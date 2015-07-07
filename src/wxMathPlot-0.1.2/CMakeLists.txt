@@ -1,0 +1,10 @@
+find_package(wxWidgets)
+if(wxWidgets_FOUND)
+    include(${wxWidgets_USE_FILE})	
+	add_library(mathplot STATIC mathplot.cpp mathplot.h)    
+    target_link_libraries(mathplot ${wxWidgets_LIBRARIES})
+	target_include_directories(mathplot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+else(wxWidgets_FOUND)
+    MESSAGE("wxWidgets not found!")
+endif(wxWidgets_FOUND)
+

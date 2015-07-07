@@ -1,0 +1,92 @@
+Version 0.1.2 - 2009-10-25
+* Added mpX_DATE and mpX_DATETIME formats for X axis.
+* Axes labels' format can now be set using the SetLabelFormat function, so the user can select the appropriate format fitting his needs.
+* Introduced mpWindow::SetColourTheme to set background and foreground colors different from default black on white. mpPrintout will continue to print everything with white background.
+* Fixed drawing of labels for mpFX, mpFY and mpFXY.
+  It is not really meaningful to use the label for mpFXY objects and similar ones: it is recommended to use mpInfoLegend instead, it is more clear and elegant.
+* Fixed evaluation of m_posY in mpWindow::Fit (margin top to be added, not subtracted)
+* Fixed mpFXYVector (and mpFXY) which did not respected margins when set as continuous
+* Can now build as a DLL on Windows (works only if wxWidgets are built as DLL): patch by zundoya
+* Reimplemented scrollers: patch by ngpaton
+* MATHPLOT_DO_LOGGING is now an option to be enabled by CMake building
+* Minor fixes.
+
+
+Version 0.1.1 - 2009-02-22
+* Fixed mathplot.cpp:654, where were a missing "orgy ="
+* Commented out line mathplot.cpp:848: wxCoord startPx = m_drawOutsideMargins ? 0 : w.GetMarginLeft(); it was a useless variable.
+* Added WXUNUSED macro to those events which remains unused (makes build more clear).
+* Introduced in CMakeLists.txt the choice to create a shared or static library
+* Modified axes label drawing to keep regular intervals between them
+* Introduced spec file to generate RPM
+* Fixed screenshot addresses in documentation
+* Added MSVC condition in samples CMakeLists.txt to avoid an error with MinGW
+
+
+Version 0.1.0 - 2008-11-06
+* Layer are divided by type using mpLayerType
+* Legend implemented
+* Mouse coordinate box layer
+* New class mpInfoLayer to add overlay boxes functionalities
+* mpWindow::SaveScreenshot allows saving plot screenshot in BMP, PNG and JPEG formats
+* Fixed assert on wxPaintDC during debug under Windows
+* Introduced margins on mpWindow: you can now scale everything down into a subarea of the window, by defining 4 window margins (top, right, bottom, left). This is done to let the layer plot outside of axis labels, that is more readable. mpLayer has now a boolean attribute to decide whether to draw or not outside the margins. All default layers were adapted to this behaviuor, but mpMovableObject and mpBitmapLayer always draw outside margins.
+* Fixed rectangular zoom: in some cases the selection rectangle were drawn in the opposite direction of the mouse cursor movement.
+* Commented out useless GetClientSize in mpWindow::OnMouseWheel and mpWindow::UpdateAll
+* Complete revision of axis drawing. Many behaviour vere fixed. Now grid can be limited only in the are inside the margin, making the axes more readable and more "professional-looking". If margins are sufficient, the axis title is drawn outside the ases labels, and for Y axis, its is drawn vertically
+* X axis can now be set to be a time axis, displaying values in the hours:minutes:seconds.milliseconds format.
+* Build system completely revised: now CMake is used to generate project files for every platform
+* BUG FIXED: mpFXYVector didn't draw the last point in the vector.
+* Added a new method to delete all the layers of a mpWindow (mpWindow::DelAllLayers).
+* All the layers are deleted at the mpWindow destructor.
+* The type for the list of "mpLayer*" has been moved from a wxMap to a standard STL std::deque. 
+   This is because the hash map was being used just to access by layer index, which can be also performed 
+   through the deque index, and to avoid the "type punned" warnings derived from the wxHashMap declaration.
+* Added a new option to "AddLayer" to avoid refreshing the display. Default behavior is to refresh, i.e. backwards compatible.
+* A new example "sample3" has been added to demonstrate a moving "car" over a background occupancy gridmap.
+* New class "mpBitmapLayer" displays an image in a given rectagular area in graph coordinates.
+* New class implementing "mpMovableObject": "mpPolygon" an arbitrary shape (or a cloud of points if m_continuity=false). 
+  This class is esentially similar to mpFXY, but mpMovableObject-capable.
+* New class implementing "mpMovableObject": "mpCovarianceEllipse" a 2D ellipse given by its covariance matrix.
+* A new virtual class "mpMovableObject" has been introduced for translating and rotating objects (a 2D rigid transformation).
+* A new option added to mpLayer, for optionally disabling showing the name of the layer if it is not null (prior default behavior).
+  This option is accesible through mpLayer::ShowName. By default, all classes has m_showName set to true (compatible with existing code).
+* Added options to "mpWindow::DelLayer" to allow the automatic deletion of the layer object, and to avoid the automatic refresh of the window.
+   The default parameters make this method compatible with prior code.
+* Added a method for retrieving a given mpLayer from a mpWindow by its name (mpWindow::GetLayerByName).
+* Added printing support through class mpPrintout
+* Added methods for rectangular zoom and separated X and Y zoom
+* Fixed text in message box explaining mouse commands
+* Many other bugfixes...
+
+Version 0.03 - 2007-09-11
+* Added mpWindow::GetLayer to extract the pointer to a layer and call directly its methods. Please note that you shoud know the position of the layer inside the list whis is internal to mpWindow, but it matches to the order you add layers to the window.
+* Added management for axes position: now axes can be set to be fixed to the borders of he window, or close to them with a small offset, even if you zoom or change the window size. The old behavior is set through mpALIGN_CENTER.
+* Inside mpScaleX and mpScaleY now it is possible to activate dotted grid lines instead of the axes ticks. This is achieved through the "ticks" flag in the constructor, or through the methods SetTicks and GetTicks.
+* A new class is available to plot data, calling mpProfile. It is intended to remove the limit of mpFX, which draws one point per X-scale pixel. This means that if your function has a local high value of derivative (i.e. delta Y is more than noe pixel in scale), the curve appears to be discontinous. mpProfile draws the curve by lines.
+* Corrected the "Lock-aspect menu non-checking" bug.
+* mpWindow has built-in support for mouse-based navigation (pan and zoom). 
+  This can be optionally disabled.
+* mpWindow has "doubleBuffer" support (default=disabled).
+* A new property in mpLayer for the "continuity" of 2D graphs. It can 
+select between drawing a set of separate points, or drawing them as a continuous line.
+* Formula fixed in mpWindow::UpdateAll.
+* A new layer class (mpFXYVector) for drawing 2D graphs from two vectors X and Y.
+* Changes in mpWindow to reduce redundant OnPaint's.
+* Added a macro "MATHPLOT_DO_LOGGING" for enable debug messages. 
+* Added a class mpText which allows to put a text string on a fixed position within the plot frame. In fact, the position is given in percentage of height and width.
+
+Version 0.02 - 2007-06-13
+* Added "debug" target in Makefile, to allow debugging of wxMathPlot;
+* Added method mpWindow::CountLayers, which returns layers number, excluding
+axes;
+* Removed dc.BeginDrawing() and dc.EndDrawing() in mpWindow::OnPaint, which
+are reprecated methods in wxWidgets recent versions;
+* Re-implemented m_layers as a wxHashMap, removing deprecated wxList,
+because it caused some obscure crashes. All methods using it were corrected;
+* Introduced in mpLayer methods GetXscl(), GetYscl(), GetXpos() and
+GetYpos(), replacing respectively GetScaleX(), GetScaleY(), GetPosX() and
+GetPosY(), because the old methods sometimes return some obscure zero
+values. I guess the compiler confuses them with other methods inside the
+wxWidgets inheritance tree. New methods does exactly the same things, but
+appears to be more reliable.

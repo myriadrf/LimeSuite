@@ -1,0 +1,56 @@
+#include "lms7002_pnlBIST_view.h"
+#include "LMS7002M.h"
+#include <map>
+#include "lms7002_gui_utilities.h"
+
+lms7002_pnlBIST_view::lms7002_pnlBIST_view( wxWindow* parent )
+:
+pnlBIST_view( parent )
+{
+
+}
+
+lms7002_pnlBIST_view::lms7002_pnlBIST_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
+    : pnlBIST_view(parent, id, pos, size, style), lmsControl(nullptr)
+{
+}
+
+void lms7002_pnlBIST_view::Initialize(LMS7002M* pControl)
+{
+    lmsControl = pControl;
+    assert(lmsControl != nullptr);
+}
+
+void lms7002_pnlBIST_view::ParameterChangeHandler(wxCommandEvent& event)
+{
+    assert(lmsControl != nullptr);
+    LMS7Parameter parameter;
+    try
+    {
+        parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
+    }
+    catch (std::exception & e)
+    {
+        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        return;
+    }
+    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+}
+
+void lms7002_pnlBIST_view::onbtnReadBIST( wxCommandEvent& event )
+{
+    int value;
+    value = lmsControl->Get_SPI_Reg_bits(BSIGC);
+    lblBSIGC->SetLabel(wxString::Format(_("0x%0.6X"), value));
+    value = lmsControl->Get_SPI_Reg_bits(BSIGR);
+    lblBSIGR->SetLabel(wxString::Format(_("0x%0.6X"), value));
+    value = lmsControl->Get_SPI_Reg_bits(BSIGT);
+    lblBSIGT->SetLabel(wxString::Format(_("0x%0.6X"), value));
+    value = lmsControl->Get_SPI_Reg_bits(BSTATE);
+    lblBSTATE->SetLabel(wxString::Format(_("0x%X"), value));
+}
+
+void lms7002_pnlBIST_view::UpdateGUI()
+{
+    LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
+}
