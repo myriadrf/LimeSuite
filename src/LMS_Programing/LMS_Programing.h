@@ -7,21 +7,45 @@
 #define LMS_Programing_H
 
 #include <atomic>
-
+#include <thread>
 class LMScomms;
 
 class LMS_Programing
 {
 public:
+    enum Status
+    {
+        SUCCESS,
+        FAILURE,
+        FILE_NOT_FOUND,
+        DEVICE_NOT_CONNECTED,
+        UPLOAD_IN_PROGRESS
+    };
+
+    struct Info
+    {
+        int bytesSent;
+        int bytesCount;        
+        bool aborted;
+        unsigned char deviceResponse; //in case of failure device might give reason
+    };
+    
     LMS_Programing(LMScomms* pSerPort);
     ~LMS_Programing();
 
-    int LoadFile(const char* filename, const int type);
-    int LoadArray(const unsigned char* array, const unsigned int arraySize);
-    int UploadProgram(const int device, const int prog_mode);
-    float GetProgress() const;
+    Status LoadFile(const char* filename, const int type);
+    Status LoadArray(const unsigned char* array, const unsigned int arraySize);
+    Status UploadProgram(const int device, const int prog_mode);
+
+    //Creates thread that executes UploadProgram
+    Status StartUploadProgram(const int device, const int prog_mode);
+    Info GetProgressInfo() const;    
+    void AbortPrograming();
 protected:
-    std::atomic<float> mProgressPercent;
+    std::thread mProgramingThread;
+    std::atomic<Info> mProgressInfo;
+    std::atomic<bool> mAbortPrograming;
+    std::atomic<bool> mUploadInProgress;
     LMScomms* m_serPort;
     unsigned char* m_data;
     long m_data_size;

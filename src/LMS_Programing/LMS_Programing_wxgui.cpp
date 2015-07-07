@@ -5,20 +5,19 @@
 */
 #include "LMS_Programing_wxgui.h"
 #include "lmsComms.h"
-//(*InternalHeaders(LMS_Programing_wxgui)
+
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/choice.h>
 #include <wx/button.h>
 #include <wx/string.h>
 #include <wx/gauge.h>
-//*)
+
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
 #include <wx/wfstream.h>
 #include "LMS_Programing.h"
 
-//(*IdInit(LMS_Programing_wxgui)
 const long LMS_Programing_wxgui::ID_BUTTON1 = wxNewId();
 const long LMS_Programing_wxgui::ID_STATICTEXT1 = wxNewId();
 const long LMS_Programing_wxgui::ID_STATICTEXT2 = wxNewId();
@@ -29,7 +28,6 @@ const long LMS_Programing_wxgui::ID_STATICTEXT3 = wxNewId();
 const long LMS_Programing_wxgui::ID_STATICTEXT6 = wxNewId();
 const long LMS_Programing_wxgui::ID_CHOICE2 = wxNewId();
 const long LMS_Programing_wxgui::ID_CHOICE1 = wxNewId();
-//*)
 
 BEGIN_EVENT_TABLE(LMS_Programing_wxgui, wxFrame)	
 END_EVENT_TABLE()
@@ -37,8 +35,7 @@ END_EVENT_TABLE()
 LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)    
 {
     progressPooler = new wxTimer(this, wxNewId());
-    Connect(wxID_ANY, wxEVT_TIMER, wxTimerEventHandler(LMS_Programing_wxgui::OnProgressPoll), NULL, this);
-    Connect(wxID_ANY, wxEVT_THREAD, wxThreadEventHandler(LMS_Programing_wxgui::OnProgramingFinished), NULL, this);
+    Connect(wxID_ANY, wxEVT_TIMER, wxTimerEventHandler(LMS_Programing_wxgui::OnProgressPoll), NULL, this);    
     m_programmer = new LMS_Programing(serPort);
     wxFlexGridSizer* FlexGridSizer3;
     wxFlexGridSizer* FlexGridSizer2;
@@ -48,7 +45,6 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, 
     wxFlexGridSizer* FlexGridSizer1;
 
     wxFrame::Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
-    wxThreadHelper::Create();
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 0);
     FlexGridSizer2 = new wxFlexGridSizer(0, 2, 0, 0);
@@ -60,8 +56,8 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, 
     lblFilename = new wxStaticText(this, ID_STATICTEXT2, _T("\?"), wxDefaultPosition, wxSize(400, -1), 0, _T("ID_STATICTEXT2"));
     FlexGridSizer6->Add(lblFilename, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer2->Add(FlexGridSizer6, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    btnProgram = new wxButton(this, ID_BUTTON2, _T("Program"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
-    FlexGridSizer2->Add(btnProgram, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    btnStartStop = new wxButton(this, ID_BUTTON2, _T("Program"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
+    FlexGridSizer2->Add(btnStartStop, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);        
     FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 0);
     FlexGridSizer8->AddGrowableCol(1);
     lblProgressPercent = new wxStaticText(this, ID_STATICTEXT5, _T("0 %"), wxDefaultPosition, wxSize(48, -1), 0, _T("ID_STATICTEXT5"));
@@ -98,39 +94,34 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, 
     FlexGridSizer1->SetSizeHints(this);
 
     Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnOpenClick);
-    Connect(ID_BUTTON2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnProgMyriadClick);
+    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnProgMyriadClick);    
     Connect(ID_CHOICE2, wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&LMS_Programing_wxgui::OncmbDeviceSelect);
-    //*)
+    
     wxCommandEvent evt;
     OncmbDeviceSelect(evt);
 }
 
 LMS_Programing_wxgui::~LMS_Programing_wxgui()
-{
-	//(*Destroy(LMS_Programing_wxgui)
-	//*)
-    if (GetThread()->IsRunning())
-        GetThread()->Wait();
+{   
+    Disconnect(wxID_ANY, wxEVT_TIMER, wxTimerEventHandler(LMS_Programing_wxgui::OnProgressPoll), NULL, this);
+    progressPooler->Stop();
+    m_programmer->AbortPrograming();
 }
 
 
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
-    if(!m_programmer)
-        return;
     wxFileDialog dlg(this, _("Select file"), "", "", "rbf (*.rbf)| *.rbf|bin (*.bin)| *.bin|All files(*.*)|*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
     lblFilename->SetLabel(dlg.GetPath());
-
 }
 
 void LMS_Programing_wxgui::OnbtnProgMyriadClick(wxCommandEvent& event)
 {
+    assert(m_programmer != nullptr);
     progressBar->SetValue(0);
-    lblProgressPercent->SetLabel(wxString::Format("%3.1f%%", 0.0));
-    if(!m_programmer)
-        return;
+    lblProgressPercent->SetLabel(wxString::Format("%3.1f%%", 0.0));    
     if( (cmbDevice->GetSelection() == 1 && cmbProgMode->GetSelection() == 2) == false)
     {
 		if (lblFilename->GetLabel().length() <= 1)
@@ -138,7 +129,7 @@ void LMS_Programing_wxgui::OnbtnProgMyriadClick(wxCommandEvent& event)
 			wxMessageBox("Program file not selected");
 			return;
 		}
-        wxFFileInputStream fin(lblFilename->GetLabel());
+        wxFFileInputStream fin(lblFilename->GetLabel()); //using wxWidgets to read file, to support nonascii characters in path
 
         if(!fin.IsOk())
         {
@@ -153,32 +144,20 @@ void LMS_Programing_wxgui::OnbtnProgMyriadClick(wxCommandEvent& event)
         fin.Read((char*)m_data, m_data_size);
         m_programmer->LoadArray(m_data, m_data_size);
         delete m_data;
-    }    
-    progressPooler->Start(250);
-    btnOpen->Disable();
-    btnProgram->Disable();
-    GetThread()->Run();
-}
-/*
-void LMS_Programing_wxgui::HandleMessage(const LMS_Message &msg)
-{
-    switch(msg.type)
+    }            
+    assert(m_programmer != nullptr);
+    Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnProgMyriadClick);
+    btnStartStop->SetLabel(_("Abort"));
+    int status = m_programmer->StartUploadProgram(cmbDevice->GetSelection(), cmbProgMode->GetSelection());    
+    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);    
+    if (status == LMS_Programing::SUCCESS)
     {
-    case MSG_INFO:
-    case MSG_ERROR:
-        wxMessageBox( wxString::Format("%s", msg.text), _(""));
-        break;
-    case MSG_PROGRAMMING_PACKET_SENT:
-        if(progressBar->GetRange() != msg.param2)
-            progressBar->SetRange(msg.param2);
-        progressBar->SetValue(msg.param1);
-        lblProgressPercent->SetLabel(wxString::Format("%3.1f%%", 100.0*msg.param1/msg.param2));
-        wxYield();
-        break;
-    default:
-        break;
+        progressPooler->Start(250);
+        btnOpen->Disable();
     }
-}*/
+    else    
+        btnOpen->Enable();
+}
 
 void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
 {
@@ -200,34 +179,39 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
     }
 }
 
-wxThread::ExitCode LMS_Programing_wxgui::Entry()
-{    
-    int status = m_programmer->UploadProgram(cmbDevice->GetSelection(), cmbProgMode->GetSelection());
-    if (status != 0)
-    {
-        if (status == -3)
-            wxMessageBox("Board not connected");
-        if (status == -2)
-            wxMessageBox("Program file not selected");
-    }    
-    wxQueueEvent(this, new wxThreadEvent(wxEVT_THREAD));
-    return (wxThread::ExitCode)0;
-}
-
+/** @brief timer polls programming status, updates progress bar
+*/
 void LMS_Programing_wxgui::OnProgressPoll(wxTimerEvent& evt)
 {
-    float percent = m_programmer->GetProgress();
+    assert(m_programmer != nullptr);
+    LMS_Programing::Info info = m_programmer->GetProgressInfo();
     progressBar->SetRange(100);
+    float percent = 100.0*info.bytesSent / info.bytesCount;
     progressBar->SetValue(percent);
     lblProgressPercent->SetLabel(wxString::Format("%3.1f", percent));
+    if (info.bytesSent == info.bytesCount)
+        OnProgramingFinished();
 }
 
-void LMS_Programing_wxgui::OnProgramingFinished(wxThreadEvent& evt)
+void LMS_Programing_wxgui::OnProgramingFinished()
 {
     progressPooler->Stop();
-    wxMessageBox(_("Programming completed"), _("INFO"));
     progressBar->SetValue(100);
     lblProgressPercent->SetLabel(wxString::Format("%3.1f", 100.0));
+    LMS_Programing::Info info = m_programmer->GetProgressInfo();
+    if (info.aborted)
+        wxMessageBox(_("Programming aborted"), _("ERROR"));
+    else
+        wxMessageBox(wxString::Format(_("Programming Finished: %i bytes sent"), info.bytesSent), _("INFO"));
     btnOpen->Enable();
-    btnProgram->Enable();
+    Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
+    Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnProgMyriadClick);
+    btnStartStop->SetLabel(_("Program"));
+}
+
+void LMS_Programing_wxgui::OnAbortProgramming(wxCommandEvent& event)
+{
+    assert(m_programmer != nullptr);
+    m_programmer->AbortPrograming();
+    OnProgramingFinished();
 }

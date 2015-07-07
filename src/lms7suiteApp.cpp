@@ -18,7 +18,11 @@
 #include "lms7suiteApp.h"
 #include "lms7suiteAppFrame.h"
 #include <wx/time.h>
+#ifndef NDEBUG
+IMPLEMENT_APP_CONSOLE(lms7suiteApp);
+#else
 IMPLEMENT_APP(lms7suiteApp);
+#endif
 
 bool lms7suiteApp::OnInit()
 {

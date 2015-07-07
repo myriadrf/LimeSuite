@@ -10,19 +10,27 @@
 #include <sstream>
 #include <string.h>
 #include <iostream>
-#include <chrono>
 using namespace std;
 
 LMS_Programing::LMS_Programing(LMScomms* pSerPort)
 {
+    mAbortPrograming.store(false);
+    mUploadInProgress.store(false);
     m_serPort = pSerPort;
     m_data = NULL;
     m_data_size = 0;
-    mProgressPercent = 0;
+    Info initInfo;
+    initInfo.bytesSent = 0;
+    initInfo.bytesCount= 0;
+    initInfo.aborted = false;
+    initInfo.deviceResponse = 0;
+    mProgressInfo.store(initInfo);
 }
 
 LMS_Programing::~LMS_Programing()
 {
+    if (mUploadInProgress.load() == true)
+        AbortPrograming();
     if(m_data)
         delete m_data;
 }
@@ -30,10 +38,12 @@ LMS_Programing::~LMS_Programing()
 /** @brief Loads program code from file
     @param filename file path
     @param type 0-binary, 1-hex
-    @return 0:success, -1:failure, -2:file not found
+    @return 0:success, other: failure
 */
-int LMS_Programing::LoadFile(const char* filename, const int type)
+LMS_Programing::Status LMS_Programing::LoadFile(const char* filename, const int type)
 {
+    if (mUploadInProgress.load() == true)
+        return UPLOAD_IN_PROGRESS;
     fstream fin;
     if(type == 0)
     {
@@ -41,7 +51,7 @@ int LMS_Programing::LoadFile(const char* filename, const int type)
         if(!fin.good())
         {
             fin.close();
-            return -2;
+            return FILE_NOT_FOUND;
         }
         fin.seekg(0, ios_base::end);
         m_data_size = fin.tellg();
@@ -49,20 +59,22 @@ int LMS_Programing::LoadFile(const char* filename, const int type)
             delete[] m_data;
         m_data = new unsigned char[m_data_size];
         fin.seekg(0, ios_base::beg);
-        fin.readsome((char*)m_data, m_data_size);
+        fin.read((char*)m_data, m_data_size);
         fin.close();
-        return 0;
+        return SUCCESS;
     }
-    return -1;
+    return FAILURE;
 }
 
 /** @brief Loads program code from array
     @param array program code
     @param arraySize program code size in bytes
-    @return 0:success, -1:failure, -2:file not found
+    @return 0:success, other:failure
 */
-int LMS_Programing::LoadArray(const unsigned char* array, const unsigned int arraySize)
+LMS_Programing::Status LMS_Programing::LoadArray(const unsigned char* array, const unsigned int arraySize)
 {
+    if (mUploadInProgress.load() == true)
+        return UPLOAD_IN_PROGRESS;
     if(arraySize > 0)
     {
         m_data_size = arraySize;
@@ -70,31 +82,38 @@ int LMS_Programing::LoadArray(const unsigned char* array, const unsigned int arr
             delete[] m_data;
         m_data = new unsigned char[m_data_size];
         memcpy(m_data, array, m_data_size);
-        return 0;
+        return SUCCESS;
     }
     else
-        return -1;
+        return FAILURE;
 }
 
 /** @brief Uploads program to controller
     @param device programmed device type 0:MyriadRF
     @param prog_mode programming mode
-    @return 0:success, -1:failure, -2:program not loaded; -3:board not connected
+    @return 0:success, other: failure
 */
-int LMS_Programing::UploadProgram(const int device, const int prog_mode)
+LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int prog_mode)
 {
-    mProgressPercent.store(0);
+    if (mUploadInProgress.load() == true)
+        return UPLOAD_IN_PROGRESS;
+    mAbortPrograming.store(false);
+    Info progress;
+    progress.bytesSent = 0;
+    progress.bytesCount= 0;
+    progress.aborted = false;
+    progress.deviceResponse = 0;
+    mProgressInfo.store(progress);
     if(m_data_size == 0 && (device != 1) && (prog_mode != 2))
-        return -2;
+        return FAILURE;
 
     if(!m_serPort->IsOpen())
-        return -3;
-
-    int pktSize = 32;
+        return DEVICE_NOT_CONNECTED;
+    mUploadInProgress.store(true);
+    const int pktSize = 32;
     int data_left = m_data_size;
-    unsigned char* data_src = m_data;
-    // +1 programming end packet
-    int portionsCount = m_data_size/pktSize + (m_data_size%pktSize > 0) + 1;
+    unsigned char* data_src = m_data;    
+    const int portionsCount = m_data_size/pktSize + (m_data_size%pktSize > 0) + 1; // +1 programming end packet
     int portionNumber;
     int status = 0;
     eCMD_LMS cmd;
@@ -110,10 +129,8 @@ int LMS_Programing::UploadProgram(const int device, const int prog_mode)
     ctrbuf[1] = 0;
     ctrbuf[2] = 56;
 
-    long updateInterval_ms = 1000;
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
-    for(portionNumber=0; portionNumber<portionsCount; ++portionNumber)
+    progress.bytesCount = m_data_size;
+    for (portionNumber = 0; portionNumber<portionsCount && mAbortPrograming.load() != true; ++portionNumber)
     {
         int offset = 8;
         memset(&ctrbuf[offset], 0, 56);
@@ -131,48 +148,82 @@ int LMS_Programing::UploadProgram(const int device, const int prog_mode)
         }
 
         m_serPort->Write(ctrbuf, 64);
-        long len = 64;
-        m_serPort->Read(inbuf, len);
+        m_serPort->Read(inbuf, 64);
 
         data_left -= data_cnt;
-
-        mProgressPercent.store(100 * (float)portionNumber / (portionsCount - 1));
         status = inbuf[1];
-        
-        t2 = chrono::high_resolution_clock::now();
+        progress.bytesSent += data_cnt;
+        progress.deviceResponse = status;
+        mProgressInfo.store(progress);
+                
         if(status != STATUS_COMPLETED_CMD)
         {
 #ifndef NDEBUG
             stringstream ss;
             ss << "Programming failed! Status: " << status2string(status) << endl;            
 #endif
-            mProgressPercent.store(100);
-            return -1;
-        }
-        long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if (timePeriod >updateInterval_ms || portionNumber == portionsCount - 1)
-        {
-            
-#ifndef NDEBUG
-            cout << "Programming progress: " << mProgressPercent.load() << endl;
-#endif
-            t1 = t2;
+            progress.aborted = true;
+            progress.deviceResponse = status;
+            mProgressInfo.store(progress);
+            return FAILURE;
         }        
-        if(device == 1 && prog_mode == 2)
+        if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
             break;
-    }
-    mProgressPercent.store(100);
 #ifndef NDEBUG
-    cout << "Programming progress: " << mProgressPercent.load() << endl;
+        printf("programing: %6i/%i\r", portionNumber, portionsCount - 1);
+#endif  
+    }    
+    mProgressInfo.store(progress);
+    mUploadInProgress.store(false);
+    if (mAbortPrograming.load() == true)
+    {
+        printf("\nProgramming aborted\n");
+        progress.aborted = true;
+        mProgressInfo.store(progress);
+        return FAILURE;
+    }    
+#ifndef NDEBUG
 	if ((device == 1 && prog_mode == 2) == false)
-		printf("Programming finished, %li bytes sent!\n", m_data_size);
+		printf("\nProgramming finished, %li bytes sent!\n", m_data_size);
 	else
-		printf("FPGA configuring initiated\n");
-#endif
-    return 0;
+		printf("\nFPGA configuring initiated\n");
+#endif    
+    return SUCCESS;
 }
 
-float LMS_Programing::GetProgress() const
+/** @brief Starts programming procedure asynchronously
+*/
+LMS_Programing::Status LMS_Programing::StartUploadProgram(const int device, const int prog_mode)
 {
-    return mProgressPercent.load();
+    if (mUploadInProgress.load() == true)
+        return UPLOAD_IN_PROGRESS;
+    try
+    {
+        mProgramingThread = std::thread(&LMS_Programing::UploadProgram, this, device, prog_mode);
+    }
+    catch (...)
+    {
+        return FAILURE;
+    }
+    return SUCCESS;
+}
+
+/** @returns programming progress
+    Use this to poll progress if program uploading is done asynchronously
+*/
+LMS_Programing::Info LMS_Programing::GetProgressInfo() const
+{
+    return mProgressInfo.load();
+}
+
+/** @brief Aborts programming procedure
+    Use this to stop programming if it is done asynchronously
+*/
+void LMS_Programing::AbortPrograming()
+{
+    if (mUploadInProgress.load() == true)
+    {
+        mAbortPrograming.store(true);
+        mProgramingThread.join();
+    }
 }
