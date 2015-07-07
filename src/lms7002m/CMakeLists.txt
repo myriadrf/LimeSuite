@@ -12,23 +12,18 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
-#set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
-
-#add_subdirectory(connectionManager)
-#include_directories(connectionManager)
-
 # set up include-directories
 include_directories(
   "${PROJECT_SOURCE_DIR}"
   "${PROJECT_BINARY_DIR}"  
+  cpp-feather-ini-parser
  )
 
 set(LMS7002M_src_files
     LMS7002M.cpp
 	LMS7002M_parameters.cpp
 	LMS7002M_statuses.cpp
-	LMS7002M_filtersCalibration.cpp
-    CommonUtilities.cpp	
+	LMS7002M_filtersCalibration.cpp    
 	lmsComms.cpp
 )
 
@@ -47,9 +42,6 @@ endif()
 
 add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files})
 target_include_directories(LMS7002M PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-#add_library(connectionManager STATIC ${connectionManager_src_files})
-#target_include_directories(connectionManager PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32 AND ENABLE_USB_CONNECTION)
 	find_package(CyAPI REQUIRED)

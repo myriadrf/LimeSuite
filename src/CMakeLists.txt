@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE TYPE INTERNAL FORCE)
 project("lms7suite")
-#include modules for finding FFT and CyAPI
+#include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 cmake_policy(SET CMP0015 OLD)
 if(${CMAKE_MAJOR_VERSION} GREATER 2)

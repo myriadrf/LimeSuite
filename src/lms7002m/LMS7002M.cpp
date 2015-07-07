@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <set>
 #include "lmsComms.h"
-#include "iniParser.h"
+#include "INI.h"
 #include <cmath>
 
 #define PI 3.14159265359
@@ -164,14 +164,16 @@ liblms7_status LMS7002M::ResetChip()
 */
 liblms7_status LMS7002M::LoadConfig(const char* filename)
 {
+    uint16_t addr = 0;
+    uint16_t value = 0;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC)); //remember used channel
 
     liblms7_status status;
-    iniParser parser;
-    parser.Open(filename);
-    parser.SelectSection("file_info");
+    typedef INI<string, string, string> ini_t;
+    ini_t parser(filename, true);
+    parser.select("file_info");
     string type = "";
-    type = parser.Get("type", "undefined");
+    type = parser.get("type", "undefined");
     stringstream ss;
     if (type != "lms7002m_minimal_config")
     {
@@ -180,66 +182,65 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     }
 
     int fileVersion = 0;
-    fileVersion = parser.Get("version", 0);
+    fileVersion = parser.get("version", 0);
 
     vector<uint16_t> addrToWrite;
     vector<uint16_t> dataToWrite;
 
     if (fileVersion == 1)
     {
-        parser.SelectSection("lms7002_registers_a");
-        map<string, string>::iterator pairs;
-        map<string, string> regValues = parser.GetCurrentSection();
+        if(parser.select("lms7002_registers_a") == true)
+        { 
+            ini_t::sectionsit_t section = parser.sections.find("lms7002_registers_a");
 
-        uint16_t addr = 0;
-        uint16_t value = 0;
-        uint16_t x0020_value = 0;
-        Modify_SPI_Reg_bits(LMS7param(MAC), 1); //select A channel
-        for (pairs = regValues.begin(); pairs != regValues.end(); ++pairs)
-        {
-            sscanf(pairs->first.c_str(), "%hx", &addr);
-            sscanf(pairs->second.c_str(), "%hx", &value);
-            if (addr == LMS7param(MAC).address) //skip register containing channel selection
+            uint16_t x0020_value = 0;
+            Modify_SPI_Reg_bits(LMS7param(MAC), 1); //select A channel
+            for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
             {
-                x0020_value = value;
-                continue;
+                sscanf(pairs->first.c_str(), "%hx", &addr);
+                sscanf(pairs->second.c_str(), "%hx", &value);
+                if (addr == LMS7param(MAC).address) //skip register containing channel selection
+                {
+                    x0020_value = value;
+                    continue;
+                }
+                addrToWrite.push_back(addr);
+                dataToWrite.push_back(value);
             }
-            addrToWrite.push_back(addr);
-            dataToWrite.push_back(value);
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
+            status = LIBLMS7_SUCCESS;
+            if (status != LIBLMS7_SUCCESS)
+                return status;
+            status = SPI_write(0x0020, x0020_value);
+            if (status != LIBLMS7_SUCCESS)
+                return status;
+            Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+            if (status != LIBLMS7_SUCCESS)
+                return status;
         }        
-        status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());        
-        status = LIBLMS7_SUCCESS;
-        if (status != LIBLMS7_SUCCESS)
-            return status;
-        status = SPI_write(0x0020, x0020_value);
-        if (status != LIBLMS7_SUCCESS)
-            return status;
-        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-        if (status != LIBLMS7_SUCCESS)
-            return status;
 
-        parser.SelectSection("lms7002_registers_b");
-        regValues.clear();
-        regValues = parser.GetCurrentSection();
-
-        addrToWrite.clear();
-        dataToWrite.clear();
-        for (pairs = regValues.begin(); pairs != regValues.end(); ++pairs)
+        if (parser.select("lms7002_registers_b") == true)
         {
-            sscanf(pairs->first.c_str(), "%hx", &addr);
-            sscanf(pairs->second.c_str(), "%hx", &value);
-            addrToWrite.push_back(addr);
-            dataToWrite.push_back(value);
-        }
-        Modify_SPI_Reg_bits(LMS7param(MAC), 2); //select B channel
-        status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-        if (status != LIBLMS7_SUCCESS)
-            return status;
+            addrToWrite.clear();
+            dataToWrite.clear();
+            ini_t::sectionsit_t section = parser.sections.find("lms7002_registers_b");
+            for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
+            {
+                sscanf(pairs->first.c_str(), "%hx", &addr);
+                sscanf(pairs->second.c_str(), "%hx", &value);
+                addrToWrite.push_back(addr);
+                dataToWrite.push_back(value);
+            }
+            Modify_SPI_Reg_bits(LMS7param(MAC), 2); //select B channel
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
+            if (status != LIBLMS7_SUCCESS)
+                return status;
+        }        
         Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
-        parser.SelectSection("reference_clocks");
-        mRefClkSXR_MHz = parser.Get("sxr_ref_clk_mhz", 30.72);
-        mRefClkSXT_MHz = parser.Get("sxt_ref_clk_mhz", 30.72);
+        parser.select("reference_clocks");
+        mRefClkSXR_MHz = parser.get("sxr_ref_clk_mhz", 30.72);
+        mRefClkSXT_MHz = parser.get("sxt_ref_clk_mhz", 30.72);
     }
 
     Modify_SPI_Reg_bits(MAC, 1);
@@ -257,10 +258,11 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
 liblms7_status LMS7002M::SaveConfig(const char* filename)
 {   
     liblms7_status status;
-    iniParser parser;
-    parser.SelectSection("file_info");
-    parser.Set("type", "lms7002m_minimal_config");
-    parser.Set("version", 1);
+    typedef INI<> ini_t;
+    ini_t parser(filename, true);
+    parser.create("file_info");
+    parser.set("type", "lms7002m_minimal_config");
+    parser.set("version", 1);
 
     char addr[80];
     char value[80];
@@ -274,7 +276,7 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
     vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
 
-    parser.SelectSection("lms7002_registers_a");
+    parser.create("lms7002_registers_a");
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
     
@@ -282,10 +284,10 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
     {        
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);                
-        parser.Set(addr, value);
+        parser.set(addr, value);
     }
 
-    parser.SelectSection("lms7002_registers_b");
+    parser.create("lms7002_registers_b");
     addrToRead.clear(); //add only B channel addresses
     for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
         for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
@@ -299,15 +301,15 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
     {
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
-        parser.Set(addr, value);
+        parser.set(addr, value);
     }
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //retore previously used channel
 
-    parser.SelectSection("reference_clocks");
-    parser.Set("sxt_ref_clk_mhz", mRefClkSXT_MHz);
-    parser.Set("sxr_ref_clk_mhz", mRefClkSXR_MHz);
-    parser.Save(filename);
+    parser.create("reference_clocks");
+    parser.set("sxt_ref_clk_mhz", mRefClkSXT_MHz);
+    parser.set("sxr_ref_clk_mhz", mRefClkSXR_MHz);
+    parser.save(filename);
     return LIBLMS7_SUCCESS;
 }
 
