@@ -11,6 +11,7 @@ class mpPolygon;
 class mpFXYVector;
 class StreamerLTE;
 class LMScomms;
+class LMS_StreamBoard;
 #include <wx/timer.h>
 //// end generated include
 
@@ -36,6 +37,7 @@ class fftviewer_frFFTviewer : public frFFTviewer
         void StopStreaming();
 	
 protected:
+    bool mStreamRunning;
     wxString printDataRate(float dataRate);
 
     LMScomms* mDataPort;
@@ -44,6 +46,7 @@ protected:
     mpFXYVector* mConstelationData;
     mpPolygon* mFFTdata;
     StreamerLTE* mLTEstreamer;
+    LMS_StreamBoard* mStreamBrd;
     wxTimer* mGUIupdater;
 };
 

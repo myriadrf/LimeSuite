@@ -82,10 +82,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
     }
     memset(buffers, 0, buffers_count*buffer_size);
 
-    char *tempBuf = new char[65536 * 4];
-    memset(tempBuf, 0, 65536 * 4);
-    unsigned int tempBufIndex = 0;
-
     //USB FIFO reset
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_USB_FIFO_RST;
@@ -104,11 +100,8 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
     int packetsReceived = 0;
     unsigned long BytesReceived = 0;
     int m_bufferFailures = 0;
-    bool packetReceived = false;
-    uint64_t pktCnt = 0;
     while (pthis->stopRx.load() == false)
-    {
-        packetReceived = false;
+    {   
         if (pthis->mDataPort->WaitForReading(handles[bi], 1000) == false)
         {
             ++m_bufferFailures;
@@ -118,11 +111,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
         {
             ++packetsReceived;
             BytesReceived += bytesToRead;
-            if (tempBufIndex < 65536 * 4)
-            {
-                memcpy(&tempBuf[tempBufIndex], &buffers[bi*buffer_size], bytesToRead);
-                tempBufIndex += bytesToRead;
-            }
             for (int p = 0; p < buffer_size / sizeof(pkt); ++p)
             {
                 memcpy(&pkt, &buffers[bi*buffer_size+p*sizeof(pkt)], sizeof(pkt));
@@ -134,7 +122,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
                     sample = sample >> 4;
                     pkt.samples[i] = sample;
                 }
-                packetReceived = true;
                 if (pthis->mRxFIFO->push_back(pkt, 0) == false)
                     ++m_bufferFailures;
             }
@@ -142,7 +129,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
         else
         {
             ++m_bufferFailures;
-            packetReceived = false;
         }
 
         t2 = chrono::high_resolution_clock::now();

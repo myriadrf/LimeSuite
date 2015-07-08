@@ -98,8 +98,22 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer12->SetFlexibleDirection( wxBOTH );
 	fgSizer12->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	wxFlexGridSizer* fgSizer91;
+	fgSizer91 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer91->SetFlexibleDirection( wxBOTH );
+	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxString cmbStreamTypeChoices[] = { wxT("IQ samples"), wxT("LTE packets") };
+	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
+	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
+	cmbStreamType->SetSelection( 0 );
+	fgSizer91->Add( cmbStreamType, 0, 0, 5 );
+	
 	btnStartStop = new wxButton( sbSizer2->GetStaticBox(), wxID_ANY, wxT("START"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer12->Add( btnStartStop, 0, 0, 5 );
+	fgSizer91->Add( btnStartStop, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer12->Add( fgSizer91, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer13;
 	fgSizer13 = new wxFlexGridSizer( 0, 2, 0, 5 );

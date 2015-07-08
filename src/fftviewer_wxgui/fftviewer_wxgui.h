@@ -25,6 +25,7 @@ class mpWindow;
 #include <wx/valtext.h>
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
+#include <wx/choice.h>
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/gauge.h>
@@ -50,6 +51,7 @@ class frFFTviewer : public wxFrame
 		wxTextCtrl* txtNyquistFreqMHz;
 		wxStaticText* m_staticText7;
 		wxSpinCtrl* spinFFTsize;
+		wxChoice* cmbStreamType;
 		wxButton* btnStartStop;
 		wxStaticText* m_staticText8;
 		wxStaticText* lblRxDataRate;

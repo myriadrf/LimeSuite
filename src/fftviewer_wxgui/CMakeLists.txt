@@ -6,4 +6,4 @@ set(fftviewer_wx_gui_src_files
 add_library(fftviewer_wxgui STATIC ${fftviewer_wx_gui_src_files})
 target_include_directories(fftviewer_wxgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(fftviewer_wxgui mathplot LTEpackets kissFFT)
+target_link_libraries(fftviewer_wxgui mathplot LMS_StreamBoard LTEpackets kissFFT)

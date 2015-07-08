@@ -5,7 +5,7 @@ set(streamBoard_src_files
 add_library(LMS_StreamBoard STATIC ${streamBoard_src_files})
 target_include_directories(LMS_StreamBoard PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(LMS_StreamBoard LMS7002M${CONNECTION_MANAGER_LIBS})	
+target_link_libraries(LMS_StreamBoard kissFFT LMS7002M ${CONNECTION_MANAGER_LIBS})	
 
 if(WIN32 AND ENABLE_USB_CONNECTION)
 	find_package(CyAPI REQUIRED)

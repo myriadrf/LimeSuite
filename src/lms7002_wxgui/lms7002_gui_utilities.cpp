@@ -50,7 +50,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, co
         if (wndClass->IsKindOf(cmbInfo))
         {
             wxComboBox *box = wxStaticCast(wnd, wxComboBox);
-            if (box->GetCount() < value)
+            if (box->GetCount() <= value)
             {
                 wxString str;
                 str = wxString::Format(_("combobox value(%li) is out of range [0-%i]"), value, box->GetCount() - 1);
@@ -60,24 +60,17 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, co
             box->SetSelection(value);
         }
         else if (wndClass->IsKindOf(chkInfo))
-        {
-            /*if (m_checkboxIDToInvert.find(wnd->GetId()) != m_checkboxIDToInvert.end())
-            {
-            if (value == true)
-            value = 0;
-            else
-            value = 1;
-            }*/
+        {   
             wxStaticCast(wnd, wxCheckBox)->SetValue(value);
         }
         else if (wndClass->IsKindOf(rgrInfo))
         {
             wxRadioBox *box = wxStaticCast(wnd, wxRadioBox);
-            if (box->GetCount() < value)
+            if (box->GetCount() <= value)
             {
                 wxString str;
                 str = wxString::Format(_("radiogroup value(%i) is out of range [0-%i]"), value, box->GetCount() - 1);
-                wxMessageBox(str, "WARNING!");
+                //wxMessageBox(str, "WARNING!");
                 value = 0;
                 continue;
             }
@@ -102,8 +95,10 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, co
         else
         {
             wxString str;
+#ifndef NDEBUG
             str = wxString::Format(_("Unhandled control class type. className=%s, was assigned address %04X"), wndClass->GetClassName(), idParam.second.address);
             wxMessageBox(str, "ERROR!");
+#endif
         }
     }
     panel->Thaw();

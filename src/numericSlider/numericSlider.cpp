@@ -62,7 +62,6 @@ NumericSlider::~NumericSlider()
 
 void NumericSlider::OnSpinnerChange(wxSpinEvent &event)
 {
-    printf("Spinner change %i \n", event.GetInt());    
     wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
     evt.SetId(this->GetId());
     evt.SetInt(event.GetInt());
@@ -72,8 +71,7 @@ void NumericSlider::OnSpinnerChange(wxSpinEvent &event)
 }
 
 void NumericSlider::OnScrollChange(wxScrollEvent &event)
-{
-    printf("Scroll change %i \n", event.GetInt());
+{   
     wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
     evt.SetId(this->GetId());    
     evt.SetEventObject(this);
