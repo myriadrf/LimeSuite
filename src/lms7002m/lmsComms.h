@@ -78,24 +78,17 @@ public:
     };
 
     struct GenericPacket
-    {
-        static const int maxDataLength = 1024*16;
+    {   
         GenericPacket()
         {
             cmd = CMD_GET_INFO;
             status = STATUS_UNDEFINED;
-            outLen = 0;
-            inLen = 0;
-            memset(outBuffer, 0, maxDataLength);
-            memset(inBuffer, 0, maxDataLength);
         }
 
         eCMD_LMS cmd;
         eCMD_STATUS status;
-        unsigned char outBuffer[maxDataLength];
-        int outLen;
-        unsigned char inBuffer[maxDataLength];
-        int inLen;
+        vector<unsigned char> outBuffer;
+        vector<unsigned char> inBuffer;
     };
 
     LMScomms();

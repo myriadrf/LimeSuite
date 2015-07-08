@@ -74,12 +74,10 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
             status = TRANSFER_FAILED;
             break;
         }
-    }
-    pkt.inLen = inDataPos;
+    }    
     ParsePacket(pkt, inBuffer, inDataPos, protocol);
     delete outBuffer;
     delete inBuffer;
-//    lmSem_post(m_lock);
     return status;
 }
 
@@ -87,7 +85,6 @@ LMSinfo LMScomms::GetInfo()
 {
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
-    pkt.outLen = 1;
     TransferPacket(pkt);
     LMSinfo info;
     info.firmware = pkt.inBuffer[0];
@@ -147,7 +144,7 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
         }
         if (packet.cmd == CMD_LMS7002_RD || packet.cmd == CMD_BRDSPI_RD)
             maxDataLength = maxDataLength/2;
-        int blockCount = pkt.outLen/byteBlockRatio;
+        int blockCount = pkt.outBuffer.size()/byteBlockRatio;
         int bufLen = blockCount/(maxDataLength/byteBlockRatio)
                     +(blockCount%(maxDataLength/byteBlockRatio)!=0);
         bufLen *= packet.pktLength;
@@ -170,8 +167,8 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
                 buffer[pktPos+2] = blockCount;
             memcpy(&buffer[pktPos+3], packet.reserved, sizeof(packet.reserved));
             int bytesToPack = (maxDataLength/byteBlockRatio)*byteBlockRatio;
-            memcpy(&buffer[pktPos+8], &pkt.outBuffer[srcPos], bytesToPack);            
-            srcPos += bytesToPack;
+            for (int k = 0; k<bytesToPack && srcPos < pkt.outBuffer.size(); ++srcPos, ++k)
+                buffer[pktPos + 8 + k] = pkt.outBuffer[srcPos];
         }
         length = bufLen;
     }
@@ -194,6 +191,7 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
     {
         ProtocolLMS64C packet;
         int inBufPos = 0;
+        pkt.inBuffer.resize(packet.maxDataLength*(length / packet.pktLength + (length % packet.pktLength)), 0);
         for(int i=0; i<length; i+=packet.pktLength)
         {
             pkt.cmd = (eCMD_LMS)buffer[i];
@@ -201,7 +199,6 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
             memcpy(&pkt.inBuffer[inBufPos], &buffer[i+8], packet.maxDataLength);
             inBufPos += packet.maxDataLength;
         }
-        pkt.inLen = inBufPos;
     }
     return 1;
 }

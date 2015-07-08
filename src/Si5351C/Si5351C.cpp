@@ -295,45 +295,42 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    vector<unsigned char> out;
+    LMScomms::GenericPacket pkt;
+    pkt.cmd = CMD_SI5351_WR;
+    
 	if (!device)
         return FAILED;
     //Disable outputs
-	out.push_back(3);
-	out.push_back(0xFF);
+	pkt.outBuffer.push_back(3);
+    pkt.outBuffer.push_back(0xFF);
 	//Power down all output drivers
 	for(int i=0; i<8; ++i)
     {
-        out.push_back(16+i);
-        out.push_back(0x84);
+        pkt.outBuffer.push_back(16 + i);
+        pkt.outBuffer.push_back(0x84);
     }
 	//write new configuration
 	for (int i = 15; i <= 92; ++i)
 	{
-        out.push_back(i);
-        out.push_back(m_newConfiguration[i]);
+        pkt.outBuffer.push_back(i);
+        pkt.outBuffer.push_back(m_newConfiguration[i]);
 	}
 	for (int i = 149; i <= 170; ++i)
 	{
-        out.push_back(i);
-        out.push_back(m_newConfiguration[i]);
+        pkt.outBuffer.push_back(i);
+        pkt.outBuffer.push_back(m_newConfiguration[i]);
 	}
 	//apply soft reset
-	out.push_back(177);
-	out.push_back(0xAC);
+    pkt.outBuffer.push_back(177);
+    pkt.outBuffer.push_back(0xAC);
     //Enabe desired outputs
-	out.push_back(3);
-	out.push_back(m_newConfiguration[3]);
+    pkt.outBuffer.push_back(3);
+    pkt.outBuffer.push_back(m_newConfiguration[3]);
 
 	if( !device->IsOpen() )
 	{   
         return FAILED;
-	}
-
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_WR;
-    memcpy(pkt.outBuffer, &out[0], out.size());
-    pkt.outLen = out.size();
+	}        
     LMScomms::TransferStatus status;
     status = device->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
@@ -843,18 +840,11 @@ void Si5351C::Reset()
 
 Si5351C::StatusBits Si5351C::GetStatusBits()
 {
-    unsigned char out[2];
-    unsigned char in[2];
-    long unsigned inLen = 2;
-    out[0] = 0;
-    out[1] = 1;
-
     StatusBits stat;
-
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_SI5351_RD;
-    memcpy(pkt.outBuffer, &out[0], 2);
-    pkt.outLen = 2;
+    pkt.outBuffer.push_back(0);
+    pkt.outBuffer.push_back(1);        
     LMScomms::TransferStatus status;
     status = device->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
@@ -862,14 +852,14 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
         return stat;
     }
 
-    stat.sys_init = (in[0] >> 7);
-    stat.lol_b = (in[0] >> 6) & 0x1;
-    stat.lol_a = (in[0] >> 5) & 0x1;
-    stat.los = (in[0] >> 4) & 0x1;
-    stat.sys_init_stky = (in[1] >> 7);
-    stat.lol_b_stky = (in[1] >> 6) & 0x1;
-    stat.lol_a_stky = (in[1] >> 5) & 0x1;
-    stat.los_stky = (in[1] >> 4) & 0x1;
+    stat.sys_init = (pkt.inBuffer[0] >> 7);
+    stat.lol_b = (pkt.inBuffer[0] >> 6) & 0x1;
+    stat.lol_a = (pkt.inBuffer[0] >> 5) & 0x1;
+    stat.los = (pkt.inBuffer[0] >> 4) & 0x1;
+    stat.sys_init_stky = (pkt.inBuffer[1] >> 7);
+    stat.lol_b_stky = (pkt.inBuffer[1] >> 6) & 0x1;
+    stat.lol_a_stky = (pkt.inBuffer[1] >> 5) & 0x1;
+    stat.los_stky = (pkt.inBuffer[1] >> 4) & 0x1;
     return stat;
 }
 
@@ -877,9 +867,8 @@ Si5351C::Status Si5351C::ClearStatus()
 {    
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_SI5351_WR;
-    pkt.outBuffer[0] = 1;
-    pkt.outBuffer[1] = 0x0;
-    pkt.outLen = 2;
+    pkt.outBuffer.push_back(1);
+    pkt.outBuffer.push_back(0x0);    
     LMScomms::TransferStatus status;
     status = device->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)    

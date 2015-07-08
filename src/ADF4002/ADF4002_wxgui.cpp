@@ -521,8 +521,8 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_ADF4002_WR;
-    memcpy(pkt.outBuffer, data, 12);
-    pkt.outLen = 12;
+    pkt.outBuffer.resize(12, 0);
+    memcpy(&pkt.outBuffer[0], data, 12);    
     LMScomms::TransferStatus status;
     status = serPort->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
@@ -585,8 +585,8 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_ADF4002_WR;
-    memcpy(pkt.outBuffer, data, 12);
-    pkt.outLen = 12;
+    pkt.outBuffer.resize(12, 0);
+    memcpy(&pkt.outBuffer[0], data, 12);    
     LMScomms::TransferStatus status;
     status = serPort->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)

@@ -89,8 +89,7 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
     //USB FIFO reset
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer[0] = 0x01;
-    ctrPkt.outLen = 1;
+    ctrPkt.outBuffer.push_back(0x01);
     pthis->mDataPort->TransferPacket(ctrPkt);
     ctrPkt.outBuffer[0] = 0x00;
     pthis->mDataPort->TransferPacket(ctrPkt);
@@ -397,11 +396,10 @@ StreamerLTE::STATUS StreamerLTE::SPI_write(uint16_t address, uint16_t data)
     assert(mDataPort != nullptr);
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer[0] = (address >> 8) & 0xFF;
-    ctrPkt.outBuffer[1] = address & 0xFF;
-    ctrPkt.outBuffer[2] = (data >> 8) & 0xFF;
-    ctrPkt.outBuffer[3] = data & 0xFF;
-    ctrPkt.outLen = 4;
+    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(address & 0xFF);
+    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(data & 0xFF);
     mDataPort->TransferPacket(ctrPkt);
     return ctrPkt.status == 1 ? SUCCESS : FAILURE;
 }
@@ -410,9 +408,8 @@ uint16_t StreamerLTE::SPI_read(uint16_t address)
     assert(mDataPort != nullptr);
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer[0] = (address >> 8) & 0xFF;
-    ctrPkt.outBuffer[1] = address & 0xFF;
-    ctrPkt.outLen = 2;
+    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(address & 0xFF);    
     mDataPort->TransferPacket(ctrPkt);
     return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
 }

@@ -26,11 +26,10 @@ void lms7002_pnlSPI_view::onLMSwrite( wxCommandEvent& event )
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_WR;
-    pkt.outBuffer[0] = (addr >> 8) & 0xFF;
-    pkt.outBuffer[1] = addr & 0xFF;
-    pkt.outBuffer[2] = (data >> 8) & 0xFF;
-    pkt.outBuffer[3] = data & 0xFF;
-    pkt.outLen = 4;
+    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
+    pkt.outBuffer.push_back(addr & 0xFF);
+    pkt.outBuffer.push_back((data >> 8) & 0xFF);
+    pkt.outBuffer.push_back(data & 0xFF);    
 
     assert(ctrPort != nullptr);
     LMScomms::TransferStatus status = ctrPort->TransferPacket(pkt);
@@ -49,9 +48,8 @@ void lms7002_pnlSPI_view::onLMSread( wxCommandEvent& event )
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RD;
-    pkt.outBuffer[0] = (addr >> 8) & 0xFF;
-    pkt.outBuffer[1] = addr & 0xFF;
-    pkt.outLen = 2;
+    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
+    pkt.outBuffer.push_back(addr & 0xFF);
     assert(ctrPort != nullptr);
     LMScomms::TransferStatus status = ctrPort->TransferPacket(pkt);
 

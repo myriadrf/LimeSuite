@@ -179,20 +179,19 @@ LMS_StreamBoard::Status LMS_StreamBoard::CaptureIQSamples(LMScomms *dataPort, in
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer[0] = 0x00;
-    pkt.outBuffer[1] = 0x05;
-    pkt.outLen = 2;
+    pkt.outBuffer.push_back(0x00);
+    pkt.outBuffer.push_back(0x05);
     dataPort->TransferPacket(pkt);
     if (pkt.status != STATUS_COMPLETED_CMD)
         return STREAM_BRD_FAILURE;
 
     uint16_t regVal = (pkt.inBuffer[2] * 256) + pkt.inBuffer[3];
     pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer[0] = 0x00;
-    pkt.outBuffer[1] = 0x05;
-    pkt.outBuffer[2] = 0;
-    pkt.outBuffer[3] = regVal | 0x4;
-    pkt.outLen = 4;
+    pkt.outBuffer.clear();
+    pkt.outBuffer.push_back(0x00);
+    pkt.outBuffer.push_back(0x05);
+    pkt.outBuffer.push_back(0);
+    pkt.outBuffer.push_back(regVal | 0x4);    
     dataPort->TransferPacket(pkt);
     if (pkt.status != STATUS_COMPLETED_CMD)
         return STREAM_BRD_FAILURE;
@@ -219,20 +218,20 @@ LMS_StreamBoard::Status LMS_StreamBoard::CaptureIQSamples(LMScomms *dataPort, in
         }        
     }
     pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer[0] = 0x00;
-    pkt.outBuffer[1] = 0x01;
-    pkt.outBuffer[2] = 0x00;
-    pkt.outBuffer[3] = 0x05;
-    pkt.outLen = 4;
+    pkt.outBuffer.clear();
+    pkt.outBuffer.push_back(0x00);
+    pkt.outBuffer.push_back(0x01);
+    pkt.outBuffer.push_back(0x00);
+    pkt.outBuffer.push_back(0x05);    
     dataPort->TransferPacket(pkt);
 
     regVal = (pkt.inBuffer[2] * 256) + pkt.inBuffer[3];
     pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer[0] = 0x00;
-    pkt.outBuffer[1] = 0x05;
-    pkt.outBuffer[2] = 0;
-    pkt.outBuffer[3] = regVal & ~0x4;
-    pkt.outLen = 4;
+    pkt.outBuffer.clear();
+    pkt.outBuffer.push_back(0x00);
+    pkt.outBuffer.push_back(0x05);
+    pkt.outBuffer.push_back(0);
+    pkt.outBuffer.push_back(regVal & ~0x4);    
     dataPort->TransferPacket(pkt);
 
     delete[] buffer;

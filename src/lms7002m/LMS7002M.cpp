@@ -146,8 +146,7 @@ liblms7_status LMS7002M::ResetChip()
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
-    pkt.outBuffer[0] = LMS_RST_PULSE;
-    pkt.outLen = 1;
+    pkt.outBuffer.push_back(LMS_RST_PULSE);    
     controlPort->TransferPacket(pkt);
     if (pkt.status == STATUS_COMPLETED_CMD)
     {
@@ -815,11 +814,10 @@ liblms7_status LMS7002M::SPI_write(uint16_t address, uint16_t data)
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_WR;
-    pkt.outBuffer[0] = address >> 8;
-    pkt.outBuffer[1] = address & 0xFF;
-    pkt.outBuffer[2] = data >> 8;
-    pkt.outBuffer[3] = data & 0xFF;
-    pkt.outLen = 4;
+    pkt.outBuffer.push_back(address >> 8);
+    pkt.outBuffer.push_back(address & 0xFF);
+    pkt.outBuffer.push_back(data >> 8);
+    pkt.outBuffer.push_back(data & 0xFF);    
     controlPort->TransferPacket(pkt);
     if (pkt.status == STATUS_COMPLETED_CMD)
         return LIBLMS7_SUCCESS;
@@ -859,9 +857,8 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
     
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RD;
-    pkt.outBuffer[0] = address >> 8;
-    pkt.outBuffer[1] = address & 0xFF;
-    pkt.outLen = 2;
+    pkt.outBuffer.push_back(address >> 8);
+    pkt.outBuffer.push_back(address & 0xFF);    
     controlPort->TransferPacket(pkt);
     if (status)
         *status = (pkt.status == STATUS_COMPLETED_CMD ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE);
@@ -881,10 +878,10 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
     uint32_t index = 0;
     for (uint32_t i = 0; i < cnt; ++i)
     {
-        pkt.outBuffer[index++] = spiAddr[i] >> 8;
-        pkt.outBuffer[index++] = spiAddr[i] & 0xFF;
-        pkt.outBuffer[index++] = spiData[i] >> 8;
-        pkt.outBuffer[index++] = spiData[i] & 0xFF;
+        pkt.outBuffer.push_back(spiAddr[i] >> 8);
+        pkt.outBuffer.push_back(spiAddr[i] & 0xFF);
+        pkt.outBuffer.push_back(spiData[i] >> 8);
+        pkt.outBuffer.push_back(spiData[i] & 0xFF);
 
         for (int j = 0; j < sizeof(moduleAddresses) / sizeof(uint16_t); ++j)
             if (moduleAddresses[j] == spiAddr[i])
@@ -897,8 +894,6 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
             }
 
     }
-    pkt.outLen = index;
-
     if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
@@ -924,10 +919,9 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
     uint32_t index = 0;
     for (uint32_t i = 0; i < cnt; ++i)
     {
-        pkt.outBuffer[index++] = spiAddr[i] >> 8;
-        pkt.outBuffer[index++] = spiAddr[i] & 0xFF;
-    }
-    pkt.outLen = index;
+        pkt.outBuffer.push_back(spiAddr[i] >> 8);
+        pkt.outBuffer.push_back(spiAddr[i] & 0xFF);
+    }    
     if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
