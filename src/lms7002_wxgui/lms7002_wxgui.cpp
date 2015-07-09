@@ -8366,10 +8366,10 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	
 	fgSizer198->Add( rgrMode, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	ID_BUTTON_STARTPROG = new wxButton( sbSizer125->GetStaticBox(), wxID_ANY, wxT("Send command"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_BUTTON_STARTPROG->Enable( false );
+	btnStartProgramming = new wxButton( sbSizer125->GetStaticBox(), wxID_ANY, wxT("Send command"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnStartProgramming->Enable( false );
 	
-	fgSizer198->Add( ID_BUTTON_STARTPROG, 1, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer198->Add( btnStartProgramming, 1, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	ID_S_PROGFINISHED = new wxStaticText( sbSizer125->GetStaticBox(), wxID_ANY, wxT("Proggramming finished"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_S_PROGFINISHED->Wrap( -1 );
@@ -8425,7 +8425,8 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer200->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	DebugMode = new wxCheckBox( sbSizer127->GetStaticBox(), ID_DEBUGMODE, wxT("Select Debug mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer200->Add( DebugMode, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	DebugMode->SetValue(true); 
+	fgSizer200->Add( DebugMode, 0, wxALIGN_LEFT, 5 );
 	
 	wxStaticBoxSizer* sbSizer128;
 	sbSizer128 = new wxStaticBoxSizer( new wxStaticBox( sbSizer127->GetStaticBox(), wxID_ANY, wxT("Execution control") ), wxHORIZONTAL );
@@ -8461,7 +8462,7 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	sbSizer128->Add( fgSizer201, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	fgSizer200->Add( sbSizer128, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer200->Add( sbSizer128, 1, wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer129;
 	sbSizer129 = new wxStaticBoxSizer( new wxStaticBox( sbSizer127->GetStaticBox(), wxID_ANY, wxT("SFR and IRAM options ") ), wxHORIZONTAL );
@@ -8484,7 +8485,7 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	sbSizer129->Add( fgSizer202, 1, wxALL|wxEXPAND|wxSHAPED|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	fgSizer200->Add( sbSizer129, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer200->Add( sbSizer129, 1, wxEXPAND|wxALIGN_LEFT, 5 );
 	
 	wxStaticBoxSizer* sbSizer130;
 	sbSizer130 = new wxStaticBoxSizer( new wxStaticBox( sbSizer127->GetStaticBox(), wxID_ANY, wxT("MCU's clock divider") ), wxHORIZONTAL );
@@ -8508,10 +8509,10 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	sbSizer130->Add( fgSizer203, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	fgSizer200->Add( sbSizer130, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer200->Add( sbSizer130, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
-	sbSizer127->Add( fgSizer200, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	sbSizer127->Add( fgSizer200, 0, wxALIGN_CENTER_HORIZONTAL|wxEXPAND, 5 );
 	
 	
 	fgSizer196->Add( sbSizer127, 1, wxEXPAND|wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5 );
@@ -8545,11 +8546,11 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	ID_STATICTEXT5->Wrap( 0 );
 	fgSizer205->Add( ID_STATICTEXT5, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	wxString Choice1Choices[] = { wxT("REG0"), wxT("REG1"), wxT("REG2"), wxT("REG3"), wxT("REG4"), wxT("REG5"), wxT("REG6") };
-	int Choice1NChoices = sizeof( Choice1Choices ) / sizeof( wxString );
-	Choice1 = new wxChoice( sbSizer132->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, Choice1NChoices, Choice1Choices, 0 );
-	Choice1->SetSelection( 0 );
-	fgSizer205->Add( Choice1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	wxString cmbRegAddrChoices[] = { wxT("REG0"), wxT("REG1"), wxT("REG2"), wxT("REG3"), wxT("REG4"), wxT("REG5"), wxT("REG6") };
+	int cmbRegAddrNChoices = sizeof( cmbRegAddrChoices ) / sizeof( wxString );
+	cmbRegAddr = new wxChoice( sbSizer132->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbRegAddrNChoices, cmbRegAddrChoices, 0 );
+	cmbRegAddr->SetSelection( 0 );
+	fgSizer205->Add( cmbRegAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	sbSizer132->Add( fgSizer205, 0, wxALL|wxEXPAND|wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5 );
@@ -8559,19 +8560,19 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer206->SetFlexibleDirection( wxBOTH );
 	fgSizer206->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	RadioButton7 = new wxRadioButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Write"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
-	fgSizer206->Add( RadioButton7, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	rbtnRegWrite = new wxRadioButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Write"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
+	fgSizer206->Add( rbtnRegWrite, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	ID_STATICTEXT11 = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Data (0-255):"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT11->Wrap( -1 );
 	fgSizer206->Add( ID_STATICTEXT11, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	TextCtrl1 = new wxTextCtrl( sbSizer132->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( 65,-1 ), 0 );
-	TextCtrl1->SetMaxLength( 0 ); 
-	fgSizer206->Add( TextCtrl1, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	txtRegValueWr = new wxTextCtrl( sbSizer132->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( 65,-1 ), 0 );
+	txtRegValueWr->SetMaxLength( 0 ); 
+	fgSizer206->Add( txtRegValueWr, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	RadioButton6 = new wxRadioButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer206->Add( RadioButton6, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	rbtnRegRead = new wxRadioButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer206->Add( rbtnRegRead, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	ReadResult = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Result is:"), wxDefaultPosition, wxDefaultSize, 0 );
 	ReadResult->Wrap( -1 );
@@ -8580,59 +8581,11 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	
 	sbSizer132->Add( fgSizer206, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	Button4 = new wxButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Read/Write"), wxDefaultPosition, wxSize( 105,36 ), 0 );
-	sbSizer132->Add( Button4, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	btnRdWr = new wxButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Read/Write"), wxDefaultPosition, wxSize( 105,36 ), 0 );
+	sbSizer132->Add( btnRdWr, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	fgSizer204->Add( sbSizer132, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	wxStaticBoxSizer* sbSizer133;
-	sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Algorithms") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer207;
-	fgSizer207 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer207->SetFlexibleDirection( wxBOTH );
-	fgSizer207->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	ID_BUTTON4 = new wxButton( sbSizer133->GetStaticBox(), wxID_ANY, wxT("Rx DC"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_BUTTON4->Enable( false );
-	
-	fgSizer207->Add( ID_BUTTON4, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	wxFlexGridSizer* fgSizer208;
-	fgSizer208 = new wxFlexGridSizer( 0, 3, 0, 0 );
-	fgSizer208->SetFlexibleDirection( wxBOTH );
-	fgSizer208->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	ID_STATICTEXT14 = new wxStaticText( sbSizer133->GetStaticBox(), wxID_ANY, wxT("Status:"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT14->Wrap( -1 );
-	fgSizer208->Add( ID_STATICTEXT14, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	ID_STATICTEXT15 = new wxStaticText( sbSizer133->GetStaticBox(), wxID_ANY, wxT("0x00"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT15->Wrap( -1 );
-	fgSizer208->Add( ID_STATICTEXT15, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	
-	fgSizer207->Add( fgSizer208, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	ID_BUTTON5 = new wxButton( sbSizer133->GetStaticBox(), wxID_ANY, wxT("Tx DC"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_BUTTON5->Enable( false );
-	
-	fgSizer207->Add( ID_BUTTON5, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	
-	fgSizer207->Add( 0, 0, 1, wxEXPAND, 5 );
-	
-	ID_BUTTON6 = new wxButton( sbSizer133->GetStaticBox(), wxID_ANY, wxT("Tx IQ"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_BUTTON6->Enable( false );
-	
-	fgSizer207->Add( ID_BUTTON6, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	
-	sbSizer133->Add( fgSizer207, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	
-	fgSizer204->Add( sbSizer133, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	
 	fgSizer196->Add( fgSizer204, 1, wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5 );
@@ -8650,9 +8603,9 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	ID_STATICTEXT2->Wrap( -1 );
 	fgSizer209->Add( ID_STATICTEXT2, 1, wxLEFT|wxRIGHT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	ID_GAUGE1 = new wxGauge( this, wxID_ANY, 255, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL );
-	ID_GAUGE1->SetValue( 0 ); 
-	fgSizer209->Add( ID_GAUGE1, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	progressBar = new wxGauge( this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL );
+	progressBar->SetValue( 0 ); 
+	fgSizer209->Add( progressBar, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	fgSizer195->Add( fgSizer209, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -8660,13 +8613,13 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	wxGridSizer* gSizer1;
 	gSizer1 = new wxGridSizer( 0, 1, 0, 0 );
 	
-	ID_STATICTEXT12 = new wxStaticText( this, wxID_ANY, wxT("Program code file:"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT12->Wrap( -1 );
-	gSizer1->Add( ID_STATICTEXT12, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	lblProgCodeFile = new wxStaticText( this, wxID_ANY, wxT("Program code file:"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblProgCodeFile->Wrap( -1 );
+	gSizer1->Add( lblProgCodeFile, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	ID_STATICTEXT13 = new wxStaticText( this, wxID_ANY, wxT("Test results file:"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT13->Wrap( -1 );
-	gSizer1->Add( ID_STATICTEXT13, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	lblTestResultsFile = new wxStaticText( this, wxID_ANY, wxT("Test results file:"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblTestResultsFile->Wrap( -1 );
+	gSizer1->Add( lblTestResultsFile, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	fgSizer195->Add( gSizer1, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -8679,20 +8632,19 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	// Connect Events
 	Button_LOADHEX->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton_LOADHexClick ), NULL, this );
 	chkReset->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnchkResetClick ), NULL, this );
-	ID_BUTTON_STARTPROG->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
+	btnStartProgramming->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
 	btnLoadTestFile->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnLoadTestFileClick ), NULL, this );
 	btnRunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunTestClick ), NULL, this );
 	DebugMode->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnDebugModeClick ), NULL, this );
-	RunInstr->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton4Click ), NULL, this );
+	RunInstr->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRunInstruction ), NULL, this );
 	ResetPC->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnResetPCClick ), NULL, this );
-	ViewSFRs->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewSDRsClick ), NULL, this );
+	ViewSFRs->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewSFRsClick ), NULL, this );
 	ViewIRAM->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewIRAMClick ), NULL, this );
 	EraseIRAM->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnEraseIRAMClick ), NULL, this );
 	SelDiv->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::OnSelDivSelect ), NULL, this );
 	m_cCtrlBaseband->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::Onm_cCtrlBasebandSelect ), NULL, this );
 	m_cCtrlMCU_BD->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::Onm_cCtrlMCU_BDSelect ), NULL, this );
-	Choice1->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::OnChoice1Select ), NULL, this );
-	Button4->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton4Click1 ), NULL, this );
+	btnRdWr->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRegWriteRead ), NULL, this );
 }
 
 pnlMCU_BD_view::~pnlMCU_BD_view()
@@ -8700,20 +8652,19 @@ pnlMCU_BD_view::~pnlMCU_BD_view()
 	// Disconnect Events
 	Button_LOADHEX->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton_LOADHexClick ), NULL, this );
 	chkReset->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnchkResetClick ), NULL, this );
-	ID_BUTTON_STARTPROG->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
+	btnStartProgramming->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
 	btnLoadTestFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnLoadTestFileClick ), NULL, this );
 	btnRunTest->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunTestClick ), NULL, this );
 	DebugMode->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnDebugModeClick ), NULL, this );
-	RunInstr->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton4Click ), NULL, this );
+	RunInstr->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRunInstruction ), NULL, this );
 	ResetPC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnResetPCClick ), NULL, this );
-	ViewSFRs->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewSDRsClick ), NULL, this );
+	ViewSFRs->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewSFRsClick ), NULL, this );
 	ViewIRAM->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnViewIRAMClick ), NULL, this );
 	EraseIRAM->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnEraseIRAMClick ), NULL, this );
 	SelDiv->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::OnSelDivSelect ), NULL, this );
 	m_cCtrlBaseband->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::Onm_cCtrlBasebandSelect ), NULL, this );
 	m_cCtrlMCU_BD->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::Onm_cCtrlMCU_BDSelect ), NULL, this );
-	Choice1->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMCU_BD_view::OnChoice1Select ), NULL, this );
-	Button4->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton4Click1 ), NULL, this );
+	btnRdWr->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRegWriteRead ), NULL, this );
 	
 }
 

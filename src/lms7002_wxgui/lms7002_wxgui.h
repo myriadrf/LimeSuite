@@ -2010,7 +2010,7 @@ class pnlMCU_BD_view : public wxPanel
 		wxButton* Button_LOADHEX;
 		wxCheckBox* chkReset;
 		wxRadioBox* rgrMode;
-		wxButton* ID_BUTTON_STARTPROG;
+		wxButton* btnStartProgramming;
 		wxStaticText* ID_S_PROGFINISHED;
 		wxStaticText* ID_STATICTEXT3;
 		wxButton* btnLoadTestFile;
@@ -2032,22 +2032,17 @@ class pnlMCU_BD_view : public wxPanel
 		wxRadioButton* m_cCtrlBaseband;
 		wxRadioButton* m_cCtrlMCU_BD;
 		wxStaticText* ID_STATICTEXT5;
-		wxChoice* Choice1;
-		wxRadioButton* RadioButton7;
+		wxChoice* cmbRegAddr;
+		wxRadioButton* rbtnRegWrite;
 		wxStaticText* ID_STATICTEXT11;
-		wxTextCtrl* TextCtrl1;
-		wxRadioButton* RadioButton6;
+		wxTextCtrl* txtRegValueWr;
+		wxRadioButton* rbtnRegRead;
 		wxStaticText* ReadResult;
-		wxButton* Button4;
-		wxButton* ID_BUTTON4;
-		wxStaticText* ID_STATICTEXT14;
-		wxStaticText* ID_STATICTEXT15;
-		wxButton* ID_BUTTON5;
-		wxButton* ID_BUTTON6;
+		wxButton* btnRdWr;
 		wxStaticText* ID_STATICTEXT2;
-		wxGauge* ID_GAUGE1;
-		wxStaticText* ID_STATICTEXT12;
-		wxStaticText* ID_STATICTEXT13;
+		wxGauge* progressBar;
+		wxStaticText* lblProgCodeFile;
+		wxStaticText* lblTestResultsFile;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnButton_LOADHexClick( wxCommandEvent& event ) { event.Skip(); }
@@ -2056,16 +2051,15 @@ class pnlMCU_BD_view : public wxPanel
 		virtual void OnbtnLoadTestFileClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnRunTestClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDebugModeClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnButton4Click( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRunInstruction( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetPCClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnViewSDRsClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnViewSFRsClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnViewIRAMClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEraseIRAMClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSelDivSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onm_cCtrlBasebandSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onm_cCtrlMCU_BDSelect( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnChoice1Select( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnButton4Click1( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRegWriteRead( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

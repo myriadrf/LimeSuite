@@ -26,6 +26,7 @@ LMScomms::~LMScomms()
 */
 LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 {
+    std::lock_guard<std::mutex> lock(mControlPortLock);
 	TransferStatus status = TRANSFER_SUCCESS;
     if(IsOpen() == false)
         return NOT_CONNECTED;

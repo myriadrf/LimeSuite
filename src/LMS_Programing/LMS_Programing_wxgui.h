@@ -35,8 +35,7 @@ class LMS_Programing_wxgui : public wxFrame
 		wxButton* btnOpen;
 
 	protected:
-        wxTimer* progressPooler;        
-        void OnUploadProgram(wxTimerEvent& evt);
+        wxTimer* progressPooler;                
         void OnProgressPoll(wxTimerEvent& evt);
         void OnProgramingFinished();
 	    LMS_Programing* m_programmer;

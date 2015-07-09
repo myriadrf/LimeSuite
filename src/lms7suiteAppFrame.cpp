@@ -31,9 +31,12 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
         lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
-        LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
-        if (status != LMS_StreamBoard::STREAM_BRD_SUCCESS)
-            wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
+        if (streamBoardPort->IsOpen())
+        {
+            LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
+            if (status != LMS_StreamBoard::SUCCESS)
+                wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
+        }
         if (fftviewer)
             fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
     }

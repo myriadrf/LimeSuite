@@ -46,6 +46,8 @@ add_subdirectory(LMS_Programing)
 include_directories(LMS_Programing)
 add_subdirectory(lms7002m)
 include_directories(lms7002m)
+add_subdirectory(lms7002m_mcu)
+include_directories(lms7002m_mcu)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 

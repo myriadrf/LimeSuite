@@ -19,8 +19,11 @@ set(lms7002_gui_src_files
 	lms7002_pnlXBUF_view.cpp
 	lms7002_pnlCalibrations_view.cpp
 	lms7002_gui_utilities.cpp
+	lms7002_pnlMCU_BD_view.cpp
+	dlgViewIRAM.cpp
+	dlgViewSFR.cpp
 )
 add_library(lms7002_wxgui STATIC ${lms7002_gui_src_files})
 target_include_directories(lms7002_wxgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(lms7002_wxgui numericSlider)
-target_link_libraries(lms7002_wxgui LMS7002M lms7suiteEvents)
+target_link_libraries(lms7002_wxgui LMS7002M_MCU LMS7002M lms7suiteEvents)

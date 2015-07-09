@@ -859,10 +859,14 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
     pkt.cmd = CMD_LMS7002_RD;
     pkt.outBuffer.push_back(address >> 8);
     pkt.outBuffer.push_back(address & 0xFF);    
-    controlPort->TransferPacket(pkt);
-    if (status)
-        *status = (pkt.status == STATUS_COMPLETED_CMD ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE);
-    return (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    if (controlPort->TransferPacket(pkt) == LMScomms::TRANSFER_SUCCESS)
+    {
+        if (status)
+            *status = (pkt.status == STATUS_COMPLETED_CMD ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE);
+        return (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    }
+    else
+        return 0;
 }
 
 /** @brief Batches multiple register writes into least ammount of transactions

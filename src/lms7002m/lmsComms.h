@@ -10,6 +10,7 @@
 #include "lms7002_defines.h"
 #include "connectionManager/ConnectionManager.h"
 #include <string.h>
+#include <mutex>
 
 struct LMSinfo
 {
@@ -97,6 +98,7 @@ public:
     virtual TransferStatus TransferPacket(GenericPacket &pkt);
     LMSinfo GetInfo();
 protected:
+    std::mutex mControlPortLock;
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
 protected:
