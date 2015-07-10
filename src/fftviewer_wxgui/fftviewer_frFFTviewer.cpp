@@ -15,7 +15,9 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
 :
 frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullptr), mStreamRunning(false)
 {
+#ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
+#endif
     SetSize(800, 600);
     wxFont graphFont(11, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     //FFT plot

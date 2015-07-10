@@ -70,3 +70,4 @@ class LMS7SuiteAppFrame : public AppFrame_view
 
 
 #endif // __LMS7SuiteAppFrame__
+

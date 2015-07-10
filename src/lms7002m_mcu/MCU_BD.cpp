@@ -10,7 +10,7 @@ using namespace std;
 #include "MCU_File.h"
 #include <sstream>
 #include <fstream>
-#include "LMScomms.h"
+#include "lmsComms.h"
 #include <assert.h>
 
 MCU_BD::MCU_BD()
@@ -657,7 +657,7 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 	// an error occured during programming
 	//else return 0; // programming successful
 #ifndef NDEBUG
-    printf("\nMCU programming Finished\n", info.stepsDone, info.stepsTotal);
+    printf("\nMCU programming Finished\n");
 #endif
 	if(success)
         Log("PROGRAMMING MCU SUCCESS\n");
@@ -820,7 +820,7 @@ int MCU_BD::RunInstr_MCU(unsigned short * pPCVAL)
 
 void MCU_BD::Log(const char* msg)
 {
-    printf(msg);
+    printf("%s", msg);
 }
 
 /** @brief Returns information about programming or reading data progress

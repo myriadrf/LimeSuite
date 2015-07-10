@@ -14,10 +14,11 @@ class LMScomms;
 class MCU_BD
 {
     public:
-        struct ProgressInfo
+        //GCC 4.8 fails to use not aligned and bigger than 8 bytes struct for atomic
+        struct alignas(8) ProgressInfo
         {
-            int stepsDone;
-            int stepsTotal;
+            unsigned short stepsDone;
+            unsigned short stepsTotal;
             bool aborted;
         };
         ProgressInfo GetProgressInfo() const;

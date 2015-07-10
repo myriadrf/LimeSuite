@@ -43,7 +43,12 @@ public:
     void AbortPrograming();
 protected:
     std::thread mProgramingThread;
-    std::atomic<Info> mProgressInfo;
+
+    std::atomic<int> bytesSent;
+    std::atomic<int> bytesCount;
+    std::atomic<bool> aborted;
+    std::atomic<unsigned char> deviceResponse;
+
     std::atomic<bool> mAbortPrograming;
     std::atomic<bool> mUploadInProgress;
     LMScomms* m_serPort;

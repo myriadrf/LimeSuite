@@ -70,7 +70,9 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
 {
+#ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
+#endif
     programmer = nullptr;
     fftviewer = nullptr;
     adfGUI = nullptr;
@@ -92,6 +94,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
 
 	Layout();
 	Fit();
+
+    SetMinSize(GetSize());
 
 	wxCommandEvent evt;
 	OnDataBoardConnect(evt);

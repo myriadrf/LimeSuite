@@ -19,12 +19,10 @@ LMS_Programing::LMS_Programing(LMScomms* pSerPort)
     m_serPort = pSerPort;
     m_data = NULL;
     m_data_size = 0;
-    Info initInfo;
-    initInfo.bytesSent = 0;
-    initInfo.bytesCount= 0;
-    initInfo.aborted = false;
-    initInfo.deviceResponse = 0;
-    mProgressInfo.store(initInfo);
+    bytesSent = 0;
+    bytesCount= 0;
+    aborted = false;
+    deviceResponse = 0;
 }
 
 LMS_Programing::~LMS_Programing()
@@ -103,7 +101,10 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
     progress.bytesCount= 0;
     progress.aborted = false;
     progress.deviceResponse = 0;
-    mProgressInfo.store(progress);
+    bytesSent.store(progress.bytesSent);
+    bytesCount.store(progress.bytesCount);
+    aborted.store(progress.aborted);
+    deviceResponse.store(progress.deviceResponse);
     if(m_data_size == 0 && (device != 1) && (prog_mode != 2))
         return FAILURE;
 
@@ -154,7 +155,10 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
         status = inbuf[1];
         progress.bytesSent += data_cnt;
         progress.deviceResponse = status;
-        mProgressInfo.store(progress);
+        bytesSent.store(progress.bytesSent);
+        bytesCount.store(progress.bytesCount);
+        aborted.store(progress.aborted);
+        deviceResponse.store(progress.deviceResponse);
                 
         if(status != STATUS_COMPLETED_CMD)
         {
@@ -164,7 +168,10 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
 #endif
             progress.aborted = true;
             progress.deviceResponse = status;
-            mProgressInfo.store(progress);
+            bytesSent.store(progress.bytesSent);
+            bytesCount.store(progress.bytesCount);
+            aborted.store(progress.aborted);
+            deviceResponse.store(progress.deviceResponse);
             return FAILURE;
         }        
         if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
@@ -173,13 +180,19 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
         printf("programing: %6i/%i\r", portionNumber, portionsCount - 1);
 #endif  
     }    
-    mProgressInfo.store(progress);
+    bytesSent.store(progress.bytesSent);
+    bytesCount.store(progress.bytesCount);
+    aborted.store(progress.aborted);
+    deviceResponse.store(progress.deviceResponse);
     mUploadInProgress.store(false);
     if (mAbortPrograming.load() == true)
     {
         printf("\nProgramming aborted\n");
         progress.aborted = true;
-        mProgressInfo.store(progress);
+        bytesSent.store(progress.bytesSent);
+        bytesCount.store(progress.bytesCount);
+        aborted.store(progress.aborted);
+        deviceResponse.store(progress.deviceResponse);
         return FAILURE;
     }    
 #ifndef NDEBUG
@@ -213,7 +226,12 @@ LMS_Programing::Status LMS_Programing::StartUploadProgram(const int device, cons
 */
 LMS_Programing::Info LMS_Programing::GetProgressInfo() const
 {
-    return mProgressInfo.load();
+    Info progress;
+    progress.bytesSent = bytesSent.load();
+    progress.bytesCount = bytesCount.load();
+    progress.aborted = aborted.load();
+    progress.deviceResponse = deviceResponse.load();
+    return progress;
 }
 
 /** @brief Aborts programming procedure

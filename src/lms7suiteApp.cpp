@@ -19,6 +19,7 @@
 #include "lms7suiteAppFrame.h"
 #include <wx/time.h>
 #include <wx/splash.h>
+#include <iostream>
 #ifndef NDEBUG
 IMPLEMENT_APP_CONSOLE(lms7suiteApp);
 #else
@@ -35,10 +36,11 @@ bool lms7suiteApp::OnInit()
         wxSPLASH_CENTRE_ON_SCREEN,
         6000, NULL, -1, wxDefaultPosition, wxDefaultSize,
         wxSIMPLE_BORDER | wxSTAY_ON_TOP);
+    wxYield(); //linux needs this to load splash image
     wxLongLong t1 = wxGetUTCTimeMillis();
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
 #ifndef NDEBUG
-    printf("Create time %li ms\n", wxGetUTCTimeMillis() - t1);
+    std::cout << "Create time " << (wxGetUTCTimeMillis() - t1).ToString() << " ms\n";
 #endif
     splash->Destroy();
     frame->Show();

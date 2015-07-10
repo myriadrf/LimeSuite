@@ -97,5 +97,5 @@ protected:
     std::atomic<float> mRxFIFOfilled;
     std::atomic<float> mTxFIFOfilled;
 };
-
 #endif
+

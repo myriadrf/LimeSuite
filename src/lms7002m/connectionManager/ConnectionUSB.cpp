@@ -7,6 +7,11 @@
 #include "ConnectionUSB.h"
 #include <string.h>
 
+#ifdef __unix__
+    #include <thread>
+    #include <chrono>
+#endif
+
 #define USB_TIMEOUT 1000
 
 #define HW_LDIGIRED L"DigiRed"
@@ -24,10 +29,6 @@
 #define CTR_R_REQCODE 0xC0
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
-
-#ifdef __unix__
-    #include "CommonUtilities.h"
-#endif // __unix__
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
@@ -532,9 +533,9 @@ int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
         status = InEndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
 	return status;
     #else
-	unsigned long t1, t2;
-	t2 = t1 = getMilis();
-    while(contexts[contextHandle].done == false && (t2 - t1) < timeout_ms)
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    while(contexts[contextHandle].done == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
 	{
 	    struct timeval tv;
 	    tv.tv_sec = 1;
@@ -542,8 +543,8 @@ int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
 		//if(libusb_handle_events(ctx) != 0)
 		if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
             printf("error libusb_handle_events %i\n", status);
-		t2 = getMilis();
-		milSleep(1);
+		t2 = chrono::high_resolution_clock::now();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
     std::unique_lock<std::mutex> lck(contexts[contextHandle].m_lock);
     while(contexts[contextHandle].done == false) //is changed in libusb callback
@@ -667,18 +668,18 @@ int ConnectionUSB::WaitForSending(int contextHandle, unsigned int timeout_ms)
         status = OutEndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
 	return status;
     #else
-	unsigned long t1, t2;
-	int status = 0;
-	t2 = t1 = getMilis();
-    while(contextsToSend[contextHandle].done == false && (t2 - t1) < timeout_ms)
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    while(contextsToSend[contextHandle].done == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
 	{
 	    struct timeval tv;
 	    tv.tv_sec = 1;
 	    tv.tv_usec = 0;
-		if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
+        int status = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
+        if(status != 0)
             printf("error libusb_handle_events %i\n", status);
-		t2 = getMilis();
-		milSleep(1);
+        t2 = chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 	std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].m_lock);
     while(contextsToSend[contextHandle].done == false) //is changed in libusb callback
