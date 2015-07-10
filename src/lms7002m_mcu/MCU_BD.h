@@ -14,8 +14,12 @@ class LMScomms;
 class MCU_BD
 {
     public:
+#ifdef __unix__
         //GCC 4.8 fails to use not aligned and bigger than 8 bytes struct for atomic
         struct alignas(8) ProgressInfo
+#else
+        struct ProgressInfo
+#endif
         {
             unsigned short stepsDone;
             unsigned short stepsTotal;
