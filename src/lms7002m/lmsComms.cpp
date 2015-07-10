@@ -86,15 +86,18 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 */
 LMSinfo LMScomms::GetInfo()
 {
+    LMSinfo info;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
-    TransferPacket(pkt);
-    LMSinfo info;
-    info.firmware = pkt.inBuffer[0];
-    info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
-    info.protocol = pkt.inBuffer[2];
-    info.hardware = pkt.inBuffer[3];
-    info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4]: EXP_BOARD_UNKNOWN;
+    LMScomms::TransferStatus status = TransferPacket(pkt);
+    if (status == LMScomms::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
+    {   
+        info.firmware = pkt.inBuffer[0];
+        info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
+        info.protocol = pkt.inBuffer[2];
+        info.hardware = pkt.inBuffer[3];
+        info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
+    }
     return info;
 }
 

@@ -9,8 +9,8 @@ namespace AutoVersion
     static const int month = 7;
     static const int day = 10;
     static const int hour = 14;
-    static const int minutes = 21;
-    static const int seconds = 46;
-    static const int buildsCounter = 236;
+    static const int minutes = 29;
+    static const int seconds = 19;
+    static const int buildsCounter = 238;
     static const char branchName[] = "";
 }
