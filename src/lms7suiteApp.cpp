@@ -18,20 +18,29 @@
 #include "lms7suiteApp.h"
 #include "lms7suiteAppFrame.h"
 #include <wx/time.h>
+#include <wx/splash.h>
 #ifndef NDEBUG
 IMPLEMENT_APP_CONSOLE(lms7suiteApp);
 #else
 IMPLEMENT_APP(lms7suiteApp);
 #endif
 
+#include "splash_image.h"
+
 bool lms7suiteApp::OnInit()
 {
+    wxInitAllImageHandlers();
+    wxBitmap splashBitmap = wxBITMAP_PNG_FROM_DATA(splash);
+    wxSplashScreen* splash = new wxSplashScreen(splashBitmap,
+        wxSPLASH_CENTRE_ON_SCREEN,
+        6000, NULL, -1, wxDefaultPosition, wxDefaultSize,
+        wxSIMPLE_BORDER | wxSTAY_ON_TOP);
     wxLongLong t1 = wxGetUTCTimeMillis();
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
 #ifndef NDEBUG
     printf("Create time %li ms\n", wxGetUTCTimeMillis() - t1);
 #endif
-    //frame->SetIcon(wxICON(aaaa)); // To Set App Icon
+    splash->Destroy();
     frame->Show();
     return true;
 }

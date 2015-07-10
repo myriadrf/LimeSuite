@@ -68,7 +68,7 @@ if(WIN32)
 	include_directories(${CYAPI_INCLUDE_DIRS})
 endif()
 
-add_executable(lms7suite ${lms7suiteApp})
+add_executable(lms7suite ${lms7suiteApp} resource.rc)
 
 set(AUTO_UPDATE_VERSION OFF CACHE BOOL "Uses python script to increment version")
 if(AUTO_UPDATE_VERSION)

@@ -70,6 +70,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
 {
+    SetIcon(wxIcon(_("aaaaAPPicon")));
     programmer = nullptr;
     fftviewer = nullptr;
     adfGUI = nullptr;
