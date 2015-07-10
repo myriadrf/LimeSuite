@@ -2292,6 +2292,7 @@ liblms7_status LMS7002M::DownloadAll()
 }
 
 /** @brief Configures interfaces for desired frequency
+    Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
 */
 liblms7_status LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation)
 {

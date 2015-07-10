@@ -46,9 +46,12 @@ class LMS7SuiteAppFrame : public AppFrame_view
 	//// end generated class members
 		virtual ~LMS7SuiteAppFrame();
 	protected:
+        void OnLogMessage(wxCommandEvent &event);
 		const std::string cWindowTitle = "LMS7Suite";
 		const int cDeviceInfoCollumn = 1;
 		const int cDeviceVerRevMaskCollumn = 2;
+
+        pnlMiniLog* log;
         	
         LMScomms* lms7controlPort;
         LMScomms* streamBoardPort;

@@ -23,6 +23,8 @@
 #include "Si5351C.h"
 #include "Si5351C_wxgui.h"
 #include "LMS_Programing_wxgui.h"
+#include "pnlMiniLog.h"
+#include <wx/string.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -30,12 +32,36 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+        liblms7_status status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+        if (status == LIBLMS7_SUCCESS)
+        {
+            wxCommandEvent evt;
+            evt.SetEventType(LOG_MESSAGE);
+            wxString msg;
+            msg += _("Parameters modified: ");
+            msg += wxString::Format(_("HBI_OVR: %i "), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, false));
+            msg += wxString::Format(_("TXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(TXTSPCLKA_DIV, false));
+            msg += wxString::Format(_("TXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(TXDIVEN, false));
+            msg += wxString::Format(_("MCLK1SRC: %i "), lmsControl->Get_SPI_Reg_bits(MCLK1SRC, false));
+            msg += wxString::Format(_("HBD_OVR: %i "), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP, false));
+            msg += wxString::Format(_("RXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(RXTSPCLKA_DIV, false));
+            msg += wxString::Format(_("RXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(RXDIVEN, false));
+            msg += wxString::Format(_("MCLK2SRC: %i "), lmsControl->Get_SPI_Reg_bits(MCLK2SRC, false));
+            evt.SetString(msg);
+            wxPostEvent(this, evt);
+        }
         if (streamBoardPort->IsOpen())
         {
             LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
             if (status != LMS_StreamBoard::SUCCESS)
                 wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
+            else
+            {
+                wxCommandEvent evt;
+                evt.SetEventType(LOG_MESSAGE);
+                evt.SetString(wxString::Format(_("Stream board PLL configured Tx: %.3f MHz Rx: %.3f MHz Angle: %.0f deg"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90.0));
+                wxPostEvent(this, evt);
+            }
         }
         if (fftviewer)
             fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
@@ -54,6 +80,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     lmsControl = new LMS7002M(lms7controlPort, streamBoardPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
+    log = new pnlMiniLog(this, wxNewId());
+    Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
+    contentSizer->Add(log, 1, wxEXPAND, 5);
 
     adfModule = new ADF4002();
 
@@ -123,12 +152,22 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(wxString::Format(_(" FW:%i HW:%i Protocol:%i"), (int)info.firmware, (int)info.hardware, (int)info.protocol));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);        
+        evt.SetString(_("Connected ") + controlDev);
+        wxPostEvent(this, evt);
+
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info.device);
     }
     else
+    {
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
-    //SetTitle(stemp);
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Disconnected control port"));
+        wxPostEvent(this, evt);
+    }
 }
 
 void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
@@ -142,10 +181,20 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
         controlDev.Append(wxString::From8BitData(GetDeviceName(info.device)));
         controlDev.Append(wxString::Format(_(" FW:%i HW:%i Protocol:%i"), (int)info.firmware, (int)info.hardware, (int)info.protocol));
         statusBar->SetStatusText(controlDev, dataCollumn);
+
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Connected ") + controlDev);
+        wxPostEvent(this, evt);
     }
     else
+    {
         statusBar->SetStatusText(_("Data port: Not Connected"), dataCollumn);
-    //SetTitle(stemp);
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Disconnected data port"));
+        wxPostEvent(this, evt);
+    }
 }
 
 void LMS7SuiteAppFrame::OnFFTviewerClose(wxCloseEvent& event)
@@ -224,4 +273,9 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
         programmer->Show();
     }
 
+}
+
+void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
+{
+    log->HandleMessage(event);
 }

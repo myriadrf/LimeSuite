@@ -138,6 +138,8 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
     liblms7_status status = lmsControl->ResetChip();
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(liblms7_status2string(status))), _("Warning"));
+    wxNotebookEvent evt;
+    Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
 void lms7002_mainPanel::UpdateGUI()

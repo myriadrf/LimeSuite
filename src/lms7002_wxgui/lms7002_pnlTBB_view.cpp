@@ -3,6 +3,7 @@
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
+#include "lms7suiteEvents.h"
 
 lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent )
 :
@@ -209,12 +210,23 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     else switch (rgrFilterSelectionTest->GetSelection())
     {
     case 0:
+        {
         wxMessageBox(_("Tx Ladder calibration finished"), _("INFO"));
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Tx Ladder calibrated"));
+        wxPostEvent(this, evt);
         break;
+        }
     case 1:
+        {
         wxMessageBox(_("Tx Realpole calibration finished"), _("INFO"));
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Tx Realpole calibrated"));
+        wxPostEvent(this, evt);
         break;
-
+        }
     }
     lmsControl->DownloadAll();
     UpdateGUI();

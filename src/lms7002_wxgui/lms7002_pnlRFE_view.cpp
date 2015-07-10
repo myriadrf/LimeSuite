@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
+#include "lms7suiteEvents.h"
 
 using namespace LMS7002_WXGUI;
 
@@ -240,6 +241,12 @@ void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
             wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(liblms7_status2string(status)), _("Error"));
     }
     else
+    {
         wxMessageBox(_("Rx TIA calibration finished"), _("INFO"));
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Rx TIA calibrated"));
+        wxPostEvent(this, evt);
+    }
     UpdateGUI();
 }

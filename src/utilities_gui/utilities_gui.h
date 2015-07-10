@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun  5 2014)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -69,6 +69,8 @@ class pnlMiniLog_view : public wxPanel
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnUpdateGUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void OnBtnClearClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowFullLog( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

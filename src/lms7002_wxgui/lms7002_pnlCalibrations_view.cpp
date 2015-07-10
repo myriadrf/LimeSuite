@@ -3,6 +3,7 @@
 #include "LMS7002M.h"
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
+#include "lms7suiteEvents.h"
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view( wxWindow* parent )
 :
 pnlCalibrations_view( parent )
@@ -35,7 +36,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx( wxCommandEvent& event )
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
     else
+    {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Rx Calibrated"));
+        wxPostEvent(this, evt);
+    }
     UpdateGUI();
 }
 
@@ -48,7 +55,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
     else
+    {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Tx Calibrated"));
+        wxPostEvent(this, evt);
+    }
     UpdateGUI();
 }
 

@@ -22,7 +22,7 @@ LMScomms::~LMScomms()
 
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
-    @return 1: success, 0:failed, -1:Port not opened, -2:Connection Manager not initialized
+    @return 0: success, other: failure
 */
 LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 {
@@ -82,6 +82,8 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
     return status;
 }
 
+/** @brief Returns connected device information
+*/
 LMSinfo LMScomms::GetInfo()
 {
     GenericPacket pkt;

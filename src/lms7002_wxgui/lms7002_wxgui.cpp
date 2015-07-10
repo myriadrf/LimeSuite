@@ -1208,7 +1208,6 @@ pnlTRF_view::pnlTRF_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbEN_LOWBWLOMX_TMX_TRF = new wxComboBox( this, ID_EN_LOWBWLOMX_TMX_TRF, wxEmptyString, wxDefaultPosition, wxSize( 201,-1 ), 0, NULL, 0 );
 	cmbEN_LOWBWLOMX_TMX_TRF->Append( wxT("High band - bias resistor 3K") );
 	cmbEN_LOWBWLOMX_TMX_TRF->Append( wxT("Low band -bias resistor 30K") );
-	cmbEN_LOWBWLOMX_TMX_TRF->Append( wxEmptyString );
 	cmbEN_LOWBWLOMX_TMX_TRF->SetToolTip( wxT("Controls the high pass pole frequency of the RC biasing the gate of the mixer switches") );
 	
 	fgSizer34->Add( cmbEN_LOWBWLOMX_TMX_TRF, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
@@ -8425,7 +8424,6 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer200->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	DebugMode = new wxCheckBox( sbSizer127->GetStaticBox(), ID_DEBUGMODE, wxT("Select Debug mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	DebugMode->SetValue(true); 
 	fgSizer200->Add( DebugMode, 0, wxALIGN_LEFT, 5 );
 	
 	wxStaticBoxSizer* sbSizer128;

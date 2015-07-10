@@ -146,13 +146,15 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     liblms7_status status = lmsControl->SetFrequencyCGEN(freqMHz);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(liblms7_status2string(status))));
-//  UpdateInterfaceFrequencies();
-//  UpdateCLKL();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
     UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);    
     wxPostEvent(this, evt);
+    wxCommandEvent cmd;
+    cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
+    cmd.SetEventType(LOG_MESSAGE);
+    wxPostEvent(this, cmd);
 }
 
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )

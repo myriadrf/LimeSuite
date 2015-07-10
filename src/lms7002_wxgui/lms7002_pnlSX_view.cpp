@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "numericSlider.h"
 #include "lms7002_gui_utilities.h"
+#include "lms7suiteEvents.h"
 
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
@@ -407,7 +408,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
     }
     lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
 
-    if (parameter == CSW_VCO)
+    if (parameter == CSW_VCO) //for convenience refresh comparator values
     {
         wxCommandEvent evt;
         OnbtnReadComparators(evt);
@@ -448,7 +449,9 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
         {
             double currentFreq;
             txtFrequency->GetValue().ToDouble(&currentFreq);
-            lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, currentFreq * 1000, refClkMHz);
+            liblms7_status status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, currentFreq, refClkMHz);
+            if (status != LIBLMS7_SUCCESS)
+                wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
             UpdateGUI();
         }
     }
@@ -471,6 +474,20 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, freqMHz, RefClkMHz);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    else
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        unsigned char channel = lmsControl->Get_SPI_Reg_bits(MAC, false);
+        wxString msg;
+        if (channel == 1)
+            msg = _("SXR");
+        else
+            msg = _("SXT");
+        msg += wxString::Format(_(" frequency set to %f MHz"), freqMHz);
+        evt.SetString(msg);
+        wxPostEvent(this, evt);
+    }
     UpdateGUI();
 }
 

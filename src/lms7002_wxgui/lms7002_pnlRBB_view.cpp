@@ -4,6 +4,7 @@
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
 #include "lms7002_gui_utilities.h"
+#include "lms7suiteEvents.h"
 
 lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent )
 :
@@ -202,12 +203,23 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     else switch (rgrFilterSelection->GetSelection())
     {
     case 0:
+        {
         wxMessageBox(_("Rx Low band calibration finished"), _("INFO"));
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Rx Low band calibrated"));
+        wxPostEvent(this, evt);
         break;
+        }
     case 1:
+        {
         wxMessageBox(_("Rx High band calibration finished"), _("INFO"));
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Rx High band calibrated"));
+        wxPostEvent(this, evt);
         break;
-
+        }
     }
     lmsControl->DownloadAll();
     UpdateGUI();

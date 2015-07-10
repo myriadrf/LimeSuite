@@ -307,30 +307,31 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
 
 void lms7002_pnlTxTSP_view::UpdateGUI()
 {
+    bool fromChip = false;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx)));
 
-    long hbi = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+    long hbi = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, fromChip);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
-    int16_t value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP);
+    int16_t value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP, fromChip);
     int bitsToShift = (15 - IQCORR_TXTSP.msb - IQCORR_TXTSP.lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
 
-    value = lmsControl->Get_SPI_Reg_bits(SEL_TX);
+    value = lmsControl->Get_SPI_Reg_bits(SEL_TX, fromChip);
     assert(rgrNCOselections.size() == 16);
     rgrNCOselections[value & 0xF]->SetValue(true);
     UpdateNCOinputs();
 
-    int8_t dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRI_TXTSP);
+    int8_t dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRI_TXTSP, fromChip);
     cmbDCCORRI_TXTSP->SetValue(dccorr);
-    dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRQ_TXTSP);
+    dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRQ_TXTSP, fromChip);
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
     //check if B channel is enabled
-    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC);
+    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC, fromChip);
     if (channel > 1)
     {
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
