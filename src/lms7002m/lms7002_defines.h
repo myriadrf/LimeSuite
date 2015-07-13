@@ -24,6 +24,7 @@ enum eLMS_DEV
 	LMS_DEV_DATASPARK,
 	LMS_DEV_RFSPARK,
 	LMS_DEV_LMS6002USB,
+	LMS_DEV_RFESPARK,
 	
 	LMS_DEV_COUNT
 };
@@ -42,7 +43,8 @@ const char LMS_DEV_NAMES[][80] =
 	"Novena",
 	"DataSpark",
 	"RF-Spark",
-	"LMS6002-USB Stick"
+	"LMS6002-USB Stick",
+	"RF-ESpark"
 };
 
 static const char* GetDeviceName(const eLMS_DEV device)
