@@ -50,6 +50,8 @@ add_subdirectory(lms7002m_mcu)
 include_directories(lms7002m_mcu)
 add_subdirectory(RFSpark)
 include_directories(RFSpark)
+add_subdirectory(HPM7)
+include_directories(HPM7)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -83,6 +85,7 @@ set_target_properties(lms7suite
 	RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
 	
 target_link_libraries(lms7suite 
+	HPM7
 	RFSpark 
 	LMS_Programing 
 	ADF4002 

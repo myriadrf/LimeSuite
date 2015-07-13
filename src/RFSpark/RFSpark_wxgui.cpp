@@ -219,7 +219,7 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
     }
 	
@@ -254,7 +254,7 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 	
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
     }
 	
@@ -292,7 +292,7 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 	}    
     LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)		
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
 }
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
@@ -310,7 +310,7 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
     }
     assert(pkt.inBuffer.size() >= 3);

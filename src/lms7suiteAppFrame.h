@@ -20,6 +20,7 @@ class Si5351C;
 class Si5351C_wxgui;
 class LMS_Programing_wxgui;
 class RFSpark_wxgui;
+class HPM7_wxgui;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -43,6 +44,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowPrograming(wxCommandEvent& event);
         void OnRFSparkClose(wxCloseEvent& event);
         void OnShowRFSpark(wxCommandEvent& event);
+        void OnHPM7Close(wxCloseEvent& event);
+        void OnShowHPM7(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );		
@@ -70,6 +73,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 	
         LMS_Programing_wxgui* programmer;
         RFSpark_wxgui* rfspark;
+        HPM7_wxgui* hpm7;
 };
 
 
