@@ -24,6 +24,7 @@
 #include "Si5351C_wxgui.h"
 #include "LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
+#include "RFSpark_wxgui.h"
 #include <wx/string.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     fftviewer = nullptr;
     adfGUI = nullptr;
     si5351gui = nullptr;
+    rfspark = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -277,10 +279,27 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
         programmer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnProgramingClose), NULL, this);
         programmer->Show();
     }
-
 }
 
 void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
 {
     log->HandleMessage(event);
+}
+
+void LMS7SuiteAppFrame::OnRFSparkClose(wxCloseEvent& event)
+{
+    rfspark->Destroy();
+    rfspark = nullptr;
+}
+void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
+{
+    if (rfspark) //it's already opened
+        rfspark->Show();
+    else
+    {
+        rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-Spark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        rfspark->Initialize(lms7controlPort);
+        rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
+        rfspark->Show();
+    }
 }

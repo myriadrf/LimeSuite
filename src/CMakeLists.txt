@@ -48,6 +48,8 @@ add_subdirectory(lms7002m)
 include_directories(lms7002m)
 add_subdirectory(lms7002m_mcu)
 include_directories(lms7002m_mcu)
+add_subdirectory(RFSpark)
+include_directories(RFSpark)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -79,7 +81,21 @@ endif()
 set_target_properties(lms7suite
 	PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-target_link_libraries(lms7suite LMS_Programing ADF4002 Si5351C lms7002_wxgui utilities_gui numericSlider fftviewer_wxgui LMS7002M lms7suiteEvents LMS_StreamBoard ${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES})
+	
+target_link_libraries(lms7suite 
+	RFSpark 
+	LMS_Programing 
+	ADF4002 
+	Si5351C 
+	lms7002_wxgui 
+	utilities_gui 
+	numericSlider 
+	fftviewer_wxgui 
+	LMS7002M 
+	lms7suiteEvents 
+	LMS_StreamBoard 
+	${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES}
+	)
 
 if(UNIX)	
 	set(CONNECTION_MANAGER_LIBS usb-1.0 -lpthread)

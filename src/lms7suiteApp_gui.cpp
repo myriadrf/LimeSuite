@@ -64,6 +64,10 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programing") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuPrograming );
 	
+	wxMenuItem* mnuRFSpark;
+	mnuRFSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("RF-Spark") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuRFSpark );
+	
 	mbar->Append( mnuModules, wxT("Modules") ); 
 	
 	this->SetMenuBar( mbar );
@@ -92,6 +96,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuADF4002->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Connect( mnuSi5351C->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Connect( mnuPrograming->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
+	this->Connect( mnuRFSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
 }
 
 AppFrame_view::~AppFrame_view()
@@ -105,6 +110,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
 	
 }
 

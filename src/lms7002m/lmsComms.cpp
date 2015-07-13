@@ -123,7 +123,6 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
         switch( packet.cmd )
         {
         case CMD_PROG_MCU:
-        //case CMD_LMS_RST:
         case CMD_GET_INFO:
         case CMD_SI5351_RD:
         case CMD_SI5356_RD:        
@@ -142,7 +141,8 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
             byteBlockRatio = 3;
             break;
         case CMD_LMS7002_WR:
-        case CMD_BRDSPI_WR:        
+        case CMD_BRDSPI_WR:
+        case CMD_ANALOG_VAL_WR:
             byteBlockRatio = 4;
             break;
         default:
@@ -150,6 +150,8 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
         }
         if (packet.cmd == CMD_LMS7002_RD || packet.cmd == CMD_BRDSPI_RD)
             maxDataLength = maxDataLength/2;
+        if (packet.cmd == CMD_ANALOG_VAL_RD)
+            maxDataLength = maxDataLength / 4;
         int blockCount = pkt.outBuffer.size()/byteBlockRatio;
         int bufLen = blockCount/(maxDataLength/byteBlockRatio)
                     +(blockCount%(maxDataLength/byteBlockRatio)!=0);
