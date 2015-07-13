@@ -26,6 +26,7 @@
 #include "pnlMiniLog.h"
 #include "RFSpark_wxgui.h"
 #include "HPM7_wxgui.h"
+#include "FPGAcontrols_wxgui.h"
 #include <wx/string.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -81,6 +82,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     si5351gui = nullptr;
     rfspark = nullptr;
     hpm7 = nullptr;
+    fpgaControls = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -321,5 +323,23 @@ void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
         hpm7->Initialize(lms7controlPort);
         hpm7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnHPM7Close), NULL, this);
         hpm7->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnFPGAcontrolsClose(wxCloseEvent& event)
+{
+    fpgaControls->Destroy();
+    fpgaControls = nullptr;
+}
+void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
+{
+    if (fpgaControls) //it's already opened
+        fpgaControls->Show();
+    else
+    {
+        fpgaControls = new FPGAcontrols_wxgui(this, wxNewId(), _("FPGA Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        fpgaControls->Initialize(streamBoardPort);
+        fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
+        fpgaControls->Show();
     }
 }

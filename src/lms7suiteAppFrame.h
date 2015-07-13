@@ -21,6 +21,7 @@ class Si5351C_wxgui;
 class LMS_Programing_wxgui;
 class RFSpark_wxgui;
 class HPM7_wxgui;
+class FPGAcontrols_wxgui;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -46,6 +47,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowRFSpark(wxCommandEvent& event);
         void OnHPM7Close(wxCloseEvent& event);
         void OnShowHPM7(wxCommandEvent& event);
+        void OnFPGAcontrolsClose(wxCloseEvent& event);
+        void OnShowFPGAcontrols(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );		
@@ -74,6 +77,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         LMS_Programing_wxgui* programmer;
         RFSpark_wxgui* rfspark;
         HPM7_wxgui* hpm7;
+        FPGAcontrols_wxgui* fpgaControls;
 };
 
 

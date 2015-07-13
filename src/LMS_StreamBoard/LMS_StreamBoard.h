@@ -39,6 +39,7 @@ public:
     };
 
     static Status CaptureIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount, bool frameStart);
+    static Status UploadIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount);
     static Status ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg);
 
     struct DataToGUI
@@ -63,6 +64,9 @@ public:
     void SetRxFrameStart(const bool startValue);
     virtual Status StartReceiving(unsigned int fftSize);
     virtual Status StopReceiving();
+	
+	virtual Status StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount);
+    virtual Status StopCyclicTransmitting();
 
     DataToGUI GetIncomingData();
     ProgressStats GetStats();    
@@ -96,6 +100,11 @@ protected:
     std::atomic<float> mTxDataRate;
     std::atomic<float> mRxFIFOfilled;
     std::atomic<float> mTxFIFOfilled;
+
+    std::vector<int16_t> mCyclicTransmittingSourceData;
+    std::atomic_bool mTxCyclicRunning;
+    std::thread threadTxCyclic;
+    std::atomic_bool stopTxCyclic;
 };
 #endif
 

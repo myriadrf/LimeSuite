@@ -93,6 +93,9 @@ LMS_Programing::Status LMS_Programing::LoadArray(const unsigned char* array, con
 */
 LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int prog_mode)
 {
+#ifndef NDEBUG
+    auto t1 = chrono::high_resolution_clock::now();
+#endif    
     if (mUploadInProgress.load() == true)
         return UPLOAD_IN_PROGRESS;
     mAbortPrograming.store(false);
@@ -196,8 +199,9 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
         return FAILURE;
     }    
 #ifndef NDEBUG
+    auto t2 = chrono::high_resolution_clock::now();
 	if ((device == 1 && prog_mode == 2) == false)
-		printf("\nProgramming finished, %li bytes sent!\n", m_data_size);
+        printf("\nProgramming finished, %li bytes sent! %li ms\n", m_data_size, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
 		printf("\nFPGA configuring initiated\n");
 #endif    
