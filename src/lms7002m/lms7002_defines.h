@@ -82,6 +82,14 @@ const char EXP_BOARD_NAMES[][80] =
 	"Myriad7",
 	"HMP7"
 };
+
+static const char* GetExpansionBoardName(const eEXP_BOARD board)
+{
+    if (EXP_BOARD_UNKNOWN < board && board < LMS_DEV_COUNT)
+        return EXP_BOARD_NAMES[board];
+    else
+        return EXP_BOARD_NAMES[EXP_BOARD_UNKNOWN];
+}
 			
 struct LMS64C_Info
 {
