@@ -175,6 +175,7 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
             bytesCount.store(progress.bytesCount);
             aborted.store(progress.aborted);
             deviceResponse.store(progress.deviceResponse);
+            mUploadInProgress.store(false);
             return FAILURE;
         }        
         if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
@@ -217,6 +218,7 @@ LMS_Programing::Status LMS_Programing::StartUploadProgram(const int device, cons
     try
     {
         mProgramingThread = std::thread(&LMS_Programing::UploadProgram, this, device, prog_mode);
+        mProgramingThread.detach();
     }
     catch (...)
     {
@@ -246,6 +248,5 @@ void LMS_Programing::AbortPrograming()
     if (mUploadInProgress.load() == true)
     {
         mAbortPrograming.store(true);
-        mProgramingThread.join();
     }
 }

@@ -189,7 +189,7 @@ void LMS_Programing_wxgui::OnProgressPoll(wxTimerEvent& evt)
     float percent = 100.0*info.bytesSent / info.bytesCount;
     progressBar->SetValue(percent);
     lblProgressPercent->SetLabel(wxString::Format("%3.1f", percent));
-    if (info.bytesSent == info.bytesCount)
+    if (info.bytesSent == info.bytesCount || info.aborted)
         OnProgramingFinished();
 }
 
@@ -199,10 +199,10 @@ void LMS_Programing_wxgui::OnProgramingFinished()
     progressBar->SetValue(100);
     lblProgressPercent->SetLabel(wxString::Format("%3.1f", 100.0));
     LMS_Programing::Info info = m_programmer->GetProgressInfo();
-    if (info.aborted)
-        wxMessageBox(_("Programming aborted"), _("ERROR"));
+    if (info.aborted || info.bytesSent != info.bytesCount)
+        wxMessageBox(_("Programming aborted. Board last status response: ") + wxString::From8BitData(status2string(info.deviceResponse)), _("ERROR"), wxICON_ERROR | wxOK);
     else
-        wxMessageBox(wxString::Format(_("Programming Finished: %i bytes sent"), info.bytesSent), _("INFO"));
+        wxMessageBox(wxString::Format(_("Programming Finished: %i bytes sent"), info.bytesSent), _("INFO"), wxICON_INFORMATION | wxOK);
     btnOpen->Enable();
     Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
     Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnProgMyriadClick);
