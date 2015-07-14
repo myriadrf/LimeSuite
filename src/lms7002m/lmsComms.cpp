@@ -87,6 +87,11 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 LMSinfo LMScomms::GetInfo()
 {
     LMSinfo info;
+    info.device = LMS_DEV_UNKNOWN;
+    info.expansion = EXP_BOARD_UNKNOWN;
+    info.firmware = 0;
+    info.hardware = 0;
+    info.protocol = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
     LMScomms::TransferStatus status = TransferPacket(pkt);
