@@ -410,27 +410,27 @@ int ConnectionUSB::RefreshDeviceList()
                         printf("Cannot Claim Interface\n");
                     }
 
-                    //read device name
                     string fullName;
+                    //check operating speed
+                    int speed = libusb_get_device_speed(devs[i]);
+                    if(speed == LIBUSB_SPEED_HIGH)
+                        fullName = "USB 2.0");
+                    else if(speed == LIBUSB_SPEED_SUPER)
+                        fullName = "USB 3.0");
+                    else
+                        fullName = "USB");
+                    fullName += " (";
+                    //read device name                    
                     char data[255];
                     memset(data, 0, 255);
                     int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
                     if(strlen(data) > 0)
-                        fullName = data;
-                    else
-                        fullName = "DigiRed";
+                        fullName += data;
+                    fullName += ")";
                     libusb_close(tempDev_handle);
-
-                    //check operating speed
-                    int speed = libusb_get_device_speed(devs[i]);
-                    if(speed == LIBUSB_SPEED_HIGH)
-                        fullName.append(" (USB 2.0)");
-                    else if(speed == LIBUSB_SPEED_SUPER)
-                        fullName.append(" (USB 3.0)");
 
                     m_deviceNames.push_back(fullName);
                     m_dev_pid_vid.push_back( pair<int,int>(pid,vid));
-
                 }
             }
         }
@@ -452,19 +452,25 @@ void ConnectionUSB::ClearComm()
 */
 string ConnectionUSB::DeviceName()
 {
-	#ifndef __unix__
+#ifndef __unix__
 	string name;
 	char tempName[USB_STRING_MAXLEN];
-	memcpy(tempName, USBDevicePrimary->FriendlyName, USB_STRING_MAXLEN);
-    name = tempName;
+	//memcpy(tempName, USBDevicePrimary->FriendlyName, USB_STRING_MAXLEN);
+    //name = tempName;
 
 	for (int i = 0; i < USB_STRING_MAXLEN; ++i)
-		tempName[i] = USBDevicePrimary->Product[i];
-	name += " (";
+		tempName[i] = USBDevicePrimary->DeviceName[i];
+    if (USBDevicePrimary->bSuperSpeed == true)
+        name = "USB 3.0";
+    else if (USBDevicePrimary->bHighSpeed == true)
+        name = "USB 2.0";
+    else
+        name = "USB";
+    name += " (";
 	name += tempName;
 	name += ")";
     return name;
-    #else
+#else
     if(dev_handle != 0)
     {
         char data[255];
@@ -472,7 +478,7 @@ string ConnectionUSB::DeviceName()
         return string(data);
     }
     return "no name";
-    #endif
+#endif
 }
 
 /**
