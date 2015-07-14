@@ -11,7 +11,6 @@
 #include "lms7002_pnlRxTSP_view.h"
 #include "lms7002_pnlRBB_view.h"
 #include "lms7002_pnlRFE_view.h"
-#include "lms7002_pnlSPI_view.h"
 #include "lms7002_pnlSX_view.h"
 #include "lms7002_pnlTBB_view.h"
 #include "lms7002_pnlTRF_view.h"
@@ -127,7 +126,6 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabCDS->Initialize(lmsControl);
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
-    mTabSPI->Initialize(lmsControl->GetControlPort(), nullptr);
     mcuControl->Initialize(lmsControl->GetControlPort());
     mTabMCU->Initialize(mcuControl);
     UpdateGUI();

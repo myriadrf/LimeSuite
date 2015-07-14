@@ -283,3 +283,275 @@ dlgDeviceInfo_view::~dlgDeviceInfo_view()
 	btnGetInfo->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgDeviceInfo_view::OnGetInfo ), NULL, this );
 	
 }
+
+SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
+	
+	wxFlexGridSizer* fgSizer305;
+	fgSizer305 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer305->SetFlexibleDirection( wxBOTH );
+	fgSizer305->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxStaticBoxSizer* sbSizer160;
+	sbSizer160 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LMS Write ") ), wxHORIZONTAL );
+	
+	wxFlexGridSizer* fgSizer306;
+	fgSizer306 = new wxFlexGridSizer( 0, 7, 5, 5 );
+	fgSizer306->SetFlexibleDirection( wxBOTH );
+	fgSizer306->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT1 = new wxStaticText( sbSizer160->GetStaticBox(), wxID_ANY, wxT("Address(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT1->Wrap( 0 );
+	fgSizer306->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtLMSwriteAddr = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	txtLMSwriteAddr->SetMaxLength( 0 ); 
+	txtLMSwriteAddr->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer306->Add( txtLMSwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT9 = new wxStaticText( sbSizer160->GetStaticBox(), wxID_ANY, wxT("Value(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT9->Wrap( 0 );
+	fgSizer306->Add( ID_STATICTEXT9, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtLMSwriteValue = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtLMSwriteValue->SetMaxLength( 0 ); 
+	txtLMSwriteValue->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer306->Add( txtLMSwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	btnLMSwrite = new wxButton( sbSizer160->GetStaticBox(), wxID_ANY, wxT("CMD Write"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLMSwrite->SetDefault(); 
+	fgSizer306->Add( btnLMSwrite, 1, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT5 = new wxStaticText( sbSizer160->GetStaticBox(), wxID_ANY, wxT("Status:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT5->Wrap( 0 );
+	fgSizer306->Add( ID_STATICTEXT5, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblLMSwriteStatus = new wxStaticText( sbSizer160->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxSize( 134,13 ), 0 );
+	lblLMSwriteStatus->Wrap( 0 );
+	fgSizer306->Add( lblLMSwriteStatus, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	sbSizer160->Add( fgSizer306, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	fgSizer305->Add( sbSizer160, 1, wxLEFT|wxRIGHT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxStaticBoxSizer* sbSizer161;
+	sbSizer161 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LMS Read") ), wxHORIZONTAL );
+	
+	wxFlexGridSizer* fgSizer307;
+	fgSizer307 = new wxFlexGridSizer( 0, 7, 5, 5 );
+	fgSizer307->SetFlexibleDirection( wxBOTH );
+	fgSizer307->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT2 = new wxStaticText( sbSizer161->GetStaticBox(), wxID_ANY, wxT("Address(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT2->Wrap( 0 );
+	fgSizer307->Add( ID_STATICTEXT2, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtLMSreadAddr = new wxTextCtrl( sbSizer161->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtLMSreadAddr->SetMaxLength( 0 ); 
+	txtLMSreadAddr->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer307->Add( txtLMSreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	btnLMSread = new wxButton( sbSizer161->GetStaticBox(), wxID_ANY, wxT("CMD Read"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLMSread->SetDefault(); 
+	fgSizer307->Add( btnLMSread, 1, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	wxFlexGridSizer* fgSizer308;
+	fgSizer308 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer308->SetFlexibleDirection( wxBOTH );
+	fgSizer308->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT3 = new wxStaticText( sbSizer161->GetStaticBox(), wxID_ANY, wxT("Read Value(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT3->Wrap( -1 );
+	fgSizer308->Add( ID_STATICTEXT3, 1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblLMSreadValue = new wxStaticText( sbSizer161->GetStaticBox(), wxID_ANY, wxT("????"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblLMSreadValue->Wrap( 0 );
+	fgSizer308->Add( lblLMSreadValue, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT7 = new wxStaticText( sbSizer161->GetStaticBox(), wxID_ANY, wxT("Status:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT7->Wrap( -1 );
+	fgSizer308->Add( ID_STATICTEXT7, 1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblLMSreadStatus = new wxStaticText( sbSizer161->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxSize( 143,13 ), 0 );
+	lblLMSreadStatus->Wrap( 0 );
+	fgSizer308->Add( lblLMSreadStatus, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	fgSizer307->Add( fgSizer308, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	wxFlexGridSizer* fgSizer309;
+	fgSizer309 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer309->SetFlexibleDirection( wxBOTH );
+	fgSizer309->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_BUTTON23 = new wxButton( sbSizer161->GetStaticBox(), wxID_ANY, wxT("PurgeCOM"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_BUTTON23->SetDefault(); 
+	ID_BUTTON23->Hide();
+	
+	fgSizer309->Add( ID_BUTTON23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_CHECKBOX5 = new wxCheckBox( sbSizer161->GetStaticBox(), wxID_ANY, wxT("Test written data"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_CHECKBOX5->SetValue(true); 
+	ID_CHECKBOX5->Hide();
+	ID_CHECKBOX5->SetToolTip( wxT("After writing register, reads back the same register and checks if values match") );
+	
+	fgSizer309->Add( ID_CHECKBOX5, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	fgSizer307->Add( fgSizer309, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	sbSizer161->Add( fgSizer307, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	fgSizer305->Add( sbSizer161, 1, wxLEFT|wxRIGHT|wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer3;
+	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
+	
+	wxStaticBoxSizer* sbSizer168;
+	sbSizer168 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Board SPI") ), wxHORIZONTAL );
+	
+	wxFlexGridSizer* fgSizer319;
+	fgSizer319 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer319->AddGrowableCol( 0 );
+	fgSizer319->SetFlexibleDirection( wxBOTH );
+	fgSizer319->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxStaticBoxSizer* sbSizer169;
+	sbSizer169 = new wxStaticBoxSizer( new wxStaticBox( sbSizer168->GetStaticBox(), wxID_ANY, wxT("Write") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer320;
+	fgSizer320 = new wxFlexGridSizer( 0, 7, 5, 5 );
+	fgSizer320->SetFlexibleDirection( wxBOTH );
+	fgSizer320->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT15 = new wxStaticText( sbSizer169->GetStaticBox(), wxID_ANY, wxT("Address(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT15->Wrap( 0 );
+	fgSizer320->Add( ID_STATICTEXT15, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtBoardwriteAddr = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	txtBoardwriteAddr->SetMaxLength( 0 ); 
+	txtBoardwriteAddr->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer320->Add( txtBoardwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT16 = new wxStaticText( sbSizer169->GetStaticBox(), wxID_ANY, wxT("Value(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT16->Wrap( 0 );
+	fgSizer320->Add( ID_STATICTEXT16, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtBoardwriteValue = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	txtBoardwriteValue->SetMaxLength( 0 ); 
+	txtBoardwriteValue->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer320->Add( txtBoardwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_BUTTON24 = new wxButton( sbSizer169->GetStaticBox(), wxID_ANY, wxT("CMD Write"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_BUTTON24->SetDefault(); 
+	fgSizer320->Add( ID_BUTTON24, 1, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT17 = new wxStaticText( sbSizer169->GetStaticBox(), wxID_ANY, wxT("Status:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT17->Wrap( 0 );
+	fgSizer320->Add( ID_STATICTEXT17, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblBoardwriteStatus = new wxStaticText( sbSizer169->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	lblBoardwriteStatus->Wrap( 0 );
+	fgSizer320->Add( lblBoardwriteStatus, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	sbSizer169->Add( fgSizer320, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	fgSizer319->Add( sbSizer169, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxStaticBoxSizer* sbSizer170;
+	sbSizer170 = new wxStaticBoxSizer( new wxStaticBox( sbSizer168->GetStaticBox(), wxID_ANY, wxT("Read") ), wxHORIZONTAL );
+	
+	wxFlexGridSizer* fgSizer321;
+	fgSizer321 = new wxFlexGridSizer( 0, 7, 5, 5 );
+	fgSizer321->SetFlexibleDirection( wxBOTH );
+	fgSizer321->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT19 = new wxStaticText( sbSizer170->GetStaticBox(), wxID_ANY, wxT("Address(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT19->Wrap( 0 );
+	fgSizer321->Add( ID_STATICTEXT19, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtBoardreadAddr = new wxTextCtrl( sbSizer170->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	txtBoardreadAddr->SetMaxLength( 0 ); 
+	txtBoardreadAddr->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer321->Add( txtBoardreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_BUTTON25 = new wxButton( sbSizer170->GetStaticBox(), wxID_ANY, wxT("CMD Read"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_BUTTON25->SetDefault(); 
+	fgSizer321->Add( ID_BUTTON25, 1, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	wxFlexGridSizer* fgSizer322;
+	fgSizer322 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer322->SetFlexibleDirection( wxBOTH );
+	fgSizer322->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT20 = new wxStaticText( sbSizer170->GetStaticBox(), wxID_ANY, wxT("Read Value(Hex):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT20->Wrap( -1 );
+	fgSizer322->Add( ID_STATICTEXT20, 1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblBoardreadValue = new wxStaticText( sbSizer170->GetStaticBox(), wxID_ANY, wxT("????"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblBoardreadValue->Wrap( 0 );
+	fgSizer322->Add( lblBoardreadValue, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	ID_STATICTEXT22 = new wxStaticText( sbSizer170->GetStaticBox(), wxID_ANY, wxT("Status:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT22->Wrap( 0 );
+	fgSizer322->Add( ID_STATICTEXT22, 1, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblBoardreadStatus = new wxStaticText( sbSizer170->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	lblBoardreadStatus->Wrap( 0 );
+	fgSizer322->Add( lblBoardreadStatus, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	fgSizer321->Add( fgSizer322, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	sbSizer170->Add( fgSizer321, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	fgSizer319->Add( sbSizer170, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	sbSizer168->Add( fgSizer319, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	bSizer3->Add( sbSizer168, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
+	
+	
+	fgSizer305->Add( bSizer3, 1, wxEXPAND, 5 );
+	
+	
+	this->SetSizer( fgSizer305 );
+	this->Layout();
+	fgSizer305->Fit( this );
+	
+	this->Centre( wxBOTH );
+	
+	// Connect Events
+	btnLMSwrite->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onLMSwrite ), NULL, this );
+	btnLMSread->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onLMSread ), NULL, this );
+	ID_BUTTON24->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onBoardWrite ), NULL, this );
+	ID_BUTTON25->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::OnBoardRead ), NULL, this );
+}
+
+SPI_view::~SPI_view()
+{
+	// Disconnect Events
+	btnLMSwrite->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onLMSwrite ), NULL, this );
+	btnLMSread->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onLMSread ), NULL, this );
+	ID_BUTTON24->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::onBoardWrite ), NULL, this );
+	ID_BUTTON25->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SPI_view::OnBoardRead ), NULL, this );
+	
+}

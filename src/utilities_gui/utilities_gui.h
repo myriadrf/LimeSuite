@@ -23,6 +23,8 @@
 #include <wx/textctrl.h>
 #include <wx/panel.h>
 #include <wx/statbox.h>
+#include <wx/checkbox.h>
+#include <wx/frame.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -119,6 +121,60 @@ class dlgDeviceInfo_view : public wxDialog
 		
 		dlgDeviceInfo_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Device Info"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
 		~dlgDeviceInfo_view();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class SPI_view
+///////////////////////////////////////////////////////////////////////////////
+class SPI_view : public wxFrame 
+{
+	private:
+	
+	protected:
+		wxStaticText* ID_STATICTEXT1;
+		wxTextCtrl* txtLMSwriteAddr;
+		wxStaticText* ID_STATICTEXT9;
+		wxTextCtrl* txtLMSwriteValue;
+		wxButton* btnLMSwrite;
+		wxStaticText* ID_STATICTEXT5;
+		wxStaticText* lblLMSwriteStatus;
+		wxStaticText* ID_STATICTEXT2;
+		wxTextCtrl* txtLMSreadAddr;
+		wxButton* btnLMSread;
+		wxStaticText* ID_STATICTEXT3;
+		wxStaticText* lblLMSreadValue;
+		wxStaticText* ID_STATICTEXT7;
+		wxStaticText* lblLMSreadStatus;
+		wxButton* ID_BUTTON23;
+		wxCheckBox* ID_CHECKBOX5;
+		wxStaticText* ID_STATICTEXT15;
+		wxTextCtrl* txtBoardwriteAddr;
+		wxStaticText* ID_STATICTEXT16;
+		wxTextCtrl* txtBoardwriteValue;
+		wxButton* ID_BUTTON24;
+		wxStaticText* ID_STATICTEXT17;
+		wxStaticText* lblBoardwriteStatus;
+		wxStaticText* ID_STATICTEXT19;
+		wxTextCtrl* txtBoardreadAddr;
+		wxButton* ID_BUTTON25;
+		wxStaticText* ID_STATICTEXT20;
+		wxStaticText* lblBoardreadValue;
+		wxStaticText* ID_STATICTEXT22;
+		wxStaticText* lblBoardreadStatus;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void onLMSwrite( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onLMSread( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onBoardWrite( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBoardRead( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		SPI_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("SPI"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		
+		~SPI_view();
 	
 };
 

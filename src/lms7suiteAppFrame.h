@@ -24,6 +24,7 @@ class HPM7_wxgui;
 class FPGAcontrols_wxgui;
 class Myriad7_wxgui;
 class dlgDeviceInfo;
+class SPI_wxgui;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -55,6 +56,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowMyriad7(wxCommandEvent& event);
         void OnDeviceInfoClose(wxCloseEvent& event);
         void OnShowDeviceInfo(wxCommandEvent& event);
+        void OnSPIClose(wxCloseEvent& event);
+        void OnShowSPI(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );		
@@ -86,6 +89,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         FPGAcontrols_wxgui* fpgaControls;
         Myriad7_wxgui* myriad7;
         dlgDeviceInfo* deviceInfo;
+        SPI_wxgui* spi;
 };
 
 

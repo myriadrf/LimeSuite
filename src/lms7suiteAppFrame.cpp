@@ -28,6 +28,7 @@
 #include "HPM7_wxgui.h"
 #include "FPGAcontrols_wxgui.h"
 #include "myriad7_wxgui.h"
+#include "SPI_wxgui.h"
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
 
@@ -87,6 +88,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     fpgaControls = nullptr;
     myriad7 = nullptr;
     deviceInfo = nullptr;
+    spi = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -382,5 +384,24 @@ void LMS7SuiteAppFrame::OnShowDeviceInfo(wxCommandEvent& event)
         deviceInfo->Initialize(lms7controlPort, streamBoardPort);
         deviceInfo->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnDeviceInfoClose), NULL, this);
         deviceInfo->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnSPIClose(wxCloseEvent& event)
+{
+    spi->Destroy();
+    spi = nullptr;
+}
+
+void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
+{
+    if (spi) //it's already opened
+        spi->Show();
+    else
+    {
+        spi = new SPI_wxgui(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
+        spi->Initialize(lms7controlPort, streamBoardPort);
+        spi->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSPIClose), NULL, this);
+        spi->Show();
     }
 }

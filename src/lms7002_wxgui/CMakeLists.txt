@@ -12,7 +12,6 @@ set(lms7002_gui_src_files
 	lms7002_pnlRxTSP_view.cpp
 	lms7002_pnlRBB_view.cpp
 	lms7002_pnlRFE_view.cpp
-	lms7002_pnlSPI_view.cpp	
 	lms7002_pnlSX_view.cpp
 	lms7002_pnlTBB_view.cpp
 	lms7002_pnlTRF_view.cpp

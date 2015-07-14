@@ -332,6 +332,21 @@
                         <event name="OnMenuSelection">OnShowDeviceInfo</event>
                         <event name="OnUpdateUI"></event>
                     </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help"></property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">SPI</property>
+                        <property name="name">mnuSPI</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut"></property>
+                        <property name="unchecked_bitmap"></property>
+                        <event name="OnMenuSelection">OnShowSPI</event>
+                        <event name="OnUpdateUI"></event>
+                    </object>
                 </object>
             </object>
             <object class="wxStatusBar" expanded="0">

@@ -22,7 +22,6 @@ class lms7002_pnlLimeLightPAD_view;
 class lms7002_pnlRBB_view;
 class lms7002_pnlRFE_view;
 class lms7002_pnlRxTSP_view;
-class lms7002_pnlSPI_view;
 class lms7002_pnlSX_view;
 class lms7002_pnlTBB_view;
 class lms7002_pnlTRF_view;
@@ -85,8 +84,7 @@ class mainPanel : public wxPanel
 			ID_TAB_TXTSP,
 			ID_TAB_RXTSP,
 			ID_TAB_CDS,
-			ID_TAB_BIST,
-			ID_TAB_SPI
+			ID_TAB_BIST
 		};
 		
 		wxButton* ID_BUTTON1;
@@ -115,7 +113,6 @@ class mainPanel : public wxPanel
 		lms7002_pnlRxTSP_view* mTabRxTSP;
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
-		lms7002_pnlSPI_view* mTabSPI;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
@@ -2066,57 +2063,6 @@ class pnlMCU_BD_view : public wxPanel
 		
 		pnlMCU_BD_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlMCU_BD_view();
-	
-};
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class pnlSPI_view
-///////////////////////////////////////////////////////////////////////////////
-class pnlSPI_view : public wxPanel 
-{
-	private:
-	
-	protected:
-		wxStaticText* ID_STATICTEXT1;
-		wxTextCtrl* txtLMSwriteAddr;
-		wxStaticText* ID_STATICTEXT9;
-		wxTextCtrl* txtLMSwriteValue;
-		wxButton* btnLMSwrite;
-		wxStaticText* ID_STATICTEXT5;
-		wxStaticText* lblLMSwriteStatus;
-		wxStaticText* ID_STATICTEXT2;
-		wxTextCtrl* txtLMSreadAddr;
-		wxButton* btnLMSread;
-		wxStaticText* ID_STATICTEXT3;
-		wxStaticText* lblLMSreadValue;
-		wxStaticText* ID_STATICTEXT7;
-		wxStaticText* lblLMSreadStatus;
-		wxButton* ID_BUTTON23;
-		wxCheckBox* ID_CHECKBOX5;
-		wxStaticText* ID_STATICTEXT15;
-		wxTextCtrl* ID_TEXTCTRL7;
-		wxStaticText* ID_STATICTEXT16;
-		wxTextCtrl* ID_TEXTCTRL8;
-		wxButton* ID_BUTTON24;
-		wxStaticText* ID_STATICTEXT17;
-		wxStaticText* ID_STATICTEXT18;
-		wxStaticText* ID_STATICTEXT19;
-		wxTextCtrl* ID_TEXTCTRL9;
-		wxButton* ID_BUTTON25;
-		wxStaticText* ID_STATICTEXT20;
-		wxStaticText* ID_STATICTEXT21;
-		wxStaticText* ID_STATICTEXT22;
-		wxStaticText* ID_STATICTEXT23;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void onLMSwrite( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onLMSread( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		
-		pnlSPI_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
-		~pnlSPI_view();
 	
 };
 
