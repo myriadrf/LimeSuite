@@ -80,6 +80,10 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuMyriad7 = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Myriad7") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuMyriad7 );
 	
+	wxMenuItem* mnuDeviceInfo;
+	mnuDeviceInfo = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Device Info") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuDeviceInfo );
+	
 	mbar->Append( mnuModules, wxT("Modules") ); 
 	
 	this->SetMenuBar( mbar );
@@ -112,6 +116,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuHPM7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Connect( mnuFPGAcontrols->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Connect( mnuMyriad7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
+	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 }
 
 AppFrame_view::~AppFrame_view()
@@ -129,6 +134,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	
 }
 

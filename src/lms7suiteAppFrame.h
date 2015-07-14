@@ -23,6 +23,7 @@ class RFSpark_wxgui;
 class HPM7_wxgui;
 class FPGAcontrols_wxgui;
 class Myriad7_wxgui;
+class dlgDeviceInfo;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -52,6 +53,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowFPGAcontrols(wxCommandEvent& event);
         void OnMyriad7Close(wxCloseEvent& event);
         void OnShowMyriad7(wxCommandEvent& event);
+        void OnDeviceInfoClose(wxCloseEvent& event);
+        void OnShowDeviceInfo(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );		
@@ -82,6 +85,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         HPM7_wxgui* hpm7;
         FPGAcontrols_wxgui* fpgaControls;
         Myriad7_wxgui* myriad7;
+        dlgDeviceInfo* deviceInfo;
 };
 
 

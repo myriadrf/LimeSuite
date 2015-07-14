@@ -85,7 +85,7 @@ const char EXP_BOARD_NAMES[][80] =
 
 static const char* GetExpansionBoardName(const eEXP_BOARD board)
 {
-    if (EXP_BOARD_UNKNOWN < board && board < LMS_DEV_COUNT)
+    if (EXP_BOARD_UNKNOWN < board && board < EXP_BOARD_COUNT)
         return EXP_BOARD_NAMES[board];
     else
         return EXP_BOARD_NAMES[EXP_BOARD_UNKNOWN];

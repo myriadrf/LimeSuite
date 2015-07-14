@@ -29,6 +29,7 @@
 #include "FPGAcontrols_wxgui.h"
 #include "myriad7_wxgui.h"
 #include <wx/string.h>
+#include "dlgDeviceInfo.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -85,6 +86,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     hpm7 = nullptr;
     fpgaControls = nullptr;
     myriad7 = nullptr;
+    deviceInfo = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -361,5 +363,24 @@ void LMS7SuiteAppFrame::OnShowMyriad7(wxCommandEvent& event)
         myriad7->Initialize(lms7controlPort);
         myriad7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnMyriad7Close), NULL, this);
         myriad7->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnDeviceInfoClose(wxCloseEvent& event)
+{
+    deviceInfo->Destroy();
+    deviceInfo = nullptr;
+}
+
+void LMS7SuiteAppFrame::OnShowDeviceInfo(wxCommandEvent& event)
+{
+    if (deviceInfo) //it's already opened
+        deviceInfo->Show();
+    else
+    {
+        deviceInfo = new dlgDeviceInfo(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
+        deviceInfo->Initialize(lms7controlPort, streamBoardPort);
+        deviceInfo->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnDeviceInfoClose), NULL, this);
+        deviceInfo->Show();
     }
 }

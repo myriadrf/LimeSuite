@@ -22,6 +22,7 @@
 #include <wx/dialog.h>
 #include <wx/textctrl.h>
 #include <wx/panel.h>
+#include <wx/statbox.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -77,6 +78,47 @@ class pnlMiniLog_view : public wxPanel
 		
 		pnlMiniLog_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlMiniLog_view();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class dlgDeviceInfo_view
+///////////////////////////////////////////////////////////////////////////////
+class dlgDeviceInfo_view : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxButton* btnGetInfo;
+		wxStaticText* m_staticText6;
+		wxStaticText* lblDeviceCtr;
+		wxStaticText* m_staticText8;
+		wxStaticText* lblExpansionCtr;
+		wxStaticText* m_staticText10;
+		wxStaticText* lblFirmwareCtr;
+		wxStaticText* m_staticText12;
+		wxStaticText* lblHardwareCtr;
+		wxStaticText* m_staticText14;
+		wxStaticText* lblProtocolCtr;
+		wxStaticText* m_staticText61;
+		wxStaticText* lblDeviceData;
+		wxStaticText* m_staticText81;
+		wxStaticText* lblExpansionData;
+		wxStaticText* m_staticText101;
+		wxStaticText* lblFirmwareData;
+		wxStaticText* m_staticText121;
+		wxStaticText* lblHardwareData;
+		wxStaticText* m_staticText141;
+		wxStaticText* lblProtocolData;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnGetInfo( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		dlgDeviceInfo_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Device Info"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
+		~dlgDeviceInfo_view();
 	
 };
 
