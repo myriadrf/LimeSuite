@@ -68,6 +68,7 @@ class AppFrame_view : public wxFrame
 		virtual void OnShowRFSpark( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowHPM7( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFPGAcontrols( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowMyriad7( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

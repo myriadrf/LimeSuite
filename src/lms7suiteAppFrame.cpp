@@ -27,6 +27,7 @@
 #include "RFSpark_wxgui.h"
 #include "HPM7_wxgui.h"
 #include "FPGAcontrols_wxgui.h"
+#include "myriad7_wxgui.h"
 #include <wx/string.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -83,6 +84,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     rfspark = nullptr;
     hpm7 = nullptr;
     fpgaControls = nullptr;
+    myriad7 = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -341,5 +343,23 @@ void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
         fpgaControls->Initialize(streamBoardPort);
         fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
         fpgaControls->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnMyriad7Close(wxCloseEvent& event)
+{
+    myriad7->Destroy();
+    myriad7 = nullptr;
+}
+void LMS7SuiteAppFrame::OnShowMyriad7(wxCommandEvent& event)
+{
+    if (myriad7) //it's already opened
+        myriad7->Show();
+    else
+    {
+        myriad7 = new Myriad7_wxgui(this, wxNewId(), _("Myriad7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        myriad7->Initialize(lms7controlPort);
+        myriad7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnMyriad7Close), NULL, this);
+        myriad7->Show();
     }
 }
