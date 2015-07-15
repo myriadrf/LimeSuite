@@ -737,7 +737,14 @@ liblms7_status LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const 
 {
     uint8_t index;
     uint8_t coefLimit;
-    uint16_t startAddr = 0x0280;
+    uint16_t startAddr;
+    if (GFIR_index == 0)
+        startAddr = 0x0280;
+    else if (GFIR_index == 1)
+        startAddr = 0x02C0;
+    else
+        startAddr = 0x0300;
+
     if (tx == false)
         startAddr += 0x0200;
     if (GFIR_index < 2)
@@ -748,10 +755,7 @@ liblms7_status LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const 
         return LIBLMS7_TOO_MANY_VALUES;
     vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
-    {
         addresses.push_back(startAddr + index + 24 * (index / 40));
-        //SPI_write(startAddr + index + 24*(index/40), coef[index]);
-    }
     SPI_write_batch(&addresses[0], (uint16_t*)coef, coefCount);
     return LIBLMS7_SUCCESS;
 }
@@ -768,7 +772,14 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
     liblms7_status status = LIBLMS7_FAILURE;
     uint8_t index;
     uint8_t coefLimit;
-    uint16_t startAddr = 0x0280;
+    uint16_t startAddr;
+    if(GFIR_index == 0)
+        startAddr = 0x0280;
+    else if (GFIR_index == 1)
+        startAddr = 0x02C0;
+    else
+        startAddr = 0x0300;
+
     if (tx == false)
         startAddr += 0x0200;
     if (GFIR_index < 2)
@@ -777,12 +788,15 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
         coefLimit = 120;
     if (coefCount > coefLimit)
         return LIBLMS7_TOO_MANY_VALUES;
+
+    std::vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
-    {
-        coef[index] = SPI_read(startAddr + index + 24 * (index / 40), true, &status);
-        if (status != LIBLMS7_SUCCESS)
-            break;
-    }
+        addresses.push_back(startAddr + index + 24 * (index / 40));
+    uint16_t spiData[120];
+    memset(spiData, 0, 120 * sizeof(uint16_t));
+    status = SPI_read_batch(&addresses[0], spiData, coefCount);
+    for (index = 0; index < coefCount; ++index)
+        coef[index] = spiData[index];
     return status;
 }
 
