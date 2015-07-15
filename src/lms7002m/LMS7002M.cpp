@@ -944,7 +944,11 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
-    controlPort->TransferPacket(pkt);
+
+    LMScomms::TransferStatus status = controlPort->TransferPacket(pkt);
+    if (status != LMScomms::TRANSFER_SUCCESS)
+        return LIBLMS7_FAILURE;
+
     for (uint32_t i = 0; i < cnt; ++i)
     {
         spiData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];

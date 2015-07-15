@@ -2,6 +2,7 @@
 #include "lms7002_gui_utilities.h"
 #include "LMS7002M.h"
 #include "numericSlider.h"
+#include "lms7002_dlgGFIR_Coefficients.h"
 
 using namespace LMS7002_WXGUI;
 static indexValueMap hbd_ovr_rxtsp_IndexValuePairs;
@@ -158,17 +159,74 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
 
 void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
 {
-// TODO: Implement onbtnGFIR1Coef
+    lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this);
+    std::vector<int16_t> coefficients;
+    const int gfirIndex = 0;
+    const int maxCoefCount = 40;
+    coefficients.resize(maxCoefCount, 0);
+    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != LIBLMS7_SUCCESS)
+    {
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        dlg->Destroy();
+        return;
+    }
+
+    dlg->SetCoefficients(coefficients);
+    if (dlg->ShowModal() == wxID_OK)
+    {
+        coefficients = dlg->GetCoefficients();
+        lmsControl->SetGFIRCoefficients(false, gfirIndex, &coefficients[0], coefficients.size());
+    }
+    dlg->Destroy();
 }
 
 void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
 {
-// TODO: Implement onbtnGFIR2Coef
+    lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this);
+    std::vector<int16_t> coefficients;
+    const int gfirIndex = 1;
+    const int maxCoefCount = 40;
+    coefficients.resize(maxCoefCount, 0);
+    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != LIBLMS7_SUCCESS)
+    {
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        dlg->Destroy();
+        return;
+    }
+
+    dlg->SetCoefficients(coefficients);
+    if (dlg->ShowModal() == wxID_OK)
+    {
+        coefficients = dlg->GetCoefficients();
+        lmsControl->SetGFIRCoefficients(false, gfirIndex, &coefficients[0], coefficients.size());
+    }
+    dlg->Destroy();
 }
 
 void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
 {
-// TODO: Implement onbtnGFIR3Coef
+    lms7002_dlgGFIR_Coefficients *dlg = new lms7002_dlgGFIR_Coefficients(this);
+    std::vector<int16_t> coefficients;
+    const int gfirIndex = 2;
+    const int maxCoefCount = 120;
+    coefficients.resize(maxCoefCount, 0);
+    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != LIBLMS7_SUCCESS)
+    {
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        dlg->Destroy();
+        return;
+    }
+
+    dlg->SetCoefficients(coefficients);
+    if (dlg->ShowModal() == wxID_OK)
+    {
+        coefficients = dlg->GetCoefficients();
+        lmsControl->SetGFIRCoefficients(false, gfirIndex, &coefficients[0], coefficients.size());
+    }
+    dlg->Destroy();
 }
 
 void lms7002_pnlRxTSP_view::Initialize(LMS7002M* pControl)

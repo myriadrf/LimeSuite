@@ -50,6 +50,8 @@ class lms7002_pnlXBUF_view;
 #include <wx/radiobox.h>
 #include <wx/choice.h>
 #include <wx/gauge.h>
+#include <wx/grid.h>
+#include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -2134,6 +2136,39 @@ class pnlCalibrations_view : public wxPanel
 		
 		pnlCalibrations_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlCalibrations_view();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class dlgGFIR_Coefficients
+///////////////////////////////////////////////////////////////////////////////
+class dlgGFIR_Coefficients : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxButton* btnLoadFromFile;
+		wxButton* btnSaveToFile;
+		wxButton* btnClearTable;
+		wxStaticText* ID_STATICTEXT3;
+		wxSpinCtrl* spinCoefCount;
+		wxGrid* gridCoef;
+		wxButton* btnOk;
+		wxButton* btnCancel;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnLoadFromFile( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSaveToFile( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnClearTable( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnspinCoefCountChange( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnBtnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnCancelClick( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		dlgGFIR_Coefficients( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Coefficients"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
+		~dlgGFIR_Coefficients();
 	
 };
 
