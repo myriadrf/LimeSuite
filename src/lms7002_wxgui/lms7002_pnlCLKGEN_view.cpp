@@ -86,6 +86,8 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     temp.push_back(_("TST[0]=Hi Z; TST[1]=Hi Z; TSTA=Vtune@60kOhm"));
     temp.push_back(_("TST[0]=Hi Z; TST[1]=Hi Z; TSTA=Vtune@10kOhm"));
     cmbTST_CGEN->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlCLKGEN_view::Initialize(LMS7002M* pControl)

@@ -145,6 +145,8 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     cmbCDC_I_RFE->Set(temp);
     cmbCDC_Q_RFE->Set(temp);
     cmbCCOMP_TIA_RFE->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlRFE_view::Initialize(LMS7002M* pControl)

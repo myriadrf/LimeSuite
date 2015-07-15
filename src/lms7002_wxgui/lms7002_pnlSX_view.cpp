@@ -375,6 +375,8 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     sprintf(ctemp, "%.4f V", 0.4685); temp.push_back(ctemp);
     sprintf(ctemp, "%.4f V", 0.3436); temp.push_back(ctemp);
     cmbVDIV_VCO->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlSX_view::Initialize(LMS7002M* pControl)

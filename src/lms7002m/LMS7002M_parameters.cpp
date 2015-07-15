@@ -158,15 +158,15 @@ const struct LMS7Parameter SX_DITHER_EN_CGEN = { 0x0089, 13, 13, 0, "SX_DITHER_E
 const struct LMS7Parameter CLKH_OV_CLKL_CGEN = { 0x0089, 12, 11, 0, "CLKH_OV_CLKL_CGEN", "FCLKL here is ADC clock. FCLKH is the clock to the DAC and if no division is added to the ADC as well" };
 const struct LMS7Parameter DIV_OUTCH_CGEN = { 0x0089, 10, 3, 4, "DIV_OUTCH_CGEN", "" };
 const struct LMS7Parameter TST_CGEN = { 0x0089, 2, 0, 0, "TST_CGEN", 
-"Controls the test mode of the SX\
-0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off\
-1 - tstdo[0] = ADC clock; tstdo[1] = DAC clock; tstao = High impedance;\
-2 - tstdo[0] = SDM clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 60kOhm resistor;\
-3 - tstdo[0] = Reference clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 10kOhm resistor;\
-4 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = High impedance;\
-5 - tstdo[0] = Charge pump Down signal; tstdo[1] = Charge pump Up signal; tstao = High impedance;\
-6 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 60kOhm resistor;\
-7 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 10kOhm resistor;\
+"Controls the test mode of the SX\n\
+0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off\n\
+1 - tstdo[0] = ADC clock; tstdo[1] = DAC clock; tstao = High impedance;\n\
+2 - tstdo[0] = SDM clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 60kOhm resistor;\n\
+3 - tstdo[0] = Reference clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 10kOhm resistor;\n\
+4 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = High impedance;\n\
+5 - tstdo[0] = Charge pump Down signal; tstdo[1] = Charge pump Up signal; tstao = High impedance;\n\
+6 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 60kOhm resistor;\n\
+7 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 10kOhm resistor;\n\
 if TST_SX[2] = 1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40"};
 const struct LMS7Parameter REV_CLKDAC_CGEN = { 0x008A, 14, 14, 0, "REV_CLKDAC_CGEN", "Inverts the clock F_CLKL" };
 const struct LMS7Parameter CMPLO_CTRL_CGEN = { 0x008A, 27, 14, 0, "CMPLO_CTRL_CGEN", "" };
@@ -479,16 +479,16 @@ const struct LMS7Parameter PW_DIV2_LOCH = { 0x011F, 14, 12, 3, "PW_DIV2_LOCH", "
 const struct LMS7Parameter PW_DIV4_LOCH = { 0x011F, 11, 9, 3, "PW_DIV4_LOCH", "trims the duty cycle of DIV4 LOCH. Only works when forward divider is dividing by at least 4 (excluding quadrature block division). If in bypass mode, this does not work" };
 const struct LMS7Parameter DIV_LOCH = { 0x011F, 8, 6, 1, "DIV_LOCH", "Controls the division ratio in the LOCH_DIV" };
 const struct LMS7Parameter TST_SX = { 0x011F, 5, 3, 0, "TST_SX", 
-"Controls the test mode of PLLs. TST signal lines are shared between all PLLs (CGEN, RX and TX). Only one TST signal of any PLL should be active at a given time.\
-0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off(default)\
-1 - tstdo[0] = VCO / 20 clock*; tstdo[1] = VCO / 40 clock*; tstao = High impedance;\
-2 - tstdo[0] = SDM clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 60kOhm resistor;\
-3 - tstdo[0] = Reference clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 10kOhm resistor;\
-4 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = High impedance;\
-5 - tstdo[0] = Charge pump Down signal; tstdo[1] = Charge pump Up signal; tstao = High impedance;\
-6 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 60kOhm resistor;\
-7 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 10kOhm resistor;\
-if TST_SX[2] = 1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40\
+"Controls the test mode of PLLs. TST signal lines are shared between all PLLs (CGEN, RX and TX). Only one TST signal of any PLL should be active at a given time.\n\
+0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off(default)\n\
+1 - tstdo[0] = VCO / 20 clock*; tstdo[1] = VCO / 40 clock*; tstao = High impedance;\n\
+2 - tstdo[0] = SDM clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 60kOhm resistor;\n\
+3 - tstdo[0] = Reference clock; tstdo[1] = feedback divider output; tstao = VCO tune through a 10kOhm resistor;\n\
+4 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = High impedance;\n\
+5 - tstdo[0] = Charge pump Down signal; tstdo[1] = Charge pump Up signal; tstao = High impedance;\n\
+6 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 60kOhm resistor;\n\
+7 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 10kOhm resistor;\n\
+if TST_SX[2] = 1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40\n\
 * When EN_DIV2_DIVPROG_(SXR, SXT) is active, the division ratio must be multiplied by 2 (40 / 80)"};
 const struct LMS7Parameter SEL_SDMCLK = { 0x011F, 2, 2, 0, "SEL_SDMCLK", "Selects between the feedback divider output and Fref for SDM" };
 const struct LMS7Parameter SX_DITHER_EN = { 0x011F, 1, 1, 0, "SX_DITHER_EN", "Enabled dithering in SDM" };

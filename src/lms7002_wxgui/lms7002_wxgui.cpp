@@ -3320,9 +3320,7 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	ID_STATICTEXT4->Wrap( -1 );
 	fgSizer246->Add( ID_STATICTEXT4, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
-	cmbTST_CGEN = new wxComboBox( this, ID_TST_CGEN, wxEmptyString, wxDefaultPosition, wxSize( 340,-1 ), 0, NULL, 0 ); 
-	cmbTST_CGEN->SetToolTip( wxT("Controls the test mode of the SX\n    0 – TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off\n    1 – tstdo[0]=ADC clock; tstdo[1]=DAC clock; tstao = High impedance;\n    2 – tstdo[0]=SDM clock; tstdo[1]= feedback divider output; tstao = VCO tune through a 60kOhm resistor;\n    3 – tstdo[0]=Reference clock; tstdo[1]= feedback divider output; tstao = VCO tune through a 10kOhm resistor;\n    4 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = High impedance;\n    5 – tstdo[0]=Charge pump Down signal; tstdo[1]=Charge pump Up signal; tstao = High impedance;\n    6 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = VCO tune through a 60kOhm resistor;\n    7 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = VCO tune through a 10kOhm resistor;\n\n    if TST_SX[2]=1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40") );
-	
+	cmbTST_CGEN = new wxComboBox( this, ID_TST_CGEN, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
 	fgSizer246->Add( cmbTST_CGEN, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	
@@ -3929,8 +3927,6 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	fgSizer203->Add( ID_STATICTEXT7, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	cmbTST_SX = new wxComboBox( this, ID_TST_SX, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
-	cmbTST_SX->SetToolTip( wxT("Controls the test mode of PLLs. TST signal lines are shared between all PLLs (CGEN, RX and TX). Only one TST signal of any PLL should be active at a given time.\n    0 – TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off (default)\n    1 – tstdo[0]=VCO/20 clock*; tstdo[1]=VCO/40 clock*; tstao = High impedance;\n    2 – tstdo[0]=SDM clock; tstdo[1]= feedback divider output; tstao = VCO tune through a 60kOhm resistor;\n    3 – tstdo[0]=Reference clock; tstdo[1]= feedback divider output; tstao = VCO tune through a 10kOhm resistor;\n    4 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = High impedance;\n    5 – tstdo[0]=Charge pump Down signal; tstdo[1]=Charge pump Up signal; tstao = High impedance;\n    6 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = VCO tune through a 60kOhm resistor;\n    7 – tstdo[0]= High impedance; tstdo[1]= High impedance; tstao = VCO tune through a 10kOhm resistor;\n\n    if TST_SX[2]=1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40\n    * When EN_DIV2_DIVPROG_(SXR, SXT) is active, the division ratio must be multiplied by 2 (40/80)") );
-	
 	fgSizer203->Add( cmbTST_SX, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	

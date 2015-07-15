@@ -22,6 +22,8 @@ lms7002_pnlXBUF_view::lms7002_pnlXBUF_view( wxWindow* parent, wxWindowID id, con
     wndId2Enum[chkPD_XBUF_TX] = PD_XBUF_TX;
     wndId2Enum[chkSLFB_XBUF_RX] = SLFB_XBUF_RX;
     wndId2Enum[chkSLFB_XBUF_TX] = SLFB_XBUF_TX;
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlXBUF_view::Initialize(LMS7002M* pControl)

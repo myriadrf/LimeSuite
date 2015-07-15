@@ -25,6 +25,8 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[chkEN_DCOFF_RXFE_RFE] = EN_DCOFF_RXFE_RFE;
     wndId2Enum[cmbDCOFFI_RFE] = DCOFFI_RFE;
     wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx( wxCommandEvent& event )

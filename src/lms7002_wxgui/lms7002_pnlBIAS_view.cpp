@@ -35,6 +35,7 @@ lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent, wxWindowID id, con
         temp.push_back(wxString::Format(_("%i"), i));
     }
     cmbRP_CALIB_BIAS->Set(temp);
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlBIAS_view::Initialize(LMS7002M* pControl)

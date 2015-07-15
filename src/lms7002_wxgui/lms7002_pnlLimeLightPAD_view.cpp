@@ -108,6 +108,8 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     wndId2Enum[rgrENABLEDIR2] = ENABLEDIR2;
     wndId2Enum[rgrENABLEDIRCTR1] = ENABLEDIRCTR1;
     wndId2Enum[rgrENABLEDIR1] = ENABLEDIR1;
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlLimeLightPAD_view::Initialize(LMS7002M* pControl)

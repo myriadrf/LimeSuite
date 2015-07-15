@@ -33,6 +33,8 @@ lms7002_pnlCDS_view::lms7002_pnlCDS_view( wxWindow* parent, wxWindowID id, const
     wndId2Enum[rgrCDS_TXATSP] = CDS_TXATSP;
     wndId2Enum[rgrCDS_TXBLML] = CDS_TXBLML;
     wndId2Enum[rgrCDS_TXBTSP] = CDS_TXBTSP;
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlCDS_view::Initialize(LMS7002M* pControl)

@@ -45,6 +45,8 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     temp.push_back(_("RSSI 1 output will be connected to ADC 2 input"));
     temp.push_back(_("RSSI 2 output will be connected to ADC 2 input"));
     cmbMUX_AFE_2->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlAFE_view::Initialize(LMS7002M* pControl)

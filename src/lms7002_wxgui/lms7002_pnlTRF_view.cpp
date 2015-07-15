@@ -77,6 +77,8 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
         temp.push_back(wxString::Format(_("%i"), i));
     cmbCDC_I_TRF->Append(temp);
     cmbCDC_Q_TRF->Append(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlTRF_view::Initialize(LMS7002M* pControl)

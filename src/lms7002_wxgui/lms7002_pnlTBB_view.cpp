@@ -67,6 +67,8 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     temp.push_back("to Lowband filter");
     temp.push_back("to current amplifier");
     cmbTSTIN_TBB->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlTBB_view::Initialize(LMS7002M* pControl)

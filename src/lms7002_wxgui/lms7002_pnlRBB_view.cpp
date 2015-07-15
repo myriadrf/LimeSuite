@@ -80,6 +80,8 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     temp.push_back("when 15MHz");
     temp.push_back("when 20MHz");
     cmbRCC_CTL_LPFL_RBB->Set(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlRBB_view::Initialize(LMS7002M* pControl)

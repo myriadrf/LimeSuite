@@ -190,6 +190,8 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     cmbRDIV_VCOGN->Append(temp);
     cmbRDIV_VCOSXR->Append(temp);
     cmbRDIV_VCOSXT->Append(temp);
+
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlLDO_view::Initialize(LMS7002M* pControl)

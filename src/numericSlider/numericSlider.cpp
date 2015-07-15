@@ -95,6 +95,13 @@ int NumericSlider::GetValue()
     return mSpinner->GetValue();
 }
 
+void NumericSlider::SetToolTip(const wxString &tipString)
+{
+    mSpinner->SetToolTip(NULL);
+    mSpinner->SetToolTip(tipString);
+    mScroll->SetToolTip(tipString);
+}
+
 BEGIN_EVENT_TABLE(NumericSlider, wxPanel)
 END_EVENT_TABLE()
 

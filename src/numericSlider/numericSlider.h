@@ -32,6 +32,8 @@ public:
 
    void SetValue(int integer);
    int GetValue();
+
+   virtual void SetToolTip(const wxString &tipString);
 protected:
     void OnSpinnerChange(wxSpinEvent &event);
     void OnScrollChange(wxScrollEvent &event);

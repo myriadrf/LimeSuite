@@ -21,4 +21,6 @@ typedef std::vector < indexValuePair > indexValueMap;
 int index2value(int index, const indexValueMap &pairs);
 int value2index(int value, const indexValueMap &pairs);
 
+void UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wndId2param, bool replace);
+
 }

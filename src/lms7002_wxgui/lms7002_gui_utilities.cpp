@@ -4,6 +4,7 @@
 @brief 	Implementation of common functions used by all panels
 */
 #include "lms7002_gui_utilities.h"
+#include <wx/defs.h> 
 #include <wx/panel.h>
 #include <wx/combobox.h>
 #include <wx/checkbox.h>
@@ -118,4 +119,39 @@ int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
         if (value == pairs[i].second)
             return pairs[i].first;
     return 0;
+}
+
+/** @brief Changes given wxWidget controls tooltips to parameter descriptions
+    @param wndId2Param wxWidgets controls and LMS parameters pairs
+    @param replace Replace all tooltips with new ones, or keep old ones and just add missing ones
+*/
+void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wndId2param, bool replace)
+{   
+    wxString sttip = _("");
+    std::map<wxWindow*, LMS7Parameter>::const_iterator iter;
+    for (iter = wndId2param.begin(); iter != wndId2param.end(); ++iter)
+    {        
+        wxToolTip *ttip = NULL;
+        ttip = iter->first->GetToolTip();
+        if (ttip)
+            sttip = ttip->GetTip();
+        else
+            sttip = _("");
+
+        if (replace || sttip.length() == 0)
+            sttip = wxString::From8BitData(iter->second.tooltip);
+
+        if (sttip.length() != 0)
+            sttip += _("\n");
+                
+        int bitCount = iter->second.msb - iter->second.lsb +1;
+        if (bitCount == 1)
+            sttip += wxString::Format(_("0x%.4X[%i]"), iter->second.address, iter->second.lsb);
+        else
+            sttip += wxString::Format(_("0x%.4X[%i:%i]"), iter->second.address, iter->second.msb, iter->second.lsb);
+        if(iter->first->IsKindOf(wxClassInfo::FindClass(_("NumericSlider")))) //set tooltip is not virtual method, need to cast
+            (reinterpret_cast<NumericSlider*>(iter->first))->SetToolTip(sttip + wxString::From8BitData(iter->second.name));
+        else
+            iter->first->SetToolTip(sttip + wxString::From8BitData(iter->second.name));
+    }
 }

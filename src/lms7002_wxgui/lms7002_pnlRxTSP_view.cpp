@@ -152,6 +152,8 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
 
     tsgfcw_rxtsp_IndexValuePairs.push_back(indexValuePair(0, 1));
     tsgfcw_rxtsp_IndexValuePairs.push_back(indexValuePair(1, 2));
+
+    UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
