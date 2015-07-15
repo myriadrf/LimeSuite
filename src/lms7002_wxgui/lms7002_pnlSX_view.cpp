@@ -49,8 +49,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     wndId2Enum[cmbVDIV_VCO] = VDIV_VCO;
     wndId2Enum[chkPD_FBDIV] = PD_FBDIV;
     wndId2Enum[chkEN_DIR_SXRSXT] = EN_DIR_SXRSXT;
-    wndId2Enum[lblINT_SDM] = INT_SDM;
-    wndId2Enum[lblFRAC_SDM] = FRAC_SDM;
+    wndId2Enum[lblINT_SDM] = INT_SDM;    
     wndId2Enum[lblEN_DIV2_DIVPROG] = EN_DIV2_DIVPROG;
 
     char ctemp[80];
@@ -512,6 +511,9 @@ void lms7002_pnlSX_view::UpdateGUI()
     double freq = lmsControl->GetFrequencySX_MHz(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, refClk);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
+
+    int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);
+    lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
     wxCommandEvent evt;
     OnbtnReadComparators(evt);

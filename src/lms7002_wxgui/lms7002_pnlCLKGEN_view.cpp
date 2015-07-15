@@ -27,7 +27,6 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     wndId2Enum[chkEN_G_CGEN] = EN_G_CGEN;
     wndId2Enum[chkEN_INTONLY_SDM_CGEN] = EN_INTONLY_SDM_CGEN;
     wndId2Enum[chkEN_SDM_CLK_CGEN] = EN_SDM_CLK_CGEN;
-    wndId2Enum[lblFRAC_SDM_CGEN] = FRAC_SDM_CGEN;
     wndId2Enum[cmbICT_VCO_CGEN] = ICT_VCO_CGEN;
     wndId2Enum[lblINT_SDM_CGEN] = INT_SDM_CGEN;
     wndId2Enum[cmbIOFFSET_CP_CGEN] = IOFFSET_CP_CGEN;
@@ -175,6 +174,9 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     UpdateCLKL();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN_MHz()));
+
+    int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_LSB, false);
+    lblFRAC_SDM_CGEN->SetLabel(wxString::Format("%i", fracValue));
 }
 
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
