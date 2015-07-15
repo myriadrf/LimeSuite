@@ -13,6 +13,9 @@
 
 #define PI 3.14159265359
 
+float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
+
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
 
@@ -345,7 +348,6 @@ float_type LMS7002M::GetReferenceClk_TSP_MHz(bool tx)
         return tx ? cgenFreq : clklfreq/4.0;
 }
 
-#define CLKGEN_VCO_HIGH 2700
 /** @brief Sets CLKGEN frequency, calculations use receiver'r reference clock
     @param freq_MHz desired frequency in MHz
     @return 0-succes, other-cannot deliver desired frequency
@@ -357,7 +359,7 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz)
     int16_t iHdiv;
 
     //VCO frequency selection according to F_CLKH
-	iHdiv = (int16_t)((CLKGEN_VCO_HIGH/2)/freq_MHz)-1;
+    iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_MHz) - 1;
 	dFvco = 2*(iHdiv+1) * freq_MHz;
 
     //Integer division
@@ -549,7 +551,6 @@ liblms7_status LMS7002M::SetFrequencySX(bool Tx, float_type freq_MHz, float_type
         return LIBLMS7_NOT_CONNECTED;
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500; //threshold to enable additional divider
-    const float_type m_pdVCO[3][sxVCO_N] = { { 3800, 5222 }, { 4961, 6754 }, { 6306, 7714 } }; //VCO frequency ranges
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC) ); //remember used channel
     float_type dFvco;
 	int8_t i; //iDInd
@@ -560,7 +561,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool Tx, float_type freq_MHz, float_type
 		for(i=6; i>=0; --i)
 		{
 			dFvco = (1<<(i+1)) * freq_MHz;
-            if ((dFvco >= m_pdVCO[iVCO][0]) && (dFvco <= m_pdVCO[iVCO][sxVCO_N - 1]))
+            if ((dFvco >= gVCO_frequency_table[iVCO][0]) && (dFvco <= gVCO_frequency_table[iVCO][sxVCO_N - 1]))
             {
                 canDeliverFrequency = true;
                 goto vco_found;

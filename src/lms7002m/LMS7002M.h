@@ -121,6 +121,9 @@ public:
     static const float_type gRxLPF_high_lower_limit;
     static const float_type gRxLPF_high_higher_limit;
 
+    static float_type gVCO_frequency_table[3][2];
+    static float_type gCGEN_VCO_frequencies[2];
+
 protected:
     static const uint16_t moduleAddresses[];
     static const uint16_t defaultValues[];

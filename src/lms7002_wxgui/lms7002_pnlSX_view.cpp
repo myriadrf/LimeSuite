@@ -9,6 +9,7 @@
 #include "numericSlider.h"
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
+#include "lms7002_dlgVCOfrequencies.h"
 
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
@@ -519,4 +520,11 @@ void lms7002_pnlSX_view::UpdateGUI()
 
     wxCommandEvent evt;
     OnbtnReadComparators(evt);
+}
+
+void lms7002_pnlSX_view::OnShowVCOclicked(wxCommandEvent& event)
+{
+    lms7002_dlgVCOfrequencies* dlg = new lms7002_dlgVCOfrequencies(this, lmsControl);
+    dlg->ShowModal();
+    dlg->Destroy();
 }
