@@ -24,6 +24,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
 #include "MCU_BD.h"
+#include "lms7002_pnlBuffers_view.h"
 using namespace std;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -98,6 +99,9 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     case ID_TAB_CALIBRATIONS:
         mTabCalibrations->UpdateGUI();
         break;
+    case ID_TAB_BUFFERS:
+        mTabBuffers->UpdateGUI();
+        break;
     }
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
@@ -128,6 +132,7 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabCalibrations->Initialize(lmsControl);
     mcuControl->Initialize(lmsControl->GetControlPort());
     mTabMCU->Initialize(mcuControl);
+    mTabBuffers->Initialize(lmsControl->GetControlPort());
     UpdateGUI();
 }
 
