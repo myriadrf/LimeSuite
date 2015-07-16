@@ -810,9 +810,6 @@ liblms7_status LMS7002M::SPI_write(uint16_t address, uint16_t data)
 {
     if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
-#ifndef NDEBUG
-    printf("SPI WR: 0x%04X : 0x%04X\n", address, data);
-#endif
     
     for (int i = 0; i < sizeof(moduleAddresses) / sizeof(uint16_t); ++i)
         if (moduleAddresses[i] == address)

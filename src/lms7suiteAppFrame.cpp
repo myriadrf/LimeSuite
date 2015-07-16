@@ -95,14 +95,14 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     lmsControl = new LMS7002M(lms7controlPort, streamBoardPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    log = new pnlMiniLog(this, wxNewId());
+    mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     //bind callbacks for spi data logging
     lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     streamBoardPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-    contentSizer->Add(log, 1, wxEXPAND, 5);
+    contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
 
     adfModule = new ADF4002();
 
@@ -298,8 +298,8 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
 {
-    if (log)
-        log->HandleMessage(event);
+    if (mMiniLog)
+        mMiniLog->HandleMessage(event);
 }
 
 void LMS7SuiteAppFrame::OnRFSparkClose(wxCloseEvent& event)
@@ -415,6 +415,8 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
 #include <iomanip>
 void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
 {
+    if (mMiniLog == nullptr | mMiniLog->chkLogData->IsChecked() == false)
+        return;
     stringstream ss;
     ss << (Tx ? "Wr(" : "Rd(");
     ss << length << "): ";

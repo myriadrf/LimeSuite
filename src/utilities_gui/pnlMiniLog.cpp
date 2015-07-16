@@ -1,4 +1,5 @@
 #include "pnlMiniLog.h"
+#include "dlgFullMessageLog.h"
 
 pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
 	: pnlMiniLog_view( parent, id, pos, size, style )
@@ -20,7 +21,7 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     wxString line = wxString::From8BitData(buffer);
     line.append(event.GetString());
     mAllMessages.push_back(line);
-    const int allMessageLimit = 2000;
+    const int allMessageLimit = 3000;
     if (mAllMessages.size() > allMessageLimit)
         mAllMessages.pop_front();
 
@@ -54,5 +55,7 @@ void pnlMiniLog::OnBtnClearClicked(wxCommandEvent& event)
 
 void pnlMiniLog::OnShowFullLog(wxCommandEvent& event)
 {
-
+    dlgFullMessageLog *dlg = new dlgFullMessageLog(this);
+    dlg->AddMessages(mAllMessages);
+    dlg->ShowModal();
 }

@@ -69,9 +69,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 		const std::string cWindowTitle = "LMS7Suite";
 		const int cDeviceInfoCollumn = 1;
 		const int cDeviceVerRevMaskCollumn = 2;
-
-        pnlMiniLog* log;
-        	
+	
         LMScomms* lms7controlPort;
         LMScomms* streamBoardPort;
         LMS7002M* lmsControl;
