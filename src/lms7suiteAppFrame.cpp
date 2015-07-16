@@ -34,6 +34,8 @@
 #include <functional>
 ///////////////////////////////////////////////////////////////////////////
 
+const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
+
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
@@ -175,7 +177,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);        
+        evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
 
@@ -425,7 +427,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     for (int i = length - 1; i >= 0; --i)
         if (data[i] == 0)
             ++repeatedZeros;
-        else 
+        else
             break;
     if (repeatedZeros == 2)
         repeatedZeros = 0;

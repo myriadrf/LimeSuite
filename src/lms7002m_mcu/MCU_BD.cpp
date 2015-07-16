@@ -15,11 +15,9 @@ using namespace std;
 
 MCU_BD::MCU_BD()
 {
-    ProgressInfo info;
-    info.stepsTotal = 0;
-    info.stepsDone = 0;
-    info.aborted = false;
-    mProgressInfo.store(info);
+    stepsTotal = 0;
+    stepsDone = 0;
+    aborted = false;
     //ctor
     int i=0;
     m_serPort=NULL;
@@ -56,11 +54,11 @@ void MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
     {
         MCU_File	inFile(inFileName, "rb");
         inFile.ReadHex(8191);
- 
+
         for (i=0; i<8192; i++)
         {
             find_byte=inFile.GetByte(i, ch);
-            if (find_byte==true)  
+            if (find_byte==true)
                 byte_array[i]=ch;
             else
                 byte_array[i]=0x00;
@@ -106,9 +104,9 @@ unsigned short MCU_BD:: mSPI_read(
         LMScomms::GenericPacket pkt;
         pkt.cmd = CMD_LMS7002_RD;
         pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
-        pkt.outBuffer.push_back(addr_reg & 0xFF);        
-        if (m_serPort->TransferPacket(pkt) == LMScomms::TRANSFER_SUCCESS)        
-            if (pkt.status == STATUS_COMPLETED_CMD)            
+        pkt.outBuffer.push_back(addr_reg & 0xFF);
+        if (m_serPort->TransferPacket(pkt) == LMScomms::TRANSFER_SUCCESS)
+            if (pkt.status == STATUS_COMPLETED_CMD)
                 return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
     }
     return 0x0000;
@@ -127,9 +125,9 @@ int MCU_BD::WaitUntilWritten(){
 		tempi=mSPI_read(0x0003); // REG3 read
 		countDown--;
 	}
-	if (countDown==0) 
+	if (countDown==0)
         return -1; // an error occured, timer elapsed
-	else 
+	else
         return 0; // Finished regularly
 	// pass if WRITE_REQ is '0'
 }
@@ -143,26 +141,26 @@ int MCU_BD::ReadOneByte(unsigned char * data)
 	 // this means that there is nothing to read
 	tempi=mSPI_read(0x0003); // REG3 read
 
-    while (((tempi&0x0008)==0x0000) && (countDown>0)) 
+    while (((tempi&0x0008)==0x0000) && (countDown>0))
     {
         // wait if READ_REQ is '0'
 		tempi=mSPI_read(0x0003); // REG3 read
 		countDown--;
 	}
 
-	if (countDown>0) 
+	if (countDown>0)
     { // Time out has not occured
 		 tempi=mSPI_read(0x0005); // REG5 read
 		  // return the read byte
 		 (* data) = (unsigned char) (tempi);
 	}
-	else  
+	else
         (* data) =0;
 	 // return the zero, default value
 
 	if (countDown==0)
         return -1; // an error occured
-	else 
+	else
         return 0; // finished regularly
 }
 
@@ -231,7 +229,7 @@ int MCU_BD::Change_MCUFrequency(unsigned char data) {
 	return retval;
 }
 
-int MCU_BD::Read_IRAM() 
+int MCU_BD::Read_IRAM()
 {
 	unsigned char tempc1, tempc2, tempc3=0x00;
 	int i=0;
@@ -241,27 +239,24 @@ int MCU_BD::Read_IRAM()
 	//IRAM array initialization
 	for (i=0; i<=255; i++)
 		m_IRAM[i]=0x00;
-	
-    ProgressInfo info;
-    info.stepsTotal = 256;
-    info.stepsDone = 0;
-    info.aborted = false;
-    mProgressInfo.store(info);
+
+    stepsTotal.store(256);
+    stepsDone.store(0);
+    aborted.store(false);
 	for (i=0; i<=255; i++)
-    {	
+    {
         // code 0x78 is for reading the IRAM locations
-		retval=Three_byte_command(0x78, ((unsigned char)(i)), 0x00,&tempc1, &tempc2, &tempc3);            
+		retval=Three_byte_command(0x78, ((unsigned char)(i)), 0x00,&tempc1, &tempc2, &tempc3);
 		if (retval==0)
             m_IRAM[i]=tempc3;
 		else
         {
             i=256; // error, stop
-            info.aborted = true;
+            aborted.store(true);
         }
-        ++info.stepsDone;
-        mProgressInfo.store(info);
+        ++stepsDone;
 #ifndef NDEBUG
-        printf("MCU reading IRAM: %2i/256\r", info.stepsDone);
+        printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
 #endif
         Wait_CLK_Cycles(64);
 	}
@@ -271,7 +266,7 @@ int MCU_BD::Read_IRAM()
 	return retval;
 }
 
-int MCU_BD::Erase_IRAM() 
+int MCU_BD::Erase_IRAM()
 {
 	unsigned char tempc1, tempc2, tempc3=0x00;
 	int retval=0;
@@ -279,13 +274,11 @@ int MCU_BD::Erase_IRAM()
 
 	//default ini.
 	for (i=0; i<=255; i++)
-			m_IRAM[i]=0x00;	
-	
-    ProgressInfo info;
-    info.stepsTotal = 256;
-    info.stepsDone = 0;
-    info.aborted = false;
-    mProgressInfo.store(info);
+			m_IRAM[i]=0x00;
+
+    stepsTotal.store(256);
+    stepsDone.store(0);
+    aborted.store(false);
 	for (i=0; i<=255; i++)
     {
 			m_IRAM[i]=0x00;
@@ -294,13 +287,12 @@ int MCU_BD::Erase_IRAM()
             if (retval == -1)
             {
                 i = 256;
-                info.aborted = true;
+                aborted.store(true);
             }
-            ++info.stepsDone;
+            ++stepsDone;
 #ifndef NDEBUG
-            printf("MCU erasing IRAM: %2i/256\r", info.stepsDone);
+            printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
 #endif
-            mProgressInfo.store(info);
 	}
 #ifndef NDEBUG
     printf("\nMCU erasing IRAM finished\n");
@@ -308,17 +300,15 @@ int MCU_BD::Erase_IRAM()
 	return retval;
 }
 
-int MCU_BD::Read_SFR() 
+int MCU_BD::Read_SFR()
 {
     int i=0;
 	unsigned char tempc1, tempc2, tempc3=0x00;
 	int retval=0;
 
-    ProgressInfo info;
-    info.stepsTotal = 48;
-    info.stepsDone = 0;
-    info.aborted = false;
-    mProgressInfo.store(info);
+    stepsTotal.store(48);
+    stepsDone.store(0);
+    aborted.store(false);
 
 	//default m_SFR array initialization
 	for (i=0; i<=255; i++)
@@ -349,8 +339,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x85]=tempc3;
 
-    info.stepsDone = 6;    
-    mProgressInfo.store(info);
+    stepsDone.store(6);
 
 	retval=Three_byte_command(0x7A, 0x86, 0x00, &tempc1, &tempc2, &tempc3); // DPS
 	if (retval==-1) return -1;
@@ -376,8 +365,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x8B]=tempc3;
 
-    info.stepsDone = 12;
-    mProgressInfo.store(info);
+    stepsDone.store(12);
 
 	retval=Three_byte_command(0x7A, 0x8C, 0x00, &tempc1, &tempc2, &tempc3); // TH0
 	if (retval==-1) return -1;
@@ -403,8 +391,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x98]=tempc3;
 
-    info.stepsDone = 18;
-    mProgressInfo.store(info);
+    stepsDone.store(18);
 
 	retval=Three_byte_command(0x7A, 0x99, 0x00, &tempc1, &tempc2, &tempc3); // SBUF
 	if (retval==-1) return -1;
@@ -426,8 +413,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xA8]=tempc3;
 
-    info.stepsDone = 24;
-    mProgressInfo.store(info);
+    stepsDone.store(24);
 
 	retval=Three_byte_command(0x7A, 0xA9, 0x00, &tempc1, &tempc2, &tempc3); // IEN1
 	if (retval==-1) return -1;
@@ -453,8 +439,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xBF]=tempc3;
 
-    info.stepsDone = 30;
-    mProgressInfo.store(info);
+    stepsDone.store(30);
 
 	retval=Three_byte_command(0x7A, 0xC0, 0x00, &tempc1, &tempc2, &tempc3); // IRCON
 	if (retval==-1) return -1;
@@ -480,8 +465,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xCD]=tempc3;
 
-    info.stepsDone = 36;
-    mProgressInfo.store(info);
+    stepsDone.store(36);
 
 	retval=Three_byte_command(0x7A, 0xD0, 0x00, &tempc1, &tempc2, &tempc3); // PSW
 	if (retval==-1) return -1;
@@ -507,8 +491,7 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xEE]=tempc3;
 
-    info.stepsDone = 42;
-    mProgressInfo.store(info);
+    stepsDone.store(42);
 
 	retval=Three_byte_command(0x7A, 0xEF, 0x00, &tempc1, &tempc2, &tempc3); // REG3
 	if (retval==-1) return -1;
@@ -538,13 +521,12 @@ int MCU_BD::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xFD]=tempc3;
 
-    info.stepsDone = 48;
-    mProgressInfo.store(info);
+    stepsDone.store(48);
 
 	return 0;
 }
 
-void MCU_BD::Wait_CLK_Cycles(int delay) 
+void MCU_BD::Wait_CLK_Cycles(int delay)
 {
 	//// some delay
 	int i=0;
@@ -587,18 +569,16 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_PROG_MCU;
 
-    ProgressInfo info;
-    info.stepsTotal = 8192;
-    info.stepsDone = 0;
-    info.aborted = false;
-    mProgressInfo.store(info);
-    
+    stepsTotal.store(8192);
+    stepsDone.store(0);
+    aborted.store(false);
+
 	while  (CntEnd<8192)
     {
 		//tempi=mSPI_read(0x0003);
 		//REG3 read
 		//if ((tempi&0x0001)==0x0001){ // Flag EmptyFIFO==1
-        
+
         pkt.outBuffer.clear();
         pkt.outBuffer.push_back(tempi);
         pkt.outBuffer.push_back(packetNumber++);
@@ -608,13 +588,12 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
             //mSPI_write(0x8004, (unsigned short) (byte_array[CntEnd+i]));
             // REG4 write
         }
-        
+
         m_serPort->TransferPacket(pkt);
         status = pkt.status;
-        info.stepsDone += 32;
-        mProgressInfo.store(info);
+        stepsDone.store(stepsDone.load() + 32);
 #ifndef NDEBUG
-        printf("MCU programming : %4i/%4i\r", info.stepsDone, info.stepsTotal);
+        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
 #endif
 
         if(status != STATUS_COMPLETED_CMD)
@@ -622,16 +601,14 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
             stringstream ss;
             ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
             success = false;
-            info.aborted = true;
-            mProgressInfo.store(info);
+            aborted.store(true);
             break;
         }
 
         if((m_iMode0 == 1) && (m_iMode1 == 1)) // if boot mode , send only first packet
-        {   
-            info.stepsDone = 1;
-            info.stepsTotal = 1;
-            mProgressInfo.store(info);
+        {
+            stepsDone.store(1);
+            stepsTotal.store(1);
             break;
         }
 
@@ -689,7 +666,7 @@ void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, i
 	// used for driving the P0 input
 	// P0 defines the test no.
 
-	if ((test_code>7)||(test_code==0)) 
+	if ((test_code>7)||(test_code==0))
         limit=1;
 	else
         limit=50;
@@ -711,7 +688,7 @@ void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, i
 	mSPI_write(0x8002, tempi); // REG2 write
 
 	// generating waveform
-	for (i=0; i<=limit; i++) 
+	for (i=0; i<=limit; i++)
     {
 		tempi=basei|0x000C;
 		mSPI_write(0x8000, tempi);
@@ -773,7 +750,7 @@ void MCU_BD::RunFabTest_MCU(int m_iMode1, int m_iMode0, int m_iDebug) {
 
 }
 
-void MCU_BD::DebugModeSet_MCU(int m_iMode1, int m_iMode0) 
+void MCU_BD::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
 {
         unsigned short tempi=0x00C0;
         // bit DEBUG is set
@@ -827,5 +804,9 @@ void MCU_BD::Log(const char* msg)
 */
 MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
 {
-    return mProgressInfo.load();
+    ProgressInfo info;
+    info.stepsDone = stepsDone.load();
+    info.stepsTotal = stepsTotal.load();
+    info.aborted = aborted.load();
+    return info;
 }

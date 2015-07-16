@@ -16,12 +16,12 @@ public:
     {
     public:
         SamplesPacket() : channel(0)
-        {}        
+        {}
         ~SamplesPacket()
         {}
 
         SamplesPacket& operator=(const SamplesPacket& obj)
-        {   
+        {
             memcpy(this->iqdata, obj.iqdata, sizeof(float)*samplesCount);
             this->channel = obj.channel;
             return *this;
@@ -64,12 +64,12 @@ public:
     void SetRxFrameStart(const bool startValue);
     virtual Status StartReceiving(unsigned int fftSize);
     virtual Status StopReceiving();
-	
+
 	virtual Status StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount);
     virtual Status StopCyclicTransmitting();
 
     DataToGUI GetIncomingData();
-    ProgressStats GetStats();    
+    ProgressStats GetStats();
 
     Status SPI_write(uint16_t address, uint16_t data);
     uint16_t SPI_read(uint16_t address);
@@ -96,10 +96,10 @@ protected:
     std::thread threadTx;
     LMScomms* mDataPort;
 
-    std::atomic<float> mRxDataRate;
-    std::atomic<float> mTxDataRate;
-    std::atomic<float> mRxFIFOfilled;
-    std::atomic<float> mTxFIFOfilled;
+    std::atomic<unsigned long> mRxDataRate;
+    std::atomic<unsigned long> mTxDataRate;
+    std::atomic<int> mRxFIFOfilled;
+    std::atomic<int> mTxFIFOfilled;
 
     std::vector<int16_t> mCyclicTransmittingSourceData;
     std::atomic_bool mTxCyclicRunning;
