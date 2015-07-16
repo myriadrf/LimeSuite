@@ -24,7 +24,9 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
 {
     m_serPort = nullptr;    
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
+#ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
+#endif
     wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 3, 5, 5);
     wxFlexGridSizer* tunersSizer = new wxFlexGridSizer(0, 3, 5, 5);
     wxStaticBoxSizer* tunerGroup;

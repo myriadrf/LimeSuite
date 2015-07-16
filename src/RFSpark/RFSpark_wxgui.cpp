@@ -72,8 +72,8 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
 {
     m_serPort = nullptr;
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, style, title);
+#ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
-#ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
 
