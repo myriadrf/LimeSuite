@@ -31,7 +31,7 @@
 #include "SPI_wxgui.h"
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
-
+#include <functional>
 ///////////////////////////////////////////////////////////////////////////
 
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
@@ -97,6 +97,11 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     log = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
+
+    //bind callbacks for spi data logging
+    lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    streamBoardPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
     contentSizer->Add(log, 1, wxEXPAND, 5);
 
     adfModule = new ADF4002();
@@ -293,7 +298,8 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
 {
-    log->HandleMessage(event);
+    if (log)
+        log->HandleMessage(event);
 }
 
 void LMS7SuiteAppFrame::OnRFSparkClose(wxCloseEvent& event)
@@ -404,4 +410,33 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
         spi->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSPIClose), NULL, this);
         spi->Show();
     }
+}
+
+#include <iomanip>
+void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
+{
+    stringstream ss;
+    ss << (Tx ? "Wr(" : "Rd(");
+    ss << length << "): ";
+    ss << std::hex << std::setfill('0');
+    int repeatedZeros = 0;
+    for (int i = length - 1; i >= 0; --i)
+        if (data[i] == 0)
+            ++repeatedZeros;
+        else 
+            break;
+    if (repeatedZeros == 2)
+        repeatedZeros = 0;
+    repeatedZeros = repeatedZeros - (repeatedZeros & 0x1);
+    for (int i = 0; i<length - repeatedZeros; ++i)
+        //casting to short to print as numbers
+        ss << " " << std::setw(2) << (unsigned short)data[i];
+    if (repeatedZeros > 2)
+        ss << " (00 x " << std::dec << repeatedZeros << " times)";
+    cout << ss.str() << endl;
+    wxCommandEvent *evt = new wxCommandEvent();
+    evt->SetString(ss.str());
+    evt->SetEventObject(this);
+    evt->SetEventType(LOG_MESSAGE);
+    wxQueueEvent(this, evt);
 }

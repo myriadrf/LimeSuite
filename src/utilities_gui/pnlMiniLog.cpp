@@ -20,12 +20,14 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     wxString line = wxString::From8BitData(buffer);
     line.append(event.GetString());
     mAllMessages.push_back(line);
-    if (mAllMessages.size() > 2000)
-        mAllMessages.erase(mMessageList.begin());
+    const int allMessageLimit = 2000;
+    if (mAllMessages.size() > allMessageLimit)
+        mAllMessages.pop_front();
 
     mMessageList.push_back(line);
-    if (mMessageList.size() > 10)
-        mMessageList.erase(mMessageList.begin());
+    const int miniLogMessageLimit = 10;
+    if (mMessageList.size() > miniLogMessageLimit)
+        mMessageList.pop_front();
 	++mNewMessages;
 }
 

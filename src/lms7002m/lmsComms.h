@@ -97,7 +97,9 @@ public:
 
     virtual TransferStatus TransferPacket(GenericPacket &pkt);
     LMSinfo GetInfo();
+    void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
 protected:
+    std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     std::mutex mControlPortLock;
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);

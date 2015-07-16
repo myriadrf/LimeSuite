@@ -8,6 +8,7 @@
 
 LMScomms::LMScomms()
 {
+    callback_logData = nullptr;
     unsigned short test = 0x1234;
     unsigned char* bytes = (unsigned char*)&test;
     if(bytes[0] == 0x12 && bytes[1] == 0x34)
@@ -17,7 +18,7 @@ LMScomms::LMScomms()
 }
 
 LMScomms::~LMScomms()
-{
+{   
 }
 
 /** @brief Transfers data between packet and connected device
@@ -25,7 +26,7 @@ LMScomms::~LMScomms()
     @return 0: success, other: failure
 */
 LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
-{
+{   
     std::lock_guard<std::mutex> lock(mControlPortLock);
 	TransferStatus status = TRANSFER_SUCCESS;
     if(IsOpen() == false)
@@ -58,16 +59,20 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
     for(int i=0; i<outLen; i+=packetLen)
     {
         int bytesToSend = packetLen;
+        if (callback_logData)
+            callback_logData(true, &outBuffer[outBufPos], bytesToSend);
         if( Write(&outBuffer[outBufPos], bytesToSend) )
         {
             outBufPos += packetLen;
             long readLen = packetLen;
-            int bread = Read(&inBuffer[inDataPos], readLen);
+            int bread = Read(&inBuffer[inDataPos], readLen);            
             if(bread != readLen)
             {
                 status = TRANSFER_FAILED;
                 break;
             }
+            if (callback_logData)
+                callback_logData(false, &inBuffer[inDataPos], bread);
             inDataPos += readLen;
         }
         else
@@ -214,4 +219,11 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
         }
     }
     return 1;
+}
+
+/** @brief Sets callback function which gets called each time data is sent or received
+*/
+void LMScomms::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)
+{
+    callback_logData = callback;
 }
