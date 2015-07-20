@@ -14,12 +14,7 @@ class LMScomms;
 class MCU_BD
 {
     public:
-#ifdef __unix__
-        //GCC 4.8 fails to use not aligned and bigger than 8 bytes struct for atomic
-        struct alignas(8) ProgressInfo
-#else
         struct ProgressInfo
-#endif
         {
             unsigned short stepsDone;
             unsigned short stepsTotal;
@@ -32,7 +27,9 @@ class MCU_BD
         int m_iLoopTries;
 
     protected:
-        std::atomic<ProgressInfo> mProgressInfo;
+        std::atomic_ushort stepsDone;
+        std::atomic_ushort stepsTotal;
+        std::atomic_bool aborted;
         void Log(const char* msg);
         int WaitUntilWritten();
         int ReadOneByte(unsigned char * data);

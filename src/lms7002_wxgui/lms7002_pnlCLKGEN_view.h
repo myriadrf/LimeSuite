@@ -22,6 +22,7 @@ class lms7002_pnlCLKGEN_view : public pnlCLKGEN_view
 		void onbtnTuneClick( wxCommandEvent& event );
         void OnbtnReadComparators(wxCommandEvent& event);
         void OnbtnUpdateCoarse(wxCommandEvent& event);
+        void OnShowVCOclicked(wxCommandEvent& event);
 	public:
         void onbtnCalculateClick(wxCommandEvent& event);
 		/** Constructor */

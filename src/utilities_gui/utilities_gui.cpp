@@ -108,12 +108,17 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	fgSizer5->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	btnClear = new wxButton( this, wxID_ANY, wxT("Clear"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer5->Add( btnClear, 0, 0, 5 );
+	btnClear->SetMinSize( wxSize( 48,-1 ) );
 	
-	btnFullLog = new wxButton( this, wxID_ANY, wxT("Log"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnFullLog->Hide();
+	fgSizer5->Add( btnClear, 0, wxEXPAND, 5 );
 	
-	fgSizer5->Add( btnFullLog, 0, 0, 5 );
+	btnFullLog = new wxButton( this, wxID_ANY, wxT("Show Log"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnFullLog->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer5->Add( btnFullLog, 0, wxEXPAND, 5 );
+	
+	chkLogData = new wxCheckBox( this, wxID_ANY, wxT("Log data"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer5->Add( chkLogData, 0, 0, 5 );
 	
 	
 	fgSizer4->Add( fgSizer5, 1, 0, 5 );
@@ -127,6 +132,7 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	this->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( pnlMiniLog_view::OnUpdateGUI ) );
 	btnClear->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
+	chkLogData->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
 }
 
 pnlMiniLog_view::~pnlMiniLog_view()
@@ -135,7 +141,36 @@ pnlMiniLog_view::~pnlMiniLog_view()
 	this->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( pnlMiniLog_view::OnUpdateGUI ) );
 	btnClear->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
+	chkLogData->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
 	
+}
+
+dlgFullMessageLog_view::dlgFullMessageLog_view( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxSize( 500,200 ), wxDefaultSize );
+	
+	wxFlexGridSizer* fgSizer19;
+	fgSizer19 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer19->AddGrowableCol( 0 );
+	fgSizer19->AddGrowableRow( 0 );
+	fgSizer19->SetFlexibleDirection( wxBOTH );
+	fgSizer19->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	txtMessageField = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH2 );
+	txtMessageField->SetMinSize( wxSize( 300,100 ) );
+	
+	fgSizer19->Add( txtMessageField, 1, wxEXPAND, 5 );
+	
+	
+	this->SetSizer( fgSizer19 );
+	this->Layout();
+	fgSizer19->Fit( this );
+	
+	this->Centre( wxBOTH );
+}
+
+dlgFullMessageLog_view::~dlgFullMessageLog_view()
+{
 }
 
 dlgDeviceInfo_view::dlgDeviceInfo_view( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )

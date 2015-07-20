@@ -4,6 +4,7 @@ set(connectionManager_gui_src_files
 
 set(messageLog_gui_src_files	
 	pnlMiniLog.cpp
+	dlgFullMessageLog.cpp
 )
 
 set(deviceinfo_gui_src_files	

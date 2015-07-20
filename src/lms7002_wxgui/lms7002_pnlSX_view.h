@@ -24,6 +24,7 @@ class lms7002_pnlSX_view : public pnlSX_view
 		void OnDIV2PrescalerChange( wxCommandEvent& event );
 		void OnbtnCalculateClick( wxCommandEvent& event );
 		void OnbtnTuneClick( wxCommandEvent& event );
+        void OnShowVCOclicked(wxCommandEvent& event);
 	public:
 		/** Constructor */
 		lms7002_pnlSX_view( wxWindow* parent );

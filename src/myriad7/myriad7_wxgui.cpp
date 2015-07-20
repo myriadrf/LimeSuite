@@ -27,7 +27,9 @@ Myriad7_wxgui::Myriad7_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
 	wxFlexGridSizer* FlexGridSizer1;
 
 	Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
+#ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
+#endif
 	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 0, 0);
 	FlexGridSizer2 = new wxFlexGridSizer(0, 2, 0, 0);
 	StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _T("Rx (A/B) Input:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));

@@ -178,6 +178,7 @@ pnlBuffers_view::pnlBuffers_view( wxWindow* parent, wxWindowID id, const wxPoint
 	sbSizer128->Add( chkDIO_DIR_CTRL1, 0, 0, 5 );
 	
 	chkDIO_DIR_CTRL2 = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("DIO_DIR_CTRL2"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkDIO_DIR_CTRL2->SetValue(true); 
 	sbSizer128->Add( chkDIO_DIR_CTRL2, 0, 0, 5 );
 	
 	chkDIO_BUFF_OE = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("DIO_BUFF_OE"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -3779,6 +3780,7 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	btnUpdateCoarse->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnbtnUpdateCoarse ), NULL, this );
 	cmbCSW_VCO_CGEN->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_VCO_CGEN->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
+	btnShowVCO->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnShowVCOclicked ), NULL, this );
 	cmbIOFFSET_CP_CGEN->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbIPULSE_CP_CGEN->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 }
@@ -3817,6 +3819,7 @@ pnlCLKGEN_view::~pnlCLKGEN_view()
 	btnUpdateCoarse->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnbtnUpdateCoarse ), NULL, this );
 	cmbCSW_VCO_CGEN->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_VCO_CGEN->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
+	btnShowVCO->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnShowVCOclicked ), NULL, this );
 	cmbIOFFSET_CP_CGEN->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbIPULSE_CP_CGEN->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	
@@ -9135,5 +9138,194 @@ dlgGFIR_Coefficients::~dlgGFIR_Coefficients()
 	spinCoefCount->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( dlgGFIR_Coefficients::OnspinCoefCountChange ), NULL, this );
 	btnOk->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgGFIR_Coefficients::OnBtnOkClick ), NULL, this );
 	btnCancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgGFIR_Coefficients::OnBtnCancelClick ), NULL, this );
+	
+}
+
+dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	
+	wxFlexGridSizer* fgSizer247;
+	fgSizer247 = new wxFlexGridSizer( 0, 1, 5, 5 );
+	fgSizer247->SetFlexibleDirection( wxBOTH );
+	fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxFlexGridSizer* fgSizer240;
+	fgSizer240 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer240->SetFlexibleDirection( wxBOTH );
+	fgSizer240->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxStaticBoxSizer* sbSizer129;
+	sbSizer129 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("VCOH SXR/SXT") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer241;
+	fgSizer241 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer241->SetFlexibleDirection( wxBOTH );
+	fgSizer241->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText341 = new wxStaticText( sbSizer129->GetStaticBox(), wxID_ANY, wxT("Low(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText341->Wrap( -1 );
+	fgSizer241->Add( m_staticText341, 0, wxALL, 5 );
+	
+	txtVCOH_low = new wxTextCtrl( sbSizer129->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOH_low->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer241->Add( txtVCOH_low, 0, 0, 5 );
+	
+	m_staticText342 = new wxStaticText( sbSizer129->GetStaticBox(), wxID_ANY, wxT("High(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText342->Wrap( -1 );
+	fgSizer241->Add( m_staticText342, 0, wxALL, 5 );
+	
+	txtVCOH_high = new wxTextCtrl( sbSizer129->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOH_high->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer241->Add( txtVCOH_high, 0, 0, 5 );
+	
+	
+	sbSizer129->Add( fgSizer241, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer240->Add( sbSizer129, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer1291;
+	sbSizer1291 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("VCOM SXR/SXT") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer2411;
+	fgSizer2411 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer2411->SetFlexibleDirection( wxBOTH );
+	fgSizer2411->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText3411 = new wxStaticText( sbSizer1291->GetStaticBox(), wxID_ANY, wxT("Low(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3411->Wrap( -1 );
+	fgSizer2411->Add( m_staticText3411, 0, wxALL, 5 );
+	
+	txtVCOM_low = new wxTextCtrl( sbSizer1291->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOM_low->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2411->Add( txtVCOM_low, 0, 0, 5 );
+	
+	m_staticText3421 = new wxStaticText( sbSizer1291->GetStaticBox(), wxID_ANY, wxT("High(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3421->Wrap( -1 );
+	fgSizer2411->Add( m_staticText3421, 0, wxALL, 5 );
+	
+	txtVCOM_high = new wxTextCtrl( sbSizer1291->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOM_high->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2411->Add( txtVCOM_high, 0, 0, 5 );
+	
+	
+	sbSizer1291->Add( fgSizer2411, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer240->Add( sbSizer1291, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer1292;
+	sbSizer1292 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("VCOL SXR/SXT") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer2412;
+	fgSizer2412 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer2412->SetFlexibleDirection( wxBOTH );
+	fgSizer2412->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText3412 = new wxStaticText( sbSizer1292->GetStaticBox(), wxID_ANY, wxT("Low(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3412->Wrap( -1 );
+	fgSizer2412->Add( m_staticText3412, 0, wxALL, 5 );
+	
+	txtVCOL_low = new wxTextCtrl( sbSizer1292->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOL_low->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2412->Add( txtVCOL_low, 0, 0, 5 );
+	
+	m_staticText3422 = new wxStaticText( sbSizer1292->GetStaticBox(), wxID_ANY, wxT("High(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3422->Wrap( -1 );
+	fgSizer2412->Add( m_staticText3422, 0, wxALL, 5 );
+	
+	txtVCOL_high = new wxTextCtrl( sbSizer1292->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOL_high->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2412->Add( txtVCOL_high, 0, 0, 5 );
+	
+	
+	sbSizer1292->Add( fgSizer2412, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer240->Add( sbSizer1292, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer1293;
+	sbSizer1293 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("VCO CGEN") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer2413;
+	fgSizer2413 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer2413->SetFlexibleDirection( wxBOTH );
+	fgSizer2413->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText3413 = new wxStaticText( sbSizer1293->GetStaticBox(), wxID_ANY, wxT("Low(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3413->Wrap( -1 );
+	fgSizer2413->Add( m_staticText3413, 0, wxALL, 5 );
+	
+	txtVCOCGEN_low = new wxTextCtrl( sbSizer1293->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOCGEN_low->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2413->Add( txtVCOCGEN_low, 0, 0, 5 );
+	
+	m_staticText3423 = new wxStaticText( sbSizer1293->GetStaticBox(), wxID_ANY, wxT("High(GHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3423->Wrap( -1 );
+	fgSizer2413->Add( m_staticText3423, 0, wxALL, 5 );
+	
+	txtVCOCGEN_high = new wxTextCtrl( sbSizer1293->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtVCOCGEN_high->SetMinSize( wxSize( 64,-1 ) );
+	
+	fgSizer2413->Add( txtVCOCGEN_high, 0, 0, 5 );
+	
+	
+	sbSizer1293->Add( fgSizer2413, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer240->Add( sbSizer1293, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer247->Add( fgSizer240, 1, wxEXPAND, 5 );
+	
+	wxFlexGridSizer* fgSizer249;
+	fgSizer249 = new wxFlexGridSizer( 0, 4, 5, 5 );
+	fgSizer249->SetFlexibleDirection( wxBOTH );
+	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	btnOk = new wxButton( this, wxID_ANY, wxT("Ok"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer249->Add( btnOk, 0, 0, 5 );
+	
+	btnCancel = new wxButton( this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer249->Add( btnCancel, 0, 0, 5 );
+	
+	btnLoadFile = new wxButton( this, wxID_ANY, wxT("Load file"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer249->Add( btnLoadFile, 0, 0, 5 );
+	
+	btnSaveFile = new wxButton( this, wxID_ANY, wxT("Save to file"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer249->Add( btnSaveFile, 0, 0, 5 );
+	
+	
+	fgSizer247->Add( fgSizer249, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	
+	this->SetSizer( fgSizer247 );
+	this->Layout();
+	fgSizer247->Fit( this );
+	
+	this->Centre( wxBOTH );
+	
+	// Connect Events
+	btnOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnBtnOkClick ), NULL, this );
+	btnCancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnBtnCancelClick ), NULL, this );
+	btnLoadFile->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnLoadFile ), NULL, this );
+	btnSaveFile->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnSaveFile ), NULL, this );
+}
+
+dlgVCOfrequencies::~dlgVCOfrequencies()
+{
+	// Disconnect Events
+	btnOk->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnBtnOkClick ), NULL, this );
+	btnCancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnBtnCancelClick ), NULL, this );
+	btnLoadFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnLoadFile ), NULL, this );
+	btnSaveFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnSaveFile ), NULL, this );
 	
 }

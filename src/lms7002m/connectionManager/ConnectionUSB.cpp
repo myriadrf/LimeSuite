@@ -414,11 +414,11 @@ int ConnectionUSB::RefreshDeviceList()
                     //check operating speed
                     int speed = libusb_get_device_speed(devs[i]);
                     if(speed == LIBUSB_SPEED_HIGH)
-                        fullName = "USB 2.0");
+                        fullName = "USB 2.0";
                     else if(speed == LIBUSB_SPEED_SUPER)
-                        fullName = "USB 3.0");
+                        fullName = "USB 3.0";
                     else
-                        fullName = "USB");
+                        fullName = "USB";
                     fullName += " (";
                     //read device name                    
                     char data[255];

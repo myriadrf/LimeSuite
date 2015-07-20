@@ -5,6 +5,7 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+#include "lms7002_dlgVCOfrequencies.h"
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent )
 :
@@ -223,4 +224,11 @@ void lms7002_pnlCLKGEN_view::UpdateCLKL()
     txtFrequency->GetValue().ToDouble(&cgenFreq);
     double clklfreq = cgenFreq / pow(2.0, dMul);
     txtFrequencyCLKL->SetLabel(wxString::Format("%.3f", clklfreq));
+}
+
+void lms7002_pnlCLKGEN_view::OnShowVCOclicked(wxCommandEvent& event)
+{
+    lms7002_dlgVCOfrequencies* dlg = new lms7002_dlgVCOfrequencies(this, lmsControl);
+    dlg->ShowModal();
+    dlg->Destroy();
 }

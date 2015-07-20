@@ -41,7 +41,7 @@ const long FPGAcontrols_wxgui::ID_BUTTON4 = wxNewId();
 const long FPGAcontrols_wxgui::ID_STREAMING_TIMER = wxNewId();
 
 BEGIN_EVENT_TABLE(FPGAcontrols_wxgui, wxFrame)
-    EVT_TIMER(ID_STREAMING_TIMER, OnUpdateStats)
+    EVT_TIMER(ID_STREAMING_TIMER, FPGAcontrols_wxgui::OnUpdateStats)
 END_EVENT_TABLE()
 
 const wxString gWFMdirectory = "lms7suite_wfm";
@@ -62,7 +62,9 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	wxFlexGridSizer* FlexGridSizer1;
 
 	Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
+#ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
+#endif
 	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 0, 0);
 	FlexGridSizer1->AddGrowableCol(0);
 	StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));

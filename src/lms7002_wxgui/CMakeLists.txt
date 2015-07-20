@@ -24,6 +24,7 @@ set(lms7002_gui_src_files
 	lms7002_dlgGFIR_Coefficients.cpp
 	CoefficientFileParser.cpp
 	lms7002_pnlBuffers_view.cpp
+	lms7002_dlgVCOfrequencies.cpp
 )
 add_library(lms7002_wxgui STATIC ${lms7002_gui_src_files})
 target_include_directories(lms7002_wxgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

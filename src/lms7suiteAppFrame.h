@@ -34,7 +34,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 		void OnClose( wxCloseEvent& event );
 		void OnQuit( wxCommandEvent& event );
 		void OnShowConnectionSettings( wxCommandEvent& event );
-		void OnAbout( wxCommandEvent& event );        
+		void OnAbout( wxCommandEvent& event );
         void OnControlBoardConnect(wxCommandEvent& event);
         void OnDataBoardConnect(wxCommandEvent& event);
         void HandleLMSevent(wxCommandEvent& event);
@@ -60,17 +60,16 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowSPI(wxCommandEvent& event);
     public:
 		/** Constructor */
-		LMS7SuiteAppFrame( wxWindow* parent );		
+		LMS7SuiteAppFrame( wxWindow* parent );
 	//// end generated class members
 		virtual ~LMS7SuiteAppFrame();
 	protected:
+        void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
         void OnLogMessage(wxCommandEvent &event);
-		const std::string cWindowTitle = "LMS7Suite";
-		const int cDeviceInfoCollumn = 1;
-		const int cDeviceVerRevMaskCollumn = 2;
+		static const wxString cWindowTitle;
+		static const int cDeviceInfoCollumn = 1;
+		static const int cDeviceVerRevMaskCollumn = 2;
 
-        pnlMiniLog* log;
-        	
         LMScomms* lms7controlPort;
         LMScomms* streamBoardPort;
         LMS7002M* lmsControl;
@@ -82,7 +81,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 
         Si5351C* si5351module;
         Si5351C_wxgui* si5351gui;
-	
+
         LMS_Programing_wxgui* programmer;
         RFSpark_wxgui* rfspark;
         HPM7_wxgui* hpm7;

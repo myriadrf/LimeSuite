@@ -21,9 +21,9 @@
 #include <wx/button.h>
 #include <wx/dialog.h>
 #include <wx/textctrl.h>
+#include <wx/checkbox.h>
 #include <wx/panel.h>
 #include <wx/statbox.h>
-#include <wx/checkbox.h>
 #include <wx/frame.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -74,12 +74,31 @@ class pnlMiniLog_view : public wxPanel
 		virtual void OnUpdateGUI( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void OnBtnClearClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFullLog( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnLogDataClicked( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
+		wxCheckBox* chkLogData;
 		
 		pnlMiniLog_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlMiniLog_view();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class dlgFullMessageLog_view
+///////////////////////////////////////////////////////////////////////////////
+class dlgFullMessageLog_view : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxTextCtrl* txtMessageField;
+	
+	public:
+		
+		dlgFullMessageLog_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Message log"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxRESIZE_BORDER ); 
+		~dlgFullMessageLog_view();
 	
 };
 

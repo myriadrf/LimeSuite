@@ -51,7 +51,7 @@ public:
 
     DataToGUI GetIncomingData();
     ProgressStats GetStats();
-    unsigned long mTransmitDelay;    
+    unsigned long mTransmitDelay;
 
     STATUS SPI_write(uint16_t address, uint16_t data);
     uint16_t SPI_read(uint16_t address);
@@ -70,14 +70,14 @@ protected:
     std::atomic_bool stopRx;
     std::atomic_bool stopProcessing;
     std::atomic_bool stopTx;
-        
+
     std::thread threadRx;
     std::thread threadProcessing;
-    std::thread threadTx;    
+    std::thread threadTx;
     LMScomms* mDataPort;
 
-    std::atomic<float> mRxDataRate;
-    std::atomic<float> mTxDataRate;
-    std::atomic<float> mRxFIFOfilled;
-    std::atomic<float> mTxFIFOfilled;
+    std::atomic<int> mRxDataRate;
+    std::atomic<int> mTxDataRate;
+    std::atomic<int> mRxFIFOfilled;
+    std::atomic<int> mTxFIFOfilled;
 };

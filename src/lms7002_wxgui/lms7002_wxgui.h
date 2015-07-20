@@ -1100,6 +1100,7 @@ class pnlCLKGEN_view : public wxPanel
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnUpdateCoarse( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnShowVCOclicked( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -2198,6 +2199,49 @@ class dlgGFIR_Coefficients : public wxDialog
 		
 		dlgGFIR_Coefficients( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Coefficients"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
 		~dlgGFIR_Coefficients();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class dlgVCOfrequencies
+///////////////////////////////////////////////////////////////////////////////
+class dlgVCOfrequencies : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxStaticText* m_staticText341;
+		wxTextCtrl* txtVCOH_low;
+		wxStaticText* m_staticText342;
+		wxTextCtrl* txtVCOH_high;
+		wxStaticText* m_staticText3411;
+		wxTextCtrl* txtVCOM_low;
+		wxStaticText* m_staticText3421;
+		wxTextCtrl* txtVCOM_high;
+		wxStaticText* m_staticText3412;
+		wxTextCtrl* txtVCOL_low;
+		wxStaticText* m_staticText3422;
+		wxTextCtrl* txtVCOL_high;
+		wxStaticText* m_staticText3413;
+		wxTextCtrl* txtVCOCGEN_low;
+		wxStaticText* m_staticText3423;
+		wxTextCtrl* txtVCOCGEN_high;
+		wxButton* btnOk;
+		wxButton* btnCancel;
+		wxButton* btnLoadFile;
+		wxButton* btnSaveFile;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnBtnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBtnCancelClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnLoadFile( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSaveFile( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		dlgVCOfrequencies( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("VCO frequencies"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
+		~dlgVCOfrequencies();
 	
 };
 
