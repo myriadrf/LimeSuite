@@ -88,7 +88,7 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     wxString adcNames[] = { "VDD12_TIA_RFE", "VDD_TBB", "VDD14_RBB", "DVDD_SXT", "VDD_DIC_SXT", "VDD12_TXBUF", "VDD12_VCO_SXT", "VDD14_LNA_RFE",
         "DVDD_SXR", "VDD_DIV_SXR", "VDD_CP_SXR", "VDD18_SXR", "VD_MXLOBUF_RFE", "VDD14_TIA_RFE", "VDD12_LNA_RFE", "VDD_TLOBUF_TRF",
         "VDD12_RXBIF", "VDD_AFE", "DIGPRVDD1", "VDD_SPI_BUF", "VDD18_TPAD_TRF", "DVDD_CGEN", "VDD_DIV_CGEN", "VDD_CP_CGEN", "VDD12_DIG", "VDD14_VCO_CGEN",
-        "TSTAO", "TSTDO 0", "TSTDO 1", "3V3", "VDIO", "VDIO_BB" };
+        "TSTAO", "TSTDO 0", "TSTDO 1", "3V3", "VDIO", "VDIO_FMC" };
     for (int i = 0; i < mADCcount; ++i)
     {
         adcElement.title = new wxStaticText(this, wxNewId(), wxString::Format("%s", adcNames[i]));
@@ -134,7 +134,7 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
         mGPIOboxes.push_back(chkgpio);
     }
 
-    wxString gpios15_8[] = { "GPIO 15", "DIG_RST", "G_PWR_DWN", "IQSELEN2RX_DIR", "IQSELEN1TX_DIR", "DIO_BUF_OE", "DIQ2TX_DIR", "DIQ2RX_DIR" };
+    wxString gpios15_8[] = { "GPIO 15", "DIG_RST", "CORE_LDO_EN", "IQSELEN2RX_DIR", "IQSELEN1TX_DIR", "DIO_BUF_OE", "DIQ2RX_DIR", "DIQ1TX_DIR" };
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
