@@ -422,7 +422,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
 	else
-        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
+        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
 	Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0); //Set SWC_VCO<7:0>=<00000000>
 
 	i=7;
@@ -643,7 +643,7 @@ liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
+        Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); //DC_BYP
     }
     return LIBLMS7_SUCCESS;
 }
@@ -2069,7 +2069,7 @@ const uint16_t backupAddrs[] = {
     0x0403, 0x0404, 0x0405, 0x0406, 0x0407, 0x0408, 0x0409, 0x040A, 0x040B, 0x040C,
     0x0440, 0x0442, 0x0443 };
 uint16_t backupRegs[sizeof(backupAddrs) / 2];
-uint16_t backupSXAddr[] = { 0x011C, 0x011D, 0x011E, 0x011F, 0x01200, 0x0121, 0x0122, 0x0123, 0x0124 };
+const uint16_t backupSXAddr[] = { 0x011C, 0x011D, 0x011E, 0x011F, 0x01200, 0x0121, 0x0122, 0x0123, 0x0124 };
 uint16_t backupRegsSXR[sizeof(backupSXAddr) / 2];
 uint16_t backupRegsSXT[sizeof(backupSXAddr) / 2];
 
@@ -2080,9 +2080,9 @@ void LMS7002M::BackupAllRegisters()
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     SPI_read_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
-    SPI_read_batch(backupRegsSXR, backupSXAddr, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_read_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
-    SPI_read_batch(backupRegsSXT, backupSXAddr, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_read_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 }
 
@@ -2093,9 +2093,9 @@ void LMS7002M::RestoreAllRegisters()
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     SPI_write_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
-    SPI_write_batch(backupRegsSXR, backupSXAddr, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
-    SPI_write_batch(backupRegsSXT, backupSXAddr, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 }
 
