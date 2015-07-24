@@ -245,7 +245,7 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
     }
 
     LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_WR;
+    pkt.cmd = CMD_ANALOG_VAL_RD;
 
 	int index = cmbADCselect->GetSelection();
 	pkt.outBuffer.push_back(index);

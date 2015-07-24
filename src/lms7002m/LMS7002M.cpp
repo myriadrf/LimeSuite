@@ -543,7 +543,7 @@ liblms7_status LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_
 	@param refClk_MHz reference clock in MHz
     @return 0-success, other-cannot deliver requested frequency
 */
-liblms7_status LMS7002M::SetFrequencySX(bool Tx, float_type freq_MHz, float_type refClk_MHz)
+liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type refClk_MHz)
 {
 	if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
@@ -578,7 +578,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool Tx, float_type freq_MHz, float_type
     uint16_t gINT = (uint16_t)(dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))) - 4);
     uint32_t gFRAC = (uint32_t)( (dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))) - (uint32_t)(dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))))) * 1048576);
 
-    Modify_SPI_Reg_bits(LMS7param(MAC), Tx + 1);
+    Modify_SPI_Reg_bits(LMS7param(MAC), tx + 1);
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), iVCO); //SEL_VCO
     Modify_SPI_Reg_bits(LMS7param(INT_SDM), gINT); //INT_SDM
     Modify_SPI_Reg_bits(0x011D, 15, 0, gFRAC & 0xFFFF); //FRAC_SDM[15:0]
@@ -586,11 +586,11 @@ liblms7_status LMS7002M::SetFrequencySX(bool Tx, float_type freq_MHz, float_type
     Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), i); //DIV_LOCH
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (dFvco > m_dThrF)); //EN_DIV2_DIVPROG
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
-    if (Tx)
+    if (tx)
         mRefClkSXT_MHz = refClk_MHz;
     else
         mRefClkSXR_MHz = refClk_MHz;
-    return TuneVCO( Tx ? VCO_SXT : VCO_SXR); //Rx-1, Tx-2
+    return TuneVCO( tx ? VCO_SXT : VCO_SXR); //Rx-1, Tx-2
 }
 
 /**	@brief Returns currently set SXR/SXT frequency
