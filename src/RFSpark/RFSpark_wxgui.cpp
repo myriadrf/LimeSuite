@@ -185,6 +185,9 @@ void RFSpark_wxgui::Initialize(LMScomms* pSerPort)
 {
     m_serPort = pSerPort;
     assert(m_serPort != nullptr);
+    wxCommandEvent evt;
+    OnbtnReadGPIO(evt);
+    OnbtnRefreshAllADC(evt);
 }
 
 RFSpark_wxgui::~RFSpark_wxgui()

@@ -65,7 +65,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuModules->Append( mnuPrograming );
 	
 	wxMenuItem* mnuRFSpark;
-	mnuRFSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("RF-Spark") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuRFSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("RF-ESpark") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuRFSpark );
 	
 	wxMenuItem* mnuHPM7;

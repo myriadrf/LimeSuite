@@ -315,7 +315,7 @@ void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
         rfspark->Show();
     else
     {
-        rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-Spark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
         rfspark->Initialize(lms7controlPort);
         rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
         rfspark->Show();
