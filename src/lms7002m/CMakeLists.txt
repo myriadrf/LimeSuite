@@ -28,16 +28,21 @@ set(LMS7002M_src_files
 )
 
 set(ENABLE_USB_CONNECTION "YES" CACHE BOOL INTERNAL)
+set(ENABLE_SPI_CONNECTION "NO" CACHE BOOL INTERNAL)
 set(CONNECTION_MANAGER_DIR connectionManager)
 set(connectionManager_src_files
 	${CONNECTION_MANAGER_DIR}/ConnectionManager.cpp
-	${CONNECTION_MANAGER_DIR}/ConnectionCOM.cpp	
+	${CONNECTION_MANAGER_DIR}/ConnectionCOM.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionManager.h
-	${CONNECTION_MANAGER_DIR}/ConnectionCOM.h	
+	${CONNECTION_MANAGER_DIR}/ConnectionCOM.h
 )
 if(ENABLE_USB_CONNECTION)
 	list(APPEND connectionManager_src_files ${CONNECTION_MANAGER_DIR}/ConnectionUSB.cpp ${CONNECTION_MANAGER_DIR}/ConnectionUSB.h)
     add_definitions(-DENABLE_USB_CONNECTION)
+endif()
+if(ENABLE_SPI_CONNECTION)
+	list(APPEND connectionManager_src_files ${CONNECTION_MANAGER_DIR}/ConnectionSPI.cpp ${CONNECTION_MANAGER_DIR}/ConnectionSPI.h)
+    add_definitions(-DENABLE_SPI_CONNECTION)
 endif()
 
 add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files})

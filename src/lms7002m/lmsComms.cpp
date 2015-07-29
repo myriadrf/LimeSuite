@@ -18,7 +18,7 @@ LMScomms::LMScomms()
 }
 
 LMScomms::~LMScomms()
-{   
+{
 }
 
 /** @brief Transfers data between packet and connected device
@@ -26,21 +26,30 @@ LMScomms::~LMScomms()
     @return 0: success, other: failure
 */
 LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
-{   
+{
     std::lock_guard<std::mutex> lock(mControlPortLock);
 	TransferStatus status = TRANSFER_SUCCESS;
     if(IsOpen() == false)
         return NOT_CONNECTED;
 
     int packetLen;
-    eLMS_PROTOCOL protocol = LMS_PROTOCOL_LMS64C;
+    eLMS_PROTOCOL protocol = LMS_PROTOCOL_UNDEFINED;
+    if(activeControlPort->GetType() == IConnection::SPI_PORT)
+        protocol = LMS_PROTOCOL_NOVENA;
+    else
+        protocol = LMS_PROTOCOL_LMS64C;
     switch(protocol)
     {
     case LMS_PROTOCOL_UNDEFINED:
         return TRANSFER_FAILED;
     case LMS_PROTOCOL_LMS64C:
         packetLen = ProtocolLMS64C::pktLength;
+    case LMS_PROTOCOL_NOVENA:
+        packetLen = pkt.outBuffer.size();
         break;
+    default:
+        packetLen = 0;
+        return TRANSFER_FAILED;
     }
     int outLen = 0;
     unsigned char* outBuffer = NULL;
@@ -65,7 +74,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
         {
             outBufPos += packetLen;
             long readLen = packetLen;
-            int bread = Read(&inBuffer[inDataPos], readLen);            
+            int bread = Read(&inBuffer[inDataPos], readLen);
             if(bread != readLen)
             {
                 status = TRANSFER_FAILED;
@@ -80,7 +89,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
             status = TRANSFER_FAILED;
             break;
         }
-    }    
+    }
     ParsePacket(pkt, inBuffer, inDataPos, protocol);
     delete outBuffer;
     delete inBuffer;
@@ -101,7 +110,7 @@ LMSinfo LMScomms::GetInfo()
     pkt.cmd = CMD_GET_INFO;
     LMScomms::TransferStatus status = TransferPacket(pkt);
     if (status == LMScomms::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
-    {   
+    {
         info.firmware = pkt.inBuffer[0];
         info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
         info.protocol = pkt.inBuffer[2];
@@ -135,7 +144,7 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
         case CMD_PROG_MCU:
         case CMD_GET_INFO:
         case CMD_SI5351_RD:
-        case CMD_SI5356_RD:        
+        case CMD_SI5356_RD:
             byteBlockRatio = 1;
             break;
         case CMD_SI5351_WR:
@@ -144,7 +153,7 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
             break;
         case CMD_LMS7002_RD:
         case CMD_BRDSPI_RD:
-        case CMD_BRDSPI8_RD:        
+        case CMD_BRDSPI8_RD:
             byteBlockRatio = 2;
             break;
         case CMD_ADF4002_WR:
@@ -190,6 +199,23 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
         }
         length = bufLen;
     }
+    else if(protocol == LMS_PROTOCOL_NOVENA)
+    {
+        ProtocolNovena packet;
+        int maxDataLength = packet.maxDataLength;
+        packet.cmd = pkt.cmd;
+        packet.status = pkt.status;
+        if (packet.cmd == CMD_LMS7002_RD)
+            maxDataLength = maxDataLength/2;
+        buffer = new unsigned char[pkt.outBuffer.size()];
+        memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
+        if (packet.cmd == CMD_LMS7002_WR)
+        {
+            for(int i=0; i<pkt.outBuffer.size(); i+=2)
+                buffer[i] |= 0x80;
+        }
+        length = pkt.outBuffer.size();
+    }
     return buffer;
 }
 
@@ -216,6 +242,23 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
             pkt.status = (eCMD_STATUS)buffer[i+1];
             memcpy(&pkt.inBuffer[inBufPos], &buffer[i+8], packet.maxDataLength);
             inBufPos += packet.maxDataLength;
+        }
+    }
+    else if(protocol == LMS_PROTOCOL_NOVENA)
+    {
+        ProtocolLMS64C packet;
+        int inBufPos = 0;
+        pkt.cmd = CMD_LMS7002_RD;
+        pkt.status = length > 0 ? STATUS_COMPLETED_CMD : STATUS_ERROR_CMD;
+        pkt.inBuffer.reserve(length*2);
+        for(int i=0; i<length; i+=2)
+        {
+            //reading from spi returns only registers values
+            //fill addresses as zeros to match generic format of address, value pairs
+            pkt.inBuffer.push_back(0); //should be address msb
+            pkt.inBuffer.push_back(0); //should be address lsb
+            pkt.inBuffer.push_back(buffer[i]);
+            pkt.inBuffer.push_back(buffer[i+1]);
         }
     }
     return 1;
