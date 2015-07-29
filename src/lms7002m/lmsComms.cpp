@@ -44,6 +44,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
         return TRANSFER_FAILED;
     case LMS_PROTOCOL_LMS64C:
         packetLen = ProtocolLMS64C::pktLength;
+        break;
     case LMS_PROTOCOL_NOVENA:
         packetLen = pkt.outBuffer.size();
         break;
