@@ -83,7 +83,7 @@ public:
     ///@name TSP
 	liblms7_status LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
 	liblms7_status SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz);
-	float_type GetNCOFrequency_MHz(bool tx, uint8_t index);
+	float_type GetNCOFrequency_MHz(bool tx, uint8_t index, float_type refClk_MHz, bool fromChip = true);
     liblms7_status SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
 	liblms7_status SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
 	float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);

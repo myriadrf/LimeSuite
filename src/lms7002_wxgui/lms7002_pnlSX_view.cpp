@@ -518,6 +518,17 @@ void lms7002_pnlSX_view::UpdateGUI()
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
+    //check if B channel is enabled
+    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC, false);
+    if (channel > 1)
+    {
+        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
+        {
+            wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
+            return;
+        }
+    }
+
     wxCommandEvent evt;
     OnbtnReadComparators(evt);
 }
