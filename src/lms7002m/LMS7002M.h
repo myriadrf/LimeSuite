@@ -24,7 +24,7 @@ public:
     };
 
 	LMS7002M();
-    LMS7002M(LMScomms* controlPort, LMScomms* dataPort);
+    LMS7002M(LMScomms* controlPort);
 	virtual ~LMS7002M();
 
     ///@name Registers writing and reading

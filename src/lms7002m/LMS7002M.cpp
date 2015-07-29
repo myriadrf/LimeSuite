@@ -56,9 +56,8 @@ LMS7002M::LMS7002M() : controlPort(NULL)
 
 /** @brief Creates LMS7002M main control object, it requires LMScomms to communicate with chip
     @param controlPort data connection for controlling LMS7002 chip registers
-    @param dataPort data connection for reading RF sampling data (optional)
 */
-LMS7002M::LMS7002M(LMScomms* controlPort, LMScomms* dataPort) : controlPort(controlPort)
+LMS7002M::LMS7002M(LMScomms* controlPort) : controlPort(controlPort)
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;

@@ -94,7 +94,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
-    lmsControl = new LMS7002M(lms7controlPort, streamBoardPort);
+    lmsControl = new LMS7002M(lms7controlPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
