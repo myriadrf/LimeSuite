@@ -97,7 +97,6 @@ ConnectionSPI::ConnectionSPI()
         m_SEN.flush();
         cout << "GPIO122: set to 1" << endl;
     }
-    memset(rxbuf, 0, cSPI_BUF_SIZE);
 }
 
 ConnectionSPI::~ConnectionSPI()
@@ -202,22 +201,25 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
     m_SEN << 0;
     m_SEN.flush();
     unsigned long bytesWritten = 0;
-    memset(rxbuf, 0, 1024);
+    rxbuf.clear();
     int bytesReceived = 0;
+    char rxbytes[2];
     while(bytesWritten < length)
     {
-        int toWrite = length > cSPI_BUF_SIZE ? cSPI_BUF_SIZE : length;
-        for(int i=0; i<toWrite; i+=4)
+        int toWrite = length-bytesWritten > cSPI_BUF_SIZE ? cSPI_BUF_SIZE : length-bytesWritten;
+        for(int i=0; i<toWrite; i+=2)
         {
-            if(buffer[i] < 0x80)
+            if(buffer[i] < 0x80) //reading
             {
                 write(fd, &buffer[i], 2);
-                read(fd, &rxbuf[i], 2);
-                ++bytesReceived;
+                bytesReceived += read(fd, rxbytes, 2);
+                rxbuf.push_back(rxbytes[0]);
+                rxbuf.push_back(rxbytes[1]);
             }
-            else
+            else //writing
             {
                 write(fd, &buffer[i], 4);
+                i+=2; //data bytes have been written
             }
         }
 
@@ -245,7 +247,6 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
 //        MessageLog::getInstance()->write(ss.str(), LOG_DATA);
 
         bytesWritten += toWrite;
-        length -= toWrite;
     }
     m_SEN << 1;
     m_SEN.flush();
@@ -267,9 +268,9 @@ int ConnectionSPI::Read(unsigned char *buffer, int length, int timeout_ms)
     if(fd < 0)
         return 0;
     //because transfer is done in full duplex, function returns data from last transfer
-    int tocpy = length > cSPI_BUF_SIZE ? cSPI_BUF_SIZE : length;
-    memcpy(buffer, rxbuf, tocpy);
-    memset(rxbuf, 0, sizeof(rxbuf));
+    int tocpy = length > rxbuf.size() ? rxbuf.size() : length;
+    memcpy(buffer, &rxbuf[0], tocpy);
+    rxbuf.clear();
     return tocpy;
 #else
     return 0;
@@ -281,6 +282,7 @@ int ConnectionSPI::Read(unsigned char *buffer, int length, int timeout_ms)
 */
 int ConnectionSPI::RefreshDeviceList()
 {
+    m_deviceNames.clear();
 #ifdef __unix__
     int spidev = open("/dev/spidev2.0", O_RDWR);
 	if (spidev >= 0)

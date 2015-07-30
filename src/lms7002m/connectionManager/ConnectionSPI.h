@@ -34,7 +34,7 @@ public:
 	int RefreshDeviceList();
 protected:
     std::vector<std::string> m_deviceNames;
-	char rxbuf[1024];
+	std::vector<unsigned char> rxbuf;
     int fd;
     std::fstream m_SEN;
 };

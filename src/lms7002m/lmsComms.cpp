@@ -46,7 +46,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
         packetLen = ProtocolLMS64C::pktLength;
         break;
     case LMS_PROTOCOL_NOVENA:
-        packetLen = pkt.outBuffer.size();
+        packetLen = pkt.outBuffer.size() > ProtocolNovena::pktLength ? ProtocolNovena::pktLength : pkt.outBuffer.size();
         break;
     default:
         packetLen = 0;
@@ -66,32 +66,58 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
         outLen = 1;
     }
 
-    for(int i=0; i<outLen; i+=packetLen)
+    if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        int bytesToSend = packetLen;
         if (callback_logData)
-            callback_logData(true, &outBuffer[outBufPos], bytesToSend);
-        if( Write(&outBuffer[outBufPos], bytesToSend) )
+            callback_logData(true, outBuffer, outLen);
+        int bytesWritten = Write(outBuffer, outLen);
+        if( bytesWritten == outLen)
         {
-            outBufPos += packetLen;
-            long readLen = packetLen;
-            int bread = Read(&inBuffer[inDataPos], readLen);
-            if(bread != readLen)
+            if(pkt.cmd == CMD_LMS7002_RD)
+            {
+                inDataPos = Read(&inBuffer[inDataPos], outLen);
+                if(inDataPos != outLen)
+                    status = TRANSFER_FAILED;
+                else
+                {
+                    if (callback_logData)
+                        callback_logData(false, inBuffer, inDataPos);
+                }
+            }
+            ParsePacket(pkt, inBuffer, inDataPos, protocol);
+        }
+        else
+            status = TRANSFER_FAILED;
+    }
+    else
+    {
+        for(int i=0; i<outLen; i+=packetLen)
+        {
+            int bytesToSend = packetLen;
+            if (callback_logData)
+                callback_logData(true, &outBuffer[outBufPos], bytesToSend);
+            if( Write(&outBuffer[outBufPos], bytesToSend) )
+            {
+                outBufPos += packetLen;
+                long readLen = packetLen;
+                int bread = Read(&inBuffer[inDataPos], readLen);
+                if(bread != readLen && protocol != LMS_PROTOCOL_NOVENA)
+                {
+                    status = TRANSFER_FAILED;
+                    break;
+                }
+                if (callback_logData)
+                    callback_logData(false, &inBuffer[inDataPos], bread);
+                inDataPos += bread;
+            }
+            else
             {
                 status = TRANSFER_FAILED;
                 break;
             }
-            if (callback_logData)
-                callback_logData(false, &inBuffer[inDataPos], bread);
-            inDataPos += readLen;
         }
-        else
-        {
-            status = TRANSFER_FAILED;
-            break;
-        }
+        ParsePacket(pkt, inBuffer, inDataPos, protocol);
     }
-    ParsePacket(pkt, inBuffer, inDataPos, protocol);
     delete outBuffer;
     delete inBuffer;
     return status;
@@ -202,17 +228,11 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
     }
     else if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        ProtocolNovena packet;
-        int maxDataLength = packet.maxDataLength;
-        packet.cmd = pkt.cmd;
-        packet.status = pkt.status;
-        if (packet.cmd == CMD_LMS7002_RD)
-            maxDataLength = maxDataLength/2;
         buffer = new unsigned char[pkt.outBuffer.size()];
         memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
-        if (packet.cmd == CMD_LMS7002_WR)
+        if (pkt.cmd == CMD_LMS7002_WR)
         {
-            for(int i=0; i<pkt.outBuffer.size(); i+=2)
+            for(int i=0; i<pkt.outBuffer.size(); i+=4)
                 buffer[i] |= 0x80;
         }
         length = pkt.outBuffer.size();
@@ -247,11 +267,9 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
     }
     else if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        ProtocolLMS64C packet;
-        int inBufPos = 0;
         pkt.cmd = CMD_LMS7002_RD;
-        pkt.status = length > 0 ? STATUS_COMPLETED_CMD : STATUS_ERROR_CMD;
-        pkt.inBuffer.reserve(length*2);
+        pkt.status = STATUS_COMPLETED_CMD;
+        pkt.inBuffer.clear();
         for(int i=0; i<length; i+=2)
         {
             //reading from spi returns only registers values
