@@ -668,17 +668,17 @@ liblms7_status LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq
 /** @brief Returns chosen NCO's frequency in MHz
     @param tx transmitter or receiver selection
     @param index NCO index from 0 to 15
+    @param fromChip read frequency directly from chip or local registers
     @return NCO frequency in MHz
 */
-float_type LMS7002M::GetNCOFrequency_MHz(bool tx, uint8_t index)
+float_type LMS7002M::GetNCOFrequency_MHz(bool tx, uint8_t index, const float_type refClk_MHz, bool fromChip)
 {
     if(index > 15)
         return LIBLMS7_INDEX_OUT_OF_RANGE;
-    float_type refClk_MHz = GetReferenceClk_TSP_MHz(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
     uint32_t fcw = 0;
-	fcw |= SPI_read(addr+2+index*2) << 16; //NCO frequency control word register MSB part.
-    fcw |= SPI_read(addr+3+index*2); //NCO frequency control word register LSB part.
+    fcw |= SPI_read(addr + 2 + index * 2, fromChip) << 16; //NCO frequency control word register MSB part.
+    fcw |= SPI_read(addr + 3 + index * 2, fromChip); //NCO frequency control word register LSB part.
     return refClk_MHz*(fcw/4294967296.0);
 }
 
