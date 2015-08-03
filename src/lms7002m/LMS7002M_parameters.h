@@ -8,9 +8,23 @@
 #define LMS7002M_PARAMETERS_H
 
 #include "typedefs.h"
+#include <vector>
+
+struct LMS7Parameter;
+extern std::vector<const LMS7Parameter*> LMS7parameterList;
 
 struct LMS7Parameter
 {
+    LMS7Parameter() : address(0), msb(0), lsb(0), defaultValue(0), name(nullptr), tooltip(nullptr)
+    {
+    }
+
+    LMS7Parameter(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t defaultValue, const char *name, const char* tooltip)
+        : address(address), msb(msb), lsb(lsb), defaultValue(defaultValue), name(name), tooltip(tooltip)
+    {
+        LMS7parameterList.push_back(this);
+    }
+
     uint16_t address;
     uint8_t msb;
     uint8_t lsb;
@@ -18,7 +32,7 @@ struct LMS7Parameter
     const char* name;
     const char* tooltip;
     inline bool operator==(const LMS7Parameter& obj)
-    { 
+    {
         if (address == obj.address && msb == obj.msb && lsb == obj.lsb)
             return true;
         return false;

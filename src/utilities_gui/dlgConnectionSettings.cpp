@@ -63,7 +63,8 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
                 evt.SetInt(mListLMS7ports->GetSelection());
                 evt.SetEventType(CONTROL_PORT_CONNECTED);
                 evt.SetString(mListLMS7ports->GetString(event.GetInt()));
-                wxPostEvent(this, evt);
+                if(GetParent())
+                    wxPostEvent(GetParent(), evt);
             }
         }
 	}
@@ -79,7 +80,8 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
                 evt.SetInt(mListStreamports->GetSelection());
                 evt.SetEventType(DATA_PORT_CONNECTED);
                 evt.SetString(mListStreamports->GetString(event.GetInt()));
-                wxPostEvent(this, evt);
+                if(GetParent())
+                    wxPostEvent(GetParent(), evt);
             }
         }
 	}
@@ -98,7 +100,8 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 		lms7port->Close();
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_DISCONNECTED);
-        wxPostEvent(this, evt);
+        if(GetParent())
+            wxPostEvent(GetParent(), evt);
 	}
 	mListLMS7ports->SetSelection(-1);
 	if (streamBrdPort)
@@ -106,7 +109,8 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 		streamBrdPort->Close();
         wxCommandEvent evt;
         evt.SetEventType(DATA_PORT_DISCONNECTED);
-        wxPostEvent(this, evt);
+        if(GetParent())
+            wxPostEvent(GetParent(), evt);
 	}
 	mListStreamports->SetSelection(-1);
 }

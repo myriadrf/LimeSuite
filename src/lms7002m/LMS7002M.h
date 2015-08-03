@@ -9,11 +9,13 @@
 
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
+#include "LMS7002M_RegistersMap.h"
 #include "typedefs.h"
 
 #include <sstream>
 
 class LMScomms;
+class LMS7002M_RegistersMap;
 
 class LMS7002M
 {
@@ -24,14 +26,14 @@ public:
     };
 
 	LMS7002M();
-    LMS7002M(LMScomms* controlPort, LMScomms* dataPort);
+    LMS7002M(LMScomms* controlPort);
 	virtual ~LMS7002M();
 
     ///@name Registers writing and reading
     liblms7_status UploadAll();
     liblms7_status DownloadAll();
     bool IsSynced();
-    
+
 	liblms7_status ResetChip();
 	liblms7_status LoadConfig(const char* filename);
 	liblms7_status SaveConfig(const char* filename);
@@ -125,6 +127,7 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
 protected:
+    LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t moduleAddresses[];
     static const uint16_t defaultValues[];
     static const uint16_t readOnlyRegisters[];
@@ -171,6 +174,6 @@ protected:
     virtual void Log(const char* text, LogType type);
 
     ///port used for communicating with LMS7002M
-    LMScomms* controlPort;    
+    LMScomms* controlPort;
 };
 #endif

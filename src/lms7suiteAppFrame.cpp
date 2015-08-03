@@ -94,7 +94,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
-    lmsControl = new LMS7002M(lms7controlPort, streamBoardPort);
+    lmsControl = new LMS7002M(lms7controlPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
@@ -147,15 +147,11 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
         fftviewer->StopStreaming();
 
     dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
-    dlg.Connect(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Connect(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
-    dlg.Connect(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Connect(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
+    Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
+    Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
+    Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
+    Bind(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
 	dlg.ShowModal();
-    dlg.Disconnect(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Disconnect(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
-    dlg.Disconnect(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Disconnect(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
 }
 
 void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )

@@ -68,26 +68,44 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 
     if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        if (callback_logData)
-            callback_logData(true, outBuffer, outLen);
-        int bytesWritten = Write(outBuffer, outLen);
-        if( bytesWritten == outLen)
+        bool transferData = true; //some commands are fake, so don't need transferring
+        if(pkt.cmd == CMD_GET_INFO)
         {
-            if(pkt.cmd == CMD_LMS7002_RD)
-            {
-                inDataPos = Read(&inBuffer[inDataPos], outLen);
-                if(inDataPos != outLen)
-                    status = TRANSFER_FAILED;
-                else
-                {
-                    if (callback_logData)
-                        callback_logData(false, inBuffer, inDataPos);
-                }
-            }
-            ParsePacket(pkt, inBuffer, inDataPos, protocol);
+            //spi does not have GET INFO, fake it to inform what device it is
+            pkt.status = STATUS_COMPLETED_CMD;
+            pkt.inBuffer.clear();
+            pkt.inBuffer.resize(64, 0);
+            pkt.inBuffer[0] = 0; //firmware
+            pkt.inBuffer[1] = LMS_DEV_NOVENA; //device
+            pkt.inBuffer[2] = 0; //protocol
+            pkt.inBuffer[3] = 0; //hardware
+            pkt.inBuffer[4] = EXP_BOARD_UNSUPPORTED; //expansion
+            transferData = false;
         }
-        else
-            status = TRANSFER_FAILED;
+
+        if(transferData)
+        {
+            if (callback_logData)
+                callback_logData(true, outBuffer, outLen);
+            int bytesWritten = Write(outBuffer, outLen);
+            if( bytesWritten == outLen)
+            {
+                if(pkt.cmd == CMD_LMS7002_RD)
+                {
+                    inDataPos = Read(&inBuffer[inDataPos], outLen);
+                    if(inDataPos != outLen)
+                        status = TRANSFER_FAILED;
+                    else
+                    {
+                        if (callback_logData)
+                            callback_logData(false, inBuffer, inDataPos);
+                    }
+                }
+                ParsePacket(pkt, inBuffer, inDataPos, protocol);
+            }
+            else
+                status = TRANSFER_FAILED;
+        }
     }
     else
     {
@@ -228,14 +246,30 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
     }
     else if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        buffer = new unsigned char[pkt.outBuffer.size()];
-        memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
-        if (pkt.cmd == CMD_LMS7002_WR)
+        if(pkt.cmd == CMD_LMS7002_RST)
         {
-            for(int i=0; i<pkt.outBuffer.size(); i+=4)
-                buffer[i] |= 0x80;
+            buffer = new unsigned char[8];
+            buffer[0] = 0x88;
+            buffer[1] = 0x06;
+            buffer[2] = 0x00;
+            buffer[3] = 0x18;
+            buffer[4] = 0x88;
+            buffer[5] = 0x06;
+            buffer[6] = 0x00;
+            buffer[7] = 0x38;
+            length = 8;
         }
-        length = pkt.outBuffer.size();
+        else
+        {
+            buffer = new unsigned char[pkt.outBuffer.size()];
+            memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
+            if (pkt.cmd == CMD_LMS7002_WR)
+            {
+                for(int i=0; i<pkt.outBuffer.size(); i+=4)
+                    buffer[i] |= 0x80;
+            }
+            length = pkt.outBuffer.size();
+        }
     }
     return buffer;
 }

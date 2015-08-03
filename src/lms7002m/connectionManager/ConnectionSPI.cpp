@@ -26,6 +26,9 @@
 
 #include <sstream>
 
+const int ConnectionSPI::cSPI_BUF_SIZE = 128;
+const int ConnectionSPI::cSPI_SPEED_HZ = 2000000;
+
 /** @brief Tries to read EEPROM for Novena board signature
     @return true if Novena board
 */
@@ -112,7 +115,7 @@ IConnection::DeviceStatus ConnectionSPI::Open()
 {
 	Close();
 #ifdef __unix__
-	fd = open("/dev/spidev2.0", O_RDWR);
+	fd = open("/dev/spidev2.0", O_RDWR | O_SYNC);
 	if (fd < 0)
 	{
         //MessageLog::getInstance()->write("SPI PORT: device not found\n", LOG_ERROR);
@@ -211,18 +214,17 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
         {
             if(buffer[i] < 0x80) //reading
             {
-                write(fd, &buffer[i], 2);
+                write(fd, &buffer[i+bytesWritten], 2);
                 bytesReceived += read(fd, rxbytes, 2);
                 rxbuf.push_back(rxbytes[0]);
                 rxbuf.push_back(rxbytes[1]);
             }
             else //writing
             {
-                write(fd, &buffer[i], 4);
+                write(fd, &buffer[i+bytesWritten], 4);
                 i+=2; //data bytes have been written
             }
         }
-
 //        stringstream ss;
 //        ss << "write(" << toWrite << "): ";
 //        for(int i=0; i<toWrite; ++i)
@@ -234,7 +236,7 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
 //        ss << endl;
 //        if(bytesReceived > 0)
 //        {
-//            ss << " read(" << toWrite << "): ";
+//            ss << " re443ad(" << toWrite << "): ";
 //            for(int i=0; i<toWrite; ++i)
 //            {
 //                char ctemp[16];

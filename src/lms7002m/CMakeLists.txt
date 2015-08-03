@@ -25,6 +25,7 @@ set(LMS7002M_src_files
 	LMS7002M_statuses.cpp
 	LMS7002M_filtersCalibration.cpp    
 	lmsComms.cpp
+	LMS7002M_RegistersMap.cpp
 )
 
 set(ENABLE_USB_CONNECTION "YES" CACHE BOOL INTERNAL)

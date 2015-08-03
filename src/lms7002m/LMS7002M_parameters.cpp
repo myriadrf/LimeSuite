@@ -6,6 +6,8 @@
 
 #include "LMS7002M_parameters.h"
 
+std::vector<const LMS7Parameter*> LMS7parameterList;
+
 const struct LMS7Parameter LRST_TX_B = { 0x0020, 15, 15, 1, "LRST_TX_B", "Resets all the logic registers to the default state for Tx MIMO channel B" };
 const struct LMS7Parameter MRST_TX_B = { 0x0020, 14, 14, 1, "MRST_TX_B", "Resets all the configuration memory to the default state for Tx MIMO channel B" };
 const struct LMS7Parameter LRST_TX_A = { 0x0020, 13, 13, 1, "LRST_TX_A", "Resets all the logic registers to the default state for Tx MIMO channel A" };
@@ -157,7 +159,7 @@ const struct LMS7Parameter SEL_SDMCLK_CGEN = { 0x0089, 14, 14, 0, "SEL_SDMCLK_CG
 const struct LMS7Parameter SX_DITHER_EN_CGEN = { 0x0089, 13, 13, 0, "SX_DITHER_EN_CGEN", "Enabled dithering in SDM" };
 const struct LMS7Parameter CLKH_OV_CLKL_CGEN = { 0x0089, 12, 11, 0, "CLKH_OV_CLKL_CGEN", "FCLKL here is ADC clock. FCLKH is the clock to the DAC and if no division is added to the ADC as well" };
 const struct LMS7Parameter DIV_OUTCH_CGEN = { 0x0089, 10, 3, 4, "DIV_OUTCH_CGEN", "" };
-const struct LMS7Parameter TST_CGEN = { 0x0089, 2, 0, 0, "TST_CGEN", 
+const struct LMS7Parameter TST_CGEN = { 0x0089, 2, 0, 0, "TST_CGEN",
 "Controls the test mode of the SX\n\
 0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off\n\
 1 - tstdo[0] = ADC clock; tstdo[1] = DAC clock; tstao = High impedance;\n\
@@ -478,7 +480,7 @@ const struct LMS7Parameter FRAC_SDM_MSB = { 0x011E, 3, 0, 0, "FRAC_SDM_MSB", "" 
 const struct LMS7Parameter PW_DIV2_LOCH = { 0x011F, 14, 12, 3, "PW_DIV2_LOCH", "trims the duty cycle of DIV2 LOCH. Only works when forward divider is dividing by at least 2 (excluding quadrature block division). If in bypass mode, this does not work" };
 const struct LMS7Parameter PW_DIV4_LOCH = { 0x011F, 11, 9, 3, "PW_DIV4_LOCH", "trims the duty cycle of DIV4 LOCH. Only works when forward divider is dividing by at least 4 (excluding quadrature block division). If in bypass mode, this does not work" };
 const struct LMS7Parameter DIV_LOCH = { 0x011F, 8, 6, 1, "DIV_LOCH", "Controls the division ratio in the LOCH_DIV" };
-const struct LMS7Parameter TST_SX = { 0x011F, 5, 3, 0, "TST_SX", 
+const struct LMS7Parameter TST_SX = { 0x011F, 5, 3, 0, "TST_SX",
 "Controls the test mode of PLLs. TST signal lines are shared between all PLLs (CGEN, RX and TX). Only one TST signal of any PLL should be active at a given time.\n\
 0 - TST disabled; RSSI analog outputs enabled if RSSI blocks active and when all PLL test signals are off(default)\n\
 1 - tstdo[0] = VCO / 20 clock*; tstdo[1] = VCO / 40 clock*; tstao = High impedance;\n\

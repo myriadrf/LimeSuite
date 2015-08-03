@@ -15,8 +15,8 @@
 class ConnectionSPI : public IConnection
 {
 public:
-    static const int cSPI_BUF_SIZE = 128;
-    static const int cSPI_SPEED_HZ = 4000000;
+    static const int cSPI_BUF_SIZE;
+    static const int cSPI_SPEED_HZ;
 
 	ConnectionSPI();
 	~ConnectionSPI();
