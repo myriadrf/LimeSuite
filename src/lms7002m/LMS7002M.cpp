@@ -14,6 +14,9 @@
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
 
+#include <chrono>
+#include <thread>
+
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
 
@@ -419,7 +422,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	while(i>=0)
 	{
         Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 1); // CSW_VCO<i>=1
-        //usleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12);
         if ( (cmphl&0x01) == 1) // reduce CSW
             Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 0); // CSW_VCO<i>=0
@@ -435,7 +438,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             while(csw_lowest>=0)
             {
                 Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
-                //usleep(10);
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 if(Get_SPI_Reg_bits(addrCMP, 13, 12) == 0)
                     break;
                 else
@@ -2177,6 +2180,8 @@ isSyncedEnding:
 }
 
 /** @brief Writes all registers from host to chip
+
+When used on Novena board, also changes gpios to match rx path and tx band selections
 */
 liblms7_status LMS7002M::UploadAll()
 {
@@ -2224,9 +2229,38 @@ liblms7_status LMS7002M::UploadAll()
     if (status != LIBLMS7_SUCCESS)
         return status;
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore last used channel
+
+    //in case of Novena board, need to update GPIO
+    if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
+    {
+        uint16_t regValue = SPI_read(0x0806) & 0xFFF8;
+        //lms_gpio2 - tx output selection:
+		//		0 - TX1_A and TX1_B (Band 1),
+		//		1 - TX2_A and TX2_B (Band 2)
+        regValue |= Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) << 2; //gpio2
+        //RX active paths
+        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
+        //  0 			0       =>  	no active path
+        //  1   		0 		=>	LNAW_A  	LNAW_B
+        //  0			1		=>	LNAH_A  	LNAH_B
+        //  1			1		=>	LNAL_A 	 	LNAL_B
+        switch(Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)))
+        {
+            //set gpio1:gpio0
+            case 0: regValue |= 0x0; break;
+            case 1: regValue |= 0x2; break;
+            case 2: regValue |= 0x3; break;
+            case 3: regValue |= 0x1; break;
+        }
+        SPI_write(0x0806, regValue);
+    }
     return LIBLMS7_SUCCESS;
 }
 
+/** @brief Reads all registers from the chip to host
+
+When used on Novena board, also updates gpios to match rx path and tx band selections
+*/
 liblms7_status LMS7002M::DownloadAll()
 {
     if (controlPort == nullptr)
@@ -2263,6 +2297,32 @@ liblms7_status LMS7002M::DownloadAll()
         mRegistersMap->SetValue(1, addrToRead[i], dataReceived[i]);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //retore previously used channel
+
+    //in case of Novena board, update GPIO
+    if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
+    {
+        uint16_t regValue = SPI_read(0x0806) & 0xFFF8;
+        //lms_gpio2 - tx output selection:
+		//		0 - TX1_A and TX1_B (Band 1),
+		//		1 - TX2_A and TX2_B (Band 2)
+        regValue |= Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) << 2; //gpio2
+        //RX active paths
+        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
+        //  0 			0       =>  	no active path
+        //  1   		0 		=>	LNAW_A  	LNAW_B
+        //  0			1		=>	LNAH_A  	LNAH_B
+        //  1			1		=>	LNAL_A 	 	LNAL_B
+        switch(Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)))
+        {
+            //set gpio1:gpio0
+            case 0: regValue |= 0x0; break;
+            case 1: regValue |= 0x2; break;
+            case 2: regValue |= 0x3; break;
+            case 3: regValue |= 0x1; break;
+        }
+        SPI_write(0x0806, regValue);
+    }
+
     return LIBLMS7_SUCCESS;
 }
 

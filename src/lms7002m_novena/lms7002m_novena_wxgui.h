@@ -20,8 +20,10 @@ public:
     virtual void UpdatePanel();
 
     wxCheckBox *lms_reset, *lms_rxen, *lms_txen, *lms_gpio2, *lms_gpio1, *lms_gpio0;
+    wxButton* btnReadAll;
 protected:
     void ParameterChangeHandler(wxCommandEvent& event);
+    void OnReadAll(wxCommandEvent& event);
     LMScomms* mSerPort;
 
 };
