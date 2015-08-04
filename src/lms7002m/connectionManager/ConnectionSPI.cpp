@@ -16,7 +16,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <iostream>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
@@ -24,6 +23,7 @@
 #include <linux/i2c-dev.h>
 #endif // LINUX
 
+#include <iostream>
 #include <sstream>
 
 const int ConnectionSPI::cSPI_BUF_SIZE = 128;

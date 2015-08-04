@@ -28,6 +28,7 @@
 #include "HPM7_wxgui.h"
 #include "FPGAcontrols_wxgui.h"
 #include "myriad7_wxgui.h"
+#include "lms7002m_novena_wxgui.h"
 #include "SPI_wxgui.h"
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
@@ -91,6 +92,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     myriad7 = nullptr;
     deviceInfo = nullptr;
     spi = nullptr;
+    novenaGui = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -413,7 +415,7 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
 #include <iomanip>
 void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
 {
-    if (mMiniLog == nullptr | mMiniLog->chkLogData->IsChecked() == false)
+    if (mMiniLog == nullptr || mMiniLog->chkLogData->IsChecked() == false)
         return;
     stringstream ss;
     ss << (Tx ? "Wr(" : "Rd(");
@@ -440,3 +442,23 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     evt->SetEventType(LOG_MESSAGE);
     wxQueueEvent(this, evt);
 }
+
+void LMS7SuiteAppFrame::OnShowNovena(wxCommandEvent& event)
+{
+    if (novenaGui) //it's already opened
+        novenaGui->Show();
+    else
+    {
+        novenaGui = new LMS7002M_Novena_wxgui(this, wxNewId(), _("Novena"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
+        novenaGui->Initialize(lms7controlPort);
+        novenaGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnNovenaClose), NULL, this);
+        novenaGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnNovenaClose(wxCloseEvent& event)
+{   
+    novenaGui->Destroy();
+    novenaGui = nullptr;
+}
+

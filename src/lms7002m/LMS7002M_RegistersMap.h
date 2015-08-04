@@ -5,7 +5,7 @@
 #include <map>
 #include <typedefs.h>
 
-class LMS7Parameter;
+struct LMS7Parameter;
 
 class LMS7002M_RegistersMap
 {

@@ -419,7 +419,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	while(i>=0)
 	{
         Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 1); // CSW_VCO<i>=1
-        usleep(10);
+        //usleep(10);
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12);
         if ( (cmphl&0x01) == 1) // reduce CSW
             Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 0); // CSW_VCO<i>=0
@@ -435,7 +435,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             while(csw_lowest>=0)
             {
                 Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
-                usleep(10);
+                //usleep(10);
                 if(Get_SPI_Reg_bits(addrCMP, 13, 12) == 0)
                     break;
                 else
@@ -1684,7 +1684,6 @@ uint32_t LMS7002M::FindMinRSSI(const uint16_t addr, const uint8_t msb, const uin
 liblms7_status LMS7002M::SetDefaults(MemorySection module)
 {
     liblms7_status status = LIBLMS7_SUCCESS;
-    uint16_t i;
     vector<uint16_t> addrs;
     vector<uint16_t> values;
     for(uint32_t address = MemorySectionAddresses[module][0]; address <= MemorySectionAddresses[module][1]; ++address)
