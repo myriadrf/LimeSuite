@@ -4,6 +4,7 @@
 #include <vector>
 #include "lms7002_gui_utilities.h"
 #include "wx/msgdlg.h"
+#include "lms7suiteEvents.h"
 
 using namespace LMS7002_WXGUI;
 static indexValueMap en_amphf_pdet_trfIndexValuePairs;
@@ -126,6 +127,10 @@ void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
         lmsControl->Modify_SPI_Reg_bits(SEL_BAND1_TRF, false);
         lmsControl->Modify_SPI_Reg_bits(SEL_BAND2_TRF, false);
     }
+    wxCommandEvent evt;
+    evt.SetEventType(LMS7_TXBAND_CHANGED);
+    evt.SetEventObject(this);
+    wxPostEvent(this, evt);
 }
 
 void lms7002_pnlTRF_view::UpdateGUI()

@@ -28,6 +28,7 @@
 #include "HPM7_wxgui.h"
 #include "FPGAcontrols_wxgui.h"
 #include "myriad7_wxgui.h"
+#include "lms7002m_novena_wxgui.h"
 #include "SPI_wxgui.h"
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
@@ -74,6 +75,35 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         if (fftviewer)
             fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
     }
+    else if (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED )
+    {
+        //in case of Novena board, need to update GPIO
+        if(lms7controlPort->GetInfo().device == LMS_DEV_NOVENA)
+        {
+            uint16_t regValue = lmsControl->SPI_read(0x0806) & 0xFFF8;
+            //lms_gpio2 - tx output selection:
+            //		0 - TX1_A and TX1_B (Band 1),
+            //		1 - TX2_A and TX2_B (Band 2)
+            regValue |= lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF, false) << 2; //gpio2
+            //RX active paths
+            //lms_gpio0 | lms_gpio1      	RX_A		RX_B
+            //  0 			0       =>  	no active path
+            //  1   		0 		=>	LNAW_A  	LNAW_B
+            //  0			1		=>	LNAH_A  	LNAH_B
+            //  1			1		=>	LNAL_A 	 	LNAL_B
+            switch(lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE, false))
+            {
+                //set gpio1:gpio0
+                case 0: regValue |= 0x0; break;
+                case 1: regValue |= 0x2; break;
+                case 2: regValue |= 0x3; break;
+                case 3: regValue |= 0x1; break;
+            }
+            lmsControl->SPI_write(0x0806, regValue);
+        }
+        if(novenaGui)
+            novenaGui->UpdatePanel();
+    }
 }
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
@@ -91,12 +121,15 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     myriad7 = nullptr;
     deviceInfo = nullptr;
     spi = nullptr;
+    novenaGui = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
     lmsControl = new LMS7002M(lms7controlPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
+    Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
+    Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
@@ -147,15 +180,11 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
         fftviewer->StopStreaming();
 
     dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
-    dlg.Connect(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Connect(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
-    dlg.Connect(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Connect(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
+    Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
+    Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
+    Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
+    Bind(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
 	dlg.ShowModal();
-    dlg.Disconnect(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Disconnect(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
-    dlg.Disconnect(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), NULL, this);
-    dlg.Disconnect(DATA_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), NULL, this);
 }
 
 void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
@@ -417,7 +446,7 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
 #include <iomanip>
 void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
 {
-    if (mMiniLog == nullptr | mMiniLog->chkLogData->IsChecked() == false)
+    if (mMiniLog == nullptr || mMiniLog->chkLogData->IsChecked() == false)
         return;
     stringstream ss;
     ss << (Tx ? "Wr(" : "Rd(");
@@ -444,3 +473,24 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     evt->SetEventType(LOG_MESSAGE);
     wxQueueEvent(this, evt);
 }
+
+void LMS7SuiteAppFrame::OnShowNovena(wxCommandEvent& event)
+{
+    if (novenaGui) //it's already opened
+        novenaGui->Show();
+    else
+    {
+        novenaGui = new LMS7002M_Novena_wxgui(this, wxNewId(), _("Novena"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
+        novenaGui->Initialize(lms7controlPort);
+        novenaGui->UpdatePanel();
+        novenaGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnNovenaClose), NULL, this);
+        novenaGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnNovenaClose(wxCloseEvent& event)
+{
+    novenaGui->Destroy();
+    novenaGui = nullptr;
+}
+

@@ -10,6 +10,9 @@
 #ifdef ENABLE_USB_CONNECTION
     #include "ConnectionUSB.h"
 #endif
+#ifdef ENABLE_SPI_CONNECTION
+    #include "ConnectionSPI.h"
+#endif
 
 #include <sstream>
 #include <iomanip>
@@ -24,6 +27,9 @@ ConnectionManager::ConnectionManager() : activeControlPort(NULL)
     m_connections[IConnection::COM_PORT] = new ConnectionCOM();
 #ifdef ENABLE_USB_CONNECTION
     m_connections[IConnection::USB_PORT] = new ConnectionUSB();
+#endif
+#ifdef ENABLE_SPI_CONNECTION
+    m_connections[IConnection::SPI_PORT] = new ConnectionSPI();
 #endif
 }
 
@@ -71,6 +77,9 @@ int ConnectionManager::Open(unsigned i)
         break;
     case IConnection::USB_PORT:
 		activeControlPort = m_connections[IConnection::USB_PORT];
+        break;
+    case IConnection::SPI_PORT:
+		activeControlPort = m_connections[IConnection::SPI_PORT];
         break;
     default:
         return 0;

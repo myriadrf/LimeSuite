@@ -56,6 +56,8 @@ add_subdirectory(FPGAcontrols_wxgui)
 include_directories(FPGAcontrols_wxgui)
 add_subdirectory(myriad7)
 include_directories(myriad7)
+add_subdirectory(lms7002m_novena)
+include_directories(lms7002m_novena)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -89,6 +91,7 @@ set_target_properties(lms7suite
 	RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
 	
 target_link_libraries(lms7suite 
+	LMS7002M_NOVENA
 	myriad7
 	FPGAcontrols_wxgui
 	HPM7

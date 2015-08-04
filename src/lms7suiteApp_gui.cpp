@@ -88,6 +88,10 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuSPI = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("SPI") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuSPI );
 	
+	wxMenuItem* mnuNovena;
+	mnuNovena = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Novena") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuNovena );
+	
 	mbar->Append( mnuModules, wxT("Modules") ); 
 	
 	this->SetMenuBar( mbar );
@@ -122,6 +126,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuMyriad7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Connect( mnuSPI->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
+	this->Connect( mnuNovena->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 }
 
 AppFrame_view::~AppFrame_view()
@@ -141,6 +146,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 	
 }
 

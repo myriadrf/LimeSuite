@@ -224,6 +224,14 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         lmsControl->Modify_SPI_Reg_bits(parameter, valToSend);
         return;
     }
+
+    if(parameter == SEL_PATH_RFE)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(LMS7_RXPATH_CHANGED);
+        evt.SetEventObject(this);
+        wxPostEvent(this, evt);
+    }
     lmsControl->Modify_SPI_Reg_bits(parameter, value);
 }
 

@@ -9,11 +9,13 @@
 
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
+#include "LMS7002M_RegistersMap.h"
 #include "typedefs.h"
 
 #include <sstream>
 
 class LMScomms;
+class LMS7002M_RegistersMap;
 
 class LMS7002M
 {
@@ -31,7 +33,7 @@ public:
     liblms7_status UploadAll();
     liblms7_status DownloadAll();
     bool IsSynced();
-    
+
 	liblms7_status ResetChip();
 	liblms7_status LoadConfig(const char* filename);
 	liblms7_status SaveConfig(const char* filename);
@@ -83,7 +85,7 @@ public:
     ///@name TSP
 	liblms7_status LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
 	liblms7_status SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz);
-	float_type GetNCOFrequency_MHz(bool tx, uint8_t index);
+	float_type GetNCOFrequency_MHz(bool tx, uint8_t index, float_type refClk_MHz, bool fromChip = true);
     liblms7_status SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
 	liblms7_status SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
 	float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
@@ -125,6 +127,7 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
 protected:
+    LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t moduleAddresses[];
     static const uint16_t defaultValues[];
     static const uint16_t readOnlyRegisters[];
@@ -171,6 +174,6 @@ protected:
     virtual void Log(const char* text, LogType type);
 
     ///port used for communicating with LMS7002M
-    LMScomms* controlPort;    
+    LMScomms* controlPort;
 };
 #endif

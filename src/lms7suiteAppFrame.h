@@ -25,6 +25,7 @@ class FPGAcontrols_wxgui;
 class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
+class LMS7002M_Novena_wxgui;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -58,6 +59,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowDeviceInfo(wxCommandEvent& event);
         void OnSPIClose(wxCloseEvent& event);
         void OnShowSPI(wxCommandEvent& event);
+        void OnNovenaClose(wxCloseEvent& event);
+        void OnShowNovena(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );
@@ -89,6 +92,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         Myriad7_wxgui* myriad7;
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
+        LMS7002M_Novena_wxgui* novenaGui;
 };
 
 
