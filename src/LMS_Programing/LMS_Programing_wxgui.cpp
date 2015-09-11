@@ -111,7 +111,7 @@ LMS_Programing_wxgui::~LMS_Programing_wxgui()
 
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
-    wxFileDialog dlg(this, _("Select file"), "", "", "rbf (*.rbf)| *.rbf|bin (*.bin)| *.bin|All files(*.*)|*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    wxFileDialog dlg(this, _("Select file"), _(""), _(""), _("rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|All files(*.*)|*.*"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
     lblFilename->SetLabel(dlg.GetPath());
