@@ -286,7 +286,10 @@ TxFilterTuneEnd:
     else if (type == TX_LADDER)
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal);
     else if (type == TX_HIGHBAND)
+    {
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), rcal);
+        Modify_SPI_Reg_bits(0x0105, 4, 0, 0x7); //set powerdowns
+    }
     return LIBLMS7_SUCCESS;
 }
 
@@ -424,6 +427,7 @@ TxFilterLowBandChainEnd:
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1);
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
     Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal);
+    Modify_SPI_Reg_bits(0x0105, 4, 0, 0x11); //set powerdowns
 
     return LIBLMS7_SUCCESS;
 }
@@ -500,6 +504,7 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
         Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
         Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
+        Modify_SPI_Reg_bits(0x010c, 1, 0, 0x1);
     }
     else if (filter == RX_LPF_LOWBAND)
     {
@@ -509,6 +514,8 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
+        Modify_SPI_Reg_bits(0x0115, 3, 0, 0x9);
+        Modify_SPI_Reg_bits(0x0118, 15, 13, 0x1);
     }
     else if (filter == RX_LPF_HIGHBAND)
     {
@@ -518,6 +525,8 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
+        Modify_SPI_Reg_bits(0x0115, 3, 0, 0x5);
+        Modify_SPI_Reg_bits(0x0118, 15, 13, 0x0);
     }
     return LIBLMS7_SUCCESS;
 }

@@ -1428,6 +1428,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 
         Modify_SPI_Reg_mask(requiredRegs, requiredMask, requiredValue, 0, 3);
     }
+
     for (i = 0; i<6; ++i)
     {
         FindMinRSSI(LMS7param(DCOFFI_RFE), offsetI, &offsetI, 3, 2, 32 >> i);
@@ -2144,7 +2145,7 @@ bool LMS7002M::IsSynced()
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
-        if (dataReceived[i] != mLocalRegistersCopy[0][i])
+        if (dataReceived[i] != mRegistersMap->GetValue(0, addrToRead[i]))
         {
             isSynced = false;
             goto isSyncedEnding;
@@ -2169,7 +2170,7 @@ bool LMS7002M::IsSynced()
         return false;
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
-        if (dataReceived[i] != mLocalRegistersCopy[0][i])
+        if (dataReceived[i] != mRegistersMap->GetValue(1, addrToRead[i]))
         {
             isSynced = false;
             break;

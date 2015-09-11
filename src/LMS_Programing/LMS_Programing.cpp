@@ -95,13 +95,13 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
 {
 #ifndef NDEBUG
     auto t1 = chrono::high_resolution_clock::now();
-#endif    
+#endif
     if (mUploadInProgress.load() == true)
         return UPLOAD_IN_PROGRESS;
     mAbortPrograming.store(false);
     Info progress;
     progress.bytesSent = 0;
-    progress.bytesCount= 0;
+    progress.bytesCount= m_data_size;
     progress.aborted = false;
     progress.deviceResponse = 0;
     bytesSent.store(progress.bytesSent);
@@ -116,7 +116,7 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
     mUploadInProgress.store(true);
     const int pktSize = 32;
     int data_left = m_data_size;
-    unsigned char* data_src = m_data;    
+    unsigned char* data_src = m_data;
     const int portionsCount = m_data_size/pktSize + (m_data_size%pktSize > 0) + 1; // +1 programming end packet
     int portionNumber;
     int status = 0;
@@ -162,12 +162,12 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
         bytesCount.store(progress.bytesCount);
         aborted.store(progress.aborted);
         deviceResponse.store(progress.deviceResponse);
-                
+
         if(status != STATUS_COMPLETED_CMD)
         {
 #ifndef NDEBUG
             stringstream ss;
-            ss << "Programming failed! Status: " << status2string(status) << endl;            
+            ss << "Programming failed! Status: " << status2string(status) << endl;
 #endif
             progress.aborted = true;
             progress.deviceResponse = status;
@@ -177,13 +177,13 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
             deviceResponse.store(progress.deviceResponse);
             mUploadInProgress.store(false);
             return FAILURE;
-        }        
+        }
         if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
             break;
 #ifndef NDEBUG
         printf("programing: %6i/%i\r", portionNumber, portionsCount - 1);
-#endif  
-    }    
+#endif
+    }
     bytesSent.store(progress.bytesSent);
     bytesCount.store(progress.bytesCount);
     aborted.store(progress.aborted);
@@ -198,14 +198,14 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
         aborted.store(progress.aborted);
         deviceResponse.store(progress.deviceResponse);
         return FAILURE;
-    }    
+    }
 #ifndef NDEBUG
     auto t2 = chrono::high_resolution_clock::now();
 	if ((device == 1 && prog_mode == 2) == false)
         printf("\nProgramming finished, %li bytes sent! %li ms\n", m_data_size, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
 		printf("\nFPGA configuring initiated\n");
-#endif    
+#endif
     return SUCCESS;
 }
 

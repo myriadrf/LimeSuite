@@ -132,7 +132,6 @@ protected:
     static const uint16_t defaultValues[];
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
-    uint16_t **mLocalRegistersCopy; //A and B channels, for offline use, or to reduce SPI reading operations
 
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
     ///@name Algorithms functions

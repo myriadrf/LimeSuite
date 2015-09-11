@@ -47,9 +47,9 @@ uint16_t LMS7002M_RegistersMap::GetValue(uint8_t channel, uint16_t address) cons
         regMap = &mChannelA;
     else if(channel == 1)
         regMap = &mChannelB;
-    std::map<uint16_t, Register>::const_iterator iter;
+    std::map<const uint16_t, Register>::const_iterator iter;
     iter = regMap->find(address);
-    if( iter != mChannelA.end())
+    if (iter != regMap->end())
         return iter->second.value;
     else
         return 0;
