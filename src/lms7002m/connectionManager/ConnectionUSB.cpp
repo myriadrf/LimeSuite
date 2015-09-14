@@ -420,7 +420,7 @@ int ConnectionUSB::RefreshDeviceList()
                     else
                         fullName = "USB";
                     fullName += " (";
-                    //read device name                    
+                    //read device name
                     char data[255];
                     memset(data, 0, 255);
                     int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
@@ -558,7 +558,7 @@ int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
         if(contexts[contextHandle].mPacketProcessed.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
             return 0;
     }
-	return 0;
+	return contexts[contextHandle].done == true;
     #endif
     }
     else
@@ -693,7 +693,7 @@ int ConnectionUSB::WaitForSending(int contextHandle, unsigned int timeout_ms)
         if(contextsToSend[contextHandle].mPacketProcessed.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
             return 0;
     }
-	return 0;
+	return contextsToSend[contextHandle].done == true;
     #endif
     }
     else
