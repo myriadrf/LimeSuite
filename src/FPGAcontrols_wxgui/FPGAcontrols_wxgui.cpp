@@ -47,11 +47,11 @@ END_EVENT_TABLE()
 const wxString gWFMdirectory = "lms7suite_wfm";
 
 FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles)
-{    
+{
     mStreamer = nullptr;
     fileForCyclicTransmitting = _("");
     mStreamingTimer = new wxTimer(this, ID_STREAMING_TIMER);
-    m_serPort = nullptr;    
+    m_serPort = nullptr;
 
 	wxFlexGridSizer* FlexGridSizer10;
 	wxFlexGridSizer* FlexGridSizer3;
@@ -99,7 +99,7 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	btnPlayWFM = new wxButton(this, ID_BUTTON3, _T("Play >"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON3"));
 	FlexGridSizer2->Add(btnPlayWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	btnStopWFM = new wxButton(this, ID_BUTTON4, _T("Stop ||"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON4"));
-	FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);    
+	FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer6->Add(FlexGridSizer2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
@@ -168,7 +168,7 @@ int ReadWFM(const wxString filename, std::vector<int16_t> &iSamples, std::vector
 {
 	if (filename.length() <= 1)
 		return 0;
-    wxFFile fpin(filename, "rb");    
+    wxFFile fpin(filename, "rb");
     unsigned char inputBuffer[4];
     unsigned char c1, c2, c3, c4; // To read Agilent Signal Studio file
     double iin, qin; // IQ inputs
@@ -247,7 +247,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
     }
-       
+
     if (filename.length() == 0)
     {
         wxMessageBox(_("File not selected"), _("Error"));
@@ -255,6 +255,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     }
     vector<int16_t> isamples;
     vector<int16_t> qsamples;
+    isamples.clear();
+    qsamples.clear();
     if( ReadWFM(filename, isamples, qsamples) < 0)
     {
         wxMessageBox(_("File not found ") + filename, _("Error"));
@@ -263,9 +265,9 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     int bufferSize = isamples.size() * 2; //IQ samples interleaved
     int16_t *buffer = new int16_t[bufferSize];
     memset(buffer, 0, bufferSize);
-    int bufPos = 0;        
+    int bufPos = 0;
     for(unsigned i=0; i<isamples.size(); ++i)
-    {            
+    {
         buffer[bufPos] = (isamples[i] & 0xFFF) | 0x1000; //add iq select bit
         buffer[bufPos + 1] = (qsamples[i] & 0xFFF);
         bufPos += 2;
@@ -282,7 +284,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 
     uint16_t regData = mStreamer->SPI_read(0x0005);
     mStreamer->SPI_write(0x0005, regData & ~0x7);
-                
+
     while(sent<outLen)
     {
         char *outBuf = (char*)buffer;
@@ -299,6 +301,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         sent += toSendBytes;
         progressBar->SetValue(progressBar->GetValue()+1);
         lblProgressPercent->SetLabel(wxString::Format(_("%3.0f%%"), 100.0*sent/outLen));
+        wxYield();
     }
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
@@ -315,7 +318,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 		return -3;
 	}
 	else
-		return 0;    
+		return 0;
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
@@ -361,7 +364,7 @@ void FPGAcontrols_wxgui::OnUpdateStats(wxTimerEvent& event)
     if (mStreamer == nullptr)
         return;
     LMS_StreamBoard::ProgressStats stats = mStreamer->GetStats();
-    txtDataRate->SetLabelText(wxString::Format(_("Data rate: %.1f kB/s"), stats.TxRate_Bps/1000));    
+    txtDataRate->SetLabelText(wxString::Format(_("Data rate: %.1f kB/s"), stats.TxRate_Bps/1000));
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
