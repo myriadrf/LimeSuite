@@ -34,6 +34,22 @@ StreamerLTE::STATUS StreamerLTE::StartStreaming(unsigned int fftSize)
     stopRx.store(false);
     stopProcessing.store(false);
     stopTx.store(false);
+
+    //stop Tx Rx if they were active
+    uint16_t regVal = SPI_read(0x0005);
+    SPI_write(0x0005, regVal & ~0x6);
+
+    //USB FIFO reset
+    LMScomms::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x01);
+    mDataPort->TransferPacket(ctrPkt);
+    ctrPkt.outBuffer[0] = 0x00;
+    mDataPort->TransferPacket(ctrPkt);
+
+    regVal = SPI_read(0x0005);
+    SPI_write(0x0005, regVal | 0x6);
+
     threadRx = std::thread(ReceivePackets, this);
     threadProcessing = std::thread(ProcessPackets, this, fftSize);
     threadTx = std::thread(TransmitPackets, this);
@@ -53,7 +69,13 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     threadTx.join();
     threadProcessing.join();
     threadRx.join();
+
+    //stop Tx Rx if they were active
+    uint16_t regVal = SPI_read(0x0005);
+    SPI_write(0x0005, regVal & ~0x6);
+
     mStreamRunning.store(false);
+
     return SUCCESS;
 }
 
@@ -82,17 +104,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
     }
     memset(buffers, 0, buffers_count*buffer_size);
 
-    //USB FIFO reset
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    pthis->mDataPort->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    pthis->mDataPort->TransferPacket(ctrPkt);
-
-    uint16_t regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal | 0x4);
-
     for (int i = 0; i<buffers_count; ++i)
         handles[i] = pthis->mDataPort->BeginDataReading(&buffers[i*buffer_size], buffer_size);
 
@@ -101,7 +112,7 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
     unsigned long BytesReceived = 0;
     int m_bufferFailures = 0;
     while (pthis->stopRx.load() == false)
-    {   
+    {
         if (pthis->mDataPort->WaitForReading(handles[bi], 1000) == false)
         {
             ++m_bufferFailures;
@@ -161,9 +172,6 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
         pthis->mDataPort->WaitForReading(handles[j], 1000);
         pthis->mDataPort->FinishDataReading(&buffers[j*buffer_size], bytesToRead, handles[j]);
     }
-
-    regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal & ~0x4);
 
     delete[] buffers;
 #ifndef NDEBUG
@@ -228,7 +236,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, unsigned int fftSize)
             std::unique_lock<std::mutex> lck(pthis->mLockIncomingPacket);
             pthis->mIncomingPacket = localDataResults;
         }
-		
+
 		//Transmit earlier received packets with a counter delay
         for (int i = 0; i < packetsCountForFFT; ++i)
         {
@@ -395,7 +403,7 @@ uint16_t StreamerLTE::SPI_read(uint16_t address)
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_BRDSPI_RD;
     ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);    
+    ctrPkt.outBuffer.push_back(address & 0xFF);
     mDataPort->TransferPacket(ctrPkt);
     return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
 }
