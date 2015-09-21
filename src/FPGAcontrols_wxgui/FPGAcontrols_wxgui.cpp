@@ -386,7 +386,7 @@ void FPGAcontrols_wxgui::OnbtnStartStreamingClick(wxCommandEvent& event)
         wxMessageBox(_("File not found ") + fileForCyclicTransmitting, _("Error"));
         return;
     }
-    if (framesCount)
+    if (framesCount == 0)
     {
         wxMessageBox(_("No samples were loaded"));
         return;

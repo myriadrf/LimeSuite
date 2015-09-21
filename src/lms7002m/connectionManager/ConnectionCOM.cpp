@@ -317,7 +317,11 @@ void ConnectionCOM::FindAllComPorts()
                         nUserNameLen,
                         NULL, NULL ); // Unrepresented char replacement - Use Default
 						portname[nUserNameLen] = 0;
+#ifdef UNICODE
                         comPortList.push_back(portname);
+#else
+                        comPortList.push_back(szPort);
+#endif
 					}
 					// Prepare for the next time around
 					dwValueNameSize = dwMaxValueNameSizeInChars;

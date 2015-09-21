@@ -179,7 +179,11 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
             return FAILURE;
         }
         if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
+        {   
+            progress.bytesCount = progress.bytesSent;
+            mUploadInProgress.store(false);
             break;
+        }
 #ifndef NDEBUG
         printf("programing: %6i/%i\r", portionNumber, portionsCount - 1);
 #endif
