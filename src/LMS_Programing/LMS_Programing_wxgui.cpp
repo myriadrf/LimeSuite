@@ -186,10 +186,17 @@ void LMS_Programing_wxgui::OnProgressPoll(wxTimerEvent& evt)
     assert(m_programmer != nullptr);
     LMS_Programing::Info info = m_programmer->GetProgressInfo();
     progressBar->SetRange(100);
-    if(info.bytesCount == 0)
-        info.bytesCount = 1;
-    float percent = 100.0*info.bytesSent / info.bytesCount;
-    progressBar->SetValue(percent);
+    float percent;
+    if (info.bytesCount == 0)
+    {
+        percent = 100;
+        progressBar->SetValue(100);
+    }
+    else
+    {
+        percent = 100.0*info.bytesSent / info.bytesCount;
+        progressBar->SetValue(percent);
+    }
     lblProgressPercent->SetLabel(wxString::Format("%3.1f", percent));
     if (info.bytesSent == info.bytesCount || info.aborted)
         OnProgramingFinished();
