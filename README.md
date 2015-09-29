@@ -1,4 +1,9 @@
 This is software to control Lime Microsystems EVB7 and Stream boards.
+
+This repository uses cpp-feather-ini-parser as submodule, execute this command
+to download it's source code:
+	git submodule update --init --recursive
+
 Detailed instructions how to compile this software is given in:
 	docs/lms7suite_compilation_guide.doc
 
@@ -6,7 +11,7 @@ Source code is is grouped into modules by functionality in ./src directory.
 
 The main library is LMS7002M it is designed to configure LMS7002M transceiver and
 perform data transfering operations to boards. Basic functionality is documented
-in ./docs/lms7api.doc file.
+in ./docs/lms7api.pdf file.
 
 LTEpackets module is designed to experiment with receiving, processing and 
 transmitting samples.
