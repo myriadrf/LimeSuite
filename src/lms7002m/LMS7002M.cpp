@@ -161,6 +161,13 @@ liblms7_status LMS7002M::ResetChip()
 */
 liblms7_status LMS7002M::LoadConfig(const char* filename)
 {
+	ifstream f(filename);
+    if (f.good() == false) //file not found
+    {
+        f.close();
+        return LIBLMS7_FILE_NOT_FOUND;
+    }
+    f.close();
     uint16_t addr = 0;
     uint16_t value = 0;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC)); //remember used channel

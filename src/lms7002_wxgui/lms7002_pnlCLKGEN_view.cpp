@@ -177,7 +177,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     UpdateCLKL();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN_MHz()));
-
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_LSB, false);
     lblFRAC_SDM_CGEN->SetLabel(wxString::Format("%i", fracValue));
 }

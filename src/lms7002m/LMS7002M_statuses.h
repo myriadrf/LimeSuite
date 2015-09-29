@@ -19,7 +19,8 @@ const char liblms7_status_strings[][64] =
 "cannot deliver frequency",
 "VCO is powered down",
 "Bad SEL_PATH_RFE",
-"Band not selected"
+"Band not selected",
+"file not found"
 };
 
 enum liblms7_status
@@ -35,6 +36,7 @@ enum liblms7_status
     LIBLMS7_VCO_IS_POWERED_DOWN,
     LIBLMS7_BAD_SEL_PATH,
     LIBLMS7_BAND_NOT_SELECTED,
+    LIBLMS7_FILE_NOT_FOUND,
 
     LIBLMS7_STATUS_COUNT
 };
