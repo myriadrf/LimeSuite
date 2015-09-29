@@ -531,7 +531,7 @@ int ConnectionUSB::BeginDataReading(char *buffer, long length)
 */
 int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
-    if( contexts[contextHandle].used == true && contextHandle > 0)
+    if( contexts[contextHandle].used == true && contextHandle >= 0)
     {
     int status = 0;
     #ifndef __unix__
@@ -574,7 +574,7 @@ int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
 */
 int ConnectionUSB::FinishDataReading(char *buffer, long &length, int contextHandle)
 {
-    if( contexts[contextHandle].used == true && contextHandle > 0)
+    if( contexts[contextHandle].used == true && contextHandle >= 0)
     {
     #ifndef __unix__
     int status = 0;
