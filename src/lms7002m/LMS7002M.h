@@ -9,7 +9,6 @@
 
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
-#include "LMS7002M_RegistersMap.h"
 #include "typedefs.h"
 
 #include <sstream>
@@ -128,8 +127,6 @@ public:
 
 protected:
     LMS7002M_RegistersMap *mRegistersMap;
-    static const uint16_t moduleAddresses[];
-    static const uint16_t defaultValues[];
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
 

@@ -134,7 +134,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     double input1;
     double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
-    txtFilterFrequency->GetValue().ToDouble(&input2);
+    txtFilterFrequency2->GetValue().ToDouble(&input2);
     liblms7_status status;
     switch (rgrFilterSelection->GetSelection())
     {

@@ -7,6 +7,7 @@
 using namespace LMS7002_WXGUI;
 
 indexValueMap hbi_ovr_txtsp_IndexValuePairs;
+indexValueMap tsgfcw_txtsp_IndexValuePairs;
 
 lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent )
 :
@@ -184,7 +185,11 @@ void lms7002_pnlTxTSP_view::ParameterChangeHandler( wxCommandEvent& event )
     {   
         float angle = atan(value / 2048.0) * 180 / 3.141596;
         txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));        
-    }    
+    }
+    else if (event.GetEventObject() == rgrTSGFCW_TXTSP)
+    {
+        value = index2value(value, tsgfcw_txtsp_IndexValuePairs);
+    }
     else if (event.GetEventObject() == cmbHBI_OVR_TXTSP)
     {
         value = index2value(value, hbi_ovr_txtsp_IndexValuePairs);
@@ -376,7 +381,10 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     long hbi = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, fromChip);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
-    int16_t value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP, fromChip);
+    int16_t value = lmsControl->Get_SPI_Reg_bits(TSGFCW_RXTSP, fromChip);
+    rgrTSGFCW_TXTSP->SetSelection(value2index(value, tsgfcw_txtsp_IndexValuePairs));
+
+    value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP, fromChip);
     int bitsToShift = (15 - IQCORR_TXTSP.msb - IQCORR_TXTSP.lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
