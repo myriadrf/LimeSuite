@@ -149,6 +149,9 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     hbi_ovr_txtsp_IndexValuePairs.push_back(indexValuePair(5, 7));
     cmbHBI_OVR_TXTSP->Set(temp);
 
+    tsgfcw_txtsp_IndexValuePairs.push_back(indexValuePair(0, 1));
+    tsgfcw_txtsp_IndexValuePairs.push_back(indexValuePair(1, 2));
+
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
