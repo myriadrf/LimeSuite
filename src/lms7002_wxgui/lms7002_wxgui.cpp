@@ -4905,7 +4905,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	ID_PANEL1->SetSizer( fgMainSizer );
 	ID_PANEL1->Layout();
 	fgMainSizer->Fit( ID_PANEL1 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL1, wxT("Modes"), true );
+	ID_NOTEBOOK1->AddPage( ID_PANEL1, wxT("Modes"), false );
 	ID_PANEL2 = new wxPanel( ID_NOTEBOOK1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer115;
 	fgSizer115 = new wxFlexGridSizer( 0, 1, 5, 5 );
@@ -4926,7 +4926,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	sbSizerSampleSource = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL2, wxID_ANY, wxT("Sample source") ), wxVERTICAL );
 	
 	wxStaticBoxSizer* sbSizer87;
-	sbSizer87 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSampleSource->GetStaticBox(), wxID_ANY, wxT("When Port 1 is Tx") ), wxVERTICAL );
+	sbSizer87 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSampleSource->GetStaticBox(), wxID_ANY, wxT("When Port 1 is RF2BB") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer118;
 	fgSizer118 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -4997,7 +4997,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	sbSizerSampleSource->Add( sbSizer87, 0, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	wxStaticBoxSizer* sbSizer89;
-	sbSizer89 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSampleSource->GetStaticBox(), wxID_ANY, wxT("When Port 2 is Tx") ), wxVERTICAL );
+	sbSizer89 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSampleSource->GetStaticBox(), wxID_ANY, wxT("When Port 2 is RF2BB") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer120;
 	fgSizer120 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -5074,7 +5074,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	sbSizerSamplePositions = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL2, wxID_ANY, wxT("Sample positions") ), wxVERTICAL );
 	
 	wxStaticBoxSizer* sbSizer88;
-	sbSizer88 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSamplePositions->GetStaticBox(), wxID_ANY, wxT("When Port 1 is Rx") ), wxVERTICAL );
+	sbSizer88 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSamplePositions->GetStaticBox(), wxID_ANY, wxT("When Port 1 is BB2RF") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer119;
 	fgSizer119 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -5140,7 +5140,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	sbSizerSamplePositions->Add( sbSizer88, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	wxStaticBoxSizer* sbSizer90;
-	sbSizer90 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSamplePositions->GetStaticBox(), wxID_ANY, wxT("When Port 2 is Rx") ), wxVERTICAL );
+	sbSizer90 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSamplePositions->GetStaticBox(), wxID_ANY, wxT("When Port 2 is BB2RF") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer121;
 	fgSizer121 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -5559,7 +5559,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	ID_PANEL2->SetSizer( fgSizer115 );
 	ID_PANEL2->Layout();
 	fgSizer115->Fit( ID_PANEL2 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Sample position && Clock"), false );
+	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Sample position && Clock"), true );
 	
 	fgSizer105->Add( ID_NOTEBOOK1, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
@@ -7463,7 +7463,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	fgSizer148->Add( rgrTSGMODE_RXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
-	wxString rgrINSEL_RXTSPChoices[] = { wxT("LML output"), wxT("Test signal") };
+	wxString rgrINSEL_RXTSPChoices[] = { wxT("ADC"), wxT("Test signal") };
 	int rgrINSEL_RXTSPNChoices = sizeof( rgrINSEL_RXTSPChoices ) / sizeof( wxString );
 	rgrINSEL_RXTSP = new wxRadioBox( sbSizer105->GetStaticBox(), ID_INSEL_RXTSP, wxT("Input source"), wxDefaultPosition, wxDefaultSize, rgrINSEL_RXTSPNChoices, rgrINSEL_RXTSPChoices, 1, wxRA_SPECIFY_COLS );
 	rgrINSEL_RXTSP->SetSelection( 0 );
