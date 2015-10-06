@@ -4,6 +4,8 @@
 #include <wx/timer.h>
 #include <vector>
 #include "LMS_StreamBoard.h"
+#include "StreamerNovena.h"
+#include "lmsComms.h"
 
 void fftviewer_frFFTviewer::Initialize(LMScomms* pDataPort)
 {
@@ -117,7 +119,10 @@ void fftviewer_frFFTviewer::StartStreaming()
     {
     case 0:
         assert(mStreamBrd == nullptr);
-        mStreamBrd = new LMS_StreamBoard(mDataPort);
+        if (mDataPort->GetInfo().device == LMS_DEV_NOVENA)
+            mStreamBrd = new StreamerNovena(mDataPort);
+        else
+            mStreamBrd = new LMS_StreamBoard(mDataPort);
         mStreamBrd->StartReceiving(spinFFTsize->GetValue());
         break;
     case 1:        
