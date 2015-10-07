@@ -240,14 +240,14 @@ int writeKernelMemory(long offset, long value, int virtualized, int size)
 
 int prep_eim_burst()
 {
-    if (eim_configured == true)
+    if(eim_configured == true)
         return 1;
     eim_configured = true;
     // set up pads to be mapped to EIM
     for (int i = 0; i < 16; i++)
     {
-        writeKernelMemory(0x20e0114 + i * 4, 0x0, 0, 4); // mux mapping
-        writeKernelMemory(0x20e0428 + i * 4, 0xb0b1, 0, 4); // pad strength config'd for a 100MHz rate
+        writeKernelMemory(0x20e0114 + i*4, 0x0, 0, 4); // mux mapping
+        writeKernelMemory(0x20e0428 + i*4, 0xb0b1, 0, 4); // pad strength config'd for a 100MHz rate
     }
 
     // mux mapping
@@ -301,12 +301,12 @@ int prep_eim_burst()
     int SRD = 1 << 2; //synch reads
     int SWR = 1 << 1; //synch writes
     int CSEN = 1; //chip select is enabled
-    int EIM_CSnGCR1 = PSZ | WP | GBC | AUS | CSREC | SP | DSZ | BCS | BCD | WC | BL | CREP | CRE | RFL | WFL | MUM | SRD | SWR | CSEN;
+    int EIM_CSnGCR1 = PSZ|WP|GBC|AUS|CSREC|SP|DSZ|BCS|BCD|WC|BL|CREP|CRE|RFL|WFL|MUM|SRD|SWR|CSEN;
     printf("EIM_CSnGCR1 0x%08X\n", EIM_CSnGCR1);
 
     writeKernelMemory(0x21b8000, EIM_CSnGCR1, 0, 4);
-    writeKernelMemory(0x21b8000 + 24, EIM_CSnGCR1, 0, 4);
-    writeKernelMemory(0x21b8000 + 48, EIM_CSnGCR1, 0, 4);
+    writeKernelMemory(0x21b8000+24, EIM_CSnGCR1, 0, 4);
+    writeKernelMemory(0x21b8000+48, EIM_CSnGCR1, 0, 4);
 
     // EIM_CS0GCR2
     int MUX16_BYP_GRANT = 1 << 12;
@@ -314,11 +314,11 @@ int prep_eim_burst()
     int DAE = 0 << 8;
     int DAPS = 0 << 4;
     int ADH = 0; // address hold time after ADC negation(0 cycles)
-    int EIM_CSnGCR2 = MUX16_BYP_GRANT | DAP | DAE | DAPS | ADH;
+    int EIM_CSnGCR2 = MUX16_BYP_GRANT|DAP|DAE|DAPS|ADH;
     printf("EIM_CSnGCR2 0x%08X\n", EIM_CSnGCR2);
     writeKernelMemory(0x21b8004, EIM_CSnGCR2, 0, 4);
-    writeKernelMemory(0x21b8004 + 24, EIM_CSnGCR2, 0, 4);
-    writeKernelMemory(0x21b8004 + 48, EIM_CSnGCR2, 0, 4);
+    writeKernelMemory(0x21b8004+24, EIM_CSnGCR2, 0, 4);
+    writeKernelMemory(0x21b8004+48, EIM_CSnGCR2, 0, 4);
 
     // EIM_CS0RCR1
     // RWSC RADVA RAL RADVN OEA OEN RCSA RCSN
@@ -330,10 +330,10 @@ int prep_eim_burst()
     int OEN = 0 << 8;
     int RCSA = 0 << 4;
     int RCSN = 0;
-    int EIM_CSnRCR1 = RWSC | RADVA | RAL | RADVN | OEA | OEN | RCSA | RCSN;
+    int EIM_CSnRCR1 = RWSC|RADVA|RAL|RADVN|OEA|OEN|RCSA|RCSN;
     writeKernelMemory(0x21b8008, EIM_CSnRCR1, 0, 4);
-    writeKernelMemory(0x21b8008 + 24, EIM_CSnRCR1, 0, 4);
-    writeKernelMemory(0x21b8008 + 48, EIM_CSnRCR1, 0, 4);
+    writeKernelMemory(0x21b8008+24, EIM_CSnRCR1, 0, 4);
+    writeKernelMemory(0x21b8008+48, EIM_CSnRCR1, 0, 4);
     printf("EIM_CSnRCR1 0x%08X\n", EIM_CSnRCR1);
 
     // EIM_CS0RCR2
@@ -344,10 +344,10 @@ int prep_eim_burst()
     int RBEA = 0 << 4; //these match RCSA/RCSN from previous field
     int RBE = 0 << 3;
     int RBEN = 0;
-    int EIM_CSnRCR2 = APR | PAT | RL | RBEA | RBE | RBEN;
+    int EIM_CSnRCR2 = APR|PAT|RL|RBEA|RBE|RBEN;
     writeKernelMemory(0x21b800c, EIM_CSnRCR2, 0, 4);
-    writeKernelMemory(0x21b800c + 24, EIM_CSnRCR2, 0, 4);
-    writeKernelMemory(0x21b800c + 48, EIM_CSnRCR2, 0, 4);
+    writeKernelMemory(0x21b800c+24, EIM_CSnRCR2, 0, 4);
+    writeKernelMemory(0x21b800c+48, EIM_CSnRCR2, 0, 4);
     printf("EIM_CSnRCR2 0x%08X\n", EIM_CSnRCR2);
 
     // EIM_CS0WCR1
@@ -363,12 +363,12 @@ int prep_eim_burst()
     int WEA = 0 << 9; //0 cycles between beginning of access and WE assertion
     int WEN = 0 << 6; //1 cycles to end of WE assertion
     int WCSA = 0 << 3; //cycles to CS assertion
-    int WCSN = 0; //cycles to CS negation
-    int EIM_CSnWCR1 = WAL | WBED | WWSC | WADVA | WADVN | WBEA | WBEN | WEA | WEN | WCSA | WCSN;
+    int WCSN = 0 ; //cycles to CS negation
+    int EIM_CSnWCR1 = WAL|WBED|WWSC|WADVA|WADVN|WBEA|WBEN|WEA|WEN|WCSA|WCSN;
     printf("EIM_CSnWCR1 0x%08X\n", EIM_CSnWCR1);
     writeKernelMemory(0x21b8010, EIM_CSnWCR1, 0, 4);
-    writeKernelMemory(0x21b8010 + 24, EIM_CSnWCR1, 0, 4); //cs1
-    writeKernelMemory(0x21b8010 + 48, EIM_CSnWCR1, 0, 4); //cs2
+    writeKernelMemory(0x21b8010+24, EIM_CSnWCR1, 0, 4); //cs1
+    writeKernelMemory(0x21b8010+48, EIM_CSnWCR1, 0, 4); //cs2
 
     // EIM_WCR
     // BCM = 1 free-run BCLK
@@ -380,7 +380,7 @@ int prep_eim_burst()
     int INTEN = 0 << 4;
     int GBCD = 0 << 1; //0 //don't divide the burst clock
     int BCM = 1; //free-run BCLK
-    int EIM_WCR = WDOG_LIMIT | WDOG_EN | INTPOL | INTEN | GBCD | BCM;
+    int EIM_WCR = WDOG_LIMIT|WDOG_EN|INTPOL|INTEN|GBCD|BCM;
     writeKernelMemory(0x21b8090, EIM_WCR, 0, 4);
     printf("EIM_WCR 0x%08X\n", EIM_WCR);
 
@@ -392,12 +392,12 @@ int prep_eim_burst()
     int INT = 0 << 2;
     int IPS_ACK = 0 << 1;
     int IPS_REQ = 0;
-    int EIM_WIAR = ACLK_EN | ERRST | INT | IPS_ACK | IPS_REQ;
+    int EIM_WIAR = ACLK_EN|ERRST|INT|IPS_ACK|IPS_REQ;
     writeKernelMemory(0x21b8094, EIM_WIAR, 0, 4);
     printf("EIM_WIAR 0x%08X\n", EIM_WIAR);
 
-    printf("resetting CS0 space to 64M and enabling 32M CS1 and 32M CS2 space.\n");
-    writeKernelMemory(0x20e0004, (readKernelMemory(0x20e0004, 0, 4) & 0xFFFFF000) | 0x04B, 0, 4);
+    printf( "resetting CS0 space to 64M and enabling 32M CS1 and 32M CS2 space.\n" );
+    writeKernelMemory( 0x20e0004, (readKernelMemory(0x20e0004, 0, 4) & 0xFFFFF000) | 0x04B, 0, 4);
     printf("EIM configured\n");
     return 0;
 }
@@ -452,6 +452,7 @@ LMS_StreamBoard::Status StreamerNovena::StopCyclicTransmitting()
 
 void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 {
+    prep_eim_burst();
     StreamerNovena *pthis = pStreamer;
     LMS_StreamBoard::SamplesPacket pkt;
     int samplesCollected = 0;
@@ -475,15 +476,15 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     uint16_t controlRegValue = pthis->SPI_read(0x0802);
 
     LMScomms::GenericPacket ctrPkt;
-    pthis->SPI_write(0x0802, (controlRegValue & 0x1FFF) | (dataSource << 12));
-    pthis->SPI_write(0x0802, (controlRegValue & 0x1FFF) | (dataSource << 12) | 0x8000);
+    pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12));
+    pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         int bytesReceived = 0;
-        for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead / sizeof(int16_t))
+        for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead)
         {
             fpga_read(0xC000000, (unsigned short*)&buffer[bb], bytesToRead);
             totalBytesReceived += bytesToRead;
@@ -491,10 +492,10 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
             //printf("fpga read %i words\n", bytesToRead/2);
         }
 
-        LMScomms::GenericPacket ctrPkt;        
-        pthis->SPI_write(0x0802, (controlRegValue & 0x1FFF) | (dataSource << 12));
-        pthis->SPI_write(0x0802, (controlRegValue & 0x1FFF) | (dataSource << 12) | 0x8000);
-        
+        LMScomms::GenericPacket ctrPkt;
+        pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12));
+        pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
+
         if (bytesReceived > 0)
         {
             ++packetsReceived;
@@ -549,12 +550,12 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
         }
         memset(buffer, 0, buffer_size);
     }
-    
-    for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead / sizeof(int16_t))
+
+    /*for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead / sizeof(int16_t))
     {
         fpga_read(0xC000000, (unsigned short*)&buffer[bb], bytesToRead);
         //printf("fpga read %i words\n", bytesToRead/2);
-    }
+    }*/
 #ifndef NDEBUG
     printf("Rx finished\n");
 #endif
@@ -563,4 +564,40 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 void StreamerNovena::TransmitPackets(StreamerNovena* pthis)
 {
 
+}
+
+
+/** @brief Helper function to write board spi regiters
+    @param address spi address
+    @param data register value
+*/
+LMS_StreamBoard::Status StreamerNovena::SPI_write(uint16_t address, uint16_t data)
+{
+    assert(mDataPort != nullptr);
+    LMScomms::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_LMS7002_WR;
+    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(address & 0xFF);
+    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(data & 0xFF);
+    mDataPort->TransferPacket(ctrPkt);
+    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
+}
+
+/** @brief Helper function to read board spi registers
+    @param address spi address
+    @return register value
+*/
+uint16_t StreamerNovena::SPI_read(uint16_t address)
+{
+    assert(mDataPort != nullptr);
+    LMScomms::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_LMS7002_RD;
+    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back(address & 0xFF);
+    mDataPort->TransferPacket(ctrPkt);
+    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
+        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    else
+        return 0;
 }
