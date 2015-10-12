@@ -4,6 +4,7 @@
 @brief 	panel for interacting with HPM7 board
 */
 #include "HPM7_wxgui.h"
+#include "lms7suiteEvents.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -79,14 +80,45 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     btnUpdateAll = new wxButton(this, wxNewId(), _("Read All"));
     Connect(btnUpdateAll->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&HPM7_wxgui::DownloadAll);
     leftCollumn->Add(btnUpdateAll, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    wxStaticBoxSizer* gpioGroup = new wxStaticBoxSizer(wxVERTICAL, this, _("GPIOS"));
-    for (int i = 0; i < 5; ++i)
-    {
-        chkGPIO.push_back(new wxCheckBox(this, wxNewId(), wxString::Format(_("GPIO%i"), i)));
-        gpioGroup->Add(chkGPIO[i], 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-        Connect(chkGPIO[i]->GetId(), wxEVT_CHECKBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
-    }
-    leftCollumn->Add(gpioGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
+    wxFlexGridSizer* gpioControls = new wxFlexGridSizer(0, 1, 5, 5);
+    const wxString activePathChoices[] = { _("No path active"), _("LNAH"), _("LNAL"), _("LNAW") };
+    // GPIO1 GPIO0
+    //   0     0  not used
+    //   0     1  LNAW_A&B (Wide band)
+    //   1     0  LNAH_A&B (High band)
+    //   1     1  LNAL_A&B (Low band)
+    cmbActivePath = new wxComboBox(this, wxNewId(), activePathChoices[1], wxDefaultPosition, wxDefaultSize, 4, activePathChoices);
+    Connect(cmbActivePath->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
+    gpioControls->Add(new wxStaticText(this, wxID_ANY, _("Active path to RXFE:")), 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
+    gpioControls->Add(cmbActivePath, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
+
+    gpioControls->Add(new wxStaticText(this, wxID_ANY, _("TxFE output selection")), 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
+    const wxString bandChoices[] = { _("Band1"), _("Band2") };
+    // GPIO2
+    //   0  TXA_2 output
+    //   1  TXA_1 output amplified
+    cmbBand = new wxComboBox(this, wxNewId(), bandChoices[0], wxDefaultPosition, wxDefaultSize, 2, bandChoices);
+    Connect(cmbBand->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
+    gpioControls->Add(cmbBand, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
+
+    gpioControls->Add(new wxStaticText(this, wxID_ANY, _("Enable external LNA:")), 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
+    const wxString lnaChoices[] = { _("Bypass LNA"), _("Enable LNA")};
+    //GPIO3
+    //  0  Bypass LNA
+    //  1  Enable LNA
+    cmbLNA = new wxComboBox(this, wxNewId(), lnaChoices[1], wxDefaultPosition, wxDefaultSize, 2, lnaChoices);
+    Connect(cmbLNA->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
+    gpioControls->Add(cmbLNA, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
+    
+    gpioControls->Add(new wxStaticText(this, wxID_ANY, _("PAs Vd Driver:")), 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
+    const wxString paChoices[] = { _("5V"), _("2V") };
+    //GPIO4
+    //  0  5V
+    //  1  2V
+    cmbPAdriver = new wxComboBox(this, wxNewId(), paChoices[0], wxDefaultPosition, wxDefaultSize, 2, paChoices);
+    Connect(cmbPAdriver->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
+    gpioControls->Add(cmbPAdriver, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
+    leftCollumn->Add(gpioControls, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
 
     //DACs
     wxFlexGridSizer* dacSizer = new wxFlexGridSizer(0, 2, 5, 5);
@@ -183,23 +215,23 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
 
 void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
 {
-    assert(m_serPort != nullptr);
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
+    if (UploadGPIO() == false)
         return;
-    }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
-    pkt.outBuffer.push_back(0x10);    
-    unsigned char value = 0;
-    for (int i = 0; i < chkGPIO.size(); ++i)
-        value |= (chkGPIO[i]->GetValue() << i);
-    pkt.outBuffer.push_back( value );
-    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    wxCommandEvent evt;
+    evt.SetEventObject(this);
+    if (event.GetId() == cmbActivePath->GetId())
+    {
+        evt.SetEventType(LMS7_RXPATH_CHANGED);
+        evt.SetInt(event.GetInt());
+        wxPostEvent(this, evt);
+    }
+    else if (event.GetId() == cmbBand->GetId())
+    {
+        evt.SetEventType(LMS7_TXBAND_CHANGED);
+        evt.SetInt(event.GetInt());
+        wxPostEvent(this, evt);
+    }    
 }
 
 void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
@@ -226,8 +258,10 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
     }
 
     assert(pkt.inBuffer.size() >= 14);
-    for (int i = 0; i < chkGPIO.size(); ++i)
-        chkGPIO[i]->SetValue((pkt.inBuffer[1] >> i) & 1);
+    cmbActivePath->SetSelection(pkt.inBuffer[1] & 0x3);
+    cmbBand->SetSelection((pkt.inBuffer[1] >> 2) & 0x1);
+    cmbLNA->SetSelection((pkt.inBuffer[1] >> 3) & 0x1);
+    cmbPAdriver->SetSelection((pkt.inBuffer[1] >> 4) & 0x1);
 
     int index = 3;
     for (int i = 0; i < chkEB.size(); ++i)
@@ -269,4 +303,46 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
     LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
     if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+}
+
+void HPM7_wxgui::SelectBand(unsigned int i)
+{
+    if (cmbBand)
+        cmbBand->SetSelection(i & 0x1);
+    UploadGPIO();
+}
+
+void HPM7_wxgui::SelectRxPath(unsigned int i)
+{
+    if (cmbActivePath)
+        cmbActivePath->SetSelection(i & 0x3);
+    UploadGPIO();
+}
+
+bool HPM7_wxgui::UploadGPIO()
+{
+    assert(m_serPort != nullptr);
+    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    {
+        wxMessageBox(_("Uploading HPM7 GPIO, board not connected"), _("Warning"));
+        return false;
+    }
+
+    LMScomms::GenericPacket pkt;
+    pkt.cmd = CMD_MYRIAD_WR;
+    pkt.outBuffer.push_back(0x10);
+    unsigned char value = 0;
+    value |= cmbActivePath->GetSelection() & 0x3;
+    value |= (cmbBand->GetSelection() & 0x1) << 2;
+    value |= (cmbLNA->GetSelection() & 0x1) << 3;
+    value |= (cmbPAdriver->GetSelection() & 0x1) << 4;
+    pkt.outBuffer.push_back(value);
+    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
+    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    {
+        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        return false;
+    }
+    return true;
+
 }

@@ -24,15 +24,21 @@ public:
     HPM7_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
     virtual void Initialize(LMScomms* serPort);
     virtual ~HPM7_wxgui();
+    void SelectBand(unsigned int i);
+    void SelectRxPath(unsigned int i);
+    bool UploadGPIO();
 
 protected:
+    wxComboBox* cmbActivePath;
+    wxComboBox* cmbBand;
+    wxComboBox* cmbLNA;
+    wxComboBox* cmbPAdriver;
     std::vector<long> tunerIds;
     std::vector<wxCheckBox*> chkEB;
     std::vector<wxCheckBox*> chkTP;
     std::vector<wxComboBox*> cmbSSC1;
     std::vector<wxComboBox*> cmbSSC2;    
     wxButton* btnUpdateAll;
-    std::vector<wxCheckBox*> chkGPIO;
     wxComboBox* cmbDAC_A;
     wxComboBox* cmbDAC_B;
 

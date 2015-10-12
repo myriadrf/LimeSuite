@@ -100,6 +100,20 @@ class mainPanel : public wxPanel
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
 		wxNotebook* tabsNotebook;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
+		
+	
+	public:
 		lms7002_pnlCalibrations_view* mTabCalibrations;
 		lms7002_pnlRFE_view* mTabRFE;
 		lms7002_pnlRBB_view* mTabRBB;
@@ -118,20 +132,6 @@ class mainPanel : public wxPanel
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
 		lms7002_pnlBuffers_view* mTabBuffers;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
-		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
-		
-	
-	public:
 		
 		mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~mainPanel();

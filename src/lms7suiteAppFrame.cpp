@@ -33,6 +33,8 @@
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
 #include <functional>
+#include "lms7002_pnlTRF_view.h"
+#include "lms7002_pnlRFE_view.h"
 ///////////////////////////////////////////////////////////////////////////
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
@@ -75,35 +77,62 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         if (fftviewer)
             fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
     }
-    else if (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED )
+   
+    //in case of Novena board, need to update GPIO
+    if (lms7controlPort->GetInfo().device == LMS_DEV_NOVENA &&
+        (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
-        //in case of Novena board, need to update GPIO
-        if(lms7controlPort->GetInfo().device == LMS_DEV_NOVENA)
+        uint16_t regValue = lmsControl->SPI_read(0x0806) & 0xFFF8;
+        //lms_gpio2 - tx output selection:
+        //		0 - TX1_A and TX1_B (Band 1),
+        //		1 - TX2_A and TX2_B (Band 2)
+        regValue |= lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF, false) << 2; //gpio2
+        //RX active paths
+        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
+        //  0 			0       =>  	no active path
+        //  1   		0 		=>	LNAW_A  	LNAW_B
+        //  0			1		=>	LNAH_A  	LNAH_B
+        //  1			1		=>	LNAL_A 	 	LNAL_B
+        switch(lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE, false))
         {
-            uint16_t regValue = lmsControl->SPI_read(0x0806) & 0xFFF8;
-            //lms_gpio2 - tx output selection:
-            //		0 - TX1_A and TX1_B (Band 1),
-            //		1 - TX2_A and TX2_B (Band 2)
-            regValue |= lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF, false) << 2; //gpio2
-            //RX active paths
-            //lms_gpio0 | lms_gpio1      	RX_A		RX_B
-            //  0 			0       =>  	no active path
-            //  1   		0 		=>	LNAW_A  	LNAW_B
-            //  0			1		=>	LNAH_A  	LNAH_B
-            //  1			1		=>	LNAL_A 	 	LNAL_B
-            switch(lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE, false))
-            {
-                //set gpio1:gpio0
-                case 0: regValue |= 0x0; break;
-                case 1: regValue |= 0x2; break;
-                case 2: regValue |= 0x3; break;
-                case 3: regValue |= 0x1; break;
-            }
-            lmsControl->SPI_write(0x0806, regValue);
+            //set gpio1:gpio0
+            case 0: regValue |= 0x0; break;
+            case 1: regValue |= 0x2; break;
+            case 2: regValue |= 0x3; break;
+            case 3: regValue |= 0x1; break;
         }
-        if(novenaGui)
+        lmsControl->SPI_write(0x0806, regValue);
+        if (novenaGui)
             novenaGui->UpdatePanel();
     }
+
+    if (event.GetEventType() == LMS7_TXBAND_CHANGED)
+    {
+        const wxObject* eventSource = event.GetEventObject();
+        const int bandIndex = event.GetInt();
+        //update HPM7 if changes were made outside of it
+        if (lms7controlPort->GetInfo().expansion == EXP_BOARD_HPM7 && eventSource != hpm7)
+            hpm7->SelectBand(bandIndex);
+        if (eventSource == hpm7)
+        {
+            lmsControl->Modify_SPI_Reg_bits(SEL_BAND1_TRF, bandIndex == 0);
+            lmsControl->Modify_SPI_Reg_bits(SEL_BAND2_TRF, bandIndex == 1);
+            mContent->mTabTRF->UpdateGUI();
+        }
+    }
+    if (event.GetEventType() == LMS7_RXPATH_CHANGED)
+    {
+        const wxObject* eventSource = event.GetEventObject();
+        const int pathIndex = event.GetInt();
+        //update HPM7 if changes were made outside of it
+        if (lms7controlPort->GetInfo().expansion == EXP_BOARD_HPM7 && eventSource != hpm7)
+            hpm7->SelectRxPath(pathIndex);
+        if (eventSource == hpm7)
+        {
+            lmsControl->Modify_SPI_Reg_bits(SEL_PATH_RFE, pathIndex);
+            mContent->mTabRFE->UpdateGUI();
+        }
+    }   
 }
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
