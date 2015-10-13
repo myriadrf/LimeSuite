@@ -797,9 +797,20 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
         addresses.push_back(startAddr + index + 24 * (index / 40));
     uint16_t spiData[120];
     memset(spiData, 0, 120 * sizeof(uint16_t));
-    status = SPI_read_batch(&addresses[0], spiData, coefCount);
-    for (index = 0; index < coefCount; ++index)
-        coef[index] = spiData[index];
+    if (controlPort->IsOpen())
+    {
+        status = SPI_read_batch(&addresses[0], spiData, coefCount);
+        for (index = 0; index < coefCount; ++index)
+            coef[index] = spiData[index];
+    }
+    else
+    {
+        const int channel = Get_SPI_Reg_bits(LMS7param(MAC), false) > 1 ? 1 : 0;
+        for (index = 0; index < coefCount; ++index)
+            coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
+        status = LIBLMS7_SUCCESS;
+    }
+    
     return status;
 }
 
