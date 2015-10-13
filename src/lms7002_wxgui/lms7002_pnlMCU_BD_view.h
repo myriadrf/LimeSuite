@@ -32,6 +32,7 @@ class lms7002_pnlMCU_BD_view : public pnlMCU_BD_view
 		void Onm_cCtrlBasebandSelect( wxCommandEvent& event );
 		void Onm_cCtrlMCU_BDSelect( wxCommandEvent& event );
 		void OnRegWriteRead( wxCommandEvent& event );
+        void OnbtnRunProductionTestClicked(wxCommandEvent& event);
 	public:
 		/** Constructor */
 		lms7002_pnlMCU_BD_view( wxWindow* parent );

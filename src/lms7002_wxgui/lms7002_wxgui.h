@@ -2042,10 +2042,10 @@ class pnlMCU_BD_view : public wxPanel
 		wxButton* btnStartProgramming;
 		wxStaticText* ID_S_PROGFINISHED;
 		wxStaticText* ID_STATICTEXT3;
-		wxButton* btnLoadTestFile;
+		wxButton* btnRunTest;
 		wxStaticText* ID_STATICTEXT4;
 		wxTextCtrl* m_sTestNo;
-		wxButton* btnRunTest;
+		wxButton* btnRunProductionTest;
 		wxCheckBox* DebugMode;
 		wxButton* RunInstr;
 		wxStaticText* ID_STATICTEXT6;
@@ -2077,8 +2077,8 @@ class pnlMCU_BD_view : public wxPanel
 		virtual void OnButton_LOADHexClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnchkResetClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartProgrammingClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnLoadTestFileClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnRunTestClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnRunProductionTestClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDebugModeClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRunInstruction( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetPCClick( wxCommandEvent& event ) { event.Skip(); }
