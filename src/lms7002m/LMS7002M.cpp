@@ -417,7 +417,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     }
 	// Initialization
 	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
-    if (Modify_SPI_Reg_bits(addrVCOpd, 2, 1, 0) != 0)
+    if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return LIBLMS7_VCO_IS_POWERED_DOWN;
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
