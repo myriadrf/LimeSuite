@@ -18,6 +18,7 @@
 #include <wx/timer.h>
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
+#include "wx/checkbox.h"
 
 #include <vector>
 #include "lmsComms.h"
@@ -65,10 +66,17 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 0, 0);
+	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
 	FlexGridSizer1->AddGrowableCol(0);
+
+    wxStaticBoxSizer* digitalInterfaceGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Digital Interface"));
+    chkDigitalLoopbackEnable = new wxCheckBox(this, wxNewId(), _("Digital Loopback enable"));
+    digitalInterfaceGroup->Add(chkDigitalLoopbackEnable, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+    Connect(chkDigitalLoopbackEnable->GetId(), wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick);
+    FlexGridSizer1->Add(digitalInterfaceGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxLEFT, 5);
+
 	StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));
-	FlexGridSizer6 = new wxFlexGridSizer(0, 1, 5, 0);
+    FlexGridSizer6 = new wxFlexGridSizer(0, 1, 5, 0);
 	FlexGridSizer6->AddGrowableCol(0);
 	FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 5);
 	btnLoadOnetone = new wxToggleButton(this, ID_BUTTON6, _T("Onetone"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
@@ -102,7 +110,7 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer6->Add(FlexGridSizer2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+	FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
 
     wxStaticBoxSizer* streamingBox = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("Samples streaming"));
     wxFlexGridSizer* streamingSizer = new wxFlexGridSizer(0, 4, 0, 0);
@@ -398,4 +406,27 @@ void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 {
     mStreamingTimer->Stop();
     mStreamer->StopCyclicTransmitting();
+}
+
+void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
+{
+    unsigned short regValue = 0;
+    LMScomms::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_BRDSPI_RD;
+    ctrPkt.outBuffer.push_back(0x00);
+    ctrPkt.outBuffer.push_back(0x16);
+    m_serPort->TransferPacket(ctrPkt);
+    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
+        regValue = ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+
+    ctrPkt.cmd = CMD_BRDSPI_WR;
+    ctrPkt.outBuffer.clear();
+    ctrPkt.outBuffer.push_back(0x00);
+    ctrPkt.outBuffer.push_back(0x16);
+    ctrPkt.outBuffer.push_back((regValue >> 8) & 0xFF);
+    ctrPkt.outBuffer.push_back((regValue & 0xFE) | chkDigitalLoopbackEnable->IsChecked());
+    m_serPort->TransferPacket(ctrPkt);
+        
+    if (ctrPkt.status != 1)
+        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }
