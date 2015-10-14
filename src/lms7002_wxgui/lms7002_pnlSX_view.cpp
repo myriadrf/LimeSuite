@@ -514,6 +514,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     double freq = lmsControl->GetFrequencySX_MHz(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, refClk);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
+    lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
 
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
