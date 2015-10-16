@@ -8445,14 +8445,14 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer199->SetFlexibleDirection( wxBOTH );
 	fgSizer199->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	ID_STATICTEXT3 = new wxStaticText( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Load test results file:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT3 = new wxStaticText( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Debug test (1-15):"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT3->Wrap( -1 );
 	fgSizer199->Add( ID_STATICTEXT3, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	btnLoadTestFile = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Load file"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer199->Add( btnLoadTestFile, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	btnRunTest = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Run one test"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer199->Add( btnRunTest, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	ID_STATICTEXT4 = new wxStaticText( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Select test no. (1-14):"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT4 = new wxStaticText( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Select test no. (1-15):"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT4->Wrap( -1 );
 	fgSizer199->Add( ID_STATICTEXT4, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
@@ -8460,8 +8460,8 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	m_sTestNo->SetMaxLength( 0 ); 
 	fgSizer199->Add( m_sTestNo, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	btnRunTest = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Run test"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer199->Add( btnRunTest, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	btnRunProductionTest = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Run production test"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer199->Add( btnRunProductionTest, 0, wxALL, 5 );
 	
 	
 	sbSizer126->Add( fgSizer199, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
@@ -8688,8 +8688,8 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	Button_LOADHEX->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton_LOADHexClick ), NULL, this );
 	chkReset->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnchkResetClick ), NULL, this );
 	btnStartProgramming->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
-	btnLoadTestFile->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnLoadTestFileClick ), NULL, this );
 	btnRunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunTestClick ), NULL, this );
+	btnRunProductionTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunProductionTestClicked ), NULL, this );
 	DebugMode->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnDebugModeClick ), NULL, this );
 	RunInstr->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRunInstruction ), NULL, this );
 	ResetPC->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnResetPCClick ), NULL, this );
@@ -8708,8 +8708,8 @@ pnlMCU_BD_view::~pnlMCU_BD_view()
 	Button_LOADHEX->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnButton_LOADHexClick ), NULL, this );
 	chkReset->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnchkResetClick ), NULL, this );
 	btnStartProgramming->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnStartProgrammingClick ), NULL, this );
-	btnLoadTestFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnLoadTestFileClick ), NULL, this );
 	btnRunTest->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunTestClick ), NULL, this );
+	btnRunProductionTest->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnbtnRunProductionTestClicked ), NULL, this );
 	DebugMode->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnDebugModeClick ), NULL, this );
 	RunInstr->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnRunInstruction ), NULL, this );
 	ResetPC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMCU_BD_view::OnResetPCClick ), NULL, this );

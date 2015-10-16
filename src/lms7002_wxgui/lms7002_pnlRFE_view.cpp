@@ -230,6 +230,7 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         wxCommandEvent evt;
         evt.SetEventType(LMS7_RXPATH_CHANGED);
         evt.SetEventObject(this);
+        evt.SetInt(event.GetInt());
         wxPostEvent(this, evt);
     }
     lmsControl->Modify_SPI_Reg_bits(parameter, value);

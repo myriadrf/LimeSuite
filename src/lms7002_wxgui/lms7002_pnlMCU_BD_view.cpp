@@ -93,6 +93,9 @@ void lms7002_pnlMCU_BD_view::OnchkResetClick( wxCommandEvent& event )
         ViewIRAM->Enable(false);
         EraseIRAM->Enable(false);
         SelDiv->Enable(false);
+        // global variables
+        m_bLoadedDebug = 0;
+        m_bLoadedProd = 0;
     }
     else
     {
@@ -147,7 +150,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
     wxString m_sTxtFileName = dlg.GetPath();
     wxString temps;
     temps = _("Test results file: ");
-    temps = temps << m_sTxtFileName;
+    temps = temps + m_sTxtFileName;
     lblTestResultsFile->SetLabel(temps);
     
     FILE * inFile = NULL;
@@ -198,17 +201,57 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
 
 void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
 {
+    wxString m_sTxtFileName = _("lms7suite_mcu/TestResults.txt");
+    lblTestResultsFile->SetLabel("Test results file: " + m_sTxtFileName);
+
+    FILE * inFile = NULL;
+    inFile = fopen(m_sTxtFileName.mb_str(), "r");
+
+    // debugging
+    //FILE * outFile=NULL;
+    //outFile = fopen("Out.txt", "w");
+    // end debugging
+    if (inFile != NULL)
+    {
+        m_iTestResultFileLine = 0;
+        for (int i = 0; i < 256; i++)
+        {
+            TestResultArray_code[i] = 0;
+            TestResultArray_address[i] = 0;
+            TestResultArray_value[i] = 0;
+        }
+
+        m_iTestResultFileLine = 0;
+        int  test_code = 0;
+        int  address = 0;
+        int  value = 0;
+        fscanf(inFile, "%d", &test_code);
+        while (!feof(inFile))
+        {
+            //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
+            fscanf(inFile, "%d ", &address);
+            fscanf(inFile, "%d\n", &value);
+            TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
+            TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
+            TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
+
+            m_iTestResultFileLine++;
+            fscanf(inFile, "%d", &test_code);
+        }
+    }
+    else
+    {
+        wxMessageBox(_("lms7suite_mcu/TestResults.txt file not found"));
+        return;
+    }
+    fclose(inFile);
+
     unsigned char tempc1, tempc2, tempc3 = 0x00;
     int retval = 0;
     int m_iError = 0;
     int i = 0;
 
-    if ((m_iMode1 == 0) && (m_iMode0 == 0))
-    {
-        wxMessageBox(_("Turn off reset."));
-        return;
-    }
-    if ((m_iTestNo <= 0) || (m_iTestNo>14))
+    if ((m_iTestNo <= 0) || (m_iTestNo>15))
     {
         m_iTestNo = 0;
         m_sTestNo->SetValue(_("0"));
@@ -509,4 +552,14 @@ void lms7002_pnlMCU_BD_view::OnProgrammingfinished(wxThreadEvent &event)
         rgrMode->Enable();
         btnStartProgramming->Enable();
     }    
+}
+
+void lms7002_pnlMCU_BD_view::OnbtnRunProductionTestClicked(wxCommandEvent& event)
+{
+    int status = mcuControl->RunProductionTest_MCU();
+    lblProgCodeFile->SetLabel("Program code file: " + mcuControl->GetProgramFilename());
+    if (status == 0)
+        wxMessageBox(_("Test passed"));
+    else
+        wxMessageBox(_("Test FAILED"));
 }

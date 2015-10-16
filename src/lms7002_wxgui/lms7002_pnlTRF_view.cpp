@@ -130,6 +130,7 @@ void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
     wxCommandEvent evt;
     evt.SetEventType(LMS7_TXBAND_CHANGED);
     evt.SetEventObject(this);
+    evt.SetInt(event.GetInt());
     wxPostEvent(this, evt);
 }
 

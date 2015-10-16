@@ -15,6 +15,9 @@ using namespace std;
 
 MCU_BD::MCU_BD()
 {
+    mLoadedProgramFilename = "";
+    m_bLoadedDebug = 0;
+    m_bLoadedProd = 0;
     stepsTotal = 0;
     stepsDone = 0;
     aborted = false;
@@ -44,7 +47,12 @@ void MCU_BD::Initialize(LMScomms* pSerPort)
     m_serPort = pSerPort;
 }
 
-void MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
+/** @brief Read program code from file into memory
+    @param inFileName source file path
+    @param bin binary or hex file
+    @return 0:success, -1:file not found
+*/
+int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
 {
     unsigned char ch=0x00;
     bool find_byte=false;
@@ -53,6 +61,10 @@ void MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
     if(!bin)
     {
         MCU_File	inFile(inFileName, "rb");
+        if (inFile.FileOpened() == false)
+            return -1;
+        
+        mLoadedProgramFilename = inFileName;
         inFile.ReadHex(8191);
 
         for (i=0; i<8192; i++)
@@ -69,6 +81,9 @@ void MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         char inByte = 0;
         fstream fin;
         fin.open(inFileName, ios::in | ios::binary);
+        if (fin.good() == false)
+            return -1;
+        mLoadedProgramFilename = inFileName;
         memset(byte_array, 0, 8192);
         for(int i=0; i<8192 && !fin.eof(); ++i)
         {
@@ -77,6 +92,7 @@ void MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
             byte_array[i]=inByte;
         }
     }
+    return 0;
 }
 
 void MCU_BD:: mSPI_write(
@@ -534,6 +550,9 @@ void MCU_BD::Wait_CLK_Cycles(int delay)
            mSPI_read(0x0003);
 }
 
+/** @brief Upload program code from memory into MCU
+    @return 0:success, -1:failed
+*/
 int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 {
     bool success = true;
@@ -575,18 +594,12 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 
 	while  (CntEnd<8192)
     {
-		//tempi=mSPI_read(0x0003);
-		//REG3 read
-		//if ((tempi&0x0001)==0x0001){ // Flag EmptyFIFO==1
-
         pkt.outBuffer.clear();
         pkt.outBuffer.push_back(tempi);
         pkt.outBuffer.push_back(packetNumber++);
         for (i=0; i<32; i++)
         {
             pkt.outBuffer.push_back(byte_array[CntEnd + i]);
-            //mSPI_write(0x8004, (unsigned short) (byte_array[CntEnd+i]));
-            // REG4 write
         }
 
         m_serPort->TransferPacket(pkt);
@@ -614,31 +627,18 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 
         CntEnd+=32;
         countDown=m_iLoopTries;
-
-        //if (CntEnd==32*128) {
-        //    mSPI_write(0x8002, tempi2);
-        //}
-        //Wait_CLK_Cycles(256);
 	};
 
-	/*tempi=mSPI_read(0x0003);
-	// REG3 read
-
-	while (((tempi&0x0040)== 0x0000)&&(countDown>0)) {
-    // wait if bit Programmed=='0'
-		tempi=mSPI_read(0x0003);  // REG3 read
-		countDown--;
-	}*/
-
-	//if (countDown==0) return -1;
-	// an error occured during programming
-	//else return 0; // programming successful
 #ifndef NDEBUG
     printf("\nMCU programming Finished\n");
 #endif
-	if(success)
+    if (success)
+    {
         Log("PROGRAMMING MCU SUCCESS\n");
-	return 0;
+        return 0;
+    }
+    else
+        return -1;
 }
 
 void MCU_BD::Reset_MCU()
@@ -649,6 +649,159 @@ void MCU_BD::Reset_MCU()
 	mSPI_write(0x8000, tempi);
 }
 
+int MCU_BD::RunProductionTest_MCU()
+{
+    string temps;
+    unsigned short tempi = 0x0080;  // was 0x0000
+    int m_iMode1_ = 0;
+    int m_iMode0_ = 0;
+    int m_iExt2 = 0;
+
+    if (m_bLoadedProd == 0)
+    {
+        if (GetProgramCode("lms7suite_mcu/ptest.hex", false) != 0)
+            return -1;
+    }
+    //MCU gets control over SPI switch
+    mSPI_write(0x0006, 0x0001); //REG6 write
+
+    // reset MCU
+    tempi = 0x0080;
+    mSPI_write(0x8002, tempi); // REG2
+    tempi = 0x0000;
+    mSPI_write(0x8000, tempi); // REG0
+
+    if (m_bLoadedProd == 0)
+    {
+        //select programming mode "01" for SRAM and EEPROM
+        m_iMode1_ = 0; m_iMode0_ = 1;
+    }
+    else
+    {
+        //boot from EEPROM
+        m_iMode1_ = 1; m_iMode0_ = 1;
+    }
+
+    //upload hex file
+    if (Program_MCU(m_iMode1_, m_iMode0_) != 0)
+        return -1; //failed to program
+
+    if (m_bLoadedProd == 0) 
+    {
+        Wait_CLK_Cycles(256 * 100);  // for programming mode, prog.code has been already loaded into MCU
+        m_iMode1_ = 0; m_iMode0_ = 1;
+    }
+    else
+    {
+        Wait_CLK_Cycles(256 * 400);
+        // for booting from EEPROM mode, must wait for some longer delay, at least 8kB/(80kb/s)=0.1s
+        m_iMode1_ = 1; m_iMode0_ = 1;
+    }
+
+    // global variable
+    m_bLoadedProd = 1;  // the ptest.hex has been loaded
+    m_bLoadedDebug = 0;
+
+    //tempi = 0x0000; 
+    // EXT_INT2=1, external interrupt 2 is raised
+    mSPI_write(0x8002, formREG2command(0, 0, 0, 1, m_iMode1_, m_iMode0_)); // EXT_INT2=1
+    // here you can put any Delay function
+    Wait_CLK_Cycles(256);
+    // EXT_INT2=0, external interrupt 2 is pulled down
+    mSPI_write(0x8002, formREG2command(0, 0, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT2=0
+
+    // wait for some time MCU to execute the tests
+    // the time is approximately 20ms
+    // here you can put any Delay function
+    Wait_CLK_Cycles(256 * 100);
+
+    unsigned short retval = 0;
+    retval = mSPI_read(1); //REG1 read
+
+    // show the return value at the MCU Control Panel
+    //int temps = wxString::Format("Result is: 0x%02X", retval);
+    //ReadResult->SetLabel(temps);
+
+    if (retval == 0x10)
+    {
+        tempi = 0x0055;
+        mSPI_write(0x8000, tempi); // P0=0x55;
+        // EXT_INT3=1, external interrupt 3 is raised
+        mSPI_write(0x8002, formREG2command(0, 0, 1, 0, m_iMode1_, m_iMode0_)); // EXT_INT3=1
+        // here you can put any Delay function
+        Wait_CLK_Cycles(256);
+        // EXT_INT3=0, external interrupt 3 is pulled down
+        mSPI_write(0x8002, formREG2command(0, 0, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT3=0
+        Wait_CLK_Cycles(256 * 5);
+        retval = mSPI_read(1);  //REG1 read
+        if (retval != 0x55)
+            temps = "Ext. interrupt 3 test failed.";
+        else 
+        {
+            tempi = 0x00AA;
+            mSPI_write(0x8000, tempi); // P0=0xAA;
+            // EXT_INT4=1, external interrupt 4 is raised
+            mSPI_write(0x8002, formREG2command(0, 1, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT4=1
+            // here you can put any Delay function
+            Wait_CLK_Cycles(256);
+            // EXT_INT4=0, external interrupt 4 is pulled down
+            mSPI_write(0x8002, formREG2command(0, 0, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT4=0
+            Wait_CLK_Cycles(256 * 5);
+            retval = mSPI_read(1);  //REG1 read
+            if (retval != 0xAA)  temps = "Ext. interrupt 4 test failed.";
+            else {
+                tempi = 0x0055;
+                mSPI_write(0x8000, tempi); // P0=0x55;
+                // EXT_INT5=1, external interrupt 5 is raised
+                mSPI_write(0x8002, formREG2command(1, 0, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT5=1
+                // here you can put any Delay function
+                Wait_CLK_Cycles(256);
+                // EXT_INT5=0, external interrupt 5 is pulled down
+                mSPI_write(0x8002, formREG2command(0, 0, 0, 0, m_iMode1_, m_iMode0_)); // EXT_INT5=0
+                Wait_CLK_Cycles(256 * 5);
+                retval = mSPI_read(1);  //REG1 read
+                if (retval != 0x55)
+                {
+                    temps = "Ext. interrupt 5 test failed.";
+                    return -1;
+                }
+                else
+                {
+                    temps = "Production test finished. MCU is OK.";
+                    return 0;
+                }
+            }
+        }
+    }
+    else 
+    {
+        if ((retval & 0xF0) == 0x30) 
+        { // detected error code
+            if ((retval & 0x0F) > 0)
+            {
+                char ctemp[64];
+                sprintf(ctemp, "Test %i failed", (retval & 0x0F));
+                temps = ctemp;
+                return -1;
+            }
+            else
+            {   
+                temps = "Test failed";
+                return -1;
+            }
+        }
+        else 
+        {
+            // test too long. Failure.
+            temps = "Test failed.";
+            return -1;
+        }
+    }
+
+    //Baseband gets back the control over SPI switch
+    mSPI_write(0x0006, 0x0000); //REG6 write
+}
+
 void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug) {
 
 	int i=0;
@@ -656,7 +809,7 @@ void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, i
 	unsigned short tempi=0x0000;
 	unsigned short basei=0x0000;
 
-	if  (test_code<=14) basei=(test_code<<4);
+	if  (test_code<=15) basei=(test_code<<4);
 	else basei=0x0000;
 
 	basei=basei&0xFFF0; // not necessery
@@ -809,4 +962,20 @@ MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
     info.stepsTotal = stepsTotal.load();
     info.aborted = aborted.load();
     return info;
+}
+
+unsigned int MCU_BD::formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int m_iExt2, int m_iMode1, int m_iMode0) {
+    unsigned int tempi = 0x0000;
+    if (m_iExt5 == 1)  tempi = tempi | 0x0020;
+    if (m_iExt4 == 1)  tempi = tempi | 0x0010;
+    if (m_iExt3 == 1)  tempi = tempi | 0x0008;
+    if (m_iExt2 == 1)  tempi = tempi | 0x0004;
+    if (m_iMode1 == 1) tempi = tempi | 0x0002;
+    if (m_iMode0 == 1) tempi = tempi | 0x0001;
+    return(tempi);
+}
+
+std::string MCU_BD::GetProgramFilename() const
+{
+    return mLoadedProgramFilename;
 }

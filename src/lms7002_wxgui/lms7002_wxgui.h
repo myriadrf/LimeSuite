@@ -100,6 +100,20 @@ class mainPanel : public wxPanel
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
 		wxNotebook* tabsNotebook;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
+		
+	
+	public:
 		lms7002_pnlCalibrations_view* mTabCalibrations;
 		lms7002_pnlRFE_view* mTabRFE;
 		lms7002_pnlRBB_view* mTabRBB;
@@ -118,20 +132,6 @@ class mainPanel : public wxPanel
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
 		lms7002_pnlBuffers_view* mTabBuffers;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
-		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
-		
-	
-	public:
 		
 		mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~mainPanel();
@@ -2042,10 +2042,10 @@ class pnlMCU_BD_view : public wxPanel
 		wxButton* btnStartProgramming;
 		wxStaticText* ID_S_PROGFINISHED;
 		wxStaticText* ID_STATICTEXT3;
-		wxButton* btnLoadTestFile;
+		wxButton* btnRunTest;
 		wxStaticText* ID_STATICTEXT4;
 		wxTextCtrl* m_sTestNo;
-		wxButton* btnRunTest;
+		wxButton* btnRunProductionTest;
 		wxCheckBox* DebugMode;
 		wxButton* RunInstr;
 		wxStaticText* ID_STATICTEXT6;
@@ -2077,8 +2077,8 @@ class pnlMCU_BD_view : public wxPanel
 		virtual void OnButton_LOADHexClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnchkResetClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartProgrammingClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnLoadTestFileClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnRunTestClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnRunProductionTestClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDebugModeClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRunInstruction( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetPCClick( wxCommandEvent& event ) { event.Skip(); }

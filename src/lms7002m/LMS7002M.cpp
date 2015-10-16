@@ -418,7 +418,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     }
 	// Initialization
 	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
-    if (Modify_SPI_Reg_bits(addrVCOpd, 2, 1, 0) != 0)
+    if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return LIBLMS7_VCO_IS_POWERED_DOWN;
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
@@ -448,7 +448,10 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
                 Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 if(Get_SPI_Reg_bits(addrCMP, 13, 12) == 0)
+                {
+                    ++csw_lowest;
                     break;
+                }
                 else
                     --csw_lowest;
             }
@@ -554,45 +557,62 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
         return LIBLMS7_NOT_CONNECTED;
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500; //threshold to enable additional divider
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC) ); //remember used channel
-    float_type dFvco;
-	int8_t i; //iDInd
-	int8_t iVCO;
-    //VCO selection
+    uint8_t ch; //remember used channel
+    float_type VCOfreq;
+    int8_t div_loch;
+    int8_t sel_vco;
     bool canDeliverFrequency = false;
-	for(iVCO=2; iVCO>=0; --iVCO)
-		for(i=6; i>=0; --i)
-		{
-			dFvco = (1<<(i+1)) * freq_MHz;
-            if ((dFvco >= gVCO_frequency_table[iVCO][0]) && (dFvco <= gVCO_frequency_table[iVCO][sxVCO_N - 1]))
-            {
-                canDeliverFrequency = true;
-                goto vco_found;
-            }
-		}
-    vco_found:
+    uint16_t integerPart;
+    uint32_t fractionalPart;
 
-    if (canDeliverFrequency == false)
+    //find required VCO frequency
+    for (div_loch = 6; div_loch >= 0; --div_loch)
     {
-        Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
-        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
+        VCOfreq = (1 << (div_loch + 1)) * freq_MHz;
+        if ((VCOfreq >= gVCO_frequency_table[0][0]) && (VCOfreq <= gVCO_frequency_table[2][sxVCO_N - 1]))
+        {
+            canDeliverFrequency = true;
+            break;
+        }
     }
+    if (canDeliverFrequency == false)
+        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
 
-    uint16_t gINT = (uint16_t)(dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))) - 4);
-    uint32_t gFRAC = (uint32_t)( (dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))) - (uint32_t)(dFvco/(refClk_MHz * (1+(dFvco > m_dThrF))))) * 1048576);
+    integerPart = (uint16_t)(VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))) - 4);
+    fractionalPart = (uint32_t)((VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
 
+    ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     Modify_SPI_Reg_bits(LMS7param(MAC), tx + 1);
-    Modify_SPI_Reg_bits(LMS7param(SEL_VCO), iVCO); //SEL_VCO
-    Modify_SPI_Reg_bits(LMS7param(INT_SDM), gINT); //INT_SDM
-    Modify_SPI_Reg_bits(0x011D, 15, 0, gFRAC & 0xFFFF); //FRAC_SDM[15:0]
-    Modify_SPI_Reg_bits(0x011E, 3, 0, (gFRAC >> 16)); //FRAC_SDM[19:16]
-    Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), i); //DIV_LOCH
-    Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (dFvco > m_dThrF)); //EN_DIV2_DIVPROG
+    Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
+    Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
+    Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
+    Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
+    Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
+
+    //find which VCO supports required frequency
+    int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
+    canDeliverFrequency = false;
+    for (sel_vco = 0; sel_vco < 3; ++sel_vco)
+    {
+        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 0);
+        uint8_t cmp0 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 255);
+        uint8_t cmp255 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
+        if (cmp0 != cmp255)
+        {
+            canDeliverFrequency = true;
+            break;
+        }
+    }    
+    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), cswBackup);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
     if (tx)
         mRefClkSXT_MHz = refClk_MHz;
     else
         mRefClkSXR_MHz = refClk_MHz;
+    if (canDeliverFrequency == false)
+        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
     return TuneVCO( tx ? VCO_SXT : VCO_SXR); //Rx-1, Tx-2
 }
 
@@ -798,9 +818,20 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
         addresses.push_back(startAddr + index + 24 * (index / 40));
     uint16_t spiData[120];
     memset(spiData, 0, 120 * sizeof(uint16_t));
-    status = SPI_read_batch(&addresses[0], spiData, coefCount);
-    for (index = 0; index < coefCount; ++index)
-        coef[index] = spiData[index];
+    if (controlPort->IsOpen())
+    {
+        status = SPI_read_batch(&addresses[0], spiData, coefCount);
+        for (index = 0; index < coefCount; ++index)
+            coef[index] = spiData[index];
+    }
+    else
+    {
+        const int channel = Get_SPI_Reg_bits(LMS7param(MAC), false) > 1 ? 1 : 0;
+        for (index = 0; index < coefCount; ++index)
+            coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
+        status = LIBLMS7_SUCCESS;
+    }
+    
     return status;
 }
 

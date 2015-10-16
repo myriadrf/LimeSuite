@@ -1,3 +1,3 @@
-add_library(LMS7002M_NOVENA STATIC lms7002m_novena_wxgui.cpp)
+add_library(LMS7002M_NOVENA STATIC lms7002m_novena_wxgui.cpp StreamerNovena.cpp)
 target_include_directories(LMS7002M_NOVENA PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(LMS7002M_NOVENA LMS7002M)

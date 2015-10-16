@@ -14,6 +14,7 @@ class wxFlexGridSizer;
 class wxButton;
 class wxStaticBoxSizer;
 class wxToggleButton;
+class wxCheckBox;
 
 #include <vector>
 #include <map>
@@ -41,7 +42,8 @@ class FPGAcontrols_wxgui: public wxFrame
         wxStaticText* txtDataRate;
         wxButton* btnLoadSamples;
         wxButton* btnStartStreaming;
-        wxButton* btnStopStreaming;        
+        wxButton* btnStopStreaming;
+        wxCheckBox* chkDigitalLoopbackEnable;
 
 	protected:
 		static const long ID_BUTTON6;
@@ -71,6 +73,7 @@ class FPGAcontrols_wxgui: public wxFrame
         void OnbtnStopStreamingClick(wxCommandEvent& event);
 
         void OnUpdateStats(wxTimerEvent& event);
+        void OnChkDigitalLoopbackEnableClick(wxCommandEvent& event);
 
 	protected:
         wxString fileForCyclicTransmitting;

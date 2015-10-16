@@ -8,6 +8,7 @@
 #define MCU_BD_H
 
 #include <atomic>
+#include <string>
 
 class LMScomms;
 
@@ -25,8 +26,10 @@ class MCU_BD
         MCU_BD();
         virtual ~MCU_BD();
         int m_iLoopTries;
+        std::string GetProgramFilename() const;
 
     protected:
+        std::string mLoadedProgramFilename;
         std::atomic_ushort stepsDone;
         std::atomic_ushort stepsTotal;
         std::atomic_bool aborted;
@@ -34,7 +37,10 @@ class MCU_BD
         int WaitUntilWritten();
         int ReadOneByte(unsigned char * data);
         int One_byte_command(unsigned short data1, unsigned char * rdata1);
+        unsigned int formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int m_iExt2, int m_iMode1, int m_iMode0);
         LMScomms * m_serPort;
+        int m_bLoadedDebug;
+        int m_bLoadedProd;
 
     public:
         void Wait_CLK_Cycles(int data);
@@ -49,7 +55,7 @@ class MCU_BD
         unsigned short mSPI_read(unsigned short addr_reg);
         int Three_byte_command(unsigned char data1,unsigned char data2,unsigned char data3,
                    unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3);
-        void GetProgramCode(const char *inFileName, bool bin = false);
+        int GetProgramCode(const char *inFileName, bool bin = false);
         int Change_MCUFrequency(unsigned char data);
         int Read_IRAM();
         int Erase_IRAM();
@@ -57,6 +63,7 @@ class MCU_BD
         int Program_MCU(int m_iMode1, int m_iMode0);
         void Reset_MCU();
         void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
+        int RunProductionTest_MCU();
         void RunFabTest_MCU(int m_iMode1, int m_iMode0, int m_iDebug);
         // debug mode functions
         void DebugModeSet_MCU(int m_iMode1, int m_iMode0);
