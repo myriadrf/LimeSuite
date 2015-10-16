@@ -588,22 +588,30 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
 
-    //find which VCO is best for required frequency
-    for (sel_vco = 0; sel_vco < 2; ++sel_vco)
+    //find which VCO supports required frequency
+    int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
+    canDeliverFrequency = false;
+    for (sel_vco = 0; sel_vco < 3; ++sel_vco)
     {
         Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 0); //SEL_VCO
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 0);
         uint8_t cmp0 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 255); //SEL_VCO
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 255);
         uint8_t cmp255 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
         if (cmp0 != cmp255)
+        {
+            canDeliverFrequency = true;
             break;
-    }
+        }
+    }    
+    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), cswBackup);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
     if (tx)
         mRefClkSXT_MHz = refClk_MHz;
     else
         mRefClkSXR_MHz = refClk_MHz;
+    if (canDeliverFrequency == false)
+        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
     return TuneVCO( tx ? VCO_SXT : VCO_SXR); //Rx-1, Tx-2
 }
 
