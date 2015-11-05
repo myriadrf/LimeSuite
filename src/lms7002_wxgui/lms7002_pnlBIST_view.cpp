@@ -13,6 +13,14 @@ pnlBIST_view( parent )
 lms7002_pnlBIST_view::lms7002_pnlBIST_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlBIST_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
+    wndId2Enum[chkBENC] = BENC;
+    wndId2Enum[chkBENR] = BENR;
+    wndId2Enum[chkBENT] = BENT;
+    wndId2Enum[chkBSTART] = BSTART;
+    wndId2Enum[chkSDM_TSTO_CGEN] = EN_SDM_TSTO_CGEN;
+    wndId2Enum[chkSDM_TSTO_SXR] = EN_SDM_TSTO_SXR;
+    wndId2Enum[chkSDM_TSTO_SXT] = EN_SDM_TSTO_SXT;
+    LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlBIST_view::Initialize(LMS7002M* pControl)
