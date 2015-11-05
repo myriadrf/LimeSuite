@@ -4905,7 +4905,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	ID_PANEL1->SetSizer( fgMainSizer );
 	ID_PANEL1->Layout();
 	fgMainSizer->Fit( ID_PANEL1 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL1, wxT("Modes"), false );
+	ID_NOTEBOOK1->AddPage( ID_PANEL1, wxT("Modes"), true );
 	ID_PANEL2 = new wxPanel( ID_NOTEBOOK1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer115;
 	fgSizer115 = new wxFlexGridSizer( 0, 1, 5, 5 );
@@ -5559,7 +5559,7 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	ID_PANEL2->SetSizer( fgSizer115 );
 	ID_PANEL2->Layout();
 	fgSizer115->Fit( ID_PANEL2 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Sample position && Clock"), true );
+	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Sample position && Clock"), false );
 	
 	fgSizer105->Add( ID_NOTEBOOK1, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
@@ -6480,6 +6480,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer137;
 	fgSizer137 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer137->AddGrowableCol( 1 );
 	fgSizer137->SetFlexibleDirection( wxBOTH );
 	fgSizer137->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -6516,6 +6517,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer139;
 	fgSizer139 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer139->AddGrowableCol( 1 );
 	fgSizer139->SetFlexibleDirection( wxBOTH );
 	fgSizer139->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -6552,6 +6554,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer141;
 	fgSizer141 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer141->AddGrowableCol( 1 );
 	fgSizer141->SetFlexibleDirection( wxBOTH );
 	fgSizer141->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -6571,7 +6574,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbGFIR3_N_TXTSP = new wxSpinCtrl( sbSizer102->GetStaticBox(), ID_GFIR3_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 255, 255 );
 	cmbGFIR3_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
 	
-	fgSizer141->Add( cmbGFIR3_N_TXTSP, 0, 0, 5 );
+	fgSizer141->Add( cmbGFIR3_N_TXTSP, 0, wxEXPAND, 5 );
 	
 	
 	sbSizer102->Add( fgSizer141, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
@@ -7621,6 +7624,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer137;
 	fgSizer137 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer137->AddGrowableCol( 1 );
 	fgSizer137->SetFlexibleDirection( wxBOTH );
 	fgSizer137->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -7657,6 +7661,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer139;
 	fgSizer139 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer139->AddGrowableCol( 1 );
 	fgSizer139->SetFlexibleDirection( wxBOTH );
 	fgSizer139->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -7693,6 +7698,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	wxFlexGridSizer* fgSizer141;
 	fgSizer141 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer141->AddGrowableCol( 1 );
 	fgSizer141->SetFlexibleDirection( wxBOTH );
 	fgSizer141->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -7712,7 +7718,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbGFIR3_N_RXTSP = new wxSpinCtrl( sbSizer102->GetStaticBox(), ID_GFIR3_N_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 255, 255 );
 	cmbGFIR3_N_RXTSP->SetMinSize( wxSize( 48,-1 ) );
 	
-	fgSizer141->Add( cmbGFIR3_N_RXTSP, 0, 0, 5 );
+	fgSizer141->Add( cmbGFIR3_N_RXTSP, 0, wxEXPAND, 5 );
 	
 	
 	sbSizer102->Add( fgSizer141, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
