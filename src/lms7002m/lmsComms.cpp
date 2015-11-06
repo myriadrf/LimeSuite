@@ -246,15 +246,16 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
     }
     else if(protocol == LMS_PROTOCOL_NOVENA)
     {
+        const uint16_t NOVENA_GPIO_ADDR = 0x0706;
         if(pkt.cmd == CMD_LMS7002_RST)
         {
             buffer = new unsigned char[8];
-            buffer[0] = 0x88;
-            buffer[1] = 0x06;
+            buffer[0] = (NOVENA_GPIO_ADDR >> 8) | 0x80;
+            buffer[1] = NOVENA_GPIO_ADDR & 0xFF;
             buffer[2] = 0x00;
             buffer[3] = 0x18;
-            buffer[4] = 0x88;
-            buffer[5] = 0x06;
+            buffer[4] = (NOVENA_GPIO_ADDR >> 8) | 0x80;
+            buffer[5] = NOVENA_GPIO_ADDR & 0xFF;
             buffer[6] = 0x00;
             buffer[7] = 0x38;
             length = 8;

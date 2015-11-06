@@ -473,11 +473,12 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     const int FPGAbufferSize = 32768;
 
     int dataSource = 0;
-    uint16_t controlRegValue = pthis->SPI_read(0x0802);
+    const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
+    uint16_t controlRegValue = pthis->SPI_read(NOVENA_DATA_SRC_ADDR);
 
     LMScomms::GenericPacket ctrPkt;
-    pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12));
-    pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12));
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
@@ -493,8 +494,8 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
         }
 
         LMScomms::GenericPacket ctrPkt;
-        pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12));
-        pthis->SPI_write(0x0802, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12));
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
 
         if (bytesReceived > 0)
         {

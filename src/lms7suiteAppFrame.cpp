@@ -82,7 +82,8 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     if (lms7controlPort->GetInfo().device == LMS_DEV_NOVENA &&
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
-        uint16_t regValue = lmsControl->SPI_read(0x0806) & 0xFFF8;
+        const uint16_t NOVENA_GPIO_ADDR = 0x0706;
+        uint16_t regValue = lmsControl->SPI_read(NOVENA_GPIO_ADDR) & 0xFFF8;
         //lms_gpio2 - tx output selection:
         //		0 - TX1_A and TX1_B (Band 1),
         //		1 - TX2_A and TX2_B (Band 2)
@@ -101,7 +102,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             case 2: regValue |= 0x3; break;
             case 3: regValue |= 0x1; break;
         }
-        lmsControl->SPI_write(0x0806, regValue);
+        lmsControl->SPI_write(NOVENA_GPIO_ADDR, regValue);
         if (novenaGui)
             novenaGui->UpdatePanel();
     }
