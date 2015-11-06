@@ -2272,7 +2272,7 @@ liblms7_status LMS7002M::UploadAll()
     //in case of Novena board, need to update GPIO
     if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
     {
-        uint16_t regValue = SPI_read(0x0806) & 0xFFF8;
+        uint16_t regValue = SPI_read(0x0706) & 0xFFF8;
         //lms_gpio2 - tx output selection:
 		//		0 - TX1_A and TX1_B (Band 1),
 		//		1 - TX2_A and TX2_B (Band 2)
@@ -2291,7 +2291,7 @@ liblms7_status LMS7002M::UploadAll()
             case 2: regValue |= 0x3; break;
             case 3: regValue |= 0x1; break;
         }
-        SPI_write(0x0806, regValue);
+        SPI_write(0x0706, regValue);
     }
     return LIBLMS7_SUCCESS;
 }
@@ -2340,7 +2340,7 @@ liblms7_status LMS7002M::DownloadAll()
     //in case of Novena board, update GPIO
     if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
     {
-        uint16_t regValue = SPI_read(0x0806) & 0xFFF8;
+        uint16_t regValue = SPI_read(0x0706) & 0xFFF8;
         //lms_gpio2 - tx output selection:
 		//		0 - TX1_A and TX1_B (Band 1),
 		//		1 - TX2_A and TX2_B (Band 2)
@@ -2359,7 +2359,7 @@ liblms7_status LMS7002M::DownloadAll()
             case 2: regValue |= 0x3; break;
             case 3: regValue |= 0x1; break;
         }
-        SPI_write(0x0806, regValue);
+        SPI_write(0x0706, regValue);
     }
 
     return LIBLMS7_SUCCESS;
