@@ -291,11 +291,10 @@ int prep_eim_burst()
     int BCS = 0 << 14; //0 clock delay for burst generation
     int BCD = 0 << 12; //divide EIM clock by 1 for burst clock
     int WC = 1 << 11; //write accesses are continuous burst length
-    int BL = 3 << 8; //32 word memory wrap length
-    //int BL = 4 << 8; //32 word memory wrap length
+    int BL = 2 << 8; //32 word memory wrap length
     int CREP = 1 << 7; //non-PSRAM, set to 1
     int CRE = 0 << 6; //CRE is disabled
-    int RFL = 0 << 5; //fixed latency reads
+    int RFL = 1 << 5; //fixed latency reads
     int WFL = 0 << 4; //fixed latency writes
     int MUM = 1 << 3; //multiplexed mode enabled
     int SRD = 1 << 2; //synch reads
@@ -322,7 +321,7 @@ int prep_eim_burst()
 
     // EIM_CS0RCR1
     // RWSC RADVA RAL RADVN OEA OEN RCSA RCSN
-    int RWSC = 3 << 24;
+    int RWSC = 4 << 24;
     int RADVA = 0 << 20;
     int RAL = 0 << 19;
     int RADVN = 0 << 16;
@@ -359,7 +358,6 @@ int prep_eim_burst()
     int WADVN = 2 << 18; //this sets WE length to 1 (this value +1)
     int WBEA = 0 << 15; //same as RBEA
     int WBEN = 0 << 12; //same as RBEN
-    //int WEA = 2 << 9; //2 cycles between beginning of access and WE assertion
     int WEA = 0 << 9; //0 cycles between beginning of access and WE assertion
     int WEN = 0 << 6; //1 cycles to end of WE assertion
     int WCSA = 0 << 3; //cycles to CS assertion
@@ -371,9 +369,6 @@ int prep_eim_burst()
     writeKernelMemory(0x21b8010+48, EIM_CSnWCR1, 0, 4); //cs2
 
     // EIM_WCR
-    // BCM = 1 free-run BCLK
-    // GBCD = 0 don't divide the burst clock
-    // EIM_WCR
     int WDOG_LIMIT = 3 << 9;
     int WDOG_EN = 1 << 8;
     int INTPOL = 0 << 5;
@@ -384,8 +379,6 @@ int prep_eim_burst()
     writeKernelMemory(0x21b8090, EIM_WCR, 0, 4);
     printf("EIM_WCR 0x%08X\n", EIM_WCR);
 
-    // EIM_WIAR
-    // ACLK_EN = 1
     // EIM_WIAR
     int ACLK_EN = 1 << 4;
     int ERRST = 0 << 3;
@@ -468,7 +461,6 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     int m_bufferFailures = 0;
     short sample;
 
-    bool frameStart = pthis->mRxFrameStart.load();
     const int bytesToRead = 4096;
     const int FPGAbufferSize = 32768;
 
@@ -476,41 +468,43 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
     uint16_t controlRegValue = pthis->SPI_read(NOVENA_DATA_SRC_ADDR);
 
-    LMScomms::GenericPacket ctrPkt;
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12));
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
+    dataSource = (controlRegValue >> 12) & 0x3;
+    //reset FIFO
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    //set data source
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
+    //request data
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         int bytesReceived = 0;
+	printf("--- FPGA FIFO UPDATE ---\n");
         for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead)
         {
             fpga_read(0xC000000, (unsigned short*)&buffer[bb], bytesToRead);
             totalBytesReceived += bytesToRead;
             bytesReceived += bytesToRead;
-            //printf("fpga read %i words\n", bytesToRead/2);
         }
-
-        LMScomms::GenericPacket ctrPkt;
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12));
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x0FFF) | (dataSource << 12) | 0x4000);
+	//reset FIFO
+	pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        //request data
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
         if (bytesReceived > 0)
         {
             ++packetsReceived;
             char* bufStart = buffer;
-
             for (int p = 0; p < bytesReceived; p += 2)
             {
-                if (samplesCollected == 0) //find frame start
-                {
-                    int frameStartOffset = pStreamer->FindFrameStart(&bufStart[p], bytesReceived - p, frameStart);
-                    if (frameStartOffset < 0)
-                        break; //frame start was not found, move on to next buffer
-                    p += frameStartOffset;
-                }
                 sample = (bufStart[p + 1] & 0x0F);
                 sample = sample << 8;
                 sample |= (bufStart[p] & 0xFF);
@@ -523,6 +517,7 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
                     samplesCollected = 0;
                     if (pthis->mRxFIFO->push_back(pkt, 200) == false)
                         ++m_bufferFailures;
+		    break;
                 }
             }
         }
@@ -535,8 +530,6 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
         long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
         {
-            // periodically update frame start, user might change it during operation
-            frameStart = pthis->mRxFrameStart.load();
             float m_dataRate = 1000.0*totalBytesReceived / timePeriod;
             t1 = t2;
             totalBytesReceived = 0;
@@ -551,12 +544,6 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
         }
         memset(buffer, 0, buffer_size);
     }
-
-    /*for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead / sizeof(int16_t))
-    {
-        fpga_read(0xC000000, (unsigned short*)&buffer[bb], bytesToRead);
-        //printf("fpga read %i words\n", bytesToRead/2);
-    }*/
 #ifndef NDEBUG
     printf("Rx finished\n");
 #endif
