@@ -403,22 +403,22 @@ int prep_eim_burst()
 
 void fifo_reset()
 {
-    short controlRegValue = SPI_read(0x0802);
-    SPI_write(0x0802, (controlRegValue & 0x7FFF));
-    SPI_write(0x0802, (controlRegValue & 0x7FFF) | 0x8000);
-    SPI_write(0x0802, (controlRegValue & 0x7FFF));
+    short controlRegValue = SPI_read(0x0702);
+    SPI_write(0x0702, (controlRegValue & 0x7FFF));
+    SPI_write(0x0702, (controlRegValue & 0x7FFF) | 0x8000);
+    SPI_write(0x0702, (controlRegValue & 0x7FFF));
 }
 
 void fifo_request_data(int src)
 {
-    short controlRegValue = SPI_read(0x0802);
-    SPI_write(0x0802, (controlRegValue & 0xCFFF) | (src << 12));
-    controlRegValue = SPI_read(0x0802);
-    SPI_write(0x0802, (controlRegValue & 0xBFFF));
-    SPI_write(0x0802, (controlRegValue & 0xBFFF) | 0x4000);
-    //SPI_write(0x0802, (controlRegValue & 0xBFFF));
+    short controlRegValue = SPI_read(0x0702);
+    SPI_write(0x0702, (controlRegValue & 0xCFFF) | (src << 12));
+    controlRegValue = SPI_read(0x0702);
+    SPI_write(0x0702, (controlRegValue & 0xBFFF));
+    SPI_write(0x0702, (controlRegValue & 0xBFFF) | 0x4000);
+    //SPI_write(0x0702, (controlRegValue & 0xBFFF));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    SPI_write(0x0802, (controlRegValue & 0xBFFF));
+    SPI_write(0x0702, (controlRegValue & 0xBFFF));
 }
 
 int main(int argc, char** argv)
@@ -446,7 +446,7 @@ int main(int argc, char** argv)
     prep_eim_burst();
 
     const int buffer_size = 65536;
-    static char buffer[buffer_size] __attribute__((aligned(0x10000)));
+    static char buffer[buffer_size];
     memset(buffer, 0, buffer_size);
     short* shortsBuf = (short*)&buffer;
 

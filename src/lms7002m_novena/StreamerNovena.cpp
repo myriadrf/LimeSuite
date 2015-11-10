@@ -452,7 +452,7 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    const int buffer_size = 32768;
+    const int buffer_size = 32768*2;
     char buffer[buffer_size];
     memset(buffer, 0, buffer_size);
 
@@ -462,7 +462,7 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     short sample;
 
     const int bytesToRead = 4096;
-    const int FPGAbufferSize = 32768;
+    const int FPGAbufferSize = 32768*2;
 
     int dataSource = 0;
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
@@ -474,14 +474,14 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
     pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
     //set data source
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
+    //pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
     //request data
     pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
     pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
         int bytesReceived = 0;
 	printf("--- FPGA FIFO UPDATE ---\n");
@@ -517,7 +517,7 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
                     samplesCollected = 0;
                     if (pthis->mRxFIFO->push_back(pkt, 200) == false)
                         ++m_bufferFailures;
-		    break;
+                    break;
                 }
             }
         }
