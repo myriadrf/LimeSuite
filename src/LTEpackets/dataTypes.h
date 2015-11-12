@@ -1,6 +1,8 @@
 #ifndef LMS_DATA_TYPES_H
 #define LMS_DATA_TYPES_H
 
+#include <string.h>
+
 typedef struct
 {
     uint8_t reserved[8];
@@ -85,7 +87,7 @@ public:
         }
     }
 
-    PacketFrame& PacketFrame::operator= (const PacketFrame &pkt)
+    PacketFrame& operator= (const PacketFrame &pkt)
     {
         if (this->channelsCount != pkt.channelsCount)
             this->Initialize(pkt.channelsCount);

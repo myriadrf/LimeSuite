@@ -25,7 +25,7 @@ public:
         std::vector<float> fftBins_dbFS[2];
         float nyquist_MHz;
 
-        DataToGUI& DataToGUI::operator=(const DataToGUI& src)
+        DataToGUI& operator=(const DataToGUI& src)
         {
             for (int ch = 0; ch < 2; ++ch)
             {

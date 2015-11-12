@@ -7,6 +7,7 @@
 #include <thread>
 #include <condition_variable>
 #include "dataTypes.h"
+#include <assert.h>
 
 /*  @brief Single producer, single consumer FIFO
 */
