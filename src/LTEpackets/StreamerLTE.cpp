@@ -29,7 +29,7 @@ StreamerLTE::STATUS StreamerLTE::StartStreaming(const int fftSize, const int cha
         return FAILURE;
     if (mDataPort->IsOpen() == false)
         return FAILURE;
-    
+
     stopProcessing.store(false);
     threadProcessing = std::thread(ProcessPackets, this, fftSize, channelsCount);
     mStreamRunning.store(true);
@@ -53,7 +53,7 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     @param terminate periodically pooled flag to terminate thread
 */
 void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate)
-{   
+{
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
@@ -236,7 +236,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     std::thread threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx);
 
     int updateCounter = 0;
-    
+
     while (pthis->stopProcessing.load() == false)
     {
         uint32_t samplesPopped = pthis->mRxFIFO->pop_samples((complex16_t**)buffers, samplesToRead, channelsCount, &timestamp, timeout_ms);
@@ -299,8 +299,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 /** @brief Functions dedicated for transmitting packets to board
 */
 void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate)
-{   
-    const int channelsCount = 2;
+{
+    const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 1;
     const int bufferSize = 65536;
     const int buffersCount = 16; // must be power of 2
