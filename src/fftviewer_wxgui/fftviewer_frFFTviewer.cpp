@@ -219,7 +219,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
                 double nyquistMHz;
                 txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
                 for (int i = 0; i < data.fftBins_dbFS[0].size(); ++i)
-                    freqs.push_back(-nyquistMHz * 1000 + i * 2000 * nyquistMHz / data.samplesI[0].size());
+                    freqs.push_back(1000000*(-nyquistMHz + i*2*nyquistMHz / data.samplesI[0].size()));
                 vector<float> indexes;
                 indexes.reserve(data.samplesI[0].size());
                 for (int i = 0; i < data.samplesI[0].size(); ++i)

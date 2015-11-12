@@ -382,7 +382,7 @@ void OpenGLGraph::DrawStaticElements()
 
 	char format[10];
 	if(settings.staticGrid)
-        sprintf(format, "%%.2f %%s");
+        sprintf(format, "%%.3f %%s");
     else
         sprintf(format, "%%.%if %%s", settings.gridXprec);
 
@@ -398,7 +398,7 @@ void OpenGLGraph::DrawStaticElements()
 		if(posX > settings.marginLeft && posX < settings.windowWidth-settings.marginRight)
 		{
 		    if(settings.staticGrid)
-                value = gridpx/1000.0+settings.gridXoffset;
+                value = gridpx/1000000.0+settings.gridXoffset;
             else
                 value = gridpx+settings.gridXoffset;
 			sprintf(text, format, value, settings.xUnits.c_str());
