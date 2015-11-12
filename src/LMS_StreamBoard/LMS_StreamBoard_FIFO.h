@@ -33,7 +33,24 @@ public:
     {        
         mHead = 0;
         mTail = 0;
-		mElements.resize(FIFO_length);    
+        int cnt = 0;
+        try
+        {
+            for (int i = 0; i < FIFO_length; ++i)
+            {
+                mElements.push_back(T());
+                ++cnt;
+            }
+            //mElements.resize(FIFO_length, T());
+        }
+        catch (std::bad_alloc &e)
+        {
+            printf("Error allocating FIFO memory\n");
+        }
+        catch (...)
+        {
+            printf("Error allocating FIFO memory\n");
+        }
 		mElementsFilled = 0;
     }
 

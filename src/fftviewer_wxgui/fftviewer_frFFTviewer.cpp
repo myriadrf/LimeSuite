@@ -6,6 +6,7 @@
 #include "LMS_StreamBoard.h"
 #include "StreamerNovena.h"
 #include "lmsComms.h"
+#include "OpenGLGraph.h"
 
 void fftviewer_frFFTviewer::Initialize(LMScomms* pDataPort)
 {
@@ -33,57 +34,62 @@ frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullp
     yaxis->SetFont(graphFont);
     xaxis->SetDrawOutsideMargins(false);
     yaxis->SetDrawOutsideMargins(false);
-    mFFTpanel->SetMargins(0, 0, 24, 75);
-    mFFTpanel->AddLayer(mFFTdata);
-    mFFTpanel->AddLayer(xaxis);
-    mFFTpanel->AddLayer(yaxis);    
 
-    mFFTpanel->EnableDoubleBuffer(true);
-    mFFTpanel->Fit(-16000, 16000, -100, 0);
+    mFFTpanel->settings.useVBO = true;
+    mFFTpanel->AddSerie(new cDataSerie());
+    mFFTpanel->AddSerie(new cDataSerie());
+    mFFTpanel->series[0]->color = 0xFF0000FF;
+    mFFTpanel->series[1]->color = 0x0000FFFF;
+    mFFTpanel->SetDrawingMode(GLG_LINE);
+    mFFTpanel->settings.gridXlines = 15;
+    mFFTpanel->SetInitialDisplayArea(-16000, 16000, -100, 0);
 
-    //time domain plot
-    wxPen ipen(*wxRED, 1, wxSOLID);
-    wxPen qpen(*wxBLUE, 1, wxSOLID);
-    mTimeDomainIdata = new mpPolygon();
-    mTimeDomainQdata = new mpPolygon();
-    mTimeDomainIdata->SetPen(ipen);
-    mTimeDomainQdata->SetPen(qpen);
-    mTimeDomainIdata->SetDrawOutsideMargins(false);
-    mTimeDomainQdata->SetDrawOutsideMargins(false);
-    xaxis = new mpScaleX(wxT("sample"), mpALIGN_BOTTOM, false, mpX_NORMAL);
-    yaxis = new mpScaleY(wxT(""), mpALIGN_LEFT, false);
-    xaxis->SetFont(graphFont);
-    yaxis->SetFont(graphFont);
-    xaxis->SetDrawOutsideMargins(false);
-    yaxis->SetDrawOutsideMargins(false);
-    mTimeDomainPanel->SetMargins(0, 0, 24, 75);
-    mTimeDomainPanel->AddLayer(mTimeDomainIdata);
-    mTimeDomainPanel->AddLayer(mTimeDomainQdata);
-    mTimeDomainPanel->AddLayer(xaxis);
-    mTimeDomainPanel->AddLayer(yaxis);
-    mTimeDomainPanel->EnableDoubleBuffer(true);
-    mTimeDomainPanel->Fit(0, 16384, -2050, 2050);
+    mFFTpanel->settings.title = "FFT";
+    mFFTpanel->settings.titleXaxis = "Frequency(MHz)";
+    mFFTpanel->settings.titleYaxis = "Amplitude(dBFS)";
+    mFFTpanel->settings.xUnits = "";
+    mFFTpanel->settings.gridXprec = 3;
+    //mFFTpanel->settings.yUnits = "dB";
+    mFFTpanel->settings.markersEnabled = true;
 
-    //Constellation plot
-    wxPen constellationPen(*wxBLACK, 3, wxSOLID);
-    mConstelationData = new mpFXYVector();
-    mConstelationData->SetPen(constellationPen);
-    mConstelationData->SetDrawOutsideMargins(false);
-    xaxis = new mpScaleX(wxT("I"), mpALIGN_BOTTOM, false, mpX_NORMAL);
-    yaxis = new mpScaleY(wxT("Q"), mpALIGN_LEFT, false);
-    xaxis->SetFont(graphFont);
-    yaxis->SetFont(graphFont);
-    xaxis->SetDrawOutsideMargins(false);
-    yaxis->SetDrawOutsideMargins(false);
-    mConstelationPanel->SetMargins(0, 0, 24, 75);
-    mConstelationPanel->AddLayer(xaxis);
-    mConstelationPanel->AddLayer(yaxis);
-    mConstelationPanel->AddLayer(mConstelationData);
-    mConstelationPanel->EnableDoubleBuffer(true);
-    mConstelationPanel->Fit(-2050,2050,-2050,2050);
+    mFFTpanel->settings.marginLeft = 40;
+    mFFTpanel->settings.staticGrid = true;
+
+
+    mTimeDomainPanel->settings.useVBO = true;
+    mTimeDomainPanel->AddSerie(new cDataSerie());
+    mTimeDomainPanel->AddSerie(new cDataSerie());
+    mTimeDomainPanel->AddSerie(new cDataSerie());
+    mTimeDomainPanel->AddSerie(new cDataSerie());
+    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -2048, 2048);
+    mTimeDomainPanel->settings.title = "IQ samples";
+    mTimeDomainPanel->series[0]->color = 0xFF0000FF;
+    mTimeDomainPanel->series[1]->color = 0x0000FFFF;
+    mTimeDomainPanel->series[2]->color = 0xFF00FFFF;
+    mTimeDomainPanel->series[3]->color = 0x00FFFFFF;
+    mTimeDomainPanel->settings.marginLeft = 40;
+
+    mConstelationPanel->settings.useVBO = true;
+    mConstelationPanel->AddSerie(new cDataSerie());
+    mConstelationPanel->AddSerie(new cDataSerie());
+    mConstelationPanel->series[0]->color = 0xFF0000FF;
+    mConstelationPanel->series[1]->color = 0x0000FFFF;
+    mConstelationPanel->SetInitialDisplayArea(-2048, 2048, -2048, 2048);
+    mConstelationPanel->SetDrawingMode(GLG_POINTS);
+    mConstelationPanel->settings.title = "I versus Q";
+    mConstelationPanel->settings.titleXaxis = "I";
+    mConstelationPanel->settings.titleYaxis = "Q";
+    mConstelationPanel->settings.gridXlines = 8;
+    mConstelationPanel->settings.gridYlines = 8;
+    mConstelationPanel->settings.marginLeft = 40;
 
     mGUIupdater = new wxTimer(this, wxID_ANY); //timer for updating plots
     Connect(wxEVT_TIMER, wxTimerEventHandler(fftviewer_frFFTviewer::OnUpdatePlots), NULL, this);
+
+    wxCommandEvent evt;
+    //show only A channel at startup
+    evt.SetInt(0);
+    OnChannelVisibilityChange(evt);
 }
 
 fftviewer_frFFTviewer::~fftviewer_frFFTviewer()
@@ -114,6 +120,7 @@ void fftviewer_frFFTviewer::StartStreaming()
 {
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
+    spinFFTsize->Disable();
     mStreamRunning = true;
     switch (cmbStreamType->GetSelection())
     {
@@ -125,10 +132,15 @@ void fftviewer_frFFTviewer::StartStreaming()
             mStreamBrd = new LMS_StreamBoard(mDataPort);
         mStreamBrd->StartReceiving(spinFFTsize->GetValue());
         break;
-    case 1:        
+    case 1: //SISO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);        
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue());            
+        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1);
+        break;
+    case 2: //MIMO
+        assert(mLTEstreamer == nullptr);
+        mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2);
         break;
     }    
     btnStartStop->SetLabel(_("STOP"));
@@ -150,6 +162,7 @@ void fftviewer_frFFTviewer::StopStreaming()
         }
         break;
     case 1:
+    case 2:
         if (mLTEstreamer)
         {
             mLTEstreamer->StopStreaming();
@@ -161,23 +174,23 @@ void fftviewer_frFFTviewer::StopStreaming()
     mStreamRunning = false;
     btnStartStop->SetLabel(_("START"));
     cmbStreamType->Enable();
+    spinFFTsize->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
 {
-    std::vector<double> samplesI;
-    std::vector<double> samplesQ;
-    std::vector<double> fftBins_dbFS;
-
-    float RxFilled;
-    float TxFilled;
-    float RxRate;
-    float TxRate;
+    float RxFilled = 0;
+    float TxFilled = 0;
+    float RxRate = 0;
+    float TxRate = 0;
     
     switch (cmbStreamType->GetSelection())
     {
         case 0:
         {
+            std::vector<double> samplesI;
+            std::vector<double> samplesQ;
+            std::vector<double> fftBins_dbFS;
             assert(mStreamBrd != nullptr);
             LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();
             samplesI = data.samplesI;
@@ -191,48 +204,55 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
             break;
         }
         case 1:
+        case 2:
         {
             assert(mLTEstreamer != nullptr);
             StreamerLTE::DataToGUI data = mLTEstreamer->GetIncomingData();
-            samplesI = data.samplesI;
-            samplesQ = data.samplesQ;
-            fftBins_dbFS = data.fftBins_dbFS;
-            StreamerLTE::ProgressStats stats = mLTEstreamer->GetStats();
-            RxFilled = stats.RxFIFOfilled;
-            TxFilled = stats.TxFIFOfilled;
-            RxRate = stats.RxRate_Bps;
-            TxRate = stats.TxRate_Bps;
+            StreamerLTE::Stats info = mLTEstreamer->GetStats();
+            RxFilled = 100.0*info.rxBufFilled / info.rxBufSize;
+            TxFilled = 100.0*info.txBufFilled / info.txBufSize;
+            
+            if (data.fftBins_dbFS[0].size() > 0)
+            {
+                std::vector<float> freqs;
+                freqs.reserve(data.fftBins_dbFS[0].size());
+                double nyquistMHz;
+                txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
+                for (int i = 0; i < data.fftBins_dbFS[0].size(); ++i)
+                    freqs.push_back(-nyquistMHz * 1000 + i * 2000 * nyquistMHz / data.samplesI[0].size());
+                vector<float> indexes;
+                indexes.reserve(data.samplesI[0].size());
+                for (int i = 0; i < data.samplesI[0].size(); ++i)
+                    indexes.push_back(i);
+                mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0][0], data.samplesI[0].size());
+                mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0][0], data.samplesQ[0].size());
+                mTimeDomainPanel->series[2]->AssignValues(&indexes[0], &data.samplesI[1][0], data.samplesI[1].size());
+                mTimeDomainPanel->series[3]->AssignValues(&indexes[0], &data.samplesQ[1][0], data.samplesQ[1].size());
+                mConstelationPanel->series[0]->AssignValues(&data.samplesI[0][0], &data.samplesQ[0][0], data.samplesQ[0].size());
+                mConstelationPanel->series[1]->AssignValues(&data.samplesI[1][0], &data.samplesQ[1][0], data.samplesQ[1].size());
+                mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0][0], data.fftBins_dbFS[0].size());
+                mFFTpanel->series[1]->AssignValues(&freqs[0], &data.fftBins_dbFS[1][0], data.fftBins_dbFS[1].size());
+            }
             break;
         }
     }
     
     if (chkFreezeTimeDomain->IsChecked() == false)
-    {
-        std::vector<double> sampleIndexes;
-        sampleIndexes.reserve(samplesI.size());
-        for (int i = 0; i < samplesI.size(); ++i)
-            sampleIndexes.push_back(i);
-        mTimeDomainIdata->setPoints(sampleIndexes, samplesI, false);
-        mTimeDomainQdata->setPoints(sampleIndexes, samplesQ, false);
-        mTimeDomainPanel->UpdateAll();
+    {   
+        mTimeDomainPanel->Refresh();
+        mTimeDomainPanel->Draw();
     }
 
     if (chkFreezeConstellation->IsChecked() == false)
-    {
-        mConstelationData->SetData(samplesI, samplesQ);
-        mConstelationPanel->UpdateAll();
+    {   
+        mConstelationPanel->Refresh();
+        mConstelationPanel->Draw();
     }
 
     if (chkFreezeFFT->IsChecked() == false)
-    {
-        std::vector<double> freqs;
-        freqs.reserve(fftBins_dbFS.size());
-        double nyquistMHz;
-        txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
-        for (int i = 0; i < fftBins_dbFS.size(); ++i)
-            freqs.push_back(-nyquistMHz*1000 + i * 2000 * nyquistMHz / samplesI.size());
-        mFFTdata->setPoints(freqs, fftBins_dbFS, false);
-        mFFTpanel->UpdateAll();
+    {   
+        mFFTpanel->Refresh();
+        mFFTpanel->Draw();
     }
 
     if(RxFilled > 100)
@@ -258,4 +278,34 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency(float freqMHz)
 {
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%f"), freqMHz));
+}
+
+void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
+{
+    const int channelCount = 2;
+    bool visibilities[channelCount];
+
+    switch(event.GetInt())
+    {
+    case 0:
+        visibilities[0] = true;
+        visibilities[1] = false;
+        break;
+    case 1:
+        visibilities[0] = false;
+        visibilities[1] = true;
+        break;
+    case 2:
+        visibilities[0] = true;
+        visibilities[1] = true;
+        break;
+    }
+    mTimeDomainPanel->series[0]->visible = visibilities[0];
+    mTimeDomainPanel->series[1]->visible = visibilities[0];
+    mTimeDomainPanel->series[2]->visible = visibilities[1];
+    mTimeDomainPanel->series[3]->visible = visibilities[1];
+    mConstelationPanel->series[0]->visible = visibilities[0];
+    mConstelationPanel->series[1]->visible = visibilities[1];
+    mFFTpanel->series[0]->visible = visibilities[0];
+    mFFTpanel->series[1]->visible = visibilities[1];
 }

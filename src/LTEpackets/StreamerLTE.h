@@ -8,33 +8,40 @@
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "StreamerFIFO.h"
-class LMScomms;
+#include <mutex>
+#include <atomic>
+#include "dataTypes.h"
 
-struct PacketLTE
-{
-    uint8_t reserved[8];
-    uint64_t counter;
-    int16_t samples[2040];
-};
+class LMScomms;
+class LMS_SamplesFIFO;
 
 class StreamerLTE
 {
 public:
     struct DataToGUI
     {
-        std::vector<double> samplesI;
-        std::vector<double> samplesQ;
-        std::vector<double> fftBins_dbFS;
+        std::vector<float> samplesI[2];
+        std::vector<float> samplesQ[2];
+        std::vector<float> fftBins_dbFS[2];
         float nyquist_MHz;
-    };
 
-    struct ProgressStats
-    {
-        float RxRate_Bps;
-        float TxRate_Bps;
-        float RxFIFOfilled;
-        float TxFIFOfilled;
+        DataToGUI& DataToGUI::operator=(const DataToGUI& src)
+        {
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                this->samplesI[ch].clear();
+                this->samplesI[ch].reserve(src.samplesI[ch].size());
+                this->samplesI[ch] = src.samplesI[ch];
+                this->samplesQ[ch].clear();
+                this->samplesQ[ch].reserve(src.samplesQ[ch].size());
+                this->samplesQ[ch] = src.samplesQ[ch];
+                this->fftBins_dbFS[ch].clear();
+                this->fftBins_dbFS[ch].reserve(src.fftBins_dbFS[ch].size());
+                this->fftBins_dbFS[ch] = src.fftBins_dbFS[ch];
+                this->nyquist_MHz = src.nyquist_MHz;
+            }
+            return *this;
+        }
     };
 
     enum STATUS
@@ -43,28 +50,37 @@ public:
         FAILURE,
     };
 
+    struct Stats
+    {
+        uint32_t rxBufSize;
+        uint32_t rxBufFilled;
+        uint32_t rxAproxSampleRate;
+        uint32_t txBufSize;
+        uint32_t txBufFilled;
+        uint32_t txAproxSampleRate;
+    };
+
     StreamerLTE(LMScomms* dataPort);
     virtual ~StreamerLTE();
 
-    virtual STATUS StartStreaming(unsigned int fftSize);
+    virtual STATUS StartStreaming(const int fftSize, const int channelsCount);
     virtual STATUS StopStreaming();
 
     DataToGUI GetIncomingData();
-    ProgressStats GetStats();
-    unsigned long mTransmitDelay;
-
-    STATUS SPI_write(uint16_t address, uint16_t data);
-    uint16_t SPI_read(uint16_t address);
+    Stats GetStats();    
 protected:
+    static STATUS SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data);
+    static uint16_t SPI_read(LMScomms* dataPort, uint16_t address);
+
     std::mutex mLockIncomingPacket;
     DataToGUI mIncomingPacket;
 
-    StreamerFIFO<PacketLTE> *mRxFIFO;
-    StreamerFIFO<PacketLTE> *mTxFIFO;
+    LMS_SamplesFIFO *mRxFIFO;
+    LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(StreamerLTE* pthis);
-    static void ProcessPackets(StreamerLTE* pthis, unsigned int fftSize);
-    static void TransmitPackets(StreamerLTE* pthis);
+    static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate);
+    static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount);
+    static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate);
 
     std::atomic_bool mStreamRunning;
     std::atomic_bool stopRx;
@@ -78,6 +94,4 @@ protected:
 
     std::atomic<int> mRxDataRate;
     std::atomic<int> mTxDataRate;
-    std::atomic<int> mRxFIFOfilled;
-    std::atomic<int> mTxFIFOfilled;
 };

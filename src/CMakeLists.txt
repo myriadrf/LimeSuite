@@ -58,6 +58,8 @@ add_subdirectory(myriad7)
 include_directories(myriad7)
 add_subdirectory(lms7002m_novena)
 include_directories(lms7002m_novena)
+add_subdirectory(oglGraph)
+include_directories(oglGraph)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 

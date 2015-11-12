@@ -293,8 +293,8 @@ LMS_StreamBoard::LMS_StreamBoard(LMScomms* dataPort)
 {
     mRxFrameStart.store(true);
     mDataPort = dataPort;
-    mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*4);
-    mTxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*4);
+    mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
+    mTxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
     mStreamRunning.store(false);
     mTxCyclicRunning.store(false);
 }

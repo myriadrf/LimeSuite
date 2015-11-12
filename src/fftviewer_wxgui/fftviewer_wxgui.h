@@ -10,7 +10,7 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
-class mpWindow;
+class OpenGLGraph;
 
 #include <wx/panel.h>
 #include <wx/gdicmn.h>
@@ -44,9 +44,9 @@ class frFFTviewer : public wxFrame
 		wxSplitterWindow* mPlotsSplitter;
 		wxPanel* mTimeConstellationPanel;
 		wxSplitterWindow* m_splitter3;
-		mpWindow* mTimeDomainPanel;
-		mpWindow* mConstelationPanel;
-		mpWindow* mFFTpanel;
+		OpenGLGraph* mTimeDomainPanel;
+		OpenGLGraph* mConstelationPanel;
+		OpenGLGraph* mFFTpanel;
 		wxStaticText* m_staticText6;
 		wxTextCtrl* txtNyquistFreqMHz;
 		wxStaticText* m_staticText7;
@@ -59,12 +59,11 @@ class frFFTviewer : public wxFrame
 		wxStaticText* lblTxDataRate;
 		wxStaticText* m_staticText10;
 		wxStaticText* lblFFTrate;
-		wxCheckBox* chkShowTimeDomain;
 		wxCheckBox* chkFreezeTimeDomain;
-		wxCheckBox* chkShowConstellation;
 		wxCheckBox* chkFreezeConstellation;
-		wxCheckBox* chkShowFFT;
 		wxCheckBox* chkFreezeFFT;
+		wxStaticText* m_staticText11;
+		wxChoice* cmbChannelVisibility;
 		wxStaticText* m_staticText15;
 		wxGauge* gaugeRxBuffer;
 		wxStaticText* m_staticText16;
@@ -73,6 +72,7 @@ class frFFTviewer : public wxFrame
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
