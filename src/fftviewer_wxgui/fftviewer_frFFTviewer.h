@@ -42,10 +42,6 @@ protected:
     wxString printDataRate(float dataRate);
 
     LMScomms* mDataPort;
-    mpPolygon* mTimeDomainIdata;
-    mpPolygon* mTimeDomainQdata;
-    mpFXYVector* mConstelationData;
-    mpPolygon* mFFTdata;
     StreamerLTE* mLTEstreamer;
     LMS_StreamBoard* mStreamBrd;
     wxTimer* mGUIupdater;

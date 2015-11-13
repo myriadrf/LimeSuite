@@ -1,5 +1,4 @@
 #include "fftviewer_frFFTviewer.h"
-#include "mathplot.h"
 #include "StreamerLTE.h"
 #include <wx/timer.h>
 #include <vector>
@@ -22,19 +21,6 @@ frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullp
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
     SetSize(800, 600);
-    wxFont graphFont(11, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-    //FFT plot
-    wxPen fftpen(*wxRED, 1, wxSOLID);
-    mFFTdata = new mpPolygon();
-    mFFTdata->SetPen(fftpen);
-    mFFTdata->SetDrawOutsideMargins(false);
-    mpScaleX* xaxis = new mpScaleX(wxT("Frequency(kHz)"), mpALIGN_BOTTOM, false, mpX_NORMAL);
-    mpScaleY* yaxis = new mpScaleY(wxT("Amplitude(dBFS)"), mpALIGN_LEFT, false);
-    xaxis->SetFont(graphFont);
-    yaxis->SetFont(graphFont);
-    xaxis->SetDrawOutsideMargins(false);
-    yaxis->SetDrawOutsideMargins(false);
-
     mFFTpanel->settings.useVBO = true;
     mFFTpanel->AddSerie(new cDataSerie());
     mFFTpanel->AddSerie(new cDataSerie());
@@ -42,7 +28,7 @@ frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullp
     mFFTpanel->series[1]->color = 0x0000FFFF;
     mFFTpanel->SetDrawingMode(GLG_LINE);
     mFFTpanel->settings.gridXlines = 15;
-    mFFTpanel->SetInitialDisplayArea(-16000, 16000, -100, 0);
+    mFFTpanel->SetInitialDisplayArea(-16000000, 16000000, -100, 0);
 
     mFFTpanel->settings.title = "FFT";
     mFFTpanel->settings.titleXaxis = "Frequency(MHz)";
@@ -54,7 +40,6 @@ frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullp
 
     mFFTpanel->settings.marginLeft = 40;
     mFFTpanel->settings.staticGrid = true;
-
 
     mTimeDomainPanel->settings.useVBO = true;
     mTimeDomainPanel->AddSerie(new cDataSerie());
@@ -188,19 +173,29 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     {
         case 0:
         {
-            std::vector<double> samplesI;
-            std::vector<double> samplesQ;
-            std::vector<double> fftBins_dbFS;
             assert(mStreamBrd != nullptr);
-            LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();
-            samplesI = data.samplesI;
-            samplesQ = data.samplesQ;
-            fftBins_dbFS = data.fftBins_dbFS;
+            LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();           
             LMS_StreamBoard::ProgressStats stats = mStreamBrd->GetStats();
             RxFilled = stats.RxFIFOfilled;
             TxFilled = stats.TxFIFOfilled;
             RxRate = stats.RxRate_Bps;
             TxRate = stats.TxRate_Bps;
+			
+			std::vector<float> freqs;
+			freqs.reserve(data.fftBins_dbFS.size());
+			double nyquistMHz;
+			txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
+			const float step = 2*nyquistMHz / data.samplesI.size();
+			for (int i = 0; i < data.fftBins_dbFS.size(); ++i)
+				freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
+			vector<float> indexes;
+			indexes.reserve(data.samplesI.size());
+			for (int i = 0; i < data.samplesI.size(); ++i)
+				indexes.push_back(i);
+			mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0], data.samplesI.size());
+			mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0], data.samplesQ.size());
+			mConstelationPanel->series[0]->AssignValues(&data.samplesI[0], &data.samplesQ[0], data.samplesQ.size());
+			mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0], data.fftBins_dbFS.size());
             break;
         }
         case 1:
@@ -218,8 +213,9 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
                 freqs.reserve(data.fftBins_dbFS[0].size());
                 double nyquistMHz;
                 txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
+				const float step = 2*nyquistMHz / data.samplesI[0].size();
                 for (int i = 0; i < data.fftBins_dbFS[0].size(); ++i)
-                    freqs.push_back(1000000*(-nyquistMHz + i*2*nyquistMHz / data.samplesI[0].size()));
+                    freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
                 vector<float> indexes;
                 indexes.reserve(data.samplesI[0].size());
                 for (int i = 0; i < data.samplesI[0].size(); ++i)
