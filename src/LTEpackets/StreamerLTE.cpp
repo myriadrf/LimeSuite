@@ -110,7 +110,7 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
                 tempPacket.first = 0;
                 tempPacket.timestamp = pkt[pktIndex].counter;
 
-                uint8_t* pktStart = (uint8_t*)&pkt->data;
+                uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
                 const int stepSize = channelsCount * 3;
                 for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
                 {
