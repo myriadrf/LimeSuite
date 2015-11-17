@@ -360,7 +360,7 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
             }
             PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
             pkt[i].counter = timestamp;
-            uint8_t* dataStart = (uint8_t*)&pkt->data;
+            uint8_t* dataStart = (uint8_t*)pkt[i].data;
             const int stepSize = channelsCount * 3;
             int samplesCollected = 0;
             for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
