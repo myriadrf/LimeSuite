@@ -7,10 +7,10 @@ namespace AutoVersion
 {
     static const int year = 2015;
     static const int month = 11;
-    static const int day = 17;
-    static const int hour = 12;
-    static const int minutes = 51;
-    static const int seconds = 51;
-    static const int buildsCounter = 737;
+    static const int day = 23;
+    static const int hour = 18;
+    static const int minutes = 40;
+    static const int seconds = 40;
+    static const int buildsCounter = 742;
     static const char branchName[] = "develop";
 }

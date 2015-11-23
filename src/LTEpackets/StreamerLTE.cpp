@@ -161,7 +161,6 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
             char ctemp[256];
             //sprintf(ctemp, "Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", m_dataRate / 1000000.0, rxSamplingRate.load() / 1000000.0, rxDroppedSamples.load());
             //printf(ctemp);
-            printf("RxWorking\n");
 
             rxDroppedSamples = 0;
         }
@@ -213,9 +212,15 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
     //enable MIMO mode, 12 bit compressed values
     if (channelsCount == 2)
-        SPI_write(pthis->mDataPort, 0x0001, 0x001D);
+    {
+        SPI_write(pthis->mDataPort, 0x0001, 0x0003);
+        SPI_write(pthis->mDataPort, 0x0007, 0x000A);
+    }
     else
-        SPI_write(pthis->mDataPort, 0x0001, 0x000C);
+    {
+        SPI_write(pthis->mDataPort, 0x0001, 0x0001);
+        SPI_write(pthis->mDataPort, 0x0007, 0x0008);
+    }
 
     //USB FIFO reset
     LMScomms::GenericPacket ctrPkt;
@@ -302,7 +307,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate)
 {
     const int channelsCount = txFIFO->GetChannelsCount();
-    const int packetsToBatch = 1;
+    const int packetsToBatch = 16;
     const int bufferSize = 65536;
     const int buffersCount = 16; // must be power of 2
     const int buffersCountMask = buffersCount - 1;
@@ -346,7 +351,21 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     uint64_t batchSamplesFilled = 0;
 
     while (terminate->load() != true)
-    {
+    {   
+        if (bufferUsed[bi])
+        {
+            if (dataPort->WaitForSending(handles[bi], 1000) == false)
+            {
+                ++m_bufferFailures;
+            }
+            long tempToSend = bytesToSend[bi];
+            bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], tempToSend, handles[bi]);
+            if (bytesSent == tempToSend)
+                totalBytesSent += bytesSent;
+            else
+                ++m_bufferFailures;
+            bufferUsed[bi] = false;
+        }
         int i = 0;
         while (i < packetsToBatch)
         {
@@ -380,20 +399,6 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
             }
             ++i;
         }
-        if (bufferUsed[bi])
-        {
-            if (dataPort->WaitForSending(handles[bi], 1000) == false)
-            {
-                ++m_bufferFailures;
-            }
-            long tempToSend = bytesToSend[bi];
-            bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], tempToSend, handles[bi]);
-            if (bytesSent == tempToSend)
-                totalBytesSent += bytesSent;
-            else
-                ++m_bufferFailures;
-            bufferUsed[bi] = false;
-        }
 
         bytesToSend[bi] = sizeof(PacketLTE)*packetsToBatch;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
@@ -413,7 +418,6 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
             //sprintf(ctemp, "Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n",
                 //m_dataRate / 1000000.0, txSamplingRate.load() / 1000000.0, m_bufferFailures);
             //printf(ctemp);
-            printf("TxWorking\n");
 #endif
             m_bufferFailures = 0;
         }
