@@ -192,10 +192,19 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
 			indexes.reserve(data.samplesI.size());
 			for (int i = 0; i < data.samplesI.size(); ++i)
 				indexes.push_back(i);
-			mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0], data.samplesI.size());
-			mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0], data.samplesQ.size());
-			mConstelationPanel->series[0]->AssignValues(&data.samplesI[0], &data.samplesQ[0], data.samplesQ.size());
-			mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0], data.fftBins_dbFS.size());
+            if (chkFreezeTimeDomain->IsChecked() == false)
+            {
+                mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0], data.samplesI.size());
+                mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0], data.samplesQ.size());
+            }
+            if (chkFreezeConstellation->IsChecked() == false)
+            {
+                mConstelationPanel->series[0]->AssignValues(&data.samplesI[0], &data.samplesQ[0], data.samplesQ.size());
+            }
+            if (chkFreezeFFT->IsChecked() == false)
+            {
+                mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0], data.fftBins_dbFS.size());
+            }
             break;
         }
         case 1:
@@ -220,14 +229,23 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
                 indexes.reserve(data.samplesI[0].size());
                 for (int i = 0; i < data.samplesI[0].size(); ++i)
                     indexes.push_back(i);
-                mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0][0], data.samplesI[0].size());
-                mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0][0], data.samplesQ[0].size());
-                mTimeDomainPanel->series[2]->AssignValues(&indexes[0], &data.samplesI[1][0], data.samplesI[1].size());
-                mTimeDomainPanel->series[3]->AssignValues(&indexes[0], &data.samplesQ[1][0], data.samplesQ[1].size());
-                mConstelationPanel->series[0]->AssignValues(&data.samplesI[0][0], &data.samplesQ[0][0], data.samplesQ[0].size());
-                mConstelationPanel->series[1]->AssignValues(&data.samplesI[1][0], &data.samplesQ[1][0], data.samplesQ[1].size());
-                mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0][0], data.fftBins_dbFS[0].size());
-                mFFTpanel->series[1]->AssignValues(&freqs[0], &data.fftBins_dbFS[1][0], data.fftBins_dbFS[1].size());
+                if (chkFreezeTimeDomain->IsChecked() == false)
+                {
+                    mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0][0], data.samplesI[0].size());
+                    mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0][0], data.samplesQ[0].size());
+                    mTimeDomainPanel->series[2]->AssignValues(&indexes[0], &data.samplesI[1][0], data.samplesI[1].size());
+                    mTimeDomainPanel->series[3]->AssignValues(&indexes[0], &data.samplesQ[1][0], data.samplesQ[1].size());
+                }
+                if (chkFreezeConstellation->IsChecked() == false)
+                {
+                    mConstelationPanel->series[0]->AssignValues(&data.samplesI[0][0], &data.samplesQ[0][0], data.samplesQ[0].size());
+                    mConstelationPanel->series[1]->AssignValues(&data.samplesI[1][0], &data.samplesQ[1][0], data.samplesQ[1].size());
+                }
+                if (chkFreezeFFT->IsChecked() == false)
+                {
+                    mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0][0], data.fftBins_dbFS[0].size());
+                    mFFTpanel->series[1]->AssignValues(&freqs[0], &data.fftBins_dbFS[1][0], data.fftBins_dbFS[1].size());
+                }
             }
             break;
         }
