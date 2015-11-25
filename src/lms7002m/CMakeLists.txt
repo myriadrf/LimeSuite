@@ -12,6 +12,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cpp-feather-ini-parser/INI.h)
+    message(FATAL_ERROR "cpp-feather-ini-parser submodule not configured\n$ git submodule init && git submodule update")
+endif ()
+
 # set up include-directories
 include_directories(
   "${PROJECT_SOURCE_DIR}"
