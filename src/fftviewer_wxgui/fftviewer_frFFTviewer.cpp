@@ -215,6 +215,8 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
             StreamerLTE::Stats info = mLTEstreamer->GetStats();
             RxFilled = 100.0*info.rxBufFilled / info.rxBufSize;
             TxFilled = 100.0*info.txBufFilled / info.txBufSize;
+            RxRate = data.rxDataRate_Bps;
+            TxRate = data.txDataRate_Bps;
             
             if (data.fftBins_dbFS[0].size() > 0)
             {

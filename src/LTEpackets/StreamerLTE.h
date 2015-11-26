@@ -24,6 +24,8 @@ public:
         std::vector<float> samplesQ[2];
         std::vector<float> fftBins_dbFS[2];
         float nyquist_MHz;
+        float rxDataRate_Bps;
+        float txDataRate_Bps;
 
         DataToGUI& operator=(const DataToGUI& src)
         {
@@ -39,6 +41,8 @@ public:
                 this->fftBins_dbFS[ch].reserve(src.fftBins_dbFS[ch].size());
                 this->fftBins_dbFS[ch] = src.fftBins_dbFS[ch];
                 this->nyquist_MHz = src.nyquist_MHz;
+                this->rxDataRate_Bps = src.rxDataRate_Bps;
+                this->txDataRate_Bps = src.txDataRate_Bps;
             }
             return *this;
         }
@@ -78,9 +82,9 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate);
+    static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount);
-    static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate);
+    static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
 
     std::atomic_bool mStreamRunning;
     std::atomic_bool stopRx;

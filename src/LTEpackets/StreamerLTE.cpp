@@ -51,8 +51,9 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
 /** @brief Function dedicated for receiving data samples from board
     @param rxFIFO FIFO to store received data
     @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate)
+void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
@@ -150,18 +151,19 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
         {
-            double m_dataRate = 1000.0*totalBytesReceived / timePeriod;
-            //rxSamplingRate.store((1000.0*samplesReceived) / timePeriod);
+            //total number of bytes sent per second
+            double dataRate = 1000.0*totalBytesReceived / timePeriod;
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
             samplesReceived = 0;
             t1 = t2;
             totalBytesReceived = 0;
-            //RxDataRate.store((long)m_dataRate);
+            if (dataRate_Bps)
+                dataRate_Bps->store((long)dataRate);
             m_bufferFailures = 0;
-
-            char ctemp[256];
-            //sprintf(ctemp, "Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", m_dataRate / 1000000.0, rxSamplingRate.load() / 1000000.0, rxDroppedSamples.load());
-            //printf(ctemp);
-
+#ifndef NDEBUG
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples);
+#endif
             rxDroppedSamples = 0;
         }
 
@@ -237,8 +239,10 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
     atomic<bool> stopRx(0);
     atomic<bool> stopTx(0);
-    std::thread threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx);
-    std::thread threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx);
+    atomic<uint32_t> rxRate_Bps(0);
+    atomic<uint32_t> txRate_Bps(0);
+    std::thread threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps);
+    std::thread threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
 
     int updateCounter = 0;
 
@@ -276,6 +280,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
             }
             {
+                localDataResults.rxDataRate_Bps = rxRate_Bps.load();
+                localDataResults.txDataRate_Bps = txRate_Bps.load();
                 std::unique_lock<std::mutex> lck(pthis->mLockIncomingPacket);
                 pthis->mIncomingPacket = localDataResults;
             }
@@ -303,8 +309,11 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 }
 
 /** @brief Functions dedicated for transmitting packets to board
+    @param txFIFO data source FIFO
+    @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate)
+void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 16;
@@ -408,16 +417,17 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
         {
+            //total number of bytes sent per second
             double m_dataRate = 1000.0*totalBytesSent / timePeriod;
-            //txSamplingRate.store((1000.0*samplesSent) / timePeriod);
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            if(dataRate_Bps)
+                dataRate_Bps->store(m_dataRate);
             samplesSent = 0;
             t1 = t2;
             totalBytesSent = 0;
 #ifndef NDEBUG
-            char ctemp[128];
-            //sprintf(ctemp, "Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n",
-                //m_dataRate / 1000000.0, txSamplingRate.load() / 1000000.0, m_bufferFailures);
-            //printf(ctemp);
+            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures);
 #endif
             m_bufferFailures = 0;
         }
