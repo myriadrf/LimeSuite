@@ -46,7 +46,7 @@ const char LMS_DEV_NAMES[][80] =
 	"RF-Spark",
 	"LMS6002-USB Stick",
 	"RF-ESpark",
-	"Sodera",
+	"SoDeRa",
 };
 
 static const char* GetDeviceName(const eLMS_DEV device)
