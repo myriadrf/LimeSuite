@@ -154,6 +154,185 @@ liblms7_status LMS7002M::ResetChip()
         return LIBLMS7_FAILURE;
 }
 
+liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
+{
+    ifstream f(filename);
+    if (f.good() == false) //file not found
+    {
+        f.close();
+        return LIBLMS7_FILE_NOT_FOUND;
+    }
+    f.close();
+    uint16_t addr = 0;
+    uint16_t value = 0;
+    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC)); //remember used channel
+    liblms7_status status;
+    typedef INI<string, string, string> ini_t;
+    ini_t parser(filename, true);
+    if (parser.select("FILE INFO") == false)
+        return LIBLMS7_FILE_INVALID_FORMAT;
+
+    string type = "";
+    type = parser.get("type", "undefined");
+    stringstream ss;
+    if (type.find("LMS7002 configuration") == string::npos)
+    {
+        ss << "File " << filename << " not recognized" << endl;
+        return LIBLMS7_FILE_INVALID_FORMAT;
+    }
+
+    int fileVersion = 0;
+    fileVersion = parser.get("version", 0);
+
+    vector<uint16_t> addrToWrite;
+    vector<uint16_t> dataToWrite;
+    if (fileVersion == 1)
+    {
+        if (parser.select("Reference clocks"))
+        {
+            mRefClkSXR_MHz = parser.get("SXR reference frequency MHz", 30.72);
+            mRefClkSXT_MHz = parser.get("SXT reference frequency MHz", 30.72);
+        }
+
+        if (parser.select("LMS7002 registers ch.A") == true)
+        {
+            ini_t::sectionsit_t section = parser.sections.find("LMS7002 registers ch.A");
+
+            uint16_t x0020_value = 0;
+            Modify_SPI_Reg_bits(LMS7param(MAC), 1); //select A channel
+            for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
+            {
+                sscanf(pairs->first.c_str(), "%hx", &addr);
+                sscanf(pairs->second.c_str(), "%hx", &value);
+                if (addr == LMS7param(MAC).address) //skip register containing channel selection
+                {
+                    x0020_value = value;
+                    continue;
+                }
+                addrToWrite.push_back(addr);
+                dataToWrite.push_back(value);
+            }
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
+                return status;
+
+            //parse FCW or PHO
+            if (parser.select("NCO Rx ch.A") == true)
+            {
+                char varname[64];
+                int mode = Get_SPI_Reg_bits(LMS7param(MODE_RX));
+                if (mode == 0) //FCW
+                {                   
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "FCW%02i", i);
+                        SetNCOFrequency(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "PHO%02i", i);
+                        SetNCOPhaseOffset(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                    }
+                }
+            }
+            if (parser.select("NCO Tx ch.A") == true)
+            {
+                char varname[64];
+                int mode = Get_SPI_Reg_bits(LMS7param(MODE_TX));
+                if (mode == 0) //FCW
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "FCW%02i", i);
+                        SetNCOFrequency(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "PHO%02i", i);
+                        SetNCOPhaseOffset(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                    }
+                }
+            }
+            status = SPI_write(0x0020, x0020_value);
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
+                return status;
+        }
+
+        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+
+        if (parser.select("LMS7002 registers ch.B") == true)
+        {
+            addrToWrite.clear();
+            dataToWrite.clear();
+            ini_t::sectionsit_t section = parser.sections.find("LMS7002 registers ch.B");
+            for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
+            {
+                sscanf(pairs->first.c_str(), "%hx", &addr);
+                sscanf(pairs->second.c_str(), "%hx", &value);
+                addrToWrite.push_back(addr);
+                dataToWrite.push_back(value);
+            }
+            Modify_SPI_Reg_bits(LMS7param(MAC), 2); //select B channel
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
+                return status;
+
+            //parse FCW or PHO
+            if (parser.select("NCO Rx ch.B") == true)
+            {
+                char varname[64];
+                int mode = Get_SPI_Reg_bits(LMS7param(MODE_RX));
+                if (mode == 0) //FCW
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "FCW%02i", i);
+                        SetNCOFrequency(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "PHO%02i", i);
+                        SetNCOPhaseOffset(LMS7002M::Rx, i, parser.get(varname, 0.0));
+                    }
+                }
+            }
+            if (parser.select("NCO Tx ch.A") == true)
+            {
+                char varname[64];
+                int mode = Get_SPI_Reg_bits(LMS7param(MODE_TX));
+                if (mode == 0) //FCW
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "FCW%02i", i);
+                        SetNCOFrequency(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 16; ++i)
+                    {
+                        sprintf(varname, "PHO%02i", i);
+                        SetNCOPhaseOffset(LMS7002M::Tx, i, parser.get(varname, 0.0));
+                    }
+                }
+            }
+        }
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    }
+    else
+        return LIBLMS7_FILE_INVALID_FORMAT;
+}
+
 /** @brief Reads configuration file and uploads registers to chip
     @param filename Configuration source file
     @return 0-success, other-failure
@@ -174,14 +353,20 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     liblms7_status status;
     typedef INI<string, string, string> ini_t;
     ini_t parser(filename, true);
-    parser.select("file_info");
+    if (parser.select("file_info") == false)
+    {
+        //try loading as legacy format
+        status = LoadConfigLegacyFile(filename);
+        Modify_SPI_Reg_bits(MAC, 1);
+        return status;
+    }
     string type = "";
     type = parser.get("type", "undefined");
     stringstream ss;
     if (type.find("lms7002m_minimal_config") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return LIBLMS7_FAILURE;
+        return LIBLMS7_FILE_INVALID_FORMAT;
     }
 
     int fileVersion = 0;
@@ -211,13 +396,13 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != LIBLMS7_SUCCESS)
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
                 return status;
             status = SPI_write(0x0020, x0020_value);
-            if (status != LIBLMS7_SUCCESS)
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
                 return status;
             Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-            if (status != LIBLMS7_SUCCESS)
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
                 return status;
         }
 
@@ -235,7 +420,7 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
             }
             Modify_SPI_Reg_bits(LMS7param(MAC), 2); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != LIBLMS7_SUCCESS)
+            if (status != LIBLMS7_SUCCESS && status != LIBLMS7_NOT_CONNECTED)
                 return status;
         }
         Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -280,10 +465,9 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
 
     parser.create("lms7002_registers_a");
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
-
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
+        dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
         parser.set(addr, value);
@@ -297,10 +481,9 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
                 addrToRead.push_back(addr);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
-
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
+        dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
         parser.set(addr, value);
