@@ -733,6 +733,10 @@ Si5351C::Status Si5351C::ConfigureClocks()
     }
 
     //configure pll
+    //set input clk source
+    m_newConfiguration[15] = m_newConfiguration[15] & 0xF3;
+    m_newConfiguration[15] |= (PLL[0].CLK_SRC & 1) << 2;
+    m_newConfiguration[15] |= (PLL[1].CLK_SRC & 1) << 3;
     for(int i=0; i<2; ++i)
     {
         addr = 26+i*8;
@@ -779,18 +783,6 @@ Si5351C::Status Si5351C::ConfigureClocks()
         m_newConfiguration[addr+1] |= MSNx_P3;
         m_newConfiguration[addr] |= MSNx_P3 >> 8;
     }
-    //CLK input divider
-    unsigned char cbyte = 0;    
-    cbyte = (m_newConfiguration[15] & 0x3F);    
-    PLL[0].CLKIN_DIV = 0;
-    while ( PLL[0].inputFreqHz/pow(2.0, PLL[0].CLKIN_DIV) > 40000000 && PLL[0].CLKIN_DIV < 3)
-    {
-        ++PLL[0].CLKIN_DIV;
-    }
-    cbyte |= (PLL[0].CLKIN_DIV << 6);    
-    cbyte |= 0x04;
-    cbyte |= 0x08;
-    m_newConfiguration[15] = cbyte;
     return SUCCESS;
 }
 
@@ -821,10 +813,13 @@ void Si5351C::SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled, bo
     @param id PLL id 0-PLLA 1-PLLB
     @param CLKIN_Hz clock input in Hz
 */
-void Si5351C::SetPLL(unsigned char id, unsigned long CLKIN_Hz)
+void Si5351C::SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC)
 {
-    if(id < 2)
+    if (id < 2)
+    {
         PLL[id].inputFreqHz = CLKIN_Hz;
+        PLL[id].CLK_SRC = CLK_SRC;
+    }
 }
 
 /** @brief Resets configuration registers to default values
