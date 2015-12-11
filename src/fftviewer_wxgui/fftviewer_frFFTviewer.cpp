@@ -294,6 +294,7 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency(float freqMHz)
 {
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%f"), freqMHz));
+    mFFTpanel->SetInitialDisplayArea(-freqMHz * 1000000, freqMHz * 1000000, -100, 0);
 }
 
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)

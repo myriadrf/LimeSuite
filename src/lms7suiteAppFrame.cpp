@@ -35,6 +35,7 @@
 #include <functional>
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
+#include "pnlBoardControls.h"
 ///////////////////////////////////////////////////////////////////////////
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
@@ -158,6 +159,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     deviceInfo = nullptr;
     spi = nullptr;
     novenaGui = nullptr;
+    boardControlsGui = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -248,6 +250,9 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info.device);
+
+        if (boardControlsGui)
+            boardControlsGui->SetupControls(info.device);
         
         //must configure synthesizer before using SoDeRa
         if (info.device == LMS_DEV_SODERA)
@@ -323,6 +328,11 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Initialize(streamBoardPort);
         fftviewer->Show();
+        int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        if (decimation != 7)
+            samplingFreq_MHz /= pow(2.0, decimation);
+        fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
 }
 
@@ -550,3 +560,22 @@ void LMS7SuiteAppFrame::OnNovenaClose(wxCloseEvent& event)
     novenaGui = nullptr;
 }
 
+void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
+{
+    if (boardControlsGui) //it's already opened
+        boardControlsGui->Show();
+    else
+    {
+        boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        boardControlsGui->Initialize(lms7controlPort);
+        boardControlsGui->UpdatePanel();
+        boardControlsGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnBoardControlsClose), NULL, this);
+        boardControlsGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
+{
+    boardControlsGui->Destroy();
+    boardControlsGui = nullptr;
+}
