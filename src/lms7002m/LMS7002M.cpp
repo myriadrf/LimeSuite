@@ -328,9 +328,11 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
             }
         }
         Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+        return LIBLMS7_SUCCESS;
     }
     else
         return LIBLMS7_FILE_INVALID_FORMAT;
+    return LIBLMS7_FAILURE;
 }
 
 /** @brief Reads configuration file and uploads registers to chip
