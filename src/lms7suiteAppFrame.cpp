@@ -75,7 +75,13 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             }
         }
         if (fftviewer)
-            fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
+        {
+            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            if (decimation != 7)
+                samplingFreq_MHz /= pow(2.0, decimation);
+            fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
+        }
     }
    
     //in case of Novena board, need to update GPIO
@@ -132,19 +138,6 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         {
             lmsControl->Modify_SPI_Reg_bits(SEL_PATH_RFE, pathIndex);
             mContent->mTabRFE->UpdateGUI();
-        }
-    }
-    if (event.GetEventType() == DATA_PORT_CONNECTED)
-    {
-        if (streamBoardPort->GetInfo().device == LMS_DEV_SODERA)
-        {
-            si5351module->SetClock(0, 27000000, true, false);
-            si5351module->SetClock(1, 27000000, true, false);
-            for (int i = 2; i < 8; ++i)
-                si5351module->SetClock(i, 27000000, false, false);
-            Si5351C::Status status = si5351module->ConfigureClocks();
-            if (status != Si5351C::SUCCESS)
-                wxMessageBox(_("Failed to configure Si5351C"), _("Warning"));
         }
     }
 }
@@ -255,6 +248,26 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info.device);
+        
+        //must configure synthesizer before using SoDeRa
+        if (info.device == LMS_DEV_SODERA)
+        {   
+            si5351module->SetPLL(0, 25000000, 0);
+            si5351module->SetPLL(1, 25000000, 0);
+            si5351module->SetClock(0, 27000000, true, false);
+            si5351module->SetClock(1, 27000000, true, false);
+            for (int i = 2; i < 8; ++i)
+                si5351module->SetClock(i, 27000000, false, false);
+            Si5351C::Status status = si5351module->ConfigureClocks();
+            if (status != Si5351C::SUCCESS)
+            {
+                wxMessageBox(_("Failed to configure Si5351C"), _("Warning"));
+                return;
+            }
+            status = si5351module->UploadConfiguration();
+            if (status != Si5351C::SUCCESS)
+                wxMessageBox(_("Failed to upload Si5351C configuration"), _("Warning"));
+        }
     }
     else
     {
