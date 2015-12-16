@@ -120,12 +120,17 @@ void fftviewer_frFFTviewer::StartStreaming()
     case 1: //SISO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);        
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1);
+        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 2: //MIMO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2);
+        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_COMPRESSED);
+        break;
+    case 3: //SISO uncompressed samples
+        assert(mLTEstreamer == nullptr);
+        mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_IN_16);
         break;
     }    
     btnStartStop->SetLabel(_("STOP"));
@@ -148,6 +153,7 @@ void fftviewer_frFFTviewer::StopStreaming()
         break;
     case 1:
     case 2:
+    case 3:
         if (mLTEstreamer)
         {
             mLTEstreamer->StopStreaming();
@@ -209,6 +215,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
         }
         case 1:
         case 2:
+        case 3:
         {
             assert(mLTEstreamer != nullptr);
             StreamerLTE::DataToGUI data = mLTEstreamer->GetIncomingData();

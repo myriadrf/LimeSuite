@@ -636,7 +636,7 @@
                                     <object class="wxFlexGridSizer" expanded="0">
                                         <property name="cols">2</property>
                                         <property name="flexible_direction">wxBOTH</property>
-                                        <property name="growablecols"></property>
+                                        <property name="growablecols">1</property>
                                         <property name="growablerows"></property>
                                         <property name="hgap">0</property>
                                         <property name="minimum_size"></property>
@@ -1066,7 +1066,7 @@
                                                         <property name="caption"></property>
                                                         <property name="caption_visible">1</property>
                                                         <property name="center_pane">0</property>
-                                                        <property name="choices">&quot;IQ samples&quot; &quot;LTE packets&quot; &quot;LTE packets MIMO&quot;</property>
+                                                        <property name="choices">&quot;IQ samples&quot; &quot;LTE packets&quot; &quot;LTE packets MIMO&quot; &quot;LTE packets uncompressed&quot;</property>
                                                         <property name="close_button">1</property>
                                                         <property name="context_help"></property>
                                                         <property name="context_menu">1</property>

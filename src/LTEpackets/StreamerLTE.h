@@ -18,6 +18,12 @@ class LMS_SamplesFIFO;
 class StreamerLTE
 {
 public:
+    enum StreamDataFormat
+    {
+        STREAM_12_BIT_IN_16,
+        STREAM_12_BIT_COMPRESSED,
+    };
+
     struct DataToGUI
     {
         std::vector<float> samplesI[2];
@@ -67,7 +73,7 @@ public:
     StreamerLTE(LMScomms* dataPort);
     virtual ~StreamerLTE();
 
-    virtual STATUS StartStreaming(const int fftSize, const int channelsCount);
+    virtual STATUS StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format);
     virtual STATUS StopStreaming();
 
     DataToGUI GetIncomingData();
@@ -83,8 +89,10 @@ protected:
     LMS_SamplesFIFO *mTxFIFO;
 
     static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount);
+    static void ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
     static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
 
     std::atomic_bool mStreamRunning;
     std::atomic_bool stopRx;

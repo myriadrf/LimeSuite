@@ -43,8 +43,8 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
         WX_GL_DEPTH_SIZE, 16,
         WX_GL_STENCIL_SIZE, 0,
         0, 0 };
-    mTimeDomainPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, "", GLCanvasAttributes_1);
-    mConstelationPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, "", GLCanvasAttributes_1);
+    mTimeDomainPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
+    mConstelationPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
 	m_splitter3->SplitVertically( mTimeDomainPanel, mConstelationPanel, 0 );
 	fgSizer9->Add( m_splitter3, 1, wxEXPAND, 5 );
 	
@@ -52,7 +52,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	mTimeConstellationPanel->SetSizer( fgSizer9 );
 	mTimeConstellationPanel->Layout();
 	fgSizer9->Fit( mTimeConstellationPanel );
-    mFFTpanel = new OpenGLGraph(mPlotsSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, "", GLCanvasAttributes_1);
+    mFFTpanel = new OpenGLGraph(mPlotsSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
 	mPlotsSplitter->SplitHorizontally( mTimeConstellationPanel, mFFTpanel, 0 );
 	fgSizer7->Add( mPlotsSplitter, 1, wxEXPAND, 5 );
 	
@@ -66,6 +66,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	wxFlexGridSizer* fgSizer11;
 	fgSizer11 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer11->AddGrowableCol( 1 );
 	fgSizer11->SetFlexibleDirection( wxBOTH );
 	fgSizer11->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -109,7 +110,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer91->SetFlexibleDirection( wxBOTH );
 	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString cmbStreamTypeChoices[] = { wxT("IQ samples"), wxT("LTE packets"), wxT("LTE packets MIMO") };
+	wxString cmbStreamTypeChoices[] = { wxT("IQ samples"), wxT("LTE packets"), wxT("LTE packets MIMO"), wxT("LTE packets uncompressed") };
 	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
 	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
 	cmbStreamType->SetSelection( 0 );
