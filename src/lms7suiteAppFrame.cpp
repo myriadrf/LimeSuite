@@ -326,7 +326,6 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
     {
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
-        fftviewer->Initialize(streamBoardPort);
         fftviewer->Show();
         int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
         float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
@@ -334,6 +333,13 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
             samplingFreq_MHz /= pow(2.0, decimation);
         fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
+    if (lms7controlPort->GetInfo().device == LMS_DEV_SODERA)
+    {
+        //on Linux USB device can be connected only by one Connection manager, so pass the lms control port instead of separate stream port
+        fftviewer->Initialize(lms7controlPort);
+    }
+    else
+        fftviewer->Initialize(streamBoardPort);
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
