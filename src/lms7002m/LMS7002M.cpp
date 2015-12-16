@@ -748,6 +748,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     bool canDeliverFrequency = false;
     uint16_t integerPart;
     uint32_t fractionalPart;
+    int8_t i;
 
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
@@ -774,21 +775,35 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
 
     //find which VCO supports required frequency
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
     int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
     canDeliverFrequency = false;
+    int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
     for (sel_vco = 0; sel_vco < 3; ++sel_vco)
     {
         Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 0);
-        uint8_t cmp0 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO), 255);
-        uint8_t cmp255 = Get_SPI_Reg_bits(0x0123, 13, 12, true);
-        if (cmp0 != cmp255)
-        {
+        liblms7_status status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
+        int csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
+        tuneScore[sel_vco] = -128 + csw;
+        if (status == LIBLMS7_SUCCESS)
             canDeliverFrequency = true;
-            break;
-        }
-    }    
+    }
+    if (abs(tuneScore[0]) < abs(tuneScore[1]))
+    {   
+        if (abs(tuneScore[0]) < abs(tuneScore[2]))
+            sel_vco = 0;
+        else
+            sel_vco = 2;
+    }
+    else
+    {
+        if (abs(tuneScore[1]) < abs(tuneScore[2]))
+            sel_vco = 1;
+        else
+            sel_vco = 2;
+    }
+    Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), cswBackup);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
     if (tx)
