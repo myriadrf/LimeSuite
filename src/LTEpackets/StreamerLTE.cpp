@@ -2,16 +2,18 @@
 #include "lmsComms.h"
 #include <fstream>
 #include <iostream>
+#include "fifo.h"
 
 #include "kiss_fft.h"
+
+LMScomms* gDataPort;
 
 StreamerLTE::StreamerLTE(LMScomms* dataPort)
 {
     mDataPort = dataPort;
-    mRxFIFO = new StreamerFIFO<PacketLTE>(4096*8);
-    mTxFIFO = new StreamerFIFO<PacketLTE>(4096*8);
+    mRxFIFO = new LMS_SamplesFIFO(1, 1);
+    mTxFIFO = new LMS_SamplesFIFO(1, 1);
     mStreamRunning.store(false);
-    mTransmitDelay = 1048576;
 }
 
 StreamerLTE::~StreamerLTE()
@@ -21,38 +23,17 @@ StreamerLTE::~StreamerLTE()
     delete mTxFIFO;
 }
 
-/** @brief Crates threads for packets receiving, processing and transmitting
+/** @brief Crates thread for packets processing
 */
-StreamerLTE::STATUS StreamerLTE::StartStreaming(unsigned int fftSize)
+StreamerLTE::STATUS StreamerLTE::StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format)
 {
     if (mStreamRunning.load() == true)
         return FAILURE;
     if (mDataPort->IsOpen() == false)
         return FAILURE;
-    mRxFIFO->reset();
-    mTxFIFO->reset();
-    stopRx.store(false);
+
     stopProcessing.store(false);
-    stopTx.store(false);
-
-    //stop Tx Rx if they were active
-    uint16_t regVal = SPI_read(0x0005);
-    SPI_write(0x0005, regVal & ~0x6);
-
-    //USB FIFO reset
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    mDataPort->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    mDataPort->TransferPacket(ctrPkt);
-
-    regVal = SPI_read(0x0005);
-    SPI_write(0x0005, regVal | 0x6);
-
-    threadRx = std::thread(ReceivePackets, this);
-    threadProcessing = std::thread(ProcessPackets, this, fftSize);
-    threadTx = std::thread(TransmitPackets, this);
+    threadProcessing = std::thread(ProcessPackets, this, fftSize, channelsCount, format);
     mStreamRunning.store(true);
     return SUCCESS;
 }
@@ -63,78 +44,104 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
 {
     if (mStreamRunning.load() == false)
         return FAILURE;
-    stopTx.store(true);
     stopProcessing.store(true);
-    stopRx.store(true);
-    threadTx.join();
     threadProcessing.join();
-    threadRx.join();
-
-    //stop Tx Rx if they were active
-    uint16_t regVal = SPI_read(0x0005);
-    SPI_write(0x0005, regVal & ~0x6);
-
     mStreamRunning.store(false);
-
     return SUCCESS;
 }
 
 /** @brief Function dedicated for receiving data samples from board
+    @param rxFIFO FIFO to store received data
+    @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
+void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
-    PacketLTE pkt;
-    pkt.counter = 0;
-    memset(pkt.samples, 0, sizeof(pkt.samples));
-    memset(pkt.reserved, 0, sizeof(pkt.reserved));
+    //at this point Rx must be enabled in FPGA
+    int rxDroppedSamples = 0;
+    const int channelsCount = rxFIFO->GetChannelsCount();
+    uint32_t samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    const int buffer_size = 65536;// 4096;
-    const int buffers_count = 16; // must be power of 2
-    const int buffers_count_mask = buffers_count - 1;
-    int handles[buffers_count];
-    memset(handles, 0, sizeof(int)*buffers_count);
-    char *buffers = NULL;
-    buffers = new char[buffers_count*buffer_size];
-    if (buffers == 0)
+    const int bufferSize = 65536;
+    const int buffersCount = 16; // must be power of 2
+    const int buffersCountMask = buffersCount - 1;
+    int handles[buffersCount];
+    memset(handles, 0, sizeof(int)*buffersCount);
+    vector<char>buffers;
+    try
     {
-        printf("error allocating buffers\n");
+        buffers.resize(buffersCount*bufferSize, 0);
+    }
+    catch (const std::bad_alloc &ex)
+    {
+        printf("Error allocating Rx buffers, not enough memory\n");
         return;
     }
-    memset(buffers, 0, buffers_count*buffer_size);
 
-    for (int i = 0; i<buffers_count; ++i)
-        handles[i] = pthis->mDataPort->BeginDataReading(&buffers[i*buffer_size], buffer_size);
+    //temporary buffer to store samples for batch insertion to FIFO
+    PacketFrame tempPacket;
+    tempPacket.Initialize(channelsCount);
+
+    for (int i = 0; i<buffersCount; ++i)
+        handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
 
     int bi = 0;
-    int packetsReceived = 0;
-    unsigned long BytesReceived = 0;
+    unsigned long totalBytesReceived = 0; //for data rate calculation
     int m_bufferFailures = 0;
-    while (pthis->stopRx.load() == false)
+    int16_t sample;
+
+    uint32_t samplesReceived = 0;
+
+    while (terminate->load() == false)
     {
-        if (pthis->mDataPort->WaitForReading(handles[bi], 1000) == false)
-        {
+        if (dataPort->WaitForReading(handles[bi], 1000) == false)
             ++m_bufferFailures;
-        }
-        long bytesToRead = buffer_size;
-        if (pthis->mDataPort->FinishDataReading(&buffers[bi*buffer_size], bytesToRead, handles[bi]))
+
+        long bytesToRead = bufferSize;
+        long bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bytesToRead, handles[bi]);
+        if (bytesReceived > 0)
         {
-            ++packetsReceived;
-            BytesReceived += bytesToRead;
-            for (int p = 0; p < buffer_size / sizeof(pkt); ++p)
+            if (bytesReceived != bufferSize) //data should come in full sized packets
+                ++m_bufferFailures;
+
+            totalBytesReceived += bytesReceived;
+            for (int pktIndex = 0; pktIndex < bytesReceived / sizeof(PacketLTE); ++pktIndex)
             {
-                memcpy(&pkt, &buffers[bi*buffer_size+p*sizeof(pkt)], sizeof(pkt));
-                int16_t sample;
-                for (int i = 0; i < sizeof(pkt.samples) / sizeof(int16_t); ++i)
+                PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+                tempPacket.first = 0;
+                tempPacket.timestamp = pkt[pktIndex].counter;
+
+                uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
+                const int stepSize = channelsCount * 3;
+                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
                 {
-                    sample = (pkt.samples[i] & 0xFFF);
-                    sample = sample << 4;
-                    sample = sample >> 4;
-                    pkt.samples[i] = sample;
+                    for (int ch = 0; ch < channelsCount; ++ch)
+                    {
+                        //I sample
+                        sample = (pktStart[b + 1 + 3 * ch] & 0x0F) << 8;
+                        sample |= (pktStart[b + 3 * ch] & 0xFF);
+                        sample = sample << 4;
+                        sample = sample >> 4;
+                        tempPacket.samples[ch][samplesCollected].i = sample;
+
+                        //Q sample
+                        sample = pktStart[b + 2 + 3 * ch] << 4;
+                        sample |= (pktStart[b + 1 + 3 * ch] >> 4) & 0x0F;
+                        sample = sample << 4;
+                        sample = sample >> 4;
+                        tempPacket.samples[ch][samplesCollected].q = sample;
+                    }
+                    ++samplesCollected;
+                    ++samplesReceived;
                 }
-                if (pthis->mRxFIFO->push_back(pkt, 0) == false)
-                    ++m_bufferFailures;
+                tempPacket.last = samplesCollected;
+
+                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10);
+                if (samplesPushed != samplesCollected)
+                    rxDroppedSamples += samplesCollected - samplesPushed;
+                samplesCollected = 0;
             }
         }
         else
@@ -143,151 +150,355 @@ void StreamerLTE::ReceivePackets(StreamerLTE* pthis)
         }
 
         t2 = chrono::high_resolution_clock::now();
-        long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
         {
-            float m_dataRate = 1000.0*BytesReceived / timePeriod;
+            //total number of bytes sent per second
+            double dataRate = 1000.0*totalBytesReceived / timePeriod;
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            samplesReceived = 0;
             t1 = t2;
-            BytesReceived = 0;
-            StreamerFIFO<PacketLTE>::Status rxstats = pthis->mRxFIFO->GetStatus();
-
-            pthis->mRxDataRate.store(m_dataRate);
-            pthis->mRxFIFOfilled.store(100.0*rxstats.filledElements / rxstats.maxElements);
-#ifndef NDEBUG
-            printf("Rx: %.1f%% \t packet counter: %i\n", 100.0*rxstats.filledElements / rxstats.maxElements, pkt.counter);
-            printf("Rx rate: %.0f kB/s failures:%i\n", m_dataRate / 1000.0, m_bufferFailures);
-#endif
+            totalBytesReceived = 0;
+            if (dataRate_Bps)
+                dataRate_Bps->store((long)dataRate);
             m_bufferFailures = 0;
+#ifndef NDEBUG
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples);
+#endif
+            rxDroppedSamples = 0;
         }
 
         // Re-submit this request to keep the queue full
-        memset(&buffers[bi*buffer_size], 0, buffer_size);
-        handles[bi] = pthis->mDataPort->BeginDataReading(&buffers[bi*buffer_size], buffer_size);
-        bi = (bi + 1) & buffers_count_mask;
+        memset(&buffers[bi*bufferSize], 0, bufferSize);
+        handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
+        bi = (bi + 1) & buffersCountMask;
     }
-    pthis->mDataPort->AbortReading();
-    for (int j = 0; j<buffers_count; j++)
+    dataPort->AbortReading();
+    for (int j = 0; j<buffersCount; j++)
     {
-        long bytesToRead = buffer_size;
-        pthis->mDataPort->WaitForReading(handles[j], 1000);
-        pthis->mDataPort->FinishDataReading(&buffers[j*buffer_size], bytesToRead, handles[j]);
+        long bytesToRead = bufferSize;
+        dataPort->WaitForReading(handles[j], 1000);
+        dataPort->FinishDataReading(&buffers[j*bufferSize], bytesToRead, handles[j]);
+    }
+}
+
+/** @brief Function dedicated for receiving data samples from board
+    @param rxFIFO FIFO to store received data
+    @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
+*/
+void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+{
+    //at this point Rx must be enabled in FPGA
+    int rxDroppedSamples = 0;
+    const int channelsCount = 1;
+    uint32_t samplesCollected = 0;
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+
+    const int bufferSize = 65536;
+    const int buffersCount = 16; // must be power of 2
+    const int buffersCountMask = buffersCount - 1;
+    int handles[buffersCount];
+    memset(handles, 0, sizeof(int)*buffersCount);
+    vector<char>buffers;
+    try
+    {
+        buffers.resize(buffersCount*bufferSize, 0);
+    }
+    catch (const std::bad_alloc &ex)
+    {
+        printf("Error allocating Rx buffers, not enough memory\n");
+        return;
     }
 
-    delete[] buffers;
+    //temporary buffer to store samples for batch insertion to FIFO
+    PacketFrame tempPacket;
+    tempPacket.Initialize(channelsCount);
+
+    unsigned short regVal = SPI_read(gDataPort, 0x0005);
+
+    printf("Begin Data Reading\n");
+
+    for (int i = 0; i<buffersCount; ++i)
+        handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
+
+    bool async = false;
+    SPI_write(gDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+
+    int bi = 0;
+    unsigned long totalBytesReceived = 0; //for data rate calculation
+    int m_bufferFailures = 0;
+    int16_t sample;
+
+    uint32_t samplesReceived = 0;
+
+    while (terminate->load() == false)
+    {
+        if (dataPort->WaitForReading(handles[bi], 1000) == false)
+            ++m_bufferFailures;
+
+        long bytesToRead = bufferSize;
+        long bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bytesToRead, handles[bi]);
+        if (bytesReceived > 0)
+        {
+            if (bytesReceived != bufferSize) //data should come in full sized packets
+                ++m_bufferFailures;
+
+            totalBytesReceived += bytesReceived;
+            for (int pktIndex = 0; pktIndex < bytesReceived / sizeof(PacketLTE); ++pktIndex)
+            {
+                PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+                tempPacket.first = 0;
+                tempPacket.timestamp = pkt[pktIndex].counter;
+
+                uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
+                const int stepSize = channelsCount * 4;
+                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
+                {
+                    for (int ch = 0; ch < channelsCount; ++ch)
+                    {
+                        //I sample
+                        sample = (pktStart[b + 1 + 4 * ch] & 0x0F) << 8;
+                        sample |= (pktStart[b + 4 * ch] & 0xFF);
+                        sample = sample << 4;
+                        sample = sample >> 4;
+                        tempPacket.samples[ch][samplesCollected].i = sample;
+
+                        //Q sample
+                        sample = (pktStart[b + 3 + 4 * ch] & 0x0F) << 8;
+                        sample |= pktStart[b + 2 + 4 * ch] & 0xFF;
+                        sample = sample << 4;
+                        sample = sample >> 4;
+                        tempPacket.samples[ch][samplesCollected].q = sample;
+                    }
+                    ++samplesCollected;
+                    ++samplesReceived;
+                }
+                tempPacket.last = samplesCollected;
+
+                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10);
+                if (samplesPushed != samplesCollected)
+                    rxDroppedSamples += samplesCollected - samplesPushed;
+                samplesCollected = 0;
+            }
+        }
+        else
+        {
+            ++m_bufferFailures;
+        }
+
+        t2 = chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            //total number of bytes sent per second
+            double dataRate = 1000.0*totalBytesReceived / timePeriod;
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            samplesReceived = 0;
+            t1 = t2;
+            totalBytesReceived = 0;
+            if (dataRate_Bps)
+                dataRate_Bps->store((long)dataRate);
+            m_bufferFailures = 0;
 #ifndef NDEBUG
-    printf("Rx finished\n");
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples);
 #endif
+            rxDroppedSamples = 0;
+        }
+
+        // Re-submit this request to keep the queue full
+        memset(&buffers[bi*bufferSize], 0, bufferSize);
+        handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
+        bi = (bi + 1) & buffersCountMask;
+    }
+    dataPort->AbortReading();
+    for (int j = 0; j<buffersCount; j++)
+    {
+        long bytesToRead = bufferSize;
+        dataPort->WaitForReading(handles[j], 1000);
+        dataPort->FinishDataReading(&buffers[j*bufferSize], bytesToRead, handles[j]);
+    }
 }
 
 /** @brief Function dedicated for processing incomming data and generating outputs for transmitting
 */
-void StreamerLTE::ProcessPackets(StreamerLTE* pthis, unsigned int fftSize)
+void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format)
 {
+    pthis->mRxFIFO->Reset(2*4096, channelsCount);
+    pthis->mTxFIFO->Reset(2*4096, channelsCount);
+
     DataToGUI localDataResults;
     localDataResults.nyquist_MHz = 7.68*1000000;
-    localDataResults.samplesI.resize(fftSize, 0);
-    localDataResults.samplesQ.resize(fftSize, 0);
-    localDataResults.fftBins_dbFS.resize(fftSize, 0);
+    localDataResults.samplesI[0].resize(fftSize, 0);
+    localDataResults.samplesI[1].resize(fftSize, 0);
+    localDataResults.samplesQ[0].resize(fftSize, 0);
+    localDataResults.samplesQ[1].resize(fftSize, 0);
+    localDataResults.fftBins_dbFS[0].resize(fftSize, 0);
+    localDataResults.fftBins_dbFS[1].resize(fftSize, 0);
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
 
-    const int samplesInPacket = (4096-16) / 4;
-    const int packetsCountForFFT = fftSize / samplesInPacket + ((fftSize % samplesInPacket) != 0);
+    const int samplesToRead = fftSize;
+    int16_t** buffers;
+    buffers = new int16_t*[channelsCount];
+    for (int i = 0; i < channelsCount; ++i)
+        buffers[i] = new int16_t[samplesToRead * 2];
+    uint64_t timestamp = 0;
+    int timeout_ms = 1000;
 
-    PacketLTE* pkt = new PacketLTE[packetsCountForFFT];
+    //switch off Rx
+    uint16_t regVal = SPI_read(pthis->mDataPort, 0x0005);
+    SPI_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+
+    //enable MIMO mode, 12 bit compressed values
+    if (channelsCount == 2)
+    {
+        SPI_write(pthis->mDataPort, 0x0001, 0x0003);
+        SPI_write(pthis->mDataPort, 0x0007, 0x000A);
+    }
+    else
+    {
+        SPI_write(pthis->mDataPort, 0x0001, 0x0001);
+        SPI_write(pthis->mDataPort, 0x0007, 0x0008);
+    }
+
+    //USB FIFO reset
+    LMScomms::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x01);
+    pthis->mDataPort->TransferPacket(ctrPkt);
+    ctrPkt.outBuffer[0] = 0x00;
+    pthis->mDataPort->TransferPacket(ctrPkt);
+
+    //switch on Rx
+    regVal = SPI_read(pthis->mDataPort, 0x0005);
+    bool async = false;
+    SPI_write(pthis->mDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    gDataPort = pthis->mDataPort;
+
+    atomic<bool> stopRx(0);
+    atomic<bool> stopTx(0);
+    atomic<uint32_t> rxRate_Bps(0);
+    atomic<uint32_t> txRate_Bps(0);
+    std::thread threadRx;
+    std::thread threadTx;
+    if (format == STREAM_12_BIT_COMPRESSED)
+    {
+        threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps);
+        threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+    }
+    else
+    {
+        threadRx = std::thread(ReceivePacketsUncompressed, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps);
+        threadTx = std::thread(TransmitPacketsUncompressed, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+    }
+
+    int updateCounter = 0;
+
     while (pthis->stopProcessing.load() == false)
     {
-		//collect enough packets for desired FFT size
-        for (int i = 0; i < packetsCountForFFT; ++i)
+        uint32_t samplesPopped = pthis->mRxFIFO->pop_samples((complex16_t**)buffers, samplesToRead, channelsCount, &timestamp, timeout_ms);
+        ++updateCounter;
+        //Transmit earlier received packets with a counter delay
+        uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms);
+
+        if (updateCounter & 0x40)
         {
-            if (pthis->mRxFIFO->pop_front(&pkt[i], 1000) == false)
+
+            for (int ch = 0; ch < channelsCount; ++ch)
             {
-                if (pthis->stopProcessing.load() == true)
-                    break;
-                printf("\tError: popping from RX\n");
-                continue;
+                for (int i = 0; i < fftSize; ++i)
+                {
+                    localDataResults.samplesI[ch][i] = m_fftCalcIn[i].r = buffers[ch][2 * i];
+                    localDataResults.samplesQ[ch][i] = m_fftCalcIn[i].i = buffers[ch][2 * i + 1];
+                }
+                kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+                for (int i = 0; i < fftSize; ++i)
+                {
+                    // normalize FFT results
+                    m_fftCalcOut[i].r /= fftSize;
+                    m_fftCalcOut[i].i /= fftSize;
+                }
+
+                int output_index = 0;
+                for (int i = fftSize / 2 + 1; i < fftSize; ++i)
+                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                for (int i = 0; i < fftSize / 2 + 1; ++i)
+                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                for (int s = 0; s < fftSize; ++s)
+                    localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
             }
-        }
-
-        unsigned int samplesUsed = 0;
-        for (int i = 0; i < fftSize; ++i)
-        {
-            localDataResults.samplesI[i] = m_fftCalcIn[i].r = pkt[i / samplesInPacket].samples[(2 * i) % (2*samplesInPacket)];
-            localDataResults.samplesQ[i] = m_fftCalcIn[i].i = pkt[i / samplesInPacket].samples[(2 * i + 1) % (2*samplesInPacket)];
-        }
-        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
-
-        for (int i = 0; i<fftSize; ++i)
-        {
-            // normalize FFT results
-            m_fftCalcOut[i].r /= fftSize;
-            m_fftCalcOut[i].i /= fftSize;
-        }
-        int output_index = 0;
-        for (int i = fftSize / 2 + 1; i <fftSize; ++i)
-            localDataResults.fftBins_dbFS[output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
-        for (int i = 0; i <fftSize / 2 + 1; ++i)
-            localDataResults.fftBins_dbFS[output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
-        for (int s = 0; s<fftSize; ++s)
-            localDataResults.fftBins_dbFS[s] = (localDataResults.fftBins_dbFS[s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[s])) - 69.2369 : -300);
-
-        {
-            std::unique_lock<std::mutex> lck(pthis->mLockIncomingPacket);
-            pthis->mIncomingPacket = localDataResults;
-        }
-
-		//Transmit earlier received packets with a counter delay
-        for (int i = 0; i < packetsCountForFFT; ++i)
-        {
-            pkt[i].counter += pthis->mTransmitDelay;
-            bool iqSelect = true;
-            for (int j = 0; j < sizeof(pkt[i].samples) / sizeof(int16_t); ++j)
             {
-                if (iqSelect) //output samples need to have iq select bit
-                    pkt[i].samples[j] = (pkt[i].samples[j] & 0xFFF) | 0x1000;
-                else
-                    pkt[i].samples[j] = (pkt[i].samples[j] & 0xFFF);
-                iqSelect = !iqSelect;
+                localDataResults.rxDataRate_Bps = rxRate_Bps.load();
+                localDataResults.txDataRate_Bps = txRate_Bps.load();
+                std::unique_lock<std::mutex> lck(pthis->mLockIncomingPacket);
+                pthis->mIncomingPacket = localDataResults;
             }
-            if (pthis->mTxFIFO->push_back(pkt[i], 1000) == false)
-            {
-                printf("\tError: pushing into TX\n");
-                if (pthis->stopProcessing.load() == true)
-                    break;
-                continue;
-            }
+            updateCounter = 0;
         }
     }
-    delete[] pkt;
+    stopTx.store(true);
+    stopRx.store(true);
+
+    threadTx.join();
+    threadRx.join();
+
+    //stop Tx Rx if they were active
+    regVal = SPI_read(pthis->mDataPort, 0x0005);
+    SPI_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+
+    kiss_fft_free(m_fftCalcPlan);
+
+    for (int i = 0; i < channelsCount; ++i)
+        delete[] buffers[i];
+    delete []buffers;
 #ifndef NDEBUG
     printf("Processing finished\n");
 #endif
 }
 
 /** @brief Functions dedicated for transmitting packets to board
+    @param txFIFO data source FIFO
+    @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPackets(StreamerLTE* pthis)
+void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
+    const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 16;
-    const int buffer_size = sizeof(PacketLTE)*packetsToBatch;
-    const int buffers_count = 16; // must be power of 2
-    const int buffers_count_mask = buffers_count - 1;
-    int handles[buffers_count];
-    memset(handles, 0, sizeof(int)*buffers_count);
-    char *buffers = NULL;
-    buffers = new char[buffers_count*buffer_size];
-    if (buffers == 0)
+    const int bufferSize = 65536;
+    const int buffersCount = 16; // must be power of 2
+    const int buffersCountMask = buffersCount - 1;
+    int handles[buffersCount];
+    memset(handles, 0, sizeof(int)*buffersCount);
+    vector<char> buffers;
+    try
     {
-        printf("error allocating buffers\n");
+        buffers.resize(buffersCount*bufferSize, 0);
     }
-    memset(buffers, 0, buffers_count*buffer_size);
-    bool *bufferUsed = new bool[buffers_count];
-    memset(bufferUsed, 0, sizeof(bool)*buffers_count);
+    catch (const std::bad_alloc& ex) //not enough memory for buffers
+    {
+        printf("Error allocating Tx buffers, not enough memory\n");
+        return;
+    }
+    memset(&buffers[0], 0, buffersCount*bufferSize);
+    bool bufferUsed[buffersCount];
+    memset(bufferUsed, 0, sizeof(bool)*buffersCount);
+    uint32_t bytesToSend[buffersCount];
+    memset(bytesToSend, 0, sizeof(uint32_t)*buffersCount);
 
     int bi = 0; //buffer index
+    complex16_t **outSamples = new complex16_t*[channelsCount];
+    const int samplesInPacket = PacketFrame::maxSamplesInPacket / channelsCount;
+    for (int i = 0; i < channelsCount; ++i)
+    {
+        outSamples[i] = new complex16_t[samplesInPacket];
+    }
 
-    PacketLTE* pkt = new PacketLTE[packetsToBatch];
     int m_bufferFailures = 0;
     long bytesSent = 0;
     auto t1 = chrono::high_resolution_clock::now();
@@ -295,115 +506,293 @@ void StreamerLTE::TransmitPackets(StreamerLTE* pthis)
     long totalBytesSent = 0;
 
     unsigned long outputCounter = 0;
+    uint32_t samplesSent = 0;
 
-    while (pthis->stopTx.load() == false)
-    {
-        for (int i = 0; i < packetsToBatch; ++i)
-        {
-            if (pthis->mTxFIFO->pop_front(&pkt[i], 200) == false)
-            {
-                printf("Error popping from TX\n");
-                if (pthis->stopTx.load() == false)
-                    break;
-                continue;
-            }
-        }
-        //wait for desired slot buffer to be transferred
+    uint32_t samplesPopped = 0;
+    uint64_t timestamp = 0;
+    uint64_t batchSamplesFilled = 0;
+
+    while (terminate->load() != true)
+    {   
         if (bufferUsed[bi])
         {
-            if (pthis->mDataPort->WaitForSending(handles[bi], 1000) == false)
+            if (dataPort->WaitForSending(handles[bi], 1000) == false)
             {
                 ++m_bufferFailures;
             }
-            // Must always call FinishDataXfer to release memory of contexts[i]
-            long bytesToSend = buffer_size;
-            bytesSent = pthis->mDataPort->FinishDataSending(&buffers[bi*buffer_size], bytesToSend, handles[bi]);
-            if (bytesSent > 0)
+            long tempToSend = bytesToSend[bi];
+            bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], tempToSend, handles[bi]);
+            if (bytesSent == tempToSend)
                 totalBytesSent += bytesSent;
             else
                 ++m_bufferFailures;
             bufferUsed[bi] = false;
         }
+        int i = 0;
+        while (i < packetsToBatch)
+        {
+            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000);
+            if (samplesPopped == 0 || samplesPopped != samplesInPacket)
+            {
+                printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
+                if (terminate->load() == true)
+                    break;
+                continue;
+            }
+            PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+            pkt[i].counter = timestamp;
+            uint8_t* dataStart = (uint8_t*)pkt[i].data;
+            const int stepSize = channelsCount * 3;
+            int samplesCollected = 0;
+            for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
+            {
+                for (int ch = 0; ch < channelsCount; ++ch)
+                {
+                    //I sample
+                    dataStart[b + 3 * ch] = outSamples[ch][samplesCollected].i & 0xFF;
+                    dataStart[b + 1 + 3 * ch] = (outSamples[ch][samplesCollected].i >> 8) & 0x0F;
 
-        memcpy(&buffers[bi*buffer_size], &pkt[0], sizeof(PacketLTE)*packetsToBatch);
-        handles[bi] = pthis->mDataPort->BeginDataSending(&buffers[bi*buffer_size], buffer_size);
+                    //Q sample
+                    dataStart[b + 1 + 3 * ch] |= (outSamples[ch][samplesCollected].q << 4) & 0xF0;
+                    dataStart[b + 2 + 3 * ch] = (outSamples[ch][samplesCollected].q >> 4) & 0xFF;
+                }
+                ++samplesCollected;
+                ++samplesSent;
+            }
+            ++i;
+        }
+
+        bytesToSend[bi] = sizeof(PacketLTE)*packetsToBatch;
+        handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
-        long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
         {
-            float m_dataRate = 1000.0*totalBytesSent / timePeriod;
+            //total number of bytes sent per second
+            double m_dataRate = 1000.0*totalBytesSent / timePeriod;
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            if(dataRate_Bps)
+                dataRate_Bps->store(m_dataRate);
+            samplesSent = 0;
             t1 = t2;
             totalBytesSent = 0;
 #ifndef NDEBUG
-            cout << "Tx rate: " << m_dataRate/1000 << " kB/s\t failures: " << m_bufferFailures << endl;
+            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures);
 #endif
-            StreamerFIFO<PacketLTE>::Status txstats = pthis->mTxFIFO->GetStatus();
-            pthis->mTxDataRate.store(m_dataRate);
-            pthis->mTxFIFOfilled.store(100.0*txstats.filledElements / txstats.maxElements);
             m_bufferFailures = 0;
         }
-        bi = (bi + 1) & buffers_count_mask;
+        bi = (bi + 1) & buffersCountMask;
     }
 
     // Wait for all the queued requests to be cancelled
-    pthis->mDataPort->AbortSending();
-    for (int j = 0; j<buffers_count; j++)
+    dataPort->AbortSending();
+    for (int j = 0; j<buffersCount; j++)
     {
-        long bytesToSend = buffer_size;
+        long bytesToSend = bufferSize;
         if (bufferUsed[bi])
         {
-            pthis->mDataPort->WaitForSending(handles[j], 1000);
-            pthis->mDataPort->FinishDataSending(&buffers[j*buffer_size], bytesToSend, handles[j]);
+            dataPort->WaitForSending(handles[j], 1000);
+            dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);
         }
     }
-
-    delete[] buffers;
-    delete[] bufferUsed;
-    delete[] pkt;
-#ifndef NDEBUG
-    printf("Tx finished\n");
-#endif
+    for (int i = 0; i < channelsCount; ++i)
+    {
+        delete[]outSamples[i];
+    }
+    delete[]outSamples;
 }
+
+/** @brief Functions dedicated for transmitting packets to board
+    @param txFIFO data source FIFO
+    @param terminate periodically pooled flag to terminate thread
+    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
+*/
+void StreamerLTE::TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+{
+    const int channelsCount = 1;
+    const int packetsToBatch = 16;
+    const int bufferSize = 65536;
+    const int buffersCount = 16; // must be power of 2
+    const int buffersCountMask = buffersCount - 1;
+    int handles[buffersCount];
+    memset(handles, 0, sizeof(int)*buffersCount);
+    vector<char> buffers;
+    try
+    {
+        buffers.resize(buffersCount*bufferSize, 0);
+    }
+    catch (const std::bad_alloc& ex) //not enough memory for buffers
+    {
+        printf("Error allocating Tx buffers, not enough memory\n");
+        return;
+    }
+    memset(&buffers[0], 0, buffersCount*bufferSize);
+    bool bufferUsed[buffersCount];
+    memset(bufferUsed, 0, sizeof(bool)*buffersCount);
+    uint32_t bytesToSend[buffersCount];
+    memset(bytesToSend, 0, sizeof(uint32_t)*buffersCount);
+
+    int bi = 0; //buffer index
+    complex16_t **outSamples = new complex16_t*[channelsCount];
+    const int samplesInPacket = 1020;
+    for (int i = 0; i < channelsCount; ++i)
+    {
+        outSamples[i] = new complex16_t[samplesInPacket];
+    }
+
+    int m_bufferFailures = 0;
+    long bytesSent = 0;
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    long totalBytesSent = 0;
+
+    unsigned long outputCounter = 0;
+    uint32_t samplesSent = 0;
+
+    uint32_t samplesPopped = 0;
+    uint64_t timestamp = 0;
+    uint64_t batchSamplesFilled = 0;
+
+    while (terminate->load() != true)
+    {
+        if (bufferUsed[bi])
+        {
+            if (dataPort->WaitForSending(handles[bi], 1000) == false)
+            {
+                ++m_bufferFailures;
+            }
+            long tempToSend = bytesToSend[bi];
+            bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], tempToSend, handles[bi]);
+            if (bytesSent == tempToSend)
+                totalBytesSent += bytesSent;
+            else
+                ++m_bufferFailures;
+            bufferUsed[bi] = false;
+        }
+        int i = 0;
+        while (i < packetsToBatch)
+        {
+            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000);
+            if (samplesPopped == 0 || samplesPopped != samplesInPacket)
+            {
+                printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
+                if (terminate->load() == true)
+                    break;
+                continue;
+            }
+            PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+            pkt[i].counter = timestamp;
+            uint8_t* dataStart = (uint8_t*)pkt[i].data;
+            const int stepSize = channelsCount * 4;
+            int samplesCollected = 0;
+            for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
+            {
+                for (int ch = 0; ch < channelsCount; ++ch)
+                {
+                    //I sample
+                    dataStart[b + 4 * ch] = outSamples[ch][samplesCollected].i & 0xFF;
+                    dataStart[b + 1 + 4 * ch] = (outSamples[ch][samplesCollected].i >> 8) & 0x0F | 0x10;
+
+                    //Q sample
+                    dataStart[b + 2 + 4 * ch] |= (outSamples[ch][samplesCollected].q ) & 0xFF;
+                    dataStart[b + 3 + 4 * ch] = (outSamples[ch][samplesCollected].q >> 8) & 0x0F;
+                }
+                ++samplesCollected;
+                ++samplesSent;
+            }
+            ++i;
+        }
+
+        bytesToSend[bi] = sizeof(PacketLTE)*packetsToBatch;
+        handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
+        bufferUsed[bi] = true;
+
+        t2 = chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            //total number of bytes sent per second
+            double m_dataRate = 1000.0*totalBytesSent / timePeriod;
+            //total number of samples from all channels per second
+            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            if (dataRate_Bps)
+                dataRate_Bps->store(m_dataRate);
+            samplesSent = 0;
+            t1 = t2;
+            totalBytesSent = 0;
+#ifndef NDEBUG
+            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures);
+#endif
+            m_bufferFailures = 0;
+        }
+        bi = (bi + 1) & buffersCountMask;
+    }
+
+    // Wait for all the queued requests to be cancelled
+    dataPort->AbortSending();
+    for (int j = 0; j<buffersCount; j++)
+    {
+        long bytesToSend = bufferSize;
+        if (bufferUsed[bi])
+        {
+            dataPort->WaitForSending(handles[j], 1000);
+            dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);
+        }
+    }
+    for (int i = 0; i < channelsCount; ++i)
+    {
+        delete[]outSamples[i];
+    }
+    delete[]outSamples;
+}
+
 
 /** @brief Returns current data state for user interface
 */
 StreamerLTE::DataToGUI StreamerLTE::GetIncomingData()
 {
     std::unique_lock<std::mutex> lck(mLockIncomingPacket);
-    return mIncomingPacket;
+    DataToGUI data = mIncomingPacket;
+    return data;
 }
 
-StreamerLTE::ProgressStats StreamerLTE::GetStats()
+StreamerLTE::Stats StreamerLTE::GetStats()
 {
-    ProgressStats stats;
-    stats.RxRate_Bps = mRxDataRate.load();
-    stats.TxRate_Bps = mTxDataRate.load();
-    stats.RxFIFOfilled = mRxFIFOfilled.load();
-    stats.TxFIFOfilled = mTxFIFOfilled.load();
-    return stats;
+    Stats data;
+    LMS_SamplesFIFO::BufferInfo rxInfo = mRxFIFO->GetInfo();
+    LMS_SamplesFIFO::BufferInfo txInfo = mTxFIFO->GetInfo();
+    data.rxBufSize = rxInfo.size;
+    data.rxBufFilled = rxInfo.itemsFilled;
+    data.txBufSize = txInfo.size;
+    data.txBufFilled = txInfo.itemsFilled;
+    return data;
 }
 
-StreamerLTE::STATUS StreamerLTE::SPI_write(uint16_t address, uint16_t data)
+StreamerLTE::STATUS StreamerLTE::SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data)
 {
-    assert(mDataPort != nullptr);
+    assert(dataPort != nullptr);
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_BRDSPI_WR;
     ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
     ctrPkt.outBuffer.push_back(address & 0xFF);
     ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
     ctrPkt.outBuffer.push_back(data & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
+    dataPort->TransferPacket(ctrPkt);
     return ctrPkt.status == 1 ? SUCCESS : FAILURE;
 }
-uint16_t StreamerLTE::SPI_read(uint16_t address)
+uint16_t StreamerLTE::SPI_read(LMScomms* dataPort, uint16_t address)
 {
-    assert(mDataPort != nullptr);
+    assert(dataPort != nullptr);
     LMScomms::GenericPacket ctrPkt;
     ctrPkt.cmd = CMD_BRDSPI_RD;
     ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
     ctrPkt.outBuffer.push_back(address & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    dataPort->TransferPacket(ctrPkt);
+    if (ctrPkt.inBuffer.size() > 4)
+        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    else
+        return 0;
 }

@@ -51,6 +51,7 @@ void pnlMiniLog::OnBtnClearClicked(wxCommandEvent& event)
 {
     mMessageList.clear();
     txtMessageField->Clear();
+    mAllMessages.clear();
 }
 
 void pnlMiniLog::OnShowFullLog(wxCommandEvent& event)

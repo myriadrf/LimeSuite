@@ -53,7 +53,7 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, 
     FlexGridSizer6 = new wxFlexGridSizer(0, 2, 0, 0);
     StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _T("File:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
     FlexGridSizer6->Add(StaticText1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    lblFilename = new wxStaticText(this, ID_STATICTEXT2, _T("\?"), wxDefaultPosition, wxSize(400, -1), 0, _T("ID_STATICTEXT2"));
+    lblFilename = new wxStaticText(this, ID_STATICTEXT2, _T("\?"), wxDefaultPosition, wxSize(400, -1), wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
     FlexGridSizer6->Add(lblFilename, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer2->Add(FlexGridSizer6, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     btnStartStop = new wxButton(this, ID_BUTTON2, _T("Program"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
@@ -197,7 +197,7 @@ void LMS_Programing_wxgui::OnProgressPoll(wxTimerEvent& evt)
         percent = 100.0*info.bytesSent / info.bytesCount;
         progressBar->SetValue(percent);
     }
-    lblProgressPercent->SetLabel(wxString::Format("%3.1f", percent));
+    lblProgressPercent->SetLabel(wxString::Format("%3.1f%%", percent));
     if (info.bytesSent == info.bytesCount || info.aborted)
         OnProgramingFinished();
 }
@@ -206,7 +206,7 @@ void LMS_Programing_wxgui::OnProgramingFinished()
 {
     progressPooler->Stop();
     progressBar->SetValue(100);
-    lblProgressPercent->SetLabel(wxString::Format("%3.1f", 100.0));
+    lblProgressPercent->SetLabel(wxString::Format("%3.1f%%", 100.0));
     LMS_Programing::Info info = m_programmer->GetProgressInfo();
     if (info.aborted || info.bytesSent != info.bytesCount)
         wxMessageBox(_("Programming aborted. Board last status response: ") + wxString::From8BitData(status2string(info.deviceResponse)), _("ERROR"), wxICON_ERROR | wxOK);

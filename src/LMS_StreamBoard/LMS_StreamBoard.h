@@ -44,9 +44,9 @@ public:
 
     struct DataToGUI
     {
-        std::vector<double> samplesI;
-        std::vector<double> samplesQ;
-        std::vector<double> fftBins_dbFS;
+        std::vector<float> samplesI;
+        std::vector<float> samplesQ;
+        std::vector<float> fftBins_dbFS;
         float nyquist_MHz;
     };
 

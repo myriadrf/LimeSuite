@@ -5,7 +5,6 @@
 */
 
 #include "Si5351C_wxgui.h"
-
 #include "Si5351C.h"
 
 //(*InternalHeaders(Si5351C_wxgui)
@@ -63,13 +62,14 @@ const long Si5351C_wxgui::ID_CHECKBOX16 = wxNewId();
 const long Si5351C_wxgui::ID_BUTTON3 = wxNewId();
 //*)
 
-BEGIN_EVENT_TABLE(Si5351C_wxgui,wxFrame)
-    //(*EventTable(Si5351C_wxgui)
-    //*)
+BEGIN_EVENT_TABLE(Si5351C_wxgui, wxFrame)
+//(*EventTable(Si5351C_wxgui)
+//*)
 END_EVENT_TABLE()
+#include <vector>
 
 Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
-{
+{   
     m_pModule = NULL;
     
     wxFlexGridSizer* FlexGridSizer4;
@@ -91,11 +91,20 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     btnResetToDefaults = new wxButton(this, ID_BUTTON4, _("Reset register map to default"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON4"));
     StaticBoxSizer1->Add(btnResetToDefaults, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer3->Add(StaticBoxSizer1, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer2 = new wxFlexGridSizer(0, 1, 0, 0);
+    FlexGridSizer2 = new wxFlexGridSizer(0, 2, 5, 5);
     StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("CLKIN Frequency (MHz)"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
-    FlexGridSizer2->Add(StaticText1, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer2->Add(StaticText1, 1, wxTOP | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtCLKIN_MHz = new wxTextCtrl(this, ID_TEXTCTRL1, _("30.72"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
-    FlexGridSizer2->Add(txtCLKIN_MHz, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer2->Add(txtCLKIN_MHz, 1, wxTOP | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+
+    const wxString clksrcChoices[] = { _("XTAL"), _("CLKIN") };
+    rgrClkSrc = new wxRadioBox(this, wxNewId(), _("PLL src"), wxDefaultPosition, wxDefaultSize, 2, clksrcChoices, 2, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX1"));
+    FlexGridSizer2->Add(rgrClkSrc, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 0);
+
+    const wxString xtalfreqChoices[] = { _("25 MHz"), _("27 MHz") };    
+    rgrXTALfreq = new wxRadioBox(this, wxNewId(), _("XTAL freq"), wxDefaultPosition, wxDefaultSize, 2, xtalfreqChoices, 2, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX1"));
+    FlexGridSizer2->Add(rgrXTALfreq, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 0);
+
     FlexGridSizer3->Add(FlexGridSizer2, 1, wxLEFT | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer6 = new wxFlexGridSizer(0, 1, 0, 0);
     lblStatus = new wxStaticText(this, ID_STATICTEXT14, _("SYS_INIT:\t\? \t SYS_INIT_STKY:\t\?\nLOL_B:\t\?  \tLOL_B_STKY:\t\?\nLOL_A:\t\?  \tLOL_A_STKY:\t\?\nLOS:\t\?  \tLOS_STKY:\t\?"), wxDefaultPosition, wxSize(282, 59), 0, _T("ID_STATICTEXT14"));
@@ -171,7 +180,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     lblCLK5 = new wxStaticText(this, ID_STATICTEXT8, _("CLK5"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT8"));
     FlexGridSizer9->Add(lblCLK5, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     chkEN_CLK5 = new wxCheckBox(this, ID_CHECKBOX6, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX6"));
-    chkEN_CLK5->SetValue(true);
+    chkEN_CLK5->SetValue(true);    
     FlexGridSizer9->Add(chkEN_CLK5, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK5 = new wxTextCtrl(this, ID_TEXTCTRL7, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL7"));
     FlexGridSizer9->Add(txtFreq_CLK5, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -211,7 +220,6 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     Connect(ID_BUTTON1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnReadStatusClick);
     Connect(ID_BUTTON5, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnClearStatusClick);
     Connect(ID_BUTTON3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnConfigureClockClick);
-
 }
 
 void Si5351C_wxgui::Initialize(Si5351C* pModule)
@@ -239,16 +247,20 @@ void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
         return;
 
     m_pModule->LoadRegValuesFromFile( openFileDialog.GetPath().ToStdString().c_str() );
-    m_pModule->UploadConfiguration();
+    if(m_pModule->UploadConfiguration() != 0)
+        wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
 {
     double refFreq;
     double freq;
-    txtCLKIN_MHz->GetValue().ToDouble(&refFreq);
-    m_pModule->SetPLL(0, refFreq*1000000);
-    m_pModule->SetPLL(1, refFreq*1000000);
+    if (rgrClkSrc->GetSelection() == 0)
+        refFreq = (rgrXTALfreq->GetSelection() == 0 ? 25 : 27);
+    else
+        txtCLKIN_MHz->GetValue().ToDouble(&refFreq);
+    m_pModule->SetPLL(0, refFreq * 1000000, rgrClkSrc->GetSelection());
+    m_pModule->SetPLL(1, refFreq * 1000000, rgrClkSrc->GetSelection());
 
     txtFreq_CLK0->GetValue().ToDouble(&freq);
     m_pModule->SetClock(0, freq*1000000, chkEN_CLK0->GetValue(), chkInvert_CLK0->GetValue());
@@ -295,6 +307,19 @@ void Si5351C_wxgui::ModifyClocksGUI(eLMS_DEV board)
         ClockEnable(5, false);
         lblCLK6->SetLabel(_("CLK6 - CLK_FPGA0"));
         lblCLK7->SetLabel(_("CLK7 - CLK_FPGA1"));
+        rgrClkSrc->SetSelection(1);
+    }    
+    else if (board == LMS_DEV_SODERA)
+    {
+        lblCLK0->SetLabel(_("CLK0"));
+        lblCLK1->SetLabel(_("CLK1"));
+        lblCLK2->SetLabel(_("CLK2"));
+        lblCLK3->SetLabel(_("CLK3"));
+        lblCLK4->SetLabel(_("CLK4"));
+        lblCLK5->SetLabel(_("CLK5"));
+        lblCLK6->SetLabel(_("CLK6"));
+        lblCLK7->SetLabel(_("CLK7"));
+        rgrClkSrc->SetSelection(0);
     }
     else
     {
@@ -310,6 +335,7 @@ void Si5351C_wxgui::ModifyClocksGUI(eLMS_DEV board)
         ClockEnable(6, false);
         lblCLK7->SetLabel(_("CLK7"));
         ClockEnable(7, false);
+        rgrClkSrc->SetSelection(1);
     }
     Layout();
 }

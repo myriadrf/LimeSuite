@@ -171,5 +171,7 @@ protected:
 
     ///port used for communicating with LMS7002M
     LMScomms* controlPort;
+
+    liblms7_status LoadConfigLegacyFile(const char* filename);
 };
 #endif

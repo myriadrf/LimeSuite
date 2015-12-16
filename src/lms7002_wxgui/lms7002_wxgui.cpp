@@ -3695,7 +3695,7 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	ID_STATICTEXT9->Wrap( -1 );
 	fgSizer85->Add( ID_STATICTEXT9, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
-	cmbICT_VCO_CGEN = new NumericSlider( sbSizer67->GetStaticBox(), ID_ICT_VCO_CGEN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
+	cmbICT_VCO_CGEN = new NumericSlider( sbSizer67->GetStaticBox(), ID_ICT_VCO_CGEN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
 	fgSizer85->Add( cmbICT_VCO_CGEN, 1, wxEXPAND, 5 );
 	
 	btnShowVCO = new wxButton( sbSizer67->GetStaticBox(), wxID_ANY, wxT("VCO params"), wxDefaultPosition, wxDefaultSize, 0 );

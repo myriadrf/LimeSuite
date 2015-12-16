@@ -35,11 +35,12 @@ struct Si5351_Channel
 
 struct Si5351_PLL
 {
-    Si5351_PLL() : inputFreqHz(0), VCO_Hz(0), feedbackDivider(0), CLKIN_DIV(1) {}
+    Si5351_PLL() : inputFreqHz(0), VCO_Hz(0), feedbackDivider(0), CLKIN_DIV(1), CLK_SRC(1) {}
     unsigned long inputFreqHz;
     float VCO_Hz;
     float feedbackDivider;
     int CLKIN_DIV;
+    int CLK_SRC; //0-XTAL, 1-CLKIN
 };
 
 class LMScomms;
@@ -76,12 +77,13 @@ public:
 	void Initialize(LMScomms *mng);
 	bool LoadRegValuesFromFile(string FName);
 
-    void SetPLL(unsigned char id, unsigned long CLKIN_Hz);
+    void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
     void SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled = true, bool inverted = false);
 
     Status UploadConfiguration();
     Status ConfigureClocks();
 	void Reset();
+    
 private:
     void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
     LMScomms *device;

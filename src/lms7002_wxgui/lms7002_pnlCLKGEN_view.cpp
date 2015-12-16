@@ -180,6 +180,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_LSB, false);
     lblFRAC_SDM_CGEN->SetLabel(wxString::Format("%i", fracValue));
+    lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_OUTCH_CGEN)+1));
 }
 
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()

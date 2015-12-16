@@ -192,7 +192,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     if (status != LIBLMS7_SUCCESS)
     {
         if (status != LIBLMS7_NOT_CONNECTED)
-            wxMessageBox(_("Failed to load file"), _("Warning"));
+            wxMessageBox(wxString::Format(_("Failed to load file: %s"), liblms7_status2string(status)), _("Warning"));
     }
     wxCommandEvent tevt;
     lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
@@ -275,5 +275,8 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
     liblms7_status status = lmsControl->UploadAll();
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(liblms7_status2string(status))), _("Warning"));
+    wxCommandEvent evt;
+    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
+    wxPostEvent(this, evt);
     UpdateVisiblePanel();
 }

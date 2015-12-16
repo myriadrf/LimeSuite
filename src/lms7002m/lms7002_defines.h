@@ -25,6 +25,7 @@ enum eLMS_DEV
 	LMS_DEV_RFSPARK,
 	LMS_DEV_LMS6002USB,
 	LMS_DEV_RFESPARK,
+	LMS_DEV_SODERA,
 	
 	LMS_DEV_COUNT
 };
@@ -44,7 +45,8 @@ const char LMS_DEV_NAMES[][80] =
 	"DataSpark",
 	"RF-Spark",
 	"LMS6002-USB Stick",
-	"RF-ESpark"
+	"RF-ESpark",
+	"SoDeRa",
 };
 
 static const char* GetDeviceName(const eLMS_DEV device)
@@ -201,10 +203,11 @@ enum eADC_UNITS
 	CURRENT,
 	RESISTANCE,
 	POWER,
+	TEMPERATURE,
 	ADC_UNITS_COUNT
 };
 
-static const char  adc_units_text[][8] = {"", "V", "A", "Ohm", "W"};
+static const char  adc_units_text[][8] = {"", "V", "A", "Ohm", "W", "C"};
 
 static const char* adcUnits2string(const unsigned units)
 {

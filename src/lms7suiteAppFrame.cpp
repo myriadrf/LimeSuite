@@ -35,6 +35,7 @@
 #include <functional>
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
+#include "pnlBoardControls.h"
 ///////////////////////////////////////////////////////////////////////////
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
@@ -61,7 +62,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             evt.SetString(msg);
             wxPostEvent(this, evt);
         }
-        if (streamBoardPort->IsOpen())
+        if (streamBoardPort->IsOpen() && streamBoardPort->GetInfo().device != LMS_DEV_NOVENA)
         {
             LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
             if (status != LMS_StreamBoard::SUCCESS)
@@ -75,14 +76,21 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             }
         }
         if (fftviewer)
-            fftviewer->SetNyquistFrequency(lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx));
+        {
+            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            if (decimation != 7)
+                samplingFreq_MHz /= pow(2.0, decimation);
+            fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
+        }
     }
    
     //in case of Novena board, need to update GPIO
     if (lms7controlPort->GetInfo().device == LMS_DEV_NOVENA &&
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
-        uint16_t regValue = lmsControl->SPI_read(0x0806) & 0xFFF8;
+        const uint16_t NOVENA_GPIO_ADDR = 0x0706;
+        uint16_t regValue = lmsControl->SPI_read(NOVENA_GPIO_ADDR) & 0xFFF8;
         //lms_gpio2 - tx output selection:
         //		0 - TX1_A and TX1_B (Band 1),
         //		1 - TX2_A and TX2_B (Band 2)
@@ -101,7 +109,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             case 2: regValue |= 0x3; break;
             case 3: regValue |= 0x1; break;
         }
-        lmsControl->SPI_write(0x0806, regValue);
+        lmsControl->SPI_write(NOVENA_GPIO_ADDR, regValue);
         if (novenaGui)
             novenaGui->UpdatePanel();
     }
@@ -132,7 +140,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             lmsControl->Modify_SPI_Reg_bits(SEL_PATH_RFE, pathIndex);
             mContent->mTabRFE->UpdateGUI();
         }
-    }   
+    }
 }
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
@@ -151,6 +159,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     deviceInfo = nullptr;
     spi = nullptr;
     novenaGui = nullptr;
+    boardControlsGui = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -241,6 +250,29 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info.device);
+
+        if (boardControlsGui)
+            boardControlsGui->SetupControls(info.device);
+        
+        //must configure synthesizer before using SoDeRa
+        if (info.device == LMS_DEV_SODERA)
+        {   
+            si5351module->SetPLL(0, 25000000, 0);
+            si5351module->SetPLL(1, 25000000, 0);
+            si5351module->SetClock(0, 27000000, true, false);
+            si5351module->SetClock(1, 27000000, true, false);
+            for (int i = 2; i < 8; ++i)
+                si5351module->SetClock(i, 27000000, false, false);
+            Si5351C::Status status = si5351module->ConfigureClocks();
+            if (status != Si5351C::SUCCESS)
+            {
+                wxMessageBox(_("Failed to configure Si5351C"), _("Warning"));
+                return;
+            }
+            status = si5351module->UploadConfiguration();
+            if (status != Si5351C::SUCCESS)
+                wxMessageBox(_("Failed to upload Si5351C configuration"), _("Warning"));
+        }
     }
     else
     {
@@ -294,9 +326,20 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
     {
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
-        fftviewer->Initialize(streamBoardPort);
         fftviewer->Show();
+        int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        if (decimation != 7)
+            samplingFreq_MHz /= pow(2.0, decimation);
+        fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
+    if (lms7controlPort->GetInfo().device == LMS_DEV_SODERA)
+    {
+        //on Linux USB device can be connected only by one Connection manager, so pass the lms control port instead of separate stream port
+        fftviewer->Initialize(lms7controlPort);
+    }
+    else
+        fftviewer->Initialize(streamBoardPort);
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
@@ -523,3 +566,22 @@ void LMS7SuiteAppFrame::OnNovenaClose(wxCloseEvent& event)
     novenaGui = nullptr;
 }
 
+void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
+{
+    if (boardControlsGui) //it's already opened
+        boardControlsGui->Show();
+    else
+    {
+        boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        boardControlsGui->Initialize(lms7controlPort);
+        boardControlsGui->UpdatePanel();
+        boardControlsGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnBoardControlsClose), NULL, this);
+        boardControlsGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
+{
+    boardControlsGui->Destroy();
+    boardControlsGui = nullptr;
+}

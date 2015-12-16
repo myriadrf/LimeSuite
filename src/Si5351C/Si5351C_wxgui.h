@@ -12,6 +12,7 @@
 #include <wx/checkbox.h>
 #include <wx/frame.h>
 #include <wx/button.h>
+#include <wx/radiobox.h>
 #include "lms7002_defines.h"
 
 class Si5351C;
@@ -70,6 +71,8 @@ public:
     wxCheckBox* chkEN_CLK2;
     wxCheckBox* chkEN_CLK0;
     wxCheckBox* chkInvert_CLK4;
+    wxRadioBox* rgrClkSrc;
+    wxRadioBox* rgrXTALfreq;
     //*)
 
 protected:

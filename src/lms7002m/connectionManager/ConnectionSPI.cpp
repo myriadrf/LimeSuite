@@ -190,7 +190,7 @@ bool ConnectionSPI::IsOpen()
     return (fd >= 0);
 }
 
-/** @brief Sends data through COM port
+/** @brief Sends data through SPI port
     @param buffer data buffer to send
     @param length size of data buffer
     @param timeout_ms timeout limit for operation in milliseconds
@@ -225,29 +225,6 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
                 i+=2; //data bytes have been written
             }
         }
-//        stringstream ss;
-//        ss << "write(" << toWrite << "): ";
-//        for(int i=0; i<toWrite; ++i)
-//        {
-//            char ctemp[16];
-//            sprintf(ctemp, "%02X", buffer[bytesWritten+i]);
-//            ss << ctemp << " ";
-//        }
-//        ss << endl;
-//        if(bytesReceived > 0)
-//        {
-//            ss << " re443ad(" << toWrite << "): ";
-//            for(int i=0; i<toWrite; ++i)
-//            {
-//                char ctemp[16];
-//                sprintf(ctemp, "%02X", rxbuf[bytesWritten+i]);
-//                ss << ctemp << " ";
-//            }
-//            ss << endl;
-//        }
-//        cout << ss.str() << endl;
-//        MessageLog::getInstance()->write(ss.str(), LOG_DATA);
-
         bytesWritten += toWrite;
     }
     m_SEN << 1;
@@ -258,7 +235,7 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
 #endif
 }
 
-/** @brief Reads data from COM port
+/** @brief Reads data from SPI port
     @param buffer pointer to data buffer for receiving
     @param length number of bytes to read
     @param timeout_ms timeout limit for operation in milliseconds
@@ -279,7 +256,7 @@ int ConnectionSPI::Read(unsigned char *buffer, int length, int timeout_ms)
 #endif
 }
 
-/** @brief Finds all chips connected to com ports
+/** @brief Finds SPI port
     @return number of devices found
 */
 int ConnectionSPI::RefreshDeviceList()

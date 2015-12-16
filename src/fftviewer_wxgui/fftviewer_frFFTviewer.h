@@ -23,6 +23,7 @@ class fftviewer_frFFTviewer : public frFFTviewer
 		void OnFFTsamplesCountChanged( wxSpinEvent& event );
 		void OnWindowFunctionChanged( wxCommandEvent& event );
 		void OnbtnStartStop( wxCommandEvent& event );
+        void OnChannelVisibilityChange(wxCommandEvent& event);
 
         void OnUpdatePlots(wxTimerEvent& event);
 	public:
@@ -41,10 +42,6 @@ protected:
     wxString printDataRate(float dataRate);
 
     LMScomms* mDataPort;
-    mpPolygon* mTimeDomainIdata;
-    mpPolygon* mTimeDomainQdata;
-    mpFXYVector* mConstelationData;
-    mpPolygon* mFFTdata;
     StreamerLTE* mLTEstreamer;
     LMS_StreamBoard* mStreamBrd;
     wxTimer* mGUIupdater;
