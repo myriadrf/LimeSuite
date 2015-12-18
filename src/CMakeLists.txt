@@ -19,9 +19,16 @@ set(wxWidgets_USE_UNICODE ON)
 set(wxWidgets_USE_UNIVERSAL OFF)
 set(wxWidgets_USE_STATIC ON)
 
-# Add sub-directories
+# connection registry
 add_subdirectory(connectionRegistry)
 include_directories(connectionRegistry)
+add_subdirectory(ConnectionEVB7COM)
+set(connectionRegistryLibs
+	connectionRegistry
+	ConnectionEVB7COM
+)
+
+# Add sub-directories
 add_subdirectory(lms7002_wxgui)
 include_directories(lms7002_wxgui)
 add_subdirectory(numericSlider)
@@ -108,7 +115,7 @@ target_link_libraries(lms7suite
 	LMS7002M 
 	lms7suiteEvents 
 	LMS_StreamBoard 
-	connection_registry
+	${connectionRegistryLibs}
 	${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES}
 	)
 
@@ -120,3 +127,10 @@ endif()
 if (MSVC)
 	set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
 endif(MSVC)
+
+########################################################################
+# Lime Util -- command line utility for quick testing connections
+########################################################################
+
+add_executable(LimeUtil LimeUtil.cpp)
+target_link_libraries(LimeUtil ${connectionRegistryLibs})

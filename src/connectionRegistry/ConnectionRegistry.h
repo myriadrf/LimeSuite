@@ -75,19 +75,19 @@ public:
      * \param hint an optional connection handle with some fields filled-in
      * \return a list of handles which can be used to make a connection
      */
-    std::vector<ConnectionHandle> findConnections(const ConnectionHandle &hint = ConnectionHandle());
+    static std::vector<ConnectionHandle> findConnections(const ConnectionHandle &hint = ConnectionHandle());
 
     /*!
      * Create a connection from an identifying handle.
      * \param handle a connection handle with fields filled-in
      * \return a pointer to a connection instance
      */
-    IConnection *makeConnection(const ConnectionHandle &handle);
+    static IConnection *makeConnection(const ConnectionHandle &handle);
 
     /*!
      * Free an connection created by makeConnection().
      */
-    void freeConnection(IConnection *conn);
+    static void freeConnection(IConnection *conn);
 };
 
 /*******************************************************************

@@ -1,0 +1,2 @@
+add_library(ConnectionEVB7COM STATIC ConnectionEVB7COMEntry.cpp ConnectionEVB7COM.cpp)
+target_link_libraries(ConnectionEVB7COM connectionRegistry)

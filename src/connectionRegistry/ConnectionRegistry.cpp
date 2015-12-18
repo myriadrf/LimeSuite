@@ -10,6 +10,7 @@
 #include <map>
 #include <stdexcept>
 #include <memory>
+#include <iostream>
 
 /*******************************************************************
  * Connection handle implementation
