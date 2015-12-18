@@ -24,6 +24,13 @@ struct LMSinfo
     int protocol;
 };
 
+enum OperationStatus
+{
+    SUCCESS = 0,
+    FAILED,
+    UNSUPPORTED,
+};
+
 using namespace std;
 
 /*!
@@ -82,6 +89,23 @@ public:
      * @return a list of RFICInfos
      */
     virtual std::vector<RFICInfo> listRFICs(void);
+
+   /*!
+    * @brief Bulk SPI write/read transaction.
+    *
+    * The transactSPI function is capable of bulk writes and bulk reads
+    * of SPI registers in an arbitrary IC (up to 32-bits per transaction).
+    *
+    * The readData parameter may be NULL to indicate a write-only operation,
+    * the underlying implementation may be able to optimize out the readback.
+    *
+    * @param index the SPI device number
+    * @param writeData SPI bits to write out
+    * @param [out] readData stores readback data
+    * @param size the number of SPI transactions
+    * @return the transaction success state
+    */
+    virtual OperationStatus transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
 /***********************************************************************
  * !!! Below is the old IConnection and LMScomms API

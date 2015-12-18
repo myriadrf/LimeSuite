@@ -38,6 +38,11 @@ std::vector<RFICInfo> IConnection::listRFICs(void)
     return std::vector<RFICInfo>(1);
 }
 
+OperationStatus IConnection::transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure
