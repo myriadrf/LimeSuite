@@ -7,6 +7,15 @@
 #include "IConnection.h"
 #include <cstring> //memcpy
 
+RFICInfo::RFICInfo(void):
+    spiIndexRFIC(-1),
+    spiIndexSi5351(-1),
+    rxChannel(-1),
+    txChannel(-1)
+{
+    return;
+}
+
 IConnection::IConnection(void):
     m_connectionType(CONNECTION_UNDEFINED)
 {
@@ -21,7 +30,12 @@ IConnection::IConnection(void):
 
 IConnection::~IConnection(void)
 {
-    
+    return;
+}
+
+std::vector<RFICInfo> IConnection::listRFICs(void)
+{
+    return std::vector<RFICInfo>(1);
 }
 
 /** @brief Transfers data between packet and connected device

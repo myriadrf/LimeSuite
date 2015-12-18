@@ -14,6 +14,7 @@
 #include <functional>
 #include <lms7002_defines.h>
 
+//! REMOVE ME -- part of the old API
 struct LMSinfo
 {
     eLMS_DEV device;
@@ -25,9 +26,67 @@ struct LMSinfo
 
 using namespace std;
 
+/*!
+ * Information about a particular RFIC on an IConnection.
+ * RFICInfo associates streaming channels and SPI slaves.
+ */
+struct RFICInfo
+{
+
+    RFICInfo(void);
+
+    /*!
+     * The SPI index number used to access the lime RFIC.
+     * This index will be used in the spi access functions.
+     */
+    int spiIndexRFIC;
+
+    /*!
+     * The SPI index number used to access the Si5351
+     * found on some development boards. -1 when not present.
+     */
+    int spiIndexSi5351;
+
+    /*!
+     * The channel number used in the read stream API.
+     * Set to -1 when RX streaming not available.
+     */
+    int rxChannel;
+
+    /*!
+     * The channel number used in the write stream API.
+     * Set to -1 when TX streaming not available.
+     */
+    int txChannel;
+};
+
+/*!
+ * IConnection is the interface class for a device with 1 or more Lime RFICs.
+ * The LMS7002M driver class calls into IConnection to interface with the hardware
+ * to implement high level functions on top of low-level SPI and GPIO.
+ * Device developers will implement a custom IConnection for their hardware
+ * as an abstraction for streaming and low-level SPI and configuration access.
+ */
 class IConnection
 {
 public:
+
+    //! IConnection constructor
+    IConnection(void);
+
+    //! IConnection destructor
+    virtual ~IConnection(void);
+
+    /*!
+     * RFIC enumeration API.
+     * @return a list of RFICInfos
+     */
+    virtual std::vector<RFICInfo> listRFICs(void);
+
+/***********************************************************************
+ * !!! Below is the old IConnection and LMScomms API
+ * It remains here to enable compiling until its replaced
+ **********************************************************************/
 
     /// Supported connection types.
     enum eConnectionType
@@ -132,8 +191,11 @@ public:
         return len;
     }
 
-	IConnection(void);
-	virtual ~IConnection(void);
+    /***********************************************************************
+     * !!! Below is the old IConnection Enumeration API
+     * It remains here to enable compiling until its replaced
+     **********************************************************************/
+
 	virtual int RefreshDeviceList() = 0;
 	virtual DeviceStatus Open(unsigned i) = 0;
 	virtual void Close() = 0;
@@ -147,6 +209,11 @@ public:
 
 	virtual eConnectionType GetType() { return m_connectionType; };
 	virtual bool SetParam(const char *name, const char* value) {return false;};
+
+    /***********************************************************************
+     * !!! Below is the old IConnection Streaming API
+     * It remains here to enable compiling until its replaced
+     **********************************************************************/
 
 	virtual int BeginDataReading(char *buffer, long length){ return -1; };
 	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};
