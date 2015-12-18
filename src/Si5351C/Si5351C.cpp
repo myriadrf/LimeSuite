@@ -11,6 +11,7 @@
 #include <fstream>
 #include <sstream>
 #include <set>
+#include <map>
 #include <string.h>
 #include <assert.h>
 #include <iostream>

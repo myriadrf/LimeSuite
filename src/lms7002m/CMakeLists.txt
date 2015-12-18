@@ -27,8 +27,7 @@ set(LMS7002M_src_files
     LMS7002M.cpp
 	LMS7002M_parameters.cpp
 	LMS7002M_statuses.cpp
-	LMS7002M_filtersCalibration.cpp    
-	lmsComms.cpp
+	LMS7002M_filtersCalibration.cpp
 	LMS7002M_RegistersMap.cpp
 )
 
@@ -36,6 +35,7 @@ set(ENABLE_USB_CONNECTION "YES" CACHE BOOL INTERNAL)
 set(ENABLE_SPI_CONNECTION "NO" CACHE BOOL INTERNAL)
 set(CONNECTION_MANAGER_DIR connectionManager)
 set(connectionManager_src_files
+	${CONNECTION_MANAGER_DIR}/IConnection.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionRegistry.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionManager.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionCOM.cpp

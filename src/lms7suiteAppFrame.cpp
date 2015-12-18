@@ -161,8 +161,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     novenaGui = nullptr;
     boardControlsGui = nullptr;
 
-    lms7controlPort = new LMScomms();
-    streamBoardPort = new LMScomms();
+    //! JB TODO these should be connection registry
+    //lms7controlPort = new LMScomms();
+    //streamBoardPort = new LMScomms();
     lmsControl = new LMS7002M(lms7controlPort);
 	mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -217,7 +218,8 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
     if (fftviewer)
         fftviewer->StopStreaming();
 
-    dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
+    //! TODO JB this should be the connection registry being used
+    //dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
     Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
     Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
     Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);

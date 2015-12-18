@@ -1,12 +1,14 @@
 /**
-@file   LMScomms.cpp
-@author Lime Microsystems (www.limemicro.com)
-@brief  Implementation of data transmission to LMS boards
+    @file   IConnection.cpp
+    @author Lime Microsystems (www.limemicro.com)
+    @brief  Implementation of IConnection interface
 */
 
-#include "lmsComms.h"
+#include "IConnection.h"
+#include <cstring> //memcpy
 
-LMScomms::LMScomms()
+IConnection::IConnection(void):
+    m_connectionType(CONNECTION_UNDEFINED)
 {
     callback_logData = nullptr;
     unsigned short test = 0x1234;
@@ -17,15 +19,16 @@ LMScomms::LMScomms()
         mSystemBigEndian = false;
 }
 
-LMScomms::~LMScomms()
+IConnection::~IConnection(void)
 {
+    
 }
 
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure
 */
-LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
+IConnection::TransferStatus IConnection::TransferPacket(GenericPacket& pkt)
 {
     std::lock_guard<std::mutex> lock(mControlPortLock);
 	TransferStatus status = TRANSFER_SUCCESS;
@@ -34,7 +37,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 
     int packetLen;
     eLMS_PROTOCOL protocol = LMS_PROTOCOL_UNDEFINED;
-    if(activeControlPort->GetType() == IConnection::SPI_PORT)
+    if(this->GetType() == IConnection::SPI_PORT)
         protocol = LMS_PROTOCOL_NOVENA;
     else
         protocol = LMS_PROTOCOL_LMS64C;
@@ -143,7 +146,7 @@ LMScomms::TransferStatus LMScomms::TransferPacket(GenericPacket& pkt)
 
 /** @brief Returns connected device information
 */
-LMSinfo LMScomms::GetInfo()
+LMSinfo IConnection::GetInfo()
 {
     LMSinfo info;
     info.device = LMS_DEV_UNKNOWN;
@@ -153,8 +156,8 @@ LMSinfo LMScomms::GetInfo()
     info.protocol = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
-    LMScomms::TransferStatus status = TransferPacket(pkt);
-    if (status == LMScomms::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
+    IConnection::TransferStatus status = TransferPacket(pkt);
+    if (status == IConnection::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
     {
         info.firmware = pkt.inBuffer[0];
         info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
@@ -171,7 +174,7 @@ LMSinfo LMScomms::GetInfo()
     @param protocol which protocol to use for data
     @return pointer to data buffer, must be manually deleted after use
 */
-unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, const eLMS_PROTOCOL protocol)
+unsigned char* IConnection::PreparePacket(const GenericPacket& pkt, int& length, const eLMS_PROTOCOL protocol)
 {
     unsigned char* buffer = NULL;
     if(protocol == LMS_PROTOCOL_UNDEFINED)
@@ -246,16 +249,15 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
     }
     else if(protocol == LMS_PROTOCOL_NOVENA)
     {
-        const uint16_t NOVENA_GPIO_ADDR = 0x0706;
         if(pkt.cmd == CMD_LMS7002_RST)
         {
             buffer = new unsigned char[8];
-            buffer[0] = (NOVENA_GPIO_ADDR >> 8) | 0x80;
-            buffer[1] = NOVENA_GPIO_ADDR & 0xFF;
+            buffer[0] = 0x88;
+            buffer[1] = 0x06;
             buffer[2] = 0x00;
             buffer[3] = 0x18;
-            buffer[4] = (NOVENA_GPIO_ADDR >> 8) | 0x80;
-            buffer[5] = NOVENA_GPIO_ADDR & 0xFF;
+            buffer[4] = 0x88;
+            buffer[5] = 0x06;
             buffer[6] = 0x00;
             buffer[7] = 0x38;
             length = 8;
@@ -282,7 +284,7 @@ unsigned char* LMScomms::PreparePacket(const GenericPacket& pkt, int& length, co
     @param protocol which protocol to use for data parsing
     @return 1:success, 0:failure
 */
-int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol)
+int IConnection::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol)
 {
     if(protocol == LMS_PROTOCOL_UNDEFINED)
         return -1;
@@ -320,7 +322,7 @@ int LMScomms::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const
 
 /** @brief Sets callback function which gets called each time data is sent or received
 */
-void LMScomms::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)
+void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)
 {
     callback_logData = callback;
 }
