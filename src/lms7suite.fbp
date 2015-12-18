@@ -174,26 +174,6 @@
                     </object>
                 </object>
                 <object class="wxMenu" expanded="1">
-                    <property name="label">&amp;Help</property>
-                    <property name="name">helpMenu</property>
-                    <property name="permission">protected</property>
-                    <object class="wxMenuItem" expanded="0">
-                        <property name="bitmap"></property>
-                        <property name="checked">0</property>
-                        <property name="enabled">1</property>
-                        <property name="help">Show info about this application</property>
-                        <property name="id">idMenuAbout</property>
-                        <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">&amp;About</property>
-                        <property name="name">menuHelpAbout</property>
-                        <property name="permission">none</property>
-                        <property name="shortcut">F1</property>
-                        <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">OnAbout</event>
-                        <event name="OnUpdateUI"></event>
-                    </object>
-                </object>
-                <object class="wxMenu" expanded="1">
                     <property name="label">Modules</property>
                     <property name="name">mnuModules</property>
                     <property name="permission">protected</property>
@@ -375,6 +355,26 @@
                         <property name="shortcut"></property>
                         <property name="unchecked_bitmap"></property>
                         <event name="OnMenuSelection">OnShowBoardControls</event>
+                        <event name="OnUpdateUI"></event>
+                    </object>
+                </object>
+                <object class="wxMenu" expanded="1">
+                    <property name="label">&amp;Help</property>
+                    <property name="name">helpMenu</property>
+                    <property name="permission">protected</property>
+                    <object class="wxMenuItem" expanded="0">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Show info about this application</property>
+                        <property name="id">idMenuAbout</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">&amp;About</property>
+                        <property name="name">menuHelpAbout</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">F1</property>
+                        <property name="unchecked_bitmap"></property>
+                        <event name="OnMenuSelection">OnAbout</event>
                         <event name="OnUpdateUI"></event>
                     </object>
                 </object>

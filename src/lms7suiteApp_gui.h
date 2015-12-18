@@ -50,8 +50,8 @@ class AppFrame_view : public wxFrame
 		wxMenuBar* mbar;
 		wxMenu* fileMenu;
 		wxMenu* mnuOptions;
-		wxMenu* helpMenu;
 		wxMenu* mnuModules;
+		wxMenu* helpMenu;
 		wxStatusBar* statusBar;
 		wxFlexGridSizer* contentSizer;
 		lms7002_mainPanel* mContent;
@@ -60,7 +60,6 @@ class AppFrame_view : public wxFrame
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowConnectionSettings( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFFTviewer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowADF4002( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSi5351C( wxCommandEvent& event ) { event.Skip(); }
@@ -73,6 +72,7 @@ class AppFrame_view : public wxFrame
 		virtual void OnShowSPI( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowNovena( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowBoardControls( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

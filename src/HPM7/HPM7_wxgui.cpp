@@ -340,7 +340,6 @@ bool HPM7_wxgui::UploadGPIO()
     case 2: value |= 3; break;
     case 3: value |= 1; break;
     }
-    value |= cmbActivePath->GetSelection() & 0x3;
     value |= (cmbBand->GetSelection() & 0x1) << 2;
     value |= (cmbLNA->GetSelection() & 0x1) << 3;
     value |= (cmbPAdriver->GetSelection() & 0x1) << 4;
