@@ -7,7 +7,7 @@
 #ifndef LMS_COMMS_H
 #define LMS_COMMS_H
 
-#include "connectionManager/IConnection.h"
+#include "IConnection.h"
 
 //! JB TODO, remove this compatibility layer later
 //! A lot of code is written around LMScomms *

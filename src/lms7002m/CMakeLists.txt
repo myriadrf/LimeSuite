@@ -35,8 +35,6 @@ set(ENABLE_USB_CONNECTION "YES" CACHE BOOL INTERNAL)
 set(ENABLE_SPI_CONNECTION "NO" CACHE BOOL INTERNAL)
 set(CONNECTION_MANAGER_DIR connectionManager)
 set(connectionManager_src_files
-	${CONNECTION_MANAGER_DIR}/IConnection.cpp
-	${CONNECTION_MANAGER_DIR}/ConnectionRegistry.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionManager.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionCOM.cpp
 	${CONNECTION_MANAGER_DIR}/ConnectionManager.h

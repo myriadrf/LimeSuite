@@ -20,6 +20,8 @@ set(wxWidgets_USE_UNIVERSAL OFF)
 set(wxWidgets_USE_STATIC ON)
 
 # Add sub-directories
+add_subdirectory(connectionRegistry)
+include_directories(connectionRegistry)
 add_subdirectory(lms7002_wxgui)
 include_directories(lms7002_wxgui)
 add_subdirectory(numericSlider)
@@ -106,6 +108,7 @@ target_link_libraries(lms7suite
 	LMS7002M 
 	lms7suiteEvents 
 	LMS_StreamBoard 
+	connection_registry
 	${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES}
 	)
 

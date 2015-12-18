@@ -12,7 +12,9 @@
 #include <mutex>
 #include <cstring> //memset
 #include <functional>
-#include <lms7002_defines.h>
+
+//! REMOVE ME -- part of the old API
+#include "../lms7002m/lms7002_defines.h"
 
 //! REMOVE ME -- part of the old API
 struct LMSinfo
