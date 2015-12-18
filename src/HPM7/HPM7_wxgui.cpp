@@ -332,6 +332,14 @@ bool HPM7_wxgui::UploadGPIO()
     pkt.cmd = CMD_MYRIAD_WR;
     pkt.outBuffer.push_back(0x10);
     unsigned char value = 0;
+    int activePath = cmbActivePath->GetSelection();
+    switch (activePath)
+    {
+    case 0: value |= 0; break;
+    case 1: value |= 2; break;
+    case 2: value |= 3; break;
+    case 3: value |= 1; break;
+    }
     value |= cmbActivePath->GetSelection() & 0x3;
     value |= (cmbBand->GetSelection() & 0x1) << 2;
     value |= (cmbLNA->GetSelection() & 0x1) << 3;
