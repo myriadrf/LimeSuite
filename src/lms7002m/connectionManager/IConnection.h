@@ -68,6 +68,27 @@ struct RFICInfo
 };
 
 /*!
+ * The Stream metadata structure is used with the streaming API to exchange
+ * extra data associated with the stream such as timestamps and burst info.
+ */
+struct StreamMetadata
+{
+    StreamMetadata(void);
+
+    /*!
+     * The timestamp in clock units
+     * Set to -1 when the timestamp is not applicable.
+     */
+    long long timestamp;
+
+    /*!
+     * True to indicate the end of a stream buffer.
+     * When false, subsequent calls continue the stream.
+     */
+    bool endOfBurst;
+};
+
+/*!
  * IConnection is the interface class for a device with 1 or more Lime RFICs.
  * The LMS7002M driver class calls into IConnection to interface with the hardware
  * to implement high level functions on top of low-level SPI and GPIO.
@@ -106,6 +127,49 @@ public:
     * @return the transaction success state
     */
     virtual OperationStatus transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    /*!
+     * The RX stream control call configures a channel to
+     * stream at a particular time, requests burst,
+     * or to start or stop continuous streaming.
+     *
+     * - Use the metadata's optional timestamp to control stream time
+     * - Use the metadata's end of burst to request stream bursts
+     * - Without end of burst, the burstSize affects continuous streaming
+     *
+     * @param channel the RX channel index number
+     * @param burstSize the burst size when metadata has end of burst
+     * @param metadata time and burst options
+     * @return true for success, otherwise false
+     */
+    virtual bool rxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata);
+
+    /*!
+     * Read blocking data from the stream into the specified buffer.
+     *
+     * @param channel the RX channel index number
+     * @param buffer the buffer to be filled
+     * @param length the number of bytes in the buffer
+     * @param timeout_ms the timeout in milliseconds
+     * @param [out] metadata optional stream metadata
+     * @return the number of bytes read or error code
+     */
+    virtual int readStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+
+    /*!
+     * Write blocking data into the stream from the specified buffer.
+     *
+     * - The metadata timestamp corresponds to the start of the buffer.
+     * - The end of burst only applies when all bytes have been written.
+     *
+     * @param channel the TX channel index number
+     * @param buffer the buffer to be read from
+     * @param length the number of bytes in the buffer
+     * @param timeout_ms the timeout in milliseconds
+     * @param metadata optional stream metadata
+     * @return the number of bytes written or error code
+     */
+    virtual int writeStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
 /***********************************************************************
  * !!! Below is the old IConnection and LMScomms API

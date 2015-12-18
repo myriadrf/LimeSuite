@@ -16,6 +16,13 @@ RFICInfo::RFICInfo(void):
     return;
 }
 
+StreamMetadata::StreamMetadata(void):
+    timestamp(-1),
+    endOfBurst(false)
+{
+    return;
+}
+
 IConnection::IConnection(void):
     m_connectionType(CONNECTION_UNDEFINED)
 {
@@ -41,6 +48,21 @@ std::vector<RFICInfo> IConnection::listRFICs(void)
 OperationStatus IConnection::transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     return UNSUPPORTED;
+}
+
+bool IConnection::rxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata)
+{
+    return false;
+}
+
+int IConnection::readStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+{
+    return -1;
+}
+
+int IConnection::writeStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+{
+    return -1;
 }
 
 /** @brief Transfers data between packet and connected device
