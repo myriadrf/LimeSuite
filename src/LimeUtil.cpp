@@ -8,19 +8,23 @@
 #include <iostream>
 #include <cstdlib>
 
-void __loadConnectionEVB7COMEntry(void); //TODO fixme replace with LoadLibrary/dlopen
-
 int main(void)
 {
     std::cout << "Welcome to LimeUtil" << std::endl;
-
-    __loadConnectionEVB7COMEntry();
 
     std::cout << "Discovery available connections..." << std::endl;
     auto handles = ConnectionRegistry::findConnections();
     for (const auto &handle : handles)
     {
-        std::cout << "Handle " << handle.serialize() << std::endl;
+        std::cout << "  Found handle [" << handle.serialize() << "]" << std::endl;
+
+        std::cout << "  Make connection... " << std::flush;
+        auto conn = ConnectionRegistry::makeConnection(handle);
+        std::cout << "OK" << std::endl;
+
+        std::cout << "  Free connection... " << std::flush;
+        ConnectionRegistry::freeConnection(conn);
+        std::cout << "OK" << std::endl;
     }
 
     std::cout << "Done!" << std::endl;

@@ -13,6 +13,16 @@
 #include <iostream>
 
 /*******************************************************************
+ * FIXME - temporary way to load connections until we make new loader
+ ******************************************************************/
+void __loadConnectionEVB7COMEntry(void);
+
+static void __loadAllConnections(void)
+{
+    __loadConnectionEVB7COMEntry();
+}
+
+/*******************************************************************
  * Connection handle implementation
  ******************************************************************/
 ConnectionHandle::ConnectionHandle(void):
@@ -66,6 +76,7 @@ static std::map<std::string, std::shared_ptr<SharedConnection>> connectionCache;
  ******************************************************************/
 std::vector<ConnectionHandle> ConnectionRegistry::findConnections(const ConnectionHandle &hint)
 {
+    __loadAllConnections();
     std::lock_guard<std::mutex> lock(registryMutex());
 
     std::vector<ConnectionHandle> result;
@@ -79,6 +90,7 @@ std::vector<ConnectionHandle> ConnectionRegistry::findConnections(const Connecti
 
 IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
 {
+    __loadAllConnections();
     std::lock_guard<std::mutex> lock(registryMutex());
 
     //use the identifier as a hint to perform a discovery

@@ -18,21 +18,24 @@ public:
     ~ConnectionEVB7COM(void);
 
     //! JB TODO remove old interfaces
-    DeviceStatus Open();
-    DeviceStatus Open(unsigned i);
-    void Close();
-    bool IsOpen();
-    int GetOpenedIndex();
+    DeviceStatus Open(){}
+    DeviceStatus Open(unsigned i){}
+    void Close(){}
+    bool IsOpen(){}
+    int GetOpenedIndex(){}
 
-    int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
-    int Read(unsigned char *buffer, int length, int timeout_ms = 0);
+    int Write(const unsigned char *buffer, int length, int timeout_ms = 0){}
+    int Read(unsigned char *buffer, int length, int timeout_ms = 0){}
 
-    std::vector<std::string> GetDeviceNames();
-    int RefreshDeviceList();
-    void ClearComm();
+    std::vector<std::string> GetDeviceNames(){}
+    int RefreshDeviceList(){}
+    void ClearComm(){}
     //! -------------------------------------------------------------
 
 private:
+
+    DeviceStatus Open(const char *comName, int baudrate);
+
     #ifndef __unix__
         HANDLE hComm;
         COMMTIMEOUTS m_ctmoNew;

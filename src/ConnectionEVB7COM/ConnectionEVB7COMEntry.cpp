@@ -40,7 +40,7 @@ std::vector<ConnectionHandle> ConnectionEVB7COMEntry::enumerate(const Connection
 
 IConnection *ConnectionEVB7COMEntry::make(const ConnectionHandle &handle)
 {
-    //return new ConnectionEVB7COM(handle.addr.c_str(), comBaudrate);
+    return new ConnectionEVB7COM(handle.addr.c_str(), comBaudrate);
 }
 
 std::vector<std::string> ConnectionEVB7COMEntry::FindAllComPorts()
