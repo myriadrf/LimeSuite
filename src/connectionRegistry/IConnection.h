@@ -109,17 +109,25 @@ public:
     virtual ~IConnection(void);
 
     /*!
+     * Is this connection open?
+     * The constructor should attempt to connect but may fail,
+     * or the connection may go down at a later time.
+     * @return true when the connection is available
+     */
+    virtual bool IsOpen(void);
+
+    /*!
      * RFIC enumeration API.
      * @return a list of RFICInfos
      */
-    virtual std::vector<RFICInfo> listRFICs(void);
+    virtual std::vector<RFICInfo> ListRFICs(void);
 
     /*!
      * Perform reset sequence on the device.
      * Typically this will reset the RFIC using a GPIO,
      * and possibly other ICs located on the device.
      */
-    virtual OperationStatus deviceReset(void);
+    virtual OperationStatus DeviceReset(void);
 
    /*!
     * @brief Bulk SPI write/read transaction.
@@ -136,7 +144,7 @@ public:
     * @param size the number of SPI transactions
     * @return the transaction success state
     */
-    virtual OperationStatus transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     /*!
      * The RX stream control call configures a channel to
@@ -152,7 +160,7 @@ public:
      * @param metadata time and burst options
      * @return true for success, otherwise false
      */
-    virtual bool rxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata);
+    virtual bool RxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata);
 
     /*!
      * Read blocking data from the stream into the specified buffer.
@@ -164,7 +172,7 @@ public:
      * @param [out] metadata optional stream metadata
      * @return the number of bytes read or error code
      */
-    virtual int readStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+    virtual int ReadStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 
     /*!
      * Write blocking data into the stream from the specified buffer.
@@ -179,7 +187,7 @@ public:
      * @param metadata optional stream metadata
      * @return the number of bytes written or error code
      */
-    virtual int writeStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+    virtual int WriteStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
 /***********************************************************************
  * !!! Below is the old IConnection and LMScomms API
@@ -297,7 +305,6 @@ public:
 	virtual int RefreshDeviceList() = 0;
 	virtual DeviceStatus Open(unsigned i) = 0;
 	virtual void Close() = 0;
-	virtual bool IsOpen() = 0;
 	virtual int GetOpenedIndex() = 0;
 
 	virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;

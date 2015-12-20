@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionEVB7COM.h"
-#include <stdexcept>
 
 #include "string.h"
 #ifdef __unix__
@@ -34,11 +33,18 @@ ConnectionEVB7COM::ConnectionEVB7COM(const char *comName, int baudrate)
 
     if (this->Open(comName, baudrate) != SUCCESS)
     {
-        throw std::runtime_error("Failed to open " + std::string(comName));
+        this->Close();
+
+        //TODO log here
     }
 }
 
 ConnectionEVB7COM::~ConnectionEVB7COM(void)
+{
+    this->Close();
+}
+
+void ConnectionEVB7COM::Close(void)
 {
 #ifndef __unix__
     if (hComm != INVALID_HANDLE_VALUE)
@@ -54,6 +60,18 @@ ConnectionEVB7COM::~ConnectionEVB7COM(void)
     }
     hComm = -1;
 #endif
+}
+
+bool ConnectionEVB7COM::IsOpen(void)
+{
+#ifndef __unix__
+    if (hComm != INVALID_HANDLE_VALUE)
+        return true;
+#else
+    if (hComm != -1)
+        return true;
+#endif
+    return false;
 }
 
 IConnection::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int baudrate)

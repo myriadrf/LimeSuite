@@ -40,32 +40,37 @@ IConnection::~IConnection(void)
     return;
 }
 
-std::vector<RFICInfo> IConnection::listRFICs(void)
-{
-    return std::vector<RFICInfo>(1);
-}
-
-OperationStatus IConnection::deviceReset(void)
-{
-    return UNSUPPORTED;
-}
-
-OperationStatus IConnection::transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
-{
-    return UNSUPPORTED;
-}
-
-bool IConnection::rxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata)
+bool IConnection::IsOpen(void)
 {
     return false;
 }
 
-int IConnection::readStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+std::vector<RFICInfo> IConnection::ListRFICs(void)
+{
+    return std::vector<RFICInfo>(1);
+}
+
+OperationStatus IConnection::DeviceReset(void)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
+bool IConnection::RxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata)
+{
+    return false;
+}
+
+int IConnection::ReadStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
     return -1;
 }
 
-int IConnection::writeStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+int IConnection::WriteStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
     return -1;
 }

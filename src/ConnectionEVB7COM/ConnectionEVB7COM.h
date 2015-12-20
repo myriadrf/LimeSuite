@@ -17,11 +17,13 @@ public:
 
     ~ConnectionEVB7COM(void);
 
+    bool IsOpen(void);
+
+    void Close(void);
+
     //! JB TODO remove old interfaces
     DeviceStatus Open(){}
     DeviceStatus Open(unsigned i){}
-    void Close(){}
-    bool IsOpen(){}
     int GetOpenedIndex(){}
 
     int Write(const unsigned char *buffer, int length, int timeout_ms = 0){}

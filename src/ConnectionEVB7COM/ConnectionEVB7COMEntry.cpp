@@ -156,12 +156,8 @@ std::vector<std::string> ConnectionEVB7COMEntry::FilterDeviceList(const std::vec
 
         //when not on unix, perform a test open to validate the port
 #ifndef __unix__
-        try
-        { 
-            ConnectionEVB7COM(comName.c_str(), comBaudrate);
-            deviceNames.push_back(comName);
-        }
-        catch(...){}
+        ConnectionEVB7COM testConn(comName.c_str(), comBaudrate);
+        if (testConn.IsOpen()) deviceNames.push_back(comName);
 #else
         deviceNames.push_back(comName);
 #endif
