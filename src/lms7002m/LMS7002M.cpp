@@ -1042,28 +1042,7 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
 */
 liblms7_status LMS7002M::SPI_write(uint16_t address, uint16_t data)
 {
-    if (controlPort == NULL)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-
-    if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1 && address >= 0x0100)
-        mRegistersMap->SetValue(1, address, data);
-    else
-        mRegistersMap->SetValue(0, address, data);
-
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
-
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_WR;
-    pkt.outBuffer.push_back(address >> 8);
-    pkt.outBuffer.push_back(address & 0xFF);
-    pkt.outBuffer.push_back(data >> 8);
-    pkt.outBuffer.push_back(data & 0xFF);
-    controlPort->TransferPacket(pkt);
-    if (pkt.status == STATUS_COMPLETED_CMD)
-        return LIBLMS7_SUCCESS;
-    else
-        return LIBLMS7_FAILURE;
+    return this->SPI_write_batch(&address, &data, 1);
 }
 
 /** @brief Reads whole register value from given address
@@ -1087,18 +1066,10 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
             return mRegistersMap->GetValue(0, address);
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_RD;
-    pkt.outBuffer.push_back(address >> 8);
-    pkt.outBuffer.push_back(address & 0xFF);
-    if (controlPort->TransferPacket(pkt) == LMScomms::TRANSFER_SUCCESS)
-    {
-        if (status)
-            *status = (pkt.status == STATUS_COMPLETED_CMD ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE);
-        return (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-    }
-    else
-        return 0;
+    uint16_t data = 0;
+    liblms7_status st = this->SPI_read_batch(&address, &data, 1);
+    if (status != nullptr) *status = st;
+    return data;
 }
 
 /** @brief Batches multiple register writes into least ammount of transactions
