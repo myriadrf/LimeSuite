@@ -19,15 +19,14 @@ public:
 
     bool IsOpen(void);
 
-    void Close(void);
+    OperationStatus DeviceReset(void);
+
+    OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     //! JB TODO remove old interfaces
     DeviceStatus Open(){}
     DeviceStatus Open(unsigned i){}
     int GetOpenedIndex(){}
-
-    int Write(const unsigned char *buffer, int length, int timeout_ms = 0){}
-    int Read(unsigned char *buffer, int length, int timeout_ms = 0){}
 
     std::vector<std::string> GetDeviceNames(){}
     int RefreshDeviceList(){}
@@ -37,6 +36,11 @@ public:
 private:
 
     DeviceStatus Open(const char *comName, int baudrate);
+
+    void Close(void);
+
+    int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
+    int Read(unsigned char *buffer, int length, int timeout_ms = 0);
 
     #ifndef __unix__
         HANDLE hComm;
