@@ -45,6 +45,11 @@ std::vector<RFICInfo> IConnection::listRFICs(void)
     return std::vector<RFICInfo>(1);
 }
 
+OperationStatus IConnection::deviceReset(void)
+{
+    return UNSUPPORTED;
+}
+
 OperationStatus IConnection::transactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     return UNSUPPORTED;

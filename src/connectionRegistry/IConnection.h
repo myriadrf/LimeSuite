@@ -31,6 +31,7 @@ enum OperationStatus
     SUCCESS = 0,
     FAILED,
     UNSUPPORTED,
+    DISCONNECTED,
 };
 
 using namespace std;
@@ -112,6 +113,13 @@ public:
      * @return a list of RFICInfos
      */
     virtual std::vector<RFICInfo> listRFICs(void);
+
+    /*!
+     * Perform reset sequence on the device.
+     * Typically this will reset the RFIC using a GPIO,
+     * and possibly other ICs located on the device.
+     */
+    virtual OperationStatus deviceReset(void);
 
    /*!
     * @brief Bulk SPI write/read transaction.
