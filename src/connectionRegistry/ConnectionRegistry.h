@@ -79,8 +79,9 @@ public:
 
     /*!
      * Create a connection from an identifying handle.
+     * Return a null pointer when no factories are available.
      * \param handle a connection handle with fields filled-in
-     * \return a pointer to a connection instance
+     * \return a pointer to a connection instance (or null)
      */
     static IConnection *makeConnection(const ConnectionHandle &handle);
 

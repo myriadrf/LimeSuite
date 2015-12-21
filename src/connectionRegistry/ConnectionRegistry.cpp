@@ -8,7 +8,6 @@
 #include "IConnection.h"
 #include <mutex>
 #include <map>
-#include <stdexcept>
 #include <memory>
 #include <iostream>
 
@@ -125,7 +124,7 @@ IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
         return sharedConnection->connection;
     }
 
-    throw std::runtime_error("No connections found for " + handle.serialize());
+    return nullptr;
 }
 
 void ConnectionRegistry::freeConnection(IConnection *conn)

@@ -18,6 +18,8 @@ LMS64CProtocol::~LMS64CProtocol(void)
 
 OperationStatus LMS64CProtocol::DeviceReset(void)
 {
+    if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
+
     IConnection::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
     pkt.outBuffer.push_back(LMS_RST_PULSE);
@@ -33,6 +35,10 @@ OperationStatus LMS64CProtocol::DeviceReset(void)
 
 OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
+    //JB TODO this depends on the spi slave index...
+
+    if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
+
     IConnection::TransferStatus status;
     IConnection::GenericPacket pkt;
 

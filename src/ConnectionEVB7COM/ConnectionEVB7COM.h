@@ -36,6 +36,11 @@ private:
 
     void Close(void);
 
+    eConnectionType GetType(void)
+    {
+        return COM_PORT;
+    }
+
     int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
     int Read(unsigned char *buffer, int length, int timeout_ms = 0);
 

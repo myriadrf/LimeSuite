@@ -9,7 +9,7 @@
 
 #include <string>
 #include <vector>
-#include <mutex>
+//#include <mutex>
 #include <cstring> //memset
 #include <functional>
 
@@ -302,18 +302,19 @@ public:
      * It remains here to enable compiling until its replaced
      **********************************************************************/
 
-	virtual int RefreshDeviceList() = 0;
-	virtual DeviceStatus Open(unsigned i) = 0;
-	virtual void Close() = 0;
-	virtual int GetOpenedIndex() = 0;
+	//virtual int RefreshDeviceList() = 0;
+	//virtual DeviceStatus Open(unsigned i) = 0;
+	//virtual void Close() = 0;
+	//virtual int GetOpenedIndex() = 0;
 
+    //TODO JB used by programmer, should we keep these interfaces?
 	virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;
 	virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
 
-	virtual std::vector<std::string> GetDeviceNames() = 0;
+	//virtual std::vector<std::string> GetDeviceNames() = 0;
 
-	virtual eConnectionType GetType() { return m_connectionType; };
-	virtual bool SetParam(const char *name, const char* value) {return false;};
+	//virtual eConnectionType GetType() { return m_connectionType; };
+	//virtual bool SetParam(const char *name, const char* value) {return false;};
 
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
@@ -336,12 +337,12 @@ public:
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
 
 protected:
-    unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
-    int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
-    eConnectionType m_connectionType;
+    //unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
+    //int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
+    //eConnectionType m_connectionType;
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     bool mSystemBigEndian;
-    std::mutex mControlPortLock;
+    //std::mutex mControlPortLock;
 };
 
 #endif

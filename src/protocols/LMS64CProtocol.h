@@ -29,6 +29,9 @@ public:
 
 protected:
 
+    //! implement in base class
+    virtual eConnectionType GetType(void) = 0;
+
     //! virtual write function to be implemented by the base class
     virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;
 
