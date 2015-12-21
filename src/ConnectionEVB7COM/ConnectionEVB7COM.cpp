@@ -215,16 +215,6 @@ IConnection::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int baudr
     return SUCCESS;
 }
 
-OperationStatus ConnectionEVB7COM::DeviceReset(void)
-{
-    
-}
-
-OperationStatus ConnectionEVB7COM::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
-{
-    
-}
-
 /** @brief Sends data through COM port
     @param buffer data buffer to send
     @param length size of data buffer

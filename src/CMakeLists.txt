@@ -27,6 +27,7 @@ set(connectionRegistryLibs
 	connectionRegistry
 	ConnectionEVB7COM
 )
+add_subdirectory(protocols)
 
 # Add sub-directories
 add_subdirectory(lms7002_wxgui)

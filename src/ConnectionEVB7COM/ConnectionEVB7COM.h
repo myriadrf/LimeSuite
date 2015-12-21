@@ -7,10 +7,11 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
+#include <LMS64CProtocol.h>
 #include <vector>
 #include <string>
 
-class ConnectionEVB7COM : public IConnection
+class ConnectionEVB7COM : public LMS64CProtocol
 {
 public:
     ConnectionEVB7COM(const char *comName, int baudrate);
@@ -18,10 +19,6 @@ public:
     ~ConnectionEVB7COM(void);
 
     bool IsOpen(void);
-
-    OperationStatus DeviceReset(void);
-
-    OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     //! JB TODO remove old interfaces
     DeviceStatus Open(){}

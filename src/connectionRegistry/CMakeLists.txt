@@ -6,3 +6,4 @@ set(connection_registry_src_files
 add_library(connectionRegistry STATIC ${connection_registry_src_files})
 target_include_directories(connectionRegistry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET connectionRegistry PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+target_link_libraries(connectionRegistry protocols)
