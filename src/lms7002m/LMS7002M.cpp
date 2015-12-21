@@ -142,11 +142,7 @@ liblms7_status LMS7002M::ResetChip()
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_RST;
-    pkt.outBuffer.push_back(LMS_RST_PULSE);
-    controlPort->TransferPacket(pkt);
-    if (pkt.status == STATUS_COMPLETED_CMD)
+    if (controlPort->DeviceReset() == OperationStatus::SUCCESS)
     {
         Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
         return LIBLMS7_SUCCESS;
@@ -1080,15 +1076,10 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
 */
 liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt)
 {
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_WR;
-    uint32_t index = 0;
-    for (uint32_t i = 0; i < cnt; ++i)
+    std::vector<uint32_t> data(cnt);
+    for (size_t i = 0; i < cnt; ++i)
     {
-        pkt.outBuffer.push_back(spiAddr[i] >> 8);
-        pkt.outBuffer.push_back(spiAddr[i] & 0xFF);
-        pkt.outBuffer.push_back(spiData[i] >> 8);
-        pkt.outBuffer.push_back(spiData[i] & 0xFF);
+        data[i] = (uint32_t(spiAddr[i]) << 16) | spiData[i];
 
         if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1)
             mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1096,13 +1087,17 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
             mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
 
     }
+
     if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    controlPort->TransferPacket(pkt);
-    if (pkt.status == STATUS_COMPLETED_CMD)
+    //TODO index should be stashed for this connection and specific RFIC
+    auto index = controlPort->ListRFICs()[0].spiIndexRFIC;
+    auto status = controlPort->TransactSPI(index, data.data(), nullptr, cnt);
+
+    if (status == OperationStatus::SUCCESS)
         return LIBLMS7_SUCCESS;
     else
         return LIBLMS7_FAILURE;
@@ -1116,32 +1111,34 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
 */
 liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt)
 {
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_RD;
-    uint32_t index = 0;
-    for (uint32_t i = 0; i < cnt; ++i)
-    {
-        pkt.outBuffer.push_back(spiAddr[i] >> 8);
-        pkt.outBuffer.push_back(spiAddr[i] & 0xFF);
-    }
     if (controlPort == NULL)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    LMScomms::TransferStatus status = controlPort->TransferPacket(pkt);
+    std::vector<uint32_t> dataWr(cnt);
+    std::vector<uint32_t> dataRd(cnt);
+    for (size_t i = 0; i < cnt; ++i)
+    {
+        dataWr[i] = (uint32_t(spiAddr[i]) << 16) | (1 << 31);
+    }
+
+    //TODO index should be stashed for this connection and specific RFIC
+    auto index = controlPort->ListRFICs()[0].spiIndexRFIC;
+    auto status = controlPort->TransactSPI(index, dataWr.data(), dataRd.data(), cnt);
+
     if (status != LMScomms::TRANSFER_SUCCESS)
         return LIBLMS7_FAILURE;
 
-    for (uint32_t i = 0; i < cnt; ++i)
+    for (size_t i = 0; i < cnt; ++i)
     {
-        spiData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];
         if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1)
-            mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
+            mRegistersMap->SetValue(1, spiAddr[i], dataRd[i] & 0xffff);
         else
-            mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
+            mRegistersMap->SetValue(0, spiAddr[i], dataRd[i] & 0xffff);
     }
-    return pkt.status == STATUS_COMPLETED_CMD ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE;
+    return LIBLMS7_SUCCESS;
+
     /*
     for(int i=0; i<cnt; ++i)
     {

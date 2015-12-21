@@ -45,8 +45,7 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
     if (readData != nullptr)
     {
         pkt.cmd = CMD_LMS7002_RD;
-        uint32_t index = 0;
-        for (uint32_t i = 0; i < size; ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             uint16_t addr = (writeData[i] >> 16) & 0x7fff;
             pkt.outBuffer.push_back(addr >> 8);
@@ -54,12 +53,16 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
         }
 
         status = this->TransferPacket(pkt);
+
+        for (size_t i = 0; i < size; ++i)
+        {
+            readData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];
+        }
     }
     else
     {
         pkt.cmd = CMD_LMS7002_WR;
-        uint32_t index = 0;
-        for (uint32_t i = 0; i < size; ++i)
+        for (size_t i = 0; i < size; ++i)
         {
             uint16_t addr = (writeData[i] >> 16) & 0x7fff;
             uint16_t data = writeData[i] & 0xffff;
