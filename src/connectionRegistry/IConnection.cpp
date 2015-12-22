@@ -60,17 +60,22 @@ OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeD
     return UNSUPPORTED;
 }
 
-bool IConnection::RxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata)
+OperationStatus IConnection::WriteSi5351C(const uint16_t *writeData, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
+bool IConnection::RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata)
 {
     return false;
 }
 
-int IConnection::ReadStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+int IConnection::ReadStream(const int streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
     return -1;
 }
 
-int IConnection::WriteStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+int IConnection::WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
     return -1;
 }

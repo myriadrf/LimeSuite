@@ -296,49 +296,56 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_WR;
+    std::vector<unsigned char> outBuffer;
     
 	if (!device)
         return FAILED;
     //Disable outputs
-	pkt.outBuffer.push_back(3);
-    pkt.outBuffer.push_back(0xFF);
+    outBuffer.push_back(3);
+    outBuffer.push_back(0xFF);
 	//Power down all output drivers
 	for(int i=0; i<8; ++i)
     {
-        pkt.outBuffer.push_back(16 + i);
-        pkt.outBuffer.push_back(0x84);
+        outBuffer.push_back(16 + i);
+        outBuffer.push_back(0x84);
     }
 	//write new configuration
 	for (int i = 15; i <= 92; ++i)
 	{
-        pkt.outBuffer.push_back(i);
-        pkt.outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(i);
+        outBuffer.push_back(m_newConfiguration[i]);
 	}
 	for (int i = 149; i <= 170; ++i)
 	{
-        pkt.outBuffer.push_back(i);
-        pkt.outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(i);
+        outBuffer.push_back(m_newConfiguration[i]);
 	}
 	//apply soft reset
-    pkt.outBuffer.push_back(177);
-    pkt.outBuffer.push_back(0xAC);
+    outBuffer.push_back(177);
+    outBuffer.push_back(0xAC);
     //Enabe desired outputs
-    pkt.outBuffer.push_back(3);
-    pkt.outBuffer.push_back(m_newConfiguration[3]);
+    outBuffer.push_back(3);
+    outBuffer.push_back(m_newConfiguration[3]);
 
 	if( !device->IsOpen() )
 	{   
         return FAILED;
-	}        
-    LMScomms::TransferStatus status;
-    status = device->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+	}
+
+    //convert to spi-transaction format
+    std::vector<uint16_t> spiData;
+    for (size_t i = 0; i < outBuffer.size(); i+=2)
     {
-        return FAILED;
+        uint16_t addr = outBuffer[i + 0];
+        uint16_t data = outBuffer[i + 1];
+        spiData.push_back((addr << 8) | data);
     }
-    return SUCCESS;
+
+    auto status = device->WriteSi5351C(spiData.data(), spiData.size());
+    if (status == OperationStatus::SUCCESS)
+        return SUCCESS;
+    else
+        return FAILED;
 }
 
 // ---------------------------------------------------------------------------

@@ -138,13 +138,22 @@ public:
     * The readData parameter may be NULL to indicate a write-only operation,
     * the underlying implementation may be able to optimize out the readback.
     *
-    * @param index the SPI device number
+    * @param index the RFIC device index
     * @param writeData SPI bits to write out
     * @param [out] readData stores readback data
     * @param size the number of SPI transactions
     * @return the transaction success state
     */
     virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    /*!
+     * @brief Write the SPI registers on the Si5351C.
+     *
+     * @param writeData SPI bits to write out
+     * @param size the number of SPI transactions
+     * @return the transaction success state
+     */
+    virtual OperationStatus WriteSi5351C(const uint16_t *writeData, const size_t size);
 
     /*!
      * The RX stream control call configures a channel to
@@ -155,24 +164,24 @@ public:
      * - Use the metadata's end of burst to request stream bursts
      * - Without end of burst, the burstSize affects continuous streaming
      *
-     * @param channel the RX channel index number
+     * @param streamID the RX stream index number
      * @param burstSize the burst size when metadata has end of burst
      * @param metadata time and burst options
      * @return true for success, otherwise false
      */
-    virtual bool RxStreamControl(const int channel, const size_t burstSize, const StreamMetadata &metadata);
+    virtual bool RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata);
 
     /*!
      * Read blocking data from the stream into the specified buffer.
      *
-     * @param channel the RX channel index number
-     * @param buffer the buffer to be filled
+     * @param streamID the RX stream index number
+     * @param buffs an array of buffers pointers
      * @param length the number of bytes in the buffer
      * @param timeout_ms the timeout in milliseconds
      * @param [out] metadata optional stream metadata
      * @return the number of bytes read or error code
      */
-    virtual int ReadStream(const int channel, char *buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+    virtual int ReadStream(const int streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 
     /*!
      * Write blocking data into the stream from the specified buffer.
@@ -180,14 +189,14 @@ public:
      * - The metadata timestamp corresponds to the start of the buffer.
      * - The end of burst only applies when all bytes have been written.
      *
-     * @param channel the TX channel index number
-     * @param buffer the buffer to be read from
+     * @param streamID the TX stream stream number
+     * @param buffs an array of buffers pointers
      * @param length the number of bytes in the buffer
      * @param timeout_ms the timeout in milliseconds
      * @param metadata optional stream metadata
      * @return the number of bytes written or error code
      */
-    virtual int WriteStream(const int channel, const char *buffer, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+    virtual int WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
 /***********************************************************************
  * !!! Below is the old IConnection and LMScomms API

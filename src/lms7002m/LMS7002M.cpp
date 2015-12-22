@@ -1127,7 +1127,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
     auto index = controlPort->ListRFICs()[0].spiIndexRFIC;
     auto status = controlPort->TransactSPI(index, dataWr.data(), dataRd.data(), cnt);
 
-    if (status != LMScomms::TRANSFER_SUCCESS)
+    if (status != OperationStatus::SUCCESS)
         return LIBLMS7_FAILURE;
 
     for (size_t i = 0; i < cnt; ++i)
