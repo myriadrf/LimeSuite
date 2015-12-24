@@ -51,6 +51,7 @@ set(ENABLE_SPI_CONNECTION "NO" CACHE BOOL INTERNAL)
 
 add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files})
 target_include_directories(LMS7002M PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(LMS7002M protocols)
 
 if(WIN32 AND ENABLE_USB_CONNECTION)
 	find_package(CyAPI REQUIRED)

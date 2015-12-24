@@ -20,11 +20,11 @@ OperationStatus LMS64CProtocol::DeviceReset(void)
 {
     if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
 
-    IConnection::GenericPacket pkt;
+    GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
     pkt.outBuffer.push_back(LMS_RST_PULSE);
-    IConnection::TransferStatus status = this->TransferPacket(pkt);
-    if (status != IConnection::TRANSFER_SUCCESS) return OperationStatus::FAILED;
+    TransferStatus status = this->TransferPacket(pkt);
+    if (status != TRANSFER_SUCCESS) return OperationStatus::FAILED;
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
@@ -39,8 +39,8 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
 
     if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
 
-    IConnection::TransferStatus status;
-    IConnection::GenericPacket pkt;
+    TransferStatus status;
+    GenericPacket pkt;
 
     if (readData != nullptr)
     {
@@ -75,7 +75,7 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
         status = this->TransferPacket(pkt);
     }
 
-    if (status != IConnection::TRANSFER_SUCCESS) return OperationStatus::FAILED;
+    if (status != TRANSFER_SUCCESS) return OperationStatus::FAILED;
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
@@ -108,8 +108,8 @@ LMSinfo LMS64CProtocol::GetInfo()
     info.protocol = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
-    IConnection::TransferStatus status = TransferPacket(pkt);
-    if (status == IConnection::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
+    TransferStatus status = TransferPacket(pkt);
+    if (status == TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
     {
         info.firmware = pkt.inBuffer[0];
         info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
@@ -124,7 +124,7 @@ LMSinfo LMS64CProtocol::GetInfo()
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure
 */
-IConnection::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt)
+LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt)
 {
     std::lock_guard<std::mutex> lock(mControlPortLock);
     TransferStatus status = TRANSFER_SUCCESS;
@@ -133,7 +133,7 @@ IConnection::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt)
 
     int packetLen;
     eLMS_PROTOCOL protocol = LMS_PROTOCOL_UNDEFINED;
-    if(this->GetType() == IConnection::SPI_PORT)
+    if(this->GetType() == SPI_PORT)
         protocol = LMS_PROTOCOL_NOVENA;
     else
         protocol = LMS_PROTOCOL_LMS64C;

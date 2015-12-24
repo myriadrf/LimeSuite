@@ -75,7 +75,7 @@ bool ConnectionEVB7COM::IsOpen(void)
     return false;
 }
 
-IConnection::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int baudrate)
+LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int baudrate)
 {
 
 	if (strlen(comName) == 0)

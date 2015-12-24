@@ -8,12 +8,13 @@
 #define LMS_COMMS_H
 
 #include "IConnection.h"
+#include "LMS64CProtocol.h"
 
 //! JB TODO, remove this compatibility layer later
 //! A lot of code is written around LMScomms *
 //! Replace with sed 's/LMScomms/IConnection/g'
 
-class LMScomms : public IConnection
+class LMScomms : public LMS64CProtocol
 {
 public:
     LMScomms(){}

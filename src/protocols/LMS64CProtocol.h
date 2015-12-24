@@ -7,6 +7,16 @@
 #pragma once
 #include <IConnection.h>
 #include <mutex>
+#include "../lms7002m/lms7002_defines.h"
+
+struct LMSinfo
+{
+    eLMS_DEV device;
+    eEXP_BOARD expansion;
+    int firmware;
+    int hardware;
+    int protocol;
+};
 
 /*!
  * Implement the LMS64CProtocol.
@@ -21,11 +31,99 @@ public:
 
     virtual ~LMS64CProtocol(void);
 
+    DeviceInfo GetDeviceInfo(void);
+
     //! DeviceReset implemented by LMS64C
     OperationStatus DeviceReset(void);
 
     //! TransactSPI implemented by LMS64C
     OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    /// Supported connection types.
+    enum eConnectionType
+    {
+        CONNECTION_UNDEFINED = -1,
+        COM_PORT = 0,
+        USB_PORT = 1,
+        SPI_PORT = 2,
+        //insert new types here
+        CONNECTION_TYPES_COUNT //used only for memory allocation
+    };
+
+    enum eLMS_PROTOCOL
+    {
+        LMS_PROTOCOL_UNDEFINED = 0,
+        LMS_PROTOCOL_DIGIC,
+        LMS_PROTOCOL_LMS64C,
+        LMS_PROTOCOL_NOVENA,
+    };
+
+    enum DeviceStatus
+    {
+        SUCCESS,
+        FAILURE,
+        END_POINTS_NOT_FOUND,
+        CANNOT_CLAIM_INTERFACE
+    };
+
+    enum TransferStatus
+    {
+        TRANSFER_SUCCESS,
+        TRANSFER_FAILED,
+        NOT_CONNECTED
+    };
+
+    struct GenericPacket
+    {   
+        GenericPacket()
+        {
+            cmd = CMD_GET_INFO;
+            status = STATUS_UNDEFINED;
+        }
+
+        eCMD_LMS cmd;
+        eCMD_STATUS status;
+        vector<unsigned char> outBuffer;
+        vector<unsigned char> inBuffer;
+    };
+
+    struct ProtocolDIGIC
+    {
+        static const int pktLength = 64;
+        static const int maxDataLength = 60;
+        ProtocolDIGIC() : cmd(0), i2cAddr(0), blockCount(0) {};
+        unsigned char cmd;
+        unsigned char i2cAddr;
+        unsigned char blockCount;
+        unsigned char reserved;
+        unsigned char data[maxDataLength];
+    };
+
+    struct ProtocolLMS64C
+    {
+        static const int pktLength = 64;
+        static const int maxDataLength = 56;
+        ProtocolLMS64C() :cmd(0),status(STATUS_UNDEFINED),blockCount(0)
+        {
+            memset(reserved, 0, 5);
+        };
+        unsigned char cmd;
+        unsigned char status;
+        unsigned char blockCount;
+        unsigned char reserved[5];
+        unsigned char data[maxDataLength];
+    };
+
+    struct ProtocolNovena
+    {
+        static const int pktLength = 128;
+        static const int maxDataLength = 128;
+        ProtocolNovena() :cmd(0),status(0) {};
+        unsigned char cmd;
+        unsigned char status;
+        unsigned char blockCount;
+        unsigned char data[maxDataLength];
+    };
 
     /*!
      * Transfer a packet over the underlying transport layer.
@@ -36,11 +134,7 @@ public:
      */
     TransferStatus TransferPacket(GenericPacket &pkt);
 
-    DeviceInfo GetDeviceInfo(void);
-
     LMSinfo GetInfo();
-
-protected:
 
     //! implement in base class
     virtual eConnectionType GetType(void) = 0;

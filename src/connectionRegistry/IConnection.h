@@ -13,19 +13,6 @@
 #include <cstring> //memset
 #include <functional>
 
-//! REMOVE ME -- part of the old API
-#include "../lms7002m/lms7002_defines.h"
-
-//! REMOVE ME -- part of the old API
-struct LMSinfo
-{
-    eLMS_DEV device;
-    eEXP_BOARD expansion;
-    int firmware;
-    int hardware;
-    int protocol;
-};
-
 enum OperationStatus
 {
     SUCCESS = 0,
@@ -245,100 +232,10 @@ public:
      */
     virtual int WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
-/***********************************************************************
- * !!! Below is the old IConnection and LMScomms API
- * It remains here to enable compiling until its replaced
- **********************************************************************/
-
-    /// Supported connection types.
-    enum eConnectionType
-    {
-        CONNECTION_UNDEFINED = -1,
-        COM_PORT = 0,
-        USB_PORT = 1,
-        SPI_PORT = 2,
-        //insert new types here
-        CONNECTION_TYPES_COUNT //used only for memory allocation
-    };
-
-    enum eLMS_PROTOCOL
-    {
-        LMS_PROTOCOL_UNDEFINED = 0,
-        LMS_PROTOCOL_DIGIC,
-        LMS_PROTOCOL_LMS64C,
-        LMS_PROTOCOL_NOVENA,
-    };
-
-    enum DeviceStatus
-    {
-        SUCCESS,
-        FAILURE,
-        END_POINTS_NOT_FOUND,
-        CANNOT_CLAIM_INTERFACE
-    };
-
-    enum TransferStatus
-    {
-        TRANSFER_SUCCESS,
-        TRANSFER_FAILED,
-        NOT_CONNECTED
-    };
-
-    struct GenericPacket
-    {   
-        GenericPacket()
-        {
-            cmd = CMD_GET_INFO;
-            status = STATUS_UNDEFINED;
-        }
-
-        eCMD_LMS cmd;
-        eCMD_STATUS status;
-        vector<unsigned char> outBuffer;
-        vector<unsigned char> inBuffer;
-    };
-
-    struct ProtocolDIGIC
-    {
-        static const int pktLength = 64;
-        static const int maxDataLength = 60;
-        ProtocolDIGIC() : cmd(0), i2cAddr(0), blockCount(0) {};
-        unsigned char cmd;
-        unsigned char i2cAddr;
-        unsigned char blockCount;
-        unsigned char reserved;
-        unsigned char data[maxDataLength];
-    };
-
-    struct ProtocolLMS64C
-    {
-        static const int pktLength = 64;
-        static const int maxDataLength = 56;
-        ProtocolLMS64C() :cmd(0),status(STATUS_UNDEFINED),blockCount(0)
-        {
-            memset(reserved, 0, 5);
-        };
-        unsigned char cmd;
-        unsigned char status;
-        unsigned char blockCount;
-        unsigned char reserved[5];
-        unsigned char data[maxDataLength];
-    };
-
-    struct ProtocolNovena
-    {
-        static const int pktLength = 128;
-        static const int maxDataLength = 128;
-        ProtocolNovena() :cmd(0),status(0) {};
-        unsigned char cmd;
-        unsigned char status;
-        unsigned char blockCount;
-        unsigned char data[maxDataLength];
-    };
-
-    virtual TransferStatus TransferPacket(GenericPacket &pkt);
-
-    virtual LMSinfo GetInfo(){LMSinfo info; return info;}
+    /***********************************************************************
+     * !!! Below is the old IConnection Streaming API
+     * It remains here to enable compiling until its replaced
+     **********************************************************************/
 
     int ReadStream(char *buffer, int length, unsigned int timeout_ms)
     {
@@ -352,30 +249,6 @@ public:
         int status = this->ReadDataBlocking(buffer, len, 0);
         return len;
     }
-
-    /***********************************************************************
-     * !!! Below is the old IConnection Enumeration API
-     * It remains here to enable compiling until its replaced
-     **********************************************************************/
-
-	//virtual int RefreshDeviceList() = 0;
-	//virtual DeviceStatus Open(unsigned i) = 0;
-	//virtual void Close() = 0;
-	//virtual int GetOpenedIndex() = 0;
-
-    //TODO JB used by programmer, should we keep these interfaces?
-	virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;
-	virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
-
-	//virtual std::vector<std::string> GetDeviceNames() = 0;
-
-	//virtual eConnectionType GetType() { return m_connectionType; };
-	//virtual bool SetParam(const char *name, const char* value) {return false;};
-
-    /***********************************************************************
-     * !!! Below is the old IConnection Streaming API
-     * It remains here to enable compiling until its replaced
-     **********************************************************************/
 
 	virtual int BeginDataReading(char *buffer, long length){ return -1; };
 	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};

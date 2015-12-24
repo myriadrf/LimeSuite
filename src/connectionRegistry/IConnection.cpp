@@ -101,15 +101,6 @@ int IConnection::WriteStream(const int streamID, const void * const *buffs, cons
     return -1;
 }
 
-/** @brief Transfers data between packet and connected device
-    @param pkt packet containing output data and to receive incomming data
-    @return 0: success, other: failure
-*/
-IConnection::TransferStatus IConnection::TransferPacket(GenericPacket& pkt)
-{
-    throw std::runtime_error("TransferPacket -> This is the old call, removing soon....");
-}
-
 /** @brief Sets callback function which gets called each time data is sent or received
 */
 void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)
