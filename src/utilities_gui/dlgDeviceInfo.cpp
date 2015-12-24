@@ -19,12 +19,12 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {    
     if (ctrPort != nullptr && ctrPort->IsOpen() == true)
     {
-        LMSinfo info = ctrPort->GetInfo();
-        lblDeviceCtr->SetLabel(wxString::From8BitData(GetDeviceName(info.device)));
-        lblExpansionCtr->SetLabel(wxString::From8BitData(GetExpansionBoardName(info.expansion)));
-        lblFirmwareCtr->SetLabel(wxString::Format(_("%i"), info.firmware));
-        lblHardwareCtr->SetLabel(wxString::Format(_("%i"), info.hardware));
-        lblProtocolCtr->SetLabel(wxString::Format(_("%i"), info.protocol));
+        auto info = ctrPort->GetDeviceInfo();
+        lblDeviceCtr->SetLabel(info.deviceName);
+        lblExpansionCtr->SetLabel(info.expansionName);
+        lblFirmwareCtr->SetLabel(info.firmwareVersion);
+        lblHardwareCtr->SetLabel(info.hardwareVersion);
+        lblProtocolCtr->SetLabel(info.protocolVersion);
     }
     else
     {
@@ -37,12 +37,12 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 
     if (dataPort != nullptr && dataPort->IsOpen() == true)
     {
-        LMSinfo info = dataPort->GetInfo();
-        lblDeviceData->SetLabel(wxString::From8BitData(GetDeviceName(info.device)));
-        lblExpansionData->SetLabel(wxString::From8BitData(GetExpansionBoardName(info.expansion)));
-        lblFirmwareData->SetLabel(wxString::Format(_("%i"), info.firmware));
-        lblHardwareData->SetLabel(wxString::Format(_("%i"), info.hardware));
-        lblProtocolData->SetLabel(wxString::Format(_("%i"), info.protocol));
+        auto info = dataPort->GetDeviceInfo();
+        lblDeviceData->SetLabel(info.deviceName);
+        lblExpansionData->SetLabel(info.expansionName);
+        lblFirmwareData->SetLabel(info.firmwareVersion);
+        lblHardwareData->SetLabel(info.hardwareVersion);
+        lblProtocolData->SetLabel(info.protocolVersion);
     }
     else
     {

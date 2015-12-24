@@ -7,6 +7,11 @@
 #include "IConnection.h"
 #include <cstring> //memcpy
 
+DeviceInfo::DeviceInfo(void)
+{
+    return;
+}
+
 RFICInfo::RFICInfo(void):
     spiIndexRFIC(-1),
     spiIndexSi5351(-1),
@@ -45,6 +50,12 @@ bool IConnection::IsOpen(void)
     return false;
 }
 
+DeviceInfo IConnection::GetDeviceInfo(void)
+{
+    DeviceInfo info;
+    return info;
+}
+
 std::vector<RFICInfo> IConnection::ListRFICs(void)
 {
     return std::vector<RFICInfo>(1);
@@ -61,6 +72,16 @@ OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeD
 }
 
 void IConnection::UpdateExternalBandSelect(const int trfBand, const int rfeBand)
+{
+    return;
+}
+
+double IConnection::GetReferenceClockRate(void)
+{
+    return 1.0;
+}
+
+void IConnection::SetReferenceClockRate(const double rate)
 {
     return;
 }

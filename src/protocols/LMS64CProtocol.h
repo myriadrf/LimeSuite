@@ -36,6 +36,8 @@ public:
      */
     TransferStatus TransferPacket(GenericPacket &pkt);
 
+    DeviceInfo GetDeviceInfo(void);
+
     LMSinfo GetInfo();
 
 protected:

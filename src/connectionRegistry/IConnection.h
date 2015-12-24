@@ -71,6 +71,32 @@ struct RFICInfo
 };
 
 /*!
+ * Information about the set of available hardware on a device.
+ * This includes available ICs, streamers, and version info.
+ */
+struct DeviceInfo
+{
+    DeviceInfo(void);
+
+    //! The displayable name for the device
+    std::string deviceName;
+
+    /*! The displayable name for the expansion card
+     * Ex: if the RFIC is on a daughter-card
+     */
+    std::string expansionName;
+
+    //! The firmware version as a string
+    std::string firmwareVersion;
+
+    //! The hardware version as a string
+    std::string hardwareVersion;
+
+    //! The protocol version as a string
+    std::string protocolVersion;
+};
+
+/*!
  * The Stream metadata structure is used with the streaming API to exchange
  * extra data associated with the stream such as timestamps and burst info.
  */
@@ -117,6 +143,13 @@ public:
     virtual bool IsOpen(void);
 
     /*!
+     * Get information about a device
+     * for displaying helpful information
+     * or for making device-specific decisions.
+     */
+    virtual DeviceInfo GetDeviceInfo(void);
+
+    /*!
      * RFIC enumeration API.
      * @return a list of RFICInfos
      */
@@ -153,6 +186,21 @@ public:
      * @param rfeBand the SEL_PATH_RFE config bits
      */
     virtual void UpdateExternalBandSelect(const int trfBand, const int rfeBand);
+
+    /*!
+     * Query the frequency of the reference clock.
+     * Some implementations have a fixed reference,
+     * some have a programmable synthesizer like Si5351C.
+     * @return the reference clock rate in Hz
+     */
+    virtual double GetReferenceClockRate(void);
+
+    /*!
+     * Set the programmable reference clock rate.
+     * Some implementations use the programmable Si5351C.
+     * @param rate the clock rate in Hz
+     */
+    virtual void SetReferenceClockRate(const double rate);
 
     /*!
      * The RX stream control call configures a channel to

@@ -84,6 +84,18 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
     return OperationStatus::FAILED;
 }
 
+DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
+{
+    LMSinfo lmsInfo = this->GetInfo();
+    DeviceInfo devInfo;
+    devInfo.deviceName = GetDeviceName(lmsInfo.device);
+    devInfo.expansionName = GetExpansionBoardName(lmsInfo.expansion);
+    devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
+    devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
+    devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
+    return devInfo;
+}
+
 /** @brief Returns connected device information
 */
 LMSinfo LMS64CProtocol::GetInfo()
