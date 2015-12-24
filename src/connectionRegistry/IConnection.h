@@ -147,6 +147,14 @@ public:
     virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     /*!
+     * Called by the LMS7002M driver after potential band-selection changes.
+     * Implementations may have additional external bands to switch via GPIO.
+     * @param trfBand the SEL_BAND2_TRF config bits
+     * @param rfeBand the SEL_PATH_RFE config bits
+     */
+    virtual void UpdateExternalBandSelect(const int trfBand, const int rfeBand);
+
+    /*!
      * The RX stream control call configures a channel to
      * stream at a particular time, requests burst,
      * or to start or stop continuous streaming.
@@ -282,7 +290,7 @@ public:
 
     virtual TransferStatus TransferPacket(GenericPacket &pkt);
 
-    LMSinfo GetInfo();
+    virtual LMSinfo GetInfo(){LMSinfo info; return info;}
 
     int ReadStream(char *buffer, int length, unsigned int timeout_ms)
     {

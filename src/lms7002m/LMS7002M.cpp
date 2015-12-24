@@ -2389,7 +2389,6 @@ isSyncedEnding:
 
 /** @brief Writes all registers from host to chip
 
-When used on Novena board, also changes gpios to match rx path and tx band selections
 */
 liblms7_status LMS7002M::UploadAll()
 {
@@ -2438,36 +2437,16 @@ liblms7_status LMS7002M::UploadAll()
         return status;
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore last used channel
 
-    //in case of Novena board, need to update GPIO
-    if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
-    {
-        uint16_t regValue = SPI_read(0x0706) & 0xFFF8;
-        //lms_gpio2 - tx output selection:
-		//		0 - TX1_A and TX1_B (Band 1),
-		//		1 - TX2_A and TX2_B (Band 2)
-        regValue |= Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) << 2; //gpio2
-        //RX active paths
-        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
-        //  0 			0       =>  	no active path
-        //  1   		0 		=>	LNAW_A  	LNAW_B
-        //  0			1		=>	LNAH_A  	LNAH_B
-        //  1			1		=>	LNAL_A 	 	LNAL_B
-        switch(Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)))
-        {
-            //set gpio1:gpio0
-            case 0: regValue |= 0x0; break;
-            case 1: regValue |= 0x2; break;
-            case 2: regValue |= 0x3; break;
-            case 3: regValue |= 0x1; break;
-        }
-        SPI_write(0x0706, regValue);
-    }
+    //update external band-selection to match
+    controlPort->UpdateExternalBandSelect(
+        Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)),
+        Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)));
+
     return LIBLMS7_SUCCESS;
 }
 
 /** @brief Reads all registers from the chip to host
 
-When used on Novena board, also updates gpios to match rx path and tx band selections
 */
 liblms7_status LMS7002M::DownloadAll()
 {
@@ -2506,30 +2485,10 @@ liblms7_status LMS7002M::DownloadAll()
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //retore previously used channel
 
-    //in case of Novena board, update GPIO
-    if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
-    {
-        uint16_t regValue = SPI_read(0x0706) & 0xFFF8;
-        //lms_gpio2 - tx output selection:
-		//		0 - TX1_A and TX1_B (Band 1),
-		//		1 - TX2_A and TX2_B (Band 2)
-        regValue |= Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) << 2; //gpio2
-        //RX active paths
-        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
-        //  0 			0       =>  	no active path
-        //  1   		0 		=>	LNAW_A  	LNAW_B
-        //  0			1		=>	LNAH_A  	LNAH_B
-        //  1			1		=>	LNAL_A 	 	LNAL_B
-        switch(Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)))
-        {
-            //set gpio1:gpio0
-            case 0: regValue |= 0x0; break;
-            case 1: regValue |= 0x2; break;
-            case 2: regValue |= 0x3; break;
-            case 3: regValue |= 0x1; break;
-        }
-        SPI_write(0x0706, regValue);
-    }
+    //update external band-selection to match
+    controlPort->UpdateExternalBandSelect(
+        Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)),
+        Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)));
 
     return LIBLMS7_SUCCESS;
 }

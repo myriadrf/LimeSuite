@@ -84,6 +84,30 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
     return OperationStatus::FAILED;
 }
 
+/** @brief Returns connected device information
+*/
+LMSinfo LMS64CProtocol::GetInfo()
+{
+    LMSinfo info;
+    info.device = LMS_DEV_UNKNOWN;
+    info.expansion = EXP_BOARD_UNKNOWN;
+    info.firmware = 0;
+    info.hardware = 0;
+    info.protocol = 0;
+    GenericPacket pkt;
+    pkt.cmd = CMD_GET_INFO;
+    IConnection::TransferStatus status = TransferPacket(pkt);
+    if (status == IConnection::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
+    {
+        info.firmware = pkt.inBuffer[0];
+        info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
+        info.protocol = pkt.inBuffer[2];
+        info.hardware = pkt.inBuffer[3];
+        info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
+    }
+    return info;
+}
+
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure
@@ -203,7 +227,6 @@ IConnection::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     delete inBuffer;
     return status;
 }
-
 
 /** @brief Takes generic packet and converts to specific protocol buffer
     @param pkt generic data packet to convert

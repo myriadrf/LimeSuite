@@ -27,6 +27,17 @@ public:
     //! TransactSPI implemented by LMS64C
     OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
+    /*!
+     * Transfer a packet over the underlying transport layer.
+     * TransferPacket performs a request/response
+     * using the GenericPacket data structure.
+     * Some implementations will cast to LMS64CProtocol
+     * and directly use the TransferPacket() API call.
+     */
+    TransferStatus TransferPacket(GenericPacket &pkt);
+
+    LMSinfo GetInfo();
+
 protected:
 
     //! implement in base class
@@ -40,7 +51,6 @@ protected:
 
 private:
 
-    TransferStatus TransferPacket(GenericPacket &pkt);
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
     std::mutex mControlPortLock;

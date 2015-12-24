@@ -60,6 +60,11 @@ OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeD
     return UNSUPPORTED;
 }
 
+void IConnection::UpdateExternalBandSelect(const int trfBand, const int rfeBand)
+{
+    return;
+}
+
 bool IConnection::RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata)
 {
     return false;
@@ -82,30 +87,6 @@ int IConnection::WriteStream(const int streamID, const void * const *buffs, cons
 IConnection::TransferStatus IConnection::TransferPacket(GenericPacket& pkt)
 {
     throw std::runtime_error("TransferPacket -> This is the old call, removing soon....");
-}
-
-/** @brief Returns connected device information
-*/
-LMSinfo IConnection::GetInfo()
-{
-    LMSinfo info;
-    info.device = LMS_DEV_UNKNOWN;
-    info.expansion = EXP_BOARD_UNKNOWN;
-    info.firmware = 0;
-    info.hardware = 0;
-    info.protocol = 0;
-    GenericPacket pkt;
-    pkt.cmd = CMD_GET_INFO;
-    IConnection::TransferStatus status = TransferPacket(pkt);
-    if (status == IConnection::TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
-    {
-        info.firmware = pkt.inBuffer[0];
-        info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
-        info.protocol = pkt.inBuffer[2];
-        info.hardware = pkt.inBuffer[3];
-        info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
-    }
-    return info;
 }
 
 /** @brief Sets callback function which gets called each time data is sent or received
