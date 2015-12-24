@@ -84,28 +84,6 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
     return OperationStatus::FAILED;
 }
 
-OperationStatus LMS64CProtocol::WriteSi5351C(const uint16_t *writeData, const size_t size)
-{
-    GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_WR;
-
-    for (size_t i = 0; i < size; i++)
-    {
-        pkt.outBuffer.push_back(writeData[i] >> 8);
-        pkt.outBuffer.push_back(writeData[i] & 0xff);
-    }
-
-    IConnection::TransferStatus status;
-    status = this->TransferPacket(pkt);
-    if (status != IConnection::TRANSFER_SUCCESS) return OperationStatus::FAILED;
-    switch (pkt.status)
-    {
-    case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
-    case STATUS_UNKNOWN_CMD: return OperationStatus::UNSUPPORTED;
-    }
-    return OperationStatus::FAILED;
-}
-
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure

@@ -60,11 +60,6 @@ OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeD
     return UNSUPPORTED;
 }
 
-OperationStatus IConnection::WriteSi5351C(const uint16_t *writeData, const size_t size)
-{
-    return UNSUPPORTED;
-}
-
 bool IConnection::RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata)
 {
     return false;

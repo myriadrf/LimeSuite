@@ -27,9 +27,6 @@ public:
     //! TransactSPI implemented by LMS64C
     OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
-    //! WriteSi5351C implemented by LMS64C
-    OperationStatus WriteSi5351C(const uint16_t *writeData, const size_t size);
-
 protected:
 
     //! implement in base class

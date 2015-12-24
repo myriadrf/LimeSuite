@@ -138,22 +138,13 @@ public:
     * The readData parameter may be NULL to indicate a write-only operation,
     * the underlying implementation may be able to optimize out the readback.
     *
-    * @param index the RFIC device index
+    * @param index the SPI device index
     * @param writeData SPI bits to write out
     * @param [out] readData stores readback data
     * @param size the number of SPI transactions
     * @return the transaction success state
     */
     virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
-
-    /*!
-     * @brief Write the SPI registers on the Si5351C.
-     *
-     * @param writeData SPI bits to write out
-     * @param size the number of SPI transactions
-     * @return the transaction success state
-     */
-    virtual OperationStatus WriteSi5351C(const uint16_t *writeData, const size_t size);
 
     /*!
      * The RX stream control call configures a channel to
