@@ -33,11 +33,11 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 {
     mTabMCU = new lms7002_pnlMCU_BD_view(tabsNotebook);
     tabsNotebook->AddPage(mTabMCU, _("MCU"));
-    mcuControl = new MCU_BD();    
+    mcuControl = new MCU_BD();
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
-{   
+{
     delete mcuControl;
 }
 
@@ -130,9 +130,10 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabCDS->Initialize(lmsControl);
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
-    mcuControl->Initialize(lmsControl->GetControlPort());
+// TODO : get control port not from lmsControl
+    //mcuControl->Initialize(lmsControl->GetControlPort());
     mTabMCU->Initialize(mcuControl);
-    mTabBuffers->Initialize(lmsControl->GetControlPort());
+    //mTabBuffers->Initialize(lmsControl->GetControlPort());
     UpdateGUI();
 }
 
@@ -196,7 +197,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     }
     wxCommandEvent tevt;
     lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
-    UpdateGUI();  
+    UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);

@@ -13,7 +13,7 @@
 
 #include <sstream>
 
-class LMScomms;
+class IConnection;
 class LMS7002M_RegistersMap;
 
 class LMS7002M
@@ -25,7 +25,7 @@ public:
     };
 
 	LMS7002M();
-    LMS7002M(LMScomms* controlPort);
+    LMS7002M(IConnection* controlPort);
 	virtual ~LMS7002M();
 
     ///@name Registers writing and reading
@@ -105,7 +105,6 @@ public:
         MEMORY_SECTIONS_COUNT
     };
     virtual liblms7_status SetDefaults(MemorySection module);
-	LMScomms* GetControlPort() const { return controlPort;};
 
     static const float_type gLadder_lower_limit;
     static const float_type gLadder_higher_limit;
@@ -170,7 +169,7 @@ protected:
     virtual void Log(const char* text, LogType type);
 
     ///port used for communicating with LMS7002M
-    LMScomms* controlPort;
+    IConnection* controlPort;
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };

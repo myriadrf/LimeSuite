@@ -12,7 +12,7 @@
 
 #include "lms7suiteAppFrame.h"
 #include "LMS7002M.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 #include "dlgAbout.h"
 #include "dlgConnectionSettings.h"
 #include "lms7suiteEvents.h"
@@ -65,7 +65,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             evt.SetString(msg);
             wxPostEvent(this, evt);
         }
-        if (streamBoardPort->IsOpen() && streamBoardPort->GetInfo().device != LMS_DEV_NOVENA)
+        if (streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
         {
             LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
             if (status != LMS_StreamBoard::SUCCESS)
@@ -87,9 +87,9 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
         }
     }
-   
+
     //in case of Novena board, need to update GPIO
-    if (lms7controlPort->GetInfo().device == LMS_DEV_NOVENA &&
+    if (lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
         const uint16_t NOVENA_GPIO_ADDR = 0x0706;
@@ -122,7 +122,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         const wxObject* eventSource = event.GetEventObject();
         const int bandIndex = event.GetInt();
         //update HPM7 if changes were made outside of it
-        if (lms7controlPort->GetInfo().expansion == EXP_BOARD_HPM7 && eventSource != hpm7)
+        if (lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
             hpm7->SelectBand(bandIndex);
         if (eventSource == hpm7)
         {
@@ -136,7 +136,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         const wxObject* eventSource = event.GetEventObject();
         const int pathIndex = event.GetInt();
         //update HPM7 if changes were made outside of it
-        if (lms7controlPort->GetInfo().expansion == EXP_BOARD_HPM7 && eventSource != hpm7)
+        if (lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
             hpm7->SelectRxPath(pathIndex);
         if (eventSource == hpm7)
         {
@@ -164,8 +164,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     novenaGui = nullptr;
     boardControlsGui = nullptr;
 
-    lms7controlPort = new LMScomms();
-    streamBoardPort = new LMScomms();
+    //lms7controlPort = new LMScomms();
+    //streamBoardPort = new LMScomms();
     lmsControl = new LMS7002M(lms7controlPort);
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -240,26 +240,26 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     const int controlCollumn = 1;
     if (lms7controlPort->IsOpen())
     {
-        LMSinfo info = lms7controlPort->GetInfo();
+        DeviceInfo info = lms7controlPort->GetDeviceInfo();
         wxString controlDev = _("Control port: ");
-        controlDev.Append(wxString::From8BitData(GetDeviceName(info.device)));
-        controlDev.Append(wxString::Format(_(" FW:%i HW:%i Protocol:%i"), (int)info.firmware, (int)info.hardware, (int)info.protocol));
+        controlDev.Append(info.deviceName);
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
+//  TODO : setup controls according to connected board
+//        if (si5351gui)
+//            si5351gui->ModifyClocksGUI(info.device);
+//
+//        if (boardControlsGui)
+//            boardControlsGui->SetupControls(info.device);
 
-        if (si5351gui)
-            si5351gui->ModifyClocksGUI(info.device);
-
-        if (boardControlsGui)
-            boardControlsGui->SetupControls(info.device);
-        
         //must configure synthesizer before using SoDeRa
-        if (info.device == LMS_DEV_SODERA)
-        {   
+        if (info.deviceName == GetDeviceName(LMS_DEV_SODERA))
+        {
             si5351module->SetPLL(0, 25000000, 0);
             si5351module->SetPLL(1, 25000000, 0);
             si5351module->SetClock(0, 27000000, true, false);
@@ -293,10 +293,10 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
     const int dataCollumn = 2;
     if (streamBoardPort->IsOpen())
     {
-        LMSinfo info = streamBoardPort->GetInfo();
+        DeviceInfo info = streamBoardPort->GetDeviceInfo();
         wxString controlDev = _("Data port: ");
-        controlDev.Append(wxString::From8BitData(GetDeviceName(info.device)));
-        controlDev.Append(wxString::Format(_(" FW:%i HW:%i Protocol:%i"), (int)info.firmware, (int)info.hardware, (int)info.protocol));
+        controlDev.Append(info.deviceName);
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
         statusBar->SetStatusText(controlDev, dataCollumn);
 
         wxCommandEvent evt;
@@ -336,7 +336,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
             samplingFreq_MHz /= pow(2.0, decimation);
         fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
-    if (lms7controlPort->GetInfo().device == LMS_DEV_SODERA)
+    if (lms7controlPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_SODERA))
     {
         //on Linux USB device can be connected only by one Connection manager, so pass the lms control port instead of separate stream port
         fftviewer->Initialize(lms7controlPort);
@@ -378,7 +378,8 @@ void LMS7SuiteAppFrame::OnShowSi5351C(wxCommandEvent& event)
     {
         si5351gui = new Si5351C_wxgui(this, wxNewId(), _("Si5351C"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
         si5351gui->Initialize(si5351module);
-        si5351gui->ModifyClocksGUI(lms7controlPort->GetInfo().device);
+// TODO : modify clock names according to connected board
+//        si5351gui->ModifyClocksGUI(lms7controlPort->GetInfo().device);
         si5351gui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSi5351Close), NULL, this);
         si5351gui->Show();
     }

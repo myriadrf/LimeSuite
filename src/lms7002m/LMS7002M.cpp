@@ -7,7 +7,7 @@
 #include "LMS7002M.h"
 #include <stdio.h>
 #include <set>
-#include "lmsComms.h"
+#include "IConnection.h"
 #include "INI.h"
 #include <cmath>
 #include <iostream>
@@ -58,11 +58,11 @@ LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMa
     mRefClkSXT_MHz = 30.72;
 }
 
-/** @brief Creates LMS7002M main control object, it requires LMScomms to communicate with chip
+/** @brief Creates LMS7002M main control object, it requires IConnection to communicate with chip
     @param controlPort data connection for controlling LMS7002 chip registers
 */
 
-LMS7002M::LMS7002M(LMScomms* controlPort) :
+LMS7002M::LMS7002M(IConnection* controlPort) :
     controlPort(controlPort), mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
