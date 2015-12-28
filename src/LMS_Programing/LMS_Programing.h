@@ -8,7 +8,7 @@
 
 #include <atomic>
 #include <thread>
-class LMScomms;
+class IConnection;
 
 class LMS_Programing
 {
@@ -25,12 +25,12 @@ public:
     struct Info
     {
         int bytesSent;
-        int bytesCount;        
+        int bytesCount;
         bool aborted;
         unsigned char deviceResponse; //in case of failure device might give reason
     };
-    
-    LMS_Programing(LMScomms* pSerPort);
+
+    LMS_Programing(IConnection* pSerPort);
     ~LMS_Programing();
 
     Status LoadFile(const char* filename, const int type);
@@ -39,7 +39,7 @@ public:
 
     //Creates thread that executes UploadProgram
     Status StartUploadProgram(const int device, const int prog_mode);
-    Info GetProgressInfo() const;    
+    Info GetProgressInfo() const;
     void AbortPrograming();
 protected:
     std::thread mProgramingThread;
@@ -51,7 +51,7 @@ protected:
 
     std::atomic<bool> mAbortPrograming;
     std::atomic<bool> mUploadInProgress;
-    LMScomms* m_serPort;
+    IConnection* m_serPort;
     unsigned char* m_data;
     long m_data_size;
 };

@@ -5,14 +5,14 @@
 */
 #include "LMS_Programing.h"
 #include <fstream>
-#include "lmsComms.h"
+#include <IConnection.h>
 #include "lms7002_defines.h"
 #include <sstream>
 #include <string.h>
 #include <iostream>
 using namespace std;
 
-LMS_Programing::LMS_Programing(LMScomms* pSerPort)
+LMS_Programing::LMS_Programing(IConnection* pSerPort)
 {
     mAbortPrograming.store(false);
     mUploadInProgress.store(false);
@@ -151,8 +151,9 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
             data_src+=data_cnt;
         }
 
-        m_serPort->Write(ctrbuf, 64);
-        m_serPort->Read(inbuf, 64);
+// TODO : this is protocol dependent programming, should be moved into protocol module
+//        m_serPort->Write(ctrbuf, 64);
+//        m_serPort->Read(inbuf, 64);
 
         data_left -= data_cnt;
         status = inbuf[1];
@@ -179,7 +180,7 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
             return FAILURE;
         }
         if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
-        {   
+        {
             progress.bytesCount = progress.bytesSent;
             mUploadInProgress.store(false);
             break;

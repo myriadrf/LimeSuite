@@ -4,7 +4,7 @@
 @brief	panel for uploading data to FPGA
 */
 #include "LMS_Programing_wxgui.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -17,6 +17,7 @@
 #include <wx/msgdlg.h>
 #include <wx/wfstream.h>
 #include "LMS_Programing.h"
+#include "lms7002_defines.h" //programming status to string
 
 const long LMS_Programing_wxgui::ID_BUTTON1 = wxNewId();
 const long LMS_Programing_wxgui::ID_STATICTEXT1 = wxNewId();
@@ -32,7 +33,7 @@ const long LMS_Programing_wxgui::ID_CHOICE1 = wxNewId();
 BEGIN_EVENT_TABLE(LMS_Programing_wxgui, wxFrame)
 END_EVENT_TABLE()
 
-LMS_Programing_wxgui::LMS_Programing_wxgui(LMScomms* serPort, wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
+LMS_Programing_wxgui::LMS_Programing_wxgui(IConnection* serPort, wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
 {
     progressPooler = new wxTimer(this, wxNewId());
     Connect(wxID_ANY, wxEVT_TIMER, wxTimerEventHandler(LMS_Programing_wxgui::OnProgressPoll), NULL, this);

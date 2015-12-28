@@ -14,13 +14,13 @@ class wxFlexGridSizer;
 class wxButton;
 class wxChoice;
 //*)
-class LMScomms;
+class IConnection;
 class LMS_Programing;
 
 class LMS_Programing_wxgui : public wxFrame
 {
-	public:        
-		LMS_Programing_wxgui(LMScomms* pSerPort, wxWindow* parent,wxWindowID id=wxID_ANY,const wxString &title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=0, wxString name = wxEmptyString);
+	public:
+		LMS_Programing_wxgui(IConnection* pSerPort, wxWindow* parent,wxWindowID id=wxID_ANY,const wxString &title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=0, wxString name = wxEmptyString);
 		virtual ~LMS_Programing_wxgui();
 
 		wxChoice* cmbDevice;
@@ -31,15 +31,15 @@ class LMS_Programing_wxgui : public wxFrame
 		wxStaticText* StaticText1;
 		wxStaticText* StaticText3;
 		wxChoice* cmbProgMode;
-		wxButton* btnStartStop;        
+		wxButton* btnStartStop;
 		wxButton* btnOpen;
 
 	protected:
-        wxTimer* progressPooler;                
+        wxTimer* progressPooler;
         void OnProgressPoll(wxTimerEvent& evt);
         void OnProgramingFinished();
 	    LMS_Programing* m_programmer;
-		
+
 		static const long ID_BUTTON1;
 		static const long ID_STATICTEXT1;
 		static const long ID_STATICTEXT2;
