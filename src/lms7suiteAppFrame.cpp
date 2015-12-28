@@ -164,9 +164,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     novenaGui = nullptr;
     boardControlsGui = nullptr;
 
-    //! JB TODO these should be from the connection settings dialog
-    //lms7controlPort = new LMScomms();
-    //streamBoardPort = new LMScomms();
+    lms7controlPort = new LMScomms();
+    streamBoardPort = new LMScomms();
     lmsControl = new LMS7002M(lms7controlPort);
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -221,6 +220,7 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
     if (fftviewer)
         fftviewer->StopStreaming();
 
+    dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
     Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
     Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
     Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);

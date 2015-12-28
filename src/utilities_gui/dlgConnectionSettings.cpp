@@ -1,6 +1,7 @@
 #include "dlgConnectionSettings.h"
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
+#include "lmsComms.h"
 #include <wx/msgdlg.h>
 #include <vector>
 #include "lms7suiteEvents.h"
@@ -13,6 +14,12 @@ dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )
 	streamOpenedIndex = -1;
 	lms7Conn = nullptr;
 	streamBrdConn = nullptr;
+}
+
+void dlgConnectionSettings::SetConnectionManagers(LMScomms *lms7ctr, LMScomms *streamBrdctr)
+{
+	lms7Manager = lms7ctr;
+	streamBrdManager = streamBrdctr;
 }
 
 void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
@@ -45,6 +52,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
         }
         else
         {
+            lms7Manager->setConnection(lms7Conn);
             wxCommandEvent evt;
             evt.SetInt(mListLMS7ports->GetSelection());
             evt.SetEventType(CONTROL_PORT_CONNECTED);
@@ -65,6 +73,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
         }
         else
         {
+            streamBrdManager->setConnection(streamBrdConn);
             wxCommandEvent evt;
             evt.SetInt(mListStreamports->GetSelection());
             evt.SetEventType(DATA_PORT_CONNECTED);
@@ -85,6 +94,7 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
     if (lms7Conn != nullptr)
     {
+        lms7Manager->setConnection(nullptr);
         ConnectionRegistry::freeConnection(lms7Conn);
         lms7Conn = nullptr;
         wxCommandEvent evt;
@@ -96,6 +106,7 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 
     if (streamBrdConn != nullptr)
     {
+        streamBrdManager->setConnection(nullptr);
         ConnectionRegistry::freeConnection(streamBrdConn);
         streamBrdConn = nullptr;
         wxCommandEvent evt;
