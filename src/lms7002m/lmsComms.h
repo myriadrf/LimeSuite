@@ -88,8 +88,8 @@ public:
 
         eCMD_LMS cmd;
         eCMD_STATUS status;
-        vector<unsigned char> outBuffer;
-        vector<unsigned char> inBuffer;
+        std::vector<unsigned char> outBuffer;
+        std::vector<unsigned char> inBuffer;
     };
 
     LMScomms();

@@ -17,8 +17,6 @@
 #include <vector>
 #include "string.h"
 
-using namespace std;
-
 enum eOGLGMouseButton
 {
 	OGLG_LEFT,
@@ -197,12 +195,12 @@ public:
 struct GLG_settings
 {
 	GLG_settings();
-	string title;
-	string titleXaxis;
-	string titleYaxis;
+	std::string title;
+	std::string titleXaxis;
+	std::string titleYaxis;
 
-	string xUnits;
-	string yUnits;
+	std::string xUnits;
+	std::string yUnits;
 
 	bool drawGridX;
 	bool drawGridY;
@@ -303,7 +301,7 @@ public:
 	bool SaveConfig(char *file);
 	bool LoadConfig(char *file);
 
-	vector<cDataSerie*> series;
+	std::vector<cDataSerie*> series;
 
 	GLG_settings settings;
 	void SettingsChanged();
@@ -351,8 +349,8 @@ public:
 
 private:
     void UpdateInfoDisplay();
-    vector<string> info_msg;
-    vector<string> info_msg_toDisplay;
+    std::vector<std::string> info_msg;
+    std::vector<std::string> info_msg_toDisplay;
     static const unsigned int mMarkerColors[];
 
     dlgMarkers* mMarkersDlg;
@@ -388,7 +386,7 @@ private:
 
     GLFont *m_font;
 
-	vector<OGLMarker> markers;
+	std::vector<OGLMarker> markers;
 	int m_selectedMarker;
 	unsigned m_maxMarkers;
 	int clickedOnMarker(int X, int Y);

@@ -6,6 +6,8 @@
 
 #include "kiss_fft.h"
 
+using namespace std;
+
 LMScomms* gDataPort;
 
 StreamerLTE::StreamerLTE(LMScomms* dataPort)

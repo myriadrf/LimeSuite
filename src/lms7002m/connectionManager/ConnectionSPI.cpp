@@ -26,6 +26,8 @@
 #include <iostream>
 #include <sstream>
 
+using namespace std;
+
 const int ConnectionSPI::cSPI_BUF_SIZE = 128;
 const int ConnectionSPI::cSPI_SPEED_HZ = 2000000;
 
