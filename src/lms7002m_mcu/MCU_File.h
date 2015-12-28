@@ -3,8 +3,6 @@
 #include <vector>
 #include <iostream>
 
-using namespace std;
-
 #if !(defined(max)) && _MSC_VER
 	// VC fix
 	#define max __max

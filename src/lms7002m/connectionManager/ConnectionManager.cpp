@@ -18,6 +18,8 @@
 #include <iomanip>
 #include <iostream>
 
+using namespace std;
+
 /** @brief Creates connection interfaces
 */
 ConnectionManager::ConnectionManager() : activeControlPort(NULL)

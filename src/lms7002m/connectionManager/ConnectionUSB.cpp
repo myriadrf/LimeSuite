@@ -30,6 +30,8 @@
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
 
+using namespace std;
+
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
 ConnectionUSB::ConnectionUSB()

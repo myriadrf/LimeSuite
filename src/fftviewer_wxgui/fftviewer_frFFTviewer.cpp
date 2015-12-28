@@ -7,6 +7,8 @@
 #include "lmsComms.h"
 #include "OpenGLGraph.h"
 
+using namespace std;
+
 void fftviewer_frFFTviewer::Initialize(LMScomms* pDataPort)
 {
     assert(pDataPort != nullptr);

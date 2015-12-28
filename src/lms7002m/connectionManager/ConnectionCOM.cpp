@@ -20,6 +20,8 @@
 #include <stdio.h>
 #endif // LINUX
 
+using namespace std;
+
 const int COM_RETRY_INTERVAL = 20; //ms
 const int COM_TOTAL_TIMEOUT = 300; //ms
 

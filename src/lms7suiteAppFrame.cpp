@@ -36,6 +36,9 @@
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
 #include "pnlBoardControls.h"
+
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////////
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");

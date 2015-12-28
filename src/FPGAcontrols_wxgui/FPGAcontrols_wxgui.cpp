@@ -29,6 +29,8 @@
 #include <iostream>
 #include "LMS_StreamBoard.h"
 
+using namespace std;
+
 const long FPGAcontrols_wxgui::ID_BUTTON6 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON7 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON8 = wxNewId();

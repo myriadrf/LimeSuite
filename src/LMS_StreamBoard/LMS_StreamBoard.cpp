@@ -4,6 +4,8 @@
 #include <iostream>
 #include "kiss_fft.h"
 
+using namespace std;
+
 /** @brief Configures Stream board FPGA clocks
     @param serPort Communications port to send data
     @param fOutTx_MHz transmitter frequency in MHz
