@@ -117,3 +117,13 @@ OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, cons
 {
     return UNSUPPORTED;
 }
+
+OperationStatus IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    return UNSUPPORTED;
+}

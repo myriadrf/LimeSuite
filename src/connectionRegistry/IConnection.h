@@ -254,6 +254,20 @@ public:
     */
     virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index);
 
+    /**	@brief Writes GPIO values to device
+    @param source buffer for GPIO values LSB first, each bit sets GPIO state
+    @param bufLength buffer length
+    @return the operation success state
+    */
+    virtual OperationStatus GPIOWrite(const uint8_t *buffer, const size_t bufLength);
+
+    /**	@brief Reads GPIO values from device
+    @param destination buffer for GPIO values LSB first, each bit represent GPIO state
+    @param bufLength buffer length to read
+    @return the operation success state
+    */
+    virtual OperationStatus GPIORead(uint8_t *buffer, const size_t bufLength);
+
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
      * It remains here to enable compiling until its replaced

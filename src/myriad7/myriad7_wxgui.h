@@ -10,14 +10,14 @@ class wxComboBox;
 class wxStaticText;
 class wxFlexGridSizer;
 
-class LMScomms;
+class IConnection;
 
 class Myriad7_wxgui: public wxFrame
 {
 	public:
 
 		Myriad7_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-		void Initialize(LMScomms* serPort);
+		void Initialize(IConnection* serPort);
 		virtual ~Myriad7_wxgui();
 		virtual void UpdatePanel();
 
@@ -25,15 +25,15 @@ class Myriad7_wxgui: public wxFrame
 		wxComboBox* cmbGPIO2;
 		wxStaticText* StaticText1;
 		wxComboBox* cmbGPIO_1_0;
-		
+
         static const long ID_STATICTEXT1;
 		static const long ID_COMBOBOX1;
 		static const long ID_STATICTEXT2;
 		static const long ID_COMBOBOX2;
-		
-        void ParameterChangeHandler(wxCommandEvent& event);		
+
+        void ParameterChangeHandler(wxCommandEvent& event);
 	protected:
-        LMScomms* serPort;
+        IConnection* serPort;
 		DECLARE_EVENT_TABLE()
 };
 
