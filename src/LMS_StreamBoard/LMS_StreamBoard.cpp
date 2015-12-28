@@ -13,7 +13,7 @@ using namespace std;
     @param phaseShift_deg IQ phase shift in degrees
     @return 0-success, other-failure
 */
-LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
+LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const int devIndex, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
 {
     assert(serPort != nullptr);
     if (serPort == NULL)
@@ -88,7 +88,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
             value |= ((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3];
             spiBuffer.push_back(value);
         }
-        if(serPort->TransactSPI(mDeviceIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
+        if(serPort->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else
@@ -143,7 +143,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
             value |= ((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3];
             spiBuffer.push_back(value);
         }
-        if(serPort->TransactSPI(mDeviceIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
+        if(serPort->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else

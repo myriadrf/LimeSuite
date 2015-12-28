@@ -553,39 +553,3 @@ void StreamerNovena::TransmitPackets(StreamerNovena* pthis)
 {
 
 }
-
-
-/** @brief Helper function to write board spi regiters
-    @param address spi address
-    @param data register value
-*/
-LMS_StreamBoard::Status StreamerNovena::SPI_write(uint16_t address, uint16_t data)
-{
-    assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_WR;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(data & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
-}
-
-/** @brief Helper function to read board spi registers
-    @param address spi address
-    @return register value
-*/
-uint16_t StreamerNovena::SPI_read(uint16_t address)
-{
-    assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
-        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
-    else
-        return 0;
-}
