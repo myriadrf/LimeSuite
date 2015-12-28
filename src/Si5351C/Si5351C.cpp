@@ -5,7 +5,7 @@
 */
 
 #include "Si5351C.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 #include <math.h>
 #include <iomanip>
 #include <fstream>
@@ -296,48 +296,48 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_WR;
-    
-	if (!device)
+// TODO : get device index from outside
+    const int devIndex = 0;
+	if (!device && device->IsOpen() == false)
         return FAILED;
+
+    vector<uint8_t> outBuffer;
     //Disable outputs
-	pkt.outBuffer.push_back(3);
-    pkt.outBuffer.push_back(0xFF);
+	outBuffer.push_back(3);
+    outBuffer.push_back(0xFF);
 	//Power down all output drivers
 	for(int i=0; i<8; ++i)
     {
-        pkt.outBuffer.push_back(16 + i);
-        pkt.outBuffer.push_back(0x84);
+        outBuffer.push_back(16 + i);
+        outBuffer.push_back(0x84);
     }
 	//write new configuration
 	for (int i = 15; i <= 92; ++i)
 	{
-        pkt.outBuffer.push_back(i);
-        pkt.outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(i);
+        outBuffer.push_back(m_newConfiguration[i]);
 	}
 	for (int i = 149; i <= 170; ++i)
 	{
-        pkt.outBuffer.push_back(i);
-        pkt.outBuffer.push_back(m_newConfiguration[i]);
+        outBuffer.push_back(i);
+        outBuffer.push_back(m_newConfiguration[i]);
 	}
 	//apply soft reset
-    pkt.outBuffer.push_back(177);
-    pkt.outBuffer.push_back(0xAC);
+    outBuffer.push_back(177);
+    outBuffer.push_back(0xAC);
     //Enabe desired outputs
-    pkt.outBuffer.push_back(3);
-    pkt.outBuffer.push_back(m_newConfiguration[3]);
+    outBuffer.push_back(3);
+    outBuffer.push_back(m_newConfiguration[3]);
 
-	if( !device->IsOpen() )
-	{   
+    vector<uint32_t> spiBuffer;
+    //Si5351C uses 8 bits for address, 8 bits for data
+// TODO : checkup if this needs any extra info for writing
+    for(int i=0; i<outBuffer.size(); i+=2)
+        spiBuffer.push_back((uint32_t)outBuffer[i] << 8 | outBuffer[i+1]);
+    OperationStatus status;
+    status = device->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size());
+    if (status != OperationStatus::SUCCESS)
         return FAILED;
-	}        
-    LMScomms::TransferStatus status;
-    status = device->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        return FAILED;
-    }
     return SUCCESS;
 }
 
@@ -346,10 +346,10 @@ Si5351C::Status Si5351C::UploadConfiguration()
     @brief Sets connection manager to use for data transferring Si5351C
     @param mng connection manager for data transferring
 */
-void Si5351C::Initialize(LMScomms *mng)
+void Si5351C::Initialize(IConnection *mng)
 {
     assert(mng != nullptr);
-	device = mng;	
+	device = mng;
 }
 
 /**
@@ -634,7 +634,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
     FindVCO(CLK, PLL, 600000000, 900000000);
     stringstream ss;
     int addr;
-    m_newConfiguration[3] = 0;    
+    m_newConfiguration[3] = 0;
     for(int i=0; i<8; ++i)
     {
         m_newConfiguration[3] |= (!CLK[i].powered) << i; //enabled
@@ -698,7 +698,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
             }
             else if( CLK[i].outputFreqHz <= 160000000) // AVAILABLE ONLY ON 0-5 MULTISYNTHS
             {
-                Log("Si5351C - clock configuring for more than 150 MHz not implemented\n", LOG_ERROR); 
+                Log("Si5351C - clock configuring for more than 150 MHz not implemented\n", LOG_ERROR);
                 return FAILED;
             }
         }
@@ -837,37 +837,36 @@ void Si5351C::Reset()
 Si5351C::StatusBits Si5351C::GetStatusBits()
 {
     StatusBits stat;
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_RD;
-    pkt.outBuffer.push_back(0);
-    pkt.outBuffer.push_back(1);        
-    LMScomms::TransferStatus status;
-    status = device->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        return stat;
-    }
+    const uint32_t dataWr[2] = { 0x0000, 0x0100};
+    uint32_t dataRd[2];
 
-    stat.sys_init = (pkt.inBuffer[0] >> 7);
-    stat.lol_b = (pkt.inBuffer[0] >> 6) & 0x1;
-    stat.lol_a = (pkt.inBuffer[0] >> 5) & 0x1;
-    stat.los = (pkt.inBuffer[0] >> 4) & 0x1;
-    stat.sys_init_stky = (pkt.inBuffer[1] >> 7);
-    stat.lol_b_stky = (pkt.inBuffer[1] >> 6) & 0x1;
-    stat.lol_a_stky = (pkt.inBuffer[1] >> 5) & 0x1;
-    stat.los_stky = (pkt.inBuffer[1] >> 4) & 0x1;
+// TODO : get device index from outside
+    const int devIndex = 0;
+    OperationStatus status;
+    status = device->TransactSPI(devIndex, (uint32_t*)&dataWr, (uint32_t*)&dataRd, 2);
+    if (status != OperationStatus::SUCCESS)
+        return stat;
+    uint8_t reg0 = dataRd[0] & 0xFF;
+    uint8_t reg1 = dataRd[1] & 0xFF;
+    stat.sys_init = (reg0 >> 7);
+    stat.lol_b = (reg0 >> 6) & 0x1;
+    stat.lol_a = (reg0 >> 5) & 0x1;
+    stat.los = (reg0 >> 4) & 0x1;
+    stat.sys_init_stky = (reg1 >> 7);
+    stat.lol_b_stky = (reg1 >> 6) & 0x1;
+    stat.lol_a_stky = (reg1 >> 5) & 0x1;
+    stat.los_stky = (reg1 >> 4) & 0x1;
     return stat;
 }
 
 Si5351C::Status Si5351C::ClearStatus()
-{    
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_SI5351_WR;
-    pkt.outBuffer.push_back(1);
-    pkt.outBuffer.push_back(0x0);    
-    LMScomms::TransferStatus status;
-    status = device->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)    
+{
+// TODO : get device index from outside
+    const int devIndex = 0;
+    const uint32_t dataWr = 0x0100;
+    OperationStatus status;
+    status = device->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    if (status != OperationStatus::SUCCESS)
         return FAILED;
     return SUCCESS;
 }
