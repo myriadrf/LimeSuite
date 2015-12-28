@@ -1,5 +1,5 @@
 #include "lms7002m_novena_wxgui.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 
 LMS7002M_Novena_wxgui::LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
     :mSerPort(nullptr)
@@ -63,20 +63,20 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_RD;
-    unsigned int address = 0x0806;
-    pkt.outBuffer.push_back(address >> 8);
-    pkt.outBuffer.push_back(address & 0xFF);
-    if (mSerPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS)
+// TODO : get device index from outside
+    const int devIndex = 0;
+    uint32_t dataWr = (1<<31) | (0x0806 << 16);
+    uint32_t dataRd = 0;
+    OperationStatus status;
+    status = mSerPort->TransactSPI(devIndex, &dataWr, &dataRd, 1);
+
+    if (status != OperationStatus::SUCCESS)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"), wxICON_WARNING | wxOK);
 
-    unsigned int value = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+    unsigned int value = dataRd & 0xFFFF;
     lms_reset->SetValue((value >> 5)&1);
     lms_rxen->SetValue((value >> 4)&1);
     lms_txen->SetValue((value >> 3)&1);
@@ -85,7 +85,7 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     lms_gpio0->SetValue((value >> 0)&1);
 }
 
-void LMS7002M_Novena_wxgui::Initialize(LMScomms* serPort)
+void LMS7002M_Novena_wxgui::Initialize(IConnection* serPort)
 {
     assert(serPort != nullptr);
     mSerPort = serPort;
@@ -115,11 +115,8 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_WR;
-    unsigned int address = 0x0806;
-    pkt.outBuffer.push_back(address >> 8);
-    pkt.outBuffer.push_back(address & 0xFF);
+// TODO : get device index from outside
+    const int devIndex = 0;
     unsigned int value = 0;
     value |= lms_reset->GetValue() << 5;
     value |= lms_rxen->GetValue() << 4;
@@ -127,15 +124,14 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     value |= lms_gpio2->GetValue() << 2;
     value |= lms_gpio1->GetValue() << 1;
     value |= lms_gpio0->GetValue() << 0;
-    pkt.outBuffer.push_back(value >> 8);
-    pkt.outBuffer.push_back(value & 0xFF);
-    if (mSerPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS)
+    uint32_t dataWr = (1 << 31) | (0x0806 << 16) | (value & 0xFFFF);
+    OperationStatus status;
+    status = mSerPort->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    if (status != OperationStatus::SUCCESS)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"), wxICON_WARNING | wxOK);
 }
 
 void LMS7002M_Novena_wxgui::OnReadAll(wxCommandEvent& event)

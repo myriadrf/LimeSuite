@@ -9,13 +9,13 @@
 
 #include <wx/wx.h>
 
-class LMScomms;
+class IConnection;
 
 class LMS7002M_Novena_wxgui : public wxFrame
 {
 public:
     LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-    void Initialize(LMScomms* serPort);
+    void Initialize(IConnection* serPort);
     virtual ~LMS7002M_Novena_wxgui();
     virtual void UpdatePanel();
 
@@ -24,7 +24,7 @@ public:
 protected:
     void ParameterChangeHandler(wxCommandEvent& event);
     void OnReadAll(wxCommandEvent& event);
-    LMScomms* mSerPort;
+    IConnection* mSerPort;
 
 };
 
