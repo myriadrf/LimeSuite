@@ -221,7 +221,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
                 char varname[64];
                 int mode = Get_SPI_Reg_bits(LMS7param(MODE_RX));
                 if (mode == 0) //FCW
-                {                   
+                {
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
@@ -789,7 +789,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
             canDeliverFrequency = true;
     }
     if (abs(tuneScore[0]) < abs(tuneScore[1]))
-    {   
+    {
         if (abs(tuneScore[0]) < abs(tuneScore[2]))
             sel_vco = 0;
         else
@@ -1029,7 +1029,7 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
             coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
         status = LIBLMS7_SUCCESS;
     }
-    
+
     return status;
 }
 
@@ -1081,9 +1081,9 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
     std::vector<uint32_t> data(cnt);
     for (size_t i = 0; i < cnt; ++i)
     {
-        data[i] = (uint32_t(spiAddr[i]) << 16) | spiData[i];
+        data[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
 
-        if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1)
+        if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1 && spiAddr[i] != LMS7param(MAC).address)
             mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
         else
             mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
@@ -1122,7 +1122,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
     std::vector<uint32_t> dataRd(cnt);
     for (size_t i = 0; i < cnt; ++i)
     {
-        dataWr[i] = (uint32_t(spiAddr[i]) << 16) | (1 << 31);
+        dataWr[i] = (uint32_t(spiAddr[i]) << 16);
     }
 
     //TODO index should be stashed for this connection and specific RFIC
@@ -1134,6 +1134,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
 
     for (size_t i = 0; i < cnt; ++i)
     {
+        spiData[i] = dataRd[i] & 0xffff;
         if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1)
             mRegistersMap->SetValue(1, spiAddr[i], dataRd[i] & 0xffff);
         else
