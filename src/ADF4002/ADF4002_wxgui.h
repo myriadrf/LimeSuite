@@ -22,14 +22,14 @@ class wxStaticBoxSizer;
 //*)
 
 class ADF4002;
-class LMScomms;
+class IConnection;
 
 class ADF4002_wxgui: public wxFrame
 {
 public:
 
     ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title=_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=wxDEFAULT_FRAME_STYLE, wxString idname="");
-    void Initialize(ADF4002* pModule, LMScomms* pSerPort);
+    void Initialize(ADF4002* pModule, IConnection* pSerPort);
     virtual ~ADF4002_wxgui();
 
     void SetGuiDefaults();
@@ -144,7 +144,7 @@ protected:
 
 private:
     ADF4002* m_pModule;
-    LMScomms* serPort;
+    IConnection* serPort;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);

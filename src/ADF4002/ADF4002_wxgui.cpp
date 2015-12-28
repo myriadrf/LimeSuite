@@ -6,7 +6,7 @@
 
 #include "ADF4002.h"
 #include "ADF4002_wxgui.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 
 #include <wx/msgdlg.h>
 #include <wx/sizer.h>
@@ -414,7 +414,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     //*)
 }
 
-void ADF4002_wxgui::Initialize(ADF4002* pModule, LMScomms* pSerPort)
+void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
 {
     assert(pSerPort != nullptr);
     m_pModule = pModule;
@@ -519,16 +519,17 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
     unsigned char data[12];
     m_pModule->GetConfig(data);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.outBuffer.resize(12, 0);
-    memcpy(&pkt.outBuffer[0], data, 12);    
-    LMScomms::TransferStatus status;
-    status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
+    vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    OperationStatus status;
+// TODO : get device index from outside
+// ADF4002 needs to be writen 4 values of 24 bits
+    const int devIndex = 0;
+    status = serPort->TransactSPI(devIndex, dataWr.data(), nullptr, 4);
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
-    }
 }
 
 void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
@@ -583,14 +584,15 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
     unsigned char data[12];
     m_pModule->GetConfig(data);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.outBuffer.resize(12, 0);
-    memcpy(&pkt.outBuffer[0], data, 12);    
-    LMScomms::TransferStatus status;
-    status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
+    vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    OperationStatus status;
+// TODO : get device index from outside
+// ADF4002 needs to be writen 4 values of 24 bits
+    const int devIndex = 0;
+    status = serPort->TransactSPI(devIndex, dataWr.data(), nullptr, 4);
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
-    }
 }
