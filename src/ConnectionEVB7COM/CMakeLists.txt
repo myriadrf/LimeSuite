@@ -8,7 +8,7 @@
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_EVB7COM "Enable EVB + COM" ON "TRUE" OFF)
-add_feature_info(EVB7COM ENABLE_EVB7COM "EVB + COM Connection support")
+add_feature_info(ConnectionEVB7COM ENABLE_EVB7COM "EVB + COM Connection support")
 if (NOT ENABLE_EVB7COM)
     return()
 endif()
