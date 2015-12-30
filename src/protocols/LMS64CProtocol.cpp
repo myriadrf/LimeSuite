@@ -45,7 +45,7 @@ OperationStatus LMS64CProtocol::DeviceReset(void)
     return convertStatus(status, pkt);
 }
 
-OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+OperationStatus LMS64CProtocol::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     //! TODO
     //! For multi-LMS7002M, RFIC # could be encoded with the slave number
@@ -54,14 +54,14 @@ OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *wri
     if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
 
     //perform spi writes when there is no read data
-    if (readData == nullptr) switch(index)
+    if (readData == nullptr) switch(addr)
     {
     case LMS7002M_SPI_INDEX: return this->WriteLMS7002MSPI(writeData, size);
     case ADF4002_SPI_INDEX: return this->WriteADF4002SPI(writeData, size);
     }
 
     //otherwise perform reads into the provided buffer
-    if (readData != nullptr) switch(index)
+    if (readData != nullptr) switch(addr)
     {
     case LMS7002M_SPI_INDEX: return this->ReadLMS7002MSPI(writeData, readData, size);
     case ADF4002_SPI_INDEX: return this->ReadADF4002SPI(writeData, readData, size);
@@ -206,9 +206,9 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
     devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
     devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
-    devInfo.spiIndexRFICs.push_back(LMS7002M_SPI_INDEX);
-    devInfo.i2cAddressSi5351 = Si5351_I2C_ADDR;
-    devInfo.spiIndexADF4002 = ADF4002_SPI_INDEX;
+    devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
+    devInfo.addrSi5351 = Si5351_I2C_ADDR;
+    devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     return devInfo;
 }
 

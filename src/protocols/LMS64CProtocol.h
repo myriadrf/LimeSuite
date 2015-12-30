@@ -37,7 +37,7 @@ public:
     OperationStatus DeviceReset(void);
 
     //! TransactSPI implemented by LMS64C
-    OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    OperationStatus TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     //! WriteI2C implemented by LMS64C
     OperationStatus WriteI2C(const int addr, const std::string &data);

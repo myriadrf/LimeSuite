@@ -9,7 +9,6 @@
 
 #include <string>
 #include <vector>
-//#include <mutex>
 #include <cstring> //memset
 #include <functional>
 
@@ -25,9 +24,9 @@ enum OperationStatus
  * Information about the set of available hardware on a device.
  * This includes available ICs, streamers, and version info.
  *
- * This structure provides SPI slave indexes for one or more RFICs
- * and slave index number or I2C addresses for commonly supported ICs.
- * A -1 for a slave index number indicates that it is not available.
+ * This structure provides SPI slave addresses for one or more RFICs
+ * and slave addresses or I2C addresses for commonly supported ICs.
+ * A -1 for an address number indicates that it is not available.
  */
 struct DeviceInfo
 {
@@ -51,22 +50,22 @@ struct DeviceInfo
     std::string protocolVersion;
 
     /*!
-     * The SPI index numbers used to access each lime RFIC.
+     * The SPI address numbers used to access each LMS7002M.
      * This index will be used in the spi access functions.
      */
-    std::vector<int> spiIndexRFICs;
+    std::vector<int> addrsLMS7002M;
 
     /*!
      * The I2C address number used to access the Si5351
      * found on some development boards. -1 when not present.
      */
-    int i2cAddressSi5351;
+    int addrSi5351;
 
     /*!
-     * The SPI index number used to access the ADF4002
+     * The SPI address number used to access the ADF4002
      * found on some development boards. -1 when not present.
      */
-    int spiIndexADF4002;
+    int addrADF4002;
 };
 
 /*!
@@ -138,13 +137,13 @@ public:
      * The readData parameter may be NULL to indicate a write-only operation,
      * the underlying implementation may be able to optimize out the readback.
      *
-     * @param index the SPI device index
+     * @param addr the SPI device address
      * @param writeData SPI bits to write out
      * @param [out] readData stores readback data
      * @param size the number of SPI transactions
      * @return the transaction success state
      */
-    virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    virtual OperationStatus TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     /*!
      * Write to an available I2C slave.
@@ -265,12 +264,8 @@ public:
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
 
 protected:
-    //unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
-    //int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
-    //eConnectionType m_connectionType;
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     bool mSystemBigEndian;
-    //std::mutex mControlPortLock;
 };
 
 #endif

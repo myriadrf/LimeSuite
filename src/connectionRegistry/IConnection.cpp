@@ -8,8 +8,8 @@
 #include <cstring> //memcpy
 
 DeviceInfo::DeviceInfo(void):
-    i2cAddressSi5351(-1),
-    spiIndexADF4002(-1)
+    addrSi5351(-1),
+    addrADF4002(-1)
 {
     return;
 }
@@ -21,8 +21,7 @@ StreamMetadata::StreamMetadata(void):
     return;
 }
 
-IConnection::IConnection(void)//:
-    //m_connectionType(CONNECTION_UNDEFINED)
+IConnection::IConnection(void)
 {
     callback_logData = nullptr;
     unsigned short test = 0x1234;
@@ -46,7 +45,7 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
-    info.spiIndexRFICs.push_back(0);
+    info.addrsLMS7002M.push_back(0);
     return info;
 }
 
@@ -55,7 +54,7 @@ OperationStatus IConnection::DeviceReset(void)
     return UNSUPPORTED;
 }
 
-OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+OperationStatus IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     return UNSUPPORTED;
 }
