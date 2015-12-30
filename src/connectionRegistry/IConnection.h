@@ -230,6 +230,28 @@ public:
      */
     virtual int WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
+
+
+    /** @brief Uploads program to selected device
+        @param buffer binary program data
+        @param length buffer length
+        @param programmingMode to RAM, to FLASH, to EEPROM, etc..
+        @param index target device number
+        @return the operation success state
+
+        Can be used to program MCU, FPGA, write external on board memory.
+        This could be a quite long operation, need callback to get progress or terminate early
+    */
+    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index);
+
+    /**	@brief Reads current program from selected device
+        @param destination buffer for binary program data
+        @param length buffer length to read
+        @param index target device number
+        @return the operation success state
+    */
+    virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index);
+
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
      * It remains here to enable compiling until its replaced
