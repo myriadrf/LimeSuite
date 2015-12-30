@@ -1096,7 +1096,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
         return LIBLMS7_NOT_CONNECTED;
 
     //TODO index should be stashed for this connection and specific RFIC
-    auto index = controlPort->ListRFICs()[0].spiIndexRFIC;
+    auto index = controlPort->GetDeviceInfo().spiIndexRFICs[0];
     auto status = controlPort->TransactSPI(index, data.data(), nullptr, cnt);
 
     if (status == OperationStatus::SUCCESS)
@@ -1126,7 +1126,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
     }
 
     //TODO index should be stashed for this connection and specific RFIC
-    auto index = controlPort->ListRFICs()[0].spiIndexRFIC;
+    auto index = controlPort->GetDeviceInfo().spiIndexRFICs[0];
     auto status = controlPort->TransactSPI(index, dataWr.data(), dataRd.data(), cnt);
 
     if (status != OperationStatus::SUCCESS)

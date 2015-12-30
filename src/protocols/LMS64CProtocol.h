@@ -39,6 +39,12 @@ public:
     //! TransactSPI implemented by LMS64C
     OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
+    //! WriteI2C implemented by LMS64C
+    OperationStatus WriteI2C(const int addr, const std::string &data);
+
+    //! ReadI2C implemented by LMS64C
+    OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
+
     /// Supported connection types.
     enum eConnectionType
     {
@@ -83,8 +89,8 @@ public:
 
         eCMD_LMS cmd;
         eCMD_STATUS status;
-        vector<unsigned char> outBuffer;
-        vector<unsigned char> inBuffer;
+        std::vector<unsigned char> outBuffer;
+        std::vector<unsigned char> inBuffer;
     };
 
     struct ProtocolDIGIC
@@ -146,6 +152,13 @@ public:
     virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
 
 private:
+
+    OperationStatus WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
+    OperationStatus ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
+    OperationStatus WriteSi5351I2C(const std::string &data);
+    OperationStatus ReadSi5351I2C(const size_t numBytes, std::string &data);
+    OperationStatus WriteADF4002SPI(const uint32_t *writeData, const size_t size);
+    OperationStatus ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);

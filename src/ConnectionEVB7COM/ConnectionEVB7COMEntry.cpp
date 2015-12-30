@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>
 
+using namespace std;
+
 static const int comBaudrate = 9600;
 
 //! make a static-initialized entry in the registry

@@ -7,16 +7,9 @@
 #include "IConnection.h"
 #include <cstring> //memcpy
 
-DeviceInfo::DeviceInfo(void)
-{
-    return;
-}
-
-RFICInfo::RFICInfo(void):
-    spiIndexRFIC(-1),
-    spiIndexSi5351(-1),
-    rxChannel(-1),
-    txChannel(-1)
+DeviceInfo::DeviceInfo(void):
+    i2cAddressSi5351(-1),
+    spiIndexADF4002(-1)
 {
     return;
 }
@@ -53,12 +46,8 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
+    info.spiIndexRFICs.push_back(0);
     return info;
-}
-
-std::vector<RFICInfo> IConnection::ListRFICs(void)
-{
-    return std::vector<RFICInfo>(1);
 }
 
 OperationStatus IConnection::DeviceReset(void)
@@ -67,6 +56,16 @@ OperationStatus IConnection::DeviceReset(void)
 }
 
 OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::WriteI2C(const int addr, const std::string &data)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
     return UNSUPPORTED;
 }
