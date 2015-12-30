@@ -12,8 +12,8 @@ dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )
 {
 	lmsOpenedIndex = -1;
 	streamOpenedIndex = -1;
-	lms7Conn = nullptr;
-	streamBrdConn = nullptr;
+	lms7Manager = nullptr;
+	streamBrdManager = nullptr;
 }
 
 void dlgConnectionSettings::SetConnectionManagers(LMScomms *lms7ctr, LMScomms *streamBrdctr)
@@ -43,7 +43,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
     if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
     {
-        lms7Conn = ConnectionRegistry::makeConnection(cachedHandles.at(mListLMS7ports->GetSelection()));
+        auto lms7Conn = ConnectionRegistry::makeConnection(cachedHandles.at(mListLMS7ports->GetSelection()));
         if (lms7Conn != nullptr and not lms7Conn->IsOpen())
         {
             ConnectionRegistry::freeConnection(lms7Conn);
@@ -52,7 +52,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
         }
         else
         {
-            lms7Manager->setConnection(lms7Conn);
+            lms7Manager->SetConnection(lms7Conn);
             wxCommandEvent evt;
             evt.SetInt(mListLMS7ports->GetSelection());
             evt.SetEventType(CONTROL_PORT_CONNECTED);
@@ -64,7 +64,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 
     if(mListStreamports->GetSelection() != wxNOT_FOUND)
     {
-        streamBrdConn = ConnectionRegistry::makeConnection(cachedHandles.at(mListStreamports->GetSelection()));
+        auto streamBrdConn = ConnectionRegistry::makeConnection(cachedHandles.at(mListStreamports->GetSelection()));
         if (streamBrdConn != nullptr and not streamBrdConn->IsOpen())
         {
             ConnectionRegistry::freeConnection(streamBrdConn);
@@ -73,7 +73,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
         }
         else
         {
-            streamBrdManager->setConnection(streamBrdConn);
+            streamBrdManager->SetConnection(streamBrdConn);
             wxCommandEvent evt;
             evt.SetInt(mListStreamports->GetSelection());
             evt.SetEventType(DATA_PORT_CONNECTED);
@@ -92,9 +92,10 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
+    auto lms7Conn = lms7Manager->GetConnection();
     if (lms7Conn != nullptr)
     {
-        lms7Manager->setConnection(nullptr);
+        lms7Manager->SetConnection(nullptr);
         ConnectionRegistry::freeConnection(lms7Conn);
         lms7Conn = nullptr;
         wxCommandEvent evt;
@@ -104,9 +105,10 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
     }
     mListLMS7ports->SetSelection(-1);
 
+    auto streamBrdConn = streamBrdManager->GetConnection();
     if (streamBrdConn != nullptr)
     {
-        streamBrdManager->setConnection(nullptr);
+        streamBrdManager->SetConnection(nullptr);
         ConnectionRegistry::freeConnection(streamBrdConn);
         streamBrdConn = nullptr;
         wxCommandEvent evt;
