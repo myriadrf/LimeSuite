@@ -115,7 +115,6 @@ private:
 
 	USBTransferContext contexts[USB_MAX_CONTEXTS];
 	USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
-	void Initialize();
 
 	bool isConnected;
 

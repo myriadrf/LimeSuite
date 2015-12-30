@@ -35,9 +35,10 @@ public:
     std::string module;
 
     /*!
-     * The connection type. Example: SPI, COM, USB.
+     * The connection media type.
+     * Example: SPI, COM, USB.
      */
-    std::string type;
+    std::string media;
 
     /*!
      * The name of the device. Example: STREAM, NOVENA.

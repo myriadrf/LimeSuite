@@ -44,7 +44,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
         for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
         {
             ConnectionHandle handle;
-            handle.type = "USB";
+            handle.media = "USB";
             handle.name = ConnectionSTREAM(USBDevicePrimary, i).DeviceName();
             handle.index = i;
             handles.push_back(handle);
@@ -69,7 +69,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                 if(pid == 34323)
                 {
                     ConnectionHandle handle;
-                    handle.type = "USB";
+                    handle.media = "USB";
                     handle.name = "DigiGreen";
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
                     handles.push_back(handle);
@@ -108,7 +108,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     libusb_close(tempDev_handle);
 
                     ConnectionHandle handle;
-                    handle.type = "USB";
+                    handle.media = "USB";
                     handle.name = fullName;
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
                     handles.push_back(handle);

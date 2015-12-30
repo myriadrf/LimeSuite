@@ -32,7 +32,7 @@ std::vector<ConnectionHandle> ConnectionEVB7COMEntry::enumerate(const Connection
     for (const auto &comName : availableComms)
     {
         ConnectionHandle handle;
-        handle.type = "COM";
+        handle.media = "COM";
         handle.name = "EVB7";
         handle.addr = comName;
         result.push_back(handle);

@@ -37,7 +37,7 @@ std::string ConnectionHandle::serialize(void) const
     std::string out;
 
     if (not module.empty()) out += ", module="+module;
-    if (not type.empty()) out += ", type="+type;
+    if (not media.empty()) out += ", media="+media;
     if (not name.empty()) out += ", name="+name;
     if (not addr.empty()) out += ", addr="+addr;
     if (not serial.empty()) out += ", serial="+serial;

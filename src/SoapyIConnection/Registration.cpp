@@ -13,10 +13,9 @@ static ConnectionHandle argsToHandle(const SoapySDR::Kwargs &args)
 
     //load handle with key/value provided options
     if (args.count("module") != 0) handle.module = args.at("module");
-    if (args.count("type") != 0) handle.type = args.at("type");
+    if (args.count("media") != 0) handle.media = args.at("media");
     if (args.count("name") != 0) handle.name = args.at("name");
     if (args.count("addr") != 0) handle.addr = args.at("addr");
-    if (args.count("name") != 0) handle.type = args.at("name");
     if (args.count("serial") != 0) handle.serial = args.at("serial");
     if (args.count("index") != 0) handle.index = std::stoi(args.at("index"));
 
@@ -29,7 +28,7 @@ static SoapySDR::Kwargs handleToArgs(const ConnectionHandle &handle)
 
     //convert the handle into key/value pairs
     if (not handle.module.empty()) args["module"] = handle.module;
-    if (not handle.type.empty()) args["type"] = handle.type;
+    if (not handle.media.empty()) args["media"] = handle.media;
     if (not handle.name.empty()) args["name"] = handle.name;
     if (not handle.addr.empty()) args["addr"] = handle.addr;
     if (not handle.serial.empty()) args["serial"] = handle.serial;
