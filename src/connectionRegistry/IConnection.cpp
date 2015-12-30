@@ -115,3 +115,29 @@ OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, cons
 {
     return UNSUPPORTED;
 }
+
+IConnectionProxy::IConnectionProxy(void):
+    _internal(nullptr)
+{
+    return;
+}
+
+void IConnectionProxy::reset(void)
+{
+    _internal = nullptr;
+}
+
+void IConnectionProxy::reset(IConnection *conn)
+{
+    _internal = conn;
+}
+
+IConnection *IConnectionProxy::get(void) const
+{
+    return _internal;
+}
+
+IConnectionProxy::operator bool(void) const
+{
+    return _internal != nullptr;
+}

@@ -290,5 +290,42 @@ protected:
     bool mSystemBigEndian;
 };
 
+/*!
+ * The IConnectionProxy contains an internal IConnection
+ * that can be swapped out at runtime via reset().
+ * The IConnectionProxy does not own the connection.
+ */
+class IConnectionProxy
+{
+public:
+
+    IConnectionProxy(void);
+
+    //! Set the internal connection to null
+    void reset(void);
+
+    //! Set the internal connection to conn
+    void reset(IConnection *conn);
+
+    //! Get the internal connection
+    IConnection *get(void) const;
+
+    //! True when the connection is not null
+    operator bool(void) const;
+
+    IConnection* operator->(void) const
+    {
+        return _internal;
+    }
+
+    IConnection* operator->(void)
+    {
+        return _internal;
+    }
+
+private:
+    IConnection *_internal;
+};
+
 #endif
 
