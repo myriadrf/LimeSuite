@@ -1,5 +1,5 @@
 #include "dlgDeviceInfo.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 
 dlgDeviceInfo::dlgDeviceInfo(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
@@ -9,14 +9,14 @@ dlgDeviceInfo_view( parent, id, title, pos, size, styles)
     dataPort = nullptr;
 }
 
-void dlgDeviceInfo::Initialize(LMScomms* pCtrPort, LMScomms* pDataPort)
+void dlgDeviceInfo::Initialize(IConnection* pCtrPort, IConnection* pDataPort)
 {
     ctrPort = pCtrPort;
     dataPort = pDataPort;
 }
 
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
-{    
+{
     if (ctrPort != nullptr && ctrPort->IsOpen() == true)
     {
         auto info = ctrPort->GetDeviceInfo();
