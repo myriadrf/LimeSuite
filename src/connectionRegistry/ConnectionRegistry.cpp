@@ -79,13 +79,17 @@ std::vector<ConnectionHandle> ConnectionRegistry::findConnections(const Connecti
     __loadAllConnections();
     std::lock_guard<std::mutex> lock(registryMutex());
 
-    std::vector<ConnectionHandle> result;
+    std::vector<ConnectionHandle> results;
     for (const auto &entry : registryEntries)
     {
-        const auto r = entry.second->enumerate(hint);
-        result.insert(result.end(), r.begin(), r.end());
+        for (auto handle : entry.second->enumerate(hint))
+        {
+            //insert the module name, which can be filtered on in makeConnection()
+            handle.module = entry.first;
+            results.push_back(handle);
+        }
     }
-    return result;
+    return results;
 }
 
 IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
@@ -97,6 +101,9 @@ IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
     //only identifiers from the discovery function itself is used in the factory
     for (const auto &entry : registryEntries)
     {
+        //filter by module name when specified
+        if (not handle.module.empty() and handle.module != entry.first) continue;
+
         const auto r = entry.second->enumerate(handle);
         if (r.empty()) continue;
 
@@ -152,7 +159,8 @@ void ConnectionRegistry::freeConnection(IConnection *conn)
 /*******************************************************************
  * Entry implementation
  ******************************************************************/
-ConnectionRegistryEntry::ConnectionRegistryEntry(const std::string &name)
+ConnectionRegistryEntry::ConnectionRegistryEntry(const std::string &name):
+    _name(name)
 {
     std::lock_guard<std::mutex> lock(registryMutex());
     registryEntries[_name] = this;
