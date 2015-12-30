@@ -4,7 +4,8 @@
     @brief Command line test app
 */
 
-#include "ConnectionRegistry.h"
+#include <ConnectionRegistry.h>
+#include <IConnection.h>
 #include <iostream>
 #include <cstdlib>
 
@@ -21,6 +22,9 @@ int main(void)
         std::cout << "  Make connection... " << std::flush;
         auto conn = ConnectionRegistry::makeConnection(handle);
         std::cout << "OK" << std::endl;
+
+        std::cout << "  Conn? " << size_t(conn) << std::endl;
+        std::cout << "  IsOpen? " << conn->IsOpen() << std::endl;
 
         std::cout << "  Free connection... " << std::flush;
         ConnectionRegistry::freeConnection(conn);

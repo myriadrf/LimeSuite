@@ -133,6 +133,6 @@ IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
     const auto splitPos = pidvid.find(":");
     const auto pid = std::stoi(pidvid.substr(0, splitPos));
     const auto vid = std::stoi(pidvid.substr(splitPos+1));
-    return new ConnectionSTREAM(ctx, handle.index, pid, vid);
+    return new ConnectionSTREAM(ctx, handle.index, vid, pid);
 #endif
 }

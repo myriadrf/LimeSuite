@@ -50,6 +50,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     devs = 0;
     ctx = (libusb_context *)arg;
 #endif
+    this->Open(index, vid, pid);
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.

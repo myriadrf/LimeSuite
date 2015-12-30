@@ -79,7 +79,7 @@ public:
 class ConnectionSTREAM : public LMS64CProtocol
 {
 public:
-    ConnectionSTREAM(void *ctx, const unsigned index, const int pid=-1, const int vid=-1);
+    ConnectionSTREAM(void *ctx, const unsigned index, const int vid=-1, const int pid=-1);
 
     ~ConnectionSTREAM(void);
 
