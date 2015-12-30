@@ -166,8 +166,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     novenaGui = nullptr;
     boardControlsGui = nullptr;
 
-    //lms7controlPort = new LMScomms();
-    //streamBoardPort = new LMScomms();
+    lms7controlPort = nullptr;
+    streamBoardPort = nullptr;
     lmsControl = new LMS7002M(lms7controlPort);
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -423,7 +423,8 @@ void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
     else
     {
         rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        rfspark->Initialize(lms7controlPort);
+// TODO : initialize with IConnection, currently used only by RFSpark board
+//        rfspark->Initialize(lms7controlPort);
         rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
         rfspark->Show();
     }
@@ -441,7 +442,8 @@ void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
     else
     {
         hpm7 = new HPM7_wxgui(this, wxNewId(), _("HPM7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        hpm7->Initialize(lms7controlPort);
+// TODO : initialize with IConnection, currently used only for HPM7 expansion board
+//        hpm7->Initialize(lms7controlPort);
         hpm7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnHPM7Close), NULL, this);
         hpm7->Show();
     }
@@ -579,7 +581,8 @@ void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
     else
     {
         boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-        boardControlsGui->Initialize(lms7controlPort);
+// TODO : initialize with IConnection, currently used only by SoDeRa board
+        //boardControlsGui->Initialize(lms7controlPort);
         boardControlsGui->UpdatePanel();
         boardControlsGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnBoardControlsClose), NULL, this);
         boardControlsGui->Show();
