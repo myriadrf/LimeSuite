@@ -3,12 +3,12 @@
 
 #include "LMS_StreamBoard.h"
 
-class LMScomms;
+class IConnection;
 
 class StreamerNovena : public LMS_StreamBoard
 {
 public:
-    StreamerNovena(LMScomms* dataPort);
+    StreamerNovena(IConnection* dataPort);
     virtual ~StreamerNovena();
 
     virtual LMS_StreamBoard::Status StartReceiving(unsigned int fftSize);
@@ -17,8 +17,6 @@ public:
     virtual LMS_StreamBoard::Status StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount);
     virtual LMS_StreamBoard::Status StopCyclicTransmitting();
 
-    LMS_StreamBoard::Status SPI_write(uint16_t address, uint16_t data);
-    uint16_t SPI_read(uint16_t address);
 protected:
     static void ReceivePackets(StreamerNovena* pthis);
     static void TransmitPackets(StreamerNovena* pthis);

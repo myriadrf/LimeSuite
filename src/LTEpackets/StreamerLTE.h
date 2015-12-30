@@ -12,7 +12,7 @@
 #include <atomic>
 #include "dataTypes.h"
 
-class LMScomms;
+class IConnection;
 class LMS_SamplesFIFO;
 
 class StreamerLTE
@@ -70,17 +70,17 @@ public:
         uint32_t txAproxSampleRate;
     };
 
-    StreamerLTE(LMScomms* dataPort);
+    StreamerLTE(IConnection* dataPort);
     virtual ~StreamerLTE();
 
     virtual STATUS StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format);
     virtual STATUS StopStreaming();
 
     DataToGUI GetIncomingData();
-    Stats GetStats();    
+    Stats GetStats();
 protected:
-    static STATUS SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data);
-    static uint16_t SPI_read(LMScomms* dataPort, uint16_t address);
+    static STATUS SPI_write(IConnection* dataPort, uint16_t address, uint16_t data);
+    static uint16_t SPI_read(IConnection* dataPort, uint16_t address);
 
     std::mutex mLockIncomingPacket;
     DataToGUI mIncomingPacket;
@@ -88,11 +88,11 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
-    static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
 
     std::atomic_bool mStreamRunning;
     std::atomic_bool stopRx;
@@ -102,7 +102,7 @@ protected:
     std::thread threadRx;
     std::thread threadProcessing;
     std::thread threadTx;
-    LMScomms* mDataPort;
+    IConnection* mDataPort;
 
     std::atomic<int> mRxDataRate;
     std::atomic<int> mTxDataRate;

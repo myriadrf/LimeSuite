@@ -1,5 +1,5 @@
 #include "StreamerLTE.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 #include <fstream>
 #include <iostream>
 #include "fifo.h"
@@ -8,9 +8,9 @@
 
 using namespace std;
 
-LMScomms* gDataPort;
+IConnection* gDataPort;
 
-StreamerLTE::StreamerLTE(LMScomms* dataPort)
+StreamerLTE::StreamerLTE(IConnection* dataPort)
 {
     mDataPort = dataPort;
     mRxFIFO = new LMS_SamplesFIFO(1, 1);
@@ -57,7 +57,7 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
@@ -190,7 +190,7 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
@@ -325,6 +325,17 @@ void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO
     }
 }
 
+static void ResetUSBFIFO(IConnection* port)
+{
+// TODO : USB FIFO reset command for IConnection
+//    LMScomms::GenericPacket ctrPkt;
+//    ctrPkt.cmd = CMD_USB_FIFO_RST;
+//    ctrPkt.outBuffer.push_back(0x01);
+//    pthis->mDataPort->TransferPacket(ctrPkt);
+//    ctrPkt.outBuffer[0] = 0x00;
+//    pthis->mDataPort->TransferPacket(ctrPkt);
+}
+
 /** @brief Function dedicated for processing incomming data and generating outputs for transmitting
 */
 void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format)
@@ -369,12 +380,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     }
 
     //USB FIFO reset
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    pthis->mDataPort->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    pthis->mDataPort->TransferPacket(ctrPkt);
+    ResetUSBFIFO(pthis->mDataPort);
 
     //switch on Rx
     regVal = SPI_read(pthis->mDataPort, 0x0005);
@@ -468,7 +474,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 16;
@@ -515,7 +521,7 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     uint64_t batchSamplesFilled = 0;
 
     while (terminate->load() != true)
-    {   
+    {
         if (bufferUsed[bi])
         {
             if (dataPort->WaitForSending(handles[bi], 1000) == false)
@@ -612,7 +618,7 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
 {
     const int channelsCount = 1;
     const int packetsToBatch = 16;
@@ -773,28 +779,27 @@ StreamerLTE::Stats StreamerLTE::GetStats()
     return data;
 }
 
-StreamerLTE::STATUS StreamerLTE::SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data)
+StreamerLTE::STATUS StreamerLTE::SPI_write(IConnection* dataPort, uint16_t address, uint16_t data)
 {
     assert(dataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(data & 0xFF);
-    dataPort->TransferPacket(ctrPkt);
-    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
+    const uint32_t dataWr = (1 << 31) | address << 16 | data;
+// TODO : get device index from outside
+    const int devIndex = 0;
+    OperationStatus status;
+    status = dataPort->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
-uint16_t StreamerLTE::SPI_read(LMScomms* dataPort, uint16_t address)
+uint16_t StreamerLTE::SPI_read(IConnection* dataPort, uint16_t address)
 {
     assert(dataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    dataPort->TransferPacket(ctrPkt);
-    if (ctrPkt.inBuffer.size() > 4)
-        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    const uint32_t dataWr = address << 16;
+    uint32_t dataRd = 0;
+    OperationStatus status;
+// TODO : get device index from outside
+    const int devIndex = 0;
+    status = dataPort->TransactSPI(devIndex, &dataWr, &dataRd, 1);
+    if (status == OperationStatus::SUCCESS)
+        return dataRd & 0xFFFF;
     else
         return 0;
 }

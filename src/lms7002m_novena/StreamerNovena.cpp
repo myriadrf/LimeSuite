@@ -9,7 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include "lmsComms.h"
+#include "IConnection.h"
 
 #if defined(__GNUC__) || defined(__GNUG__)
 #include <unistd.h>
@@ -395,7 +395,7 @@ int prep_eim_burst()
     return 0;
 }
 
-StreamerNovena::StreamerNovena(LMScomms* dataPort) : LMS_StreamBoard(dataPort)
+StreamerNovena::StreamerNovena(IConnection* dataPort) : LMS_StreamBoard(dataPort)
 {
 
 }

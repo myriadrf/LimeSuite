@@ -21,7 +21,7 @@
 #include "wx/checkbox.h"
 
 #include <vector>
-#include "lmsComms.h"
+#include "IConnection.h"
 #include <fstream>
 #include <wx/ffile.h>
 #include <wx/dir.h>
@@ -151,7 +151,7 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
         dir.Make(gWFMdirectory);
 }
 
-void FPGAcontrols_wxgui::Initialize(LMScomms* dataPort)
+void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
 {
     m_serPort = dataPort;
     assert(m_serPort != nullptr);
@@ -412,23 +412,23 @@ void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 {
+    const uint16_t address = 0x0016;
+    uint32_t dataWr = (1 << 31) | address << 16;
+    uint32_t dataRd = 0;
+    OperationStatus status;
+// TODO : get device index from outside
+    const int devIndex = 0;
+    status = m_serPort->TransactSPI(devIndex, &dataWr, &dataRd, 1);
     unsigned short regValue = 0;
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer.push_back(0x00);
-    ctrPkt.outBuffer.push_back(0x16);
-    m_serPort->TransferPacket(ctrPkt);
-    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
-        regValue = ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
 
-    ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer.clear();
-    ctrPkt.outBuffer.push_back(0x00);
-    ctrPkt.outBuffer.push_back(0x16);
-    ctrPkt.outBuffer.push_back((regValue >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back((regValue & 0xFE) | chkDigitalLoopbackEnable->IsChecked());
-    m_serPort->TransferPacket(ctrPkt);
-        
-    if (ctrPkt.status != 1)
+    if (status == OperationStatus::SUCCESS)
+        regValue = dataRd & 0xFFFF;
+
+    regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
+    dataWr = (1 << 31) | address << 16 | regValue;
+
+    status = m_serPort->TransactSPI(devIndex, &dataWr, nullptr, 1);
+
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }
