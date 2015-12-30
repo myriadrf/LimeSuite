@@ -131,7 +131,7 @@ LMS7002M::LMS7002M(IConnection* controlPort) :
 
 LMS7002M::~LMS7002M()
 {
-
+    delete mRegistersMap;
 }
 
 /** @brief Sends reset signal to chip, after reset enables B channel controls
@@ -1055,6 +1055,7 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
     {
         if (status)
             *status = LIBLMS7_NO_CONNECTION_MANAGER;
+        return 0;
     }
     if (controlPort->IsOpen() == false || fromChip == false)
     {
@@ -2323,7 +2324,7 @@ uint32_t LMS7002M::FindMinRSSI_Gain(const LMS7Parameter &param, uint16_t *foundV
 */
 bool LMS7002M::IsSynced()
 {
-    if (controlPort->IsOpen() == false)
+    if (!controlPort || controlPort->IsOpen() == false)
         return false;
     bool isSynced = true;
     liblms7_status status;
