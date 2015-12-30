@@ -34,6 +34,7 @@ std::string ConnectionHandle::serialize(void) const
 {
     std::string out;
 
+    if (not module.empty()) out += ", module="+module;
     if (not type.empty()) out += ", type="+type;
     if (not name.empty()) out += ", name="+name;
     if (not addr.empty()) out += ", addr="+addr;
@@ -129,6 +130,9 @@ IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
 
 void ConnectionRegistry::freeConnection(IConnection *conn)
 {
+    //some client code may end up freeing a null connection
+    if (conn == nullptr) return;
+
     std::lock_guard<std::mutex> lock(registryMutex());
 
     for (auto &cacheEntry : connectionCache)

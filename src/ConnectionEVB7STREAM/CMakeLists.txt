@@ -31,3 +31,5 @@ endif()
 ########################################################################
 ## Build library
 ########################################################################
+
+#set_property(TARGET ConnectionEVB7STREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)

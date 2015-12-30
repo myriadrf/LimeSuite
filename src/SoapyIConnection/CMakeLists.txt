@@ -24,5 +24,7 @@ SOAPY_SDR_MODULE_UTIL(
         Registration.cpp
         Settings.cpp
         Streaming.cpp
-    LIBRARIES LMS7002M
+    LIBRARIES
+        LMS7002M
+        ${connectionRegistryLibs}
 )
