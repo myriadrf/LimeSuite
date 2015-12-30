@@ -1,5 +1,5 @@
 ########################################################################
-## Support for EVB7 over USB STREAM connection
+## Support for USB STREAM connection
 ########################################################################
 
 if(WIN32)
@@ -22,14 +22,16 @@ message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_EVB7STREAM "Enable EVB + STREAM" ON "USB_FOUND" OFF)
-add_feature_info(ConnectionEVB7STREAM ENABLE_EVB7COM "EVB + STREAM Connection support")
-if (NOT ENABLE_EVB7STREAM)
+cmake_dependent_option(ENABLE_STREAM "Enable STREAM" ON "USB_FOUND" OFF)
+add_feature_info(ConnectionSTREAM ENABLE_COM "STREAM Connection support")
+if (NOT ENABLE_STREAM)
     return()
 endif()
 
 ########################################################################
 ## Build library
 ########################################################################
-
-#set_property(TARGET ConnectionEVB7STREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+include_directories(${USB_INCLUDE_DIRS})
+add_library(ConnectionSTREAM STATIC ConnectionSTREAMEntry.cpp ConnectionSTREAM.cpp)
+target_link_libraries(ConnectionSTREAM connectionRegistry ${USB_LIBRARIES})
+set_property(TARGET ConnectionSTREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)

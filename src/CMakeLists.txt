@@ -31,11 +31,11 @@ set(wxWidgets_USE_STATIC ON)
 add_subdirectory(connectionRegistry)
 include_directories(connectionRegistry)
 add_subdirectory(ConnectionEVB7COM)
-add_subdirectory(ConnectionEVB7STREAM)
+add_subdirectory(ConnectionSTREAM)
 set(connectionRegistryLibs
 	connectionRegistry
 	ConnectionEVB7COM
-	#ConnectionEVB7STREAM
+	ConnectionSTREAM
 )
 add_subdirectory(protocols)
 

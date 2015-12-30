@@ -15,10 +15,12 @@
  * FIXME - temporary way to load connections until we make new loader
  ******************************************************************/
 void __loadConnectionEVB7COMEntry(void);
+void __loadConnectionSTREAMEntry(void);
 
 static void __loadAllConnections(void)
 {
     __loadConnectionEVB7COMEntry();
+    __loadConnectionSTREAMEntry();
 }
 
 /*******************************************************************
