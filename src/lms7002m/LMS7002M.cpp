@@ -52,18 +52,19 @@ void LMS7002M::Log(const char* text, LogType type)
     }
 }
 
-LMS7002M::LMS7002M() : mRegistersMap(new LMS7002M_RegistersMap())
+/** @brief Sets connection which is used for data communication with chip
+*/
+void LMS7002M::SetConnection(IConnection* port)
 {
-    mRefClkSXR_MHz = 30.72;
-    mRefClkSXT_MHz = 30.72;
+    controlPort = port;
 }
 
-/** @brief Creates LMS7002M main control object, it requires IConnection to communicate with chip
-    @param controlPort data connection for controlling LMS7002 chip registers
+/** @brief Creates LMS7002M main control object.
+It requires IConnection to be set by SetConnection() to communicate with chip
 */
 
-LMS7002M::LMS7002M(ProxyPtr<IConnection> controlPort) :
-    controlPort(controlPort), mRegistersMap(new LMS7002M_RegistersMap())
+LMS7002M::LMS7002M() :
+    controlPort(nullptr), mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;

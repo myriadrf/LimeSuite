@@ -148,7 +148,8 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     }
 }
 
-LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent )
+LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
+    AppFrame_view( parent ), lms7controlPort(nullptr), streamBoardPort(nullptr)
 {
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
@@ -166,9 +167,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     novenaGui = nullptr;
     boardControlsGui = nullptr;
 
-    lms7controlPort = nullptr;
-    streamBoardPort = nullptr;
-    lmsControl = new LMS7002M(lms7controlPort);
+    lmsControl = new LMS7002M();
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -176,32 +175,21 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
-    //bind callbacks for spi data logging
-    lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    streamBoardPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
     contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
 
     adfModule = new ADF4002();
-
     si5351module = new Si5351C();
-    si5351module->Initialize(lms7controlPort);
 
 	Layout();
 	Fit();
 
     SetMinSize(GetSize());
-
-	wxCommandEvent evt;
-	OnDataBoardConnect(evt);
-	OnControlBoardConnect(evt);
+    UpdateConnections(lms7controlPort, streamBoardPort);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
 {
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-	delete lms7controlPort;
-	delete streamBoardPort;
 
 }
 
@@ -240,8 +228,12 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
 void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
     const int controlCollumn = 1;
-    if (lms7controlPort->IsOpen())
+    if (lms7controlPort && lms7controlPort->IsOpen())
     {
+        //bind callback for spi data logging
+        lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        UpdateConnections(lms7controlPort, streamBoardPort);
+
         DeviceInfo info = lms7controlPort->GetDeviceInfo();
         wxString controlDev = _("Control port: ");
         controlDev.Append(info.deviceName);
@@ -291,10 +283,13 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
 {
-    assert(streamBoardPort != nullptr);
     const int dataCollumn = 2;
-    if (streamBoardPort->IsOpen())
+    if (streamBoardPort && streamBoardPort->IsOpen())
     {
+        //bind callback for spi data logging
+        streamBoardPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        UpdateConnections(lms7controlPort, streamBoardPort);
+
         DeviceInfo info = streamBoardPort->GetDeviceInfo();
         wxString controlDev = _("Data port: ");
         controlDev.Append(info.deviceName);
@@ -338,13 +333,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
             samplingFreq_MHz /= pow(2.0, decimation);
         fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
-    if (lms7controlPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_SODERA))
-    {
-        //on Linux USB device can be connected only by one Connection manager, so pass the lms control port instead of separate stream port
-        fftviewer->Initialize(lms7controlPort);
-    }
-    else
-        fftviewer->Initialize(streamBoardPort);
+    fftviewer->Initialize(streamBoardPort);
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
@@ -593,4 +582,32 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 {
     boardControlsGui->Destroy();
     boardControlsGui = nullptr;
+}
+
+void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnection* streamBoardPort)
+{
+    if(lmsControl)
+        lmsControl->SetConnection(lms7controlPort);
+    if(si5351module)
+        si5351module->Initialize(lms7controlPort);
+    if(fftviewer)
+        fftviewer->Initialize(streamBoardPort);
+    if(adfGUI)
+        adfGUI->Initialize(adfModule, lms7controlPort);
+//    if(rfspark)
+//        rfspark->Initialize(lms7controlPort);
+//    if(hpm7)
+//        hpm7->Initialize(lms7controlPort);
+//    if(fpgaControls)
+//        fpgaControls->Initialize(streamBoardPort);
+    if(myriad7)
+        myriad7->Initialize(lms7controlPort);
+    if(deviceInfo)
+        deviceInfo->Initialize(lms7controlPort, streamBoardPort);
+    if(spi)
+        spi->Initialize(lms7controlPort, streamBoardPort);
+    if(novenaGui)
+        novenaGui->Initialize(lms7controlPort);
+//    if(boardControlsGui)
+//        boardControlsGui->Initialize(lms7controlPort);
 }

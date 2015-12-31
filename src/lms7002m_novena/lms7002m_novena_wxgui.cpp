@@ -53,7 +53,6 @@ LMS7002M_Novena_wxgui::~LMS7002M_Novena_wxgui()
 
 void LMS7002M_Novena_wxgui::UpdatePanel()
 {
-    assert(mSerPort != nullptr);
     if (mSerPort == nullptr)
         return;
 
@@ -87,7 +86,6 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
 
 void LMS7002M_Novena_wxgui::Initialize(IConnection* serPort)
 {
-    assert(serPort != nullptr);
     mSerPort = serPort;
 }
 

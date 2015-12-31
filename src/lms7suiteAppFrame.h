@@ -75,6 +75,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 		static const wxString cWindowTitle;
 		static const int cDeviceInfoCollumn = 1;
 		static const int cDeviceVerRevMaskCollumn = 2;
+		void UpdateConnections(IConnection* controlPort, IConnection* samplingPort);
 
         IConnection* lms7controlPort;
         IConnection* streamBoardPort;

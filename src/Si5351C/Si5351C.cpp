@@ -348,7 +348,6 @@ Si5351C::Status Si5351C::UploadConfiguration()
 */
 void Si5351C::Initialize(IConnection *mng)
 {
-    assert(mng != nullptr);
 	device = mng;
 }
 
@@ -837,6 +836,8 @@ void Si5351C::Reset()
 Si5351C::StatusBits Si5351C::GetStatusBits()
 {
     StatusBits stat;
+    if(!device)
+        return stat;
     const uint32_t dataWr[2] = { 0x0000, 0x0100};
     uint32_t dataRd[2];
 
@@ -861,6 +862,8 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
 
 Si5351C::Status Si5351C::ClearStatus()
 {
+    if(!device)
+        return FAILED;
 // TODO : get device index from outside
     const int devIndex = 0;
     const uint32_t dataWr = 0x0100;

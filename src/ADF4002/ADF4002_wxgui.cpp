@@ -418,7 +418,6 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
 
 void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
 {
-    assert(pSerPort != nullptr);
     m_pModule = pModule;
     serPort = pSerPort;
 }

@@ -26,7 +26,7 @@ public:
     };
 
 	LMS7002M();
-    LMS7002M(ProxyPtr<IConnection> controlPort);
+    void SetConnection(IConnection* port);
 	virtual ~LMS7002M();
 
     ///@name Registers writing and reading
@@ -170,7 +170,7 @@ protected:
     virtual void Log(const char* text, LogType type);
 
     ///port used for communicating with LMS7002M
-    ProxyPtr<IConnection> controlPort;
+    IConnection* controlPort;
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };

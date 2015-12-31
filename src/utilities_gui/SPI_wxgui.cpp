@@ -13,8 +13,6 @@ void SPI_wxgui::Initialize(IConnection* pCtrPort, IConnection* pDataPort)
 {
     ctrPort = pCtrPort;
     dataPort = pDataPort;
-    assert(ctrPort != nullptr);
-    assert(dataPort != nullptr);
 }
 
 void SPI_wxgui::onLMSwrite( wxCommandEvent& event )

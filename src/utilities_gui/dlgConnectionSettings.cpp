@@ -42,6 +42,9 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
     if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
     {
+        //free previously used connection
+        ConnectionRegistry::freeConnection(*lms7Manager);
+        *lms7Manager = nullptr;
         auto lms7Conn = ConnectionRegistry::makeConnection(cachedHandles.at(mListLMS7ports->GetSelection()));
         if (lms7Conn != nullptr and not lms7Conn->IsOpen())
         {
@@ -63,6 +66,9 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 
     if(mListStreamports->GetSelection() != wxNOT_FOUND)
     {
+        //free previously used connection
+        ConnectionRegistry::freeConnection(*streamBrdManager);
+        *streamBrdManager = nullptr;
         auto streamBrdConn = ConnectionRegistry::makeConnection(cachedHandles.at(mListStreamports->GetSelection()));
         if (streamBrdConn != nullptr and not streamBrdConn->IsOpen())
         {

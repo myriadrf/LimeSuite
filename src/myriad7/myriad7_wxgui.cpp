@@ -63,7 +63,6 @@ Myriad7_wxgui::~Myriad7_wxgui()
 void Myriad7_wxgui::Initialize(IConnection* pSerPort)
 {
     serPort = pSerPort;
-    assert(serPort != nullptr);
 }
 
 void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)

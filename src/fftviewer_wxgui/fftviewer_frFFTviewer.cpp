@@ -12,7 +12,6 @@ using namespace std;
 
 void fftviewer_frFFTviewer::Initialize(IConnection* pDataPort)
 {
-    assert(pDataPort != nullptr);
     mDataPort = pDataPort;
 }
 

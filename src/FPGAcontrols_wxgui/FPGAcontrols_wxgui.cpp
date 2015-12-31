@@ -154,7 +154,6 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
 {
     m_serPort = dataPort;
-    assert(m_serPort != nullptr);
     if (mStreamer)
         delete mStreamer;
     mStreamer = new LMS_StreamBoard(m_serPort);
