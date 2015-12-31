@@ -39,6 +39,9 @@ set(connectionRegistryLibs
 )
 add_subdirectory(protocols)
 
+#TODO temporary while we re-factor
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/protocols)
+
 ########################################################################
 # Add sub-directories
 ########################################################################

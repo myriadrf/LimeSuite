@@ -31,37 +31,15 @@ set(LMS7002M_src_files
 	LMS7002M_RegistersMap.cpp
 )
 
-set(ENABLE_USB_CONNECTION "YES" CACHE BOOL INTERNAL)
-set(ENABLE_SPI_CONNECTION "NO" CACHE BOOL INTERNAL)
-#set(CONNECTION_MANAGER_DIR connectionManager)
-#set(connectionManager_src_files
-	#${CONNECTION_MANAGER_DIR}/ConnectionManager.cpp
-	#${CONNECTION_MANAGER_DIR}/ConnectionCOM.cpp
-	#${CONNECTION_MANAGER_DIR}/ConnectionManager.h
-	#${CONNECTION_MANAGER_DIR}/ConnectionCOM.h
-#)
-#if(ENABLE_USB_CONNECTION)
-	#list(APPEND connectionManager_src_files ${CONNECTION_MANAGER_DIR}/ConnectionUSB.cpp ${CONNECTION_MANAGER_DIR}/ConnectionUSB.h)
-    #add_definitions(-DENABLE_USB_CONNECTION)
-#endif()
-#if(ENABLE_SPI_CONNECTION)
-	#list(APPEND connectionManager_src_files ${CONNECTION_MANAGER_DIR}/ConnectionSPI.cpp ${CONNECTION_MANAGER_DIR}/ConnectionSPI.h)
-    #add_definitions(-DENABLE_SPI_CONNECTION)
-#endif()
+#dl libs used by dlopen in unix
+list(APPEND LMS7002M_LIBRARIES ${CMAKE_DL_LIBS})
 
-add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files})
+#support threaded client code
+if(CMAKE_COMPILER_IS_GNUCXX)
+    list(APPEND LMS7002M_LIBRARIES -pthread)
+endif()
+
+add_library(LMS7002M STATIC ${LMS7002M_src_files})
 target_include_directories(LMS7002M PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(LMS7002M protocols)
-
-if(WIN32 AND ENABLE_USB_CONNECTION)
-	find_package(CyAPI REQUIRED)
-	LINK_DIRECTORIES(${CYAPI_LIBRARIES})	
-	include_directories(${CYAPI_INCLUDE_DIRS})
-	set(CONNECTION_MANAGER_LIBS ${CYAPI_LIBRARIES} SetupAPI)
-	target_link_libraries(LMS7002M ${CONNECTION_MANAGER_LIBS})
-endif()
-if(UNIX AND ENABLE_USB_CONNECTION)	
-	set(CONNECTION_MANAGER_LIBS usb-1.0 -lpthread)
-	target_link_libraries(LMS7002M ${CONNECTION_MANAGER_LIBS})
-endif()
+target_link_libraries(LMS7002M ${LMS7002M_LIBRARIES})
 
