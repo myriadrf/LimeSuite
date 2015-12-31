@@ -52,7 +52,7 @@ void LMS7002M::Log(const char* text, LogType type)
     }
 }
 
-LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMap())
+LMS7002M::LMS7002M() : mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
@@ -62,7 +62,7 @@ LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMa
     @param controlPort data connection for controlling LMS7002 chip registers
 */
 
-LMS7002M::LMS7002M(IConnection* controlPort) :
+LMS7002M::LMS7002M(ProxyPtr<IConnection> controlPort) :
     controlPort(controlPort), mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
@@ -139,7 +139,7 @@ LMS7002M::~LMS7002M()
 */
 liblms7_status LMS7002M::ResetChip()
 {
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -432,7 +432,7 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     }
 
     Modify_SPI_Reg_bits(MAC, 1);
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -567,7 +567,7 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz)
 */
 liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -734,7 +734,7 @@ liblms7_status LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_
 */
 liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type refClk_MHz)
 {
-	if (controlPort == NULL)
+	if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -1051,7 +1051,7 @@ liblms7_status LMS7002M::SPI_write(uint16_t address, uint16_t data)
 */
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *status)
 {
-    if (controlPort == NULL)
+    if (!controlPort)
     {
         if (status)
             *status = LIBLMS7_NO_CONNECTION_MANAGER;
@@ -1091,7 +1091,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
 
     }
 
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -1114,7 +1114,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
 */
 liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt)
 {
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -1161,7 +1161,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
 liblms7_status LMS7002M::RegistersTest()
 {
     char chex[16];
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -2396,7 +2396,7 @@ isSyncedEnding:
 */
 liblms7_status LMS7002M::UploadAll()
 {
-    if (controlPort == NULL)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
@@ -2454,7 +2454,7 @@ liblms7_status LMS7002M::UploadAll()
 */
 liblms7_status LMS7002M::DownloadAll()
 {
-    if (controlPort == nullptr)
+    if (!controlPort)
         return LIBLMS7_NO_CONNECTION_MANAGER;
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;

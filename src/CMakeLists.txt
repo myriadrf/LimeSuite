@@ -15,6 +15,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 ########################################################################
 ## wx widgets dependency
 ########################################################################
