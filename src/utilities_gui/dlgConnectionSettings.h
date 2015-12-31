@@ -26,13 +26,11 @@ class dlgConnectionSettings : public dlgConnectionSettings_view
 		/** Constructor */
 		dlgConnectionSettings( wxWindow* parent );
 	//// end generated class members
-		void SetConnectionManagers(IConnection *lms7ctr, IConnection *streamBrdctr);
+		void SetConnectionManagers(IConnection **lms7ctr, IConnection **streamBrdctr);
 	protected:
-		IConnection *lms7Manager;
-		IConnection *lms7Conn;
+		IConnection **lms7Manager;
 		int lmsOpenedIndex;
-		IConnection *streamBrdManager;
-		IConnection *streamBrdConn;
+		IConnection **streamBrdManager;
 		int streamOpenedIndex;
 		std::vector<ConnectionHandle> cachedHandles;
 };

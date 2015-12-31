@@ -7,16 +7,9 @@
 #include "IConnection.h"
 #include <cstring> //memcpy
 
-DeviceInfo::DeviceInfo(void)
-{
-    return;
-}
-
-RFICInfo::RFICInfo(void):
-    spiIndexRFIC(-1),
-    spiIndexSi5351(-1),
-    rxChannel(-1),
-    txChannel(-1)
+DeviceInfo::DeviceInfo(void):
+    addrSi5351(-1),
+    addrADF4002(-1)
 {
     return;
 }
@@ -28,8 +21,7 @@ StreamMetadata::StreamMetadata(void):
     return;
 }
 
-IConnection::IConnection(void)//:
-    //m_connectionType(CONNECTION_UNDEFINED)
+IConnection::IConnection(void)
 {
     callback_logData = nullptr;
     unsigned short test = 0x1234;
@@ -53,12 +45,8 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
+    info.addrsLMS7002M.push_back(0);
     return info;
-}
-
-std::vector<RFICInfo> IConnection::ListRFICs(void)
-{
-    return std::vector<RFICInfo>(1);
 }
 
 OperationStatus IConnection::DeviceReset(void)
@@ -66,7 +54,17 @@ OperationStatus IConnection::DeviceReset(void)
     return UNSUPPORTED;
 }
 
-OperationStatus IConnection::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+OperationStatus IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::WriteI2C(const int addr, const std::string &data)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
     return UNSUPPORTED;
 }
@@ -126,4 +124,52 @@ OperationStatus IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLe
 OperationStatus IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
     return UNSUPPORTED;
+}
+
+IConnectionProxy::IConnectionProxy(void):
+    _connRef(nullptr),
+    _internal(nullptr)
+{
+    return;
+}
+
+IConnectionProxy::IConnectionProxy(IConnection *conn):
+    _connRef(nullptr),
+    _internal(conn)
+{
+    return;
+}
+
+IConnectionProxy::IConnectionProxy(IConnection **conn):
+    _connRef(conn),
+    _internal(nullptr)
+{
+    return;
+}
+
+void IConnectionProxy::reset(void)
+{
+    _internal = nullptr;
+}
+
+void IConnectionProxy::reset(IConnection *conn)
+{
+    _internal = conn;
+}
+
+const IConnection *IConnectionProxy::get(void) const
+{
+    if (_connRef != nullptr) return *_connRef;
+    return _internal;
+}
+
+IConnection *IConnectionProxy::get(void)
+{
+    if (_connRef != nullptr) return *_connRef;
+    return _internal;
+}
+
+IConnectionProxy::operator bool(void) const
+{
+    return this->get() != nullptr;
 }

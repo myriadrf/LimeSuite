@@ -1,13 +1,15 @@
 /**
-@file   ConnectionUSB.h
-@author Lime Microsystems (www.limemicro.com)
-@brief  Class for data writing and reading through USB port
+    @file ConnectionSTREAM.h
+    @author Lime Microsystems
+    @brief Implementation of STREAM board connection.
 */
 
-#ifndef USB_PORT_CONNECTION_H
-#define USB_PORT_CONNECTION_H
-
-#include "IConnection.h"
+#pragma once
+#include <ConnectionRegistry.h>
+#include <IConnection.h>
+#include <LMS64CProtocol.h>
+#include <vector>
+#include <string>
 
 #ifndef __unix__
 #include "windows.h"
@@ -74,15 +76,14 @@ public:
 	#endif
 };
 
-class ConnectionUSB : public IConnection
+class ConnectionSTREAM : public LMS64CProtocol
 {
 public:
-	ConnectionUSB();
-	~ConnectionUSB();
+    ConnectionSTREAM(void *ctx, const unsigned index, const int vid=-1, const int pid=-1);
 
-    void FindDevices();
-	DeviceStatus Open();
-	DeviceStatus Open(unsigned index);
+    ~ConnectionSTREAM(void);
+
+	DeviceStatus Open(const unsigned index, const int vid, const int pid);
 	void Close();
 	bool IsOpen();
 	int GetOpenedIndex();
@@ -100,24 +101,22 @@ public:
 	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms);
 	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
 	virtual void AbortSending();
-
-	std::vector<std::string> GetDeviceNames();
-	int RefreshDeviceList();
-	void ClearComm();
 private:
-    int currentDeviceIndex;
+
+    eConnectionType GetType(void)
+    {
+        return USB_PORT;
+    }
+
     std::string DeviceName();
 
-    std::vector<std::string> m_deviceNames;
     std::string m_hardwareName;
     int m_hardwareVer;
 
 	USBTransferContext contexts[USB_MAX_CONTEXTS];
 	USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
-	void Initialize();
 
 	bool isConnected;
-	int currentPortIndex;
 
 	#ifndef __unix__
 	CCyUSBDevice *USBDevicePrimary;
@@ -137,8 +136,26 @@ private:
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
-    std::vector<std::pair<int,int> > m_dev_pid_vid;
 	#endif
 };
 
-#endif
+
+
+class ConnectionSTREAMEntry : public ConnectionRegistryEntry
+{
+public:
+    ConnectionSTREAMEntry(void);
+
+    ~ConnectionSTREAMEntry(void);
+
+    std::vector<ConnectionHandle> enumerate(const ConnectionHandle &hint);
+
+    IConnection *make(const ConnectionHandle &handle);
+
+private:
+    #ifndef __unix__
+    CCyUSBDevice *USBDevicePrimary;
+    #else
+    libusb_context *ctx; //a libusb session
+    #endif
+};

@@ -1,0 +1,138 @@
+/**
+    @file ConnectionSTREAMEntry.cpp
+    @author Lime Microsystems
+    @brief Implementation of STREAM board connection.
+*/
+
+#include "ConnectionSTREAM.h"
+
+//! make a static-initialized entry in the registry
+void __loadConnectionSTREAMEntry(void) //TODO fixme replace with LoadLibrary/dlopen
+{
+static ConnectionSTREAMEntry STREAMEntry;
+}
+
+ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
+    ConnectionRegistryEntry("STREAM")
+{
+#ifndef __unix__
+    USBDevicePrimary = new CCyUSBDevice(NULL);
+#else
+    int r = libusb_init(&ctx); //initialize the library for the session we just declared
+    if(r < 0)
+        printf("Init Error %i\n", r); //there was an error
+    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+#endif
+}
+
+ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
+{
+#ifndef __unix__
+    delete USBDevicePrimary;
+#else
+    libusb_exit(ctx);
+#endif
+}
+
+std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionHandle &hint)
+{
+    std::vector<ConnectionHandle> handles;
+
+#ifndef __unix__
+    if (USBDevicePrimary->DeviceCount())
+    {
+        for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
+        {
+            ConnectionHandle handle;
+            handle.media = "USB";
+            handle.name = ConnectionSTREAM(USBDevicePrimary, i).DeviceName();
+            handle.index = i;
+            handles.push_back(handle);
+        }
+    }
+#else
+    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
+    if(usbDeviceCount > 0)
+    {
+        libusb_device_descriptor desc;
+        for(int i=0; i<usbDeviceCount; ++i)
+        {
+            int r = libusb_get_device_descriptor(devs[i], &desc);
+            if(r<0)
+                printf("failed to get device description\n");
+            int pid = desc.idProduct;
+            int vid = desc.idVendor;
+
+            if( vid == 1204)
+            {
+                if(pid == 34323)
+                {
+                    ConnectionHandle handle;
+                    handle.media = "USB";
+                    handle.name = "DigiGreen";
+                    handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+                    handles.push_back(handle);
+                }
+                else if(pid == 241)
+                {
+                    libusb_device_handle *tempDev_handle;
+                    tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+                    if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
+                    {
+                        if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
+                            printf("Kernel Driver Detached!\n");
+                    }
+                    if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
+                    {
+                        printf("Cannot Claim Interface\n");
+                    }
+
+                    std::string fullName;
+                    //check operating speed
+                    int speed = libusb_get_device_speed(devs[i]);
+                    if(speed == LIBUSB_SPEED_HIGH)
+                        fullName = "USB 2.0";
+                    else if(speed == LIBUSB_SPEED_SUPER)
+                        fullName = "USB 3.0";
+                    else
+                        fullName = "USB";
+                    fullName += " (";
+                    //read device name
+                    char data[255];
+                    memset(data, 0, 255);
+                    int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                    if(strlen(data) > 0)
+                        fullName += data;
+                    fullName += ")";
+                    libusb_close(tempDev_handle);
+
+                    ConnectionHandle handle;
+                    handle.media = "USB";
+                    handle.name = fullName;
+                    handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+                    handles.push_back(handle);
+                }
+            }
+        }
+    }
+    else
+    {
+        libusb_free_device_list(devs, 1);
+    }
+#endif
+    return handles;
+}
+
+IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
+{
+#ifndef __unix__
+    return new ConnectionSTREAM(USBDevicePrimary, handle.index);
+#else
+    const auto pidvid = handle.addr;
+    const auto splitPos = pidvid.find(":");
+    const auto pid = std::stoi(pidvid.substr(0, splitPos));
+    const auto vid = std::stoi(pidvid.substr(splitPos+1));
+    return new ConnectionSTREAM(ctx, handle.index, vid, pid);
+#endif
+}

@@ -9,6 +9,7 @@
 
 #include "IConnection.h"
 #include "LMS64CProtocol.h"
+#include <iostream>
 
 //! JB TODO, remove this compatibility layer later
 //! A lot of code is written around LMScomms *
@@ -27,9 +28,16 @@ public:
         return;
     }
 
-    //! Set the underlying connection
-    void setConnection(IConnection *conn)
+    //! Get the internal connection object
+    IConnection *GetConnection(void) const
     {
+        return _actual;
+    }
+
+    //! Set the underlying connection
+    void SetConnection(IConnection *conn)
+    {
+        std::cout << "LMScomms now manages " << size_t(conn) << std::endl;
         _actual = dynamic_cast<LMS64CProtocol *>(conn);
     }
 

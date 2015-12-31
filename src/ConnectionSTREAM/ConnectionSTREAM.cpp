@@ -1,16 +1,19 @@
 /**
-@file   ConnectionUSB.cpp
-@author Lime Microsystems (www.limemicro.com)
-@brief  Data writing and reading through USB port
+    @file ConnectionSTREAM.cpp
+    @author Lime Microsystems
+    @brief Implementation of STREAM board connection.
 */
 
-#include "ConnectionUSB.h"
-#include <string.h>
+#include "ConnectionSTREAM.h"
+#include <cstring>
+#include <iostream>
 
 #ifdef __unix__
     #include <thread>
     #include <chrono>
 #endif
+
+using namespace std;
 
 #define USB_TIMEOUT 1000
 
@@ -30,17 +33,14 @@
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
 
-using namespace std;
-
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionUSB::ConnectionUSB()
+ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vid, const int pid)
 {
     m_hardwareName = "";
     isConnected = false;
-    m_connectionType = USB_PORT;
 #ifndef __unix__
-    USBDevicePrimary = new CCyUSBDevice(NULL);
+    USBDevicePrimary = (CCyUSBDevice *)arg;
     OutCtrEndPt = NULL;
     InCtrEndPt = NULL;
 	InCtrlEndPt3 = NULL;
@@ -48,53 +48,22 @@ ConnectionUSB::ConnectionUSB()
 #else
     dev_handle = 0;
     devs = 0;
-    int r = libusb_init(&ctx); //initialize the library for the session we just declared
-    if(r < 0)
-        printf("Init Error %i\n", r); //there was an error
-    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+    ctx = (libusb_context *)arg;
 #endif
-    currentDeviceIndex = -1;
+    this->Open(index, vid, pid);
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
 */
-ConnectionUSB::~ConnectionUSB()
+ConnectionSTREAM::~ConnectionSTREAM()
 {
     Close();
-#ifndef __unix__
-    delete USBDevicePrimary;
-#else
-    libusb_exit(ctx);
-#endif
-}
-
-/**	@brief Automatically open first available chip connected to usb port.
-	@return 0-success, other-failure
-*/
-IConnection::DeviceStatus ConnectionUSB::Open()
-{
-    currentDeviceIndex = -1;
-    if(m_deviceNames.size() == 0)
-        RefreshDeviceList();
-
-#ifndef __unix__
-    for(int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
-        if( Open(i) == SUCCESS)
-        {
-            currentDeviceIndex = i;
-            return SUCCESS;
-        }
-#else
-    if(Open(0) == SUCCESS)
-        return SUCCESS;
-#endif
-    return FAILURE;
 }
 
 /**	@brief Tries to open connected USB device and find communication endpoints.
 	@return Returns 1-Success, 0-EndPoints not found or device didn't connect.
 */
-IConnection::DeviceStatus ConnectionUSB::Open(unsigned index)
+LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
 	wstring m_hardwareDesc = L"";
@@ -158,38 +127,44 @@ IConnection::DeviceStatus ConnectionUSB::Open(unsigned index)
 	} //if has devices
     return FAILURE;
 #else
-    if(index >= 0 && index < m_dev_pid_vid.size())
-    {
-		dev_handle = libusb_open_device_with_vid_pid(ctx, m_dev_pid_vid[index].second, m_dev_pid_vid[index].first);
 
-		if(dev_handle == 0)
-            return FAILURE;
-        if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
-        {
-            printf("Kernel Driver Active\n");
-            if(libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
-                printf("Kernel Driver Detached!\n");
-        }
-        int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
-        if(r < 0)
-        {
-            printf("Cannot Claim Interface\n");
-            return CANNOT_CLAIM_INTERFACE;
-        }
-        printf("Claimed Interface\n");
-        isConnected = true;
-        return SUCCESS;
-    }
-    else
+    if( vid == 1204)
     {
-        return FAILURE;
+        if(pid == 34323)
+        {
+            m_hardwareName = HW_DIGIGREEN;
+        }
+        else if(pid == 241)
+        {
+            m_hardwareName = HW_DIGIRED;
+        }
     }
+
+    dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+
+    if(dev_handle == 0)
+        return FAILURE;
+    if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
+    {
+        printf("Kernel Driver Active\n");
+        if(libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
+            printf("Kernel Driver Detached!\n");
+    }
+    int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
+    if(r < 0)
+    {
+        printf("Cannot Claim Interface\n");
+        return CANNOT_CLAIM_INTERFACE;
+    }
+    printf("Claimed Interface\n");
+    isConnected = true;
+    return SUCCESS;
 #endif
 }
 
 /**	@brief Closes communication to device.
 */
-void ConnectionUSB::Close()
+void ConnectionSTREAM::Close()
 {
     #ifndef __unix__
 	USBDevicePrimary->Close();
@@ -219,7 +194,7 @@ void ConnectionUSB::Close()
 /**	@brief Returns connection status
 	@return 1-connection open, 0-connection closed.
 */
-bool ConnectionUSB::IsOpen()
+bool ConnectionSTREAM::IsOpen()
 {
     #ifndef __unix__
     return USBDevicePrimary->IsOpen() && isConnected;
@@ -234,7 +209,7 @@ bool ConnectionUSB::IsOpen()
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes sent.
 */
-int ConnectionUSB::Write(const unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
     long len = length;
     if(IsOpen())
@@ -279,7 +254,7 @@ int ConnectionUSB::Write(const unsigned char *buffer, const int length, int time
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes received.
 */
-int ConnectionUSB::Read(unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     long len = length;
     if(IsOpen())
@@ -354,105 +329,9 @@ void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-/** @brief Finds all chips connected to usb ports
-    @return number of devices found
-*/
-int ConnectionUSB::RefreshDeviceList()
-{
-    #ifndef __unix__
-    USBDevicePrimary->Close();
-    currentDeviceIndex = -1;
-    m_deviceNames.clear();
-    string name;
-    if (USBDevicePrimary->DeviceCount())
-    {
-        for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
-        {
-            Open(i);
-            name = DeviceName();
-            m_deviceNames.push_back(name);
-        }
-        currentDeviceIndex = -1;
-    }
-    #else
-    m_dev_pid_vid.clear();
-    m_deviceNames.clear();
-    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-    if(usbDeviceCount > 0)
-    {
-        libusb_device_descriptor desc;
-        for(int i=0; i<usbDeviceCount; ++i)
-        {
-            int r = libusb_get_device_descriptor(devs[i], &desc);
-            if(r<0)
-                printf("failed to get device description\n");
-            int pid = desc.idProduct;
-            int vid = desc.idVendor;
-
-            if( vid == 1204)
-            {
-                if(pid == 34323)
-                {
-                    m_hardwareName = HW_DIGIGREEN;
-                    m_deviceNames.push_back("DigiGreen");
-                    m_dev_pid_vid.push_back( pair<int,int>(pid,vid));
-                }
-                else if(pid == 241)
-                {
-                    m_hardwareName = HW_DIGIRED;
-                    libusb_device_handle *tempDev_handle;
-                    tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-                    if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
-                    {
-                        if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                            printf("Kernel Driver Detached!\n");
-                    }
-                    if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
-                    {
-                        printf("Cannot Claim Interface\n");
-                    }
-
-                    string fullName;
-                    //check operating speed
-                    int speed = libusb_get_device_speed(devs[i]);
-                    if(speed == LIBUSB_SPEED_HIGH)
-                        fullName = "USB 2.0";
-                    else if(speed == LIBUSB_SPEED_SUPER)
-                        fullName = "USB 3.0";
-                    else
-                        fullName = "USB";
-                    fullName += " (";
-                    //read device name
-                    char data[255];
-                    memset(data, 0, 255);
-                    int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
-                    if(strlen(data) > 0)
-                        fullName += data;
-                    fullName += ")";
-                    libusb_close(tempDev_handle);
-
-                    m_deviceNames.push_back(fullName);
-                    m_dev_pid_vid.push_back( pair<int,int>(pid,vid));
-                }
-            }
-        }
-    }
-    else
-    {
-        libusb_free_device_list(devs, 1);
-        return 0;
-    }
-    #endif
-    return m_deviceNames.size();
-}
-
-void ConnectionUSB::ClearComm()
-{
-}
-
 /**	@return name of currently opened device as string.
 */
-string ConnectionUSB::DeviceName()
+string ConnectionSTREAM::DeviceName()
 {
 #ifndef __unix__
 	string name;
@@ -489,7 +368,7 @@ string ConnectionUSB::DeviceName()
 	@param length number of bytes to read
 	@return handle of transfer context
 */
-int ConnectionUSB::BeginDataReading(char *buffer, long length)
+int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 {
     int i = 0;
 	bool contextFound = false;
@@ -531,7 +410,7 @@ int ConnectionUSB::BeginDataReading(char *buffer, long length)
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
+int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
     if( contexts[contextHandle].used == true && contextHandle >= 0)
     {
@@ -574,7 +453,7 @@ int ConnectionUSB::WaitForReading(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes received
 */
-int ConnectionUSB::FinishDataReading(char *buffer, long &length, int contextHandle)
+int ConnectionSTREAM::FinishDataReading(char *buffer, long &length, int contextHandle)
 {
     if( contexts[contextHandle].used == true && contextHandle >= 0)
     {
@@ -596,7 +475,7 @@ int ConnectionUSB::FinishDataReading(char *buffer, long &length, int contextHand
         return 0;
 }
 
-int ConnectionUSB::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
+int ConnectionSTREAM::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
 {
 #ifndef __unix__
     return InEndPt->XferData((unsigned char*)buffer, length);
@@ -609,7 +488,7 @@ int ConnectionUSB::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
 /**
 	@brief Aborts reading operations
 */
-void ConnectionUSB::AbortReading()
+void ConnectionSTREAM::AbortReading()
 {
 #ifndef __unix__
 	InEndPt->Abort();
@@ -627,7 +506,7 @@ void ConnectionUSB::AbortReading()
 	@param length number of bytes to send
 	@return handle of transfer context
 */
-int ConnectionUSB::BeginDataSending(const char *buffer, long length)
+int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
 {
     int i = 0;
 	//find not used context
@@ -666,7 +545,7 @@ int ConnectionUSB::BeginDataSending(const char *buffer, long length)
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionUSB::WaitForSending(int contextHandle, unsigned int timeout_ms)
+int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
@@ -709,7 +588,7 @@ int ConnectionUSB::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes sent
 */
-int ConnectionUSB::FinishDataSending(const char *buffer, long &length, int contextHandle)
+int ConnectionSTREAM::FinishDataSending(const char *buffer, long &length, int contextHandle)
 {
     if( contextsToSend[contextHandle].used == true)
     {
@@ -733,7 +612,7 @@ int ConnectionUSB::FinishDataSending(const char *buffer, long &length, int conte
 /**
 	@brief Aborts sending operations
 */
-void ConnectionUSB::AbortSending()
+void ConnectionSTREAM::AbortSending()
 {
 #ifndef __unix__
 	OutEndPt->Abort();
@@ -748,17 +627,4 @@ void ConnectionUSB::AbortSending()
         contextsToSend[i].reset();
     }
 #endif
-}
-
-int ConnectionUSB::GetOpenedIndex()
-{
-    return currentDeviceIndex;
-}
-
-/** @brief Returns found devices names
-    @return vector of device names
-*/
-vector<string> ConnectionUSB::GetDeviceNames()
-{
-    return m_deviceNames;
 }

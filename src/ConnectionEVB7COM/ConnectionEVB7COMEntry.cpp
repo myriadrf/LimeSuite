@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>
 
+using namespace std;
+
 static const int comBaudrate = 9600;
 
 //! make a static-initialized entry in the registry
@@ -30,7 +32,7 @@ std::vector<ConnectionHandle> ConnectionEVB7COMEntry::enumerate(const Connection
     for (const auto &comName : availableComms)
     {
         ConnectionHandle handle;
-        handle.type = "COM";
+        handle.media = "COM";
         handle.name = "EVB7";
         handle.addr = comName;
         result.push_back(handle);

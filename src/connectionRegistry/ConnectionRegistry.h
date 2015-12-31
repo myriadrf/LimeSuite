@@ -29,9 +29,16 @@ public:
     ConnectionHandle(void);
 
     /*!
-     * The connection type. Example: SPI, COM, USB.
+     * The name of the IConnection support module.
+     * Example EVB7COM, EVB7STREAM, NOVENA7.
      */
-    std::string type;
+    std::string module;
+
+    /*!
+     * The connection media type.
+     * Example: SPI, COM, USB.
+     */
+    std::string media;
 
     /*!
      * The name of the device. Example: STREAM, NOVENA.

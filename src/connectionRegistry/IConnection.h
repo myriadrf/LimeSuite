@@ -9,7 +9,6 @@
 
 #include <string>
 #include <vector>
-//#include <mutex>
 #include <cstring> //memset
 #include <functional>
 
@@ -21,45 +20,13 @@ enum OperationStatus
     DISCONNECTED,
 };
 
-using namespace std;
-
-/*!
- * Information about a particular RFIC on an IConnection.
- * RFICInfo associates streaming channels and SPI slaves.
- */
-struct RFICInfo
-{
-
-    RFICInfo(void);
-
-    /*!
-     * The SPI index number used to access the lime RFIC.
-     * This index will be used in the spi access functions.
-     */
-    int spiIndexRFIC;
-
-    /*!
-     * The SPI index number used to access the Si5351
-     * found on some development boards. -1 when not present.
-     */
-    int spiIndexSi5351;
-
-    /*!
-     * The channel number used in the read stream API.
-     * Set to -1 when RX streaming not available.
-     */
-    int rxChannel;
-
-    /*!
-     * The channel number used in the write stream API.
-     * Set to -1 when TX streaming not available.
-     */
-    int txChannel;
-};
-
 /*!
  * Information about the set of available hardware on a device.
  * This includes available ICs, streamers, and version info.
+ *
+ * This structure provides SPI slave addresses for one or more RFICs
+ * and slave addresses or I2C addresses for commonly supported ICs.
+ * A -1 for an address number indicates that it is not available.
  */
 struct DeviceInfo
 {
@@ -81,6 +48,24 @@ struct DeviceInfo
 
     //! The protocol version as a string
     std::string protocolVersion;
+
+    /*!
+     * The SPI address numbers used to access each LMS7002M.
+     * This index will be used in the spi access functions.
+     */
+    std::vector<int> addrsLMS7002M;
+
+    /*!
+     * The I2C address number used to access the Si5351
+     * found on some development boards. -1 when not present.
+     */
+    int addrSi5351;
+
+    /*!
+     * The SPI address number used to access the ADF4002
+     * found on some development boards. -1 when not present.
+     */
+    int addrADF4002;
 };
 
 /*!
@@ -137,34 +122,47 @@ public:
     virtual DeviceInfo GetDeviceInfo(void);
 
     /*!
-     * RFIC enumeration API.
-     * @return a list of RFICInfos
-     */
-    virtual std::vector<RFICInfo> ListRFICs(void);
-
-    /*!
      * Perform reset sequence on the device.
      * Typically this will reset the RFIC using a GPIO,
      * and possibly other ICs located on the device.
      */
     virtual OperationStatus DeviceReset(void);
 
-   /*!
-    * @brief Bulk SPI write/read transaction.
-    *
-    * The transactSPI function is capable of bulk writes and bulk reads
-    * of SPI registers in an arbitrary IC (up to 32-bits per transaction).
-    *
-    * The readData parameter may be NULL to indicate a write-only operation,
-    * the underlying implementation may be able to optimize out the readback.
-    *
-    * @param index the SPI device index
-    * @param writeData SPI bits to write out
-    * @param [out] readData stores readback data
-    * @param size the number of SPI transactions
-    * @return the transaction success state
-    */
-    virtual OperationStatus TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    /*!
+     * @brief Bulk SPI write/read transaction.
+     *
+     * The transactSPI function is capable of bulk writes and bulk reads
+     * of SPI registers in an arbitrary IC (up to 32-bits per transaction).
+     *
+     * The readData parameter may be NULL to indicate a write-only operation,
+     * the underlying implementation may be able to optimize out the readback.
+     *
+     * @param addr the SPI device address
+     * @param writeData SPI bits to write out
+     * @param [out] readData stores readback data
+     * @param size the number of SPI transactions
+     * @return the transaction success state
+     */
+    virtual OperationStatus TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    /*!
+     * Write to an available I2C slave.
+     * @param addr the address of the slave
+     * @param data an array of bytes write out
+     * @return the transaction success state
+     */
+    virtual OperationStatus WriteI2C(const int addr, const std::string &data);
+
+    /*!
+     * Read from an available I2C slave.
+     * If the device contains multiple I2C masters,
+     * the address bits can encode which master.
+     * \param addr the address of the slave
+     * \param numBytes the number of bytes to read
+     * \param [out] data an array of bytes read from the slave
+     * @return the transaction success state
+     */
+    virtual OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.
@@ -231,8 +229,6 @@ public:
      * @return the number of bytes written or error code
      */
     virtual int WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-
-
 
     /** @brief Uploads program to selected device
         @param buffer binary program data
@@ -302,12 +298,68 @@ public:
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
 
 protected:
-    //unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
-    //int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
-    //eConnectionType m_connectionType;
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     bool mSystemBigEndian;
-    //std::mutex mControlPortLock;
+};
+
+/*!
+ * The IConnectionProxy contains an internal IConnection
+ * that can be swapped out at runtime via reset().
+ * The IConnectionProxy does not own the connection.
+ */
+class IConnectionProxy
+{
+public:
+
+    IConnectionProxy(void);
+
+    //! Create a proxy from a connection pointer
+    IConnectionProxy(IConnection *conn);
+
+    /*!
+     * Create a proxy from a pointer to a connection pointer.
+     * This is used for swapping out the underlying connection.
+     */
+    IConnectionProxy(IConnection **conn);
+
+    //! Set the internal connection to null
+    void reset(void);
+
+    //! Set the internal connection to conn
+    void reset(IConnection *conn);
+
+    //! Get the internal connection
+    const IConnection *get(void) const;
+
+    //! Get the internal connection
+    IConnection *get(void);
+
+    //! True when the connection is not null
+    operator bool(void) const;
+
+    const IConnection* operator->(void) const
+    {
+        return this->get();
+    }
+
+    IConnection* operator->(void)
+    {
+        return this->get();
+    }
+
+    const IConnection& operator*(void) const
+    {
+        return *this->get();
+    }
+
+    IConnection& operator*(void)
+    {
+        return *this->get();
+    }
+
+private:
+    IConnection **_connRef;
+    IConnection *_internal;
 };
 
 #endif

@@ -6,6 +6,23 @@
 
 #include "LMS64CProtocol.h"
 
+//! arbitrary spi constants used to dispatch calls
+
+#define LMS7002M_SPI_INDEX 0x10
+#define Si5351_I2C_ADDR 0x20
+#define ADF4002_SPI_INDEX 0x30
+
+static OperationStatus convertStatus(const LMS64CProtocol::TransferStatus &status, const LMS64CProtocol::GenericPacket &pkt)
+{
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS) return OperationStatus::FAILED;
+    switch (pkt.status)
+    {
+    case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
+    case STATUS_UNKNOWN_CMD: return OperationStatus::UNSUPPORTED;
+    }
+    return OperationStatus::FAILED;
+}
+
 LMS64CProtocol::LMS64CProtocol(void)
 {
     return;
@@ -24,66 +41,162 @@ OperationStatus LMS64CProtocol::DeviceReset(void)
     pkt.cmd = CMD_LMS7002_RST;
     pkt.outBuffer.push_back(LMS_RST_PULSE);
     TransferStatus status = this->TransferPacket(pkt);
-    if (status != TRANSFER_SUCCESS) return OperationStatus::FAILED;
-    switch (pkt.status)
-    {
-    case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
-    case STATUS_UNKNOWN_CMD: return OperationStatus::UNSUPPORTED;
-    }
-    return OperationStatus::FAILED;
+
+    return convertStatus(status, pkt);
 }
 
-OperationStatus LMS64CProtocol::TransactSPI(const int index, const uint32_t *writeData, uint32_t *readData, const size_t size)
+OperationStatus LMS64CProtocol::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    //TODO for multiple LMS7002M, the index would need to be encoded into the packet
+    //! TODO
+    //! For multi-LMS7002M, RFIC # could be encoded with the slave number
+    //! And the index would need to be encoded into the packet as well
 
     if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
 
-    TransferStatus status;
-    GenericPacket pkt;
-
-    if (readData != nullptr)
+    //perform spi writes when there is no read data
+    if (readData == nullptr) switch(addr)
     {
-        pkt.cmd = CMD_LMS7002_RD;
-        for (size_t i = 0; i < size; ++i)
-        {
-            uint16_t addr = (writeData[i] >> 16) & 0x7fff;
-            pkt.outBuffer.push_back(addr >> 8);
-            pkt.outBuffer.push_back(addr & 0xFF);
-        }
-
-        status = this->TransferPacket(pkt);
-
-        for (size_t i = 0; i < size; ++i)
-        {
-            readData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];
-        }
-    }
-    else
-    {
-        pkt.cmd = CMD_LMS7002_WR;
-        for (size_t i = 0; i < size; ++i)
-        {
-            uint16_t addr = (writeData[i] >> 16) & 0x7fff;
-            uint16_t data = writeData[i] & 0xffff;
-            pkt.outBuffer.push_back(addr >> 8);
-            pkt.outBuffer.push_back(addr & 0xFF);
-            pkt.outBuffer.push_back(data >> 8);
-            pkt.outBuffer.push_back(data & 0xFF);
-        }
-
-        status = this->TransferPacket(pkt);
+    case LMS7002M_SPI_INDEX: return this->WriteLMS7002MSPI(writeData, size);
+    case ADF4002_SPI_INDEX: return this->WriteADF4002SPI(writeData, size);
     }
 
-    if (status != TRANSFER_SUCCESS) return OperationStatus::FAILED;
-    switch (pkt.status)
+    //otherwise perform reads into the provided buffer
+    if (readData != nullptr) switch(addr)
     {
-    case STATUS_COMPLETED_CMD: return OperationStatus::SUCCESS;
-    case STATUS_UNKNOWN_CMD: return OperationStatus::UNSUPPORTED;
+    case LMS7002M_SPI_INDEX: return this->ReadLMS7002MSPI(writeData, readData, size);
+    case ADF4002_SPI_INDEX: return this->ReadADF4002SPI(writeData, readData, size);
     }
-    return OperationStatus::FAILED;
+
+    return OperationStatus::UNSUPPORTED;
 }
 
+OperationStatus LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
+{
+    if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
+
+    switch(addr)
+    {
+    case Si5351_I2C_ADDR: return this->WriteSi5351I2C(data);
+    }
+
+    return OperationStatus::UNSUPPORTED;
+}
+
+OperationStatus LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &data)
+{
+    if (not this->IsOpen()) return OperationStatus::DISCONNECTED;
+
+    switch(addr)
+    {
+    case Si5351_I2C_ADDR: return this->ReadSi5351I2C(numBytes, data);
+    }
+
+    return OperationStatus::UNSUPPORTED;
+}
+
+/***********************************************************************
+ * LMS7002M SPI access
+ **********************************************************************/
+OperationStatus LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, const size_t size)
+{
+    GenericPacket pkt;
+    pkt.cmd = CMD_LMS7002_WR;
+    for (size_t i = 0; i < size; ++i)
+    {
+        uint16_t addr = (writeData[i] >> 16) & 0x7fff;
+        uint16_t data = writeData[i] & 0xffff;
+        pkt.outBuffer.push_back(addr >> 8);
+        pkt.outBuffer.push_back(addr & 0xFF);
+        pkt.outBuffer.push_back(data >> 8);
+        pkt.outBuffer.push_back(data & 0xFF);
+    }
+
+    TransferStatus status = this->TransferPacket(pkt);
+
+    return convertStatus(status, pkt);
+}
+
+OperationStatus LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    GenericPacket pkt;
+    pkt.cmd = CMD_LMS7002_RD;
+    for (size_t i = 0; i < size; ++i)
+    {
+        uint16_t addr = (writeData[i] >> 16) & 0x7fff;
+        pkt.outBuffer.push_back(addr >> 8);
+        pkt.outBuffer.push_back(addr & 0xFF);
+    }
+
+    TransferStatus status = this->TransferPacket(pkt);
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        readData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];
+    }
+
+    return convertStatus(status, pkt);
+}
+
+/***********************************************************************
+ * Si5351 SPI access
+ **********************************************************************/
+OperationStatus LMS64CProtocol::WriteSi5351I2C(const std::string &data)
+{
+    GenericPacket pkt;
+    pkt.cmd = CMD_SI5351_WR;
+
+    for (size_t i = 0; i < data.size(); i++)
+    {
+        pkt.outBuffer.push_back(data.at(i));
+    }
+
+    TransferStatus status = this->TransferPacket(pkt);
+    return convertStatus(status, pkt);
+}
+
+OperationStatus LMS64CProtocol::ReadSi5351I2C(const size_t numBytes, std::string &data)
+{
+    GenericPacket pkt;
+    pkt.cmd = CMD_SI5351_RD;
+
+    TransferStatus status = this->TransferPacket(pkt);
+
+    data.clear();
+    for (size_t i = 0; i < pkt.inBuffer.size(); ++i)
+    {
+        data += pkt.inBuffer[i];
+    }
+
+    return convertStatus(status, pkt);
+}
+
+/***********************************************************************
+ * ADF4002 SPI access
+ **********************************************************************/
+OperationStatus LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const size_t size)
+{
+    GenericPacket pkt;
+    pkt.cmd = CMD_ADF4002_WR;
+
+    for (size_t i = 0; i < size; i++)
+    {
+        pkt.outBuffer.push_back((writeData[i] >> 16) & 0xff);
+        pkt.outBuffer.push_back((writeData[i] >> 8) & 0xff);
+        pkt.outBuffer.push_back((writeData[i] >> 0) & 0xff);
+    }
+
+    TransferStatus status = this->TransferPacket(pkt);
+    return convertStatus(status, pkt);
+}
+
+OperationStatus LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    //TODO
+}
+
+/***********************************************************************
+ * Device Information
+ **********************************************************************/
 DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
 {
     LMSinfo lmsInfo = this->GetInfo();
@@ -93,6 +206,9 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
     devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
     devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
+    devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
+    devInfo.addrSi5351 = Si5351_I2C_ADDR;
+    devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     return devInfo;
 }
 

@@ -1,3 +1,6 @@
+########################################################################
+## Create lime-suite project
+########################################################################
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE TYPE INTERNAL FORCE)
 project("lms7suite")
@@ -12,6 +15,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
+########################################################################
+## wx widgets dependency
+########################################################################
 find_package(wxWidgets REQUIRED richtext xml html xrc adv aui core base gl)
 include(${wxWidgets_USE_FILE})
 set(wxWidgets_USE_DEBUG OFF)
@@ -19,17 +25,26 @@ set(wxWidgets_USE_UNICODE ON)
 set(wxWidgets_USE_UNIVERSAL OFF)
 set(wxWidgets_USE_STATIC ON)
 
-# connection registry
+########################################################################
+## connection registry and built-in connections
+########################################################################
 add_subdirectory(connectionRegistry)
 include_directories(connectionRegistry)
 add_subdirectory(ConnectionEVB7COM)
+add_subdirectory(ConnectionSTREAM)
 set(connectionRegistryLibs
 	connectionRegistry
 	ConnectionEVB7COM
+	ConnectionSTREAM
 )
 add_subdirectory(protocols)
 
+#TODO temporary while we re-factor
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/protocols)
+
+########################################################################
 # Add sub-directories
+########################################################################
 add_subdirectory(lms7002_wxgui)
 include_directories(lms7002_wxgui)
 add_subdirectory(numericSlider)
@@ -69,6 +84,9 @@ include_directories(lms7002m_novena)
 add_subdirectory(oglGraph)
 include_directories(oglGraph)
 
+########################################################################
+## lms7suite graphical app
+########################################################################
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
 set(lms7suiteApp
@@ -132,6 +150,25 @@ endif(MSVC)
 ########################################################################
 # Lime Util -- command line utility for quick testing connections
 ########################################################################
-
 add_executable(LimeUtil LimeUtil.cpp)
 target_link_libraries(LimeUtil ${connectionRegistryLibs})
+
+########################################################################
+## SoapySDR bindings for IConnection
+########################################################################
+add_subdirectory(SoapyIConnection)
+
+#########################################################################
+# summary
+#########################################################################
+include(FeatureSummary)
+message(STATUS "")
+message(STATUS "######################################################")
+message(STATUS "## ${PROJECT_NAME} enabled features")
+message(STATUS "######################################################")
+feature_summary(WHAT ENABLED_FEATURES)
+message(STATUS "######################################################")
+message(STATUS "## ${PROJECT_NAME} disabled features")
+message(STATUS "######################################################")
+feature_summary(WHAT DISABLED_FEATURES)
+message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")

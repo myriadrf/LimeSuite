@@ -222,7 +222,7 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
     if (fftviewer)
         fftviewer->StopStreaming();
 
-    dlg.SetConnectionManagers(lms7controlPort, streamBoardPort);
+    dlg.SetConnectionManagers(&lms7controlPort, &streamBoardPort);
     Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
     Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
     Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);

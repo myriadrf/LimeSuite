@@ -19,6 +19,8 @@
 #include <wx/string.h>
 #include <wx/combobox.h>
 
+using namespace std;
+
 const long ADF4002_wxgui::ID_STATICTEXT1 = wxNewId();
 const long ADF4002_wxgui::ID_STATICTEXT2 = wxNewId();
 const long ADF4002_wxgui::ID_STATICTEXT3 = wxNewId();
