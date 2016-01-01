@@ -67,7 +67,6 @@ void Myriad7_wxgui::Initialize(IConnection* pSerPort)
 
 void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 {
-    assert(serPort != nullptr);
     if (serPort == nullptr)
         return;
     unsigned rxInput = cmbGPIO_1_0->GetSelection();
@@ -86,7 +85,6 @@ void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 
 void Myriad7_wxgui::UpdatePanel()
 {
-    assert(serPort != nullptr);
     if (serPort == nullptr || serPort->GetDeviceInfo().expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
         return;
 

@@ -251,7 +251,7 @@ void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
     assert(mStreamer != nullptr);
-    if (m_serPort->IsOpen() == false)
+    if (!m_serPort || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
@@ -411,6 +411,12 @@ void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 {
+    if(!m_serPort)
+    {
+        wxMessageBox(_("FPGA controls: Connection not initialized"), _("ERROR"));
+        return;
+    }
+
     const uint16_t address = 0x0016;
     uint32_t dataWr = (1 << 31) | address << 16;
     uint32_t dataRd = 0;

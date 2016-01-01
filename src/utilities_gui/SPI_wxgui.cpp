@@ -24,7 +24,6 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
     long data = 0;
     value.ToLong(&data, 16);
 
-    assert(ctrPort != nullptr);
     if (ctrPort == nullptr)
         return;
 // TODO : get device index from outside
@@ -47,7 +46,6 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
     long addr = 0;
     address.ToLong(&addr, 16);
 
-    assert(ctrPort != nullptr);
     if (ctrPort == nullptr)
         return;
 

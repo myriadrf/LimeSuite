@@ -15,8 +15,7 @@ using namespace std;
 */
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const int devIndex, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
 {
-    assert(serPort != nullptr);
-    if (serPort == NULL)
+    if (serPort == nullptr)
         return FAILURE;
     if (serPort->IsOpen() == false)
         return FAILURE;
@@ -217,6 +216,15 @@ void ResetUSBFIFO(IConnection* port)
 */
 void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ReceivePackets: port not connected");
+    #endif
+        return;
+    }
+
+
     SamplesPacket pkt;
     int samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
@@ -403,6 +411,14 @@ void LMS_StreamBoard::ProcessPackets(LMS_StreamBoard* pthis, unsigned int fftSiz
 */
 void LMS_StreamBoard::TransmitPackets(LMS_StreamBoard* pthis)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ReceivePackets: port not connected");
+    #endif
+        return;
+    }
+
     const int packetsToBatch = 16;
     const int buffer_size = sizeof(SamplesPacket)*packetsToBatch;
     const int buffers_count = 16; // must be power of 2
@@ -580,7 +596,7 @@ int LMS_StreamBoard::FindFrameStart(const char* buffer, const int bufLen, const 
 */
 LMS_StreamBoard::Status LMS_StreamBoard::StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount)
 {
-    if (mDataPort->IsOpen() == false)
+    if (!mDataPort || mDataPort->IsOpen() == false)
         return FAILURE;
 
     stopTxCyclic.store(false);

@@ -992,6 +992,11 @@ liblms7_status LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const 
 */
 liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount)
 {
+    if (!controlPort)
+        return LIBLMS7_NO_CONNECTION_MANAGER;
+    if (controlPort->IsOpen() == false)
+        return LIBLMS7_NOT_CONNECTED;
+
     liblms7_status status = LIBLMS7_FAILURE;
     uint8_t index;
     uint8_t coefLimit;

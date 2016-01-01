@@ -23,7 +23,7 @@ END_EVENT_TABLE()
 
 HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 {
-    m_serPort = nullptr;    
+    m_serPort = nullptr;
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, _T("id"));
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
@@ -32,7 +32,7 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     wxFlexGridSizer* tunersSizer = new wxFlexGridSizer(0, 3, 5, 5);
     wxStaticBoxSizer* tunerGroup;
     wxStaticText* stext;
-    wxString tunerNames[] = { 
+    wxString tunerNames[] = {
         _("TUNER_A_IN"),
         _("TUNER_A_MID"),
         _("TUNER_A_OUT"),
@@ -50,8 +50,8 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
 
     for (int i = 0; i < 6; ++i)
     {
-        tunerIds.push_back(wxNewId());        
-        cmbSSC1ids.push_back(wxNewId());        
+        tunerIds.push_back(wxNewId());
+        cmbSSC1ids.push_back(wxNewId());
         tunerGroup = new wxStaticBoxSizer(wxVERTICAL, this, tunerNames[i]);
         chkEB.push_back(new wxCheckBox(this, tunerIds[i], _("Ext. branch (F11)")));
         Connect(tunerIds[i], wxEVT_CHECKBOX, (wxObjectEventFunction)&HPM7_wxgui::OnTunerSSC2change);
@@ -59,7 +59,7 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
         chkTP.push_back(new wxCheckBox(this, tunerIds[i], _("Through path (F10)")));
         Connect(tunerIds[i], wxEVT_CHECKBOX, (wxObjectEventFunction)&HPM7_wxgui::OnTunerSSC2change);
         tunerGroup->Add(chkTP[i], 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-        
+
         stext = new wxStaticText(this, wxNewId(), _("SSC2 (F9-F6)"));
         tunerGroup->Add(stext);
         cmbSSC2.push_back(new wxComboBox(this, tunerIds[i], ssc2_choices[0], wxDefaultPosition, wxDefaultSize, ssc2_choices));
@@ -109,7 +109,7 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     cmbLNA = new wxComboBox(this, wxNewId(), lnaChoices[1], wxDefaultPosition, wxDefaultSize, 2, lnaChoices);
     Connect(cmbLNA->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnGPIOchange);
     gpioControls->Add(cmbLNA, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
-    
+
     gpioControls->Add(new wxStaticText(this, wxID_ANY, _("PAs Vd Driver:")), 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 0);
     const wxString paChoices[] = { _("5V"), _("2V") };
     //GPIO4
@@ -124,8 +124,8 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     wxFlexGridSizer* dacSizer = new wxFlexGridSizer(0, 2, 5, 5);
     wxArrayString dac_choices;
     for (int i = 0; i < 256; ++i)
-        dac_choices.push_back(wxString::Format("%.2f V", i*3.3/256));    
-    cmbDAC_A = new wxComboBox(this, wxNewId(), "0", wxDefaultPosition, wxSize(64, -1), dac_choices);    
+        dac_choices.push_back(wxString::Format("%.2f V", i*3.3/256));
+    cmbDAC_A = new wxComboBox(this, wxNewId(), "0", wxDefaultPosition, wxSize(64, -1), dac_choices);
     dacSizer->Add(new wxStaticText(this, wxNewId(), "DAC_A: "), 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
     dacSizer->Add(cmbDAC_A, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0);
 
@@ -136,11 +136,11 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     Connect(cmbDAC_B->GetId(), wxEVT_COMBOBOX, (wxObjectEventFunction)&HPM7_wxgui::OnDACchange);
     wxStaticBoxSizer* dacGroup = new wxStaticBoxSizer(wxVERTICAL, this, _("DAC"));
     dacGroup->Add(dacSizer);
-    
+
     leftCollumn->Add(dacGroup);
     mainSizer->Add(leftCollumn);
-    mainSizer->Add(tunersSizer);    
-   
+    mainSizer->Add(tunersSizer);
+
     SetSizer(mainSizer);
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
@@ -150,7 +150,6 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
 void HPM7_wxgui::Initialize(LMScomms* serPort)
 {
 	m_serPort = serPort;
-	assert(m_serPort != nullptr);
 }
 
 HPM7_wxgui::~HPM7_wxgui()
@@ -160,13 +159,12 @@ HPM7_wxgui::~HPM7_wxgui()
 
 void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 {
-    assert(m_serPort != nullptr);
     if (m_serPort == nullptr || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-        
+
     int tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < cmbSSC1.size(); ++tunerIndex)
         if (event.GetId() == cmbSSC1[tunerIndex]->GetId())
@@ -185,7 +183,6 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
 {
-    assert(m_serPort != nullptr);
     if (m_serPort == nullptr || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
@@ -203,7 +200,7 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
     pkt.cmd = CMD_MYRIAD_WR;
     unsigned char address = (0x21 + tunerIndex * 2);
     pkt.outBuffer.push_back(0x21 + tunerIndex*2);
-    unsigned char value = chkEB[tunerIndex]->GetValue() << 5;    
+    unsigned char value = chkEB[tunerIndex]->GetValue() << 5;
     value |= chkTP[tunerIndex]->GetValue() << 4;
     value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);
     pkt.outBuffer.push_back(value);
@@ -231,12 +228,11 @@ void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
         evt.SetEventType(LMS7_TXBAND_CHANGED);
         evt.SetInt(event.GetInt());
         wxPostEvent(this, evt);
-    }    
+    }
 }
 
 void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 {
-    assert(m_serPort != nullptr);
     if (m_serPort == nullptr || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
@@ -265,7 +261,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
     int index = 3;
     for (int i = 0; i < chkEB.size(); ++i)
-    {        
+    {
         cmbSSC1[i]->SetSelection(pkt.inBuffer[index] & 0x1F);
         index+=2;
         chkEB[i]->SetValue((pkt.inBuffer[index] >> 5) & 1);
@@ -281,7 +277,6 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
 void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
 {
-    assert(m_serPort != nullptr);
     if (m_serPort == nullptr || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
@@ -321,7 +316,6 @@ void HPM7_wxgui::SelectRxPath(unsigned int i)
 
 bool HPM7_wxgui::UploadGPIO()
 {
-    assert(m_serPort != nullptr);
     if (m_serPort == nullptr || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Uploading HPM7 GPIO, board not connected"), _("Warning"));

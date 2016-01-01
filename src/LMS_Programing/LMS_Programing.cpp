@@ -111,7 +111,7 @@ LMS_Programing::Status LMS_Programing::UploadProgram(const int device, const int
     if(m_data_size == 0 && (device != 1) && (prog_mode != 2))
         return FAILURE;
 
-    if(!m_serPort->IsOpen())
+    if(!m_serPort || !m_serPort->IsOpen())
         return DEVICE_NOT_CONNECTED;
     mUploadInProgress.store(true);
     const int pktSize = 32;

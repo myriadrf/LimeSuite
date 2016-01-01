@@ -105,6 +105,11 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
+    if(!mDataPort)
+    {
+        wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
+        return;
+    }
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();

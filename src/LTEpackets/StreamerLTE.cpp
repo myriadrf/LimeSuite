@@ -340,6 +340,13 @@ static void ResetUSBFIFO(IConnection* port)
 */
 void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ProcessPackets: port not connected");
+    #endif
+        return;
+    }
     pthis->mRxFIFO->Reset(2*4096, channelsCount);
     pthis->mTxFIFO->Reset(2*4096, channelsCount);
 
@@ -781,7 +788,8 @@ StreamerLTE::Stats StreamerLTE::GetStats()
 
 StreamerLTE::STATUS StreamerLTE::SPI_write(IConnection* dataPort, uint16_t address, uint16_t data)
 {
-    assert(dataPort != nullptr);
+    if(dataPort == nullptr);
+        return FAILURE;
     const uint32_t dataWr = (1 << 31) | address << 16 | data;
 // TODO : get device index from outside
     const int devIndex = 0;
@@ -791,7 +799,8 @@ StreamerLTE::STATUS StreamerLTE::SPI_write(IConnection* dataPort, uint16_t addre
 }
 uint16_t StreamerLTE::SPI_read(IConnection* dataPort, uint16_t address)
 {
-    assert(dataPort != nullptr);
+    if(dataPort == nullptr);
+        return 0;
     const uint32_t dataWr = address << 16;
     uint32_t dataRd = 0;
     OperationStatus status;
