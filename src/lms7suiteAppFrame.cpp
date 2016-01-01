@@ -65,7 +65,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             evt.SetString(msg);
             wxPostEvent(this, evt);
         }
-        if (streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
+        if (streamBoardPort && streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
         {
 // TODO : get FPGA device index
             const int fpgaIndex = 0;
@@ -227,12 +227,12 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
 
 void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
+    UpdateConnections(lms7controlPort, streamBoardPort);
     const int controlCollumn = 1;
     if (lms7controlPort && lms7controlPort->IsOpen())
     {
         //bind callback for spi data logging
         lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-        UpdateConnections(lms7controlPort, streamBoardPort);
 
         DeviceInfo info = lms7controlPort->GetDeviceInfo();
         wxString controlDev = _("Control port: ");
@@ -283,12 +283,12 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
 {
+    UpdateConnections(lms7controlPort, streamBoardPort);
     const int dataCollumn = 2;
     if (streamBoardPort && streamBoardPort->IsOpen())
     {
         //bind callback for spi data logging
         streamBoardPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-        UpdateConnections(lms7controlPort, streamBoardPort);
 
         DeviceInfo info = streamBoardPort->GetDeviceInfo();
         wxString controlDev = _("Data port: ");

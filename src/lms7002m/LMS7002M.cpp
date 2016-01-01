@@ -59,6 +59,8 @@ void LMS7002M::SetConnection(IConnection* port, const int addr)
     controlPort = port;
     addrLMS7002M = addr;
 
+    if(!controlPort)
+        return;
     //automatic selection when address not specified
     if (addrLMS7002M == -1)
     {

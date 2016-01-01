@@ -129,7 +129,7 @@ OperationStatus LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint3
 
     TransferStatus status = this->TransferPacket(pkt);
 
-    for (size_t i = 0; i < size; ++i)
+    for (size_t i = 0; i < size && i < pkt.inBuffer.size(); ++i)
     {
         readData[i] = (pkt.inBuffer[2*sizeof(uint16_t)*i + 2] << 8) | pkt.inBuffer[2*sizeof(uint16_t)*i + 3];
     }
