@@ -161,6 +161,11 @@ OperationStatus LMS64CProtocol::ReadSi5351I2C(const size_t numBytes, std::string
 
     TransferStatus status = this->TransferPacket(pkt);
 
+    for (size_t i = 0; i < data.size(); i++)
+    {
+        pkt.outBuffer.push_back(data.at(i));
+    }
+
     data.clear();
     for (size_t i = 0; i < pkt.inBuffer.size(); ++i)
     {

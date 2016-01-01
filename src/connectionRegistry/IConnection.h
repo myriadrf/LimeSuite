@@ -155,11 +155,13 @@ public:
 
     /*!
      * Read from an available I2C slave.
+     * The data parameter can be used to pass optional write data.
+     * Some implementations can combine a write + read transaction.
      * If the device contains multiple I2C masters,
      * the address bits can encode which master.
      * \param addr the address of the slave
      * \param numBytes the number of bytes to read
-     * \param [out] data an array of bytes read from the slave
+     * \param [inout] data an array of bytes read from the slave
      * @return the transaction success state
      */
     virtual OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);

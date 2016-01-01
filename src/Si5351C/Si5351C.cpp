@@ -301,7 +301,7 @@ Si5351C::Status Si5351C::UploadConfiguration()
 	if (!device && device->IsOpen() == false)
         return FAILED;
 
-    vector<uint8_t> outBuffer;
+    std::string outBuffer;
     //Disable outputs
 	outBuffer.push_back(3);
     outBuffer.push_back(0xFF);
@@ -329,13 +329,8 @@ Si5351C::Status Si5351C::UploadConfiguration()
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);
 
-    vector<uint32_t> spiBuffer;
-    //Si5351C uses 8 bits for address, 8 bits for data
-// TODO : checkup if this needs any extra info for writing
-    for(int i=0; i<outBuffer.size(); i+=2)
-        spiBuffer.push_back((uint32_t)outBuffer[i] << 8 | outBuffer[i+1]);
     OperationStatus status;
-    status = device->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size());
+    status = device->WriteI2C(addrSi5351, outBuffer);
     if (status != OperationStatus::SUCCESS)
         return FAILED;
     return SUCCESS;
@@ -349,6 +344,8 @@ Si5351C::Status Si5351C::UploadConfiguration()
 void Si5351C::Initialize(IConnection *mng)
 {
 	device = mng;
+	if (device != nullptr and device->IsOpen())
+		addrSi5351 = mng->GetDeviceInfo().addrSi5351;
 }
 
 /**
@@ -838,17 +835,16 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
     StatusBits stat;
     if(!device)
         return stat;
-    const uint32_t dataWr[2] = { 0x0000, 0x0100};
-    uint32_t dataRd[2];
+    std::string dataIo;
+    dataIo.push_back(0);
+    dataIo.push_back(1);
 
-// TODO : get device index from outside
-    const int devIndex = 0;
     OperationStatus status;
-    status = device->TransactSPI(devIndex, (uint32_t*)&dataWr, (uint32_t*)&dataRd, 2);
+    status = device->ReadI2C(addrSi5351, 2, dataIo);
     if (status != OperationStatus::SUCCESS)
         return stat;
-    uint8_t reg0 = dataRd[0] & 0xFF;
-    uint8_t reg1 = dataRd[1] & 0xFF;
+    uint8_t reg0 = dataIo[0] & 0xFF;
+    uint8_t reg1 = dataIo[1] & 0xFF;
     stat.sys_init = (reg0 >> 7);
     stat.lol_b = (reg0 >> 6) & 0x1;
     stat.lol_a = (reg0 >> 5) & 0x1;
@@ -864,11 +860,13 @@ Si5351C::Status Si5351C::ClearStatus()
 {
     if(!device)
         return FAILED;
-// TODO : get device index from outside
-    const int devIndex = 0;
-    const uint32_t dataWr = 0x0100;
+
+    std::string dataWr;
+    dataWr.push_back(1);
+    dataWr.push_back(0x1);
+
     OperationStatus status;
-    status = device->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    status = device->WriteI2C(addrSi5351, dataWr);
     if (status != OperationStatus::SUCCESS)
         return FAILED;
     return SUCCESS;

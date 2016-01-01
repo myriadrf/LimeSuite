@@ -87,6 +87,7 @@ public:
 private:
     void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
     IConnection *device;
+    int addrSi5351;
 
     Si5351_PLL PLL[2];
     Si5351_Channel CLK[8];
