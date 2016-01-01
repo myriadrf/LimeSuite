@@ -10,7 +10,6 @@
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
 #include "typedefs.h"
-#include "ProxyPtr.h"
 
 #include <sstream>
 
