@@ -18,10 +18,10 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
     _moduleName = handle.module;
     _conn = ConnectionRegistry::makeConnection(handle);
     const auto devInfo = _conn->GetDeviceInfo();
-    for (size_t i = 0; i < devInfo.addrsLMS7002M.size(); i++)
+    for (const auto &addr : devInfo.addrsLMS7002M)
     {
-        //TODO index
-        //_rfics.push_back(new LMS7002M(_conn));
+        _rfics.push_back(new LMS7002M());
+        _rfics.back()->SetConnection(_conn, addr);
     }
 }
 

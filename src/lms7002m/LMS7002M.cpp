@@ -54,9 +54,16 @@ void LMS7002M::Log(const char* text, LogType type)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IConnection* port)
+void LMS7002M::SetConnection(IConnection* port, const int addr)
 {
     controlPort = port;
+    addrLMS7002M = addr;
+
+    //automatic selection when address not specified
+    if (addrLMS7002M == -1)
+    {
+        addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M[0];
+    }
 }
 
 /** @brief Creates LMS7002M main control object.
@@ -64,7 +71,7 @@ It requires IConnection to be set by SetConnection() to communicate with chip
 */
 
 LMS7002M::LMS7002M() :
-    controlPort(nullptr), mRegistersMap(new LMS7002M_RegistersMap())
+    controlPort(nullptr), addrLMS7002M(-1), mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
@@ -1102,9 +1109,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    //TODO index should be stashed for this connection and specific RFIC
-    auto index = controlPort->GetDeviceInfo().addrsLMS7002M[0];
-    auto status = controlPort->TransactSPI(index, data.data(), nullptr, cnt);
+    auto status = controlPort->TransactSPI(addrLMS7002M, data.data(), nullptr, cnt);
 
     if (status == OperationStatus::SUCCESS)
         return LIBLMS7_SUCCESS;
@@ -1132,9 +1137,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
         dataWr[i] = (uint32_t(spiAddr[i]) << 16);
     }
 
-    //TODO index should be stashed for this connection and specific RFIC
-    auto index = controlPort->GetDeviceInfo().addrsLMS7002M[0];
-    auto status = controlPort->TransactSPI(index, dataWr.data(), dataRd.data(), cnt);
+    auto status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), cnt);
 
     if (status != OperationStatus::SUCCESS)
         return LIBLMS7_FAILURE;
