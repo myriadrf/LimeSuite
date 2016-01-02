@@ -94,27 +94,10 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     if (lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
-        const uint16_t NOVENA_GPIO_ADDR = 0x0706;
-        uint16_t regValue = lmsControl->SPI_read(NOVENA_GPIO_ADDR) & 0xFFF8;
-        //lms_gpio2 - tx output selection:
-        //		0 - TX1_A and TX1_B (Band 1),
-        //		1 - TX2_A and TX2_B (Band 2)
-        regValue |= lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF, false) << 2; //gpio2
-        //RX active paths
-        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
-        //  0 			0       =>  	no active path
-        //  1   		0 		=>	LNAW_A  	LNAW_B
-        //  0			1		=>	LNAH_A  	LNAH_B
-        //  1			1		=>	LNAL_A 	 	LNAL_B
-        switch(lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE, false))
-        {
-            //set gpio1:gpio0
-            case 0: regValue |= 0x0; break;
-            case 1: regValue |= 0x2; break;
-            case 2: regValue |= 0x3; break;
-            case 3: regValue |= 0x1; break;
-        }
-        lmsControl->SPI_write(NOVENA_GPIO_ADDR, regValue);
+        //update external band-selection to match
+        lms7controlPort->UpdateExternalBandSelect(
+            lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF),
+            lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE));
         if (novenaGui)
             novenaGui->UpdatePanel();
     }
@@ -413,8 +396,7 @@ void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
     else
     {
         rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-// TODO : initialize with IConnection, currently used only by RFSpark board
-//        rfspark->Initialize(lms7controlPort);
+        rfspark->Initialize(lms7controlPort);
         rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
         rfspark->Show();
     }
@@ -432,8 +414,7 @@ void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
     else
     {
         hpm7 = new HPM7_wxgui(this, wxNewId(), _("HPM7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-// TODO : initialize with IConnection, currently used only for HPM7 expansion board
-//        hpm7->Initialize(lms7controlPort);
+        hpm7->Initialize(lms7controlPort);
         hpm7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnHPM7Close), NULL, this);
         hpm7->Show();
     }
@@ -571,8 +552,7 @@ void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
     else
     {
         boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-// TODO : initialize with IConnection, currently used only by SoDeRa board
-        //boardControlsGui->Initialize(lms7controlPort);
+        boardControlsGui->Initialize(lms7controlPort);
         boardControlsGui->UpdatePanel();
         boardControlsGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnBoardControlsClose), NULL, this);
         boardControlsGui->Show();
@@ -595,12 +575,12 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
         fftviewer->Initialize(streamBoardPort);
     if(adfGUI)
         adfGUI->Initialize(adfModule, lms7controlPort);
-//    if(rfspark)
-//        rfspark->Initialize(lms7controlPort);
-//    if(hpm7)
-//        hpm7->Initialize(lms7controlPort);
-//    if(fpgaControls)
-//        fpgaControls->Initialize(streamBoardPort);
+    if(rfspark)
+        rfspark->Initialize(lms7controlPort);
+    if(hpm7)
+        hpm7->Initialize(lms7controlPort);
+    if(fpgaControls)
+        fpgaControls->Initialize(streamBoardPort);
     if(myriad7)
         myriad7->Initialize(lms7controlPort);
     if(deviceInfo)
@@ -609,8 +589,8 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
         spi->Initialize(lms7controlPort, streamBoardPort);
     if(novenaGui)
         novenaGui->Initialize(lms7controlPort);
-//    if(boardControlsGui)
-//        boardControlsGui->Initialize(lms7controlPort);
+    if(boardControlsGui)
+        boardControlsGui->Initialize(lms7controlPort);
     if(programmer)
         programmer->SetConnection(lms7controlPort);
 }
