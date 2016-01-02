@@ -8,6 +8,7 @@
 #include <IConnection.h>
 #include <stdexcept>
 #include <LMS7002M.h>
+#include <LMS7002M_RegistersMap.h>
 
 /*******************************************************************
  * Constructor/destructor
@@ -29,6 +30,17 @@ SoapyIConnection::~SoapyIConnection(void)
 {
     for (auto rfic : _rfics) delete rfic;
     ConnectionRegistry::freeConnection(_conn);
+}
+
+LMS7002M *SoapyIConnection::getRFIC(const size_t channel) const
+{
+    if (_rfics.size() >= channel/2)
+    {
+        throw std::out_of_range("SoapyIConnection::getRFIC("+std::to_string(channel)+") out of range");
+    }
+    auto rfic = _rfics.at(channel/2);
+    rfic->Modify_SPI_Reg_bits(MAC, (channel%2) + 1);
+    return rfic;
 }
 
 /*******************************************************************
@@ -198,28 +210,41 @@ SoapySDR::Range SoapyIConnection::getGainRange(const int direction, const size_t
 
 void SoapyIConnection::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
 {
+    auto rfic = getRFIC(channel);
+    auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
+
     if (name == "RF")
     {
-        //TODO tune LO
+        rfic->SetFrequencySX(direction == SOAPY_SDR_TX, frequency/1e6, ref_MHz);
+        return;
     }
 
     if (name == "BB")
     {
-        //TODO tune CORDIC
+        //TODO configure dsp bypass
+        rfic->SetNCOFrequency(direction == SOAPY_SDR_TX, 0, frequency/1e6);
+        return;
     }
+
+    throw std::runtime_error("SoapyIConnection::getFrequency("+name+") unknown name");
 }
 
 double SoapyIConnection::getFrequency(const int direction, const size_t channel, const std::string &name) const
 {
+    auto rfic = getRFIC(channel);
+    auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
+
     if (name == "RF")
     {
-        
+        return rfic->GetFrequencySX_MHz(direction == SOAPY_SDR_TX, ref_MHz)*1e6;
     }
 
     if (name == "BB")
     {
-        
+        return rfic->GetNCOFrequency_MHz(direction == SOAPY_SDR_TX, 0, ref_MHz)*1e6;
     }
+
+    throw std::runtime_error("SoapyIConnection::getFrequency("+name+") unknown name");
 }
 
 std::vector<std::string> SoapyIConnection::listFrequencies(const int /*direction*/, const size_t /*channel*/) const
@@ -230,8 +255,10 @@ std::vector<std::string> SoapyIConnection::listFrequencies(const int /*direction
     return opts;
 }
 
-SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, const size_t /*channel*/, const std::string &name) const
+SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, const size_t channel, const std::string &name) const
 {
+    auto rfic = getRFIC(channel);
+
     SoapySDR::RangeList ranges;
     if (name == "RF")
     {
@@ -239,7 +266,7 @@ SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, con
     }
     if (name == "BB")
     {
-        const double dspRate = 1e6; //TODO get from board
+        const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
         ranges.push_back(SoapySDR::Range(-dspRate/2, dspRate/2));
     }
     return ranges;
@@ -317,12 +344,16 @@ std::vector<double> SoapyIConnection::listBandwidths(const int direction, const 
 
 void SoapyIConnection::setMasterClockRate(const double rate)
 {
-    return _conn->SetReferenceClockRate(rate);
+    for (auto rfic : _rfics)
+    {
+        rfic->SetFrequencyCGEN(rate/1e6);
+    }
 }
 
 double SoapyIConnection::getMasterClockRate(void) const
 {
-    return _conn->GetReferenceClockRate();
+    auto rfic = this->getRFIC(0); //same for all RFIC
+    return rfic->GetFrequencyCGEN_MHz()*1e6;
 }
 
 /*******************************************************************

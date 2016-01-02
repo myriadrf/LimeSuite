@@ -18,6 +18,13 @@ endif()
 ########################################################################
 ## Build support module
 ########################################################################
+if(CMAKE_COMPILER_IS_GNUCXX)
+
+    #disable warnings for unused parameters
+    add_definitions(-Wno-unused-parameter)
+
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
 SOAPY_SDR_MODULE_UTIL(
     TARGET LimeIConnection
     SOURCES
