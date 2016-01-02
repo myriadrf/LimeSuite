@@ -10,7 +10,7 @@ using namespace std;
 #include "MCU_File.h"
 #include <sstream>
 #include <fstream>
-#include "lmsComms.h"
+#include "LMS64CProtocol.h"
 #include <assert.h>
 
 MCU_BD::MCU_BD()
@@ -42,9 +42,9 @@ MCU_BD::~MCU_BD()
     //dtor
 }
 
-void MCU_BD::Initialize(LMScomms* pSerPort)
+void MCU_BD::Initialize(IConnection* pSerPort)
 {
-    m_serPort = pSerPort;
+    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
 }
 
 /** @brief Read program code from file into memory
@@ -100,7 +100,7 @@ void MCU_BD:: mSPI_write(
             unsigned short data_reg)  // takes 16 bit value
 {
     assert(m_serPort != nullptr);
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_WR;
     pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
     pkt.outBuffer.push_back(addr_reg & 0xFF);
@@ -117,11 +117,11 @@ unsigned short MCU_BD:: mSPI_read(
     assert(m_serPort != nullptr);
     if (m_serPort->IsOpen()==true)
     {
-        LMScomms::GenericPacket pkt;
+        LMS64CProtocol::GenericPacket pkt;
         pkt.cmd = CMD_LMS7002_RD;
         pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
         pkt.outBuffer.push_back(addr_reg & 0xFF);
-        if (m_serPort->TransferPacket(pkt) == LMScomms::TRANSFER_SUCCESS)
+        if (m_serPort->TransferPacket(pkt) == LMS64CProtocol::TRANSFER_SUCCESS)
             if (pkt.status == STATUS_COMPLETED_CMD)
                 return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
     }
@@ -585,7 +585,7 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
     int packetNumber = 0;
     int status = STATUS_UNDEFINED;
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_PROG_MCU;
 
     stepsTotal.store(8192);

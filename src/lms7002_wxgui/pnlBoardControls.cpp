@@ -8,7 +8,7 @@
 #endif //WX_PRECOMP
 
 #include <assert.h>
-#include "lmsComms.h"
+#include "LMS64CProtocol.h"
 #include <wx/spinctrl.h>
 
 static wxString power2unitsString(char powerx3)
@@ -214,14 +214,14 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
     
     for (const auto& param : mADCparameters)
         pkt.outBuffer.push_back(param.channel);
     
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
@@ -261,7 +261,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
 
     for (int i = 0; i < mDACparameters.size(); ++i)
@@ -272,18 +272,18 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         pkt.outBuffer.push_back(mDACparameters[i].value & 0xFF);
     }
     assert(serPort != nullptr);
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
     }
 }
     
-void pnlBoardControls::Initialize(LMScomms* controlPort)
+void pnlBoardControls::Initialize(IConnection* controlPort)
 {
     assert(controlPort != nullptr);
-    serPort = controlPort;
+    serPort = dynamic_cast<LMS64CProtocol *>(controlPort);
     SetupControls(serPort->GetInfo().device);
     if (serPort->IsOpen())
     {
@@ -419,7 +419,7 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
         {
             mDACparameters[i].value = mDAC_GUI_widgets[i]->value->GetValue();
             //write to chip
-            LMScomms::GenericPacket pkt;
+            LMS64CProtocol::GenericPacket pkt;
             pkt.cmd = CMD_ANALOG_VAL_WR;
             pkt.outBuffer.push_back(mDACparameters[i].channel);
             pkt.outBuffer.push_back(mDACparameters[i].units << 4 | mDACparameters[i].powerOf10);
@@ -430,8 +430,8 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
             if (serPort->IsOpen() == false)
                 return;
 
-            LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-            if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+            LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
+            if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
                 wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
             return;
         }
@@ -451,13 +451,13 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
     pkt.outBuffer.push_back(spinCustomChannelRd->GetValue());
 
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
@@ -484,7 +484,7 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
     pkt.outBuffer.push_back(spinCustomChannelWr->GetValue());
     pkt.outBuffer.push_back(cmbCustomUnitsWr->GetSelection() << 4 | cmbCustomPowerOf10Wr->GetSelection());
@@ -493,8 +493,8 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
     pkt.outBuffer.push_back(value & 0xFF);
     
     assert(serPort != nullptr);
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;

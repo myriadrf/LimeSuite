@@ -15,7 +15,7 @@
 #include <wx/msgdlg.h>
 
 #include <vector>
-#include "lmsComms.h"
+#include "LMS64CProtocol.h"
 
 const long RFSpark_wxgui::ID_BTNREADADC = wxNewId();
 const long RFSpark_wxgui::ID_BTNREADALLADC = wxNewId();
@@ -181,9 +181,9 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     Connect(ID_BTNREADGPIO, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnReadGPIO);
 }
 
-void RFSpark_wxgui::Initialize(LMScomms* pSerPort)
+void RFSpark_wxgui::Initialize(IConnection* pSerPort)
 {
-    m_serPort = pSerPort;
+    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
     assert(m_serPort != nullptr);
     wxCommandEvent evt;
     OnbtnReadGPIO(evt);
@@ -212,15 +212,15 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
     
     for (int i = 0; i < mADCdata.size(); ++i)
         pkt.outBuffer.push_back(i);
     assert(m_serPort != nullptr);
-    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
+    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
@@ -247,15 +247,15 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
 	int index = cmbADCselect->GetSelection();
 	pkt.outBuffer.push_back(index);
     assert(m_serPort != nullptr);
-    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
+    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 	
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;
@@ -282,7 +282,7 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_WR;
     
 	int gpioIndex = 0;
@@ -293,8 +293,8 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 			value |= mGPIOboxes[gpioIndex++]->IsChecked() << j;			
         pkt.outBuffer.push_back(value);
 	}    
-    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)		
+    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)		
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
 }
 
@@ -306,12 +306,12 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
+    LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;
     assert(m_serPort != nullptr);
-    LMScomms::TransferStatus status = m_serPort->TransferPacket(pkt);
+    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
         return;

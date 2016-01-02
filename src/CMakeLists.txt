@@ -30,6 +30,7 @@ set(wxWidgets_USE_STATIC ON)
 ########################################################################
 add_subdirectory(connectionRegistry)
 include_directories(connectionRegistry)
+
 add_subdirectory(ConnectionEVB7COM)
 add_subdirectory(ConnectionSTREAM)
 set(connectionRegistryLibs
@@ -37,10 +38,9 @@ set(connectionRegistryLibs
 	ConnectionEVB7COM
 	ConnectionSTREAM
 )
-add_subdirectory(protocols)
 
-#TODO temporary while we re-factor
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/protocols)
+add_subdirectory(protocols)
+include_directories(protocols)
 
 ########################################################################
 # Add sub-directories

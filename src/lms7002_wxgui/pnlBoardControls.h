@@ -25,7 +25,8 @@
 #include <stdint.h>
 #include "lms7002_defines.h"
 
-class LMScomms;
+class LMS64CProtocol;
+class IConnection;
 
 class pnlBoardControls : public wxFrame
 {
@@ -91,8 +92,8 @@ class pnlBoardControls : public wxFrame
         ~pnlBoardControls();
 	
         void UpdatePanel();
-        void Initialize(LMScomms* controlPort);
-        LMScomms* serPort;
+        void Initialize(IConnection* controlPort);
+        LMS64CProtocol* serPort;
 
         void SetupControls(eLMS_DEV boardID);
         void OnSetDACvalues(wxSpinEvent &event);
