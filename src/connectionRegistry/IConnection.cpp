@@ -106,12 +106,12 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
     callback_logData = callback;
 }
 
-OperationStatus IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index)
+OperationStatus IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
     return UNSUPPORTED;
 }
 
-OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, const int index)
+OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
 {
     return UNSUPPORTED;
 }

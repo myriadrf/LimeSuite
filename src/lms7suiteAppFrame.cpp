@@ -388,7 +388,8 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
         programmer->Show();
     else
     {
-        programmer = new LMS_Programing_wxgui(lms7controlPort, this, wxNewId(), _("Programing"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        programmer = new LMS_Programing_wxgui(this, wxNewId(), _("Programing"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        programmer->SetConnection(lms7controlPort);
         programmer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnProgramingClose), NULL, this);
         programmer->Show();
     }
@@ -610,4 +611,6 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
         novenaGui->Initialize(lms7controlPort);
 //    if(boardControlsGui)
 //        boardControlsGui->Initialize(lms7controlPort);
+    if(programmer)
+        programmer->SetConnection(lms7controlPort);
 }

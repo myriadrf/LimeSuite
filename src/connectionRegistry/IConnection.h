@@ -18,6 +18,7 @@ enum OperationStatus
     FAILED,
     UNSUPPORTED,
     DISCONNECTED,
+    USER_ABORTED,
 };
 
 /*!
@@ -99,6 +100,14 @@ struct StreamMetadata
 class IConnection
 {
 public:
+    /*!
+     * Callback from programming processes
+     * @param bsent number of bytes transferred
+     * @param btotal total number of bytes to send
+     * @param progressMsg string describing current progress state
+     * @return 0-continue programming, 1-abort operation
+     */
+    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
 
     //! IConnection constructor
     IConnection(void);
@@ -237,20 +246,22 @@ public:
         @param length buffer length
         @param programmingMode to RAM, to FLASH, to EEPROM, etc..
         @param index target device number
+        @param callback callback for progress reporting or early termination
         @return the operation success state
 
         Can be used to program MCU, FPGA, write external on board memory.
-        This could be a quite long operation, need callback to get progress or terminate early
+        This could be a quite long operation, use callback to get progress info or to terminate early
     */
-    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index);
+    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
 
     /**	@brief Reads current program from selected device
         @param destination buffer for binary program data
         @param length buffer length to read
         @param index target device number
+        @param callback callback for progress reporting or early termination
         @return the operation success state
     */
-    virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index);
+    virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
 
     /**	@brief Writes GPIO values to device
     @param source buffer for GPIO values LSB first, each bit sets GPIO state

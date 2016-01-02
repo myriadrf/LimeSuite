@@ -45,6 +45,7 @@ int main(int argc, char** argv)
 
 	//create soft link to emulator
 	char linkCommand[256];
+	printf("Creating symbolik link /dev/ttyACM_LMS7emulator\n");
 	sprintf(linkCommand, "sudo ln -s %s /dev/ttyACM_LMS7emulator", ptsname(masterFd));
 	system(linkCommand);
 
@@ -103,12 +104,19 @@ int main(int argc, char** argv)
 		}
 	}
 	close(masterFd);
+	printf("Removing symbolic link /dev/ttyACM_LMS7emulator\n");
+	sprintf(linkCommand, "sudo rm /dev/ttyACM_LMS7emulator");
+	system(linkCommand);
+	return 0;
 }
 
 
 //LMS7002 registers
 map<uint16_t, uint16_t> channelA;
 map<uint16_t, uint16_t> channelB;
+
+//FPGA registers
+map<uint16_t, uint16_t> fpgaRegisters;
 
 void WriteRegister(const uint16_t addr, const uint16_t data)
 {
@@ -174,6 +182,42 @@ int ProcessLMS64C(const uint8_t *input, uint8_t *output)
 			output[outBufPos+3] = data & 0xFF;
 		}
 		break;}
+	case CMD_BRDSPI_WR:{
+		memcpy(output, input, bufSize);
+		output[1] = STATUS_COMPLETED_CMD;
+        int blockCount = input[2];
+        for(int i=0; i<blockCount; ++i)
+		{
+			int bufPos = hs+i*4;
+			int addr = (input[bufPos]<<8) | input[bufPos+1];
+			addr = addr & 0x7FFF;
+			int data = (input[bufPos+2]<<8) | input[bufPos+3];
+			fpgaRegisters[addr] = data;
+		}
+		break;}
+	case CMD_BRDSPI_RD:{
+		memcpy(output, input, hs);
+		output[1] = STATUS_COMPLETED_CMD;
+        int blockCount = input[2];
+        for(int i=0; i<blockCount; ++i)
+		{
+			int bufPos = hs+i*2;
+			int addr = (input[bufPos]<<8) | input[bufPos+1];
+			addr = addr & 0x7FFF;
+			int data = fpgaRegisters[addr];
+			int outBufPos = hs+i*4;
+			output[outBufPos] = input[bufPos];
+			output[outBufPos+1] = input[bufPos+1];
+			output[outBufPos+2] = data >> 8;
+			output[outBufPos+3] = data & 0xFF;
+		}
+		break;}
+	case CMD_ALTERA_FPGA_GW_WR:
+	case CMD_ALTERA_FPGA_GW_RD:
+	case CMD_MYRIAD_PROG:
+		memcpy(output, input, hs);
+		output[1] = STATUS_COMPLETED_CMD;
+		break;
 	default:
 		memcpy(output, input, hs);
 		output[1] = STATUS_UNKNOWN_CMD;

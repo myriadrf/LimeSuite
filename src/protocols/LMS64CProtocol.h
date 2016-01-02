@@ -80,7 +80,7 @@ public:
     };
 
     struct GenericPacket
-    {   
+    {
         GenericPacket()
         {
             cmd = CMD_GET_INFO;
@@ -150,6 +150,8 @@ public:
 
     //! virtual read function to be implemented by the base class
     virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
+
+    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
 
 private:
 

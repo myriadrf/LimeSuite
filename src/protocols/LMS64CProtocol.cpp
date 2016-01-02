@@ -5,6 +5,7 @@
 */
 
 #include "LMS64CProtocol.h"
+#include <chrono>
 
 //! arbitrary spi constants used to dispatch calls
 
@@ -511,4 +512,105 @@ int LMS64CProtocol::ParsePacket(GenericPacket& pkt, const unsigned char* buffer,
         }
     }
     return 1;
+}
+
+OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)
+{
+#ifndef NDEBUG
+    auto t1 = std::chrono::high_resolution_clock::now();
+#endif
+    char progressMsg[128];
+    bool abortProgramming = false;
+    int bytesSent = 0;
+    if(length == 0)
+        return OperationStatus::FAILED;
+
+    if(!IsOpen())
+        return OperationStatus::DISCONNECTED;
+
+    const int pktSize = 32;
+    int data_left = length;
+    const int portionsCount = length/pktSize + (length%pktSize > 0) + 1; // +1 programming end packet
+    int portionNumber;
+    int status = 0;
+    eCMD_LMS cmd;
+    if(device == 0)
+        cmd = CMD_MYRIAD_PROG;
+    if(device == 1)
+        cmd = CMD_ALTERA_FPGA_GW_WR;
+
+    unsigned char ctrbuf[64];
+    unsigned char inbuf[64];
+    memset(ctrbuf, 0, 64);
+    ctrbuf[0] = cmd;
+    ctrbuf[1] = 0;
+    ctrbuf[2] = 56;
+
+    for (portionNumber = 0; portionNumber<portionsCount && !abortProgramming; ++portionNumber)
+    {
+        int offset = 8;
+        memset(&ctrbuf[offset], 0, 56);
+        ctrbuf[offset+0] = prog_mode;
+        ctrbuf[offset+1] = (portionNumber >> 24) & 0xFF;
+        ctrbuf[offset+2] = (portionNumber >> 16) & 0xFF;
+        ctrbuf[offset+3] = (portionNumber >> 8) & 0xFF;
+        ctrbuf[offset+4] = portionNumber & 0xFF;
+        unsigned char data_cnt = data_left > pktSize ? pktSize : data_left;
+        ctrbuf[offset+5] = data_cnt;
+        if(data_src != NULL)
+        {
+            memcpy(&ctrbuf[offset+24], data_src, data_cnt);
+            data_src+=data_cnt;
+        }
+
+        Write(ctrbuf, 64);
+        Read(inbuf, 64);
+
+        data_left -= data_cnt;
+        status = inbuf[1];
+        bytesSent += data_cnt;
+
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            sprintf(progressMsg, "Programming failed! %s", status2string(status));
+            if(callback)
+                abortProgramming = callback(bytesSent, length, progressMsg);
+#ifndef NDEBUG
+            printf("\n%s\n", progressMsg);
+#endif
+            return OperationStatus::FAILED;
+        }
+        if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
+        {
+            bytesSent = length;
+            break;
+        }
+        sprintf(progressMsg, "programing: %6i/%i", portionNumber, portionsCount - 1);
+        if(callback)
+            abortProgramming = callback(bytesSent, length, progressMsg);
+#ifndef NDEBUG
+        printf("%s\r", progressMsg);
+#endif
+    }
+    if (abortProgramming == true)
+    {
+        sprintf(progressMsg, "programming: aborted by user");
+#ifndef NDEBUG
+        printf("\n%s\n", progressMsg);
+#endif
+        if(callback)
+            callback(bytesSent, length, progressMsg);
+        return OperationStatus::USER_ABORTED;
+    }
+    sprintf(progressMsg, "programming: completed");
+    if(callback)
+        callback(bytesSent, length, progressMsg);
+#ifndef NDEBUG
+    auto t2 = std::chrono::high_resolution_clock::now();
+	if ((device == 1 && prog_mode == 2) == false)
+        printf("\nProgramming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+	else
+		printf("\nFPGA configuring initiated\n");
+#endif
+    return OperationStatus::SUCCESS;
 }
