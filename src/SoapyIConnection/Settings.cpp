@@ -247,12 +247,135 @@ std::vector<std::string> SoapyIConnection::listGains(const int direction, const 
 
 void SoapyIConnection::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
-    //TODO set gain based on name
+    auto rfic = getRFIC(channel);
+
+    if (direction == SOAPY_SDR_RX and name == "LNA")
+    {
+        const double gmax = 30;
+        double val = value - gmax;
+
+        int g_lna_rfe = 0;
+        if (val >= 0) g_lna_rfe = 15;
+        else if (val >= -1) g_lna_rfe = 14;
+        else if (val >= -2) g_lna_rfe = 13;
+        else if (val >= -3) g_lna_rfe = 12;
+        else if (val >= -4) g_lna_rfe = 11;
+        else if (val >= -5) g_lna_rfe = 10;
+        else if (val >= -6) g_lna_rfe = 9;
+        else if (val >= -9) g_lna_rfe = 8;
+        else if (val >= -12) g_lna_rfe = 7;
+        else if (val >= -15) g_lna_rfe = 6;
+        else if (val >= -18) g_lna_rfe = 5;
+        else if (val >= -21) g_lna_rfe = 4;
+        else if (val >= -24) g_lna_rfe = 3;
+        else if (val >= -27) g_lna_rfe = 2;
+        else g_lna_rfe = 1;
+
+        rfic->Modify_SPI_Reg_bits(G_LNA_RFE, g_lna_rfe);
+    }
+
+    else if (direction == SOAPY_SDR_RX and name == "TIA")
+    {
+        const double gmax = 12;
+        double val = value - gmax;
+
+        int g_tia_rfe = 0;
+        if (val >= 0) g_tia_rfe = 3;
+        else if (val >= -3) g_tia_rfe = 2;
+        else g_tia_rfe = 1;
+
+        rfic->Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+    }
+
+    else if (direction == SOAPY_SDR_RX and name == "PGA")
+    {
+        int g_pga_rbb = (int)(value + 12.5);
+        if (g_pga_rbb > 0x1f) g_pga_rbb = 0x1f;
+        if (g_pga_rbb < 0) g_pga_rbb = 0;
+        rfic->Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+
+        //TODO set rcc_ctl_pga_rbb, c_ctl_pga_rbb
+    }
+
+    else if (direction == SOAPY_SDR_TX and name == "PAD")
+    {
+        const double pmax = 0;
+        double loss = pmax-value;
+
+        //different scaling realm
+        if (loss > 10) loss = (loss+10)/2;
+
+        //clip
+        if (loss > 31) loss = 31;
+        if (loss < 0) loss = 0;
+
+        //integer round
+        int loss_int = (int)(loss + 0.5);
+
+        rfic->Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF, loss_int);
+        rfic->Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, loss_int);
+    }
+
+    else throw std::runtime_error("SoapyIConnection::setGain("+name+") - unknown gain name");
 }
 
 double SoapyIConnection::getGain(const int direction, const size_t channel, const std::string &name) const
 {
-    
+    auto rfic = getRFIC(channel);
+
+    if (direction == SOAPY_SDR_RX and name == "LNA")
+    {
+        const double gmax = 30;
+        auto g_lna_rfe = rfic->Get_SPI_Reg_bits(G_LNA_RFE);
+        switch (g_lna_rfe)
+        {
+        case 15: return gmax-0;
+        case 14: return gmax-1;
+        case 13: return gmax-2;
+        case 12: return gmax-3;
+        case 11: return gmax-4;
+        case 10: return gmax-5;
+        case 9: return gmax-6;
+        case 8: return gmax-9;
+        case 7: return gmax-12;
+        case 6: return gmax-15;
+        case 5: return gmax-18;
+        case 4: return gmax-21;
+        case 3: return gmax-24;
+        case 2: return gmax-27;
+        case 1: return gmax-30;
+        }
+        return 0.0;
+    }
+
+    else if (direction == SOAPY_SDR_RX and name == "TIA")
+    {
+        const double gmax = 12;
+        auto g_tia_rfe = rfic->Get_SPI_Reg_bits(G_TIA_RFE);
+        switch (g_tia_rfe)
+        {
+        case 3: return gmax-0;
+        case 2: return gmax-3;
+        case 1: return gmax-12;
+        }
+        return 0.0;
+    }
+
+    else if (direction == SOAPY_SDR_RX and name == "PGA")
+    {
+        auto g_pga_rbb = rfic->Get_SPI_Reg_bits(G_PGA_RBB);
+        return g_pga_rbb - 12;
+    }
+
+    else if (direction == SOAPY_SDR_TX and name == "PAD")
+    {
+        const double pmax = 0;
+        auto loss_int = rfic->Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF);
+        if (loss_int > 10) return pmax-10-2*(loss_int-10);
+        return pmax-loss_int;
+    }
+
+    else throw std::runtime_error("SoapyIConnection::getGain("+name+") - unknown gain name");
 }
 
 SoapySDR::Range SoapyIConnection::getGainRange(const int direction, const size_t channel, const std::string &name) const
