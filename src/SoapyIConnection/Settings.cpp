@@ -24,10 +24,22 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
         _rfics.push_back(new LMS7002M());
         _rfics.back()->SetConnection(_conn, addr);
     }
+
+    //enable all channels
+    for (size_t i = 0; i < _rfics.size()*2; i++)
+    {
+        this->SetComponentsEnabled(i, true);
+    }
 }
 
 SoapyIConnection::~SoapyIConnection(void)
 {
+    //power down all channels
+    for (size_t i = 0; i < _rfics.size()*2; i++)
+    {
+        this->SetComponentsEnabled(i, false);
+    }
+
     for (auto rfic : _rfics) delete rfic;
     ConnectionRegistry::freeConnection(_conn);
 }
@@ -41,6 +53,11 @@ LMS7002M *SoapyIConnection::getRFIC(const size_t channel) const
     auto rfic = _rfics.at(channel/2);
     rfic->Modify_SPI_Reg_bits(MAC, (channel%2) + 1);
     return rfic;
+}
+
+void SoapyIConnection::SetComponentsEnabled(const int channel, const bool enabled)
+{
+    
 }
 
 /*******************************************************************
@@ -192,7 +209,7 @@ void SoapyIConnection::setDCOffsetMode(const int direction, const size_t channel
 
 bool SoapyIConnection::getDCOffsetMode(const int direction, const size_t channel) const
 {
-    
+    return 0;
 }
 
 bool SoapyIConnection::hasDCOffset(const int direction, const size_t /*channel*/) const
@@ -207,7 +224,7 @@ void SoapyIConnection::setDCOffset(const int direction, const size_t channel, co
 
 std::complex<double> SoapyIConnection::getDCOffset(const int direction, const size_t channel) const
 {
-    
+    return 0;
 }
 
 bool SoapyIConnection::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
@@ -222,7 +239,7 @@ void SoapyIConnection::setIQBalance(const int direction, const size_t channel, c
 
 std::complex<double> SoapyIConnection::getIQBalance(const int direction, const size_t channel) const
 {
-    
+    return 0;
 }
 
 /*******************************************************************
@@ -482,14 +499,73 @@ std::vector<double> SoapyIConnection::listSampleRates(const int direction, const
     return rates;
 }
 
+/*******************************************************************
+ * Bandwidth API
+ ******************************************************************/
+
 void SoapyIConnection::setBandwidth(const int direction, const size_t channel, const double bw)
 {
-    //TODO set RBB/TBB BW + calibrate here?
+    auto rfic = getRFIC(channel);
+
+    int rcc_ctl = 0;
+    auto &actual = _actualBw[direction][channel];
+    bool bypass = false;
+    if (direction == SOAPY_SDR_RX)
+    {
+        const bool hb = bw >= 37.0e6;
+
+        if (bw <= 1.4e6) rcc_ctl = 0, actual = 1.4e6;
+        else if (bw <= 3.0e6) rcc_ctl = 1, actual = 3.0e6;
+        else if (bw <= 5.0e6) rcc_ctl = 2, actual = 5.0e6;
+        else if (bw <= 10.0e6) rcc_ctl = 3, actual = 10.0e6;
+        else if (bw <= 15.0e6) rcc_ctl = 4, actual = 15.0e6;
+        else if (bw <= 20.0e6) rcc_ctl = 5, actual = 20.0e6;
+        else if (bw <= 37.0e6) rcc_ctl = 1, actual = 37.0e6;
+        else if (bw <= 66.0e6) rcc_ctl = 4, actual = 66.0e6;
+        else if (bw <= 108.0e6) rcc_ctl = 7, actual = 108.0e6;
+        else bypass = true;
+
+        //only one filter is actually used
+        rfic->Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl);
+        rfic->Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl);
+
+        //set path
+        rfic->Modify_SPI_Reg_bits(PD_LPFH_RBB, (not bypass and hb)?0:1);
+        rfic->Modify_SPI_Reg_bits(PD_LPFL_RBB, (not bypass and not hb)?0:1);
+        rfic->Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, bypass?(2):(hb?1:0));
+
+        //run the calibration for this bandwidth setting
+        auto status = rfic->CalibrateRx(bw/1e6);
+        if (!bypass && status == LIBLMS7_SUCCESS)
+        {
+            status = rfic->TuneRxFilter(hb?LMS7002M::RX_LPF_HIGHBAND:LMS7002M::RX_LPF_LOWBAND, bw/1e6);
+        }
+        if (status == LIBLMS7_SUCCESS)
+        {
+            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
+        }
+        if (status != LIBLMS7_SUCCESS)
+        {
+            //TODO log failure
+        }
+    }
+
+    if (direction == SOAPY_SDR_TX)
+    {
+        //TODO
+    }
 }
 
 double SoapyIConnection::getBandwidth(const int direction, const size_t channel) const
 {
-    
+    try
+    {
+        return _actualBw.at(direction).at(channel);
+    }
+    catch (...)
+    {
+        return 1.0;
+    }
 }
 
 std::vector<double> SoapyIConnection::listBandwidths(const int direction, const size_t channel) const
@@ -554,6 +630,7 @@ bool SoapyIConnection::hasHardwareTime(const std::string &what) const
 long long SoapyIConnection::getHardwareTime(const std::string &what) const
 {
     //TODO put this call on iconnection...
+    return 0;
 }
 
 void SoapyIConnection::setHardwareTime(const long long timeNs, const std::string &what)

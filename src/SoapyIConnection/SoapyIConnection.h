@@ -6,6 +6,7 @@
 
 #include <SoapySDR/Device.hpp>
 #include <ConnectionRegistry.h>
+#include <map>
 
 class LMS7002M;
 
@@ -15,6 +16,8 @@ public:
     SoapyIConnection(const ConnectionHandle &handle);
 
     ~SoapyIConnection(void);
+
+    void SetComponentsEnabled(const int channel, const bool enabled);
 
     /*******************************************************************
      * Identification API
@@ -153,6 +156,12 @@ public:
     double getSampleRate(const int direction, const size_t channel) const;
 
     std::vector<double> listSampleRates(const int direction, const size_t channel) const;
+
+    /*******************************************************************
+     * Bandwidth API
+     ******************************************************************/
+
+    std::map<int, std::map<size_t, double>> _actualBw;
 
     void setBandwidth(const int direction, const size_t channel, const double bw);
 
