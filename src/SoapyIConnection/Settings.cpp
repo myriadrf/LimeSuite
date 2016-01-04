@@ -12,6 +12,31 @@
 #include <SoapySDR/Logger.hpp>
 
 /*******************************************************************
+ * Special LMS7002M with log forwarding
+ ******************************************************************/
+class LMS7002M_withLogging : public LMS7002M
+{
+public:
+    LMS7002M_withLogging(void):
+        LMS7002M()
+    {
+        return;
+    }
+
+protected:
+    void Log(const char* text, LogType type)
+    {
+        switch(type)
+        {
+        case LOG_INFO: SoapySDR::log(SOAPY_SDR_INFO, text); break;
+        case LOG_WARNING: SoapySDR::log(SOAPY_SDR_WARNING, text); break;
+        case LOG_ERROR: SoapySDR::log(SOAPY_SDR_ERROR, text); break;
+        case LOG_DATA: SoapySDR::log(SOAPY_SDR_DEBUG, text); break;
+        }
+    }
+};
+
+/*******************************************************************
  * Constructor/destructor
  ******************************************************************/
 SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
@@ -23,7 +48,7 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
     for (const auto &addr : devInfo.addrsLMS7002M)
     {
         SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", addr);
-        _rfics.push_back(new LMS7002M());
+        _rfics.push_back(new LMS7002M_withLogging());
         _rfics.back()->SetConnection(_conn, addr);
     }
 
