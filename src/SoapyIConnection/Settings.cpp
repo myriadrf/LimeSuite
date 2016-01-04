@@ -490,7 +490,9 @@ double SoapyIConnection::getSampleRate(const int direction, const size_t channel
 
 std::vector<double> SoapyIConnection::listSampleRates(const int direction, const size_t channel) const
 {
-    const double dspRate = 1e6; //TODO get from board
+    auto rfic = getRFIC(channel);
+
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
     std::vector<double> rates;
     for (int i = 5; i >= 0; i--)
     {
@@ -506,39 +508,22 @@ std::vector<double> SoapyIConnection::listSampleRates(const int direction, const
 void SoapyIConnection::setBandwidth(const int direction, const size_t channel, const double bw)
 {
     auto rfic = getRFIC(channel);
-
-    int rcc_ctl = 0;
     auto &actual = _actualBw[direction][channel];
-    bool bypass = false;
+
     if (direction == SOAPY_SDR_RX)
     {
         const bool hb = bw >= 37.0e6;
-
-        if (bw <= 1.4e6) rcc_ctl = 0, actual = 1.4e6;
-        else if (bw <= 3.0e6) rcc_ctl = 1, actual = 3.0e6;
-        else if (bw <= 5.0e6) rcc_ctl = 2, actual = 5.0e6;
-        else if (bw <= 10.0e6) rcc_ctl = 3, actual = 10.0e6;
-        else if (bw <= 15.0e6) rcc_ctl = 4, actual = 15.0e6;
-        else if (bw <= 20.0e6) rcc_ctl = 5, actual = 20.0e6;
-        else if (bw <= 37.0e6) rcc_ctl = 1, actual = 37.0e6;
-        else if (bw <= 66.0e6) rcc_ctl = 4, actual = 66.0e6;
-        else if (bw <= 108.0e6) rcc_ctl = 7, actual = 108.0e6;
-        else bypass = true;
-
-        //only one filter is actually used
-        rfic->Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl);
-        rfic->Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl);
-
-        //set path
-        rfic->Modify_SPI_Reg_bits(PD_LPFH_RBB, (not bypass and hb)?0:1);
-        rfic->Modify_SPI_Reg_bits(PD_LPFL_RBB, (not bypass and not hb)?0:1);
-        rfic->Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, bypass?(2):(hb?1:0));
+        const bool bypass = bw > 108.0e6;
 
         //run the calibration for this bandwidth setting
         auto status = rfic->CalibrateRx(bw/1e6);
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
-            status = rfic->TuneRxFilter(hb?LMS7002M::RX_LPF_HIGHBAND:LMS7002M::RX_LPF_LOWBAND, bw/1e6);
+            LMS7002M::RxFilter filter;
+            if (hb) filter = LMS7002M::RX_LPF_HIGHBAND;
+            else filter = LMS7002M::RX_LPF_LOWBAND;
+
+            status = rfic->TuneRxFilter(filter, bw/1e6);
         }
         if (status == LIBLMS7_SUCCESS)
         {
@@ -552,7 +537,24 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
 
     if (direction == SOAPY_SDR_TX)
     {
-        //TODO
+        const bool hb = bw >= 18.5e6;
+        const bool bypass = bw > 54.0e6;
+
+        //run the calibration for this bandwidth setting
+        auto status = rfic->CalibrateTx(bw/1e6);
+        if (!bypass && status == LIBLMS7_SUCCESS)
+        {
+            LMS7002M::TxFilter filter;
+            if (hb) filter = LMS7002M::TX_HIGHBAND;
+            else if (bw >= 2.4e6) filter = LMS7002M::TX_LADDER;
+            else filter = LMS7002M::TX_REALPOLE;
+
+            status = rfic->TuneTxFilter(filter, bw/1e6);
+        }
+        if (status != LIBLMS7_SUCCESS)
+        {
+            //TODO log failure
+        }
     }
 }
 
