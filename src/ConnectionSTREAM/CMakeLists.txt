@@ -33,5 +33,5 @@ endif()
 ########################################################################
 include_directories(${USB_INCLUDE_DIRS})
 add_library(ConnectionSTREAM STATIC ConnectionSTREAMEntry.cpp ConnectionSTREAM.cpp)
-target_link_libraries(ConnectionSTREAM connectionRegistry ${USB_LIBRARIES})
+target_link_libraries(ConnectionSTREAM connectionRegistry protocols ${USB_LIBRARIES})
 set_property(TARGET ConnectionSTREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)

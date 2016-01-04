@@ -45,6 +45,17 @@ public:
     //! ReadI2C implemented by LMS64C
     OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
+    //! Get the last-set reference clock rate
+    double GetReferenceClockRate(void)
+    {
+        _cachedRefClockRate;
+    }
+
+    /*!
+     * Set the reference using the Si5351C when available
+     */
+    void SetReferenceClockRate(const double rate);
+
     /// Supported connection types.
     enum eConnectionType
     {
@@ -165,4 +176,5 @@ private:
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
     std::mutex mControlPortLock;
+    double _cachedRefClockRate;
 };

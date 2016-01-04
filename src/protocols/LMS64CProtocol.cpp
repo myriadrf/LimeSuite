@@ -5,6 +5,7 @@
 */
 
 #include "LMS64CProtocol.h"
+#include "Si5351C.h"
 #include <chrono>
 
 //! arbitrary spi constants used to dispatch calls
@@ -93,6 +94,17 @@ OperationStatus LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, s
     }
 
     return OperationStatus::UNSUPPORTED;
+}
+
+void LMS64CProtocol::SetReferenceClockRate(const double rate)
+{
+    Si5351C pll;
+    pll.Initialize(this);
+
+    //TODO set the PLL freq
+
+    //stash the actual reference
+    _cachedRefClockRate = rate;
 }
 
 /***********************************************************************
