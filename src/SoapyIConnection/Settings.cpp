@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <LMS7002M.h>
 #include <LMS7002M_RegistersMap.h>
+#include <SoapySDR/Logger.hpp>
 
 /*******************************************************************
  * Constructor/destructor
@@ -21,6 +22,7 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
     const auto devInfo = _conn->GetDeviceInfo();
     for (const auto &addr : devInfo.addrsLMS7002M)
     {
+        SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", addr);
         _rfics.push_back(new LMS7002M());
         _rfics.back()->SetConnection(_conn, addr);
     }
@@ -46,7 +48,7 @@ SoapyIConnection::~SoapyIConnection(void)
 
 LMS7002M *SoapyIConnection::getRFIC(const size_t channel) const
 {
-    if (_rfics.size() >= channel/2)
+    if (_rfics.size() <= channel/2)
     {
         throw std::out_of_range("SoapyIConnection::getRFIC("+std::to_string(channel)+") out of range");
     }
@@ -55,9 +57,46 @@ LMS7002M *SoapyIConnection::getRFIC(const size_t channel) const
     return rfic;
 }
 
-void SoapyIConnection::SetComponentsEnabled(const int channel, const bool enabled)
+void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool enable)
 {
-    
+    SoapySDR::logf(SOAPY_SDR_INFO, "%s LMS7002M::ch%d", enable?"Enable":"Disable", int(channel));
+
+    auto rfic = getRFIC(channel);
+
+    //--- ADC/DAC ---
+    rfic->Modify_SPI_Reg_bits(EN_DIR_AFE, 1);
+    rfic->Modify_SPI_Reg_bits(EN_G_AFE, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(PD_AFE, enable?0:1);
+    if ((channel%2) == 0)
+    {
+        rfic->Modify_SPI_Reg_bits(PD_TX_AFE1, enable?0:1);
+        rfic->Modify_SPI_Reg_bits(PD_RX_AFE1, enable?0:1);
+    }
+    else
+    {
+        rfic->Modify_SPI_Reg_bits(PD_TX_AFE2, enable?0:1);
+        rfic->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
+    }
+
+    //--- digital ---
+    rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
+
+    //--- baseband ---
+    rfic->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);
+    rfic->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
+    rfic->Modify_SPI_Reg_bits(EN_G_RBB, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(EN_G_TBB, enable?1:0);
+
+    //--- frontend ---
+    rfic->Modify_SPI_Reg_bits(EN_DIR_RFE, 1);
+    rfic->Modify_SPI_Reg_bits(EN_DIR_TRF, 1);
+    rfic->Modify_SPI_Reg_bits(EN_G_RFE, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(EN_G_TRF, enable?1:0);
+
+    //--- synthesizers ---
+    rfic->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
+    rfic->Modify_SPI_Reg_bits(EN_G, enable?1:0);
 }
 
 /*******************************************************************

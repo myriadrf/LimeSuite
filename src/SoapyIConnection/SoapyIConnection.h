@@ -17,7 +17,7 @@ public:
 
     ~SoapyIConnection(void);
 
-    void SetComponentsEnabled(const int channel, const bool enabled);
+    void SetComponentsEnabled(const size_t channel, const bool enabled);
 
     /*******************************************************************
      * Identification API
