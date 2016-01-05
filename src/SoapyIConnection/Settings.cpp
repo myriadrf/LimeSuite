@@ -489,7 +489,11 @@ void SoapyIConnection::setFrequency(const int direction, const size_t channel, c
 
     if (name == "BB")
     {
-        //TODO configure dsp bypass
+        switch (direction)
+        {
+        case SOAPY_SDR_RX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
+        case SOAPY_SDR_TX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
+        }
         rfic->SetNCOFrequency(direction == SOAPY_SDR_TX, 0, frequency/1e6);
         return;
     }
