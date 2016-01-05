@@ -151,6 +151,9 @@ public:
      * Sample Rate API
      ******************************************************************/
 
+    std::map<size_t, int> _interps;
+    std::map<size_t, int> _decims;
+
     void setSampleRate(const int direction, const size_t channel, const double rate);
 
     double getSampleRate(const int direction, const size_t channel) const;

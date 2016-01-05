@@ -282,19 +282,6 @@ public:
      * It remains here to enable compiling until its replaced
      **********************************************************************/
 
-    int ReadStream(char *buffer, int length, unsigned int timeout_ms)
-    {
-        /*int handle = activeControlPort->BeginDataReading(buffer, length);
-        activeControlPort->WaitForReading(handle, timeout_ms);
-            long received = length;
-            activeControlPort->FinishDataReading(buffer, received, handle);
-            return received;
-        */
-        long len = length;
-        int status = this->ReadDataBlocking(buffer, len, 0);
-        return len;
-    }
-
 	virtual int BeginDataReading(char *buffer, long length){ return -1; };
 	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};
 	virtual int FinishDataReading(char *buffer, long &length, int contextHandle){ return 0;}

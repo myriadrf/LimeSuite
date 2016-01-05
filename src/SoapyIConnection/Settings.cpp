@@ -255,6 +255,8 @@ std::string SoapyIConnection::getAntenna(const int direction, const size_t chann
     {
         return (rfic->Get_SPI_Reg_bits(SEL_BAND2_TRF) == 1)?"BAND2":"BAND1";
     }
+
+    return "";
 }
 
 /*******************************************************************
@@ -544,12 +546,48 @@ SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, con
 
 void SoapyIConnection::setSampleRate(const int direction, const size_t channel, const double rate)
 {
-    //TODO set interp/decim
+    auto rfic = getRFIC(channel);
+
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+    const double factor = dspRate/rate;
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setSampleRate(%d, %f MHz), baseRate %f MHz, factor %f", direction, rate/1e6, dspRate/1e6, factor);
+    if (factor < 2.0) throw std::runtime_error("SoapyIConnection::setSampleRate() -- rate too high");
+    int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
+    if (intFactor > 32) throw std::runtime_error("SoapyIConnection::setSampleRate() -- rate too low");
+
+    if (std::abs(factor-intFactor) > 0.01) SoapySDR::logf(SOAPY_SDR_WARNING,
+        "SoapyIConnection::setSampleRate(): not a power of two factor: TSP Rate = %f MHZ, Requested rate = %f MHz", dspRate/1e6, rate/1e6);
+
+    switch (direction)
+    {
+    case SOAPY_SDR_TX: _interps[channel] = intFactor; break;
+    case SOAPY_SDR_RX: _decims[channel] = intFactor; break;
+    }
+
+    rfic->SetInterfaceFrequency(
+        this->getMasterClockRate(),
+        int(std::log(double(_interps[channel]))/std::log(2.0)),
+        int(std::log(double(_decims[channel]))/std::log(2.0)));
 }
 
 double SoapyIConnection::getSampleRate(const int direction, const size_t channel) const
 {
-    
+    auto rfic = getRFIC(channel);
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+
+    try
+    {
+        switch (direction)
+        {
+        case SOAPY_SDR_TX: return dspRate/_interps.at(channel);
+        case SOAPY_SDR_RX: return dspRate/_decims.at(channel);
+        }
+    }
+    catch (...)
+    {
+        return dspRate;
+    }
+    return dspRate;
 }
 
 std::vector<double> SoapyIConnection::listSampleRates(const int direction, const size_t channel) const
@@ -573,6 +611,7 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
 {
     auto rfic = getRFIC(channel);
     auto &actual = _actualBw[direction][channel];
+    actual = bw;
 
     if (direction == SOAPY_SDR_RX)
     {
