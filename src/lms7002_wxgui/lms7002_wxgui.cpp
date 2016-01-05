@@ -6288,7 +6288,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer228->Add( fgSizer153, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer105;
-	sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxHORIZONTAL );
+	sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer147;
 	fgSizer147 = new wxFlexGridSizer( 0, 1, 5, 0 );
@@ -6342,7 +6342,39 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer147->Add( fgSizer148, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	
-	sbSizer105->Add( fgSizer147, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	sbSizer105->Add( fgSizer147, 0, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxFlexGridSizer* fgSizer149;
+	fgSizer149 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer149->SetFlexibleDirection( wxBOTH );
+	fgSizer149->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	btnLoadDCI = new wxButton( sbSizer105->GetStaticBox(), wxID_ANY, wxT("Load to DC I"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLoadDCI->SetDefault(); 
+	fgSizer149->Add( btnLoadDCI, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxFlexGridSizer* fgSizer150;
+	fgSizer150 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer150->SetFlexibleDirection( wxBOTH );
+	fgSizer150->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT23 = new wxStaticText( sbSizer105->GetStaticBox(), wxID_ANY, wxT("DC_REG:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT23->Wrap( -1 );
+	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtDC_REG_TXTSP = new wxTextCtrl( sbSizer105->GetStaticBox(), ID_DC_REG_TXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
+	txtDC_REG_TXTSP->SetMaxLength( 0 ); 
+	fgSizer150->Add( txtDC_REG_TXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	fgSizer149->Add( fgSizer150, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	btnLoadDCQ = new wxButton( sbSizer105->GetStaticBox(), wxID_ANY, wxT("Load to DC Q"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLoadDCQ->SetDefault(); 
+	fgSizer149->Add( btnLoadDCQ, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	sbSizer105->Add( fgSizer149, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer228->Add( sbSizer105, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -6369,38 +6401,6 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer220->AddGrowableCol( 1 );
 	fgSizer220->SetFlexibleDirection( wxBOTH );
 	fgSizer220->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxFlexGridSizer* fgSizer149;
-	fgSizer149 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer149->SetFlexibleDirection( wxBOTH );
-	fgSizer149->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxFlexGridSizer* fgSizer150;
-	fgSizer150 = new wxFlexGridSizer( 0, 3, 0, 0 );
-	fgSizer150->SetFlexibleDirection( wxBOTH );
-	fgSizer150->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	ID_STATICTEXT23 = new wxStaticText( this, wxID_ANY, wxT("DC_REG:"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT23->Wrap( -1 );
-	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	txtDC_REG_TXTSP = new wxTextCtrl( this, ID_DC_REG_TXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
-	txtDC_REG_TXTSP->SetMaxLength( 0 ); 
-	fgSizer150->Add( txtDC_REG_TXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	
-	fgSizer149->Add( fgSizer150, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	btnLoadDCI = new wxButton( this, wxID_ANY, wxT("Load to DC I"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnLoadDCI->SetDefault(); 
-	fgSizer149->Add( btnLoadDCI, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	btnLoadDCQ = new wxButton( this, wxID_ANY, wxT("Load to DC Q"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnLoadDCQ->SetDefault(); 
-	fgSizer149->Add( btnLoadDCQ, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	
-	fgSizer220->Add( fgSizer149, 1, wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer98;
 	sbSizer98 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("CMIX") ), wxVERTICAL );
@@ -7432,7 +7432,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer228->Add( fgSizer153, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer105;
-	sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxHORIZONTAL );
+	sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer147;
 	fgSizer147 = new wxFlexGridSizer( 0, 1, 5, 0 );
@@ -7477,7 +7477,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	wxString rgrTSGFC_RXTSPChoices[] = { wxT("-6dB"), wxT("Full scale") };
 	int rgrTSGFC_RXTSPNChoices = sizeof( rgrTSGFC_RXTSPChoices ) / sizeof( wxString );
 	rgrTSGFC_RXTSP = new wxRadioBox( sbSizer105->GetStaticBox(), ID_TSGFC_RXTSP, wxT("TSGFC"), wxDefaultPosition, wxDefaultSize, rgrTSGFC_RXTSPNChoices, rgrTSGFC_RXTSPChoices, 1, wxRA_SPECIFY_COLS );
-	rgrTSGFC_RXTSP->SetSelection( 1 );
+	rgrTSGFC_RXTSP->SetSelection( 0 );
 	rgrTSGFC_RXTSP->SetToolTip( wxT("TSG full scale control") );
 	
 	fgSizer148->Add( rgrTSGFC_RXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -7486,7 +7486,39 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer147->Add( fgSizer148, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	
-	sbSizer105->Add( fgSizer147, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	sbSizer105->Add( fgSizer147, 0, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxFlexGridSizer* fgSizer149;
+	fgSizer149 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer149->SetFlexibleDirection( wxBOTH );
+	fgSizer149->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	btnLoadDCI = new wxButton( sbSizer105->GetStaticBox(), wxID_ANY, wxT("Load to DC I"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLoadDCI->SetDefault(); 
+	fgSizer149->Add( btnLoadDCI, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	wxFlexGridSizer* fgSizer150;
+	fgSizer150 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer150->SetFlexibleDirection( wxBOTH );
+	fgSizer150->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	ID_STATICTEXT23 = new wxStaticText( sbSizer105->GetStaticBox(), wxID_ANY, wxT("DC_REG:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT23->Wrap( -1 );
+	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtDC_REG_RXTSP = new wxTextCtrl( sbSizer105->GetStaticBox(), ID_DC_REG_RXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
+	txtDC_REG_RXTSP->SetMaxLength( 0 ); 
+	fgSizer150->Add( txtDC_REG_RXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	fgSizer149->Add( fgSizer150, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	btnLoadDCQ = new wxButton( sbSizer105->GetStaticBox(), wxID_ANY, wxT("Load to DC Q"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnLoadDCQ->SetDefault(); 
+	fgSizer149->Add( btnLoadDCQ, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	sbSizer105->Add( fgSizer149, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer228->Add( sbSizer105, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -7513,38 +7545,6 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer220->AddGrowableCol( 1 );
 	fgSizer220->SetFlexibleDirection( wxBOTH );
 	fgSizer220->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxFlexGridSizer* fgSizer149;
-	fgSizer149 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer149->SetFlexibleDirection( wxBOTH );
-	fgSizer149->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxFlexGridSizer* fgSizer150;
-	fgSizer150 = new wxFlexGridSizer( 0, 3, 0, 0 );
-	fgSizer150->SetFlexibleDirection( wxBOTH );
-	fgSizer150->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	ID_STATICTEXT23 = new wxStaticText( this, wxID_ANY, wxT("DC_REG:"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT23->Wrap( -1 );
-	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	txtDC_REG_RXTSP = new wxTextCtrl( this, ID_DC_REG_RXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
-	txtDC_REG_RXTSP->SetMaxLength( 0 ); 
-	fgSizer150->Add( txtDC_REG_RXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	
-	fgSizer149->Add( fgSizer150, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	btnLoadDCI = new wxButton( this, wxID_ANY, wxT("Load to DC I"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnLoadDCI->SetDefault(); 
-	fgSizer149->Add( btnLoadDCI, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	btnLoadDCQ = new wxButton( this, wxID_ANY, wxT("Load to DC Q"), wxDefaultPosition, wxDefaultSize, 0 );
-	btnLoadDCQ->SetDefault(); 
-	fgSizer149->Add( btnLoadDCQ, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
-	
-	
-	fgSizer220->Add( fgSizer149, 1, wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer98;
 	sbSizer98 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("CMIX") ), wxVERTICAL );

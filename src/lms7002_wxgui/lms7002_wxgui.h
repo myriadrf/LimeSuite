@@ -1640,9 +1640,9 @@ class pnlTxTSP_view : public wxPanel
 		wxRadioBox* rgrTSGMODE_TXTSP;
 		wxRadioBox* rgrINSEL_TXTSP;
 		wxRadioBox* rgrTSGFC_TXTSP;
+		wxButton* btnLoadDCI;
 		wxStaticText* ID_STATICTEXT23;
 		wxTextCtrl* txtDC_REG_TXTSP;
-		wxButton* btnLoadDCI;
 		wxButton* btnLoadDCQ;
 		wxComboBox* cmbCMIX_SC_TXTSP;
 		wxStaticText* ID_STATICTEXT24;
@@ -1834,9 +1834,9 @@ class pnlRxTSP_view : public wxPanel
 		wxRadioBox* rgrTSGMODE_RXTSP;
 		wxRadioBox* rgrINSEL_RXTSP;
 		wxRadioBox* rgrTSGFC_RXTSP;
+		wxButton* btnLoadDCI;
 		wxStaticText* ID_STATICTEXT23;
 		wxTextCtrl* txtDC_REG_RXTSP;
-		wxButton* btnLoadDCI;
 		wxButton* btnLoadDCQ;
 		wxComboBox* cmbCMIX_SC_RXTSP;
 		wxStaticText* ID_STATICTEXT24;
