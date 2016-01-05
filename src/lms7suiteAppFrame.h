@@ -27,6 +27,7 @@ class dlgDeviceInfo;
 class SPI_wxgui;
 class LMS7002M_Novena_wxgui;
 class pnlBoardControls;
+class DPDTest;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -64,6 +65,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowNovena(wxCommandEvent& event);
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
+        void OnDPDTestClose(wxCloseEvent& event);
+        void OnShowDPDTest(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );
@@ -97,6 +100,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         SPI_wxgui* spi;
         LMS7002M_Novena_wxgui* novenaGui;
         pnlBoardControls* boardControlsGui;
+        DPDTest* DPDTestGui;
 };
 
 

@@ -276,8 +276,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     int bufPos = 0;
     for(unsigned i=0; i<isamples.size(); ++i)
     {
-        buffer[bufPos] = (isamples[i] & 0xFFF) | 0x1000; //add iq select bit
-        buffer[bufPos + 1] = (qsamples[i] & 0xFFF);
+        buffer[bufPos] = ((unsigned short)(isamples[i]) & 0xFFF) | 0x1000; //add iq select bit
+        buffer[bufPos + 1] = ((unsigned short)(qsamples[i]) & 0xFFF) ;
         bufPos += 2;
     }
     const long outLen = bufPos*2;

@@ -58,6 +58,8 @@ add_subdirectory(lms7002m_novena)
 include_directories(lms7002m_novena)
 add_subdirectory(oglGraph)
 include_directories(oglGraph)
+add_subdirectory(DPDTest)
+include_directories(DPDTest)
 
 set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -106,6 +108,7 @@ target_link_libraries(lms7suite
 	LMS7002M 
 	lms7suiteEvents 
 	LMS_StreamBoard 
+    DPDTest
 	${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES}
 	)
 

@@ -36,6 +36,7 @@
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
 #include "pnlBoardControls.h"
+#include "DPDTest.h"
 ///////////////////////////////////////////////////////////////////////////
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
@@ -79,9 +80,15 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         {
             int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
             float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
-            if (decimation != 7)
-                samplingFreq_MHz /= pow(2.0, decimation);
+            samplingFreq_MHz /= pow(2.0, decimation+1);
             fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
+        }
+        if (DPDTestGui)
+        {
+            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            samplingFreq_MHz /= pow(2.0, decimation+1);
+            DPDTestGui->SetNyquist(samplingFreq_MHz / 2);
         }
     }
    
@@ -160,6 +167,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) : AppFrame_view( parent
     spi = nullptr;
     novenaGui = nullptr;
     boardControlsGui = nullptr;
+    DPDTestGui = nullptr;
 
     lms7controlPort = new LMScomms();
     streamBoardPort = new LMScomms();
@@ -329,8 +337,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer->Show();
         int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
         float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
-        if (decimation != 7)
-            samplingFreq_MHz /= pow(2.0, decimation);
+        samplingFreq_MHz /= pow(2.0, decimation+1);
         fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
     if (lms7controlPort->GetInfo().device == LMS_DEV_SODERA)
@@ -584,4 +591,28 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 {
     boardControlsGui->Destroy();
     boardControlsGui = nullptr;
+}
+
+void LMS7SuiteAppFrame::OnDPDTestClose(wxCloseEvent& event)
+{
+    DPDTestGui->Destroy();
+    DPDTestGui = nullptr;
+}
+
+void LMS7SuiteAppFrame::OnShowDPDTest(wxCommandEvent& event)
+{
+    if (DPDTestGui) //it's already opened
+        DPDTestGui->Show();
+    else
+    {
+        DPDTestGui = new DPDTest(this, wxNewId(), _("DPDTest"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        DPDTestGui->Initialize(streamBoardPort);
+        int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        if (decimation != 7)
+            samplingFreq_MHz /= pow(2.0, decimation+1);
+        DPDTestGui->SetNyquist(samplingFreq_MHz / 2);
+        DPDTestGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnDPDTestClose), NULL, this);
+        DPDTestGui->Show();
+    }
 }
