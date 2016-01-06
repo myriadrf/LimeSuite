@@ -480,6 +480,7 @@ void SoapyIConnection::setFrequency(const int direction, const size_t channel, c
 {
     auto rfic = getRFIC(channel);
     auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setFrequency(%d, %s, %f MHz), ref %f MHz", direction, name.c_str(), frequency/1e6, ref_MHz);
 
     if (name == "RF")
     {
@@ -569,7 +570,7 @@ void SoapyIConnection::setSampleRate(const int direction, const size_t channel, 
     }
 
     rfic->SetInterfaceFrequency(
-        this->getMasterClockRate(),
+        this->getMasterClockRate()/1e6,
         int(std::log(double(_interps[channel]))/std::log(2.0)),
         int(std::log(double(_decims[channel]))/std::log(2.0)));
 }

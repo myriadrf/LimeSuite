@@ -17,4 +17,5 @@ if(UNIX AND ENABLE_USB_CONNECTION)
 	target_link_libraries(LMS_StreamBoard usb-1.0 -lpthread)
 endif()
 
+set_property(TARGET LMS_StreamBoard PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 

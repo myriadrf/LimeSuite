@@ -46,10 +46,7 @@ public:
     OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     //! Get the last-set reference clock rate
-    double GetReferenceClockRate(void)
-    {
-        _cachedRefClockRate;
-    }
+    double GetReferenceClockRate(void);
 
     /*!
      * Set the reference using the Si5351C when available

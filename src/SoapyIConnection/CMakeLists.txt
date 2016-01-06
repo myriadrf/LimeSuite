@@ -34,4 +34,5 @@ SOAPY_SDR_MODULE_UTIL(
     LIBRARIES
         LMS7002M
         ${connectionRegistryLibs}
+        LMS_StreamBoard
 )

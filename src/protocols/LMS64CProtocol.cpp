@@ -7,6 +7,7 @@
 #include "LMS64CProtocol.h"
 #include "Si5351C.h"
 #include <chrono>
+#include <iostream>
 
 //! arbitrary spi constants used to dispatch calls
 
@@ -27,7 +28,8 @@ static OperationStatus convertStatus(const LMS64CProtocol::TransferStatus &statu
 
 LMS64CProtocol::LMS64CProtocol(void)
 {
-    return;
+    //set a sane-default for the rate
+    _cachedRefClockRate = 61.44e6/2;
 }
 
 LMS64CProtocol::~LMS64CProtocol(void)
@@ -94,6 +96,11 @@ OperationStatus LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, s
     }
 
     return OperationStatus::UNSUPPORTED;
+}
+
+double LMS64CProtocol::GetReferenceClockRate(void)
+{
+    return _cachedRefClockRate;
 }
 
 void LMS64CProtocol::SetReferenceClockRate(const double rate)

@@ -6,17 +6,21 @@
 
 #include "SoapyIConnection.h"
 #include <SoapySDR/Formats.hpp>
+#include "LMS_StreamBoard.h"
+#include <iostream>
 
 /*******************************************************************
  * Stream data structure
  ******************************************************************/
 struct IConnectionStream
 {
-    int streamId;
+    //int streamId;
     int direction;
     //format, etc...
-    //TODO fill me in
+    LMS_StreamBoard *streamBoard;
 };
+
+#define STREAM_MTU 1024 //for now
 
 /*******************************************************************
  * Stream information
@@ -53,17 +57,26 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
     const SoapySDR::Kwargs &args)
     
 {
-    
+    if (direction == SOAPY_SDR_TX) throw std::runtime_error("SoapyIConnection::setupStream() no TX yet");
+    if (format != SOAPY_SDR_CF32) throw std::runtime_error("SoapyIConnection::setupStream() only complex floats now");
+    if (channels.size() != 2 or channels.at(0) != 0 or channels.at(1) != 1) throw std::runtime_error("SoapyIConnection::setupStream() only channels 0, 1 supported");
+
+    auto icstream = new IConnectionStream();
+    icstream->direction = direction;
+    icstream->streamBoard = new LMS_StreamBoard(_conn);
+    return (SoapySDR::Stream *)icstream;
 }
 
 void SoapyIConnection::closeStream(SoapySDR::Stream *stream)
 {
-    
+    auto icstream = (IConnectionStream *)stream;
+    delete icstream->streamBoard;
+    delete icstream;
 }
 
 size_t SoapyIConnection::getStreamMTU(SoapySDR::Stream *stream) const
 {
-    
+    return STREAM_MTU;
 }
 
 int SoapyIConnection::activateStream(
@@ -72,7 +85,16 @@ int SoapyIConnection::activateStream(
     const long long timeNs,
     const size_t numElems)
 {
-    
+    auto icstream = (IConnectionStream *)stream;
+    if (icstream->direction == SOAPY_SDR_RX)
+    {
+        auto st = icstream->streamBoard->StartReceiving(STREAM_MTU);
+        if (st != LMS_StreamBoard::SUCCESS)
+        {
+            return SOAPY_SDR_STREAM_ERROR;
+        }
+    }
+    return 0;
 }
 
 int SoapyIConnection::deactivateStream(
@@ -80,7 +102,16 @@ int SoapyIConnection::deactivateStream(
     const int flags,
     const long long timeNs)
 {
-    
+    auto icstream = (IConnectionStream *)stream;
+    if (icstream->direction == SOAPY_SDR_RX)
+    {
+        auto st = icstream->streamBoard->StopReceiving();
+        if (st != LMS_StreamBoard::SUCCESS)
+        {
+            return SOAPY_SDR_STREAM_ERROR;
+        }
+    }
+    return 0;
 }
 
 /*******************************************************************
@@ -94,7 +125,13 @@ int SoapyIConnection::readStream(
     long long &timeNs,
     const long timeoutUs)
 {
-    
+    auto icstream = (IConnectionStream *)stream;
+    auto data = icstream->streamBoard->GetIncomingData();
+
+    //TODO convert into buffers
+    std::cout << "data.samplesI.size()  " << data.samplesI.size()  << std::endl;
+
+    return SOAPY_SDR_TIMEOUT;
 }
 
 int SoapyIConnection::writeStream(
@@ -105,7 +142,7 @@ int SoapyIConnection::writeStream(
     const long long timeNs,
     const long timeoutUs)
 {
-    
+    return SOAPY_SDR_NOT_SUPPORTED;
 }
 
 int SoapyIConnection::readStreamStatus(
