@@ -104,7 +104,7 @@ protected:
     std::thread threadTxCyclic;
     std::atomic_bool stopTxCyclic;
 
-    int mDeviceIndex;
+    int mSpiAddr;
 };
 #endif
 

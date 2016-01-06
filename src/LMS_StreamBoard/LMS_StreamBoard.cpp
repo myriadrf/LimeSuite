@@ -1,5 +1,6 @@
 #include "LMS_StreamBoard.h"
 #include "IConnection.h"
+#include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 #include <assert.h>
 #include <iostream>
 #include "kiss_fft.h"
@@ -153,7 +154,11 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
 LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
 // TODO : pass device index from outside
-    mDeviceIndex = 0;
+    int mDeviceIndex = 0;
+    if (dataPort != nullptr)
+    {
+        mSpiAddr = dataPort->GetDeviceInfo().addrsLMS7002M[mDeviceIndex];
+    }
     mRxFrameStart.store(true);
     mDataPort = dataPort;
     mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
@@ -201,15 +206,16 @@ LMS_StreamBoard::Status LMS_StreamBoard::StopReceiving()
     return SUCCESS;
 }
 
-void ResetUSBFIFO(IConnection* port)
+void ResetUSBFIFO(LMS64CProtocol* port)
 {
 // TODO : USB FIFO reset command for IConnection
-//    LMScomms::GenericPacket ctrPkt;
-//    ctrPkt.cmd = CMD_USB_FIFO_RST;
-//    ctrPkt.outBuffer.push_back(0x01);
-//    pthis->mDataPort->TransferPacket(ctrPkt);
-//    ctrPkt.outBuffer[0] = 0x00;
-//    pthis->mDataPort->TransferPacket(ctrPkt);
+    if (port == nullptr) return;
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x01);
+    port->TransferPacket(ctrPkt);
+    ctrPkt.outBuffer[0] = 0x00;
+    port->TransferPacket(ctrPkt);
 }
 
 /** @brief Function dedicated for receiving data samples from board
@@ -244,7 +250,7 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
     }
     memset(buffers, 0, buffers_count*buffer_size);
 
-    ResetUSBFIFO(pthis->mDataPort);
+    ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
     uint16_t regVal = pthis->SPI_read(0x0005);
     pthis->SPI_write(0x0005, regVal | 0x4);
@@ -545,7 +551,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::SPI_write(uint16_t address, uint16_t da
 {
     assert(mDataPort != nullptr);
     const uint32_t dataWr = (1<<31) | address << 16 | data;
-    OperationStatus status = mDataPort->TransactSPI(mDeviceIndex, &dataWr, nullptr, 1);
+    OperationStatus status = mDataPort->TransactSPI(mSpiAddr, &dataWr, nullptr, 1);
     return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
 
@@ -558,7 +564,7 @@ uint16_t LMS_StreamBoard::SPI_read(uint16_t address)
     assert(mDataPort != nullptr);
     const uint32_t dataWr = (address & 0x7FF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = mDataPort->TransactSPI(mDeviceIndex, &dataWr, &dataRd, 1);
+    OperationStatus status = mDataPort->TransactSPI(mSpiAddr, &dataWr, &dataRd, 1);
     if (status == OperationStatus::SUCCESS)
         return dataRd & 0xFFFF;
     else
