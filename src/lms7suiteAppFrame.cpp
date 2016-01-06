@@ -83,7 +83,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
             float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
             if (decimation != 7)
-                samplingFreq_MHz /= pow(2.0, decimation);
+                samplingFreq_MHz /= pow(2.0, decimation+1);
             fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
         }
     }
@@ -333,7 +333,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
         float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
         if (decimation != 7)
-            samplingFreq_MHz /= pow(2.0, decimation);
+            samplingFreq_MHz /= pow(2.0, decimation+1);
         fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
     }
     if (lms7controlPort->GetInfo().device == LMS_DEV_SODERA)
