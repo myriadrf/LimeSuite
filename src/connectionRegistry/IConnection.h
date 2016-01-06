@@ -199,6 +199,22 @@ public:
     virtual void SetReferenceClockRate(const double rate);
 
     /*!
+     * Query the TX frequency of the reference clock.
+     * Some boards will use a separate tx reference, otherwise
+     * this call simply forwards to GetReferenceClockRate()
+     * @return the reference clock rate in Hz
+     */
+    virtual double GetTxReferenceClockRate(void);
+
+    /*!
+     * Set the programmable TX reference clock rate.
+     * Some boards will use a separate tx reference, otherwise
+     * this call simply forwards to SetReferenceClockRate()
+     * @param rate the clock rate in Hz
+     */
+    virtual void SetTxReferenceClockRate(const double rate);
+
+    /*!
      * The RX stream control call configures a channel to
      * stream at a particular time, requests burst,
      * or to start or stop continuous streaming.

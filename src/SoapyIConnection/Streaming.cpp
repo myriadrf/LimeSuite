@@ -32,6 +32,7 @@ std::vector<std::string> SoapyIConnection::getStreamFormats(const int direction,
 std::string SoapyIConnection::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
 {
     //TODO this may not be the case for every advice (exampled packed complex 12 bit)
+    fullScale = 1024;
     return SOAPY_SDR_CS16;
 }
 

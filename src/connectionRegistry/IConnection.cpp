@@ -76,12 +76,23 @@ void IConnection::UpdateExternalBandSelect(const int trfBand, const int rfeBand)
 
 double IConnection::GetReferenceClockRate(void)
 {
-    return 1.0;
+    //this is the populated TCXO on many boards
+    return 61.44e6/2;
 }
 
 void IConnection::SetReferenceClockRate(const double rate)
 {
     return;
+}
+
+double IConnection::GetTxReferenceClockRate(void)
+{
+    return this->GetReferenceClockRate();
+}
+
+void IConnection::SetTxReferenceClockRate(const double rate)
+{
+    return this->SetReferenceClockRate(rate);
 }
 
 bool IConnection::RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata)
