@@ -54,17 +54,13 @@ void LMS7002M::Log(const char* text, LogType type)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IConnection* port, const int addr)
+void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
 {
     controlPort = port;
-    addrLMS7002M = addr;
 
-    if(!controlPort)
-        return;
-    //automatic selection when address not specified
-    if (addrLMS7002M == -1)
+    if (controlPort != nullptr)
     {
-        addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M[0];
+        addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
     }
 }
 

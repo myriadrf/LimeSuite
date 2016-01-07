@@ -45,11 +45,13 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
     _moduleName = handle.module;
     _conn = ConnectionRegistry::makeConnection(handle);
     const auto devInfo = _conn->GetDeviceInfo();
-    for (const auto &addr : devInfo.addrsLMS7002M)
+    const size_t numRFICs = devInfo.addrsLMS7002M.size();
+
+    for (size_t i = 0; i < numRFICs; i++)
     {
-        SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", addr);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", int(i));
         _rfics.push_back(new LMS7002M_withLogging());
-        _rfics.back()->SetConnection(_conn, addr);
+        _rfics.back()->SetConnection(_conn, i);
         SoapySDR::logf(SOAPY_SDR_INFO, "Ver=%d, Rev=%d, Mask=%d",
             _rfics.back()->Get_SPI_Reg_bits(VER, true),
             _rfics.back()->Get_SPI_Reg_bits(REV, true),

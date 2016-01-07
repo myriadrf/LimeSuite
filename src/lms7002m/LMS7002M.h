@@ -28,13 +28,10 @@ public:
 
     /*!
      * Set the connection for the LMS7002M driver.
-     * This call takes a SPI address which is passed to TransactSPI.
-     * When the addr is set to -1, the driver will automatically select
-     * the first RFIC SPI slave from the device information structure.
      * \param port the connection interface
-     * \param addr which SPI slave to use
+     * \param devIndex which RFIC index (default 0 for most devices)
      */
-    void SetConnection(IConnection* port, const int addr = -1);
+    void SetConnection(IConnection* port, const size_t devIndex = 0);
 
 	virtual ~LMS7002M();
 
