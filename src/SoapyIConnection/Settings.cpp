@@ -50,6 +50,10 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
         SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", addr);
         _rfics.push_back(new LMS7002M_withLogging());
         _rfics.back()->SetConnection(_conn, addr);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Ver=%d, Rev=%d, Mask=%d",
+            _rfics.back()->Get_SPI_Reg_bits(VER, true),
+            _rfics.back()->Get_SPI_Reg_bits(REV, true),
+            _rfics.back()->Get_SPI_Reg_bits(MASK, true));
     }
 
     //enable all channels
@@ -106,6 +110,11 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
     //--- digital ---
     rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
     rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
+
+    //--- testing ---
+    rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 0); //NCO
+    rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, 1); //SIGGEN
+    rfic->Modify_SPI_Reg_bits(TSGFCW_RXTSP, 1); //clk/8
 
     //--- baseband ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);

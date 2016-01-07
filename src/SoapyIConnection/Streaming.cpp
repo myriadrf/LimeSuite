@@ -8,6 +8,9 @@
 #include <SoapySDR/Formats.hpp>
 #include "LMS_StreamBoard.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <algorithm>
 
 /*******************************************************************
  * Stream data structure
@@ -20,7 +23,7 @@ struct IConnectionStream
     LMS_StreamBoard *streamBoard;
 };
 
-#define STREAM_MTU 1024 //for now
+#define STREAM_MTU 16384 //for now
 
 /*******************************************************************
  * Stream information
@@ -126,10 +129,27 @@ int SoapyIConnection::readStream(
     const long timeoutUs)
 {
     auto icstream = (IConnectionStream *)stream;
-    auto data = icstream->streamBoard->GetIncomingData();
 
-    //TODO convert into buffers
-    std::cout << "data.samplesI.size()  " << data.samplesI.size()  << std::endl;
+    const auto exitTime(std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs));
+    do
+    {
+        auto data = icstream->streamBoard->GetIncomingData();
+        if (data.samplesI.size() != 0)
+        {
+            //TODO
+            // * both buffers
+            // * remainder when numElems is smaller
+            size_t N = std::min(data.samplesI.size(), numElems);
+            auto ch0_data = (std::complex<float> *)buffs[0];
+            for (size_t i = 0; i < N; i++)
+            {
+                ch0_data[i] = std::complex<float>(data.samplesI[i], data.samplesQ[i]);
+            }
+            return N;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    } while (std::chrono::high_resolution_clock::now() < exitTime);
 
     return SOAPY_SDR_TIMEOUT;
 }

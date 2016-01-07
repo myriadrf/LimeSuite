@@ -3,6 +3,8 @@ from SoapySDR import * #SOAPY_SDR_* constants
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 if __name__ == '__main__':
     streamBoardSDR = SoapySDR.Device({"driver":"lime"})
 
@@ -35,6 +37,10 @@ if __name__ == '__main__':
     sampsCh1 = np.array([0]*1024, np.complex64)
     sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], 1024, 0)
     print sr
+
+    plt.plot(np.real(sampsCh0))
+    plt.ylabel('some numbers')
+    plt.show()
 
     print("Cleanup rx stream")
     streamBoardSDR.deactivateStream(rxStream)
