@@ -296,8 +296,6 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-// TODO : get device index from outside
-    const int devIndex = 0;
 	if (!device && device->IsOpen() == false)
         return FAILED;
 

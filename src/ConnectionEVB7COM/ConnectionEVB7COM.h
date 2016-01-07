@@ -20,11 +20,6 @@ public:
 
     bool IsOpen(void);
 
-    //! JB TODO remove old interfaces
-    DeviceStatus Open(){}
-    DeviceStatus Open(unsigned i){}
-    int GetOpenedIndex(){}
-
     std::vector<std::string> GetDeviceNames(){}
     int RefreshDeviceList(){}
     void ClearComm(){}

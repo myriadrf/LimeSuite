@@ -70,7 +70,7 @@ public:
         uint32_t txAproxSampleRate;
     };
 
-    StreamerLTE(IConnection* dataPort);
+    StreamerLTE(IConnection* dataPort, const size_t devIndex = 0);
     virtual ~StreamerLTE();
 
     virtual STATUS StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format);
@@ -79,8 +79,8 @@ public:
     DataToGUI GetIncomingData();
     Stats GetStats();
 protected:
-    static STATUS SPI_write(IConnection* dataPort, uint16_t address, uint16_t data);
-    static uint16_t SPI_read(IConnection* dataPort, uint16_t address);
+    static STATUS SPI_write(IConnection* dataPort, int spiDevAddr, uint16_t address, uint16_t data);
+    static uint16_t SPI_read(IConnection* dataPort, int spiDevAddr, uint16_t address);
 
     std::mutex mLockIncomingPacket;
     DataToGUI mIncomingPacket;
@@ -103,6 +103,7 @@ protected:
     std::thread threadProcessing;
     std::thread threadTx;
     IConnection* mDataPort;
+    int mSpiDevAddr;
 
     std::atomic<int> mRxDataRate;
     std::atomic<int> mTxDataRate;

@@ -420,6 +420,10 @@ void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
 {
     m_pModule = pModule;
     serPort = pSerPort;
+    if (serPort != nullptr)
+    {
+        m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+    }
 }
 
 ADF4002_wxgui::~ADF4002_wxgui()
@@ -525,10 +529,8 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
         dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
 
     OperationStatus status;
-// TODO : get device index from outside
 // ADF4002 needs to be writen 4 values of 24 bits
-    const int devIndex = 0;
-    status = serPort->TransactSPI(devIndex, dataWr.data(), nullptr, 4);
+    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
     if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
@@ -590,10 +592,8 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
         dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
 
     OperationStatus status;
-// TODO : get device index from outside
 // ADF4002 needs to be writen 4 values of 24 bits
-    const int devIndex = 0;
-    status = serPort->TransactSPI(devIndex, dataWr.data(), nullptr, 4);
+    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
     if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }

@@ -24,10 +24,15 @@ class SPI_wxgui : public SPI_view
 		SPI_wxgui( wxWindow* parent );
 	//// end generated class members
         SPI_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-        virtual void Initialize(IConnection* pCtrPort, IConnection* pDataPort);
+
+        //devIndex is an RFIC index (0 when only one is present)
+        virtual void Initialize(IConnection* pCtrPort, IConnection* pDataPort, const size_t devIndex = 0);
     protected:
         IConnection* ctrPort;
         IConnection* dataPort;
+
+        int m_rficSpiAddrCtr;
+        int m_rficSpiAddrData;
 };
 
 #endif // __SPI_wxgui__

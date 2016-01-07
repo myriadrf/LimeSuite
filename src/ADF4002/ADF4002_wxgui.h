@@ -145,6 +145,7 @@ protected:
 private:
     ADF4002* m_pModule;
     IConnection* serPort;
+    int m_adf4002SpiAddr;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);

@@ -62,12 +62,10 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
         return;
     }
 
-// TODO : get device index from outside
-    const int devIndex = 0;
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint32_t dataRd = 0;
     OperationStatus status;
-    status = mSerPort->TransactSPI(devIndex, &dataWr, &dataRd, 1);
+    status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
 
     if (status != OperationStatus::SUCCESS)
     {
@@ -84,9 +82,13 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     lms_gpio0->SetValue((value >> 0)&1);
 }
 
-void LMS7002M_Novena_wxgui::Initialize(IConnection* serPort)
+void LMS7002M_Novena_wxgui::Initialize(IConnection* serPort, const size_t devIndex)
 {
     mSerPort = serPort;
+    if (mSerPort != nullptr)
+    {
+        m_rficSpiAddr = mSerPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+    }
 }
 
 /**
@@ -113,8 +115,6 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
 
-// TODO : get device index from outside
-    const int devIndex = 0;
     unsigned int value = 0;
     value |= lms_reset->GetValue() << 5;
     value |= lms_rxen->GetValue() << 4;
@@ -124,7 +124,7 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     value |= lms_gpio0->GetValue() << 0;
     uint32_t dataWr = (1 << 31) | (0x0806 << 16) | (value & 0xFFFF);
     OperationStatus status;
-    status = mSerPort->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
     if (status != OperationStatus::SUCCESS)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);

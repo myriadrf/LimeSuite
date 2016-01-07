@@ -151,9 +151,13 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
         dir.Make(gWFMdirectory);
 }
 
-void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
+void FPGAcontrols_wxgui::Initialize(IConnection* dataPort, const size_t devIndex)
 {
     m_serPort = dataPort;
+    if (m_serPort != nullptr)
+    {
+        mSpiAddr = m_serPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+    }
     if (mStreamer)
         delete mStreamer;
     mStreamer = new LMS_StreamBoard(m_serPort);
@@ -421,9 +425,7 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     uint32_t dataWr = (1 << 31) | address << 16;
     uint32_t dataRd = 0;
     OperationStatus status;
-// TODO : get device index from outside
-    const int devIndex = 0;
-    status = m_serPort->TransactSPI(devIndex, &dataWr, &dataRd, 1);
+    status = m_serPort->TransactSPI(mSpiAddr, &dataWr, &dataRd, 1);
     unsigned short regValue = 0;
 
     if (status == OperationStatus::SUCCESS)
@@ -432,7 +434,7 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
     dataWr = (1 << 31) | address << 16 | regValue;
 
-    status = m_serPort->TransactSPI(devIndex, &dataWr, nullptr, 1);
+    status = m_serPort->TransactSPI(mSpiAddr, &dataWr, nullptr, 1);
 
     if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);

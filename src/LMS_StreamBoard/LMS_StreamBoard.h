@@ -56,7 +56,7 @@ public:
         float TxFIFOfilled;
     };
 
-    LMS_StreamBoard(IConnection* dataPort);
+    LMS_StreamBoard(IConnection* dataPort, const size_t devIndex = 0);
     virtual ~LMS_StreamBoard();
 
     void SetRxFrameStart(const bool startValue);

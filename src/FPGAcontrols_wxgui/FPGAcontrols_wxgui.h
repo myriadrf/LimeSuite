@@ -26,7 +26,7 @@ class FPGAcontrols_wxgui: public wxFrame
 {
 	public:
         FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-        virtual void Initialize(IConnection* dataPort);
+        virtual void Initialize(IConnection* dataPort, const size_t devIndex = 0);
         virtual ~FPGAcontrols_wxgui();
 
         int UploadFile(const wxString &filename);
@@ -78,6 +78,7 @@ class FPGAcontrols_wxgui: public wxFrame
 	protected:
         wxString fileForCyclicTransmitting;
         IConnection* m_serPort;
+        int mSpiAddr;
         LMS_StreamBoard* mStreamer;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()
