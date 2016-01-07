@@ -56,6 +56,17 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
             _rfics.back()->Get_SPI_Reg_bits(VER, true),
             _rfics.back()->Get_SPI_Reg_bits(REV, true),
             _rfics.back()->Get_SPI_Reg_bits(MASK, true));
+
+        liblms7_status st;
+
+        st = _rfics.back()->RegistersTest();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("RegistersTest() failed");
+
+        st = _rfics.back()->ResetChip();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("ResetChip() failed");
+
+        st = _rfics.back()->UploadAll();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("UploadAll() failed");
     }
 
     //enable all channels
@@ -191,6 +202,7 @@ std::vector<std::string> SoapyIConnection::listAntennas(const int direction, con
     }
     if (direction == SOAPY_SDR_TX)
     {
+        ants.push_back("NONE");
         ants.push_back("BAND1");
         ants.push_back("BAND2");
     }
@@ -203,44 +215,27 @@ void SoapyIConnection::setAntenna(const int direction, const size_t channel, con
 
     if (direction == SOAPY_SDR_RX)
     {
-        int sel_path_rfe = 0;
-        if (name == "NONE") sel_path_rfe = 0;
-        else if (name == "LNAH") sel_path_rfe = 1;
-        else if (name == "LNAL") sel_path_rfe = 2;
-        else if (name == "LNAW") sel_path_rfe = 3;
-        else if (name == "LB1") sel_path_rfe = 3;
-        else if (name == "LB2") sel_path_rfe = 2;
+        LMS7002M::PathRFE path = LMS7002M::PATH_RFE_NONE;
+        if (name == "NONE") path = LMS7002M::PATH_RFE_NONE;
+        else if (name == "LNAH") path = LMS7002M::PATH_RFE_LNAH;
+        else if (name == "LNAL") path = LMS7002M::PATH_RFE_LNAL;
+        else if (name == "LNAW") path = LMS7002M::PATH_RFE_LNAW;
+        else if (name == "LB1") path = LMS7002M::PATH_RFE_LB1;
+        else if (name == "LB2") path = LMS7002M::PATH_RFE_LB2;
         else throw std::runtime_error("SoapyIConnection::setAntenna(RX, "+name+") - unknown antenna name");
 
-        int pd_lna_rfe = (name == "NONE");
-        int pd_rloopb_1_rfe = (name != "LB1");
-        int pd_rloopb_2_rfe = (name != "LB2");
-        int en_inshsw_l_rfe = (name == "LNAL");
-        int en_inshsw_w_rfe = (name == "LNAW");
-        int en_inshsw_lb1_rfe = (name == "LB1");
-        int en_inshsw_lb2_rfe =(name == "LB2");
-
-        rfic->Modify_SPI_Reg_bits(PD_LNA_RFE, pd_lna_rfe);
-        rfic->Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, pd_rloopb_1_rfe);
-        rfic->Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, pd_rloopb_2_rfe);
-        rfic->Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, en_inshsw_lb1_rfe);
-        rfic->Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, en_inshsw_lb2_rfe);
-        rfic->Modify_SPI_Reg_bits(EN_INSHSW_L_RFE, en_inshsw_l_rfe);
-        rfic->Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, en_inshsw_w_rfe);
-        rfic->Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_path_rfe);
-
-        //TODO when loopback set: en_loopb_txpad_trf
+        rfic->SetPathRFE(path);
     }
 
     if (direction == SOAPY_SDR_TX)
     {
-        int band1 = 0, band2 = 0;
-        if (name == "BAND1") band1 = 1;
-        else if (name == "BAND2") band2 = 1;
+        int band = 0;
+        if (name == "NONE") band = 0;
+        else if (name == "BAND1") band = 1;
+        else if (name == "BAND2") band = 2;
         else throw std::runtime_error("SoapyIConnection::setAntenna(TX, "+name+") - unknown antenna name");
 
-        rfic->Modify_SPI_Reg_bits(SEL_BAND1_TRF, band1);
-        rfic->Modify_SPI_Reg_bits(SEL_BAND2_TRF, band2);
+        rfic->SetBandTRF(band);
     }
 
     _conn->UpdateExternalBandSelect(
@@ -254,17 +249,25 @@ std::string SoapyIConnection::getAntenna(const int direction, const size_t chann
 
     if (direction == SOAPY_SDR_RX)
     {
-        if (rfic->Get_SPI_Reg_bits(PD_LNA_RFE) != 0) return "NONE";
-        if (rfic->Get_SPI_Reg_bits(EN_INSHSW_LB1_RFE) != 0) return "LB1";
-        if (rfic->Get_SPI_Reg_bits(EN_INSHSW_LB2_RFE) != 0) return "LB2";
-        if (rfic->Get_SPI_Reg_bits(EN_INSHSW_L_RFE) != 0) return "LNAL";
-        if (rfic->Get_SPI_Reg_bits(EN_INSHSW_W_RFE) != 0) return "LNAW";
-        return "LNAH";
+        switch (rfic->GetPathRFE())
+        {
+        case LMS7002M::PATH_RFE_NONE: return "NONE";
+        case LMS7002M::PATH_RFE_LNAH: return "LNAH";
+        case LMS7002M::PATH_RFE_LNAL: return "LNAL";
+        case LMS7002M::PATH_RFE_LNAW: return "LNAW";
+        case LMS7002M::PATH_RFE_LB1: return "LB1";
+        case LMS7002M::PATH_RFE_LB2: return "LB2";
+        }
     }
 
     if (direction == SOAPY_SDR_TX)
     {
-        return (rfic->Get_SPI_Reg_bits(SEL_BAND2_TRF) == 1)?"BAND2":"BAND1";
+        switch (rfic->GetBandTRF())
+        {
+        case 1: return "BAND1";
+        case 2: return "BAND2";
+        default: return "NONE";
+        }
     }
 
     return "";

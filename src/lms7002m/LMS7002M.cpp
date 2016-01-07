@@ -505,6 +505,76 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
     return LIBLMS7_SUCCESS;
 }
 
+liblms7_status LMS7002M::SetPathRFE(PathRFE path)
+{
+    int sel_path_rfe = 0;
+    switch (path)
+    {
+    case PATH_RFE_NONE: sel_path_rfe = 0; break;
+    case PATH_RFE_LNAH: sel_path_rfe = 1; break;
+    case PATH_RFE_LNAL: sel_path_rfe = 2; break;
+    case PATH_RFE_LNAW: sel_path_rfe = 3; break;
+    case PATH_RFE_LB1: sel_path_rfe = 3; break;
+    case PATH_RFE_LB2: sel_path_rfe = 2; break;
+    }
+
+    int pd_lna_rfe = (path == PATH_RFE_NONE);
+    int pd_rloopb_1_rfe = (path != PATH_RFE_LB1);
+    int pd_rloopb_2_rfe = (path != PATH_RFE_LB2);
+    int en_inshsw_l_rfe = (path == PATH_RFE_LNAL);
+    int en_inshsw_w_rfe = (path == PATH_RFE_LNAW);
+    int en_inshsw_lb1_rfe = (path == PATH_RFE_LB1);
+    int en_inshsw_lb2_rfe = (path == PATH_RFE_LB2);
+
+    this->Modify_SPI_Reg_bits(PD_LNA_RFE, pd_lna_rfe);
+    this->Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, pd_rloopb_1_rfe);
+    this->Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, pd_rloopb_2_rfe);
+    this->Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, en_inshsw_lb1_rfe);
+    this->Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, en_inshsw_lb2_rfe);
+    this->Modify_SPI_Reg_bits(EN_INSHSW_L_RFE, en_inshsw_l_rfe);
+    this->Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, en_inshsw_w_rfe);
+    this->Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_path_rfe);
+
+    //TODO when loopback set: en_loopb_txpad_trf
+
+    //update external band-selection to match
+    controlPort->UpdateExternalBandSelect(
+        this->Get_SPI_Reg_bits(SEL_BAND2_TRF),
+        this->Get_SPI_Reg_bits(SEL_PATH_RFE));
+
+    return LIBLMS7_SUCCESS;
+}
+
+LMS7002M::PathRFE LMS7002M::GetPathRFE(void)
+{
+    if (this->Get_SPI_Reg_bits(PD_LNA_RFE) != 0) return PATH_RFE_NONE;
+    if (this->Get_SPI_Reg_bits(EN_INSHSW_LB1_RFE) != 0) return PATH_RFE_LB1;
+    if (this->Get_SPI_Reg_bits(EN_INSHSW_LB2_RFE) != 0) return PATH_RFE_LB2;
+    if (this->Get_SPI_Reg_bits(EN_INSHSW_L_RFE) != 0) return PATH_RFE_LNAL;
+    if (this->Get_SPI_Reg_bits(EN_INSHSW_W_RFE) != 0) return PATH_RFE_LNAW;
+    return PATH_RFE_LNAH;
+}
+
+liblms7_status LMS7002M::SetBandTRF(const int band)
+{
+    this->Modify_SPI_Reg_bits(SEL_BAND1_TRF, (band==1)?1:0);
+    this->Modify_SPI_Reg_bits(SEL_BAND2_TRF, (band==2)?1:0);
+
+    //update external band-selection to match
+    controlPort->UpdateExternalBandSelect(
+        this->Get_SPI_Reg_bits(SEL_BAND2_TRF),
+        this->Get_SPI_Reg_bits(SEL_PATH_RFE));
+
+    return LIBLMS7_SUCCESS;
+}
+
+int LMS7002M::GetBandTRF(void)
+{
+    if (this->Get_SPI_Reg_bits(SEL_BAND1_TRF) == 1) return 1;
+    if (this->Get_SPI_Reg_bits(SEL_BAND2_TRF) == 1) return 2;
+    return 0;
+}
+
 /**	@brief Returns reference clock in MHz used for SXT or SXR
 	@param Tx transmitter or receiver selection
 */

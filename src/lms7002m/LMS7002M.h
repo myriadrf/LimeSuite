@@ -74,6 +74,37 @@ public:
 	liblms7_status TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
     ///@}
 
+    ///@name RF selection
+    enum PathRFE
+    {
+        PATH_RFE_NONE,
+        PATH_RFE_LNAH,
+        PATH_RFE_LNAL,
+        PATH_RFE_LNAW,
+        PATH_RFE_LB1,
+        PATH_RFE_LB2,
+    };
+
+    //! Set the RFE input path.
+    liblms7_status SetPathRFE(PathRFE path);
+
+    //! Get the currently set RFE path
+    PathRFE GetPathRFE(void);
+
+    /*!
+     * Set the TRF Band selection.
+     * @param band 1 or 2
+     */
+    liblms7_status SetBandTRF(const int band);
+
+    /*!
+     * Get the TRF Band selection.
+     * @return the band 1 or 2
+     */
+    int GetBandTRF(void);
+
+    ///@}
+
     ///@name CGEN and PLL
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN_MHz();
