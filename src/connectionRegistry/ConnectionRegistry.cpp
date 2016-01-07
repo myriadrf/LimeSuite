@@ -48,6 +48,17 @@ std::string ConnectionHandle::serialize(void) const
     return out;
 }
 
+std::string ConnectionHandle::ToString(void) const
+{
+    std::string out;
+
+    if (not name.empty()) out = name;
+
+    if (out.empty()) out = this->serialize();
+
+    return out;
+}
+
 /*******************************************************************
  * Registry data structures
  ******************************************************************/

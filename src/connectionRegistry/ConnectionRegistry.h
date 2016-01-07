@@ -65,6 +65,12 @@ public:
      * This string format can be used to represent the handle.
      */
     std::string serialize(void) const;
+
+    /*!
+     * Get a displayable string for this handle.
+     * @return a string that may be printed
+     */
+    std::string ToString(void) const;
 };
 
 /*!

@@ -28,12 +28,12 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
     cachedHandles = ConnectionRegistry::findConnections();
 
     for (unsigned i = 0; i<cachedHandles.size(); ++i)
-        mListLMS7ports->Append(cachedHandles[i].serialize());
+        mListLMS7ports->Append(cachedHandles[i].ToString());
     if (lmsOpenedIndex >= 0 && lmsOpenedIndex < mListLMS7ports->GetCount())
         mListLMS7ports->SetSelection(lmsOpenedIndex);
 
     for (unsigned i = 0; i<cachedHandles.size(); ++i)
-        mListStreamports->Append(cachedHandles[i].serialize());
+        mListStreamports->Append(cachedHandles[i].ToString());
     if (streamOpenedIndex >= 0 && streamOpenedIndex < mListStreamports->GetCount())
         mListStreamports->SetSelection(streamOpenedIndex);
 }
