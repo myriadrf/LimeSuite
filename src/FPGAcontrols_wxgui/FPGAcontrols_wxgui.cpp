@@ -151,12 +151,12 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
         dir.Make(gWFMdirectory);
 }
 
-void FPGAcontrols_wxgui::Initialize(IConnection* dataPort, const size_t devIndex)
+void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
 {
     m_serPort = dataPort;
     if (m_serPort != nullptr)
     {
-        mSpiAddr = m_serPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        mSpiAddr = m_serPort->GetDeviceInfo().addrBoard;
     }
     if (mStreamer)
         delete mStreamer;

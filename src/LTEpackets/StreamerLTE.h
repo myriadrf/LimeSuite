@@ -70,7 +70,7 @@ public:
         uint32_t txAproxSampleRate;
     };
 
-    StreamerLTE(IConnection* dataPort, const size_t devIndex = 0);
+    StreamerLTE(IConnection* dataPort);
     virtual ~StreamerLTE();
 
     virtual STATUS StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format);

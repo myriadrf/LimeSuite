@@ -165,10 +165,15 @@ private:
 
     OperationStatus WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
     OperationStatus ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
+
     OperationStatus WriteSi5351I2C(const std::string &data);
     OperationStatus ReadSi5351I2C(const size_t numBytes, std::string &data);
+
     OperationStatus WriteADF4002SPI(const uint32_t *writeData, const size_t size);
     OperationStatus ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    OperationStatus WriteBoardSPI(const uint32_t *writeData, const size_t size);
+    OperationStatus ReadBoardSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);

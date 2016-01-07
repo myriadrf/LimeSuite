@@ -12,12 +12,12 @@ using namespace std;
 IConnection* gDataPort;
 int gSpiDevAddr;
 
-StreamerLTE::StreamerLTE(IConnection* dataPort, const size_t devIndex)
+StreamerLTE::StreamerLTE(IConnection* dataPort)
 {
     mDataPort = dataPort;
     if (mDataPort != nullptr)
     {
-        mSpiDevAddr = mDataPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        mSpiDevAddr = mDataPort->GetDeviceInfo().addrBoard;
     }
     mRxFIFO = new LMS_SamplesFIFO(1, 1);
     mTxFIFO = new LMS_SamplesFIFO(1, 1);

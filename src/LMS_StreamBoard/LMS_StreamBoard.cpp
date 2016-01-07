@@ -151,11 +151,11 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
     return SUCCESS;
 }
 
-LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort, const size_t devIndex)
+LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
     if (dataPort != nullptr)
     {
-        mSpiAddr = dataPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        mSpiAddr = dataPort->GetDeviceInfo().addrBoard;
     }
     mRxFrameStart.store(true);
     mDataPort = dataPort;

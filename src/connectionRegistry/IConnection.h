@@ -67,6 +67,12 @@ struct DeviceInfo
      * found on some development boards. -1 when not present.
      */
     int addrADF4002;
+
+    /*!
+     * The SPI address number used for FPGA register access
+     * found on some development boards. -1 when not present.
+     */
+    int addrBoard;
 };
 
 /*!

@@ -15,11 +15,11 @@ void SPI_wxgui::Initialize(IConnection* pCtrPort, IConnection* pDataPort, const 
     dataPort = pDataPort;
     if (ctrPort != nullptr)
     {
-        m_rficSpiAddrCtr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        m_rficSpiAddr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
     }
     if (dataPort != nullptr)
     {
-        m_rficSpiAddrData = dataPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        m_brdSpiAddr = dataPort->GetDeviceInfo().addrBoard;
     }
 }
 
@@ -38,7 +38,7 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
     dataWr |= (addr & 0xFFFF) << 16;
     dataWr |=  data & 0xFFFF;
     OperationStatus status;
-    status = ctrPort->TransactSPI(m_rficSpiAddrCtr, &dataWr, nullptr, 1);
+    status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
 
     if (status == OperationStatus::SUCCESS)
         lblLMSwriteStatus->SetLabel(_("Write success"));
@@ -57,7 +57,7 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
 
     const uint32_t dataWr = (addr & 0x7FFF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = ctrPort->TransactSPI(m_rficSpiAddrCtr, &dataWr, &dataRd, 1);
+    OperationStatus status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
 
     if (status == OperationStatus::SUCCESS)
     {
@@ -86,7 +86,7 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
     dataWr |= (addr & 0xFFFF) << 16;
     dataWr |=  data & 0xFFFF;
     OperationStatus status;
-    status = dataPort->TransactSPI(m_rficSpiAddrData, &dataWr, nullptr, 1);
+    status = dataPort->TransactSPI(m_brdSpiAddr, &dataWr, nullptr, 1);
 
     if (status == OperationStatus::SUCCESS)
         lblBoardwriteStatus->SetLabel(_("Write success"));
@@ -106,7 +106,7 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
 
     const uint32_t dataWr = (addr & 0x7FFF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = dataPort->TransactSPI(m_rficSpiAddrData, &dataWr, &dataRd, 1);
+    OperationStatus status = dataPort->TransactSPI(m_brdSpiAddr, &dataWr, &dataRd, 1);
 
     if (status == OperationStatus::SUCCESS)
     {

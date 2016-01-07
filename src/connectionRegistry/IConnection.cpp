@@ -9,7 +9,8 @@
 
 DeviceInfo::DeviceInfo(void):
     addrSi5351(-1),
-    addrADF4002(-1)
+    addrADF4002(-1),
+    addrBoard(-1)
 {
     return;
 }
