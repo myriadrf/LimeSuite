@@ -191,6 +191,14 @@ public:
     void setHardwareTime(const long long timeNs, const std::string &what = "");
 
     /*******************************************************************
+     * Register API
+     ******************************************************************/
+
+    void writeRegister(const unsigned addr, const unsigned value);
+
+    unsigned readRegister(const unsigned addr) const;
+
+    /*******************************************************************
      * I2C API
      ******************************************************************/
 

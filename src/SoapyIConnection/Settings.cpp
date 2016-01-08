@@ -763,6 +763,26 @@ void SoapyIConnection::setHardwareTime(const long long timeNs, const std::string
 }
 
 /*******************************************************************
+ * Register API
+ ******************************************************************/
+
+void SoapyIConnection::writeRegister(const unsigned addr, const unsigned value)
+{
+    auto st = _conn->WriteRegister(addr, value);
+    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+        "SoapyIConnection::WriteRegister("+std::to_string(addr)+") FAIL");
+}
+
+unsigned SoapyIConnection::readRegister(const unsigned addr) const
+{
+    unsigned readbackData = 0;
+    auto st = _conn->ReadRegister(addr, readbackData);
+    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+        "SoapyIConnection::ReadRegister("+std::to_string(addr)+") FAIL");
+    return readbackData;
+}
+
+/*******************************************************************
  * I2C API
  ******************************************************************/
 void SoapyIConnection::writeI2C(const int addr, const std::string &data)
