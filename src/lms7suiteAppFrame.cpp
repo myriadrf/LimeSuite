@@ -228,11 +228,11 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
 //  TODO : setup controls according to connected board
-//        if (si5351gui)
-//            si5351gui->ModifyClocksGUI(info.device);
+        if (si5351gui)
+            si5351gui->ModifyClocksGUI(info.deviceName);
 //
-//        if (boardControlsGui)
-//            boardControlsGui->SetupControls(info.device);
+        if (boardControlsGui)
+            boardControlsGui->SetupControls(info.deviceName);
 
         //must configure synthesizer before using SoDeRa
         if (info.deviceName == GetDeviceName(LMS_DEV_SODERA))

@@ -324,6 +324,24 @@ public:
     template <typename ReadType>
     OperationStatus ReadRegister(const uint32_t addr, ReadType &data);
 
+    /** @brief Sets custom on board control to given value units
+	@param ids indexes of selected controls
+	@param values new control values
+	@param count number of values to write
+	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
+	@return the operation success state
+    */
+    virtual OperationStatus CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+
+    /** @brief Returns value of custom on board control
+	@param ids indexes of controls to read
+	@param values retrieved control values
+	@param count number of values to read
+	@param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
+	@return the operation success state
+    */
+    virtual OperationStatus CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
+
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
      * It remains here to enable compiling until its replaced

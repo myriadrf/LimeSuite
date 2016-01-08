@@ -156,3 +156,13 @@ OperationStatus IConnection::WriteRegister(const uint32_t addr, const uint32_t d
 {
     return this->WriteRegisters(&addr, &data, 1);
 }
+
+OperationStatus IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
+{
+    return UNSUPPORTED;
+}

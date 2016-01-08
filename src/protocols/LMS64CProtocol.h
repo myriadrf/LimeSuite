@@ -167,6 +167,9 @@ public:
 
     virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
 
+    virtual OperationStatus CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
+    virtual OperationStatus CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+
 private:
 
     OperationStatus WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);

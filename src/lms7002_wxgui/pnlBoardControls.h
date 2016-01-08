@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include "lms7002_defines.h"
 
-class LMS64CProtocol;
 class IConnection;
 
 class pnlBoardControls : public wxFrame
@@ -36,12 +35,12 @@ class pnlBoardControls : public wxFrame
             std::string name;
             int16_t value;
             uint8_t channel;
-            uint8_t units;
+            std::string units;
             int8_t powerOf10;
             int16_t minValue;
             int16_t maxValue;
         };
-                
+
         class ADC_GUI
         {
         public:
@@ -90,12 +89,12 @@ class pnlBoardControls : public wxFrame
 
         pnlBoardControls(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
         ~pnlBoardControls();
-	
+
         void UpdatePanel();
         void Initialize(IConnection* controlPort);
-        LMS64CProtocol* serPort;
+        IConnection* serPort;
 
-        void SetupControls(eLMS_DEV boardID);
+        void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);
         void OnSetDACvaluesENTER(wxCommandEvent &event);
 	protected:
@@ -116,13 +115,13 @@ class pnlBoardControls : public wxFrame
         wxFlexGridSizer* sizerAnalogRd;
         wxFlexGridSizer* sizerAnalogWr;
 
-        std::vector<ADC_DAC> getBoardADCs(eLMS_DEV boardID);
-        std::vector<ADC_DAC> getBoardDACs(eLMS_DEV boardID);
+        std::vector<ADC_DAC> getBoardADCs(const std::string &boardID);
+        std::vector<ADC_DAC> getBoardDACs(const std::string &boardID);
 
         void OnUserChangedBoardType(wxCommandEvent& event);
 		void OnReadAll( wxCommandEvent& event );
 		void OnWriteAll( wxCommandEvent& event );
-		
+
 		wxButton* btnReadAll;
 		wxButton* btnWriteAll;
 		wxStaticText* m_staticText349;

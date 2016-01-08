@@ -8,6 +8,8 @@
 #include "Si5351C.h"
 #include <chrono>
 #include <iostream>
+#include <assert.h>
+#include <math.h>
 
 //! arbitrary spi constants used to dispatch calls
 
@@ -675,5 +677,59 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
 	else
 		printf("\nFPGA configuring initiated\n");
 #endif
+    return OperationStatus::SUCCESS;
+}
+
+OperationStatus LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_ANALOG_VAL_RD;
+
+    for (int i=0; i<count; ++i)
+        pkt.outBuffer.push_back(ids[i]);
+
+    LMS64CProtocol::TransferStatus status = this->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+        return OperationStatus::FAILED;
+
+    assert(pkt.inBuffer.size() >= 4 * count);
+
+    for (int i = 0; i < count; ++i)
+    {
+        int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
+        if(units)
+            units[i] = adcUnits2string(unitsIndex);
+        values[i] = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
+        int powerOf10 = pkt.inBuffer[i * 4 + 1] & 0x0F;
+        values[i] *= pow(10, powerOf10);
+        if(unitsIndex == TEMPERATURE)
+            values[i] /= 10;
+    }
+    return OperationStatus::SUCCESS;
+}
+
+OperationStatus LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_ANALOG_VAL_WR;
+
+    for (int i = 0; i < count; ++i)
+    {
+        pkt.outBuffer.push_back(ids[i]);
+        int powerOf10 = 0;
+        if(values[i] != 0)
+            powerOf10 = log10(values[i])/3;
+        int unitsId = 0; // need to convert given units to their enum
+        pkt.outBuffer.push_back(unitsId << 4 | powerOf10);
+        int value = values[i] / pow(10, 3*powerOf10);
+        pkt.outBuffer.push_back(value >> 8);
+        pkt.outBuffer.push_back(value & 0xFF);
+    }
+    LMS64CProtocol::TransferStatus status = this->TransferPacket(pkt);
+    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    {
+        return OperationStatus::FAILED;
+        //wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    }
     return OperationStatus::SUCCESS;
 }

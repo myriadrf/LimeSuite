@@ -14,6 +14,7 @@
 #include <wx/button.h>
 #include <wx/radiobox.h>
 #include "lms7002_defines.h"
+#include <string>
 
 class Si5351C;
 
@@ -24,7 +25,7 @@ public:
     Si5351C_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int styles = wxDEFAULT_FRAME_STYLE, wxString idname = "");
     void Initialize(Si5351C* pModule);
     virtual ~Si5351C_wxgui();
-    void ModifyClocksGUI(eLMS_DEV board);
+    void ModifyClocksGUI(const std::string &board);
 
     //(*Declarations(Si5351C_wxgui)
     wxCheckBox* chkEN_CLK5;
