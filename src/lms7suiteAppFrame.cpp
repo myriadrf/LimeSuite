@@ -36,6 +36,7 @@
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
 #include "pnlBoardControls.h"
+#include <ConnectionRegistry.h>
 
 using namespace std;
 
@@ -174,6 +175,8 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
 {
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
 
+    ConnectionRegistry::freeConnection(lms7controlPort);
+    ConnectionRegistry::freeConnection(streamBoardPort);
 }
 
 void LMS7SuiteAppFrame::OnClose( wxCloseEvent& event )
