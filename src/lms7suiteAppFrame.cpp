@@ -68,9 +68,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         }
         if (streamBoardPort && streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
         {
-// TODO : get FPGA device index
-            const int fpgaIndex = 0;
-            LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, fpgaIndex, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
+            LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
             if (status != LMS_StreamBoard::SUCCESS)
                 wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
             else

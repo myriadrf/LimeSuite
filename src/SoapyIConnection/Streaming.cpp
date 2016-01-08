@@ -7,6 +7,7 @@
 #include "SoapyIConnection.h"
 #include <SoapySDR/Formats.hpp>
 #include "LMS_StreamBoard.h"
+#include <LMS7002M.h>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -17,6 +18,7 @@
  ******************************************************************/
 struct IConnectionStream
 {
+    LMS7002M *rfic;
     //int streamId;
     int direction;
     //format, etc...
@@ -65,6 +67,7 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
     if (channels.size() != 2 or channels.at(0) != 0 or channels.at(1) != 1) throw std::runtime_error("SoapyIConnection::setupStream() only channels 0, 1 supported");
 
     auto icstream = new IConnectionStream();
+    icstream->rfic = _rfics.at(channels.at(0)/2);
     icstream->direction = direction;
     icstream->streamBoard = new LMS_StreamBoard(_conn);
     return (SoapySDR::Stream *)icstream;
@@ -91,7 +94,8 @@ int SoapyIConnection::activateStream(
     auto icstream = (IConnectionStream *)stream;
     if (icstream->direction == SOAPY_SDR_RX)
     {
-        auto st = icstream->streamBoard->StartReceiving(STREAM_MTU);
+        auto st = LMS_StreamBoard::ConfigurePLL(_conn, icstream->rfic->GetReferenceClk_TSP_MHz(LMS7002M::Tx), icstream->rfic->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
+        st = icstream->streamBoard->StartReceiving(STREAM_MTU);
         if (st != LMS_StreamBoard::SUCCESS)
         {
             return SOAPY_SDR_STREAM_ERROR;

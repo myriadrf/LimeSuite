@@ -14,7 +14,7 @@ using namespace std;
     @param phaseShift_deg IQ phase shift in degrees
     @return 0-success, other-failure
 */
-LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const int devIndex, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
+LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
 {
     if (serPort == nullptr)
         return FAILURE;

@@ -7,6 +7,7 @@
 #include "SoapyIConnection.h"
 #include <IConnection.h>
 #include <stdexcept>
+#include <iostream>
 #include <LMS7002M.h>
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
@@ -59,14 +60,21 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
 
         liblms7_status st;
 
-        st = _rfics.back()->RegistersTest();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("RegistersTest() failed");
-
         st = _rfics.back()->ResetChip();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("ResetChip() failed");
 
+        //reset sequence over spi
+        auto reg_0x0020 = _rfics.back()->SPI_read(0x0020);
+        auto reg_0x002E = _rfics.back()->SPI_read(0x002E);
+        _rfics.back()->SPI_write(0x0020, 0x0);
+        _rfics.back()->SPI_write(0x0020, reg_0x0020);
+        _rfics.back()->SPI_write(0x002E, reg_0x002E);//must write
+
         st = _rfics.back()->UploadAll();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("UploadAll() failed");
+
+        st = _rfics.back()->RegistersTest();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("RegistersTest() failed");
     }
 
     //enable all channels
@@ -105,6 +113,27 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
 
     auto rfic = getRFIC(channel);
 
+    //--- LML ---
+    //TODO highly specific config, generalize...
+    rfic->Modify_SPI_Reg_bits(LML1_FIDM, 1); //Frame start=1
+    rfic->Modify_SPI_Reg_bits(LML2_FIDM, 1); //Frame start=1
+    rfic->Modify_SPI_Reg_bits(LML1_MODE, 0); //TRXIQ
+    rfic->Modify_SPI_Reg_bits(LML2_MODE, 0); //TRXIQ
+    rfic->Modify_SPI_Reg_bits(LML2_S3S, 0); //AI
+    rfic->Modify_SPI_Reg_bits(LML2_S2S, 0); //AI
+    rfic->Modify_SPI_Reg_bits(LML2_S1S, 1); //AQ
+    rfic->Modify_SPI_Reg_bits(LML2_S0S, 1); //AQ
+    if ((channel%2) == 0)
+    {
+        rfic->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);
+        rfic->Modify_SPI_Reg_bits(TXEN_A, enable?1:0);
+    }
+    else
+    {
+        rfic->Modify_SPI_Reg_bits(RXEN_B, enable?1:0);
+        rfic->Modify_SPI_Reg_bits(TXEN_B, enable?1:0);
+    }
+
     //--- ADC/DAC ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_AFE, 1);
     rfic->Modify_SPI_Reg_bits(EN_G_AFE, enable?1:0);
@@ -120,14 +149,23 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
         rfic->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
     }
 
-    //--- digital ---
-    rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
-
     //--- testing ---
     rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 0); //NCO
     rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, 1); //SIGGEN
     rfic->Modify_SPI_Reg_bits(TSGFCW_RXTSP, 1); //clk/8
+
+    //--- digital ---
+    rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 2); //bypass
+    rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GC_BYP_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(PH_BYP_RXTSP, 1);
 
     //--- baseband ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);

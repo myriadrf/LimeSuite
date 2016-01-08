@@ -5,6 +5,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+import time
+
 if __name__ == '__main__':
     streamBoardSDR = SoapySDR.Device({"driver":"lime"})
 
@@ -33,12 +35,14 @@ if __name__ == '__main__':
     streamBoardSDR.activateStream(rxStream)
 
     print("Test receive")
-    sampsCh0 = np.array([0]*1024, np.complex64)
-    sampsCh1 = np.array([0]*1024, np.complex64)
-    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], 1024, 0)
+    time.sleep(1)
+    sampsCh0 = np.array([0]*128, np.complex64)
+    sampsCh1 = np.array([0]*128, np.complex64)
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], 128, 0)
     print sr
 
     plt.plot(np.real(sampsCh0))
+    plt.plot(np.imag(sampsCh0))
     plt.ylabel('some numbers')
     plt.show()
 
