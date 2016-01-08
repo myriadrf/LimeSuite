@@ -80,15 +80,14 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         outBuffer.push_back(reg2);
 
         //temporary solution
-        vector<uint32_t> spiBuffer;
+        vector<uint32_t> addrs;
+        vector<uint32_t> values;
         for(int i=0; i<outBuffer.size(); i+=4)
         {
-            uint32_t value = (1 << 31);
-            value |= ((uint16_t)outBuffer[i] << 24) | outBuffer[i+1] << 16;
-            value |= ((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3];
-            spiBuffer.push_back(value);
+            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
+            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
         }
-        if(serPort->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else
@@ -135,15 +134,14 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         outBuffer.push_back(0x00);
 
         //temporary solution
-        vector<uint32_t> spiBuffer;
+        vector<uint32_t> addrs;
+        vector<uint32_t> values;
         for(int i=0; i<outBuffer.size(); i+=4)
         {
-            uint32_t value = (1 << 31);
-            value |= ((uint16_t)outBuffer[i] << 24) | outBuffer[i+1] << 16;
-            value |= ((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3];
-            spiBuffer.push_back(value);
+            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
+            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
         }
-        if(serPort->TransactSPI(devIndex, spiBuffer.data(), nullptr, spiBuffer.size()) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else
