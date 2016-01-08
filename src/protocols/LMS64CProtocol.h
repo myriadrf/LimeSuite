@@ -45,6 +45,12 @@ public:
     //! ReadI2C implemented by LMS64C
     OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
+    //! WriteRegisters (BRDSPI) implemented by LMS64C
+    OperationStatus WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
+
+    //! ReadRegisters (BRDSPI) implemented by LMS64C
+    OperationStatus ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
+
     //! Get the last-set reference clock rate
     double GetReferenceClockRate(void);
 
@@ -171,9 +177,6 @@ private:
 
     OperationStatus WriteADF4002SPI(const uint32_t *writeData, const size_t size);
     OperationStatus ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
-
-    OperationStatus WriteBoardSPI(const uint32_t *writeData, const size_t size);
-    OperationStatus ReadBoardSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);

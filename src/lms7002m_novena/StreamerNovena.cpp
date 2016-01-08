@@ -466,18 +466,18 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 
     int dataSource = 0;
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
-    uint16_t controlRegValue = pthis->SPI_read(NOVENA_DATA_SRC_ADDR);
+    uint16_t controlRegValue = pthis->Reg_read(NOVENA_DATA_SRC_ADDR);
 
     dataSource = (controlRegValue >> 12) & 0x3;
     //reset FIFO
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
     //set data source
-    //pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
+    //pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
     //request data
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
@@ -492,12 +492,12 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
             bytesReceived += bytesToRead;
         }
 	//reset FIFO
-	pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+	pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
         //request data
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
         if (bytesReceived > 0)
         {

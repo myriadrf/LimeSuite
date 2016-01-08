@@ -67,12 +67,6 @@ struct DeviceInfo
      * found on some development boards. -1 when not present.
      */
     int addrADF4002;
-
-    /*!
-     * The SPI address number used for FPGA register access
-     * found on some development boards. -1 when not present.
-     */
-    int addrBoard;
 };
 
 /*!
@@ -298,6 +292,42 @@ public:
     @return the operation success state
     */
     virtual OperationStatus GPIORead(uint8_t *buffer, const size_t bufLength);
+
+    /**	@brief Bulk write device registers.
+     * WriteRegisters() writes multiple registers and supports 32-bit addresses and data.
+     * WriteRegisters() can support multiple devices by dispatching based on the address.
+     * @param addrs an array of 32-bit register addresses
+     * @param data an array of 32-bit register data
+     * @param size the number of entries in addrs and data
+     * @return the operation success state
+     */
+    virtual OperationStatus WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
+
+    //! Write a single device register
+    OperationStatus WriteRegister(const uint32_t addr, const uint32_t data)
+    {
+        return this->WriteRegisters(&addr, &data, 1);
+    }
+
+    /**	@brief Bulk read device registers.
+     * ReadRegisters() writes multiple registers and supports 32-bit addresses and data.
+     * ReadRegisters() can support multiple devices by dispatching based on the address.
+     * @param addrs an array of 32-bit register addresses
+     * @param [out] data an array of 32-bit register data
+     * @param size the number of entries in addrs and data
+     * @return the operation success state
+     */
+    virtual OperationStatus ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
+
+    //! Read a single device register
+    template <typename ReadType>
+    OperationStatus ReadRegister(const uint32_t addr, ReadType &data)
+    {
+        uint32_t data32 = 0;
+        OperationStatus st = this->ReadRegisters(&addr, &data32, 1);
+        data = ReadType(data32);
+        return st;
+    }
 
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API

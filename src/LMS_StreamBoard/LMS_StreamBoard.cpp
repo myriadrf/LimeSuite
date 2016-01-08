@@ -153,10 +153,6 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
 
 LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
-    if (dataPort != nullptr)
-    {
-        mSpiAddr = dataPort->GetDeviceInfo().addrBoard;
-    }
     mRxFrameStart.store(true);
     mDataPort = dataPort;
     mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
@@ -250,8 +246,8 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
 
     ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
-    uint16_t regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal | 0x4);
+    uint16_t regVal = pthis->Reg_read(0x0005);
+    pthis->Reg_write(0x0005, regVal | 0x4);
 
     for (int i = 0; i<buffers_count; ++i)
         handles[i] = pthis->mDataPort->BeginDataReading(&buffers[i*buffer_size], buffer_size);
@@ -337,8 +333,8 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
         pthis->mDataPort->FinishDataReading(&buffers[j*buffer_size], bytesToRead, handles[j]);
     }
 
-    regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal & ~0x4);
+    regVal = pthis->Reg_read(0x0005);
+    pthis->Reg_write(0x0005, regVal & ~0x4);
 
     delete[] buffers;
 #ifndef NDEBUG
@@ -545,11 +541,10 @@ LMS_StreamBoard::ProgressStats LMS_StreamBoard::GetStats()
     @param address spi address
     @param data register value
 */
-LMS_StreamBoard::Status LMS_StreamBoard::SPI_write(uint16_t address, uint16_t data)
+LMS_StreamBoard::Status LMS_StreamBoard::Reg_write(uint16_t address, uint16_t data)
 {
     assert(mDataPort != nullptr);
-    const uint32_t dataWr = (1<<31) | address << 16 | data;
-    OperationStatus status = mDataPort->TransactSPI(mSpiAddr, &dataWr, nullptr, 1);
+    OperationStatus status = mDataPort->WriteRegister(address, data);
     return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
 
@@ -557,12 +552,11 @@ LMS_StreamBoard::Status LMS_StreamBoard::SPI_write(uint16_t address, uint16_t da
     @param address spi address
     @return register value
 */
-uint16_t LMS_StreamBoard::SPI_read(uint16_t address)
+uint16_t LMS_StreamBoard::Reg_read(uint16_t address)
 {
     assert(mDataPort != nullptr);
-    const uint32_t dataWr = (address & 0x7FF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = mDataPort->TransactSPI(mSpiAddr, &dataWr, &dataRd, 1);
+    OperationStatus status = mDataPort->ReadRegister(address, dataRd);
     if (status == OperationStatus::SUCCESS)
         return dataRd & 0xFFFF;
     else

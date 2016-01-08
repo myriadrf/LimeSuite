@@ -154,10 +154,6 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
 {
     m_serPort = dataPort;
-    if (m_serPort != nullptr)
-    {
-        mSpiAddr = m_serPort->GetDeviceInfo().addrBoard;
-    }
     if (mStreamer)
         delete mStreamer;
     mStreamer = new LMS_StreamBoard(m_serPort);
@@ -241,15 +237,15 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData | 0x3);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData | 0x3);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, (regData & ~0x2) | 0x1);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
@@ -295,8 +291,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData & ~0x7);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData & ~0x7);
 
     while(sent<outLen)
     {
@@ -319,8 +315,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
 
-    regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData | 0x3);
+    regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData | 0x3);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
@@ -422,19 +418,17 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     }
 
     const uint16_t address = 0x0016;
-    uint32_t dataWr = (1 << 31) | address << 16;
     uint32_t dataRd = 0;
     OperationStatus status;
-    status = m_serPort->TransactSPI(mSpiAddr, &dataWr, &dataRd, 1);
+    status = m_serPort->ReadRegister(address, dataRd);
     unsigned short regValue = 0;
 
     if (status == OperationStatus::SUCCESS)
         regValue = dataRd & 0xFFFF;
 
     regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
-    dataWr = (1 << 31) | address << 16 | regValue;
 
-    status = m_serPort->TransactSPI(mSpiAddr, &dataWr, nullptr, 1);
+    status = m_serPort->WriteRegister(address, regValue);
 
     if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);

@@ -78,7 +78,6 @@ class FPGAcontrols_wxgui: public wxFrame
 	protected:
         wxString fileForCyclicTransmitting;
         IConnection* m_serPort;
-        int mSpiAddr;
         LMS_StreamBoard* mStreamer;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()

@@ -17,10 +17,6 @@ void SPI_wxgui::Initialize(IConnection* pCtrPort, IConnection* pDataPort, const 
     {
         m_rficSpiAddr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
     }
-    if (dataPort != nullptr)
-    {
-        m_brdSpiAddr = dataPort->GetDeviceInfo().addrBoard;
-    }
 }
 
 void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
@@ -86,7 +82,7 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
     dataWr |= (addr & 0xFFFF) << 16;
     dataWr |=  data & 0xFFFF;
     OperationStatus status;
-    status = dataPort->TransactSPI(m_brdSpiAddr, &dataWr, nullptr, 1);
+    status = dataPort->WriteRegister(addr, data);
 
     if (status == OperationStatus::SUCCESS)
         lblBoardwriteStatus->SetLabel(_("Write success"));
@@ -104,9 +100,8 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
     if (dataPort == nullptr)
         return;
 
-    const uint32_t dataWr = (addr & 0x7FFF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = dataPort->TransactSPI(m_brdSpiAddr, &dataWr, &dataRd, 1);
+    OperationStatus status = dataPort->ReadRegister(addr, dataRd);
 
     if (status == OperationStatus::SUCCESS)
     {

@@ -9,8 +9,7 @@
 
 DeviceInfo::DeviceInfo(void):
     addrSi5351(-1),
-    addrADF4002(-1),
-    addrBoard(-1)
+    addrADF4002(-1)
 {
     return;
 }
@@ -134,6 +133,16 @@ OperationStatus IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLe
 }
 
 OperationStatus IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
+{
+    return UNSUPPORTED;
+}
+
+OperationStatus IConnection::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
 {
     return UNSUPPORTED;
 }

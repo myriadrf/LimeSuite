@@ -14,7 +14,6 @@
 #define LMS7002M_SPI_INDEX 0x10
 #define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
-#define BOARD_SPI_INDEX 0x40
 
 static OperationStatus convertStatus(const LMS64CProtocol::TransferStatus &status, const LMS64CProtocol::GenericPacket &pkt)
 {
@@ -63,7 +62,6 @@ OperationStatus LMS64CProtocol::TransactSPI(const int addr, const uint32_t *writ
     {
     case LMS7002M_SPI_INDEX: return this->WriteLMS7002MSPI(writeData, size);
     case ADF4002_SPI_INDEX: return this->WriteADF4002SPI(writeData, size);
-    case BOARD_SPI_INDEX: return this->WriteBoardSPI(writeData, size);
     }
 
     //otherwise perform reads into the provided buffer
@@ -71,7 +69,6 @@ OperationStatus LMS64CProtocol::TransactSPI(const int addr, const uint32_t *writ
     {
     case LMS7002M_SPI_INDEX: return this->ReadLMS7002MSPI(writeData, readData, size);
     case ADF4002_SPI_INDEX: return this->ReadADF4002SPI(writeData, readData, size);
-    case BOARD_SPI_INDEX: return this->ReadBoardSPI(writeData, readData, size);
     }
 
     return OperationStatus::UNSUPPORTED;
@@ -154,7 +151,9 @@ OperationStatus LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint3
 
     for (size_t i = 0; i < size && i < pkt.inBuffer.size(); ++i)
     {
-        readData[i] = (pkt.inBuffer[4*sizeof(uint8_t)*i + 2] << 8) | pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
+        int lo = pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
+        int hi = pkt.inBuffer[4*sizeof(uint8_t)*i + 2];
+        readData[i] = (hi << 8) | lo;
     }
 
     return convertStatus(status, pkt);
@@ -223,20 +222,18 @@ OperationStatus LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32
 }
 
 /***********************************************************************
- * ADF4002 SPI access
+ * Board SPI access
  **********************************************************************/
-OperationStatus LMS64CProtocol::WriteBoardSPI(const uint32_t *writeData, const size_t size)
+OperationStatus LMS64CProtocol::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_BRDSPI_WR;
     for (size_t i = 0; i < size; ++i)
     {
-        uint16_t addr = (writeData[i] >> 16) & 0x7fff;
-        uint16_t data = writeData[i] & 0xffff;
-        pkt.outBuffer.push_back(addr >> 8);
-        pkt.outBuffer.push_back(addr & 0xFF);
-        pkt.outBuffer.push_back(data >> 8);
-        pkt.outBuffer.push_back(data & 0xFF);
+        pkt.outBuffer.push_back(addrs[i] >> 8);
+        pkt.outBuffer.push_back(addrs[i] & 0xFF);
+        pkt.outBuffer.push_back(data[i] >> 8);
+        pkt.outBuffer.push_back(data[i] & 0xFF);
     }
 
     TransferStatus status = this->TransferPacket(pkt);
@@ -244,22 +241,23 @@ OperationStatus LMS64CProtocol::WriteBoardSPI(const uint32_t *writeData, const s
     return convertStatus(status, pkt);
 }
 
-OperationStatus LMS64CProtocol::ReadBoardSPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
+OperationStatus LMS64CProtocol::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_BRDSPI_RD;
     for (size_t i = 0; i < size; ++i)
     {
-        uint16_t addr = (writeData[i] >> 16) & 0x7fff;
-        pkt.outBuffer.push_back(addr >> 8);
-        pkt.outBuffer.push_back(addr & 0xFF);
+        pkt.outBuffer.push_back(addrs[i] >> 8);
+        pkt.outBuffer.push_back(addrs[i] & 0xFF);
     }
 
     TransferStatus status = this->TransferPacket(pkt);
 
     for (size_t i = 0; i < size && i < pkt.inBuffer.size(); ++i)
     {
-        readData[i] = (pkt.inBuffer[4*sizeof(uint8_t)*i + 2] << 8) | pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
+        int lo = pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
+        int hi = pkt.inBuffer[4*sizeof(uint8_t)*i + 2];
+        data[i] = (hi << 8) | lo;
     }
 
     return convertStatus(status, pkt);
@@ -280,7 +278,6 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
     devInfo.addrSi5351 = Si5351_I2C_ADDR;
     devInfo.addrADF4002 = ADF4002_SPI_INDEX;
-    devInfo.addrBoard = BOARD_SPI_INDEX;
     return devInfo;
 }
 

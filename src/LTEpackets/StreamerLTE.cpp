@@ -10,15 +10,10 @@
 using namespace std;
 
 IConnection* gDataPort;
-int gSpiDevAddr;
 
 StreamerLTE::StreamerLTE(IConnection* dataPort)
 {
     mDataPort = dataPort;
-    if (mDataPort != nullptr)
-    {
-        mSpiDevAddr = mDataPort->GetDeviceInfo().addrBoard;
-    }
     mRxFIFO = new LMS_SamplesFIFO(1, 1);
     mTxFIFO = new LMS_SamplesFIFO(1, 1);
     mStreamRunning.store(false);
@@ -225,7 +220,7 @@ void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesF
     PacketFrame tempPacket;
     tempPacket.Initialize(channelsCount);
 
-    unsigned short regVal = SPI_read(gDataPort, gSpiDevAddr, 0x0005);
+    unsigned short regVal = Reg_read(gDataPort, 0x0005);
 
     printf("Begin Data Reading\n");
 
@@ -233,7 +228,7 @@ void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesF
         handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
 
     bool async = false;
-    SPI_write(gDataPort, gSpiDevAddr, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    Reg_write(gDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
 
     int bi = 0;
     unsigned long totalBytesReceived = 0; //for data rate calculation
@@ -378,30 +373,29 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     int timeout_ms = 1000;
 
     //switch off Rx
-    uint16_t regVal = SPI_read(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005);
-    SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005, regVal & ~0x6);
+    uint16_t regVal = Reg_read(pthis->mDataPort, 0x0005);
+    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
 
     //enable MIMO mode, 12 bit compressed values
     if (channelsCount == 2)
     {
-        SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0001, 0x0003);
-        SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0007, 0x000A);
+        Reg_write(pthis->mDataPort, 0x0001, 0x0003);
+        Reg_write(pthis->mDataPort, 0x0007, 0x000A);
     }
     else
     {
-        SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0001, 0x0001);
-        SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0007, 0x0008);
+        Reg_write(pthis->mDataPort, 0x0001, 0x0001);
+        Reg_write(pthis->mDataPort, 0x0007, 0x0008);
     }
 
     //USB FIFO reset
     ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
     //switch on Rx
-    regVal = SPI_read(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005);
+    regVal = Reg_read(pthis->mDataPort, 0x0005);
     bool async = false;
-    SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    Reg_write(pthis->mDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
     gDataPort = pthis->mDataPort;
-    gSpiDevAddr = pthis->mSpiDevAddr;
 
     atomic<bool> stopRx(0);
     atomic<bool> stopTx(0);
@@ -471,8 +465,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     threadRx.join();
 
     //stop Tx Rx if they were active
-    regVal = SPI_read(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005);
-    SPI_write(pthis->mDataPort, pthis->mSpiDevAddr, 0x0005, regVal & ~0x6);
+    regVal = Reg_read(pthis->mDataPort, 0x0005);
+    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
 
     kiss_fft_free(m_fftCalcPlan);
 
@@ -794,23 +788,21 @@ StreamerLTE::Stats StreamerLTE::GetStats()
     return data;
 }
 
-StreamerLTE::STATUS StreamerLTE::SPI_write(IConnection* dataPort, int spiDevAddr, uint16_t address, uint16_t data)
+StreamerLTE::STATUS StreamerLTE::Reg_write(IConnection* dataPort, uint16_t address, uint16_t data)
 {
     if(dataPort == nullptr);
         return FAILURE;
-    const uint32_t dataWr = (1 << 31) | address << 16 | data;
     OperationStatus status;
-    status = dataPort->TransactSPI(spiDevAddr, &dataWr, nullptr, 1);
+    status = dataPort->WriteRegister(address, data);
     return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
-uint16_t StreamerLTE::SPI_read(IConnection* dataPort, int spiDevAddr, uint16_t address)
+uint16_t StreamerLTE::Reg_read(IConnection* dataPort, uint16_t address)
 {
     if(dataPort == nullptr);
         return 0;
-    const uint32_t dataWr = address << 16;
     uint32_t dataRd = 0;
     OperationStatus status;
-    status = dataPort->TransactSPI(spiDevAddr, &dataWr, &dataRd, 1);
+    status = dataPort->ReadRegister(address, dataRd);
     if (status == OperationStatus::SUCCESS)
         return dataRd & 0xFFFF;
     else

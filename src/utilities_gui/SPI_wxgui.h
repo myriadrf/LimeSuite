@@ -32,7 +32,6 @@ class SPI_wxgui : public SPI_view
         IConnection* dataPort;
 
         int m_rficSpiAddr;
-        int m_brdSpiAddr;
 };
 
 #endif // __SPI_wxgui__
