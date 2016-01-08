@@ -38,7 +38,7 @@ public:
         {
             for (int i = 0; i < FIFO_length; ++i)
             {
-                mElements.push_back(T());
+                mElements.push_back(new T());
                 ++cnt;
             }
             //mElements.resize(FIFO_length, T());
@@ -56,7 +56,8 @@ public:
 
     ~LMS_StreamBoard_FIFO()
     {
-        
+        //cleanup packet fifo
+        for (T *elem : mElements) delete elem;
     }
 
     /** @brief Copies given src element to queue.
@@ -74,7 +75,7 @@ public:
             if (canWrite.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
                 return false;            
         }
-        memcpy(&mElements[mTail], &src, sizeof(T));		
+        *mElements[mTail] = src; //assignment copy
 		mTail = (mTail+1) % mElements.size();
 		++mElementsFilled;
         canRead.notify_one();
@@ -99,8 +100,7 @@ public:
         }                
         if (mElementsFilled == 0)
             return false;
-        *dest = mElements[mHead];
-        memcpy(dest, &mElements[mHead], sizeof(T));
+        *dest = *mElements[mHead]; //assignment copy
         mHead = (mHead + 1) % mElements.size();
         --mElementsFilled;
         canWrite.notify_one();
@@ -131,7 +131,7 @@ protected:
 	uint32_t mElementsFilled;
 
     std::mutex mElementsLock; // condition variable for critical section  	
-    std::vector<T> mElements;
+    std::vector<T*> mElements;
     std::condition_variable canWrite;
     std::condition_variable canRead;
 };
