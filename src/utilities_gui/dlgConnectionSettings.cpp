@@ -27,6 +27,21 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
     mListStreamports->Clear();
     cachedHandles = ConnectionRegistry::findConnections();
 
+    //select the currently opened index
+    lmsOpenedIndex = -1;
+    streamOpenedIndex = -1;
+    for (size_t i = 0; i < cachedHandles.size(); i++)
+    {
+        if (*lms7Manager != nullptr and (*lms7Manager)->GetHandle() == cachedHandles[i])
+        {
+            lmsOpenedIndex = i;
+        }
+        if (*streamBrdManager != nullptr and (*streamBrdManager)->GetHandle() == cachedHandles[i])
+        {
+            streamOpenedIndex = i;
+        }
+    }
+
     for (unsigned i = 0; i<cachedHandles.size(); ++i)
         mListLMS7ports->Append(cachedHandles[i].ToString());
     if (lmsOpenedIndex >= 0 && lmsOpenedIndex < mListLMS7ports->GetCount())

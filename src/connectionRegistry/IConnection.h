@@ -7,6 +7,7 @@
 #ifndef ICONNECTION_H
 #define ICONNECTION_H
 
+#include <ConnectionHandle.h>
 #include <string>
 #include <vector>
 #include <cstring> //memset
@@ -114,6 +115,9 @@ public:
 
     //! IConnection destructor
     virtual ~IConnection(void);
+
+    //! Get the connection handle that was used to create this connection
+    const ConnectionHandle &GetHandle(void) const;
 
     /*!
      * Is this connection open?
@@ -304,10 +308,7 @@ public:
     virtual OperationStatus WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
 
     //! Write a single device register
-    OperationStatus WriteRegister(const uint32_t addr, const uint32_t data)
-    {
-        return this->WriteRegisters(&addr, &data, 1);
-    }
+    OperationStatus WriteRegister(const uint32_t addr, const uint32_t data);
 
     /**	@brief Bulk read device registers.
      * ReadRegisters() writes multiple registers and supports 32-bit addresses and data.
@@ -321,13 +322,7 @@ public:
 
     //! Read a single device register
     template <typename ReadType>
-    OperationStatus ReadRegister(const uint32_t addr, ReadType &data)
-    {
-        uint32_t data32 = 0;
-        OperationStatus st = this->ReadRegisters(&addr, &data32, 1);
-        data = ReadType(data32);
-        return st;
-    }
+    OperationStatus ReadRegister(const uint32_t addr, ReadType &data);
 
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
@@ -352,7 +347,20 @@ public:
 protected:
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     bool mSystemBigEndian;
+
+private:
+    friend class ConnectionRegistry;
+    ConnectionHandle _handle;
 };
+
+template <typename ReadType>
+OperationStatus IConnection::ReadRegister(const uint32_t addr, ReadType &data)
+{
+    uint32_t data32 = 0;
+    OperationStatus st = this->ReadRegisters(&addr, &data32, 1);
+    data = ReadType(data32);
+    return st;
+}
 
 #endif
 

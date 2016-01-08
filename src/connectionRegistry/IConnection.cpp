@@ -37,6 +37,11 @@ IConnection::~IConnection(void)
     return;
 }
 
+const ConnectionHandle &IConnection::GetHandle(void) const
+{
+    return _handle;
+}
+
 bool IConnection::IsOpen(void)
 {
     return false;
@@ -145,4 +150,9 @@ OperationStatus IConnection::WriteRegisters(const uint32_t *addrs, const uint32_
 OperationStatus IConnection::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
 {
     return UNSUPPORTED;
+}
+
+OperationStatus IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
+{
+    return this->WriteRegisters(&addr, &data, 1);
 }

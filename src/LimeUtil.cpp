@@ -25,6 +25,7 @@ int main(void)
 
         std::cout << "  Conn? " << size_t(conn) << std::endl;
         std::cout << "  IsOpen? " << conn->IsOpen() << std::endl;
+        std::cout << "  Handle: " << conn->GetHandle().serialize() << std::endl;
 
         std::cout << "  Free connection... " << std::flush;
         ConnectionRegistry::freeConnection(conn);
