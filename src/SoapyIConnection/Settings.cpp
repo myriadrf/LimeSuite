@@ -601,6 +601,11 @@ SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, con
  * Sample Rate API
  ******************************************************************/
 
+void SoapyIConnection::updateStreamRate(const int direction, const size_t channel)
+{
+    _streamRates[direction][channel] = this->getSampleRate(direction, channel);
+}
+
 void SoapyIConnection::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     auto rfic = getRFIC(channel);
@@ -625,6 +630,8 @@ void SoapyIConnection::setSampleRate(const int direction, const size_t channel, 
         this->getMasterClockRate()/1e6,
         int(std::log(double(_interps[channel]))/std::log(2.0)),
         int(std::log(double(_decims[channel]))/std::log(2.0)));
+
+    this->updateStreamRate(direction, channel);
 }
 
 double SoapyIConnection::getSampleRate(const int direction, const size_t channel) const
@@ -771,6 +778,12 @@ void SoapyIConnection::setMasterClockRate(const double rate)
     {
         rfic->SetFrequencyCGEN(rate/1e6);
     }
+
+    for (size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); chan++)
+        this->updateStreamRate(SOAPY_SDR_RX, chan);
+
+    for (size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); chan++)
+        this->updateStreamRate(SOAPY_SDR_TX, chan);
 }
 
 double SoapyIConnection::getMasterClockRate(void) const

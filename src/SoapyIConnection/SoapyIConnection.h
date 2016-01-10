@@ -6,6 +6,7 @@
 
 #include <SoapySDR/Device.hpp>
 #include <ConnectionRegistry.h>
+#include <atomic>
 #include <map>
 
 class LMS7002M;
@@ -40,6 +41,10 @@ public:
     /*******************************************************************
      * Stream API
      ******************************************************************/
+
+    //! updateStreamRate() called internally to maintain _streamRates;
+    void updateStreamRate(const int direction, const size_t channel);
+    std::map<int, std::map<size_t, std::atomic<double>>> _streamRates;
 
     std::vector<std::string> getStreamFormats(const int direction, const size_t channel) const;
 
