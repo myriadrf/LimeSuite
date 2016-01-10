@@ -17,6 +17,18 @@ endif()
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 
+set(CONNECTION_STREAM_SOURCES
+    ConnectionSTREAMEntry.cpp
+    ConnectionSTREAM.cpp
+    ConnectionSTREAMing.cpp
+)
+
+set(CONNECTION_STREAM_LIBRARIES
+    protocols #LMS64C
+    ${USB_LIBRARIES}
+    LMS_StreamBoard
+)
+
 ########################################################################
 ## Feature registration
 ########################################################################
@@ -32,6 +44,6 @@ endif()
 ## Build library
 ########################################################################
 include_directories(${USB_INCLUDE_DIRS})
-add_library(ConnectionSTREAM STATIC ConnectionSTREAMEntry.cpp ConnectionSTREAM.cpp)
-target_link_libraries(ConnectionSTREAM connectionRegistry protocols ${USB_LIBRARIES})
+add_library(ConnectionSTREAM STATIC ${CONNECTION_STREAM_SOURCES})
+target_link_libraries(ConnectionSTREAM ${CONNECTION_STREAM_LIBRARIES})
 set_property(TARGET ConnectionSTREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)

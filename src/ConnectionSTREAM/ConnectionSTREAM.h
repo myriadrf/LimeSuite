@@ -101,6 +101,15 @@ public:
 	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms);
 	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
 	virtual void AbortSending();
+
+	//IConnection stream API implementation
+	std::string SetupStream(size_t &streamID, const StreamConfig &config);
+	void CloseStream(const size_t streamID);
+	size_t GetStreamSize(const size_t streamID);
+	bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
+	int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+	int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+
 private:
 
     eConnectionType GetType(void)
