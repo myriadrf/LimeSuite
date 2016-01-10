@@ -15,8 +15,17 @@ DeviceInfo::DeviceInfo(void):
 }
 
 StreamMetadata::StreamMetadata(void):
-    timestamp(-1),
+    timestamp(0),
     endOfBurst(false)
+{
+    return;
+}
+
+StreamConfig::StreamConfig(void):
+    isTx(false),
+    bufferLength(0),
+    format(STREAM_12_BIT_IN_16),
+    linkFormat(STREAM_12_BIT_IN_16)
 {
     return;
 }
@@ -100,17 +109,35 @@ void IConnection::SetTxReferenceClockRate(const double rate)
     return this->SetReferenceClockRate(rate);
 }
 
-bool IConnection::RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata)
+std::string IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
+{
+    streamID = ~0;
+    return "SetupStream not implemented";
+}
+
+void IConnection::CloseStream(const size_t streamID)
+{
+    return;
+}
+
+size_t IConnection::GetStreamSize(const size_t streamID)
+{
+    //this should be overloaded, but if not,
+    //pick a number that will probably work (power of 2)
+    return 16*1024;
+}
+
+bool IConnection::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
 {
     return false;
 }
 
-int IConnection::ReadStream(const int streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+int IConnection::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
     return -1;
 }
 
-int IConnection::WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+int IConnection::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
     return -1;
 }

@@ -80,15 +80,62 @@ struct StreamMetadata
 
     /*!
      * The timestamp in clock units
-     * Set to -1 when the timestamp is not applicable.
+     * Set to 0 when the timestamp is not applicable.
      */
-    long long timestamp;
+    uint64_t timestamp;
 
     /*!
      * True to indicate the end of a stream buffer.
      * When false, subsequent calls continue the stream.
      */
     bool endOfBurst;
+};
+
+/*!
+ * The stream config structure is used with the SetupStream() API.
+ */
+struct StreamConfig
+{
+    StreamConfig(void);
+
+    //! True for transmit stream, false for receive
+    bool isTx;
+
+    /*!
+     * The array of channels used by the stream.
+     * Configurations depend on hardware support.
+     * Example [0] for channel 0 on RFIC0
+     * Example [0, 1] for MIMO on RFIC0
+     * Example [2, 3] for MIMO on RFIC1
+     */
+    std::vector<size_t> channels;
+
+    //! Possible stream data formats
+    enum StreamDataFormat
+    {
+        STREAM_12_BIT_IN_16,
+        STREAM_12_BIT_COMPRESSED,
+        STREAM_COMPLEX_FLOAT32,
+    };
+
+    /*!
+     * The buffer length is a size in samples
+     * that used for allocating internal buffers.
+     * Default: 0, meaning automatic selection
+     */
+    size_t bufferLength;
+
+    //! The format of the samples in Read/WriteStream().
+    StreamDataFormat format;
+
+    /*!
+     * The format of samples over the wire.
+     * This is not the format presented to the API caller.
+     * Choosing a compressed format can decrease link use
+     * at the expense of additional processing on the PC
+     * Default: STREAM_12_BIT_IN_16
+     */
+    StreamDataFormat linkFormat;
 };
 
 /*!
@@ -141,6 +188,10 @@ public:
      */
     virtual OperationStatus DeviceReset(void);
 
+    /***********************************************************************
+     * Serial API
+     **********************************************************************/
+
     /*!
      * @brief Bulk SPI write/read transaction.
      *
@@ -179,6 +230,10 @@ public:
      */
     virtual OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
+    /***********************************************************************
+     * Antenna API
+     **********************************************************************/
+
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.
      * Implementations may have additional external bands to switch via GPIO.
@@ -186,6 +241,10 @@ public:
      * @param rfeBand the SEL_PATH_RFE config bits
      */
     virtual void UpdateExternalBandSelect(const int trfBand, const int rfeBand);
+
+    /***********************************************************************
+     * Reference clocks API
+     **********************************************************************/
 
     /*!
      * Query the frequency of the reference clock.
@@ -218,33 +277,74 @@ public:
      */
     virtual void SetTxReferenceClockRate(const double rate);
 
+    /***********************************************************************
+     * Stream API
+     **********************************************************************/
+
     /*!
-     * The RX stream control call configures a channel to
-     * stream at a particular time, requests burst,
-     * or to start or stop continuous streaming.
+     * Setup a stream with a request configuration.
+     * SetupStream() either sets a valid stream ID
+     * to be used with the other stream API calls,
+     * or a helpful error message when setup fails.
      *
+     * SetupStream() may fail for a variety of reasons
+     * such as invalid channel, format, or buffer configurations,
+     * the stream is already open, or streaming not supported.
+     *
+     * @param [out] streamID the configured stream identifier
+     * @param config the requested stream configuration
+     * @return an error message or empty string on success
+     */
+    virtual std::string SetupStream(size_t &streamID, const StreamConfig &config);
+
+    /*!
+     * Close an open stream give the stream ID.
+     * This invalidates the stream ID
+     * @param streamID the configured stream identifier
+     */
+    virtual void CloseStream(const size_t streamID);
+
+    /*!
+     * Get the transfer size per buffer in samples.
+     * Use the stream size buffers when possible
+     * with the ReadStream()/WriteStream() API
+     * to match up with the link transfer size.
+     * Consider this an optimization.
+     * @param streamID the configured stream identifier
+     * @return the transfer size per buffer in samples
+     */
+    virtual size_t GetStreamSize(const size_t streamID);
+
+    /*!
+     * Control streaming activation, bursts, and timing.
+     * While SetupStream() sets up and allocates resources,
+     * ControlStream() is resonsible for dis/enabling the
+     * stream and providing advanced burst and timing controls.
+     *
+     * - Use enable to activate/deactivate the stream.
      * - Use the metadata's optional timestamp to control stream time
      * - Use the metadata's end of burst to request stream bursts
      * - Without end of burst, the burstSize affects continuous streaming
      *
-     * @param streamID the RX stream index number
+     * @param streamID the stream index number
+     * @param enable true to enable streaming, false to halt streaming
      * @param burstSize the burst size when metadata has end of burst
      * @param metadata time and burst options
      * @return true for success, otherwise false
      */
-    virtual bool RxStreamControl(const int streamID, const size_t burstSize, const StreamMetadata &metadata);
+    virtual bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
 
     /*!
      * Read blocking data from the stream into the specified buffer.
      *
      * @param streamID the RX stream index number
      * @param buffs an array of buffers pointers
-     * @param length the number of bytes in the buffer
+     * @param length the number of samples per buffer
      * @param timeout_ms the timeout in milliseconds
      * @param [out] metadata optional stream metadata
-     * @return the number of bytes read or error code
+     * @return the number of samples read or error code
      */
-    virtual int ReadStream(const int streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+    virtual int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 
     /*!
      * Write blocking data into the stream from the specified buffer.
@@ -254,12 +354,16 @@ public:
      *
      * @param streamID the TX stream stream number
      * @param buffs an array of buffers pointers
-     * @param length the number of bytes in the buffer
+     * @param length the number of samples per buffer
      * @param timeout_ms the timeout in milliseconds
      * @param metadata optional stream metadata
-     * @return the number of bytes written or error code
+     * @return the number of samples written or error code
      */
-    virtual int WriteStream(const int streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+    virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+
+    /***********************************************************************
+     * Programming API
+     **********************************************************************/
 
     /** @brief Uploads program to selected device
         @param buffer binary program data
@@ -283,6 +387,10 @@ public:
     */
     virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
 
+    /***********************************************************************
+     * GPIO API
+     **********************************************************************/
+
     /**	@brief Writes GPIO values to device
     @param source buffer for GPIO values LSB first, each bit sets GPIO state
     @param bufLength buffer length
@@ -296,6 +404,10 @@ public:
     @return the operation success state
     */
     virtual OperationStatus GPIORead(uint8_t *buffer, const size_t bufLength);
+
+    /***********************************************************************
+     * Register API
+     **********************************************************************/
 
     /**	@brief Bulk write device registers.
      * WriteRegisters() writes multiple registers and supports 32-bit addresses and data.
@@ -323,6 +435,10 @@ public:
     //! Read a single device register
     template <typename ReadType>
     OperationStatus ReadRegister(const uint32_t addr, ReadType &data);
+
+    /***********************************************************************
+     * Aribtrary settings API
+     **********************************************************************/
 
     /** @brief Sets custom on board control to given value units
 	@param ids indexes of selected controls
