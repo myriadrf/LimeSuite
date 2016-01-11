@@ -237,10 +237,11 @@ public:
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.
      * Implementations may have additional external bands to switch via GPIO.
-     * @param trfBand the SEL_BAND2_TRF config bits
-     * @param rfeBand the SEL_PATH_RFE config bits
+     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
+     * @param trfBand the transmit frontend band selection: 1 or 2
+     * @param rfePath the receive frontend path selection: LMS7002M::PathRFE
      */
-    virtual void UpdateExternalBandSelect(const int trfBand, const int rfeBand);
+    virtual void UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath);
 
     /***********************************************************************
      * Reference clocks API

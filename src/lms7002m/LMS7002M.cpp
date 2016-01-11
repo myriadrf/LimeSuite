@@ -57,6 +57,7 @@ void LMS7002M::Log(const char* text, LogType type)
 void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
 {
     controlPort = port;
+    mdevIndex = devIndex;
 
     if (controlPort != nullptr)
     {
@@ -69,7 +70,10 @@ It requires IConnection to be set by SetConnection() to communicate with chip
 */
 
 LMS7002M::LMS7002M() :
-    controlPort(nullptr), addrLMS7002M(-1), mRegistersMap(new LMS7002M_RegistersMap())
+    controlPort(nullptr),
+    addrLMS7002M(-1),
+    mdevIndex(0),
+    mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
@@ -138,6 +142,26 @@ LMS7002M::LMS7002M() :
 LMS7002M::~LMS7002M()
 {
     delete mRegistersMap;
+}
+
+void LMS7002M::SetActiveChannel(const Channel ch)
+{
+    this->Modify_SPI_Reg_bits(LMS7param(MAC), int(ch));
+}
+
+LMS7002M::Channel LMS7002M::GetActiveChannel(bool fromChip)
+{
+    auto ch = Get_SPI_Reg_bits(LMS7param(MAC), fromChip);
+    return Channel(ch);
+}
+
+size_t LMS7002M::GetActiveChannelIndex(void)
+{
+    switch (this->GetActiveChannel())
+    {
+    case ChB: return mdevIndex*2 + 1;
+    default: return mdevIndex*2 + 0;
+    }
 }
 
 /** @brief Sends reset signal to chip, after reset enables B channel controls
@@ -538,9 +562,7 @@ liblms7_status LMS7002M::SetPathRFE(PathRFE path)
     //TODO when loopback set: en_loopb_txpad_trf
 
     //update external band-selection to match
-    controlPort->UpdateExternalBandSelect(
-        this->Get_SPI_Reg_bits(SEL_BAND2_TRF),
-        this->Get_SPI_Reg_bits(SEL_PATH_RFE));
+    this->UpdateExternalBandSelect();
 
     return LIBLMS7_SUCCESS;
 }
@@ -561,9 +583,7 @@ liblms7_status LMS7002M::SetBandTRF(const int band)
     this->Modify_SPI_Reg_bits(SEL_BAND2_TRF, (band==2)?1:0);
 
     //update external band-selection to match
-    controlPort->UpdateExternalBandSelect(
-        this->Get_SPI_Reg_bits(SEL_BAND2_TRF),
-        this->Get_SPI_Reg_bits(SEL_PATH_RFE));
+    this->UpdateExternalBandSelect();
 
     return LIBLMS7_SUCCESS;
 }
@@ -573,6 +593,14 @@ int LMS7002M::GetBandTRF(void)
     if (this->Get_SPI_Reg_bits(SEL_BAND1_TRF) == 1) return 1;
     if (this->Get_SPI_Reg_bits(SEL_BAND2_TRF) == 1) return 2;
     return 0;
+}
+
+void LMS7002M::UpdateExternalBandSelect(void)
+{
+    return controlPort->UpdateExternalBandSelect(
+        this->GetActiveChannelIndex(),
+        this->GetBandTRF(),
+        int(this->GetPathRFE()));
 }
 
 /**	@brief Returns reference clock in MHz used for SXT or SXR
@@ -2519,9 +2547,7 @@ liblms7_status LMS7002M::UploadAll()
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore last used channel
 
     //update external band-selection to match
-    controlPort->UpdateExternalBandSelect(
-        Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)),
-        Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)));
+    this->UpdateExternalBandSelect();
 
     return LIBLMS7_SUCCESS;
 }
@@ -2567,9 +2593,7 @@ liblms7_status LMS7002M::DownloadAll()
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //retore previously used channel
 
     //update external band-selection to match
-    controlPort->UpdateExternalBandSelect(
-        Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)),
-        Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)));
+    this->UpdateExternalBandSelect();
 
     return LIBLMS7_SUCCESS;
 }

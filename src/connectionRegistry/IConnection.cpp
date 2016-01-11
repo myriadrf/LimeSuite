@@ -83,7 +83,7 @@ OperationStatus IConnection::ReadI2C(const int addr, const size_t numBytes, std:
     return UNSUPPORTED;
 }
 
-void IConnection::UpdateExternalBandSelect(const int trfBand, const int rfeBand)
+void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
 {
     return;
 }

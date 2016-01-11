@@ -94,9 +94,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
         //update external band-selection to match
-        lms7controlPort->UpdateExternalBandSelect(
-            lmsControl->Get_SPI_Reg_bits(SEL_BAND2_TRF),
-            lmsControl->Get_SPI_Reg_bits(SEL_PATH_RFE));
+        lmsControl->UpdateExternalBandSelect();
         if (novenaGui)
             novenaGui->UpdatePanel();
     }

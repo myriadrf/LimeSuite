@@ -103,7 +103,7 @@ LMS7002M *SoapyIConnection::getRFIC(const size_t channel) const
         throw std::out_of_range("SoapyIConnection::getRFIC("+std::to_string(channel)+") out of range");
     }
     auto rfic = _rfics.at(channel/2);
-    rfic->Modify_SPI_Reg_bits(MAC, (channel%2) + 1);
+    rfic->SetActiveChannel(((channel%2) == 0)?LMS7002M::ChA:LMS7002M::ChB);
     return rfic;
 }
 
@@ -275,10 +275,6 @@ void SoapyIConnection::setAntenna(const int direction, const size_t channel, con
 
         rfic->SetBandTRF(band);
     }
-
-    _conn->UpdateExternalBandSelect(
-            rfic->Get_SPI_Reg_bits(SEL_BAND2_TRF),
-            rfic->Get_SPI_Reg_bits(SEL_PATH_RFE));
 }
 
 std::string SoapyIConnection::getAntenna(const int direction, const size_t channel) const

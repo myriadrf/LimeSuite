@@ -35,6 +35,36 @@ public:
 
 	virtual ~LMS7002M();
 
+    /*!
+     * Enum for configuring the channel selection.
+     * @see MAC register
+     */
+    enum Channel
+    {
+        ChA = 1,
+        ChB = 2,
+        ChAB = 3,
+    };
+
+    /*!
+     * Set the selected channel (MAC).
+     * The API calls will reflect this channel.
+     */
+    void SetActiveChannel(const Channel ch);
+
+    /*!
+     * Get the selected channel (MAC).
+     * The API calls will reflect this channel.
+     */
+    Channel GetActiveChannel(bool fromChip = true);
+
+    /*!
+     * Get the channel selected by the RFIC index (devIndex),
+     * and by the currently selected RF channel A/B (MAC).
+     * Example when devIndex == 0, return 0 for chA, 1 for chB.
+     */
+    size_t GetActiveChannelIndex(void);
+
     ///@name Registers writing and reading
     liblms7_status UploadAll();
     liblms7_status DownloadAll();
@@ -77,12 +107,12 @@ public:
     ///@name RF selection
     enum PathRFE
     {
-        PATH_RFE_NONE,
-        PATH_RFE_LNAH,
-        PATH_RFE_LNAL,
-        PATH_RFE_LNAW,
-        PATH_RFE_LB1,
-        PATH_RFE_LB2,
+        PATH_RFE_NONE = 0,
+        PATH_RFE_LNAH = int('H'),
+        PATH_RFE_LNAL = int('L'),
+        PATH_RFE_LNAW = int('W'),
+        PATH_RFE_LB1 = 1,
+        PATH_RFE_LB2 = 2,
     };
 
     //! Set the RFE input path.
@@ -102,6 +132,14 @@ public:
      * @return the band 1 or 2
      */
     int GetBandTRF(void);
+
+    /*!
+     * Update the external band selection by calling
+     * UpdateExternalBandSelect() on the connection object.
+     * This is called automatically by the LMS7002M driver,
+     * but can also be called manually by the user.
+     */
+    void UpdateExternalBandSelect(void);
 
     ///@}
 
@@ -209,6 +247,7 @@ protected:
     ///port used for communicating with LMS7002M
     IConnection* controlPort;
     int addrLMS7002M;
+    size_t mdevIndex;
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };
