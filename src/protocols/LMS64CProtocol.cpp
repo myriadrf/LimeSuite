@@ -10,6 +10,7 @@
 #include <iostream>
 #include <assert.h>
 #include <math.h>
+#include <algorithm>
 
 //! arbitrary spi constants used to dispatch calls
 
@@ -151,10 +152,11 @@ OperationStatus LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint3
 
     TransferStatus status = this->TransferPacket(pkt);
 
-    for (size_t i = 0; i < size && i < pkt.inBuffer.size(); ++i)
+    const size_t numRead = std::min<size_t>(pkt.inBuffer.size()/4, size);
+    for (size_t i = 0; i < numRead; ++i)
     {
-        int lo = pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
-        int hi = pkt.inBuffer[4*sizeof(uint8_t)*i + 2];
+        int hi = pkt.inBuffer[4*i + 2];
+        int lo = pkt.inBuffer[4*i + 3];
         readData[i] = (hi << 8) | lo;
     }
 
@@ -255,10 +257,11 @@ OperationStatus LMS64CProtocol::ReadRegisters(const uint32_t *addrs, uint32_t *d
 
     TransferStatus status = this->TransferPacket(pkt);
 
-    for (size_t i = 0; i < size && i < pkt.inBuffer.size(); ++i)
+    const size_t numRead = std::min<size_t>(pkt.inBuffer.size()/4, size);
+    for (size_t i = 0; i < numRead; ++i)
     {
-        int lo = pkt.inBuffer[4*sizeof(uint8_t)*i + 3];
-        int hi = pkt.inBuffer[4*sizeof(uint8_t)*i + 2];
+        int hi = pkt.inBuffer[4*i + 2];
+        int lo = pkt.inBuffer[4*i + 3];
         data[i] = (hi << 8) | lo;
     }
 
