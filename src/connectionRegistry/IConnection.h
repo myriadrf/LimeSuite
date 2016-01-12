@@ -231,7 +231,7 @@ public:
     virtual OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     /***********************************************************************
-     * Antenna API
+     * LMS7002M Driver callbacks
      **********************************************************************/
 
     /*!
@@ -242,6 +242,16 @@ public:
      * @param rfePath the receive frontend path selection: LMS7002M::PathRFE
      */
     virtual void UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath);
+
+    /*!
+     * Called by the LMS7002M driver after TSP/DIQ rate changes.
+     * Implementations may use these rate updates to configure
+     * internal parameters or perhaps PLL circuitry in a FPGA.
+     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
+     * @param txRate the baseband transmit data rate in Hz (BBIC to RFIC)
+     * @param rxRate the baseband receive data rate in Hz (RFIC to BBIC)
+     */
+    virtual void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 
     /***********************************************************************
      * Reference clocks API

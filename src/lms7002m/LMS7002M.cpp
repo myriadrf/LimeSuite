@@ -2641,5 +2641,12 @@ liblms7_status LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const u
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), true);
         Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 0);
     }
+
+    //communicate the new rate to the control implementation
+    controlPort->UpdateExternalDataRate(
+        this->GetActiveChannelIndex(),
+        this->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6,
+        this->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6);
+
     return status;
 }

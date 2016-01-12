@@ -88,6 +88,11 @@ void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBa
     return;
 }
 
+void IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
+{
+    return;
+}
+
 double IConnection::GetReferenceClockRate(void)
 {
     //this is the populated TCXO on many boards

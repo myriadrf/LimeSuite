@@ -219,7 +219,7 @@ public:
 
 private:
     IConnection *_conn;
-    std::string _moduleName;
+    const std::string _moduleName;
 
     LMS7002M *getRFIC(const size_t channel) const;
     std::vector<LMS7002M *> _rfics;

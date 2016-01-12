@@ -41,13 +41,24 @@ protected:
  * Constructor/destructor
  ******************************************************************/
 SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
-    _conn(nullptr)
+    _conn(nullptr),
+    _moduleName(handle.module)
 {
-    _moduleName = handle.module;
+    //connect
+    SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
     _conn = ConnectionRegistry::makeConnection(handle);
+    if (_conn == nullptr) throw std::runtime_error(
+        "Failed to make connection with '" + handle.serialize() + "'");
+
+    //device info
     const auto devInfo = _conn->GetDeviceInfo();
     const size_t numRFICs = devInfo.addrsLMS7002M.size();
 
+    //quick summary
+    SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
+    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %f MHz", _conn->GetReferenceClockRate()/1e6);
+
+    //LMS7002M driver for each RFIC
     for (size_t i = 0; i < numRFICs; i++)
     {
         SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", int(i));
@@ -528,11 +539,12 @@ void SoapyIConnection::setFrequency(const int direction, const size_t channel, c
 {
     auto rfic = getRFIC(channel);
     auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setFrequency(%d, %s, %f MHz), ref %f MHz", direction, name.c_str(), frequency/1e6, ref_MHz);
 
     if (name == "RF")
     {
-        rfic->SetFrequencySX(direction == SOAPY_SDR_TX, frequency/1e6, ref_MHz);
+        rfic->SetFrequencySX(lmsDir, frequency/1e6, ref_MHz);
         return;
     }
 
@@ -543,7 +555,7 @@ void SoapyIConnection::setFrequency(const int direction, const size_t channel, c
         case SOAPY_SDR_RX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
         case SOAPY_SDR_TX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
         }
-        rfic->SetNCOFrequency(direction == SOAPY_SDR_TX, 0, frequency/1e6);
+        rfic->SetNCOFrequency(lmsDir, 0, frequency/1e6);
         return;
     }
 
@@ -554,15 +566,16 @@ double SoapyIConnection::getFrequency(const int direction, const size_t channel,
 {
     auto rfic = getRFIC(channel);
     auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     if (name == "RF")
     {
-        return rfic->GetFrequencySX_MHz(direction == SOAPY_SDR_TX, ref_MHz)*1e6;
+        return rfic->GetFrequencySX_MHz(lmsDir, ref_MHz)*1e6;
     }
 
     if (name == "BB")
     {
-        return rfic->GetNCOFrequency_MHz(direction == SOAPY_SDR_TX, 0, ref_MHz)*1e6;
+        return rfic->GetNCOFrequency_MHz(lmsDir, 0, ref_MHz)*1e6;
     }
 
     throw std::runtime_error("SoapyIConnection::getFrequency("+name+") unknown name");
@@ -579,6 +592,7 @@ std::vector<std::string> SoapyIConnection::listFrequencies(const int /*direction
 SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, const size_t channel, const std::string &name) const
 {
     auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     SoapySDR::RangeList ranges;
     if (name == "RF")
@@ -587,7 +601,7 @@ SoapySDR::RangeList SoapyIConnection::getFrequencyRange(const int direction, con
     }
     if (name == "BB")
     {
-        const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+        const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
         ranges.push_back(SoapySDR::Range(-dspRate/2, dspRate/2));
     }
     return ranges;
@@ -605,8 +619,9 @@ void SoapyIConnection::updateStreamRate(const int direction, const size_t channe
 void SoapyIConnection::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
     const double factor = dspRate/rate;
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setSampleRate(%d, %f MHz), baseRate %f MHz, factor %f", direction, rate/1e6, dspRate/1e6, factor);
     if (factor < 2.0) throw std::runtime_error("SoapyIConnection::setSampleRate() -- rate too high");
@@ -633,7 +648,8 @@ void SoapyIConnection::setSampleRate(const int direction, const size_t channel, 
 double SoapyIConnection::getSampleRate(const int direction, const size_t channel) const
 {
     auto rfic = getRFIC(channel);
-    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
 
     try
     {
@@ -653,8 +669,9 @@ double SoapyIConnection::getSampleRate(const int direction, const size_t channel
 std::vector<double> SoapyIConnection::listSampleRates(const int direction, const size_t channel) const
 {
     auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    const double dspRate = rfic->GetReferenceClk_TSP_MHz(direction == SOAPY_SDR_TX)*1e6;
+    const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
     std::vector<double> rates;
     for (int i = 5; i >= 0; i--)
     {
