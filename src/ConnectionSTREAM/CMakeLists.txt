@@ -27,6 +27,7 @@ set(CONNECTION_STREAM_LIBRARIES
     protocols #LMS64C
     ${USB_LIBRARIES}
     LMS_StreamBoard
+    LTEpackets
 )
 
 ########################################################################
