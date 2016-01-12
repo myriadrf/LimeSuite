@@ -19,8 +19,8 @@ if __name__ == '__main__':
     streamBoardSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", 1e9)
 
     print("Tune cordics")
-    streamBoardSDR.setFrequency(SOAPY_SDR_RX, 0, "BB", 0.0)
-    streamBoardSDR.setFrequency(SOAPY_SDR_RX, 1, "BB", 0.0)
+    streamBoardSDR.setFrequency(SOAPY_SDR_RX, 0, "BB", 50e3)
+    streamBoardSDR.setFrequency(SOAPY_SDR_RX, 1, "BB", 50e3)
     streamBoardSDR.setFrequency(SOAPY_SDR_TX, 0, "BB", 0.0)
     streamBoardSDR.setFrequency(SOAPY_SDR_TX, 1, "BB", 0.0)
 
@@ -36,13 +36,16 @@ if __name__ == '__main__':
 
     print("Test receive")
     time.sleep(1)
-    sampsCh0 = np.array([0]*128, np.complex64)
-    sampsCh1 = np.array([0]*128, np.complex64)
-    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], 128, 0)
+    sampsCh0 = np.array([0]*32, np.complex64)
+    sampsCh1 = np.array([0]*32, np.complex64)
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
     print sr
 
-    plt.plot(np.real(sampsCh0))
-    plt.plot(np.imag(sampsCh0))
+    plt.plot(np.real(sampsCh0), label="ChA:I")
+    plt.plot(np.imag(sampsCh0), label="ChA:Q")
+    plt.plot(np.real(sampsCh1) + .1, label="ChB:I")
+    plt.plot(np.imag(sampsCh1) + .1, label="ChB:Q")
+    plt.legend()
     plt.ylabel('some numbers')
     plt.show()
 

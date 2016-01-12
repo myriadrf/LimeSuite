@@ -130,10 +130,10 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
     rfic->Modify_SPI_Reg_bits(LML2_FIDM, 1); //Frame start=1
     rfic->Modify_SPI_Reg_bits(LML1_MODE, 0); //TRXIQ
     rfic->Modify_SPI_Reg_bits(LML2_MODE, 0); //TRXIQ
-    rfic->Modify_SPI_Reg_bits(LML2_S3S, 0); //AI
+    rfic->Modify_SPI_Reg_bits(LML2_S3S, 1); //AQ
     rfic->Modify_SPI_Reg_bits(LML2_S2S, 0); //AI
-    rfic->Modify_SPI_Reg_bits(LML2_S1S, 1); //AQ
-    rfic->Modify_SPI_Reg_bits(LML2_S0S, 1); //AQ
+    rfic->Modify_SPI_Reg_bits(LML2_S1S, 3); //BQ
+    rfic->Modify_SPI_Reg_bits(LML2_S0S, 2); //BI
     if ((channel%2) == 0)
     {
         rfic->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);
@@ -161,9 +161,18 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
     }
 
     //--- testing ---
-    rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 0); //NCO
+    rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
     rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, 1); //SIGGEN
-    rfic->Modify_SPI_Reg_bits(TSGFCW_RXTSP, 1); //clk/8
+
+    rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, (channel == 0)?(0):(0));
+    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
+    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
+
+    rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, (channel == 0)?(1 << 11):(1 << 11));
+    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
+    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
 
     //--- digital ---
     rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);

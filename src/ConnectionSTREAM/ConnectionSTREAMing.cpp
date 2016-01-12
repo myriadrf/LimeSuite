@@ -153,6 +153,11 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     default: return "SoapyIConnection::setupStream() unsupported link format";
     }
 
+    //TODO delete this when fixed
+    //having issues with STREAM_12_BIT_IN_16,
+    //might need better control over FPGA regs
+    linkFormat = StreamerLTE::STREAM_12_BIT_COMPRESSED;
+
     streamID = size_t(new StreamerLTECustom(this, config.isTx, channelsCount, linkFormat));
     return ""; //success
 }
@@ -194,8 +199,8 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
         for (size_t j = 0; j < samplesCount; j++)
         {
             buffOut[j] = std::complex<float>(
-                float(buffIn[j].i)/1024,
-                float(buffIn[j].q)/1024);
+                float(buffIn[j].i)/2048,
+                float(buffIn[j].q)/2048);
         }
     }
 
@@ -214,8 +219,8 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
         auto bufOut = stream->mFIFOBuffers[i];
         for (size_t j = 0; j < samplesCount; j++)
         {
-            bufOut[j].i = int16_t(buffIn[j].real()*1024);
-            bufOut[j].q = int16_t(buffIn[j].imag()*1024);
+            bufOut[j].i = int16_t(buffIn[j].real()*2048);
+            bufOut[j].q = int16_t(buffIn[j].imag()*2048);
         }
     }
 

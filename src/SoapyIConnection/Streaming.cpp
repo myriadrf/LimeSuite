@@ -8,6 +8,8 @@
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
+#include <LMS7002M.h>
+#include <LMS7002M_RegistersMap.h>
 
 /*******************************************************************
  * Stream data structure
@@ -32,7 +34,7 @@ std::vector<std::string> SoapyIConnection::getStreamFormats(const int direction,
 
 std::string SoapyIConnection::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
 {
-    fullScale = 1024;
+    fullScale = 2048;
     return SOAPY_SDR_CS16;
 }
 
