@@ -102,13 +102,9 @@ struct StreamConfig
     bool isTx;
 
     /*!
-     * The array of channels used by the stream.
-     * Configurations depend on hardware support.
-     * Example [0] for channel 0 on RFIC0
-     * Example [0, 1] for MIMO on RFIC0
-     * Example [2, 3] for MIMO on RFIC1
+     * The number of channels used by the stream.
      */
-    std::vector<size_t> channels;
+    size_t channelsCount;
 
     //! Possible stream data formats
     enum StreamDataFormat

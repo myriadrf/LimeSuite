@@ -2650,3 +2650,55 @@ liblms7_status LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const u
 
     return status;
 }
+
+void LMS7002M::ConfigureLML_RF2BB(
+    const LMLSampleSource s0,
+    const LMLSampleSource s1,
+    const LMLSampleSource s2,
+    const LMLSampleSource s3)
+{
+    //map a sample source to a position
+    std::map<LMLSampleSource, int> m;
+    m[AI] = 0;
+    m[AQ] = 1;
+    m[BI] = 2;
+    m[BQ] = 3;
+
+    //load the same config on both LMLs
+    //only one will get used based on direction
+    this->Modify_SPI_Reg_bits(LML1_S3S, m[s3]);
+    this->Modify_SPI_Reg_bits(LML1_S2S, m[s2]);
+    this->Modify_SPI_Reg_bits(LML1_S1S, m[s1]);
+    this->Modify_SPI_Reg_bits(LML1_S0S, m[s0]);
+
+    this->Modify_SPI_Reg_bits(LML2_S3S, m[s3]);
+    this->Modify_SPI_Reg_bits(LML2_S2S, m[s2]);
+    this->Modify_SPI_Reg_bits(LML2_S1S, m[s1]);
+    this->Modify_SPI_Reg_bits(LML2_S0S, m[s0]);
+}
+
+void LMS7002M::ConfigureLML_BB2RF(
+    const LMLSampleSource s0,
+    const LMLSampleSource s1,
+    const LMLSampleSource s2,
+    const LMLSampleSource s3)
+{
+    //map a sample source to a position
+    std::map<LMLSampleSource, int> m;
+    m[s0] = 0;
+    m[s1] = 1;
+    m[s2] = 2;
+    m[s3] = 3;
+
+    //load the same config on both LMLs
+    //only one will get used based on direction
+    this->Modify_SPI_Reg_bits(LML1_BQP, m[BQ]);
+    this->Modify_SPI_Reg_bits(LML1_BIP, m[BI]);
+    this->Modify_SPI_Reg_bits(LML1_AQP, m[AQ]);
+    this->Modify_SPI_Reg_bits(LML1_AIP, m[AI]);
+
+    this->Modify_SPI_Reg_bits(LML2_BQP, m[BQ]);
+    this->Modify_SPI_Reg_bits(LML2_BIP, m[BI]);
+    this->Modify_SPI_Reg_bits(LML2_AQP, m[AQ]);
+    this->Modify_SPI_Reg_bits(LML2_AIP, m[AI]);
+}

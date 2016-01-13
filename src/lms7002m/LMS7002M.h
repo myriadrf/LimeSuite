@@ -171,6 +171,34 @@ public:
 
     liblms7_status SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation);
 
+    ///@name LML
+    enum LMLSampleSource
+    {
+        AI = 0,
+        AQ = 1,
+        BI = 2,
+        BQ = 3,
+    };
+
+    /*!
+     * Set the LML sample positions in the RF to baseband direction.
+     */
+    void ConfigureLML_RF2BB(
+        const LMLSampleSource s0,
+        const LMLSampleSource s1,
+        const LMLSampleSource s2,
+        const LMLSampleSource s3);
+
+    /*!
+     * Set the LML sample positions in the baseband to RF direction.
+     */
+    void ConfigureLML_BB2RF(
+        const LMLSampleSource s0,
+        const LMLSampleSource s1,
+        const LMLSampleSource s2,
+        const LMLSampleSource s3);
+    ///@}
+
     ///enumeration to indicate module registers intervals
     enum MemorySection
     {

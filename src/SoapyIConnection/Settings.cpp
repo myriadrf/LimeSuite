@@ -125,15 +125,10 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
     auto rfic = getRFIC(channel);
 
     //--- LML ---
-    //TODO highly specific config, generalize...
     rfic->Modify_SPI_Reg_bits(LML1_FIDM, 1); //Frame start=1
     rfic->Modify_SPI_Reg_bits(LML2_FIDM, 1); //Frame start=1
     rfic->Modify_SPI_Reg_bits(LML1_MODE, 0); //TRXIQ
     rfic->Modify_SPI_Reg_bits(LML2_MODE, 0); //TRXIQ
-    rfic->Modify_SPI_Reg_bits(LML2_S3S, 1); //AQ
-    rfic->Modify_SPI_Reg_bits(LML2_S2S, 0); //AI
-    rfic->Modify_SPI_Reg_bits(LML2_S1S, 3); //BQ
-    rfic->Modify_SPI_Reg_bits(LML2_S0S, 2); //BI
     if ((channel%2) == 0)
     {
         rfic->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);

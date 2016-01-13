@@ -138,11 +138,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
         return "ConnectionSTREAM::setupStream() only complex floats now";
 
     //check channel config
-    if (config.channels.size() > 2) return "SoapyIConnection::setupStream() 2 channels max";
-    if (config.channels.size() == 1 and config.channels.at(0) != 0) return "SoapyIConnection::setupStream() first channel must be 0";
-    if (config.channels.size() == 2 and config.channels.at(1) != 1) return "SoapyIConnection::setupStream() second channel must be 1";
-    size_t channelsCount = config.channels.size();
-    if (channelsCount == 0) channelsCount++;
+    if (config.channelsCount > 2) return "SoapyIConnection::setupStream() 2 channels max";
 
     //check link format
     auto linkFormat = StreamerLTE::STREAM_12_BIT_IN_16;
@@ -158,7 +154,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     //might need better control over FPGA regs
     linkFormat = StreamerLTE::STREAM_12_BIT_COMPRESSED;
 
-    streamID = size_t(new StreamerLTECustom(this, config.isTx, channelsCount, linkFormat));
+    streamID = size_t(new StreamerLTECustom(this, config.isTx, config.channelsCount, linkFormat));
     return ""; //success
 }
 
