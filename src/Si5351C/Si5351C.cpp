@@ -15,6 +15,7 @@
 #include <string.h>
 #include <assert.h>
 #include <iostream>
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 
 #define Log(msg, type) cout << (msg) << endl;

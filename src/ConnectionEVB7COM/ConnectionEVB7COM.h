@@ -11,6 +11,10 @@
 #include <vector>
 #include <string>
 
+#ifndef __unix__
+    #include <windows.h>
+#endif
+
 class ConnectionEVB7COM : public LMS64CProtocol
 {
 public:

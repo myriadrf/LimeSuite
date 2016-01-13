@@ -186,7 +186,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
         stream->channelsCount,
         &metadata.timestamp,
         timeout_ms);
-    samplesCount = std::min(samplesCount, sampsPopped);
+    samplesCount = (std::min)(samplesCount, sampsPopped);
 
     for (size_t i = 0; i < stream->channelsCount; i++)
     {
@@ -226,7 +226,7 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
         stream->channelsCount,
         metadata.timestamp,
         timeout_ms);
-    samplesCount = std::min(samplesCount, sampsPushed);
+    samplesCount = (std::min)(samplesCount, sampsPushed);
 
     return samplesCount;
 }

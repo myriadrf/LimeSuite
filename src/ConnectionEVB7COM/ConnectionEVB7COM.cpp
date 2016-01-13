@@ -100,7 +100,7 @@ LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int ba
 	// Initialize DSB structure
 	memset(&m_dcbCommPort, 0, sizeof(m_dcbCommPort));
 
-	m_dcbCommPort.BaudRate = comBaudrate;
+    m_dcbCommPort.BaudRate = 9600;
 	m_dcbCommPort.fBinary = 1;
 	m_dcbCommPort.fParity = 0;
 	m_dcbCommPort.fOutxCtsFlow = 0;
@@ -138,7 +138,7 @@ LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int ba
 	m_ctmoNew.WriteTotalTimeoutConstant = 100;
 
 	// Open COM port
-	string stmp;
+	std::string stmp;
 	stmp = "\\\\.\\";
 	stmp.append(comName);
 	hComm = CreateFileA(stmp.c_str(), GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);

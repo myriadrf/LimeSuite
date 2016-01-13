@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <math.h>
 #include <algorithm>
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 
 //! arbitrary spi constants used to dispatch calls
 
@@ -223,6 +224,7 @@ OperationStatus LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const
 OperationStatus LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     //TODO
+    return OperationStatus::UNSUPPORTED;
 }
 
 /***********************************************************************

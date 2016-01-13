@@ -4,6 +4,7 @@
 #include <wx/msgdlg.h>
 #include <vector>
 #include "lms7suiteEvents.h"
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 
 dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )

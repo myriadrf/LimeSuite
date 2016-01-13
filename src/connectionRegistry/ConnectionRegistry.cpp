@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <iostream>
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 
 /*******************************************************************
  * FIXME - temporary way to load connections until we make new loader

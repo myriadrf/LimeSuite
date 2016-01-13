@@ -156,7 +156,9 @@ target_link_libraries(LimeUtil ${connectionRegistryLibs})
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
-add_executable(boardEmulator boardEmulator.cpp)
+if(UNIX)
+    add_executable(boardEmulator boardEmulator.cpp)
+endif()
 
 ########################################################################
 ## SoapySDR bindings for IConnection

@@ -12,6 +12,7 @@
 #include <vector>
 #include <cstring> //memset
 #include <functional>
+#include <stdint.h>
 
 enum OperationStatus
 {
