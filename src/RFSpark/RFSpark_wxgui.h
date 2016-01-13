@@ -12,8 +12,10 @@ class wxButton;
 class wxStaticBoxSizer;
 class wxComboBox;
 class wxCheckBox;
+namespace lime{
 class LMS64CProtocol;
 class IConnection;
+}
 #include <vector>
 
 class RFSpark_wxgui: public wxFrame
@@ -36,7 +38,7 @@ class RFSpark_wxgui: public wxFrame
 		};
 
 		RFSpark_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString& title=wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long style = 0);
-        virtual void Initialize(IConnection* pSerPort);
+        virtual void Initialize(lime::IConnection* pSerPort);
 		virtual ~RFSpark_wxgui();
 
 		wxButton* btnReadADC;
@@ -62,7 +64,7 @@ class RFSpark_wxgui: public wxFrame
 		void OnbtnReadGPIO(wxCommandEvent& event);
 
 	protected:
-        LMS64CProtocol* m_serPort;
+        lime::LMS64CProtocol* m_serPort;
 		DECLARE_EVENT_TABLE()
 };
 

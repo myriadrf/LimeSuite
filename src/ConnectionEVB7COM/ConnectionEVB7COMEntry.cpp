@@ -9,6 +9,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace lime;
 
 static const int comBaudrate = 9600;
 

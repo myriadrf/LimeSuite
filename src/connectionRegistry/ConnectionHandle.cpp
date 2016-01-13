@@ -6,6 +6,7 @@
 
 #include "ConnectionHandle.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
+using namespace lime;
 
 /*******************************************************************
  * Connection handle implementation

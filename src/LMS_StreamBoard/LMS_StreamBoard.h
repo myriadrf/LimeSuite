@@ -7,6 +7,7 @@
 #include <thread>
 #include "LMS_StreamBoard_FIFO.h"
 
+namespace lime{
 class IConnection;
 
 class LMS_StreamBoard
@@ -104,5 +105,6 @@ protected:
     std::thread threadTxCyclic;
     std::atomic_bool stopTxCyclic;
 };
+}
 #endif
 

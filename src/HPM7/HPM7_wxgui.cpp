@@ -17,6 +17,8 @@
 #include <vector>
 #include "LMS64CProtocol.h"
 
+using namespace lime;
+
 BEGIN_EVENT_TABLE(HPM7_wxgui, wxFrame)
 
 END_EVENT_TABLE()

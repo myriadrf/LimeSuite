@@ -12,6 +12,7 @@
 #include <math.h>
 #include <algorithm>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
+using namespace lime;
 
 //! arbitrary spi constants used to dispatch calls
 

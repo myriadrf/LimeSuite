@@ -12,6 +12,8 @@
 #include <atomic>
 #include "dataTypes.h"
 
+namespace lime{
+
 class IConnection;
 class LMS_SamplesFIFO;
 
@@ -107,3 +109,4 @@ protected:
     std::atomic<int> mRxDataRate;
     std::atomic<int> mTxDataRate;
 };
+}

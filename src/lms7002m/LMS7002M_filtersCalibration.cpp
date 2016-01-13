@@ -6,6 +6,7 @@
 
 #include "LMS7002M.h"
 #include <cmath>
+using namespace lime;
 
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id

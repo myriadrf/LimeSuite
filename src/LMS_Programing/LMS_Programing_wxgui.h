@@ -16,14 +16,16 @@ class wxChoice;
 #include <thread>
 #include <atomic>
 #include <vector>
+namespace lime{
 class IConnection;
 class LMS_Programing;
+}
 
 class LMS_Programing_wxgui : public wxFrame
 {
 public:
     LMS_Programing_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY,const wxString& title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=0, wxString name = wxEmptyString);
-    virtual void SetConnection(IConnection* port);
+    virtual void SetConnection(lime::IConnection* port);
     virtual ~LMS_Programing_wxgui();
 
 protected:
@@ -41,7 +43,7 @@ protected:
     void DoProgramming();
     bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     std::vector<char> mProgramData;
-    IConnection* serPort;
+    lime::IConnection* serPort;
     std::atomic<bool> mProgrammingInProgress;
     std::atomic<bool> mAbortProgramming;
     std::thread mWorkerThread;

@@ -9,6 +9,8 @@
 #include <cmath>
 #include <string.h>
 
+using namespace lime;
+
 ADF4002::ADF4002()
 {
 }

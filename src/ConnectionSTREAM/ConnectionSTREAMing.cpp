@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <complex>
 
+using namespace lime;
+
 #define STREAM_MTU 16384 //for now
 
 /***********************************************************************
@@ -173,6 +175,8 @@ bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, c
 {
     auto *stream = (StreamerLTECustom *)streamID;
     stream->Enable(this, enable);
+    //TODO must return value?
+    return false;
 }
 
 int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)

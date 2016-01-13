@@ -24,6 +24,8 @@ static const int COM_RETRY_INTERVAL = 20; //ms
 static const int COM_TOTAL_TIMEOUT = 300; //ms
 static const int COM_BUFFER_LENGTH = 1024; //max buffer size for data
 
+using namespace lime;
+
 ConnectionEVB7COM::ConnectionEVB7COM(const char *comName, int baudrate)
 {
 #ifndef __unix__

@@ -3,12 +3,13 @@
 
 #include "LMS_StreamBoard.h"
 
+namespace lime{
 class IConnection;
 
 class StreamerNovena : public LMS_StreamBoard
 {
 public:
-    StreamerNovena(IConnection* dataPort);
+    StreamerNovena(lime::IConnection* dataPort);
     virtual ~StreamerNovena();
 
     virtual LMS_StreamBoard::Status StartReceiving(unsigned int fftSize);
@@ -21,5 +22,7 @@ protected:
     static void ReceivePackets(StreamerNovena* pthis);
     static void TransmitPackets(StreamerNovena* pthis);
 };
+
+}
 #endif
 

@@ -6,6 +6,7 @@
 #include "kiss_fft.h"
 
 using namespace std;
+using namespace lime;
 
 /** @brief Configures Stream board FPGA clocks
     @param serPort Communications port to send data

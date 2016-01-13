@@ -33,6 +33,8 @@ using namespace std;
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
 
+using namespace lime;
+
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
 ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vid, const int pid)

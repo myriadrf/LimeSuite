@@ -15,6 +15,8 @@
     #include <windows.h>
 #endif
 
+namespace lime{
+
 class ConnectionEVB7COM : public LMS64CProtocol
 {
 public:
@@ -68,3 +70,5 @@ private:
     std::vector<std::string> FindAllComPorts();
     std::vector<std::string> FilterDeviceList(const std::vector<std::string> &);
 };
+
+}

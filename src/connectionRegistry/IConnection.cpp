@@ -7,6 +7,8 @@
 #include "IConnection.h"
 #include <cstring> //memcpy
 
+using namespace lime;
+
 DeviceInfo::DeviceInfo(void):
     addrSi5351(-1),
     addrADF4002(-1)

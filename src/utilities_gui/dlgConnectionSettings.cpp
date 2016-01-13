@@ -6,6 +6,7 @@
 #include "lms7suiteEvents.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
+using namespace lime;
 
 dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )
 	: dlgConnectionSettings_view( parent )

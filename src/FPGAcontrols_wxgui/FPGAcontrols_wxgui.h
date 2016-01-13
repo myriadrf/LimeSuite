@@ -19,14 +19,16 @@ class wxCheckBox;
 #include <vector>
 #include <map>
 
+namespace lime{
 class IConnection;
 class LMS_StreamBoard;
+}
 
 class FPGAcontrols_wxgui: public wxFrame
 {
 	public:
         FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-        virtual void Initialize(IConnection* dataPort);
+        virtual void Initialize(lime::IConnection* dataPort);
         virtual ~FPGAcontrols_wxgui();
 
         int UploadFile(const wxString &filename);
@@ -77,8 +79,8 @@ class FPGAcontrols_wxgui: public wxFrame
 
 	protected:
         wxString fileForCyclicTransmitting;
-        IConnection* m_serPort;
-        LMS_StreamBoard* mStreamer;
+        lime::IConnection* m_serPort;
+        lime::LMS_StreamBoard* mStreamer;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()
 };

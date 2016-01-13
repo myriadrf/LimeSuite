@@ -7,6 +7,8 @@
 #ifndef ADF_MODULE_H
 #define ADF_MODULE_H
 
+namespace lime{
+
 class ADF4002
 {
 public:
@@ -62,4 +64,5 @@ protected:
     unsigned char m_registers[12];
 };
 
+}
 #endif // ADF_MODULE_H

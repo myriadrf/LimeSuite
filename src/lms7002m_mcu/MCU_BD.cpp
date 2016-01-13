@@ -13,6 +13,8 @@ using namespace std;
 #include "LMS64CProtocol.h"
 #include <assert.h>
 
+using namespace lime;
+
 MCU_BD::MCU_BD()
 {
     mLoadedProgramFilename = "";

@@ -17,6 +17,8 @@
 #include <vector>
 #include "LMS64CProtocol.h"
 
+using namespace lime;
+
 const long RFSpark_wxgui::ID_BTNREADADC = wxNewId();
 const long RFSpark_wxgui::ID_BTNREADALLADC = wxNewId();
 const long RFSpark_wxgui::ID_BTNWRITEGPIO = wxNewId();

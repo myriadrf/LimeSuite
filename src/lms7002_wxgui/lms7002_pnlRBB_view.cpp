@@ -5,6 +5,7 @@
 #include "numericSlider.h"
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
+using namespace lime;
 
 lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent )
 :

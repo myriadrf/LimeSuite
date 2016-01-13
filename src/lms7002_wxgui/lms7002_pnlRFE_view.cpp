@@ -8,6 +8,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 
+using namespace lime;
 using namespace LMS7002_WXGUI;
 
 indexValueMap g_lna_rfe_IndexValuePairs;

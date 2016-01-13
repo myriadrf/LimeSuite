@@ -14,6 +14,8 @@
 #include "IConnection.h"
 #include "lms7002_defines.h"
 
+using namespace lime;
+
 const long Myriad7_wxgui::ID_STATICTEXT1 = wxNewId();
 const long Myriad7_wxgui::ID_COMBOBOX1 = wxNewId();
 const long Myriad7_wxgui::ID_STATICTEXT2 = wxNewId();

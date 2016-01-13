@@ -10,6 +10,8 @@
 #include <atomic>
 #include <string>
 
+namespace lime{
+
 class LMS64CProtocol;
 class IConnection;
 
@@ -73,5 +75,5 @@ class MCU_BD
         int RunInstr_MCU(unsigned short * pPCVAL);
         void Initialize(IConnection* pSerPort);
 };
-
+}
 #endif // MCU_BD_H

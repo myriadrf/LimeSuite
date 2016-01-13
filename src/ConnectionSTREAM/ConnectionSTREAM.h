@@ -21,6 +21,8 @@
 #include <chrono>
 #endif
 
+namespace lime{
+
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
 /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -113,14 +115,13 @@ public:
 	//hooks to update FPGA plls when baseband interface data rate is changed
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 
+    std::string DeviceName();
 private:
 
     eConnectionType GetType(void)
     {
         return USB_PORT;
     }
-
-    std::string DeviceName();
 
     std::string m_hardwareName;
     int m_hardwareVer;
@@ -171,3 +172,5 @@ private:
     libusb_context *ctx; //a libusb session
     #endif
 };
+
+}

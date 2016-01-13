@@ -5,6 +5,8 @@
 #include <map>
 #include <typedefs.h>
 
+namespace lime{
+
 struct LMS7Parameter;
 
 class LMS7002M_RegistersMap
@@ -32,4 +34,5 @@ protected:
     std::map<const uint16_t, Register> mChannelB;
 };
 
+}
 #endif

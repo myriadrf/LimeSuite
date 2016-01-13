@@ -18,6 +18,7 @@
 #include <thread>
 
 using namespace std;
+using namespace lime;
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};

@@ -13,6 +13,7 @@
 
 #include <sstream>
 
+namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
 
@@ -279,4 +280,5 @@ protected:
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };
+}
 #endif

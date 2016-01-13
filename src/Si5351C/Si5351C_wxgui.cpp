@@ -15,6 +15,8 @@
 #include <wx/filedlg.h>
 #include <wx/wx.h>
 
+using namespace lime;
+
 //(*IdInit(Si5351C_wxgui)
 const long Si5351C_wxgui::ID_BUTTON2 = wxNewId();
 const long Si5351C_wxgui::ID_BUTTON4 = wxNewId();

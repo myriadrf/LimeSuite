@@ -9,6 +9,8 @@
 #include <mutex>
 #include "../lms7002m/lms7002_defines.h"
 
+namespace lime{
+
 struct LMSinfo
 {
     eLMS_DEV device;
@@ -186,3 +188,4 @@ private:
     std::mutex mControlPortLock;
     double _cachedRefClockRate;
 };
+}

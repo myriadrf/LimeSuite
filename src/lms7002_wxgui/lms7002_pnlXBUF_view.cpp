@@ -3,6 +3,8 @@
 #include <map>
 #include "lms7002_gui_utilities.h"
 
+using namespace lime;
+
 lms7002_pnlXBUF_view::lms7002_pnlXBUF_view( wxWindow* parent )
 :
 pnlXBUF_view( parent )

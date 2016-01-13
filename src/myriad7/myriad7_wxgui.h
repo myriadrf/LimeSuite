@@ -10,14 +10,16 @@ class wxComboBox;
 class wxStaticText;
 class wxFlexGridSizer;
 
+namespace lime{
 class IConnection;
+}
 
 class Myriad7_wxgui: public wxFrame
 {
 	public:
 
 		Myriad7_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-		void Initialize(IConnection* serPort);
+		void Initialize(lime::IConnection* serPort);
 		virtual ~Myriad7_wxgui();
 		virtual void UpdatePanel();
 
@@ -33,7 +35,7 @@ class Myriad7_wxgui: public wxFrame
 
         void ParameterChangeHandler(wxCommandEvent& event);
 	protected:
-        IConnection* serPort;
+        lime::IConnection* serPort;
 		DECLARE_EVENT_TABLE()
 };
 

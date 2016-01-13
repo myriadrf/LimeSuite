@@ -21,15 +21,17 @@ class wxButton;
 class wxStaticBoxSizer;
 //*)
 
+namespace lime{
 class ADF4002;
 class IConnection;
+}
 
 class ADF4002_wxgui: public wxFrame
 {
 public:
 
     ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title=_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=wxDEFAULT_FRAME_STYLE, wxString idname="");
-    void Initialize(ADF4002* pModule, IConnection* pSerPort);
+    void Initialize(lime::ADF4002* pModule, lime::IConnection* pSerPort);
     virtual ~ADF4002_wxgui();
 
     void SetGuiDefaults();
@@ -143,8 +145,8 @@ protected:
     //*)
 
 private:
-    ADF4002* m_pModule;
-    IConnection* serPort;
+    lime::ADF4002* m_pModule;
+    lime::IConnection* serPort;
     int m_adf4002SpiAddr;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);

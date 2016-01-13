@@ -25,7 +25,9 @@
 #include <stdint.h>
 #include "lms7002_defines.h"
 
+namespace lime{
 class IConnection;
+}
 
 class pnlBoardControls : public wxFrame
 {
@@ -91,8 +93,8 @@ class pnlBoardControls : public wxFrame
         ~pnlBoardControls();
 
         void UpdatePanel();
-        void Initialize(IConnection* controlPort);
-        IConnection* serPort;
+        void Initialize(lime::IConnection* controlPort);
+        lime::IConnection* serPort;
 
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);

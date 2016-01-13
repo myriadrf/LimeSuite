@@ -8,6 +8,7 @@
 
 #include <string>
 
+namespace lime{
 /*!
  * A connection handle identifies a particular connection.
  * Handles are used by the connection registry to return
@@ -69,5 +70,6 @@ public:
     std::string ToString(void) const;
 };
 
+}
 //! Check two connection handles for equality
-bool operator==(const ConnectionHandle &lhs, const ConnectionHandle &rhs);
+bool operator==(const lime::ConnectionHandle &lhs, const lime::ConnectionHandle &rhs);

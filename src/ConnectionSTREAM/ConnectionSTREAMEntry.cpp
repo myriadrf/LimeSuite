@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionSTREAM.h"
+using namespace lime;
 
 //! make a static-initialized entry in the registry
 void __loadConnectionSTREAMEntry(void) //TODO fixme replace with LoadLibrary/dlopen

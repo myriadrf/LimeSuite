@@ -8,6 +8,7 @@
 #include "kiss_fft.h"
 
 using namespace std;
+using namespace lime;
 
 IConnection* gDataPort;
 

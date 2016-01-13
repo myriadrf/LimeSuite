@@ -1,6 +1,8 @@
 #include "SPI_wxgui.h"
 #include "IConnection.h"
 
+using namespace lime;
+
 SPI_wxgui::SPI_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
 SPI_view( parent )

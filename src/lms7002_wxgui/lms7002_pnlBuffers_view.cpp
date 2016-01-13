@@ -1,6 +1,7 @@
 #include "lms7002_pnlBuffers_view.h"
 #include "LMS64CProtocol.h"
 #include "wx/msgdlg.h"
+using namespace lime;
 
 static unsigned char setbit(const unsigned char src, const int pos, const bool value)
 {

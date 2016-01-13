@@ -7,11 +7,13 @@
 #ifndef CONNECTION_REGISTRY_H
 #define CONNECTION_REGISTRY_H
 
-class IConnection;
-
 #include <ConnectionHandle.h>
 #include <string>
 #include <vector>
+
+namespace lime{
+
+class IConnection;
 
 /*!
  * The connection registry provides a way to register
@@ -91,5 +93,6 @@ private:
     std::string _name;
 };
 
+}
 #endif
 

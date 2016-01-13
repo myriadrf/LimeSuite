@@ -4,6 +4,7 @@
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
 
+using namespace lime;
 using namespace LMS7002_WXGUI;
 
 indexValueMap hbi_ovr_txtsp_IndexValuePairs;

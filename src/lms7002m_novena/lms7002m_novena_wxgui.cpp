@@ -1,6 +1,8 @@
 #include "lms7002m_novena_wxgui.h"
 #include "IConnection.h"
 
+using namespace lime;
+
 LMS7002M_Novena_wxgui::LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
     :mSerPort(nullptr)
 {

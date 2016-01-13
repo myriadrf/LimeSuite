@@ -11,6 +11,7 @@
 #include <string>
 
 //---------------------------------------------------------------------------
+namespace lime{
 
 enum eSi_CLOCK_INPUT
 {
@@ -98,4 +99,5 @@ private:
 
 };
 
+}
 #endif // SI5351C_MODULE

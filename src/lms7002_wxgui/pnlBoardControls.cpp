@@ -13,6 +13,7 @@
 #include <vector>
 
 using namespace std;
+using namespace lime;
 
 static wxString power2unitsString(char powerx3)
 {

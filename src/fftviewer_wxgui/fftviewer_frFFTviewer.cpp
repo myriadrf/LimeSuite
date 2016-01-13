@@ -9,6 +9,7 @@
 #include "lms7002_defines.h"
 
 using namespace std;
+using namespace lime;
 
 void fftviewer_frFFTviewer::Initialize(IConnection* pDataPort)
 {

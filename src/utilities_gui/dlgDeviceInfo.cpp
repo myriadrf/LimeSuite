@@ -1,6 +1,8 @@
 #include "dlgDeviceInfo.h"
 #include "IConnection.h"
 
+using namespace lime;
+
 dlgDeviceInfo::dlgDeviceInfo(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
 dlgDeviceInfo_view( parent, id, title, pos, size, styles)

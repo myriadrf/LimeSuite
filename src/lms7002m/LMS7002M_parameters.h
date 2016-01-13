@@ -10,6 +10,8 @@
 #include "typedefs.h"
 #include <vector>
 
+namespace lime{
+
 struct LMS7Parameter;
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
 
@@ -610,4 +612,5 @@ extern const struct LMS7Parameter DTHBIT_RX;
 extern const struct LMS7Parameter SEL_RX;
 extern const struct LMS7Parameter MODE_RX;
 
+}
 #endif

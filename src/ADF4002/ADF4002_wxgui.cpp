@@ -20,6 +20,7 @@
 #include <wx/combobox.h>
 
 using namespace std;
+using namespace lime;
 
 const long ADF4002_wxgui::ID_STATICTEXT1 = wxNewId();
 const long ADF4002_wxgui::ID_STATICTEXT2 = wxNewId();

@@ -11,6 +11,7 @@
 #include <memory>
 #include <iostream>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
+using namespace lime;
 
 /*******************************************************************
  * FIXME - temporary way to load connections until we make new loader

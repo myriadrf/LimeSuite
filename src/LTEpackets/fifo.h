@@ -9,6 +9,8 @@
 #include "dataTypes.h"
 #include <assert.h>
 
+namespace lime{
+
 /*  @brief Single producer, single consumer FIFO
 */
 class LMS_SamplesFIFO
@@ -183,5 +185,5 @@ protected:
     std::condition_variable canWrite;
     std::condition_variable canRead;
 };
-
+}
 #endif

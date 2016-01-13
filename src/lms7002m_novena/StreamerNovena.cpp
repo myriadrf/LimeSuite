@@ -44,6 +44,7 @@
 #define DATA_FIFO_ADDR (IMX6_EIM_CS1_BASE_ADDR + 0xf000)
 
 using namespace std;
+using namespace lime;
 
 static const int cSPI_SPEED = 5000000;
 

@@ -14,6 +14,8 @@
 #include <functional>
 #include <stdint.h>
 
+namespace lime{
+
 enum OperationStatus
 {
     SUCCESS = 0,
@@ -504,5 +506,6 @@ OperationStatus IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     return st;
 }
 
+}
 #endif
 

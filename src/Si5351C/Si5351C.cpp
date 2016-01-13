@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
+using namespace lime;
 
 #define Log(msg, type) cout << (msg) << endl;
 

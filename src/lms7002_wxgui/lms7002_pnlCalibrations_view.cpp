@@ -4,6 +4,8 @@
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+using namespace lime;
+
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view( wxWindow* parent )
 :
 pnlCalibrations_view( parent )

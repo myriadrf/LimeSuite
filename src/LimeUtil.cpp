@@ -8,6 +8,7 @@
 #include <IConnection.h>
 #include <iostream>
 #include <cstdlib>
+using namespace lime;
 
 int main(void)
 {

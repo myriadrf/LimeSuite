@@ -26,6 +26,7 @@
 #include "MCU_BD.h"
 #include "lms7002_pnlBuffers_view.h"
 using namespace std;
+using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     :
