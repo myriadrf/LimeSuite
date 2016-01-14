@@ -35,16 +35,24 @@ if __name__ == '__main__':
     streamBoardSDR.activateStream(rxStream)
 
     print("Test receive")
-    time.sleep(1)
-    sampsCh0 = np.array([0]*32, np.complex64)
-    sampsCh1 = np.array([0]*32, np.complex64)
-    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
-    print sr
+    sampsCh0 = np.array([0]*1024, np.complex64)
+    sampsCh1 = np.array([0]*1024, np.complex64)
 
-    plt.plot(np.real(sampsCh0), label="ChA:I")
-    plt.plot(np.imag(sampsCh0), label="ChA:Q")
-    plt.plot(np.real(sampsCh1) + .1, label="ChB:I")
-    plt.plot(np.imag(sampsCh1) + .1, label="ChB:Q")
+    totalSamps = 0
+    for i in range(1000):
+        sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+        if sr.ret < 1:
+            print sr
+            break
+        totalSamps += sr.ret
+
+    print sr
+    print "totalSamps", totalSamps
+
+    plt.plot(np.real(sampsCh0[:32]), label="ChA:I")
+    plt.plot(np.imag(sampsCh0[:32]), label="ChA:Q")
+    plt.plot(np.real(sampsCh1[:32]) + .1, label="ChB:I")
+    plt.plot(np.imag(sampsCh1[:32]) + .1, label="ChB:Q")
     plt.legend()
     plt.ylabel('some numbers')
     plt.show()

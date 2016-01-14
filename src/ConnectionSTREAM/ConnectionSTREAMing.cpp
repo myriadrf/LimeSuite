@@ -24,11 +24,12 @@ using namespace lime;
 
 struct StreamerLTECustom : StreamerLTE
 {
-    StreamerLTECustom(LMS64CProtocol *dataPort, const bool isTx, const size_t channelsCount, const StreamDataFormat format):
+    StreamerLTECustom(LMS64CProtocol *dataPort, const bool isTx, const size_t channelsCount, const StreamDataFormat format, const bool convertFloat):
         StreamerLTE(dataPort),
         isTx(isTx),
         channelsCount(channelsCount),
         format(format),
+        convertFloat(convertFloat),
         workThread(nullptr),
         mFIFO(nullptr)
     {
@@ -120,6 +121,7 @@ struct StreamerLTECustom : StreamerLTE
     const bool isTx;
     const size_t channelsCount;
     const StreamDataFormat format;
+    const bool convertFloat;
     std::atomic<bool> stopThread;
     std::atomic<uint32_t> rate_Bps;
     std::thread *workThread;
@@ -136,8 +138,10 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     streamID = ~0;
 
     //API format check
-    if (config.format != StreamConfig::STREAM_COMPLEX_FLOAT32)
-        return "ConnectionSTREAM::setupStream() only complex floats now";
+    bool convertFloat = false;
+    if (config.format == StreamConfig::STREAM_COMPLEX_FLOAT32) convertFloat = true;
+    else if (config.format == StreamConfig::STREAM_12_BIT_IN_16) convertFloat = false;
+    else return "ConnectionSTREAM::setupStream() only complex floats or int16";
 
     //check channel config
     if (config.channelsCount > 2) return "SoapyIConnection::setupStream() 2 channels max";
@@ -156,7 +160,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     //might need better control over FPGA regs
     linkFormat = StreamerLTE::STREAM_12_BIT_COMPRESSED;
 
-    streamID = size_t(new StreamerLTECustom(this, config.isTx, config.channelsCount, linkFormat));
+    streamID = size_t(new StreamerLTECustom(this, config.isTx, config.channelsCount, linkFormat, convertFloat));
     return ""; //success
 }
 
@@ -184,23 +188,31 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
     auto *stream = (StreamerLTECustom *)streamID;
 
     size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
+
+    complex16_t **popBuffer(nullptr);
+    if (stream->convertFloat) popBuffer = (complex16_t **)stream->mFIFOBuffers.data();
+    else popBuffer = (complex16_t **)buffs;
+
     size_t sampsPopped = stream->mFIFO->pop_samples(
-        stream->mFIFOBuffers.data(),
+        popBuffer,
         samplesCount,
         stream->channelsCount,
         &metadata.timestamp,
         timeout_ms);
     samplesCount = (std::min)(samplesCount, sampsPopped);
 
-    for (size_t i = 0; i < stream->channelsCount; i++)
+    if (stream->convertFloat)
     {
-        auto buffIn = stream->mFIFOBuffers[i];
-        auto buffOut = (std::complex<float> *)buffs[i];
-        for (size_t j = 0; j < samplesCount; j++)
+        for (size_t i = 0; i < stream->channelsCount; i++)
         {
-            buffOut[j] = std::complex<float>(
-                float(buffIn[j].i)/2048,
-                float(buffIn[j].q)/2048);
+            auto buffIn = stream->mFIFOBuffers[i];
+            auto buffOut = (std::complex<float> *)buffs[i];
+            for (size_t j = 0; j < samplesCount; j++)
+            {
+                buffOut[j] = std::complex<float>(
+                    float(buffIn[j].i)/2048,
+                    float(buffIn[j].q)/2048);
+            }
         }
     }
 
@@ -213,19 +225,25 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
 
     size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
 
-    for (size_t i = 0; i < stream->channelsCount; i++)
+    const complex16_t **pushBuffer(nullptr);
+    if (stream->convertFloat)
     {
-        auto buffIn = (const std::complex<float> *)buffs[i];
-        auto bufOut = stream->mFIFOBuffers[i];
-        for (size_t j = 0; j < samplesCount; j++)
+        pushBuffer = (const complex16_t **)stream->mFIFOBuffers.data();
+        for (size_t i = 0; i < stream->channelsCount; i++)
         {
-            bufOut[j].i = int16_t(buffIn[j].real()*2048);
-            bufOut[j].q = int16_t(buffIn[j].imag()*2048);
+            auto buffIn = (const std::complex<float> *)buffs[i];
+            auto bufOut = stream->mFIFOBuffers[i];
+            for (size_t j = 0; j < samplesCount; j++)
+            {
+                bufOut[j].i = int16_t(buffIn[j].real()*2048);
+                bufOut[j].q = int16_t(buffIn[j].imag()*2048);
+            }
         }
     }
+    else pushBuffer = (const complex16_t **)buffs;
 
     size_t sampsPushed = stream->mFIFO->push_samples(
-        (const complex16_t **)stream->mFIFOBuffers.data(),
+        pushBuffer,
         samplesCount,
         stream->channelsCount,
         metadata.timestamp,
