@@ -157,20 +157,6 @@ void SoapyIConnection::SetComponentsEnabled(const size_t channel, const bool ena
         rfic->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
     }
 
-    //--- testing ---
-    rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
-    rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, 1); //SIGGEN
-
-    rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, (channel == 0)?(0):(0));
-    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
-    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
-
-    rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, (channel == 0)?(1 << 11):(1 << 11));
-    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
-    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
-
     //--- digital ---
     rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
     rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
@@ -717,7 +703,7 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            //TODO log failure
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %d MHz) Failed", int(channel), bw/1e6);
         }
     }
 
@@ -739,7 +725,7 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            //TODO log failure
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %d MHz) Failed", int(channel), bw/1e6);
         }
     }
 }
@@ -850,6 +836,48 @@ unsigned SoapyIConnection::readRegister(const unsigned addr) const
     if (st != OperationStatus::SUCCESS) throw std::runtime_error(
         "SoapyIConnection::ReadRegister("+std::to_string(addr)+") FAIL");
     return readbackData;
+}
+
+/*******************************************************************
+ * Settings API
+ ******************************************************************/
+SoapySDR::ArgInfoList SoapyIConnection::getSettingInfo(void) const
+{
+    SoapySDR::ArgInfoList infos;
+
+    return infos;
+}
+
+void SoapyIConnection::writeSetting(const std::string &key, const std::string &value)
+{
+    auto rfic = _rfics.front();
+
+    if (key == "ACTIVE_CHANNEL")
+    {
+        if (value == "A") rfic->SetActiveChannel(LMS7002M::ChA);
+        if (value == "B") rfic->SetActiveChannel(LMS7002M::ChB);
+    }
+
+    if (key == "ENABLE_RXTSP_CONST")
+    {
+        rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
+        rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, (value=="true")?1:0); //SIGGEN
+
+        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 1 << 15);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 1);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
+
+        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 1);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
+    }
+}
+
+std::string SoapyIConnection::readSetting(const std::string &key) const
+{
+    return "";
 }
 
 /*******************************************************************

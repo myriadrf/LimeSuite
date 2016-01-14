@@ -38,6 +38,11 @@ if __name__ == '__main__':
     sampsCh0 = np.array([0]*1024, np.complex64)
     sampsCh1 = np.array([0]*1024, np.complex64)
 
+    streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "A");
+    streamBoardSDR.writeSetting("ENABLE_RXTSP_CONST", "true");
+    streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "B");
+    streamBoardSDR.writeSetting("ENABLE_RXTSP_CONST", "true");
+
     totalSamps = 0
     for i in range(1000):
         sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)

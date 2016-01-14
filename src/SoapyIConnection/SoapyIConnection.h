@@ -207,6 +207,16 @@ public:
     unsigned readRegister(const unsigned addr) const;
 
     /*******************************************************************
+     * Settings API
+     ******************************************************************/
+
+    SoapySDR::ArgInfoList getSettingInfo(void) const;
+
+    void writeSetting(const std::string &key, const std::string &value);
+
+    std::string readSetting(const std::string &key) const;
+
+    /*******************************************************************
      * I2C API
      ******************************************************************/
 
