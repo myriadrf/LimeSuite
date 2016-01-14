@@ -12,6 +12,8 @@
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
 
+using namespace lime;
+
 /*******************************************************************
  * Special LMS7002M with log forwarding
  ******************************************************************/

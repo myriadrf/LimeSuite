@@ -9,12 +9,15 @@
 #include <atomic>
 #include <map>
 
-class LMS7002M;
+namespace lime
+{
+    class LMS7002M;
+}
 
 class SoapyIConnection : public SoapySDR::Device
 {
 public:
-    SoapyIConnection(const ConnectionHandle &handle);
+    SoapyIConnection(const lime::ConnectionHandle &handle);
 
     ~SoapyIConnection(void);
 
@@ -218,9 +221,9 @@ public:
     unsigned transactSPI(const int addr, const unsigned data, const size_t numBits);
 
 private:
-    IConnection *_conn;
+    lime::IConnection *_conn;
     const std::string _moduleName;
 
-    LMS7002M *getRFIC(const size_t channel) const;
-    std::vector<LMS7002M *> _rfics;
+    lime::LMS7002M *getRFIC(const size_t channel) const;
+    std::vector<lime::LMS7002M *> _rfics;
 };

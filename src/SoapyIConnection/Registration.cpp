@@ -7,6 +7,8 @@
 #include "SoapyIConnection.h"
 #include <SoapySDR/Registry.hpp>
 
+using namespace lime;
+
 static ConnectionHandle argsToHandle(const SoapySDR::Kwargs &args)
 {
     ConnectionHandle handle;
