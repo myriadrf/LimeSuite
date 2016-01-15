@@ -46,6 +46,8 @@ if __name__ == '__main__':
     totalSamps = 0
     for i in range(1000):
         sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+        if i == 0: print 'sr0', sr
+        if i == 1: print 'sr1', sr
         if sr.ret < 1:
             print sr
             break

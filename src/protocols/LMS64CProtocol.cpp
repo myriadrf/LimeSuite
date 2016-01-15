@@ -12,10 +12,15 @@
 #include <math.h>
 #include <algorithm>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
+#include <ADCUnits.h>
 using namespace lime;
 
-//! arbitrary spi constants used to dispatch calls
+//! CMD_LMS7002_RST options
+const int LMS_RST_DEACTIVATE = 0;
+const int LMS_RST_ACTIVATE = 1;
+const int LMS_RST_PULSE = 2;
 
+//! arbitrary spi constants used to dispatch calls
 #define LMS7002M_SPI_INDEX 0x10
 #define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
@@ -291,7 +296,7 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
 
 /** @brief Returns connected device information
 */
-LMSinfo LMS64CProtocol::GetInfo()
+LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
 {
     LMSinfo info;
     info.device = LMS_DEV_UNKNOWN;

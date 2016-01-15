@@ -23,7 +23,6 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
-#include "lms7002_defines.h"
 
 namespace lime{
 class IConnection;

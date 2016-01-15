@@ -7,18 +7,10 @@
 #pragma once
 #include <IConnection.h>
 #include <mutex>
-#include "../lms7002m/lms7002_defines.h"
+#include <LMS64CCommands.h>
+#include <LMSBoards.h>
 
 namespace lime{
-
-struct LMSinfo
-{
-    eLMS_DEV device;
-    eEXP_BOARD expansion;
-    int firmware;
-    int hardware;
-    int protocol;
-};
 
 /*!
  * Implement the LMS64CProtocol.
@@ -155,6 +147,15 @@ public:
      * and directly use the TransferPacket() API call.
      */
     TransferStatus TransferPacket(GenericPacket &pkt);
+
+    struct LMSinfo
+    {
+        eLMS_DEV device;
+        eEXP_BOARD expansion;
+        int firmware;
+        int hardware;
+        int protocol;
+    };
 
     LMSinfo GetInfo();
 

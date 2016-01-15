@@ -37,6 +37,7 @@
 #include "lms7002_pnlRFE_view.h"
 #include "pnlBoardControls.h"
 #include <ConnectionRegistry.h>
+#include <LMSBoards.h>
 
 using namespace std;
 using namespace lime;

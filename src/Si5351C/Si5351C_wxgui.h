@@ -13,7 +13,6 @@
 #include <wx/frame.h>
 #include <wx/button.h>
 #include <wx/radiobox.h>
-#include "lms7002_defines.h"
 #include <string>
 
 namespace lime{

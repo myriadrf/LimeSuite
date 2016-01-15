@@ -8,6 +8,8 @@
 #endif //WX_PRECOMP
 
 #include <IConnection.h>
+#include <LMSBoards.h>
+#include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
 #include <vector>

@@ -16,6 +16,7 @@
 
 #include <vector>
 #include "LMS64CProtocol.h"
+#include <ADCUnits.h>
 
 using namespace lime;
 

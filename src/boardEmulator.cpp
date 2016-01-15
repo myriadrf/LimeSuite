@@ -11,9 +11,11 @@
 #include <termios.h>
 #include <map>
 #include <ctime>
-#include "lms7002m/lms7002_defines.h"
+#include <LMS64CProtocol.h>
+#include <LMSBoards.h>
 
 using namespace std;
+using namespace lime;
 
 bool stopApplication = false;
 

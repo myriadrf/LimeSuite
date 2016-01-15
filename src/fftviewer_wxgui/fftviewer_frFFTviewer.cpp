@@ -6,7 +6,7 @@
 #include "StreamerNovena.h"
 #include "IConnection.h"
 #include "OpenGLGraph.h"
-#include "lms7002_defines.h"
+#include <LMSBoards.h>
 
 using namespace std;
 using namespace lime;

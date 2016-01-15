@@ -12,7 +12,7 @@
 #include <wx/msgdlg.h>
 
 #include "IConnection.h"
-#include "lms7002_defines.h"
+#include <LMSBoards.h>
 
 using namespace lime;
 
