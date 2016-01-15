@@ -16,6 +16,48 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 ########################################################################
+## public headers
+########################################################################
+set(LIME_SUITE_PUBLIC_HEADERS
+    LimeSuiteConfig.h
+    ADF4002/ADF4002.h
+    version.h
+    lms7002m_mcu/MCU_BD.h
+    lms7002m_mcu/MCU_File.h
+    connectionRegistry/IConnection.h
+    connectionRegistry/ConnectionHandle.h
+    connectionRegistry/ConnectionRegistry.h
+    lms7002m_novena/StreamerNovena.h
+    lms7002m/LMS7002M_statuses.h
+    lms7002m/LMS7002M.h
+    lms7002m/cpp-feather-ini-parser/INI.h
+    lms7002m/LMS7002M_RegistersMap.h
+    lms7002m/typedefs.h
+    lms7002m/LMS7002M_parameters.h
+    protocols/ADCUnits.h
+    protocols/LMS64CCommands.h
+    protocols/LMS64CProtocol.h
+    protocols/LMSBoards.h
+    LTEpackets/dataTypes.h
+    LTEpackets/fifo.h
+    LTEpackets/StreamerLTE.h
+    Si5351C/Si5351C.h
+    LMS_StreamBoard/LMS_StreamBoard.h
+    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
+)
+
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_HEADERS "Enable install headers" ON "TRUE" OFF)
+add_feature_info(LimeSuiteHeaders ENABLE_EVB7COM "Install lime-suite headers")
+if (ENABLE_HEADERS)
+    install(
+        FILES ${LIME_SUITE_PUBLIC_HEADERS}
+        DESTINATION include/lime
+    )
+endif()
+
+########################################################################
 ## wx widgets dependency
 ########################################################################
 find_package(wxWidgets REQUIRED richtext xml html xrc adv aui core base gl)
