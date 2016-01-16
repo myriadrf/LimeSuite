@@ -8,8 +8,6 @@
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
-#include <LMS7002M.h>
-#include <LMS7002M_RegistersMap.h>
 
 using namespace lime;
 
@@ -78,51 +76,12 @@ SoapySDR::ArgInfoList SoapyIConnection::getStreamArgsInfo(const int direction, c
 SoapySDR::Stream *SoapyIConnection::setupStream(
     const int direction,
     const std::string &format,
-    const std::vector<size_t> &channels_,
+    const std::vector<size_t> &channels,
     const SoapySDR::Kwargs &args)
 {
-    //provide a default channel 0 if none specified
-    std::vector<size_t> channels(channels_);
-    if (channels.empty()) channels.push_back(0);
-    if (channels.size() > 2) throw std::runtime_error(
-        "SoapyIConnection::setupStream() max of 2 channels supported");
-
-    //assumes a max of 2 channels for now
-    bool ch0_isA = (channels.front()%2) == 0;
-    bool ch1_isA = (channels.back()%2) == 0;
-
-    //determine sample positions based on channels
-    auto s0 = ch0_isA?LMS7002M::AI:LMS7002M::BI;
-    auto s1 = ch0_isA?LMS7002M::AQ:LMS7002M::BQ;
-    auto s2 = ch1_isA?LMS7002M::BI:LMS7002M::AI;
-    auto s3 = ch1_isA?LMS7002M::BQ:LMS7002M::AQ;
-
-    //smear position when one channel is used
-    if (channels.size() == 1)
-    {
-        s3 = s1;
-        s2 = s1;
-        s1 = s0;
-    }
-
-    //channel swap to make things work (might be STREAM specific)
-    std::swap(s0, s2);
-    std::swap(s1, s3);
-
-    //configure LML based on channel config
-    auto rfic = getRFIC(channels.front());
-    if (direction == SOAPY_SDR_RX)
-    {
-        rfic->ConfigureLML_RF2BB(s0, s1, s2, s3);
-    }
-    if (direction == SOAPY_SDR_TX)
-    {
-        rfic->ConfigureLML_BB2RF(s0, s1, s2, s3);
-    }
-
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
-    config.channelsCount = channels.size();
+    config.channels = channels;
     if (format == SOAPY_SDR_CF32) config.format = StreamConfig::STREAM_COMPLEX_FLOAT32;
     else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::STREAM_12_BIT_IN_16;
     else throw std::runtime_error("SoapyIConnection::setupStream(format="+format+") unsupported format");

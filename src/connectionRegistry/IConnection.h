@@ -105,9 +105,12 @@ struct StreamConfig
     bool isTx;
 
     /*!
-     * The number of channels used by the stream.
+     * A list of channels to use.
+     *  - Example ChA on RFIC0: [0]
+     *  - Example MIMO on RFIC0: [0, 1]
+     *  - Example MIMO on RFIC1: [2, 3]
      */
-    size_t channelsCount;
+    std::vector<size_t> channels;
 
     //! Possible stream data formats
     enum StreamDataFormat

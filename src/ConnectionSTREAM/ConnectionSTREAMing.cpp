@@ -8,6 +8,7 @@
 #include "LMS_StreamBoard.h"
 #include "StreamerLTE.h"
 #include "fifo.h" //from StreamerLTE
+#include <LMS7002M.h>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -24,11 +25,12 @@ using namespace lime;
 
 struct StreamerLTECustom : StreamerLTE
 {
-    StreamerLTECustom(LMS64CProtocol *dataPort, const bool isTx, const size_t channelsCount, const StreamDataFormat format, const bool convertFloat):
+    StreamerLTECustom(LMS64CProtocol *dataPort, const bool isTx, const size_t channelsCount, const StreamDataFormat /*format*/, const bool convertFloat):
         StreamerLTE(dataPort),
         isTx(isTx),
         channelsCount(channelsCount),
-        format(format),
+        //format(format), //TODO fix STREAM_12_BIT_IN_16
+        format(STREAM_12_BIT_COMPRESSED),
         convertFloat(convertFloat),
         workThread(nullptr),
         mFIFO(nullptr)
@@ -144,7 +146,27 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     else return "ConnectionSTREAM::setupStream() only complex floats or int16";
 
     //check channel config
-    if (config.channelsCount > 2) return "SoapyIConnection::setupStream() 2 channels max";
+    //provide a default channel 0 if none specified
+    std::vector<size_t> channels(config.channels);
+    if (channels.empty()) channels.push_back(0);
+    if (channels.size() > 2) return "SoapyIConnection::setupStream() 2 channels max";
+    if (channels.front() > 1) return "SoapyIConnection::setupStream() channels must be [0, 1]";
+    if (channels.back() > 1) return "SoapyIConnection::setupStream() channels must be [0, 1]";
+    bool pos0isA = channels.front() == 0;
+    bool pos1isA = channels.back() == 0;
+
+    //determine sample positions based on channels
+    auto s0 = pos1isA?LMS7002M::AI:LMS7002M::BI;
+    auto s1 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s2 = pos0isA?LMS7002M::AI:LMS7002M::BI;
+    auto s3 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
+    if (channels.size() == 1) s0 = s3;
+
+    //configure LML based on channel config
+    LMS7002M rfic;
+    rfic.SetConnection(this);
+    if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
+    else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
     //check link format
     auto linkFormat = StreamerLTE::STREAM_12_BIT_IN_16;
@@ -155,12 +177,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     default: return "SoapyIConnection::setupStream() unsupported link format";
     }
 
-    //TODO delete this when fixed
-    //having issues with STREAM_12_BIT_IN_16,
-    //might need better control over FPGA regs
-    linkFormat = StreamerLTE::STREAM_12_BIT_COMPRESSED;
-
-    streamID = size_t(new StreamerLTECustom(this, config.isTx, config.channelsCount, linkFormat, convertFloat));
+    streamID = size_t(new StreamerLTECustom(this, config.isTx, channels.size(), linkFormat, convertFloat));
     return ""; //success
 }
 
