@@ -179,8 +179,7 @@ bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, c
 {
     auto *stream = (StreamerLTECustom *)streamID;
     stream->Enable(this, enable);
-    //TODO must return value?
-    return false;
+    return true;
 }
 
 int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)

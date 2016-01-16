@@ -321,12 +321,25 @@ bool SoapyIConnection::hasDCOffsetMode(const int direction, const size_t /*chann
 
 void SoapyIConnection::setDCOffsetMode(const int direction, const size_t channel, const bool automatic)
 {
-    //TODO set DC automatic removal on RX DSP chain only
+    auto rfic = getRFIC(channel);
+
+    if (direction == SOAPY_SDR_RX)
+    {
+        rfic->Modify_SPI_Reg_bits(DC_BYP_RXTSP, automatic?0:1);
+        rfic->Modify_SPI_Reg_bits(DCCORR_AVG_RXTSP, 0x7);
+    }
 }
 
 bool SoapyIConnection::getDCOffsetMode(const int direction, const size_t channel) const
 {
-    return 0;
+    auto rfic = getRFIC(channel);
+
+    if (direction == SOAPY_SDR_RX)
+    {
+        return rfic->Get_SPI_Reg_bits(DC_BYP_RXTSP) == 0;
+    }
+
+    return false;
 }
 
 bool SoapyIConnection::hasDCOffset(const int direction, const size_t /*channel*/) const
