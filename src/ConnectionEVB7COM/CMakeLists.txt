@@ -17,5 +17,5 @@ endif()
 ## Build library
 ########################################################################
 add_library(ConnectionEVB7COM STATIC ConnectionEVB7COMEntry.cpp ConnectionEVB7COM.cpp)
-#target_link_libraries(ConnectionEVB7COM LimeSuite)
+target_link_libraries(ConnectionEVB7COM LimeSuite)
 set_property(TARGET ConnectionEVB7COM PROPERTY POSITION_INDEPENDENT_CODE TRUE)

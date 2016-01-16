@@ -24,7 +24,7 @@ set(CONNECTION_STREAM_SOURCES
 )
 
 set(CONNECTION_STREAM_LIBRARIES
-    #LimeSuite
+    LimeSuite
     ${USB_LIBRARIES}
 )
 

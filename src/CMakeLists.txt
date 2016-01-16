@@ -121,7 +121,27 @@ if (ENABLE_LIBRARY)
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
+
+    set(LIME_SUITE_LIBS LimeSuite)
 endif()
+
+########################################################################
+## Supported connections
+########################################################################
+add_subdirectory(ConnectionEVB7COM)
+add_subdirectory(ConnectionSTREAM)
+#add_subdirectory(ConnectionNovena7)
+
+#connections are statically linked into LimeSuite
+#TODO this might be done as installable modules in the future
+
+set(CONNECTION_LIBS ConnectionEVB7COM ConnectionSTREAM)
+
+if (BUILD_SHARED_LIBS)
+    target_link_libraries(LimeSuite ${CONNECTION_LIBS})
+else ()
+    list(APPEND LIME_SUITE_LIBS ${CONNECTION_LIBS})
+endif ()
 
 ########################################################################
 ## wx widgets dependency
@@ -213,7 +233,7 @@ if (ENABLE_LMS7_GUI)
     add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
@@ -236,7 +256,7 @@ endif()
 # Lime Util -- command line utility for quick testing connections
 ########################################################################
 add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil LimeSuite)
+target_link_libraries(LimeUtil ${LIME_SUITE_LIBS})
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
@@ -244,18 +264,6 @@ target_link_libraries(LimeUtil LimeSuite)
 if(UNIX)
     add_executable(boardEmulator boardEmulator.cpp)
 endif()
-
-########################################################################
-## Supported connections
-########################################################################
-add_subdirectory(ConnectionEVB7COM)
-add_subdirectory(ConnectionSTREAM)
-#add_subdirectory(ConnectionNovena7)
-
-#connections are statically linked into LimeSuite
-#TODO this might be done as installable modules in the future
-target_link_libraries(LimeSuite ConnectionEVB7COM)
-target_link_libraries(LimeSuite ConnectionSTREAM)
 
 ########################################################################
 ## SoapySDR bindings for IConnection
