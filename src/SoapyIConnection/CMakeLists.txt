@@ -9,8 +9,8 @@ find_package(SoapySDR CONFIG)
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_SOAPYICONNECTION "Enable SoapySDR bindings" ON "SoapySDR_FOUND" OFF)
-add_feature_info(SoapyIConnection ENABLE_SOAPYICONNECTION "SoapySDR bindings for IConnection")
+cmake_dependent_option(ENABLE_SOAPYICONNECTION "Enable SoapySDR bindings" ON "ENABLE_LIBRARY;SoapySDR_FOUND" OFF)
+add_feature_info(SoapyIConnection ENABLE_SOAPYICONNECTION "SoapySDR bindings for Lime")
 if (NOT ENABLE_SOAPYICONNECTION)
     return()
 endif()
@@ -32,6 +32,5 @@ SOAPY_SDR_MODULE_UTIL(
         Settings.cpp
         Streaming.cpp
     LIBRARIES
-        LMS7002M
-        ${connectionRegistryLibs}
+        LimeSuite
 )

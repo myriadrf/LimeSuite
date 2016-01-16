@@ -15,6 +15,18 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
+if (MSVC)
+	SET( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
+	SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
+endif(MSVC)
+
+#version numbers built into shared library
+#todo version number, example could be date, standard major.minor.patch
+#todo abi compatibility, could be version, date, incrementing number
+#maybe parse version.h for info?
+set(LIME_SUITE_VERSION 0.0.0)
+set(LIME_SUITE_ABI 1)
+
 ########################################################################
 ## public headers
 ########################################################################
@@ -49,7 +61,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_HEADERS "Enable install headers" ON "TRUE" OFF)
-add_feature_info(LimeSuiteHeaders ENABLE_EVB7COM "Install lime-suite headers")
+add_feature_info(LimeSuiteHeaders ENABLE_HEADERS "The lime suite headers")
 if (ENABLE_HEADERS)
     install(
         FILES ${LIME_SUITE_PUBLIC_HEADERS}
@@ -58,142 +70,173 @@ if (ENABLE_HEADERS)
 endif()
 
 ########################################################################
+## lime suite library
+########################################################################
+set(LIME_SUITE_SOURCES
+    ADF4002/ADF4002.cpp
+    lms7002m_mcu/MCU_BD.cpp
+    connectionRegistry/IConnection.cpp
+    connectionRegistry/ConnectionHandle.cpp
+    connectionRegistry/ConnectionRegistry.cpp
+    lms7002m_novena/StreamerNovena.cpp
+    lms7002m/LMS7002M_RegistersMap.cpp
+    lms7002m/LMS7002M_parameters.cpp
+    lms7002m/LMS7002M_statuses.cpp
+    lms7002m/LMS7002M.cpp
+    lms7002m/LMS7002M_filtersCalibration.cpp
+    protocols/LMS64CProtocol.cpp
+    LTEpackets/StreamerLTE.cpp
+    Si5351C/Si5351C.cpp
+    LMS_StreamBoard/LMS_StreamBoard.cpp
+    kissFFT/kiss_fft.c
+)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(ADF4002)
+include_directories(lms7002m_mcu)
+include_directories(connectionRegistry)
+include_directories(lms7002m_novena)
+include_directories(lms7002m)
+include_directories(lms7002m/cpp-feather-ini-parser)
+include_directories(HPM7)
+include_directories(protocols)
+include_directories(LTEpackets)
+include_directories(Si5351C)
+include_directories(LMS_StreamBoard)
+include_directories(kissFFT)
+
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
+add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
+if (ENABLE_LIBRARY)
+    add_library(LimeSuite ${LIME_SUITE_SOURCES})
+    set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+    set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
+    set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
+    set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
+
+    install(TARGETS LimeSuite
+        LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
+        ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
+        RUNTIME DESTINATION bin              # .dll file
+    )
+endif()
+
+########################################################################
 ## wx widgets dependency
 ########################################################################
-find_package(wxWidgets REQUIRED richtext xml html xrc adv aui core base gl)
-include(${wxWidgets_USE_FILE})
 set(wxWidgets_USE_DEBUG OFF)
 set(wxWidgets_USE_UNICODE ON)
 set(wxWidgets_USE_UNIVERSAL OFF)
 set(wxWidgets_USE_STATIC ON)
+find_package(wxWidgets COMPONENTS richtext xml html xrc adv aui core base gl)
+message(STATUS "wxWidgets_DEFINITIONS: ${wxWidgets_DEFINITIONS}")
+message(STATUS "wxWidgets_INCLUDE_DIRS: ${wxWidgets_INCLUDE_DIRS}")
+message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 
 ########################################################################
-## connection registry and built-in connections
+## lms7suite gui app
 ########################################################################
-add_subdirectory(connectionRegistry)
-include_directories(connectionRegistry)
-
-add_subdirectory(ConnectionEVB7COM)
-add_subdirectory(ConnectionSTREAM)
-set(connectionRegistryLibs
-	connectionRegistry
-	ConnectionEVB7COM
-	ConnectionSTREAM
+set(LMS7SUITE_GUI_SOURCES
+    ADF4002/ADF4002_wxgui.cpp
+    lms7002_wxgui/lms7002_pnlBuffers_view.cpp
+    lms7002_wxgui/lms7002_pnlXBUF_view.cpp
+    lms7002_wxgui/lms7002_wxgui.cpp
+    lms7002_wxgui/lms7002_pnlRFE_view.cpp
+    lms7002_wxgui/lms7002_pnlCalibrations_view.cpp
+    lms7002_wxgui/lms7002_pnlTRF_view.cpp
+    lms7002_wxgui/lms7002_pnlCDS_view.cpp
+    lms7002_wxgui/lms7002_pnlLimeLightPAD_view.cpp
+    lms7002_wxgui/lms7002_pnlBIST_view.cpp
+    lms7002_wxgui/dlgViewIRAM.cpp
+    lms7002_wxgui/lms7002_gui_utilities.cpp
+    lms7002_wxgui/lms7002_pnlSX_view.cpp
+    lms7002_wxgui/lms7002_pnlTBB_view.cpp
+    lms7002_wxgui/lms7002_dlgVCOfrequencies.cpp
+    lms7002_wxgui/lms7002_pnlRBB_view.cpp
+    lms7002_wxgui/lms7002_pnlLDO_view.cpp
+    lms7002_wxgui/lms7002_pnlAFE_view.cpp
+    lms7002_wxgui/CoefficientFileParser.cpp
+    lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
+    lms7002_wxgui/lms7002_mainPanel.cpp
+    lms7002_wxgui/pnlBoardControls.cpp
+    lms7002_wxgui/dlgViewSFR.cpp
+    lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp
+    lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp
+    lms7002_wxgui/lms7002_pnlBIAS_view.cpp
+    lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp
+    lms7002_wxgui/lms7002_pnlTxTSP_view.cpp
+    LMS_Programing/LMS_Programing_wxgui.cpp
+    utilities_gui/dlgConnectionSettings.cpp
+    utilities_gui/pnlMiniLog.cpp
+    utilities_gui/SPI_wxgui.cpp
+    utilities_gui/dlgFullMessageLog.cpp
+    utilities_gui/dlgDeviceInfo.cpp
+    utilities_gui/utilities_gui.cpp
+    lms7suiteAppFrame.cpp
+    lms7002m_novena/lms7002m_novena_wxgui.cpp
+    RFSpark/RFSpark_wxgui.cpp
+    Si5351C/Si5351C_wxgui.cpp
+    lms7suiteApp_gui.cpp
+    lms7suiteApp.cpp
+    FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp
+    HPM7/HPM7_wxgui.cpp
+    dlgAbout.cpp
+    numericSlider/numericSlider.cpp
+    myriad7/myriad7_wxgui.cpp
+    fftviewer_wxgui/fftviewer_wxgui.cpp
+    fftviewer_wxgui/fftviewer_frFFTviewer.cpp
+    lms7suiteEvents/lms7suiteEvents.cpp
 )
 
-add_subdirectory(protocols)
-include_directories(protocols)
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_LMS7_GUI "Enable build lms7suite" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+add_feature_info(LimeSuiteGUILMS7 ENABLE_LMS7_GUI "GUI Application for LMS7")
+if (ENABLE_LMS7_GUI)
 
-########################################################################
-# Add sub-directories
-########################################################################
-add_subdirectory(lms7002_wxgui)
-include_directories(lms7002_wxgui)
-add_subdirectory(numericSlider)
-include_directories(numericSlider)
-add_subdirectory(utilities_gui)
-include_directories(utilities_gui)
-add_subdirectory(lms7suiteEvents)
-include_directories(lms7suiteEvents)
-add_subdirectory(kissFFT)
-include_directories(kissFFT)
-add_subdirectory(fftviewer_wxgui)
-include_directories(fftviewer_wxgui)
-add_subdirectory(LTEpackets)
-include_directories(LTEpackets)
-add_subdirectory(LMS_StreamBoard)
-include_directories(LMS_StreamBoard)
-add_subdirectory(ADF4002)
-include_directories(ADF4002)
-add_subdirectory(Si5351C)
-include_directories(Si5351C)
-add_subdirectory(LMS_Programing)
-include_directories(LMS_Programing)
-add_subdirectory(lms7002m)
-include_directories(lms7002m)
-add_subdirectory(lms7002m_mcu)
-include_directories(lms7002m_mcu)
-add_subdirectory(RFSpark)
-include_directories(RFSpark)
-add_subdirectory(HPM7)
-include_directories(HPM7)
-add_subdirectory(FPGAcontrols_wxgui)
-include_directories(FPGAcontrols_wxgui)
-add_subdirectory(myriad7)
-include_directories(myriad7)
-add_subdirectory(lms7002m_novena)
-include_directories(lms7002m_novena)
-add_subdirectory(oglGraph)
-include_directories(oglGraph)
+    include_directories(lms7002_wxgui)
+    include_directories(LMS_Programing)
+    include_directories(utilities_gui)
+    include_directories(RFSpark)
+    include_directories(FPGAcontrols_wxgui)
+    include_directories(numericSlider)
+    include_directories(myriad7)
+    include_directories(fftviewer_wxgui)
+    include_directories(lms7suiteEvents)
+    include(${wxWidgets_USE_FILE})
+    add_subdirectory(oglGraph)
 
-########################################################################
-## lms7suite graphical app
-########################################################################
-set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+    set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
-set(lms7suiteApp
-	lms7suiteApp.cpp
-	lms7suiteAppFrame.cpp
-	lms7suiteApp_gui.cpp
-	dlgAbout.cpp
-	)
-	
-if (MSVC)
-	SET( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
-	SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
-endif(MSVC)
-if(WIN32)
-	find_package(CyAPI REQUIRED)
-	LINK_DIRECTORIES(${CYAPI_LIBRARIES})	
-	include_directories(${CYAPI_INCLUDE_DIRS})
+    add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
+    set_target_properties(lms7suite PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+    target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
+
+    if (MSVC)
+        set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+    endif(MSVC)
+
+    install(TARGETS lms7suite DESTINATION bin)
+
 endif()
 
-add_executable(lms7suite ${lms7suiteApp} resource.rc)
-
+########################################################################
+## update version.h
+########################################################################
 set(AUTO_UPDATE_VERSION OFF CACHE BOOL "Uses python script to increment version")
 if(AUTO_UPDATE_VERSION)
-	add_custom_target(updateVersion ALL COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/auto_version.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})	
+	add_custom_target(updateVersion ALL COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/auto_version.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_dependencies(lms7suite updateVersion)
 endif()
-
-set_target_properties(lms7suite
-	PROPERTIES
-	RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-	
-target_link_libraries(lms7suite 
-	LMS7002M_NOVENA
-	myriad7
-	FPGAcontrols_wxgui
-	HPM7
-	RFSpark 
-	LMS_Programing 
-	ADF4002 
-	Si5351C 
-	lms7002_wxgui 
-	utilities_gui 
-	numericSlider 
-	fftviewer_wxgui 
-	LMS7002M 
-	lms7suiteEvents 
-	LMS_StreamBoard 
-	${connectionRegistryLibs}
-	${CYAPI_LIBRARIES} ${wxWidgets_LIBRARIES}
-	)
-
-if(UNIX)	
-	set(CONNECTION_MANAGER_LIBS usb-1.0 -lpthread)
-	target_link_libraries(lms7suite ${CONNECTION_MANAGER_LIBS})
-endif()
-
-if (MSVC)
-	set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
-endif(MSVC)
 
 ########################################################################
 # Lime Util -- command line utility for quick testing connections
 ########################################################################
 add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil ${connectionRegistryLibs})
+target_link_libraries(LimeUtil LimeSuite)
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
@@ -201,6 +244,18 @@ target_link_libraries(LimeUtil ${connectionRegistryLibs})
 if(UNIX)
     add_executable(boardEmulator boardEmulator.cpp)
 endif()
+
+########################################################################
+## Supported connections
+########################################################################
+add_subdirectory(ConnectionEVB7COM)
+add_subdirectory(ConnectionSTREAM)
+#add_subdirectory(ConnectionNovena7)
+
+#connections are statically linked into LimeSuite
+#TODO this might be done as installable modules in the future
+target_link_libraries(LimeSuite ConnectionEVB7COM)
+target_link_libraries(LimeSuite ConnectionSTREAM)
 
 ########################################################################
 ## SoapySDR bindings for IConnection
@@ -221,3 +276,5 @@ message(STATUS "## ${PROJECT_NAME} disabled features")
 message(STATUS "######################################################")
 feature_summary(WHAT DISABLED_FEATURES)
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Lime Suite Version: ${LIME_SUITE_VERSION}")
+message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")

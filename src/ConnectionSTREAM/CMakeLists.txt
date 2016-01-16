@@ -24,10 +24,8 @@ set(CONNECTION_STREAM_SOURCES
 )
 
 set(CONNECTION_STREAM_LIBRARIES
-    protocols #LMS64C
+    #LimeSuite
     ${USB_LIBRARIES}
-    LMS_StreamBoard
-    LTEpackets
 )
 
 ########################################################################
@@ -35,7 +33,7 @@ set(CONNECTION_STREAM_LIBRARIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_STREAM "Enable STREAM" ON "USB_FOUND" OFF)
+cmake_dependent_option(ENABLE_STREAM "Enable STREAM" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
 add_feature_info(ConnectionSTREAM ENABLE_STREAM "STREAM Connection support")
 if (NOT ENABLE_STREAM)
     return()
