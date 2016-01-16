@@ -30,6 +30,19 @@ if __name__ == '__main__':
     streamBoardSDR.setSampleRate(SOAPY_SDR_TX, 0, 32e6/8)
     streamBoardSDR.setSampleRate(SOAPY_SDR_TX, 1, 32e6/8)
 
+    print("Set RX gains")
+    streamBoardSDR.setGain(SOAPY_SDR_RX, 0, "LNA", 10.0)
+    streamBoardSDR.setGain(SOAPY_SDR_RX, 0, "TIA", 12.0)
+    streamBoardSDR.setGain(SOAPY_SDR_RX, 0, "PGA", -3.0)
+    print("LNA = %f dB"%streamBoardSDR.getGain(SOAPY_SDR_RX, 0, "LNA"))
+    print("TIA = %f dB"%streamBoardSDR.getGain(SOAPY_SDR_RX, 0, "TIA"))
+    print("PGA = %f dB"%streamBoardSDR.getGain(SOAPY_SDR_RX, 0, "PGA"))
+
+    print("set RX bandwidth")
+    streamBoardSDR.setAntenna(SOAPY_SDR_RX, 0, "LNAL")
+    streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 0, 10e6)
+
+    """
     print("Create rx stream")
     rxStream = streamBoardSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
     streamBoardSDR.activateStream(rxStream)
@@ -67,3 +80,4 @@ if __name__ == '__main__':
     print("Cleanup rx stream")
     streamBoardSDR.deactivateStream(rxStream)
     streamBoardSDR.closeStream(rxStream)
+    """

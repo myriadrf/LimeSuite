@@ -14,6 +14,8 @@
 
 using namespace lime;
 
+#define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
+
 /*******************************************************************
  * Special LMS7002M with log forwarding
  ******************************************************************/
@@ -23,6 +25,7 @@ public:
     LMS7002M_withLogging(void):
         LMS7002M()
     {
+        SoapySDR::setLogLevel(SOAPY_SDR_DEBUG);
         return;
     }
 
@@ -91,9 +94,23 @@ SoapyIConnection::SoapyIConnection(const ConnectionHandle &handle):
     }
 
     //enable all channels
-    for (size_t i = 0; i < _rfics.size()*2; i++)
+    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
     {
-        this->SetComponentsEnabled(i, true);
+        this->SetComponentsEnabled(channel, true);
+    }
+
+    //give all RFICs a default state
+    this->setMasterClockRate(32e6);
+    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+    {
+        this->setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0);
+        this->setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0);
+        this->setAntenna(SOAPY_SDR_RX, channel, "LNAL");
+        this->setAntenna(SOAPY_SDR_TX, channel, "BAND1");
+        this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
+        this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
+        this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
+        this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
     }
 }
 
@@ -252,6 +269,7 @@ std::vector<std::string> SoapyIConnection::listAntennas(const int direction, con
 
 void SoapyIConnection::setAntenna(const int direction, const size_t channel, const std::string &name)
 {
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setAntenna(%s, %d, %s)", dirName, int(channel), name.c_str());
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX)
@@ -394,6 +412,7 @@ std::vector<std::string> SoapyIConnection::listGains(const int direction, const 
 
 void SoapyIConnection::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setGain(%s, %d, %s, %f dB)", dirName, int(channel), name.c_str(), value);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
@@ -545,7 +564,7 @@ void SoapyIConnection::setFrequency(const int direction, const size_t channel, c
     auto rfic = getRFIC(channel);
     auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setFrequency(%d, %s, %f MHz), ref %f MHz", direction, name.c_str(), frequency/1e6, ref_MHz);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setFrequency(%s, %d, %s, %f MHz), ref %f MHz", dirName, int(channel), name.c_str(), frequency/1e6, ref_MHz);
 
     if (name == "RF")
     {
@@ -628,7 +647,7 @@ void SoapyIConnection::setSampleRate(const int direction, const size_t channel, 
 
     const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
     const double factor = dspRate/rate;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setSampleRate(%d, %f MHz), baseRate %f MHz, factor %f", direction, rate/1e6, dspRate/1e6, factor);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setSampleRate(%s, %d, %f MHz), baseRate %f MHz, factor %f", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
     if (factor < 2.0) throw std::runtime_error("SoapyIConnection::setSampleRate() -- rate too high");
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
     if (intFactor > 32) throw std::runtime_error("SoapyIConnection::setSampleRate() -- rate too low");
@@ -691,6 +710,8 @@ std::vector<double> SoapyIConnection::listSampleRates(const int direction, const
 
 void SoapyIConnection::setBandwidth(const int direction, const size_t channel, const double bw)
 {
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyIConnection::setBandwidth(%s, %d, %f MHz)", dirName, int(channel), bw/1e6);
+
     auto rfic = getRFIC(channel);
     auto &actual = _actualBw[direction][channel];
     actual = bw;
@@ -701,22 +722,32 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
         const bool bypass = bw > 108.0e6;
 
         //run the calibration for this bandwidth setting
+        SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
         auto status = rfic->CalibrateRx(bw/1e6);
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
             LMS7002M::RxFilter filter;
-            if (hb) filter = LMS7002M::RX_LPF_HIGHBAND;
-            else filter = LMS7002M::RX_LPF_LOWBAND;
+            if (hb)
+            {
+                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_LPF_HIGHBAND)");
+                filter = LMS7002M::RX_LPF_HIGHBAND;
+            }
+            else
+            {
+                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_LPF_LOWBAND)");
+                filter = LMS7002M::RX_LPF_LOWBAND;
+            }
 
             status = rfic->TuneRxFilter(filter, bw/1e6);
         }
         if (status == LIBLMS7_SUCCESS)
         {
+            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
             status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %d MHz) Failed", int(channel), bw/1e6);
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %f MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
         }
     }
 
@@ -726,19 +757,32 @@ void SoapyIConnection::setBandwidth(const int direction, const size_t channel, c
         const bool bypass = bw > 54.0e6;
 
         //run the calibration for this bandwidth setting
+        SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
         auto status = rfic->CalibrateTx(bw/1e6);
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
             LMS7002M::TxFilter filter;
-            if (hb) filter = LMS7002M::TX_HIGHBAND;
-            else if (bw >= 2.4e6) filter = LMS7002M::TX_LADDER;
-            else filter = LMS7002M::TX_REALPOLE;
+            if (hb)
+            {
+                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_HIGHBAND)");
+                filter = LMS7002M::TX_HIGHBAND;
+            }
+            else if (bw >= 2.4e6)
+            {
+                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_LADDER)");
+                filter = LMS7002M::TX_LADDER;
+            }
+            else
+            {
+                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_REALPOLE)");
+                filter = LMS7002M::TX_REALPOLE;
+            }
 
             status = rfic->TuneTxFilter(filter, bw/1e6);
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %d MHz) Failed", int(channel), bw/1e6);
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %f MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
         }
     }
 }

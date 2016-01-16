@@ -147,7 +147,7 @@ public:
      * Frequency API
      ******************************************************************/
 
-    void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args);
+    void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 
     double getFrequency(const int direction, const size_t channel, const std::string &name) const;
 
