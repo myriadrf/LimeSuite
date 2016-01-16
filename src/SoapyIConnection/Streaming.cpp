@@ -97,6 +97,14 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
     auto s2 = ch1_isA?LMS7002M::BI:LMS7002M::AI;
     auto s3 = ch1_isA?LMS7002M::BQ:LMS7002M::AQ;
 
+    //smear position when one channel is used
+    if (channels.size() == 1)
+    {
+        s3 = s1;
+        s2 = s1;
+        s1 = s0;
+    }
+
     //channel swap to make things work (might be STREAM specific)
     std::swap(s0, s2);
     std::swap(s1, s3);
