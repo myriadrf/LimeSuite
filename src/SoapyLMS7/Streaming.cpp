@@ -4,7 +4,7 @@
 @author Lime Microsystems (www.limemicro.com)
 */
 
-#include "SoapyIConnection.h"
+#include "SoapyLMS7.h"
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
@@ -24,7 +24,7 @@ struct IConnectionStream
 /*******************************************************************
  * Stream information
  ******************************************************************/
-std::vector<std::string> SoapyIConnection::getStreamFormats(const int direction, const size_t channel) const
+std::vector<std::string> SoapyLMS7::getStreamFormats(const int direction, const size_t channel) const
 {
     std::vector<std::string> formats;
     formats.push_back(SOAPY_SDR_CF32);
@@ -32,13 +32,13 @@ std::vector<std::string> SoapyIConnection::getStreamFormats(const int direction,
     return formats;
 }
 
-std::string SoapyIConnection::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
+std::string SoapyLMS7::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
 {
     fullScale = 2048;
     return SOAPY_SDR_CS16;
 }
 
-SoapySDR::ArgInfoList SoapyIConnection::getStreamArgsInfo(const int direction, const size_t channel) const
+SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const size_t channel) const
 {
     SoapySDR::ArgInfoList argInfos;
 
@@ -73,7 +73,7 @@ SoapySDR::ArgInfoList SoapyIConnection::getStreamArgsInfo(const int direction, c
 /*******************************************************************
  * Stream config
  ******************************************************************/
-SoapySDR::Stream *SoapyIConnection::setupStream(
+SoapySDR::Stream *SoapyLMS7::setupStream(
     const int direction,
     const std::string &format,
     const std::vector<size_t> &channels,
@@ -84,7 +84,7 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
     config.channels = channels;
     if (format == SOAPY_SDR_CF32) config.format = StreamConfig::STREAM_COMPLEX_FLOAT32;
     else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::STREAM_12_BIT_IN_16;
-    else throw std::runtime_error("SoapyIConnection::setupStream(format="+format+") unsupported format");
+    else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported format");
 
     //optional buffer length if specified
     if (args.count("bufferLength") != 0)
@@ -98,13 +98,13 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
         const auto linkFormat = args.at("linkFormat");
         if (linkFormat == SOAPY_SDR_CS16) config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
         else if (linkFormat == SOAPY_SDR_CS12) config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
-        else throw std::runtime_error("SoapyIConnection::setupStream(linkFormat="+format+") unsupported format");
+        else throw std::runtime_error("SoapyLMS7::setupStream(linkFormat="+format+") unsupported format");
     }
 
     //create the stream
     size_t streamID(~0);
     const auto errorMsg = _conn->SetupStream(streamID, config);
-    if (not errorMsg.empty()) throw std::runtime_error("SoapyIConnection::setupStream() failed: " + errorMsg);
+    if (not errorMsg.empty()) throw std::runtime_error("SoapyLMS7::setupStream() failed: " + errorMsg);
 
     //store result into opaque stream object
     auto stream = new IConnectionStream;
@@ -114,7 +114,7 @@ SoapySDR::Stream *SoapyIConnection::setupStream(
     return (SoapySDR::Stream *)stream;
 }
 
-void SoapyIConnection::closeStream(SoapySDR::Stream *stream)
+void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
 {
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
@@ -122,14 +122,14 @@ void SoapyIConnection::closeStream(SoapySDR::Stream *stream)
     _conn->CloseStream(streamID);
 }
 
-size_t SoapyIConnection::getStreamMTU(SoapySDR::Stream *stream) const
+size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream *stream) const
 {
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
     return _conn->GetStreamSize(streamID);
 }
 
-int SoapyIConnection::activateStream(
+int SoapyLMS7::activateStream(
     SoapySDR::Stream *stream,
     const int flags,
     const long long timeNs,
@@ -145,7 +145,7 @@ int SoapyIConnection::activateStream(
     return ok?0:SOAPY_SDR_STREAM_ERROR;
 }
 
-int SoapyIConnection::deactivateStream(
+int SoapyLMS7::deactivateStream(
     SoapySDR::Stream *stream,
     const int flags,
     const long long timeNs)
@@ -163,7 +163,7 @@ int SoapyIConnection::deactivateStream(
 /*******************************************************************
  * Stream API
  ******************************************************************/
-int SoapyIConnection::readStream(
+int SoapyLMS7::readStream(
     SoapySDR::Stream *stream,
     void * const *buffs,
     const size_t numElems,
@@ -187,7 +187,7 @@ int SoapyIConnection::readStream(
     return (ret > 0)? ret : SOAPY_SDR_STREAM_ERROR;
 }
 
-int SoapyIConnection::writeStream(
+int SoapyLMS7::writeStream(
     SoapySDR::Stream *stream,
     const void * const *buffs,
     const size_t numElems,
@@ -210,7 +210,7 @@ int SoapyIConnection::writeStream(
     return (ret > 0)? ret : SOAPY_SDR_STREAM_ERROR;
 }
 
-int SoapyIConnection::readStreamStatus(
+int SoapyLMS7::readStreamStatus(
     SoapySDR::Stream *stream,
     size_t &chanMask,
     int &flags,

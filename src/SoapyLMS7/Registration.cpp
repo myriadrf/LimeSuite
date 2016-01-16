@@ -4,7 +4,7 @@
 @author Lime Microsystems (www.limemicro.com)
 */
 
-#include "SoapyIConnection.h"
+#include "SoapyLMS7.h"
 #include <SoapySDR/Registry.hpp>
 
 using namespace lime;
@@ -51,7 +51,7 @@ static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs &matchArgs)
 
 static SoapySDR::Device *makeIConnection(const SoapySDR::Kwargs &args)
 {
-    return new SoapyIConnection(argsToHandle(args));
+    return new SoapyLMS7(argsToHandle(args));
 }
 
 static SoapySDR::Registry registerIConnection("lime", &findIConnection, &makeIConnection, SOAPY_SDR_ABI_VERSION);

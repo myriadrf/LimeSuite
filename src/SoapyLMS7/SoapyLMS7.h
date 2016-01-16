@@ -1,5 +1,5 @@
 /**
-@file	SoapyIConnection.h
+@file	SoapyLMS7.h
 @brief	Header for Soapy SDR + IConnection bindings.
 @author Lime Microsystems (www.limemicro.com)
 */
@@ -14,12 +14,12 @@ namespace lime
     class LMS7002M;
 }
 
-class SoapyIConnection : public SoapySDR::Device
+class SoapyLMS7 : public SoapySDR::Device
 {
 public:
-    SoapyIConnection(const lime::ConnectionHandle &handle);
+    SoapyLMS7(const lime::ConnectionHandle &handle);
 
-    ~SoapyIConnection(void);
+    ~SoapyLMS7(void);
 
     void SetComponentsEnabled(const size_t channel, const bool enabled);
 

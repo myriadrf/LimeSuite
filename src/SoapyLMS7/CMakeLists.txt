@@ -1,5 +1,5 @@
 ########################################################################
-## SoapySDR bindings for IConnection
+## SoapySDR bindings for LMS7
 ########################################################################
 
 find_package(SoapySDR CONFIG)
@@ -9,9 +9,9 @@ find_package(SoapySDR CONFIG)
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_SOAPYICONNECTION "Enable SoapySDR bindings" ON "ENABLE_LIBRARY;SoapySDR_FOUND" OFF)
-add_feature_info(SoapyIConnection ENABLE_SOAPYICONNECTION "SoapySDR bindings for Lime")
-if (NOT ENABLE_SOAPYICONNECTION)
+cmake_dependent_option(ENABLE_SOAPY_LMS7 "Enable LMS7 SoapySDR bindings" ON "ENABLE_LIBRARY;SoapySDR_FOUND" OFF)
+add_feature_info(SoapySDRLMS7 ENABLE_SOAPY_LMS7 "SoapySDR bindings for LMS7")
+if (NOT ENABLE_SOAPY_LMS7)
     return()
 endif()
 
@@ -26,7 +26,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 SOAPY_SDR_MODULE_UTIL(
-    TARGET LimeIConnection
+    TARGET LMS7Support
     SOURCES
         Registration.cpp
         Settings.cpp

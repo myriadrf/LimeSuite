@@ -266,9 +266,9 @@ if(UNIX)
 endif()
 
 ########################################################################
-## SoapySDR bindings for IConnection
+## SoapySDR bindings for LMS7 RFIC driver
 ########################################################################
-add_subdirectory(SoapyIConnection)
+add_subdirectory(SoapyLMS7)
 
 #########################################################################
 # summary
