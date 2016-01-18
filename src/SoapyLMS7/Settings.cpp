@@ -192,12 +192,18 @@ void SoapyLMS7::SetComponentsEnabled(const size_t channel, const bool enable)
     rfic->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
     rfic->Modify_SPI_Reg_bits(EN_G_RBB, enable?1:0);
     rfic->Modify_SPI_Reg_bits(EN_G_TBB, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(PD_PGA_RBB, enable?0:1);
 
     //--- frontend ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_RFE, 1);
     rfic->Modify_SPI_Reg_bits(EN_DIR_TRF, 1);
     rfic->Modify_SPI_Reg_bits(EN_G_RFE, enable?1:0);
     rfic->Modify_SPI_Reg_bits(EN_G_TRF, enable?1:0);
+    rfic->Modify_SPI_Reg_bits(PD_MXLOBUF_RFE, enable?0:1);
+    rfic->Modify_SPI_Reg_bits(PD_QGEN_RFE, enable?0:1);
+    rfic->Modify_SPI_Reg_bits(PD_TIA_RFE, enable?0:1);
+    rfic->Modify_SPI_Reg_bits(PD_TLOBUF_TRF, enable?0:1);
+    rfic->Modify_SPI_Reg_bits(PD_TXPAD_TRF, enable?0:1);
 
     //--- synthesizers ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
@@ -663,8 +669,8 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
     rfic->SetInterfaceFrequency(
         this->getMasterClockRate()/1e6,
-        int(std::log(double(_interps[channel]))/std::log(2.0)),
-        int(std::log(double(_decims[channel]))/std::log(2.0)));
+        int(std::log(double(_interps[channel]))/std::log(2.0))-1,
+        int(std::log(double(_decims[channel]))/std::log(2.0))-1);
 
     this->updateStreamRate(direction, channel);
 }
