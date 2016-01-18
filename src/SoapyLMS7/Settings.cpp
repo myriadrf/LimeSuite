@@ -720,6 +720,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     {
         const bool hb = bw >= 37.0e6;
         const bool bypass = bw > 108.0e6;
+        auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
         //run the calibration for this bandwidth setting
         SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
@@ -749,6 +750,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %f MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
         }
+
+        this->setDCOffsetMode(direction, channel, saveDcMode);
     }
 
     if (direction == SOAPY_SDR_TX)
