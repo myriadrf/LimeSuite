@@ -281,10 +281,10 @@ int prep_eim_burst()
     // rework timing for sync use
     // PSZ WP GBC AUS CSREC SP DSZ BCS BCD WC BL CREP CRE RFL WFL MUM SRD SWR CSEN
 
-    int PSZ = 3 << 28; // 2048 words page size
+    int PSZ = 1 << 28; // 2048 words page size
     int WP = 0 << 27; //(not protected)
     int GBC = 1 << 24; //min 1 cycles between chip select changes
-    int AUS = 1 << 23; //0 address shifted according to port size / 1: unshifted
+    int AUS = 0 << 23; //0 address shifted according to port size / 1: unshifted
     int CSREC = 1 << 20; //min 1 cycles between CS, OE, WE signals
     int SP = 0 << 19; //no supervisor protect (user mode access allowed)
     int DSZ = 1 << 16; //16-bit port resides on DATA[15:0]
@@ -295,7 +295,7 @@ int prep_eim_burst()
     int CREP = 1 << 7; //non-PSRAM, set to 1
     int CRE = 0 << 6; //CRE is disabled
     int RFL = 1 << 5; //fixed latency reads
-    int WFL = 0 << 4; //fixed latency writes
+    int WFL = 1 << 4; //fixed latency writes
     int MUM = 1 << 3; //multiplexed mode enabled
     int SRD = 1 << 2; //synch reads
     int SWR = 1 << 1; //synch writes
@@ -321,11 +321,11 @@ int prep_eim_burst()
 
     // EIM_CS0RCR1
     // RWSC RADVA RAL RADVN OEA OEN RCSA RCSN
-    int RWSC = 4 << 24;
+    int RWSC = 9 << 24;
     int RADVA = 0 << 20;
     int RAL = 0 << 19;
-    int RADVN = 0 << 16;
-    int OEA = 0 << 12;
+    int RADVN = 1 << 16;
+    int OEA = 4 << 12;
     int OEN = 0 << 8;
     int RCSA = 0 << 4;
     int RCSN = 0;
@@ -353,12 +353,12 @@ int prep_eim_burst()
     // WAL WBED WWSC WADVA WADVN WBEA WBEN WEA WEN WCSA WCSN
     int WAL = 0 << 31; //use WADVN
     int WBED = 0 << 30; //allow BE during write
-    int WWSC = 1 << 24; // write wait states
+    int WWSC = 9 << 24; // write wait states
     int WADVA = 0 << 21; //same as RADVA
     int WADVN = 2 << 18; //this sets WE length to 1 (this value +1)
     int WBEA = 0 << 15; //same as RBEA
     int WBEN = 0 << 12; //same as RBEN
-    int WEA = 0 << 9; //0 cycles between beginning of access and WE assertion
+    int WEA = 4 << 9; //0 cycles between beginning of access and WE assertion
     int WEN = 0 << 6; //1 cycles to end of WE assertion
     int WCSA = 0 << 3; //cycles to CS assertion
     int WCSN = 0 ; //cycles to CS negation
