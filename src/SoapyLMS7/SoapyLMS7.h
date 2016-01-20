@@ -180,6 +180,9 @@ public:
 
     std::vector<double> listBandwidths(const int direction, const size_t channel) const;
 
+    //! Call after a configuration change to re-calibrate
+    void recalAfterChange(const int direction, const size_t channel);
+
     /*******************************************************************
      * Clocking API
      ******************************************************************/

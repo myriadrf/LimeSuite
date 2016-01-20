@@ -444,6 +444,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         else g_lna_rfe = 1;
 
         rfic->Modify_SPI_Reg_bits(G_LNA_RFE, g_lna_rfe);
+        this->recalAfterChange(direction, channel);
     }
 
     else if (direction == SOAPY_SDR_RX and name == "TIA")
@@ -457,6 +458,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         else g_tia_rfe = 1;
 
         rfic->Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+        this->recalAfterChange(direction, channel);
     }
 
     else if (direction == SOAPY_SDR_RX and name == "PGA")
@@ -465,8 +467,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         if (g_pga_rbb > 0x1f) g_pga_rbb = 0x1f;
         if (g_pga_rbb < 0) g_pga_rbb = 0;
         rfic->Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
-
-        //TODO set rcc_ctl_pga_rbb, c_ctl_pga_rbb
+        this->recalAfterChange(direction, channel);
     }
 
     else if (direction == SOAPY_SDR_TX and name == "PAD")
@@ -486,6 +487,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 
         rfic->Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF, loss_int);
         rfic->Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, loss_int);
+        this->recalAfterChange(direction, channel);
     }
 
     else throw std::runtime_error("SoapyLMS7::setGain("+name+") - unknown gain name");
@@ -575,6 +577,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     if (name == "RF")
     {
         rfic->SetFrequencySX(lmsDir, frequency/1e6, ref_MHz);
+        this->recalAfterChange(direction, channel);
         return;
     }
 
@@ -720,7 +723,9 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     auto rfic = getRFIC(channel);
     auto &actual = _actualBw[direction][channel];
+
     actual = bw;
+    this->recalAfterChange(direction, channel);
 
     if (direction == SOAPY_SDR_RX)
     {
@@ -729,8 +734,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
         //run the calibration for this bandwidth setting
-        SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
-        auto status = rfic->CalibrateRx(bw/1e6);
+        //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
+        auto status = LIBLMS7_SUCCESS;//rfic->CalibrateRx(bw/1e6);
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
             LMS7002M::RxFilter filter;
@@ -766,8 +771,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         const bool bypass = bw > 54.0e6;
 
         //run the calibration for this bandwidth setting
-        SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
-        auto status = rfic->CalibrateTx(bw/1e6);
+        //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
+        auto status = LIBLMS7_SUCCESS;//rfic->CalibrateTx(bw/1e6);
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
             LMS7002M::TxFilter filter;
@@ -837,6 +842,23 @@ std::vector<double> SoapyLMS7::listBandwidths(const int direction, const size_t 
     }
 
     return bws;
+}
+
+void SoapyLMS7::recalAfterChange(const int direction, const size_t channel)
+{
+    double bw = 0.0;
+    try
+    {
+        bw = _actualBw.at(direction).at(channel);
+    }
+    catch (...)
+    {
+        return;
+    }
+
+    auto rfic = getRFIC(channel);
+    if (direction == SOAPY_SDR_RX) rfic->CalibrateRx(bw/1e6);
+    if (direction == SOAPY_SDR_TX) rfic->CalibrateTx(bw/1e6);
 }
 
 /*******************************************************************
