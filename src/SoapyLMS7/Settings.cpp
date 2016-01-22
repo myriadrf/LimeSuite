@@ -445,6 +445,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         else g_lna_rfe = 1;
 
         rfic->Modify_SPI_Reg_bits(G_LNA_RFE, g_lna_rfe);
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "G_LNA_RFE=%d", g_lna_rfe);
         this->recalAfterChange(direction, channel);
     }
 
@@ -459,6 +460,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         else g_tia_rfe = 1;
 
         rfic->Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "G_TIA_RFE=%d", g_tia_rfe);
         this->recalAfterChange(direction, channel);
     }
 
@@ -468,6 +470,22 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         if (g_pga_rbb > 0x1f) g_pga_rbb = 0x1f;
         if (g_pga_rbb < 0) g_pga_rbb = 0;
         rfic->Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+
+        int rcc_ctl_pga_rbb = (430.0*pow(0.65, (g_pga_rbb/10.0))-110.35)/20.4516 + 16;
+
+        int c_ctl_pga_rbb = 0;
+        if (0 <= g_pga_rbb && g_pga_rbb < 8) c_ctl_pga_rbb = 3;
+        if (8 <= g_pga_rbb && g_pga_rbb < 13) c_ctl_pga_rbb = 2;
+        if (13 <= g_pga_rbb && g_pga_rbb < 21) c_ctl_pga_rbb = 1;
+        if (21 <= g_pga_rbb) c_ctl_pga_rbb = 0;
+
+        rfic->Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+        rfic->Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "G_PGA_RBB=%d", g_pga_rbb);
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "RCC_CTL_PGA_RBB=%d", rcc_ctl_pga_rbb);
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "C_CTL_PGA_RBB=%d", c_ctl_pga_rbb);
+
         this->recalAfterChange(direction, channel);
     }
 
@@ -492,6 +510,8 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
     }
 
     else throw std::runtime_error("SoapyLMS7::setGain("+name+") - unknown gain name");
+
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s%s[%d] gain %f dB", dirName, name.c_str(), int(channel), this->getGain(direction, channel, name));
 }
 
 double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string &name) const
