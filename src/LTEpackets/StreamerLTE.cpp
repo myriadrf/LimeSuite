@@ -153,7 +153,10 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                         if (currentRxCmd.timestamp < tempPacket.timestamp)
                         {
                             std::cout << "L" << std::flush;
-                            currentRxCmdValid = false;
+                            //until we can report late, treat it as asap:
+                            currentRxCmd.waitForTimestamp = false;
+                            //and put this one back in....
+                            //currentRxCmdValid = false;
                             continue;
                         }
 
