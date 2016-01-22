@@ -78,6 +78,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     const std::vector<size_t> &channels,
     const SoapySDR::Kwargs &args)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
     config.channels = channels;
