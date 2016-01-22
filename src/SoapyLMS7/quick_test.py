@@ -60,6 +60,7 @@ if __name__ == '__main__':
     streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "B");
     streamBoardSDR.writeSetting("ENABLE_RXTSP_CONST", "true");
 
+    t0 = streamBoardSDR.getHardwareTime()
     totalSamps = 0
     for i in range(1000):
         sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
@@ -71,7 +72,10 @@ if __name__ == '__main__':
         totalSamps += sr.ret
 
     print sr
+    t1 = streamBoardSDR.getHardwareTime()
     print "totalSamps", totalSamps
+    print "t0", t0
+    print "t1", t1
 
     plt.plot(np.real(sampsCh0[:32]), label="ChA:I")
     plt.plot(np.imag(sampsCh0[:32]), label="ChA:Q")

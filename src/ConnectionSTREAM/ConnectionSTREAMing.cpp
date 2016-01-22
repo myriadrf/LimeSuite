@@ -25,7 +25,14 @@ using namespace lime;
 
 struct StreamerLTECustom : StreamerLTE
 {
-    StreamerLTECustom(LMS64CProtocol *dataPort, const bool isTx, const size_t channelsCount, const StreamDataFormat /*format*/, const bool convertFloat):
+    StreamerLTECustom(
+        LMS64CProtocol *dataPort,
+        const bool isTx,
+        const size_t channelsCount,
+        const StreamDataFormat /*format*/,
+        const bool convertFloat,
+        const RxReportFunction &reporter
+    ):
         StreamerLTE(dataPort),
         isTx(isTx),
         channelsCount(channelsCount),
@@ -72,12 +79,12 @@ struct StreamerLTECustom : StreamerLTE
         stopThread = false;
         if (format == STREAM_12_BIT_COMPRESSED)
         {
-            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, RxReportFunction());
+            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, reporter);
             if (isTx) workThread = new std::thread(TransmitPackets, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
         else
         {
-            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, RxReportFunction());
+            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, reporter);
             if (isTx) workThread = new std::thread(TransmitPacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
     }
@@ -177,7 +184,8 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     default: return "SoapyIConnection::setupStream() unsupported link format";
     }
 
-    streamID = size_t(new StreamerLTECustom(this, config.isTx, channels.size(), linkFormat, convertFloat));
+    auto reporter = std::bind(&ConnectionSTREAM::handleRxStatus, this, std::placeholders::_1, std::placeholders::_2);
+    streamID = size_t(new StreamerLTECustom(this, config.isTx, channels.size(), linkFormat, convertFloat, reporter));
     return ""; //success
 }
 
@@ -215,6 +223,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
         stream->channelsCount,
         &metadata.timestamp,
         timeout_ms);
+    metadata.timestamp += mTimestampOffset;
     samplesCount = (std::min)(samplesCount, sampsPopped);
 
     if (stream->convertFloat)
@@ -262,11 +271,17 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
         pushBuffer,
         samplesCount,
         stream->channelsCount,
-        metadata.timestamp,
+        metadata.timestamp - mTimestampOffset,
         timeout_ms);
     samplesCount = (std::min)(samplesCount, sampsPushed);
 
     return samplesCount;
+}
+
+void ConnectionSTREAM::handleRxStatus(const uint8_t status, const uint64_t &counter)
+{
+    //TODO status fifo
+    mLastRxTimestamp = counter;
 }
 
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
@@ -274,4 +289,14 @@ void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double
     //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
     LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
     mHwCounterRate = rxRate;
+}
+
+uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
+{
+    return mLastRxTimestamp + mTimestampOffset;
+}
+
+void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
+{
+    mTimestampOffset = int64_t(now)-int64_t(mLastRxTimestamp);
 }

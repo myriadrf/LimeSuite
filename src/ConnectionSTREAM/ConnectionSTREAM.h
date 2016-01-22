@@ -105,8 +105,8 @@ public:
 	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
 	virtual void AbortSending();
 
-	uint64_t GetHardwareTimestamp(void){}
-	void SetHardwareTimestamp(const uint64_t now){}
+	uint64_t GetHardwareTimestamp(void);
+	void SetHardwareTimestamp(const uint64_t now);
 	double GetHardwareTimestampRate(void)
 	{
 	    return mHwCounterRate;
@@ -161,6 +161,11 @@ private:
 
     //! The rate of the hardware counter in the FPGA
     std::atomic<double> mHwCounterRate;
+    std::atomic<uint64_t> mLastRxTimestamp;
+    std::atomic<int64_t> mTimestampOffset;
+
+    //! Handle for rx status update messages
+    void handleRxStatus(const uint8_t status, const uint64_t &counter);
 };
 
 
