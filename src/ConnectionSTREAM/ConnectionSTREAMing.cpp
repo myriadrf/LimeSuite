@@ -77,14 +77,15 @@ struct StreamerLTECustom : StreamerLTE
         dataPort->TransferPacket(ctrPkt);
 
         stopThread = false;
+        auto getRxCmd = std::bind(&ConcurrentQueue<RxCommand>::try_pop, &mRxCmdQueue, std::placeholders::_1);
         if (format == STREAM_12_BIT_COMPRESSED)
         {
-            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, reporter);
+            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, reporter, getRxCmd);
             if (isTx) workThread = new std::thread(TransmitPackets, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
         else
         {
-            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, reporter);
+            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, reporter, getRxCmd);
             if (isTx) workThread = new std::thread(TransmitPacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
     }
@@ -109,24 +110,6 @@ struct StreamerLTECustom : StreamerLTE
         mFIFOBuffers.clear();
     }
 
-    void Enable(LMS64CProtocol *dataPort, const bool enable)
-    {
-        std::cout << "StreamerLTECustom::Enable " << enable << std::endl;
-        if (enable)
-        {
-            //switch on Rx
-            auto regVal = Reg_read(dataPort, 0x0005);
-            bool async = false;
-            Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
-        }
-        else
-        {
-            //stop Tx Rx if they were active
-            auto regVal = Reg_read(dataPort, 0x0005);
-            Reg_write(dataPort, 0x0005, regVal & ~0x6);
-        }
-    }
-
     const bool isTx;
     const size_t channelsCount;
     const StreamDataFormat format;
@@ -136,6 +119,7 @@ struct StreamerLTECustom : StreamerLTE
     std::thread *workThread;
     LMS_SamplesFIFO *mFIFO;
     std::vector<complex16_t *> mFIFOBuffers;
+    ConcurrentQueue<RxCommand> mRxCmdQueue;
 };
 
 /***********************************************************************
@@ -203,7 +187,31 @@ size_t ConnectionSTREAM::GetStreamSize(const size_t streamID)
 bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
 {
     auto *stream = (StreamerLTECustom *)streamID;
-    stream->Enable(this, enable);
+
+    if (!stream->isTx)
+    {
+        RxCommand rxCmd;
+        rxCmd.waitForTimestamp = metadata.hasTimestamp;
+        rxCmd.timestamp = metadata.timestamp-mTimestampOffset;
+        rxCmd.finiteRead = metadata.endOfBurst;
+        rxCmd.numSamps = burstSize;
+        stream->mRxCmdQueue.push(rxCmd);
+    }
+
+    if (enable)
+    {
+        //switch on Rx
+        uint32_t regVal; ReadRegister(0x0005, regVal);
+        bool async = false;
+        WriteRegister(0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    }
+    else
+    {
+        //stop Tx Rx if they were active
+        uint32_t regVal; ReadRegister(0x0005, regVal);
+        WriteRegister(0x0005, regVal & ~0x6);
+    }
+
     return true;
 }
 
@@ -223,6 +231,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
         stream->channelsCount,
         &metadata.timestamp,
         timeout_ms);
+    metadata.hasTimestamp = metadata.timestamp != 0;
     metadata.timestamp += mTimestampOffset;
     samplesCount = (std::min)(samplesCount, sampsPopped);
 

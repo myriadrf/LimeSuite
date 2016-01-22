@@ -44,21 +44,57 @@ if __name__ == '__main__':
     print("set RX bandwidth")
     streamBoardSDR.setAntenna(SOAPY_SDR_RX, 0, "LNAL")
     streamBoardSDR.setAntenna(SOAPY_SDR_RX, 1, "LNAL")
-    streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 0, 10e6)
-    streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 1, 10e6)
+    #streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 0, 10e6)
+    #streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 1, 10e6)
 
-    print("Create rx stream")
-    rxStream = streamBoardSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
-    streamBoardSDR.activateStream(rxStream)
-
-    print("Test receive")
-    sampsCh0 = np.array([0]*1024, np.complex64)
-    sampsCh1 = np.array([0]*1024, np.complex64)
-
+    print("Enable Rx TSG")
     streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "A");
     streamBoardSDR.writeSetting("ENABLE_RXTSP_CONST", "true");
     streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "B");
     streamBoardSDR.writeSetting("ENABLE_RXTSP_CONST", "true");
+
+    print("Create rx stream")
+    rxStream = streamBoardSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
+    sampsCh0 = np.array([0]*1024, np.complex64)
+    sampsCh1 = np.array([0]*1024, np.complex64)
+
+    print(">>> test burst aquisition")
+    streamBoardSDR.activateStream(rxStream, SOAPY_SDR_END_BURST, 0, 100)
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+    print sr
+    assert sr.ret == 100
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+    assert sr.ret == SOAPY_SDR_TIMEOUT
+
+    print(">>> test larger burst aquisition")
+    totalSamps = 1024*100
+    streamBoardSDR.activateStream(rxStream, SOAPY_SDR_END_BURST, 0, totalSamps)
+    while totalSamps > 0:
+        sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+        assert sr.ret > 0
+        totalSamps -= sr.ret
+    assert totalSamps == 0
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+    assert sr.ret == SOAPY_SDR_TIMEOUT
+
+    print(">>> test timed burst aquisition")
+    totalSamps = 1024*100
+    timeStream = streamBoardSDR.getHardwareTime() + int(1e8) #100ms in the future
+    print("timeStream = %d ns"%timeStream)
+    streamBoardSDR.activateStream(rxStream, SOAPY_SDR_END_BURST | SOAPY_SDR_HAS_TIME, timeStream, totalSamps)
+    timeStreamActual = None
+    while totalSamps > 0:
+        sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0, timeoutUs=int(1e6))
+        assert sr.ret > 0
+        if timeStreamActual is None: timeStreamActual = sr.timeNs
+        totalSamps -= sr.ret
+    print("timeStreamActual = %d ns"%timeStreamActual)
+    assert totalSamps == 0
+    sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
+    assert sr.ret == SOAPY_SDR_TIMEOUT
+
+    print("Test receive")
+    streamBoardSDR.activateStream(rxStream)
 
     t0 = streamBoardSDR.getHardwareTime()
     totalSamps = 0

@@ -2,9 +2,11 @@
 #define LMS_FIFO_BUFFER_H
 
 #include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include <vector>
 #include <thread>
+#include <queue>
 #include <condition_variable>
 #include "dataTypes.h"
 #include <assert.h>
@@ -185,5 +187,53 @@ protected:
     std::condition_variable canWrite;
     std::condition_variable canRead;
 };
+
+//https://www.justsoftwaresolutions.co.uk/threading/implementing-a-thread-safe-queue-using-condition-variables.html
+template <typename T>
+class ConcurrentQueue
+{
+private:
+    std::queue<T> mQueue;
+    std::mutex mMutex;
+    std::condition_variable mCond;
+public:
+    void push(T const& data)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mQueue.push(data);
+        lock.unlock();
+        mCond.notify_one();
+    }
+
+    bool empty() const
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        return mQueue.empty();
+    }
+
+    bool try_pop(T& popped_value)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        if(mQueue.empty())
+        {
+            return false;
+        }
+        popped_value=mQueue.front();
+        mQueue.pop();
+        return true;
+    }
+
+    void wait_and_pop(T& popped_value)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        while(mQueue.empty())
+        {
+            mCond.wait(lock);
+        }
+        popped_value=mQueue.front();
+        mQueue.pop();
+    }
+};
+
 }
 #endif

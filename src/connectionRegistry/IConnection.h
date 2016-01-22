@@ -88,6 +88,9 @@ struct StreamMetadata
      */
     uint64_t timestamp;
 
+    //! True to indicate that the timestamp is valid
+    bool hasTimestamp;
+
     /*!
      * True to indicate the end of a stream buffer.
      * When false, subsequent calls continue the stream.

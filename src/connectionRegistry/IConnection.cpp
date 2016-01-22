@@ -18,6 +18,7 @@ DeviceInfo::DeviceInfo(void):
 
 StreamMetadata::StreamMetadata(void):
     timestamp(0),
+    hasTimestamp(false),
     endOfBurst(false)
 {
     return;

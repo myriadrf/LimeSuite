@@ -59,7 +59,7 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report)
+void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd)
 {
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
@@ -98,6 +98,9 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
 
     uint32_t samplesReceived = 0;
 
+    bool currentRxCmdValid = false;
+    RxCommand currentRxCmd;
+
     while (terminate->load() == false)
     {
         if (dataPort->WaitForReading(handles[bi], 1000) == false)
@@ -116,11 +119,77 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                 PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
                 tempPacket.first = 0;
                 tempPacket.timestamp = pkt[pktIndex].counter;
-                if (report) report(pkt[pktIndex].reserved[7], pkt[pktIndex].counter);
+
+                if (report)
+                {
+                    report(pkt[pktIndex].reserved[7], pkt[pktIndex].counter);
+                }
 
                 uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
                 const int stepSize = channelsCount * 3;
-                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
+                size_t numPktBytes = sizeof(pkt->data);
+
+                if (getCmd)
+                {
+                    auto numPacketSamps = numPktBytes/stepSize;
+
+                    //no valid command, try to pop a new command
+                    if (not currentRxCmdValid) currentRxCmdValid = getCmd(currentRxCmd);
+
+                    //command is valid, and this is an infinite read
+                    //so we always replace the command if available
+                    //the currentRxCmdValid variable remains true
+                    else if (!currentRxCmd.finiteRead) getCmd(currentRxCmd);
+
+                    //no valid command, just continue to the next pkt
+                    if (not currentRxCmdValid) continue;
+
+                    //handle timestamp logic
+                    if (currentRxCmd.waitForTimestamp)
+                    {
+                        //the specified timestamp is late
+                        //TODO report late condition to the rx fifo
+                        //we are done with this current command
+                        if (currentRxCmd.timestamp < tempPacket.timestamp)
+                        {
+                            std::cout << "L" << std::flush;
+                            currentRxCmdValid = false;
+                            continue;
+                        }
+
+                        //the specified timestamp is in a future packet
+                        //continue onto the next packet
+                        if (currentRxCmd.timestamp >= tempPacket.timestamp+numPacketSamps)
+                        {
+                            continue;
+                        }
+
+                        //the specified timestamp is within this packet
+                        //adjust pktStart and numPktBytes for the offset
+                        currentRxCmd.waitForTimestamp = false;
+                        auto offsetSamps = currentRxCmd.timestamp-tempPacket.timestamp;
+                        pktStart += offsetSamps*stepSize;
+                        numPktBytes -= offsetSamps*stepSize;
+                        numPacketSamps -= offsetSamps;
+                        tempPacket.timestamp += offsetSamps;
+                    }
+
+                    //total adjustments for finite read
+                    if (currentRxCmd.finiteRead)
+                    {
+                        //the current command has been depleted
+                        //adjust numPktBytes to the requested end
+                        if (currentRxCmd.numSamps <= numPacketSamps)
+                        {
+                            auto extraSamps = numPacketSamps-currentRxCmd.numSamps;
+                            numPktBytes -= extraSamps*stepSize;
+                            currentRxCmdValid = false;
+                        }
+                        else currentRxCmd.numSamps -= numPacketSamps;
+                    }
+                }
+
+                for (uint16_t b = 0; b < numPktBytes; b += stepSize)
                 {
                     for (int ch = 0; ch < channelsCount; ++ch)
                     {
@@ -193,7 +262,7 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report)
+void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd)
 {
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
@@ -408,12 +477,12 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     std::thread threadTx;
     if (format == STREAM_12_BIT_COMPRESSED)
     {
-        threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction());
+        threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction(), RxPopCommandFunction());
         threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
     }
     else
     {
-        threadRx = std::thread(ReceivePacketsUncompressed, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction());
+        threadRx = std::thread(ReceivePacketsUncompressed, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction(), RxPopCommandFunction());
         threadTx = std::thread(TransmitPacketsUncompressed, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
     }
 

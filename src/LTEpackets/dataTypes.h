@@ -3,6 +3,26 @@
 
 #include <string.h>
 
+namespace lime{
+
+struct RxCommand
+{
+    //! True to wait for timestamp, false to collect ASAP
+    bool waitForTimestamp;
+
+    //! The time to begin collecting incoming samples
+    uint64_t timestamp;
+
+    /*!
+     * True to read the specified amount,
+     * false to read until the next command.
+     */
+    bool finiteRead;
+
+    //! The number of samples to read for this command
+    uint64_t numSamps;
+};
+
 typedef struct
 {
     uint8_t reserved[8];
@@ -101,5 +121,7 @@ public:
         }
     }
 };
+
+}// namespace lime
 
 #endif

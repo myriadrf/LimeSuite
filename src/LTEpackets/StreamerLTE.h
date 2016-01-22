@@ -25,6 +25,13 @@ class LMS_SamplesFIFO;
  */
 typedef std::function<void(const uint8_t status, const uint64_t &counter)> RxReportFunction;
 
+/*!
+ * Callback to retrieve a RxCommand structure.
+ * @param [out] command the rx command
+ * @return true if the command is valid
+ */
+typedef std::function<bool(RxCommand &command)> RxPopCommandFunction;
+
 class StreamerLTE
 {
 public:
@@ -98,8 +105,8 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report);
-    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report);
+    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd);
+    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
     static void TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
     static void TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
