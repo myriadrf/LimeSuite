@@ -10,12 +10,20 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <functional>
 #include "dataTypes.h"
 
 namespace lime{
 
 class IConnection;
 class LMS_SamplesFIFO;
+
+/*!
+ * Callback to report the latest state from the RX receiver thread.
+ * @param status 8-bit status report (byte 7)
+ * @param counter the most recent timestamp
+ */
+typedef std::function<void(const uint8_t status, const uint64_t &counter)> RxReportFunction;
 
 class StreamerLTE
 {
@@ -90,8 +98,8 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report);
+    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
     static void TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
     static void TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);

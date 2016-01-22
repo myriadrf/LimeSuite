@@ -65,10 +65,9 @@ DeviceInfo IConnection::GetDeviceInfo(void)
     return info;
 }
 
-OperationStatus IConnection::DeviceReset(void)
-{
-    return UNSUPPORTED;
-}
+/***********************************************************************
+ * Serial API
+ **********************************************************************/
 
 OperationStatus IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
@@ -85,6 +84,15 @@ OperationStatus IConnection::ReadI2C(const int addr, const size_t numBytes, std:
     return UNSUPPORTED;
 }
 
+/***********************************************************************
+ * LMS7002M Driver callbacks
+ **********************************************************************/
+
+OperationStatus IConnection::DeviceReset(void)
+{
+    return UNSUPPORTED;
+}
+
 void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
 {
     return;
@@ -94,6 +102,10 @@ void IConnection::UpdateExternalDataRate(const size_t channel, const double txRa
 {
     return;
 }
+
+/***********************************************************************
+ * Reference clocks API
+ **********************************************************************/
 
 double IConnection::GetReferenceClockRate(void)
 {
@@ -115,6 +127,29 @@ void IConnection::SetTxReferenceClockRate(const double rate)
 {
     return this->SetReferenceClockRate(rate);
 }
+
+/***********************************************************************
+ * Timestamp API
+ **********************************************************************/
+
+uint64_t IConnection::GetHardwareTimestamp(void)
+{
+    return 0;
+}
+
+void IConnection::SetHardwareTimestamp(const uint64_t now)
+{
+    return;
+}
+
+double IConnection::GetHardwareTimestampRate(void)
+{
+    return 1.0;
+}
+
+/***********************************************************************
+ * Stream API
+ **********************************************************************/
 
 std::string IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
 {
@@ -156,6 +191,10 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
     callback_logData = callback;
 }
 
+/***********************************************************************
+ * Programming API
+ **********************************************************************/
+
 OperationStatus IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
     return UNSUPPORTED;
@@ -166,6 +205,10 @@ OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, cons
     return UNSUPPORTED;
 }
 
+/***********************************************************************
+ * GPIO API
+ **********************************************************************/
+
 OperationStatus IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
     return UNSUPPORTED;
@@ -175,6 +218,10 @@ OperationStatus IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
     return UNSUPPORTED;
 }
+
+/***********************************************************************
+ * Register API
+ **********************************************************************/
 
 OperationStatus IConnection::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
 {
@@ -190,6 +237,10 @@ OperationStatus IConnection::WriteRegister(const uint32_t addr, const uint32_t d
 {
     return this->WriteRegisters(&addr, &data, 1);
 }
+
+/***********************************************************************
+ * Aribtrary settings API
+ **********************************************************************/
 
 OperationStatus IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
 {

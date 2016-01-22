@@ -18,7 +18,6 @@ struct IConnectionStream
 {
     size_t streamID;
     int direction;
-    std::atomic<double> *rate;
 };
 
 /*******************************************************************
@@ -110,7 +109,6 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     auto stream = new IConnectionStream;
     stream->streamID = streamID;
     stream->direction = direction;
-    stream->rate = &_streamRates[direction][channels.front()];
     return (SoapySDR::Stream *)stream;
 }
 
@@ -139,7 +137,7 @@ int SoapyLMS7::activateStream(
     auto streamID = icstream->streamID;
 
     StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, *(icstream->rate));
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
     auto ok = _conn->ControlStream(streamID, true, numElems, metadata);
     return ok?0:SOAPY_SDR_STREAM_ERROR;
@@ -154,7 +152,7 @@ int SoapyLMS7::deactivateStream(
     auto streamID = icstream->streamID;
 
     StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, *(icstream->rate));
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
     auto ok = _conn->ControlStream(streamID, false, 0, metadata);
     return ok?0:SOAPY_SDR_STREAM_ERROR;
@@ -180,7 +178,7 @@ int SoapyLMS7::readStream(
     //output metadata
     flags = 0;
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, *(icstream->rate));;
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());;
 
     //return num read or error code
     if (ret == 0) return SOAPY_SDR_TIMEOUT;
@@ -200,7 +198,7 @@ int SoapyLMS7::writeStream(
 
     //input metadata
     StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, *(icstream->rate));
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
 
     auto ret = _conn->WriteStream(streamID, buffs, numElems, timeoutUs/1000, metadata);

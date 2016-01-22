@@ -11,6 +11,7 @@
 #include <LMS7002M.h>
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
+#include <SoapySDR/Time.hpp>
 
 using namespace lime;
 
@@ -644,11 +645,6 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
  * Sample Rate API
  ******************************************************************/
 
-void SoapyLMS7::updateStreamRate(const int direction, const size_t channel)
-{
-    _streamRates[direction][channel] = this->getSampleRate(direction, channel);
-}
-
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     auto rfic = getRFIC(channel);
@@ -674,8 +670,6 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         this->getMasterClockRate()/1e6,
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
-
-    this->updateStreamRate(direction, channel);
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
@@ -871,12 +865,6 @@ void SoapyLMS7::setMasterClockRate(const double rate)
     {
         rfic->SetFrequencyCGEN(rate/1e6);
     }
-
-    for (size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); chan++)
-        this->updateStreamRate(SOAPY_SDR_RX, chan);
-
-    for (size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); chan++)
-        this->updateStreamRate(SOAPY_SDR_TX, chan);
 }
 
 double SoapyLMS7::getMasterClockRate(void) const
@@ -891,19 +879,37 @@ double SoapyLMS7::getMasterClockRate(void) const
 
 bool SoapyLMS7::hasHardwareTime(const std::string &what) const
 {
-    //TODO
-    return false;
+    //assume hardware time when no argument is specified
+    //some boards may not ever support hw time, so TODO
+    return what.empty();
 }
 
 long long SoapyLMS7::getHardwareTime(const std::string &what) const
 {
-    //TODO put this call on iconnection...
-    return 0;
+    if (what.empty())
+    {
+        auto ticks = _conn->GetHardwareTimestamp();
+        auto rate = _conn->GetHardwareTimestampRate();
+        return SoapySDR::ticksToTimeNs(ticks, rate);
+    }
+    else
+    {
+        throw std::invalid_argument("SoapyLMS7::getHardwareTime("+what+") unknown argument");
+    }
 }
 
 void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 {
-    //TODO put this call on iconnection...
+    if (what.empty())
+    {
+        auto rate = _conn->GetHardwareTimestampRate();
+        auto ticks = SoapySDR::timeNsToTicks(timeNs, rate);
+        _conn->SetHardwareTimestamp(ticks);
+    }
+    else
+    {
+        throw std::invalid_argument("SoapyLMS7::setHardwareTime("+what+") unknown argument");
+    }
 }
 
 /*******************************************************************

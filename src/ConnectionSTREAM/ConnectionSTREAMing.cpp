@@ -72,12 +72,12 @@ struct StreamerLTECustom : StreamerLTE
         stopThread = false;
         if (format == STREAM_12_BIT_COMPRESSED)
         {
-            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps);
+            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, RxReportFunction());
             if (isTx) workThread = new std::thread(TransmitPackets, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
         else
         {
-            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps);
+            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, RxReportFunction());
             if (isTx) workThread = new std::thread(TransmitPacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps);
         }
     }
@@ -273,4 +273,5 @@ void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double
 {
     //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
     LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
+    mHwCounterRate = rxRate;
 }

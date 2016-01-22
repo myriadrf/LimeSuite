@@ -10,6 +10,7 @@
 #include <LMS64CProtocol.h>
 #include <vector>
 #include <string>
+#include <atomic>
 
 #ifndef __unix__
 #include "windows.h"
@@ -104,6 +105,13 @@ public:
 	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
 	virtual void AbortSending();
 
+	uint64_t GetHardwareTimestamp(void){}
+	void SetHardwareTimestamp(const uint64_t now){}
+	double GetHardwareTimestampRate(void)
+	{
+	    return mHwCounterRate;
+	}
+
 	//IConnection stream API implementation
 	std::string SetupStream(size_t &streamID, const StreamConfig &config);
 	void CloseStream(const size_t streamID);
@@ -150,6 +158,9 @@ private:
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
 	#endif
+
+    //! The rate of the hardware counter in the FPGA
+    std::atomic<double> mHwCounterRate;
 };
 
 

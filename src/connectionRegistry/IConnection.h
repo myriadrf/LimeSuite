@@ -84,6 +84,7 @@ struct StreamMetadata
     /*!
      * The timestamp in clock units
      * Set to 0 when the timestamp is not applicable.
+     * See GetHardwareTimestampRate() for tick rate.
      */
     uint64_t timestamp;
 
@@ -183,13 +184,6 @@ public:
      */
     virtual DeviceInfo GetDeviceInfo(void);
 
-    /*!
-     * Perform reset sequence on the device.
-     * Typically this will reset the RFIC using a GPIO,
-     * and possibly other ICs located on the device.
-     */
-    virtual OperationStatus DeviceReset(void);
-
     /***********************************************************************
      * Serial API
      **********************************************************************/
@@ -235,6 +229,13 @@ public:
     /***********************************************************************
      * LMS7002M Driver callbacks
      **********************************************************************/
+
+    /*!
+     * Perform reset sequence on the device.
+     * Typically this will reset the RFIC using a GPIO,
+     * and possibly other ICs located on the device.
+     */
+    virtual OperationStatus DeviceReset(void);
 
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.
@@ -289,6 +290,26 @@ public:
      * @param rate the clock rate in Hz
      */
     virtual void SetTxReferenceClockRate(const double rate);
+
+    /***********************************************************************
+     * Timestamp API
+     **********************************************************************/
+
+    /*!
+     * Get the current timestamp in clock units.
+     */
+    virtual uint64_t GetHardwareTimestamp(void);
+
+    /*!
+     * Set the current timestamp in clock units.
+     */
+    virtual void SetHardwareTimestamp(const uint64_t now);
+
+    /*!
+     * Get the rate of the current timestamp in ticks per second.
+     * This call may be used often and should return a cached value.
+     */
+    virtual double GetHardwareTimestampRate(void);
 
     /***********************************************************************
      * Stream API
