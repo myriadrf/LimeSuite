@@ -82,7 +82,8 @@ struct USBStreamService : StreamerLTE
         //switch on Rx
         regVal = Reg_read(dataPort, 0x0005);
         bool async = false;
-        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x5 | (async << 4));
+        bool timeOff = 1 << 5;
+        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x5 | (async << 4) | timeOff);
     }
 
     ~USBStreamService(void)
@@ -126,6 +127,7 @@ struct USBStreamService : StreamerLTE
         return mTxFIFO;
     }
 
+    std::atomic<bool> txTimeEnabled;
     std::atomic<uint64_t> mLastRxTimestamp;
     std::atomic<int64_t> mTimestampOffset;
     std::atomic<double> mHwCounterRate;
@@ -191,7 +193,9 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     auto s1 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
     auto s2 = pos0isA?LMS7002M::AI:LMS7002M::BI;
     auto s3 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
-    if (channels.size() == 1) s0 = s3;
+
+    //Note: only when FPGA is also in 1-ch mode
+    //if (channels.size() == 1) s0 = s3;
 
     //configure LML based on channel config
     LMS7002M rfic;
@@ -276,6 +280,17 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
+    //set the time enabled register if usage changed
+    //TODO maybe the FPGA should check a flag in the pkt
+    if (mStreamService->txTimeEnabled != metadata.hasTimestamp)
+    {
+        uint32_t regVal; this->ReadRegister(0x0005, regVal);
+        if (metadata.hasTimestamp) regVal &= ~(1 << 5);
+        else                       regVal |= (1 << 5);
+        this->WriteRegister(0x0005, regVal);
+        mStreamService->txTimeEnabled = metadata.hasTimestamp;
+    }
+
     size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
 
     const complex16_t **pushBuffer(nullptr);
@@ -295,11 +310,12 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     }
     else pushBuffer = (const complex16_t **)buffs;
 
+    auto ticks = metadata.timestamp - mStreamService->mTimestampOffset;
     size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
         pushBuffer,
         samplesCount,
         stream->channelsCount,
-        metadata.timestamp - mStreamService->mTimestampOffset,
+        metadata.hasTimestamp?ticks:0,
         timeout_ms);
     samplesCount = (std::min)(samplesCount, sampsPushed);
 

@@ -1000,6 +1000,22 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 1);
         rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
     }
+
+    if (key == "ENABLE_TXTSP_CONST")
+    {
+        rfic->Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1); //DC
+        rfic->Modify_SPI_Reg_bits(INSEL_TXTSP, (value=="true")?1:0); //SIGGEN
+
+        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 1 << 15);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 1);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
+
+        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 0);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 1);
+        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 0);
+    }
 }
 
 std::string SoapyLMS7::readSetting(const std::string &key) const
