@@ -58,11 +58,22 @@ if __name__ == '__main__':
     sampsCh0 = np.array([0]*1024, np.complex64)
     sampsCh1 = np.array([0]*1024, np.complex64)
 
+    print("Create tx stream")
+    txStream = streamBoardSDR.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32, [0, 1])
+    streamBoardSDR.activateStream(txStream)
+
+    #print(">>> test tx late burst")
+    #timeStream = streamBoardSDR.getHardwareTime() + int(1e8) #100ms in the future
+    #time.sleep(1.0) #time will be late
+    #sr = streamBoardSDR.writeStream(txStream, [sampsCh0, sampsCh1], sampsCh0.size, SOAPY_SDR_END_BURST | SOAPY_SDR_HAS_TIME, timeStream, timeoutUs=int(1e6))
+    #print streamBoardSDR.readStreamStatus(txStream, 
+
     print(">>> test burst aquisition")
     streamBoardSDR.activateStream(rxStream, SOAPY_SDR_END_BURST, 0, 100)
     sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
     print sr
     assert sr.ret == 100
+    assert sr.flags & SOAPY_SDR_END_BURST
     sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
     assert sr.ret == SOAPY_SDR_TIMEOUT
 
@@ -73,6 +84,7 @@ if __name__ == '__main__':
         sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
         assert sr.ret > 0
         totalSamps -= sr.ret
+        assert (totalSamps == 0) or not (sr.flags & SOAPY_SDR_END_BURST)
     assert totalSamps == 0
     sr = streamBoardSDR.readStream(rxStream, [sampsCh0, sampsCh1], sampsCh0.size, 0)
     assert sr.ret == SOAPY_SDR_TIMEOUT
@@ -123,4 +135,6 @@ if __name__ == '__main__':
 
     print("Cleanup rx stream")
     streamBoardSDR.deactivateStream(rxStream)
+    streamBoardSDR.deactivateStream(txStream)
     streamBoardSDR.closeStream(rxStream)
+    streamBoardSDR.closeStream(txStream)

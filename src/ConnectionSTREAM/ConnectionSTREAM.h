@@ -118,6 +118,7 @@ public:
 	bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
 	int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 	int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+	int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
 
 	//hooks to update FPGA plls when baseband interface data rate is changed
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);

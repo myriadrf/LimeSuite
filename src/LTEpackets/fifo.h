@@ -57,9 +57,10 @@ public:
     @param samplesCount number of samples to insert from each buffer channel
     @param channelsCount number of channels to insert
     @param timeout_ms timeout duration for operation
+    @param flags optional flags associated with the samples
     @return number of items inserted
     */
-    uint32_t push_samples(const complex16_t **buffer, const uint32_t samplesCount, const uint8_t channelsCount, uint64_t timestamp, const uint32_t timeout_ms)
+    uint32_t push_samples(const complex16_t **buffer, const uint32_t samplesCount, const uint8_t channelsCount, uint64_t timestamp, const uint32_t timeout_ms, const uint32_t flags = 0)
     {
         assert(buffer != nullptr);
         uint32_t samplesTaken = 0;
@@ -78,6 +79,7 @@ public:
                 mBuffer[tailIndex].timestamp = timestamp + samplesTaken;
                 mBuffer[tailIndex].first = 0;
                 mBuffer[tailIndex].last = 0;
+                mBuffer[tailIndex].flags = flags;
                 while (mBuffer[tailIndex].last < mBuffer[tailIndex].samplesCount && samplesTaken < samplesCount)
                 {
                     const int sampleIndex = mBuffer[tailIndex].last;
@@ -103,13 +105,15 @@ public:
         @param channelsCount number of channels to pop
 		@param timestamp returns timestamp of the first sample in buffer
         @param timeout_ms timeout duration for operation
+        @param flags optional flags associated with the samples
         @return number of samples popped
     */
-    uint32_t pop_samples(complex16_t** buffer, const uint32_t samplesCount, const uint8_t channelsCount, uint64_t *timestamp, const uint32_t timeout_ms)
+    uint32_t pop_samples(complex16_t** buffer, const uint32_t samplesCount, const uint8_t channelsCount, uint64_t *timestamp, const uint32_t timeout_ms, uint32_t *flags = nullptr)
 	{   
         assert(buffer != nullptr);
         uint32_t samplesFilled = 0;		
 		*timestamp = 0;
+        if (flags != nullptr) *flags = 0;
         std::unique_lock<std::mutex> lck(readLock);
         while (samplesFilled < samplesCount)
         {   
@@ -124,6 +128,7 @@ public:
 			while(mElementsFilled.load() > 0 && samplesFilled < samplesCount)
 			{	
 				int headIndex = mHead.load();
+                if (flags != nullptr) *flags |= mBuffer[headIndex].flags;
                 while (mBuffer[headIndex].first < mBuffer[headIndex].last && samplesFilled < samplesCount)
 				{
                     for (int ch = 0; ch < channelsCount; ++ch)
@@ -232,6 +237,19 @@ public:
         }
         popped_value=mQueue.front();
         mQueue.pop();
+    }
+
+    bool wait_and_pop(T& popped_value, const int timeout_ms)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        while(mQueue.empty())
+        {
+            if (mCond.wait_for(lock, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
+                return false;
+        }
+        popped_value=mQueue.front();
+        mQueue.pop();
+        return true;
     }
 };
 

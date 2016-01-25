@@ -182,7 +182,7 @@ int SoapyLMS7::readStream(
     flags = 0;
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
     if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());;
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
 
     //return num read or error code
     if (ret == 0) return SOAPY_SDR_TIMEOUT;
@@ -220,5 +220,21 @@ int SoapyLMS7::readStreamStatus(
     long long &timeNs,
     const long timeoutUs)
 {
-    return SOAPY_SDR_NOT_SUPPORTED;
+    auto icstream = (IConnectionStream *)stream;
+    auto streamID = icstream->streamID;
+
+    StreamMetadata metadata;
+    int ret = _conn->ReadStreamStatus(streamID, timeoutUs/1000, metadata);
+
+    if (ret != 0) return SOAPY_SDR_TIMEOUT;
+
+    //output metadata
+    flags = 0;
+    if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
+    if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
+
+    if (metadata.lateTimestamp) return SOAPY_SDR_TIME_ERROR;
+    if (metadata.packetDropped) return SOAPY_SDR_OVERFLOW;
+    return 0;
 }

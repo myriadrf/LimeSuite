@@ -18,12 +18,17 @@ namespace lime{
 class IConnection;
 class LMS_SamplesFIFO;
 
+static const int STATUS_FLAG_RX_END = (1 << 1); //!< An rx stream command completed
+static const int STATUS_FLAG_RX_LATE = (1 << 2); //!< An rx stream command had a late time
+static const int STATUS_FLAG_TX_LATE = (1 << 3); //!< An tx stream had a late time
+static const int STATUS_FLAG_RX_DROP = (1 << 4); //!< An rx packet was dropped, no room
+
 /*!
  * Callback to report the latest state from the RX receiver thread.
- * @param status 8-bit status report (byte 7)
+ * @param status status flags (see STATUS_FLAG_*)
  * @param counter the most recent timestamp
  */
-typedef std::function<void(const uint8_t status, const uint64_t &counter)> RxReportFunction;
+typedef std::function<void(const int status, const uint64_t &counter)> RxReportFunction;
 
 /*!
  * Callback to retrieve a RxCommand structure.

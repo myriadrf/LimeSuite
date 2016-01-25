@@ -82,7 +82,7 @@ struct USBStreamService : StreamerLTE
         //switch on Rx
         regVal = Reg_read(dataPort, 0x0005);
         bool async = false;
-        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x5 | (async << 4));
     }
 
     ~USBStreamService(void)
@@ -98,10 +98,22 @@ struct USBStreamService : StreamerLTE
         threadTx.join();
     }
 
-    void handleRxStatus(const uint8_t status, const uint64_t &counter)
+    void handleRxStatus(const int status, const uint64_t &counter)
     {
-        //TODO status fifo
         mLastRxTimestamp = counter;
+        if (status == 0) return;
+
+        StreamMetadata metadata;
+        metadata.hasTimestamp = true;
+        metadata.timestamp = counter + mTimestampOffset;
+        const bool isTx = ((status & STATUS_FLAG_TX_LATE) != 0);
+        metadata.endOfBurst = (status & STATUS_FLAG_RX_END) != 0;
+        metadata.lateTimestamp = (status & STATUS_FLAG_RX_LATE) != 0;
+        metadata.lateTimestamp = (status & STATUS_FLAG_TX_LATE) != 0;
+        metadata.packetDropped = (status & STATUS_FLAG_RX_DROP) != 0;
+
+        if (isTx) mTxStatQueue.push(metadata);
+        else mRxStatQueue.push(metadata);
     }
 
     LMS_SamplesFIFO *GetRxFIFO(void) const
@@ -118,6 +130,8 @@ struct USBStreamService : StreamerLTE
     std::atomic<int64_t> mTimestampOffset;
     std::atomic<double> mHwCounterRate;
     ConcurrentQueue<RxCommand> mRxCmdQueue;
+    ConcurrentQueue<StreamMetadata> mRxStatQueue;
+    ConcurrentQueue<StreamMetadata> mTxStatQueue;
 };
 
 struct USBStreamServiceChannel
@@ -227,14 +241,17 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
     if (stream->convertFloat) popBuffer = (complex16_t **)stream->FIFOBuffers.data();
     else popBuffer = (complex16_t **)buffs;
 
+    uint32_t fifoFlags = 0;
     size_t sampsPopped = mStreamService->GetRxFIFO()->pop_samples(
         popBuffer,
         samplesCount,
         stream->channelsCount,
         &metadata.timestamp,
-        timeout_ms);
+        timeout_ms,
+        &fifoFlags);
     metadata.hasTimestamp = metadata.timestamp != 0;
     metadata.timestamp += mStreamService->mTimestampOffset;
+    metadata.endOfBurst = (fifoFlags & STATUS_FLAG_RX_END) != 0;
     samplesCount = (std::min)(samplesCount, sampsPopped);
 
     if (stream->convertFloat)
@@ -287,6 +304,15 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     samplesCount = (std::min)(samplesCount, sampsPushed);
 
     return samplesCount;
+}
+
+int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
+{
+    auto *stream = (USBStreamServiceChannel *)streamID;
+
+    if (stream->isTx and mStreamService->mTxStatQueue.wait_and_pop(metadata, timeout_ms)) return 0;
+    if (!stream->isTx and mStreamService->mRxStatQueue.wait_and_pop(metadata, timeout_ms)) return 0;
+    return -1;
 }
 
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)

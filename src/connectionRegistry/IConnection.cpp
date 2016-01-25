@@ -6,6 +6,8 @@
 
 #include "IConnection.h"
 #include <cstring> //memcpy
+#include <chrono>
+#include <thread>
 
 using namespace lime;
 
@@ -19,7 +21,9 @@ DeviceInfo::DeviceInfo(void):
 StreamMetadata::StreamMetadata(void):
     timestamp(0),
     hasTimestamp(false),
-    endOfBurst(false)
+    endOfBurst(false),
+    lateTimestamp(false),
+    packetDropped(false)
 {
     return;
 }
@@ -182,6 +186,12 @@ int IConnection::ReadStream(const size_t streamID, void * const *buffs, const si
 
 int IConnection::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
+    return -1;
+}
+
+int IConnection::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
     return -1;
 }
 

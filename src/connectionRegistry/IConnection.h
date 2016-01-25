@@ -96,6 +96,18 @@ struct StreamMetadata
      * When false, subsequent calls continue the stream.
      */
     bool endOfBurst;
+
+    /*!
+     * True to indicate that the timestamp was late.
+     * Used in stream status reporting.
+     */
+    bool lateTimestamp;
+
+    /*!
+     * True to indicate that a packet was dropped
+     * perhaps in a receiver overflow event.
+     */
+    bool packetDropped;
 };
 
 /*!
@@ -397,6 +409,17 @@ public:
      * @return the number of samples written or error code
      */
     virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+
+    /*!
+     * Read reported stream status events such as
+     * overflow, underflow, late transmit, end of burst.
+     *
+     * @param streamID the RX stream index number
+     * @param timeout_ms the timeout in milliseconds
+     * @param [out] metadata stream status metadata
+     * @return 0 on success, -1 for timeout no data
+     */
+    virtual int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
 
     /***********************************************************************
      * Programming API

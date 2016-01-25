@@ -120,14 +120,20 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                 tempPacket.first = 0;
                 tempPacket.timestamp = pkt[pktIndex].counter;
 
-                if (report)
-                {
-                    report(pkt[pktIndex].reserved[7], pkt[pktIndex].counter);
-                }
-
+                int statusFlags = 0;
                 uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
                 const int stepSize = channelsCount * 3;
                 size_t numPktBytes = sizeof(pkt->data);
+
+                /*
+                 * FIXME not working yet, bit always set
+                auto byte7 = pkt[pktIndex].reserved[7];
+                if ((byte7 & (1 << 3)) != 0)
+                {
+                    std::cout << "L" << std::flush;
+                    statusFlags |= STATUS_FLAG_TX_LATE;
+                }
+                */
 
                 if (getCmd)
                 {
@@ -157,6 +163,7 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                             currentRxCmd.waitForTimestamp = false;
                             //and put this one back in....
                             //currentRxCmdValid = false;
+                            statusFlags |= STATUS_FLAG_RX_LATE;
                             continue;
                         }
 
@@ -187,6 +194,7 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                             auto extraSamps = numPacketSamps-currentRxCmd.numSamps;
                             numPktBytes -= extraSamps*stepSize;
                             currentRxCmdValid = false;
+                            statusFlags |= STATUS_FLAG_RX_END;
                         }
                         else currentRxCmd.numSamps -= numPacketSamps;
                     }
@@ -215,10 +223,18 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                 }
                 tempPacket.last = samplesCollected;
 
-                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10);
+                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10, statusFlags);
                 if (samplesPushed != samplesCollected)
+                {
                     rxDroppedSamples += samplesCollected - samplesPushed;
+                    statusFlags |= STATUS_FLAG_RX_DROP;
+                }
                 samplesCollected = 0;
+
+                if (report)
+                {
+                    report(statusFlags, pkt[pktIndex].counter);
+                }
             }
         }
         else
