@@ -30,7 +30,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
 
     LMScomms::GenericPacket pkt;
     pkt.cmd = CMD_BRDSPI_WR;
-    
+    unsigned short reg2 = 0;
     if (fOut_MHz*M > vcoLimits_MHz[0] && fOut_MHz*M < vcoLimits_MHz[1])
     {   
         pkt.outBuffer.push_back(0x00);
@@ -57,7 +57,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
         float Fstep_us = 1 / (8 * fOutTx_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOutTx_MHz);
         short nSteps = phaseShiftTx_deg / Fstep_deg;
-        unsigned short reg2 = 0x0400 | (nSteps & 0x3FF);
+        reg2 = 0x0400 | (nSteps & 0x3FF);
         pkt.outBuffer.push_back(0x00);
         pkt.outBuffer.push_back(0x02);
         pkt.outBuffer.push_back((reg2 >> 8));
@@ -118,7 +118,8 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
         float Fstep_us = 1 / (8 * fOutRx_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOutRx_MHz);
         short nSteps = phaseShiftRx_deg / Fstep_deg;
-        unsigned short reg2 = 0x2000 | (nSteps & 0x3FF);
+        reg2 = reg2 & ~0x3FF;
+        reg2 |= (0x2000 | (nSteps & 0x3FF));
         pkt.outBuffer.push_back(0x00);
         pkt.outBuffer.push_back(0x02);
         pkt.outBuffer.push_back((reg2 >> 8));
