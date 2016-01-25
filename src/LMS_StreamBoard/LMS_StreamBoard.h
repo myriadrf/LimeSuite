@@ -40,7 +40,7 @@ public:
 
     static Status CaptureIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount, bool frameStart);
     static Status UploadIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount);
-    static Status ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg);
+    static Status ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg);
 
     struct DataToGUI
     {
