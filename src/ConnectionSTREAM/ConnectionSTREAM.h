@@ -22,6 +22,8 @@
 #include <chrono>
 #endif
 
+struct USBStreamService;
+
 namespace lime{
 
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
@@ -107,10 +109,7 @@ public:
 
 	uint64_t GetHardwareTimestamp(void);
 	void SetHardwareTimestamp(const uint64_t now);
-	double GetHardwareTimestampRate(void)
-	{
-	    return mHwCounterRate;
-	}
+	double GetHardwareTimestampRate(void);
 
 	//IConnection stream API implementation
 	std::string SetupStream(size_t &streamID, const StreamConfig &config);
@@ -159,13 +158,8 @@ private:
     libusb_context *ctx; //a libusb session
 	#endif
 
-    //! The rate of the hardware counter in the FPGA
-    std::atomic<double> mHwCounterRate;
-    std::atomic<uint64_t> mLastRxTimestamp;
-    std::atomic<int64_t> mTimestampOffset;
-
-    //! Handle for rx status update messages
-    void handleRxStatus(const uint8_t status, const uint64_t &counter);
+    //! Stream service used by the stream and time API
+    std::shared_ptr<USBStreamService> mStreamService;
 };
 
 

@@ -121,7 +121,7 @@ protected:
     std::thread threadTx;
     IConnection* mDataPort;
 
-    std::atomic<int> mRxDataRate;
-    std::atomic<int> mTxDataRate;
+    std::atomic<uint32_t> mRxDataRate;
+    std::atomic<uint32_t> mTxDataRate;
 };
 }

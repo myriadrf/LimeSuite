@@ -23,33 +23,19 @@ using namespace lime;
  * Custom StreamerLTE for streaming API hooks
  **********************************************************************/
 
-struct StreamerLTECustom : StreamerLTE
+struct USBStreamService : StreamerLTE
 {
-    StreamerLTECustom(
+    USBStreamService(
         LMS64CProtocol *dataPort,
-        const bool isTx,
-        const size_t channelsCount,
-        const StreamDataFormat /*format*/,
-        const bool convertFloat,
-        const RxReportFunction &reporter
+        const size_t channelsCount = 2,
+        const StreamDataFormat format = STREAM_12_BIT_COMPRESSED
     ):
         StreamerLTE(dataPort),
-        isTx(isTx),
-        channelsCount(channelsCount),
-        //format(format), //TODO fix STREAM_12_BIT_IN_16
-        format(STREAM_12_BIT_COMPRESSED),
-        convertFloat(convertFloat),
-        workThread(nullptr),
-        mFIFO(nullptr)
+        mLastRxTimestamp(0),
+        mTimestampOffset(0)
     {
-        std::cout << "StreamerLTECustom(isTx=" << isTx << ", channelsCount=" << channelsCount << ")" << std::endl;
-        if (workThread != nullptr) return;
-
-        mFIFO = new LMS_SamplesFIFO(2*4096, channelsCount);
-        for (size_t i = 0; i < channelsCount; i++)
-        {
-            mFIFOBuffers.push_back(new complex16_t[STREAM_MTU]);
-        }
+        mRxFIFO->Reset(2*4096, channelsCount);
+        mTxFIFO->Reset(2*4096, channelsCount);
 
         //switch off Rx
         uint16_t regVal = Reg_read(dataPort, 0x0005);
@@ -76,50 +62,90 @@ struct StreamerLTECustom : StreamerLTE
         ctrPkt.outBuffer[0] = 0x00;
         dataPort->TransferPacket(ctrPkt);
 
-        stopThread = false;
+        auto reporter = std::bind(&USBStreamService::handleRxStatus, this, std::placeholders::_1, std::placeholders::_2);
         auto getRxCmd = std::bind(&ConcurrentQueue<RxCommand>::try_pop, &mRxCmdQueue, std::placeholders::_1);
+
+        stopRx = false;
+        stopTx = false;
+
         if (format == STREAM_12_BIT_COMPRESSED)
         {
-            if (!isTx) workThread = new std::thread(ReceivePackets, dataPort, mFIFO, &stopThread, &rate_Bps, reporter, getRxCmd);
-            if (isTx) workThread = new std::thread(TransmitPackets, dataPort, mFIFO, &stopThread, &rate_Bps);
+            threadRx = std::thread(ReceivePackets, dataPort, mRxFIFO, &stopRx, &mRxDataRate, reporter, getRxCmd);
+            threadTx = std::thread(TransmitPackets, dataPort, mTxFIFO, &stopTx, &mTxDataRate);
         }
         else
         {
-            if (!isTx) workThread = new std::thread(ReceivePacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps, reporter, getRxCmd);
-            if (isTx) workThread = new std::thread(TransmitPacketsUncompressed, dataPort, mFIFO, &stopThread, &rate_Bps);
+            threadRx = std::thread(ReceivePacketsUncompressed, dataPort, mRxFIFO, &stopRx, &mRxDataRate, reporter, getRxCmd);
+            threadTx = std::thread(TransmitPacketsUncompressed, dataPort, mTxFIFO, &stopTx, &mTxDataRate);
+        }
+
+        //switch on Rx
+        regVal = Reg_read(dataPort, 0x0005);
+        bool async = false;
+        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    }
+
+    ~USBStreamService(void)
+    {
+        //stop Tx Rx if they were active
+        uint32_t regVal = Reg_read(mDataPort, 0x0005);
+        Reg_write(mDataPort, 0x0005, regVal & ~0x6);
+
+        stopRx = true;
+        stopTx = true;
+
+        threadRx.join();
+        threadTx.join();
+    }
+
+    void handleRxStatus(const uint8_t status, const uint64_t &counter)
+    {
+        //TODO status fifo
+        mLastRxTimestamp = counter;
+    }
+
+    LMS_SamplesFIFO *GetRxFIFO(void) const
+    {
+        return mRxFIFO;
+    }
+
+    LMS_SamplesFIFO *GetTxFIFO(void) const
+    {
+        return mTxFIFO;
+    }
+
+    std::atomic<uint64_t> mLastRxTimestamp;
+    std::atomic<int64_t> mTimestampOffset;
+    std::atomic<double> mHwCounterRate;
+    ConcurrentQueue<RxCommand> mRxCmdQueue;
+};
+
+struct USBStreamServiceChannel
+{
+    USBStreamServiceChannel(bool isTx, const size_t channelsCount, const bool convertFloat):
+        isTx(isTx),
+        channelsCount(channelsCount),
+        convertFloat(convertFloat)
+    {
+        for (size_t i = 0; i < channelsCount; i++)
+        {
+            FIFOBuffers.push_back(new complex16_t[STREAM_MTU]);
         }
     }
 
-    ~StreamerLTECustom(void)
+    ~USBStreamServiceChannel(void)
     {
-        std::cout << "~StreamerLTECustom " << std::endl;
-        if (workThread == nullptr) return;
-        stopThread = true;
-
-        workThread->join();
-        delete workThread;
-        workThread = nullptr;
-
-        delete mFIFO;
-        mFIFO = nullptr;
-
         for (size_t i = 0; i < channelsCount; i++)
         {
-            delete [] mFIFOBuffers[i];
+            delete [] FIFOBuffers[i];
         }
-        mFIFOBuffers.clear();
+        FIFOBuffers.clear();
     }
 
     const bool isTx;
     const size_t channelsCount;
-    const StreamDataFormat format;
     const bool convertFloat;
-    std::atomic<bool> stopThread;
-    std::atomic<uint32_t> rate_Bps;
-    std::thread *workThread;
-    LMS_SamplesFIFO *mFIFO;
-    std::vector<complex16_t *> mFIFOBuffers;
-    ConcurrentQueue<RxCommand> mRxCmdQueue;
+    std::vector<complex16_t *> FIFOBuffers;
 };
 
 /***********************************************************************
@@ -159,23 +185,13 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
     else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
-    //check link format
-    auto linkFormat = StreamerLTE::STREAM_12_BIT_IN_16;
-    switch (config.linkFormat)
-    {
-    case StreamConfig::STREAM_12_BIT_IN_16: linkFormat = StreamerLTE::STREAM_12_BIT_IN_16; break;
-    case StreamConfig::STREAM_12_BIT_COMPRESSED: linkFormat = StreamerLTE::STREAM_12_BIT_COMPRESSED; break;
-    default: return "SoapyIConnection::setupStream() unsupported link format";
-    }
-
-    auto reporter = std::bind(&ConnectionSTREAM::handleRxStatus, this, std::placeholders::_1, std::placeholders::_2);
-    streamID = size_t(new StreamerLTECustom(this, config.isTx, channels.size(), linkFormat, convertFloat, reporter));
+    streamID = size_t(new USBStreamServiceChannel(config.isTx, channels.size(), convertFloat));
     return ""; //success
 }
 
 void ConnectionSTREAM::CloseStream(const size_t streamID)
 {
-    auto *stream = (LMS_StreamBoard *)streamID;
+    auto *stream = (USBStreamServiceChannel *)streamID;
     delete stream;
 }
 
@@ -186,30 +202,16 @@ size_t ConnectionSTREAM::GetStreamSize(const size_t streamID)
 
 bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
 {
-    auto *stream = (StreamerLTECustom *)streamID;
+    auto *stream = (USBStreamServiceChannel *)streamID;
 
     if (!stream->isTx)
     {
         RxCommand rxCmd;
         rxCmd.waitForTimestamp = metadata.hasTimestamp;
-        rxCmd.timestamp = metadata.timestamp-mTimestampOffset;
+        rxCmd.timestamp = metadata.timestamp-mStreamService->mTimestampOffset;
         rxCmd.finiteRead = metadata.endOfBurst;
         rxCmd.numSamps = burstSize;
-        stream->mRxCmdQueue.push(rxCmd);
-    }
-
-    if (enable)
-    {
-        //switch on Rx
-        uint32_t regVal; ReadRegister(0x0005, regVal);
-        bool async = false;
-        WriteRegister(0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
-    }
-    else
-    {
-        //stop Tx Rx if they were active
-        uint32_t regVal; ReadRegister(0x0005, regVal);
-        WriteRegister(0x0005, regVal & ~0x6);
+        mStreamService->mRxCmdQueue.push(rxCmd);
     }
 
     return true;
@@ -217,29 +219,29 @@ bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, c
 
 int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
-    auto *stream = (StreamerLTECustom *)streamID;
+    auto *stream = (USBStreamServiceChannel *)streamID;
 
     size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
 
     complex16_t **popBuffer(nullptr);
-    if (stream->convertFloat) popBuffer = (complex16_t **)stream->mFIFOBuffers.data();
+    if (stream->convertFloat) popBuffer = (complex16_t **)stream->FIFOBuffers.data();
     else popBuffer = (complex16_t **)buffs;
 
-    size_t sampsPopped = stream->mFIFO->pop_samples(
+    size_t sampsPopped = mStreamService->GetRxFIFO()->pop_samples(
         popBuffer,
         samplesCount,
         stream->channelsCount,
         &metadata.timestamp,
         timeout_ms);
     metadata.hasTimestamp = metadata.timestamp != 0;
-    metadata.timestamp += mTimestampOffset;
+    metadata.timestamp += mStreamService->mTimestampOffset;
     samplesCount = (std::min)(samplesCount, sampsPopped);
 
     if (stream->convertFloat)
     {
         for (size_t i = 0; i < stream->channelsCount; i++)
         {
-            auto buffIn = stream->mFIFOBuffers[i];
+            auto buffIn = stream->FIFOBuffers[i];
             auto buffOut = (std::complex<float> *)buffs[i];
             for (size_t j = 0; j < samplesCount; j++)
             {
@@ -255,18 +257,18 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
 
 int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
-    auto *stream = (StreamerLTECustom *)streamID;
+    auto *stream = (USBStreamServiceChannel *)streamID;
 
     size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
 
     const complex16_t **pushBuffer(nullptr);
     if (stream->convertFloat)
     {
-        pushBuffer = (const complex16_t **)stream->mFIFOBuffers.data();
+        pushBuffer = (const complex16_t **)stream->FIFOBuffers.data();
         for (size_t i = 0; i < stream->channelsCount; i++)
         {
             auto buffIn = (const std::complex<float> *)buffs[i];
-            auto bufOut = stream->mFIFOBuffers[i];
+            auto bufOut = stream->FIFOBuffers[i];
             for (size_t j = 0; j < samplesCount; j++)
             {
                 bufOut[j].i = int16_t(buffIn[j].real()*2048);
@@ -276,36 +278,36 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     }
     else pushBuffer = (const complex16_t **)buffs;
 
-    size_t sampsPushed = stream->mFIFO->push_samples(
+    size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
         pushBuffer,
         samplesCount,
         stream->channelsCount,
-        metadata.timestamp - mTimestampOffset,
+        metadata.timestamp - mStreamService->mTimestampOffset,
         timeout_ms);
     samplesCount = (std::min)(samplesCount, sampsPushed);
 
     return samplesCount;
 }
 
-void ConnectionSTREAM::handleRxStatus(const uint8_t status, const uint64_t &counter)
-{
-    //TODO status fifo
-    mLastRxTimestamp = counter;
-}
-
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
+    if (not mStreamService) mStreamService.reset(new USBStreamService(this));
     //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
     LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
-    mHwCounterRate = rxRate;
+    mStreamService->mHwCounterRate = rxRate;
 }
 
 uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
 {
-    return mLastRxTimestamp + mTimestampOffset;
+    return mStreamService->mLastRxTimestamp + mStreamService->mTimestampOffset;
 }
 
 void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
 {
-    mTimestampOffset = int64_t(now)-int64_t(mLastRxTimestamp);
+    mStreamService->mTimestampOffset = int64_t(now)-int64_t(mStreamService->mLastRxTimestamp);
+}
+
+double ConnectionSTREAM::GetHardwareTimestampRate(void)
+{
+    return mStreamService->mHwCounterRate;
 }

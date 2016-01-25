@@ -59,6 +59,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 */
 ConnectionSTREAM::~ConnectionSTREAM()
 {
+    mStreamService.reset();
     Close();
 }
 
