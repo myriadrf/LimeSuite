@@ -17,7 +17,8 @@
 
 using namespace lime;
 
-#define STREAM_MTU 16384 //for now
+#define LTE_CHAN_COUNT 2
+#define STREAM_MTU (PacketFrame::maxSamplesInPacket/(LTE_CHAN_COUNT))
 
 /***********************************************************************
  * Custom StreamerLTE for streaming API hooks
@@ -27,7 +28,7 @@ struct USBStreamService : StreamerLTE
 {
     USBStreamService(
         LMS64CProtocol *dataPort,
-        const size_t channelsCount = 2,
+        const size_t channelsCount = LTE_CHAN_COUNT,
         const StreamDataFormat format = STREAM_12_BIT_COMPRESSED
     ):
         StreamerLTE(dataPort),
@@ -101,8 +102,11 @@ struct USBStreamService : StreamerLTE
 
     void handleRxStatus(const int status, const uint64_t &counter)
     {
-        mLastRxTimestamp = counter;
-        if (status == 0) return;
+        if (status == STATUS_FLAG_TIME_UP)
+        {
+            mLastRxTimestamp = counter;
+            return;
+        }
 
         StreamMetadata metadata;
         metadata.hasTimestamp = true;

@@ -18,6 +18,7 @@ namespace lime{
 class IConnection;
 class LMS_SamplesFIFO;
 
+static const int STATUS_FLAG_TIME_UP = (1 << 0); //!< Update the internal timestamp
 static const int STATUS_FLAG_RX_END = (1 << 1); //!< An rx stream command completed
 static const int STATUS_FLAG_RX_LATE = (1 << 2); //!< An rx stream command had a late time
 static const int STATUS_FLAG_TX_LATE = (1 << 3); //!< An tx stream had a late time

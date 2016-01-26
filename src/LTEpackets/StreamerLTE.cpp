@@ -125,15 +125,15 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                 const int stepSize = channelsCount * 3;
                 size_t numPktBytes = sizeof(pkt->data);
 
-                /*
-                 * FIXME not working yet, bit always set
                 auto byte7 = pkt[pktIndex].reserved[7];
                 if ((byte7 & (1 << 3)) != 0)
                 {
-                    std::cout << "L" << std::flush;
-                    statusFlags |= STATUS_FLAG_TX_LATE;
+                    //FIXME not working yet, bit always set
+                    //std::cout << "L" << std::flush;
+                    //statusFlags |= STATUS_FLAG_TX_LATE;
                 }
-                */
+
+                if (report) report(STATUS_FLAG_TIME_UP, pkt[pktIndex].counter);
 
                 if (getCmd)
                 {
@@ -163,7 +163,7 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                             currentRxCmd.waitForTimestamp = false;
                             //and put this one back in....
                             //currentRxCmdValid = false;
-                            statusFlags |= STATUS_FLAG_RX_LATE;
+                            if (report) report(STATUS_FLAG_RX_LATE, currentRxCmd.timestamp);
                             continue;
                         }
 
@@ -227,14 +227,9 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
                 if (samplesPushed != samplesCollected)
                 {
                     rxDroppedSamples += samplesCollected - samplesPushed;
-                    statusFlags |= STATUS_FLAG_RX_DROP;
+                    if (report) report(STATUS_FLAG_RX_DROP, pkt[pktIndex].counter);
                 }
                 samplesCollected = 0;
-
-                if (report)
-                {
-                    report(statusFlags, pkt[pktIndex].counter);
-                }
             }
         }
         else
