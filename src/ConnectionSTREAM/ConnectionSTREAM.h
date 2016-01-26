@@ -36,6 +36,7 @@ class USBTransferContext
 public:
 	USBTransferContext() : used(false)
 	{
+		id = idCounter++;
 		#ifndef __unix__
 		inOvLap = new OVERLAPPED;
 		memset(inOvLap, 0, sizeof(OVERLAPPED));
@@ -73,12 +74,12 @@ public:
 	PUCHAR context;
 	OVERLAPPED *inOvLap;
 	#else
+	static int idCounter;
+	int id;
 	libusb_transfer* transfer;
 	long bytesXfered;
 	long bytesExpected;
-	bool done;
-	std::mutex m_lock;
-    std::condition_variable mPacketProcessed;
+	std::atomic<bool> done;
 	#endif
 };
 

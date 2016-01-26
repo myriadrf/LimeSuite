@@ -64,7 +64,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 }
 
 /**	@brief Tries to open connected USB device and find communication endpoints.
-	@return Returns 1-Success, 0-EndPoints not found or device didn't connect.
+	@return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
 LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
@@ -299,25 +299,30 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
-        printf("Transfer canceled\n" );
+        printf("Transfer %i canceled\n", context->id);
         context->bytesXfered = trans->actual_length;
-        context->done = true;
-        context->used = false;
-        context->reset();
+        context->done.store(true);
+        //context->used = false;
+        //context->reset();
         break;
     case LIBUSB_TRANSFER_COMPLETED:
-        if(trans->actual_length == context->bytesExpected)
+        //if(trans->actual_length == context->bytesExpected)
 		{
 			context->bytesXfered = trans->actual_length;
-			context->done = true;
+			context->done.store(true);
 		}
-		//printf("Transfer complete %i\n", trans->actual_length);
         break;
     case LIBUSB_TRANSFER_ERROR:
         printf("TRANSFER ERRRO\n");
+        context->bytesXfered = trans->actual_length;
+        context->done.store(true);
+        //context->used = false;
         break;
     case LIBUSB_TRANSFER_TIMED_OUT:
-        printf("transfer timed out\n");
+        printf("transfer timed out %i\n", context->id);
+        context->bytesXfered = trans->actual_length;
+        context->done.store(true);
+        //context->used = false;
 
         break;
     case LIBUSB_TRANSFER_OVERFLOW:
@@ -328,7 +333,6 @@ void callback_libusbtransfer(libusb_transfer *trans)
         printf("transfer stalled\n");
         break;
 	}
-    context->mPacketProcessed.notify_one();
 }
 #endif
 
@@ -385,7 +389,10 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
         }
     }
     if(!contextFound)
+    {
+        printf("No contexts left for reading data\n");
         return -1;
+    }
     contexts[i].used = true;
     #ifndef __unix__
     if(InEndPt)
@@ -398,11 +405,12 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 	contexts[i].done = false;
 	contexts[i].bytesXfered = 0;
 	contexts[i].bytesExpected = length;
-    int status = libusb_submit_transfer(tr);
-    int actual = 0;
-    //int status = libusb_bulk_transfer(dev_handle, 0x81, (unsigned char*)buffer, length, &actual, USB_TIMEOUT);
+	int status = libusb_submit_transfer(tr);
     if(status != 0)
+    {
         printf("ERROR BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
+        return i;
+    }
     #endif
     return i;
 }
@@ -415,7 +423,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 */
 int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
-    if( contexts[contextHandle].used == true && contextHandle >= 0)
+    if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
     int status = 0;
     #ifndef __unix__
@@ -425,24 +433,16 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
     #else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
-    while(contexts[contextHandle].done == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
 	{
 	    struct timeval tv;
 	    tv.tv_sec = 1;
 	    tv.tv_usec = 0;
-		//if(libusb_handle_events(ctx) != 0)
 		if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
             printf("error libusb_handle_events %i\n", status);
 		t2 = chrono::high_resolution_clock::now();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-    std::unique_lock<std::mutex> lck(contexts[contextHandle].m_lock);
-    while(contexts[contextHandle].done == false) //is changed in libusb callback
-    {
-        if(contexts[contextHandle].mPacketProcessed.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
-            return 0;
-    }
-	return contexts[contextHandle].done == true;
+	return contexts[contextHandle].done.load() == true;
     #endif
     }
     else
@@ -458,7 +458,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 */
 int ConnectionSTREAM::FinishDataReading(char *buffer, long &length, int contextHandle)
 {
-    if( contexts[contextHandle].used == true && contextHandle >= 0)
+    if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
     #ifndef __unix__
     int status = 0;
@@ -532,7 +532,6 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
     #else
     unsigned int Timeout = 1000;
     libusb_transfer *tr = contextsToSend[i].transfer;
-    //libusb_set_iso_packet_lengths(contexts[i].transfer, 512*64);
 	libusb_fill_bulk_transfer(tr, dev_handle, 0x1, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
 	contextsToSend[i].done = false;
 	contextsToSend[i].bytesXfered = 0;
@@ -560,7 +559,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
     #else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
-    while(contextsToSend[contextHandle].done == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
 	{
 	    struct timeval tv;
 	    tv.tv_sec = 1;
@@ -571,12 +570,6 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
         t2 = chrono::high_resolution_clock::now();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-	std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].m_lock);
-    while(contextsToSend[contextHandle].done == false) //is changed in libusb callback
-    {
-        if(contextsToSend[contextHandle].mPacketProcessed.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
-            return 0;
-    }
 	return contextsToSend[contextHandle].done == true;
     #endif
     }
@@ -623,11 +616,6 @@ void ConnectionSTREAM::AbortSending()
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
         libusb_cancel_transfer(contextsToSend[i].transfer);
-    }
-    for(int i=0; i<USB_MAX_CONTEXTS; ++i)
-    {
-        contextsToSend[i].used = false;
-        contextsToSend[i].reset();
     }
 #endif
 }
