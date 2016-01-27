@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <memory>
 
 #ifndef __unix__
 #include "windows.h"

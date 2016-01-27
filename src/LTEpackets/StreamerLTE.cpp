@@ -59,8 +59,15 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd)
+void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto rxFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+    auto report = args.report;
+    auto getCmd = args.getCmd;
+
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
@@ -276,8 +283,13 @@ void StreamerLTE::ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO,
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd)
+void StreamerLTE::ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto rxFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
     const int channelsCount = 1;
@@ -340,7 +352,6 @@ void StreamerLTE::ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesF
                 PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
                 tempPacket.first = 0;
                 tempPacket.timestamp = pkt[pktIndex].counter;
-                if (report) report(pkt[pktIndex].reserved[7], pkt[pktIndex].counter);
 
                 uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
                 const int stepSize = channelsCount * 4;
@@ -489,15 +500,28 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     atomic<uint32_t> txRate_Bps(0);
     std::thread threadRx;
     std::thread threadTx;
+
+    StreamerLTE_ThreadData threadRxArgs;
+    threadRxArgs.dataPort = pthis->mDataPort;
+    threadRxArgs.FIFO = pthis->mRxFIFO;
+    threadRxArgs.terminate = &stopRx;
+    threadRxArgs.dataRate_Bps = &rxRate_Bps;
+
+    StreamerLTE_ThreadData threadTxArgs;
+    threadTxArgs.dataPort = pthis->mDataPort;
+    threadTxArgs.FIFO = pthis->mTxFIFO;
+    threadTxArgs.terminate = &stopTx;
+    threadTxArgs.dataRate_Bps = &txRate_Bps;
+
     if (format == STREAM_12_BIT_COMPRESSED)
     {
-        threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction(), RxPopCommandFunction());
-        threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+        threadRx = std::thread(ReceivePackets, threadRxArgs);
+        threadTx = std::thread(TransmitPackets, threadTxArgs);
     }
     else
     {
-        threadRx = std::thread(ReceivePacketsUncompressed, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps, RxReportFunction(), RxPopCommandFunction());
-        threadTx = std::thread(TransmitPacketsUncompressed, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+        threadRx = std::thread(ReceivePacketsUncompressed, threadRxArgs);
+        threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
     }
 
     int updateCounter = 0;
@@ -569,8 +593,13 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto txFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 16;
     const int bufferSize = 65536;
@@ -713,8 +742,13 @@ void StreamerLTE::TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto txFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     const int channelsCount = 1;
     const int packetsToBatch = 16;
     const int bufferSize = 65536;

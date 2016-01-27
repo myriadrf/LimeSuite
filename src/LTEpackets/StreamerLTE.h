@@ -38,6 +38,19 @@ typedef std::function<void(const int status, const uint64_t &counter)> RxReportF
  */
 typedef std::function<bool(RxCommand &command)> RxPopCommandFunction;
 
+/*!
+ * Receiver and transmitter thread arguments.
+ */
+struct StreamerLTE_ThreadData
+{
+    IConnection* dataPort; //!< Connection interface
+    LMS_SamplesFIFO* FIFO; //!< FIFO (tx pops, rx pushes)
+    std::atomic<bool>* terminate; //!< true exit loop
+    std::atomic<uint32_t>* dataRate_Bps; //!< report rate
+    RxReportFunction report; //!< status report out
+    RxPopCommandFunction getCmd; //!< external commands in
+};
+
 class StreamerLTE
 {
 public:
@@ -111,16 +124,16 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd);
-    static void ReceivePacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps, const RxReportFunction &report, const RxPopCommandFunction &getCmd);
+    static void ReceivePackets(const StreamerLTE_ThreadData &args);
+    static void ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
-    static void TransmitPackets(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void TransmitPacketsUncompressed(IConnection* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void TransmitPackets(const StreamerLTE_ThreadData &args);
+    static void TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args);
 
-    std::atomic_bool mStreamRunning;
-    std::atomic_bool stopRx;
-    std::atomic_bool stopProcessing;
-    std::atomic_bool stopTx;
+    std::atomic<bool> mStreamRunning;
+    std::atomic<bool> stopRx;
+    std::atomic<bool> stopProcessing;
+    std::atomic<bool> stopTx;
 
     std::thread threadRx;
     std::thread threadProcessing;

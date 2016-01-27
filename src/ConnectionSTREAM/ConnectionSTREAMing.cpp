@@ -69,15 +69,29 @@ struct USBStreamService : StreamerLTE
         stopRx = false;
         stopTx = false;
 
+        StreamerLTE_ThreadData threadRxArgs;
+        threadRxArgs.dataPort = dataPort;
+        threadRxArgs.FIFO = mRxFIFO;
+        threadRxArgs.terminate = &stopRx;
+        threadRxArgs.dataRate_Bps = &mRxDataRate;
+        threadRxArgs.report = reporter;
+        threadRxArgs.getCmd = getRxCmd;
+
+        StreamerLTE_ThreadData threadTxArgs;
+        threadTxArgs.dataPort = dataPort;
+        threadTxArgs.FIFO = mTxFIFO;
+        threadTxArgs.terminate = &stopTx;
+        threadTxArgs.dataRate_Bps = &mTxDataRate;
+
         if (format == STREAM_12_BIT_COMPRESSED)
         {
-            threadRx = std::thread(ReceivePackets, dataPort, mRxFIFO, &stopRx, &mRxDataRate, reporter, getRxCmd);
-            threadTx = std::thread(TransmitPackets, dataPort, mTxFIFO, &stopTx, &mTxDataRate);
+            threadRx = std::thread(ReceivePackets, threadRxArgs);
+            threadTx = std::thread(TransmitPackets, threadTxArgs);
         }
         else
         {
-            threadRx = std::thread(ReceivePacketsUncompressed, dataPort, mRxFIFO, &stopRx, &mRxDataRate, reporter, getRxCmd);
-            threadTx = std::thread(TransmitPacketsUncompressed, dataPort, mTxFIFO, &stopTx, &mTxDataRate);
+            threadRx = std::thread(ReceivePacketsUncompressed, threadRxArgs);
+            threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
         }
 
         //switch on Rx
