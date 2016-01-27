@@ -13,6 +13,8 @@ void __loadConnectionSTREAMEntry(void) //TODO fixme replace with LoadLibrary/dlo
 static ConnectionSTREAMEntry STREAMEntry;
 }
 
+int USBTransferContext::idCounter = 0;
+
 ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
     ConnectionRegistryEntry("STREAM")
 {
