@@ -135,6 +135,9 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
                 auto byte7 = pkt[pktIndex].reserved[7];
                 if ((byte7 & (1 << 3)) != 0)
                 {
+                    //auto reg7 = Reg_read(dataPort, 0x0007);
+                    //Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
+                    //Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
                     //FIXME not working yet, bit always set
                     //std::cout << "L" << std::flush;
                     //statusFlags |= STATUS_FLAG_TX_LATE;

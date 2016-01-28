@@ -124,6 +124,8 @@ public:
 
 	//hooks to update FPGA plls when baseband interface data rate is changed
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
+	void EnterSelfCalibration(const size_t channel);
+	void ExitSelfCalibration(const size_t channel);
 
     std::string DeviceName();
 private:

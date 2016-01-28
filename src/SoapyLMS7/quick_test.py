@@ -44,8 +44,8 @@ if __name__ == '__main__':
     print("set RX bandwidth")
     streamBoardSDR.setAntenna(SOAPY_SDR_RX, 0, "LNAL")
     streamBoardSDR.setAntenna(SOAPY_SDR_RX, 1, "LNAL")
-    #streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 0, 10e6)
-    #streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 1, 10e6)
+    streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 0, 10e6)
+    streamBoardSDR.setBandwidth(SOAPY_SDR_RX, 1, 10e6)
 
     print("Enable Rx TSG")
     streamBoardSDR.writeSetting("ACTIVE_CHANNEL", "A");

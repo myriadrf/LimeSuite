@@ -93,6 +93,8 @@ liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type c
 
 liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff_MHz)
 {   
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     float_type lowLimit = 0;
     float_type highLimit = 1000;
@@ -331,6 +333,9 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     BackupAllRegisters();
 
     liblms7_status status = TuneTxFilter(TX_LADDER, bandwidth);
+
+    LMS7002M_SelfCalState state(this);
+
     uint8_t ladder_c_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
     uint8_t ladder_r_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
     status = TuneTxFilterSetup(TX_LADDER, bandwidth);
@@ -435,6 +440,8 @@ TxFilterLowBandChainEnd:
 
 liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 {
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     uint16_t cfb_tia_rfe;
     uint16_t c_ctl_lpfl_rbb;

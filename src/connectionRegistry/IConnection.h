@@ -271,6 +271,22 @@ public:
      */
     virtual void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 
+    /*!
+     * Called by the LMS7002M driver before the board begins self-calibration.
+     * Implementations should perform the necessary steps to power down
+     * external amplifiers and disable any BBIC interfaces which
+     * may be affected by the change in BBIC interface clock rate.
+     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
+     */
+    virtual void EnterSelfCalibration(const size_t channel);
+
+    /*!
+     * Called by the LMS7002M driver after the board completes self-calibration.
+     * Implementations should restore the board to the pre-calibration state.
+     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
+     */
+    virtual void ExitSelfCalibration(const size_t channel);
+
     /***********************************************************************
      * Reference clocks API
      **********************************************************************/

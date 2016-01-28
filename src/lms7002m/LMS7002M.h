@@ -34,6 +34,11 @@ public:
      */
     void SetConnection(IConnection* port, const size_t devIndex = 0);
 
+    IConnection *GetConnection(void) const
+    {
+        return controlPort;
+    }
+
 	virtual ~LMS7002M();
 
     /*!
@@ -280,5 +285,25 @@ protected:
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };
+
+
+/*!
+ * Helper class to enter a calibration upon construction,
+ * and to automatically exit calibration upon exit.
+ */
+class LMS7002M_SelfCalState
+{
+public:
+    LMS7002M_SelfCalState(LMS7002M *rfic);
+    ~LMS7002M_SelfCalState(void);
+
+private:
+    IConnection *ctrl;
+    const size_t channel;
+    const double txRate;
+    const double rxRate;
+};
+
+
 }
 #endif

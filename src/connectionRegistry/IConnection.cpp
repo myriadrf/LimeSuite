@@ -108,6 +108,16 @@ void IConnection::UpdateExternalDataRate(const size_t channel, const double txRa
     return;
 }
 
+void IConnection::EnterSelfCalibration(const size_t channel)
+{
+    return;
+}
+
+void IConnection::ExitSelfCalibration(const size_t channel)
+{
+    return;
+}
+
 /***********************************************************************
  * Reference clocks API
  **********************************************************************/

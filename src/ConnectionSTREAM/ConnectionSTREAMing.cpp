@@ -70,7 +70,7 @@ struct USBStreamService : StreamerLTE
         stopTx = false;
 
         StreamerLTE_ThreadData threadRxArgs;
-        threadRxArgs.dataPort = dataPort;
+        threadRxArgs.dataPort = mDataPort;
         threadRxArgs.FIFO = mRxFIFO;
         threadRxArgs.terminate = &stopRx;
         threadRxArgs.dataRate_Bps = &mRxDataRate;
@@ -78,7 +78,7 @@ struct USBStreamService : StreamerLTE
         threadRxArgs.getCmd = getRxCmd;
 
         StreamerLTE_ThreadData threadTxArgs;
-        threadTxArgs.dataPort = dataPort;
+        threadTxArgs.dataPort = mDataPort;
         threadTxArgs.FIFO = mTxFIFO;
         threadTxArgs.terminate = &stopTx;
         threadTxArgs.dataRate_Bps = &mTxDataRate;
@@ -94,24 +94,33 @@ struct USBStreamService : StreamerLTE
             threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
         }
 
-        //switch on Rx
-        regVal = Reg_read(dataPort, 0x0005);
-        bool async = false;
-        bool timeOff = 1 << 5;
-        Reg_write(dataPort, 0x0005, (regVal & ~0x20) | 0x5 | (async << 4) | timeOff);
+        this->start();
     }
 
     ~USBStreamService(void)
     {
-        //stop Tx Rx if they were active
-        uint32_t regVal = Reg_read(mDataPort, 0x0005);
-        Reg_write(mDataPort, 0x0005, regVal & ~0x6);
+        this->stop();
 
         stopRx = true;
         stopTx = true;
 
         threadRx.join();
         threadTx.join();
+    }
+
+    void start(void)
+    {
+        //switch on Rx
+        auto regVal = Reg_read(mDataPort, 0x0005);
+        bool timeOff = 1 << 5;
+        Reg_write(mDataPort, 0x0005, (regVal & ~0x20) | 0x5 | timeOff);
+    }
+
+    void stop(void)
+    {
+        //stop Tx Rx if they were active
+        uint32_t regVal = Reg_read(mDataPort, 0x0005);
+        Reg_write(mDataPort, 0x0005, regVal & ~0x6);
     }
 
     void handleRxStatus(const int status, const uint64_t &counter)
@@ -355,6 +364,16 @@ void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double
     //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
     LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
     mStreamService->mHwCounterRate = rxRate;
+}
+
+void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)
+{
+    if (mStreamService) mStreamService->stop();
+}
+
+void ConnectionSTREAM::ExitSelfCalibration(const size_t channel)
+{
+    if (mStreamService) mStreamService->start();
 }
 
 uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)

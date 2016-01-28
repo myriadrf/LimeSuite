@@ -877,6 +877,8 @@ void SoapyLMS7::recalAfterChange(const int direction, const size_t channel)
         return;
     }
 
+    auto saveDcMode = this->getDCOffsetMode(direction, channel);
+
     auto rfic = getRFIC(channel);
     if (direction == SOAPY_SDR_RX) rfic->CalibrateRx(bw/1e6);
     if (direction == SOAPY_SDR_TX) rfic->CalibrateTx(bw/1e6);
@@ -886,6 +888,8 @@ void SoapyLMS7::recalAfterChange(const int direction, const size_t channel)
         rfic->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6,
         rfic->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6);
     */
+
+    this->setDCOffsetMode(direction, channel, saveDcMode);
 }
 
 /*******************************************************************

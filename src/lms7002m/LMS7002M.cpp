@@ -1605,6 +1605,8 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     Log("Tx calibration started", LOG_INFO);
     BackupAllRegisters();
@@ -2136,6 +2138,8 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     uint32_t minRSSI_i;
     uint32_t minRSSI_q;
@@ -2709,4 +2713,19 @@ void LMS7002M::ConfigureLML_BB2RF(
     this->Modify_SPI_Reg_bits(LML2_BIP, m[BI]);
     this->Modify_SPI_Reg_bits(LML2_AQP, m[AQ]);
     this->Modify_SPI_Reg_bits(LML2_AIP, m[AI]);
+}
+
+LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
+    ctrl(rfic->GetConnection()),
+    channel(rfic->GetActiveChannelIndex()),
+    txRate(rfic->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6),
+    rxRate(rfic->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6)
+{
+    ctrl->EnterSelfCalibration(channel);
+}
+
+LMS7002M_SelfCalState::~LMS7002M_SelfCalState(void)
+{
+    ctrl->UpdateExternalDataRate(channel, txRate, rxRate);
+    ctrl->ExitSelfCalibration(channel);
 }
