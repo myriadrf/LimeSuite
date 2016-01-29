@@ -17,14 +17,15 @@ endif()
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionSTREAM)
+
 set(CONNECTION_STREAM_SOURCES
-    ConnectionSTREAMEntry.cpp
-    ConnectionSTREAM.cpp
-    ConnectionSTREAMing.cpp
+    ${THIS_SOURCE_DIR}/ConnectionSTREAMEntry.cpp
+    ${THIS_SOURCE_DIR}/ConnectionSTREAM.cpp
+    ${THIS_SOURCE_DIR}/ConnectionSTREAMing.cpp
 )
 
 set(CONNECTION_STREAM_LIBRARIES
-    LimeSuite
     ${USB_LIBRARIES}
 )
 
@@ -40,9 +41,8 @@ if (NOT ENABLE_STREAM)
 endif()
 
 ########################################################################
-## Build library
+## Add to library
 ########################################################################
-include_directories(${USB_INCLUDE_DIRS})
-add_library(ConnectionSTREAM STATIC ${CONNECTION_STREAM_SOURCES})
-target_link_libraries(ConnectionSTREAM ${CONNECTION_STREAM_LIBRARIES})
-set_property(TARGET ConnectionSTREAM PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS})
+target_sources(LimeSuite PUBLIC ${CONNECTION_STREAM_SOURCES})
+target_link_libraries(LimeSuite ${CONNECTION_STREAM_LIBRARIES})

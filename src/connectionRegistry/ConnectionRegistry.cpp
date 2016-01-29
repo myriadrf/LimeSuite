@@ -13,17 +13,7 @@
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace lime;
 
-/*******************************************************************
- * FIXME - temporary way to load connections until we make new loader
- ******************************************************************/
-void __loadConnectionEVB7COMEntry(void);
-void __loadConnectionSTREAMEntry(void);
-
-static void __loadAllConnections(void)
-{
-    __loadConnectionEVB7COMEntry();
-    __loadConnectionSTREAMEntry();
-}
+void __loadAllConnections(void);
 
 /*******************************************************************
  * Registry data structures

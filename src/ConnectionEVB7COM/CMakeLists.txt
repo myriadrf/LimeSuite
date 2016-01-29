@@ -2,6 +2,13 @@
 ## Support for EVB7 over COM serial connection
 ########################################################################
 
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionEVB7COM)
+
+set(CONNECTION_EVB7_COM_SOURCES
+    ${THIS_SOURCE_DIR}/ConnectionEVB7COMEntry.cpp
+    ${THIS_SOURCE_DIR}/ConnectionEVB7COM.cpp
+)
+
 ########################################################################
 ## Feature registration
 ########################################################################
@@ -14,8 +21,6 @@ if (NOT ENABLE_EVB7COM)
 endif()
 
 ########################################################################
-## Build library
+## Add to library
 ########################################################################
-add_library(ConnectionEVB7COM STATIC ConnectionEVB7COMEntry.cpp ConnectionEVB7COM.cpp)
-target_link_libraries(ConnectionEVB7COM LimeSuite)
-set_property(TARGET ConnectionEVB7COM PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+target_sources(LimeSuite PUBLIC ${CONNECTION_EVB7_COM_SOURCES})

@@ -128,20 +128,16 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-add_subdirectory(ConnectionEVB7COM)
-add_subdirectory(ConnectionSTREAM)
-#add_subdirectory(ConnectionNovena7)
+include(ConnectionEVB7COM/CMakeLists.txt)
+include(ConnectionSTREAM/CMakeLists.txt)
+#include(ConnectionNovena7/CMakeLists.txt)
 
-#connections are statically linked into LimeSuite
-#TODO this might be done as installable modules in the future
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/connectionRegistry/BuiltinConnections.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
+)
 
-set(CONNECTION_LIBS ConnectionEVB7COM ConnectionSTREAM)
-
-if (BUILD_SHARED_LIBS)
-    target_link_libraries(LimeSuite ${CONNECTION_LIBS})
-else ()
-    list(APPEND LIME_SUITE_LIBS ${CONNECTION_LIBS})
-endif ()
+target_sources(LimeSuite PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
 
 ########################################################################
 ## wx widgets dependency
