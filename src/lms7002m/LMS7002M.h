@@ -91,6 +91,15 @@ public:
     liblms7_status RegistersTest();
     ///@}
 
+    ///@name Calibration protection:
+    ///Called internally by calibration and cgen API.
+    ///Call externally when performing multiple cals.
+    ///Safe to next calls to enter and exit.
+    ///Always match calls to enter+exit.
+    void EnterSelfCalibration(void);
+    void ExitSelfCalibration(void);
+    ///@}
+
     ///@name Transmitter, Receiver calibrations
 	liblms7_status CalibrateRx(float_type bandwidth_MHz);
 	liblms7_status CalibrateTx(float_type bandwidth_MHz);
@@ -282,6 +291,7 @@ protected:
     IConnection* controlPort;
     int addrLMS7002M;
     size_t mdevIndex;
+    size_t mSelfCalDepth;
 
     liblms7_status LoadConfigLegacyFile(const char* filename);
 };
@@ -298,10 +308,7 @@ public:
     ~LMS7002M_SelfCalState(void);
 
 private:
-    IConnection *ctrl;
-    const size_t channel;
-    const double txRate;
-    const double rxRate;
+    LMS7002M *rfic;
 };
 
 

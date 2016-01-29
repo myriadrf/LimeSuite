@@ -323,6 +323,7 @@ void LMS7002M::FilterTuning_AdjustGains()
 
 liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_type realpole_MHz)
 {
+    LMS7002M_SelfCalState state(this);
     uint32_t rssi;
     uint32_t rssi_value_10k;
     bool prevRSSIbigger;
@@ -333,9 +334,6 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     BackupAllRegisters();
 
     liblms7_status status = TuneTxFilter(TX_LADDER, bandwidth);
-
-    LMS7002M_SelfCalState state(this);
-
     uint8_t ladder_c_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
     uint8_t ladder_r_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
     status = TuneTxFilterSetup(TX_LADDER, bandwidth);

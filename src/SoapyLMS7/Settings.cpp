@@ -113,6 +113,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle):
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
     }
+
+    _conn->SetHardwareTimestamp(0);
 }
 
 SoapyLMS7::~SoapyLMS7(void)
@@ -742,6 +744,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %f MHz)", dirName, int(channel), bw/1e6);
 
     auto rfic = getRFIC(channel);
+    LMS7002M_SelfCalState state(rfic);
     auto &actual = _actualBw[direction][channel];
 
     actual = bw;

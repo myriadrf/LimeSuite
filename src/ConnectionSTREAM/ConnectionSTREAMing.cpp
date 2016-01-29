@@ -360,10 +360,9 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
-    if (not mStreamService) mStreamService.reset(new USBStreamService(this));
     //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
     LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
-    mStreamService->mHwCounterRate = rxRate;
+    if (mStreamService) mStreamService->mHwCounterRate = rxRate;
 }
 
 void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)
@@ -383,6 +382,7 @@ uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
 
 void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
 {
+    if (not mStreamService) mStreamService.reset(new USBStreamService(this));
     mStreamService->mTimestampOffset = int64_t(now)-int64_t(mStreamService->mLastRxTimestamp);
 }
 

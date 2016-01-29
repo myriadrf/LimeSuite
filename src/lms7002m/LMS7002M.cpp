@@ -74,6 +74,7 @@ LMS7002M::LMS7002M() :
     controlPort(nullptr),
     addrLMS7002M(-1),
     mdevIndex(0),
+    mSelfCalDepth(0),
     mRegistersMap(new LMS7002M_RegistersMap())
 {
     mRefClkSXR_MHz = 30.72;
@@ -650,6 +651,7 @@ float_type LMS7002M::GetReferenceClk_TSP_MHz(bool tx)
 */
 liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz)
 {
+    LMS7002M_SelfCalState state(this);
     float_type dFvco;
     float_type dFrac;
     int16_t iHdiv;
@@ -2615,6 +2617,7 @@ liblms7_status LMS7002M::DownloadAll()
 */
 liblms7_status LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation)
 {
+    LMS7002M_SelfCalState state(this);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
     liblms7_status status = SetFrequencyCGEN(cgen_freq_MHz);
@@ -2715,17 +2718,34 @@ void LMS7002M::ConfigureLML_BB2RF(
     this->Modify_SPI_Reg_bits(LML2_AIP, m[AI]);
 }
 
-LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
-    ctrl(rfic->GetConnection()),
-    channel(rfic->GetActiveChannelIndex()),
-    txRate(rfic->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6),
-    rxRate(rfic->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6)
+void LMS7002M::EnterSelfCalibration(void)
 {
-    ctrl->EnterSelfCalibration(channel);
+    if (mSelfCalDepth == 0)
+    {
+        controlPort->EnterSelfCalibration(this->GetActiveChannelIndex());
+    }
+    mSelfCalDepth++;
+}
+
+void LMS7002M::ExitSelfCalibration(void)
+{
+    mSelfCalDepth--;
+    if (mSelfCalDepth == 0)
+    {
+        controlPort->UpdateExternalDataRate(this->GetActiveChannelIndex(),
+            this->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6,
+            this->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6);
+        controlPort->ExitSelfCalibration(this->GetActiveChannelIndex());
+    }
+}
+
+LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
+    rfic(rfic)
+{
+    rfic->EnterSelfCalibration();
 }
 
 LMS7002M_SelfCalState::~LMS7002M_SelfCalState(void)
 {
-    ctrl->UpdateExternalDataRate(channel, txRate, rxRate);
-    ctrl->ExitSelfCalibration(channel);
+    rfic->ExitSelfCalibration();
 }
