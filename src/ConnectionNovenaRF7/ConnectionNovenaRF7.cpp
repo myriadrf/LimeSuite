@@ -1,14 +1,10 @@
 /**
-    @file   ConnectionSPI.cpp
-    @author Lime Microsystems (www.limemicro.com)
-    @brief  Implementation of communications through SPI port
+    @file ConnectionNovenaRF7.cpp
+    @author Lime Microsystems
+    @brief NovenaRF connection over SPI-DEV linux.
 */
 
-#include "ConnectionSPI.h"
-
-#include "string.h"
-#ifdef __unix__
-#include <fstream>
+#include "ConnectionNovenaRF7.h"
 #include <errno.h>
 #include <unistd.h>
 #include <termios.h>
@@ -21,70 +17,17 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <linux/i2c-dev.h>
-#endif // LINUX
-
 #include <iostream>
-#include <sstream>
 
 using namespace std;
+using namespace lime;
 
-const int ConnectionSPI::cSPI_BUF_SIZE = 128;
-const int ConnectionSPI::cSPI_SPEED_HZ = 2000000;
+const int ConnectionNovenaRF7::cSPI_BUF_SIZE = 128;
+const int ConnectionNovenaRF7::cSPI_SPEED_HZ = 2000000;
 
-/** @brief Tries to read EEPROM for Novena board signature
-    @return true if Novena board
-*/
-bool IsNovenaBoard()
-{
-#ifdef __unix__
-    char data[8];
-    int count = 6;
-    memset(data, 0, 8);
-    int addr = 0;
-    struct i2c_rdwr_ioctl_data session;
-    struct i2c_msg messages[2];
-    char set_addr_buf[2];
-    memset(set_addr_buf, 0, sizeof(set_addr_buf));
-    memset(data, 0, count);
-    set_addr_buf[0] = addr>>8;
-    set_addr_buf[1] = addr;
-    messages[0].addr = 0xac>>1;
-    messages[0].flags = 0;
-    messages[0].len = sizeof(set_addr_buf);
-    messages[0].buf = set_addr_buf;
-    messages[1].addr = 0xac>>1;
-    messages[1].flags = I2C_M_RD;
-    messages[1].len = count;
-    messages[1].buf = data;
-    session.msgs = messages;
-    session.nmsgs = 2;
-
-    bool isNovena = false;
-
-    int fd = open("/dev/i2c-2", O_RDWR);
-    if(fd > 0)
-    {
-        if(ioctl(fd, I2C_RDWR, &session) < 0)
-        {
-            perror("Unable to communicate with i2c device");
-            isNovena = false;
-        }
-        if(strcmp("Novena", data) == 0)
-            isNovena = true;
-    }
-    close(fd);
-    return isNovena;
-#else
-    return false;
-#endif
-}
-
-/** @brief Initializes SPI port and exports needed GPIO
-*/
-ConnectionSPI::ConnectionSPI()
+ConnectionNovenaRF7::ConnectionNovenaRF7(void)
 {
     fd = -1;
-    m_connectionType = SPI_PORT;
     std::fstream gpio;
     //export SEN pin
     gpio.open("/sys/class/gpio/export", ios::out);
@@ -102,26 +45,25 @@ ConnectionSPI::ConnectionSPI()
         m_SEN.flush();
         cout << "GPIO122: set to 1" << endl;
     }
+
 }
 
-ConnectionSPI::~ConnectionSPI()
+ConnectionNovenaRF7::~ConnectionNovenaRF7(void)
 {
-    Close();
-    m_SEN.close();
+    this->Close();
 }
 
 /** @brief Opens connection to first found chip
     @return 0-success
 */
-IConnection::DeviceStatus ConnectionSPI::Open()
+LMS64CProtocol::DeviceStatus ConnectionNovenaRF7::Open(const char *spiDevPath)
 {
-	Close();
 #ifdef __unix__
-	fd = open("/dev/spidev2.0", O_RDWR | O_SYNC);
+	fd = open(spiDevPath, O_RDWR | O_SYNC);
 	if (fd < 0)
 	{
         //MessageLog::getInstance()->write("SPI PORT: device not found\n", LOG_ERROR);
-		return IConnection::FAILURE;
+		return LMS64CProtocol::FAILURE;
 	}
 	int mode = SPI_MODE_0;
 	int ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
@@ -159,24 +101,15 @@ IConnection::DeviceStatus ConnectionSPI::Open()
 	printf("spi mode: 0x%x\n", mode);
 	printf("bits per word: %d\n", bits);
 	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
-    return IConnection::SUCCESS;
+    return LMS64CProtocol::SUCCESS;
 #else
-    return IConnection::FAILURE;
+    return LMS64CProtocol::FAILURE;
 #endif
-}
-
-/** @brief Opens connection to selected chip
-    @param index chip index in device list
-    @return 0-success
-*/
-IConnection::DeviceStatus ConnectionSPI::Open(unsigned index)
-{
-    return Open();
 }
 
 /** @brief Closes connection to chip
 */
-void ConnectionSPI::Close()
+void ConnectionNovenaRF7::Close()
 {
 #ifdef __unix__
     close(fd);
@@ -187,7 +120,7 @@ void ConnectionSPI::Close()
 /** @brief Returns whether chip is connected
     @return chip is connected
 */
-bool ConnectionSPI::IsOpen()
+bool ConnectionNovenaRF7::IsOpen()
 {
     return (fd >= 0);
 }
@@ -198,7 +131,7 @@ bool ConnectionSPI::IsOpen()
     @param timeout_ms timeout limit for operation in milliseconds
     @return Number of bytes sent
 */
-int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms)
+int ConnectionNovenaRF7::Write(const unsigned char *buffer, int length, int timeout_ms)
 {
     #ifdef __unix__
     if(fd < 0)
@@ -243,7 +176,7 @@ int ConnectionSPI::Write(const unsigned char *buffer, int length, int timeout_ms
     @param timeout_ms timeout limit for operation in milliseconds
     @return Number of bytes received
 */
-int ConnectionSPI::Read(unsigned char *buffer, int length, int timeout_ms)
+int ConnectionNovenaRF7::Read(unsigned char *buffer, int length, int timeout_ms)
 {
 #ifdef __unix__
     if(fd < 0)
@@ -258,35 +191,34 @@ int ConnectionSPI::Read(unsigned char *buffer, int length, int timeout_ms)
 #endif
 }
 
-/** @brief Finds SPI port
-    @return number of devices found
-*/
-int ConnectionSPI::RefreshDeviceList()
+void ConnectionNovenaRF7::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
 {
-    m_deviceNames.clear();
-#ifdef __unix__
-    int spidev = open("/dev/spidev2.0", O_RDWR);
-	if (spidev >= 0)
-	{
-	    if(IsNovenaBoard() == true)
-            m_deviceNames.push_back("SPI (Novena)");
-        else
-            m_deviceNames.push_back("SPI");
-	}
-    close(spidev);
-#endif
-    return m_deviceNames.size();
-}
-
-/** @brief Returns found devices names
-    @return vector of device names
-*/
-vector<string> ConnectionSPI::GetDeviceNames()
-{
-    return m_deviceNames;
-}
-
-int ConnectionSPI::GetOpenedIndex()
-{
-    return 0;
+    //TODO...
+    printf("Fill in the UpdateExternalBandSelect() function for NovenaRF7!\n");
+    /*
+    //in case of Novena board, need to update GPIO
+    if(controlPort->GetInfo().device == LMS_DEV_NOVENA)
+    {
+        uint16_t regValue = SPI_read(0x0706) & 0xFFF8;
+        //lms_gpio2 - tx output selection:
+        //		0 - TX1_A and TX1_B (Band 1),
+        //		1 - TX2_A and TX2_B (Band 2)
+        regValue |= Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) << 2; //gpio2
+        //RX active paths
+        //lms_gpio0 | lms_gpio1      	RX_A		RX_B
+        //  0 			0       =>  	no active path
+        //  1   		0 		=>	LNAW_A  	LNAW_B
+        //  0			1		=>	LNAH_A  	LNAH_B
+        //  1			1		=>	LNAL_A 	 	LNAL_B
+        switch(Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE)))
+        {
+            //set gpio1:gpio0
+            case 0: regValue |= 0x0; break;
+            case 1: regValue |= 0x2; break;
+            case 2: regValue |= 0x3; break;
+            case 3: regValue |= 0x1; break;
+        }
+        SPI_write(0x0706, regValue);
+    }
+    */
 }

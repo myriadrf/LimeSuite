@@ -5,11 +5,11 @@
 
 #cmakedefine ENABLE_EVB7COM
 #cmakedefine ENABLE_STREAM
-#cmakedefine ENABLE_NOVENA7
+#cmakedefine ENABLE_NOVENARF7
 
 void __loadConnectionEVB7COMEntry(void);
 void __loadConnectionSTREAMEntry(void);
-void __loadConnectionNovena7Entry(void);
+void __loadConnectionNovenaRF7Entry(void);
 
 void __loadAllConnections(void)
 {
@@ -21,7 +21,7 @@ void __loadAllConnections(void)
     __loadConnectionSTREAMEntry();
     #endif
 
-    #ifdef ENABLE_NOVENA7
-    __loadConnectionNovena7Entry();
+    #ifdef ENABLE_NOVENARF7
+    __loadConnectionNovenaRF7Entry();
     #endif
 }
