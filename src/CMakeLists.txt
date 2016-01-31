@@ -36,9 +36,9 @@ set(LIME_SUITE_PUBLIC_HEADERS
     version.h
     lms7002m_mcu/MCU_BD.h
     lms7002m_mcu/MCU_File.h
-    connectionRegistry/IConnection.h
-    connectionRegistry/ConnectionHandle.h
-    connectionRegistry/ConnectionRegistry.h
+    ConnectionRegistry/IConnection.h
+    ConnectionRegistry/ConnectionHandle.h
+    ConnectionRegistry/ConnectionRegistry.h
     lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M_statuses.h
     lms7002m/LMS7002M.h
@@ -75,9 +75,9 @@ endif()
 set(LIME_SUITE_SOURCES
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
-    connectionRegistry/IConnection.cpp
-    connectionRegistry/ConnectionHandle.cpp
-    connectionRegistry/ConnectionRegistry.cpp
+    ConnectionRegistry/IConnection.cpp
+    ConnectionRegistry/ConnectionHandle.cpp
+    ConnectionRegistry/ConnectionRegistry.cpp
     lms7002m_novena/StreamerNovena.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
@@ -94,7 +94,7 @@ set(LIME_SUITE_SOURCES
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(ADF4002)
 include_directories(lms7002m_mcu)
-include_directories(connectionRegistry)
+include_directories(ConnectionRegistry)
 include_directories(lms7002m_novena)
 include_directories(lms7002m)
 include_directories(lms7002m/cpp-feather-ini-parser)
@@ -133,7 +133,7 @@ include(ConnectionSTREAM/CMakeLists.txt)
 #include(ConnectionNovena7/CMakeLists.txt)
 
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/connectionRegistry/BuiltinConnections.in.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
 )
 
