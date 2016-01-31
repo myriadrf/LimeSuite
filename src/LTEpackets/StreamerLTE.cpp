@@ -3,6 +3,7 @@
 #include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 #include <fstream>
 #include <iostream>
+#include <ciso646>
 #include "fifo.h"
 
 #include "kiss_fft.h"
