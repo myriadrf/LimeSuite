@@ -7,7 +7,7 @@
 #ifndef LMS7002M_PARAMETERS_H
 #define LMS7002M_PARAMETERS_H
 
-#include "typedefs.h"
+#include <cstdint>
 #include <vector>
 
 namespace lime{

@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <map>
-#include <typedefs.h>
+#include <cstdint>
 
 namespace lime{
 

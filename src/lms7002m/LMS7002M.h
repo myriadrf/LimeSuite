@@ -9,13 +9,15 @@
 
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
-#include "typedefs.h"
+#include <cstdint>
 
 #include <sstream>
 
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
+
+typedef double float_type;
 
 class LMS7002M
 {
