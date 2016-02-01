@@ -489,6 +489,7 @@ IConnection::DeviceStatus ConnectionCOM::Open(const char *comName, int baudrate)
 
     tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
     tty.c_iflag &= ~IGNBRK;
+    tty.c_iflag &= ~ICRNL;
     tty.c_lflag = 0;
     tty.c_oflag = 0;
     tty.c_cc[VMIN] = 0; // read non blocking
