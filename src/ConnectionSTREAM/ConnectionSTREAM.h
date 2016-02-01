@@ -165,6 +165,8 @@ private:
 
     //! Stream service used by the stream and time API
     std::shared_ptr<USBStreamService> mStreamService;
+
+    std::mutex mExtraUsbMutex;
 };
 
 

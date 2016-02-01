@@ -214,6 +214,7 @@ bool ConnectionSTREAM::IsOpen()
 */
 int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
+    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
     if(IsOpen())
     {
@@ -259,6 +260,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
 */
 int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
+    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
     if(IsOpen())
     {
@@ -299,7 +301,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
-        printf("Transfer %i canceled\n", context->id);
+        //printf("Transfer %i canceled\n", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;
@@ -319,7 +321,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
         //context->used = false;
         break;
     case LIBUSB_TRANSFER_TIMED_OUT:
-        printf("transfer timed out %i\n", context->id);
+        //printf("transfer timed out %i\n", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;
@@ -377,6 +379,7 @@ string ConnectionSTREAM::DeviceName()
 */
 int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 {
+    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     int i = 0;
 	bool contextFound = false;
 	//find not used context
@@ -511,6 +514,7 @@ void ConnectionSTREAM::AbortReading()
 */
 int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
 {
+    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     int i = 0;
 	//find not used context
 	bool contextFound = false;
