@@ -32,8 +32,15 @@ struct USBStreamService : StreamerLTE
         const StreamDataFormat format = STREAM_12_BIT_COMPRESSED
     ):
         StreamerLTE(dataPort),
+        format(format),
+        rxStreamUseCount(1), //always need rx for status reporting
+        txStreamUseCount(0),
+        mTxThread(nullptr),
+        mRxThread(nullptr),
+        rxStreamingContinuous(false),
         mLastRxTimestamp(0),
-        mTimestampOffset(0)
+        mTimestampOffset(0),
+        mHwCounterRate(0.0)
     {
         mRxFIFO->Reset(2*4096, channelsCount);
         mTxFIFO->Reset(2*4096, channelsCount);
@@ -62,7 +69,15 @@ struct USBStreamService : StreamerLTE
         dataPort->TransferPacket(ctrPkt);
         ctrPkt.outBuffer[0] = 0x00;
         dataPort->TransferPacket(ctrPkt);
+    }
 
+    ~USBStreamService(void)
+    {
+        this->updateThreadState(true);
+    }
+
+    void updateThreadState(const bool forceStop = false)
+    {
         auto reporter = std::bind(&USBStreamService::handleRxStatus, this, std::placeholders::_1, std::placeholders::_2);
         auto getRxCmd = std::bind(&ConcurrentQueue<RxCommand>::try_pop, &mRxCmdQueue, std::placeholders::_1);
 
@@ -83,37 +98,68 @@ struct USBStreamService : StreamerLTE
         threadTxArgs.terminate = &stopTx;
         threadTxArgs.dataRate_Bps = &mTxDataRate;
 
-        if (format == STREAM_12_BIT_COMPRESSED)
+        if (mRxThread == nullptr and rxStreamUseCount != 0 and not forceStop)
         {
-            threadRx = std::thread(ReceivePackets, threadRxArgs);
-            threadTx = std::thread(TransmitPackets, threadTxArgs);
+            //restore stream state continuous
+            if (rxStreamingContinuous)
+            {
+                RxCommand rxCmd;
+                rxCmd.waitForTimestamp = false;
+                rxCmd.timestamp = 0;
+                rxCmd.finiteRead = false;
+                rxCmd.numSamps = 0;
+                mRxCmdQueue.push(rxCmd);
+            }
+
+            if (format == STREAM_12_BIT_COMPRESSED)
+            {
+                mRxThread = new std::thread(ReceivePackets, threadRxArgs);
+            }
+            else
+            {
+                mRxThread = new std::thread(ReceivePacketsUncompressed, threadRxArgs);
+            }
         }
-        else
+
+        if (mTxThread == nullptr and txStreamUseCount != 0 and not forceStop)
         {
-            threadRx = std::thread(ReceivePacketsUncompressed, threadRxArgs);
-            threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
+            if (format == STREAM_12_BIT_COMPRESSED)
+            {
+                mTxThread = new std::thread(TransmitPackets, threadTxArgs);
+            }
+            else
+            {
+                mTxThread = new std::thread(TransmitPacketsUncompressed, threadTxArgs);
+            }
         }
 
-        this->start();
-    }
+        if ((forceStop or txStreamUseCount == 0) and mTxThread != nullptr)
+        {
+            stopTx = true;
+            mTxThread->join();
+            delete mTxThread;
+            mTxThread = nullptr;
+        }
 
-    ~USBStreamService(void)
-    {
-        this->stop();
-
-        stopRx = true;
-        stopTx = true;
-
-        threadRx.join();
-        threadTx.join();
+        if ((forceStop or rxStreamUseCount == 0) and mRxThread != nullptr)
+        {
+            stopRx = true;
+            mRxThread->join();
+            delete mRxThread;
+            mRxThread = nullptr;
+        }
     }
 
     void start(void)
     {
+        if (mHwCounterRate == 0.0) return; //not configured
+
         //switch on Rx
         auto regVal = Reg_read(mDataPort, 0x0005);
         bool timeOff = 1 << 5;
         Reg_write(mDataPort, 0x0005, (regVal & ~0x20) | 0x5 | timeOff);
+
+        this->updateThreadState();
     }
 
     void stop(void)
@@ -121,12 +167,15 @@ struct USBStreamService : StreamerLTE
         //stop Tx Rx if they were active
         uint32_t regVal = Reg_read(mDataPort, 0x0005);
         Reg_write(mDataPort, 0x0005, regVal & ~0x6);
+
+        this->updateThreadState(true);
     }
 
     void handleRxStatus(const int status, const uint64_t &counter)
     {
         if (status == STATUS_FLAG_TIME_UP)
         {
+            if (counter < mLastRxTimestamp) std::cerr << "C";
             mLastRxTimestamp = counter;
             return;
         }
@@ -154,6 +203,14 @@ struct USBStreamService : StreamerLTE
         return mTxFIFO;
     }
 
+    const StreamDataFormat format;
+    std::atomic<int> rxStreamUseCount;
+    std::atomic<int> txStreamUseCount;
+    std::thread *mTxThread;
+    std::thread *mRxThread;
+    //! was the last rx command for continuous streaming?
+    //! this lets us restore streaming after calibration
+    std::atomic<bool> rxStreamingContinuous;
     std::atomic<bool> txTimeEnabled;
     std::atomic<uint64_t> mLastRxTimestamp;
     std::atomic<int64_t> mTimestampOffset;
@@ -230,6 +287,10 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
     else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
+    if (config.isTx) mStreamService->txStreamUseCount++;
+    if (!config.isTx) mStreamService->rxStreamUseCount++;
+    mStreamService->updateThreadState();
+
     streamID = size_t(new USBStreamServiceChannel(config.isTx, channels.size(), convertFloat));
     return ""; //success
 }
@@ -237,6 +298,8 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
 void ConnectionSTREAM::CloseStream(const size_t streamID)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
+    if (stream->isTx) mStreamService->txStreamUseCount--;
+    if (!stream->isTx) mStreamService->rxStreamUseCount--;
     delete stream;
 }
 
@@ -257,6 +320,7 @@ bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, c
         rxCmd.finiteRead = metadata.endOfBurst;
         rxCmd.numSamps = burstSize;
         mStreamService->mRxCmdQueue.push(rxCmd);
+        mStreamService->rxStreamingContinuous = not metadata.endOfBurst;
     }
 
     return true;
