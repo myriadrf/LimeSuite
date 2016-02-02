@@ -21,7 +21,10 @@ def siggen_app(
     txAnt=None,
     clockRate=None,
     waveFreq=None,
+    txTSP=False,
 ):
+    if waveFreq is None: waveFreq = rate/10
+
     sdr = SoapySDR.Device(args)
 
     #set clock rate first
@@ -51,8 +54,12 @@ def siggen_app(
     txStream = sdr.setupStream(SOAPY_SDR_TX, "CF32", [txChan])
     sdr.activateStream(txStream)
 
+    if txTSP:
+        sdr.setFrequency(SOAPY_SDR_TX, txChan, "BB", waveFreq)
+        sdr.writeSetting("ACTIVE_CHANNEL", {0:"A",1:"B"}[txChan])
+        sdr.writeSetting("ENABLE_TXTSP_CONST", "true");
+
     #tx loop
-    if waveFreq is None: waveFreq = rate/10
     phaseAcc = 0
     phaseInc = 2*math.pi*waveFreq/rate
     streamMTU = sdr.getStreamMTU(txStream)
@@ -87,6 +94,7 @@ def main():
     parser.add_option("--freq", type="float", dest="freq", help="Optional Tx and Rx freq (Hz)", default=None)
     parser.add_option("--waveFreq", type="float", dest="waveFreq", help="Baseband waveform freq (Hz)", default=None)
     parser.add_option("--clockRate", type="float", dest="clockRate", help="Optional clock rate (Hz)", default=None)
+    parser.add_option("--txTSP", action="store_true", dest="txTSP", help="Use internal TX siggen w/ CORDIC", default=False)
     (options, args) = parser.parse_args()
     siggen_app(
         args=options.args,
@@ -98,6 +106,7 @@ def main():
         txChan=options.txChan,
         clockRate=options.clockRate,
         waveFreq=options.waveFreq,
+        txTSP=options.txTSP,
     )
 
 if __name__ == '__main__': main()
