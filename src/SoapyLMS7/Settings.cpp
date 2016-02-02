@@ -511,6 +511,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 
         rfic->Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF, loss_int);
         rfic->Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, loss_int);
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "LOSS_LIN_TXPAD_TRF=%d", loss_int);
         this->recalAfterChange(direction, channel);
     }
 

@@ -156,8 +156,11 @@ struct USBStreamService : StreamerLTE
 
         //switch on Rx
         auto regVal = Reg_read(mDataPort, 0x0005);
-        bool timeOff = 1 << 5;
-        Reg_write(mDataPort, 0x0005, (regVal & ~0x20) | 0x5 | timeOff);
+        int syncDis = 1 << 5; //disabled
+        int rxTxEnb = 1 << 2; //streaming on
+        int txFromRam = 0 << 1; //off
+        int txNormal = 1 << 0; //normal op
+        Reg_write(mDataPort, 0x0005, (regVal & ~0x27) | syncDis | rxTxEnb | txFromRam | txNormal);
 
         this->updateThreadState();
     }
@@ -166,7 +169,7 @@ struct USBStreamService : StreamerLTE
     {
         //stop Tx Rx if they were active
         uint32_t regVal = Reg_read(mDataPort, 0x0005);
-        Reg_write(mDataPort, 0x0005, regVal & ~0x6);
+        Reg_write(mDataPort, 0x0005, regVal & ~(1 << 2));
 
         this->updateThreadState(true);
     }
