@@ -281,6 +281,13 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     auto s2 = pos0isA?LMS7002M::AI:LMS7002M::BI;
     auto s3 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
 
+    //IQ swap for RX spectrum
+    if (!config.isTx)
+    {
+        std::swap(s0, s1);
+        std::swap(s2, s3);
+    }
+
     //Note: only when FPGA is also in 1-ch mode
     //if (channels.size() == 1) s0 = s3;
 
@@ -427,8 +434,8 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
-    //std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
-    LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
+    std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
+    LMS_StreamBoard::ConfigurePLL(this, LTE_CHAN_COUNT*txRate/1e6, LTE_CHAN_COUNT*rxRate/1e6, 90);
     if (mStreamService) mStreamService->mHwCounterRate = rxRate;
 }
 

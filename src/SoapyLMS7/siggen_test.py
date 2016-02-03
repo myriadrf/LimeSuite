@@ -64,6 +64,9 @@ def siggen_app(
     phaseInc = 2*math.pi*waveFreq/rate
     streamMTU = sdr.getStreamMTU(txStream)
     sampsCh0 = np.array([0]*streamMTU, np.complex64)
+    t0 = time.time()
+    timeLastPrint = time.time()
+    totalSamps = 0
     while True:
         for i in range(streamMTU):
             sampsCh0[i] = ampl*math.e**(1j*phaseAcc)
@@ -76,6 +79,11 @@ def siggen_app(
         sr = sdr.writeStream(txStream, [sampsCh0], sampsCh0.size)
         if sr.ret != sampsCh0.size:
             raise Exception("Expected writeStream() to consume all samples! %d"%sr.ret)
+        totalSamps += sr.ret
+
+        if time.time() > timeLastPrint + 5.0:
+            print("Python siggen rate: %f Msps"%(totalSamps/(time.time()-t0)/1e6))
+            timeLastPrint = time.time()
 
     #cleanup streams
     print("Cleanup stream")
