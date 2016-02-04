@@ -13,6 +13,12 @@
 */
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
+    if (fOutRx_MHz < 5 || fOutTx_MHz < 5)
+    {
+        printf("WARNING: FPGA PLL frequency should not be lower than 5 MHz\n");
+        return FAILURE;
+    }
+
     assert(serPort != nullptr);
     if (serPort == NULL)
         return FAILURE;
