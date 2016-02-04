@@ -154,6 +154,9 @@ struct USBStreamService : StreamerLTE
     {
         if (mHwCounterRate == 0.0) return; //not configured
 
+        //clear any residual data from FIFO
+        ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(mDataPort));
+
         //switch on Rx
         auto regVal = Reg_read(mDataPort, 0x0005);
         int syncDis = 1 << 5; //disabled
@@ -167,11 +170,11 @@ struct USBStreamService : StreamerLTE
 
     void stop(void)
     {
+        //stop threads first, then disable FPGA
+        this->updateThreadState(true);
         //stop Tx Rx if they were active
         uint32_t regVal = Reg_read(mDataPort, 0x0005);
         Reg_write(mDataPort, 0x0005, regVal & ~(1 << 2));
-
-        this->updateThreadState(true);
     }
 
     void handleRxStatus(const int status, const uint64_t &counter)

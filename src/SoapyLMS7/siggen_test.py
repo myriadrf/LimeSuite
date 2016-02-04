@@ -26,14 +26,13 @@ def siggen_app(
     if waveFreq is None: waveFreq = rate/10
 
     sdr = SoapySDR.Device(args)
-
     #set clock rate first
     if clockRate is not None: sdr.setMasterClockRate(clockRate)
-
     #set sample rate
     sdr.setSampleRate(SOAPY_SDR_RX, rxChan, rate)
     sdr.setSampleRate(SOAPY_SDR_TX, txChan, rate)
     sdr.setBandwidth(SOAPY_SDR_TX, txChan, 10e6)
+
     print("Actual Rx Rate %f Msps"%(sdr.getSampleRate(SOAPY_SDR_RX, rxChan)/1e6))
     print("Actual Tx Rate %f Msps"%(sdr.getSampleRate(SOAPY_SDR_TX, txChan)/1e6))
 
@@ -49,17 +48,17 @@ def siggen_app(
     print("Tune the frontend")
     if freq is not None: sdr.setFrequency(SOAPY_SDR_TX, txChan, freq)
 
-    #create tx stream
-    print("Create Tx stream")
-    txStream = sdr.setupStream(SOAPY_SDR_TX, "CF32", [txChan])
-    sdr.activateStream(txStream)
-
     if txTSP:
         sdr.setFrequency(SOAPY_SDR_TX, txChan, "BB", waveFreq)
         sdr.writeSetting("ACTIVE_CHANNEL", {0:"A",1:"B"}[txChan])
         sdr.writeSetting("ENABLE_TXTSP_CONST", "true");
 
     #tx loop
+    #create tx stream
+    print("Create Tx stream")
+    txStream = sdr.setupStream(SOAPY_SDR_TX, "CF32", [txChan])
+    print("Activate Tx Stream")
+    sdr.activateStream(txStream)
     phaseAcc = 0
     phaseInc = 2*math.pi*waveFreq/rate
     streamMTU = sdr.getStreamMTU(txStream)
@@ -69,12 +68,8 @@ def siggen_app(
     totalSamps = 0
     while True:
         for i in range(streamMTU):
-            sampsCh0[i] = ampl*math.e**(1j*phaseAcc)
+            sampsCh0[i] = ampl*math.sin(phaseAcc)+1j*ampl*math.sin(phaseAcc+math.pi/2)
             phaseAcc += phaseInc
-        while phaseAcc > 2*math.pi:
-            phaseAcc -= 2*math.pi
-        while phaseAcc < -2*math.pi:
-            phaseAcc += 2*math.pi
 
         sr = sdr.writeStream(txStream, [sampsCh0], sampsCh0.size)
         if sr.ret != sampsCh0.size:

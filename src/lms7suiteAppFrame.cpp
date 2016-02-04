@@ -70,14 +70,23 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         }
         if (streamBoardPort && streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
         {
-            LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90);
+            //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
+            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            float interfaceRx_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            if (decimation != 7)
+                interfaceRx_MHz /= pow(2.0, decimation);
+            int interpolation = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+            float interfaceTx_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx);
+            if (interpolation != 7)
+                interfaceTx_MHz /= pow(2.0, interpolation);
+            LMS_StreamBoard::Status status = LMS_StreamBoard::ConfigurePLL(streamBoardPort, interfaceTx_MHz, interfaceRx_MHz, 90);
             if (status != LMS_StreamBoard::SUCCESS)
                 wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
             else
             {
                 wxCommandEvent evt;
                 evt.SetEventType(LOG_MESSAGE);
-                evt.SetString(wxString::Format(_("Stream board PLL configured Tx: %.3f MHz Rx: %.3f MHz Angle: %.0f deg"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx), 90.0));
+                evt.SetString(wxString::Format(_("Stream board PLL configured Tx: %.3f MHz Rx: %.3f MHz Angle: %.0f deg"), interfaceTx_MHz, interfaceRx_MHz, 90.0));
                 wxPostEvent(this, evt);
             }
         }

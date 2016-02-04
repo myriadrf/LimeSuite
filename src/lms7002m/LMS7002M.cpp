@@ -2726,11 +2726,19 @@ void LMS7002M::ExitSelfCalibration(void)
     mSelfCalDepth--;
     if (mSelfCalDepth == 0)
     {
-        auto interp = 2 << Get_SPI_Reg_bits(HBI_OVR_TXTSP);
-        auto decim = 2 << Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
+        int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        float interfaceRx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        if (decimation != 7)
+            interfaceRx_MHz /= pow(2.0, decimation);
+        int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        float interfaceTx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Tx);
+        if (interpolation != 7)
+            interfaceTx_MHz /= pow(2.0, interpolation);
+
         controlPort->UpdateExternalDataRate(this->GetActiveChannelIndex(),
-            this->GetReferenceClk_TSP_MHz(LMS7002M::Tx)*1e6/interp,
-            this->GetReferenceClk_TSP_MHz(LMS7002M::Rx)*1e6/decim);
+            interfaceTx_MHz*1e6,
+            interfaceRx_MHz*1e6);
         controlPort->ExitSelfCalibration(this->GetActiveChannelIndex());
     }
 }

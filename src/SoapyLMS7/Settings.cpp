@@ -190,6 +190,10 @@ void SoapyLMS7::SetComponentsEnabled(const size_t channel, const bool enable)
     rfic->Modify_SPI_Reg_bits(GC_BYP_RXTSP, 1);
     rfic->Modify_SPI_Reg_bits(PH_BYP_RXTSP, 1);
 
+    rfic->Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
+    rfic->Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
+
     //--- baseband ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);
     rfic->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
@@ -676,6 +680,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
+    LMS7002M_SelfCalState state(rfic);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
@@ -898,6 +903,9 @@ void SoapyLMS7::setMasterClockRate(const double rate)
 {
     for (auto rfic : _rfics)
     {
+        //make tx rx rates equal
+        rfic->Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN, 0);
+        rfic->Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN, 2);
         rfic->SetFrequencyCGEN(rate/1e6);
     }
 }

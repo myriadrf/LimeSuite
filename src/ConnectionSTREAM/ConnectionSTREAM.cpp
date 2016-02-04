@@ -402,7 +402,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
         contexts[i].context = InEndPt->BeginDataXfer((unsigned char*)buffer, length, contexts[i].inOvLap);
 	return i;
     #else
-    unsigned int Timeout = 1000;
+    unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
 	libusb_fill_bulk_transfer(tr, dev_handle, 0x81, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], Timeout);
 	contexts[i].done = false;
@@ -411,8 +411,10 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 	int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA TRANSFER %s\n", libusb_error_name(status));
-        return i;
+        printf("ERROR BEGIN DATA READING %s\n", libusb_error_name(status));
+        libusb_cancel_transfer( contexts[i].transfer );
+        contexts[i].used = false;
+        return -1;
     }
     #endif
     return i;
@@ -534,13 +536,20 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
         contextsToSend[i].context = OutEndPt->BeginDataXfer((unsigned char*)buffer, length, contextsToSend[i].inOvLap);
 	return i;
     #else
-    unsigned int Timeout = 1000;
+    unsigned int Timeout = 500;
     libusb_transfer *tr = contextsToSend[i].transfer;
 	libusb_fill_bulk_transfer(tr, dev_handle, 0x1, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
 	contextsToSend[i].done = false;
 	contextsToSend[i].bytesXfered = 0;
 	contextsToSend[i].bytesExpected = length;
-    libusb_submit_transfer(tr);
+    int status = libusb_submit_transfer(tr);
+    if(status != 0)
+    {
+        printf("ERROR BEGIN DATA SENDING %s\n", libusb_error_name(status));
+        libusb_cancel_transfer( contextsToSend[i].transfer );
+        contextsToSend[i].used = false;
+        return -1;
+    }
     #endif
     return i;
 }

@@ -17,6 +17,12 @@ using namespace lime;
 */
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
 {
+    if(fOutRx_MHz < 5 || fOutTx_MHz < 5)
+    {
+        printf("WARNING: FPGA PLL frequency should not be lower than 5 MHz\n");
+        return FAILURE;
+    }
+
     if (serPort == nullptr)
         return FAILURE;
     if (serPort->IsOpen() == false)
@@ -199,7 +205,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::StopReceiving()
     return SUCCESS;
 }
 
-void ResetUSBFIFO(LMS64CProtocol* port)
+static void ResetUSBFIFO(LMS64CProtocol* port)
 {
 // TODO : USB FIFO reset command for IConnection
     if (port == nullptr) return;

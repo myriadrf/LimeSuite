@@ -17,6 +17,7 @@ namespace lime{
 
 class IConnection;
 class LMS_SamplesFIFO;
+class LMS64CProtocol;
 
 static const int STATUS_FLAG_TIME_UP = (1 << 0); //!< Update the internal timestamp
 static const int STATUS_FLAG_RX_END = (1 << 1); //!< An rx stream command completed
@@ -124,6 +125,7 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
+    static void ResetUSBFIFO(LMS64CProtocol* port);
     static void ReceivePackets(const StreamerLTE_ThreadData &args);
     static void ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);

@@ -427,7 +427,7 @@ void StreamerLTE::ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args)
     }
 }
 
-static void ResetUSBFIFO(LMS64CProtocol* port)
+void StreamerLTE::ResetUSBFIFO(LMS64CProtocol* port)
 {
 // TODO : USB FIFO reset command for IConnection
     if (port == nullptr) return;
