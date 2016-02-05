@@ -280,10 +280,10 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     bool pos1isA = channels.back() == 0;
 
     //determine sample positions based on channels
-    auto s3 = pos0isA?LMS7002M::AI:LMS7002M::BI;
-    auto s2 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
-    auto s1 = pos1isA?LMS7002M::AI:LMS7002M::BI;
-    auto s0 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s3 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s2 = pos0isA?LMS7002M::AI:LMS7002M::BI;
+    auto s1 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s0 = pos1isA?LMS7002M::AI:LMS7002M::BI;
 
     //Note: only when FPGA is also in 1-ch mode
     //if (channels.size() == 1) s0 = s3;
@@ -432,7 +432,7 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
     std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
-    LMS_StreamBoard::ConfigurePLL(this, 2*txRate/1e6, 2*rxRate/1e6, 90);
+    LMS_StreamBoard::ConfigurePLL(this, txRate/1e6, rxRate/1e6, 90);
     if (mStreamService) mStreamService->mHwCounterRate = rxRate;
 }
 

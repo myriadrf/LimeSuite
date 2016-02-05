@@ -2668,10 +2668,10 @@ void LMS7002M::ConfigureLML_RF2BB(
 {
     //map a sample source to a position
     std::map<LMLSampleSource, int> m;
-    m[AI] = 0;
-    m[AQ] = 1;
-    m[BI] = 2;
-    m[BQ] = 3;
+    m[AI] = 1;
+    m[AQ] = 0;
+    m[BI] = 3;
+    m[BQ] = 2;
 
     //load the same config on both LMLs
     //only one will get used based on direction
@@ -2694,10 +2694,10 @@ void LMS7002M::ConfigureLML_BB2RF(
 {
     //map a sample source to a position
     std::map<LMLSampleSource, int> m;
+    m[s3] = 3;
+    m[s2] = 2;
     m[s0] = 0;
     m[s1] = 1;
-    m[s2] = 2;
-    m[s3] = 3;
 
     //load the same config on both LMLs
     //only one will get used based on direction
