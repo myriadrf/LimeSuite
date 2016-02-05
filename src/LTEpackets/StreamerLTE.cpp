@@ -108,9 +108,11 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
 
     bool currentRxCmdValid = false;
     RxCommand currentRxCmd;
+    size_t ignoreTxLateCount = 0;
 
     while (terminate->load() == false)
     {
+        if (ignoreTxLateCount != 0) ignoreTxLateCount--;
         if (dataPort->WaitForReading(handles[bi], 1000) == false)
             ++m_bufferFailures;
 
@@ -133,15 +135,15 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
                 const int stepSize = channelsCount * 3;
                 size_t numPktBytes = sizeof(pkt->data);
 
-                auto byte7 = pkt[pktIndex].reserved[7];
-                if ((byte7 & (1 << 3)) != 0)
+                auto byte0 = pkt[pktIndex].reserved[0];
+                if ((byte0 & (1 << 3)) != 0 and ignoreTxLateCount == 0)
                 {
-                    //auto reg7 = Reg_read(dataPort, 0x0007);
-                    //Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
-                    //Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
-                    //FIXME not working yet, bit always set
-                    //std::cout << "L" << std::flush;
-                    //statusFlags |= STATUS_FLAG_TX_LATE;
+                    auto reg7 = Reg_read(dataPort, 0x0007);
+                    Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
+                    Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
+                    std::cout << "L" << std::flush;
+                    if (report) report(STATUS_FLAG_TX_LATE, pkt[pktIndex].counter);
+                    ignoreTxLateCount = 16;
                 }
 
                 if (report) report(STATUS_FLAG_TIME_UP, pkt[pktIndex].counter);

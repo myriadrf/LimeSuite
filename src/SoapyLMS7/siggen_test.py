@@ -62,14 +62,15 @@ def siggen_app(
     phaseAcc = 0
     phaseInc = 2*math.pi*waveFreq/rate
     streamMTU = sdr.getStreamMTU(txStream)
-    sampsCh0 = np.array([0]*streamMTU, np.complex64)
+    sampsCh0 = np.array([ampl]*streamMTU, np.complex64)
     t0 = time.time()
     timeLastPrint = time.time()
     totalSamps = 0
     while True:
-        for i in range(streamMTU):
-            sampsCh0[i] = ampl*math.sin(phaseAcc)+1j*ampl*math.sin(phaseAcc+math.pi/2)
-            phaseAcc += phaseInc
+        phaseAccNext = phaseAcc + streamMTU*phaseInc
+        sampsCh0 = ampl*np.exp(1j*np.linspace(phaseAcc, phaseAccNext, streamMTU)).astype(np.complex64)
+        phaseAcc = phaseAccNext
+        while phaseAcc > math.pi*2: phaseAcc -= math.pi*2
 
         sr = sdr.writeStream(txStream, [sampsCh0], sampsCh0.size)
         if sr.ret != sampsCh0.size:
