@@ -257,7 +257,7 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesReceived / timePeriod;
             samplesReceived = 0;
             t1 = t2;
             totalBytesReceived = 0;
@@ -402,7 +402,7 @@ void StreamerLTE::ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args)
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesReceived / timePeriod;
             samplesReceived = 0;
             t1 = t2;
             totalBytesReceived = 0;
@@ -711,7 +711,7 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
             //total number of bytes sent per second
             double m_dataRate = 1000.0*totalBytesSent / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesSent / timePeriod;
             if(dataRate_Bps)
                 dataRate_Bps->store(m_dataRate);
             samplesSent = 0;
@@ -860,7 +860,7 @@ void StreamerLTE::TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args
             //total number of bytes sent per second
             double m_dataRate = 1000.0*totalBytesSent / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesSent / timePeriod;
             if (dataRate_Bps)
                 dataRate_Bps->store(m_dataRate);
             samplesSent = 0;
