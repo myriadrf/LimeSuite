@@ -147,11 +147,6 @@ void SoapyLMS7::SetComponentsEnabled(const size_t channel, const bool enable)
     auto rfic = getRFIC(channel);
 
     //--- LML ---
-    rfic->Modify_SPI_Reg_bits(FCLK1_INV, 1);
-    rfic->Modify_SPI_Reg_bits(LML1_FIDM, 0); //Frame start=0
-    rfic->Modify_SPI_Reg_bits(LML2_FIDM, 0); //Frame start=0
-    rfic->Modify_SPI_Reg_bits(LML1_MODE, 0); //TRXIQ
-    rfic->Modify_SPI_Reg_bits(LML2_MODE, 0); //TRXIQ
     if ((channel%2) == 0)
     {
         rfic->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);

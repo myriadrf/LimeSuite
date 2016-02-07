@@ -2694,10 +2694,10 @@ void LMS7002M::ConfigureLML_BB2RF(
 {
     //map a sample source to a position
     std::map<LMLSampleSource, int> m;
-    m[s3] = 3;
-    m[s2] = 2;
-    m[s0] = 0;
-    m[s1] = 1;
+    m[s3] = 2;
+    m[s2] = 3;
+    m[s0] = 1;
+    m[s1] = 0;
 
     //load the same config on both LMLs
     //only one will get used based on direction
@@ -2730,11 +2730,11 @@ void LMS7002M::ExitSelfCalibration(void)
         int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
         float interfaceRx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Rx);
         if (decimation != 7)
-            interfaceRx_MHz /= pow(2.0, decimation);
+            interfaceRx_MHz /= 2*pow(2.0, decimation);
         int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
         float interfaceTx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Tx);
         if (interpolation != 7)
-            interfaceTx_MHz /= pow(2.0, interpolation);
+            interfaceTx_MHz /= 2*pow(2.0, interpolation);
 
         controlPort->UpdateExternalDataRate(this->GetActiveChannelIndex(),
             interfaceTx_MHz*1e6,

@@ -34,6 +34,7 @@ if __name__ == '__main__':
     t1 = streamBoardSDR.getHardwareTime()
     print("t0 = %s"%t0)
     print("t1 = %s"%t1)
+    print("delta %s secs"%((t1-t0)/1e9))
 
     print(">>> test tx late burst")
     timeStream = streamBoardSDR.getHardwareTime() + int(1e8) #100ms in the future
