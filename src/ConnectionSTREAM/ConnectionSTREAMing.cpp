@@ -232,7 +232,11 @@ struct USBStreamServiceChannel
     USBStreamServiceChannel(bool isTx, const size_t channelsCount, const bool convertFloat):
         isTx(isTx),
         channelsCount(channelsCount),
-        convertFloat(convertFloat)
+        convertFloat(convertFloat),
+        sampsRemaining(0),
+        bufferOffset(0),
+        nextTimestamp(0),
+        currentFifoFlags(0)
     {
         for (size_t i = 0; i < channelsCount; i++)
         {
@@ -253,6 +257,11 @@ struct USBStreamServiceChannel
     const size_t channelsCount;
     const bool convertFloat;
     std::vector<complex16_t *> FIFOBuffers;
+
+    size_t sampsRemaining;
+    size_t bufferOffset;
+    uint64_t nextTimestamp;
+    uint32_t currentFifoFlags;
 };
 
 /***********************************************************************
@@ -344,30 +353,27 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
-    size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
+    //first read into the intermediate buffer
+    //intermediate buffer can be removed with different fifo implementation
+    if (stream->sampsRemaining == 0)
+    {
+        stream->bufferOffset = 0;
+        stream->sampsRemaining = mStreamService->GetRxFIFO()->pop_samples(
+            stream->FIFOBuffers.data(),
+            STREAM_MTU,
+            stream->channelsCount,
+            &stream->nextTimestamp,
+            timeout_ms,
+            &stream->currentFifoFlags);
+    }
 
-    complex16_t **popBuffer(nullptr);
-    if (stream->convertFloat) popBuffer = (complex16_t **)stream->FIFOBuffers.data();
-    else popBuffer = (complex16_t **)buffs;
-
-    uint32_t fifoFlags = 0;
-    size_t sampsPopped = mStreamService->GetRxFIFO()->pop_samples(
-        popBuffer,
-        samplesCount,
-        stream->channelsCount,
-        &metadata.timestamp,
-        timeout_ms,
-        &fifoFlags);
-    metadata.hasTimestamp = metadata.timestamp != 0;
-    metadata.timestamp += mStreamService->mTimestampOffset;
-    metadata.endOfBurst = (fifoFlags & STATUS_FLAG_RX_END) != 0;
-    samplesCount = (std::min)(samplesCount, sampsPopped);
-
+    //convert into the output buffer
+    size_t samplesCount = std::min<size_t>(length, stream->sampsRemaining);
     if (stream->convertFloat)
     {
         for (size_t i = 0; i < stream->channelsCount; i++)
         {
-            auto buffIn = stream->FIFOBuffers[i];
+            auto buffIn = stream->FIFOBuffers[i]+stream->bufferOffset;
             auto buffOut = (std::complex<float> *)buffs[i];
             for (size_t j = 0; j < samplesCount; j++)
             {
@@ -377,6 +383,25 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
             }
         }
     }
+    else
+    {
+        for (size_t i = 0; i < stream->channelsCount; i++)
+        {
+            auto buffIn = stream->FIFOBuffers.data()[i]+stream->bufferOffset;
+            std::memcpy(buffs[i], buffIn, samplesCount*sizeof(complex16_t));
+        }
+    }
+
+    //metadata
+    metadata.timestamp = stream->nextTimestamp + mStreamService->mTimestampOffset;
+    metadata.hasTimestamp = metadata.timestamp != 0;
+    metadata.endOfBurst = (stream->currentFifoFlags & STATUS_FLAG_RX_END) != 0;
+
+    //setup for next call
+    stream->bufferOffset += samplesCount;
+    stream->sampsRemaining -= samplesCount;
+    stream->nextTimestamp += samplesCount;
+    if (stream->sampsRemaining != 0) metadata.endOfBurst = false;
 
     return samplesCount;
 }
@@ -396,16 +421,23 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
         mStreamService->txTimeEnabled = metadata.hasTimestamp;
     }
 
-    size_t samplesCount = std::min<size_t>(length, STREAM_MTU);
+    //TODO check fifo has space with timeout
 
-    const complex16_t **pushBuffer(nullptr);
+    if (stream->sampsRemaining == 0)
+    {
+        stream->bufferOffset = 0;
+        stream->sampsRemaining = STREAM_MTU;
+    }
+
+    //first convert into the intermediate buffer
+    //intermediate buffer can be removed with different fifo implementation
+    size_t samplesCount = std::min<size_t>(length, stream->sampsRemaining);
     if (stream->convertFloat)
     {
-        pushBuffer = (const complex16_t **)stream->FIFOBuffers.data();
         for (size_t i = 0; i < stream->channelsCount; i++)
         {
             auto buffIn = (const std::complex<float> *)buffs[i];
-            auto bufOut = stream->FIFOBuffers[i];
+            auto bufOut = stream->FIFOBuffers[i]+stream->bufferOffset;
             for (size_t j = 0; j < samplesCount; j++)
             {
                 bufOut[j].i = int16_t(buffIn[j].real()*2048);
@@ -413,16 +445,49 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             }
         }
     }
-    else pushBuffer = (const complex16_t **)buffs;
+    else
+    {
+        for (size_t i = 0; i < stream->channelsCount; i++)
+        {
+            auto bufOut = stream->FIFOBuffers[i]+stream->bufferOffset;
+            std::memcpy(bufOut, buffs[i], samplesCount*sizeof(complex16_t));
+        }
+    }
 
-    auto ticks = metadata.timestamp - mStreamService->mTimestampOffset;
-    size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
-        pushBuffer,
-        samplesCount,
-        stream->channelsCount,
-        metadata.hasTimestamp?ticks:0,
-        timeout_ms);
-    samplesCount = (std::min)(samplesCount, sampsPushed);
+    //metadata
+    if (stream->bufferOffset == 0)
+    {
+        stream->nextTimestamp = metadata.timestamp - mStreamService->mTimestampOffset;
+        if (not metadata.hasTimestamp) stream->nextTimestamp = 0;
+    }
+
+    //setup for next call
+    stream->bufferOffset += samplesCount;
+    stream->sampsRemaining -= samplesCount;
+
+    //input was 100% consumed and this is a end of burst
+    bool actualEob = metadata.endOfBurst and samplesCount == length;
+
+    //memset any remaining samples to zero
+    if (actualEob and stream->sampsRemaining != 0)
+    {
+        for (size_t i = 0; i < stream->channelsCount; i++)
+        {
+            auto bufOut = stream->FIFOBuffers[i]+stream->bufferOffset;
+            std::memset(bufOut, 0, stream->sampsRemaining*sizeof(complex16_t));
+        }
+    }
+
+    //push on full or end of burst
+    if (actualEob or stream->sampsRemaining == 0)
+    {
+        size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
+            (const complex16_t **)stream->FIFOBuffers.data(),
+            STREAM_MTU,
+            stream->channelsCount,
+            stream->nextTimestamp,
+            timeout_ms);
+    }
 
     return samplesCount;
 }
