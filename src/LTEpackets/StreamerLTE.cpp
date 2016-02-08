@@ -672,7 +672,8 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
             int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000);
             if (samplesPopped == 0 || samplesPopped != samplesInPacket)
             {
-                printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
+                if (samplesPopped != 0)
+                    printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
                 if (terminate->load() == true)
                     break;
                 continue;

@@ -394,7 +394,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
 
     //metadata
     metadata.timestamp = stream->nextTimestamp + mStreamService->mTimestampOffset;
-    metadata.hasTimestamp = metadata.timestamp != 0;
+    metadata.hasTimestamp = true;
     metadata.endOfBurst = (stream->currentFifoFlags & STATUS_FLAG_RX_END) != 0;
 
     //setup for next call
