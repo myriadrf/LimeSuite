@@ -365,7 +365,10 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
             &stream->nextTimestamp,
             timeout_ms,
             &stream->currentFifoFlags);
+        if (stream->sampsRemaining == 0) return 0; //timeout
     }
+
+    //std::cout << "RX TIME " << stream->nextTimestamp << std::endl;
 
     //convert into the output buffer
     size_t samplesCount = std::min<size_t>(length, stream->sampsRemaining);
@@ -412,7 +415,9 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
 
     //set the time enabled register if usage changed
     //TODO maybe the FPGA should check a flag in the pkt
-    if (mStreamService->txTimeEnabled != metadata.hasTimestamp)
+    if (mStreamService->txTimeEnabled != metadata.hasTimestamp and
+        not mStreamService->txTimeEnabled /*leave time enabled once enabled - osmotrx workaround for now */
+    )
     {
         uint32_t regVal; this->ReadRegister(0x0005, regVal);
         if (metadata.hasTimestamp) regVal &= ~(1 << 5);
@@ -455,10 +460,11 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     }
 
     //metadata
-    if (stream->bufferOffset == 0)
+    if (metadata.hasTimestamp)
     {
         stream->nextTimestamp = metadata.timestamp - mStreamService->mTimestampOffset;
-        if (not metadata.hasTimestamp) stream->nextTimestamp = 0;
+        stream->nextTimestamp -= stream->bufferOffset; //applies to front of usb packet
+        //std::cout << "TX TIME " << stream->nextTimestamp << std::endl;
     }
 
     //setup for next call
@@ -487,6 +493,7 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             stream->channelsCount,
             stream->nextTimestamp,
             timeout_ms);
+        stream->nextTimestamp += sampsPushed;
     }
 
     return samplesCount;
