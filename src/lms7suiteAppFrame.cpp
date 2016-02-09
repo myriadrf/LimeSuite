@@ -237,32 +237,10 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
-//  TODO : setup controls according to connected board
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info.deviceName);
-//
         if (boardControlsGui)
             boardControlsGui->SetupControls(info.deviceName);
-
-        //must configure synthesizer before using SoDeRa
-        if (info.deviceName == GetDeviceName(LMS_DEV_SODERA))
-        {
-            si5351module->SetPLL(0, 25000000, 0);
-            si5351module->SetPLL(1, 25000000, 0);
-            si5351module->SetClock(0, 27000000, true, false);
-            si5351module->SetClock(1, 27000000, true, false);
-            for (int i = 2; i < 8; ++i)
-                si5351module->SetClock(i, 27000000, false, false);
-            Si5351C::Status status = si5351module->ConfigureClocks();
-            if (status != Si5351C::SUCCESS)
-            {
-                wxMessageBox(_("Failed to configure Si5351C"), _("Warning"));
-                return;
-            }
-            status = si5351module->UploadConfiguration();
-            if (status != Si5351C::SUCCESS)
-                wxMessageBox(_("Failed to upload Si5351C configuration"), _("Warning"));
-        }
     }
     else
     {
