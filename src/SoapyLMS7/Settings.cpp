@@ -46,7 +46,7 @@ protected:
 /*******************************************************************
  * Constructor/destructor
  ******************************************************************/
-SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle):
+SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
     _conn(nullptr),
     _moduleName(handle.module)
 {
@@ -101,7 +101,9 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle):
     }
 
     //give all RFICs a default state
-    this->setMasterClockRate(32e6);
+    double defaultClockRate = DEFAULT_CLOCK_RATE;
+    if (args.count("clock")) defaultClockRate = std::stod(args.at("clock"));
+    this->setMasterClockRate(defaultClockRate);
     for (size_t channel = 0; channel < _rfics.size()*2; channel++)
     {
         this->setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0);

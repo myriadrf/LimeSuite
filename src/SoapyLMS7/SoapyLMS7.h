@@ -10,6 +10,8 @@
 #include <atomic>
 #include <map>
 
+static const double DEFAULT_CLOCK_RATE = 32e6;
+
 namespace lime
 {
     class LMS7002M;
@@ -18,7 +20,7 @@ namespace lime
 class SoapyLMS7 : public SoapySDR::Device
 {
 public:
-    SoapyLMS7(const lime::ConnectionHandle &handle);
+    SoapyLMS7(const lime::ConnectionHandle &handle, const SoapySDR::Kwargs &args);
 
     ~SoapyLMS7(void);
 

@@ -51,7 +51,7 @@ static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs &matchArgs)
 
 static SoapySDR::Device *makeIConnection(const SoapySDR::Kwargs &args)
 {
-    return new SoapyLMS7(argsToHandle(args));
+    return new SoapyLMS7(argsToHandle(args), args);
 }
 
 static SoapySDR::Registry registerIConnection("lime", &findIConnection, &makeIConnection, SOAPY_SDR_ABI_VERSION);
