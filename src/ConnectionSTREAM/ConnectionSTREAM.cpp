@@ -7,11 +7,10 @@
 #include "ConnectionSTREAM.h"
 #include <cstring>
 #include <iostream>
+#include "Si5351C.h"
 
-#ifdef __unix__
-    #include <thread>
-    #include <chrono>
-#endif
+#include <thread>
+#include <chrono>
 
 using namespace std;
 
@@ -53,6 +52,30 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     ctx = (libusb_context *)arg;
 #endif
     this->Open(index, vid, pid);
+
+    //must configure synthesizer before using SoDeRa
+    DeviceInfo info = this->GetDeviceInfo();
+    if (info.deviceName == GetDeviceName(LMS_DEV_SODERA))
+    {
+        std::shared_ptr<Si5351C> si5351module(new Si5351C());
+        si5351module->Initialize(this);
+        si5351module->SetPLL(0, 25000000, 0);
+        si5351module->SetPLL(1, 25000000, 0);
+        si5351module->SetClock(0, 27000000, true, false);
+        si5351module->SetClock(1, 27000000, true, false);
+        for (int i = 2; i < 8; ++i)
+            si5351module->SetClock(i, 27000000, false, false);
+        Si5351C::Status status = si5351module->ConfigureClocks();
+        if (status != Si5351C::SUCCESS)
+        {
+            std::cerr << "Warning: Failed to configure Si5351C" << std::endl;
+            return;
+        }
+        status = si5351module->UploadConfiguration();
+        if (status != Si5351C::SUCCESS)
+            std::cerr << "Warning: Failed to upload Si5351C configuration" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
+    }
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
