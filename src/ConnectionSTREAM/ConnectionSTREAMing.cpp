@@ -482,10 +482,11 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             auto bufOut = stream->FIFOBuffers[i]+stream->bufferOffset;
             std::memset(bufOut, 0, stream->sampsRemaining*sizeof(complex16_t));
         }
+        stream->sampsRemaining = 0;
     }
 
-    //push on full or end of burst
-    if (actualEob or stream->sampsRemaining == 0)
+    //push when the intermediate buffer is full
+    if (stream->sampsRemaining == 0)
     {
         size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
             (const complex16_t **)stream->FIFOBuffers.data(),
