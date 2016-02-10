@@ -17,6 +17,9 @@ using namespace lime;
 
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
+//lazy fix for the const call issue -- FIXME
+#define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
+
 /*******************************************************************
  * Special LMS7002M with log forwarding
  ******************************************************************/
@@ -312,6 +315,7 @@ void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std:
 
 std::string SoapyLMS7::getAntenna(const int direction, const size_t channel) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX)
@@ -363,6 +367,7 @@ void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const
 
 bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX)
@@ -524,6 +529,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 
 double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string &name) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
@@ -627,6 +633,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 
 double SoapyLMS7::getFrequency(const int direction, const size_t channel, const std::string &name) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     auto ref_MHz = _conn->GetReferenceClockRate()/1e6;
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
@@ -654,6 +661,7 @@ std::vector<std::string> SoapyLMS7::listFrequencies(const int /*direction*/, con
 
 SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size_t channel, const std::string &name) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
@@ -705,6 +713,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
     const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
@@ -726,6 +735,7 @@ double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
 
 std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
@@ -899,6 +909,7 @@ void SoapyLMS7::recalAfterChange(const int direction, const size_t channel)
 
 void SoapyLMS7::setMasterClockRate(const double rate)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     for (auto rfic : _rfics)
     {
         //make tx rx rates equal
