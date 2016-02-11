@@ -8,7 +8,10 @@
 #include <ConnectionRegistry.h>
 #include <mutex>
 #include <atomic>
+#include <thread>
+#include <chrono>
 #include <map>
+#include <set>
 
 static const double DEFAULT_CLOCK_RATE = 32e6;
 
@@ -178,9 +181,6 @@ public:
 
     std::vector<double> listBandwidths(const int direction, const size_t channel) const;
 
-    //! Call after a configuration change to re-calibrate
-    void recalAfterChange(const int direction, const size_t channel);
-
     /*******************************************************************
      * Clocking API
      ******************************************************************/
@@ -238,4 +238,16 @@ private:
     lime::LMS7002M *getRFIC(const size_t channel) const;
     std::vector<lime::LMS7002M *> _rfics;
     std::recursive_mutex _accessMutex;
+
+    //background calibration thread
+    void _bgCalTask(void);
+    void _handleCalActions(void);
+    void _handleCalAction(const int direction, const size_t channel, const std::string &action);
+    std::thread *_bgCalThread;
+    std::atomic<bool> _bgCalActive;
+    std::map<int, std::map<size_t, std::set<std::string>>> _bgCalActions; //action to set of channels
+    std::atomic<long long> _calTriggeredCount;
+
+    //! Call after a configuration change to re-calibrate
+    void recalAfterChange(const int direction, const size_t channel);
 };
