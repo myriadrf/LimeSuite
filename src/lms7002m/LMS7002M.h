@@ -9,6 +9,7 @@
 
 #include "LMS7002M_statuses.h"
 #include "LMS7002M_parameters.h"
+#include "CalibrationCache.h"
 #include <cstdint>
 
 #include <sstream>
@@ -245,7 +246,11 @@ public:
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];
 
+    void EnableValuesCache(bool enabled = true);
+
 protected:
+    bool useCache;
+    CalibrationCache valueCache;
     LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];

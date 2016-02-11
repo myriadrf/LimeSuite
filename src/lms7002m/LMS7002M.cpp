@@ -75,7 +75,8 @@ LMS7002M::LMS7002M() :
     addrLMS7002M(-1),
     mdevIndex(0),
     mSelfCalDepth(0),
-    mRegistersMap(new LMS7002M_RegistersMap())
+    mRegistersMap(new LMS7002M_RegistersMap()),
+    useCache(0)
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
@@ -862,6 +863,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     uint16_t integerPart;
     uint32_t fractionalPart;
     int8_t i;
+    int16_t csw_value;
 
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
@@ -890,34 +892,59 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     //find which VCO supports required frequency
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
-    int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
-    canDeliverFrequency = false;
-    int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
-    for (sel_vco = 0; sel_vco < 3; ++sel_vco)
+
+    bool foundInCache = false;
+    CalibrationCache::VCOValues values;
+    if(useCache)
     {
-        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-        liblms7_status status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
-        int csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
-        tuneScore[sel_vco] = -128 + csw;
-        if (status == LIBLMS7_SUCCESS)
-            canDeliverFrequency = true;
+        foundInCache = valueCache.GetVCOValues(tx, freq_MHz * 1e6, &values);
     }
-    if (abs(tuneScore[0]) < abs(tuneScore[1]))
+    if(foundInCache)
     {
-        if (abs(tuneScore[0]) < abs(tuneScore[2]))
-            sel_vco = 0;
-        else
-            sel_vco = 2;
+        printf("SetFrequency using cache values vco:%i, csw:%i\n", values.vco, values.csw);
+        sel_vco = values.vco;
+        csw_value = values.csw;
     }
     else
     {
-        if (abs(tuneScore[1]) < abs(tuneScore[2]))
-            sel_vco = 1;
+        int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
+        canDeliverFrequency = false;
+        int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
+        for (sel_vco = 0; sel_vco < 3; ++sel_vco)
+        {
+            Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+            liblms7_status status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
+            int csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
+            tuneScore[sel_vco] = -128 + csw;
+            if (status == LIBLMS7_SUCCESS)
+                canDeliverFrequency = true;
+        }
+        if (abs(tuneScore[0]) < abs(tuneScore[1]))
+        {
+            if (abs(tuneScore[0]) < abs(tuneScore[2]))
+                sel_vco = 0;
+            else
+                sel_vco = 2;
+        }
         else
-            sel_vco = 2;
+        {
+            if (abs(tuneScore[1]) < abs(tuneScore[2]))
+                sel_vco = 1;
+            else
+                sel_vco = 2;
+        }
+        csw_value = tuneScore[sel_vco] + 128;
+    }
+    if(useCache && !foundInCache)
+    {
+        values.tx = tx;
+        values.freq = freq_MHz*1e6;
+        values.vco = sel_vco;
+        values.csw = csw_value;
+        valueCache.SetVCOValues(values);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), cswBackup);
+    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch); //restore used channel
     if (tx)
         mRefClkSXT_MHz = refClk_MHz;
@@ -925,7 +952,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
         mRefClkSXR_MHz = refClk_MHz;
     if (canDeliverFrequency == false)
         return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
-    return TuneVCO( tx ? VCO_SXT : VCO_SXR); //Rx-1, Tx-2
+    return LIBLMS7_SUCCESS;
 }
 
 /**	@brief Returns currently set SXR/SXT frequency
@@ -1607,6 +1634,25 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
+    double txFreq = GetFrequencySX_MHz(true, GetReferenceClk_SX(true));
+    CalibrationCache::DCIQValues values;
+    bool foundInCache = false;
+    if(useCache)
+    {
+        foundInCache = valueCache.GetDCIQValues(true, txFreq*1e6, &values);
+    }
+    if(foundInCache)
+    {
+        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), values.dcI);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), values.dcQ);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), values.gainI);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), values.gainQ);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), values.phaseCorr);
+        Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
+        Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
+        return LIBLMS7_SUCCESS;
+    }
+
     LMS7002M_SelfCalState state(this);
 
     liblms7_status status;
@@ -1616,8 +1662,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     int16_t iqcorr = 0;
     uint16_t gcorrq = 0;
     uint16_t gcorri = 0;
-    uint16_t dccorri;
-    uint16_t dccorrq;
+    int16_t dccorri;
+    int16_t dccorrq;
     int16_t corrI = 0;
     int16_t corrQ = 0;
     uint32_t minRSSI_i;
@@ -1839,7 +1885,11 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     }
 
     dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
+    dccorri <<= 8;
+    dccorri >>= 8;
     dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+    dccorrq <<= 8;
+    dccorrq >>= 8;
 
     // Stage 4
 TxCalibrationEnd:
@@ -1851,6 +1901,16 @@ TxCalibrationEnd:
         Log("Tx calibration failed", LOG_WARNING);
         return status;
     }
+
+    values.freq = txFreq*1e6;
+    values.dcI = dccorri;
+    values.dcQ = dccorrq;
+    values.phaseCorr = iqcorr;
+    values.gainI = gcorri;
+    values.gainQ = gcorrq;
+    values.tx = true;
+    if(useCache)
+        valueCache.SetDCIQValues(values);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
@@ -2140,6 +2200,24 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
+    double rxFreq = GetFrequencySX_MHz(false, GetReferenceClk_SX(false));
+    CalibrationCache::DCIQValues values;
+    bool foundInCache = false;
+    if(useCache)
+    {
+        foundInCache = valueCache.GetDCIQValues(false, rxFreq*1e6, &values);
+    }
+    if(foundInCache)
+    {
+        SetRxDCOFF((int8_t)values.dcI, (int8_t)values.dcQ);
+        Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), values.gainI);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), values.gainQ);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), values.phaseCorr);
+        Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
+        Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
+        return LIBLMS7_SUCCESS;
+    }
     LMS7002M_SelfCalState state(this);
 
     liblms7_status status;
@@ -2348,6 +2426,16 @@ RxCalibrationEndStage:
         Log("Rx calibration failed", LOG_WARNING);
         return status;
     }
+
+    values.tx = false;
+    values.freq = rxFreq*1e6;
+    values.dcI = dcoffi;
+    values.dcQ = dcoffq;
+    values.gainI = mingcorri;
+    values.gainQ = mingcorrq;
+    values.phaseCorr = iqcorr_rx;
+    if(useCache)
+        valueCache.SetDCIQValues(values);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
@@ -2752,4 +2840,9 @@ LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
 LMS7002M_SelfCalState::~LMS7002M_SelfCalState(void)
 {
     rfic->ExitSelfCalibration();
+}
+
+void LMS7002M::EnableValuesCache(bool enabled)
+{
+    useCache = enabled;
 }

@@ -119,6 +119,16 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
     }
 
+    //enable use of calibration value cache
+    if (args.count("cacheCalibrations"))
+    {
+        printf("Search cache parameter\n");
+        bool enable = std::stoi(args.at("cacheCalibrations")) != 0;
+        SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
+        for(int i=0; i<_rfics.size(); ++i)
+            _rfics[i]->EnableValuesCache(enable);
+    }
+
     //also triggers internal stream threads ~ its hacky
     _conn->SetHardwareTimestamp(0);
 

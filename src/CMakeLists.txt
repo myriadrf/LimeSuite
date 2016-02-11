@@ -82,6 +82,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M_statuses.cpp
     lms7002m/LMS7002M.cpp
+    lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp
     LTEpackets/StreamerLTE.cpp
