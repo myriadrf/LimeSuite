@@ -40,20 +40,14 @@ if __name__ == '__main__':
     timeStream = streamBoardSDR.getHardwareTime() + int(1e8) #100ms in the future
     print("timeStream = %s"%timeStream)
     time.sleep(1.0) #time will be late
-    #flush the burst with 15 more usb packets after the initial:
-    for  i in range(16):
-        sr = streamBoardSDR.writeStream(txStream, [sampsCh0, sampsCh1], sampsCh0.size, SOAPY_SDR_HAS_TIME, timeStream, timeoutUs=int(1e6))
-        timeStream += long(1e9/rate)*sampsCh0.size
+    sr = streamBoardSDR.writeStream(txStream, [sampsCh0, sampsCh1], sampsCh0.size, SOAPY_SDR_HAS_TIME | SOAPY_SDR_END_BURST, timeStream, timeoutUs=int(1e6))
     print streamBoardSDR.readStreamStatus(txStream, timeoutUs=int(1e6))
 
     print(">>> test tx late burst")
     timeStream = streamBoardSDR.getHardwareTime() + int(1e8) #100ms in the future
     print("timeStream = %s"%timeStream)
     time.sleep(1.0) #time will be late
-    #flush the burst with 15 more usb packets after the initial:
-    for  i in range(16):
-        sr = streamBoardSDR.writeStream(txStream, [sampsCh0, sampsCh1], sampsCh0.size, SOAPY_SDR_HAS_TIME, timeStream, timeoutUs=int(1e6))
-        timeStream += long(1e9/rate)*sampsCh0.size
+    sr = streamBoardSDR.writeStream(txStream, [sampsCh0, sampsCh1], sampsCh0.size, SOAPY_SDR_HAS_TIME | SOAPY_SDR_END_BURST, timeStream, timeoutUs=int(1e6))
     print streamBoardSDR.readStreamStatus(txStream, timeoutUs=int(1e6))
 
     print("Cleanup tx stream")

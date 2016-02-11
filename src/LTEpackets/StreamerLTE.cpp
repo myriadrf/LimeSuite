@@ -141,7 +141,6 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
                     auto reg7 = Reg_read(dataPort, 0x0007);
                     Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
                     Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
-                    std::cout << "L" << std::flush;
                     if (report) report(STATUS_FLAG_TX_LATE, pkt[pktIndex].counter);
                     ignoreTxLateCount = 16;
                 }
@@ -669,7 +668,8 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
         int i = 0;
         while (i < packetsToBatch)
         {
-            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000);
+            uint32_t statusFlags = 0;
+            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000, &statusFlags);
             if (samplesPopped == 0 || samplesPopped != samplesInPacket)
             {
                 if (samplesPopped != 0)
@@ -699,9 +699,10 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
                 ++samplesSent;
             }
             ++i;
+            if ((statusFlags & STATUS_FLAG_TX_END) != 0) break;
         }
 
-        bytesToSend[bi] = sizeof(PacketLTE)*packetsToBatch;
+        bytesToSend[bi] = sizeof(PacketLTE)*i;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
 

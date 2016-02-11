@@ -196,7 +196,14 @@ struct USBStreamService : StreamerLTE
         metadata.lateTimestamp = (status & STATUS_FLAG_TX_LATE) != 0;
         metadata.packetDropped = (status & STATUS_FLAG_RX_DROP) != 0;
 
-        if (isTx) mTxStatQueue.push(metadata);
+        if (isTx)
+        {
+            if (metadata.lateTimestamp and txTimeEnabled)
+            {
+                std::cout << "L" << std::flush;
+                mTxStatQueue.push(metadata);
+            }
+        }
         else mRxStatQueue.push(metadata);
     }
 
@@ -488,12 +495,16 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     //push when the intermediate buffer is full
     if (stream->sampsRemaining == 0)
     {
+        uint32_t statusFlags = 0;
+        if (mStreamService->txTimeEnabled) statusFlags |= STATUS_FLAG_TX_TIME;
+        if (actualEob) statusFlags |= STATUS_FLAG_TX_END;
         size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
             (const complex16_t **)stream->FIFOBuffers.data(),
             STREAM_MTU,
             stream->channelsCount,
             stream->nextTimestamp,
-            timeout_ms);
+            timeout_ms,
+            statusFlags);
         stream->nextTimestamp += sampsPushed;
     }
 

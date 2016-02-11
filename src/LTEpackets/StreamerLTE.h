@@ -24,6 +24,8 @@ static const int STATUS_FLAG_RX_END = (1 << 1); //!< An rx stream command comple
 static const int STATUS_FLAG_RX_LATE = (1 << 2); //!< An rx stream command had a late time
 static const int STATUS_FLAG_TX_LATE = (1 << 3); //!< An tx stream had a late time
 static const int STATUS_FLAG_RX_DROP = (1 << 4); //!< An rx packet was dropped, no room
+static const int STATUS_FLAG_TX_TIME = (1 << 5); //!< The tx packet has a timestamp
+static const int STATUS_FLAG_TX_END = (1 << 6); //!< The tx packet ends a burst (flush)
 
 /*!
  * Callback to report the latest state from the RX receiver thread.

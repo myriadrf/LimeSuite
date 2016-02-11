@@ -77,12 +77,6 @@ def measure_delay(
     sr = sdr.writeStream(txStream, [txPulse], len(txPulse), txFlags, txTime0)
     if sr.ret != len(txPulse): raise Exception('transmit failed %s'%str(sr))
 
-    #flush the burst with 15 more usb packets:
-    streamMtu = sdr.getStreamMTU(txStream)
-    samps = np.array([0]*streamMtu, np.complex64)
-    for i in range(15):
-        sr = sdr.writeStream(txStream, [samps], samps.size)
-
     #receive slightly before transmit time
     rxBuffs = np.array([], np.complex64)
     rxFlags = SOAPY_SDR_HAS_TIME | SOAPY_SDR_END_BURST
