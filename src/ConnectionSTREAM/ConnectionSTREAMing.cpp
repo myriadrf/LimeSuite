@@ -164,7 +164,9 @@ struct USBStreamService : StreamerLTE
         int rxTxEnb = 1 << 2; //streaming on
         int txFromRam = 0 << 1; //off
         int txNormal = 1 << 0; //normal op
-        Reg_write(mDataPort, 0x0005, (regVal & ~0x27) | syncDis | rxTxEnb | txFromRam | txNormal);
+        regVal = (regVal & ~0x27) | syncDis | txFromRam | txNormal;
+        Reg_write(mDataPort, 0x0005, regVal); //first set configuration
+        Reg_write(mDataPort, 0x0005, regVal | rxTxEnb); //enable Rx/Tx after config is set
 
         this->updateThreadState();
     }
@@ -427,9 +429,11 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     )
     {
         uint32_t regVal; this->ReadRegister(0x0005, regVal);
+        this->WriteRegister(0x0005, regVal &= ~(0x4)); //stop Rx/Tx before changing synchronization
         if (metadata.hasTimestamp) regVal &= ~(1 << 5);
         else                       regVal |= (1 << 5);
-        this->WriteRegister(0x0005, regVal);
+        this->WriteRegister(0x0005, regVal); //set config
+        this->WriteRegister(0x0005, regVal | 0x4); //reenable Rx/Tx
         mStreamService->txTimeEnabled = metadata.hasTimestamp;
     }
 
