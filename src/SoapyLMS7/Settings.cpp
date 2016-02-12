@@ -92,9 +92,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
         st = _rfics.back()->UploadAll();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("UploadAll() failed");
-
-        st = _rfics.back()->RegistersTest();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("RegistersTest() failed");
     }
 
     //enable all channels
