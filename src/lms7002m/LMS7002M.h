@@ -189,6 +189,9 @@ public:
 
     liblms7_status SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation);
 
+    //! Get the sample rate in Hz
+    float_type GetSampleRate(bool tx);
+
     ///@name LML
     enum LMLSampleSource
     {
