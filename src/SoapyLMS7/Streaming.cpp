@@ -199,6 +199,10 @@ int SoapyLMS7::writeStream(
     const long long timeNs,
     const long timeoutUs)
 {
+    //write stream can reconfigure on the first timestamp
+    //TODO lock for now until STREAM board has changes
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 

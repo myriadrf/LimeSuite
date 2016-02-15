@@ -160,7 +160,7 @@ struct USBStreamService : StreamerLTE
 
         //switch on Rx
         auto regVal = Reg_read(mDataPort, 0x0005);
-        int syncDis = 1 << 5; //disabled
+        int syncDis = txTimeEnabled?0:(1 << 5);
         int rxTxEnb = 1 << 2; //streaming on
         int txFromRam = 0 << 1; //off
         int txNormal = 1 << 0; //normal op
@@ -428,13 +428,9 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
         not mStreamService->txTimeEnabled /*leave time enabled once enabled - osmotrx workaround for now */
     )
     {
-        uint32_t regVal; this->ReadRegister(0x0005, regVal);
-        this->WriteRegister(0x0005, regVal &= ~(0x4)); //stop Rx/Tx before changing synchronization
-        if (metadata.hasTimestamp) regVal &= ~(1 << 5);
-        else                       regVal |= (1 << 5);
-        this->WriteRegister(0x0005, regVal); //set config
-        this->WriteRegister(0x0005, regVal | 0x4); //reenable Rx/Tx
         mStreamService->txTimeEnabled = metadata.hasTimestamp;
+        mStreamService->stop();
+        mStreamService->start();
     }
 
     //TODO check fifo has space with timeout
