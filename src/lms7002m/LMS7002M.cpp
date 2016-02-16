@@ -864,7 +864,8 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     uint32_t fractionalPart;
     int8_t i;
     int16_t csw_value;
-    uint32_t boardId = 0;
+    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    //TODO when there is more than one chip get it's channel
     uint8_t channel = 0;
 
     //find required VCO frequency
@@ -1633,11 +1634,15 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
-    uint32_t boardId = 0;
+    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
+    uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
+
+    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
     double txFreq = GetFrequencySX_MHz(true, GetReferenceClk_SX(true));
-    uint8_t channel = 0;
+    uint8_t channel = ch==1 ? 0 : 1;
     bool foundInCache = false;
-    int band = 0;
+    int band = sel_band1_trf ? 0 : 1;
     int dcI, dcQ, gainI, gainQ, phaseOffset;
 
     if(useCache)
@@ -1785,10 +1790,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
         -2531
     };
 
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     //Stage 1
-    uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_MHz);
     if (status != LIBLMS7_SUCCESS)
@@ -2201,9 +2203,11 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
-    uint32_t boardId = 0;
-    uint8_t channel = 0;
-    int lna = 0;
+    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    uint8_t channel = ch == 1 ? 0 : 1;
+    uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
+    int lna = sel_path_rfe;
     int dcI, dcQ, gainI, gainQ, phaseOffset;
 
     double rxFreq = GetFrequencySX_MHz(false, GetReferenceClk_SX(false));
@@ -2343,10 +2347,9 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
     };
 
     Log("Rx calibration started", LOG_INFO);
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     Log("Saving registers state", LOG_INFO);
     BackupAllRegisters();
-    uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
+
     if (sel_path_rfe == 1 || sel_path_rfe == 0)
         return LIBLMS7_BAD_SEL_PATH;
 

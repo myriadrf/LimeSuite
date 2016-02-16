@@ -54,6 +54,8 @@ struct DeviceInfo
     //! The protocol version as a string
     std::string protocolVersion;
 
+    uint32_t boardSerialNumber;
+
     /*!
      * The SPI address numbers used to access each LMS7002M.
      * This index will be used in the spi access functions.

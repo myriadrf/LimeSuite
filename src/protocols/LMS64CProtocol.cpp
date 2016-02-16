@@ -291,6 +291,7 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
     devInfo.addrSi5351 = Si5351_I2C_ADDR;
     devInfo.addrADF4002 = ADF4002_SPI_INDEX;
+    devInfo.boardSerialNumber = lmsInfo.boardSerialNumber;
     return devInfo;
 }
 
@@ -304,6 +305,7 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
     info.firmware = 0;
     info.hardware = 0;
     info.protocol = 0;
+    info.boardSerialNumber = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
     TransferStatus status = TransferPacket(pkt);
@@ -314,6 +316,7 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
         info.protocol = pkt.inBuffer[2];
         info.hardware = pkt.inBuffer[3];
         info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
+        info.boardSerialNumber = (pkt.inBuffer[5] << 24) | (pkt.inBuffer[6] << 16) | (pkt.inBuffer[7] << 8) | pkt.inBuffer[8];
     }
     return info;
 }
