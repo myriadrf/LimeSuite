@@ -56,6 +56,7 @@ public:
     int LoadFromFile(const char* filename);
 
 protected:
+    static std::string cachePath;
     static int instanceCount;
     static std::list<DCIQValues> dciq_cache;
     static std::list<VCOValues> vco_cache;

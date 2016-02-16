@@ -2,9 +2,12 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <sys/stat.h>
 using namespace std;
 
-#define CACHE_LOCATION "/tmp/LMS7002M_cache_values.txt"
+std::string CalibrationCache::cachePath = "";
+static const char* limeSuiteDirName = ".limesuite";
+static const char* cacheFilename = "LMS7002M_cache_values.txt";
 
 int CalibrationCache::instanceCount = 0;
 list<CalibrationCache::DCIQValues> CalibrationCache::dciq_cache = std::list<CalibrationCache::DCIQValues>();
@@ -12,9 +15,31 @@ list<CalibrationCache::VCOValues> CalibrationCache::vco_cache = std::list<Calibr
 
 CalibrationCache::CalibrationCache()
 {
-    printf("LMS7002M values cache at %s\n", CACHE_LOCATION);
     if(instanceCount == 0)
-        LoadFromFile(CACHE_LOCATION);
+    {
+        std::string limeSuiteDir;
+        std::string homeDir = getenv("HOME");
+        //check if HOME variable is set
+        if(homeDir.size() == 0)
+        {
+            printf("HOME variable is not set\n");
+            homeDir = "/tmp"; //home not defined move to temp
+        }
+        limeSuiteDir = homeDir + "/" + limeSuiteDirName;
+        //check if limesuite directory exists
+        struct stat info;
+        if( stat( limeSuiteDir.c_str(), &info ) != 0 )
+        {
+            printf("creating directory %s\n", limeSuiteDir.c_str());
+            //create directory
+            const int dir_err = mkdir(limeSuiteDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            if (-1 == dir_err)
+                printf("Error creating directory %s\n", limeSuiteDir.c_str());
+        }
+        cachePath = limeSuiteDir+"/"+cacheFilename;
+        printf("LMS7002M values cache at %s\n", cachePath.c_str());
+    }
+    LoadFromFile(cachePath.c_str());
     ++instanceCount;
 }
 
@@ -22,7 +47,7 @@ CalibrationCache::~CalibrationCache()
 {
     --instanceCount;
     if(instanceCount == 0)
-        SaveToFile(CACHE_LOCATION);
+        SaveToFile(cachePath.c_str());
 }
 
 bool CalibrationCache::GetDCIQValues(bool tx, const int64_t freq, DCIQValues* dest)
