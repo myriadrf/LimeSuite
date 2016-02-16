@@ -20,6 +20,10 @@ using namespace lime;
 //lazy fix for the const call issue -- FIXME
 #define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
 
+bool skipRxCalibration = false;
+bool skipTxCalibration = false;
+bool calibrateOnce = false;
+
 /*******************************************************************
  * Special LMS7002M with log forwarding
  ******************************************************************/
@@ -124,6 +128,13 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
         for(int i=0; i<_rfics.size(); ++i)
             _rfics[i]->EnableValuesCache(enable);
+    }
+
+    if(args.count("calibrateOnce"))
+    {
+        calibrateOnce = std::stoi(args.at("calibrateOnce"));
+        if(calibrateOnce)
+            SoapySDR::logf(SOAPY_SDR_INFO, "Rx/Tx will be calibrated only once");
     }
 
     //also triggers internal stream threads ~ its hacky
@@ -895,14 +906,18 @@ void SoapyLMS7::_handleCalAction(const int direction, const size_t channel, cons
     auto rfic = getRFIC(channel);
     LMS7002M_SelfCalState state(rfic);
 
-    if (direction == SOAPY_SDR_RX && action == "CALIBRATE")
+    if (direction == SOAPY_SDR_RX && action == "CALIBRATE" && not skipRxCalibration)
     {
         rfic->CalibrateRx(bw/1e6);
+        if(calibrateOnce)
+            skipRxCalibration = true;
     }
 
-    if (direction == SOAPY_SDR_TX && action == "CALIBRATE")
+    if (direction == SOAPY_SDR_TX && action == "CALIBRATE" && not skipTxCalibration)
     {
         rfic->CalibrateTx(bw/1e6);
+        if(calibrateOnce)
+            skipTxCalibration = true;
     }
 
     if (direction == SOAPY_SDR_RX && action == "TUNEFILTER")
