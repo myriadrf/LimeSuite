@@ -3,15 +3,18 @@
 #include <sstream>
 #include <iostream>
 #include <sys/stat.h>
+#include <vector>
+#include <sstream>
 using namespace std;
+using namespace lime;
 
 std::string CalibrationCache::cachePath = "";
 static const char* limeSuiteDirName = ".limesuite";
-static const char* cacheFilename = "LMS7002M_cache_values.txt";
+static const char* cacheFilename = "LMS7002M_cache_values.db";
 
 int CalibrationCache::instanceCount = 0;
 list<CalibrationCache::DCIQValues> CalibrationCache::dciq_cache = std::list<CalibrationCache::DCIQValues>();
-list<CalibrationCache::VCOValues> CalibrationCache::vco_cache = std::list<CalibrationCache::VCOValues>();
+sqlite3* CalibrationCache::db = nullptr;
 
 CalibrationCache::CalibrationCache()
 {
@@ -37,9 +40,19 @@ CalibrationCache::CalibrationCache()
                 printf("Error creating directory %s\n", limeSuiteDir.c_str());
         }
         cachePath = limeSuiteDir+"/"+cacheFilename;
+
+        if(!ifstream(cachePath.c_str()))
+        {
+            initializeDatabase();
+        }
         printf("LMS7002M values cache at %s\n", cachePath.c_str());
     }
-    LoadFromFile(cachePath.c_str());
+    int rc = sqlite3_open(cachePath.c_str(), &db);
+    if( rc )
+    {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+    }
     ++instanceCount;
 }
 
@@ -47,7 +60,7 @@ CalibrationCache::~CalibrationCache()
 {
     --instanceCount;
     if(instanceCount == 0)
-        SaveToFile(cachePath.c_str());
+        sqlite3_close(db);
 }
 
 bool CalibrationCache::GetDCIQValues(bool tx, const int64_t freq, DCIQValues* dest)
@@ -75,33 +88,6 @@ void CalibrationCache::SetDCIQValues(const DCIQValues &values)
         }
     }
     dciq_cache.push_back(values);
-}
-
-bool CalibrationCache::GetVCOValues(bool tx, const int64_t freq, VCOValues* dest)
-{
-    for(auto i : vco_cache)
-    {
-        if(freq == i.freq && tx == i.tx)
-        {
-            if(dest)
-                *dest = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-void CalibrationCache::SetVCOValues(const VCOValues &values)
-{
-    for(auto i : vco_cache)
-    {
-        if(values.freq == i.freq && values.tx == i.tx)
-        {
-            i = values;
-            return;
-        }
-    }
-    vco_cache.push_back(values);
 }
 
 int CalibrationCache::SaveToFile(const char* filename)
@@ -174,4 +160,115 @@ int CalibrationCache::LoadFromFile(const char* filename)
     }
     fin.close();
     return dciq_cache.size()+vco_cache.size();
+}
+
+/** @brief Creates database tables
+*/
+int CalibrationCache::initializeDatabase()
+{
+    int rc = sqlite3_open(cachePath.c_str(), &db);
+    if( rc )
+    {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    vector<string> cmd;
+    //create table
+    cmd.push_back(
+"CREATE TABLE LMS7002M_VCO(\
+    boardID INTEGER,\
+    frequency INTEGER,\
+    channel INTEGER,\
+    transmitter BOOLEAN,\
+    VCO INTEGER,\
+    CSW INTEGER,\
+    PRIMARY KEY (boardID, frequency, channel, transmitter));"
+    );
+
+    char *zErrMsg = 0;
+    for(auto command : cmd)
+    {
+        rc = sqlite3_exec(db, command.c_str(), nullptr, 0, &zErrMsg);
+        if( rc != SQLITE_OK )
+        {
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+            break;
+        }
+    }
+    sqlite3_close(db);
+    return 0;
+}
+
+int CalibrationCache::InsertVCO_CSW(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int vco, int csw)
+{
+    char* zErrMsg = 0;
+    stringstream query;
+    query <<
+"INSERT OR REPLACE INTO LMS7002M_VCO (boardID, frequency, channel, transmitter, vco, csw) " <<
+"VALUES ( " << boardId << "," << frequency << "," << (int)channel << "," << (transmitter?1:0) << "," <<vco<<","<<csw<<");";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    return 0;
+}
+
+int CalibrationCache::GetVCO_CSW(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int *vco, int *csw)
+{
+    struct QueryVCO_CSW
+    {
+        QueryVCO_CSW() : vco(0), csw(0), found(false){};
+        int vco;
+        int csw;
+        bool found;
+    };
+
+auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azColName)
+{
+    printf("callback active\n");
+    QueryVCO_CSW *vco_csw = (QueryVCO_CSW*)vco_csw_pair;
+    if(vco_csw != nullptr)
+    {
+        vco_csw->vco = argv[0] != nullptr ? std::stoi(argv[0]) : 0;
+        vco_csw->csw = argv[1] != nullptr ? std::stoi(argv[1]) : 128;
+        vco_csw->found = true;
+        printf("Found\n");
+        return 0;
+    }
+    return 1;
+};
+
+
+
+    QueryVCO_CSW vco_csw_pair;
+
+    char* zErrMsg = 0;
+    stringstream query;
+    query << "SELECT vco, csw FROM LMS7002M_VCO where "<<
+"boardID="<<boardId<<
+" AND frequency="<<frequency<<
+" AND channel="<<(int)channel<<
+" AND transmitter="<<(transmitter?1:0)<<";";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &vco_csw_pair, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    if(not vco_csw_pair.found)
+        return -1;
+    if(vco)
+        *vco = vco_csw_pair.vco;
+    if(csw)
+        *csw = vco_csw_pair.csw;
+    return 0;
 }

@@ -76,7 +76,7 @@ LMS7002M::LMS7002M() :
     mdevIndex(0),
     mSelfCalDepth(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
-    useCache(0)
+    useCache(1)
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
@@ -864,6 +864,8 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     uint32_t fractionalPart;
     int8_t i;
     int16_t csw_value;
+    uint32_t boardId = 0;
+    uint8_t channel = 0;
 
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
@@ -894,16 +896,17 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
 
     bool foundInCache = false;
-    CalibrationCache::VCOValues values;
+    int vco_query;
+    int csw_query;
     if(useCache)
     {
-        foundInCache = valueCache.GetVCOValues(tx, freq_MHz * 1e6, &values);
+        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_MHz*1e6, channel, tx, &vco_query, &csw_query) == 0);
     }
     if(foundInCache)
     {
-        printf("SetFrequency using cache values vco:%i, csw:%i\n", values.vco, values.csw);
-        sel_vco = values.vco;
-        csw_value = values.csw;
+        printf("SetFrequency using cache values vco:%i, csw:%i\n", vco_query, csw_query);
+        sel_vco = vco_query;
+        csw_value = csw_query;
     }
     else
     {
@@ -937,11 +940,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
     }
     if(useCache && !foundInCache)
     {
-        values.tx = tx;
-        values.freq = freq_MHz*1e6;
-        values.vco = sel_vco;
-        values.csw = csw_value;
-        valueCache.SetVCOValues(values);
+        valueCache.InsertVCO_CSW(boardId, freq_MHz*1e6, channel, tx, sel_vco, csw_value);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);

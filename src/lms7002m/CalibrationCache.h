@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <list>
 #include <sstream>
+#include <sqlite3.h>
+namespace lime
+{
+
 class CalibrationCache
 {
 public:
@@ -46,20 +50,24 @@ public:
     CalibrationCache();
     ~CalibrationCache();
 
+    int InsertVCO_CSW(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int vco, int csw);
+    int GetVCO_CSW(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int *vco, int *csw);
+
     bool GetDCIQValues(bool tx, const int64_t freq, DCIQValues *dest);
     void SetDCIQValues(const DCIQValues &values);
-
-    bool GetVCOValues(bool tx, const int64_t freq, VCOValues *dest);
-    void SetVCOValues(const VCOValues &values);
 
     int SaveToFile(const char* filename);
     int LoadFromFile(const char* filename);
 
 protected:
+    int initializeDatabase();
+
     static std::string cachePath;
     static int instanceCount;
     static std::list<DCIQValues> dciq_cache;
-    static std::list<VCOValues> vco_cache;
+    static sqlite3 *db;
 };
+
+}
 
 #endif // CALIBRATION_CACHE_H

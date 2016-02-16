@@ -71,6 +71,20 @@ endif()
 ########################################################################
 ## lime suite library
 ########################################################################
+find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
+find_library(SQLITE3_LIBRARY sqlite3)
+if(NOT SQLITE3_INCLUDE_DIR)
+  message(SEND_ERROR "Failed to find sqlite3.h")
+endif()
+if(NOT SQLITE3_LIBRARY)
+  message(SEND_ERROR "Failed to find the sqlite3 library")
+endif()
+
+message(STATUS "SQLITE3")
+
+message(STATUS ${SQLITE3_INCLUDE_DIR})
+message(STATUS ${SQLITE3_LIBRARY})
+
 set(LIME_SUITE_SOURCES
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
@@ -111,6 +125,7 @@ cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})
+    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
