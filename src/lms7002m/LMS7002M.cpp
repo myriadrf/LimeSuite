@@ -76,7 +76,7 @@ LMS7002M::LMS7002M() :
     mdevIndex(0),
     mSelfCalDepth(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
-    useCache(1)
+    useCache(0)
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;

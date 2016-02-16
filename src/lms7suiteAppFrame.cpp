@@ -583,3 +583,8 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
     if(programmer)
         programmer->SetConnection(lms7controlPort);
 }
+
+void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
+{
+    lmsControl->EnableValuesCache(mnuCacheValues->IsChecked());
+}

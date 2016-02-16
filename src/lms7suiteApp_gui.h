@@ -60,6 +60,7 @@ class AppFrame_view : public wxFrame
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowConnectionSettings( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnChangeCacheSettings( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFFTviewer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowADF4002( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSi5351C( wxCommandEvent& event ) { event.Skip(); }

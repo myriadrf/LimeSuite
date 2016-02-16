@@ -65,6 +65,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowNovena(wxCommandEvent& event);
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
+        void OnChangeCacheSettings(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );
