@@ -13,7 +13,6 @@ static const char* limeSuiteDirName = ".limesuite";
 static const char* cacheFilename = "LMS7002M_cache_values.db";
 
 int CalibrationCache::instanceCount = 0;
-list<CalibrationCache::DCIQValues> CalibrationCache::dciq_cache = std::list<CalibrationCache::DCIQValues>();
 sqlite3* CalibrationCache::db = nullptr;
 
 CalibrationCache::CalibrationCache()
@@ -63,105 +62,6 @@ CalibrationCache::~CalibrationCache()
         sqlite3_close(db);
 }
 
-bool CalibrationCache::GetDCIQValues(bool tx, const int64_t freq, DCIQValues* dest)
-{
-    for(auto i : dciq_cache)
-    {
-        if(freq == i.freq && tx == i.tx)
-        {
-            if(dest)
-                *dest = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-void CalibrationCache::SetDCIQValues(const DCIQValues &values)
-{
-    for(auto i : dciq_cache)
-    {
-        if(values.freq == i.freq && values.tx == i.tx)
-        {
-            i = values;
-            return;
-        }
-    }
-    dciq_cache.push_back(values);
-}
-
-int CalibrationCache::SaveToFile(const char* filename)
-{
-    ofstream fout;
-    fout.open(filename);
-    const char* spacer = "\t";
-    fout << "[vco]" << endl;
-    for(auto i : vco_cache)
-    {
-        fout << i.toString() << endl;
-    }
-    fout << "[dciq]" << endl;
-    for(auto i : dciq_cache)
-    {
-        fout << i.toString() << endl;
-    }
-    fout.close();
-}
-
-/** @brief loads calibration values from file
-    @return number of entries loaded
-*/
-int CalibrationCache::LoadFromFile(const char* filename)
-{
-    dciq_cache.clear();
-    ifstream fin;
-    fin.open(filename);
-    std::string line;
-    if(line[0] != '[')
-        getline(fin,line);
-    if(line == "[vco]")
-    {
-        vco_cache.clear();
-        while(getline( fin, line ))
-        {
-            if(line[0] == '[')
-                break;
-            stringstream ss;
-            ss.str(line);
-            VCOValues v;
-            ss >> v.tx;
-            ss >> v.freq;
-            ss >> v.vco;
-            ss >> v.csw;
-            vco_cache.push_back(v);
-        }
-    }
-    if(line[0] != '[')
-        getline(fin,line);
-    if(line == "[dciq]")
-    {
-        dciq_cache.clear();
-        while(getline( fin, line ))
-        {
-            if(line[0] == '[')
-                break;
-            stringstream ss;
-            ss.str(line);
-            DCIQValues v;
-            ss >> v.tx;
-            ss >> v.freq;
-            ss >> v.dcI;
-            ss >> v.dcQ;
-            ss >> v.phaseCorr;
-            ss >> v.gainI;
-            ss >> v.gainQ;
-            dciq_cache.push_back(v);
-        }
-    }
-    fin.close();
-    return dciq_cache.size()+vco_cache.size();
-}
-
 /** @brief Creates database tables
 */
 int CalibrationCache::initializeDatabase()
@@ -185,6 +85,21 @@ int CalibrationCache::initializeDatabase()
     VCO INTEGER,\
     CSW INTEGER,\
     PRIMARY KEY (boardID, frequency, channel, transmitter));"
+    );
+
+cmd.push_back(
+"CREATE TABLE LMS7002M_DC_IQ(\
+    boardID INTEGER,\
+    frequency INTEGER,\
+    channel INTEGER,\
+    transmitter BOOLEAN,\
+    band_lna INTEGER,\
+    dcI INTEGER,\
+    dcQ INTEGER,\
+    gainI INTEGER,\
+    gainQ INTEGER,\
+    phaseOffset INTEGER,\
+    PRIMARY KEY (boardID, frequency, channel, transmitter, band_lna));"
     );
 
     char *zErrMsg = 0;
@@ -245,8 +160,6 @@ auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azCo
     return 1;
 };
 
-
-
     QueryVCO_CSW vco_csw_pair;
 
     char* zErrMsg = 0;
@@ -270,5 +183,87 @@ auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azCo
         *vco = vco_csw_pair.vco;
     if(csw)
         *csw = vco_csw_pair.csw;
+    return 0;
+}
+
+int CalibrationCache::InsertDC_IQ(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int dcI, int dcQ, int gainI, int gainQ, int phaseOffset)
+{
+    char* zErrMsg = 0;
+    stringstream query;
+    query <<
+"INSERT OR REPLACE INTO LMS7002M_DC_IQ (boardID, frequency, channel, transmitter, band_lna, dcI, dcQ, gainI, gainQ, phaseOffset) " <<
+"VALUES ( " << boardId << "," << frequency << "," << (int)channel << "," << (transmitter?1:0) << "," << band_lna << ", " <<
+dcI<<","<<dcQ<<","<<gainI<<","<<gainQ<<","<<phaseOffset<<");";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    return 0;
+}
+
+int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int *dcI, int *dcQ, int *gainI, int *gainQ, int *phaseOffset)
+{
+    struct QueryDC_IQ
+    {
+        QueryDC_IQ() : dcI(0), dcQ(0), gainI(0), gainQ(0), phaseOffset(0), found(false){};
+        int dcI;
+        int dcQ;
+        int gainI;
+        int gainQ;
+        int phaseOffset;
+        bool found;
+    };
+
+    auto lambda_callback = [](void *dc_iq_data, int argc, char **argv, char **azColName)
+    {
+        QueryDC_IQ *data = (QueryDC_IQ*)dc_iq_data;
+        if(data != nullptr)
+        {
+            data->dcI = argv[0] != nullptr ? std::stoi(argv[0]) : 0;
+            data->dcQ = argv[1] != nullptr ? std::stoi(argv[1]) : 0;
+            data->gainI = argv[2] != nullptr ? std::stoi(argv[2]) : 0;
+            data->gainQ = argv[3] != nullptr ? std::stoi(argv[3]) : 0;
+            data->phaseOffset = argv[4] != nullptr ? std::stoi(argv[4]) : 0;
+            data->found = true;
+            return 0;
+        }
+        return 1;
+    };
+
+    QueryDC_IQ queryResults;
+
+    char* zErrMsg = 0;
+    stringstream query;
+    query << "SELECT dcI, dcQ, gainI, gainQ, phaseOffset FROM LMS7002M_DC_IQ where "<<
+"boardID="<<boardId<<
+" AND frequency="<<frequency<<
+" AND channel="<<(int)channel<<
+" AND transmitter="<<(transmitter?1:0)<<
+" AND band_lna="<<band_lna<<
+";";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &queryResults, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    if(not queryResults.found)
+        return -1;
+    if(dcI)
+        *dcI = queryResults.dcI;
+    if(dcQ)
+        *dcQ = queryResults.dcQ;
+    if(gainI)
+        *gainI = queryResults.gainI;
+    if(gainQ)
+        *gainQ = queryResults.gainQ;
+    if(phaseOffset)
+        *phaseOffset = queryResults.phaseOffset;
     return 0;
 }

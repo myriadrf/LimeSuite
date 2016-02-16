@@ -1633,20 +1633,24 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
+    uint32_t boardId = 0;
     double txFreq = GetFrequencySX_MHz(true, GetReferenceClk_SX(true));
-    CalibrationCache::DCIQValues values;
+    uint8_t channel = 0;
     bool foundInCache = false;
+    int band = 0;
+    int dcI, dcQ, gainI, gainQ, phaseOffset;
+
     if(useCache)
     {
-        foundInCache = valueCache.GetDCIQValues(true, txFreq*1e6, &values);
+        foundInCache = (valueCache.GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phaseOffset) == 0);
     }
     if(foundInCache)
     {
-        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), values.dcI);
-        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), values.dcQ);
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), values.gainI);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), values.gainQ);
-        Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), values.phaseCorr);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dcI);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dcQ);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gainI);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gainQ);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
         Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
         Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
         return LIBLMS7_SUCCESS;
@@ -1901,15 +1905,13 @@ TxCalibrationEnd:
         return status;
     }
 
-    values.freq = txFreq*1e6;
-    values.dcI = dccorri;
-    values.dcQ = dccorrq;
-    values.phaseCorr = iqcorr;
-    values.gainI = gcorri;
-    values.gainQ = gcorrq;
-    values.tx = true;
+    dcI = dccorri;
+    dcQ = dccorrq;
+    phaseOffset = iqcorr;
+    gainI = gcorri;
+    gainQ = gcorrq;
     if(useCache)
-        valueCache.SetDCIQValues(values);
+        valueCache.InsertDC_IQ(boardId, txFreq*1e6, channel, true, band, dcI, dcQ, gainI, gainQ, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
@@ -2199,20 +2201,24 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
+    uint32_t boardId = 0;
+    uint8_t channel = 0;
+    int lna = 0;
+    int dcI, dcQ, gainI, gainQ, phaseOffset;
+
     double rxFreq = GetFrequencySX_MHz(false, GetReferenceClk_SX(false));
-    CalibrationCache::DCIQValues values;
     bool foundInCache = false;
     if(useCache)
     {
-        foundInCache = valueCache.GetDCIQValues(false, rxFreq*1e6, &values);
+        foundInCache = (valueCache.GetDC_IQ(boardId, rxFreq*1e6, channel, false, lna, &dcI, &dcQ, &gainI, &gainQ, &phaseOffset) == 0);
     }
     if(foundInCache)
     {
-        SetRxDCOFF((int8_t)values.dcI, (int8_t)values.dcQ);
+        SetRxDCOFF(dcI, dcQ);
         Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), values.gainI);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), values.gainQ);
-        Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), values.phaseCorr);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gainI);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gainQ);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
         Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
         Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
         return LIBLMS7_SUCCESS;
@@ -2426,15 +2432,13 @@ RxCalibrationEndStage:
         return status;
     }
 
-    values.tx = false;
-    values.freq = rxFreq*1e6;
-    values.dcI = dcoffi;
-    values.dcQ = dcoffq;
-    values.gainI = mingcorri;
-    values.gainQ = mingcorrq;
-    values.phaseCorr = iqcorr_rx;
+    dcI = dcoffi;
+    dcQ = dcoffq;
+    gainI = mingcorri;
+    gainQ = mingcorrq;
+    phaseOffset = iqcorr_rx;
     if(useCache)
-        valueCache.SetDCIQValues(values);
+        valueCache.InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcI, dcQ, gainI, gainQ, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
