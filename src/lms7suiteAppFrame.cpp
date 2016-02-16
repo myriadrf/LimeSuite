@@ -586,5 +586,6 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
 
 void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
 {
-    lmsControl->EnableValuesCache(mnuCacheValues->IsChecked());
+    int checked = event.GetInt();
+    lmsControl->EnableValuesCache(checked);
 }
