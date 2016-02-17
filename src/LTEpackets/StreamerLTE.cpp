@@ -263,8 +263,9 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
             if (dataRate_Bps)
                 dataRate_Bps->store((long)dataRate);
             m_bufferFailures = 0;
+
 #ifndef NDEBUG
-            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples);
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu | TS: %li\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples, tempPacket.timestamp);
 #endif
             rxDroppedSamples = 0;
         }
@@ -476,7 +477,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
     //switch off Rx
     uint16_t regVal = Reg_read(pthis->mDataPort, 0x0005);
-    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x46);
 
     //enable MIMO mode, 12 bit compressed values
     if (channelsCount == 2)
@@ -496,7 +497,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     //switch on Rx
     regVal = Reg_read(pthis->mDataPort, 0x0005);
     bool async = false;
-    Reg_write(pthis->mDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    Reg_write(pthis->mDataPort, 0x0005, (regVal & ~0x60) | 0x6 | (async << 5));
     gDataPort = pthis->mDataPort;
 
     atomic<bool> stopRx(0);
@@ -680,6 +681,10 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
             }
             PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
             pkt[i].counter = timestamp;
+            if(statusFlags & STATUS_FLAG_TX_TIME)
+                pkt[i].reserved[0] &= ~(1 << 4); //synchronize to timestamp
+            else
+                pkt[i].reserved[0] |= (1 << 4); //ignore timestamp
             uint8_t* dataStart = (uint8_t*)pkt[i].data;
             const int stepSize = channelsCount * 3;
             int samplesCollected = 0;
@@ -720,7 +725,7 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
             t1 = t2;
             totalBytesSent = 0;
 #ifndef NDEBUG
-            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures);
+            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u | TS: %li\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures, timestamp);
 #endif
             m_bufferFailures = 0;
         }

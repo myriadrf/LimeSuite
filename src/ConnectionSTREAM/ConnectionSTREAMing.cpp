@@ -48,7 +48,11 @@ struct USBStreamService : StreamerLTE
 
         //switch off Rx
         uint16_t regVal = Reg_read(dataPort, 0x0005);
-        Reg_write(dataPort, 0x0005, regVal & ~0x6);
+        regVal &= ~0x46;
+        //reset hardware timestamp to 0
+        Reg_write(mDataPort, 0x0005, regVal);
+        Reg_write(mDataPort, 0x0005, regVal | 0x40);
+        Reg_write(mDataPort, 0x0005, regVal);
 
         //enable MIMO mode, 12 bit compressed values
         if (channelsCount == 2)
@@ -154,17 +158,17 @@ struct USBStreamService : StreamerLTE
     void start(void)
     {
         if (mHwCounterRate == 0.0) return; //not configured
-
         //clear any residual data from FIFO
         ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(mDataPort));
 
         //switch on Rx
         auto regVal = Reg_read(mDataPort, 0x0005);
-        int syncDis = 1 << 5; //disabled
+        int resetTimestamp = 0 << 6; //rising edge resets timestamp to 0
+        int syncDis = 0 << 5;//synchronization enabled, can be disabled for each packet in it's header
         int rxTxEnb = 1 << 2; //streaming on
         int txFromRam = 0 << 1; //off
         int txNormal = 1 << 0; //normal op
-        regVal = (regVal & ~0x27) | syncDis | txFromRam | txNormal;
+        regVal = (regVal & ~0x67) | resetTimestamp | syncDis | txFromRam | txNormal;
         Reg_write(mDataPort, 0x0005, regVal); //first set configuration
         Reg_write(mDataPort, 0x0005, regVal | rxTxEnb); //enable Rx/Tx after config is set
 
@@ -421,22 +425,6 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
 int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
-
-    //set the time enabled register if usage changed
-    //TODO maybe the FPGA should check a flag in the pkt
-    if (mStreamService->txTimeEnabled != metadata.hasTimestamp and
-        not mStreamService->txTimeEnabled /*leave time enabled once enabled - osmotrx workaround for now */
-    )
-    {
-        uint32_t regVal; this->ReadRegister(0x0005, regVal);
-        this->WriteRegister(0x0005, regVal &= ~(0x4)); //stop Rx/Tx before changing synchronization
-        if (metadata.hasTimestamp) regVal &= ~(1 << 5);
-        else                       regVal |= (1 << 5);
-        this->WriteRegister(0x0005, regVal); //set config
-        this->WriteRegister(0x0005, regVal | 0x4); //reenable Rx/Tx
-        mStreamService->txTimeEnabled = metadata.hasTimestamp;
-    }
-
     //TODO check fifo has space with timeout
 
     if (stream->sampsRemaining == 0)
