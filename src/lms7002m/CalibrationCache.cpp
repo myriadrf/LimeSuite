@@ -147,14 +147,12 @@ int CalibrationCache::GetVCO_CSW(uint32_t boardId, double frequency, uint8_t cha
 
 auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azColName)
 {
-    printf("callback active\n");
     QueryVCO_CSW *vco_csw = (QueryVCO_CSW*)vco_csw_pair;
     if(vco_csw != nullptr)
     {
         vco_csw->vco = argv[0] != nullptr ? std::stoi(argv[0]) : 0;
         vco_csw->csw = argv[1] != nullptr ? std::stoi(argv[1]) : 128;
         vco_csw->found = true;
-        printf("Found\n");
         return 0;
     }
     return 1;
