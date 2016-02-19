@@ -13,6 +13,7 @@ import math
 def siggen_app(
     args,
     rate,
+    rxRate=None,
     ampl=0.7,
     freq=None,
     txChan=0,
@@ -25,11 +26,13 @@ def siggen_app(
 ):
     if waveFreq is None: waveFreq = rate/10
 
+    if rxRate is None: rxRate = rate
+
     sdr = SoapySDR.Device(args)
     #set clock rate first
     if clockRate is not None: sdr.setMasterClockRate(clockRate)
     #set sample rate
-    sdr.setSampleRate(SOAPY_SDR_RX, rxChan, rate)
+    sdr.setSampleRate(SOAPY_SDR_RX, rxChan, rxRate)
     sdr.setSampleRate(SOAPY_SDR_TX, txChan, rate)
     sdr.setBandwidth(SOAPY_SDR_TX, txChan, 10e6)
 
@@ -91,7 +94,8 @@ def siggen_app(
 def main():
     parser = OptionParser()
     parser.add_option("--args", type="string", dest="args", help="device factor arguments", default="")
-    parser.add_option("--rate", type="float", dest="rate", help="Tx and Rx sample rate", default=1e6)
+    parser.add_option("--rate", type="float", dest="rate", help="Tx sample rate", default=1e6)
+    parser.add_option("--rxRate", type="float", dest="rxRate", help="Rx sample rate for testing", default=None)
     parser.add_option("--ampl", type="float", dest="ampl", help="Tx digital amplitude rate", default=0.7)
     parser.add_option("--txAnt", type="string", dest="txAnt", help="Optional Tx antenna", default=None)
     parser.add_option("--txGain", type="float", dest="txGain", help="Optional Tx gain (dB)", default=None)
@@ -104,6 +108,7 @@ def main():
     siggen_app(
         args=options.args,
         rate=options.rate,
+        rxRate=options.rxRate,
         ampl=options.ampl,
         freq=options.freq,
         txAnt=options.txAnt,
