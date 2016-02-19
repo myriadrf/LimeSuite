@@ -74,6 +74,18 @@ struct USBStreamService : StreamerLTE
         dataPort->TransferPacket(ctrPkt);
         ctrPkt.outBuffer[0] = 0x00;
         dataPort->TransferPacket(ctrPkt);
+
+        LMS64CProtocol::GenericPacket pkt;
+        pkt.cmd = CMD_ANALOG_VAL_WR;
+        pkt.outBuffer.push_back( 1 ); //select tcxo channel
+        pkt.outBuffer.push_back( 0 ); // raw value without units
+        //TODO tcxo value is different for different boards
+        uint16_t tcxo_value = 126; // txco value to be set
+        pkt.outBuffer.push_back(tcxo_value >> 8);
+        pkt.outBuffer.push_back(tcxo_value & 0xFF);
+
+        LMS64CProtocol::TransferStatus status = dataPort->TransferPacket(pkt);
+
     }
 
     ~USBStreamService(void)
