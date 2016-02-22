@@ -15,6 +15,7 @@
 
 class LMScomms;
 class LMS7002M_RegistersMap;
+class MCU_BD;
 
 class LMS7002M
 {
@@ -125,7 +126,9 @@ public:
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];
 
+    MCU_BD* GetMCUControls() const;
 protected:
+    MCU_BD *mcuControl;
     LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
@@ -140,9 +143,15 @@ protected:
     uint32_t FindMinRSSI(const LMS7Parameter &param, const int16_t startValue, int16_t *result, const uint8_t scanWidth, const uint8_t twoCompl, int8_t stepMult = 1);
     uint32_t FindMinRSSI(const uint16_t addr, const uint8_t msb, const uint8_t lsb, const int16_t startValue, int16_t *result, const uint8_t scanWidth, const uint8_t twoCompl, int8_t stepMult = 1);
     void CalibrateRxDC_RSSI();
+    void CalibrateTxDC_RSSI(const float_type bandwidth);
     liblms7_status CalibrateTxSetup(float_type bandwidth_MHz);
     liblms7_status CalibrateRxSetup(float_type bandwidth_MHz);
     liblms7_status FixRXSaturation();
+	liblms7_status CheckSaturation();
+    liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz);
+	void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
+	void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
+
     void FilterTuning_AdjustGains();
     liblms7_status TuneTxFilterSetup(TxFilter type, float_type cutoff_MHz);
     liblms7_status TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz);

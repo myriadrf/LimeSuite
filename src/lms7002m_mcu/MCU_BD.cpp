@@ -12,6 +12,8 @@ using namespace std;
 #include <fstream>
 #include "lmsComms.h"
 #include <assert.h>
+#include <chrono>
+#include <thread>
 
 MCU_BD::MCU_BD()
 {
@@ -200,6 +202,7 @@ int MCU_BD::One_byte_command(unsigned short data1, unsigned char * rdata1)
 	*rdata1=tempc;
 	return 0;
 }
+
 
 int MCU_BD::Three_byte_command(
 	    unsigned char data1,unsigned char data2,unsigned char data3,
@@ -978,4 +981,125 @@ unsigned int MCU_BD::formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int 
 std::string MCU_BD::GetProgramFilename() const
 {
     return mLoadedProgramFilename;
+}
+
+/** @brief Starts algorithm in MCU
+*/
+void MCU_BD::CallMCU(int data)
+{
+    mSPI_write(0, 0);
+    if (data != 0)
+        mSPI_write(0x0006, 1);
+    else
+        mSPI_write(0x0006, 0);
+    mSPI_write(0, data);
+}
+
+/** @brief Waits for MCU to finish executing program
+@return 0 success, 255 idle, 244 running, else algorithm status
+*/
+#include <list>
+int MCU_BD::WaitForMCU()
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    unsigned short value = 0;
+    unsigned long timeout_ms = 10000; //total time to wait for procedure completion
+    list<uint8_t> return_codes;
+
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    {
+        t2 = chrono::high_resolution_clock::now();
+        //std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        value = mSPI_read(0x0001);
+        return_codes.push_back(value);
+
+        if (return_codes.size() > 2)
+            return_codes.pop_front();
+
+        bool valueStable = true;
+        if (return_codes.size() == 2)
+        {
+
+            for (auto prev_value : return_codes)
+                if (prev_value != value)
+                {
+                    valueStable = false;
+                    break;
+                }
+        }
+
+        if (!valueStable)
+            continue;
+
+        if (value == 0) //working
+            continue;
+        if (value == 0x80) //idle, success
+            break;
+        if (value == 0x81) //returned error
+            break;
+        else
+            continue;
+    }
+    mSPI_write(0x0006, 0); //return SPI control to PC
+    //printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    return value;
+}
+
+/** @brief Switches MCU into debug mode, MCU program execution is halted
+    @param mode MCU memory initialization mode 
+    @return Operation status
+*/
+MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MEMORY_MODE mode)
+{
+    uint8_t regValue = 0;
+    switch (mode)
+    {
+    case RESET: break;
+    case EEPROM_AND_SRAM: regValue |= 0x01; break;
+    case SRAM: regValue |= 0x02; break;
+    case SRAM_FROM_EEPROM: regValue |= 0x03; break;
+    }
+    if (enabled)
+        regValue |= 0x20;
+    mSPI_write(0x8002, regValue);
+    return SUCCESS;
+}
+
+MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t *addr, uint8_t* values, const uint8_t count)
+{
+    uint8_t cmd = 0x78; //
+    int retval;
+    for (int i = 0; i < count; ++i)
+    {   
+        mSPI_write(0x8004, cmd); //REG4 write cmd
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;
+
+        mSPI_write(0x8004, addr[i]); //REG4 write IRAM address
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;
+
+        /*mSPI_write(0x8004, 0); //REG4 nop
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;*/
+
+        uint8_t result = 0;
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+        values[i] = result;
+    }
+    return SUCCESS;
+}
+
+MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* values, const uint8_t count)
+{
+    return FAILURE;
 }

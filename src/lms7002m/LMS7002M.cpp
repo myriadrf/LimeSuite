@@ -11,13 +11,142 @@
 #include "INI.h"
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
+#include <math.h>
 
 #include <chrono>
 #include <thread>
 
+#include "MCU_BD.h"
+
 using namespace std;
+
+//#define USE_MCU
+#define RSSI_FROM_MCU
+
+const float_type CGEN_FREQ_CALIBRATIONS = 368.64;
+
+inline uint16_t pow2(const uint8_t power)
+{
+    assert(power >= 0 && power < 16);
+    return 1 << power;
+}
+
+const int16_t firCoefs[] =
+{
+	-15,
+	-14,
+	-11,
+	-6,
+	0,
+	7,
+	15,
+	23,
+	30,
+	35,
+	37,
+	34,
+	26,
+	11,
+	-8,
+	-32,
+	-57,
+	-81,
+	-99,
+	-109,
+	-106,
+	-89,
+	-57,
+	-11,
+	47,
+	110,
+	172,
+	224,
+	259,
+	267,
+	244,
+	187,
+	95,
+	-26,
+	-167,
+	-315,
+	-452,
+	-562,
+	-624,
+	-623,
+	-543,
+	-378,
+	-125,
+	211,
+	617,
+	1075,
+	1558,
+	2038,
+	2484,
+	2869,
+	3163,
+	3349,
+	3411,
+	3349,
+	3163,
+	2869,
+	2484,
+	2038,
+	1558,
+	1075,
+	617,
+	211,
+	-125,
+	-378,
+	-543,
+	-623,
+	-624,
+	-562,
+	-452,
+	-315,
+	-167,
+	-26,
+	95,
+	187,
+	244,
+	267,
+	259,
+	224,
+	172,
+	110,
+	47,
+	-11,
+	-57,
+	-89,
+	-106,
+	-109,
+	-99,
+	-81,
+	-57,
+	-32,
+	-8,
+	11,
+	26,
+	34,
+	37,
+	35,
+	30,
+	23,
+	15,
+	7,
+	0,
+	-6,
+	-11,
+	-14,
+	-15
+};
+
+bool sign(const int number)
+{
+	return number < 0;
+}
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
@@ -28,6 +157,8 @@ float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
 //module addresses needs to be sorted in ascending order
 const uint16_t LMS7002M::readOnlyRegisters[] =      { 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F };
 const uint16_t LMS7002M::readOnlyRegistersMasks[] = { 0x0000, 0x0FFF, 0x007F, 0x0000, 0x0000, 0x0000, 0x0000, 0x003F, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
+
+float_type calibUserBwDivider = 5;
 
 /** @brief Simple logging function to print status messages
     @param text message to print
@@ -56,12 +187,12 @@ LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMa
 {
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
+    mcuControl = new MCU_BD();
 }
 
 /** @brief Creates LMS7002M main control object, it requires LMScomms to communicate with chip
     @param controlPort data connection for controlling LMS7002 chip registers
 */
-
 LMS7002M::LMS7002M(LMScomms* controlPort) :
     controlPort(controlPort), mRegistersMap(new LMS7002M_RegistersMap())
 {
@@ -127,11 +258,13 @@ LMS7002M::LMS7002M(LMScomms* controlPort) :
     MemorySectionAddresses[RxGFIR3c][1] = 0x05A7;
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
+    mcuControl = new MCU_BD();
+    mcuControl->Initialize(controlPort);
 }
 
 LMS7002M::~LMS7002M()
 {
-
+    delete mcuControl;
 }
 
 /** @brief Sends reset signal to chip, after reset enables B channel controls
@@ -225,7 +358,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
                 char varname[64];
                 int mode = Get_SPI_Reg_bits(LMS7param(MODE_RX));
                 if (mode == 0) //FCW
-                {                   
+                {
                     for (int i = 0; i < 16; ++i)
                     {
                         sprintf(varname, "FCW%02i", i);
@@ -793,7 +926,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz, float_type
             canDeliverFrequency = true;
     }
     if (abs(tuneScore[0]) < abs(tuneScore[1]))
-    {   
+    {
         if (abs(tuneScore[0]) < abs(tuneScore[2]))
             sel_vco = 0;
         else
@@ -1033,7 +1166,7 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
             coef[index] = mRegistersMap->GetValue(channel, addresses[index]);
         status = LIBLMS7_SUCCESS;
     }
-    
+
     return status;
 }
 
@@ -1358,67 +1491,61 @@ liblms7_status LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endA
 */
 liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 {
-    //Stage 2
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
-    uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
+	//Stage 2
+	uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+	uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
+	uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
 
-    //rfe
-    //reset RFE to defaults
-    SetDefaults(RFE);
-    if (sel_band1_trf == 1)
-        Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 3); //SEL_PATH_RFE 3
-    else if (sel_band2_trf == 1)
-        Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 2);
-    else
-        return LIBLMS7_BAND_NOT_SELECTED;
+	//rfe
+	//reset RFE to defaults
+	SetDefaults(RFE);
+	if (sel_band1_trf == 1)
+		Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 3); //SEL_PATH_RFE 3
+	else if (sel_band2_trf == 1)
+		Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 2);
+	else
+		return LIBLMS7_BAND_NOT_SELECTED;
 
-    if (ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1); // EN_NEXTTX_RFE 1
+	Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 7);
+	Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
+	Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), 4);
+	Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), 50);
+	Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE), 31); //ICT_LODC_RFE 31
+	if (sel_band1_trf)
+	{
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 1);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 1);
+	}
+	else
+	{
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 1);
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 1);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
+	}
+	Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
 
-    Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 8); //G_RXLOOPB_RFE 8
-    Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
-    Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), 10); //CCOMP_TIA_RFE 10
-    Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), 2600); //CFB_TIA_RFE 2600
-    Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE), 31); //ICT_LODC_RFE 31
-    Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), 1);
+	//RBB
+	//reset RBB to defaults
+	SetDefaults(RBB);
+	Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
+	Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 12);
+	Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 2);
 
-    //RBB
-    //reset RBB to defaults
-    SetDefaults(RBB);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 0); //PD_LPFL_RBB 0
-    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB), 0); //RCC_CTL_LPFL_RBB 0
-    Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB), 1500); //C_CTL_LPFL_RBB 1500
-    Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 22); //G_PGA_RBB 22
+	//TRF
+	Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0); //L_LOOPB_TXPAD_TRF 0
+	Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1); //EN_LOOPB_TXPAD_TRF 1
 
-    //TRF
-    //reset TRF to defaults
-    //SetDefaults(TRF);
-    Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0); //L_LOOPB_TXPAD_TRF 0
-    Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1); //EN_LOOPB_TXPAD_TRF 1
-    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0); //EN_G_TRF 0
-    if (ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); //EN_NEXTTX_TRF 1
-    Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF), 0); //LOSS_LIN_TXPAD_TRF 5
-    Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF), 0); //LOSS_MAIN_TXPAD_TRF 5
+	//AFE
+	//reset AFE to defaults
+	uint8_t isel_dac_afe = (uint8_t)Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
+	SetDefaults(AFE);
+	Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2 0
+	
+	Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
 
-    //TBB
-    //reset TBB to defaults
-    /*SetDefaults(TBB);
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 9); //CG_IAMP_TBB 9
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1); //ICT_IAMP_FRP_TBB 1
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6); //ICT_IAMP_GG_FRP_TBB 6
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), 125); //RCAL_LPFH_TBB 0
-    */
-    //AFE
-    //reset AFE to defaults
-    uint8_t isel_dac_afe =(uint8_t) Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
-    SetDefaults(AFE);
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2 0
-    Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
-
-    if (ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
     //BIAS
     uint16_t backup = Get_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS));
     SetDefaults(BIAS);
@@ -1433,7 +1560,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     //power up VCO
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_CGEN), 0);
 
-    if (SetFrequencyCGEN(122.88) != LIBLMS7_SUCCESS)
+    if (SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS) != LIBLMS7_SUCCESS)
         return LIBLMS7_FAILURE;
     if (TuneVCO(VCO_CGEN) != LIBLMS7_SUCCESS)
         return LIBLMS7_FAILURE;
@@ -1441,65 +1568,107 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     SetDefaults(SX);
-    float_type SXTfreqMHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
-
-    float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / 4 - 1;
-    if (SetFrequencySX(Rx, SXRfreqMHz, mRefClkSXR_MHz) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
-    if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+    {
+        float_type SXTfreqMHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
+        float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / calibUserBwDivider - 1;
+        if (SetFrequencySX(Rx, SXRfreqMHz, mRefClkSXR_MHz) != LIBLMS7_SUCCESS)
+            return LIBLMS7_FAILURE;
+        if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
+            return LIBLMS7_FAILURE;
+    }
+	Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //SXT
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1); //PD_LOCH_T2RBUF 1
-    if (SetFrequencySX(Tx, SXTfreqMHz, mRefClkSXT_MHz) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
-    if (TuneVCO(VCO_SXT) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+	//do nothing
 
     //TXTSP
     SetDefaults(TxTSP);
-    Modify_SPI_Reg_bits(0x0200, 3, 2, 0x3); //TSGMODE 1, INSEL 1
+	Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
     Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+	Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-    Modify_SPI_Reg_bits(0x0440, 4, 0, 0); //TX SEL[3:0] = 0 & MODE = 0
 
-    float_type offset = 0.2;
-    if (bandwidth_MHz == 8)
-    {
-        //SXR
-        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-        SetDefaults(SX);
-        float_type SXTfreqMHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
-
-        float_type sxrFreq = SXTfreqMHz - bandwidth_MHz / 4 - 1 - offset;
-        if (SetFrequencySX(Rx, sxrFreq, mRefClkSXR_MHz) != LIBLMS7_SUCCESS)
-            return LIBLMS7_FAILURE;
-        SetNCOFrequency(Tx, 0, bandwidth_MHz / 4 + offset);
-    }
-    else
-        SetNCOFrequency(Tx, 0, bandwidth_MHz / 4);
+    SetNCOFrequency(Tx, 0, bandwidth_MHz / calibUserBwDivider);
 
     //RXTSP
     SetDefaults(RxTSP);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1); //AGC_MODE 1
-    Modify_SPI_Reg_bits(0x040C, 7, 0, 0xBF);
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0); //Decimation HBD ratio
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x7); //agc_avg iq corr
+    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
+	Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+	Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
+	Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);   
+    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
+	Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x1);
+	Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
+	Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 31);
+
+    SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
+
+	Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
+
+	if (ch == 2)
+	{
+		Modify_SPI_Reg_bits(MAC, 1);
+		Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
+		Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1); // EN_NEXTTX_RFE 1
+		Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); //EN_NEXTTX_TRF 1
+		Modify_SPI_Reg_bits(MAC, ch);
+	}
 
     return LIBLMS7_SUCCESS;
 }
 
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 */
+uint32_t gRSSI = ~0;
+uint32_t badRSSI = 0;
+
 uint32_t LMS7002M::GetRSSI()
 {
+#ifndef RSSI_FROM_MCU
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
     return (Get_SPI_Reg_bits(0x040F, 15, 0) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0);
+#else
+	uint32_t rssiAvg = 0;
+	for (int i = 0; i < 2; ++i)
+	{
+		mcuControl->CallMCU(1);
+		int status = mcuControl->WaitForMCU();
+		if (status == 0)
+			//something wrong
+		{
+			printf("MCU working too long\n");
+		}
+        
+		mcuControl->DebugModeSet_MCU(1, 0);
+		//read result value from MCU RAM
+		rssiAvg = 0;
+		unsigned char tempc1, tempc2, tempc3 = 0x00;
+
+		uint8_t ramData[3];
+		for (int i = 0; i < 3; ++i)
+		{
+            const uint8_t asm_read_iram = 0x78;
+            const uint8_t rssi_iram_addr = 0xF9;
+            int retval = mcuControl->Three_byte_command(asm_read_iram, ((unsigned char)(rssi_iram_addr + i)), 0x00, &tempc1, &tempc2, &tempc3);
+			if (retval == 0)
+				ramData[i] = tempc3;
+			else
+			{
+				return ~0;
+			}
+		}
+		rssiAvg = 0;
+		rssiAvg |= (ramData[0] & 0xFF) << 16;
+		rssiAvg |= (ramData[1] & 0xFF) << 8;
+		rssiAvg |= (ramData[2] & 0xFF);
+		mcuControl->DebugModeExit_MCU(1, 0);
+	}
+    return rssiAvg;
+#endif
 }
 
 /** @brief Sets Rx Dc offsets by converting two's complementary numbers to sign and magnitude
@@ -1522,239 +1691,104 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
+    uint16_t gainAddr;
+    uint16_t gcorri;
+    uint16_t gcorrq;
+    uint16_t dccorri;
+    uint16_t dccorrq;
+    int16_t phaseOffset;
+    int16_t gain = 1983;
+    const uint16_t gainMSB = 10;
+    const uint16_t gainLSB = 0;
+
     liblms7_status status;
     Log("Tx calibration started", LOG_INFO);
     BackupAllRegisters();
 
-    int16_t iqcorr = 0;
-    uint16_t gcorrq = 0;
-    uint16_t gcorri = 0;
-    uint16_t dccorri;
-    uint16_t dccorrq;
-    int16_t corrI = 0;
-    int16_t corrQ = 0;
-    uint32_t minRSSI_i;
-    uint32_t minRSSI_q;
-    uint32_t minRSSI_iq;
-    int16_t i;
-    int16_t offsetI = 0;
-    int16_t offsetQ = 0;
-
-    const short firCoefs[] =
-    {
-        -2531,
-        -517,
-        2708,
-        188,
-        -3059,
-        216,
-        3569,
-        -770,
-        -4199,
-        1541,
-        4886,
-        -2577,
-        -5552,
-        3909,
-        6108,
-        -5537,
-        -6457,
-        7440,
-        6507,
-        -9566,
-        -6174,
-        11845,
-        5391,
-        -14179,
-        -4110,
-        16457,
-        2310,
-        -18561,
-        0,
-        20369,
-        -2780,
-        -21752,
-        5963,
-        22610,
-        -9456,
-        -22859,
-        13127,
-        22444,
-        -16854,
-        -21319,
-        20489,
-        19492,
-        -23883,
-        -17002,
-        26881,
-        13902,
-        -29372,
-        -10313,
-        31226,
-        6345,
-        -32380,
-        -2141,
-        32767,
-        -2141,
-        -32380,
-        6345,
-        31226,
-        -10313,
-        -29372,
-        13902,
-        26881,
-        -17002,
-        -23883,
-        19492,
-        20489,
-        -21319,
-        -16854,
-        22444,
-        13127,
-        -22859,
-        -9456,
-        22610,
-        5963,
-        -21752,
-        -2780,
-        20369,
-        0,
-        -18561,
-        2310,
-        16457,
-        -4110,
-        -14179,
-        5391,
-        11845,
-        -6174,
-        -9566,
-        6507,
-        7440,
-        -6457,
-        -5537,
-        6108,
-        3909,
-        -5552,
-        -2577,
-        4886,
-        1541,
-        -4199,
-        -770,
-        3569,
-        216,
-        -3059,
-        188,
-        2708,
-        -517,
-        -2531
-    };
-
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
-    //Stage 1
-    uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_MHz);
     if (status != LIBLMS7_SUCCESS)
         goto TxCalibrationEnd; //go to ending stage to restore registers
-
-    //Stage 3
-    //Calibrate Rx DC
-    Log("Rx DC calibration", LOG_INFO);
+#ifdef USE_MCU
+    mcuControl->CallMCU(12);
+    auto statusMcu = mcuControl->WaitForMCU();
+    if (statusMcu == 0)
     {
-        uint16_t requiredRegs[] = { 0x0400, 0x040A, 0x010D, 0x040C };
-        uint16_t requiredMask[] = { 0x6000, 0x3007, 0x0040, 0x00FF }; //CAPSEL, AGC_MODE, AGC_AVG, EN_DCOFF, Bypasses
-        uint16_t requiredValue[] = { 0x0000, 0x1007, 0x0040, 0x00BD };
-
-        Modify_SPI_Reg_mask(requiredRegs, requiredMask, requiredValue, 0, 3);
+        printf("MCU working too long %i\n", statusMcu);
     }
+#else
+    CheckSaturationTxRx(bandwidth_MHz);
 
-    for (i = 0; i<6; ++i)
+    Modify_SPI_Reg_bits(EN_G_TRF, 0);
+       
+    CalibrateRxDC_RSSI();    
+    CalibrateTxDC_RSSI(bandwidth_MHz);
+
+    //TXIQ
+    Modify_SPI_Reg_bits(EN_G_TRF, 1);
+    Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
+
+    SetNCOFrequency(LMS7002M::Rx, 0, 0.9);
+
+    //coarse gain
     {
-        FindMinRSSI(LMS7param(DCOFFI_RFE), offsetI, &offsetI, 3, 2, 32 >> i);
-        FindMinRSSI(LMS7param(DCOFFQ_RFE), offsetQ, &offsetQ, 3, 2, 32 >> i);
-    }
-    SetRxDCOFF((int8_t)offsetI, (int8_t)offsetQ);
-    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); // DC_BYP 0
+        uint32_t rssiIgain;
+        uint32_t rssiQgain;
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047 - 15);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
+        rssiIgain = GetRSSI();
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047 - 15);
+        rssiQgain = GetRSSI();
 
-    sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
-    //B
-    Modify_SPI_Reg_bits(0x0100, 0, 0, 1); //EN_G_TRF 1
-    if (sel_band1_trf == 1)
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
+
+        if (rssiIgain < rssiQgain)
+            gainAddr = GCORRI_TXTSP.address;
+        else
+            gainAddr = GCORRQ_TXTSP.address;
+    }
+	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
+    cout << "Coarse GAIN: " << gain << endl;
+
+    //coarse phase offset
     {
-        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0); //PD_RLOOPB_1_RFE 0
-        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0); //EN_INSHSW_LB1 0
+        uint32_t rssiUp;
+        uint32_t rssiDown;
+        Modify_SPI_Reg_bits(IQCORR_TXTSP, 15);
+        rssiUp = GetRSSI();
+        Modify_SPI_Reg_bits(IQCORR_TXTSP, -15);
+        rssiDown = GetRSSI();
+        if (rssiUp > rssiDown)
+            phaseOffset = -64;
+        else if (rssiUp < rssiDown)
+            phaseOffset = 192;
+        else
+            phaseOffset = 64;
     }
-    if (sel_band2_trf == 1)
-    {
-        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0); //PD_RLOOPB_2_RFE 0
-        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0); // EN_INSHSW_LB2 0
-    }
-    FixRXSaturation();
+	Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
+	CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
+	cout << "Coarse PHASE : " << phaseOffset << endl;
 
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 0); //GFIR3_BYP 0
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 2);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 7);
+	//fine gain
+	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
 
-    SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
+	//fine phase
+	//CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 4);
 
-    Log("IQ correction stage", LOG_INFO);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), 2047);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
-
-    Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), 0);
-
-    Log("I gain", LOG_INFO);
-    minRSSI_i = FindMinRSSI_Gain(LMS7param(GCORRI_TXTSP), &gcorri);
-
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), 2047);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
-
-    Log("Q gain", LOG_INFO);
-    minRSSI_q = FindMinRSSI_Gain(LMS7param(GCORRQ_TXTSP), &gcorrq);
-
-    if (minRSSI_i < minRSSI_q)
-        gcorrq = 2047;
-    else
-        gcorri = 2047;
-
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
-
-    Log("Phase", LOG_INFO);
-    iqcorr = 0;
-    for (uint8_t i = 0; i<9; ++i)
-        minRSSI_iq = FindMinRSSI(LMS7param(IQCORR_TXTSP), iqcorr, &iqcorr, 3, 1, 256 >> i);
-
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
-    Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), iqcorr);
-
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz)-1, mRefClkSXR_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        goto TxCalibrationEnd; //go to ending stage to restore registers
-
-    //C
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-
-    Log("TX LO calibration", LOG_INFO);
-
-    //Calibrate Tx DC
-    for (uint8_t i = 0; i<7; ++i)
-    {
-        FindMinRSSI(LMS7param(DCCORRI_TXTSP), corrI, &corrI, 3, 1, 64 >> i);
-        FindMinRSSI(LMS7param(DCCORRQ_TXTSP), corrQ, &corrQ, 3, 1, 64 >> i);
-    }
-
-    dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
+	FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
+	Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
+	Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
+#endif   
+	dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
     dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+    gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
+    gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
+    phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
+    DownloadAll();
 
-    // Stage 4
 TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -1770,7 +1804,7 @@ TxCalibrationEnd:
     Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dccorrq);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
-    Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), iqcorr);
+    Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
     Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
@@ -1780,24 +1814,40 @@ TxCalibrationEnd:
 
 /** @brief Performs Rx DC offsets calibration
 */
+/** @brief Performs Rx DC offsets calibration
+*/
 void LMS7002M::CalibrateRxDC_RSSI()
 {
-    int16_t i;
-    int16_t offsetI = 0;
-    int16_t offsetQ = 0;
-    uint16_t requiredRegs[] = { 0x0400, 0x040A, 0x010D, 0x040C };
-    uint16_t requiredMask[] = { 0x6000, 0x3007, 0x0040, 0x00FF }; //CAPSEL, AGC_MODE, AGC_AVG, EN_DCOFF, Bypasses
-    uint16_t requiredValue[] = { 0x0000, 0x1007, 0x0040, 0x00BD };
-
-    Modify_SPI_Reg_mask(requiredRegs, requiredMask, requiredValue, 0, 3);
-    for (i = 0; i<6; ++i)
+#ifdef USE_MCU
+    auto t1 = chrono::high_resolution_clock::now();
+    mcuControl->CallMCU(2);
+    auto statusMcu = mcuControl->WaitForMCU();
+    if (statusMcu == 0)
+        //something wrong
     {
-        FindMinRSSI(LMS7param(DCOFFI_RFE), offsetI, &offsetI, 3, 2, 32 >> i);
-        FindMinRSSI(LMS7param(DCOFFQ_RFE), offsetQ, &offsetQ, 3, 2, 32 >> i);
+        printf("MCU working too long\n");
     }
-    Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
-    SetRxDCOFF((int8_t)offsetI, (int8_t)offsetQ);
-    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); // DC_BYP 0
+    auto t2 = chrono::high_resolution_clock::now();
+    long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    cout << "Rx DC calibration duration " << timePeriod << " ms" << endl;
+    return;
+#endif
+    int16_t offsetI = 32;
+    int16_t offsetQ = 32;
+    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(CAPSEL, 0);
+    SetRxDCOFF(offsetI, offsetQ);
+    //find I
+    CoarseSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, 6);
+    
+    //find Q
+    CoarseSearch(DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 6);    
+
+    CoarseSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, 3);
+    CoarseSearch(DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 3);
+	FineSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 5);
+	SetRxDCOFF(offsetI, offsetQ);
+    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
 }
 
 /** @brief Tries to detect and fix gains if Rx is saturated
@@ -1949,16 +1999,11 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
 
     //rfe
-    if (ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); // EN_NEXTTX_TRF 0
-
+    Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
     Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 15); //G_RXLOOPB_RFE 15
     Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
     Modify_SPI_Reg_bits(0x010C, 1, 1, 0); //PD_TIA 0
-    Modify_SPI_Reg_bits(0x010C, 7, 7, 1); //PD_LNA 1
-
     Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
-    Modify_SPI_Reg_bits(0x010D, 4, 1, 0xFF); // all short switches are enabled
 
     //RBB
     Modify_SPI_Reg_bits(0x0115, 15, 14, 0); //Loopback switches disable
@@ -1967,18 +2012,30 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     //TRF
     //reset TRF to defaults
     SetDefaults(TRF);
-    Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0); //L_LOOPB_TXPAD_TRF 0
-    Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1); //EN_LOOPB_TXPAD_TRF 1
-    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0); //EN_G_TRF 0
-    if (ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); //EN_NEXTTX_TRF 1
-    Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF), 0); //LOSS_LIN_TXPAD_TRF 5
-    Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF), 0); //LOSS_MAIN_TXPAD_TRF 5
+	Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
+	Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
+    Modify_SPI_Reg_bits(EN_G_TRF, 0);
+
+    {
+        uint8_t selPath = Get_SPI_Reg_bits(SEL_PATH_RFE);
+        if (selPath == 2)
+        {
+            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
+            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+        }
+        else if (selPath == 3)
+        {
+            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
+            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+        }
+        else
+            return LIBLMS7_BAD_SEL_PATH; //todo restore settings
+    }
 
     //TBB
     //reset TBB to defaults
     SetDefaults(TBB);
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 9); //CG_IAMP_TBB 9
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 2);
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1); //ICT_IAMP_FRP_TBB 1
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6); //ICT_IAMP_GG_FRP_TBB 6
 
@@ -1986,14 +2043,13 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     //reset AFE to defaults
     SetDefaults(AFE);
     Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2
-    if (ch == 2)
-    {
-        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0); //PD_TX_AFE2
-    }
+
     //BIAS
-    uint16_t backup = Get_SPI_Reg_bits(0x0084, 10, 6);
-    SetDefaults(BIAS);
-    Modify_SPI_Reg_bits(0x0084, 10, 6, backup); //RP_CALIB_BIAS
+    {
+        uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, 10, 6);
+        SetDefaults(BIAS);
+        Modify_SPI_Reg_bits(0x0084, 10, 6, rp_calib_bias); //RP_CALIB_BIAS
+    }
 
     //XBUF
     Modify_SPI_Reg_bits(0x0085, 2, 0, 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
@@ -2004,29 +2060,33 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     //power up VCO
     Modify_SPI_Reg_bits(0x0086, 2, 2, 0);
 
-    liblms7_status status = SetFrequencyCGEN(122.88);
+    liblms7_status status = SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS);
     if (status != LIBLMS7_SUCCESS)
         return status;
 
-    //    //SXR
+    //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     float_type SXRfreqMHz = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
 
     //SXT
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1); //PD_LOCH_t2RBUF 1
-    status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / 4, mRefClkSXT_MHz);
+    SetDefaults(SX);
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+    status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
     if ( status != LIBLMS7_SUCCESS)
         return status;
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
     SetDefaults(TxTSP);
-    Modify_SPI_Reg_bits(0x0200, 3, 2, 0x3); //TSGMODE 1, INSEL 1
+	Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 1);
+    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1); //TSGMODE 1
+	Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
     //Modify_SPI_Reg_bits(0x0208, 6, 4, 0xFFFF); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(0x0208, 6, 6, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(0x0208, 5, 5, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(0x0208, 4, 4, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+	Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 1);  
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     SetNCOFrequency(Tx, 0, 0);
 
@@ -2034,17 +2094,27 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     SetDefaults(RxTSP);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1); //AGC_MODE 1
     Modify_SPI_Reg_bits(0x040C, 7, 7, 0x1); //CMIX_BYP 1
-    Modify_SPI_Reg_bits(0x040C, 6, 6, 0x0); //AGC_BYP 0
-    Modify_SPI_Reg_bits(0x040C, 5, 5, 1); //
     Modify_SPI_Reg_bits(0x040C, 4, 4, 1); //
     Modify_SPI_Reg_bits(0x040C, 3, 3, 1); //
-    Modify_SPI_Reg_bits(0x040C, 2, 2, 1); // DC_BYP
-    Modify_SPI_Reg_bits(0x040C, 1, 1, 1); //
-    Modify_SPI_Reg_bits(0x040C, 0, 0, 1); //
 
     Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 2);
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x7); //agc_avg iq corr
+    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
+    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1); //agc_avg iq corr
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
+    Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 31);
+
+    SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
+
+    //modifications when calibrating channel B
+    if (ch == 2)
+    {
+		Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
+        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
+		Modify_SPI_Reg_bits(MAC, ch);
+    }
     return LIBLMS7_SUCCESS;
 }
 
@@ -2053,203 +2123,145 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
-    liblms7_status status;
-    uint32_t minRSSI_i;
-    uint32_t minRSSI_q;
-    int16_t iqcorr_rx = 0;
-    uint32_t minRSSI_iq;
+	liblms7_status status;
+	int16_t iqcorr_rx = 0;
     int16_t dcoffi;
-    int16_t dcoffq;
+	int16_t dcoffq;
+    int16_t gain;
+    uint16_t gainAddr = 0;
+    const uint8_t gainMSB = 10;
+    const uint8_t gainLSB = 0;
+    int16_t phaseOffset;
+    uint16_t mingcorri;
+    uint16_t mingcorrq;
 
-    const int16_t firCoefs[] =
-    {
-        -2531,
-        -517,
-        2708,
-        188,
-        -3059,
-        216,
-        3569,
-        -770,
-        -4199,
-        1541,
-        4886,
-        -2577,
-        -5552,
-        3909,
-        6108,
-        -5537,
-        -6457,
-        7440,
-        6507,
-        -9566,
-        -6174,
-        11845,
-        5391,
-        -14179,
-        -4110,
-        16457,
-        2310,
-        -18561,
-        0,
-        20369,
-        -2780,
-        -21752,
-        5963,
-        22610,
-        -9456,
-        -22859,
-        13127,
-        22444,
-        -16854,
-        -21319,
-        20489,
-        19492,
-        -23883,
-        -17002,
-        26881,
-        13902,
-        -29372,
-        -10313,
-        31226,
-        6345,
-        -32380,
-        -2141,
-        32767,
-        -2141,
-        -32380,
-        6345,
-        31226,
-        -10313,
-        -29372,
-        13902,
-        26881,
-        -17002,
-        -23883,
-        19492,
-        20489,
-        -21319,
-        -16854,
-        22444,
-        13127,
-        -22859,
-        -9456,
-        22610,
-        5963,
-        -21752,
-        -2780,
-        20369,
-        0,
-        -18561,
-        2310,
-        16457,
-        -4110,
-        -14179,
-        5391,
-        11845,
-        -6174,
-        -9566,
-        6507,
-        7440,
-        -6457,
-        -5537,
-        6108,
-        3909,
-        -5552,
-        -2577,
-        4886,
-        1541,
-        -4199,
-        -770,
-        3569,
-        216,
-        -3059,
-        188,
-        2708,
-        -517,
-        -2531
-    };
-
-    Log("Rx calibration started", LOG_INFO);
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
-    Log("Saving registers state", LOG_INFO);
-    BackupAllRegisters();
+	Log("Rx calibration started", LOG_INFO);
+	uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+	Log("Saving registers state", LOG_INFO);
+    BackupAllRegisters();    
     uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
     if (sel_path_rfe == 1 || sel_path_rfe == 0)
         return LIBLMS7_BAD_SEL_PATH;
 
-    Log("Setup stage", LOG_INFO);
-    status = CalibrateRxSetup(bandwidth_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        goto RxCalibrationEndStage;
+	Log("Setup stage", LOG_INFO);
+	status = CalibrateRxSetup(bandwidth_MHz);
+	if (status != LIBLMS7_SUCCESS)
+		goto RxCalibrationEndStage;
 
-    Log("Rx DC calibration", LOG_INFO);
+#ifdef USE_MCU
+    mcuControl->CallMCU(11);
+    auto statusMcu = mcuControl->WaitForMCU();
+    if (statusMcu == 0)
+    {
+        printf("MCU working too long %i\n", statusMcu);
+    }
+#else
+	Log("Rx DC calibration", LOG_INFO);
+
     CalibrateRxDC_RSSI();
-    dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
-    dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
-    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
-    if (sel_path_rfe == 2)
-    {
-        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
-        Modify_SPI_Reg_bits(0x0103, 10, 10, 1);
-        Modify_SPI_Reg_bits(0x0103, 11, 11, 0);
-        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
-    }
-    if (sel_path_rfe == 3)
-    {
-        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
-        Modify_SPI_Reg_bits(0x0103, 11, 11, 1);
-        Modify_SPI_Reg_bits(0x0103, 10, 10, 0);
-        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
-    }
+	// RXIQ calibration
+	Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
-    Modify_SPI_Reg_bits(0x040C, 7, 7, 0); //CMIX_BYP 0
-    Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
-    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1); //CMIX_GAIN 1  +6 db
-    Modify_SPI_Reg_bits(0x040C, 13, 13, 1); //CMIX_SC 1
+	if (sel_path_rfe == 2)
+	{
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
+	}
+	if (sel_path_rfe == 3)
+	{
+		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
+		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
+	}
 
-    FixRXSaturation();
-
-    Modify_SPI_Reg_bits(0x040C, 5, 5, 0); //GFIR3_BYP 0
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 2);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 7);
+	Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); //DC_BYP 0
+	CheckSaturation();
 
     SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
 
-    SetNCOFrequency(Rx, 0, bandwidth_MHz / 4 + 1);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 2047);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 2047);
+	Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
+    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+    {
+        const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx, mRefClkSXR_MHz);
+        const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx, mRefClkSXT_MHz);
+        SetNCOFrequency(LMS7002M::Rx, 0, TxFreq - RxFreq + 0.1);
+    }
+    
+	Modify_SPI_Reg_bits(IQCORR_RXTSP, 0);
+	Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
+    Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
 
-    Log("IQ correction stage", LOG_INFO);
-    iqcorr_rx = 0;
-    for (int i = 0; i<9; ++i)
-        minRSSI_iq = FindMinRSSI(LMS7param(IQCORR_RXTSP), iqcorr_rx, &iqcorr_rx, 3, 1, 256 >> i);
-    Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), iqcorr_rx);
+    //coarse gain
+    {
+        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047 - 15);
+        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
+        uint32_t rssiIgain = GetRSSI();
+        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
+        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047 - 15);
+        uint32_t rssiQgain = GetRSSI();
 
-    uint16_t mingcorri;
-    Log("I gain", LOG_INFO);
-    minRSSI_i = FindMinRSSI_Gain(LMS7param(GCORRI_RXTSP), &mingcorri);
+        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
+        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
 
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 2047);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 2047);
+        gain = 1983;
+        if (rssiIgain < rssiQgain)
+        {
+            gainAddr = 0x0402;
+            Modify_SPI_Reg_bits(GCORRI_RXTSP, gain);
+        }
+        else
+        {
+            gainAddr = 0x0401;
+            Modify_SPI_Reg_bits(GCORRQ_RXTSP, gain);
+        }
+    }
 
-    Log("Q gain", LOG_INFO);
-    uint16_t mingcorrq;
-    minRSSI_q = FindMinRSSI_Gain(LMS7param(GCORRQ_RXTSP), &mingcorrq);
+	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
+    cout << "Coarse GAIN: " << gain << endl;
 
-    if (minRSSI_i < minRSSI_q)
-        mingcorrq = 2047;
-    else
-        mingcorri = 2047;
+    //find phase offset
+    {
+        uint32_t rssiUp;
+        uint32_t rssiDown;
+        Modify_SPI_Reg_bits(IQCORR_RXTSP, 15);
+        rssiUp = GetRSSI();
+        Modify_SPI_Reg_bits(IQCORR_RXTSP, -15);
+        rssiDown = GetRSSI();
 
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), mingcorri);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), mingcorrq);
+        if (rssiUp > rssiDown)
+            phaseOffset = -64;
+        else if (rssiUp < rssiDown)
+            phaseOffset = 192;
+        else
+            phaseOffset = 64;
+		Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
+    }
+	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
+	cout << "Coarse PHASE : " << phaseOffset << endl;
 
-    Log("Phase", LOG_INFO);
-    for (int i = 0; i<9; ++i)
-        minRSSI_iq = FindMinRSSI(LMS7param(IQCORR_RXTSP), iqcorr_rx, &iqcorr_rx, 3, 1, 256 >> i);
+    CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
+	cout << "Coarse GAIN: " << gain << endl;
+
+	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
+	cout << "Coarse PHASE : " << phaseOffset << endl;
+
+	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
+	cout << "Coarse GAIN: " << gain << endl;
+
+	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
+	cout << "Coarse PHASE : " << phaseOffset << endl;
+
+#endif
+	mingcorri = Get_SPI_Reg_bits(GCORRI_RXTSP);
+	mingcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
+	dcoffi = Get_SPI_Reg_bits(DCOFFI_RFE);
+	dcoffq = Get_SPI_Reg_bits(DCOFFQ_RFE);
+    phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
+
+	cout << "CALIB RESULTS: " << endl;
+	cout << "IQ phase: " << phaseOffset << endl;
+	//cout << "IQ gain: " << gain << endl;
+    DownloadAll();
 
 RxCalibrationEndStage:
     Log("Restoring registers state", LOG_INFO);
@@ -2262,10 +2274,12 @@ RxCalibrationEndStage:
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
+	//Modify_SPI_Reg_bits(DCOFFI_RFE, dcoffi);
+	//Modify_SPI_Reg_bits(DCOFFQ_RFE, dcoffq);
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), mingcorri);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), mingcorrq);
-    Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), iqcorr_rx);
+    Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
     Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
     Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
     Log("Rx calibration finished", LOG_INFO);
@@ -2612,4 +2626,253 @@ liblms7_status LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const u
         Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 0);
     }
     return status;
+}
+
+liblms7_status LMS7002M::CheckSaturation()
+{
+	Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
+	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+	const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx, mRefClkSXR_MHz);
+	const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx, mRefClkSXT_MHz);
+	SetNCOFrequency(LMS7002M::Rx, 0, TxFreq - RxFreq - 0.1);
+
+	uint32_t rssi = GetRSSI();
+
+	int cg_iamp = Get_SPI_Reg_bits(CG_IAMP_TBB);
+	while (rssi < 0x06000 && cg_iamp < 63-6)
+	{
+		rssi = GetRSSI();
+		if (rssi < 0x06000)
+			cg_iamp += 6;
+		if (rssi > 0x06000)
+			break;
+		Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
+	}
+
+	while (rssi < 0x0B000 && cg_iamp < 63-2)
+	{
+		rssi = GetRSSI();
+		if (rssi < 0x0B000)
+			cg_iamp += 2;
+		Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
+	}
+
+	return LIBLMS7_SUCCESS;
+}
+
+int32_t bin2complementry(const int32_t value, const uint8_t bitCount, bool signedInt)
+{
+    uint32_t negativemask = 0;
+    for (int i = 31; i > bitCount; --i)
+    {
+        negativemask |= (0x1 << i);
+    }
+    if (value & (0x1 << bitCount) && signedInt)
+    {
+        return value | negativemask;
+    }
+    return value;
+}
+
+static uint16_t toDCOffset(int16_t offset)
+{
+    uint16_t valToSend = 0;
+    if (offset < 0)
+        valToSend |= 0x40;
+    valToSend |= labs(offset);
+    return valToSend;
+}
+
+uint16_t testAddr = 0x002F;
+
+void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations)
+{	
+    const uint16_t DCOFFaddr = 0x010E;
+#ifdef USE_MCU
+    Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    auto t1 = chrono::high_resolution_clock::now();
+    int mcu_gain_prog = 0;
+    if (addr == GCORRI_RXTSP.address)
+        mcu_gain_prog = 3;
+    if (addr == GCORRQ_RXTSP.address)
+        mcu_gain_prog = 4;
+    if (addr == GCORRI_RXTSP.address && maxIterations != 7)
+        mcu_gain_prog = 5;
+    if (addr == GCORRQ_RXTSP.address && maxIterations != 7)
+        mcu_gain_prog = 6;
+    if (addr == IQCORR_RXTSP.address)
+        mcu_gain_prog = 7;
+    if (addr == IQCORR_RXTSP.address && maxIterations != 7)
+        mcu_gain_prog = 8;
+    
+    mcuControl->CallMCU(mcu_gain_prog);
+    auto statusMcu = mcuControl->WaitForMCU();
+    if (statusMcu == 0)
+        //something wrong
+    {
+        printf("MCU working too long\n");
+    }
+    auto t2 = chrono::high_resolution_clock::now();
+    auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    value = Get_SPI_Reg_bits(addr, msb, lsb);
+    if (addr == GCORRQ_RXTSP.address || addr == GCORRI_RXTSP.address)
+        value = bin2complementry(value, msb - lsb, 0);
+    else
+        value = bin2complementry(value, msb - lsb, 1);
+    cout << "Coarse Search duration " << timePeriod << " ms, value = " << value << endl;
+    return;
+#endif
+	uint8_t rssi_counter = 0;
+	uint32_t rssiUp;
+	uint32_t rssiDown;
+    int16_t upval;
+    int16_t downval;
+    upval = value;
+	for (rssi_counter = 0; rssi_counter < maxIterations-1; ++rssi_counter)
+	{
+		rssiUp = GetRSSI();
+        value -= pow2(maxIterations - rssi_counter);
+        Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+        downval = value;
+		rssiDown = GetRSSI();
+
+		if (rssiUp >= rssiDown)
+			value += pow2(maxIterations - 2 - rssi_counter);
+		else
+			value = value + pow2(maxIterations - rssi_counter) + pow2(maxIterations - 1 - rssi_counter) - pow2(maxIterations-2 - rssi_counter);
+        Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+        upval = value;
+	}
+	value -= pow2(maxIterations - rssi_counter);
+	rssiUp = GetRSSI();
+    if (addr != DCOFFaddr)
+	    Modify_SPI_Reg_bits(addr, msb, lsb, value - pow2(maxIterations - rssi_counter));
+    else
+        Modify_SPI_Reg_bits(addr, msb, lsb, toDCOffset(value - pow2(maxIterations - rssi_counter)));
+	rssiDown = GetRSSI();
+	if (rssiUp < rssiDown)
+		value += 1;
+
+    Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+	rssiDown = GetRSSI();
+	
+	if (rssiUp < rssiDown)
+	{
+		value += 1;
+        Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+	}
+}
+
+liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz)
+{
+	Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0);
+	Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
+	SetNCOFrequency(LMS7002M::Rx, 0, 0.9 + (bandwidth_MHz / calibUserBwDivider) * 2);
+
+	uint32_t rssi = GetRSSI();
+	int g_pga = Get_SPI_Reg_bits(G_PGA_RBB);
+	int g_rxlooop = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+	while (rssi < 0x0B000 && g_rxlooop < 15)
+	{
+		rssi = GetRSSI();
+		if (rssi < 0x0B000)
+		{
+			g_rxlooop += 1;
+			Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxlooop);
+		}
+		else
+			break;
+	}
+	//rssi = GetRSSI();
+	while (g_pga < 18 && g_rxlooop == 15)
+	{
+		g_pga += 1;
+		Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
+	}
+	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
+	Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+	return LIBLMS7_SUCCESS;
+}
+
+void LMS7002M::CalibrateTxDC_RSSI(const float_type bandwidth)
+{
+	Modify_SPI_Reg_bits(EN_G_TRF, 1);
+
+	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+
+	SetNCOFrequency(LMS7002M::Rx, 0, 0.9 + (bandwidth / calibUserBwDivider));
+
+	int16_t corrI = 64;
+	int16_t corrQ = 64;
+	Modify_SPI_Reg_bits(DCCORRI_TXTSP, 64);
+	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, 0);
+	
+		
+	CoarseSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, 7);
+	Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
+
+	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, 64);
+		
+	CoarseSearch(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
+	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+
+
+	CoarseSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, 4);
+	Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
+
+	CoarseSearch(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 4);
+	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+	
+	
+	FineSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
+	Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
+	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+	uint32_t rssi = GetRSSI();
+	if (rssi < 0x0001A)
+		return;
+}
+
+void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize)
+{
+	const uint16_t DCOFFaddr = 0x010E;
+	//const int fieldSize = 5;
+	uint32_t **rssiField = new uint32_t*[fieldSize];
+	for (int i = 0; i < fieldSize; ++i)
+	{
+		rssiField[i] = new uint32_t[fieldSize];
+		for (int q = 0; q < fieldSize; ++q)
+			rssiField[i][q] = ~0;
+	}
+
+	uint32_t minRSSI = ~0;
+	int16_t minI = 0;
+	int16_t minQ = 0;
+
+	for (int i = 0; i < fieldSize; ++i)
+	{
+		for (int q = 0; q < fieldSize; ++q)
+		{
+			int16_t ival = valueI + (i - fieldSize / 2);
+			int16_t qval = valueQ + (q - fieldSize / 2);
+			Modify_SPI_Reg_bits(addrI, msbI, lsbI, addrI != DCOFFaddr ? ival : toDCOffset(ival), true);
+			Modify_SPI_Reg_bits(addrQ, msbQ, lsbQ, addrQ != DCOFFaddr ? qval : toDCOffset(qval), true);
+			rssiField[i][q] = GetRSSI();
+			printf("%6i ", rssiField[i][q]);
+			if (rssiField[i][q] < minRSSI)
+			{
+				minI = ival;
+				minQ = qval;
+				minRSSI = rssiField[i][q];
+			}
+		}
+		printf("\n");
+	}
+	valueI = minI;
+	valueQ = minQ;
+}
+
+MCU_BD* LMS7002M::GetMCUControls() const
+{
+    return mcuControl;
 }
