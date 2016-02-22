@@ -26,6 +26,8 @@ using namespace std;
 //#define USE_MCU
 #define RSSI_FROM_MCU
 
+#define LMS_VERBOSE_OUTPUT
+
 const float_type CGEN_FREQ_CALIBRATIONS = 368.64;
 
 inline uint16_t pow2(const uint8_t power)
@@ -1751,7 +1753,9 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
             gainAddr = GCORRQ_TXTSP.address;
     }
 	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
-    cout << "Coarse GAIN: " << gain << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Tx GAIN_%s: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain);
+#endif
 
     //coarse phase offset
     {
@@ -1770,15 +1774,22 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
     }
 	Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
 	CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
-	cout << "Coarse PHASE : " << phaseOffset << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Tx IQCORR: %i\n", phaseOffset);
+#endif
 
-	//fine gain
-	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
+    CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Tx GAIN_%s: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain);
+#endif
 
-	//fine phase
-	//CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 4);
-
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Tx Fine search Tx GAIN_%s/IQCORR...\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q");
+#endif
 	FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Tx Fine search Tx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain, phaseOffset);
+#endif
 	Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
 	Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
 #endif   
@@ -1845,7 +1856,13 @@ void LMS7002M::CalibrateRxDC_RSSI()
 
     CoarseSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, 3);
     CoarseSearch(DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 3);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Fine search Rx DCOFFI/DCOFFQ\n");
+#endif
 	FineSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 5);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Fine search Rx DCOFFI: %i, DCOFFQ: %i\n", offsetI, offsetQ);
+#endif
 	SetRxDCOFF(offsetI, offsetQ);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
 }
@@ -2217,7 +2234,9 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
     }
 
 	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
-    cout << "Coarse GAIN: " << gain << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
+#endif
 
     //find phase offset
     {
@@ -2237,30 +2256,37 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
 		Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
     }
 	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
-	cout << "Coarse PHASE : " << phaseOffset << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
+#endif
 
     CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
-	cout << "Coarse GAIN: " << gain << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
+#endif
 
 	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
-	cout << "Coarse PHASE : " << phaseOffset << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
+#endif
 
 	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
-	cout << "Coarse GAIN: " << gain << endl;
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
+#endif
 
 	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
-	cout << "Coarse PHASE : " << phaseOffset << endl;
-
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
 #endif
+
+#endif //USE_MCU
 	mingcorri = Get_SPI_Reg_bits(GCORRI_RXTSP);
 	mingcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
 	dcoffi = Get_SPI_Reg_bits(DCOFFI_RFE);
 	dcoffq = Get_SPI_Reg_bits(DCOFFQ_RFE);
     phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
 
-	cout << "CALIB RESULTS: " << endl;
-	cout << "IQ phase: " << phaseOffset << endl;
-	//cout << "IQ gain: " << gain << endl;
     DownloadAll();
 
 RxCalibrationEndStage:
@@ -2274,8 +2300,6 @@ RxCalibrationEndStage:
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
-	//Modify_SPI_Reg_bits(DCOFFI_RFE, dcoffi);
-	//Modify_SPI_Reg_bits(DCOFFQ_RFE, dcoffq);
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), mingcorri);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), mingcorrq);
@@ -2825,18 +2849,20 @@ void LMS7002M::CalibrateTxDC_RSSI(const float_type bandwidth)
 	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
 	
 	
-	FineSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Fine search Tx DCCORRI/DCCORRQ\n");
+#endif
+    FineSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("Fine search Tx DCCORRI: %i, DCCORRQ: %i\n", corrI, corrQ);
+#endif	
 	Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
 	Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
-	uint32_t rssi = GetRSSI();
-	if (rssi < 0x0001A)
-		return;
 }
 
 void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize)
 {
 	const uint16_t DCOFFaddr = 0x010E;
-	//const int fieldSize = 5;
 	uint32_t **rssiField = new uint32_t*[fieldSize];
 	for (int i = 0; i < fieldSize; ++i)
 	{
@@ -2858,7 +2884,6 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
 			Modify_SPI_Reg_bits(addrI, msbI, lsbI, addrI != DCOFFaddr ? ival : toDCOffset(ival), true);
 			Modify_SPI_Reg_bits(addrQ, msbQ, lsbQ, addrQ != DCOFFaddr ? qval : toDCOffset(qval), true);
 			rssiField[i][q] = GetRSSI();
-			printf("%6i ", rssiField[i][q]);
 			if (rssiField[i][q] < minRSSI)
 			{
 				minI = ival;
@@ -2866,10 +2891,30 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
 				minRSSI = rssiField[i][q];
 			}
 		}
-		printf("\n");
 	}
+
+#ifdef LMS_VERBOSE_OUTPUT
+    printf("     |");
+    for (int i = 0; i < fieldSize; ++i)
+        printf("%6i|", valueQ - fieldSize / 2 + i);
+    printf("\n");
+    for (int i = 0; i < fieldSize + 1; ++i)
+        printf("------+");
+    printf("\n");
+    for (int i = 0; i < fieldSize; ++i)
+    {
+        printf("%4i |", valueI + (i - fieldSize / 2));
+        for (int q = 0; q < fieldSize; ++q)
+            printf("%6i|", rssiField[i][q]);
+        printf("\n");
+    }
+#endif
+
 	valueI = minI;
 	valueQ = minQ;
+    for (int i = 0; i < fieldSize; ++i)
+        delete rssiField[i];
+    delete rssiField;
 }
 
 MCU_BD* LMS7002M::GetMCUControls() const
