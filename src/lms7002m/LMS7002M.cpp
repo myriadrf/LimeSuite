@@ -1250,7 +1250,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
     pkt.cmd = CMD_LMS7002_WR;
     uint32_t index = 0;
     for (uint32_t i = 0; i < cnt; ++i)
-    {
+    {   
         pkt.outBuffer.push_back(spiAddr[i] >> 8);
         pkt.outBuffer.push_back(spiAddr[i] & 0xFF);
         pkt.outBuffer.push_back(spiData[i] >> 8);
@@ -1784,11 +1784,11 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
 #endif
 
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("Tx Fine search Tx GAIN_%s/IQCORR...\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q");
+    printf("Fine search Tx GAIN_%s/IQCORR...\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q");
 #endif
 	FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("Tx Fine search Tx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain, phaseOffset);
+    printf("Fine search Tx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain, phaseOffset);
 #endif
 	Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
 	Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
@@ -1798,7 +1798,6 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
     gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
     gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
     phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
-    DownloadAll();
 
 TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
@@ -2287,8 +2286,6 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
 	dcoffq = Get_SPI_Reg_bits(DCOFFQ_RFE);
     phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
 
-    DownloadAll();
-
 RxCalibrationEndStage:
     Log("Restoring registers state", LOG_INFO);
     RestoreAllRegisters();
@@ -2311,23 +2308,23 @@ RxCalibrationEndStage:
 }
 
 const uint16_t backupAddrs[] = {
-    0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028,
-    0x0029, 0x002A, 0x002B, 0x002C, 0x002E, 0x0081, 0x0082, 0x0084, 0x0085,
-    0x0086, 0x0087, 0x0088, 0x0089, 0x008A, 0x008B, 0x008C, 0x0092, 0x0093, 0x0094,
-    0x0095, 0x0096, 0x0097, 0x0098, 0x0099, 0x009A, 0x009B, 0x009C, 0x009D, 0x009E,
-    0x009F, 0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7, 0x00A8,
-    0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x0100, 0x0101, 0x0102, 0x0103,
-    0x0104, 0x0105, 0x0106, 0x0107, 0x0108, 0x0109, 0x010A, 0x010C, 0x010D, 0x010E,
-    0x010F, 0x0110, 0x0111, 0x0112, 0x0113, 0x0114, 0x0115, 0x0116, 0x0117, 0x0118,
-    0x0119, 0x011A, 0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123,
-    0x0124, 0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208,
-    0x0240, 0x0242, 0x0243, 0x0400, 0x0401, 0x0402,
-    0x0403, 0x0404, 0x0405, 0x0406, 0x0407, 0x0408, 0x0409, 0x040A, 0x040B, 0x040C,
-    0x0440, 0x0442, 0x0443 };
+0x0020, 0x0081, 0x0082, 0x0084, 0x0085, 0x0086, 0x0087, 0x0088, 
+0x0089, 0x008A, 0x008B, 0x008C, 0x0100, 0x0101, 0x0102, 0x0103, 
+0x0104, 0x0105, 0x0106, 0x0107, 0x0108, 0x0109, 0x010A, 0x010C, 
+0x010D, 0x010E, 0x010F, 0x0110, 0x0111, 0x0112, 0x0113, 0x0114, 
+0x0115, 0x0116, 0x0117, 0x0118, 0x0119, 0x011A, 0x0200, 0x0201, 
+0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209, 
+0x020A, 0x020B, 0x020C, 0x0242, 0x0243, 0x0400, 0x0401, 0x0402, 
+0x0403, 0x0404, 0x0405, 0x0406, 0x0407, 0x0408, 0x0409, 0x040A, 
+0x040B, 0x040C, 0x040D, 0x0442, 0x0443
+};
 uint16_t backupRegs[sizeof(backupAddrs) / 2];
 const uint16_t backupSXAddr[] = { 0x011C, 0x011D, 0x011E, 0x011F, 0x01200, 0x0121, 0x0122, 0x0123, 0x0124 };
 uint16_t backupRegsSXR[sizeof(backupSXAddr) / 2];
 uint16_t backupRegsSXT[sizeof(backupSXAddr) / 2];
+int16_t rxGFIR3_backup[sizeof(firCoefs)];
+uint16_t backup0x010D;
+uint16_t backup0x0100;
 
 /** @brief Stores chip current registers state into memory for later restoration
 */
@@ -2337,6 +2334,12 @@ void LMS7002M::BackupAllRegisters()
     SPI_read_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
     SPI_read_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    //backup GFIR3 coefficients
+    GetGFIRCoefficients(LMS7002M::Rx, 2, rxGFIR3_backup, 105);
+    //EN_NEXTRX_RFE could be modified in channel A
+    backup0x010D = SPI_read(0x010D);
+    //EN_NEXTTX_TRF could be modified in channel A
+    backup0x0100 = SPI_read(0x0100);
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
     SPI_read_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -2348,7 +2351,11 @@ void LMS7002M::RestoreAllRegisters()
 {
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     SPI_write_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
+    //restore GFIR3
+    SetGFIRCoefficients(LMS7002M::Rx, 2, rxGFIR3_backup, 105);
+    Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A    
+    SPI_write(0x010D, backup0x010D); //restore EN_NEXTRX_RFE
+    SPI_write(0x0100, backup0x0100); //restore EN_NEXTTX_TRF
     SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
     SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
@@ -2899,7 +2906,7 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
         printf("%6i|", valueQ - fieldSize / 2 + i);
     printf("\n");
     for (int i = 0; i < fieldSize + 1; ++i)
-        printf("------+");
+        printf("-----+");
     printf("\n");
     for (int i = 0; i < fieldSize; ++i)
     {
