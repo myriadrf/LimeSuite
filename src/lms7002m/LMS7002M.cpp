@@ -2269,14 +2269,14 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
     printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
 #endif
 
-	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
+    printf("Fine search Rx GAIN_%s/IQCORR\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q");
 #endif
-
-	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
+    FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
+    Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
+    Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset);
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
+    printf("Fine search Rx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain, phaseOffset);
 #endif
 
 #endif //USE_MCU
@@ -2901,16 +2901,16 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
 	}
 
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("     |");
+    printf("      |");
     for (int i = 0; i < fieldSize; ++i)
         printf("%6i|", valueQ - fieldSize / 2 + i);
     printf("\n");
     for (int i = 0; i < fieldSize + 1; ++i)
-        printf("-----+");
+        printf("------+");
     printf("\n");
     for (int i = 0; i < fieldSize; ++i)
     {
-        printf("%4i |", valueI + (i - fieldSize / 2));
+        printf("%5i |", valueI + (i - fieldSize / 2));
         for (int q = 0; q < fieldSize; ++q)
             printf("%6i|", rssiField[i][q]);
         printf("\n");
