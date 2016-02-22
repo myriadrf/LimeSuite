@@ -50,8 +50,8 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-	liblms7_status CalibrateRx(float_type bandwidth_MHz);
-	liblms7_status CalibrateTx(float_type bandwidth_MHz);
+    liblms7_status CalibrateRx(float_type bandwidth_MHz, bool useTSGsource = true);
+    liblms7_status CalibrateTx(float_type bandwidth_MHz, bool useTSGsource = true);
     ///@}
 
     ///@name Filters tuning
@@ -144,8 +144,8 @@ protected:
     uint32_t FindMinRSSI(const uint16_t addr, const uint8_t msb, const uint8_t lsb, const int16_t startValue, int16_t *result, const uint8_t scanWidth, const uint8_t twoCompl, int8_t stepMult = 1);
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
-    liblms7_status CalibrateTxSetup(float_type bandwidth_MHz);
-    liblms7_status CalibrateRxSetup(float_type bandwidth_MHz);
+    liblms7_status CalibrateTxSetup(float_type bandwidth_MHz, bool useTSGsource = true);
+    liblms7_status CalibrateRxSetup(float_type bandwidth_MHz, bool useTSGsource = true);
     liblms7_status FixRXSaturation();
 	liblms7_status CheckSaturation();
     liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz);

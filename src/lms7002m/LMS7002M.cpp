@@ -1489,7 +1489,7 @@ liblms7_status LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endA
 /** @brief Parameters setup instructions for Tx calibration
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, bool useTSGsource)
 {
 	//Stage 2
 	uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
@@ -1585,7 +1585,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     //TXTSP
     SetDefaults(TxTSP);
 	Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), useTSGsource ? 1 : 0);
     Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
 	Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
@@ -1689,7 +1689,7 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 /** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource)
 {
     uint16_t gainAddr;
     uint16_t gcorri;
@@ -1707,7 +1707,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     Log("Setup stage", LOG_INFO);
-    status = CalibrateTxSetup(bandwidth_MHz);
+    status = CalibrateTxSetup(bandwidth_MHz, useTSGsource);
     if (status != LIBLMS7_SUCCESS)
         goto TxCalibrationEnd; //go to ending stage to restore registers
 #ifdef USE_MCU
@@ -1994,7 +1994,7 @@ liblms7_status LMS7002M::SetDefaults(MemorySection module)
     @param bandwidth_MHz filter bandwidth in MHz
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, bool useTSGsource)
 {
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
 
@@ -2081,7 +2081,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     SetDefaults(TxTSP);
 	Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 1);
     Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1); //TSGMODE 1
-	Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
+	Modify_SPI_Reg_bits(INSEL_TXTSP, useTSGsource ? 1 : 0);
     //Modify_SPI_Reg_bits(0x0208, 6, 4, 0xFFFF); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(0x0208, 6, 6, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(0x0208, 5, 5, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
@@ -2121,7 +2121,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 /** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource)
 {
 	liblms7_status status;
 	int16_t iqcorr_rx = 0;
@@ -2144,7 +2144,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
         return LIBLMS7_BAD_SEL_PATH;
 
 	Log("Setup stage", LOG_INFO);
-	status = CalibrateRxSetup(bandwidth_MHz);
+    status = CalibrateRxSetup(bandwidth_MHz, useTSGsource);
 	if (status != LIBLMS7_SUCCESS)
 		goto RxCalibrationEndStage;
 
