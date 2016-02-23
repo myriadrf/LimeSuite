@@ -27,7 +27,6 @@
 
 using namespace std;
 
-#define USE_MCU
 #define RSSI_FROM_MCU
 
 #define LMS_VERBOSE_OUTPUT
@@ -191,6 +190,7 @@ void LMS7002M::Log(const char* text, LogType type)
 
 LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMap())
 {
+    mCalibrationByMCU = false;
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
     mcuControl = new MCU_BD();
@@ -202,6 +202,7 @@ LMS7002M::LMS7002M() : controlPort(NULL), mRegistersMap(new LMS7002M_RegistersMa
 LMS7002M::LMS7002M(LMScomms* controlPort) :
     controlPort(controlPort), mRegistersMap(new LMS7002M_RegistersMap())
 {
+    mCalibrationByMCU = false;
     mRefClkSXR_MHz = 30.72;
     mRefClkSXT_MHz = 30.72;
 
@@ -1725,19 +1726,22 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
     status = CalibrateTxSetup(bandwidth_MHz, useTSGsource);
     if (status != LIBLMS7_SUCCESS)
         goto TxCalibrationEnd; //go to ending stage to restore registers
-#ifdef USE_MCU
+    if (mCalibrationByMCU)
+    {
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
     auto statusMcu = mcuControl->WaitForMCU();
     if (statusMcu == 0)
     {
         printf("MCU working too long %i\n", statusMcu);
     }
-#else
+    }
+    else
+    {
     CheckSaturationTxRx(bandwidth_MHz);
 
     Modify_SPI_Reg_bits(EN_G_TRF, 0);
-       
-    CalibrateRxDC_RSSI();    
+
+    CalibrateRxDC_RSSI();
     CalibrateTxDC_RSSI(bandwidth_MHz);
 
     //TXIQ
@@ -1765,7 +1769,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
         else
             gainAddr = GCORRQ_TXTSP.address;
     }
-	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
+    CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Coarse search Tx GAIN_%s: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain);
 #endif
@@ -1785,8 +1789,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
         else
             phaseOffset = 64;
     }
-	Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
-	CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
+    Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
+    CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Coarse search Tx IQCORR: %i\n", phaseOffset);
 #endif
@@ -1799,13 +1803,13 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Fine search Tx GAIN_%s/IQCORR...\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q");
 #endif
-	FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
+    FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Fine search Tx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain, phaseOffset);
 #endif
-	Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
-	Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
-#endif //USE_MCU
+    Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
+    Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
+    }
 	dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
     dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
     gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
@@ -2171,47 +2175,50 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
 	if (status != LIBLMS7_SUCCESS)
 		goto RxCalibrationEndStage;
 
-#ifdef USE_MCU
+    if (mCalibrationByMCU)
+    {
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
     auto statusMcu = mcuControl->WaitForMCU();
     if (statusMcu == 0)
     {
         printf("MCU working too long %i\n", statusMcu);
     }
-#else
-	Log("Rx DC calibration", LOG_INFO);
+    }
+    else
+    {
+    Log("Rx DC calibration", LOG_INFO);
 
     CalibrateRxDC_RSSI();
 
-	// RXIQ calibration
-	Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
+    // RXIQ calibration
+    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
-	if (sel_path_rfe == 2)
-	{
-		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
-		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
-	}
-	if (sel_path_rfe == 3)
-	{
-		Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
-		Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
-	}
+    if (sel_path_rfe == 2)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
+        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
+    }
+    if (sel_path_rfe == 3)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
+        Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
+    }
 
-	Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); //DC_BYP 0
-	CheckSaturation();
+    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); //DC_BYP 0
+    CheckSaturation();
 
     SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
 
-	Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
+    Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     {
         const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx, mRefClkSXR_MHz);
         const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx, mRefClkSXT_MHz);
         SetNCOFrequency(LMS7002M::Rx, 0, TxFreq - RxFreq + 0.1);
     }
-    
-	Modify_SPI_Reg_bits(IQCORR_RXTSP, 0);
-	Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
+
+    Modify_SPI_Reg_bits(IQCORR_RXTSP, 0);
+    Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
     Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
 
     //coarse gain
@@ -2239,7 +2246,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
         }
     }
 
-	CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
+    CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
 #endif
@@ -2259,9 +2266,9 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
             phaseOffset = 192;
         else
             phaseOffset = 64;
-		Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
+        Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
     }
-	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
+    CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
 #endif
@@ -2271,7 +2278,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
     printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
 #endif
 
-	CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
+    CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
 #ifdef LMS_VERBOSE_OUTPUT
     printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
 #endif
@@ -2286,7 +2293,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
     printf("Fine search Rx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain, phaseOffset);
 #endif
 
-#endif //USE_MCU
+    }
 	mingcorri = Get_SPI_Reg_bits(GCORRI_RXTSP);
 	mingcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
 	dcoffi = Get_SPI_Reg_bits(DCOFFI_RFE);
@@ -2900,4 +2907,9 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
 MCU_BD* LMS7002M::GetMCUControls() const
 {
     return mcuControl;
+}
+
+void LMS7002M::EnableCalibrationByMCU(bool enabled)
+{
+    mCalibrationByMCU = enabled;
 }
