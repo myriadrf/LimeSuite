@@ -20,10 +20,14 @@
 #include <thread>
 
 #include "MCU_BD.h"
+#define MCU_ID_DC_IQ_CALIBRATIONS 0x01
+#define MCU_FUNCTION_CALIBRATE_TX 1
+#define MCU_FUNCTION_CALIBRATE_RX 2
+#define MCU_FUNCTION_READ_RSSI 3
 
 using namespace std;
 
-//#define USE_MCU
+#define USE_MCU
 #define RSSI_FROM_MCU
 
 #define LMS_VERBOSE_OUTPUT
@@ -1637,7 +1641,7 @@ uint32_t LMS7002M::GetRSSI()
 	uint32_t rssiAvg = 0;
 	for (int i = 0; i < 2; ++i)
 	{
-		mcuControl->CallMCU(1);
+		mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
 		int status = mcuControl->WaitForMCU();
 		if (status == 0)
 			//something wrong
@@ -1693,6 +1697,15 @@ void LMS7002M::SetRxDCOFF(int8_t offsetI, int8_t offsetQ)
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource)
 {
+    uint8_t mcuID = mcuControl->ReadMCUProgramID();
+    if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+    {
+        if(mcuControl->GetProgramCode("lms7_dc_iq_calibration.hex") != 0)
+            return LIBLMS7_FILE_NOT_FOUND;
+        if (mcuControl->Program_MCU(1, 0) != 0)
+            return LIBLMS7_FAILURE;
+    }
+    
     uint16_t gainAddr;
     uint16_t gcorri;
     uint16_t gcorrq;
@@ -1713,7 +1726,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
     if (status != LIBLMS7_SUCCESS)
         goto TxCalibrationEnd; //go to ending stage to restore registers
 #ifdef USE_MCU
-    mcuControl->CallMCU(12);
+    mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
     auto statusMcu = mcuControl->WaitForMCU();
     if (statusMcu == 0)
     {
@@ -1792,7 +1805,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, bool useTSGsource
 #endif
 	Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
 	Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
-#endif   
+#endif //USE_MCU
 	dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
     dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
     gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
@@ -1828,20 +1841,6 @@ TxCalibrationEnd:
 */
 void LMS7002M::CalibrateRxDC_RSSI()
 {
-#ifdef USE_MCU
-    auto t1 = chrono::high_resolution_clock::now();
-    mcuControl->CallMCU(2);
-    auto statusMcu = mcuControl->WaitForMCU();
-    if (statusMcu == 0)
-        //something wrong
-    {
-        printf("MCU working too long\n");
-    }
-    auto t2 = chrono::high_resolution_clock::now();
-    long timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    cout << "Rx DC calibration duration " << timePeriod << " ms" << endl;
-    return;
-#endif
     int16_t offsetI = 32;
     int16_t offsetQ = 32;
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
@@ -2139,6 +2138,14 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, bool useTSGs
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource)
 {
+    uint8_t mcuID = mcuControl->ReadMCUProgramID();
+    if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+    {
+        if (mcuControl->GetProgramCode("lms7_dc_iq_calibration.hex") != 0)
+            return LIBLMS7_FILE_NOT_FOUND;
+        if (mcuControl->Program_MCU(1, 0) != 0)
+            return LIBLMS7_FAILURE;
+    }
 	liblms7_status status;
 	int16_t iqcorr_rx = 0;
     int16_t dcoffi;
@@ -2165,7 +2172,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, bool useTSGsource
 		goto RxCalibrationEndStage;
 
 #ifdef USE_MCU
-    mcuControl->CallMCU(11);
+    mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
     auto statusMcu = mcuControl->WaitForMCU();
     if (statusMcu == 0)
     {
@@ -2719,41 +2726,6 @@ uint16_t testAddr = 0x002F;
 void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations)
 {	
     const uint16_t DCOFFaddr = 0x010E;
-#ifdef USE_MCU
-    Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    auto t1 = chrono::high_resolution_clock::now();
-    int mcu_gain_prog = 0;
-    if (addr == GCORRI_RXTSP.address)
-        mcu_gain_prog = 3;
-    if (addr == GCORRQ_RXTSP.address)
-        mcu_gain_prog = 4;
-    if (addr == GCORRI_RXTSP.address && maxIterations != 7)
-        mcu_gain_prog = 5;
-    if (addr == GCORRQ_RXTSP.address && maxIterations != 7)
-        mcu_gain_prog = 6;
-    if (addr == IQCORR_RXTSP.address)
-        mcu_gain_prog = 7;
-    if (addr == IQCORR_RXTSP.address && maxIterations != 7)
-        mcu_gain_prog = 8;
-    
-    mcuControl->CallMCU(mcu_gain_prog);
-    auto statusMcu = mcuControl->WaitForMCU();
-    if (statusMcu == 0)
-        //something wrong
-    {
-        printf("MCU working too long\n");
-    }
-    auto t2 = chrono::high_resolution_clock::now();
-    auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    value = Get_SPI_Reg_bits(addr, msb, lsb);
-    if (addr == GCORRQ_RXTSP.address || addr == GCORRI_RXTSP.address)
-        value = bin2complementry(value, msb - lsb, 0);
-    else
-        value = bin2complementry(value, msb - lsb, 1);
-    cout << "Coarse Search duration " << timePeriod << " ms, value = " << value << endl;
-    return;
-#endif
 	uint8_t rssi_counter = 0;
 	uint32_t rssiUp;
 	uint32_t rssiDown;
@@ -2815,11 +2787,12 @@ liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz)
 		else
 			break;
 	}
-	//rssi = GetRSSI();
-	while (g_pga < 18 && g_rxlooop == 15)
+	rssi = GetRSSI();
+	while (g_pga < 18 && g_rxlooop == 15 && rssi < 0x0B000)
 	{
 		g_pga += 1;
 		Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
+        rssi = GetRSSI();
 	}
 	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
 	Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
