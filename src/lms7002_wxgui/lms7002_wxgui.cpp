@@ -8989,8 +8989,14 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	wxString rgrCalibrationSourceChoices[] = { wxT("LimeLight"), wxT("TSG") };
 	int rgrCalibrationSourceNChoices = sizeof( rgrCalibrationSourceChoices ) / sizeof( wxString );
 	rgrCalibrationSource = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibrate using:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationSourceNChoices, rgrCalibrationSourceChoices, 1, wxRA_SPECIFY_COLS );
-	rgrCalibrationSource->SetSelection( 1 );
+	rgrCalibrationSource->SetSelection( 0 );
 	sbSizer165->Add( rgrCalibrationSource, 0, 0, 5 );
+	
+	wxString rgrCalibrationHostChoices[] = { wxT("PC"), wxT("MCU") };
+	int rgrCalibrationHostNChoices = sizeof( rgrCalibrationHostChoices ) / sizeof( wxString );
+	rgrCalibrationHost = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Run calibration on:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationHostNChoices, rgrCalibrationHostChoices, 1, wxRA_SPECIFY_COLS );
+	rgrCalibrationHost->SetSelection( 0 );
+	sbSizer165->Add( rgrCalibrationHost, 0, 0, 5 );
 	
 	
 	fgSizer309->Add( sbSizer165, 0, 0, 5 );

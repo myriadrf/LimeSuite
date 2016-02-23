@@ -15,6 +15,8 @@ using namespace std;
 #include <chrono>
 #include <thread>
 
+#define PROGRAM_ID_ADDR 0xFE
+
 MCU_BD::MCU_BD()
 {
     mLoadedProgramFilename = "";
@@ -1005,7 +1007,7 @@ int MCU_BD::WaitForMCU()
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
     unsigned short value = 0;
-    unsigned long timeout_ms = 10000; //total time to wait for procedure completion
+    unsigned long timeout_ms = 20000; //total time to wait for procedure completion
     list<uint8_t> return_codes;
 
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -1037,13 +1039,11 @@ int MCU_BD::WaitForMCU()
             continue;
         if (value == 0x80) //idle, success
             break;
-        if (value == 0x81) //returned error
-            break;
         else
-            continue;
+            break;
     }
     mSPI_write(0x0006, 0); //return SPI control to PC
-    //printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
 }
 
@@ -1062,7 +1062,7 @@ MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MEMORY_MODE mode)
     case SRAM_FROM_EEPROM: regValue |= 0x03; break;
     }
     if (enabled)
-        regValue |= 0x20;
+        regValue |= 0xC0;
     mSPI_write(0x8002, regValue);
     return SUCCESS;
 }
@@ -1081,9 +1081,9 @@ MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t *addr, uint8_t* values, c
         retval = WaitUntilWritten();
         if (retval == -1) return FAILURE;
 
-        /*mSPI_write(0x8004, 0); //REG4 nop
+        mSPI_write(0x8004, 0); //REG4 nop
         retval = WaitUntilWritten();
-        if (retval == -1) return FAILURE;*/
+        if (retval == -1) return FAILURE;
 
         uint8_t result = 0;
         retval = ReadOneByte(&result);
@@ -1102,4 +1102,17 @@ MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t *addr, uint8_t* values, c
 MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* values, const uint8_t count)
 {
     return FAILURE;
+}
+
+uint8_t MCU_BD::ReadMCUProgramID()
+{
+    /*uint8_t addr = PROGRAM_ID_ADDR;
+    uint8_t value = 0;
+    SetDebugMode(true, SRAM);
+    readIRAM(&addr, &value, 1);
+    SetDebugMode(false, SRAM);
+    return value;*/
+    CallMCU(255);
+    auto statusMcu = WaitForMCU();
+    return statusMcu & 0x7F;
 }

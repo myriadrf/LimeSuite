@@ -127,7 +127,9 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
     MCU_BD* GetMCUControls() const;
+    void EnableCalibrationByMCU(bool enabled);
 protected:
+    bool mCalibrationByMCU;
     MCU_BD *mcuControl;
     LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t readOnlyRegisters[];

@@ -31,10 +31,13 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx( wxCommandEvent& event )
 {
+    lmsControl->EnableCalibrationByMCU(rgrCalibrationHost->GetSelection() == 1);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;    
     bool useTSG = rgrCalibrationSource->GetSelection() == 1;
+    if (rgrCalibrationHost->GetSelection() == 1)
+        useTSG = true;
     status = lmsControl->CalibrateRx(bandwidth, useTSG);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -51,10 +54,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx( wxCommandEvent& event )
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
+    lmsControl->EnableCalibrationByMCU(rgrCalibrationHost->GetSelection() == 1);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;
     bool useTSG = rgrCalibrationSource->GetSelection() == 1;
+    if (rgrCalibrationHost->GetSelection() == 1)
+        useTSG = true;
     status = lmsControl->CalibrateTx(bandwidth, useTSG);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -71,13 +77,17 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {       
+    lmsControl->EnableCalibrationByMCU(rgrCalibrationHost->GetSelection() == 1);
+    bool useTSG = rgrCalibrationSource->GetSelection() == 1;
+    if (rgrCalibrationHost->GetSelection() == 1)
+        useTSG = true;
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);    
     liblms7_status status;
-    status = lmsControl->CalibrateTx(bandwidth);
+    status = lmsControl->CalibrateTx(bandwidth, useTSG);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
-    status = lmsControl->CalibrateRx(bandwidth);
+    status = lmsControl->CalibrateRx(bandwidth, useTSG);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
 
