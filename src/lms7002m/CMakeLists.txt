@@ -50,7 +50,8 @@ if(ENABLE_SPI_CONNECTION)
     add_definitions(-DENABLE_SPI_CONNECTION)
 endif()
 
-add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files} LMS7002M_MCU)
+add_library(LMS7002M STATIC ${LMS7002M_src_files} ${connectionManager_src_files})
+target_link_libraries(LMS7002M LMS7002M_MCU)
 target_include_directories(LMS7002M PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32 AND ENABLE_USB_CONNECTION)
