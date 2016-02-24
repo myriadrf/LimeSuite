@@ -1546,13 +1546,8 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, bool useTSGs
 	Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1); //EN_LOOPB_TXPAD_TRF 1
 
 	//AFE
-	//reset AFE to defaults
-	uint8_t isel_dac_afe = (uint8_t)Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
-	SetDefaults(AFE);
 	Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2 0
 	
-	Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
-
     //BIAS
     uint16_t backup = Get_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS));
     SetDefaults(BIAS);
@@ -1591,6 +1586,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, bool useTSGs
 
     //TXTSP
     SetDefaults(TxTSP);
+    Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), useTSGsource ? 1 : 0);
     Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
@@ -2059,8 +2055,6 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, bool useTSGs
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6); //ICT_IAMP_GG_FRP_TBB 6
 
     //AFE
-    //reset AFE to defaults
-    SetDefaults(AFE);
     Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2
 
     //BIAS
@@ -2098,13 +2092,11 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, bool useTSGs
 
     //TXTSP
     SetDefaults(TxTSP);
+    Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 1);
     Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1); //TSGMODE 1
 	Modify_SPI_Reg_bits(INSEL_TXTSP, useTSGsource ? 1 : 0);
-    //Modify_SPI_Reg_bits(0x0208, 6, 4, 0xFFFF); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    Modify_SPI_Reg_bits(0x0208, 6, 6, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    Modify_SPI_Reg_bits(0x0208, 5, 5, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    Modify_SPI_Reg_bits(0x0208, 4, 4, 1); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+    Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
 	Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 1);  
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     SetNCOFrequency(Tx, 0, 0);
