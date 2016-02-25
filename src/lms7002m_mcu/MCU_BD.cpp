@@ -1013,17 +1013,16 @@ int MCU_BD::WaitForMCU()
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
         t2 = chrono::high_resolution_clock::now();
-        //std::this_thread::sleep_for(std::chrono::milliseconds(5));
         value = mSPI_read(0x0001);
         return_codes.push_back(value);
 
-        if (return_codes.size() > 2)
+        if (return_codes.size() > 3)
             return_codes.pop_front();
 
-        bool valueStable = true;
-        if (return_codes.size() == 2)
+        bool valueStable = false;
+        if (return_codes.size() == 3)
         {
-
+            valueStable = true;
             for (auto prev_value : return_codes)
                 if (prev_value != value)
                 {
