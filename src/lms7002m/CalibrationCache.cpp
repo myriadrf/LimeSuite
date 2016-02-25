@@ -5,6 +5,11 @@
 #include <sys/stat.h>
 #include <vector>
 #include <sstream>
+#include <ciso646>
+#ifndef __unix__
+    #include <Windows.h>
+    #include <Shlobj.h>
+#endif
 using namespace std;
 using namespace lime;
 
@@ -20,13 +25,24 @@ CalibrationCache::CalibrationCache()
     if(instanceCount == 0)
     {
         std::string limeSuiteDir;
-        std::string homeDir = getenv("HOME");
+        std::string homeDir;
+#ifdef __unix__
+        homeDir = getenv("HOME");
         //check if HOME variable is set
-        if(homeDir.size() == 0)
+        if (homeDir.size() == 0)
         {
             printf("HOME variable is not set\n");
             homeDir = "/tmp"; //home not defined move to temp
         }
+#else
+        CHAR path[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path)) != S_OK)
+        {
+            printf("HOME variable is not set\n");
+            GetTempPathA(MAX_PATH, path); //home not defined move to temp
+        }
+        homeDir = path;
+#endif        
         limeSuiteDir = homeDir + "/" + limeSuiteDirName;
         //check if limesuite directory exists
         struct stat info;
@@ -34,9 +50,13 @@ CalibrationCache::CalibrationCache()
         {
             printf("creating directory %s\n", limeSuiteDir.c_str());
             //create directory
+#ifdef __unix__
             const int dir_err = mkdir(limeSuiteDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             if (-1 == dir_err)
                 printf("Error creating directory %s\n", limeSuiteDir.c_str());
+#else
+            CreateDirectoryA(limeSuiteDir.c_str(), NULL);
+#endif
         }
         cachePath = limeSuiteDir+"/"+cacheFilename;
 
