@@ -70,12 +70,12 @@ public:
         return true;
 	}
 	bool used;
+    int id;
+    static int idCounter;
 	#ifndef __unix__
 	PUCHAR context;
 	OVERLAPPED *inOvLap;
 	#else
-	static int idCounter;
-	int id;
 	libusb_transfer* transfer;
 	long bytesXfered;
 	long bytesExpected;
