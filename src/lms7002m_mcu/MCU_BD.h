@@ -43,7 +43,7 @@ class MCU_BD
         int m_iLoopTries;
         std::string GetProgramFilename() const;
         void CallMCU(int data);
-        int WaitForMCU();
+        int WaitForMCU(uint32_t timeout_ms);
 
     protected:
         std::string mLoadedProgramFilename;

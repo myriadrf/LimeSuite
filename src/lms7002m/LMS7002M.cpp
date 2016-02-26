@@ -1639,7 +1639,7 @@ uint32_t LMS7002M::GetRSSI()
 	for (int i = 0; i < 2; ++i)
 	{
 		mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
-		int status = mcuControl->WaitForMCU();
+		int status = mcuControl->WaitForMCU(500);
 		if (status == 0)
 			//something wrong
 		{
@@ -1725,7 +1725,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     if (mCalibrationByMCU)
     {
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
-    auto statusMcu = mcuControl->WaitForMCU();
+    auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
     {
         printf("MCU working too long %i\n", statusMcu);
@@ -1811,7 +1811,6 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
     gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
     phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
-
 TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -2137,6 +2136,13 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
     {
+        std::string mcuFile;
+        //select MCU HEX file with appopriate reference frequency
+        if (GetReferenceClk_SX(LMS7002M::Rx) > 30.72)
+            mcuFile = "lms7_dc_iq_calibration_refclk52.hex";
+        else
+            mcuFile = "lms7_dc_iq_calibration_refclk30_72.hex";
+
         if (mcuControl->GetProgramCode("lms7_dc_iq_calibration.hex") != 0)
             return LIBLMS7_FILE_NOT_FOUND;
         if (mcuControl->Program_MCU(1, 0) != 0)
@@ -2170,7 +2176,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
     if (mCalibrationByMCU)
     {
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
-    auto statusMcu = mcuControl->WaitForMCU();
+    auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
     {
         printf("MCU working too long %i\n", statusMcu);
