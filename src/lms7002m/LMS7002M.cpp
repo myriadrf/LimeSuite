@@ -2365,6 +2365,10 @@ void LMS7002M::RestoreAllRegisters()
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
     SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    //reset Tx logic registers, fixes interpolator
+    uint16_t x0020val = SPI_read(0x0020);
+    SPI_write(0x0020, x0020val & ~0xA000);
+    SPI_write(0x0020, x0020val);
 }
 
 /** @brief Searches for minimal digital RSSI value by changing given gain parameter
