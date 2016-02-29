@@ -69,7 +69,14 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
             return -1;
         
         mLoadedProgramFilename = inFileName;
-        inFile.ReadHex(8191);
+        try
+        {
+            inFile.ReadHex(8191);
+        }
+        catch (...)
+        {
+            return -1;
+        }
 
         for (i=0; i<8192; i++)
         {
