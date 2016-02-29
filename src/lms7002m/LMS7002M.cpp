@@ -1586,6 +1586,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 
     //TXTSP
     SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
@@ -1597,6 +1598,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 
     //RXTSP
     SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
@@ -2091,6 +2093,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 
     //TXTSP
     SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 1);
     Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1); //TSGMODE 1
@@ -2102,6 +2105,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 
     //RXTSP
     SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1); //AGC_MODE 1
     Modify_SPI_Reg_bits(0x040C, 7, 7, 0x1); //CMIX_BYP 1
     Modify_SPI_Reg_bits(0x040C, 4, 4, 1); //
@@ -2365,6 +2369,10 @@ void LMS7002M::RestoreAllRegisters()
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
     SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    //reset Tx logic registers, fixes interpolator
+    uint16_t x0020val = SPI_read(0x0020);
+    SPI_write(0x0020, x0020val & ~0xA000);
+    SPI_write(0x0020, x0020val);
 }
 
 /** @brief Searches for minimal digital RSSI value by changing given gain parameter

@@ -8986,12 +8986,6 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	sbSizer165->Add( fgSizer328, 1, wxEXPAND, 5 );
 	
-	wxString rgrCalibrationHostChoices[] = { wxT("PC"), wxT("MCU") };
-	int rgrCalibrationHostNChoices = sizeof( rgrCalibrationHostChoices ) / sizeof( wxString );
-	rgrCalibrationHost = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Run calibration on:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationHostNChoices, rgrCalibrationHostChoices, 1, wxRA_SPECIFY_COLS );
-	rgrCalibrationHost->SetSelection( 0 );
-	sbSizer165->Add( rgrCalibrationHost, 0, 0, 5 );
-	
 	
 	fgSizer309->Add( sbSizer165, 0, 0, 5 );
 	
