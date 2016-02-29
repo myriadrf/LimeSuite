@@ -18,6 +18,21 @@ class IConnection;
 class MCU_BD
 {
     public:
+        enum OperationStatus
+        {
+            SUCCESS = 0,
+            FAILURE,
+            TIMEOUT,
+        };
+
+        enum MEMORY_MODE
+        {
+            RESET = 0,
+            EEPROM_AND_SRAM,
+            SRAM,
+            SRAM_FROM_EEPROM
+        };
+        
         struct ProgressInfo
         {
             unsigned short stepsDone;
@@ -30,6 +45,8 @@ class MCU_BD
         virtual ~MCU_BD();
         int m_iLoopTries;
         std::string GetProgramFilename() const;
+        void CallMCU(int data);
+        int WaitForMCU(uint32_t timeout_ms);
 
     protected:
         std::string mLoadedProgramFilename;
@@ -46,6 +63,11 @@ class MCU_BD
         int m_bLoadedProd;
 
     public:
+        uint8_t ReadMCUProgramID();
+        OperationStatus SetDebugMode(bool enabled, MEMORY_MODE mode);
+        OperationStatus readIRAM(const uint8_t *addr, uint8_t* values, const uint8_t count);
+        OperationStatus writeIRAM(const uint8_t *addr, const uint8_t* values, const uint8_t count);
+
         void Wait_CLK_Cycles(int data);
         // The IRAM content
         unsigned char m_IRAM[256];
