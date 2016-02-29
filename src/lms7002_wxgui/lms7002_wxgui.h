@@ -2153,7 +2153,6 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* lblCGENrefClk;
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
-		wxRadioBox* rgrCalibrationHost;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
