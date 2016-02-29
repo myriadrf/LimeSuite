@@ -734,6 +734,13 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     case SOAPY_SDR_RX: _decims[channel] = intFactor; break;
     }
 
+    //when only setting the tx rate, also set rx if its not already
+    //this is a workaround https://github.com/limemicro/lms7suite/issues/29
+    if (direction == SOAPY_SDR_TX and _decims.count(channel) == 0)
+    {
+        this->setSampleRate(SOAPY_SDR_RX, channel, rate);
+    }
+
     rfic->SetInterfaceFrequency(
         this->getMasterClockRate()/1e6,
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
