@@ -2135,14 +2135,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 {
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
-    {
-        std::string mcuFile;
-        //select MCU HEX file with appopriate reference frequency
-        if (GetReferenceClk_SX(LMS7002M::Rx) > 30.72)
-            mcuFile = "lms7_dc_iq_calibration_refclk52.hex";
-        else
-            mcuFile = "lms7_dc_iq_calibration_refclk30_72.hex";
-
+    {   
         if (mcuControl->GetProgramCode("lms7_dc_iq_calibration.hex") != 0)
             return LIBLMS7_FILE_NOT_FOUND;
         if (mcuControl->Program_MCU(1, 0) != 0)
