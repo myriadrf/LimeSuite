@@ -13,7 +13,7 @@ using namespace lime;
 
 const float_type CGEN_FREQ_CALIBRATIONS = 368.64;
 float_type calibUserBwDivider = 5;
-
+const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
@@ -247,10 +247,13 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 	Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //SXT
-	//do nothing
+    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
     SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
@@ -262,6 +265,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 
     //RXTSP
     SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
 	Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
@@ -403,6 +407,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if (mCalibrationByMCU)
     {
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
@@ -673,6 +679,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 
     //TXTSP
     SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
 	Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 1);
     Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1); //TSGMODE 1
@@ -684,6 +691,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 
     //RXTSP
     SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1); //AGC_MODE 1
     Modify_SPI_Reg_bits(0x040C, 7, 7, 0x1); //CMIX_BYP 1
     Modify_SPI_Reg_bits(0x040C, 4, 4, 1); //
@@ -780,6 +788,8 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 
     if (mCalibrationByMCU)
     {
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
@@ -962,6 +972,10 @@ void LMS7002M::RestoreAllRegisters()
     Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
     SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    //reset Tx logic registers, fixes interpolator
+    uint16_t x0020val = SPI_read(0x0020);
+    SPI_write(0x0020, x0020val & ~0xA000);
+    SPI_write(0x0020, x0020val);
 }
 
 liblms7_status LMS7002M::CheckSaturation()
