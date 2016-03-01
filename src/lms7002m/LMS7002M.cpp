@@ -1579,10 +1579,11 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
         if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
             return LIBLMS7_FAILURE;
     }
-	Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //SXT
-	//do nothing
+    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
     SetDefaults(TxTSP);
