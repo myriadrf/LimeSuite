@@ -1728,8 +1728,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if (mCalibrationByMCU)
     {
-    //set bandwidth for MCU to read from register, value is integer stored in kHz
-    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz*1000);
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
@@ -2176,8 +2176,8 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 
     if (mCalibrationByMCU)
     {
-    //set bandwidth for MCU to read from register, value is integer stored in kHz
-    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz * 1000);
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
