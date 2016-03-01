@@ -20,6 +20,7 @@
 #include <thread>
 
 #include "MCU_BD.h"
+const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
@@ -1579,10 +1580,11 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
         if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
             return LIBLMS7_FAILURE;
     }
-	Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //SXT
-	//do nothing
+    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
     SetDefaults(TxTSP);
@@ -1726,6 +1728,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if (mCalibrationByMCU)
     {
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)
@@ -2172,6 +2176,8 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 
     if (mCalibrationByMCU)
     {
+    //set bandwidth for MCU to read from register, value is integer stored in MHz
+    SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)bandwidth_MHz);
     mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
     auto statusMcu = mcuControl->WaitForMCU(30000);
     if (statusMcu == 0)

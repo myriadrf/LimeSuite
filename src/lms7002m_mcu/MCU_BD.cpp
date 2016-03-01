@@ -1111,13 +1111,7 @@ MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* va
 }
 
 uint8_t MCU_BD::ReadMCUProgramID()
-{
-    /*uint8_t addr = PROGRAM_ID_ADDR;
-    uint8_t value = 0;
-    SetDebugMode(true, SRAM);
-    readIRAM(&addr, &value, 1);
-    SetDebugMode(false, SRAM);
-    return value;*/
+{   
     CallMCU(255);
     auto statusMcu = WaitForMCU(1000);
     return statusMcu & 0x7F;
