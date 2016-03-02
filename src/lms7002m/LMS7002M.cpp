@@ -2118,7 +2118,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1); //agc_avg iq corr
-    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
     Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 31);
 
