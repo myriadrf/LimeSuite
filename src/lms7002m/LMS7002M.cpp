@@ -1756,11 +1756,11 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     {
         uint32_t rssiIgain;
         uint32_t rssiQgain;
-        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047 - 64);
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047 - 15);
         Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
         rssiIgain = GetRSSI();
         Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047 - 64);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047 - 15);
         rssiQgain = GetRSSI();
 
         Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
@@ -2085,34 +2085,14 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     float_type SXRfreqMHz = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    uint16_t x011Cval = SPI_read(0x011C);
-    bool pd_loch_t2rbuf = x011Cval & (1 << 6);
-    bool pd_vco_sxt = x011Cval & (1 << 1);
-    bool en_g_sxt = x011Cval & (1 << 0);
-    if (!pd_loch_t2rbuf && !pd_vco_sxt && en_g_sxt)
-    {
-        float_type SXTfreqMHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
-        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-        SetDefaults(SX); //reset 
-        status = SetFrequencySX(Rx, SXTfreqMHz, mRefClkSXR_MHz);
-        if (status != LIBLMS7_SUCCESS)
-            return status;
-    }
-    
+
     //SXT
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    if (!pd_loch_t2rbuf && !pd_vco_sxt && en_g_sxt)
-    {
-        Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
-    }
-    else
-    {
-        SetDefaults(SX);
-        status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
-        if (status != LIBLMS7_SUCCESS)
-            return status;
-    }
+    SetDefaults(SX);
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+    status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
+    if ( status != LIBLMS7_SUCCESS)
+        return status;
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
@@ -2244,11 +2224,11 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
 
     //coarse gain
     {
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047 - 64);
+        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047 - 15);
         Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
         uint32_t rssiIgain = GetRSSI();
         Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047 - 64);
+        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047 - 15);
         uint32_t rssiQgain = GetRSSI();
 
         Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
