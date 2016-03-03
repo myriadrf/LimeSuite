@@ -2014,7 +2014,7 @@ liblms7_status LMS7002M::SetDefaults(MemorySection module)
     @param bandwidth_MHz filter bandwidth in MHz
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool TDD)
 {
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
 
@@ -2032,8 +2032,8 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     //TRF
     //reset TRF to defaults
     SetDefaults(TRF);
-	Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
-	Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
+    Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
+    Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
     Modify_SPI_Reg_bits(EN_G_TRF, 0);
 
     {
@@ -2082,18 +2082,21 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
     if (status != LIBLMS7_SUCCESS)
         return status;
 
-    //SXR
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    float_type SXRfreqMHz = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
+    if (TDD == false) //in TDD do nothing
+    {
+        //SXR
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        float_type SXRfreqMHz = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
 
-    //SXT
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    SetDefaults(SX);
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
-    status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
-    if ( status != LIBLMS7_SUCCESS)
-        return status;
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+        //SXT
+        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        SetDefaults(SX);
+        Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+        status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
+        if (status != LIBLMS7_SUCCESS)
+            return status;
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    }
 
     //TXTSP
     SetDefaults(TxTSP);
@@ -2139,7 +2142,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz)
 /** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
+liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 {
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
@@ -2170,7 +2173,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
         return LIBLMS7_BAD_SEL_PATH;
 
 	Log("Setup stage", LOG_INFO);
-    status = CalibrateRxSetup(bandwidth_MHz);
+    status = CalibrateRxSetup(bandwidth_MHz, TDD);
 	if (status != LIBLMS7_SUCCESS)
 		goto RxCalibrationEndStage;
 
@@ -2204,8 +2207,24 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz)
         Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
         Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
     }
-
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); //DC_BYP 0
+
+    if (TDD == true)
+    {
+        //SXR
+        Modify_SPI_Reg_bits(MAC, 1);
+        SetDefaults(SX);
+        const float SXTfreq_MHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
+        liblms7_status status = SetFrequencySX(Rx, SXTfreq_MHz, mRefClkSXR_MHz);
+
+        //SXT
+        Modify_SPI_Reg_bits(MAC, 2);
+        Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+
+        status = SetFrequencySX(Tx, SXTfreq_MHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
+        Modify_SPI_Reg_bits(MAC, ch);
+    }
+
     CheckSaturation();
 
     SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
