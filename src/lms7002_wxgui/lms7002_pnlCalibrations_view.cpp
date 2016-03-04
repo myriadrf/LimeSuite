@@ -189,7 +189,7 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRxTDD(wxCommandEvent& event)
 {
-    lmsControl->EnableCalibrationByMCU(false);
+    lmsControl->EnableCalibrationByMCU(true);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;
