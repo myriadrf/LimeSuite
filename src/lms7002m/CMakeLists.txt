@@ -29,6 +29,7 @@ set(LMS7002M_src_files
 	LMS7002M_statuses.cpp
 	LMS7002M_filtersCalibration.cpp
 	LMS7002M_RegistersMap.cpp
+    LMS7002M_RxTxCalibrations.cpp
 )
 
 #dl libs used by dlopen in unix

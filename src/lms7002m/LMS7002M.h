@@ -17,6 +17,7 @@
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
+class MCU_BD;
 
 typedef double float_type;
 
@@ -104,7 +105,8 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-	liblms7_status CalibrateRx(float_type bandwidth_MHz);
+
+	liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
 	liblms7_status CalibrateTx(float_type bandwidth_MHz);
     ///@}
 
@@ -250,8 +252,11 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
     void EnableValuesCache(bool enabled = true);
-
+    MCU_BD* GetMCUControls() const;
+    void EnableCalibrationByMCU(bool enabled);
 protected:
+    bool mCalibrationByMCU;
+    MCU_BD *mcuControl;
     bool useCache;
     CalibrationCache valueCache;
     LMS7002M_RegistersMap *mRegistersMap;
@@ -264,13 +269,16 @@ protected:
     void RestoreAllRegisters();
     uint32_t GetRSSI();
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
-    uint32_t FindMinRSSI_Gain(const LMS7Parameter &param, uint16_t *foundValue);
-    uint32_t FindMinRSSI(const LMS7Parameter &param, const int16_t startValue, int16_t *result, const uint8_t scanWidth, const uint8_t twoCompl, int8_t stepMult = 1);
-    uint32_t FindMinRSSI(const uint16_t addr, const uint8_t msb, const uint8_t lsb, const int16_t startValue, int16_t *result, const uint8_t scanWidth, const uint8_t twoCompl, int8_t stepMult = 1);
     void CalibrateRxDC_RSSI();
-    liblms7_status CalibrateTxSetup(float_type bandwidth_MHz);
-    liblms7_status CalibrateRxSetup(float_type bandwidth_MHz);
+    void CalibrateTxDC_RSSI(const float_type bandwidth);
+    liblms7_status CalibrateTxSetup(const float_type bandwidth_MHz);
+    liblms7_status CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD = false);
     liblms7_status FixRXSaturation();
+    liblms7_status CheckSaturation();
+    liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz);
+    void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
+    void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
+
     void FilterTuning_AdjustGains();
     liblms7_status TuneTxFilterSetup(TxFilter type, float_type cutoff_MHz);
     liblms7_status TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz);

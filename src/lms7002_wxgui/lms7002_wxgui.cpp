@@ -8841,8 +8841,11 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	sbSizer159->Add( sbSizerDC, 0, wxEXPAND, 5 );
 	
-	btnCalibrateRx = new wxButton( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Calibrate RX Full"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnCalibrateRx = new wxButton( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Calibrate RX FDD"), wxDefaultPosition, wxDefaultSize, 0 );
 	sbSizer159->Add( btnCalibrateRx, 0, wxALL, 5 );
+	
+	btnCalibrateRxTDD = new wxButton( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Calibrate RX TDD"), wxDefaultPosition, wxDefaultSize, 0 );
+	sbSizer159->Add( btnCalibrateRxTDD, 0, wxLEFT, 5 );
 	
 	
 	fgSizer309->Add( sbSizer159, 1, wxEXPAND, 5 );
@@ -8949,8 +8952,11 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	sbSizer148->Add( sbSizer95, 0, wxEXPAND, 5 );
 	
-	btnCalibrateTx = new wxButton( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Calibrate TX Full"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnCalibrateTx = new wxButton( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Calibrate TX FDD"), wxDefaultPosition, wxDefaultSize, 0 );
 	sbSizer148->Add( btnCalibrateTx, 0, wxALL, 5 );
+	
+	btnCalibrateTxTDD = new wxButton( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Calibrate TX TDD"), wxDefaultPosition, wxDefaultSize, 0 );
+	sbSizer148->Add( btnCalibrateTxTDD, 0, wxLEFT, 5 );
 	
 	
 	fgSizer309->Add( sbSizer148, 1, wxEXPAND, 5 );
@@ -8958,8 +8964,11 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	wxStaticBoxSizer* sbSizer165;
 	sbSizer165 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Full calibration") ), wxVERTICAL );
 	
-	btnCalibrateAll = new wxButton( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibrate ALL"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnCalibrateAll = new wxButton( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibrate FDD"), wxDefaultPosition, wxDefaultSize, 0 );
 	sbSizer165->Add( btnCalibrateAll, 0, wxALL, 5 );
+	
+	btnCalibrateAllTDD = new wxButton( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibrate TDD"), wxDefaultPosition, wxDefaultSize, 0 );
+	sbSizer165->Add( btnCalibrateAllTDD, 0, wxALL, 5 );
 	
 	wxFlexGridSizer* fgSizer328;
 	fgSizer328 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -9002,13 +9011,16 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	cmbDCOFFQ_RFE->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	chkEN_DCOFF_RXFE_RFE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateRx->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateRx ), NULL, this );
+	btnCalibrateRxTDD->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateRxTDD ), NULL, this );
 	cmbGCORRI_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbIQCORR_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbDCCORRI_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbDCCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
+	btnCalibrateTxTDD->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	btnCalibrateAllTDD->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAllTDD ), NULL, this );
 }
 
 pnlCalibrations_view::~pnlCalibrations_view()
@@ -9021,13 +9033,16 @@ pnlCalibrations_view::~pnlCalibrations_view()
 	cmbDCOFFQ_RFE->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	chkEN_DCOFF_RXFE_RFE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateRx->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateRx ), NULL, this );
+	btnCalibrateRxTDD->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateRxTDD ), NULL, this );
 	cmbGCORRI_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbIQCORR_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbDCCORRI_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	cmbDCCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
+	btnCalibrateTxTDD->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	btnCalibrateAllTDD->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAllTDD ), NULL, this );
 	
 }
 

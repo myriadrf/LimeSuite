@@ -61,10 +61,17 @@ void lms7002_pnlMCU_BD_view::OnButton_LOADHexClick( wxCommandEvent& event )
         return;
 
     wxString m_sHexFileName = dlg.GetPath();
+    int status = 0;
     if (dlg.GetFilterIndex() == 0)
-        mcuControl->GetProgramCode(m_sHexFileName.mb_str(), false);
+        status = mcuControl->GetProgramCode(m_sHexFileName.mb_str(), false);
     else
-        mcuControl->GetProgramCode(m_sHexFileName.mb_str(), true);
+        status = mcuControl->GetProgramCode(m_sHexFileName.mb_str(), true);
+
+    if (status != 0)
+    {
+        wxMessageBox(_("Failed to load Hex file"));
+        return;
+    }
 
     wxString temps;
     temps = _(".hex file: ");

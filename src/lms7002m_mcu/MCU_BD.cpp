@@ -12,6 +12,8 @@ using namespace std;
 #include <fstream>
 #include "LMS64CProtocol.h"
 #include <assert.h>
+#include <thread>
+#include <list>
 
 using namespace lime;
 
@@ -65,9 +67,16 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         MCU_File	inFile(inFileName, "rb");
         if (inFile.FileOpened() == false)
             return -1;
-        
+
         mLoadedProgramFilename = inFileName;
-        inFile.ReadHex(8191);
+        try
+        {
+            inFile.ReadHex(8191);
+        }
+        catch (...)
+        {
+            return -1;
+        }
 
         for (i=0; i<8192; i++)
         {
@@ -643,6 +652,76 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
         return -1;
 }
 
+int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
+{
+    bool success = true;
+    unsigned short tempi=0x0000;
+
+    if (mode == MEMORY_MODE::RESET)
+        return -1;
+    // MCU is in reset state
+    // the programming mode should be selected first
+
+    switch(mode)
+    {
+    case EEPROM_AND_SRAM: tempi=0x0001; break;
+    case SRAM: tempi=0x0002; break;
+    case SRAM_FROM_EEPROM: tempi=0x0003; break;
+    default: tempi = 0;
+    }
+
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
+
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
+
+    stepsTotal.store(8192);
+    stepsDone.store(0);
+    aborted.store(false);
+
+    for(int16_t CntEnd=0; CntEnd<8192; CntEnd+=32)
+    {
+        pkt.outBuffer.clear();
+        pkt.outBuffer.push_back(tempi);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (uint8_t i=0; i<32; i++)
+            pkt.outBuffer.push_back(binArray[CntEnd + i]);
+
+        m_serPort->TransferPacket(pkt);
+        status = pkt.status;
+        stepsDone.store(stepsDone.load() + 32);
+#ifndef NDEBUG
+        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
+#endif
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
+            success = false;
+            aborted.store(true);
+            break;
+        }
+
+        if(mode == SRAM_FROM_EEPROM) // if boot mode , send only first packet
+        {
+            stepsDone.store(1);
+            stepsTotal.store(1);
+            break;
+        }
+	};
+#ifndef NDEBUG
+    printf("\nMCU programming Finished\n");
+#endif
+    if (success)
+    {
+        Log("PROGRAMMING MCU SUCCESS\n");
+        return 0;
+    }
+    else
+        return -1;
+}
+
 void MCU_BD::Reset_MCU()
 {
     unsigned short tempi=0x0000;  // was 0x0000
@@ -688,7 +767,7 @@ int MCU_BD::RunProductionTest_MCU()
     if (Program_MCU(m_iMode1_, m_iMode0_) != 0)
         return -1; //failed to program
 
-    if (m_bLoadedProd == 0) 
+    if (m_bLoadedProd == 0)
     {
         Wait_CLK_Cycles(256 * 100);  // for programming mode, prog.code has been already loaded into MCU
         m_iMode1_ = 0; m_iMode0_ = 1;
@@ -704,7 +783,7 @@ int MCU_BD::RunProductionTest_MCU()
     m_bLoadedProd = 1;  // the ptest.hex has been loaded
     m_bLoadedDebug = 0;
 
-    //tempi = 0x0000; 
+    //tempi = 0x0000;
     // EXT_INT2=1, external interrupt 2 is raised
     mSPI_write(0x8002, formREG2command(0, 0, 0, 1, m_iMode1_, m_iMode0_)); // EXT_INT2=1
     // here you can put any Delay function
@@ -738,7 +817,7 @@ int MCU_BD::RunProductionTest_MCU()
         retval = mSPI_read(1);  //REG1 read
         if (retval != 0x55)
             temps = "Ext. interrupt 3 test failed.";
-        else 
+        else
         {
             tempi = 0x00AA;
             mSPI_write(0x8000, tempi); // P0=0xAA;
@@ -775,9 +854,9 @@ int MCU_BD::RunProductionTest_MCU()
             }
         }
     }
-    else 
+    else
     {
-        if ((retval & 0xF0) == 0x30) 
+        if ((retval & 0xF0) == 0x30)
         { // detected error code
             if ((retval & 0x0F) > 0)
             {
@@ -787,12 +866,12 @@ int MCU_BD::RunProductionTest_MCU()
                 return -1;
             }
             else
-            {   
+            {
                 temps = "Test failed";
                 return -1;
             }
         }
-        else 
+        else
         {
             // test too long. Failure.
             temps = "Test failed.";
@@ -980,4 +1059,128 @@ unsigned int MCU_BD::formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int 
 std::string MCU_BD::GetProgramFilename() const
 {
     return mLoadedProgramFilename;
+}
+
+/** @brief Starts algorithm in MCU
+*/
+void MCU_BD::CallMCU(int data)
+{
+    mSPI_write(0, 0);
+    if (data != 0)
+        mSPI_write(0x0006, 1);
+    else
+        mSPI_write(0x0006, 0);
+    mSPI_write(0, data);
+}
+
+/** @brief Waits for MCU to finish executing program
+@return 0 success, 255 idle, 244 running, else algorithm status
+*/
+int MCU_BD::WaitForMCU(uint32_t timeout_ms)
+{
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    unsigned short value = 0;
+    list<uint8_t> return_codes;
+    const int valueSettlingCount = 5;
+
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        t2 = chrono::high_resolution_clock::now();
+        value = mSPI_read(0x0001) & 0xFF;
+        return_codes.push_back(value);
+
+        if (return_codes.size() > valueSettlingCount)
+            return_codes.pop_front();
+
+        bool valueStable = false;
+        if (return_codes.size() == valueSettlingCount)
+        {
+            valueStable = true;
+            for (auto prev_value : return_codes)
+                if (prev_value != value)
+                {
+                    valueStable = false;
+                    break;
+                }
+        }
+
+        if (!valueStable)
+            continue;
+
+        if (value == 0) //working
+            continue;
+        if (value == 0x80) //idle, success
+            break;
+        else
+            break;
+    }
+    mSPI_write(0x0006, 0); //return SPI control to PC
+    std::printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    return value;
+}
+
+/** @brief Switches MCU into debug mode, MCU program execution is halted
+    @param mode MCU memory initialization mode
+    @return Operation status
+*/
+MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MEMORY_MODE mode)
+{
+    uint8_t regValue = 0;
+    switch (mode)
+    {
+    case RESET: break;
+    case EEPROM_AND_SRAM: regValue |= 0x01; break;
+    case SRAM: regValue |= 0x02; break;
+    case SRAM_FROM_EEPROM: regValue |= 0x03; break;
+    }
+    if (enabled)
+        regValue |= 0xC0;
+    mSPI_write(0x8002, regValue);
+    return SUCCESS;
+}
+
+MCU_BD::OperationStatus MCU_BD::readIRAM(const uint8_t *addr, uint8_t* values, const uint8_t count)
+{
+    uint8_t cmd = 0x78; //
+    int retval;
+    for (int i = 0; i < count; ++i)
+    {
+        mSPI_write(0x8004, cmd); //REG4 write cmd
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;
+
+        mSPI_write(0x8004, addr[i]); //REG4 write IRAM address
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;
+
+        mSPI_write(0x8004, 0); //REG4 nop
+        retval = WaitUntilWritten();
+        if (retval == -1) return FAILURE;
+
+        uint8_t result = 0;
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+
+        retval = ReadOneByte(&result);
+        if (retval == -1) return FAILURE;
+        values[i] = result;
+    }
+    return SUCCESS;
+}
+
+MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* values, const uint8_t count)
+{
+    return FAILURE;
+}
+
+uint8_t MCU_BD::ReadMCUProgramID()
+{
+    CallMCU(255);
+    auto statusMcu = WaitForMCU(1000);
+    return statusMcu & 0x7F;
 }

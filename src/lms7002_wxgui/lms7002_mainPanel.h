@@ -30,10 +30,10 @@ class lms7002_mainPanel : public mainPanel
         void OnSwitchToChannelA(wxCommandEvent& event);
         void OnSwitchToChannelB(wxCommandEvent& event);
 		void Onnotebook_modulesPageChanged( wxNotebookEvent& event );
-        void OnResetChip(wxCommandEvent& event);        
+        void OnResetChip(wxCommandEvent& event);
 	public:
 		/** Constructor */
-		lms7002_mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );        
+		lms7002_mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );
 	//// end generated class members
         void UpdateVisiblePanel();
         ~lms7002_mainPanel();
@@ -42,7 +42,6 @@ class lms7002_mainPanel : public mainPanel
 protected:
         lms7002_pnlMCU_BD_view *mTabMCU;
         lime::LMS7002M* lmsControl;
-        lime::MCU_BD* mcuControl;
 };
 
 #endif // __lms7002_mainPanel__

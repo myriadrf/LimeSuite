@@ -23,23 +23,20 @@
 #include <wx/filedlg.h>
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
-#include "MCU_BD.h"
 #include "lms7002_pnlBuffers_view.h"
 using namespace std;
 using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     :
-    mainPanel(parent, id, pos, size, style), lmsControl(nullptr), mcuControl(nullptr)
+    mainPanel(parent, id, pos, size, style), lmsControl(nullptr)
 {
     mTabMCU = new lms7002_pnlMCU_BD_view(tabsNotebook);
     tabsNotebook->AddPage(mTabMCU, _("MCU"));
-    mcuControl = new MCU_BD();
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
 {
-    delete mcuControl;
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
@@ -131,9 +128,7 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabCDS->Initialize(lmsControl);
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
-// TODO : get control port not from lmsControl
-    //mcuControl->Initialize(lmsControl->GetControlPort());
-    mTabMCU->Initialize(mcuControl);
+    mTabMCU->Initialize(lmsControl->GetMCUControls());
     //mTabBuffers->Initialize(lmsControl->GetControlPort());
     UpdateGUI();
 }
