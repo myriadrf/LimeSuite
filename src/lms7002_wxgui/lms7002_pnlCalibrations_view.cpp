@@ -32,14 +32,14 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlCalibrations_view::OnbtnCalibrateRx( wxCommandEvent& event )
+void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status; 
+    liblms7_status status;
     {
-        wxBusyInfo wait("Please wait, calibrating receiver..."); 
-        status = lmsControl->CalibrateRx(bandwidth);
+        wxBusyInfo wait("Please wait, calibrating receiver...");
+        status = lmsControl->CalibrateRx(bandwidth, false);
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -77,9 +77,9 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
-{       
+{
     double bandwidth = 0;
-    txtCalibrationBW->GetValue().ToDouble(&bandwidth);    
+    txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
@@ -89,7 +89,29 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
-        status = lmsControl->CalibrateRx(bandwidth);
+        status = lmsControl->CalibrateRx(bandwidth, false);
+    }
+    if (status != LIBLMS7_SUCCESS)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+
+    wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
+    UpdateGUI();
+}
+
+void lms7002_pnlCalibrations_view::OnbtnCalibrateAllTDD(wxCommandEvent& event)
+{
+    double bandwidth = 0;
+    txtCalibrationBW->GetValue().ToDouble(&bandwidth);
+    liblms7_status status;
+    {
+        wxBusyInfo wait("Please wait, calibrating transmitter...");
+        status = lmsControl->CalibrateTx(bandwidth);
+    }
+    if (status != LIBLMS7_SUCCESS)
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    {
+        wxBusyInfo wait("Please wait, calibrating receiver...");
+        status = lmsControl->CalibrateRx(bandwidth, true);
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -141,7 +163,7 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP);
     bitsToShift = (15 - IQCORR_TXTSP.msb - IQCORR_TXTSP.lsb);
     value = value << bitsToShift;
-    value = value >> bitsToShift;    
+    value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
 
     value = lmsControl->Get_SPI_Reg_bits(DCOFFI_RFE);
@@ -161,4 +183,26 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
     lblCGENrefClk->SetLabel(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
+}
+
+void lms7002_pnlCalibrations_view::OnbtnCalibrateRxTDD(wxCommandEvent& event)
+{
+    double bandwidth = 0;
+    txtCalibrationBW->GetValue().ToDouble(&bandwidth);
+    liblms7_status status;
+    {
+        wxBusyInfo wait("Please wait, calibrating receiver...");
+        status = lmsControl->CalibrateRx(bandwidth, true);
+    }
+    if (status != LIBLMS7_SUCCESS)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    else
+    {
+        wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
+        wxCommandEvent evt;
+        evt.SetEventType(LOG_MESSAGE);
+        evt.SetString(_("Rx Calibrated"));
+        wxPostEvent(this, evt);
+    }
+    UpdateGUI();
 }
