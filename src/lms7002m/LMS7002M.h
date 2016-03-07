@@ -105,7 +105,8 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-	liblms7_status CalibrateRx(float_type bandwidth_MHz);
+
+	liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
 	liblms7_status CalibrateTx(float_type bandwidth_MHz);
     ///@}
 
@@ -271,7 +272,7 @@ protected:
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
     liblms7_status CalibrateTxSetup(const float_type bandwidth_MHz);
-    liblms7_status CalibrateRxSetup(const float_type bandwidth_MHz);
+    liblms7_status CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD = false);
     liblms7_status FixRXSaturation();
     liblms7_status CheckSaturation();
     liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz);
