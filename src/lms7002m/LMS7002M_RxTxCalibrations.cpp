@@ -4,7 +4,7 @@
 #include "IConnection.h"
 #include "mcu_programs.h"
 
-#define RSSI_FROM_MCU
+//#define RSSI_FROM_MCU
 #define LMS_VERBOSE_OUTPUT
 
 ///define for parameter enumeration if prefix might be needed
@@ -302,40 +302,35 @@ uint32_t LMS7002M::GetRSSI()
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
     return (Get_SPI_Reg_bits(0x040F, 15, 0) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0);
 #else
-	uint32_t rssiAvg = 0;
-	for (int i = 0; i < 2; ++i)
-	{
-		mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
-		int status = mcuControl->WaitForMCU(500);
-		if (status == 0)
-		{
-			printf("MCU working too long\n");
-		}
+    mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
+    int status = mcuControl->WaitForMCU(500);
+    if (status == 0)
+    {
+        printf("MCU working too long\n");
+    }
 
-		mcuControl->DebugModeSet_MCU(1, 0);
-		//read result value from MCU RAM
-		rssiAvg = 0;
-		unsigned char tempc1, tempc2, tempc3 = 0x00;
+    mcuControl->DebugModeSet_MCU(1, 0);
+    //read result value from MCU RAM
+    unsigned char tempc1, tempc2, tempc3 = 0x00;
 
-		uint8_t ramData[3];
-		for (int i = 0; i < 3; ++i)
-		{
-            const uint8_t asm_read_iram = 0x78;
-            const uint8_t rssi_iram_addr = 0xF9;
-            int retval = mcuControl->Three_byte_command(asm_read_iram, ((unsigned char)(rssi_iram_addr + i)), 0x00, &tempc1, &tempc2, &tempc3);
-			if (retval == 0)
-				ramData[i] = tempc3;
-			else
-			{
-				return ~0;
-			}
-		}
-		rssiAvg = 0;
-		rssiAvg |= (ramData[0] & 0xFF) << 16;
-		rssiAvg |= (ramData[1] & 0xFF) << 8;
-		rssiAvg |= (ramData[2] & 0xFF);
-		mcuControl->DebugModeExit_MCU(1, 0);
-	}
+    uint8_t ramData[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        const uint8_t asm_read_iram = 0x78;
+        const uint8_t rssi_iram_addr = 0xF9;
+        int retval = mcuControl->Three_byte_command(asm_read_iram, ((unsigned char)(rssi_iram_addr + i)), 0x00, &tempc1, &tempc2, &tempc3);
+        if (retval == 0)
+            ramData[i] = tempc3;
+        else
+        {
+            return ~0;
+        }
+    }
+    uint32_t rssiAvg = 0;
+    rssiAvg |= (ramData[0] & 0xFF) << 16;
+    rssiAvg |= (ramData[1] & 0xFF) << 8;
+    rssiAvg |= (ramData[2] & 0xFF);
+    mcuControl->DebugModeExit_MCU(1, 0);
     return rssiAvg;
 #endif
 }
