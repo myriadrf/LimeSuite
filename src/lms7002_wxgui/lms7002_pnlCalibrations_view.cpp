@@ -148,7 +148,14 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    if(parameter == DCOFFI_RFE || parameter == DCOFFQ_RFE)
+    {
+        int16_t value = (event.GetInt() < 0) << 6;
+        value |= abs(event.GetInt()) & 0x2F;
+        lmsControl->Modify_SPI_Reg_bits(parameter, value);
+    }
+    else
+        lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
 }
 
 void lms7002_pnlCalibrations_view::UpdateGUI()
