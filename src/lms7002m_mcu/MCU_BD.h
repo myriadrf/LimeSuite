@@ -32,7 +32,7 @@ class MCU_BD
             SRAM,
             SRAM_FROM_EEPROM
         };
-        
+
         struct ProgressInfo
         {
             unsigned short stepsDone;
@@ -86,6 +86,7 @@ class MCU_BD
         int Erase_IRAM();
         int Read_SFR();
         int Program_MCU(int m_iMode1, int m_iMode0);
+        int Program_MCU(const uint8_t* binArray, const MEMORY_MODE mode);
         void Reset_MCU();
         void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
         int RunProductionTest_MCU();

@@ -652,6 +652,76 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
         return -1;
 }
 
+int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
+{
+    bool success = true;
+    unsigned short tempi=0x0000;
+
+    if (mode == MEMORY_MODE::RESET)
+        return -1;
+    // MCU is in reset state
+    // the programming mode should be selected first
+
+    switch(mode)
+    {
+    case EEPROM_AND_SRAM: tempi=0x0001; break;
+    case SRAM: tempi=0x0002; break;
+    case SRAM_FROM_EEPROM: tempi=0x0003; break;
+    default: tempi = 0;
+    }
+
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
+
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
+
+    stepsTotal.store(8192);
+    stepsDone.store(0);
+    aborted.store(false);
+
+    for(int16_t CntEnd=0; CntEnd<8192; CntEnd+=32)
+    {
+        pkt.outBuffer.clear();
+        pkt.outBuffer.push_back(tempi);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (uint8_t i=0; i<32; i++)
+            pkt.outBuffer.push_back(binArray[CntEnd + i]);
+
+        m_serPort->TransferPacket(pkt);
+        status = pkt.status;
+        stepsDone.store(stepsDone.load() + 32);
+#ifndef NDEBUG
+        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
+#endif
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
+            success = false;
+            aborted.store(true);
+            break;
+        }
+
+        if(mode == SRAM_FROM_EEPROM) // if boot mode , send only first packet
+        {
+            stepsDone.store(1);
+            stepsTotal.store(1);
+            break;
+        }
+	};
+#ifndef NDEBUG
+    printf("\nMCU programming Finished\n");
+#endif
+    if (success)
+    {
+        Log("PROGRAMMING MCU SUCCESS\n");
+        return 0;
+    }
+    else
+        return -1;
+}
+
 void MCU_BD::Reset_MCU()
 {
     unsigned short tempi=0x0000;  // was 0x0000
@@ -1007,7 +1077,7 @@ void MCU_BD::CallMCU(int data)
 @return 0 success, 255 idle, 244 running, else algorithm status
 */
 int MCU_BD::WaitForMCU(uint32_t timeout_ms)
-{   
+{
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
     unsigned short value = 0;
@@ -1046,7 +1116,7 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
         else
             break;
     }
-    mSPI_write(0x0006, 0); //return SPI control to PC    
+    mSPI_write(0x0006, 0); //return SPI control to PC
     std::printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
 }
