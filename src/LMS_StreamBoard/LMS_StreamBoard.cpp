@@ -12,10 +12,11 @@ using namespace lime;
     @param serPort Communications port to send data
     @param fOutTx_MHz transmitter frequency in MHz
     @param fOutRx_MHz receiver frequency in MHz
-    @param phaseShift_deg IQ phase shift in degrees
+    @param phaseShiftTx_deg Tx IQ phase shift in degrees
+    @param phaseShiftRx_deg Rx IQ phase shift in degrees
     @return 0-success, other-failure
 */
-LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
+LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
     if(fOutRx_MHz < 5 || fOutTx_MHz < 5)
     {
@@ -38,6 +39,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
     int clow = ((int)coef) / 2;
 
     vector<uint8_t> outBuffer;
+    unsigned short reg2 = 0;
     if (fOut_MHz*M > vcoLimits_MHz[0] && fOut_MHz*M < vcoLimits_MHz[1])
     {
         outBuffer.push_back(0x00);
@@ -63,8 +65,8 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
 
         float Fstep_us = 1 / (8 * fOutTx_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOutTx_MHz);
-        short nSteps = phaseShift_deg / Fstep_deg;
-        unsigned short reg2 = 0x0400 | (nSteps & 0x3FF);
+        short nSteps = phaseShiftTx_deg / Fstep_deg;
+        reg2 = 0x0400 | (nSteps & 0x3FF);
         outBuffer.push_back(0x00);
         outBuffer.push_back(0x02);
         outBuffer.push_back((reg2 >> 8));
@@ -85,7 +87,6 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         outBuffer.push_back(0x02);
         outBuffer.push_back((reg2 >> 8));
         outBuffer.push_back(reg2);
-
         //temporary solution
         vector<uint32_t> addrs;
         vector<uint32_t> values;
@@ -112,7 +113,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         outBuffer.push_back(0x00);
         outBuffer.push_back(0x0F);
         outBuffer.push_back(0x15); //c4-c2_bypassed
-        outBuffer.push_back(0x41 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed, c1 bypassed
+        outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
 
         outBuffer.push_back(0x00);
         outBuffer.push_back(0x08);
@@ -130,6 +131,16 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
             outBuffer.push_back(clow);	 //cX_low_cnt
         }
 
+        float Fstep_us = 1 / (8 * fOutRx_MHz*C);
+        float Fstep_deg = (360 * Fstep_us) / (1 / fOutRx_MHz);
+        short nSteps = phaseShiftRx_deg / Fstep_deg;
+        reg2 = reg2 & ~0x3FF;
+        reg2 |= (0x2000 | (nSteps & 0x3FF));
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2); //phase
+
         outBuffer.push_back(0x00);
         outBuffer.push_back(0x03);
         outBuffer.push_back(0x00);
@@ -139,6 +150,12 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         outBuffer.push_back(0x03);
         outBuffer.push_back(0x00);
         outBuffer.push_back(0x00);
+
+        reg2 = reg2 | 0x4000;
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2);
 
         //temporary solution
         vector<uint32_t> addrs;
@@ -155,6 +172,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
         return FAILURE;
     return SUCCESS;
 }
+
 
 LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {

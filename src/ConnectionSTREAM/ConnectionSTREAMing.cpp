@@ -528,7 +528,7 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
     std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
-    LMS_StreamBoard::ConfigurePLL(this, 2*txRate/1e6, 2*rxRate/1e6, 90);
+    LMS_StreamBoard::ConfigurePLL(this, 2*txRate/1e6, 2*rxRate/1e6, 90, 90);
     if (mStreamService) mStreamService->mHwCounterRate = rxRate;
 }
 

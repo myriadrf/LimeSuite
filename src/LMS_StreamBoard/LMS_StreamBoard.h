@@ -39,7 +39,7 @@ public:
         FAILURE,
     };
 
-    static Status ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg);
+    static Status ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg);
 
     struct DataToGUI
     {
