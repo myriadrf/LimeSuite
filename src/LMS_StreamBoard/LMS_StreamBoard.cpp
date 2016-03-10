@@ -18,6 +18,25 @@ using namespace lime;
 */
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
+    //switch between case for GSM sampling rate 541666 Hz and normal PLL
+    const uint16_t direct_clocking_addr = 0x0016;
+    const uint16_t phase_reg_select = 0x15;
+    const uint16_t directClockingEnable = 0x0100;
+    uint16_t regVal;
+    if(serPort->ReadRegister(direct_clocking_addr, regVal) == OperationStatus::FAILED)
+        return FAILURE;
+    regVal &= ~0x1FF;
+    if(fOutRx_MHz < 5 && fOutTx_MHz < 5)
+    {
+        regVal |= phase_reg_select|directClockingEnable;
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+            return FAILURE;
+        return SUCCESS;
+    }
+    else
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+            return FAILURE;
+
     if(fOutRx_MHz < 5 || fOutTx_MHz < 5)
     {
         printf("WARNING: FPGA PLL frequency should not be lower than 5 MHz\n");
