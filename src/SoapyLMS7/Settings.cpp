@@ -641,7 +641,11 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 
     if (name == "RF")
     {
-        rfic->SetFrequencySX(lmsDir, frequency/1e6, ref_MHz);
+        //clip the frequency into the allowed range
+        double targetRfFreq = frequency;
+        if (targetRfFreq < 30e6) targetRfFreq = 30e6;
+        if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
+        rfic->SetFrequencySX(lmsDir, targetRfFreq/1e6, ref_MHz);
         this->recalAfterChange(direction, channel);
         return;
     }
@@ -697,7 +701,7 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
     SoapySDR::RangeList ranges;
     if (name == "RF")
     {
-        ranges.push_back(SoapySDR::Range(100e3, 3.8e9));
+        ranges.push_back(SoapySDR::Range(30e6, 3.8e9));
     }
     if (name == "BB")
     {
