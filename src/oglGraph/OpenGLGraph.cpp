@@ -51,9 +51,9 @@ OpenGLGraph::OpenGLGraph(wxWindow* parent,  wxWindowID id = -1,
                     long style=0, const wxString& name="GLCanvas",
                     int* args = 0)
     : wxGLCanvas(parent, id, args, pos, size, wxNO_FULL_REPAINT_ON_RESIZE),
-initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0)
+initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
 {
-    m_font = NULL;    
+    m_font = NULL;
     m_glContext = new wxGLContext(this);
     SetBackgroundStyle(wxBG_STYLE_CUSTOM);
     int w, h;
@@ -102,12 +102,12 @@ initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0)
 OpenGLGraph::~OpenGLGraph()
 {
     if(m_timer->IsRunning())
-        m_timer->Stop();    
+        m_timer->Stop();
 	if(m_font)
         delete m_font;
 }
 
-void OpenGLGraph::Initialize(int width, int height)
+bool OpenGLGraph::Initialize(int width, int height)
 {
     char tempc[256];
 	GLenum err = glewInit();
@@ -116,6 +116,19 @@ void OpenGLGraph::Initialize(int width, int height)
 		sprintf(tempc, "GLEW ERROR %s", glewGetErrorString(err));
 		cout << tempc << endl;
 	}
+
+	char userOGLversion[255];
+	strcpy(userOGLversion, (const char*)glGetString(GL_VERSION));
+
+    oglOk = glewIsSupported("GL_VERSION_2_0");
+
+    if(!oglOk)
+    {
+        wxMessageBox(wxString::Format("Your OpenGL version is %s, required version is 2.0\nPlease update your graphics card drivers",
+                                      wxString(userOGLversion)),_("WARNING"),wxOK,this);
+        return false;
+    }
+
     glEnable( GL_TEXTURE_2D );
 	glAlphaFunc(GL_GEQUAL, 0.3);
 	glEnable(GL_ALPHA_TEST);
@@ -134,6 +147,7 @@ void OpenGLGraph::Initialize(int width, int height)
 
 	m_font = new GLFont();
 	m_font->loadFromArray(standardStaticFont, sizeof(standardStaticFont));
+	return true;
 }
 
 
@@ -612,13 +626,24 @@ void OpenGLGraph::Draw()
         return;
     }
     SetCurrent();
+    int w, h;
+    if(oglOk == false)
+    {
+        GetSize(&w, &h);
+        setupViewport(w, h);
+        glClearColor(settings.backgroundColor.red, settings.backgroundColor.green,
+				settings.backgroundColor.blue, settings.backgroundColor.alpha);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SwapBuffers();
+        return;
+    }
     if(!initialized)
     {
         int w, h;
         this->GetSize(&w, &h);
-        Initialize(w, h);
+        if(Initialize(w, h) == false)
+            return;
     }
-    int w, h;
     GetSize(&w, &h);
     setupViewport(w, h);
     glLoadIdentity();
@@ -1264,8 +1289,8 @@ void OpenGLGraph::DrawMarkers()
 		{
 		    if(markers[i].used == false)
                 continue;
-			glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);			
-			sprintf(text, "M%i: % .3f MHz / %#+3.1f dBFS", i, series[0]->values[markers[i].dataValueIndex]/1000000, series[0]->values[markers[i].dataValueIndex+1]);			
+			glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
+			sprintf(text, "M%i: % .3f MHz / %#+3.1f dBFS", i, series[0]->values[markers[i].dataValueIndex]/1000000, series[0]->values[markers[i].dataValueIndex+1]);
 			markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
 			posX = settings.marginLeft;
 			posY = settings.windowHeight-settings.marginTop - hpos;
