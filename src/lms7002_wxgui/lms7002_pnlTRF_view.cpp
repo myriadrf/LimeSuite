@@ -102,7 +102,7 @@ void lms7002_pnlTRF_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
     long value = event.GetInt();
-    if(event.GetEventObject() == cmbEN_LOWBWLOMX_TMX_TRF)
+    if(event.GetEventObject() == cmbEN_AMPHF_PDET_TRF)
         value = index2value(value, en_amphf_pdet_trfIndexValuePairs);
     lmsControl->Modify_SPI_Reg_bits(parameter, value);
 }
