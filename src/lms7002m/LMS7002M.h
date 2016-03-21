@@ -105,9 +105,8 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-
-	liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
-	liblms7_status CalibrateTx(float_type bandwidth_MHz);
+    liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
+    liblms7_status CalibrateTx(float_type bandwidth_MHz);
     ///@}
 
     ///@name Filters tuning

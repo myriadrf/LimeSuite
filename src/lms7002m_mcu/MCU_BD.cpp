@@ -212,6 +212,7 @@ int MCU_BD::One_byte_command(unsigned short data1, unsigned char * rdata1)
 	return 0;
 }
 
+
 int MCU_BD::Three_byte_command(
 	    unsigned char data1,unsigned char data2,unsigned char data3,
 		unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3){

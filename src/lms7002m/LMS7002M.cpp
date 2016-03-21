@@ -11,17 +11,30 @@
 #include "INI.h"
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
-
+#include <math.h>
+#include <assert.h>
 #include <chrono>
 #include <thread>
-#include <assert.h>
+
+#include "MCU_BD.h"
+const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
+#define MCU_ID_DC_IQ_CALIBRATIONS 0x01
+#define MCU_ID_DC_IQ_CALIBRATIONS_TDD 0x02
+#define MCU_FUNCTION_CALIBRATE_TX 1
+#define MCU_FUNCTION_CALIBRATE_RX 2
+#define MCU_FUNCTION_READ_RSSI 3
 
 using namespace std;
 using namespace lime;
 
 #include "MCU_BD.h"
+
+#define RSSI_FROM_MCU
+
+#define LMS_VERBOSE_OUTPUT
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
@@ -73,7 +86,6 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
 /** @brief Creates LMS7002M main control object.
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
-
 LMS7002M::LMS7002M() :
     controlPort(nullptr),
     addrLMS7002M(-1),
@@ -665,6 +677,22 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz)
     float_type dFrac;
     int16_t iHdiv;
 
+    //remember NCO frequencies
+    uint8_t chBck = Get_SPI_Reg_bits(MAC);
+    vector<vector<float_type> > rxNCO(2);
+    vector<vector<float_type> > txNCO(2);
+    float_type rxTSPRefClk = GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+    float_type txTSPRefClk = GetReferenceClk_TSP_MHz(LMS7002M::Tx);
+    bool rxModeNCO = Get_SPI_Reg_bits(MODE_RX, true);
+    bool txModeNCO = Get_SPI_Reg_bits(MODE_TX, true);
+    for (int ch = 0; ch < 2; ++ch)
+    {
+        Modify_SPI_Reg_bits(MAC, ch + 1);
+        for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
+            rxNCO[ch].push_back(GetNCOFrequency_MHz(LMS7002M::Rx, i, rxTSPRefClk, false));
+        for (int i = 0; i < 16 && txModeNCO == 0; ++i)
+            txNCO[ch].push_back(GetNCOFrequency_MHz(LMS7002M::Tx, i, txTSPRefClk, false));
+    }
     //VCO frequency selection according to F_CLKH
     iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_MHz) - 1;
 	dFvco = 2*(iHdiv+1) * freq_MHz;
@@ -681,6 +709,16 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz)
     Modify_SPI_Reg_bits(0x0088, 3, 0, gFRAC>>16); //INT_SDM_CGEN[19:16]
     Modify_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN), iHdiv); //DIV_OUTCH_CGEN
 
+    //recalculate NCO
+    for (int ch = 0; ch < 2; ++ch)
+    {
+        Modify_SPI_Reg_bits(MAC, ch + 1);
+        for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
+            SetNCOFrequency(LMS7002M::Rx, i, rxNCO[ch][i]);
+        for (int i = 0; i < 16 && txModeNCO == 0; ++i)
+            SetNCOFrequency(LMS7002M::Tx, i, txNCO[ch][i]);
+    }
+    Modify_SPI_Reg_bits(MAC, chBck);
     return TuneVCO(VCO_CGEN);
 }
 

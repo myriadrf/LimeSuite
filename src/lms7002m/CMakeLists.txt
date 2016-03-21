@@ -25,10 +25,10 @@ include_directories(
 
 set(LMS7002M_src_files
     LMS7002M.cpp
-	LMS7002M_parameters.cpp
-	LMS7002M_statuses.cpp
-	LMS7002M_filtersCalibration.cpp
-	LMS7002M_RegistersMap.cpp
+    LMS7002M_parameters.cpp
+    LMS7002M_statuses.cpp
+    LMS7002M_filtersCalibration.cpp
+    LMS7002M_RegistersMap.cpp
     LMS7002M_RxTxCalibrations.cpp
 )
 

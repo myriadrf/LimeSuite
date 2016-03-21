@@ -34,6 +34,7 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
+    lmsControl->EnableCalibrationByMCU(true);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;
@@ -56,6 +57,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
+    lmsControl->EnableCalibrationByMCU(true);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
     liblms7_status status;

@@ -281,7 +281,7 @@ public:
 	OpenGLGraph(wxWindow* parent,  wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name, int* args);
 	virtual ~OpenGLGraph();
 
-	void Initialize(int width, int height);
+	bool Initialize(int width, int height);
 	void Resize(int w, int h);
 
 	void AddSerie(cDataSerie* serie);
@@ -348,6 +348,8 @@ public:
 	DECLARE_EVENT_TABLE()
 
 private:
+	bool oglOk;
+	bool glInitialized;
     void UpdateInfoDisplay();
     std::vector<std::string> info_msg;
     std::vector<std::string> info_msg_toDisplay;
@@ -391,7 +393,7 @@ private:
 	unsigned m_maxMarkers;
 	int clickedOnMarker(int X, int Y);
 
-	bool m_currentlyDrawing;	
+	bool m_currentlyDrawing;
 	wxTimer* m_timer;
 
 };

@@ -129,6 +129,7 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl->GetMCUControls());
+// TODO setup buffers gui
     //mTabBuffers->Initialize(lmsControl->GetControlPort());
     UpdateGUI();
 }
