@@ -165,7 +165,7 @@ public:
     ///@name CGEN and PLL
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN_MHz();
-	liblms7_status SetFrequencyCGEN(float_type freq_MHz);
+	liblms7_status SetFrequencyCGEN(float_type freq_MHz, const bool retainNCOfrequencies = false);
 	float_type GetFrequencySX_MHz(bool tx, float_type refClk_MHz);
 	liblms7_status SetFrequencySX(bool tx, float_type freq_MHz, float_type refClk_MHz);
     ///VCO modules available for tuning
