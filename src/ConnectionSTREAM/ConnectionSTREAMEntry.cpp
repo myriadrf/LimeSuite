@@ -7,6 +7,21 @@
 #include "ConnectionSTREAM.h"
 using namespace lime;
 
+#ifdef __unix__
+void ConnectionSTREAMEntry::handle_libusb_events()
+{
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 250000;
+    while(mProcessUSBEvents.load() == true)
+    {
+        if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
+            printf("error libusb_handle_events %i\n");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+#endif // __UNIX__
+
 //! make a static-initialized entry in the registry
 void __loadConnectionSTREAMEntry(void) //TODO fixme replace with LoadLibrary/dlopen
 {
@@ -25,6 +40,8 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
     if(r < 0)
         printf("Init Error %i\n", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+    mProcessUSBEvents.store(true);
+    mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
 #endif
 }
 
@@ -33,6 +50,8 @@ ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 #ifndef __unix__
     delete USBDevicePrimary;
 #else
+    mProcessUSBEvents.store(false);
+    mUSBProcessingThread.join();
     libusb_exit(ctx);
 #endif
 }

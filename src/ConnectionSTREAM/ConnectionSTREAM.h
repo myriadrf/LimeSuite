@@ -12,6 +12,7 @@
 #include <string>
 #include <atomic>
 #include <memory>
+#include <thread>
 
 #ifndef __unix__
 #include "windows.h"
@@ -80,6 +81,8 @@ public:
 	long bytesXfered;
 	long bytesExpected;
 	std::atomic<bool> done;
+	std::mutex transferLock;
+	std::condition_variable cv;
 	#endif
 };
 
@@ -187,6 +190,9 @@ private:
     CCyUSBDevice *USBDevicePrimary;
     #else
     libusb_context *ctx; //a libusb session
+    std::thread mUSBProcessingThread;
+    void handle_libusb_events();
+    std::atomic<bool> mProcessUSBEvents;
     #endif
 };
 

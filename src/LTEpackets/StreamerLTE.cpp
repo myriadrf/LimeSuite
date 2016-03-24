@@ -737,7 +737,7 @@ void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
     for (int j = 0; j<buffersCount; j++)
     {
         long bytesToSend = bufferSize;
-        if (bufferUsed[bi])
+        if (bufferUsed[j])
         {
             dataPort->WaitForSending(handles[j], 1000);
             dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);
@@ -886,7 +886,7 @@ void StreamerLTE::TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args
     for (int j = 0; j<buffersCount; j++)
     {
         long bytesToSend = bufferSize;
-        if (bufferUsed[bi])
+        if (bufferUsed[j])
         {
             dataPort->WaitForSending(handles[j], 1000);
             dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);

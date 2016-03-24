@@ -358,6 +358,8 @@ void callback_libusbtransfer(libusb_transfer *trans)
         printf("transfer stalled\n");
         break;
 	}
+	context->transferLock.unlock();
+	context->cv.notify_one();
 }
 #endif
 
@@ -402,7 +404,6 @@ string ConnectionSTREAM::DeviceName()
 */
 int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
 {
-    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     int i = 0;
 	bool contextFound = false;
 	//find not used context
@@ -435,10 +436,11 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, long length)
     if(status != 0)
     {
         printf("ERROR BEGIN DATA READING %s\n", libusb_error_name(status));
-        libusb_cancel_transfer( contexts[i].transfer );
         contexts[i].used = false;
         return -1;
     }
+    else
+        contexts[i].transferLock.lock();
     #endif
     return i;
 }
@@ -461,15 +463,14 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
     #else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
+
+    std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
     while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
-	{
-	    struct timeval tv;
-	    tv.tv_sec = 1;
-	    tv.tv_usec = 0;
-		if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
-            printf("error libusb_handle_events %i\n", status);
-		t2 = chrono::high_resolution_clock::now();
-	}
+    {
+        //blocking not to waste CPU
+        contexts[contextHandle].cv.wait(lck);
+        t2 = chrono::high_resolution_clock::now();
+    }
 	return contexts[contextHandle].done.load() == true;
     #endif
     }
@@ -526,7 +527,8 @@ void ConnectionSTREAM::AbortReading()
 #else
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
     {
-        libusb_cancel_transfer( contexts[i].transfer );
+        if(contexts[i].used)
+            libusb_cancel_transfer( contexts[i].transfer );
     }
 #endif
 }
@@ -539,7 +541,6 @@ void ConnectionSTREAM::AbortReading()
 */
 int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
 {
-    std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     int i = 0;
 	//find not used context
 	bool contextFound = false;
@@ -569,10 +570,11 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, long length)
     if(status != 0)
     {
         printf("ERROR BEGIN DATA SENDING %s\n", libusb_error_name(status));
-        libusb_cancel_transfer( contextsToSend[i].transfer );
         contextsToSend[i].used = false;
         return -1;
     }
+    else
+        contextsToSend[i].transferLock.lock();
     #endif
     return i;
 }
@@ -595,17 +597,13 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
     #else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
+    std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
     while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
-	{
-	    struct timeval tv;
-	    tv.tv_sec = 1;
-	    tv.tv_usec = 0;
-        int status = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
-        if(status != 0)
-            printf("error libusb_handle_events %i\n", status);
+    {
+        //blocking not to waste CPU
+        contextsToSend[contextHandle].cv.wait(lck);
         t2 = chrono::high_resolution_clock::now();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
+    }
 	return contextsToSend[contextHandle].done == true;
     #endif
     }
@@ -651,7 +649,8 @@ void ConnectionSTREAM::AbortSending()
 #else
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
-        libusb_cancel_transfer(contextsToSend[i].transfer);
+        if(contextsToSend[i].used)
+            libusb_cancel_transfer(contextsToSend[i].transfer);
     }
 #endif
 }
