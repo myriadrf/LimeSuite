@@ -123,6 +123,50 @@ public:
 	liblms7_status TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
     ///@}
 
+    ///@name High level gain configuration
+
+    /*!
+     * Set the RX PGA gain in dB
+     * @param gain in dB range -12.0, 19.0 dB
+     * @return 0 for success, else error
+     */
+    int SetRBBPGA_dB(const float_type gain);
+
+    //! Get the actual RX PGA gain in dB
+    float_type GetRBBPGA_dB(void);
+
+    /*!
+     * Set the RX LNA gain in dB
+     * @param gain in dB range 0.0, 30.0 dB
+     * @return 0 for success, else error
+     */
+    int SetRFELNA_dB(const float_type gain);
+
+    //! Get the actual RX LNA gain in dB
+    float_type GetRFELNA_dB(void);
+
+    /*!
+     * Set the RX TIA gain in dB
+     * @param gain in dB range 0.0, 12.0 dB
+     * @return 0 for success, else error
+     */
+    int SetRFETIA_dB(const float_type gain);
+
+    //! Get the actual RX TIA gain in dB
+    float_type GetRFETIA_dB(void);
+
+    /*!
+     * Set the TX PAD gain in dB
+     * @param gain in dB range -52.0, 0.0 dB
+     * @return 0 for success, else error
+     */
+    int SetTRFPAD_dB(const float_type gain);
+
+    //! Get the actual TX PAD gain in dB
+    float_type GetTRFPAD_dB(void);
+
+    ///@}
+
     ///@name RF selection
     enum PathRFE
     {

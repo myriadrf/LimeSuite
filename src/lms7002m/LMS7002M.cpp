@@ -552,6 +552,137 @@ liblms7_status LMS7002M::SaveConfig(const char* filename)
     return LIBLMS7_SUCCESS;
 }
 
+int LMS7002M::SetRBBPGA_dB(const float_type value)
+{
+    int g_pga_rbb = (int)(value + 12.5);
+    if (g_pga_rbb > 0x1f) g_pga_rbb = 0x1f;
+    if (g_pga_rbb < 0) g_pga_rbb = 0;
+    int ret = this->Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+
+    int rcc_ctl_pga_rbb = (430.0*pow(0.65, (g_pga_rbb/10.0))-110.35)/20.4516 + 16;
+
+    int c_ctl_pga_rbb = 0;
+    if (0 <= g_pga_rbb && g_pga_rbb < 8) c_ctl_pga_rbb = 3;
+    if (8 <= g_pga_rbb && g_pga_rbb < 13) c_ctl_pga_rbb = 2;
+    if (13 <= g_pga_rbb && g_pga_rbb < 21) c_ctl_pga_rbb = 1;
+    if (21 <= g_pga_rbb) c_ctl_pga_rbb = 0;
+
+    ret |= this->Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+    ret |= this->Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+    return ret;
+}
+
+float_type LMS7002M::GetRBBPGA_dB(void)
+{
+    auto g_pga_rbb = this->Get_SPI_Reg_bits(G_PGA_RBB);
+    return g_pga_rbb - 12;
+}
+
+int LMS7002M::SetRFELNA_dB(const float_type value)
+{
+    const double gmax = 30;
+    double val = value - gmax;
+
+    int g_lna_rfe = 0;
+    if (val >= 0) g_lna_rfe = 15;
+    else if (val >= -1) g_lna_rfe = 14;
+    else if (val >= -2) g_lna_rfe = 13;
+    else if (val >= -3) g_lna_rfe = 12;
+    else if (val >= -4) g_lna_rfe = 11;
+    else if (val >= -5) g_lna_rfe = 10;
+    else if (val >= -6) g_lna_rfe = 9;
+    else if (val >= -9) g_lna_rfe = 8;
+    else if (val >= -12) g_lna_rfe = 7;
+    else if (val >= -15) g_lna_rfe = 6;
+    else if (val >= -18) g_lna_rfe = 5;
+    else if (val >= -21) g_lna_rfe = 4;
+    else if (val >= -24) g_lna_rfe = 3;
+    else if (val >= -27) g_lna_rfe = 2;
+    else g_lna_rfe = 1;
+
+    return this->Modify_SPI_Reg_bits(G_LNA_RFE, g_lna_rfe);
+}
+
+float_type LMS7002M::GetRFELNA_dB(void)
+{
+    const double gmax = 30;
+    auto g_lna_rfe = this->Get_SPI_Reg_bits(G_LNA_RFE);
+    switch (g_lna_rfe)
+    {
+    case 15: return gmax-0;
+    case 14: return gmax-1;
+    case 13: return gmax-2;
+    case 12: return gmax-3;
+    case 11: return gmax-4;
+    case 10: return gmax-5;
+    case 9: return gmax-6;
+    case 8: return gmax-9;
+    case 7: return gmax-12;
+    case 6: return gmax-15;
+    case 5: return gmax-18;
+    case 4: return gmax-21;
+    case 3: return gmax-24;
+    case 2: return gmax-27;
+    case 1: return gmax-30;
+    }
+    return 0.0;
+}
+
+int LMS7002M::SetRFETIA_dB(const float_type value)
+{
+    const double gmax = 12;
+    double val = value - gmax;
+
+    int g_tia_rfe = 0;
+    if (val >= 0) g_tia_rfe = 3;
+    else if (val >= -3) g_tia_rfe = 2;
+    else g_tia_rfe = 1;
+
+    return this->Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+}
+
+float_type LMS7002M::GetRFETIA_dB(void)
+{
+    const double gmax = 12;
+    auto g_tia_rfe = this->Get_SPI_Reg_bits(G_TIA_RFE);
+    switch (g_tia_rfe)
+    {
+    case 3: return gmax-0;
+    case 2: return gmax-3;
+    case 1: return gmax-12;
+    }
+    return 0.0;
+}
+
+int LMS7002M::SetTRFPAD_dB(const float_type value)
+{
+    const double pmax = 0;
+    double loss = pmax-value;
+
+    //different scaling realm
+    if (loss > 10) loss = (loss+10)/2;
+
+    //clip
+    if (loss > 31) loss = 31;
+    if (loss < 0) loss = 0;
+
+    //integer round
+    int loss_int = (int)(loss + 0.5);
+
+    int ret = 0;
+    ret |= this->Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF, loss_int);
+    ret |= this->Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, loss_int);
+    return ret;
+}
+
+float_type LMS7002M::GetTRFPAD_dB(void)
+{
+    const double pmax = 0;
+    auto loss_int = this->Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF);
+    if (loss_int > 10) return pmax-10-2*(loss_int-10);
+    return pmax-loss_int;
+}
+
 liblms7_status LMS7002M::SetPathRFE(PathRFE path)
 {
     int sel_path_rfe = 0;
