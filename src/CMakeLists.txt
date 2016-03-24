@@ -31,6 +31,7 @@ set(LIME_SUITE_ABI 1)
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    ErrorReporting.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
     version.h
@@ -88,6 +89,7 @@ message(STATUS ${SQLITE3_INCLUDE_DIR})
 message(STATUS ${SQLITE3_LIBRARY})
 
 set(LIME_SUITE_SOURCES
+    ErrorReporting.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
     ConnectionRegistry/IConnection.cpp
