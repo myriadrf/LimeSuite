@@ -6,6 +6,7 @@
 
 #include "ErrorReporting.h"
 #include <cstring> //strerror
+#include <cstdio>
 
 #ifdef _MSC_VER
 //#define thread_local __declspec( thread )
@@ -15,19 +16,19 @@
 thread_local int _reportedErrorCode;
 thread_local char _reportedErrorMessage[MAX_MSG_LEN];
 
-static const char *errToStr(const int err)
+static const char *errToStr(const int errnum)
 {
     thread_local char buff[MAX_MSG_LEN];
     #ifdef _MSC_VER
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buff, sizeof(buff), NULL);
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errnum, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buff, sizeof(buff), NULL);
     return buff;
     #else
     //http://linux.die.net/man/3/strerror_r
     #if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || __APPLE__
-    strerror_r(err, buff, sizeof(buff));
+    strerror_r(errnum, buff, sizeof(buff));
     #else
     //this version may decide to use its own internal string
-    return strerror_r(err, buff, sizeof(buff));
+    return strerror_r(errnum, buff, sizeof(buff));
     #endif
     return buff;
     #endif
@@ -43,19 +44,14 @@ const char *lime::GetLastErrorMessage(void)
     return _reportedErrorMessage;
 }
 
-void lime::ReportError(const int code)
+int lime::ReportError(const int errnum)
 {
-    lime::ReportError(code, errToStr(code));
+    return lime::ReportError(errnum, errToStr(errnum));
 }
 
-void lime::ReportError(const int code, const char *message)
+int ReportError(const int errnum, const char *format, va_list argList)
 {
-    _reportedErrorCode = code;
-    strncpy(_reportedErrorMessage, message, MAX_MSG_LEN);
-    _reportedErrorMessage[MAX_MSG_LEN-1] = '\0';
-}
-
-void lime::ReportError(const int code, const std::string &message)
-{
-    lime::ReportError(code, message.c_str());
+    _reportedErrorCode = errnum;
+    vsnprintf(_reportedErrorMessage, MAX_MSG_LEN, format, argList);
+    return -1;
 }
