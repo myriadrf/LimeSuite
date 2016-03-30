@@ -179,7 +179,7 @@ public:
 
     double getBandwidth(const int direction, const size_t channel) const;
 
-    std::vector<double> listBandwidths(const int direction, const size_t channel) const;
+    SoapySDR::RangeList getBandwidthRange(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Clocking API

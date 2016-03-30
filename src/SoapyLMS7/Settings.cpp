@@ -705,32 +705,18 @@ double SoapyLMS7::getBandwidth(const int direction, const size_t channel) const
     }
 }
 
-std::vector<double> SoapyLMS7::listBandwidths(const int direction, const size_t channel) const
+SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size_t channel) const
 {
-    std::vector<double> bws;
+    SoapySDR::RangeList bws;
 
     if (direction == SOAPY_SDR_RX)
     {
-        bws.push_back(1.4e6);
-        bws.push_back(3.0e6);
-        bws.push_back(5.0e6);
-        bws.push_back(10.0e6);
-        bws.push_back(15.0e6);
-        bws.push_back(20.0e6);
-        bws.push_back(37.0e6);
-        bws.push_back(66.0e6);
-        bws.push_back(108.0e6);
+        bws.push_back(SoapySDR::Range(1e6, 60e6));
     }
     if (direction == SOAPY_SDR_TX)
     {
-        bws.push_back(2.4e6);
-        bws.push_back(2.74e6);
-        bws.push_back(5.5e6);
-        bws.push_back(8.2e6);
-        bws.push_back(11.0e6);
-        bws.push_back(18.5e6);
-        bws.push_back(38.0e6);
-        bws.push_back(54.0e6);
+        bws.push_back(SoapySDR::Range(0.8e6, 16e6));
+        bws.push_back(SoapySDR::Range(28e6, 60e6));
     }
 
     return bws;
