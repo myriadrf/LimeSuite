@@ -407,7 +407,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     {
         for (int i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOPhaseOffset_Deg(LMS7002M::Rx, i)));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0 / 360.0)*lmsControl->GetNCOPhaseOffset_Deg(LMS7002M::Rx, i)));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency_MHz(LMS7002M::Rx, 0, refClk_MHz, fromChip)));
         lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));
