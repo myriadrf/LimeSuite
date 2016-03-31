@@ -13,18 +13,20 @@
 #include <wx/frame.h>
 #include <wx/button.h>
 #include <wx/radiobox.h>
-#include "lms7002_defines.h"
+#include <string>
 
+namespace lime{
 class Si5351C;
+}
 
 class Si5351C_wxgui: public wxFrame
 {
 public:
 
     Si5351C_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int styles = wxDEFAULT_FRAME_STYLE, wxString idname = "");
-    void Initialize(Si5351C* pModule);
+    void Initialize(lime::Si5351C* pModule);
     virtual ~Si5351C_wxgui();
-    void ModifyClocksGUI(eLMS_DEV board);
+    void ModifyClocksGUI(const std::string &board);
 
     //(*Declarations(Si5351C_wxgui)
     wxCheckBox* chkEN_CLK5;
@@ -125,7 +127,7 @@ protected:
     //*)
 
 private:
-    Si5351C *m_pModule;
+    lime::Si5351C *m_pModule;
     //(*Handlers(Si5351C_wxgui)
     void OnbtnLoadFileClick(wxCommandEvent& event);
     void OnbtnConfigureClockClick(wxCommandEvent& event);

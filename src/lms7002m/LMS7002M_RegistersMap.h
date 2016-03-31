@@ -3,7 +3,9 @@
 
 #include <vector>
 #include <map>
-#include <typedefs.h>
+#include <cstdint>
+
+namespace lime{
 
 struct LMS7Parameter;
 
@@ -32,4 +34,5 @@ protected:
     std::map<const uint16_t, Register> mChannelB;
 };
 
+}
 #endif

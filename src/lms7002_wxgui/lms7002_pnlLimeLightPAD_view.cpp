@@ -2,6 +2,7 @@
 #include "LMS7002M.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
+using namespace lime;
 
 lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent )
 :

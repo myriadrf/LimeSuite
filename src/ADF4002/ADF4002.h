@@ -7,7 +7,7 @@
 #ifndef ADF_MODULE_H
 #define ADF_MODULE_H
 
-class LMScomms;
+namespace lime{
 
 class ADF4002
 {
@@ -25,7 +25,6 @@ public:
 
     void GetConfig(unsigned char data[12]);
     void SetDefaults();
-    void Initialize(LMScomms* pSerPort);
 
     void MakeData();
     void CalculateRN();
@@ -61,8 +60,9 @@ public:
     double lblFcomp;
     double lblFvco;
 
-protected:    
+protected:
     unsigned char m_registers[12];
 };
 
+}
 #endif // ADF_MODULE_H

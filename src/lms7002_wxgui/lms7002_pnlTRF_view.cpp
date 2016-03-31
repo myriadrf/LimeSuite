@@ -5,7 +5,7 @@
 #include "lms7002_gui_utilities.h"
 #include "wx/msgdlg.h"
 #include "lms7suiteEvents.h"
-
+using namespace lime;
 using namespace LMS7002_WXGUI;
 static indexValueMap en_amphf_pdet_trfIndexValuePairs;
 

@@ -7,9 +7,15 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
+#include <IConnection.h>
+#include <LMSBoards.h>
+#include <ADCUnits.h>
 #include <assert.h>
-#include "lmsComms.h"
 #include <wx/spinctrl.h>
+#include <vector>
+
+using namespace std;
+using namespace lime;
 
 static wxString power2unitsString(char powerx3)
 {
@@ -61,32 +67,32 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 	fgSizer247->AddGrowableRow( 1 );
 	fgSizer247->SetFlexibleDirection( wxBOTH );
 	fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
+
 	wxFlexGridSizer* fgSizer248;
 	fgSizer248 = new wxFlexGridSizer( 0, 4, 0, 0 );
 	fgSizer248->SetFlexibleDirection( wxBOTH );
 	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
+
 	btnReadAll = new wxButton( this, wxID_ANY, wxT("Read all"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer248->Add( btnReadAll, 0, wxALL, 5 );
-	
+
 	btnWriteAll = new wxButton( this, wxID_ANY, wxT("Write all"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer248->Add( btnWriteAll, 0, wxALL, 5 );
-	
+
 	m_staticText349 = new wxStaticText( this, wxID_ANY, wxT("Labels:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText349->Wrap( -1 );
 	fgSizer248->Add( m_staticText349, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	
+
 	wxArrayString cmbBoardSelectionChoices;
 	cmbBoardSelection = new wxChoice( this, wxNewId(), wxDefaultPosition, wxDefaultSize, cmbBoardSelectionChoices, 0 );
 	cmbBoardSelection->SetSelection( 0 );
-	fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );	
+	fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
 
     for (int i = 0; i < LMS_DEV_COUNT; ++i)
         cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
-	
+
 	fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
-	
+
     pnlCustomControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Custom controls"));
     wxFlexGridSizer* sizerCustomControls = new wxFlexGridSizer(0, 5, 5, 5);
 
@@ -95,7 +101,7 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Power")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Units")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("")));
-    
+
     //reading
     spinCustomChannelRd = new wxSpinCtrl(pnlCustomControls, wxNewId(), _("0"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0);
     sizerCustomControls->Add(spinCustomChannelRd, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 0);
@@ -147,10 +153,10 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 	fgSizer249->AddGrowableCol( 1 );
 	fgSizer249->SetFlexibleDirection( wxBOTH );
 	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
+
 	wxStaticBoxSizer* sbSizer133;
 	sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Read") ), wxVERTICAL );
-	
+
 	sizerAnalogRd = new wxFlexGridSizer( 0, 4, 2, 2 );
 	sizerAnalogRd->SetFlexibleDirection( wxBOTH );
 	sizerAnalogRd->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -158,44 +164,44 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Name")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Value")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Units")), 1, wxALL, 5);
-	
-	
+
+
 	sbSizer133->Add( sizerAnalogRd, 1, wxEXPAND, 5 );
-	
-	
+
+
 	fgSizer249->Add( sbSizer133, 1, wxEXPAND, 5 );
-	
+
 	wxStaticBoxSizer* sbSizer134;
 	sbSizer134 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Write") ), wxVERTICAL );
-	
+
 	sizerAnalogWr = new wxFlexGridSizer( 0, 4, 2, 2 );
 	sizerAnalogWr->SetFlexibleDirection( wxBOTH );
 	sizerAnalogWr->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	
+
+
 	sbSizer134->Add( sizerAnalogWr, 1, wxEXPAND, 5 );
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Ch.")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Name")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Value")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Units")), 1, wxALL, 5);
-	
-	
+
+
 	fgSizer249->Add( sbSizer134, 1, wxEXPAND, 5 );
-	
-	
+
+
 	fgSizer247->Add( fgSizer249, 1, wxEXPAND, 5 );
-	
-	
+
+
 	this->SetSizer( fgSizer247 );
 	this->Layout();
 	fgSizer247->Fit( this );
-	
+
 	// Connect Events
     cmbBoardSelection->Connect(wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(pnlBoardControls::OnUserChangedBoardType), NULL, this);
 	btnReadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnReadAll ), NULL, this );
 	btnWriteAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnWriteAll ), NULL, this );
 
-    SetupControls(LMS_DEV_UNKNOWN);
+    SetupControls(GetDeviceName(LMS_DEV_UNKNOWN));
 }
 
 pnlBoardControls::~pnlBoardControls()
@@ -203,38 +209,40 @@ pnlBoardControls::~pnlBoardControls()
 	// Disconnect Events
 	btnReadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnReadAll ), NULL, this );
 	btnWriteAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnWriteAll ), NULL, this );
-	cmbBoardSelection->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlBoardControls::OnUserChangedBoardType), NULL, this );	
+	cmbBoardSelection->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlBoardControls::OnUserChangedBoardType), NULL, this );
 }
 
 void pnlBoardControls::OnReadAll( wxCommandEvent& event )
-{   
+{
     if (serPort == nullptr || serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
-    
+    vector<uint8_t> ids;
+    vector<double> values;
+    vector<string> units;
+
     for (const auto& param : mADCparameters)
-        pkt.outBuffer.push_back(param.channel);
-    
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        ids.push_back(param.channel);
+        values.push_back(0);
+        units.push_back("");
+    }
+
+    OperationStatus status = serPort->CustomParameterRead(ids.data(), values.data(), ids.size(), units.data());
+    if (status != OperationStatus::SUCCESS)
+    {
+        wxMessageBox(_("Failed to read values"), _("Warning"));
         return;
     }
 
-    assert(pkt.inBuffer.size() >= 4 * mADCparameters.size());
-
     for (int i = 0; i < mADCparameters.size(); ++i)
     {
-        mADCparameters[i].channel = pkt.inBuffer[i * 4];
-        mADCparameters[i].units = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
-        mADCparameters[i].powerOf10 = pkt.inBuffer[i * 4 + 1] & 0x0F;
-        mADCparameters[i].value = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
+        mADCparameters[i].channel = ids[i];
+        mADCparameters[i].units = units[i];
+        mADCparameters[i].value = values[i];
     }
     for (int i = 0; i < mDACparameters.size(); ++i)
     {
@@ -242,7 +250,6 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         {
             if (mDACparameters[i].channel == mADCparameters[j].channel)
             {
-                mDACparameters[i].powerOf10 = mADCparameters[j].powerOf10;
                 mDACparameters[i].value = mADCparameters[j].value;
                 mDACparameters[i].units = mADCparameters[j].units;
                 mDAC_GUI_widgets[i]->value->SetValue(mDACparameters[i].value);
@@ -254,37 +261,37 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 }
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
-{       
+{
     if (serPort == nullptr || serPort->IsOpen() == false)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_WR;
+    vector<uint8_t> ids;
+    vector<double> values;
+    //vector<string> units; currently is not used
 
     for (int i = 0; i < mDACparameters.size(); ++i)
     {
-        pkt.outBuffer.push_back(mDACparameters[i].channel);
-        pkt.outBuffer.push_back(mDACparameters[i].units << 4 | mDACparameters[i].powerOf10);
-        pkt.outBuffer.push_back(mDACparameters[i].value >> 8);
-        pkt.outBuffer.push_back(mDACparameters[i].value & 0xFF);
+        ids.push_back(mDACparameters[i].channel);
+        values.push_back(mDACparameters[i].value);
     }
-    assert(serPort != nullptr);
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+
+    OperationStatus status = serPort->CustomParameterWrite(ids.data(), values.data(), ids.size(), nullptr);
+    if (status != OperationStatus::SUCCESS)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Failes to write values"), _("Warning"));
         return;
     }
 }
-    
-void pnlBoardControls::Initialize(LMScomms* controlPort)
+
+void pnlBoardControls::Initialize(IConnection* controlPort)
 {
-    assert(controlPort != nullptr);
+    if(controlPort == nullptr)
+        return;
     serPort = controlPort;
-    SetupControls(serPort->GetInfo().device);
+    SetupControls(serPort->GetDeviceInfo().deviceName);
     if (serPort->IsOpen())
     {
         wxCommandEvent evt;
@@ -299,18 +306,15 @@ void pnlBoardControls::UpdatePanel()
     {
         mADC_GUI_widgets[i]->channel->SetLabel(wxString::Format(_("%i"), mADCparameters[i].channel));
         mADC_GUI_widgets[i]->title->SetLabel(wxString(mADCparameters[i].name));
-        if (mADCparameters[i].units == TEMPERATURE)
-            mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%.1f"), mADCparameters[i].value/10.0));
-        else
-            mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%i"), mADCparameters[i].value));
-        mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s%s", power2unitsString(mADCparameters[i].powerOf10), adcUnits2string(mADCparameters[i].units)));
+        mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%i"), mADCparameters[i].value));
+        mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mADCparameters[i].units));
     }
 }
 
-std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(eLMS_DEV boardID)
+std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == LMS_DEV_SODERA)
+    if (boardID == GetDeviceName(LMS_DEV_SODERA))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
@@ -331,10 +335,10 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(eLMS_DEV b
     return paramList;
 }
 
-std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(eLMS_DEV boardID)
+std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std::string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == LMS_DEV_SODERA)
+    if (boardID == GetDeviceName(LMS_DEV_SODERA))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
@@ -350,13 +354,21 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(eLMS_DEV b
     return paramList;
 }
 
-void pnlBoardControls::SetupControls(eLMS_DEV boardID)
+void pnlBoardControls::SetupControls(const std::string &boardID)
 {
-    if (boardID == LMS_DEV_UNKNOWN)
+    if (boardID == GetDeviceName(LMS_DEV_UNKNOWN))
         pnlCustomControls->Show();
     else
         pnlCustomControls->Hide();
-    cmbBoardSelection->SetSelection(boardID);
+    for(int i=0; i<LMS_DEV_COUNT; ++i)
+    {
+        if(boardID == GetDeviceName((eLMS_DEV)i))
+        {
+            cmbBoardSelection->SetSelection(i);
+            break;
+        }
+    }
+
     for (auto &widget : mADC_GUI_widgets)
         delete widget;
     mADC_GUI_widgets.clear(); //delete previously existing controls
@@ -367,15 +379,15 @@ void pnlBoardControls::SetupControls(eLMS_DEV boardID)
     mDAC_GUI_widgets.clear(); //delete previously existing controls
     mDACparameters = getBoardDACs(boardID); //update controls list by board type
 
-    if (boardID != LMS_DEV_UNKNOWN)
-    {   
+    if (boardID != GetDeviceName(LMS_DEV_UNKNOWN))
+    {
         for (int i = 0; i < mADCparameters.size(); ++i)
         {
             ADC_GUI *gui = new ADC_GUI();
             gui->channel = new wxStaticText(this, wxID_ANY, wxString::Format(_("%i"), mADCparameters[i].channel));
             gui->title = new wxStaticText(this, wxID_ANY, wxString(mADCparameters[i].name));
             gui->value = new wxStaticText(this, wxID_ANY, _(""));
-            gui->units = new wxStaticText(this, wxID_ANY, wxString::Format("%s%s", power2unitsString(mADCparameters[i].powerOf10), adcUnits2string(mADCparameters[i].units)));
+            gui->units = new wxStaticText(this, wxID_ANY, wxString::Format("%s", mADCparameters[i].units));
             mADC_GUI_widgets.push_back(gui);
             sizerAnalogRd->Add(gui->channel, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogRd->Add(gui->title, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
@@ -391,7 +403,7 @@ void pnlBoardControls::SetupControls(eLMS_DEV boardID)
             gui->value = new wxSpinCtrl(this, wxNewId(), _(""), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, mDACparameters[i].minValue, mDACparameters[i].maxValue, mDACparameters[i].minValue);
             gui->value->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(pnlBoardControls::OnSetDACvalues), NULL, this);
             gui->value->Connect(wxEVT_TEXT_ENTER, wxCommandEventHandler(pnlBoardControls::OnSetDACvaluesENTER), NULL, this);
-            gui->units = new wxStaticText(this, wxID_ANY, wxString::Format("%s%s", power2unitsString(mDACparameters[i].powerOf10), adcUnits2string(mDACparameters[i].units)));
+            gui->units = new wxStaticText(this, wxID_ANY, wxString::Format("%s", mDACparameters[i].units));
             mDAC_GUI_widgets.push_back(gui);
             sizerAnalogWr->Add(gui->channel, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogWr->Add(gui->title, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
@@ -405,7 +417,7 @@ void pnlBoardControls::SetupControls(eLMS_DEV boardID)
 }
 
 void pnlBoardControls::OnSetDACvaluesENTER(wxCommandEvent &event)
-{   
+{
     wxSpinEvent evt;
     evt.SetEventObject(event.GetEventObject());
     OnSetDACvalues(evt);
@@ -419,20 +431,16 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
         {
             mDACparameters[i].value = mDAC_GUI_widgets[i]->value->GetValue();
             //write to chip
-            LMScomms::GenericPacket pkt;
-            pkt.cmd = CMD_ANALOG_VAL_WR;
-            pkt.outBuffer.push_back(mDACparameters[i].channel);
-            pkt.outBuffer.push_back(mDACparameters[i].units << 4 | mDACparameters[i].powerOf10);
-            pkt.outBuffer.push_back(mDACparameters[i].value >> 8);
-            pkt.outBuffer.push_back(mDACparameters[i].value & 0xFF);
+            uint8_t ids = mDACparameters[i].channel;
+            double value = mDACparameters[i].value;
+            string units = mDACparameters[i].units;
 
-            assert(serPort != nullptr);
-            if (serPort->IsOpen() == false)
+            if (serPort || serPort->IsOpen() == false)
                 return;
 
-            LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-            if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-                wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+            OperationStatus status = serPort->CustomParameterWrite(&ids, &value, 1, &units);
+            if (status != OperationStatus::SUCCESS)
+                wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
         }
     }
@@ -440,7 +448,7 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
 
 void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 {
-    SetupControls((eLMS_DEV)cmbBoardSelection->GetSelection());
+    SetupControls(GetDeviceName((eLMS_DEV)cmbBoardSelection->GetSelection()));
 }
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
@@ -451,29 +459,19 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
+    uint8_t id = spinCustomChannelRd->GetValue();
+    double value = 0;
+    string units = "";
 
-    pkt.outBuffer.push_back(spinCustomChannelRd->GetValue());
-
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    OperationStatus status = serPort->CustomParameterRead(&id, &value, 1, &units);
+    if (status != OperationStatus::SUCCESS)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Failed to read value"), _("Warning"));
         return;
     }
 
-    assert(pkt.inBuffer.size() >= 4 * mADCparameters.size());
-
-    spinCustomChannelRd->SetValue(pkt.inBuffer[0]);
-    int units = (pkt.inBuffer[1] & 0xF0) >> 4;
-    txtCustomUnitsRd->SetLabel(wxString::From8BitData(adcUnits2string(units)));
-    txtCustomPowerOf10Rd->SetLabel(wxString::From8BitData(power2unitsString(pkt.inBuffer[1] & 0x0F)));
-    int16_t value = ((int16_t)pkt.inBuffer[2]) << 8 | pkt.inBuffer[3];
-    if (units == TEMPERATURE)
-        txtCustomValueRd->SetLabel(wxString::Format("%.1f", value/10.0));
-    else
-        txtCustomValueRd->SetLabel(wxString::Format("%i", value));
+    txtCustomUnitsRd->SetLabel(units);
+    txtCustomValueRd->SetLabel(wxString::Format(_("%f"), value));
 }
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
@@ -484,19 +482,16 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
         return;
     }
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_WR;
-    pkt.outBuffer.push_back(spinCustomChannelWr->GetValue());
-    pkt.outBuffer.push_back(cmbCustomUnitsWr->GetSelection() << 4 | cmbCustomPowerOf10Wr->GetSelection());
-    int16_t value = spinCustomValueWr->GetValue();
-    pkt.outBuffer.push_back(value >> 8);
-    pkt.outBuffer.push_back(value & 0xFF);
-    
-    assert(serPort != nullptr);
-    LMScomms::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    uint8_t id = spinCustomChannelWr->GetValue();
+    int powerOf10 = cmbCustomPowerOf10Wr->GetSelection()*3;
+    string units = adcUnits2string(cmbCustomUnitsWr->GetSelection());
+
+    double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
+
+    OperationStatus status = serPort->CustomParameterWrite(&id, &value, 1, &units);
+    if (status != OperationStatus::SUCCESS)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Failed to write value"), _("Warning"));
         return;
     }
 }

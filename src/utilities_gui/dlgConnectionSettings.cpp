@@ -1,90 +1,109 @@
 #include "dlgConnectionSettings.h"
-#include "connectionManager/ConnectionManager.h"
+#include <ConnectionRegistry.h>
+#include <IConnection.h>
 #include <wx/msgdlg.h>
 #include <vector>
 #include "lms7suiteEvents.h"
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
+using namespace lime;
 
 dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )
 	: dlgConnectionSettings_view( parent )
 {
-	lms7port = nullptr;
-	streamBrdPort = nullptr;
+	lmsOpenedIndex = -1;
+	streamOpenedIndex = -1;
+	lms7Manager = nullptr;
+	streamBrdManager = nullptr;
 }
 
-void dlgConnectionSettings::SetConnectionManagers(ConnectionManager* lms7ctr, ConnectionManager* streamBrdctr)
+void dlgConnectionSettings::SetConnectionManagers(IConnection **lms7ctr, IConnection **streamBrdctr)
 {
-	lms7port = lms7ctr;
-	streamBrdPort = streamBrdctr;
+	lms7Manager = lms7ctr;
+	streamBrdManager = streamBrdctr;
 }
 
 void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 {
-	mListLMS7ports->Clear();
-	mListStreamports->Clear();
-	if (lms7port)
-	{
-		lms7port->RefreshDeviceList();
-		vector<string> deviceNames = lms7port->GetDeviceList();
-		for (unsigned i = 0; i<deviceNames.size(); ++i)
-			mListLMS7ports->Append(deviceNames[i]);
-		int openedIndex = lms7port->GetOpenedIndex();
-        if (openedIndex >= 0 && openedIndex < mListLMS7ports->GetCount())
-			mListLMS7ports->SetSelection(openedIndex);
-	}
-	else
-		mListLMS7ports->Append("Connection Manager not initialized");
+    mListLMS7ports->Clear();
+    mListStreamports->Clear();
+    cachedHandles = ConnectionRegistry::findConnections();
 
-	if (streamBrdPort)
-	{
-		streamBrdPort->RefreshDeviceList();
-		vector<string> deviceNames = streamBrdPort->GetDeviceList();
-		for (unsigned i = 0; i<deviceNames.size(); ++i)
-			mListStreamports->Append(deviceNames[i]);
-		int openedIndex = streamBrdPort->GetOpenedIndex();
-		if (openedIndex >= 0 && openedIndex < mListStreamports->GetCount())
-			mListStreamports->SetSelection(openedIndex);
-	}
-	else
-		mListStreamports->Append("Connection Manager not initialized");
+    //select the currently opened index
+    lmsOpenedIndex = -1;
+    streamOpenedIndex = -1;
+    for (size_t i = 0; i < cachedHandles.size(); i++)
+    {
+        if (*lms7Manager != nullptr and (*lms7Manager)->GetHandle() == cachedHandles[i])
+        {
+            lmsOpenedIndex = i;
+        }
+        if (*streamBrdManager != nullptr and (*streamBrdManager)->GetHandle() == cachedHandles[i])
+        {
+            streamOpenedIndex = i;
+        }
+    }
+
+    for (unsigned i = 0; i<cachedHandles.size(); ++i)
+        mListLMS7ports->Append(cachedHandles[i].ToString());
+    if (lmsOpenedIndex >= 0 && lmsOpenedIndex < mListLMS7ports->GetCount())
+        mListLMS7ports->SetSelection(lmsOpenedIndex);
+
+    for (unsigned i = 0; i<cachedHandles.size(); ++i)
+        mListStreamports->Append(cachedHandles[i].ToString());
+    if (streamOpenedIndex >= 0 && streamOpenedIndex < mListStreamports->GetCount())
+        mListStreamports->SetSelection(streamOpenedIndex);
 }
 
 void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
-	if(lms7port)
-	{
-        if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
+    if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
+    {
+        //free previously used connection
+        ConnectionRegistry::freeConnection(*lms7Manager);
+        *lms7Manager = nullptr;
+        auto lms7Conn = ConnectionRegistry::makeConnection(cachedHandles.at(mListLMS7ports->GetSelection()));
+        if (lms7Conn != nullptr and not lms7Conn->IsOpen())
         {
-            if (lms7port->Open(mListLMS7ports->GetSelection()) != IConnection::SUCCESS)
-                wxMessageBox("Failed to open LMS7 control device", "Error", wxICON_STOP);
-            else
-            {
-                wxCommandEvent evt;
-                evt.SetInt(mListLMS7ports->GetSelection());
-                evt.SetEventType(CONTROL_PORT_CONNECTED);
-                evt.SetString(mListLMS7ports->GetString(event.GetInt()));
-                if(GetParent())
-                    wxPostEvent(GetParent(), evt);
-            }
+            ConnectionRegistry::freeConnection(lms7Conn);
+            lms7Conn = nullptr;
+            wxMessageBox("Failed to open LMS7 control device", "Error", wxICON_STOP);
         }
-	}
-	if (streamBrdPort)
-	{
-        if(mListStreamports->GetSelection() != wxNOT_FOUND)
+        else
         {
-            if (streamBrdPort->Open(mListStreamports->GetSelection()) != IConnection::SUCCESS)
-                wxMessageBox("Failed to open Stream board connection", "Error", wxICON_STOP);
-            else
-            {
-                wxCommandEvent evt;
-                evt.SetInt(mListStreamports->GetSelection());
-                evt.SetEventType(DATA_PORT_CONNECTED);
-                evt.SetString(mListStreamports->GetString(event.GetInt()));
-                if(GetParent())
-                    wxPostEvent(GetParent(), evt);
-            }
+            *lms7Manager = lms7Conn;
+            wxCommandEvent evt;
+            evt.SetInt(mListLMS7ports->GetSelection());
+            evt.SetEventType(CONTROL_PORT_CONNECTED);
+            evt.SetString(mListLMS7ports->GetString(event.GetInt()));
+            if(GetParent())
+                wxPostEvent(GetParent(), evt);
         }
-	}
+    }
+
+    if(mListStreamports->GetSelection() != wxNOT_FOUND)
+    {
+        //free previously used connection
+        ConnectionRegistry::freeConnection(*streamBrdManager);
+        *streamBrdManager = nullptr;
+        auto streamBrdConn = ConnectionRegistry::makeConnection(cachedHandles.at(mListStreamports->GetSelection()));
+        if (streamBrdConn != nullptr and not streamBrdConn->IsOpen())
+        {
+            ConnectionRegistry::freeConnection(streamBrdConn);
+            streamBrdConn = nullptr;
+            wxMessageBox("Failed to open Stream board connection", "Error", wxICON_STOP);
+        }
+        else
+        {
+            *streamBrdManager = streamBrdConn;
+            wxCommandEvent evt;
+            evt.SetInt(mListStreamports->GetSelection());
+            evt.SetEventType(DATA_PORT_CONNECTED);
+            evt.SetString(mListStreamports->GetString(event.GetInt()));
+            if(GetParent())
+                wxPostEvent(GetParent(), evt);
+        }
+    }
     Destroy();
 }
 
@@ -95,22 +114,27 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
-	if (lms7port)
-	{
-		lms7port->Close();
+    auto lms7Conn = *lms7Manager;
+    if (lms7Conn != nullptr)
+    {
+        *lms7Manager = nullptr;
+        ConnectionRegistry::freeConnection(lms7Conn);
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_DISCONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
-	}
-	mListLMS7ports->SetSelection(-1);
-	if (streamBrdPort)
-	{
-		streamBrdPort->Close();
+    }
+    mListLMS7ports->SetSelection(-1);
+
+    auto streamBrdConn = *streamBrdManager;
+    if (streamBrdConn != nullptr)
+    {
+        *streamBrdManager = nullptr;
+        ConnectionRegistry::freeConnection(streamBrdConn);
         wxCommandEvent evt;
         evt.SetEventType(DATA_PORT_DISCONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
-	}
-	mListStreamports->SetSelection(-1);
+    }
+    mListStreamports->SetSelection(-1);
 }

@@ -23,9 +23,9 @@
 #include <wx/filedlg.h>
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
-#include "MCU_BD.h"
 #include "lms7002_pnlBuffers_view.h"
 using namespace std;
+using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     :
@@ -36,7 +36,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
-{   
+{
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
@@ -129,7 +129,8 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl->GetMCUControls());
-    mTabBuffers->Initialize(lmsControl->GetControlPort());
+// TODO setup buffers gui
+    //mTabBuffers->Initialize(lmsControl->GetControlPort());
     UpdateGUI();
 }
 
@@ -193,7 +194,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     }
     wxCommandEvent tevt;
     lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
-    UpdateGUI();  
+    UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);

@@ -5,6 +5,7 @@
 #include <fstream>
 
 using namespace std;
+using namespace lime;
 
 lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , LMS7002M* plmsControl)
 :

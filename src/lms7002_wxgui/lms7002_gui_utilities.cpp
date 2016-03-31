@@ -16,6 +16,7 @@
 #include <wx/object.h>
 #include <wx/tooltip.h>
 #include <LMS7002M.h>
+using namespace lime;
 
 void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
 {

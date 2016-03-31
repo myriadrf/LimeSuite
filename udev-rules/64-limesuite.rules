@@ -1,0 +1,2 @@
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="8613", SYMLINK+="stream-%k", MODE="660", GROUP="plugdev"
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="00f1", SYMLINK+="stream-%k", MODE="660", GROUP="plugdev"

@@ -1,5 +1,6 @@
 #include "LMS7002M_RegistersMap.h"
 #include "LMS7002M_parameters.h"
+using namespace lime;
 
 LMS7002M_RegistersMap::LMS7002M_RegistersMap()
 {

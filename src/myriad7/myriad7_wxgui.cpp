@@ -11,7 +11,10 @@
 #include <wx/combobox.h>
 #include <wx/msgdlg.h>
 
-#include "lmsComms.h"
+#include "IConnection.h"
+#include <LMSBoards.h>
+
+using namespace lime;
 
 const long Myriad7_wxgui::ID_STATICTEXT1 = wxNewId();
 const long Myriad7_wxgui::ID_COMBOBOX1 = wxNewId();
@@ -56,53 +59,45 @@ Myriad7_wxgui::Myriad7_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
 }
 
 Myriad7_wxgui::~Myriad7_wxgui()
-{	
+{
 }
 
-void Myriad7_wxgui::Initialize(LMScomms* pSerPort)
+void Myriad7_wxgui::Initialize(IConnection* pSerPort)
 {
     serPort = pSerPort;
-    assert(serPort != nullptr);
 }
 
 void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
-{   
-    assert(serPort != nullptr);
+{
     if (serPort == nullptr)
         return;
     unsigned rxInput = cmbGPIO_1_0->GetSelection();
     unsigned txOutput = cmbGPIO2->GetSelection();
-    unsigned char value = txOutput << 2 | rxInput;
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_WR;
-    pkt.outBuffer.push_back(value);
-    if (serPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS)
+    uint8_t value = txOutput << 2 | rxInput;
+
+    OperationStatus status;
+    status = serPort->GPIOWrite(&value, 1);
+
+    if (status != OperationStatus::SUCCESS)
     {
-        wxMessageBox(_("Failed to write Myriad7 GPIOs"), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(wxString::Format(_("Failed to write Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"), wxICON_WARNING | wxOK);
 }
 
 void Myriad7_wxgui::UpdatePanel()
-{   
-    assert(serPort != nullptr);
-    if (serPort == nullptr || serPort->GetInfo().expansion != EXP_BOARD_MYRIAD7)
+{
+    if (serPort == nullptr || serPort->GetDeviceInfo().expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
         return;
-    
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_RD;
-    if (serPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS)
+
+    uint8_t dataRd[64];
+    OperationStatus status = serPort->GPIORead(dataRd, 64);
+
+    if (status != OperationStatus::SUCCESS)
     {
-        wxMessageBox(_("Failed to read Myriad7 GPIOs"), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(wxString::Format(_("Failed to read Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    if (pkt.status != STATUS_COMPLETED_CMD)
-    {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"), wxICON_WARNING | wxOK);
-        return;
-    }
-    cmbGPIO_1_0->SetSelection(pkt.inBuffer[0] & 0x3);
-    cmbGPIO2->SetSelection((pkt.inBuffer[0] & 0x4) > 0);
+    cmbGPIO_1_0->SetSelection(dataRd[0] & 0x3);
+    cmbGPIO2->SetSelection((dataRd[0] & 0x4) > 0);
 }

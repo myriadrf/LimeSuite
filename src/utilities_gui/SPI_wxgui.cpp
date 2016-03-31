@@ -1,5 +1,7 @@
 #include "SPI_wxgui.h"
-#include "lmsComms.h"
+#include "IConnection.h"
+
+using namespace lime;
 
 SPI_wxgui::SPI_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
@@ -9,12 +11,14 @@ SPI_view( parent )
     dataPort = nullptr;
 }
 
-void SPI_wxgui::Initialize(LMScomms* pCtrPort, LMScomms* pDataPort)
+void SPI_wxgui::Initialize(IConnection* pCtrPort, IConnection* pDataPort, const size_t devIndex)
 {
     ctrPort = pCtrPort;
     dataPort = pDataPort;
-    assert(ctrPort != nullptr);
-    assert(dataPort != nullptr);
+    if (ctrPort != nullptr)
+    {
+        m_rficSpiAddr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+    }
 }
 
 void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
@@ -26,20 +30,16 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
     long data = 0;
     value.ToLong(&data, 16);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_WR;
-    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
-    pkt.outBuffer.push_back(addr & 0xFF);
-    pkt.outBuffer.push_back((data >> 8) & 0xFF);
-    pkt.outBuffer.push_back(data & 0xFF);
-
-    assert(ctrPort != nullptr);
     if (ctrPort == nullptr)
         return;
-    LMScomms::TransferStatus status = ctrPort->TransferPacket(pkt);
+    uint32_t dataWr = (1 << 31);
+    dataWr |= (addr & 0xFFFF) << 16;
+    dataWr |=  data & 0xFFFF;
+    OperationStatus status;
+    status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
 
-    if (status == LMScomms::TRANSFER_SUCCESS)
-        lblLMSwriteStatus->SetLabel(wxString::FromUTF8(status2string(pkt.status)));
+    if (status == OperationStatus::SUCCESS)
+        lblLMSwriteStatus->SetLabel(_("Write success"));
     else
         lblLMSwriteStatus->SetLabel(_("Write failed"));
 }
@@ -50,19 +50,17 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
     long addr = 0;
     address.ToLong(&addr, 16);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_RD;
-    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
-    pkt.outBuffer.push_back(addr & 0xFF);
-    assert(ctrPort != nullptr);
     if (ctrPort == nullptr)
         return;
-    LMScomms::TransferStatus status = ctrPort->TransferPacket(pkt);
 
-    if (status == LMScomms::TRANSFER_SUCCESS)
+    const uint32_t dataWr = (addr & 0x7FFF) << 16;
+    uint32_t dataRd = 0;
+    OperationStatus status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
+
+    if (status == OperationStatus::SUCCESS)
     {
-        lblLMSreadStatus->SetLabel(wxString::FromUTF8(status2string(pkt.status)));
-        unsigned short value = (pkt.inBuffer[2] * 256) | pkt.inBuffer[3];
+        lblLMSreadStatus->SetLabel(_("Read success"));
+        unsigned short value = dataRd & 0xFFFF;
         lblLMSreadValue->SetLabel(wxString::Format(_("0x%04X"), value));
     }
     else
@@ -78,20 +76,18 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
     long data = 0;
     value.ToLong(&data, 16);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
-    pkt.outBuffer.push_back(addr & 0xFF);
-    pkt.outBuffer.push_back((data >> 8) & 0xFF);
-    pkt.outBuffer.push_back(data & 0xFF);
-
     assert(dataPort != nullptr);
     if (dataPort == nullptr)
         return;
-    LMScomms::TransferStatus status = dataPort->TransferPacket(pkt);
 
-    if (status == LMScomms::TRANSFER_SUCCESS)
-        lblBoardwriteStatus->SetLabel(wxString::FromUTF8(status2string(pkt.status)));
+    uint32_t dataWr = (1 << 31);
+    dataWr |= (addr & 0xFFFF) << 16;
+    dataWr |=  data & 0xFFFF;
+    OperationStatus status;
+    status = dataPort->WriteRegister(addr, data);
+
+    if (status == OperationStatus::SUCCESS)
+        lblBoardwriteStatus->SetLabel(_("Write success"));
     else
         lblBoardwriteStatus->SetLabel(_("Write failed"));
 }
@@ -102,19 +98,17 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
     long addr = 0;
     address.ToLong(&addr, 16);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer.push_back((addr >> 8) & 0xFF);
-    pkt.outBuffer.push_back(addr & 0xFF);
     assert(dataPort != nullptr);
     if (dataPort == nullptr)
         return;
-    LMScomms::TransferStatus status = dataPort->TransferPacket(pkt);
 
-    if (status == LMScomms::TRANSFER_SUCCESS)
+    uint32_t dataRd = 0;
+    OperationStatus status = dataPort->ReadRegister(addr, dataRd);
+
+    if (status == OperationStatus::SUCCESS)
     {
-        lblBoardreadStatus->SetLabel(wxString::FromUTF8(status2string(pkt.status)));
-        unsigned short value = (pkt.inBuffer[2] * 256) | pkt.inBuffer[3];
+        lblBoardreadStatus->SetLabel(_("Read success"));
+        unsigned short value = dataRd & 0xFFFF;
         lblBoardreadValue->SetLabel(wxString::Format(_("0x%04X"), value));
     }
     else

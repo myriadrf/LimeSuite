@@ -6,6 +6,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
+using namespace lime;
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent )
 :
@@ -76,7 +77,7 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
         temp.push_back(wxString::Format(_("%.0f pF"), (i * 8 * 365.0) / 1000.0));
     }
     cmbCZ_CGEN->Set(temp);
-        
+
     temp.clear();
     temp.push_back(_("TST disabled"));
     temp.push_back(_("TST[0]=ADC clk; TST[1]=DAC clk; TSTA=Hi Z"));
@@ -145,13 +146,13 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    liblms7_status status = lmsControl->SetFrequencyCGEN(freqMHz);
+    liblms7_status status = lmsControl->SetFrequencyCGEN(freqMHz, true);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(liblms7_status2string(status))));
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
     UpdateGUI();
     wxCommandEvent evt;
-    evt.SetEventType(CGEN_FREQUENCY_CHANGED);    
+    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
     wxCommandEvent cmd;
     cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));

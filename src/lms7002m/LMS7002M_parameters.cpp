@@ -5,6 +5,7 @@
 */
 
 #include "LMS7002M_parameters.h"
+namespace lime{
 
 std::vector<const LMS7Parameter*> LMS7parameterList;
 
@@ -601,3 +602,4 @@ const struct LMS7Parameter DTHBIT_RX = { 0x0440, 8, 5, 1, "DTHBIT_RX", "NCO bits
 const struct LMS7Parameter SEL_RX = { 0x0440, 4, 1, 0, "SEL_RX", "" };
 const struct LMS7Parameter MODE_RX = { 0x0440, 0, 0, 0, "MODE_RX", "" };
 const struct LMS7Parameter PHO_RX = { 0x0441, 15, 0, 0, "PHO_RX", "" };
+}

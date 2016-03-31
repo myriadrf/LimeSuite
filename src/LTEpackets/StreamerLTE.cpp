@@ -1,16 +1,19 @@
 #include "StreamerLTE.h"
-#include "lmsComms.h"
+#include "IConnection.h"
+#include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 #include <fstream>
 #include <iostream>
+#include <ciso646>
 #include "fifo.h"
 
 #include "kiss_fft.h"
 
 using namespace std;
+using namespace lime;
 
-LMScomms* gDataPort;
+IConnection* gDataPort;
 
-StreamerLTE::StreamerLTE(LMScomms* dataPort)
+StreamerLTE::StreamerLTE(IConnection* dataPort)
 {
     mDataPort = dataPort;
     mRxFIFO = new LMS_SamplesFIFO(1, 1);
@@ -57,8 +60,15 @@ StreamerLTE::STATUS StreamerLTE::StopStreaming()
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto rxFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+    auto report = args.report;
+    auto getCmd = args.getCmd;
+
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
@@ -96,8 +106,13 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
 
     uint32_t samplesReceived = 0;
 
+    bool currentRxCmdValid = false;
+    RxCommand currentRxCmd;
+    size_t ignoreTxLateCount = 0;
+
     while (terminate->load() == false)
     {
+        if (ignoreTxLateCount != 0) ignoreTxLateCount--;
         if (dataPort->WaitForReading(handles[bi], 1000) == false)
             ++m_bufferFailures;
 
@@ -115,9 +130,89 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
                 tempPacket.first = 0;
                 tempPacket.timestamp = pkt[pktIndex].counter;
 
+                int statusFlags = 0;
                 uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
                 const int stepSize = channelsCount * 3;
-                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
+                size_t numPktBytes = sizeof(pkt->data);
+
+                auto byte0 = pkt[pktIndex].reserved[0];
+                if ((byte0 & (1 << 3)) != 0 and ignoreTxLateCount == 0)
+                {
+                    auto reg7 = Reg_read(dataPort, 0x0007);
+                    Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
+                    Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
+                    if (report) report(STATUS_FLAG_TX_LATE, pkt[pktIndex].counter);
+                    ignoreTxLateCount = 16;
+                }
+
+                if (report) report(STATUS_FLAG_TIME_UP, pkt[pktIndex].counter);
+
+                if (getCmd)
+                {
+                    auto numPacketSamps = numPktBytes/stepSize;
+
+                    //no valid command, try to pop a new command
+                    if (not currentRxCmdValid) currentRxCmdValid = getCmd(currentRxCmd);
+
+                    //command is valid, and this is an infinite read
+                    //so we always replace the command if available
+                    //the currentRxCmdValid variable remains true
+                    else if (!currentRxCmd.finiteRead) getCmd(currentRxCmd);
+
+                    //no valid command, just continue to the next pkt
+                    if (not currentRxCmdValid) continue;
+
+                    //handle timestamp logic
+                    if (currentRxCmd.waitForTimestamp)
+                    {
+                        //the specified timestamp is late
+                        //TODO report late condition to the rx fifo
+                        //we are done with this current command
+                        if (currentRxCmd.timestamp < tempPacket.timestamp)
+                        {
+                            std::cout << "L" << std::flush;
+                            //until we can report late, treat it as asap:
+                            currentRxCmd.waitForTimestamp = false;
+                            //and put this one back in....
+                            //currentRxCmdValid = false;
+                            if (report) report(STATUS_FLAG_RX_LATE, currentRxCmd.timestamp);
+                            continue;
+                        }
+
+                        //the specified timestamp is in a future packet
+                        //continue onto the next packet
+                        if (currentRxCmd.timestamp >= tempPacket.timestamp+numPacketSamps)
+                        {
+                            continue;
+                        }
+
+                        //the specified timestamp is within this packet
+                        //adjust pktStart and numPktBytes for the offset
+                        currentRxCmd.waitForTimestamp = false;
+                        auto offsetSamps = currentRxCmd.timestamp-tempPacket.timestamp;
+                        pktStart += offsetSamps*stepSize;
+                        numPktBytes -= offsetSamps*stepSize;
+                        numPacketSamps -= offsetSamps;
+                        tempPacket.timestamp += offsetSamps;
+                    }
+
+                    //total adjustments for finite read
+                    if (currentRxCmd.finiteRead)
+                    {
+                        //the current command has been depleted
+                        //adjust numPktBytes to the requested end
+                        if (currentRxCmd.numSamps <= numPacketSamps)
+                        {
+                            auto extraSamps = numPacketSamps-currentRxCmd.numSamps;
+                            numPktBytes -= extraSamps*stepSize;
+                            currentRxCmdValid = false;
+                            statusFlags |= STATUS_FLAG_RX_END;
+                        }
+                        else currentRxCmd.numSamps -= numPacketSamps;
+                    }
+                }
+
+                for (uint16_t b = 0; b < numPktBytes; b += stepSize)
                 {
                     for (int ch = 0; ch < channelsCount; ++ch)
                     {
@@ -140,9 +235,12 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
                 }
                 tempPacket.last = samplesCollected;
 
-                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10);
+                uint32_t samplesPushed = rxFIFO->push_samples((const complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10, statusFlags);
                 if (samplesPushed != samplesCollected)
+                {
                     rxDroppedSamples += samplesCollected - samplesPushed;
+                    if (report) report(STATUS_FLAG_RX_DROP, pkt[pktIndex].counter);
+                }
                 samplesCollected = 0;
             }
         }
@@ -158,15 +256,16 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesReceived / timePeriod;
             samplesReceived = 0;
             t1 = t2;
             totalBytesReceived = 0;
             if (dataRate_Bps)
                 dataRate_Bps->store((long)dataRate);
             m_bufferFailures = 0;
+
 #ifndef NDEBUG
-            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples);
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz | dropped samples: %lu | TS: %li\n", dataRate / 1000000.0, samplingRate / 1000000.0, rxDroppedSamples, tempPacket.timestamp);
 #endif
             rxDroppedSamples = 0;
         }
@@ -190,8 +289,13 @@ void StreamerLTE::ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, at
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto rxFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     //at this point Rx must be enabled in FPGA
     int rxDroppedSamples = 0;
     const int channelsCount = 1;
@@ -219,7 +323,7 @@ void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO
     PacketFrame tempPacket;
     tempPacket.Initialize(channelsCount);
 
-    unsigned short regVal = SPI_read(gDataPort, 0x0005);
+    unsigned short regVal = Reg_read(gDataPort, 0x0005);
 
     printf("Begin Data Reading\n");
 
@@ -227,7 +331,7 @@ void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO
         handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
 
     bool async = false;
-    SPI_write(gDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    Reg_write(gDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
 
     int bi = 0;
     unsigned long totalBytesReceived = 0; //for data rate calculation
@@ -298,7 +402,7 @@ void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesReceived*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesReceived / timePeriod;
             samplesReceived = 0;
             t1 = t2;
             totalBytesReceived = 0;
@@ -325,10 +429,29 @@ void StreamerLTE::ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO
     }
 }
 
+void StreamerLTE::ResetUSBFIFO(LMS64CProtocol* port)
+{
+// TODO : USB FIFO reset command for IConnection
+    if (port == nullptr) return;
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x01);
+    port->TransferPacket(ctrPkt);
+    ctrPkt.outBuffer[0] = 0x00;
+    port->TransferPacket(ctrPkt);
+}
+
 /** @brief Function dedicated for processing incomming data and generating outputs for transmitting
 */
 void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ProcessPackets: port not connected");
+    #endif
+        return;
+    }
     pthis->mRxFIFO->Reset(2*4096, channelsCount);
     pthis->mTxFIFO->Reset(2*4096, channelsCount);
 
@@ -353,33 +476,28 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     int timeout_ms = 1000;
 
     //switch off Rx
-    uint16_t regVal = SPI_read(pthis->mDataPort, 0x0005);
-    SPI_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+    uint16_t regVal = Reg_read(pthis->mDataPort, 0x0005);
+    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x46);
 
     //enable MIMO mode, 12 bit compressed values
     if (channelsCount == 2)
     {
-        SPI_write(pthis->mDataPort, 0x0001, 0x0003);
-        SPI_write(pthis->mDataPort, 0x0007, 0x000A);
+        Reg_write(pthis->mDataPort, 0x0001, 0x0003);
+        Reg_write(pthis->mDataPort, 0x0007, 0x000A);
     }
     else
     {
-        SPI_write(pthis->mDataPort, 0x0001, 0x0001);
-        SPI_write(pthis->mDataPort, 0x0007, 0x0008);
+        Reg_write(pthis->mDataPort, 0x0001, 0x0001);
+        Reg_write(pthis->mDataPort, 0x0007, 0x0008);
     }
 
     //USB FIFO reset
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    pthis->mDataPort->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    pthis->mDataPort->TransferPacket(ctrPkt);
+    ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
     //switch on Rx
-    regVal = SPI_read(pthis->mDataPort, 0x0005);
+    regVal = Reg_read(pthis->mDataPort, 0x0005);
     bool async = false;
-    SPI_write(pthis->mDataPort, 0x0005, (regVal & ~0x20) | 0x6 | (async << 4));
+    Reg_write(pthis->mDataPort, 0x0005, (regVal & ~0x60) | 0x6 | (async << 5));
     gDataPort = pthis->mDataPort;
 
     atomic<bool> stopRx(0);
@@ -388,15 +506,28 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     atomic<uint32_t> txRate_Bps(0);
     std::thread threadRx;
     std::thread threadTx;
+
+    StreamerLTE_ThreadData threadRxArgs;
+    threadRxArgs.dataPort = pthis->mDataPort;
+    threadRxArgs.FIFO = pthis->mRxFIFO;
+    threadRxArgs.terminate = &stopRx;
+    threadRxArgs.dataRate_Bps = &rxRate_Bps;
+
+    StreamerLTE_ThreadData threadTxArgs;
+    threadTxArgs.dataPort = pthis->mDataPort;
+    threadTxArgs.FIFO = pthis->mTxFIFO;
+    threadTxArgs.terminate = &stopTx;
+    threadTxArgs.dataRate_Bps = &txRate_Bps;
+
     if (format == STREAM_12_BIT_COMPRESSED)
     {
-        threadRx = std::thread(ReceivePackets, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps);
-        threadTx = std::thread(TransmitPackets, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+        threadRx = std::thread(ReceivePackets, threadRxArgs);
+        threadTx = std::thread(TransmitPackets, threadTxArgs);
     }
     else
     {
-        threadRx = std::thread(ReceivePacketsUncompressed, pthis->mDataPort, pthis->mRxFIFO, &stopRx, &rxRate_Bps);
-        threadTx = std::thread(TransmitPacketsUncompressed, pthis->mDataPort, pthis->mTxFIFO, &stopTx, &txRate_Bps);
+        threadRx = std::thread(ReceivePacketsUncompressed, threadRxArgs);
+        threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
     }
 
     int updateCounter = 0;
@@ -450,8 +581,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     threadRx.join();
 
     //stop Tx Rx if they were active
-    regVal = SPI_read(pthis->mDataPort, 0x0005);
-    SPI_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+    regVal = Reg_read(pthis->mDataPort, 0x0005);
+    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
 
     kiss_fft_free(m_fftCalcPlan);
 
@@ -468,8 +599,13 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPackets(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto txFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     const int channelsCount = txFIFO->GetChannelsCount();
     const int packetsToBatch = 16;
     const int bufferSize = 65536;
@@ -515,7 +651,7 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     uint64_t batchSamplesFilled = 0;
 
     while (terminate->load() != true)
-    {   
+    {
         if (bufferUsed[bi])
         {
             if (dataPort->WaitForSending(handles[bi], 1000) == false)
@@ -533,16 +669,22 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
         int i = 0;
         while (i < packetsToBatch)
         {
-            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000);
+            uint32_t statusFlags = 0;
+            int samplesPopped = txFIFO->pop_samples(outSamples, samplesInPacket, channelsCount, &timestamp, 1000, &statusFlags);
             if (samplesPopped == 0 || samplesPopped != samplesInPacket)
             {
-                printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
+                if (samplesPopped != 0)
+                    printf("Error popping from TX, samples popped %i/%i\n", samplesPopped, samplesInPacket);
                 if (terminate->load() == true)
                     break;
                 continue;
             }
             PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
             pkt[i].counter = timestamp;
+            if(statusFlags & STATUS_FLAG_TX_TIME)
+                pkt[i].reserved[0] &= ~(1 << 4); //synchronize to timestamp
+            else
+                pkt[i].reserved[0] |= (1 << 4); //ignore timestamp
             uint8_t* dataStart = (uint8_t*)pkt[i].data;
             const int stepSize = channelsCount * 3;
             int samplesCollected = 0;
@@ -562,9 +704,10 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
                 ++samplesSent;
             }
             ++i;
+            if ((statusFlags & STATUS_FLAG_TX_END) != 0) break;
         }
 
-        bytesToSend[bi] = sizeof(PacketLTE)*packetsToBatch;
+        bytesToSend[bi] = sizeof(PacketLTE)*i;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
 
@@ -575,14 +718,14 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
             //total number of bytes sent per second
             double m_dataRate = 1000.0*totalBytesSent / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesSent / timePeriod;
             if(dataRate_Bps)
                 dataRate_Bps->store(m_dataRate);
             samplesSent = 0;
             t1 = t2;
             totalBytesSent = 0;
 #ifndef NDEBUG
-            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures);
+            printf("Tx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u | TS: %li\n", m_dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures, timestamp);
 #endif
             m_bufferFailures = 0;
         }
@@ -594,7 +737,7 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     for (int j = 0; j<buffersCount; j++)
     {
         long bytesToSend = bufferSize;
-        if (bufferUsed[bi])
+        if (bufferUsed[j])
         {
             dataPort->WaitForSending(handles[j], 1000);
             dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);
@@ -612,8 +755,13 @@ void StreamerLTE::TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, a
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerLTE::TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, atomic<bool>* terminate, atomic<uint32_t>* dataRate_Bps)
+void StreamerLTE::TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args)
 {
+    auto dataPort = args.dataPort;
+    auto txFIFO = args.FIFO;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     const int channelsCount = 1;
     const int packetsToBatch = 16;
     const int bufferSize = 65536;
@@ -719,7 +867,7 @@ void StreamerLTE::TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIF
             //total number of bytes sent per second
             double m_dataRate = 1000.0*totalBytesSent / timePeriod;
             //total number of samples from all channels per second
-            float samplingRate = 1000.0*samplesSent*channelsCount / timePeriod;
+            float samplingRate = 1000.0*samplesSent / timePeriod;
             if (dataRate_Bps)
                 dataRate_Bps->store(m_dataRate);
             samplesSent = 0;
@@ -738,7 +886,7 @@ void StreamerLTE::TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIF
     for (int j = 0; j<buffersCount; j++)
     {
         long bytesToSend = bufferSize;
-        if (bufferUsed[bi])
+        if (bufferUsed[j])
         {
             dataPort->WaitForSending(handles[j], 1000);
             dataPort->FinishDataSending(&buffers[j*bufferSize], bytesToSend, handles[j]);
@@ -773,28 +921,21 @@ StreamerLTE::Stats StreamerLTE::GetStats()
     return data;
 }
 
-StreamerLTE::STATUS StreamerLTE::SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data)
+StreamerLTE::STATUS StreamerLTE::Reg_write(IConnection* dataPort, uint16_t address, uint16_t data)
 {
-    assert(dataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(data & 0xFF);
-    dataPort->TransferPacket(ctrPkt);
-    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
+    if(dataPort == nullptr) return FAILURE;
+    OperationStatus status;
+    status = dataPort->WriteRegister(address, data);
+    return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
-uint16_t StreamerLTE::SPI_read(LMScomms* dataPort, uint16_t address)
+uint16_t StreamerLTE::Reg_read(IConnection* dataPort, uint16_t address)
 {
-    assert(dataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    dataPort->TransferPacket(ctrPkt);
-    if (ctrPkt.inBuffer.size() > 4)
-        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    if(dataPort == nullptr) return 0;
+    uint32_t dataRd = 0;
+    OperationStatus status;
+    status = dataPort->ReadRegister(address, dataRd);
+    if (status == OperationStatus::SUCCESS)
+        return dataRd & 0xFFFF;
     else
         return 0;
 }

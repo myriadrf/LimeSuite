@@ -10,10 +10,49 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <functional>
 #include "dataTypes.h"
 
-class LMScomms;
+namespace lime{
+
+class IConnection;
 class LMS_SamplesFIFO;
+class LMS64CProtocol;
+
+static const int STATUS_FLAG_TIME_UP = (1 << 0); //!< Update the internal timestamp
+static const int STATUS_FLAG_RX_END = (1 << 1); //!< An rx stream command completed
+static const int STATUS_FLAG_RX_LATE = (1 << 2); //!< An rx stream command had a late time
+static const int STATUS_FLAG_TX_LATE = (1 << 3); //!< An tx stream had a late time
+static const int STATUS_FLAG_RX_DROP = (1 << 4); //!< An rx packet was dropped, no room
+static const int STATUS_FLAG_TX_TIME = (1 << 5); //!< The tx packet has a timestamp
+static const int STATUS_FLAG_TX_END = (1 << 6); //!< The tx packet ends a burst (flush)
+
+/*!
+ * Callback to report the latest state from the RX receiver thread.
+ * @param status status flags (see STATUS_FLAG_*)
+ * @param counter the most recent timestamp
+ */
+typedef std::function<void(const int status, const uint64_t &counter)> RxReportFunction;
+
+/*!
+ * Callback to retrieve a RxCommand structure.
+ * @param [out] command the rx command
+ * @return true if the command is valid
+ */
+typedef std::function<bool(RxCommand &command)> RxPopCommandFunction;
+
+/*!
+ * Receiver and transmitter thread arguments.
+ */
+struct StreamerLTE_ThreadData
+{
+    IConnection* dataPort; //!< Connection interface
+    LMS_SamplesFIFO* FIFO; //!< FIFO (tx pops, rx pushes)
+    std::atomic<bool>* terminate; //!< true exit loop
+    std::atomic<uint32_t>* dataRate_Bps; //!< report rate
+    RxReportFunction report; //!< status report out
+    RxPopCommandFunction getCmd; //!< external commands in
+};
 
 class StreamerLTE
 {
@@ -70,17 +109,17 @@ public:
         uint32_t txAproxSampleRate;
     };
 
-    StreamerLTE(LMScomms* dataPort);
+    StreamerLTE(IConnection* dataPort);
     virtual ~StreamerLTE();
 
     virtual STATUS StartStreaming(const int fftSize, const int channelsCount, const StreamDataFormat format);
     virtual STATUS StopStreaming();
 
     DataToGUI GetIncomingData();
-    Stats GetStats();    
+    Stats GetStats();
 protected:
-    static STATUS SPI_write(LMScomms* dataPort, uint16_t address, uint16_t data);
-    static uint16_t SPI_read(LMScomms* dataPort, uint16_t address);
+    static STATUS Reg_write(IConnection* dataPort, uint16_t address, uint16_t data);
+    static uint16_t Reg_read(IConnection* dataPort, uint16_t address);
 
     std::mutex mLockIncomingPacket;
     DataToGUI mIncomingPacket;
@@ -88,22 +127,24 @@ protected:
     LMS_SamplesFIFO *mRxFIFO;
     LMS_SamplesFIFO *mTxFIFO;
 
-    static void ReceivePackets(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void ReceivePacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* rxFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void ResetUSBFIFO(LMS64CProtocol* port);
+    static void ReceivePackets(const StreamerLTE_ThreadData &args);
+    static void ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args);
     static void ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format);
-    static void TransmitPackets(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
-    static void TransmitPacketsUncompressed(LMScomms* dataPort, LMS_SamplesFIFO* txFIFO, std::atomic<bool>* terminate, std::atomic<uint32_t>* dataRate_Bps);
+    static void TransmitPackets(const StreamerLTE_ThreadData &args);
+    static void TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args);
 
-    std::atomic_bool mStreamRunning;
-    std::atomic_bool stopRx;
-    std::atomic_bool stopProcessing;
-    std::atomic_bool stopTx;
+    std::atomic<bool> mStreamRunning;
+    std::atomic<bool> stopRx;
+    std::atomic<bool> stopProcessing;
+    std::atomic<bool> stopTx;
 
     std::thread threadRx;
     std::thread threadProcessing;
     std::thread threadTx;
-    LMScomms* mDataPort;
+    IConnection* mDataPort;
 
-    std::atomic<int> mRxDataRate;
-    std::atomic<int> mTxDataRate;
+    std::atomic<uint32_t> mRxDataRate;
+    std::atomic<uint32_t> mTxDataRate;
 };
+}

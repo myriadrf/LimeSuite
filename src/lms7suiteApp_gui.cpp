@@ -38,6 +38,10 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuConnectionSettings = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("ConnectionSettings") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuOptions->Append( mnuConnectionSettings );
 	
+	wxMenuItem* mnuCacheValues;
+	mnuCacheValues = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("Cache calibration values") ) , wxEmptyString, wxITEM_CHECK );
+	mnuOptions->Append( mnuCacheValues );
+	
 	mbar->Append( mnuOptions, wxT("Options") ); 
 	
 	mnuModules = new wxMenu();
@@ -119,6 +123,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( AppFrame_view::OnClose ) );
 	this->Connect( menuFileQuit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnQuit ) );
 	this->Connect( mnuConnectionSettings->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowConnectionSettings ) );
+	this->Connect( mnuCacheValues->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnChangeCacheSettings ) );
 	this->Connect( mnuFFTviewer->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFFTviewer ) );
 	this->Connect( mnuADF4002->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Connect( mnuSi5351C->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
@@ -140,6 +145,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( AppFrame_view::OnClose ) );
 	this->Disconnect( idMenuQuit, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnQuit ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowConnectionSettings ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnChangeCacheSettings ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFFTviewer ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );

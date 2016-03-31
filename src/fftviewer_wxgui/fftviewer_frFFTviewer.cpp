@@ -4,14 +4,15 @@
 #include <vector>
 #include "LMS_StreamBoard.h"
 #include "StreamerNovena.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 #include "OpenGLGraph.h"
+#include <LMSBoards.h>
 
 using namespace std;
+using namespace lime;
 
-void fftviewer_frFFTviewer::Initialize(LMScomms* pDataPort)
+void fftviewer_frFFTviewer::Initialize(IConnection* pDataPort)
 {
-    assert(pDataPort != nullptr);
     mDataPort = pDataPort;
 }
 
@@ -105,6 +106,11 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
+    if(!mDataPort)
+    {
+        wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
+        return;
+    }
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
@@ -113,7 +119,7 @@ void fftviewer_frFFTviewer::StartStreaming()
     {
     case 0:
         assert(mStreamBrd == nullptr);
-        if (mDataPort->GetInfo().device == LMS_DEV_NOVENA)
+        if (mDataPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_NOVENA))
             mStreamBrd = new StreamerNovena(mDataPort);
         else
             mStreamBrd = new LMS_StreamBoard(mDataPort);
@@ -121,7 +127,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         break;
     case 1: //SISO
         assert(mLTEstreamer == nullptr);
-        mLTEstreamer = new StreamerLTE(mDataPort);        
+        mLTEstreamer = new StreamerLTE(mDataPort);
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 2: //MIMO
@@ -134,7 +140,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         mLTEstreamer = new StreamerLTE(mDataPort);
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_IN_16);
         break;
-    }    
+    }
     btnStartStop->SetLabel(_("STOP"));
     mGUIupdater->Start(50);
 }
@@ -144,7 +150,7 @@ void fftviewer_frFFTviewer::StopStreaming()
     txtNyquistFreqMHz->Enable();
     mGUIupdater->Stop();
     switch (cmbStreamType->GetSelection())
-    {    
+    {
     case 0:
         if (mStreamBrd)
         {
@@ -176,19 +182,19 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     float TxFilled = 0;
     float RxRate = 0;
     float TxRate = 0;
-    
+
     switch (cmbStreamType->GetSelection())
     {
         case 0:
         {
             assert(mStreamBrd != nullptr);
-            LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();           
+            LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();
             LMS_StreamBoard::ProgressStats stats = mStreamBrd->GetStats();
             RxFilled = stats.RxFIFOfilled;
             TxFilled = stats.TxFIFOfilled;
             RxRate = stats.RxRate_Bps;
             TxRate = stats.TxRate_Bps;
-			
+
 			std::vector<float> freqs;
 			freqs.reserve(data.fftBins_dbFS.size());
 			double nyquistMHz;
@@ -226,7 +232,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
             TxFilled = 100.0*info.txBufFilled / info.txBufSize;
             RxRate = data.rxDataRate_Bps;
             TxRate = data.txDataRate_Bps;
-            
+
             if (data.fftBins_dbFS[0].size() > 0)
             {
                 std::vector<float> freqs;
@@ -261,21 +267,21 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
             break;
         }
     }
-    
+
     if (chkFreezeTimeDomain->IsChecked() == false)
-    {   
+    {
         mTimeDomainPanel->Refresh();
         mTimeDomainPanel->Draw();
     }
 
     if (chkFreezeConstellation->IsChecked() == false)
-    {   
+    {
         mConstelationPanel->Refresh();
         mConstelationPanel->Draw();
     }
 
     if (chkFreezeFFT->IsChecked() == false)
-    {   
+    {
         mFFTpanel->Refresh();
         mFFTpanel->Draw();
     }

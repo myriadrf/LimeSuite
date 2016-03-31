@@ -9,7 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include "lmsComms.h"
+#include "IConnection.h"
 
 #if defined(__GNUC__) || defined(__GNUG__)
 #include <unistd.h>
@@ -44,6 +44,7 @@
 #define DATA_FIFO_ADDR (IMX6_EIM_CS1_BASE_ADDR + 0xf000)
 
 using namespace std;
+using namespace lime;
 
 static const int cSPI_SPEED = 5000000;
 
@@ -395,7 +396,7 @@ int prep_eim_burst()
     return 0;
 }
 
-StreamerNovena::StreamerNovena(LMScomms* dataPort) : LMS_StreamBoard(dataPort)
+StreamerNovena::StreamerNovena(IConnection* dataPort) : LMS_StreamBoard(dataPort)
 {
 
 }
@@ -466,18 +467,18 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 
     int dataSource = 0;
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
-    uint16_t controlRegValue = pthis->SPI_read(NOVENA_DATA_SRC_ADDR);
+    uint16_t controlRegValue = pthis->Reg_read(NOVENA_DATA_SRC_ADDR);
 
     dataSource = (controlRegValue >> 12) & 0x3;
     //reset FIFO
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
     //set data source
-    //pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
+    //pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
     //request data
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-    pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
     while (pthis->stopRx.load() == false)
     {
@@ -492,12 +493,12 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
             bytesReceived += bytesToRead;
         }
 	//reset FIFO
-	pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+	pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
         //request data
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-        pthis->SPI_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
         if (bytesReceived > 0)
         {
@@ -552,40 +553,4 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 void StreamerNovena::TransmitPackets(StreamerNovena* pthis)
 {
 
-}
-
-
-/** @brief Helper function to write board spi regiters
-    @param address spi address
-    @param data register value
-*/
-LMS_StreamBoard::Status StreamerNovena::SPI_write(uint16_t address, uint16_t data)
-{
-    assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_WR;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(data & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
-}
-
-/** @brief Helper function to read board spi registers
-    @param address spi address
-    @return register value
-*/
-uint16_t StreamerNovena::SPI_read(uint16_t address)
-{
-    assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
-        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
-    else
-        return 0;
 }

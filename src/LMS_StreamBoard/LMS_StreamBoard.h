@@ -7,7 +7,8 @@
 #include <thread>
 #include "LMS_StreamBoard_FIFO.h"
 
-class LMScomms;
+namespace lime{
+class IConnection;
 
 class LMS_StreamBoard
 {
@@ -38,9 +39,7 @@ public:
         FAILURE,
     };
 
-    static Status CaptureIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount, bool frameStart);
-    static Status UploadIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, uint32_t framesCount);
-    static Status ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg);
+    static Status ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg);
 
     struct DataToGUI
     {
@@ -58,7 +57,7 @@ public:
         float TxFIFOfilled;
     };
 
-    LMS_StreamBoard(LMScomms* dataPort);
+    LMS_StreamBoard(IConnection* dataPort);
     virtual ~LMS_StreamBoard();
 
     void SetRxFrameStart(const bool startValue);
@@ -71,8 +70,8 @@ public:
     DataToGUI GetIncomingData();
     ProgressStats GetStats();
 
-    Status SPI_write(uint16_t address, uint16_t data);
-    uint16_t SPI_read(uint16_t address);
+    Status Reg_write(uint16_t address, uint16_t data);
+    uint16_t Reg_read(uint16_t address);
 protected:
     static int FindFrameStart(const char* buffer, const int bufLen, const bool frameStart);
     std::mutex mLockIncomingPacket;
@@ -94,7 +93,7 @@ protected:
     std::thread threadRx;
     std::thread threadProcessing;
     std::thread threadTx;
-    LMScomms* mDataPort;
+    IConnection* mDataPort;
 
     std::atomic<unsigned long> mRxDataRate;
     std::atomic<unsigned long> mTxDataRate;
@@ -106,5 +105,6 @@ protected:
     std::thread threadTxCyclic;
     std::atomic_bool stopTxCyclic;
 };
+}
 #endif
 

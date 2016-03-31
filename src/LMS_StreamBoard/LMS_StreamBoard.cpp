@@ -1,28 +1,49 @@
 #include "LMS_StreamBoard.h"
-#include "lmsComms.h"
+#include "IConnection.h"
+#include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 #include <assert.h>
 #include <iostream>
 #include "kiss_fft.h"
 
 using namespace std;
+using namespace lime;
 
 /** @brief Configures Stream board FPGA clocks
     @param serPort Communications port to send data
     @param fOutTx_MHz transmitter frequency in MHz
     @param fOutRx_MHz receiver frequency in MHz
-    @param phaseShift_deg IQ phase shift in degrees
+    @param phaseShiftTx_deg Tx IQ phase shift in degrees
+    @param phaseShiftRx_deg Rx IQ phase shift in degrees
     @return 0-success, other-failure
 */
-LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShift_deg)
+LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
-    if (fOutRx_MHz < 5 || fOutTx_MHz < 5)
+    //switch between case for GSM sampling rate 541666 Hz and normal PLL
+    const uint16_t direct_clocking_addr = 0x0016;
+    const uint16_t phase_reg_select = 0x15;
+    const uint16_t directClockingEnable = 0x0100;
+    uint16_t regVal;
+    if(serPort->ReadRegister(direct_clocking_addr, regVal) == OperationStatus::FAILED)
+        return FAILURE;
+    regVal &= ~0x1FF;
+    if(fOutRx_MHz < 5 && fOutTx_MHz < 5)
+    {
+        regVal |= phase_reg_select|directClockingEnable;
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+            return FAILURE;
+        return SUCCESS;
+    }
+    else
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+            return FAILURE;
+
+    if(fOutRx_MHz < 5 || fOutTx_MHz < 5)
     {
         printf("WARNING: FPGA PLL frequency should not be lower than 5 MHz\n");
         return FAILURE;
     }
 
-    assert(serPort != nullptr);
-    if (serPort == NULL)
+    if (serPort == nullptr)
         return FAILURE;
     if (serPort->IsOpen() == false)
         return FAILURE;
@@ -36,58 +57,64 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
     int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
     int clow = ((int)coef) / 2;
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_WR;
-    
+    vector<uint8_t> outBuffer;
+    unsigned short reg2 = 0;
     if (fOut_MHz*M > vcoLimits_MHz[0] && fOut_MHz*M < vcoLimits_MHz[1])
-    {   
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x0F);
-        pkt.outBuffer.push_back(0x15); //c4-c2_bypassed
-        pkt.outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
+    {
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x0F);
+        outBuffer.push_back(0x15); //c4-c2_bypassed
+        outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x08);
-        pkt.outBuffer.push_back(1); //N_high_cnt
-        pkt.outBuffer.push_back(1);//N_low_cnt
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x09);
-        pkt.outBuffer.push_back(chigh); //M_high_cnt
-        pkt.outBuffer.push_back(clow);	 //M_low_cnt
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x08);
+        outBuffer.push_back(1); //N_high_cnt
+        outBuffer.push_back(1);//N_low_cnt
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x09);
+        outBuffer.push_back(chigh); //M_high_cnt
+        outBuffer.push_back(clow);	 //M_low_cnt
         for (int i = 0; i <= 1; ++i)
         {
-            pkt.outBuffer.push_back(0x00);
-            pkt.outBuffer.push_back(0x0A + i);
-            pkt.outBuffer.push_back(chigh); //cX_high_cnt
-            pkt.outBuffer.push_back(clow);	 //cX_low_cnt
+            outBuffer.push_back(0x00);
+            outBuffer.push_back(0x0A + i);
+            outBuffer.push_back(chigh); //cX_high_cnt
+            outBuffer.push_back(clow);	 //cX_low_cnt
         }
 
         float Fstep_us = 1 / (8 * fOutTx_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOutTx_MHz);
-        short nSteps = phaseShift_deg / Fstep_deg;
-        unsigned short reg2 = 0x0400 | (nSteps & 0x3FF);
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x02);
-        pkt.outBuffer.push_back((reg2 >> 8));
-        pkt.outBuffer.push_back(reg2); //phase
+        short nSteps = phaseShiftTx_deg / Fstep_deg;
+        reg2 = 0x0400 | (nSteps & 0x3FF);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2); //phase
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x03);
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x01);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x03);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x01);
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x03);
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x00);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x03);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x00);
 
         reg2 = reg2 | 0x800;
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x02);
-        pkt.outBuffer.push_back((reg2 >> 8));
-        pkt.outBuffer.push_back(reg2);
-
-        if(serPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2);
+        //temporary solution
+        vector<uint32_t> addrs;
+        vector<uint32_t> values;
+        for(int i=0; i<outBuffer.size(); i+=4)
+        {
+            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
+            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
+        }
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else
@@ -101,39 +128,63 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
     if (fOut_MHz*M > vcoLimits_MHz[0] && fOut_MHz*M < vcoLimits_MHz[1])
     {
         short index = 0;
-        pkt.outBuffer.clear();
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x0F);
-        pkt.outBuffer.push_back(0x15); //c4-c2_bypassed
-        pkt.outBuffer.push_back(0x41 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed, c1 bypassed
+        outBuffer.clear();
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x0F);
+        outBuffer.push_back(0x15); //c4-c2_bypassed
+        outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x08);
-        pkt.outBuffer.push_back(1); //N_high_cnt
-        pkt.outBuffer.push_back(1);//N_low_cnt
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x09);
-        pkt.outBuffer.push_back(chigh); //M_high_cnt
-        pkt.outBuffer.push_back(clow);	 //M_low_cnt
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x08);
+        outBuffer.push_back(1); //N_high_cnt
+        outBuffer.push_back(1);//N_low_cnt
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x09);
+        outBuffer.push_back(chigh); //M_high_cnt
+        outBuffer.push_back(clow);	 //M_low_cnt
         for (int i = 0; i <= 1; ++i)
         {
-            pkt.outBuffer.push_back(0x00);
-            pkt.outBuffer.push_back(0x0A + i);
-            pkt.outBuffer.push_back(chigh); //cX_high_cnt
-            pkt.outBuffer.push_back(clow);	 //cX_low_cnt
+            outBuffer.push_back(0x00);
+            outBuffer.push_back(0x0A + i);
+            outBuffer.push_back(chigh); //cX_high_cnt
+            outBuffer.push_back(clow);	 //cX_low_cnt
         }
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x03);
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x02);
+        float Fstep_us = 1 / (8 * fOutRx_MHz*C);
+        float Fstep_deg = (360 * Fstep_us) / (1 / fOutRx_MHz);
+        short nSteps = phaseShiftRx_deg / Fstep_deg;
+        reg2 = reg2 & ~0x3FF;
+        reg2 |= (0x2000 | (nSteps & 0x3FF));
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2); //phase
 
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x03);
-        pkt.outBuffer.push_back(0x00);
-        pkt.outBuffer.push_back(0x00);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x03);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
 
-        if (serPort->TransferPacket(pkt) != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x03);
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x00);
+
+        reg2 = reg2 | 0x4000;
+        outBuffer.push_back(0x00);
+        outBuffer.push_back(0x02);
+        outBuffer.push_back((reg2 >> 8));
+        outBuffer.push_back(reg2);
+
+        //temporary solution
+        vector<uint32_t> addrs;
+        vector<uint32_t> values;
+        for(int i=0; i<outBuffer.size(); i+=4)
+        {
+            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
+            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
+        }
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
             return FAILURE;
     }
     else
@@ -141,163 +192,8 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(LMScomms *serPort, const f
     return SUCCESS;
 }
 
-/** @brief Captures IQ samples from Stream board, this is blocking function, it blocks until desired frames count is captured
-    @param isamples destination array for I samples, must be big enough to contain samplesCount
-    @param qsamples destination array for Q samples, must be big enough to contain samplesCount
-    @param framesCount number of IQ frames to capture
-    @param frameStart frame start indicator 0 or 1
-    @return 0-success, other-failure
-*/
-LMS_StreamBoard::Status LMS_StreamBoard::CaptureIQSamples(LMScomms *dataPort, int16_t *isamples, int16_t *qsamples, const uint32_t framesCount, const bool frameStart)
-{
-    assert(dataPort != nullptr);
-    if (dataPort == NULL)
-        return FAILURE;
-    if (dataPort->IsOpen() == false)
-        return FAILURE;
 
-    int16_t sample_value;
-    const uint32_t bufSize = framesCount * 2 * sizeof(uint16_t);
-    char *buffer = new char[bufSize];
-    if (buffer == 0)
-    {
-#ifndef NDEBUG
-        std::cout << "Failed to allocate memory for samples buffer" << std::endl;
-#endif
-        return FAILURE;
-    }
-    memset(buffer, 0, bufSize);
-
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-    dataPort->TransferPacket(pkt);
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        return FAILURE;
-
-    uint16_t regVal = (pkt.inBuffer[2] * 256) + pkt.inBuffer[3];
-    pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer.clear();
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-    pkt.outBuffer.push_back(0);
-    pkt.outBuffer.push_back(regVal | 0x4);    
-    dataPort->TransferPacket(pkt);
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        return FAILURE;
-
-    int bytesReceived = 0;
-    for(int i = 0; i<3; ++i)
-        bytesReceived = dataPort->ReadStream(buffer, bufSize, 5000);
-    if (bytesReceived > 0)
-    {
-        bool iqSelect = false;
-        int16_t frameCounter = 0;        
-        for (uint32_t b = 0; b < bufSize;)
-        {
-            sample_value = buffer[b++] & 0xFF;
-            sample_value |= (buffer[b++] & 0x0F) << 8;
-            sample_value = sample_value << 4; //shift left then right to fill sign bits
-            sample_value = sample_value >> 4;
-            if (iqSelect == false)
-                isamples[frameCounter] = sample_value;
-            else
-                qsamples[frameCounter] = sample_value;
-            frameCounter += iqSelect;
-            iqSelect = !iqSelect;
-        }        
-    }
-    pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer.clear();
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x01);
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);    
-    dataPort->TransferPacket(pkt);
-
-    regVal = (pkt.inBuffer[2] * 256) + pkt.inBuffer[3];
-    pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer.clear();
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-    pkt.outBuffer.push_back(0);
-    pkt.outBuffer.push_back(regVal & ~0x4);    
-    dataPort->TransferPacket(pkt);
-
-    delete[] buffer;
-    return SUCCESS;
-}
-
-/** @brief Blocking operation to upload IQ samples to Stream board RAM
-    @param serPort port to use for communication
-    @param isamples I channel samples
-    @param qsamples Q channel samples
-    @param framesCount number of samples in arrays
-    @return 0-success, other-failure
-*/
-LMS_StreamBoard::Status LMS_StreamBoard::UploadIQSamples(LMScomms* serPort, int16_t *isamples, int16_t *qsamples, const uint32_t framesCount)
-{
-    int bufferSize = framesCount * 2;
-    uint16_t *buffer = new uint16_t[bufferSize];
-    memset(buffer, 0, bufferSize*sizeof(uint16_t));
-    int bufPos = 0;
-    for (unsigned i = 0; i<framesCount; ++i)
-    {   
-        buffer[bufPos] = (isamples[i] & 0xFFF);
-        buffer[bufPos + 1] = (qsamples[i] & 0xFFF) | 0x1000;
-        bufPos += 2;
-    }
-    const long outLen = bufPos * 2;
-    int packetSize = 65536;
-    int sent = 0;
-    bool success = true;
-
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-
-    serPort->TransferPacket(pkt);
-    pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer.clear();
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-    pkt.outBuffer.push_back(pkt.inBuffer[2]);
-    pkt.outBuffer.push_back(pkt.inBuffer[3] & ~0x7);
-    serPort->TransferPacket(pkt);
-
-    while (sent<outLen)
-    {
-        char *outBuf = (char*)buffer;
-        const long toSendBytes = outLen - sent > packetSize ? packetSize : outLen - sent;
-        long toSend = toSendBytes;
-        int context = serPort->BeginDataSending(&outBuf[sent], toSend);
-        if (serPort->WaitForSending(context, 5000) == false)
-        {
-            success = false;
-            serPort->FinishDataSending(&outBuf[sent], toSend, context);
-            break;
-        }
-        sent += serPort->FinishDataSending(&outBuf[sent], toSend, context);
-    }
-    
-    pkt.cmd = CMD_BRDSPI_RD;
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-
-    serPort->TransferPacket(pkt);
-    pkt.cmd = CMD_BRDSPI_WR;
-    pkt.outBuffer.clear();
-    pkt.outBuffer.push_back(0x00);
-    pkt.outBuffer.push_back(0x05);
-    pkt.outBuffer.push_back(pkt.inBuffer[2]);
-    pkt.outBuffer.push_back(pkt.inBuffer[3] | 0x3);
-    serPort->TransferPacket(pkt);
-    return success ? SUCCESS : FAILURE;
-}
-
-LMS_StreamBoard::LMS_StreamBoard(LMScomms* dataPort)
+LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
     mRxFrameStart.store(true);
     mDataPort = dataPort;
@@ -322,11 +218,11 @@ LMS_StreamBoard::Status LMS_StreamBoard::StartReceiving(unsigned int fftSize)
         return FAILURE;
     if (mDataPort->IsOpen() == false)
         return FAILURE;
-    mRxFIFO->reset();    
+    mRxFIFO->reset();
     stopRx.store(false);
-    stopProcessing.store(false);    
+    stopProcessing.store(false);
     threadRx = std::thread(ReceivePackets, this);
-    threadProcessing = std::thread(ProcessPackets, this, fftSize);    
+    threadProcessing = std::thread(ProcessPackets, this, fftSize);
     mStreamRunning.store(true);
     return SUCCESS;
 }
@@ -339,17 +235,38 @@ LMS_StreamBoard::Status LMS_StreamBoard::StopReceiving()
         return FAILURE;
     stopTx.store(true);
     stopProcessing.store(true);
-    stopRx.store(true);    
+    stopRx.store(true);
     threadProcessing.join();
     threadRx.join();
     mStreamRunning.store(false);
     return SUCCESS;
 }
 
+static void ResetUSBFIFO(LMS64CProtocol* port)
+{
+// TODO : USB FIFO reset command for IConnection
+    if (port == nullptr) return;
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x01);
+    port->TransferPacket(ctrPkt);
+    ctrPkt.outBuffer[0] = 0x00;
+    port->TransferPacket(ctrPkt);
+}
+
 /** @brief Function dedicated for receiving data samples from board
 */
 void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ReceivePackets: port not connected");
+    #endif
+        return;
+    }
+
+
     SamplesPacket pkt;
     int samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
@@ -369,16 +286,10 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
     }
     memset(buffers, 0, buffers_count*buffer_size);
 
-    //USB FIFO reset
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    pthis->mDataPort->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    pthis->mDataPort->TransferPacket(ctrPkt);
+    ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
-    uint16_t regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal | 0x4);
+    uint16_t regVal = pthis->Reg_read(0x0005);
+    pthis->Reg_write(0x0005, regVal | 0x4);
 
     for (int i = 0; i<buffers_count; ++i)
         handles[i] = pthis->mDataPort->BeginDataReading(&buffers[i*buffer_size], buffer_size);
@@ -386,7 +297,7 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
     int bi = 0;
     int packetsReceived = 0;
     unsigned long BytesReceived = 0;
-    int m_bufferFailures = 0;    
+    int m_bufferFailures = 0;
     short sample;
 
     bool frameStart = pthis->mRxFrameStart.load();
@@ -402,13 +313,13 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
             ++packetsReceived;
             BytesReceived += bytesReceived;
             char* bufStart = &buffers[bi*buffer_size];
-            
+
             for (int p = 0; p < bytesReceived; p+=2)
             {
                 if (samplesCollected == 0) //find frame start
                 {
                     int frameStartOffset = FindFrameStart(&bufStart[p], bytesReceived-p, frameStart);
-                    if (frameStartOffset < 0) 
+                    if (frameStartOffset < 0)
                         break; //frame start was not found, move on to next buffer
                     p += frameStartOffset;
                 }
@@ -464,8 +375,8 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
         pthis->mDataPort->FinishDataReading(&buffers[j*buffer_size], bytesToRead, handles[j]);
     }
 
-    regVal = pthis->SPI_read(0x0005);
-    pthis->SPI_write(0x0005, regVal & ~0x4);
+    regVal = pthis->Reg_read(0x0005);
+    pthis->Reg_write(0x0005, regVal & ~0x4);
 
     delete[] buffers;
 #ifndef NDEBUG
@@ -542,6 +453,14 @@ void LMS_StreamBoard::ProcessPackets(LMS_StreamBoard* pthis, unsigned int fftSiz
 */
 void LMS_StreamBoard::TransmitPackets(LMS_StreamBoard* pthis)
 {
+    if(pthis->mDataPort == nullptr)
+    {
+    #ifndef NDEBUG
+        printf("ReceivePackets: port not connected");
+    #endif
+        return;
+    }
+
     const int packetsToBatch = 16;
     const int buffer_size = sizeof(SamplesPacket)*packetsToBatch;
     const int buffers_count = 16; // must be power of 2
@@ -664,33 +583,24 @@ LMS_StreamBoard::ProgressStats LMS_StreamBoard::GetStats()
     @param address spi address
     @param data register value
 */
-LMS_StreamBoard::Status LMS_StreamBoard::SPI_write(uint16_t address, uint16_t data)
+LMS_StreamBoard::Status LMS_StreamBoard::Reg_write(uint16_t address, uint16_t data)
 {
     assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    ctrPkt.outBuffer.push_back((data >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(data & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    return ctrPkt.status == 1 ? SUCCESS : FAILURE;
+    OperationStatus status = mDataPort->WriteRegister(address, data);
+    return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
 }
 
 /** @brief Helper function to read board spi registers
     @param address spi address
     @return register value
 */
-uint16_t LMS_StreamBoard::SPI_read(uint16_t address)
+uint16_t LMS_StreamBoard::Reg_read(uint16_t address)
 {
     assert(mDataPort != nullptr);
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer.push_back((address >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back(address & 0xFF);
-    mDataPort->TransferPacket(ctrPkt);
-    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
-        return ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    uint32_t dataRd = 0;
+    OperationStatus status = mDataPort->ReadRegister(address, dataRd);
+    if (status == OperationStatus::SUCCESS)
+        return dataRd & 0xFFFF;
     else
         return 0;
 }
@@ -725,8 +635,8 @@ int LMS_StreamBoard::FindFrameStart(const char* buffer, const int bufLen, const 
     @return 0:success, other:failure
 */
 LMS_StreamBoard::Status LMS_StreamBoard::StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount)
-{   
-    if (mDataPort->IsOpen() == false)
+{
+    if (!mDataPort || mDataPort->IsOpen() == false)
         return FAILURE;
 
     stopTxCyclic.store(false);
@@ -795,12 +705,12 @@ LMS_StreamBoard::Status LMS_StreamBoard::StartCyclicTransmitting(const int16_t* 
                 t1 = t2;
                 totalBytesSent = 0;
 #ifndef NDEBUG
-                printf("Upload rate: %f\t failures:%li\n", 1000.0*totalBytesSent / timePeriod, m_bufferFailures);
+                printf("Upload rate: %f\t failures:%i\n", 1000.0*totalBytesSent / timePeriod, m_bufferFailures);
 #endif
                 m_bufferFailures = 0;
             }
 
-            //fill up next buffer		
+            //fill up next buffer
             for (int j = 0; j < buffer_size; ++j)
             {
                 buffers[bi*buffer_size + j] = pthis->mCyclicTransmittingSourceData[dataIndex];

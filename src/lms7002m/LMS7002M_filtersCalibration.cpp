@@ -6,6 +6,7 @@
 
 #include "LMS7002M.h"
 #include <cmath>
+using namespace lime;
 
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
@@ -92,6 +93,8 @@ liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type c
 
 liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff_MHz)
 {   
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     float_type lowLimit = 0;
     float_type highLimit = 1000;
@@ -320,6 +323,7 @@ void LMS7002M::FilterTuning_AdjustGains()
 
 liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_type realpole_MHz)
 {
+    LMS7002M_SelfCalState state(this);
     uint32_t rssi;
     uint32_t rssi_value_10k;
     bool prevRSSIbigger;
@@ -434,6 +438,8 @@ TxFilterLowBandChainEnd:
 
 liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 {
+    LMS7002M_SelfCalState state(this);
+
     liblms7_status status;
     uint16_t cfb_tia_rfe;
     uint16_t c_ctl_lpfl_rbb;

@@ -10,7 +10,10 @@
 #include <atomic>
 #include <string>
 
-class LMScomms;
+namespace lime{
+
+class LMS64CProtocol;
+class IConnection;
 
 class MCU_BD
 {
@@ -55,7 +58,7 @@ class MCU_BD
         int ReadOneByte(unsigned char * data);
         int One_byte_command(unsigned short data1, unsigned char * rdata1);
         unsigned int formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int m_iExt2, int m_iMode1, int m_iMode0);
-        LMScomms * m_serPort;
+        LMS64CProtocol * m_serPort;
         int m_bLoadedDebug;
         int m_bLoadedProd;
 
@@ -83,6 +86,7 @@ class MCU_BD
         int Erase_IRAM();
         int Read_SFR();
         int Program_MCU(int m_iMode1, int m_iMode0);
+        int Program_MCU(const uint8_t* binArray, const MEMORY_MODE mode);
         void Reset_MCU();
         void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
         int RunProductionTest_MCU();
@@ -92,7 +96,7 @@ class MCU_BD
         void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
-        void Initialize(LMScomms* pSerPort);
+        void Initialize(IConnection* pSerPort);
 };
-
+}
 #endif // MCU_BD_H

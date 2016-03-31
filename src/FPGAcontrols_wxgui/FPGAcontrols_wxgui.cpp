@@ -21,7 +21,7 @@
 #include "wx/checkbox.h"
 
 #include <vector>
-#include "lmsComms.h"
+#include "IConnection.h"
 #include <fstream>
 #include <wx/ffile.h>
 #include <wx/dir.h>
@@ -30,6 +30,7 @@
 #include "LMS_StreamBoard.h"
 
 using namespace std;
+using namespace lime;
 
 const long FPGAcontrols_wxgui::ID_BUTTON6 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON7 = wxNewId();
@@ -151,10 +152,9 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
         dir.Make(gWFMdirectory);
 }
 
-void FPGAcontrols_wxgui::Initialize(LMScomms* dataPort)
+void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
 {
     m_serPort = dataPort;
-    assert(m_serPort != nullptr);
     if (mStreamer)
         delete mStreamer;
     mStreamer = new LMS_StreamBoard(m_serPort);
@@ -238,21 +238,21 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData | 0x3);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData | 0x3);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, (regData & ~0x2) | 0x1);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
     assert(mStreamer != nullptr);
-    if (m_serPort->IsOpen() == false)
+    if (!m_serPort || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
@@ -292,8 +292,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint16_t regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData & ~0x7);
+    uint16_t regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData & ~0x7);
 
     while(sent<outLen)
     {
@@ -316,8 +316,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
 
-    regData = mStreamer->SPI_read(0x0005);
-    mStreamer->SPI_write(0x0005, regData | 0x3);
+    regData = mStreamer->Reg_read(0x0005);
+    mStreamer->Reg_write(0x0005, regData | 0x3);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
@@ -412,23 +412,25 @@ void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 {
-    unsigned short regValue = 0;
-    LMScomms::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_BRDSPI_RD;
-    ctrPkt.outBuffer.push_back(0x00);
-    ctrPkt.outBuffer.push_back(0x16);
-    m_serPort->TransferPacket(ctrPkt);
-    if (ctrPkt.status == STATUS_COMPLETED_CMD && ctrPkt.inBuffer.size() >= 4)
-        regValue = ctrPkt.inBuffer[2] * 256 + ctrPkt.inBuffer[3];
+    if(!m_serPort)
+    {
+        wxMessageBox(_("FPGA controls: Connection not initialized"), _("ERROR"));
+        return;
+    }
 
-    ctrPkt.cmd = CMD_BRDSPI_WR;
-    ctrPkt.outBuffer.clear();
-    ctrPkt.outBuffer.push_back(0x00);
-    ctrPkt.outBuffer.push_back(0x16);
-    ctrPkt.outBuffer.push_back((regValue >> 8) & 0xFF);
-    ctrPkt.outBuffer.push_back((regValue & 0xFE) | chkDigitalLoopbackEnable->IsChecked());
-    m_serPort->TransferPacket(ctrPkt);
-        
-    if (ctrPkt.status != 1)
+    const uint16_t address = 0x0016;
+    uint32_t dataRd = 0;
+    OperationStatus status;
+    status = m_serPort->ReadRegister(address, dataRd);
+    unsigned short regValue = 0;
+
+    if (status == OperationStatus::SUCCESS)
+        regValue = dataRd & 0xFFFF;
+
+    regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
+
+    status = m_serPort->WriteRegister(address, regValue);
+
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }

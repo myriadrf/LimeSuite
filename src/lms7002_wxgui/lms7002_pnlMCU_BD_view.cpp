@@ -4,6 +4,7 @@
 #include <wx/filedlg.h>
 #include "dlgViewIRAM.h"
 #include "dlgViewSFR.h"
+using namespace lime;
 
 lms7002_pnlMCU_BD_view::lms7002_pnlMCU_BD_view(wxWindow* parent)
     :

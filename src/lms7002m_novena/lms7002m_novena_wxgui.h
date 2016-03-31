@@ -8,14 +8,15 @@
 #define LMS7002M_NOVENA_WXGUI_H
 
 #include <wx/wx.h>
-
-class LMScomms;
+namespace lime{
+class IConnection;
+}
 
 class LMS7002M_Novena_wxgui : public wxFrame
 {
 public:
     LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-    void Initialize(LMScomms* serPort);
+    void Initialize(lime::IConnection* serPort, const size_t devIndex = 0);
     virtual ~LMS7002M_Novena_wxgui();
     virtual void UpdatePanel();
 
@@ -24,7 +25,8 @@ public:
 protected:
     void ParameterChangeHandler(wxCommandEvent& event);
     void OnReadAll(wxCommandEvent& event);
-    LMScomms* mSerPort;
+    lime::IConnection* mSerPort;
+    int m_rficSpiAddr;
 
 };
 

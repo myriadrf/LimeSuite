@@ -6,7 +6,7 @@
 
 #include "ADF4002.h"
 #include "ADF4002_wxgui.h"
-#include "lmsComms.h"
+#include "IConnection.h"
 
 #include <wx/msgdlg.h>
 #include <wx/sizer.h>
@@ -18,6 +18,9 @@
 #include <wx/button.h>
 #include <wx/string.h>
 #include <wx/combobox.h>
+
+using namespace std;
+using namespace lime;
 
 const long ADF4002_wxgui::ID_STATICTEXT1 = wxNewId();
 const long ADF4002_wxgui::ID_STATICTEXT2 = wxNewId();
@@ -414,11 +417,14 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     //*)
 }
 
-void ADF4002_wxgui::Initialize(ADF4002* pModule, LMScomms* pSerPort)
+void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
 {
-    assert(pSerPort != nullptr);
     m_pModule = pModule;
     serPort = pSerPort;
+    if (serPort != nullptr)
+    {
+        m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+    }
 }
 
 ADF4002_wxgui::~ADF4002_wxgui()
@@ -519,16 +525,15 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
     unsigned char data[12];
     m_pModule->GetConfig(data);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.outBuffer.resize(12, 0);
-    memcpy(&pkt.outBuffer[0], data, 12);    
-    LMScomms::TransferStatus status;
-    status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
+    vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    OperationStatus status;
+// ADF4002 needs to be writen 4 values of 24 bits
+    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
-    }
 }
 
 void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
@@ -583,14 +588,13 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
     unsigned char data[12];
     m_pModule->GetConfig(data);
 
-    LMScomms::GenericPacket pkt;
-    pkt.cmd = CMD_ADF4002_WR;
-    pkt.outBuffer.resize(12, 0);
-    memcpy(&pkt.outBuffer[0], data, 12);    
-    LMScomms::TransferStatus status;
-    status = serPort->TransferPacket(pkt);
-    if (status != LMScomms::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
+    vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    OperationStatus status;
+// ADF4002 needs to be writen 4 values of 24 bits
+    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    if (status != OperationStatus::SUCCESS)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
-    }
 }

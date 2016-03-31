@@ -11,6 +11,7 @@
 #include <string>
 
 //---------------------------------------------------------------------------
+namespace lime{
 
 enum eSi_CLOCK_INPUT
 {
@@ -43,7 +44,7 @@ struct Si5351_PLL
     int CLK_SRC; //0-XTAL, 1-CLKIN
 };
 
-class LMScomms;
+class IConnection;
 class Si5351C
 {
 public:
@@ -74,7 +75,7 @@ public:
 
 	Si5351C();
 	~Si5351C();
-	void Initialize(LMScomms *mng);
+	void Initialize(IConnection *mng);
 	bool LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
@@ -83,10 +84,11 @@ public:
     Status UploadConfiguration();
     Status ConfigureClocks();
 	void Reset();
-    
+
 private:
     void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
-    LMScomms *device;
+    IConnection *device;
+    int addrSi5351;
 
     Si5351_PLL PLL[2];
     Si5351_Channel CLK[8];
@@ -97,4 +99,5 @@ private:
 
 };
 
+}
 #endif // SI5351C_MODULE
