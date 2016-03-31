@@ -9,7 +9,8 @@
 #include <cstdio>
 
 #ifdef _MSC_VER
-//#define thread_local __declspec( thread )
+    #define thread_local __declspec( thread )
+    #include <Windows.h>
 #endif
 
 #define MAX_MSG_LEN 1024
@@ -18,7 +19,7 @@ thread_local char _reportedErrorMessage[MAX_MSG_LEN];
 
 static const char *errToStr(const int errnum)
 {
-    thread_local char buff[MAX_MSG_LEN];
+    thread_local static char buff[MAX_MSG_LEN];
     #ifdef _MSC_VER
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errnum, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&buff, sizeof(buff), NULL);
     return buff;
