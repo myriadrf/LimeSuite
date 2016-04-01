@@ -314,7 +314,7 @@ void pnlBoardControls::UpdatePanel()
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == GetDeviceName(LMS_DEV_SODERA))
+    if (boardID == GetDeviceName(LMS_DEV_LIMESDR))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
@@ -338,7 +338,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std::string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == GetDeviceName(LMS_DEV_SODERA))
+    if (boardID == GetDeviceName(LMS_DEV_LIMESDR))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";

@@ -53,9 +53,9 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 #endif
     this->Open(index, vid, pid);
 
-    //must configure synthesizer before using SoDeRa
+    //must configure synthesizer before using LimeSDR
     DeviceInfo info = this->GetDeviceInfo();
-    if (info.deviceName == GetDeviceName(LMS_DEV_SODERA))
+    if (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
     {
         std::shared_ptr<Si5351C> si5351module(new Si5351C());
         si5351module->Initialize(this);

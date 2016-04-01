@@ -313,7 +313,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         lblCLK7->SetLabel(_("CLK7 - CLK_FPGA1"));
         rgrClkSrc->SetSelection(1);
     }
-    else if (board == GetDeviceName(LMS_DEV_SODERA))
+    else if (board == GetDeviceName(LMS_DEV_LIMESDR))
     {
         lblCLK0->SetLabel(_("CLK0"));
         lblCLK1->SetLabel(_("CLK1"));

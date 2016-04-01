@@ -23,8 +23,10 @@ enum eLMS_DEV
 	LMS_DEV_RFSPARK,
 	LMS_DEV_LMS6002USB,
 	LMS_DEV_RFESPARK,
-	LMS_DEV_SODERA,
-	
+    LMS_DEV_LIMESDR,
+    LMS_DEV_LIMESDR_PCIE,
+    LMS_DEV_QSPARK,
+
 	LMS_DEV_COUNT
 };
 
@@ -44,7 +46,9 @@ const char LMS_DEV_NAMES[][80] =
 	"RF-Spark",
 	"LMS6002-USB Stick",
 	"RF-ESpark",
-	"SoDeRa",
+    "LimeSDR",
+    "LimeSDR PCI-E",
+    "QSpark",
 };
 
 static const char* GetDeviceName(const eLMS_DEV device)
@@ -66,6 +70,7 @@ enum eEXP_BOARD
 	EXP_BOARD_HPM1000,
 	EXP_BOARD_MYRIAD7,
 	EXP_BOARD_HPM7,
+    EXP_BOARD_MYRIAD7_NOVENA,
 	
 	EXP_BOARD_COUNT
 };
@@ -80,7 +85,8 @@ const char EXP_BOARD_NAMES[][80] =
 	"Novena",
 	"HPM1000",
 	"Myriad7",
-	"HMP7"
+    "HMP7",
+    "Myriad7 Novena",
 };
 
 static const char* GetExpansionBoardName(const eEXP_BOARD board)
