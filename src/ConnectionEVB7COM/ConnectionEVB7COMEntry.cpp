@@ -34,7 +34,7 @@ std::vector<ConnectionHandle> ConnectionEVB7COMEntry::enumerate(const Connection
     {
         ConnectionHandle handle;
         handle.media = "COM";
-        handle.name = "EVB7";
+        handle.name = "EVB7 ("+comName+")";
         handle.addr = comName;
         result.push_back(handle);
     }
