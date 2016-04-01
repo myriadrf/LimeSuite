@@ -31,6 +31,8 @@ def siggen_app(
     sdr = SoapySDR.Device(args)
     #set clock rate first
     if clockRate is not None: sdr.setMasterClockRate(clockRate)
+
+    sdr.setFrequency(SOAPY_SDR_RX, txChan, freq)
     #set sample rate
     sdr.setSampleRate(SOAPY_SDR_TX, txChan, rate)
     sdr.setBandwidth(SOAPY_SDR_TX, txChan, 10e6)

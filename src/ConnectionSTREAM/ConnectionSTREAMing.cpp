@@ -525,6 +525,8 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
     return -1;
 }
 
+/** @warning LMS7002 Rx/Tx PLL must be locked to configure FPGA PLL
+*/
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
     std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;

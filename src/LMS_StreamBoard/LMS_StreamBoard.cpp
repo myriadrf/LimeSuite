@@ -15,6 +15,8 @@ using namespace lime;
     @param phaseShiftTx_deg Tx IQ phase shift in degrees
     @param phaseShiftRx_deg Rx IQ phase shift in degrees
     @return 0-success, other-failure
+
+    @warning LMS7002 Rx/Tx PLL must be locked to configure FPGA PLL
 */
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
