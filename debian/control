@@ -1,0 +1,52 @@
+Source: limesuite
+Section: comm
+Priority: optional
+Maintainer: Lime Microsystems <info@limemicro.com>
+Build-Depends:
+    debhelper (>= 9.0.0),
+    cmake (>= 3.1.3),
+    libusb-1.0-0-dev,
+    libwxbase3.0-dev,
+    libsoapysdr-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/limemicro/lms7suite/wiki
+Vcs-Git: https://github.com/limemicro/lms7suite.git
+Vcs-Browser: https://github.com/limemicro/lms7suite
+
+Package: liblimesuite0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Pre-Depends: multiarch-support, ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lime Suite - shared library
+ Lime Suite application software.
+
+Package: liblimesuite-dev
+Section: libdevel
+Architecture: any
+Depends:
+    liblimesuite0 (= ${binary:Version}),
+    ${misc:Depends}
+Description: Lime Suite - development files
+ Lime Suite application software.
+
+Package: lms7suite
+Section: comm
+Architecture: any
+Depends:
+    liblimesuite0 (= ${binary:Version}),
+    ${shlibs:Depends},
+    ${misc:Depends}
+Description: Lime Suite - GUI application
+ Lime Suite application software.
+
+Package: soapysdr-lms7
+Section: comm
+Architecture: any
+Depends:
+    liblimesuite0 (= ${binary:Version}),
+    ${shlibs:Depends},
+    ${misc:Depends}
+Description: Lime Suite - SoapySDR bindings
+ Lime Suite application software.
