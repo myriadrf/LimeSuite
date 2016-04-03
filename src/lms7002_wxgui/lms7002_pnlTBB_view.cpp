@@ -107,8 +107,7 @@ void lms7002_pnlTBB_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     //check if B channel is enabled
-    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC);
-    if (channel > 1)
+    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
     {
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));

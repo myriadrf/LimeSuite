@@ -404,8 +404,7 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
     //check if B channel is enabled
-    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC, fromChip);
-    if (channel > 1)
+    if (lmsControl->GetActiveChannel(fromChip) >= LMS7002M::ChB)
     {
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));

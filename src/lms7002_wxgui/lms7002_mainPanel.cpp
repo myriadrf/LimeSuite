@@ -149,20 +149,20 @@ void lms7002_mainPanel::UpdateGUI()
     t1 = wxGetUTCTimeMillis();
     lmsControl->IsSynced();
     t2 = wxGetUTCTimeMillis();
-    int channel = lmsControl->Get_SPI_Reg_bits(MAC);
-    if (channel == 1)
+    LMS7002M::Channel channel = lmsControl->GetActiveChannel();
+    if (channel == LMS7002M::ChA)
     {
         rbChannelA->SetValue(true);
         rbChannelB->SetValue(false);
     }
-    else if (channel == 2)
+    else if (channel == LMS7002M::ChB)
     {
         rbChannelA->SetValue(false);
         rbChannelB->SetValue(true);
     }
     else
     {
-        lmsControl->Modify_SPI_Reg_bits(MAC, 1);
+        lmsControl->SetActiveChannel(LMS7002M::ChA);
         rbChannelA->SetValue(true);
         rbChannelB->SetValue(false);
     }
@@ -177,7 +177,7 @@ void lms7002_mainPanel::OnNewProject( wxCommandEvent& event )
 {
     lmsControl->ResetChip();
     lmsControl->DownloadAll();
-    lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
+    lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
     UpdateGUI();
 }
 
@@ -193,7 +193,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
             wxMessageBox(wxString::Format(_("Failed to load file: %s"), liblms7_status2string(status)), _("Warning"));
     }
     wxCommandEvent tevt;
-    lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
+    lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
     UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
@@ -221,13 +221,13 @@ void lms7002_mainPanel::OnRegistersTest( wxCommandEvent& event )
 
 void lms7002_mainPanel::OnSwitchToChannelA(wxCommandEvent& event)
 {
-    lmsControl->Modify_SPI_Reg_bits(MAC, 1);
+    lmsControl->SetActiveChannel(LMS7002M::ChA);
     UpdateVisiblePanel();
 }
 
 void lms7002_mainPanel::OnSwitchToChannelB(wxCommandEvent& event)
 {
-    lmsControl->Modify_SPI_Reg_bits(MAC, 2);
+    lmsControl->SetActiveChannel(LMS7002M::ChB);
     UpdateVisiblePanel();
 }
 
@@ -241,19 +241,19 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else if (page == mTabSXR) //change active channel to A
     {
-        lmsControl->Modify_SPI_Reg_bits(MAC, 1);
+        lmsControl->SetActiveChannel(LMS7002M::ChA);
         rbChannelA->Disable();
         rbChannelB->Disable();
     }
     else if (page == mTabSXT) //change active channel to B
     {
-        lmsControl->Modify_SPI_Reg_bits(MAC, 2);
+        lmsControl->SetActiveChannel(LMS7002M::ChB);
         rbChannelA->Disable();
         rbChannelB->Disable();
     }
     else
     {
-        lmsControl->Modify_SPI_Reg_bits(MAC, rbChannelA->GetValue() == 1 ? 1 : 2);
+        lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
         rbChannelA->Enable();
         rbChannelB->Enable();
     }

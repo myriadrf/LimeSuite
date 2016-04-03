@@ -443,8 +443,9 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter reference clock, MHz"), _("Reference clock"));
     double refClkMHz;    
     dlg->SetTextValidator(wxFILTER_NUMERIC);
-    const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
-    dlg->SetValue(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx)));
+    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
+    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
+    dlg->SetValue(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(isTx)));
     if (dlg->ShowModal() == wxID_OK)
     {
         dlg->GetValue().ToDouble(&refClkMHz);
@@ -452,8 +453,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
         {
             double currentFreq;
             txtFrequency->GetValue().ToDouble(&currentFreq);
-            lmsControl->SetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, refClkMHz);
-            liblms7_status status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, currentFreq);
+            lmsControl->SetReferenceClk_SX(isTx, refClkMHz);
+            liblms7_status status = lmsControl->SetFrequencySX(isTx, currentFreq);
             if (status != LIBLMS7_SUCCESS)
                 wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
             UpdateGUI();
@@ -471,21 +472,22 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     assert(lmsControl != nullptr);
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
+    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
+    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
-    lmsControl->SetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, RefClkMHz);
-    liblms7_status status;    
-    status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, freqMHz);
+    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz);
+    liblms7_status status;
+    status = lmsControl->SetFrequencySX(isTx, freqMHz);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
     else
     {
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
-        unsigned char channel = lmsControl->Get_SPI_Reg_bits(MAC, false);
+        const auto channel = lmsControl->GetActiveChannel(false);
         wxString msg;
-        if (channel == 1)
+        if (channel == LMS7002M::ChSXR)
             msg = _("SXR");
         else
             msg = _("SXT");
@@ -499,8 +501,8 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
 void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
-    const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
-    liblms7_status status = lmsControl->TuneVCO(ch == 2 ? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
+    liblms7_status status = lmsControl->TuneVCO((ch == LMS7002M::ChSXT)? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tune: %s"), wxString::From8BitData(liblms7_status2string(status))));
     UpdateGUI();
@@ -511,9 +513,10 @@ void lms7002_pnlSX_view::UpdateGUI()
     assert(lmsControl != nullptr);
 
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
-    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx)));    
-    double freq = lmsControl->GetFrequencySX_MHz(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx);
+    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
+    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(isTx)));
+    double freq = lmsControl->GetFrequencySX_MHz(isTx);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
     lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
@@ -522,8 +525,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
     //check if B channel is enabled
-    uint8_t channel = lmsControl->Get_SPI_Reg_bits(MAC, false);
-    if (channel > 1)
+    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
     {
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
         {
