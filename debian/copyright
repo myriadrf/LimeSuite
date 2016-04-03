@@ -1,0 +1,10 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: limesuite
+Source: https://github.com/limemicro/lms7suite/wiki
+
+Files: *
+Copyright: 2015-2016 Lime Microsystems <info@limemicro.com>
+License: Apache-2.0
+ On Debian systems, the full text of the Apache
+ License version 2.0 can be found in the file
+ `/usr/share/common-licenses/Apache-2.0'.

@@ -50,7 +50,7 @@ int lime::ReportError(const int errnum)
     return lime::ReportError(errnum, errToStr(errnum));
 }
 
-int ReportError(const int errnum, const char *format, va_list argList)
+int lime::ReportError(const int errnum, const char *format, va_list argList)
 {
     _reportedErrorCode = errnum;
     vsnprintf(_reportedErrorMessage, MAX_MSG_LEN, format, argList);
