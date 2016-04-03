@@ -547,10 +547,13 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     SetDefaults(RFE);
     Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 2);
 
+    //Share LO to CHB -- only in CHA register space
+    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     if (ch == 2)
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
     else
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 8);
     Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
@@ -572,12 +575,16 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     SetDefaults(TRF);
     Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0);
     Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1);
+    Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 0);
+    Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 1);
+
+    //Share LO to CHB -- only in CHA register space
+    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     if (ch == 2)
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
     else
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 0);
-    Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 0);
-    Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 1);
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TBB
     SetDefaults(TBB);
