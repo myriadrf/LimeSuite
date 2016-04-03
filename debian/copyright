@@ -3,5 +3,8 @@ Upstream-Name: limesuite
 Source: https://github.com/limemicro/lms7suite/wiki
 
 Files: *
-Copyright: Lime Microsystems <info@limemicro.com>
+Copyright: 2015-2016 Lime Microsystems <info@limemicro.com>
 License: Apache-2.0
+ On Debian systems, the full text of the Apache
+ License version 2.0 can be found in the file
+ `/usr/share/common-licenses/Apache-2.0'.
