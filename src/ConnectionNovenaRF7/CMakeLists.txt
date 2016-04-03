@@ -9,9 +9,10 @@ set(CONNECTION_NOVENARF7_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionNovenaRF7.cpp
 )
 
-include(CheckIncludeFiles)
-CHECK_INCLUDE_FILES(linux/spi/spidev.h HAS_SPIDEV_H)
-CHECK_INCLUDE_FILES(linux/i2c-dev.h HAS_I2CDEV_H)
+include(CheckIncludeFile)
+set(CMAKE_REQUIRED_DEFINITIONS -DNULL=0)
+CHECK_INCLUDE_FILE(linux/spi/spidev.h HAS_SPIDEV_H)
+CHECK_INCLUDE_FILE(linux/i2c-dev.h HAS_I2CDEV_H)
 
 ########################################################################
 ## Feature registration
