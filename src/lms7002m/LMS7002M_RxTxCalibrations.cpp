@@ -166,7 +166,7 @@ bool sign(const int number)
 liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 {
 	//Stage 2
-	uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+	Channel ch = this->GetActiveChannel();
 	uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
 	uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
 
@@ -235,7 +235,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
         return LIBLMS7_FAILURE;
 
     //SXR
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    this->SetActiveChannel(ChA);
     SetDefaults(SX);
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
     {
@@ -248,9 +248,9 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     }
 
     //SXT
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    this->SetActiveChannel(ChB);
     Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
 
     //TXTSP
     SetDefaults(TxTSP);
@@ -281,13 +281,13 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 
 	Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
 
-	if (ch == 2)
+	if (ch == ChB)
 	{
-		Modify_SPI_Reg_bits(MAC, 1);
+		this->SetActiveChannel(ChA);
 		Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
 		Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1); // EN_NEXTTX_RFE 1
 		Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); //EN_NEXTTX_TRF 1
-		Modify_SPI_Reg_bits(MAC, ch);
+		this->SetActiveChannel(ch);
 	}
 
     return LIBLMS7_SUCCESS;
@@ -340,7 +340,7 @@ uint32_t LMS7002M::GetRSSI()
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    Channel ch = this->GetActiveChannel();
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
     uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
 
@@ -494,7 +494,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 
 TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
     RestoreAllRegisters();
     if (status != LIBLMS7_SUCCESS)
     {
@@ -506,7 +506,7 @@ TxCalibrationEnd:
         valueCache.InsertDC_IQ(boardId, txFreq*1e6, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
 
 
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
     Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
     Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dccorrq);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
@@ -593,7 +593,7 @@ finished:
 */
 liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD)
 {
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    Channel ch = this->GetActiveChannel();
 
     //rfe
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
@@ -662,17 +662,17 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
     if (TDD == false) //in TDD do nothing
     {
         //SXR
-        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        this->SetActiveChannel(ChA);
         float_type SXRfreqMHz = GetFrequencySX_MHz(Rx);
 
         //SXT
-        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        this->SetActiveChannel(ChB);
         SetDefaults(SX);
         Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
         status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider);
         if (status != LIBLMS7_SUCCESS)
             return status;
-        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+        this->SetActiveChannel(ch);
     }
 
     //TXTSP
@@ -705,13 +705,13 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
     SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
 
     //modifications when calibrating channel B
-    if (ch == 2)
+    if (ch == ChB)
     {
-		Modify_SPI_Reg_bits(MAC, 1);
+		this->SetActiveChannel(ChA);
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
         Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
-		Modify_SPI_Reg_bits(MAC, ch);
+		this->SetActiveChannel(ch);
     }
     return LIBLMS7_SUCCESS;
 }
@@ -721,7 +721,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 {
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    Channel ch = this->GetActiveChannel();
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
@@ -830,17 +830,17 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
     if (TDD == true)
     {
         //SXR
-        Modify_SPI_Reg_bits(MAC, 1);
+        this->SetActiveChannel(ChA);
         SetDefaults(SX);
         const float SXTfreq_MHz = GetFrequencySX_MHz(Tx);
         liblms7_status status = SetFrequencySX(Rx, SXTfreq_MHz);
 
         //SXT
-        Modify_SPI_Reg_bits(MAC, 2);
+        this->SetActiveChannel(ChB);
         Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
 
         status = SetFrequencySX(Tx, SXTfreq_MHz + bandwidth_MHz / calibUserBwDivider);
-        Modify_SPI_Reg_bits(MAC, ch);
+        this->SetActiveChannel(ch);
     }
     CheckSaturation();
 
@@ -948,7 +948,7 @@ RxCalibrationEndStage:
         valueCache.InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, mingcorri, mingcorrq, phaseOffset);
 
 
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), mingcorri);
@@ -964,9 +964,9 @@ RxCalibrationEndStage:
 */
 void LMS7002M::BackupAllRegisters()
 {
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    Channel ch = this->GetActiveChannel();
     SPI_read_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
+    this->SetActiveChannel(ChA); // channel A
     SPI_read_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
     //backup GFIR3 coefficients
     GetGFIRCoefficients(LMS7002M::Rx, 2, rxGFIR3_backup, 105);
@@ -974,26 +974,26 @@ void LMS7002M::BackupAllRegisters()
     backup0x010D = SPI_read(0x010D);
     //EN_NEXTTX_TRF could be modified in channel A
     backup0x0100 = SPI_read(0x0100);
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
+    this->SetActiveChannel(ChB); // channel B
     SPI_read_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
 }
 
 /** @brief Sets chip registers to state that was stored in memory using BackupAllRegisters()
 */
 void LMS7002M::RestoreAllRegisters()
 {
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
+    Channel ch = this->GetActiveChannel();
     SPI_write_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
     //restore GFIR3
     SetGFIRCoefficients(LMS7002M::Rx, 2, rxGFIR3_backup, 105);
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1); // channel A
+    this->SetActiveChannel(ChA); // channel A
     SPI_write(0x010D, backup0x010D); //restore EN_NEXTRX_RFE
     SPI_write(0x0100, backup0x0100); //restore EN_NEXTTX_TRF
     SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2); // channel B
+    this->SetActiveChannel(ChB); // channel B
     SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this->SetActiveChannel(ch);
     //reset Tx logic registers, fixes interpolator
     uint16_t x0020val = SPI_read(0x0020);
     SPI_write(0x0020, x0020val & ~0xA000);

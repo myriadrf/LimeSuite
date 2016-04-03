@@ -54,6 +54,8 @@ public:
         ChA = 1,
         ChB = 2,
         ChAB = 3,
+        ChSXR = 1, //SXR register space
+        ChSXT = 2, //SXT register space
     };
 
     /*!
@@ -73,7 +75,7 @@ public:
      * and by the currently selected RF channel A/B (MAC).
      * Example when devIndex == 0, return 0 for chA, 1 for chB.
      */
-    size_t GetActiveChannelIndex(void);
+    size_t GetActiveChannelIndex(bool fromChip = true);
 
     ///@name Registers writing and reading
     liblms7_status UploadAll();
