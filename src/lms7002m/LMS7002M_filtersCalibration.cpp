@@ -615,7 +615,7 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     SetDefaults(SX);
-    status = SetFrequencySX(Rx, 499.95, mRefClkSXR_MHz);
+    status = SetFrequencySX(Rx, 499.95);
     if (status != LIBLMS7_SUCCESS)
         return status;
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
@@ -623,7 +623,7 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     //SXT
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     SetDefaults(SX);
-    status = SetFrequencySX(Tx, 500, mRefClkSXT_MHz);
+    status = SetFrequencySX(Tx, 500);
     if (status != LIBLMS7_SUCCESS)
         return status;
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
@@ -645,8 +645,8 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 7);
     Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
 
-    float_type sxtfreq = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
-    float_type sxrfreq = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
+    float_type sxtfreq = GetFrequencySX_MHz(Tx);
+    float_type sxrfreq = GetFrequencySX_MHz(Rx);
     SetNCOFrequency(Rx, 0, sxtfreq - sxrfreq - 1);
     return LIBLMS7_SUCCESS;
 }
@@ -707,10 +707,10 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707 );
-    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - TIA_freq_MHz, mRefClkSXR_MHz);
+    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - TIA_freq_MHz);
     if (status != LIBLMS7_SUCCESS)
         return status;
-    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - GetFrequencySX_MHz(Rx, mRefClkSXR_MHz) - 1);
+    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
     while (cfb_tia_rfe_value >= 0 && cfb_tia_rfe_value < 4096)
@@ -780,10 +780,10 @@ liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707 );
-    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - RxLPFL_freq_MHz, mRefClkSXR_MHz);
+    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - RxLPFL_freq_MHz);
     if (status != LIBLMS7_SUCCESS)
         return status;
-    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - GetFrequencySX_MHz(Rx, mRefClkSXR_MHz) - 1);
+    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
     while (c_ctl_lpfl_rbb >= 0 && c_ctl_lpfl_rbb < 2048)
@@ -850,10 +850,10 @@ liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707);
-    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - RxLPFH_freq_MHz, mRefClkSXR_MHz);
+    status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - RxLPFH_freq_MHz);
     if (status != LIBLMS7_SUCCESS)
         return status;
-    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx, mRefClkSXT_MHz) - GetFrequencySX_MHz(Rx, mRefClkSXR_MHz) - 1);
+    SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
     while (c_ctl_lpfh_rbb >= 0 && c_ctl_lpfh_rbb < 256)

@@ -207,11 +207,12 @@ public:
     ///@}
 
     ///@name CGEN and PLL
+	void SetReferenceClk_SX(bool tx, float_type freq_MHz);
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN_MHz();
 	liblms7_status SetFrequencyCGEN(float_type freq_MHz, const bool retainNCOfrequencies = false);
-	float_type GetFrequencySX_MHz(bool tx, float_type refClk_MHz);
-	liblms7_status SetFrequencySX(bool tx, float_type freq_MHz, float_type refClk_MHz);
+	float_type GetFrequencySX_MHz(bool tx);
+	liblms7_status SetFrequencySX(bool tx, float_type freq_MHz);
     ///VCO modules available for tuning
     enum VCO_Module
     {
@@ -223,7 +224,7 @@ public:
     ///@name TSP
 	liblms7_status LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
 	liblms7_status SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz);
-	float_type GetNCOFrequency_MHz(bool tx, uint8_t index, float_type refClk_MHz, bool fromChip = true);
+	float_type GetNCOFrequency_MHz(bool tx, uint8_t index, bool fromChip = true);
     liblms7_status SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
 	liblms7_status SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
 	float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
@@ -334,10 +335,6 @@ protected:
     liblms7_status SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
     liblms7_status Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
     ///@}
-    ///Reference clock used for Receiver frequency calculations
-    float_type mRefClkSXR_MHz;
-    ///Reference clock used for Transmitter frequency calculations
-    float_type mRefClkSXT_MHz;
 
     enum LogType
     {

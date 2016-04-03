@@ -239,9 +239,9 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     SetDefaults(SX);
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
     {
-        float_type SXTfreqMHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
+        float_type SXTfreqMHz = GetFrequencySX_MHz(Tx);
         float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / calibUserBwDivider - 1;
-        if (SetFrequencySX(Rx, SXRfreqMHz, mRefClkSXR_MHz) != LIBLMS7_SUCCESS)
+        if (SetFrequencySX(Rx, SXRfreqMHz) != LIBLMS7_SUCCESS)
             return LIBLMS7_FAILURE;
         if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
             return LIBLMS7_FAILURE;
@@ -345,7 +345,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
 
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-    double txFreq = GetFrequencySX_MHz(true, GetReferenceClk_SX(true));
+    double txFreq = GetFrequencySX_MHz(Tx);
     uint8_t channel = ch==1 ? 0 : 1;
     bool foundInCache = false;
     int band = sel_band1_trf ? 0 : 1;
@@ -663,13 +663,13 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
     {
         //SXR
         Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-        float_type SXRfreqMHz = GetFrequencySX_MHz(Rx, mRefClkSXR_MHz);
+        float_type SXRfreqMHz = GetFrequencySX_MHz(Rx);
 
         //SXT
         Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         SetDefaults(SX);
         Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
-        status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
+        status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider);
         if (status != LIBLMS7_SUCCESS)
             return status;
         Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -739,7 +739,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
     uint16_t mingcorrq;
     int16_t phaseOffset;
 
-    double rxFreq = GetFrequencySX_MHz(false, GetReferenceClk_SX(false));
+    double rxFreq = GetFrequencySX_MHz(Rx);
     bool foundInCache = false;
     if(useCache)
     {
@@ -832,14 +832,14 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
         //SXR
         Modify_SPI_Reg_bits(MAC, 1);
         SetDefaults(SX);
-        const float SXTfreq_MHz = GetFrequencySX_MHz(Tx, mRefClkSXT_MHz);
-        liblms7_status status = SetFrequencySX(Rx, SXTfreq_MHz, mRefClkSXR_MHz);
+        const float SXTfreq_MHz = GetFrequencySX_MHz(Tx);
+        liblms7_status status = SetFrequencySX(Rx, SXTfreq_MHz);
 
         //SXT
         Modify_SPI_Reg_bits(MAC, 2);
         Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
 
-        status = SetFrequencySX(Tx, SXTfreq_MHz + bandwidth_MHz / calibUserBwDivider, mRefClkSXT_MHz);
+        status = SetFrequencySX(Tx, SXTfreq_MHz + bandwidth_MHz / calibUserBwDivider);
         Modify_SPI_Reg_bits(MAC, ch);
     }
     CheckSaturation();
@@ -847,8 +847,8 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     {
-        const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx, mRefClkSXR_MHz);
-        const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx, mRefClkSXT_MHz);
+        const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx);
+        const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx);
         SetNCOFrequency(LMS7002M::Rx, 0, TxFreq - RxFreq + 0.1);
     }
 
@@ -1004,8 +1004,8 @@ liblms7_status LMS7002M::CheckSaturation()
 {
 	Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
 	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
-	const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx, mRefClkSXR_MHz);
-	const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx, mRefClkSXT_MHz);
+	const float_type RxFreq = GetFrequencySX_MHz(LMS7002M::Rx);
+	const float_type TxFreq = GetFrequencySX_MHz(LMS7002M::Tx);
 	SetNCOFrequency(LMS7002M::Rx, 0, TxFreq - RxFreq - 0.1);
 
 	uint32_t rssi = GetRSSI();

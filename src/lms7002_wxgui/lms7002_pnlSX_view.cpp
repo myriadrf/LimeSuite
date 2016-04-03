@@ -452,7 +452,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
         {
             double currentFreq;
             txtFrequency->GetValue().ToDouble(&currentFreq);
-            liblms7_status status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, currentFreq, refClkMHz);
+            lmsControl->SetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, refClkMHz);
+            liblms7_status status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, currentFreq);
             if (status != LIBLMS7_SUCCESS)
                 wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
             UpdateGUI();
@@ -473,8 +474,9 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
+    lmsControl->SetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, RefClkMHz);
     liblms7_status status;    
-    status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, freqMHz, RefClkMHz);
+    status = lmsControl->SetFrequencySX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, freqMHz);
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(liblms7_status2string(status))));
     else
@@ -511,8 +513,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     const int ch = lmsControl->Get_SPI_Reg_bits(MAC);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx)));    
-    double refClk = lmsControl->GetReferenceClk_SX(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx);
-    double freq = lmsControl->GetFrequencySX_MHz(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx, refClk);
+    double freq = lmsControl->GetFrequencySX_MHz(ch == 2 ? LMS7002M::Tx : LMS7002M::Rx);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
     lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
