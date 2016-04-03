@@ -1,5 +1,5 @@
 /**
-@file	Streaming.h
+@file	Streaming.cpp
 @brief	Soapy SDR + IConnection streaming interfaces.
 @author Lime Microsystems (www.limemicro.com)
 */

@@ -1,5 +1,5 @@
 /**
-@file	Registration.h
+@file	Registration.cpp
 @brief	Soapy SDR + IConnection module registration.
 @author Lime Microsystems (www.limemicro.com)
 */

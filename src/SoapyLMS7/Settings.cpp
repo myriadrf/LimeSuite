@@ -1,5 +1,5 @@
 /**
-@file	Settings.h
+@file	Settings.cpp
 @brief	Soapy SDR + IConnection config settings.
 @author Lime Microsystems (www.limemicro.com)
 */
@@ -118,6 +118,10 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
+        this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
+        this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
+        this->setSampleRate(SOAPY_SDR_RX, channel, defaultClockRate/8);
+        this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
     }
 
     //enable use of calibration value cache
@@ -126,7 +130,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         printf("Search cache parameter\n");
         bool enable = std::stoi(args.at("cacheCalibrations")) != 0;
         SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
-        for(int i=0; i<_rfics.size(); ++i)
+        for (size_t i=0; i<_rfics.size(); ++i)
             _rfics[i]->EnableValuesCache(enable);
     }
 
@@ -143,6 +147,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     //start background cal thread
     _bgCalActive = true;
     _bgCalThread = new std::thread(&SoapyLMS7::_bgCalTask, this);
+
+    //this->_handleCalActions(); //force complete
 }
 
 SoapyLMS7::~SoapyLMS7(void)
@@ -628,9 +634,9 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
     const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
     const double factor = dspRate/rate;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %f MHz), baseRate %f MHz, factor %f", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
-    if (factor < 2.0) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too high");
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %f MHz), baseRate %f MHz, factor %f", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
+    if (intFactor < 2) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too high");
     if (intFactor > 32) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too low");
 
     if (std::abs(factor-intFactor) > 0.01) SoapySDR::logf(SOAPY_SDR_WARNING,
@@ -823,8 +829,8 @@ void SoapyLMS7::_handleCalAction(const int direction, const size_t channel, cons
 
     if (direction == SOAPY_SDR_RX && action == "TUNEFILTER")
     {
-        const bool hb = bw >= 37.0e6;
-        const bool bypass = bw > 108.0e6;
+        const bool hb = bw >= 20.0e6;
+        const bool bypass = bw > 60.0e6;
         auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
         //run the calibration for this bandwidth setting

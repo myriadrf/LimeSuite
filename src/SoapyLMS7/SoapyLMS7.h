@@ -13,7 +13,7 @@
 #include <map>
 #include <set>
 
-static const double DEFAULT_CLOCK_RATE = 32e6;
+static const double DEFAULT_CLOCK_RATE = 80e6;
 
 namespace lime
 {
