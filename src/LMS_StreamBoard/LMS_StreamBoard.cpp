@@ -8,21 +8,11 @@
 using namespace std;
 using namespace lime;
 
-/** @brief Configures Stream board FPGA clocks
-    @param serPort Communications port to send data
-    @param fOutTx_MHz transmitter frequency in MHz
-    @param fOutRx_MHz receiver frequency in MHz
-    @param phaseShiftTx_deg Tx IQ phase shift in degrees
-    @param phaseShiftRx_deg Rx IQ phase shift in degrees
-    @return 0-success, other-failure
-
-    @warning LMS7002 Rx/Tx PLL must be locked to configure FPGA PLL
-*/
 LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
 {
     //switch between case for GSM sampling rate 541666 Hz and normal PLL
     const uint16_t direct_clocking_addr = 0x0016;
-    const uint16_t phase_reg_select = 0x15;
+    uint16_t phase_reg_select = 0x15;
     const uint16_t directClockingEnable = 0x0100;
     uint16_t regVal;
     if(serPort->ReadRegister(direct_clocking_addr, regVal) == OperationStatus::FAILED)
@@ -30,6 +20,20 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
     regVal &= ~0x1FF;
     if(fOutRx_MHz < 5 && fOutTx_MHz < 5)
     {
+        float inputClock_Hz = 541e3;
+        inputClock_Hz = fOutTx_MHz*1e6;
+        const float oversampleClock_Hz = 100e6;
+        const int registerChainSize = 128;
+        const float phaseShift_deg = 90;
+        const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
+        const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
+        phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
+        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
+              
+        printf("reg value : %i\n", phase_reg_select);
+        printf("input clock: %f\n", inputClock_Hz);
+        printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
+
         regVal |= phase_reg_select|directClockingEnable;
         if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
             return FAILURE;

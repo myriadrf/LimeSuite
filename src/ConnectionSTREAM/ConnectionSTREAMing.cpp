@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionSTREAM.h"
-#include "LMS_StreamBoard.h"
 #include "StreamerLTE.h"
 #include "fifo.h" //from StreamerLTE
 #include <LMS7002M.h>
@@ -525,13 +524,14 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
     return -1;
 }
 
-/** @warning LMS7002 Rx/Tx PLL must be locked to configure FPGA PLL
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
+void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
-    std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
-    LMS_StreamBoard::ConfigurePLL(this, 2*txRate/1e6, 2*rxRate/1e6, 90, 90);
-    if (mStreamService) mStreamService->mHwCounterRate = rxRate;
+    std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz << "Hz, rx=" << rxRate_Hz << "Hz)" << std::endl;
+    ConfigureFPGA_PLL(true, 2 * txRate_Hz, 90);
+    ConfigureFPGA_PLL(false, 2 * rxRate_Hz, 90);
+    if(mStreamService) mStreamService->mHwCounterRate = rxRate_Hz;
 }
 
 void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)
