@@ -764,6 +764,8 @@ void LMS7002M::UpdateExternalBandSelect(void)
 
 void LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_MHz)
 {
+    if(controlPort == nullptr)
+        return; //TODO return error
     if (tx) controlPort->SetTxReferenceClockRate(freq_MHz*1e6);
     else controlPort->SetReferenceClockRate(freq_MHz*1e6);
 }
@@ -773,7 +775,9 @@ void LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_MHz)
 */
 float_type LMS7002M::GetReferenceClk_SX(bool tx)
 {
-	return (tx ? controlPort->GetTxReferenceClockRate() : controlPort->GetReferenceClockRate())/1e6;
+    if(controlPort == nullptr)
+        return 30.72; //return default reference clock
+    return (tx ? controlPort->GetTxReferenceClockRate() : controlPort->GetReferenceClockRate())/1e6;
 }
 
 /**	@return Current CLKGEN frequency in MHz
