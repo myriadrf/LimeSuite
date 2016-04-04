@@ -130,7 +130,6 @@ public:
 	void EnterSelfCalibration(const size_t channel);
 	void ExitSelfCalibration(const size_t channel);
 
-    std::string DeviceName();
 private:
 
     eConnectionType GetType(void)
@@ -187,6 +186,7 @@ public:
 
 private:
     #ifndef __unix__
+    std::string DeviceName(unsigned int index);
     CCyUSBDevice *USBDevicePrimary;
     #else
     libusb_context *ctx; //a libusb session

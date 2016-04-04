@@ -56,6 +56,33 @@ ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 #endif
 }
 
+#ifndef __unix__
+/** @return name of usb device as string.
+    @param index device index in list
+*/
+std::string ConnectionSTREAMEntry::DeviceName(unsigned int index)
+{
+    std::string name;
+    char tempName[USB_STRING_MAXLEN];
+    CCyUSBDevice device;
+    if (index >= device.DeviceCount())
+        return "";
+
+    for (int i = 0; i < USB_STRING_MAXLEN; ++i)
+            tempName[i] = device.DeviceName[i];
+    if (device.bSuperSpeed == true)
+        name = "USB 3.0";
+    else if (device.bHighSpeed == true)
+        name = "USB 2.0";
+    else
+        name = "USB";
+    name += " (";
+    name += tempName;
+    name += ")";
+    return name;
+}
+#endif
+
 std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionHandle &hint)
 {
     std::vector<ConnectionHandle> handles;
@@ -67,7 +94,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
         {
             ConnectionHandle handle;
             handle.media = "USB";
-            handle.name = ConnectionSTREAM(USBDevicePrimary, i).DeviceName();
+            handle.name = DeviceName(i);
             handle.index = i;
             handles.push_back(handle);
         }

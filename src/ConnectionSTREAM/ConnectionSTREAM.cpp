@@ -363,39 +363,6 @@ void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-/**	@return name of currently opened device as string.
-*/
-string ConnectionSTREAM::DeviceName()
-{
-#ifndef __unix__
-	string name;
-	char tempName[USB_STRING_MAXLEN];
-	//memcpy(tempName, USBDevicePrimary->FriendlyName, USB_STRING_MAXLEN);
-    //name = tempName;
-
-	for (int i = 0; i < USB_STRING_MAXLEN; ++i)
-		tempName[i] = USBDevicePrimary->DeviceName[i];
-    if (USBDevicePrimary->bSuperSpeed == true)
-        name = "USB 3.0";
-    else if (USBDevicePrimary->bHighSpeed == true)
-        name = "USB 2.0";
-    else
-        name = "USB";
-    name += " (";
-	name += tempName;
-	name += ")";
-    return name;
-#else
-    if(dev_handle != 0)
-    {
-        char data[255];
-        int st = libusb_get_string_descriptor_ascii(dev_handle, 2, (unsigned char*)data, 255);
-        return string(data);
-    }
-    return "no name";
-#endif
-}
-
 /**
 	@brief Starts asynchronous data reading from board
 	@param *buffer buffer where to store received data
