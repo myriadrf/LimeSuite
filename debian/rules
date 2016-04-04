@@ -17,4 +17,5 @@ export DH_OPTIONS
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		-DBUILD_SHARED_LIBS=ON \
+		-DUDEV_RULES_PATH=/lib/udev/rules.d \
 		-DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)"
