@@ -169,6 +169,15 @@ public:
     //! virtual read function to be implemented by the base class
     virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
 
+    enum ProgramWriteTarget
+    {
+        HPM,
+        FX3, //
+        FPGA, // prog_modes: 0-bitstream to FPGA, 1-to FLASH, 2-bitstream from FLASH
+
+        PROGRAM_WRITE_TARGET_COUNT
+    };
+
     virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
 
     virtual OperationStatus CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);

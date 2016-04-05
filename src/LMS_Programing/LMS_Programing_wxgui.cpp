@@ -71,6 +71,7 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer7->Add(StaticText3, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     cmbDevice = new wxChoice(this, ID_CHOICE2, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE2"));
     cmbDevice->Append(_T("HPM1000/HMP7"));
+    cmbDevice->Append(_T("FX3"));
     cmbDevice->SetSelection(cmbDevice->Append(_T("Altera FPGA")));
     FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     cmbProgMode = new wxChoice(this, ID_CHOICE1, wxDefaultPosition, wxSize(176, -1), 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE1"));
@@ -123,7 +124,7 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 {
     //if needed load program data from file
-    if( (cmbDevice->GetSelection() == 1 && cmbProgMode->GetSelection() == 2) == false)
+    if( (cmbDevice->GetSelection() == 2 && cmbProgMode->GetSelection() == 2) == false)
     {
         if (lblFilename->GetLabel().length() <= 1)
         {
@@ -162,22 +163,25 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 */
 void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
 {
-    if(cmbDevice->GetSelection() == 1)
-    {
-        cmbProgMode->Clear();
+    int deviceSelection = cmbDevice->GetSelection();
+    cmbProgMode->Clear();
+    if(deviceSelection == 2)
+    {   
         cmbProgMode->Append("Bitstream to FPGA");
         cmbProgMode->Append("Bitstream to Flash");
         cmbProgMode->Append("Bitstream from Flash");
         cmbProgMode->SetSelection(0);
     }
-    else
+    else if(deviceSelection == 1)
     {
-        cmbProgMode->Clear();
+        cmbProgMode->Append(_("Firmware to Flash"));
+        cmbProgMode->SetSelection(0);
+    }
+    else if(deviceSelection == 0)
+    {   
         cmbProgMode->Append(_("Flash"));
-
         for(int i=1; i<=8; ++i)
             cmbProgMode->Append(wxString::Format("%i", i));
-
         cmbProgMode->SetSelection(0);
     }
 }
@@ -218,6 +222,10 @@ void LMS_Programing_wxgui::DoProgramming()
 {
     mProgrammingInProgress.store(true);
     IConnection::ProgrammingCallback callback = bind(&LMS_Programing_wxgui::OnProgrammingCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    int device = cmbDevice->GetSelection();
+    int progMode = cmbProgMode->GetSelection();
+    if(device == 1) // for FX3 show only option to program firmware
+        progMode = 2;
     auto status = serPort->ProgramWrite(mProgramData.data(), mProgramData.size(), cmbProgMode->GetSelection(), cmbDevice->GetSelection(), callback);
     wxCommandEvent evt;
     evt.SetEventObject(this);

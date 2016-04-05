@@ -613,10 +613,23 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
     int portionNumber;
     int status = 0;
     eCMD_LMS cmd;
-    if(device == 0)
-        cmd = CMD_MYRIAD_PROG;
-    if(device == 1)
+    if(device != FPGA)
+        cmd = CMD_MEMORY_WR;
+    else if(device == FPGA)
         cmd = CMD_ALTERA_FPGA_GW_WR;
+    else
+    {
+        sprintf(progressMsg, "Programming failed! Target device not supported");
+        if(callback)
+            abortProgramming = callback(bytesSent, length, progressMsg);
+        return OperationStatus::UNSUPPORTED;
+    }
+
+    bool needsData = true;
+    if(device == FPGA && prog_mode == 2)
+        needsData = false;
+    if(device == FX3 && (prog_mode == 0 || prog_mode == 1))
+        needsData = false;
 
     unsigned char ctrbuf[64];
     unsigned char inbuf[64];
@@ -636,15 +649,34 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
         ctrbuf[offset+4] = portionNumber & 0xFF;
         unsigned char data_cnt = data_left > pktSize ? pktSize : data_left;
         ctrbuf[offset+5] = data_cnt;
+        if(cmd == CMD_MEMORY_WR)
+        {
+            ctrbuf[offset+6] = 0;
+            ctrbuf[offset+7] = 0;
+            ctrbuf[offset+8] = 0;
+            ctrbuf[offset+9] = 0;
+
+            ctrbuf[offset+10] = (device >> 8) & 0xFF;
+            ctrbuf[offset+11] = device & 0xFF;
+        }
         if(data_src != NULL)
         {
-            memcpy(&ctrbuf[offset+24], data_src, data_cnt);
-            data_src+=data_cnt;
+            memcpy(&ctrbuf[offset + 24], data_src, data_cnt);
+            data_src += data_cnt;
         }
 
-        Write(ctrbuf, 64);
-        Read(inbuf, 64);
-
+        if(Write(ctrbuf, sizeof(ctrbuf)) != sizeof(ctrbuf))
+        {
+            if(callback)
+                callback(bytesSent, length, "Programming failed! Write operation failed");
+            return FAILED;
+        }
+        if(Read(inbuf, sizeof(inbuf)) != sizeof(ctrbuf))
+        {
+            if(callback)
+                callback(bytesSent, length, "Programming failed! Read operation failed");
+            return FAILED;
+        }
         data_left -= data_cnt;
         status = inbuf[1];
         bytesSent += data_cnt;
@@ -659,7 +691,7 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
 #endif
             return OperationStatus::FAILED;
         }
-        if (device == 1 && prog_mode == 2) //only one packet is needed to initiate bitstream from flash
+        if(needsData == false) //only one packet is needed to initiate bitstream from flash
         {
             bytesSent = length;
             break;
