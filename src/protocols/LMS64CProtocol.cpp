@@ -601,8 +601,6 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
     char progressMsg[128];
     bool abortProgramming = false;
     int bytesSent = 0;
-    if(length == 0)
-        return OperationStatus::FAILED;
 
     if(!IsOpen())
         return OperationStatus::DISCONNECTED;
@@ -718,7 +716,7 @@ OperationStatus LMS64CProtocol::ProgramWrite(const char *data_src, const size_t 
         callback(bytesSent, length, progressMsg);
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
-	if ((device == 1 && prog_mode == 2) == false)
+	if ((device == 2 && prog_mode == 2) == false)
         printf("\nProgramming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
 		printf("\nFPGA configuring initiated\n");
