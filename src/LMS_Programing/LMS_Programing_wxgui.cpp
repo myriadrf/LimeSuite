@@ -113,7 +113,7 @@ LMS_Programing_wxgui::~LMS_Programing_wxgui()
 
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
-    wxFileDialog dlg(this, _("Select file"), _(""), _(""), _("rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|All files(*.*)|*.*"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    wxFileDialog dlg(this, _("Select file"), _(""), _(""), _("rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
@@ -226,7 +226,7 @@ void LMS_Programing_wxgui::DoProgramming()
     int progMode = cmbProgMode->GetSelection();
     if(device == 1) // for FX3 show only option to program firmware
         progMode = 2;
-    auto status = serPort->ProgramWrite(mProgramData.data(), mProgramData.size(), cmbProgMode->GetSelection(), cmbDevice->GetSelection(), callback);
+    auto status = serPort->ProgramWrite(mProgramData.data(), mProgramData.size(), progMode, device, callback);
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
