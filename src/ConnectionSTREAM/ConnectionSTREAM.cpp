@@ -628,46 +628,32 @@ void ConnectionSTREAM::AbortSending()
 @param phaseShift_deg IQ phase shift in degrees
 @return 0-success, other-failure
 */
-OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(const bool tx, const double interfaceClk_Hz, const double phaseShift_deg)
+OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
 {   
+    const uint16_t baseAddr = 0x0020;
     if(IsOpen() == false)
         return OperationStatus::FAILED;
+    //select FPGA index
+    pllIndex = pllIndex & 0x1F;
+    uint16_t reg3val = 0;
+    OperationStatus status = ReadRegister(0x0003, reg3val);
+    if(status != OperationStatus::SUCCESS)
+        return status;
+    reg3val &= 0x1F << 3; //clear PLL index
+    reg3val &= ~1; //clear PLLCFG_START
+    reg3val &= ~(1 << 2); //clear PLL reset
+    reg3val &= ~(1 << 13); //clear PHCFG_UpDn
+    reg3val |= pllIndex << 3;
 
-    //reset FPGA PLL
-    uint16_t reg2val = 0;
-    OperationStatus status = ReadRegister(0x0002, reg2val);
-    WriteRegister(0x0002, reg2val | 0x1000);
-    WriteRegister(0x0002, reg2val & ~0x1000);
-
-    uint16_t regVal;
-    const uint16_t directClocking_addr = 0x0016;
-    const uint16_t directClockingEnable = 0x0100;
-    if(ReadRegister(directClocking_addr, regVal) == OperationStatus::FAILED)
-        return OperationStatus::FAILED;
-    //switch clocking mode when LimeLight interface is < 5MHz
-    if(interfaceClk_Hz < 5e6)
-    {
-        const int registerChainSize = 128;
-        const float phaseShift_deg = 90;
-        const float inputClock_Hz = interfaceClk_Hz;
-        const float oversampleClock_Hz = 100e6;
-        const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
-        const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
-        uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg) + 0.5;
-        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
-
-        printf("reg value : %i\n", phase_reg_select);
-        printf("interface clock: %f\n", inputClock_Hz);
-        printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-
-        regVal &= ~0x1FF;
-        regVal |= phase_reg_select | directClockingEnable;
-        if(WriteRegister(directClocking_addr, regVal) != OperationStatus::SUCCESS)
-            return OperationStatus::FAILED;
-        return OperationStatus::SUCCESS;
-    }
-    else if(WriteRegister(directClocking_addr, regVal & ~directClockingEnable) != OperationStatus::SUCCESS)
-        return FAILED;
+    vector<uint32_t> addrs;
+    vector<uint32_t> values;
+    addrs.push_back(baseAddr + 0x0003);
+    values.push_back(reg3val); //PLL_IND
+    addrs.push_back(baseAddr + 0x0003);
+    values.push_back(reg3val | 0x4); //PLLRST_START
+    addrs.push_back(baseAddr + 0x0003);
+    values.push_back(reg3val & ~0x4);
+    WriteRegisters(addrs.data(), values.data(), values.size());
 
     //configure FPGA PLLs
     const float vcoLimits_MHz[2] = { 600, 1300 };
@@ -675,49 +661,59 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(const bool tx, const double 
     const short bufSize = 64;
 
     float fOut_MHz = interfaceClk_Hz / 1e6;
-    float coef = 0.8*vcoLimits_MHz[1] / interfaceClk_Hz;
+    float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;
     M = C = (int)coef;
     int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
     int clow = ((int)coef) / 2;
 
-    vector<uint8_t> outBuffer;
-    vector<uint32_t> addrs;
-    vector<uint32_t> values;
-    unsigned short reg2 = 0;
+    addrs.clear();
+    values.clear();    
     if(interfaceClk_Hz*M > vcoLimits_MHz[0] && interfaceClk_Hz*M < vcoLimits_MHz[1])
     {
-        addrs.push_back(0x000F);
-        values.push_back(0x1501 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); ////c4-c2_bypassed, N_bypassed
-        addrs.push_back(0x0008);
+        //bypass N
+        addrs.push_back(baseAddr + 0x0006);
+        values.push_back(0x0001 | (M % 2 ? 0x8 : 0));
+
+        addrs.push_back(baseAddr + 0x0007);
+        values.push_back(0xAAA8 | (C % 2 ? 0x2 : 0)); //bypass c7-c1
+        addrs.push_back(baseAddr + 0x0008);
+        values.push_back(0xAAAA); //bypass c15-c8
+        
+        addrs.push_back(baseAddr + 0x000A);
         values.push_back(0x0101); //N_high_cnt, N_low_cnt
-        addrs.push_back(0x0009);
+        addrs.push_back(baseAddr + 0x000B);
         values.push_back(chigh << 8 | clow); //M_high_cnt, M_low_cnt
+
         for(int i = 0; i <= 1; ++i)
         {
-            addrs.push_back(0x000A + i);
-            values.push_back(chigh << 8 | clow); //cX_high_cnt, cX_low_cnt
+            addrs.push_back(baseAddr + 0x000E + i);
+            values.push_back(chigh << 8 | clow); // ci_high_cnt, ci_low_cnt
         }
 
         float Fstep_us = 1 / (8 * fOut_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOut_MHz);
         short nSteps = phaseShift_deg / Fstep_deg;
-        reg2 = 0x0400 | (nSteps & 0x3FF);
-        addrs.push_back(0x0002);
-        values.push_back(reg2); //phase
 
-        addrs.push_back(0x0003);
-        values.push_back(tx ? 0x0001 : 0x0002);
+        addrs.push_back(baseAddr + 0x0004);
+        values.push_back(nSteps);
+        
+        addrs.push_back(baseAddr + 0x0003);
+        int cnt_ind = 1 & 0x1F;
+        reg3val = reg3val | (1 << 13) | (cnt_ind << 8);
+        values.push_back(reg3val); //PHCFG_UpDn, CNT_IND
 
-        addrs.push_back(0x0003);
-        values.push_back(0x0000);
+        addrs.push_back(baseAddr + 0x0003);
+        values.push_back(reg3val | 0x1); //PLLCFG_START
+        addrs.push_back(baseAddr + 0x0003);
+        values.push_back(reg3val & ~0x1); //PLLCFG_START
 
-        reg2 = reg2 | (tx ? 0x0800 : 0x4000);
-        addrs.push_back(0x0002);
-        values.push_back(reg2);
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
-            return OperationStatus::FAILED;
+        addrs.push_back(baseAddr + 0x0003);
+        values.push_back(reg3val | 0x2); //PHCFG_START
+        addrs.push_back(baseAddr + 0x0003);
+        values.push_back(reg3val & ~0x2); //PHCFG_START
+
+        status = WriteRegisters(addrs.data(), values.data(), values.size());
+        return status;
     }
-    else
-        return OperationStatus::SUCCESS;
     return OperationStatus::FAILED;
 }
