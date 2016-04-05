@@ -216,7 +216,7 @@ int ProcessLMS64C(const uint8_t *input, uint8_t *output)
 		break;}
 	case CMD_ALTERA_FPGA_GW_WR:
 	case CMD_ALTERA_FPGA_GW_RD:
-	case CMD_MYRIAD_PROG:
+	case CMD_MEMORY_WR:
 		memcpy(output, input, hs);
 		output[1] = STATUS_COMPLETED_CMD;
 		break;
