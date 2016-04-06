@@ -4,6 +4,9 @@
 @brief Implementation of LMS7002M transceiver configuring
 */
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "LMS7002M.h"
 #include <stdio.h>
 #include <set>
@@ -1928,6 +1931,58 @@ void LMS7002M::ConfigureLML_BB2RF(
     this->Modify_SPI_Reg_bits(LML2_BIP, m[BI]);
     this->Modify_SPI_Reg_bits(LML2_AQP, m[AQ]);
     this->Modify_SPI_Reg_bits(LML2_AIP, m[AI]);
+}
+
+int LMS7002M::SetRxDCRemoval(const bool enable)
+{
+    this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, enable?0:1);
+    this->Modify_SPI_Reg_bits(DCCORR_AVG_RXTSP, 0x7);
+    return 0;
+}
+
+bool LMS7002M::GetRxDCRemoval(void)
+{
+    return this->Get_SPI_Reg_bits(DC_BYP_RXTSP) == 0;
+}
+
+int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
+{
+    const bool bypass = I == 0.0 and Q == 0.0;
+    this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, bypass?1:0);
+    this->Modify_SPI_Reg_bits(DCCORRI_TXTSP, (int)(I*128));
+    this->Modify_SPI_Reg_bits(DCCORRQ_TXTSP, (int)(Q*128));
+}
+
+void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
+{
+    I = this->Get_SPI_Reg_bits(DCCORRI_TXTSP)/128.0;
+    Q = this->Get_SPI_Reg_bits(DCCORRQ_TXTSP)/128.0;
+}
+
+int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
+{
+    const bool bypassPhase = (phase == 0.0);
+    const bool bypassGain = ((gainI == 1.0) and (gainQ == 1.0)) or ((gainI == 0.0) and (gainQ == 0.0));
+    int iqcorr = (int)(2047*(phase/(M_PI/2)));
+    int gcorri = (int)(2047/gainI);
+    int gcorrq = (int)(2047/gainQ);
+
+    this->Modify_SPI_Reg_bits(tx?PH_BYP_TXTSP:PH_BYP_RXTSP, bypassPhase?1:0);
+    this->Modify_SPI_Reg_bits(tx?GC_BYP_TXTSP:GC_BYP_RXTSP, bypassGain?1:0);
+    this->Modify_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP, iqcorr);
+    this->Modify_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP, gcorri);
+    this->Modify_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP, gcorrq);
+}
+
+void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
+{
+    int iqcorr = this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP);
+    int gcorri = this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP);
+    int gcorrq = this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP);
+
+    phase = (M_PI/2)*iqcorr/2047.0;
+    gainI = 2047.0/gcorri;
+    gainQ = 2047.0/gcorrq;
 }
 
 void LMS7002M::EnterSelfCalibration(void)

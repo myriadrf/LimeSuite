@@ -268,6 +268,51 @@ public:
         const LMLSampleSource s3);
     ///@}
 
+    /*!
+     * Set enable for the RX DC removal filter.
+     * @param enable true to enable DC removal
+     * @return 0 for success for error condition
+     */
+    int SetRxDCRemoval(const bool enable);
+
+    /*!
+     * Get the RX DC removal filter enabled.
+     */
+    bool GetRxDCRemoval(void);
+
+    /*!
+     * Set the TX DC offset adjustment.
+     * @param I the real adjustment [+1.0, -1.0]
+     * @param Q the imaginary adjustment [+1.0, -1.0]
+     * @return 0 for success for error condition
+     */
+    int SetTxDCOffset(const float_type I, const float_type Q);
+
+    /*!
+     * Readback the TX DC offset adjustment.
+     * @param [out] I the real adjustment [+1.0, -1.0]
+     * @param [out] Q the imaginary adjustment [+1.0, -1.0]
+     */
+    void GetTxDCOffset(float_type &I, float_type &Q);
+
+    /*!
+     * Set the IQ imbalance correction.
+     * @param tx true for tx, false for rx
+     * @param phase the phase adjustment [+pi, -pi]
+     * @param gainI the real gain adjustment [+1.0, 0.0]
+     * @param gainQ the imaginary gain adjustment [+1.0, 0.0]
+     */
+    int SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ);
+
+    /*!
+     * Get the IQ imbalance correction.
+     * @param tx true for tx, false for rx
+     * @param [out] phase the phase adjustment [+pi, -pi]
+     * @param [out] gainI the real gain adjustment [+1.0, 0.0]
+     * @param [out] gainQ the imaginary gain adjustment [+1.0, 0.0]
+     */
+    void GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ);
+
     ///enumeration to indicate module registers intervals
     enum MemorySection
     {

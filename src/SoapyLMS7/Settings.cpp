@@ -393,11 +393,7 @@ void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
 
-    if (direction == SOAPY_SDR_RX)
-    {
-        rfic->Modify_SPI_Reg_bits(DC_BYP_RXTSP, automatic?0:1);
-        rfic->Modify_SPI_Reg_bits(DCCORR_AVG_RXTSP, 0x7);
-    }
+    if (direction == SOAPY_SDR_RX) rfic->SetRxDCRemoval(automatic);
 }
 
 bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
@@ -405,10 +401,7 @@ bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
 
-    if (direction == SOAPY_SDR_RX)
-    {
-        return rfic->Get_SPI_Reg_bits(DC_BYP_RXTSP) == 0;
-    }
+    if (direction == SOAPY_SDR_RX) return rfic->GetRxDCRemoval();
 
     return false;
 }
@@ -420,12 +413,20 @@ bool SoapyLMS7::hasDCOffset(const int direction, const size_t /*channel*/) const
 
 void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset)
 {
-    //TODO set DC offset registers TX DSP chan only
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+
+    if (direction == SOAPY_SDR_TX) rfic->SetTxDCOffset(offset.real(), offset.imag());
 }
 
 std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t channel) const
 {
-    return 0;
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+
+    double I = 0.0, Q = 0.0;
+    if (direction == SOAPY_SDR_TX) rfic->GetTxDCOffset(I, Q);
+    return std::complex<double>(I, Q);
 }
 
 bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
@@ -435,12 +436,25 @@ bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) 
 
 void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance)
 {
-    //TODO IQ balance on Tx and Rx DSP chains
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+
+    double gain = std::abs(balance);
+    double gainI = 1.0; if (gain < 1.0) gainI = gain/1.0;
+    double gainQ = 1.0; if (gain > 1.0) gainQ = 1.0/gain;
+    rfic->SetIQBalance(lmsDir, std::arg(balance), gainI, gainQ);
 }
 
 std::complex<double> SoapyLMS7::getIQBalance(const int direction, const size_t channel) const
 {
-    return 0;
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+
+    double phase, gainI, gainQ;
+    rfic->GetIQBalance(lmsDir, phase, gainI, gainQ);
+    return (gainI/gainQ)*std::polar(1.0, phase);
 }
 
 /*******************************************************************
