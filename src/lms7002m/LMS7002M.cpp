@@ -4,6 +4,10 @@
 @brief Implementation of LMS7002M transceiver configuring
 */
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <ciso646>
+
 #include "LMS7002M.h"
 #include <stdio.h>
 #include <set>
@@ -626,6 +630,57 @@ float_type LMS7002M::GetRFELNA_dB(void)
     return 0.0;
 }
 
+int LMS7002M::SetRFELoopbackLNA_dB(const float_type gain)
+{
+    const double gmax = 40;
+    double val = gain - gmax;
+
+    int g_rxloopb_rfe = 0;
+    if (val >= 0) g_rxloopb_rfe = 15;
+    else if (val >= -0.5) g_rxloopb_rfe = 14;
+    else if (val >= -1) g_rxloopb_rfe = 13;
+    else if (val >= -1.6) g_rxloopb_rfe = 12;
+    else if (val >= -2.4) g_rxloopb_rfe = 11;
+    else if (val >= -3) g_rxloopb_rfe = 10;
+    else if (val >= -4) g_rxloopb_rfe = 9;
+    else if (val >= -5) g_rxloopb_rfe = 8;
+    else if (val >= -6.2) g_rxloopb_rfe = 7;
+    else if (val >= -7.5) g_rxloopb_rfe = 6;
+    else if (val >= -9) g_rxloopb_rfe = 5;
+    else if (val >= -11) g_rxloopb_rfe = 4;
+    else if (val >= -14) g_rxloopb_rfe = 3;
+    else if (val >= -17) g_rxloopb_rfe = 2;
+    else if (val >= -24) g_rxloopb_rfe = 1;
+    else g_rxloopb_rfe = 0;
+
+    return this->Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
+}
+
+float_type LMS7002M::GetRFELoopbackLNA_dB(void)
+{
+    const double gmax = 40;
+    auto g_rxloopb_rfe = this->Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    switch (g_rxloopb_rfe)
+    {
+    case 15: return gmax-0;
+    case 14: return gmax-0.5;
+    case 13: return gmax-1;
+    case 12: return gmax-1.6;
+    case 11: return gmax-2.4;
+    case 10: return gmax-3;
+    case 9: return gmax-4;
+    case 8: return gmax-5;
+    case 7: return gmax-6.2;
+    case 6: return gmax-7.5;
+    case 5: return gmax-9;
+    case 4: return gmax-11;
+    case 3: return gmax-14;
+    case 2: return gmax-17;
+    case 1: return gmax-24;
+    }
+    return 0.0;
+}
+
 int LMS7002M::SetRFETIA_dB(const float_type value)
 {
     const double gmax = 12;
@@ -718,7 +773,9 @@ liblms7_status LMS7002M::SetPathRFE(PathRFE path)
     this->Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, en_inshsw_w_rfe);
     this->Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_path_rfe);
 
-    //TODO when loopback set: en_loopb_txpad_trf
+    //enable/disable the loopback path
+    const bool loopback = (path == PATH_RFE_LB1) or (path == PATH_RFE_LB2);
+    this->Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, loopback?1:0);
 
     //update external band-selection to match
     this->UpdateExternalBandSelect();

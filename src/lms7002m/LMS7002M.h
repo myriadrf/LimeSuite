@@ -148,6 +148,16 @@ public:
     float_type GetRFELNA_dB(void);
 
     /*!
+     * Set the RX loopback LNA gain in dB
+     * @param gain in dB range 0.0, 40.0 dB
+     * @return 0 for success, else error
+     */
+    int SetRFELoopbackLNA_dB(const float_type gain);
+
+    //! Get the actual RX loopback LNA gain in dB
+    float_type GetRFELoopbackLNA_dB(void);
+
+    /*!
      * Set the RX TIA gain in dB
      * @param gain in dB range 0.0, 12.0 dB
      * @return 0 for success, else error
