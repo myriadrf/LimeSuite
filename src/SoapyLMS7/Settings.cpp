@@ -8,6 +8,7 @@
 #include <IConnection.h>
 #include <stdexcept>
 #include <iostream>
+#include <memory>
 #include <LMS7002M.h>
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
@@ -71,6 +72,9 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
     SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %f MHz", _conn->GetReferenceClockRate()/1e6);
 
+    //disable cal hooks during setup
+    std::map<size_t, std::shared_ptr<LMS7002M_SelfCalState>> calStates;
+
     //LMS7002M driver for each RFIC
     for (size_t i = 0; i < numRFICs; i++)
     {
@@ -96,6 +100,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
         st = _rfics.back()->UploadAll();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("UploadAll() failed");
+
+        calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }
 
     //enable all channels
@@ -476,6 +482,11 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         rfic->SetRFELNA_dB(value);
     }
 
+    else if (direction == SOAPY_SDR_RX and name == "LB_LNA")
+    {
+        rfic->SetRFELoopbackLNA_dB(value);
+    }
+
     else if (direction == SOAPY_SDR_RX and name == "TIA")
     {
         rfic->SetRFETIA_dB(value);
@@ -504,6 +515,11 @@ double SoapyLMS7::getGain(const int direction, const size_t channel, const std::
     if (direction == SOAPY_SDR_RX and name == "LNA")
     {
         return rfic->GetRFELNA_dB();
+    }
+
+    else if (direction == SOAPY_SDR_RX and name == "LB_LNA")
+    {
+        return rfic->GetRFELoopbackLNA_dB();
     }
 
     else if (direction == SOAPY_SDR_RX and name == "TIA")
