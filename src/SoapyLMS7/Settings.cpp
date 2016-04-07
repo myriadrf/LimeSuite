@@ -245,6 +245,11 @@ void SoapyLMS7::SetComponentsEnabled(const size_t channel, const bool enable)
     //--- synthesizers ---
     rfic->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
     rfic->Modify_SPI_Reg_bits(EN_G, enable?1:0);
+    if (channel == 0) //enable LO to channel B
+    {
+        rfic->Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+        rfic->Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+    }
 }
 
 /*******************************************************************
@@ -929,6 +934,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     if (key == "ENABLE_RXTSP_CONST")
     {
+        rfic->Modify_SPI_Reg_bits(TSGFC_RXTSP, 1); //Full-scale
         rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
         rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, (value=="true")?1:0); //SIGGEN
 
@@ -945,6 +951,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     if (key == "ENABLE_TXTSP_CONST")
     {
+        rfic->Modify_SPI_Reg_bits(TSGFC_TXTSP, 1); //Full-scale
         rfic->Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1); //DC
         rfic->Modify_SPI_Reg_bits(INSEL_TXTSP, (value=="true")?1:0); //SIGGEN
 
