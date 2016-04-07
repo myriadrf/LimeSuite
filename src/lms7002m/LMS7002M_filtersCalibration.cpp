@@ -521,7 +521,7 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x9);
-        Modify_SPI_Reg_bits(0x0118, 15, 13, 0x1);
+        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x0);
     }
     else if (filter == RX_LPF_HIGHBAND)
     {
@@ -532,7 +532,7 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x5);
-        Modify_SPI_Reg_bits(0x0118, 15, 13, 0x0);
+        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x1);
     }
     return LIBLMS7_SUCCESS;
 }
