@@ -29,8 +29,8 @@ LB_PAD_GAIN = 0.0
 TX_FREQ_DELTA = 0.7e6
 TX_CORDIC_FREQ = 1.0e6
 
-MAX_SEARCH_DEPTHS = [1/8.0, 1/16.0, 1/32.0, 1/64.0, 1/128.0]
-NUM_STEPS_PER_ITER = 5
+MAX_SEARCH_DEPTHS = range(2, 11)
+NUM_STEPS_PER_ITER = 3
 
 SAMPS_PER_CAPTURE = 1024*8
 NUM_BINS_PER_FFT = 1024
@@ -96,15 +96,15 @@ def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, rate=SAMPLE_RATE):
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(20, 10), dpi=80)
 
-    for samps, idx, title in (
-        (rxInitial[0], 1, 'Rx ChA Initial'),
-        (rxInitial[1], 2, 'Rx ChB Initial'),
-        (rxFinal[0], 3, 'Rx ChA Corrected'),
-        (rxFinal[1], 4, 'Rx ChB Corrected'),
-        (txInitial[0], 5, 'Tx ChA Initial'),
-        (txInitial[1], 6, 'Tx ChB Initial'),
-        (txFinal[0], 7, 'Tx ChA Corrected'),
-        (txFinal[1], 8, 'Tx ChB Corrected'),
+    for samps, idx, title, initial, isTx in (
+        (rxInitial[0], 1, 'Rx ChA Initial', True, False),
+        (rxInitial[1], 2, 'Rx ChB Initial', True, False),
+        (rxFinal[0], 3, 'Rx ChA Corrected', False, False),
+        (rxFinal[1], 4, 'Rx ChB Corrected', False, False),
+        (txInitial[0], 5, 'Tx ChA Initial', True, True),
+        (txInitial[1], 6, 'Tx ChB Initial', True, True),
+        (txFinal[0], 7, 'Tx ChA Corrected', False, True),
+        (txFinal[1], 8, 'Tx ChB Corrected', False, True),
     ):
 
         fftBins = sampsToPowerFFT(samps)
@@ -116,6 +116,26 @@ def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, rate=SAMPLE_RATE):
         ax.set_ylabel('Power (dBfs)', fontsize=8)
         ax.set_ylim(top=-10, bottom=-90)
 
+        def annotate(label, freq, offset, color):
+            x = int(fftBins.size*freq/rate) - fftBins.size/2
+            power = max(fftBins[x-3:x+3])
+
+            if initial: ax.annotate(label,
+                xy = (freq/1e6, power), xytext = (freq/1e6+offset[0], power+offset[1]),
+                xycoords = 'data', textcoords = 'data',
+                arrowprops = dict(arrowstyle = '->'))
+
+            ax.scatter(freq/1e6, power, c=color, s=50)
+
+        if isTx:
+            annotate("Tx tone", TX_FREQ_DELTA + TX_CORDIC_FREQ, (0.5, -10), 'green')
+            annotate("Tx dc", TX_FREQ_DELTA, (-1, 10), 'yellow')
+            annotate("Tx imbal", TX_FREQ_DELTA - TX_CORDIC_FREQ, (-1, 10), 'red')
+
+        else:
+            annotate("Tx tone", TX_FREQ_DELTA, (0.5, -10), 'green')
+            annotate("Rx imbal", -TX_FREQ_DELTA, (-1, 10), 'red')
+
     fig.savefig('/tmp/out.png')
     plt.close(fig)
 
@@ -124,9 +144,10 @@ def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, rate=SAMPLE_RATE):
 ##########################################
 def GenerateTestPoints(depth):
 
-    phaseMax = (math.pi/2)*depth
-    gainMax = 0.5*depth
-    offMax = 1.0*depth
+    scale = 1.0/(2**depth)
+    phaseMax = (math.pi/2)*scale
+    gainMax = 0.5*scale
+    offMax = 1.0*scale
 
     dcPoints = list()
     for dcI in np.linspace(-offMax, +offMax, NUM_STEPS_PER_ITER):
@@ -208,7 +229,9 @@ def CalibrateAtFreq(limeSDR, rxStream, freq):
                 newIqCorr = cmath.rect(
                     abs(iqPoint) + abs(bestTxIqCorrsIter[ch]) - 1.0,
                     cmath.phase(iqPoint) + cmath.phase(bestTxIqCorrsIter[ch]))
-                newDcCorr = dcPoint + bestTxDcCorrsIter[ch]
+                newDcCorr = complex(
+                    max(min(bestTxDcCorrsIter[ch].real + dcPoint.real, 1.0), -1.0),
+                    max(min(bestTxDcCorrsIter[ch].imag + dcPoint.imag, 1.0), -1.0))
                 limeSDR.setIQBalance(SOAPY_SDR_TX, ch, newIqCorr)
                 limeSDR.setDCOffset(SOAPY_SDR_TX, ch, newDcCorr)
                 newIqCorrs.append(newIqCorr)
