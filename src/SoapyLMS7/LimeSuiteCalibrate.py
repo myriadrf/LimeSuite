@@ -23,7 +23,7 @@ TIA_GAIN = 0.0
 LNA_GAIN = 0.0
 PAD_GAIN = -10.0
 LB_PAD_GAIN = 0.0
-TX_FREQ_DELTA = 1.5e6
+TX_FREQ_DELTA = 0.7e6
 
 ##########################################
 ## FFT utilities

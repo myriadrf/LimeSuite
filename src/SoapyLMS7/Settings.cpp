@@ -124,10 +124,10 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
-        this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
-        this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
         this->setSampleRate(SOAPY_SDR_RX, channel, defaultClockRate/8);
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
+        this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
+        this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
     }
 
     //enable use of calibration value cache
@@ -736,6 +736,11 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
         auto status = LIBLMS7_SUCCESS;//rfic->CalibrateRx(bw/1e6);
+        if (status == LIBLMS7_SUCCESS)
+        {
+            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
+            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
+        }
         if (!bypass && status == LIBLMS7_SUCCESS)
         {
             LMS7002M::RxFilter filter;
@@ -751,11 +756,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
             }
 
             status = rfic->TuneRxFilter(filter, bw/1e6);
-        }
-        if (status == LIBLMS7_SUCCESS)
-        {
-            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
-            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
         }
         if (status != LIBLMS7_SUCCESS)
         {
