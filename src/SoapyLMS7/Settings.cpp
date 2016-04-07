@@ -504,6 +504,11 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         this->recalAfterChange(direction, channel);
     }
 
+    else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
+    {
+        rfic->SetTRFLoopbackPAD_dB(value);
+    }
+
     else throw std::runtime_error("SoapyLMS7::setGain("+name+") - unknown gain name");
 
     SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s%s[%d] gain %f dB", dirName, name.c_str(), int(channel), this->getGain(direction, channel, name));
@@ -537,6 +542,11 @@ double SoapyLMS7::getGain(const int direction, const size_t channel, const std::
     else if (direction == SOAPY_SDR_TX and name == "PAD")
     {
         return rfic->GetTRFPAD_dB();
+    }
+
+    else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
+    {
+        return rfic->GetTRFLoopbackPAD_dB();
     }
 
     else throw std::runtime_error("SoapyLMS7::getGain("+name+") - unknown gain name");
@@ -1031,7 +1041,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
         rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, (value=="true")?1:0); //SIGGEN
 
-        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 1 << 15);
+        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 9830);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 1);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
@@ -1047,7 +1057,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         rfic->Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1); //DC
         rfic->Modify_SPI_Reg_bits(INSEL_TXTSP, (value=="true")?1:0); //SIGGEN
 
-        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 1 << 15);
+        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 9830);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 1);
         rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
