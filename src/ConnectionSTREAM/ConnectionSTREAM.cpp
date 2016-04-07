@@ -660,7 +660,7 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
     int M, C;
     const short bufSize = 64;
 
-    float fOut_MHz = interfaceClk_Hz / 1e6;
+    float fOut_MHz = interfaceClk_Hz/2 / 1e6;
     float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;
     M = C = (int)coef;
     int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
@@ -668,16 +668,16 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
 
     addrs.clear();
     values.clear();    
-    if(interfaceClk_Hz*M > vcoLimits_MHz[0] && interfaceClk_Hz*M < vcoLimits_MHz[1])
+    if(interfaceClk_Hz/2*M/1e6 > vcoLimits_MHz[0] && interfaceClk_Hz/2*M/1e6 < vcoLimits_MHz[1])
     {
         //bypass N
         addrs.push_back(baseAddr + 0x0006);
         values.push_back(0x0001 | (M % 2 ? 0x8 : 0));
 
         addrs.push_back(baseAddr + 0x0007);
-        values.push_back(0xAAA8 | (C % 2 ? 0x2 : 0)); //bypass c7-c1
+        values.push_back(0x5550 | (C % 2 ? 0xA : 0)); //bypass c7-c1
         addrs.push_back(baseAddr + 0x0008);
-        values.push_back(0xAAAA); //bypass c15-c8
+        values.push_back(0x5555); //bypass c15-c8
         
         addrs.push_back(baseAddr + 0x000A);
         values.push_back(0x0101); //N_high_cnt, N_low_cnt
@@ -698,7 +698,7 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
         values.push_back(nSteps);
         
         addrs.push_back(baseAddr + 0x0003);
-        int cnt_ind = 1 & 0x1F;
+        int cnt_ind = 0x3 & 0x1F;
         reg3val = reg3val | (1 << 13) | (cnt_ind << 8);
         values.push_back(reg3val); //PHCFG_UpDn, CNT_IND
 
