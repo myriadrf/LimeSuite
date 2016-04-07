@@ -27,14 +27,18 @@ PAD_GAIN = -10.0
 LB_PAD_GAIN = 0.0
 
 TX_FREQ_DELTA = 0.7e6
+TX_CORDIC_FREQ = 1.0e6
 
 MAX_SEARCH_DEPTHS = [1/8.0, 1/16.0, 1/32.0, 1/64.0, 1/128.0]
 NUM_STEPS_PER_ITER = 5
 
+SAMPS_PER_CAPTURE = 1024*8
+NUM_BINS_PER_FFT = 1024
+
 ##########################################
 ## Sample utilities
 ##########################################
-def readSamps(limeSDR, rxStream, numSamps=1024*8):
+def readSamps(limeSDR, rxStream, numSamps=SAMPS_PER_CAPTURE):
     """
     Read stream data from each channel
     @return a list of complex64 arrays
@@ -61,7 +65,7 @@ def measureToneLevel(samps, freq, rate=SAMPLE_RATE):
 ##########################################
 ## Plotting utilities
 ##########################################
-def sampsToPowerFFT(rxSamples, fftSize=1024):
+def sampsToPowerFFT(rxSamples, fftSize=NUM_BINS_PER_FFT):
     """
     Get a power FFT for a complex samples array
     Averages multiple FFTs when rxSamples.size > fftSize.
@@ -73,11 +77,13 @@ def sampsToPowerFFT(rxSamples, fftSize=1024):
 
     if numFFTs == 1:
         x = rxSamples[:fftSize]
-        absBins = np.abs(np.fft.fft(x))
+        window = scipy.signal.hann(fftSize)
+        windowPower = sum(window**2)/fftSize
+        absBins = np.abs(np.fft.fft(x*window))
         absBins = np.concatenate((absBins[absBins.size/2:], absBins[:absBins.size/2])) #reorder
         if (absBins.size % 2) == 0: absBins = absBins[1:]
         absBins = np.maximum(absBins, 1e-20) #clip
-        return 20*np.log10(absBins) - 20*math.log10(absBins.size)
+        return 20*np.log10(absBins) - 20*math.log10(absBins.size) - 10*math.log10(windowPower)
 
     fftSet = list()
     for i in range(numFFTs):
@@ -86,24 +92,29 @@ def sampsToPowerFFT(rxSamples, fftSize=1024):
 
     return np.log(sum(fftSet)/len(fftSet))
 
-def plotSingleResult(rxInitial, rxFinal, rate=SAMPLE_RATE):
+def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, rate=SAMPLE_RATE):
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(20, 8), dpi=80)
+    fig = plt.figure(figsize=(20, 10), dpi=80)
 
     for samps, idx, title in (
         (rxInitial[0], 1, 'Rx ChA Initial'),
         (rxInitial[1], 2, 'Rx ChB Initial'),
         (rxFinal[0], 3, 'Rx ChA Corrected'),
         (rxFinal[1], 4, 'Rx ChB Corrected'),
+        (txInitial[0], 5, 'Tx ChA Initial'),
+        (txInitial[1], 6, 'Tx ChB Initial'),
+        (txFinal[0], 7, 'Tx ChA Corrected'),
+        (txFinal[1], 8, 'Tx ChB Corrected'),
     ):
 
         fftBins = sampsToPowerFFT(samps)
-        ax = fig.add_subplot(2, 2, idx)
+        ax = fig.add_subplot(4, 2, idx)
         ax.plot(np.arange(-rate/2/1e6, rate/2/1e6, rate/fftBins.size/1e6)[:fftBins.size], fftBins)
         ax.grid(True)
         ax.set_title(title, fontsize=8)
-        ax.set_xlabel('Freq (MHz)', fontsize=8)
-        ax.set_ylabel('Power (dBx)', fontsize=8)
+        #ax.set_xlabel('Freq (MHz)', fontsize=8)
+        ax.set_ylabel('Power (dBfs)', fontsize=8)
+        ax.set_ylim(top=-10, bottom=-90)
 
     fig.savefig('/tmp/out.png')
     plt.close(fig)
@@ -181,8 +192,46 @@ def CalibrateAtFreq(limeSDR, rxStream, freq):
     rxFinal = readSamps(limeSDR, rxStream)
 
     #sweep for best Tx IQ  and DC correction
+    for ch in [0, 1]: limeSDR.setFrequency(SOAPY_SDR_TX, ch, "BB", TX_CORDIC_FREQ)
+    txInitial = readSamps(limeSDR, rxStream)
+    bestTxIqCorrs = [1.0]*2
+    bestTxIqLevels = [1.0]*2
+    bestTxDcCorrs = [0.0]*2
+    bestTxDcLevels = [1.0]*2
+    for depth in MAX_SEARCH_DEPTHS:
+        bestTxIqCorrsIter = copy.copy(bestTxIqCorrs)
+        bestTxDcCorrsIter = copy.copy(bestTxDcCorrs)
+        for dcPoint, iqPoint in GenerateTestPoints(depth):
+            newIqCorrs = list()
+            newDcCorrs = list()
+            for ch in [0, 1]:
+                newIqCorr = cmath.rect(
+                    abs(iqPoint) + abs(bestTxIqCorrsIter[ch]) - 1.0,
+                    cmath.phase(iqPoint) + cmath.phase(bestTxIqCorrsIter[ch]))
+                newDcCorr = dcPoint + bestTxDcCorrsIter[ch]
+                limeSDR.setIQBalance(SOAPY_SDR_TX, ch, newIqCorr)
+                limeSDR.setDCOffset(SOAPY_SDR_TX, ch, newDcCorr)
+                newIqCorrs.append(newIqCorr)
+                newDcCorrs.append(newDcCorr)
+            samps = readSamps(limeSDR, rxStream)
+            for ch in [0, 1]:
+                lvl = measureToneLevel(samps[ch], TX_FREQ_DELTA-TX_CORDIC_FREQ)
+                if lvl < bestTxIqLevels[ch]:
+                    bestTxIqCorrs[ch] = newIqCorrs[ch]
+                    bestTxIqLevels[ch] = lvl
+                lvl = measureToneLevel(samps[ch], TX_FREQ_DELTA)
+                if lvl < bestTxDcLevels[ch]:
+                    bestTxDcCorrs[ch] = newDcCorrs[ch]
+                    bestTxDcLevels[ch] = lvl
 
-    plotSingleResult(rxInitial, rxFinal)
+    print("bestTxIqCorrs = %s"%bestTxIqCorrs)
+    print("bestTxDcCorrs = %s"%bestTxDcCorrs)
+    for ch in [0, 1]:
+        limeSDR.setIQBalance(SOAPY_SDR_TX, ch, bestTxIqCorrs[ch])
+        limeSDR.setDCOffset(SOAPY_SDR_TX, ch, bestTxDcCorrs[ch])
+    txFinal = readSamps(limeSDR, rxStream)
+
+    plotSingleResult(rxInitial, rxFinal, txInitial, txFinal)
 
 ##########################################
 ## Main calibration sweep
