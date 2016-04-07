@@ -7,8 +7,10 @@ import SoapySDR
 from SoapySDR import * #*_SOAPY_SDR constants
 import numpy as np
 import scipy.signal
+import cmath
 import math
 import time
+import copy
 
 ##########################################
 ## Calibration constants
@@ -17,16 +19,20 @@ CLOCK_RATE = 80e6
 SAMPLE_RATE = 10e6
 RX_ANTENNA = "LB1"
 TX_ANTENNA = "BAND1"
-LB_LNA_GAIN = 35.0
+LB_LNA_GAIN = 40.0
 PGA_GAIN = 0.0
 TIA_GAIN = 0.0
 LNA_GAIN = 0.0
 PAD_GAIN = -10.0
 LB_PAD_GAIN = 0.0
+
 TX_FREQ_DELTA = 0.7e6
 
+MAX_SEARCH_DEPTHS = [1/8.0, 1/16.0, 1/32.0, 1/64.0, 1/128.0]
+NUM_STEPS_PER_ITER = 5
+
 ##########################################
-## FFT utilities
+## Sample utilities
 ##########################################
 def readSamps(limeSDR, rxStream, numSamps=1024*8):
     """
@@ -47,6 +53,14 @@ def readSamps(limeSDR, rxStream, numSamps=1024*8):
     rxSamples[1] -= np.mean(rxSamples[1]) #remove dc from rx samples
     return rxSamples
 
+def measureToneLevel(samps, freq, rate=SAMPLE_RATE):
+    step = -2.0*math.pi*(freq)/rate
+    shifted = samps * np.exp(1j*np.linspace(0, samps.size*step, samps.size))
+    return abs(np.mean(shifted))
+
+##########################################
+## Plotting utilities
+##########################################
 def sampsToPowerFFT(rxSamples, fftSize=1024):
     """
     Get a power FFT for a complex samples array
@@ -72,46 +86,103 @@ def sampsToPowerFFT(rxSamples, fftSize=1024):
 
     return np.log(sum(fftSet)/len(fftSet))
 
-def plotFFT(samps0, samps1, fftBins0, fftBins1, rate=SAMPLE_RATE):
+def plotSingleResult(rxInitial, rxFinal, rate=SAMPLE_RATE):
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(20, 8), dpi=80)
 
-    fftBins = fftBins0
-    ax = fig.add_subplot(2, 2, 1)
-    ax.plot(np.arange(-rate/2/1e6, rate/2/1e6, rate/fftBins.size/1e6)[:fftBins.size], fftBins)
-    ax.grid(True)
-    ax.set_title('Channel A', fontsize=8)
-    ax.set_xlabel('Freq (MHz)', fontsize=8)
-    ax.set_ylabel('Power (dBx)', fontsize=8)
+    for samps, idx, title in (
+        (rxInitial[0], 1, 'Rx ChA Initial'),
+        (rxInitial[1], 2, 'Rx ChB Initial'),
+        (rxFinal[0], 3, 'Rx ChA Corrected'),
+        (rxFinal[1], 4, 'Rx ChB Corrected'),
+    ):
 
-    fftBins = fftBins1
-    ax = fig.add_subplot(2, 2, 2)
-    ax.plot(np.arange(-rate/2/1e6, rate/2/1e6, rate/fftBins.size/1e6)[:fftBins.size], fftBins)
-    ax.grid(True)
-    ax.set_title('Channel B', fontsize=8)
-    ax.set_xlabel('Freq (MHz)', fontsize=8)
-    ax.set_ylabel('Power (dBx)', fontsize=8)
-
-    samps = samps0[:100]
-    ax = fig.add_subplot(2, 2, 3)
-    ax.grid(True)
-    ax.set_title('Channel A', fontsize=8)
-    ax.set_xlabel('Time (us)', fontsize=8)
-    ax.set_ylabel('Amplitude (units)', fontsize=8)
-    timeIndex = np.arange(0, samps.size/rate*1e6, 1/rate*1e6)[:samps.size]
-    ax.plot(timeIndex, np.real(samps), 'b', timeIndex, np.imag(samps), 'g')
-
-    samps = samps1[:100]
-    ax = fig.add_subplot(2, 2, 4)
-    ax.grid(True)
-    ax.set_title('Channel B', fontsize=8)
-    ax.set_xlabel('Time (us)', fontsize=8)
-    ax.set_ylabel('Amplitude (units)', fontsize=8)
-    timeIndex = np.arange(0, samps.size/rate*1e6, 1/rate*1e6)[:samps.size]
-    ax.plot(timeIndex, np.real(samps), 'b', timeIndex, np.imag(samps), 'g')
+        fftBins = sampsToPowerFFT(samps)
+        ax = fig.add_subplot(2, 2, idx)
+        ax.plot(np.arange(-rate/2/1e6, rate/2/1e6, rate/fftBins.size/1e6)[:fftBins.size], fftBins)
+        ax.grid(True)
+        ax.set_title(title, fontsize=8)
+        ax.set_xlabel('Freq (MHz)', fontsize=8)
+        ax.set_ylabel('Power (dBx)', fontsize=8)
 
     fig.savefig('/tmp/out.png')
     plt.close(fig)
+
+##########################################
+## Generate test points for IQ and DC
+##########################################
+def GenerateTestPoints(depth):
+
+    phaseMax = (math.pi/2)*depth
+    gainMax = 0.5*depth
+    offMax = 1.0*depth
+
+    dcPoints = list()
+    for dcI in np.linspace(-offMax, +offMax, NUM_STEPS_PER_ITER):
+        for dcQ in np.linspace(-offMax, +offMax, NUM_STEPS_PER_ITER):
+            dcPoints.append(complex(dcI, dcQ))
+
+    iqPoints = list()
+    for phase in np.linspace(-phaseMax, phaseMax, NUM_STEPS_PER_ITER):
+        for gain in np.linspace(-gainMax, gainMax, NUM_STEPS_PER_ITER):
+            iqPoints.append(cmath.rect(1.0 + gain, phase))
+
+    return zip(dcPoints, iqPoints)
+
+##########################################
+## Calibrate at a specified frequency
+##########################################
+def CalibrateAtFreq(limeSDR, rxStream, freq):
+
+    #set the RF frequency on Rx and Tx
+    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq)
+    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq + TX_FREQ_DELTA)
+
+    #clear correction for calibration
+    for channel in [0, 1]:
+        limeSDR.setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0)
+        limeSDR.setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0)
+        limeSDR.setDCOffset(SOAPY_SDR_TX, channel, 0.0)
+        limeSDR.setIQBalance(SOAPY_SDR_TX, channel, 1.0)
+        limeSDR.setIQBalance(SOAPY_SDR_RX, channel, 1.0)
+
+    #adjust gain for best levels
+    for ch in [0, 1]: limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", PGA_GAIN)
+    samps = readSamps(limeSDR, rxStream)
+    for ch in [0, 1]:
+        lvl = measureToneLevel(samps[ch], TX_FREQ_DELTA)
+        deltadB = -10 - 20*math.log10(lvl)
+        print 'deltadB', deltadB, lvl, 20*math.log10(lvl)
+        limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", min(19, PGA_GAIN + deltadB))
+
+    #sweep for best Rx IQ correction
+    rxInitial = readSamps(limeSDR, rxStream)
+    bestRxIqCorrs = [1.0]*2
+    bestRxIqLevels = [1.0]*2
+    for depth in MAX_SEARCH_DEPTHS:
+        bestRxIqCorrsIter = copy.copy(bestRxIqCorrs)
+        for dcPoint, iqPoint in GenerateTestPoints(depth):
+            newIqCorrs = list()
+            for ch in [0, 1]:
+                newIqCorr = cmath.rect(
+                    abs(iqPoint) + abs(bestRxIqCorrsIter[ch]) - 1.0,
+                    cmath.phase(iqPoint) + cmath.phase(bestRxIqCorrsIter[ch]))
+                limeSDR.setIQBalance(SOAPY_SDR_RX, ch, newIqCorr)
+                newIqCorrs.append(newIqCorr)
+            samps = readSamps(limeSDR, rxStream)
+            for ch in [0, 1]:
+                lvl = measureToneLevel(samps[ch], -TX_FREQ_DELTA)
+                if lvl < bestRxIqLevels[ch]:
+                    bestRxIqCorrs[ch] = newIqCorrs[ch]
+                    bestRxIqLevels[ch] = lvl
+
+    print("bestRxIqCorrs = %s"%bestRxIqCorrs)
+    for ch in [0, 1]: limeSDR.setIQBalance(SOAPY_SDR_RX, ch, bestRxIqCorrs[ch])
+    rxFinal = readSamps(limeSDR, rxStream)
+
+    #sweep for best Tx IQ  and DC correction
+
+    plotSingleResult(rxInitial, rxFinal)
 
 ##########################################
 ## Main calibration sweep
@@ -152,22 +223,7 @@ def LimeSuiteCalibrate(
     #open the rx stream
     rxStream = limeSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
 
-    #the sweep
-    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq_start)
-    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq_start + TX_FREQ_DELTA)
-
-    for channel in [0, 1]:
-        limeSDR.setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0)
-        limeSDR.setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0)
-        limeSDR.setDCOffset(SOAPY_SDR_TX, channel, 0.0)
-        limeSDR.setIQBalance(SOAPY_SDR_TX, channel, 1.0)
-        limeSDR.setIQBalance(SOAPY_SDR_RX, channel, 1.0)
-
-    time.sleep(1)
-    samps = readSamps(limeSDR, rxStream)
-    fft0 = sampsToPowerFFT(samps[0])
-    fft1 = sampsToPowerFFT(samps[1])
-    plotFFT(samps[0], samps[1], fft0, fft1)
+    CalibrateAtFreq(limeSDR, rxStream, freq_start)
 
     #close the rx stream
     limeSDR.closeStream(rxStream)

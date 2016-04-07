@@ -2042,8 +2042,8 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
     const bool bypassPhase = (phase == 0.0);
     const bool bypassGain = ((gainI == 1.0) and (gainQ == 1.0)) or ((gainI == 0.0) and (gainQ == 0.0));
     int iqcorr = (int)(2047*(phase/(M_PI/2)));
-    int gcorri = (int)(2047/gainI);
-    int gcorrq = (int)(2047/gainQ);
+    int gcorri = (int)(2047*gainI);
+    int gcorrq = (int)(2047*gainQ);
 
     this->Modify_SPI_Reg_bits(tx?PH_BYP_TXTSP:PH_BYP_RXTSP, bypassPhase?1:0);
     this->Modify_SPI_Reg_bits(tx?GC_BYP_TXTSP:GC_BYP_RXTSP, bypassGain?1:0);
@@ -2059,8 +2059,8 @@ void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI,
     int gcorrq = this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP);
 
     phase = (M_PI/2)*iqcorr/2047.0;
-    gainI = 2047.0/gcorri;
-    gainQ = 2047.0/gcorrq;
+    gainI = gcorri/2047.0;
+    gainQ = gcorrq/2047.0;
 }
 
 void LMS7002M::EnterSelfCalibration(void)
