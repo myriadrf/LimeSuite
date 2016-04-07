@@ -177,6 +177,16 @@ public:
     //! Get the actual TX PAD gain in dB
     float_type GetTRFPAD_dB(void);
 
+    /*!
+     * Set the TX loopback PAD gain in dB
+     * @param gain in dB range -4.3, 0.0 dB
+     * @return 0 for success, else error
+     */
+    int SetTRFLoopbackPAD_dB(const float_type gain);
+
+    //! Get the actual TX loopback PAD gain in dB
+    float_type GetTRFLoopbackPAD_dB(void);
+
     ///@}
 
     ///@name RF selection

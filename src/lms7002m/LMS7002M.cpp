@@ -736,6 +736,30 @@ float_type LMS7002M::GetTRFPAD_dB(void)
     return pmax-loss_int;
 }
 
+int LMS7002M::SetTRFLoopbackPAD_dB(const float_type gain)
+{
+    //there are 4 discrete gain values, use the midpoints
+    int val = 0;
+    if      (gain >= (-1.4-0)/2)   val = 0;
+    else if (gain >= (-1.4-3.3)/2) val = 1;
+    else if (gain >= (-3.3-4.3)/2) val = 2;
+    else                           val = 3;
+
+    return this->Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, val);
+}
+
+float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
+{
+    switch (this->Get_SPI_Reg_bits(L_LOOPB_TXPAD_TRF))
+    {
+    case 0: return 0.0;
+    case 1: return -1.4;
+    case 2: return -3.3;
+    case 3: return -4.3;
+    }
+    return 0.0;
+}
+
 liblms7_status LMS7002M::SetPathRFE(PathRFE path)
 {
     int sel_path_rfe = 0;
@@ -775,7 +799,7 @@ liblms7_status LMS7002M::SetPathRFE(PathRFE path)
 
     //enable/disable the loopback path
     const bool loopback = (path == PATH_RFE_LB1) or (path == PATH_RFE_LB2);
-    this->Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, loopback?1:0);
+    this->Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, loopback?1:0);
 
     //update external band-selection to match
     this->UpdateExternalBandSelect();
