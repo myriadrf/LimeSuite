@@ -121,7 +121,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
-        this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
+        this->setGain(SOAPY_SDR_TX, channel, "PAD", -50);
         this->setSampleRate(SOAPY_SDR_RX, channel, defaultClockRate/8);
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
         this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
