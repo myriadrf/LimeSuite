@@ -629,10 +629,46 @@ void ConnectionSTREAM::AbortSending()
 @return 0-success, other-failure
 */
 OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
-{   
+{
     const uint16_t baseAddr = 0x0020;
     if(IsOpen() == false)
         return OperationStatus::FAILED;
+
+    uint16_t drct_clk_ctrl_0005 = 0;
+    ReadRegister(0x0005, drct_clk_ctrl_0005);
+    if(interfaceClk_Hz < 5e6)
+    {
+        //enable direct clocking
+        WriteRegister(0x0005, drct_clk_ctrl_0005 | (1 << pllIndex));
+        uint16_t drct_clk_ctrl_0006;
+        ReadRegister(0x0006, drct_clk_ctrl_0006);
+        drct_clk_ctrl_0006 = drct_clk_ctrl_0006 & ~0x3FF;
+        const int cnt_ind = 1 << 5;
+        const int clk_ind = pllIndex;
+        drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
+        WriteRegister(0x0006, drct_clk_ctrl_0006);
+        const uint16_t phase_reg_sel_addr = 0x0004;
+        float inputClock_Hz = interfaceClk_Hz;
+        const float oversampleClock_Hz = 100e6;
+        const int registerChainSize = 128;
+        const float phaseShift_deg = 90;
+        const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
+        const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
+        uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
+        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
+#ifndef NDEBUG
+        printf("reg value : %i\n", phase_reg_select);
+        printf("input clock: %f\n", inputClock_Hz);
+        printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
+#endif
+        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != OperationStatus::SUCCESS)
+            return OperationStatus::FAILED;
+        return OperationStatus::SUCCESS;
+    }
+
+    //if interface frequency >= 5MHz, configure PLLs
+    WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
+
     //select FPGA index
     pllIndex = pllIndex & 0x1F;
     uint16_t reg3val = 0;
@@ -667,7 +703,7 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
     int clow = ((int)coef) / 2;
 
     addrs.clear();
-    values.clear();    
+    values.clear();
     if(interfaceClk_Hz/2*M/1e6 > vcoLimits_MHz[0] && interfaceClk_Hz/2*M/1e6 < vcoLimits_MHz[1])
     {
         //bypass N
@@ -678,7 +714,7 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
         values.push_back(0x5550 | (C % 2 ? 0xA : 0)); //bypass c7-c1
         addrs.push_back(baseAddr + 0x0008);
         values.push_back(0x5555); //bypass c15-c8
-        
+
         addrs.push_back(baseAddr + 0x000A);
         values.push_back(0x0101); //N_high_cnt, N_low_cnt
         addrs.push_back(baseAddr + 0x000B);
@@ -696,7 +732,7 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
 
         addrs.push_back(baseAddr + 0x0004);
         values.push_back(nSteps);
-        
+
         addrs.push_back(baseAddr + 0x0003);
         int cnt_ind = 0x3 & 0x1F;
         reg3val = reg3val | (1 << 13) | (cnt_ind << 8);
