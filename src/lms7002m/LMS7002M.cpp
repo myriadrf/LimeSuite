@@ -189,6 +189,117 @@ size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
     }
 }
 
+liblms7_status LMS7002M::EnableChannel(const bool isTx, const bool enable)
+{
+    Channel ch = this->GetActiveChannel();
+
+    //--- LML ---
+    if (ch == ChA)
+    {
+        if (isTx) this->Modify_SPI_Reg_bits(TXEN_A, enable?1:0);
+        else      this->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);
+    }
+    else
+    {
+        if (isTx) this->Modify_SPI_Reg_bits(TXEN_B, enable?1:0);
+        else      this->Modify_SPI_Reg_bits(RXEN_B, enable?1:0);
+    }
+
+    //--- ADC/DAC ---
+    this->Modify_SPI_Reg_bits(EN_DIR_AFE, 1);
+    this->Modify_SPI_Reg_bits(EN_G_AFE, enable?1:0);
+    this->Modify_SPI_Reg_bits(PD_AFE, enable?0:1);
+    if (ch == ChA)
+    {
+        if (isTx) this->Modify_SPI_Reg_bits(PD_TX_AFE1, enable?0:1);
+        else      this->Modify_SPI_Reg_bits(PD_RX_AFE1, enable?0:1);
+    }
+    else
+    {
+        if (isTx) this->Modify_SPI_Reg_bits(PD_TX_AFE2, enable?0:1);
+        else      this->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
+    }
+
+    //--- digital ---
+    if (isTx)
+    {
+        this->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
+        this->Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
+        this->Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
+        this->Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
+    }
+    else
+    {
+        this->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
+        this->Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 2); //bypass
+        this->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(GC_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(PH_BYP_RXTSP, 1);
+    }
+
+    //--- baseband ---
+    if (isTx)
+    {
+        this->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
+        this->Modify_SPI_Reg_bits(EN_G_TBB, enable?1:0);
+    }
+    else
+    {
+        this->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);
+        this->Modify_SPI_Reg_bits(EN_G_RBB, enable?1:0);
+        this->Modify_SPI_Reg_bits(PD_PGA_RBB, enable?0:1);
+    }
+
+    //--- frontend ---
+    if (isTx)
+    {
+        this->Modify_SPI_Reg_bits(EN_DIR_TRF, 1);
+        this->Modify_SPI_Reg_bits(EN_G_TRF, enable?1:0);
+        this->Modify_SPI_Reg_bits(PD_TLOBUF_TRF, enable?0:1);
+        this->Modify_SPI_Reg_bits(PD_TXPAD_TRF, enable?0:1);
+    }
+    else
+    {
+        this->Modify_SPI_Reg_bits(EN_DIR_RFE, 1);
+        this->Modify_SPI_Reg_bits(EN_G_RFE, enable?1:0);
+        this->Modify_SPI_Reg_bits(PD_MXLOBUF_RFE, enable?0:1);
+        this->Modify_SPI_Reg_bits(PD_QGEN_RFE, enable?0:1);
+        this->Modify_SPI_Reg_bits(PD_TIA_RFE, enable?0:1);
+    }
+
+    //--- synthesizers ---
+    if (isTx)
+    {
+        this->SetActiveChannel(ChSXT);
+        this->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
+        this->Modify_SPI_Reg_bits(EN_G, enable?1:0);
+        if (ch == ChB) //enable LO to channel B
+        {
+            this->SetActiveChannel(ChA);
+            this->Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+        }
+    }
+    else
+    {
+        this->SetActiveChannel(ChSXR);
+        this->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
+        this->Modify_SPI_Reg_bits(EN_G, enable?1:0);
+        if (ch == ChB) //enable LO to channel B
+        {
+            this->SetActiveChannel(ChA);
+            this->Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+        }
+    }
+    this->SetActiveChannel(ch);
+
+    return LIBLMS7_SUCCESS;
+}
+
 /** @brief Sends reset signal to chip, after reset enables B channel controls
     @return 0-success, other-failure
 */
@@ -206,6 +317,16 @@ liblms7_status LMS7002M::ResetChip()
     }
     else
         return LIBLMS7_FAILURE;
+}
+
+liblms7_status LMS7002M::SoftReset()
+{
+    auto reg_0x0020 = this->SPI_read(0x0020, true);
+    auto reg_0x002E = this->SPI_read(0x002E, true);
+    this->SPI_write(0x0020, 0x0);
+    this->SPI_write(0x0020, reg_0x0020);
+    this->SPI_write(0x002E, reg_0x002E);//must write
+    return LIBLMS7_SUCCESS;
 }
 
 liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)

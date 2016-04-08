@@ -77,12 +77,27 @@ public:
      */
     size_t GetActiveChannelIndex(bool fromChip = true);
 
+    /*!
+     * Enable/disable the selected channel.
+     * This powers on or off all of the respective hardware
+     * for a given channel A or B: TSP, BB, and RF sections.
+     * @param isTx true for the transmit size, false for receive
+     * @param enable true to enable, false to disable
+     */
+    liblms7_status EnableChannel(const bool isTx, const bool enable);
+
     ///@name Registers writing and reading
     liblms7_status UploadAll();
     liblms7_status DownloadAll();
     bool IsSynced();
 
 	liblms7_status ResetChip();
+
+    /*!
+     * Perform soft-reset sequence over SPI
+     */
+    liblms7_status SoftReset();
+
 	liblms7_status LoadConfig(const char* filename);
 	liblms7_status SaveConfig(const char* filename);
     ///@}

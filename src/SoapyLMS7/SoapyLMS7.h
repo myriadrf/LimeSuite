@@ -25,8 +25,6 @@ public:
 
     ~SoapyLMS7(void);
 
-    void SetComponentsEnabled(const size_t channel, const bool enabled);
-
     /*******************************************************************
      * Identification API
      ******************************************************************/

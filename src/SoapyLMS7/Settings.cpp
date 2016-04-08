@@ -91,12 +91,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         st = _rfics.back()->ResetChip();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("ResetChip() failed");
 
-        //reset sequence over spi
-        auto reg_0x0020 = _rfics.back()->SPI_read(0x0020, true);
-        auto reg_0x002E = _rfics.back()->SPI_read(0x002E, true);
-        _rfics.back()->SPI_write(0x0020, 0x0);
-        _rfics.back()->SPI_write(0x0020, reg_0x0020);
-        _rfics.back()->SPI_write(0x002E, reg_0x002E);//must write
+        st = _rfics.back()->SoftReset();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("SoftReset() failed");
 
         st = _rfics.back()->DownloadAll();
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("DownloadAll() failed");
@@ -107,7 +103,9 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     //enable all channels
     for (size_t channel = 0; channel < _rfics.size()*2; channel++)
     {
-        this->SetComponentsEnabled(channel, true);
+        auto rfic = getRFIC(channel);
+        rfic->EnableChannel(LMS7002M::Tx, true);
+        rfic->EnableChannel(LMS7002M::Rx, true);
     }
 
     //give all RFICs a default state
@@ -154,9 +152,11 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 SoapyLMS7::~SoapyLMS7(void)
 {
     //power down all channels
-    for (size_t i = 0; i < _rfics.size()*2; i++)
+    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
     {
-        this->SetComponentsEnabled(i, false);
+        auto rfic = getRFIC(channel);
+        rfic->EnableChannel(LMS7002M::Tx, false);
+        rfic->EnableChannel(LMS7002M::Rx, false);
     }
 
     for (auto rfic : _rfics) delete rfic;
@@ -172,84 +172,6 @@ LMS7002M *SoapyLMS7::getRFIC(const size_t channel) const
     auto rfic = _rfics.at(channel/2);
     rfic->SetActiveChannel(((channel%2) == 0)?LMS7002M::ChA:LMS7002M::ChB);
     return rfic;
-}
-
-void SoapyLMS7::SetComponentsEnabled(const size_t channel, const bool enable)
-{
-    SoapySDR::logf(SOAPY_SDR_INFO, "%s LMS7002M::ch%d", enable?"Enable":"Disable", int(channel));
-
-    auto rfic = getRFIC(channel);
-
-    //--- LML ---
-    if ((channel%2) == 0)
-    {
-        rfic->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);
-        rfic->Modify_SPI_Reg_bits(TXEN_A, enable?1:0);
-    }
-    else
-    {
-        rfic->Modify_SPI_Reg_bits(RXEN_B, enable?1:0);
-        rfic->Modify_SPI_Reg_bits(TXEN_B, enable?1:0);
-    }
-
-    //--- ADC/DAC ---
-    rfic->Modify_SPI_Reg_bits(EN_DIR_AFE, 1);
-    rfic->Modify_SPI_Reg_bits(EN_G_AFE, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(PD_AFE, enable?0:1);
-    if ((channel%2) == 0)
-    {
-        rfic->Modify_SPI_Reg_bits(PD_TX_AFE1, enable?0:1);
-        rfic->Modify_SPI_Reg_bits(PD_RX_AFE1, enable?0:1);
-    }
-    else
-    {
-        rfic->Modify_SPI_Reg_bits(PD_TX_AFE2, enable?0:1);
-        rfic->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
-    }
-
-    //--- digital ---
-    rfic->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 2); //bypass
-    rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GC_BYP_RXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(PH_BYP_RXTSP, 1);
-
-    rfic->Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
-    rfic->Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
-
-    //--- baseband ---
-    rfic->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);
-    rfic->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
-    rfic->Modify_SPI_Reg_bits(EN_G_RBB, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(EN_G_TBB, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(PD_PGA_RBB, enable?0:1);
-
-    //--- frontend ---
-    rfic->Modify_SPI_Reg_bits(EN_DIR_RFE, 1);
-    rfic->Modify_SPI_Reg_bits(EN_DIR_TRF, 1);
-    rfic->Modify_SPI_Reg_bits(EN_G_RFE, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(EN_G_TRF, enable?1:0);
-    rfic->Modify_SPI_Reg_bits(PD_MXLOBUF_RFE, enable?0:1);
-    rfic->Modify_SPI_Reg_bits(PD_QGEN_RFE, enable?0:1);
-    rfic->Modify_SPI_Reg_bits(PD_TIA_RFE, enable?0:1);
-    rfic->Modify_SPI_Reg_bits(PD_TLOBUF_TRF, enable?0:1);
-    rfic->Modify_SPI_Reg_bits(PD_TXPAD_TRF, enable?0:1);
-
-    //--- synthesizers ---
-    rfic->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
-    rfic->Modify_SPI_Reg_bits(EN_G, enable?1:0);
-    if (channel == 0) //enable LO to channel B
-    {
-        rfic->Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        rfic->Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-    }
 }
 
 /*******************************************************************
