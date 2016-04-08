@@ -300,7 +300,7 @@ uint32_t LMS7002M::GetRSSI()
 #ifndef RSSI_FROM_MCU
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-    return (Get_SPI_Reg_bits(0x040F, 15, 0) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0);
+    return (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
 #else
     mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
     int status = mcuControl->WaitForMCU(500);

@@ -92,14 +92,14 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         if (st != LIBLMS7_SUCCESS) throw std::runtime_error("ResetChip() failed");
 
         //reset sequence over spi
-        auto reg_0x0020 = _rfics.back()->SPI_read(0x0020);
-        auto reg_0x002E = _rfics.back()->SPI_read(0x002E);
+        auto reg_0x0020 = _rfics.back()->SPI_read(0x0020, true);
+        auto reg_0x002E = _rfics.back()->SPI_read(0x002E, true);
         _rfics.back()->SPI_write(0x0020, 0x0);
         _rfics.back()->SPI_write(0x0020, reg_0x0020);
         _rfics.back()->SPI_write(0x002E, reg_0x002E);//must write
 
-        st = _rfics.back()->UploadAll();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("UploadAll() failed");
+        st = _rfics.back()->DownloadAll();
+        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("DownloadAll() failed");
 
         calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }

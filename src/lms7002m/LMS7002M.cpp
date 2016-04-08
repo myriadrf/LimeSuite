@@ -935,7 +935,7 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz, const bool 
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
     {
-        Modify_SPI_Reg_bits(MAC, ch + 1);
+        this->SetActiveChannel((ch == 0)?ChA:ChB);
         for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
             SetNCOFrequency(LMS7002M::Rx, i, rxNCO[ch][i]);
         for (int i = 0; i < 16 && txModeNCO == 0; ++i)
@@ -998,7 +998,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	{
         Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 1); // CSW_VCO<i>=1
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
         if ( (cmphl&0x01) == 1) // reduce CSW
             Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 0); // CSW_VCO<i>=0
         if( cmphl == 2 && csw_lowest < 0)
@@ -1014,7 +1014,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             {
                 Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
-                if(Get_SPI_Reg_bits(addrCMP, 13, 12) == 0)
+                if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) == 0)
                 {
                     ++csw_lowest;
                     break;
@@ -1029,7 +1029,7 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
     else
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-	cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12);
+	cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     this->SetActiveChannel(ch); //restore previously used channel
 	if(cmphl == 2)
         return LIBLMS7_SUCCESS;
@@ -1436,10 +1436,10 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
     }
     if (controlPort->IsOpen() == false || fromChip == false)
     {
-        if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1 && address >= 0x0100)
-            return mRegistersMap->GetValue(1, address);
-        else
-            return mRegistersMap->GetValue(0, address);
+        int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
+        int regNo = (mac == 2)? 1 : 0; //only when MAC is B -> use register space B
+        if (address < 0x0100) regNo = 0; //force A when below MAC mapped register space
+        return mRegistersMap->GetValue(regNo, address);
     }
 
     uint16_t data = 0;
@@ -1456,16 +1456,19 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
 */
 liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt)
 {
+    int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
     std::vector<uint32_t> data(cnt);
     for (size_t i = 0; i < cnt; ++i)
     {
         data[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
 
-        if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1 && spiAddr[i] != LMS7param(MAC).address)
-            mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
-        else
-            mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
+        //write which register cache based on MAC bits
+        //or always when below the MAC mapped register space
+        bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
 
+        if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
+        if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
     }
 
     if (!controlPort)
@@ -1506,13 +1509,19 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
     if (status != OperationStatus::SUCCESS)
         return LIBLMS7_FAILURE;
 
+    int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
+
     for (size_t i = 0; i < cnt; ++i)
     {
         spiData[i] = dataRd[i] & 0xffff;
-        if ((mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003) > 1)
-            mRegistersMap->SetValue(1, spiAddr[i], dataRd[i] & 0xffff);
-        else
-            mRegistersMap->SetValue(0, spiAddr[i], dataRd[i] & 0xffff);
+
+        //write which register cache based on MAC bits
+        //or always when below the MAC mapped register space
+        bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
+
+        if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
+        if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
     }
     return LIBLMS7_SUCCESS;
 }
