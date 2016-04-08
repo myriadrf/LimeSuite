@@ -171,6 +171,7 @@ LMS7002M::~LMS7002M()
 
 void LMS7002M::SetActiveChannel(const Channel ch)
 {
+    if (ch == this->GetActiveChannel(false)) return;
     this->Modify_SPI_Reg_bits(LMS7param(MAC), int(ch));
 }
 
