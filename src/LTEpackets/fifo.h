@@ -119,6 +119,7 @@ public:
         {   
             while (mElementsFilled.load() == 0) //buffer might be empty, wait for packets
             {
+                if (timeout_ms == 0) return samplesFilled;
                 if (canRead.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
                     return samplesFilled;
             }

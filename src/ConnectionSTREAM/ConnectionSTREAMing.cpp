@@ -381,13 +381,24 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
     if (stream->sampsRemaining == 0)
     {
         stream->bufferOffset = 0;
+        //first receive full STREAM_MTU with no timeout
         stream->sampsRemaining = mStreamService->GetRxFIFO()->pop_samples(
             stream->FIFOBuffers.data(),
             STREAM_MTU,
             stream->channelsCount,
             &stream->nextTimestamp,
+            0, //no timeout
+            &stream->currentFifoFlags);
+
+        //otherwise perform requested receive with timeout
+        if (stream->sampsRemaining == 0) stream->sampsRemaining = mStreamService->GetRxFIFO()->pop_samples(
+            stream->FIFOBuffers.data(),
+            std::min<size_t>(STREAM_MTU, length),
+            stream->channelsCount,
+            &stream->nextTimestamp,
             timeout_ms,
             &stream->currentFifoFlags);
+
         if (stream->sampsRemaining == 0) return 0; //timeout
     }
 

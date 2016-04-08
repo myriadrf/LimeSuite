@@ -295,7 +295,9 @@ def LimeSuiteCalibrate(
     #open the rx stream
     rxStream = limeSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
 
+    t0 = time.time()
     CalibrateAtFreq(limeSDR, rxStream, freq_start)
+    print("Cal took %s seconds"%(time.time()-t0))
 
     #close the rx stream
     limeSDR.closeStream(rxStream)
