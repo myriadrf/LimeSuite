@@ -6,6 +6,7 @@
 
 #include "LMS7002M.h"
 #include <cmath>
+#include <iostream>
 using namespace lime;
 
 ///define for parameter enumeration if prefix might be needed
@@ -519,7 +520,6 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out);
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
-        Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x9);
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x0);
     }
@@ -530,10 +530,10 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out);
         Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
-        Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x5);
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x1);
     }
+
     return LIBLMS7_SUCCESS;
 }
 

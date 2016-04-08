@@ -315,13 +315,10 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     bool pos1isA = channels.back() == 0;
 
     //determine sample positions based on channels
-    auto s3 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
-    auto s2 = pos0isA?LMS7002M::AI:LMS7002M::BI;
-    auto s1 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
-    auto s0 = pos1isA?LMS7002M::AI:LMS7002M::BI;
-
-    //Note: only when FPGA is also in 1-ch mode
-    //if (channels.size() == 1) s0 = s3;
+    auto s3 = pos1isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s2 = pos1isA?LMS7002M::AI:LMS7002M::BI;
+    auto s1 = pos0isA?LMS7002M::AQ:LMS7002M::BQ;
+    auto s0 = pos0isA?LMS7002M::AI:LMS7002M::BI;
 
     //configure LML based on channel config
     LMS7002M rfic;
