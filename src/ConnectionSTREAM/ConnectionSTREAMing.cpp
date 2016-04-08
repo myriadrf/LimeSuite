@@ -326,12 +326,12 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
     else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
-    rfic.Modify_SPI_Reg_bits(FCLK1_INV, 1);
-    rfic.Modify_SPI_Reg_bits(FCLK2_INV, 1);
-    rfic.Modify_SPI_Reg_bits(LML1_FIDM, 0); //Frame start=0
-    rfic.Modify_SPI_Reg_bits(LML2_FIDM, 0); //Frame start=0
-    rfic.Modify_SPI_Reg_bits(LML1_MODE, 0); //TRXIQ
-    rfic.Modify_SPI_Reg_bits(LML2_MODE, 0); //TRXIQ
+    rfic.Modify_SPI_Reg_bits(FCLK1_INV, 1, true);
+    rfic.Modify_SPI_Reg_bits(FCLK2_INV, 1, true);
+    rfic.Modify_SPI_Reg_bits(LML1_FIDM, 0, true); //Frame start=0
+    rfic.Modify_SPI_Reg_bits(LML2_FIDM, 0, true); //Frame start=0
+    rfic.Modify_SPI_Reg_bits(LML1_MODE, 0, true); //TRXIQ
+    rfic.Modify_SPI_Reg_bits(LML2_MODE, 0, true); //TRXIQ
 
     if (config.isTx) mStreamService->txStreamUseCount++;
     if (!config.isTx) mStreamService->rxStreamUseCount++;
