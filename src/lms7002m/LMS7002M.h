@@ -389,6 +389,9 @@ protected:
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
 
+    LMS7002M_RegistersMap *BackupRegisterMap(void);
+    void RestoreRegisterMap(LMS7002M_RegistersMap *backup);
+
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
     ///@name Algorithms functions
     void BackupAllRegisters();

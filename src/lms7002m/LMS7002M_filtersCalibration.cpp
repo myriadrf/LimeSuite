@@ -5,6 +5,7 @@
 */
 
 #include "LMS7002M.h"
+#include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
 using namespace lime;
@@ -26,6 +27,49 @@ const float_type LMS7002M::gRxLPF_low_lower_limit = 1;
 const float_type LMS7002M::gRxLPF_low_higher_limit = 20;
 const float_type LMS7002M::gRxLPF_high_lower_limit = 20;
 const float_type LMS7002M::gRxLPF_high_higher_limit = 70;
+
+LMS7002M_RegistersMap *LMS7002M::BackupRegisterMap(void)
+{
+    BackupAllRegisters(); return NULL;
+    auto backup = new LMS7002M_RegistersMap();
+    Channel chBck = this->GetActiveChannel();
+    this->SetActiveChannel(ChA);
+    *backup = *mRegistersMap;
+    this->SetActiveChannel(chBck);
+    return backup;
+}
+
+void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
+{
+    RestoreAllRegisters(); return;
+    Channel chBck = this->GetActiveChannel();
+
+    for (int ch = 0; ch < 2; ch++)
+    {
+        //determine addresses that have been changed
+        //and restore backup to the main register map
+        std::vector<uint16_t> restoreAddrs, restoreData;
+        for (const uint16_t addr : mRegistersMap->GetUsedAddresses(ch))
+        {
+            uint16_t original = backup->GetValue(ch, addr);
+            uint16_t current = mRegistersMap->GetValue(ch, addr);
+            mRegistersMap->SetValue(ch, addr, original);
+
+            if (ch == 1 and addr < 0x0100) continue;
+            if (original == current) continue;
+            restoreAddrs.push_back(addr);
+            restoreData.push_back(original);
+        }
+
+        //bulk write the original register values from backup
+        this->SetActiveChannel((ch==0)?ChA:ChB);
+        SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size());
+    }
+
+    //cleanup
+    delete backup;
+    this->SetActiveChannel(chBck);
+}
 
 liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type cutoff_MHz)
 {
@@ -117,7 +161,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
     uint8_t pd_iamp_tbb = 0;
     uint8_t tstin_tbb = 0;
 
-    BackupAllRegisters();    
+    auto backup = BackupRegisterMap();
     //float_type userCLKGENfreq = GetFrequencyCGEN_MHz();
 
     status = TuneTxFilterSetup(type, cutoff_MHz);
@@ -278,7 +322,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
 
     //end
 TxFilterTuneEnd:
-    RestoreAllRegisters();
+    RestoreRegisterMap(backup);
     if (status != LIBLMS7_SUCCESS)
         return status;    
     Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
@@ -332,7 +376,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     float_type p1,p2,p3,p4,p5;
     float_type ncoFreq = 0.05;
     float_type cgenFreq;
-    BackupAllRegisters();
+    auto backup = BackupRegisterMap();
 
     liblms7_status status = TuneTxFilter(TX_LADDER, bandwidth);
     uint8_t ladder_c_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
@@ -423,7 +467,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
 
     //end
 TxFilterLowBandChainEnd:
-    RestoreAllRegisters();    
+    RestoreRegisterMap(backup);
     if (status != LIBLMS7_SUCCESS)
         return status;
 
@@ -473,7 +517,7 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
     if (bandwidth_MHz < lowerLimit || bandwidth_MHz > higherLimit)
         return LIBLMS7_FREQUENCY_OUT_OF_RANGE;
 
-    BackupAllRegisters();
+    auto backup = BackupRegisterMap();
 
     status = TuneRxFilterSetup(filter, bandwidth_MHz);
     if (status != LIBLMS7_SUCCESS)
@@ -499,7 +543,7 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
     rcc_ctl_lpfh_rbb = (int8_t)Get_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB));
 
 RxFilterTuneEnd:
-    RestoreAllRegisters();
+    RestoreRegisterMap(backup);
     if (status != LIBLMS7_SUCCESS)
         return status;
 
