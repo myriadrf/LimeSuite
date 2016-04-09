@@ -109,6 +109,16 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         rfic->EnableChannel(LMS7002M::Rx, true);
     }
 
+    //enable use of calibration value cache
+    if (args.count("cacheCalibrations"))
+    {
+        printf("Search cache parameter\n");
+        bool enable = std::stoi(args.at("cacheCalibrations")) != 0;
+        SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
+        for (size_t i=0; i<_rfics.size(); ++i)
+            _rfics[i]->EnableValuesCache(enable);
+    }
+
     //give all RFICs a default state
     double defaultClockRate = DEFAULT_CLOCK_RATE;
     if (args.count("clock")) defaultClockRate = std::stod(args.at("clock"));
@@ -127,16 +137,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
         this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
         this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
-    }
-
-    //enable use of calibration value cache
-    if (args.count("cacheCalibrations"))
-    {
-        printf("Search cache parameter\n");
-        bool enable = std::stoi(args.at("cacheCalibrations")) != 0;
-        SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
-        for (size_t i=0; i<_rfics.size(); ++i)
-            _rfics[i]->EnableValuesCache(enable);
     }
 
     if(args.count("calibrateOnce"))

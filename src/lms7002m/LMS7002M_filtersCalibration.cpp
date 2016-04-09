@@ -5,6 +5,7 @@
 */
 
 #include "LMS7002M.h"
+#include "IConnection.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
@@ -137,7 +138,14 @@ liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type c
 
 
 liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff_MHz)
-{   
+{
+    int rcalCache, ccalCache;
+    bool foundInCache = false;
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    if (useCache) foundInCache = (valueCache.GetFilter_RC(boardId, cutoff_MHz*1e6, idx, Tx, int(type), &rcalCache, &ccalCache) == 0);
+    bool storeInCache = useCache and not foundInCache;
+
     LMS7002M_SelfCalState state(this);
 
     liblms7_status status;
@@ -163,6 +171,14 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
 
     auto backup = BackupRegisterMap();
     //float_type userCLKGENfreq = GetFrequencyCGEN_MHz();
+
+    if (foundInCache)
+    {
+        rcal = rcalCache;
+        ccal_lpflad_tbb = ccalCache;
+        status = LIBLMS7_SUCCESS;
+        goto TxFilterTuneEnd;
+    }
 
     status = TuneTxFilterSetup(type, cutoff_MHz);
     if (status != LIBLMS7_SUCCESS)
@@ -338,6 +354,9 @@ TxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), rcal);
         Modify_SPI_Reg_bits(0x0105, 4, 0, 0x7); //set powerdowns
     }
+
+    if (storeInCache) valueCache.InsertFilter_RC(boardId, cutoff_MHz*1e6, idx, Tx, int(type), rcal, ccal_lpflad_tbb);
+
     return LIBLMS7_SUCCESS;
 }
 
@@ -483,6 +502,13 @@ TxFilterLowBandChainEnd:
 
 liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 {
+    int rcal, ccal, cfb;
+    bool foundInCache = false;
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    if (useCache) foundInCache = (valueCache.GetFilter_RC(boardId, bandwidth_MHz*1e6, idx, Rx, int(filter), &rcal, &ccal, &cfb) == 0);
+    bool storeInCache = useCache and not foundInCache;
+
     LMS7002M_SelfCalState state(this);
 
     liblms7_status status;
@@ -518,6 +544,23 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
         return LIBLMS7_FREQUENCY_OUT_OF_RANGE;
 
     auto backup = BackupRegisterMap();
+
+    if (foundInCache)
+    {
+        cfb_tia_rfe = cfb;
+        ccomp_tia_rfe = ccal;
+        rcomp_tia_rfe = rcal;
+        c_ctl_lpfl_rbb = ccal;
+        rcc_ctl_lpfl_rbb = rcal;
+        c_ctl_lpfh_rbb = ccal;
+        rcc_ctl_lpfh_rbb = rcal;
+        ict_pga_out = 20;
+        ict_pga_in = 20;
+        r_ctl_lpf_rbb = 16;
+        c_ctl_pga_rbb = (int8_t)Get_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB)); //preserved from pga gain setting
+        status = LIBLMS7_SUCCESS;
+        goto RxFilterTuneEnd;
+    }
 
     status = TuneRxFilterSetup(filter, bandwidth_MHz);
     if (status != LIBLMS7_SUCCESS)
@@ -556,26 +599,31 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
         Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
         Modify_SPI_Reg_bits(0x010c, 1, 0, 0x1);
+        if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_MHz*1e6, idx, Rx, int(filter), rcomp_tia_rfe, ccomp_tia_rfe, cfb_tia_rfe);
     }
     else if (filter == RX_LPF_LOWBAND)
     {
         Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB), rcc_ctl_lpfl_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB), c_ctl_lpfl_rbb);
-        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out);
-        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
-        Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
+        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out); //20
+        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in); //20
+        Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb); //16
+        //Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb); //3 - set by formula based on PGA gain by SetRBBPGA_dB()
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x9);
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x0);
+        if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_MHz*1e6, idx, Rx, int(filter), rcc_ctl_lpfl_rbb, c_ctl_lpfl_rbb);
     }
     else if (filter == RX_LPF_HIGHBAND)
     {
         Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB), rcc_ctl_lpfh_rbb);
         Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFH_RBB), c_ctl_lpfh_rbb);
-        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out);
-        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in);
-        Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb);
+        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), ict_pga_out); //20
+        Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), ict_pga_in); //20
+        Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb); //16
+        //Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb); //3 - set by formula based on PGA gain by SetRBBPGA_dB()
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x5);
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x1);
+        if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_MHz*1e6, idx, Rx, int(filter), rcc_ctl_lpfh_rbb, c_ctl_lpfh_rbb);
     }
 
     return LIBLMS7_SUCCESS;

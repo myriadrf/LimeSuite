@@ -122,6 +122,19 @@ cmd.push_back(
     PRIMARY KEY (boardID, frequency, channel, transmitter, band_lna));"
     );
 
+cmd.push_back(
+"CREATE TABLE LMS7002M_FILTER_RC(\
+    boardID INTEGER,\
+    bandwidth INTEGER,\
+    channel INTEGER,\
+    transmitter BOOLEAN,\
+    filter_id INTEGER,\
+    rcal INTEGER,\
+    ccal INTEGER,\
+    cfb INTEGER,\
+    PRIMARY KEY (boardID, bandwidth, channel, transmitter, filter_id));"
+    );
+
     char *zErrMsg = 0;
     for(auto command : cmd)
     {
@@ -283,5 +296,79 @@ int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t chann
         *gainQ = queryResults.gainQ;
     if(phaseOffset)
         *phaseOffset = queryResults.phaseOffset;
+    return 0;
+}
+
+int CalibrationCache::InsertFilter_RC(uint32_t boardId, double bandwidth, uint8_t channel, bool transmitter, int filter_id, int rcal, int ccal, int cfb)
+{
+    char* zErrMsg = 0;
+    stringstream query;
+    query <<
+"INSERT OR REPLACE INTO LMS7002M_FILTER_RC (boardID, bandwidth, channel, transmitter, filter_id, rcal, ccal, cfb) " <<
+"VALUES ( " << boardId << "," << bandwidth << "," << (int)channel << "," << (transmitter?1:0) << "," << filter_id << ", " <<
+rcal<<","<<ccal<<","<<cfb<<");";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    return 0;
+}
+
+int CalibrationCache::GetFilter_RC(uint32_t boardId, double bandwidth, uint8_t channel, bool transmitter, int filter_id, int *rcal, int *ccal, int *cfb)
+{
+    struct QueryFilter_RC
+    {
+        QueryFilter_RC() : rcal(0), ccal(0), cfb(0), found(false){};
+        int rcal;
+        int ccal;
+        int cfb;
+        bool found;
+    };
+
+    auto lambda_callback = [](void *filter_rc_data, int argc, char **argv, char **azColName)
+    {
+        QueryFilter_RC *data = (QueryFilter_RC*)filter_rc_data;
+        if(data != nullptr)
+        {
+            data->rcal = argv[0] != nullptr ? std::stoi(argv[0]) : 0;
+            data->ccal = argv[1] != nullptr ? std::stoi(argv[1]) : 0;
+            data->cfb = argv[2] != nullptr ? std::stoi(argv[2]) : 0;
+            data->found = true;
+            return 0;
+        }
+        return 1;
+    };
+
+    QueryFilter_RC queryResults;
+
+    char* zErrMsg = 0;
+    stringstream query;
+    query << "SELECT rcal, ccal, cfb FROM LMS7002M_FILTER_RC where "<<
+"boardID="<<boardId<<
+" AND bandwidth="<<bandwidth<<
+" AND channel="<<(int)channel<<
+" AND transmitter="<<(transmitter?1:0)<<
+" AND filter_id="<<filter_id<<
+";";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &queryResults, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    if(not queryResults.found)
+        return -1;
+    if(rcal)
+        *rcal = queryResults.rcal;
+    if(ccal)
+        *ccal = queryResults.ccal;
+    if(cfb)
+        *cfb = queryResults.cfb;
     return 0;
 }
