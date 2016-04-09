@@ -1255,8 +1255,6 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     int8_t i;
     int16_t csw_value;
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-    //TODO when there is more than one chip get it's channel
-    uint8_t channel = 0;
 
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
@@ -1292,7 +1290,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     int csw_query;
     if(useCache)
     {
-        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_MHz*1e6, channel, tx, &vco_query, &csw_query) == 0);
+        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_MHz*1e6, mdevIndex, tx, &vco_query, &csw_query) == 0);
     }
     if(foundInCache)
     {
@@ -1332,7 +1330,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     }
     if(useCache && !foundInCache)
     {
-        valueCache.InsertVCO_CSW(boardId, freq_MHz*1e6, channel, tx, sel_vco, csw_value);
+        valueCache.InsertVCO_CSW(boardId, freq_MHz*1e6, mdevIndex, tx, sel_vco, csw_value);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
