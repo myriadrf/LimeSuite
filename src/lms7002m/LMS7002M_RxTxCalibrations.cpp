@@ -1266,7 +1266,6 @@ liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_TXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_TXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_TXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
     }
     else
     {
@@ -1278,7 +1277,6 @@ liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); //DC_BYP
     }
     return LIBLMS7_SUCCESS;
 }
