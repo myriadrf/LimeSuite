@@ -54,6 +54,7 @@ struct DeviceInfo
     //! The protocol version as a string
     std::string protocolVersion;
 
+    //! A unique board serial number
     uint32_t boardSerialNumber;
 
     /*!

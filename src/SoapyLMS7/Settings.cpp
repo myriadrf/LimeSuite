@@ -13,6 +13,7 @@
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
+#include <cstdlib>
 
 using namespace lime;
 
@@ -191,10 +192,16 @@ SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
 {
     auto devinfo = _conn->GetDeviceInfo();
     SoapySDR::Kwargs info;
-    info["expansionName"] = devinfo.expansionName;
+    if (devinfo.expansionName != "UNSUPPORTED")
+        info["expansionName"] = devinfo.expansionName;
     info["firmwareVersion"] = devinfo.firmwareVersion;
     info["hardwareVersion"] = devinfo.hardwareVersion;
     info["protocolVersion"] = devinfo.protocolVersion;
+    if (devinfo.boardSerialNumber != unsigned(-1))
+    {
+        char buff[64]; sprintf(buff, "0x%x", devinfo.boardSerialNumber);
+        info["boardSerialNumber"] = buff;
+    }
     return info;
 }
 
