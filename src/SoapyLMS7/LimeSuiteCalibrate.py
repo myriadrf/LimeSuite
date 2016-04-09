@@ -191,6 +191,9 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
         limeSDR.setIQBalance(SOAPY_SDR_TX, channel, 1.0)
         limeSDR.setIQBalance(SOAPY_SDR_RX, channel, 1.0)
 
+    #tx tsp siggen constant
+    limeSDR.writeSetting("TXTSP_CONST", str((1 << 14)))
+
     #adjust gain for best levels
     for ch in [0, 1]: limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", PGA_GAIN)
     samps = readSamps(limeSDR, rxStream)
@@ -314,12 +317,6 @@ def LimeSuiteCalibrate(
         limeSDR.setGain(SOAPY_SDR_RX, channel, "LNA", LNA_GAIN)
         limeSDR.setGain(SOAPY_SDR_RX, channel, "LB_LNA", LB_LNA_GAIN)
         limeSDR.setDCOffsetMode(SOAPY_SDR_RX, channel, False)
-
-    #tx tsp siggen constant
-    limeSDR.writeSetting("ACTIVE_CHANNEL", "A")
-    limeSDR.writeSetting("ENABLE_TXTSP_CONST", "true")
-    limeSDR.writeSetting("ACTIVE_CHANNEL", "B")
-    limeSDR.writeSetting("ENABLE_TXTSP_CONST", "true")
 
     #open the rx stream
     rxStream = limeSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])

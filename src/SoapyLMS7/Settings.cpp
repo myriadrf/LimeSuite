@@ -856,52 +856,37 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(void) const
 
 void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 {
-    auto rfic = _rfics.front();
-
-    if (key == "ACTIVE_CHANNEL")
+    if (key == "RXTSP_CONST")
     {
-        if (value == "A") rfic->SetActiveChannel(LMS7002M::ChA);
-        if (value == "B") rfic->SetActiveChannel(LMS7002M::ChB);
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "TSP_CONST", value);
+        }
     }
 
-    if (key == "ENABLE_RXTSP_CONST")
+    if (key == "TXTSP_CONST")
     {
-        rfic->Modify_SPI_Reg_bits(TSGFC_RXTSP, 1); //Full-scale
-        rfic->Modify_SPI_Reg_bits(TSGMODE_RXTSP, 1); //DC
-        rfic->Modify_SPI_Reg_bits(INSEL_RXTSP, (value=="true")?1:0); //SIGGEN
-
-        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 9830);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 1);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_RXTSP, 0);
-
-        rfic->Modify_SPI_Reg_bits(DC_REG_RXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 1);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_RXTSP, 0);
-    }
-
-    if (key == "ENABLE_TXTSP_CONST")
-    {
-        rfic->Modify_SPI_Reg_bits(TSGFC_TXTSP, 1); //Full-scale
-        rfic->Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1); //DC
-        rfic->Modify_SPI_Reg_bits(INSEL_TXTSP, (value=="true")?1:0); //SIGGEN
-
-        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 9830);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 1);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
-
-        rfic->Modify_SPI_Reg_bits(DC_REG_TXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 0);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 1);
-        rfic->Modify_SPI_Reg_bits(TSGDCLDQ_TXTSP, 0);
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "TSP_CONST", value);
+        }
     }
 }
 
-std::string SoapyLMS7::readSetting(const std::string &key) const
+void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
 {
-    return "";
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+    const bool isTx = (direction == SOAPY_SDR_TX);
+
+    if (key == "TSP_CONST")
+    {
+        const auto ampl = std::stoi(value);
+        rfic->Modify_SPI_Reg_bits(isTx?TSGFC_TXTSP:TSGFC_RXTSP, 1); //Full-scale
+        rfic->Modify_SPI_Reg_bits(isTx?TSGMODE_TXTSP:TSGMODE_RXTSP, 1); //DC
+        rfic->Modify_SPI_Reg_bits(isTx?INSEL_TXTSP:INSEL_RXTSP, 1); //SIGGEN
+        rfic->LoadDC_REG_IQ(isTx, ampl, 0);
+    }
 }
 
 /*******************************************************************
