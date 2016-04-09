@@ -298,11 +298,18 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 uint32_t LMS7002M::GetRSSI()
 {
 #ifndef RSSI_FROM_MCU
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-    uint16_t addrs[] = {0x040F, 0x040E};
+
+    //bulk write to trigger the CAPTURE register off and on
     uint16_t data[2];
-    SPI_read_batch(addrs, data, 2);
+    uint16_t addrsWr[] = {0x0400, 0x0400};
+    int reg0x0400 = SPI_read(0x0400, false);
+    data[0] = reg0x0400 & ~(1 << 15);
+    data[1] = reg0x0400 | (1 << 15);
+    SPI_write_batch(addrsWr, data, 2);
+
+    //bulk read to get both high and low parts of the RSSI
+    uint16_t addrsRd[] = {0x040F, 0x040E};
+    SPI_read_batch(addrsRd, data, 2);
     return (data[0] << 2) | data[1];
 #else
     mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
