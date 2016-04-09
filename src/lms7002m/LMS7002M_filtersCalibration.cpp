@@ -30,7 +30,7 @@ const float_type LMS7002M::gRxLPF_high_higher_limit = 70;
 
 LMS7002M_RegistersMap *LMS7002M::BackupRegisterMap(void)
 {
-    BackupAllRegisters(); return NULL;
+    //BackupAllRegisters(); return NULL;
     auto backup = new LMS7002M_RegistersMap();
     Channel chBck = this->GetActiveChannel();
     this->SetActiveChannel(ChA);
@@ -41,7 +41,7 @@ LMS7002M_RegistersMap *LMS7002M::BackupRegisterMap(void)
 
 void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
 {
-    RestoreAllRegisters(); return;
+    //RestoreAllRegisters(); return;
     Channel chBck = this->GetActiveChannel();
 
     for (int ch = 0; ch < 2; ch++)
