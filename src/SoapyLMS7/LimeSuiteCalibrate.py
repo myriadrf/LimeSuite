@@ -2,6 +2,7 @@
 ## Loopback sweep for corrections calibration data
 ########################################################################
 
+import os
 from optparse import OptionParser
 import SoapySDR
 from SoapySDR import * #*_SOAPY_SDR constants
@@ -91,7 +92,7 @@ def sampsToPowerFFT(rxSamples, fftSize=NUM_BINS_PER_FFT):
 
     return np.log(sum(fftSet)/len(fftSet))
 
-def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, freq, rate=SAMPLE_RATE):
+def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, outPath, freq, rate=SAMPLE_RATE):
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(16, 9))
     fig.suptitle('Digital corrections @ %g MHz'%(freq/1e6), fontsize=12)
@@ -118,7 +119,7 @@ def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, freq, rate=SAMPLE_R
         #ax.set_title(title, fontsize=8)
         #ax.set_xlabel('Freq (MHz)', fontsize=8)
         ax.set_ylabel('Power (dBfs)', fontsize=8)
-        ax.set_ylim(top=-10, bottom=-90)
+        ax.set_ylim(top=0, bottom=-100)
         ax.locator_params(axis='y', nbins=6)
         legend = ax.legend(loc='upper left', fontsize=10)
 
@@ -143,7 +144,8 @@ def plotSingleResult(rxInitial, rxFinal, txInitial, txFinal, freq, rate=SAMPLE_R
             annotate("Tx tone", TX_FREQ_DELTA, (0.5, -10), 'green')
             annotate("Rx imbal", -TX_FREQ_DELTA, (-1, 10), 'red')
 
-    fig.savefig('/tmp/out.png')
+    print("Writing plot to %s"%outPath)
+    fig.savefig(outPath)
     plt.close(fig)
 
 ##########################################
@@ -171,7 +173,11 @@ def GenerateTestPoints(depth):
 ##########################################
 ## Calibrate at a specified frequency
 ##########################################
-def CalibrateAtFreq(limeSDR, rxStream, freq):
+def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
+
+    print('#'*40)
+    print('## Calibrate @ %g MHz'%(freq/1e6))
+    print('#'*40)
 
     #set the RF frequency on Rx and Tx
     limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq)
@@ -190,7 +196,7 @@ def CalibrateAtFreq(limeSDR, rxStream, freq):
     samps = readSamps(limeSDR, rxStream)
     for ch in [0, 1]:
         lvldB = measureToneLevel(samps[ch], TX_FREQ_DELTA)
-        deltadB = -10 - lvldB
+        deltadB = -5 - lvldB
         print('deltadB=%f, lvldB=%f'%(deltadB, lvldB))
         limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", min(19, PGA_GAIN + deltadB))
 
@@ -261,19 +267,29 @@ def CalibrateAtFreq(limeSDR, rxStream, freq):
         limeSDR.setDCOffset(SOAPY_SDR_TX, ch, bestTxDcCorrs[ch])
     txFinal = readSamps(limeSDR, rxStream)
 
-    plotSingleResult(
+    if dumpDir is not None: plotSingleResult(
         rxInitial=rxInitial, rxFinal=rxFinal,
         txInitial=txInitial, txFinal=txFinal,
-        freq=freq)
+        freq=freq,
+        outPath=os.path.join(dumpDir, 'results_%g_MHz.png'%(freq/1e6)))
 
 ##########################################
 ## Main calibration sweep
 ##########################################
 def LimeSuiteCalibrate(
     args,
-    freq_start,
+    freqStart,
+    freqStop,
+    freqStep,
+    dumpDir,
 ):
+    if freqStart is None: raise Exception("No start frequency specified")
+    if freqStop is None: freqStop = freqStart
+
     #open device
+    print('#'*40)
+    print('## Open device with "%s"'%(args))
+    print('#'*40)
     limeSDR = SoapySDR.Device(args)
     print(str(limeSDR))
 
@@ -282,6 +298,9 @@ def LimeSuiteCalibrate(
     limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", 1e9)
 
     #initialize parameters
+    print('#'*40)
+    print('## Initialize "%s"'%(str(limeSDR)))
+    print('#'*40)
     limeSDR.setMasterClockRate(CLOCK_RATE)
     for channel in [0, 1]:
         limeSDR.setSampleRate(SOAPY_SDR_TX, channel, SAMPLE_RATE)
@@ -305,25 +324,34 @@ def LimeSuiteCalibrate(
     #open the rx stream
     rxStream = limeSDR.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
 
-    t0 = time.time()
-    CalibrateAtFreq(limeSDR, rxStream, freq_start)
-    print("Cal took %s seconds"%(time.time()-t0))
+    #sweep for each frequency
+    for freq in np.arange(freqStart, freqStop+freqStep, freqStep):
+        t0 = time.time()
+        CalibrateAtFreq(limeSDR=limeSDR, rxStream=rxStream, freq=freq, dumpDir=dumpDir)
+        print("Cal took %s seconds"%(time.time()-t0))
 
     #close the rx stream
     limeSDR.closeStream(rxStream)
 
     #close the device
     limeSDR = None
+    print("Done")
 
 def main():
     parser = OptionParser()
-    parser.add_option("--args", type="string", dest="args", help="Device construction arguments", default='')
-    parser.add_option("--freq-start", type="float", dest="freq_start", help="Start frequency sweep in Hz")
+    parser.add_option("--args", type="string", dest="args", help="Device construction arguments [%default]", default='driver=lime')
+    parser.add_option("--freqStart", type="float", dest="freqStart", help="Start frequency sweep in Hz")
+    parser.add_option("--freqStop", type="float", dest="freqStop", help="Stop frequency sweep in Hz")
+    parser.add_option("--freqStep", type="float", dest="freqStep", help="Frequency sweep step in Hz [%default]", default=500e3)
+    parser.add_option("--dumpDir", type="string", dest="dumpDir", help="Directory to dump debug data and plots")
     (options, args) = parser.parse_args()
 
     LimeSuiteCalibrate(
         args = options.args,
-        freq_start = options.freq_start,
+        freqStart = options.freqStart,
+        freqStop = options.freqStop,
+        freqStep = options.freqStep,
+        dumpDir = options.dumpDir,
     )
 
 if __name__ == '__main__': main()
