@@ -39,11 +39,12 @@ NUM_BINS_PER_FFT = 1024
 ##########################################
 ## Sample utilities
 ##########################################
-def readSamps(limeSDR, rxStream, numSamps=SAMPS_PER_CAPTURE):
+def readSamps(limeSDR, rxStream, numSamps=SAMPS_PER_CAPTURE, sleep=False):
     """
     Read stream data from each channel
     @return a list of complex64 arrays
     """
+    if sleep: time.sleep(0.1)
     rxSamples = [np.zeros(numSamps, np.complex64), np.zeros(numSamps, np.complex64)]
     limeSDR.activateStream(rxStream, SOAPY_SDR_END_BURST, 0, numSamps)
     b0 = rxSamples[0]
@@ -171,40 +172,10 @@ def GenerateTestPoints(depth):
     return zip(dcPoints, iqPoints)
 
 ##########################################
-## Calibrate at a specified frequency
+## Calibrate sweep implementations
 ##########################################
-def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
-
-    print('#'*40)
-    print('## Calibrate @ %g MHz'%(freq/1e6))
-    print('#'*40)
-
-    #set the RF frequency on Rx and Tx
-    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq)
-    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq + TX_FREQ_DELTA)
-
-    #clear correction for calibration
-    for channel in [0, 1]:
-        limeSDR.setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0)
-        limeSDR.setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0)
-        limeSDR.setDCOffset(SOAPY_SDR_TX, channel, 0.0)
-        limeSDR.setIQBalance(SOAPY_SDR_TX, channel, 1.0)
-        limeSDR.setIQBalance(SOAPY_SDR_RX, channel, 1.0)
-
-    #tx tsp siggen constant
-    limeSDR.writeSetting("TXTSP_CONST", str((1 << 14)))
-
-    #adjust gain for best levels
-    for ch in [0, 1]: limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", PGA_GAIN)
-    samps = readSamps(limeSDR, rxStream)
-    for ch in [0, 1]:
-        lvldB = measureToneLevel(samps[ch], TX_FREQ_DELTA)
-        deltadB = -5 - lvldB
-        print('deltadB=%f, lvldB=%f'%(deltadB, lvldB))
-        limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", min(19, PGA_GAIN + deltadB))
-
+def CalibrateSweepRx(limeSDR, rxStream):
     #sweep for best Rx IQ correction
-    rxInitial = readSamps(limeSDR, rxStream)
     bestRxIqCorrs = [1.0]*2
     bestRxIqLevels = [1.0]*2
     for depth in MAX_SEARCH_DEPTHS:
@@ -226,11 +197,9 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
 
     print("bestRxIqCorrs = %s"%bestRxIqCorrs)
     for ch in [0, 1]: limeSDR.setIQBalance(SOAPY_SDR_RX, ch, bestRxIqCorrs[ch])
-    rxFinal = readSamps(limeSDR, rxStream)
 
+def CalibrateSweepTx(limeSDR, rxStream):
     #sweep for best Tx IQ  and DC correction
-    for ch in [0, 1]: limeSDR.setFrequency(SOAPY_SDR_TX, ch, "BB", TX_CORDIC_FREQ[ch])
-    txInitial = readSamps(limeSDR, rxStream)
     bestTxIqCorrs = [1.0]*2
     bestTxIqLevels = [1.0]*2
     bestTxDcCorrs = [0.0]*2
@@ -268,10 +237,59 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
     for ch in [0, 1]:
         limeSDR.setIQBalance(SOAPY_SDR_TX, ch, bestTxIqCorrs[ch])
         limeSDR.setDCOffset(SOAPY_SDR_TX, ch, bestTxDcCorrs[ch])
-    txFinal = readSamps(limeSDR, rxStream)
 
-    #store calibrations to the database
-    limeSDR.writeSetting("STORE_CORRECTIONS", "true")
+##########################################
+## Calibrate at a specified frequency
+##########################################
+def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir, validate):
+
+    print('#'*40)
+    print('## Calibrate @ %g MHz'%(freq/1e6))
+    print('#'*40)
+
+    #set the RF frequency on Rx and Tx
+    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq)
+    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq + TX_FREQ_DELTA)
+
+    #clear correction for calibration
+    for channel in [0, 1]:
+        limeSDR.setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0)
+        limeSDR.setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0)
+        limeSDR.setDCOffset(SOAPY_SDR_TX, channel, 0.0)
+        limeSDR.setIQBalance(SOAPY_SDR_TX, channel, 1.0)
+        limeSDR.setIQBalance(SOAPY_SDR_RX, channel, 1.0)
+
+    #tx tsp siggen constant
+    limeSDR.writeSetting("TXTSP_CONST", str((1 << 14)))
+
+    #adjust gain for best levels
+    for ch in [0, 1]: limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", PGA_GAIN)
+    samps = readSamps(limeSDR, rxStream)
+    for ch in [0, 1]:
+        lvldB = measureToneLevel(samps[ch], TX_FREQ_DELTA)
+        deltadB = -5 - lvldB
+        print('deltadB=%f, lvldB=%f'%(deltadB, lvldB))
+        limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", min(19, PGA_GAIN + deltadB))
+
+    #sweep for best Rx IQ correction
+    rxInitial = readSamps(limeSDR, rxStream, sleep=True)
+    if validate:
+        limeSDR.writeSetting("APPLY_RX_CORRECTIONS", "true")
+    else:
+        CalibrateSweepRx(limeSDR, rxStream)
+        limeSDR.writeSetting("STORE_RX_CORRECTIONS", "true")
+    rxFinal = readSamps(limeSDR, rxStream, sleep=True)
+
+    #sweep for best Tx IQ  and DC correction
+    for ch in [0, 1]:
+        limeSDR.setFrequency(SOAPY_SDR_TX, ch, "BB", TX_CORDIC_FREQ[ch])
+    txInitial = readSamps(limeSDR, rxStream, sleep=True)
+    if validate:
+        limeSDR.writeSetting("APPLY_TX_CORRECTIONS", "true")
+    else:
+        CalibrateSweepTx(limeSDR, rxStream)
+        limeSDR.writeSetting("STORE_TX_CORRECTIONS", "true")
+    txFinal = readSamps(limeSDR, rxStream, sleep=True)
 
     if dumpDir is not None: plotSingleResult(
         rxInitial=rxInitial, rxFinal=rxFinal,
@@ -288,6 +306,7 @@ def LimeSuiteCalibrate(
     freqStop,
     freqStep,
     dumpDir,
+    validate,
 ):
     if freqStart is None: raise Exception("No start frequency specified")
     if freqStop is None: freqStop = freqStart
@@ -329,7 +348,7 @@ def LimeSuiteCalibrate(
     #sweep for each frequency
     for freq in np.arange(freqStart, freqStop+freqStep, freqStep):
         t0 = time.time()
-        CalibrateAtFreq(limeSDR=limeSDR, rxStream=rxStream, freq=freq, dumpDir=dumpDir)
+        CalibrateAtFreq(limeSDR=limeSDR, rxStream=rxStream, freq=freq, dumpDir=dumpDir, validate=validate)
         print("Cal took %s seconds"%(time.time()-t0))
 
     #close the rx stream
@@ -346,6 +365,7 @@ def main():
     parser.add_option("--freqStop", type="float", dest="freqStop", help="Stop frequency sweep in Hz")
     parser.add_option("--freqStep", type="float", dest="freqStep", help="Frequency sweep step in Hz [%default]", default=500e3)
     parser.add_option("--dumpDir", type="string", dest="dumpDir", help="Directory to dump debug data and plots")
+    parser.add_option("--validate", action="store_true", dest="validate", help="Validate cached corrections data", default=False)
     (options, args) = parser.parse_args()
 
     LimeSuiteCalibrate(
@@ -354,6 +374,7 @@ def main():
         freqStop = options.freqStop,
         freqStep = options.freqStep,
         dumpDir = options.dumpDir,
+        validate = options.validate,
     )
 
 if __name__ == '__main__': main()

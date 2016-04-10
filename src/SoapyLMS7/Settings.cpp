@@ -893,12 +893,35 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "STORE_CORRECTIONS")
+    if (key == "STORE_RX_CORRECTIONS")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "STORE_CORRECTIONS", value);
+        }
+    }
+
+    if (key == "STORE_TX_CORRECTIONS")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
             this->writeSetting(SOAPY_SDR_TX, channel, "STORE_CORRECTIONS", value);
+        }
+    }
+
+    if (key == "APPLY_RX_CORRECTIONS")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "APPLY_CORRECTIONS", value);
+        }
+    }
+
+    if (key == "APPLY_TX_CORRECTIONS")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "APPLY_CORRECTIONS", value);
         }
     }
 }
@@ -921,6 +944,11 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     if (key == "STORE_CORRECTIONS")
     {
         rfic->StoreDigitalCorrections(isTx);
+    }
+
+    if (key == "APPLY_CORRECTIONS")
+    {
+        rfic->ApplyDigitalCorrections(isTx);
     }
 }
 
