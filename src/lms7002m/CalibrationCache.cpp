@@ -353,10 +353,10 @@ int CalibrationCache::GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_
         return -1;
     }
 
-    //found an exact match
-    if (not closeFreqs.empty() and std::llrint(closeFreqs.front()) == std::llrint(frequency))
+    //found only one match, but its very close within margin
+    if (closeFreqs.size() == 1 and std::abs(closeFreqs.front()-frequency) <= 100)
     {
-        return GetDC_IQ(boardId, frequency, channel, transmitter, band_lna, dcI, dcQ, gainI, gainQ, phaseOffset);
+        return GetDC_IQ(boardId, closeFreqs.front(), channel, transmitter, band_lna, dcI, dcQ, gainI, gainQ, phaseOffset);
     }
 
     //otherwise check for two results to perform interp
