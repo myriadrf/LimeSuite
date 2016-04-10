@@ -2156,23 +2156,23 @@ int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
 {
     const bool bypass = I == 0.0 and Q == 0.0;
     this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, bypass?1:0);
-    this->Modify_SPI_Reg_bits(DCCORRI_TXTSP, (int)(I*128));
-    this->Modify_SPI_Reg_bits(DCCORRQ_TXTSP, (int)(Q*128));
+    this->Modify_SPI_Reg_bits(DCCORRI_TXTSP, std::lrint(I*128));
+    this->Modify_SPI_Reg_bits(DCCORRQ_TXTSP, std::lrint(Q*128));
 }
 
 void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
 {
-    I = this->Get_SPI_Reg_bits(DCCORRI_TXTSP)/128.0;
-    Q = this->Get_SPI_Reg_bits(DCCORRQ_TXTSP)/128.0;
+    I = int8_t(this->Get_SPI_Reg_bits(DCCORRI_TXTSP))/128.0;
+    Q = int8_t(this->Get_SPI_Reg_bits(DCCORRQ_TXTSP))/128.0;
 }
 
 int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
 {
     const bool bypassPhase = (phase == 0.0);
     const bool bypassGain = ((gainI == 1.0) and (gainQ == 1.0)) or ((gainI == 0.0) and (gainQ == 0.0));
-    int iqcorr = (int)(2047*(phase/(M_PI/2)));
-    int gcorri = (int)(2047*gainI);
-    int gcorrq = (int)(2047*gainQ);
+    int iqcorr = std::lrint(2047*(phase/(M_PI/2)));
+    int gcorri = std::lrint(2047*gainI);
+    int gcorrq = std::lrint(2047*gainQ);
 
     this->Modify_SPI_Reg_bits(tx?PH_BYP_TXTSP:PH_BYP_RXTSP, bypassPhase?1:0);
     this->Modify_SPI_Reg_bits(tx?GC_BYP_TXTSP:GC_BYP_RXTSP, bypassGain?1:0);
@@ -2183,9 +2183,9 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
 {
-    int iqcorr = this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP);
-    int gcorri = this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP);
-    int gcorrq = this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP);
+    int iqcorr = int16_t(this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP) << 4) >> 4;
+    int gcorri = int16_t(this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP) << 4) >> 4;;
+    int gcorrq = int16_t(this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP) << 4) >> 4;;
 
     phase = (M_PI/2)*iqcorr/2047.0;
     gainI = gcorri/2047.0;
