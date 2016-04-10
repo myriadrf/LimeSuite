@@ -23,10 +23,6 @@ using namespace lime;
 //lazy fix for the const call issue -- FIXME
 #define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
 
-bool skipRxCalibration = false;
-bool skipTxCalibration = false;
-bool calibrateOnce = false;
-
 /*******************************************************************
  * Special LMS7002M with log forwarding
  ******************************************************************/
@@ -110,15 +106,11 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         rfic->EnableChannel(LMS7002M::Rx, true);
     }
 
-    //enable use of calibration value cache
-    if (args.count("cacheCalibrations"))
-    {
-        printf("Search cache parameter\n");
-        bool enable = std::stoi(args.at("cacheCalibrations")) != 0;
-        SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", enable?"Enable":"Disable");
-        for (size_t i=0; i<_rfics.size(); ++i)
-            _rfics[i]->EnableValuesCache(enable);
-    }
+    //enable use of calibration value cache automatically
+    //or specify args[cacheCalibrations] == 0 to disable
+    const bool cacheEnable = args.count("cacheCalibrations") == 0 or std::stoi(args.at("cacheCalibrations")) != 0;
+    SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", cacheEnable?"Enable":"Disable");
+    for (auto rfic : _rfics) rfic->EnableValuesCache(cacheEnable);
 
     //give all RFICs a default state
     double defaultClockRate = DEFAULT_CLOCK_RATE;
@@ -138,13 +130,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
         this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
         this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
-    }
-
-    if(args.count("calibrateOnce"))
-    {
-        calibrateOnce = std::stoi(args.at("calibrateOnce"));
-        if(calibrateOnce)
-            SoapySDR::logf(SOAPY_SDR_INFO, "Rx/Tx will be calibrated only once");
     }
 
     //also triggers internal stream threads ~ its hacky
