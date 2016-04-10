@@ -509,6 +509,20 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channe
 /*******************************************************************
  * Frequency API
  ******************************************************************/
+SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const size_t channel) const
+{
+    auto infos = SoapySDR::Device::getFrequencyArgsInfo(direction, channel);
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "CORRECTIONS";
+        info.name = "Corrections";
+        info.value = "true";
+        info.description = "Automatically apply DC/IQ corrections";
+        info.type = SoapySDR::ArgInfo::BOOL;
+        infos.push_back(info);
+    }
+    return infos;
+}
 
 void SoapyLMS7::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
 {
@@ -524,6 +538,9 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         if (targetRfFreq < 30e6) targetRfFreq = 30e6;
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
         rfic->SetFrequencySX(lmsDir, targetRfFreq/1e6);
+
+        //optional way to skip corrections (used by cal utility)
+        if (args.count("CORRECTIONS") != 0 and args.at("CORRECTIONS") == "false") return;
 
         //apply corrections to channel A
         rfic->SetActiveChannel(LMS7002M::ChA);

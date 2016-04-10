@@ -248,8 +248,8 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir, validate):
     print('#'*40)
 
     #set the RF frequency on Rx and Tx
-    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq)
-    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq + TX_FREQ_DELTA)
+    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", freq, dict(CORRECTIONS="false"))
+    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", freq + TX_FREQ_DELTA, dict(CORRECTIONS="false"))
 
     #clear correction for calibration
     for channel in [0, 1]:
@@ -321,8 +321,8 @@ def LimeSuiteCalibrate(
     for k in info.keys(): print("%s:%s"%(k,info[k]))
 
     #FIXME work around so set sample rate programs the rates
-    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", 1e9)
-    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", 1e9)
+    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", 1e9, dict(CORRECTIONS="false"))
+    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", 1e9, dict(CORRECTIONS="false"))
 
     #initialize parameters
     print('#'*40)
