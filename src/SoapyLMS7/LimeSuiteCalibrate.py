@@ -19,8 +19,8 @@ import copy
 ##########################################
 CLOCK_RATE = 80e6
 SAMPLE_RATE = 10e6
-RX_ANTENNA = "LB1"
-TX_ANTENNA = "BAND1"
+RX_ANTENNA = "LB2"
+TX_ANTENNA = "BAND2"
 LB_LNA_GAIN = 40.0
 PGA_GAIN = 0.0
 TIA_GAIN = 0.0
@@ -45,7 +45,7 @@ def readSamps(limeSDR, rxStream, numSamps=SAMPS_PER_CAPTURE, sleep=False):
     Read stream data from each channel
     @return a list of complex64 arrays
     """
-    if sleep: time.sleep(0.1)
+    if sleep: time.sleep(0.05)
     rxSamples = [np.zeros(numSamps, np.complex64), np.zeros(numSamps, np.complex64)]
     limeSDR.activateStream(rxStream, SOAPY_SDR_END_BURST, 0, numSamps)
     b0 = rxSamples[0]
@@ -269,7 +269,7 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir, validate):
     for ch in [0, 1]:
         lvldB = measureToneLevel(samps[ch], TX_FREQ_DELTA)
         deltadB = -5 - lvldB
-        print('deltadB=%f, lvldB=%f'%(deltadB, lvldB))
+        print('deltadB=%g, lvldB=%g'%(deltadB, lvldB))
         limeSDR.setGain(SOAPY_SDR_RX, ch, "PGA", min(19, PGA_GAIN + deltadB))
 
     #sweep for best Rx IQ correction
@@ -349,8 +349,9 @@ def LimeSuiteCalibrate(
     #sweep for each frequency
     for freq in np.arange(freqStart, freqStop+freqStep, freqStep):
         t0 = time.time()
-        CalibrateAtFreq(limeSDR=limeSDR, rxStream=rxStream, freq=freq, dumpDir=dumpDir, validate=validate)
-        print("Cal took %s seconds"%(time.time()-t0))
+        try: CalibrateAtFreq(limeSDR=limeSDR, rxStream=rxStream, freq=freq, dumpDir=dumpDir, validate=validate)
+        except Exception as ex: print("Failed at %g MHz, skipping...\n    %s"%(freq/1e6, str(ex)))
+        if not validate: print("Cal took %s seconds"%(time.time()-t0))
 
     #close the rx stream
     limeSDR.closeStream(rxStream)

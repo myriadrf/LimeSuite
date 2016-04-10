@@ -950,7 +950,10 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
 
     if (key == "APPLY_CORRECTIONS")
     {
-        rfic->ApplyDigitalCorrections(isTx);
+        if (rfic->ApplyDigitalCorrections(isTx) != 0)
+        {
+            throw std::runtime_error(lime::GetLastErrorMessage());
+        }
     }
 }
 
