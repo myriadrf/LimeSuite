@@ -19,6 +19,7 @@ public:
 
     int InsertDC_IQ(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int dcI, int dcQ, int gainI, int gainQ, int phaseOffset);
     int GetDC_IQ(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int *dcI, int *dcQ, int *gainI, int *gainQ, int *phaseOffset);
+    int GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int *dcI, int *dcQ, int *gainI, int *gainQ, int *phaseOffset);
 
     int InsertFilter_RC(uint32_t boardId, double bandwidth, uint8_t channel, bool transmitter, int filter_id, int rcal, int ccal, int cfb = 0);
     int GetFilter_RC(uint32_t boardId, double bandwidth, uint8_t channel, bool transmitter, int filter_id, int *rcal, int *ccal, int *cfb = nullptr);

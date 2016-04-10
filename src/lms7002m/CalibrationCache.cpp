@@ -7,6 +7,7 @@
 #include <vector>
 #include <sstream>
 #include <ciso646>
+#include <cmath>
 #ifndef __unix__
     #include <Windows.h>
     #include <Shlobj.h>
@@ -20,6 +21,12 @@ static const char* cacheFilename = "LMS7002M_cache_values.db";
 
 int CalibrationCache::instanceCount = 0;
 sqlite3* CalibrationCache::db = nullptr;
+
+static inline double linearInterp(double x, double x0, double y0, double x1, double y1)
+{
+    double a = (x - x0)/(x1 - x0);
+    return y0 + (y1 - y0)*a;
+}
 
 CalibrationCache::CalibrationCache()
 {
@@ -157,7 +164,7 @@ int CalibrationCache::InsertVCO_CSW(uint32_t boardId, double frequency, uint8_t 
     stringstream query;
     query <<
 "INSERT OR REPLACE INTO LMS7002M_VCO (boardID, frequency, channel, transmitter, vco, csw) " <<
-"VALUES ( " << boardId << "," << frequency << "," << (int)channel << "," << (transmitter?1:0) << "," <<vco<<","<<csw<<");";
+"VALUES ( " << boardId << "," << std::llrint(frequency) << "," << (int)channel << "," << (transmitter?1:0) << "," <<vco<<","<<csw<<");";
 
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
     if( rc != SQLITE_OK )
@@ -198,7 +205,7 @@ auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azCo
     stringstream query;
     query << "SELECT vco, csw FROM LMS7002M_VCO where "<<
 "boardID="<<boardId<<
-" AND frequency="<<frequency<<
+" AND frequency="<<std::llrint(frequency)<<
 " AND channel="<<(int)channel<<
 " AND transmitter="<<(transmitter?1:0)<<";";
 
@@ -224,7 +231,7 @@ int CalibrationCache::InsertDC_IQ(uint32_t boardId, double frequency, uint8_t ch
     stringstream query;
     query <<
 "INSERT OR REPLACE INTO LMS7002M_DC_IQ (boardID, frequency, channel, transmitter, band_lna, dcI, dcQ, gainI, gainQ, phaseOffset) " <<
-"VALUES ( " << boardId << "," << frequency << "," << (int)channel << "," << (transmitter?1:0) << "," << band_lna << ", " <<
+"VALUES ( " << boardId << "," << std::llrint(frequency) << "," << (int)channel << "," << (transmitter?1:0) << "," << band_lna << ", " <<
 dcI<<","<<dcQ<<","<<gainI<<","<<gainQ<<","<<phaseOffset<<");";
 
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
@@ -272,7 +279,7 @@ int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t chann
     stringstream query;
     query << "SELECT dcI, dcQ, gainI, gainQ, phaseOffset FROM LMS7002M_DC_IQ where "<<
 "boardID="<<boardId<<
-" AND frequency="<<frequency<<
+" AND frequency="<<std::llrint(frequency)<<
 " AND channel="<<(int)channel<<
 " AND transmitter="<<(transmitter?1:0)<<
 " AND band_lna="<<band_lna<<
@@ -286,7 +293,7 @@ int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t chann
         return -1;
     }
     if(not queryResults.found)
-        return -1;
+        return ReportError("GetDC_IQ(%g MHz, ch=%d, tx=%d): cannot find match", frequency/1e6, int(channel), transmitter);
     if(dcI)
         *dcI = queryResults.dcI;
     if(dcQ)
@@ -300,13 +307,91 @@ int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t chann
     return 0;
 }
 
+int CalibrationCache::GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_t channel, bool transmitter, int band_lna, int *dcI, int *dcQ, int *gainI, int *gainQ, int *phaseOffset)
+{
+    std::vector<double> closeFreqs;
+
+    auto lambda_callback = [](void *data, int argc, char **argv, char **azColName)
+    {
+        std::vector<double> *data_freqs = (std::vector<double>*)data;
+        if(data != nullptr)
+        {
+            for (size_t i = 0; i < argc; i++)
+            {
+                if (argv[i] == nullptr) continue;
+                data_freqs->push_back(double(std::stoll(argv[i])));
+            }
+            return 0;
+        }
+        return 1;
+    };
+
+    char* zErrMsg = 0;
+    stringstream query;
+    query << "SELECT min(frequency) as freq FROM LMS7002M_DC_IQ where "<<
+"boardID="<<boardId<<
+" AND frequency >= "<<std::llrint(frequency)<<
+" AND frequency < "<<std::llrint(frequency + 1e6)<<
+" AND channel="<<(int)channel<<
+" AND transmitter="<<(transmitter?1:0)<<
+" AND band_lna="<<band_lna<<
+" UNION SELECT max(frequency) as freq FROM LMS7002M_DC_IQ where "<<
+"boardID="<<boardId<<
+" AND frequency <= "<<std::llrint(frequency)<<
+" AND frequency > "<<std::llrint(frequency - 1e6)<<
+" AND channel="<<(int)channel<<
+" AND transmitter="<<(transmitter?1:0)<<
+" AND band_lna="<<band_lna<<
+";";
+
+    int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &closeFreqs, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        ReportError("SQL error: %s", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+
+    //found an exact match
+    if (not closeFreqs.empty() and std::llrint(closeFreqs.front()) == std::llrint(frequency))
+    {
+        return GetDC_IQ(boardId, frequency, channel, transmitter, band_lna, dcI, dcQ, gainI, gainQ, phaseOffset);
+    }
+
+    //otherwise check for two results to perform interp
+    if (closeFreqs.size() != 2) return ReportError(
+        "GetDC_IQ_Interp(%g MHz, ch=%d, tx=%d): no matches between [%g, %g] MHz",
+        frequency/1e6, int(channel), transmitter, frequency/1e6-1, frequency/1e6+1);
+
+    //perform interpolation
+    double f0 = closeFreqs[0];
+    double f1 = closeFreqs[1];
+    int dcI0, dcQ0, gainI0, gainQ0, phaseOffset0;
+    int dcI1, dcQ1, gainI1, gainQ1, phaseOffset1;
+
+    rc = GetDC_IQ(boardId, f0, channel, transmitter, band_lna, &dcI0, &dcQ0, &gainI0, &gainQ0, &phaseOffset0);
+    if (rc != 0) return rc;
+
+    rc = GetDC_IQ(boardId, f1, channel, transmitter, band_lna, &dcI1, &dcQ1, &gainI1, &gainQ1, &phaseOffset1);
+    if (rc != 0) return rc;
+
+    *dcI = linearInterp(frequency, f0, dcI0, f1, dcI1);
+    *dcQ = linearInterp(frequency, f0, dcQ0, f1, dcQ1);
+    *gainI = linearInterp(frequency, f0, gainI0, f1, gainI1);
+    *gainQ = linearInterp(frequency, f0, gainQ0, f1, gainQ1);
+    *phaseOffset = linearInterp(frequency, f0, phaseOffset0, f1, phaseOffset1);
+
+    return 0;
+}
+
 int CalibrationCache::InsertFilter_RC(uint32_t boardId, double bandwidth, uint8_t channel, bool transmitter, int filter_id, int rcal, int ccal, int cfb)
 {
     char* zErrMsg = 0;
     stringstream query;
     query <<
 "INSERT OR REPLACE INTO LMS7002M_FILTER_RC (boardID, bandwidth, channel, transmitter, filter_id, rcal, ccal, cfb) " <<
-"VALUES ( " << boardId << "," << bandwidth << "," << (int)channel << "," << (transmitter?1:0) << "," << filter_id << ", " <<
+"VALUES ( " << boardId << "," << std::llrint(bandwidth) << "," << (int)channel << "," << (transmitter?1:0) << "," << filter_id << ", " <<
 rcal<<","<<ccal<<","<<cfb<<");";
 
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
@@ -350,7 +435,7 @@ int CalibrationCache::GetFilter_RC(uint32_t boardId, double bandwidth, uint8_t c
     stringstream query;
     query << "SELECT rcal, ccal, cfb FROM LMS7002M_FILTER_RC where "<<
 "boardID="<<boardId<<
-" AND bandwidth="<<bandwidth<<
+" AND bandwidth="<<std::llrint(bandwidth)<<
 " AND channel="<<(int)channel<<
 " AND transmitter="<<(transmitter?1:0)<<
 " AND filter_id="<<filter_id<<

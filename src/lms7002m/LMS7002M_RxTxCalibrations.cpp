@@ -1318,8 +1318,8 @@ int LMS7002M::ApplyDigitalCorrections(const bool isTx)
     int band = 0; //TODO
 
     int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
-    if (valueCache.GetDC_IQ(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset) != 0)
-        return ReportError("Cannot find %s DC/IQ calibrations for %g MHz", isTx?"Tx":"Rx", freq/1e6);
+    int rc = valueCache.GetDC_IQ_Interp(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset);
+    if (rc != 0) return rc;
 
     if (isTx)
     {
