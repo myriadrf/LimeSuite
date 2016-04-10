@@ -270,6 +270,9 @@ def CalibrateAtFreq(limeSDR, rxStream, freq, dumpDir):
         limeSDR.setDCOffset(SOAPY_SDR_TX, ch, bestTxDcCorrs[ch])
     txFinal = readSamps(limeSDR, rxStream)
 
+    #store calibrations to the database
+    limeSDR.writeSetting("STORE_CORRECTIONS", "true")
+
     if dumpDir is not None: plotSingleResult(
         rxInitial=rxInitial, rxFinal=rxFinal,
         txInitial=txInitial, txFinal=txFinal,

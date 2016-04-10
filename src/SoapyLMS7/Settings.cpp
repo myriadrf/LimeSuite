@@ -5,6 +5,7 @@
 */
 
 #include "SoapyLMS7.h"
+#include "ErrorReporting.h"
 #include <IConnection.h>
 #include <stdexcept>
 #include <iostream>
@@ -71,7 +72,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
     //quick summary
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
-    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %f MHz", _conn->GetReferenceClockRate()/1e6);
+    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", _conn->GetReferenceClockRate()/1e6);
 
     //disable cal hooks during setup
     std::map<size_t, std::shared_ptr<LMS7002M_SelfCalState>> calStates;
@@ -408,7 +409,7 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const size_t 
 void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setGain(%s, %d, %s, %f dB)", dirName, int(channel), name.c_str(), value);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setGain(%s, %d, %s, %g dB)", dirName, int(channel), name.c_str(), value);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
@@ -453,7 +454,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 
     else throw std::runtime_error("SoapyLMS7::setGain("+name+") - unknown gain name");
 
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s%s[%d] gain %f dB", dirName, name.c_str(), int(channel), this->getGain(direction, channel, name));
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s%s[%d] gain %g dB", dirName, name.c_str(), int(channel), this->getGain(direction, channel, name));
 }
 
 double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string &name) const
@@ -514,7 +515,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setFrequency(%s, %d, %s, %f MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
 
     if (name == "RF")
     {
@@ -523,7 +524,20 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         if (targetRfFreq < 30e6) targetRfFreq = 30e6;
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
         rfic->SetFrequencySX(lmsDir, targetRfFreq/1e6);
-        //TODO -- new corrections cache api here
+
+        //apply corrections to channel A
+        rfic->SetActiveChannel(LMS7002M::ChA);
+        if (rfic->ApplyDigitalCorrections(lmsDir) != 0)
+        {
+            SoapySDR::log(SOAPY_SDR_WARNING, lime::GetLastErrorMessage());
+        }
+        //success, now channel B (ignore errors)
+        else
+        {
+            rfic->SetActiveChannel(LMS7002M::ChB);
+            rfic->ApplyDigitalCorrections(lmsDir);
+        }
+
         return;
     }
 
@@ -601,12 +615,12 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
     const double factor = dspRate/rate;
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %f MHz), baseRate %f MHz, factor %f", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), baseRate %g MHz, factor %g", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
     if (intFactor < 2) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too high");
     if (intFactor > 32) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too low");
 
     if (std::abs(factor-intFactor) > 0.01) SoapySDR::logf(SOAPY_SDR_WARNING,
-        "SoapyLMS7::setSampleRate(): not a power of two factor: TSP Rate = %f MHZ, Requested rate = %f MHz", dspRate/1e6, rate/1e6);
+        "SoapyLMS7::setSampleRate(): not a power of two factor: TSP Rate = %g MHZ, Requested rate = %g MHz", dspRate/1e6, rate/1e6);
 
     switch (direction)
     {
@@ -657,7 +671,7 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
 
 void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const double bw)
 {
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %f MHz)", dirName, int(channel), bw/1e6);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
     //save dc offset mode
     auto saveDcMode = this->getDCOffsetMode(direction, channel);
@@ -698,7 +712,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %f MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
         }
     }
 
@@ -733,7 +747,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %f MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
         }
     }
 
@@ -878,6 +892,15 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
             this->writeSetting(SOAPY_SDR_TX, channel, "TSP_CONST", value);
         }
     }
+
+    if (key == "STORE_CORRECTIONS")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "STORE_CORRECTIONS", value);
+            this->writeSetting(SOAPY_SDR_TX, channel, "STORE_CORRECTIONS", value);
+        }
+    }
 }
 
 void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
@@ -893,6 +916,11 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         rfic->Modify_SPI_Reg_bits(isTx?TSGMODE_TXTSP:TSGMODE_RXTSP, 1); //DC
         rfic->Modify_SPI_Reg_bits(isTx?INSEL_TXTSP:INSEL_RXTSP, 1); //SIGGEN
         rfic->LoadDC_REG_IQ(isTx, ampl, 0);
+    }
+
+    if (key == "STORE_CORRECTIONS")
+    {
+        rfic->StoreDigitalCorrections(isTx);
     }
 }
 

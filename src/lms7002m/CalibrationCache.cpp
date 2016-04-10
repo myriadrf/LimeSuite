@@ -1,4 +1,5 @@
 #include "CalibrationCache.h"
+#include "ErrorReporting.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>

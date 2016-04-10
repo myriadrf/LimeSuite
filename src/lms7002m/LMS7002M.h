@@ -124,6 +124,26 @@ public:
     ///@name Transmitter, Receiver calibrations
     liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
     liblms7_status CalibrateTx(float_type bandwidth_MHz);
+
+    /*!
+     * Store the digital corrections for the current channel.
+     * The corrections are written to the calibration database.
+     * This call is typically called by the self-cal utilities.
+     * @param isTx true for transmit, false for receive
+     * @return 0 for success otherwise an error code
+     */
+    int StoreDigitalCorrections(const bool isTx);
+
+    /*!
+     * Apply digital corrections for the current channel.
+     * Lookup corrections in the calibration database
+     * using the current synthesizer frequency. The call
+     * will fail if a calibration point cannot be found.
+     * @param isTx true for transmit, false for receive
+     * @return 0 for success otherwise an error code
+     */
+    int ApplyDigitalCorrections(const bool isTx);
+
     ///@}
 
     ///@name Filters tuning

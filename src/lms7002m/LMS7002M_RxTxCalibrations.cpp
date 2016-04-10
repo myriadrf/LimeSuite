@@ -1,4 +1,5 @@
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <assert.h>
 #include "MCU_BD.h"
 #include "IConnection.h"
@@ -1279,4 +1280,67 @@ liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
     }
     return LIBLMS7_SUCCESS;
+}
+
+int LMS7002M::StoreDigitalCorrections(const bool isTx)
+{
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    const double freq = this->GetFrequencySX_MHz(isTx)*1e6;
+    int band = 0; //TODO
+    int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
+
+    if (isTx)
+    {
+        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
+        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
+    }
+    else
+    {
+        dccorri = 0;
+        dccorrq = 0;
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP));
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP));
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP));
+    }
+
+    return valueCache.InsertDC_IQ(boardId, freq, idx, isTx, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
+}
+
+int LMS7002M::ApplyDigitalCorrections(const bool isTx)
+{
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    const double freq = this->GetFrequencySX_MHz(isTx)*1e6;
+    int band = 0; //TODO
+
+    int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
+    if (valueCache.GetDC_IQ(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset) != 0)
+        return ReportError("Cannot find %s DC/IQ calibrations for %g MHz", isTx?"Tx":"Rx", freq/1e6);
+
+    if (isTx)
+    {
+        Modify_SPI_Reg_bits(DCCORRI_TXTSP, dccorri);
+        Modify_SPI_Reg_bits(DCCORRQ_TXTSP, dccorrq);
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, gcorri);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, gcorrq);
+        Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
+
+        Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
+        Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
+        Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(GCORRI_RXTSP, gcorri);
+        Modify_SPI_Reg_bits(GCORRQ_RXTSP, gcorrq);
+        Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
+
+        Modify_SPI_Reg_bits(PH_BYP_RXTSP, 0);
+        Modify_SPI_Reg_bits(GC_BYP_RXTSP, 0);
+    }
+    return 0;
 }
