@@ -2162,8 +2162,8 @@ int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
 
 void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
 {
-    I = int8_t(this->Get_SPI_Reg_bits(DCCORRI_TXTSP))/128.0;
-    Q = int8_t(this->Get_SPI_Reg_bits(DCCORRQ_TXTSP))/128.0;
+    I = int8_t(this->Get_SPI_Reg_bits(DCCORRI_TXTSP))/128.0; //signed 8-bit
+    Q = int8_t(this->Get_SPI_Reg_bits(DCCORRQ_TXTSP))/128.0; //signed 8-bit
 }
 
 int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
@@ -2183,9 +2183,9 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
 {
-    int iqcorr = int16_t(this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP) << 4) >> 4;
-    int gcorri = int16_t(this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP) << 4) >> 4;;
-    int gcorrq = int16_t(this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP) << 4) >> 4;;
+    int iqcorr = int16_t(this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP) << 4) >> 4; //sign extend 12-bit
+    int gcorri = int16_t(this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP)); //unsigned 11-bit
+    int gcorrq = int16_t(this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP)); //unsigned 11-bit
 
     phase = (M_PI/2)*iqcorr/2047.0;
     gainI = gcorri/2047.0;

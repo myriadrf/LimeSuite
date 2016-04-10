@@ -1292,19 +1292,19 @@ int LMS7002M::StoreDigitalCorrections(const bool isTx)
 
     if (isTx)
     {
-        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
-        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
+        dccorri = int8_t(Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP))); //signed 8-bit
+        dccorrq = int8_t(Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP))); //signed 8-bit
+        gcorri = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP))); //unsigned 11-bit
+        gcorrq = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP))); //unsigned 11-bit
+        phaseOffset = int16_t(Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP)) << 4) >> 4; //sign extend 12-bit
     }
     else
     {
         dccorri = 0;
         dccorrq = 0;
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP));
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP));
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP));
+        gcorri = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP)) << 4) >> 4;
+        gcorrq = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP)) << 4) >> 4;
+        phaseOffset = int16_t(Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP)) << 4) >> 4;
     }
 
     return valueCache.InsertDC_IQ(boardId, freq, idx, isTx, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);

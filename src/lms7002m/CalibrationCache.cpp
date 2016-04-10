@@ -376,11 +376,11 @@ int CalibrationCache::GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_
     rc = GetDC_IQ(boardId, f1, channel, transmitter, band_lna, &dcI1, &dcQ1, &gainI1, &gainQ1, &phaseOffset1);
     if (rc != 0) return rc;
 
-    *dcI = linearInterp(frequency, f0, dcI0, f1, dcI1);
-    *dcQ = linearInterp(frequency, f0, dcQ0, f1, dcQ1);
-    *gainI = linearInterp(frequency, f0, gainI0, f1, gainI1);
-    *gainQ = linearInterp(frequency, f0, gainQ0, f1, gainQ1);
-    *phaseOffset = linearInterp(frequency, f0, phaseOffset0, f1, phaseOffset1);
+    *dcI = std::rint(linearInterp(frequency, f0, dcI0, f1, dcI1));
+    *dcQ = std::rint(linearInterp(frequency, f0, dcQ0, f1, dcQ1));
+    *gainI = std::rint(linearInterp(frequency, f0, gainI0, f1, gainI1));
+    *gainQ = std::rint(linearInterp(frequency, f0, gainQ0, f1, gainQ1));
+    *phaseOffset = std::rint(linearInterp(frequency, f0, phaseOffset0, f1, phaseOffset1));
 
     return 0;
 }
