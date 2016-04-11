@@ -241,8 +241,8 @@ void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
 {
     double input1;
     txtTIA_BW_MHz->GetValue().ToDouble(&input1);
-    liblms7_status status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1);
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1);
+    if (status != 0)
     {
         wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }

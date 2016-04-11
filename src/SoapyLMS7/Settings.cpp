@@ -84,16 +84,16 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
             _rfics.back()->Get_SPI_Reg_bits(REV, true),
             _rfics.back()->Get_SPI_Reg_bits(MASK, true));
 
-        liblms7_status st;
+        int st;
 
         st = _rfics.back()->ResetChip();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("ResetChip() failed");
+        if (st != 0) throw std::runtime_error("ResetChip() failed");
 
         st = _rfics.back()->SoftReset();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("SoftReset() failed");
+        if (st != 0) throw std::runtime_error("SoftReset() failed");
 
         st = _rfics.back()->DownloadAll();
-        if (st != LIBLMS7_SUCCESS) throw std::runtime_error("DownloadAll() failed");
+        if (st != 0) throw std::runtime_error("DownloadAll() failed");
 
         calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }
@@ -690,13 +690,13 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
-        auto status = LIBLMS7_SUCCESS;//rfic->CalibrateRx(bw/1e6);
-        if (status == LIBLMS7_SUCCESS)
+        auto status = 0;//rfic->CalibrateRx(bw/1e6);
+        if (status == 0)
         {
             SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
             status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
         }
-        if (!bypass && status == LIBLMS7_SUCCESS)
+        if (!bypass && status == 0)
         {
             LMS7002M::RxFilter filter;
             if (hb)
@@ -712,7 +712,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
             status = rfic->TuneRxFilter(filter, bw/1e6);
         }
-        if (status != LIBLMS7_SUCCESS)
+        if (status != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }
@@ -725,8 +725,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
-        auto status = LIBLMS7_SUCCESS;//rfic->CalibrateTx(bw/1e6);
-        if (!bypass && status == LIBLMS7_SUCCESS)
+        auto status = 0;//rfic->CalibrateTx(bw/1e6);
+        if (!bypass && status == 0)
         {
             LMS7002M::TxFilter filter;
             if (hb)
@@ -747,7 +747,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
             status = rfic->TuneTxFilter(filter, bw/1e6);
         }
-        if (status != LIBLMS7_SUCCESS)
+        if (status != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }

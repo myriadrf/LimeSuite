@@ -164,7 +164,7 @@ bool sign(const int number)
 /** @brief Parameters setup instructions for Tx calibration
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
+int LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 {
 	//Stage 2
 	Channel ch = this->GetActiveChannel();
@@ -231,9 +231,9 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_CGEN), 0);
 
     int status = SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS);
-    if (status != LIBLMS7_SUCCESS) return status;
+    if (status != 0) return status;
     status = TuneVCO(VCO_CGEN);
-    if (status != LIBLMS7_SUCCESS) return status;
+    if (status != 0) return status;
 
     //SXR
     this->SetActiveChannel(ChA);
@@ -243,9 +243,9 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
         float_type SXTfreqMHz = GetFrequencySX_MHz(Tx);
         float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / calibUserBwDivider - 1;
         status = SetFrequencySX(Rx, SXRfreqMHz);
-        if (status != LIBLMS7_SUCCESS) return status;
+        if (status != 0) return status;
         status = TuneVCO(VCO_SXR);
-        if (status != LIBLMS7_SUCCESS) return status;
+        if (status != 0) return status;
     }
 
     //SXT
@@ -291,7 +291,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 		this->SetActiveChannel(ch);
 	}
 
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
@@ -349,7 +349,7 @@ uint32_t LMS7002M::GetRSSI()
 /** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
+int LMS7002M::CalibrateTx(float_type bandwidth_MHz)
 {
     Channel ch = this->GetActiveChannel();
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
@@ -391,7 +391,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
             Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
             Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
             Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-            return LIBLMS7_SUCCESS;
+            return 0;
         }
     }
 
@@ -404,12 +404,12 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
         if (st != 0) return st;
     }
 
-    liblms7_status status;
+    int status;
     Log("Tx calibration started", LOG_INFO);
     BackupAllRegisters();
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_MHz);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if (mCalibrationByMCU)
     {
@@ -507,7 +507,7 @@ TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
     this->SetActiveChannel(ch);
     RestoreAllRegisters();
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
         Log("Tx calibration failed", LOG_WARNING);
         return status;
@@ -527,7 +527,7 @@ TxCalibrationEnd:
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
     Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
     Log("Tx calibration finished", LOG_INFO);
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 /** @brief Performs Rx DC offsets calibration
@@ -561,7 +561,7 @@ void LMS7002M::CalibrateRxDC_RSSI()
 /** @brief Tries to detect and fix gains if Rx is saturated
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::FixRXSaturation()
+int LMS7002M::FixRXSaturation()
 {
     uint8_t g_rxloopb = 0;
     Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), g_rxloopb);
@@ -603,7 +603,7 @@ finished:
     @param bandwidth_MHz filter bandwidth in MHz
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD)
+int LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD)
 {
     Channel ch = this->GetActiveChannel();
 
@@ -667,9 +667,8 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
     //power up VCO
     Modify_SPI_Reg_bits(0x0086, 2, 2, 0);
 
-    liblms7_status status = SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    int status = SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS);
+    if (status != 0) return status;
 
     if (TDD == false) //in TDD do nothing
     {
@@ -682,8 +681,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
         SetDefaults(SX);
         Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
         status = SetFrequencySX(Tx, SXRfreqMHz + bandwidth_MHz / calibUserBwDivider);
-        if (status != LIBLMS7_SUCCESS)
-            return status;
+        if (status != 0) return status;
         this->SetActiveChannel(ch);
     }
 
@@ -725,13 +723,13 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
 		this->SetActiveChannel(ch);
     }
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 /** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
+int LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 {
     Channel ch = this->GetActiveChannel();
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
@@ -739,7 +737,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
     uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
     int lna = sel_path_rfe;
 
-    liblms7_status status;
+    int status;
 	int16_t iqcorr_rx = 0;
     int16_t dcoffi;
 	int16_t dcoffq;
@@ -772,7 +770,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
             Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
             Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
             Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
-            return LIBLMS7_SUCCESS;
+            return 0;
         }
     }
     LMS7002M_SelfCalState state(this);
@@ -803,7 +801,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 
 	Log("Setup stage", LOG_INFO);
     status = CalibrateRxSetup(bandwidth_MHz, TDD);
-	if (status != LIBLMS7_SUCCESS)
+	if (status != 0)
 		goto RxCalibrationEndStage;
 
     if (mCalibrationByMCU)
@@ -845,7 +843,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
         this->SetActiveChannel(ChA);
         SetDefaults(SX);
         const float SXTfreq_MHz = GetFrequencySX_MHz(Tx);
-        liblms7_status status = SetFrequencySX(Rx, SXTfreq_MHz);
+        int status = SetFrequencySX(Rx, SXTfreq_MHz);
 
         //SXT
         this->SetActiveChannel(ChB);
@@ -950,7 +948,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 RxCalibrationEndStage:
     Log("Restoring registers state", LOG_INFO);
     RestoreAllRegisters();
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
         Log("Rx calibration failed", LOG_WARNING);
         return status;
@@ -969,7 +967,7 @@ RxCalibrationEndStage:
     Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
     Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
     Log("Rx calibration finished", LOG_INFO);
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 /** @brief Stores chip current registers state into memory for later restoration
@@ -1012,7 +1010,7 @@ void LMS7002M::RestoreAllRegisters()
     SPI_write(0x0020, x0020val);
 }
 
-liblms7_status LMS7002M::CheckSaturation()
+int LMS7002M::CheckSaturation()
 {
 	Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
 	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -1051,7 +1049,7 @@ liblms7_status LMS7002M::CheckSaturation()
 			cg_iamp += 2;
 		Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
 	}
-	return LIBLMS7_SUCCESS;
+	return 0;
 }
 
 int32_t bin2complementry(const int32_t value, const uint8_t bitCount, bool signedInt)
@@ -1121,7 +1119,7 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
 	}
 }
 
-liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz)
+int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz)
 {
 	Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0);
 	Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
@@ -1150,7 +1148,7 @@ liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz)
 	}
 	Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
 	Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-	return LIBLMS7_SUCCESS;
+	return 0;
 }
 
 void LMS7002M::CalibrateTxDC_RSSI(const float_type bandwidth)
@@ -1256,7 +1254,7 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
     @param I DC_REG I value
     @param Q DC_REG Q value
 */
-liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
+int LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
 {
     if(tx)
     {
@@ -1280,7 +1278,7 @@ liblms7_status LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
     }
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 int LMS7002M::StoreDigitalCorrections(const bool isTx)

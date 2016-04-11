@@ -455,8 +455,8 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
             double currentFreq;
             txtFrequency->GetValue().ToDouble(&currentFreq);
             lmsControl->SetReferenceClk_SX(isTx, refClkMHz);
-            liblms7_status status = lmsControl->SetFrequencySX(isTx, currentFreq);
-            if (status != LIBLMS7_SUCCESS)
+            int status = lmsControl->SetFrequencySX(isTx, currentFreq);
+            if (status != 0)
                 wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
             UpdateGUI();
         }
@@ -478,9 +478,9 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
     lmsControl->SetReferenceClk_SX(isTx, RefClkMHz);
-    liblms7_status status;
+    int status;
     status = lmsControl->SetFrequencySX(isTx, freqMHz);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
     else
     {
@@ -503,8 +503,8 @@ void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
     const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
-    liblms7_status status = lmsControl->TuneVCO((ch == LMS7002M::ChSXT)? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->TuneVCO((ch == LMS7002M::ChSXT)? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    if (status != 0)
         wxMessageBox(wxString::Format(_("Tune: %s"), wxString::From8BitData(GetLastErrorMessage())));
     UpdateGUI();
 }

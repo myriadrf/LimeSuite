@@ -136,7 +136,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
     txtFilterFrequency2->GetValue().ToDouble(&input2);
-    liblms7_status status;
+    int status;
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
@@ -146,7 +146,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
         status = lmsControl->TuneTxFilterLowBandChain(input1, input2);
         break;
     }
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
@@ -170,7 +170,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     double input2;
     txtLadderFrequency->GetValue().ToDouble(&input1);
     txtRealpoleFrequency->GetValue().ToDouble(&input2);
-    liblms7_status status;
+    int status;
     switch (rgrFilterSelectionTest->GetSelection())
     {
     case 0:
@@ -180,7 +180,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
         status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2);
         break;
     }
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }

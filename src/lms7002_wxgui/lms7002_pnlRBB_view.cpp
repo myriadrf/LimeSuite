@@ -176,7 +176,7 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     double input2;
     txtLowBW_MHz->GetValue().ToDouble(&input1);
     txtHighBW_MHz->GetValue().ToDouble(&input2);
-    liblms7_status status;
+    int status;
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
@@ -186,7 +186,7 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
         status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_HIGHBAND, input2);
         break;
     }
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }

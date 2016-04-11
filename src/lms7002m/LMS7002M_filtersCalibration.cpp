@@ -73,7 +73,7 @@ void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
     this->SetActiveChannel(chBck);
 }
 
-liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type cutoff_MHz)
+int LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type cutoff_MHz)
 {
     Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
@@ -134,11 +134,11 @@ liblms7_status LMS7002M::TuneTxFilterSetup(LMS7002M::TxFilter type, float_type c
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 7);
     Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
 
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 
-liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff_MHz)
+int LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff_MHz)
 {
     int rcalCache, ccalCache;
     bool foundInCache = false;
@@ -149,7 +149,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
 
     LMS7002M_SelfCalState state(this);
 
-    liblms7_status status;
+    int status;
     float_type lowLimit = 0;
     float_type highLimit = 1000;
     uint32_t rssi = 0;
@@ -177,12 +177,12 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
     {
         rcal = rcalCache;
         ccal_lpflad_tbb = ccalCache;
-        status = LIBLMS7_SUCCESS;
+        status = 0;
         goto TxFilterTuneEnd;
     }
 
     status = TuneTxFilterSetup(type, cutoff_MHz);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         goto TxFilterTuneEnd;    
     cgenFreq = cutoff_MHz * 20;
     if (cgenFreq < 60)
@@ -231,7 +231,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
     }
 
     status = SetFrequencyCGEN(cgenFreq);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         goto TxFilterTuneEnd;
 
     Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), loopb_tbb);
@@ -299,7 +299,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
             break; //skip this search, continue to advanced search
         if (rssi > rssi_value_100k)
         {
-            status = LIBLMS7_SUCCESS;
+            status = 0;
             goto TxFilterTuneEnd; //found correct value
         }
     }
@@ -333,7 +333,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
                 break; //skip c search, need to change r value
             if (rssi > rssi_value_100k*0.707)
             {
-                status = LIBLMS7_SUCCESS;
+                status = 0;
                 goto TxFilterTuneEnd;
             }
         }
@@ -342,8 +342,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
     //end
 TxFilterTuneEnd:
     RestoreRegisterMap(backup);
-    if (status != LIBLMS7_SUCCESS)
-        return status;    
+    if (status != 0) return status;
     Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1);
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
@@ -360,7 +359,7 @@ TxFilterTuneEnd:
 
     if (storeInCache) valueCache.InsertFilter_RC(boardId, cutoff_MHz*1e6, idx, Tx, int(type), rcal, ccal_lpflad_tbb);
 
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
 void LMS7002M::FilterTuning_AdjustGains()
@@ -388,7 +387,7 @@ void LMS7002M::FilterTuning_AdjustGains()
     }
 }
 
-liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_type realpole_MHz)
+int LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_type realpole_MHz)
 {
     LMS7002M_SelfCalState state(this);
     uint32_t rssi;
@@ -400,7 +399,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     float_type cgenFreq;
     auto backup = BackupRegisterMap();
 
-    liblms7_status status = TuneTxFilter(TX_LADDER, bandwidth);
+    int status = TuneTxFilter(TX_LADDER, bandwidth);
     uint8_t ladder_c_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
     uint8_t ladder_r_value = (uint8_t)Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
     status = TuneTxFilterSetup(TX_LADDER, bandwidth);
@@ -429,7 +428,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     }
 
     status = SetFrequencyCGEN(cgenFreq);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         goto TxFilterLowBandChainEnd;
 
     Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
@@ -481,7 +480,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
             if (prevRSSIbigger)
             {
                 --rcal;
-                status = LIBLMS7_SUCCESS;
+                status = 0;
                 goto TxFilterLowBandChainEnd;
             }
             ++rcal;
@@ -492,8 +491,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     //end
 TxFilterLowBandChainEnd:
     RestoreRegisterMap(backup);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
 
     Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ladder_c_value);
     Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), ladder_r_value);
@@ -502,10 +500,10 @@ TxFilterLowBandChainEnd:
     Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal);
     Modify_SPI_Reg_bits(0x0105, 4, 0, 0x11); //set powerdowns
 
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
-liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
+int LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 {
     int rcal, ccal, cfb;
     bool foundInCache = false;
@@ -516,7 +514,7 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 
     LMS7002M_SelfCalState state(this);
 
-    liblms7_status status;
+    int status;
     uint16_t cfb_tia_rfe;
     uint16_t c_ctl_lpfl_rbb;
     uint8_t ccomp_tia_rfe;
@@ -565,12 +563,12 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
         ict_pga_in = 20;
         r_ctl_lpf_rbb = 16;
         c_ctl_pga_rbb = (int8_t)Get_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB)); //preserved from pga gain setting
-        status = LIBLMS7_SUCCESS;
+        status = 0;
         goto RxFilterTuneEnd;
     }
 
     status = TuneRxFilterSetup(filter, bandwidth_MHz);
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
         goto RxFilterTuneEnd;
 
     if (filter == RX_TIA)
@@ -594,8 +592,7 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
 
 RxFilterTuneEnd:
     RestoreRegisterMap(backup);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
 
     if (filter == RX_TIA)
     {
@@ -633,12 +630,12 @@ RxFilterTuneEnd:
         if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_MHz*1e6, idx, Rx, int(filter), rcc_ctl_lpfh_rbb, c_ctl_lpfh_rbb);
     }
 
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
-liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
+int LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
 {
-    liblms7_status status;
+    int status;
     Channel ch = this->GetActiveChannel();
 
     //RFE
@@ -715,16 +712,14 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     this->SetActiveChannel(ChSXR);
     SetDefaults(SX);
     status = SetFrequencySX(Rx, 499.95);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
 
     //SXT
     this->SetActiveChannel(ChSXT);
     SetDefaults(SX);
     status = SetFrequencySX(Tx, 500);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
 
     this->SetActiveChannel(ch);
@@ -747,12 +742,12 @@ liblms7_status LMS7002M::TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz)
     float_type sxtfreq = GetFrequencySX_MHz(Tx);
     float_type sxrfreq = GetFrequencySX_MHz(Rx);
     SetNCOFrequency(Rx, 0, sxtfreq - sxrfreq - 1);
-    return LIBLMS7_SUCCESS;
+    return 0;
 }
 
-liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
+int LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
 {
-    liblms7_status status;
+    int status;
     bool prevRSSIbigger;
     uint8_t ccomp_tia_rfe_value;
     int16_t rcomp_tia_rfe;
@@ -800,15 +795,13 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
         status = SetFrequencyCGEN(cgenFreq - 10);
     else
         status = SetFrequencyCGEN(cgenFreq);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
 
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707 );
     status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - TIA_freq_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
     SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
@@ -822,16 +815,16 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
         {
             --cfb_tia_rfe_value;
             if (prevRSSIbigger)
-                return LIBLMS7_SUCCESS; //found correct value
+                return 0; //found correct value
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
     return ReportError("RFE_TIA_Calibration(%g MHz) - cfb_tia_rfe loop failed", TIA_freq_MHz);
 }
 
-liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
+int LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
 {
-    liblms7_status status;
+    int status;
     uint32_t rssi;
     uint32_t rssi_value_50k;
     int32_t c_ctl_lpfl_rbb;
@@ -873,15 +866,13 @@ liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
         status = SetFrequencyCGEN(cgenFreq_MHz - 10);
     else
         status = SetFrequencyCGEN(cgenFreq_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
 
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707 );
     status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - RxLPFL_freq_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
     SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
@@ -895,16 +886,16 @@ liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
         {
             --c_ctl_lpfl_rbb;
             if (prevRSSIbigger)
-                return LIBLMS7_SUCCESS; //found correct value
+                return 0; //found correct value
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
     return ReportError("RxLPFLow_Calibration(%g MHz) - c_ctl_lpfl_rbb loop failed", RxLPFL_freq_MHz);
 }
 
-liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
+int LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
 {
-    liblms7_status status;
+    int status;
     int16_t c_ctl_lpfh_rbb;
     int16_t rcc_ctl_lpfh_rbb;
     float_type cgenFreq = RxLPFH_freq_MHz * 20;
@@ -943,15 +934,13 @@ liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
         status = SetFrequencyCGEN(cgenFreq - 10);
     else
         status = SetFrequencyCGEN(cgenFreq);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
 
     FilterTuning_AdjustGains();
 
     rssi_value_50k = (uint32_t)( GetRSSI() * 0.707);
     status = SetFrequencySX(Rx, GetFrequencySX_MHz(Tx) - RxLPFH_freq_MHz);
-    if (status != LIBLMS7_SUCCESS)
-        return status;
+    if (status != 0) return status;
     SetNCOFrequency(Rx, 0, GetFrequencySX_MHz(Tx) - GetFrequencySX_MHz(Rx) - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_50k;
@@ -965,7 +954,7 @@ liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
         {
             --c_ctl_lpfh_rbb;
             if (prevRSSIbigger)
-                return LIBLMS7_SUCCESS; //found correct value
+                return 0; //found correct value
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
