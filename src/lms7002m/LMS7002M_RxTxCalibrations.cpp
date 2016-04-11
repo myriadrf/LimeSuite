@@ -179,7 +179,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
 	else if (sel_band2_trf == 1)
 		Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), 2);
 	else
-		return LIBLMS7_BAND_NOT_SELECTED;
+		return ReportError("CalibrateTxSetup() - TRF band not selected");
 
 	Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 7);
 	Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
@@ -637,7 +637,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(const float_type bandwidth_MHz, const 
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
         }
         else
-            return LIBLMS7_BAD_SEL_PATH; //todo restore settings
+            return ReportError("CalibrateRxSetup() - SEL_PATH_RFE must be LNAL or LNAW"); //todo restore settings
     }
 
     //TBB
@@ -798,7 +798,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
 	Log("Saving registers state", LOG_INFO);
     BackupAllRegisters();
     if (sel_path_rfe == 1 || sel_path_rfe == 0)
-        return LIBLMS7_BAD_SEL_PATH;
+        return ReportError("CalibrateRx() - SEL_PATH_RFE must be LNAH or LNAW");
 
 	Log("Setup stage", LOG_INFO);
     status = CalibrateRxSetup(bandwidth_MHz, TDD);

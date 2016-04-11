@@ -1109,7 +1109,8 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	// Initialization
 	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
-        return LIBLMS7_VCO_IS_POWERED_DOWN;
+        return ReportError("TuneVCO(%s) - VCO is powered down",
+            (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
 	else
@@ -1268,7 +1269,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
         }
     }
     if (canDeliverFrequency == false)
-        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
+        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_MHz);
 
     const float_type refClk_MHz = GetReferenceClk_SX(tx);
     integerPart = (uint16_t)(VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))) - 4);
@@ -1338,7 +1339,7 @@ liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
-        return LIBLMS7_CANNOT_DELIVER_FREQUENCY;
+        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_MHz);
     return LIBLMS7_SUCCESS;
 }
 
@@ -1370,7 +1371,7 @@ float_type LMS7002M::GetFrequencySX_MHz(bool tx)
 liblms7_status LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz)
 {
     if(index > 15)
-        return LIBLMS7_INDEX_OUT_OF_RANGE;
+        return ReportError("SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
     float_type refClk_MHz = GetReferenceClk_TSP_MHz(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
 	uint32_t fcw = (uint32_t)((freq_MHz/refClk_MHz)*4294967296);
@@ -1388,7 +1389,7 @@ liblms7_status LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq
 float_type LMS7002M::GetNCOFrequency_MHz(bool tx, uint8_t index, bool fromChip)
 {
     if(index > 15)
-        return LIBLMS7_INDEX_OUT_OF_RANGE;
+        return ReportError("GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", int(index));
     float_type refClk_MHz = GetReferenceClk_TSP_MHz(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
     uint32_t fcw = 0;
@@ -1419,7 +1420,7 @@ liblms7_status LMS7002M::SetNCOPhaseOffsetForMode0(bool tx, float_type angle_deg
 liblms7_status LMS7002M::SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_deg)
 {
     if(index > 15)
-        return LIBLMS7_INDEX_OUT_OF_RANGE;
+        return ReportError("SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", int(index));
     uint16_t addr = tx ? 0x0244 : 0x0444;
 	uint16_t pho = (uint16_t)(65536*(angle_deg / 360));
     SPI_write(addr+index, pho);
@@ -1433,6 +1434,8 @@ liblms7_status LMS7002M::SetNCOPhaseOffset(bool tx, uint8_t index, float_type an
 */
 float_type LMS7002M::GetNCOPhaseOffset_Deg(bool tx, uint8_t index)
 {
+    if(index > 15)
+        return ReportError("GetNCOPhaseOffset_Deg(index = %d) - index out of range [0, 15]", int(index));
     uint16_t addr = tx ? 0x0244 : 0x0444;
     uint16_t pho = SPI_read(addr+index);
     float_type angle = 360*pho/65536.0;
@@ -1467,7 +1470,7 @@ liblms7_status LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const 
     else
         coefLimit = 120;
     if (coefCount > coefLimit)
-        return LIBLMS7_TOO_MANY_VALUES;
+        return ReportError("SetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
     vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
         addresses.push_back(startAddr + index + 24 * (index / 40));
@@ -1507,7 +1510,7 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
     else
         coefLimit = 120;
     if (coefCount > coefLimit)
-        return LIBLMS7_TOO_MANY_VALUES;
+        return ReportError("GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
 
     std::vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
