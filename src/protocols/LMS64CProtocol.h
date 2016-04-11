@@ -72,14 +72,6 @@ public:
         LMS_PROTOCOL_NOVENA,
     };
 
-    enum DeviceStatus
-    {
-        SUCCESS,
-        FAILURE,
-        END_POINTS_NOT_FOUND,
-        CANNOT_CLAIM_INTERFACE
-    };
-
     enum TransferStatus
     {
         TRANSFER_SUCCESS,

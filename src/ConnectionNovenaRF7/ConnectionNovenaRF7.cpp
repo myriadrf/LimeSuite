@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionNovenaRF7.h"
+#include "ErrorReporting.h"
 #include <errno.h>
 #include <unistd.h>
 #include <termios.h>
@@ -56,14 +57,14 @@ ConnectionNovenaRF7::~ConnectionNovenaRF7(void)
 /** @brief Opens connection to first found chip
     @return 0-success
 */
-LMS64CProtocol::DeviceStatus ConnectionNovenaRF7::Open(const char *spiDevPath)
+int ConnectionNovenaRF7::Open(const char *spiDevPath)
 {
 #ifdef __unix__
 	fd = open(spiDevPath, O_RDWR | O_SYNC);
 	if (fd < 0)
 	{
         //MessageLog::getInstance()->write("SPI PORT: device not found\n", LOG_ERROR);
-		return LMS64CProtocol::FAILURE;
+		return ReportError(errno, "SPI PORT %s: device not found", spiDevPath);
 	}
 	int mode = SPI_MODE_0;
 	int ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
@@ -101,9 +102,9 @@ LMS64CProtocol::DeviceStatus ConnectionNovenaRF7::Open(const char *spiDevPath)
 	printf("spi mode: 0x%x\n", mode);
 	printf("bits per word: %d\n", bits);
 	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
-    return LMS64CProtocol::SUCCESS;
+    return 0;
 #else
-    return LMS64CProtocol::FAILURE;
+    return ReportError("spidev not supported on this OS");
 #endif
 }
 

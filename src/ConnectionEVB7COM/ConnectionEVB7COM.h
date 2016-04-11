@@ -33,7 +33,7 @@ public:
 
 private:
 
-    DeviceStatus Open(const char *comName, int baudrate);
+    int Open(const char *comName, int baudrate);
 
     void Close(void);
 

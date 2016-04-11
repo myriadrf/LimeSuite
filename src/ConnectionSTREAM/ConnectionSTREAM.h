@@ -93,7 +93,7 @@ public:
 
     ~ConnectionSTREAM(void);
 
-	DeviceStatus Open(const unsigned index, const int vid, const int pid);
+	int Open(const unsigned index, const int vid, const int pid);
 	void Close();
 	bool IsOpen();
 	int GetOpenedIndex();

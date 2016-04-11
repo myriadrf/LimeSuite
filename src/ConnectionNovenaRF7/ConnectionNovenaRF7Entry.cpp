@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionNovenaRF7.h"
+#include "ErrorReporting.h"
 #include <errno.h>
 #include <unistd.h>
 #include <termios.h>
@@ -104,6 +105,7 @@ std::vector<ConnectionHandle> ConnectionNovenaRF7Entry::enumerate(const Connecti
 IConnection *ConnectionNovenaRF7Entry::make(const ConnectionHandle &handle)
 {
     auto conn = new ConnectionNovenaRF7();
-    conn->Open(handle.addr.c_str());
+    if (conn->Open(handle.addr.c_str()) != 0)
+        std::cerr << GetLastErrorMessage() << std::endl;
     return conn;
 }

@@ -25,7 +25,7 @@ public:
     ConnectionNovenaRF7();
     ~ConnectionNovenaRF7();
 
-    DeviceStatus Open(const char *spiDevPath);
+    int Open(const char *spiDevPath);
     void Close();
     bool IsOpen();
 

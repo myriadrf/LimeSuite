@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionSTREAM.h"
+#include "ErrorReporting.h"
 #include <cstring>
 #include <iostream>
 #include "Si5351C.h"
@@ -51,7 +52,8 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     devs = 0;
     ctx = (libusb_context *)arg;
 #endif
-    this->Open(index, vid, pid);
+    if (this->Open(index, vid, pid) != 0)
+        std::cerr << GetLastErrorMessage() << std::endl;
 
     //must configure synthesizer before using LimeSDR
     DeviceInfo info = this->GetDeviceInfo();
@@ -89,7 +91,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 /**	@brief Tries to open connected USB device and find communication endpoints.
 	@return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
+int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
 	wstring m_hardwareDesc = L"";
@@ -148,10 +150,10 @@ LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const 
 					break;
 				}
 			isConnected = true;
-			return SUCCESS;
+			return 0;
 		} //successfully opened device
 	} //if has devices
-    return FAILURE;
+    return ReportError("No matching devices found");
 #else
 
     if( vid == 1204)
@@ -168,8 +170,8 @@ LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const 
 
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 
-    if(dev_handle == 0)
-        return FAILURE;
+    if(dev_handle == nullptr)
+        return ReportError("libusb_open failed");
     if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
     {
         printf("Kernel Driver Active\n");
@@ -180,11 +182,11 @@ LMS64CProtocol::DeviceStatus ConnectionSTREAM::Open(const unsigned index, const 
     if(r < 0)
     {
         printf("Cannot Claim Interface\n");
-        return CANNOT_CLAIM_INTERFACE;
+        return ReportError("Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     printf("Claimed Interface\n");
     isConnected = true;
-    return SUCCESS;
+    return 0;
 #endif
 }
 
