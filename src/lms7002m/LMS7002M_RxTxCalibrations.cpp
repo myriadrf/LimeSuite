@@ -3,6 +3,8 @@
 #include "MCU_BD.h"
 #include "IConnection.h"
 #include "mcu_programs.h"
+#include "LMS64CProtocol.h"
+#include <vector>
 
 //#define RSSI_FROM_MCU
 #define LMS_VERBOSE_OUTPUT
@@ -19,8 +21,15 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
 #define MCU_FUNCTION_CALIBRATE_RX 2
 #define MCU_FUNCTION_READ_RSSI 3
 
+#define ENABLE_CALIBRATION_USING_FFT
+
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    #include "kiss_fft.h"
+    int fftBin = 0; //which bin to use when calibration using FFT
+    bool rssiFromFFT = false;
+#endif // ENABLE_CALIBRATION_USING_FFT
+
 const float calibrationSXOffset_MHz = 4;
-int fftBin = 0; //which bin to use when calibration using FFT
 
 const int16_t firCoefs[] =
 {
@@ -361,42 +370,99 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool u
 */
 uint32_t LMS7002M::GetRSSI()
 {
-#ifndef RSSI_FROM_MCU
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    if(!rssiFromFFT)
+    {
+        const int fftSize = 16384;
+
+        StreamConfig config;
+        config.isTx = false;
+        config.channels.push_back(0);
+        config.channels.push_back(1);
+        config.format = StreamConfig::STREAM_12_BIT_IN_16;
+        config.bufferLength = fftSize;
+        size_t streamID(~0);
+        controlPort->SetHardwareTimestamp(0);
+        const auto errorMsg = controlPort->SetupStream(streamID, config);
+
+        float avgRSSI = 0;
+        const int channelsCount = 1;
+
+        kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
+        kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
+        kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
+
+        int16_t **buffs = new int16_t*[channelsCount];
+        for(int i=0; i<channelsCount; ++i)
+            buffs[i] = new int16_t[fftSize];
+
+        //TODO setup streaming
+
+        StreamMetadata metadata;
+        auto ret = controlPort->ReadStream(streamID, (void* const*)buffs, fftSize, 1000, metadata);
+
+        long samplesCollected = 0;
+        int16_t sample = 0;
+
+        const int stepSize = 4;
+        /*for (uint16_t b = 0; b < bytesReceived; b += stepSize)
+        {
+            //I sample
+            sample = (buffer[b] & 0xFF);
+            sample |= (buffer[b + 1] & 0x0F) << 8;
+
+            sample = sample << 4;
+            sample = sample >> 4;
+            m_fftCalcIn[samplesCollected].r = sample;
+
+            //Q sample
+            sample = (buffer[b + 2] & 0xFF);
+            sample |= (buffer[b + 3] & 0x0F) << 8;
+
+            sample = sample << 4;
+            sample = sample >> 4;
+            m_fftCalcIn[samplesCollected].i = sample;
+            ++samplesCollected;
+            if (samplesCollected >= fftSize)
+                break;
+        }*/
+
+        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+        for (int i = 0; i < fftSize; ++i)
+        {
+            // normalize FFT results
+            m_fftCalcOut[i].r /= fftSize;
+            m_fftCalcOut[i].i /= fftSize;
+        }
+
+        std::vector<float> fftBins_dbFS;
+        fftBins_dbFS.resize(fftSize, 0);
+        int output_index = 0;
+
+        for (int i = 0; i < fftSize; ++i)
+        {
+            fftBins_dbFS[output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+        }
+
+        for (int s = 0; s < fftSize; ++s)
+            fftBins_dbFS[s] = (fftBins_dbFS[s] != 0 ? (20 * log10(fftBins_dbFS[s])) - 69.2369 : -300);
+
+        int binToGet = fftBin;
+        float rssiToReturn = m_fftCalcOut[binToGet].r * m_fftCalcOut[binToGet].r + m_fftCalcOut[binToGet].i * m_fftCalcOut[binToGet].i;
+        avgRSSI = fftBins_dbFS[binToGet];
+        kiss_fft_free(m_fftCalcPlan);
+        for(int i=0; i<channelsCount; ++i)
+            delete buffs[i];
+        delete[]buffs;
+
+        printf("FFT RSSI = %f \n", avgRSSI);
+        controlPort->CloseStream(streamID);
+        return avgRSSI;
+    }
+#endif
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
     return (Get_SPI_Reg_bits(0x040F, 15, 0) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0);
-#else
-    mcuControl->CallMCU(MCU_FUNCTION_READ_RSSI);
-    int status = mcuControl->WaitForMCU(500);
-    if (status == 0)
-    {
-        printf("MCU working too long\n");
-    }
-
-    mcuControl->DebugModeSet_MCU(1, 0);
-    //read result value from MCU RAM
-    unsigned char tempc1, tempc2, tempc3 = 0x00;
-
-    uint8_t ramData[3];
-    for (int i = 0; i < 3; ++i)
-    {
-        const uint8_t asm_read_iram = 0x78;
-        const uint8_t rssi_iram_addr = 0xF9;
-        int retval = mcuControl->Three_byte_command(asm_read_iram, ((unsigned char)(rssi_iram_addr + i)), 0x00, &tempc1, &tempc2, &tempc3);
-        if (retval == 0)
-            ramData[i] = tempc3;
-        else
-        {
-            return ~0;
-        }
-    }
-    uint32_t rssiAvg = 0;
-    rssiAvg |= (ramData[0] & 0xFF) << 16;
-    rssiAvg |= (ramData[1] & 0xFF) << 8;
-    rssiAvg |= (ramData[2] & 0xFF);
-    mcuControl->DebugModeExit_MCU(1, 0);
-    return rssiAvg;
-#endif
 }
 
 /** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
@@ -580,7 +646,9 @@ TxCalibrationEnd:
 */
 void LMS7002M::CalibrateRxDC_RSSI()
 {
+#ifdef ENABLE_CALIBRATION_USING_FFT
     fftBin = 0;
+#endif
     int16_t offsetI = 32;
     int16_t offsetQ = 32;
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
@@ -603,7 +671,9 @@ void LMS7002M::CalibrateRxDC_RSSI()
 #endif
     SetRxDCOFF(offsetI, offsetQ);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
-    fftBin = 569;
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    fftBin = 569; //fft bin 100 kHz
+#endif
 }
 
 /** @brief Parameters setup instructions for Rx calibration
@@ -1046,6 +1116,7 @@ liblms7_status LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_MHz / calibUserBwDivider - 0.1);
 
+#ifdef ENABLE_CALIBRATION_USING_FFT
     //use FFT bin 100 kHz for RSSI
     fftBin = 569;
     //0x0B000 = -3 dBFS
@@ -1077,7 +1148,7 @@ liblms7_status LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const
         }
         return LIBLMS7_SUCCESS;
     }
-
+#endif
     int g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
     while (rssi < 0x0B000 && g_rxloopb_rfe  < 15)
     {
