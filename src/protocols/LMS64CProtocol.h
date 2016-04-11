@@ -72,13 +72,6 @@ public:
         LMS_PROTOCOL_NOVENA,
     };
 
-    enum TransferStatus
-    {
-        TRANSFER_SUCCESS,
-        TRANSFER_FAILED,
-        NOT_CONNECTED
-    };
-
     struct GenericPacket
     {
         GenericPacket()
@@ -138,7 +131,7 @@ public:
      * Some implementations will cast to LMS64CProtocol
      * and directly use the TransferPacket() API call.
      */
-    TransferStatus TransferPacket(GenericPacket &pkt);
+    int TransferPacket(GenericPacket &pkt);
 
     struct LMSinfo
     {

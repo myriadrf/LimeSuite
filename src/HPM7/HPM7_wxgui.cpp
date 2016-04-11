@@ -3,6 +3,8 @@
 @author Lime Microsystems
 @brief 	panel for interacting with HPM7 board
 */
+
+#include "ErrorReporting.h"
 #include "HPM7_wxgui.h"
 #include "lms7suiteEvents.h"
 
@@ -178,9 +180,8 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
     pkt.cmd = CMD_MYRIAD_WR;
     pkt.outBuffer.push_back( 0x20 + tunerIndex * 2 );
     pkt.outBuffer.push_back( event.GetInt() );
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    if (m_serPort->TransferPacket(pkt) != 0)
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
 }
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
@@ -207,9 +208,8 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
     value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);
     pkt.outBuffer.push_back(value);
 
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    if (m_serPort->TransferPacket(pkt) != 0)
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
 }
 
 void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
@@ -248,10 +248,9 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
     pkt.outBuffer.push_back(0x30);
     pkt.outBuffer.push_back(0x31);
 
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
         return;
     }
 
@@ -297,9 +296,8 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
         pkt.outBuffer.push_back(0x31);
         pkt.outBuffer.push_back(cmbDAC_B->GetSelection());
     }
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    if (m_serPort->TransferPacket(pkt) != 0)
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
 }
 
 void HPM7_wxgui::SelectBand(unsigned int i)
@@ -340,10 +338,9 @@ bool HPM7_wxgui::UploadGPIO()
     value |= (cmbLNA->GetSelection() & 0x1) << 3;
     value |= (cmbPAdriver->GetSelection() & 0x1) << 4;
     pkt.outBuffer.push_back(value);
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
         return false;
     }
     return true;

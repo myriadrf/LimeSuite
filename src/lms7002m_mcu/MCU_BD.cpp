@@ -132,9 +132,8 @@ unsigned short MCU_BD:: mSPI_read(
         pkt.cmd = CMD_LMS7002_RD;
         pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
         pkt.outBuffer.push_back(addr_reg & 0xFF);
-        if (m_serPort->TransferPacket(pkt) == LMS64CProtocol::TRANSFER_SUCCESS)
-            if (pkt.status == STATUS_COMPLETED_CMD)
-                return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
+        if (m_serPort->TransferPacket(pkt) == 0)
+            return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
     }
     return 0x0000;
 }

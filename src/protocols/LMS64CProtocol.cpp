@@ -26,22 +26,16 @@ const int LMS_RST_PULSE = 2;
 #define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
 
-static int convertStatus(const LMS64CProtocol::TransferStatus &status, const LMS64CProtocol::GenericPacket &pkt)
+static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket &pkt)
 {
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS)
-    {
-        ReportError(ECOMM);
-        return -1;
-    }
+    if (status != 0) return ReportError(ECOMM);
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return 0;
     case STATUS_UNKNOWN_CMD:
-        ReportError(EPROTONOSUPPORT, "unknown lms64c protocol command");
-        return -1;
+        return ReportError(EPROTONOSUPPORT, "unknown lms64c protocol command");
     }
-    ReportError(EPROTO);
-    return -1;
+    return ReportError(EPROTO, status2string(pkt.status));
 }
 
 LMS64CProtocol::LMS64CProtocol(void)
@@ -59,14 +53,13 @@ int LMS64CProtocol::DeviceReset(void)
 {
     if (not this->IsOpen())
     {
-        ReportError(ENOTCONN, "connection is not open");
-        return -1;
+        return ReportError(ENOTCONN, "connection is not open");
     }
 
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
     pkt.outBuffer.push_back (LMS_RST_PULSE);
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     return convertStatus(status, pkt);
 }
@@ -97,16 +90,14 @@ int LMS64CProtocol::TransactSPI(const int addr, const uint32_t *writeData, uint3
     case ADF4002_SPI_INDEX: return this->ReadADF4002SPI(writeData, readData, size);
     }
 
-    ReportError(ENOTSUP, "unknown spi address");
-    return -1;
+    return ReportError(ENOTSUP, "unknown spi address");
 }
 
 int LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
 {
     if (not this->IsOpen())
     {
-        ReportError(ENOTCONN, "connection is not open");
-        return -1;
+        return ReportError(ENOTCONN, "connection is not open");
     }
 
     switch(addr)
@@ -114,16 +105,14 @@ int LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
     case Si5351_I2C_ADDR: return this->WriteSi5351I2C(data);
     }
 
-    ReportError(ENOTSUP, "unknown i2c address");
-    return -1;
+    return ReportError(ENOTSUP, "unknown i2c address");
 }
 
 int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
     if (not this->IsOpen())
     {
-        ReportError(ENOTCONN, "connection is not open");
-        return -1;
+        return ReportError(ENOTCONN, "connection is not open");
     }
 
     switch(addr)
@@ -131,8 +120,7 @@ int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &
     case Si5351_I2C_ADDR: return this->ReadSi5351I2C(numBytes, data);
     }
 
-    ReportError(ENOTSUP, "unknown i2c address");
-    return -1;
+    return ReportError(ENOTSUP, "unknown i2c address");
 }
 
 double LMS64CProtocol::GetReferenceClockRate(void)
@@ -168,7 +156,7 @@ int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, const size_t siz
         pkt.outBuffer.push_back(data & 0xFF);
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     return convertStatus(status, pkt);
 }
@@ -184,7 +172,7 @@ int LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readDat
         pkt.outBuffer.push_back(addr & 0xFF);
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     const size_t numRead = std::min<size_t>(pkt.inBuffer.size()/4, size);
     for (size_t i = 0; i < numRead; ++i)
@@ -210,7 +198,7 @@ int LMS64CProtocol::WriteSi5351I2C(const std::string &data)
         pkt.outBuffer.push_back(data.at(i));
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
     return convertStatus(status, pkt);
 }
 
@@ -219,7 +207,7 @@ int LMS64CProtocol::ReadSi5351I2C(const size_t numBytes, std::string &data)
     GenericPacket pkt;
     pkt.cmd = CMD_SI5351_RD;
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     for (size_t i = 0; i < data.size(); i++)
     {
@@ -250,7 +238,7 @@ int LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const size_t size
         pkt.outBuffer.push_back((writeData[i] >> 0) & 0xff);
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
     return convertStatus(status, pkt);
 }
 
@@ -276,7 +264,7 @@ int LMS64CProtocol::WriteRegisters(const uint32_t *addrs, const uint32_t *data, 
         pkt.outBuffer.push_back(data[i] & 0xFF);
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     return convertStatus(status, pkt);
 }
@@ -291,7 +279,7 @@ int LMS64CProtocol::ReadRegisters(const uint32_t *addrs, uint32_t *data, const s
         pkt.outBuffer.push_back(addrs[i] & 0xFF);
     }
 
-    TransferStatus status = this->TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
 
     const size_t numRead = std::min<size_t>(pkt.inBuffer.size()/4, size);
     for (size_t i = 0; i < numRead; ++i)
@@ -336,8 +324,8 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
     info.boardSerialNumber = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_GET_INFO;
-    TransferStatus status = TransferPacket(pkt);
-    if (status == TRANSFER_SUCCESS && pkt.inBuffer.size() >= 5)
+    int status = TransferPacket(pkt);
+    if (status == 0 && pkt.inBuffer.size() >= 5)
     {
         info.firmware = pkt.inBuffer[0];
         info.device = pkt.inBuffer[1] < LMS_DEV_COUNT ? (eLMS_DEV)pkt.inBuffer[1] : LMS_DEV_UNKNOWN;
@@ -353,12 +341,11 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
     @param pkt packet containing output data and to receive incomming data
     @return 0: success, other: failure
 */
-LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt)
+int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
 {
     std::lock_guard<std::mutex> lock(mControlPortLock);
-    TransferStatus status = TRANSFER_SUCCESS;
-    if(IsOpen() == false)
-        return NOT_CONNECTED;
+    int status = 0;
+    if(IsOpen() == false) ReportError(ENOTCONN, "connection is not open");
 
     int packetLen;
     eLMS_PROTOCOL protocol = LMS_PROTOCOL_UNDEFINED;
@@ -369,7 +356,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
     switch(protocol)
     {
     case LMS_PROTOCOL_UNDEFINED:
-        return TRANSFER_FAILED;
+        return ReportError("protocol type undefined");
     case LMS_PROTOCOL_LMS64C:
         packetLen = ProtocolLMS64C::pktLength;
         break;
@@ -378,7 +365,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
         break;
     default:
         packetLen = 0;
-        return TRANSFER_FAILED;
+        return ReportError("Unknown protocol type %d", int(protocol));
     }
     int outLen = 0;
     unsigned char* outBuffer = NULL;
@@ -422,7 +409,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
                 {
                     inDataPos = Read(&inBuffer[inDataPos], outLen);
                     if(inDataPos != outLen)
-                        status = TRANSFER_FAILED;
+                        status = ReportError("Read(%d bytes) got %d", (int)outLen, (int)inDataPos);
                     else
                     {
                         if (callback_logData)
@@ -432,7 +419,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
                 ParsePacket(pkt, inBuffer, inDataPos, protocol);
             }
             else
-                status = TRANSFER_FAILED;
+                status = ReportError("Write(%d bytes) got %d", (int)outLen, (int)bytesWritten);
         }
     }
     else
@@ -449,7 +436,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
                 int bread = Read(&inBuffer[inDataPos], readLen);
                 if(bread != readLen && protocol != LMS_PROTOCOL_NOVENA)
                 {
-                    status = TRANSFER_FAILED;
+                    status = ReportError("Read(%d bytes) failed", (int)readLen);
                     break;
                 }
                 if (callback_logData)
@@ -458,7 +445,7 @@ LMS64CProtocol::TransferStatus LMS64CProtocol::TransferPacket(GenericPacket& pkt
             }
             else
             {
-                status = TRANSFER_FAILED;
+                status = ReportError("Write(%d bytes) failed", (int)bytesToSend);
                 break;
             }
         }
@@ -722,8 +709,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
             printf("\n%s\n", progressMsg);
 #endif
-            ReportError(EPROTO);
-            return -1;
+            return ReportError(EPROTO);
         }
         if(needsData == false) //only one packet is needed to initiate bitstream from flash
         {
@@ -745,8 +731,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #endif
         if(callback)
             callback(bytesSent, length, progressMsg);
-        ReportError(ECONNABORTED, "user aborted programming");
-        return -1;
+        return ReportError(ECONNABORTED, "user aborted programming");
     }
     sprintf(progressMsg, "programming: completed");
     if(callback)
@@ -769,12 +754,8 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
     for (int i=0; i<count; ++i)
         pkt.outBuffer.push_back(ids[i]);
 
-    LMS64CProtocol::TransferStatus status = this->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        ReportError(EPROTO);
-        return -1;
-    }
+    int status = this->TransferPacket(pkt);
+    if (status != 0) return convertStatus(status, pkt);
 
     assert(pkt.inBuffer.size() >= 4 * count);
 
@@ -809,12 +790,6 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
         pkt.outBuffer.push_back(value >> 8);
         pkt.outBuffer.push_back(value & 0xFF);
     }
-    LMS64CProtocol::TransferStatus status = this->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
-    {
-        ReportError(EPROTO);
-        return -1;
-        //wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
-    }
-    return 0;
+    int status = this->TransferPacket(pkt);
+    return convertStatus(status, pkt);
 }

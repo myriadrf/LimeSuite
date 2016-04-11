@@ -4,6 +4,7 @@
 @brief 	wxWidgets panel for interacting with RFSpark board
 */
 #include "RFSpark_wxgui.h"
+#include "ErrorReporting.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -221,11 +222,10 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
     for (int i = 0; i < mADCdata.size(); ++i)
         pkt.outBuffer.push_back(i);
     assert(m_serPort != nullptr);
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
         return;
     }
 	
@@ -256,11 +256,10 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 	int index = cmbADCselect->GetSelection();
 	pkt.outBuffer.push_back(index);
     assert(m_serPort != nullptr);
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 	
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
         return;
     }
 	
@@ -296,9 +295,8 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 			value |= mGPIOboxes[gpioIndex++]->IsChecked() << j;			
         pkt.outBuffer.push_back(value);
 	}    
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)		
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+    if (m_serPort->TransferPacket(pkt) != 0)		
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
 }
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
@@ -312,11 +310,10 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;
     assert(m_serPort != nullptr);
-    LMS64CProtocol::TransferStatus status = m_serPort->TransferPacket(pkt);
 
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS || pkt.status != STATUS_COMPLETED_CMD)
+    if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(status2string(pkt.status)), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
         return;
     }
     assert(pkt.inBuffer.size() >= 3);
