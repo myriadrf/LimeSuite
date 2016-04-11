@@ -138,9 +138,9 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
                 auto byte0 = pkt[pktIndex].reserved[0];
                 if ((byte0 & (1 << 3)) != 0 and ignoreTxLateCount == 0)
                 {
-                    auto reg7 = Reg_read(dataPort, 0x0007);
-                    Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
-                    Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
+                    auto reg9 = Reg_read(dataPort, 0x0009);
+                    Reg_write(dataPort, 0x0009, reg9 | (1 << 1));
+                    Reg_write(dataPort, 0x0009, reg9 & ~(1 << 1));
                     if (report) report(STATUS_FLAG_TX_LATE, pkt[pktIndex].counter);
                     ignoreTxLateCount = 16;
                 }
