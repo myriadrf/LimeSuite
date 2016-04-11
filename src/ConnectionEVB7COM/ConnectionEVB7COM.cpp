@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionEVB7COM.h"
+#include "ErrorReporting.h"
 
 #include "string.h"
 #ifdef __unix__
@@ -34,11 +35,11 @@ ConnectionEVB7COM::ConnectionEVB7COM(const char *comName, int baudrate)
     hComm = -1;
 #endif
 
-    if (this->Open(comName, baudrate) != SUCCESS)
+    if (this->Open(comName, baudrate) != 0)
     {
         this->Close();
 
-        //TODO log here
+        fprintf(stderr, "ConnectionEVB7COM(%s, %d) - %s", comName, baudrate, GetLastErrorMessage());
     }
 }
 
@@ -77,13 +78,12 @@ bool ConnectionEVB7COM::IsOpen(void)
     return false;
 }
 
-LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int baudrate)
+int ConnectionEVB7COM::Open(const char *comName, int baudrate)
 {
 
-	if (strlen(comName) == 0)
-		return FAILURE;
+	if (strlen(comName) == 0) return ReportError("empty comm name");
 
-	DeviceStatus errorCode = SUCCESS;
+	int errorCode = 0;
 
 #ifndef __unix__
 	// Initialize Overlap structures
@@ -184,7 +184,7 @@ LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int ba
     {
 //        printf("%s",strerror(errno));
 //        MessageLog::getInstance()->write("Connection manager: failed opening COM port\n", LOG_ERROR);
-        return FAILURE;
+        return ReportError("failed opening COM port");
     }
 
     struct termios tty;
@@ -192,7 +192,7 @@ LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int ba
     if( tcgetattr(hComm, &tty) != 0)
     {
 //        MessageLog::getInstance()->write("Connection Manager: error from tcgetattr\n", LOG_ERROR);
-        return FAILURE;
+        return ReportError(errno, "error from tcgetattr");
     }
     int speed = B9600;
     cfsetospeed(&tty, speed);
@@ -212,10 +212,10 @@ LMS64CProtocol::DeviceStatus ConnectionEVB7COM::Open(const char *comName, int ba
     if(tcsetattr(hComm, TCSANOW, &tty) != 0)
     {
 //        MessageLog::getInstance()->write("Connection manager: error from tcsetattr\n", LOG_ERROR);
-        return FAILURE;
+        return ReportError(errno, "error from tcgetattr");
     }
 #endif
-    return SUCCESS;
+    return 0;
 }
 
 /** @brief Sends data through COM port

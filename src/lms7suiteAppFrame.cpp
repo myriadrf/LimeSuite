@@ -50,8 +50,8 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        liblms7_status status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
-        if (status == LIBLMS7_SUCCESS)
+        int status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+        if (status == 0)
         {
             wxCommandEvent evt;
             evt.SetEventType(LOG_MESSAGE);

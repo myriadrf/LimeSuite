@@ -17,6 +17,7 @@
 #include "lms7002_pnlXBUF_view.h"
 #include "lms7002_pnlCalibrations_view.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <wx/time.h>
 #include <wx/msgdlg.h>
 #include <iostream>
@@ -136,9 +137,9 @@ void lms7002_mainPanel::Initialize(LMS7002M* pControl)
 
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
-    liblms7_status status = lmsControl->ResetChip();
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(liblms7_status2string(status))), _("Warning"));
+    int status = lmsControl->ResetChip();
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
     wxNotebookEvent evt;
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
@@ -186,11 +187,11 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Open config file"), "", "", "Project-File (*.ini)|*.ini", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    liblms7_status status = lmsControl->LoadConfig(dlg.GetPath().To8BitData());
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->LoadConfig(dlg.GetPath().To8BitData());
+    if (status != 0)
     {
-        if (status != LIBLMS7_NOT_CONNECTED)
-            wxMessageBox(wxString::Format(_("Failed to load file: %s"), liblms7_status2string(status)), _("Warning"));
+        if (lmsControl->GetConnection() == nullptr)
+            wxMessageBox(wxString::Format(_("Failed to load file: %s"), GetLastErrorMessage()), _("Warning"));
     }
     wxCommandEvent tevt;
     lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
@@ -205,15 +206,15 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Save config file"), "", "", "Project-File (*.ini)|*.ini", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    liblms7_status status = lmsControl->SaveConfig(dlg.GetPath().To8BitData());
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->SaveConfig(dlg.GetPath().To8BitData());
+    if (status != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }
 
 void lms7002_mainPanel::OnRegistersTest( wxCommandEvent& event )
 {
-    liblms7_status status = lmsControl->RegistersTest();
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->RegistersTest();
+    if (status != 0)
         wxMessageBox(_("Registers test failed!"), _("WARNING"));
     else
         wxMessageBox(_("Registers test passed!"), _("INFO"));
@@ -262,17 +263,17 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
 
 void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
-    liblms7_status status = lmsControl->DownloadAll();
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(liblms7_status2string(status))), _("Warning"));
+    int status = lmsControl->DownloadAll();
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
     UpdateVisiblePanel();
 }
 
 void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
-    liblms7_status status = lmsControl->UploadAll();
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(liblms7_status2string(status))), _("Warning"));
+    int status = lmsControl->UploadAll();
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);

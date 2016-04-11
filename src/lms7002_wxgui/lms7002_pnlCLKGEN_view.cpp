@@ -1,5 +1,6 @@
 #include "lms7002_pnlCLKGEN_view.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <map>
 #include <wx/msgdlg.h>
 #include "lms7002_gui_utilities.h"
@@ -146,9 +147,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    liblms7_status status = lmsControl->SetFrequencyCGEN(freqMHz, true);
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    int status = lmsControl->SetFrequencyCGEN(freqMHz, true);
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(GetLastErrorMessage())));
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
     UpdateGUI();
     wxCommandEvent evt;
@@ -162,9 +163,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
-    liblms7_status status = lmsControl->TuneVCO(LMS7002M::VCO_CGEN);
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    int status = lmsControl->TuneVCO(LMS7002M::VCO_CGEN);
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(GetLastErrorMessage())));
     cmbCSW_VCO_CGEN->SetValue(lmsControl->Get_SPI_Reg_bits(CSW_VCO_CGEN));
     OnbtnReadComparators(event);
 }

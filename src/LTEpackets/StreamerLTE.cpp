@@ -924,17 +924,17 @@ StreamerLTE::Stats StreamerLTE::GetStats()
 StreamerLTE::STATUS StreamerLTE::Reg_write(IConnection* dataPort, uint16_t address, uint16_t data)
 {
     if(dataPort == nullptr) return FAILURE;
-    OperationStatus status;
+    int status;
     status = dataPort->WriteRegister(address, data);
-    return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
+    return status == 0 ? SUCCESS : FAILURE;
 }
 uint16_t StreamerLTE::Reg_read(IConnection* dataPort, uint16_t address)
 {
     if(dataPort == nullptr) return 0;
     uint32_t dataRd = 0;
-    OperationStatus status;
+    int status;
     status = dataPort->ReadRegister(address, dataRd);
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
         return dataRd & 0xFFFF;
     else
         return 0;

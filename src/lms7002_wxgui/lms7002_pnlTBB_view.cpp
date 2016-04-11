@@ -1,5 +1,6 @@
 #include "lms7002_pnlTBB_view.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
@@ -135,7 +136,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
     txtFilterFrequency2->GetValue().ToDouble(&input2);
-    liblms7_status status;
+    int status;
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
@@ -145,22 +146,9 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
         status = lmsControl->TuneTxFilterLowBandChain(input1, input2);
         break;
     }
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            switch (rgrFilterSelection->GetSelection())
-            {
-            case 0:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gHighband_lower_limit, LMS7002M::gHighband_higher_limit), _("Warning"));
-                break;
-            case 1:
-                wxMessageBox(wxString::Format(_("Selected frequency out of range. Ladder range is from %.2f MHz to %.2f MHz, Realpole range is from %.2f MHz to %.2f MHz"), LMS7002M::gLadder_lower_limit, LMS7002M::gLadder_higher_limit, LMS7002M::gRealpole_lower_limit, LMS7002M::gRealpole_higher_limit));
-                break;
-            }
-        }
-        else
-            wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(liblms7_status2string(status)), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelection->GetSelection())
     {
@@ -182,7 +170,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     double input2;
     txtLadderFrequency->GetValue().ToDouble(&input1);
     txtRealpoleFrequency->GetValue().ToDouble(&input2);
-    liblms7_status status;
+    int status;
     switch (rgrFilterSelectionTest->GetSelection())
     {
     case 0:
@@ -192,22 +180,9 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
         status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2);
         break;
     }
-    if (status != LIBLMS7_SUCCESS)
+    if (status != 0)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            switch (rgrFilterSelectionTest->GetSelection())
-            {
-            case 0:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gLadder_lower_limit, LMS7002M::gLadder_higher_limit), _("Warning"));
-                break;
-            case 1:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gRealpole_lower_limit, LMS7002M::gRealpole_higher_limit), _("Warning"));
-                break;
-            }
-        }
-        else
-            wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(liblms7_status2string(status)), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelectionTest->GetSelection())
     {

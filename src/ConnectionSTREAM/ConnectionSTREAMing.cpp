@@ -85,7 +85,7 @@ struct USBStreamService : StreamerLTE
         pkt.outBuffer.push_back(tcxo_value >> 8);
         pkt.outBuffer.push_back(tcxo_value & 0xFF);
 
-        LMS64CProtocol::TransferStatus status = dataPort->TransferPacket(pkt);
+        dataPort->TransferPacket(pkt);
 
     }
 

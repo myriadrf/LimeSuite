@@ -25,18 +25,18 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
     const uint16_t phase_reg_select = 0x15;
     const uint16_t directClockingEnable = 0x0100;
     uint16_t regVal;
-    if(serPort->ReadRegister(direct_clocking_addr, regVal) == OperationStatus::FAILED)
+    if(serPort->ReadRegister(direct_clocking_addr, regVal) != 0)
         return FAILURE;
     regVal &= ~0x1FF;
     if(fOutRx_MHz < 5 && fOutTx_MHz < 5)
     {
         regVal |= phase_reg_select|directClockingEnable;
-        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != 0)
             return FAILURE;
         return SUCCESS;
     }
     else
-        if(serPort->WriteRegister(direct_clocking_addr, regVal) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegister(direct_clocking_addr, regVal) != 0)
             return FAILURE;
 
     if(fOutRx_MHz < 5 || fOutTx_MHz < 5)
@@ -116,7 +116,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
             addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
             values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
         }
-        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
             return FAILURE;
     }
     else
@@ -186,7 +186,7 @@ LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, cons
             addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
             values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
         }
-        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != OperationStatus::SUCCESS)
+        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
             return FAILURE;
     }
     else
@@ -588,8 +588,8 @@ LMS_StreamBoard::ProgressStats LMS_StreamBoard::GetStats()
 LMS_StreamBoard::Status LMS_StreamBoard::Reg_write(uint16_t address, uint16_t data)
 {
     assert(mDataPort != nullptr);
-    OperationStatus status = mDataPort->WriteRegister(address, data);
-    return status == OperationStatus::SUCCESS ? SUCCESS : FAILURE;
+    int status = mDataPort->WriteRegister(address, data);
+    return status == 0 ? SUCCESS : FAILURE;
 }
 
 /** @brief Helper function to read board spi registers
@@ -600,8 +600,8 @@ uint16_t LMS_StreamBoard::Reg_read(uint16_t address)
 {
     assert(mDataPort != nullptr);
     uint32_t dataRd = 0;
-    OperationStatus status = mDataPort->ReadRegister(address, dataRd);
-    if (status == OperationStatus::SUCCESS)
+    int status = mDataPort->ReadRegister(address, dataRd);
+    if (status == 0)
         return dataRd & 0xFFFF;
     else
         return 0;

@@ -1,6 +1,7 @@
 #include "lms7002_pnlRxTSP_view.h"
 #include "lms7002_gui_utilities.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
 
@@ -165,10 +166,10 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
     const int gfirIndex = 0;
     const int maxCoefCount = 40;
     coefficients.resize(maxCoefCount, 0);
-    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -189,10 +190,10 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
     const int gfirIndex = 1;
     const int maxCoefCount = 40;
     coefficients.resize(maxCoefCount, 0);
-    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -213,10 +214,10 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     const int gfirIndex = 2;
     const int maxCoefCount = 120;
     coefficients.resize(maxCoefCount, 0);
-    liblms7_status status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
-    if (status != LIBLMS7_SUCCESS)
+    int status = lmsControl->GetGFIRCoefficients(false, gfirIndex, &coefficients[0], maxCoefCount);
+    if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(liblms7_status2string(status)), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }

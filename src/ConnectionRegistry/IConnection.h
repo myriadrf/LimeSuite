@@ -16,15 +16,6 @@
 
 namespace lime{
 
-enum OperationStatus
-{
-    SUCCESS = 0,
-    FAILED,
-    UNSUPPORTED,
-    DISCONNECTED,
-    USER_ABORTED,
-};
-
 /*!
  * Information about the set of available hardware on a device.
  * This includes available ICs, streamers, and version info.
@@ -221,7 +212,7 @@ public:
      * @param size the number of SPI transactions
      * @return the transaction success state
      */
-    virtual OperationStatus TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     /*!
      * Write to an available I2C slave.
@@ -229,7 +220,7 @@ public:
      * @param data an array of bytes write out
      * @return the transaction success state
      */
-    virtual OperationStatus WriteI2C(const int addr, const std::string &data);
+    virtual int WriteI2C(const int addr, const std::string &data);
 
     /*!
      * Read from an available I2C slave.
@@ -242,7 +233,7 @@ public:
      * \param [inout] data an array of bytes read from the slave
      * @return the transaction success state
      */
-    virtual OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
+    virtual int ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     /***********************************************************************
      * LMS7002M Driver callbacks
@@ -253,7 +244,7 @@ public:
      * Typically this will reset the RFIC using a GPIO,
      * and possibly other ICs located on the device.
      */
-    virtual OperationStatus DeviceReset(void);
+    virtual int DeviceReset(void);
 
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.
@@ -455,7 +446,7 @@ public:
         Can be used to program MCU, FPGA, write external on board memory.
         This could be a quite long operation, use callback to get progress info or to terminate early
     */
-    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
+    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
 
     /**	@brief Reads current program from selected device
         @param destination buffer for binary program data
@@ -464,7 +455,7 @@ public:
         @param callback callback for progress reporting or early termination
         @return the operation success state
     */
-    virtual OperationStatus ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
+    virtual int ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
 
     /***********************************************************************
      * GPIO API
@@ -475,14 +466,14 @@ public:
     @param bufLength buffer length
     @return the operation success state
     */
-    virtual OperationStatus GPIOWrite(const uint8_t *buffer, const size_t bufLength);
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
 
     /**	@brief Reads GPIO values from device
     @param destination buffer for GPIO values LSB first, each bit represent GPIO state
     @param bufLength buffer length to read
     @return the operation success state
     */
-    virtual OperationStatus GPIORead(uint8_t *buffer, const size_t bufLength);
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
 
     /***********************************************************************
      * Register API
@@ -496,10 +487,10 @@ public:
      * @param size the number of entries in addrs and data
      * @return the operation success state
      */
-    virtual OperationStatus WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
+    virtual int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
 
     //! Write a single device register
-    OperationStatus WriteRegister(const uint32_t addr, const uint32_t data);
+    int WriteRegister(const uint32_t addr, const uint32_t data);
 
     /**	@brief Bulk read device registers.
      * ReadRegisters() writes multiple registers and supports 32-bit addresses and data.
@@ -509,11 +500,11 @@ public:
      * @param size the number of entries in addrs and data
      * @return the operation success state
      */
-    virtual OperationStatus ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
+    virtual int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
 
     //! Read a single device register
     template <typename ReadType>
-    OperationStatus ReadRegister(const uint32_t addr, ReadType &data);
+    int ReadRegister(const uint32_t addr, ReadType &data);
 
     /***********************************************************************
      * Aribtrary settings API
@@ -526,7 +517,7 @@ public:
 	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual OperationStatus CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
 
     /** @brief Returns value of custom on board control
 	@param ids indexes of controls to read
@@ -535,7 +526,7 @@ public:
 	@param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual OperationStatus CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
 
     /***********************************************************************
      * !!! Below is the old IConnection Streaming API
@@ -567,10 +558,10 @@ private:
 };
 
 template <typename ReadType>
-OperationStatus IConnection::ReadRegister(const uint32_t addr, ReadType &data)
+int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
 {
     uint32_t data32 = 0;
-    OperationStatus st = this->ReadRegisters(&addr, &data32, 1);
+    int st = this->ReadRegisters(&addr, &data32, 1);
     data = ReadType(data32);
     return st;
 }

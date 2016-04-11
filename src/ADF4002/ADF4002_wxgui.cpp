@@ -529,10 +529,10 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
     for(int i=0; i<12; i+=3)
         dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
 
-    OperationStatus status;
+    int status;
 // ADF4002 needs to be writen 4 values of 24 bits
     status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
 
@@ -592,9 +592,9 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
     for(int i=0; i<12; i+=3)
         dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
 
-    OperationStatus status;
+    int status;
 // ADF4002 needs to be writen 4 values of 24 bits
     status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }

@@ -28,22 +28,22 @@ public:
     DeviceInfo GetDeviceInfo(void);
 
     //! DeviceReset implemented by LMS64C
-    OperationStatus DeviceReset(void);
+    int DeviceReset(void);
 
     //! TransactSPI implemented by LMS64C
-    OperationStatus TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     //! WriteI2C implemented by LMS64C
-    OperationStatus WriteI2C(const int addr, const std::string &data);
+    int WriteI2C(const int addr, const std::string &data);
 
     //! ReadI2C implemented by LMS64C
-    OperationStatus ReadI2C(const int addr, const size_t numBytes, std::string &data);
+    int ReadI2C(const int addr, const size_t numBytes, std::string &data);
 
     //! WriteRegisters (BRDSPI) implemented by LMS64C
-    OperationStatus WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
+    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
 
     //! ReadRegisters (BRDSPI) implemented by LMS64C
-    OperationStatus ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
+    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
 
     //! Get the last-set reference clock rate
     double GetReferenceClockRate(void);
@@ -70,21 +70,6 @@ public:
         LMS_PROTOCOL_DIGIC,
         LMS_PROTOCOL_LMS64C,
         LMS_PROTOCOL_NOVENA,
-    };
-
-    enum DeviceStatus
-    {
-        SUCCESS,
-        FAILURE,
-        END_POINTS_NOT_FOUND,
-        CANNOT_CLAIM_INTERFACE
-    };
-
-    enum TransferStatus
-    {
-        TRANSFER_SUCCESS,
-        TRANSFER_FAILED,
-        NOT_CONNECTED
     };
 
     struct GenericPacket
@@ -146,7 +131,7 @@ public:
      * Some implementations will cast to LMS64CProtocol
      * and directly use the TransferPacket() API call.
      */
-    TransferStatus TransferPacket(GenericPacket &pkt);
+    int TransferPacket(GenericPacket &pkt);
 
     struct LMSinfo
     {
@@ -178,21 +163,21 @@ public:
         PROGRAM_WRITE_TARGET_COUNT
     };
 
-    virtual OperationStatus ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
+    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
 
-    virtual OperationStatus CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
-    virtual OperationStatus CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
 
 private:
 
-    OperationStatus WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
-    OperationStatus ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
+    int WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
+    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
-    OperationStatus WriteSi5351I2C(const std::string &data);
-    OperationStatus ReadSi5351I2C(const size_t numBytes, std::string &data);
+    int WriteSi5351I2C(const std::string &data);
+    int ReadSi5351I2C(const size_t numBytes, std::string &data);
 
-    OperationStatus WriteADF4002SPI(const uint32_t *writeData, const size_t size);
-    OperationStatus ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
+    int WriteADF4002SPI(const uint32_t *writeData, const size_t size);
+    int ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
     unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
     int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);

@@ -329,9 +329,9 @@ Si5351C::Status Si5351C::UploadConfiguration()
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);
 
-    OperationStatus status;
+    int status;
     status = device->WriteI2C(addrSi5351, outBuffer);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         return FAILED;
     return SUCCESS;
 }
@@ -839,9 +839,9 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
     dataIo.push_back(0);
     dataIo.push_back(1);
 
-    OperationStatus status;
+    int status;
     status = device->ReadI2C(addrSi5351, 2, dataIo);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         return stat;
     uint8_t reg0 = dataIo[0] & 0xFF;
     uint8_t reg1 = dataIo[1] & 0xFF;
@@ -865,9 +865,9 @@ Si5351C::Status Si5351C::ClearStatus()
     dataWr.push_back(1);
     dataWr.push_back(0x1);
 
-    OperationStatus status;
+    int status;
     status = device->WriteI2C(addrSi5351, dataWr);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         return FAILED;
     return SUCCESS;
 }

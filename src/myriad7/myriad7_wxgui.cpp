@@ -75,10 +75,10 @@ void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     unsigned txOutput = cmbGPIO2->GetSelection();
     uint8_t value = txOutput << 2 | rxInput;
 
-    OperationStatus status;
+    int status;
     status = serPort->GPIOWrite(&value, 1);
 
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(wxString::Format(_("Failed to write Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -91,9 +91,9 @@ void Myriad7_wxgui::UpdatePanel()
         return;
 
     uint8_t dataRd[64];
-    OperationStatus status = serPort->GPIORead(dataRd, 64);
+    int status = serPort->GPIORead(dataRd, 64);
 
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(wxString::Format(_("Failed to read Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
         return;

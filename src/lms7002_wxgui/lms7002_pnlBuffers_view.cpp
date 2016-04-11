@@ -1,3 +1,5 @@
+
+#include "ErrorReporting.h"
 #include "lms7002_pnlBuffers_view.h"
 #include "LMS64CProtocol.h"
 #include "wx/msgdlg.h"
@@ -38,14 +40,10 @@ void lms7002_pnlBuffers_view::OnGPIOchanged( wxCommandEvent& event )
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_WR;
     pkt.outBuffer.push_back(value);
-    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status != LMS64CProtocol::TRANSFER_SUCCESS)
+    if (serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Failed to write GPIO"), _("Warning"), wxICON_WARNING | wxOK);
-        return;
+        wxMessageBox(wxString::Format(_("GPIO write: %s"), wxString::From8BitData(GetLastErrorMessage())));
     }
-    if (pkt.status != STATUS_COMPLETED_CMD)
-        wxMessageBox(wxString::Format(_("GPIO write: %s"), wxString::From8BitData(status2string(pkt.status))));
 }
 
 void lms7002_pnlBuffers_view::UpdateGUI()
@@ -54,11 +52,8 @@ void lms7002_pnlBuffers_view::UpdateGUI()
         return;
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;
-    LMS64CProtocol::TransferStatus status = serPort->TransferPacket(pkt);
-    if (status == LMS64CProtocol::TRANSFER_SUCCESS)
+    if (serPort->TransferPacket(pkt) == 0)
     {   
-        if (pkt.status != STATUS_COMPLETED_CMD)
-            wxMessageBox(wxString::Format(_("GPIO read: %s"), wxString::From8BitData(status2string(pkt.status))));
         chkDIO_BUFF_OE->SetValue(getbit(pkt.inBuffer[0], 2));
         chkDIO_DIR_CTRL1->SetValue(getbit(pkt.inBuffer[0], 0));
         chkDIO_DIR_CTRL2->SetValue(getbit(pkt.inBuffer[0], 1));
@@ -66,6 +61,7 @@ void lms7002_pnlBuffers_view::UpdateGUI()
         chkIQ_SEL2_DIR->SetValue(getbit(pkt.inBuffer[0], 4));
         chkG_PWR_DWN->SetValue(getbit(pkt.inBuffer[0], 5));
     }
+    else wxMessageBox(wxString::Format(_("GPIO read: %s"), wxString::From8BitData(GetLastErrorMessage())));
     Refresh();
 }
 

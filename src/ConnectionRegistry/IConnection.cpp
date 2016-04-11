@@ -5,6 +5,7 @@
 */
 
 #include "IConnection.h"
+#include "ErrorReporting.h"
 #include <cstring> //memcpy
 #include <chrono>
 #include <thread>
@@ -74,28 +75,32 @@ DeviceInfo IConnection::GetDeviceInfo(void)
  * Serial API
  **********************************************************************/
 
-OperationStatus IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
+int IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::WriteI2C(const int addr, const std::string &data)
+int IConnection::WriteI2C(const int addr, const std::string &data)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
+int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
 /***********************************************************************
  * LMS7002M Driver callbacks
  **********************************************************************/
 
-OperationStatus IConnection::DeviceReset(void)
+int IConnection::DeviceReset(void)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
 void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
@@ -216,45 +221,51 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
  * Programming API
  **********************************************************************/
 
-OperationStatus IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
+int IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
+int IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
 /***********************************************************************
  * GPIO API
  **********************************************************************/
 
-OperationStatus IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+int IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
+int IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
 /***********************************************************************
  * Register API
  **********************************************************************/
 
-OperationStatus IConnection::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
+int IConnection::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
+int IConnection::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
+int IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
 {
     return this->WriteRegisters(&addr, &data, 1);
 }
@@ -263,12 +274,14 @@ OperationStatus IConnection::WriteRegister(const uint32_t addr, const uint32_t d
  * Aribtrary settings API
  **********************************************************************/
 
-OperationStatus IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
+int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }
 
-OperationStatus IConnection::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
+int IConnection::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
 {
-    return UNSUPPORTED;
+    ReportError(ENOTSUP);
+    return -1;
 }

@@ -35,10 +35,10 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
     uint32_t dataWr = (1 << 31);
     dataWr |= (addr & 0xFFFF) << 16;
     dataWr |=  data & 0xFFFF;
-    OperationStatus status;
+    int status;
     status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
 
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
         lblLMSwriteStatus->SetLabel(_("Write success"));
     else
         lblLMSwriteStatus->SetLabel(_("Write failed"));
@@ -55,9 +55,9 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
 
     const uint32_t dataWr = (addr & 0x7FFF) << 16;
     uint32_t dataRd = 0;
-    OperationStatus status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
+    int status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
 
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
     {
         lblLMSreadStatus->SetLabel(_("Read success"));
         unsigned short value = dataRd & 0xFFFF;
@@ -83,10 +83,10 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
     uint32_t dataWr = (1 << 31);
     dataWr |= (addr & 0xFFFF) << 16;
     dataWr |=  data & 0xFFFF;
-    OperationStatus status;
+    int status;
     status = dataPort->WriteRegister(addr, data);
 
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
         lblBoardwriteStatus->SetLabel(_("Write success"));
     else
         lblBoardwriteStatus->SetLabel(_("Write failed"));
@@ -103,9 +103,9 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
         return;
 
     uint32_t dataRd = 0;
-    OperationStatus status = dataPort->ReadRegister(addr, dataRd);
+    int status = dataPort->ReadRegister(addr, dataRd);
 
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
     {
         lblBoardreadStatus->SetLabel(_("Read success"));
         unsigned short value = dataRd & 0xFFFF;

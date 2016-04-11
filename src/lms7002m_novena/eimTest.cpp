@@ -435,7 +435,7 @@ int main(int argc, char** argv)
 	serPort->Open(0);
 
     lmsControl = new LMS7002M(serPort);
-    if(lmsControl->LoadConfig("test.ini") != LIBLMS7_SUCCESS)
+    if(lmsControl->LoadConfig("test.ini") != 0)
     {
         printf("Failed to load lms7 ini file\n");
         return -2;

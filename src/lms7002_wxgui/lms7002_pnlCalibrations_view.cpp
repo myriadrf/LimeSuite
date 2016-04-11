@@ -1,6 +1,7 @@
 #include "lms7002_pnlCalibrations_view.h"
 #include "lms7002_gui_utilities.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
@@ -37,13 +38,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
     lmsControl->EnableCalibrationByMCU(true);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status;
+    int status;
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         status = lmsControl->CalibrateRx(bandwidth, false);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
@@ -60,13 +61,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
     lmsControl->EnableCalibrationByMCU(true);
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status;
+    int status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
         status = lmsControl->CalibrateTx(bandwidth);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
@@ -82,19 +83,19 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status;
+    int status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
         status = lmsControl->CalibrateTx(bandwidth);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         status = lmsControl->CalibrateRx(bandwidth, false);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
 
     wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();
@@ -104,19 +105,19 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAllTDD(wxCommandEvent& event)
 {
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status;
+    int status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
         status = lmsControl->CalibrateTx(bandwidth);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         status = lmsControl->CalibrateRx(bandwidth, true);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
 
     wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();
@@ -198,13 +199,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRxTDD(wxCommandEvent& event)
 {
     double bandwidth = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth);
-    liblms7_status status;
+    int status;
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         status = lmsControl->CalibrateRx(bandwidth, true);
     }
-    if (status != LIBLMS7_SUCCESS)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);

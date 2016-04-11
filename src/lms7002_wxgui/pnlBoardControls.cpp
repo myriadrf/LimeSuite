@@ -231,8 +231,8 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         units.push_back("");
     }
 
-    OperationStatus status = serPort->CustomParameterRead(ids.data(), values.data(), ids.size(), units.data());
-    if (status != OperationStatus::SUCCESS)
+    int status = serPort->CustomParameterRead(ids.data(), values.data(), ids.size(), units.data());
+    if (status != 0)
     {
         wxMessageBox(_("Failed to read values"), _("Warning"));
         return;
@@ -278,8 +278,8 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         values.push_back(mDACparameters[i].value);
     }
 
-    OperationStatus status = serPort->CustomParameterWrite(ids.data(), values.data(), ids.size(), nullptr);
-    if (status != OperationStatus::SUCCESS)
+    int status = serPort->CustomParameterWrite(ids.data(), values.data(), ids.size(), nullptr);
+    if (status != 0)
     {
         wxMessageBox(_("Failes to write values"), _("Warning"));
         return;
@@ -438,8 +438,8 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
             if (serPort || serPort->IsOpen() == false)
                 return;
 
-            OperationStatus status = serPort->CustomParameterWrite(&ids, &value, 1, &units);
-            if (status != OperationStatus::SUCCESS)
+            int status = serPort->CustomParameterWrite(&ids, &value, 1, &units);
+            if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
         }
@@ -463,8 +463,8 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
     double value = 0;
     string units = "";
 
-    OperationStatus status = serPort->CustomParameterRead(&id, &value, 1, &units);
-    if (status != OperationStatus::SUCCESS)
+    int status = serPort->CustomParameterRead(&id, &value, 1, &units);
+    if (status != 0)
     {
         wxMessageBox(_("Failed to read value"), _("Warning"));
         return;
@@ -488,8 +488,8 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 
     double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
 
-    OperationStatus status = serPort->CustomParameterWrite(&id, &value, 1, &units);
-    if (status != OperationStatus::SUCCESS)
+    int status = serPort->CustomParameterWrite(&id, &value, 1, &units);
+    if (status != 0)
     {
         wxMessageBox(_("Failed to write value"), _("Warning"));
         return;

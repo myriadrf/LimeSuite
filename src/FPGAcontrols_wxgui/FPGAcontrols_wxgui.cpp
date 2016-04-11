@@ -420,17 +420,17 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 
     const uint16_t address = 0x0016;
     uint32_t dataRd = 0;
-    OperationStatus status;
+    int status;
     status = m_serPort->ReadRegister(address, dataRd);
     unsigned short regValue = 0;
 
-    if (status == OperationStatus::SUCCESS)
+    if (status == 0)
         regValue = dataRd & 0xFFFF;
 
     regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
 
     status = m_serPort->WriteRegister(address, regValue);
 
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }
