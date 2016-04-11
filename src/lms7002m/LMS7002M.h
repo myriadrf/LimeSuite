@@ -13,9 +13,6 @@
 
 #include <sstream>
 
-//!< there is a connection manager, but its not open
-#define LIBLMS7_NOT_CONNECTED -5
-
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;

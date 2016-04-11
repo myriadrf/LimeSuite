@@ -190,7 +190,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     int status = lmsControl->LoadConfig(dlg.GetPath().To8BitData());
     if (status != 0)
     {
-        if (status != LIBLMS7_NOT_CONNECTED)
+        if (lmsControl->GetConnection() == nullptr)
             wxMessageBox(wxString::Format(_("Failed to load file: %s"), GetLastErrorMessage()), _("Warning"));
     }
     wxCommandEvent tevt;

@@ -307,7 +307,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
  */
 #define checkConnection() { \
     if (controlPort == nullptr) return ReportError(ENOTCONN, "no connection object"); \
-    if (not controlPort->IsOpen()) {ReportError(ENOTCONN, "connection is not open"); return LIBLMS7_NOT_CONNECTED;} \
+    if (not controlPort->IsOpen()) return ReportError(ENOTCONN, "connection is not open"); \
 }
 
 /** @brief Sends reset signal to chip, after reset enables B channel controls
@@ -391,7 +391,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -438,7 +438,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 }
             }
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
         }
 
@@ -458,7 +458,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -574,13 +574,13 @@ int LMS7002M::LoadConfig(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
             this->SetActiveChannel(ChB);
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
         }
 
@@ -598,7 +598,7 @@ int LMS7002M::LoadConfig(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && status != LIBLMS7_NOT_CONNECTED)
+            if (status != 0 && controlPort == nullptr)
                 return status;
         }
         this->SetActiveChannel(ch);
