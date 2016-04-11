@@ -41,8 +41,8 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/ConnectionHandle.h
     ConnectionRegistry/ConnectionRegistry.h
     lms7002m_novena/StreamerNovena.h
-    lms7002m/LMS7002M_statuses.h
     lms7002m/LMS7002M.h
+    lms7002m/CalibrationCache.h
     lms7002m/cpp-feather-ini-parser/INI.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
@@ -98,7 +98,6 @@ set(LIME_SUITE_SOURCES
     lms7002m_novena/StreamerNovena.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
-    lms7002m/LMS7002M_statuses.cpp
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
     lms7002m/mcu_dc_iq_calibration.cpp

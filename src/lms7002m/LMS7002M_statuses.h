@@ -43,6 +43,4 @@ enum liblms7_status
     LIBLMS7_STATUS_COUNT
 };
 
-const char* liblms7_status2string(liblms7_status status);
-
 #endif

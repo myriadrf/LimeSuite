@@ -714,7 +714,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }
     }
 
@@ -749,7 +749,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         }
         if (status != LIBLMS7_SUCCESS)
         {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, liblms7_status2string(status));
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }
     }
 

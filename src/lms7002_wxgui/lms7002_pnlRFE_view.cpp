@@ -1,5 +1,6 @@
 #include "lms7002_pnlRFE_view.h"
 #include "LMS7002M.h"
+#include "ErrorReporting.h"
 #include <wx/msgdlg.h>
 #include <map>
 #include <vector>
@@ -249,7 +250,7 @@ void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
             wxMessageBox(wxString::Format("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz", g_tia == 1 ? LMS7002M::gRxTIA_lower_limit_g1 : LMS7002M::gRxTIA_lower_limit_g23, LMS7002M::gRxTIA_higher_limit));
         }
         else
-            wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(liblms7_status2string(status)), _("Error"));
+            wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else
     {
