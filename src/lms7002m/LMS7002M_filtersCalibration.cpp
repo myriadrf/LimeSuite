@@ -306,7 +306,7 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
 
 
     //advanced search for c and r values
-    status = LIBLMS7_FAILURE;
+    status = -1;
     dir = ccal_lpflad_tbb == 31 ? -1 : 1;
     while (rcal > 0 && rcal < 255)
     {
@@ -462,7 +462,7 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
     SetNCOFrequency(Rx, 0, realpole_MHz - 1);
 
     prevRSSIbigger = GetRSSI() > rssi_value_10k*0.707;
-    status = LIBLMS7_FAILURE; //assuming r value is not found
+    status = -1; //assuming r value is not found
     while (rcal >= 0 && rcal < 256)
     {
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal);
@@ -767,7 +767,7 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
     else if (g_tia_rfe > 1)
         cfb_tia_rfe_value = (uint16_t)(1680 / TIA_freq_MHz - 10);
     else
-        return LIBLMS7_FAILURE;
+        return ReportError("RFE_TIA_Calibration() - g_tia_rfe cannot be 0");
     Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe_value);
 
     if (g_tia_rfe == 1)
@@ -775,7 +775,7 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
     else if (g_tia_rfe > 1)
         ccomp_tia_rfe_value = (uint8_t)(cfb_tia_rfe_value / 100);
     else
-        return LIBLMS7_FAILURE;
+        return ReportError("RFE_TIA_Calibration() - g_tia_rfe cannot be 0");
     if (ccomp_tia_rfe_value > 15)
         ccomp_tia_rfe_value = 15;
 
@@ -826,7 +826,7 @@ liblms7_status LMS7002M::RFE_TIA_Calibration(float_type TIA_freq_MHz)
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
-    return LIBLMS7_FAILURE;
+    return ReportError("RFE_TIA_Calibration(%g MHz) - cfb_tia_rfe loop failed", TIA_freq_MHz);
 }
 
 liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
@@ -899,7 +899,7 @@ liblms7_status LMS7002M::RxLPFLow_Calibration(float_type RxLPFL_freq_MHz)
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
-    return LIBLMS7_FAILURE;
+    return ReportError("RxLPFLow_Calibration(%g MHz) - c_ctl_lpfl_rbb loop failed", RxLPFL_freq_MHz);
 }
 
 liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
@@ -969,5 +969,5 @@ liblms7_status LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz)
         }
         prevRSSIbigger = rssi > rssi_value_50k;
     }
-    return LIBLMS7_FAILURE;
+    return ReportError("RxLPFHigh_Calibration(%g MHz) - c_ctl_lpfh_rbb loop failed", RxLPFH_freq_MHz);
 }

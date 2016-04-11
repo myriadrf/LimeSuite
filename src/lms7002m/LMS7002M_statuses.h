@@ -27,7 +27,7 @@ const char liblms7_status_strings[][64] =
 typedef int liblms7_status;
 
 #define LIBLMS7_SUCCESS 0
-#define LIBLMS7_FAILURE 1
+//#define LIBLMS7_FAILURE 1
 //#define LIBLMS7_INDEX_OUT_OF_RANGE 2
 //#define LIBLMS7_TOO_MANY_VALUES 3
 #define LIBLMS7_NO_CONNECTION_MANAGER 4

@@ -230,10 +230,10 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     //power up VCO
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_CGEN), 0);
 
-    if (SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
-    if (TuneVCO(VCO_CGEN) != LIBLMS7_SUCCESS)
-        return LIBLMS7_FAILURE;
+    int status = SetFrequencyCGEN(CGEN_FREQ_CALIBRATIONS);
+    if (status != LIBLMS7_SUCCESS) return status;
+    status = TuneVCO(VCO_CGEN);
+    if (status != LIBLMS7_SUCCESS) return status;
 
     //SXR
     this->SetActiveChannel(ChA);
@@ -242,10 +242,10 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz)
     {
         float_type SXTfreqMHz = GetFrequencySX_MHz(Tx);
         float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / calibUserBwDivider - 1;
-        if (SetFrequencySX(Rx, SXRfreqMHz) != LIBLMS7_SUCCESS)
-            return LIBLMS7_FAILURE;
-        if (TuneVCO(VCO_SXR) != LIBLMS7_SUCCESS)
-            return LIBLMS7_FAILURE;
+        status = SetFrequencySX(Rx, SXRfreqMHz);
+        if (status != LIBLMS7_SUCCESS) return status;
+        status = TuneVCO(VCO_SXR);
+        if (status != LIBLMS7_SUCCESS) return status;
     }
 
     //SXT
@@ -400,8 +400,8 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz)
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
     {
-        if(mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
-            return LIBLMS7_FAILURE;
+        int st = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM);
+        if (st != 0) return st;
     }
 
     liblms7_status status;
@@ -595,7 +595,8 @@ liblms7_status LMS7002M::FixRXSaturation()
         }
     }
 finished:
-    return GetRSSI() < rssi_saturation_level ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE;
+    if (GetRSSI() < rssi_saturation_level) return 0;
+    return ReportError("FixRXSaturation() - failed");
 }
 
 /** @brief Parameters setup instructions for Rx calibration
@@ -781,16 +782,16 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool TDD)
     {
         if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS_TDD)
         {
-            if (mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_RxTDD_bin, MCU_BD::SRAM) != 0)
-                return LIBLMS7_FAILURE;
+            int st = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_RxTDD_bin, MCU_BD::SRAM);
+            if (st != 0) return st;
         }
     }
     else
     {
         if (mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
         {
-            if (mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
-                return LIBLMS7_FAILURE;
+            int st = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM);
+            if (st != 0) return st;
         }
     }
 

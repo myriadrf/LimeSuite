@@ -312,13 +312,9 @@ liblms7_status LMS7002M::ResetChip()
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    if (controlPort->DeviceReset() == OperationStatus::SUCCESS)
-    {
-        Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
-        return LIBLMS7_SUCCESS;
-    }
-    else
-        return LIBLMS7_FAILURE;
+    int status = controlPort->DeviceReset();
+    if (status == 0) Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
+    return status;
 }
 
 liblms7_status LMS7002M::SoftReset()
@@ -507,9 +503,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
         this->SetActiveChannel(ch);
         return LIBLMS7_SUCCESS;
     }
-    else
-        return ReportError("LoadConfigLegacyFile(%s) - invalid format", filename);
-    return LIBLMS7_FAILURE;
+    return ReportError("LoadConfigLegacyFile(%s) - invalid format", filename);
 }
 
 /** @brief Reads configuration file and uploads registers to chip
@@ -1153,12 +1147,12 @@ liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
     else
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-	cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+    cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     this->SetActiveChannel(ch); //restore previously used channel
-	if(cmphl == 2)
-        return LIBLMS7_SUCCESS;
-    else
-        return LIBLMS7_FAILURE;
+
+    if(cmphl == 2) return LIBLMS7_SUCCESS;
+    return ReportError("TuneVCO(%s) - failed to lock (cmphl != 2)",
+        (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
 }
 
 /** @brief Returns given parameter value from chip register
@@ -1492,7 +1486,7 @@ liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    liblms7_status status = LIBLMS7_FAILURE;
+    liblms7_status status = -1;
     uint8_t index;
     uint8_t coefLimit;
     uint16_t startAddr;
@@ -1600,12 +1594,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
     if (controlPort->IsOpen() == false)
         return LIBLMS7_NOT_CONNECTED;
 
-    auto status = controlPort->TransactSPI(addrLMS7002M, data.data(), nullptr, cnt);
-
-    if (status == OperationStatus::SUCCESS)
-        return LIBLMS7_SUCCESS;
-    else
-        return LIBLMS7_FAILURE;
+    return controlPort->TransactSPI(addrLMS7002M, data.data(), nullptr, cnt);
 }
 
 /** @brief Batches multiple register reads into least amount of transactions
@@ -1628,10 +1617,8 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
         dataWr[i] = (uint32_t(spiAddr[i]) << 16);
     }
 
-    auto status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), cnt);
-
-    if (status != OperationStatus::SUCCESS)
-        return LIBLMS7_FAILURE;
+    int status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), cnt);
+    if (status != 0) return status;
 
     int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
 
@@ -1747,7 +1734,8 @@ liblms7_status LMS7002M::RegistersTest()
     fout << ss.str() << endl;
     fout.close();
 
-    return allTestSuccess ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE;
+    if (allTestSuccess) return 0;
+    return ReportError("RegistersTest() failed - %s", GetLastErrorMessage());
 }
 
 /** @brief Performs registers test for given address interval by writing given pattern data
@@ -1815,7 +1803,8 @@ liblms7_status LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endA
         sprintf(ctemp, "0x%04X", pattern);
         ss << "\tRegisters OK (" << ctemp << ")\n";
     }
-    return registersMatch ? LIBLMS7_SUCCESS : LIBLMS7_FAILURE;
+    if (registersMatch) return 0;
+    return ReportError("RegistersTestInterval(startAddr=0x%x, endAddr=0x%x) - failed", startAddr, endAddr);
 }
 
 /** @brief Sets Rx Dc offsets by converting two's complementary numbers to sign and magnitude
