@@ -66,10 +66,10 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
 
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint32_t dataRd = 0;
-    OperationStatus status;
+    int status;
     status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
 
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -125,9 +125,9 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     value |= lms_gpio1->GetValue() << 1;
     value |= lms_gpio0->GetValue() << 0;
     uint32_t dataWr = (1 << 31) | (0x0806 << 16) | (value & 0xFFFF);
-    OperationStatus status;
+    int status;
     status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
-    if (status != OperationStatus::SUCCESS)
+    if (status != 0)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);
         return;

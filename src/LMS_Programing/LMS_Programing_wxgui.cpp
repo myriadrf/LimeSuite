@@ -232,7 +232,7 @@ void LMS_Programing_wxgui::DoProgramming()
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
     evt.SetEventType(wxEVT_COMMAND_THREAD);
 
-    if(status == OperationStatus::SUCCESS)
+    if(status == 0)
         evt.SetString(_("Programming Completed!"));
     else
         evt.SetString(_("Programming failed!"));

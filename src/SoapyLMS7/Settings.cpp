@@ -854,7 +854,7 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)
 {
     auto st = _conn->WriteRegister(addr, value);
-    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+    if (st != 0) throw std::runtime_error(
         "SoapyLMS7::WriteRegister("+std::to_string(addr)+") FAIL");
 }
 
@@ -862,7 +862,7 @@ unsigned SoapyLMS7::readRegister(const unsigned addr) const
 {
     unsigned readbackData = 0;
     auto st = _conn->ReadRegister(addr, readbackData);
-    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+    if (st != 0) throw std::runtime_error(
         "SoapyLMS7::ReadRegister("+std::to_string(addr)+") FAIL");
     return readbackData;
 }
@@ -963,7 +963,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
 void SoapyLMS7::writeI2C(const int addr, const std::string &data)
 {
     auto st = _conn->WriteI2C(addr, data);
-    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+    if (st != 0) throw std::runtime_error(
         "SoapyLMS7::writeI2C("+std::to_string(addr)+") FAIL");
 }
 
@@ -971,7 +971,7 @@ std::string SoapyLMS7::readI2C(const int addr, const size_t numBytes)
 {
     std::string result;
     auto st = _conn->ReadI2C(addr, numBytes, result);
-    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+    if (st != 0) throw std::runtime_error(
         "SoapyLMS7::readI2C("+std::to_string(addr)+") FAIL");
     return result;
 }
@@ -984,7 +984,7 @@ unsigned SoapyLMS7::transactSPI(const int addr, const unsigned data, const size_
     uint32_t input = data;
     uint32_t readback = 0;
     auto st = _conn->TransactSPI(addr, &input, &readback, 1);
-    if (st != OperationStatus::SUCCESS) throw std::runtime_error(
+    if (st != 0) throw std::runtime_error(
         "SoapyLMS7::transactSPI("+std::to_string(addr)+") FAIL");
     return readback;
 }
