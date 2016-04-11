@@ -2158,6 +2158,7 @@ int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
     this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, bypass?1:0);
     this->Modify_SPI_Reg_bits(DCCORRI_TXTSP, std::lrint(I*128));
     this->Modify_SPI_Reg_bits(DCCORRQ_TXTSP, std::lrint(Q*128));
+	return 0;
 }
 
 void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
@@ -2179,6 +2180,7 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
     this->Modify_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP, iqcorr);
     this->Modify_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP, gcorri);
     this->Modify_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP, gcorrq);
+	return 0;
 }
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)

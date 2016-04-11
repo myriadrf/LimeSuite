@@ -9,6 +9,9 @@
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
+#ifdef _MSC_VER
+#include <ciso646>
+#endif
 using namespace lime;
 
 ///define for parameter enumeration if prefix might be needed

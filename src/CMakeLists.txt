@@ -72,6 +72,11 @@ endif()
 ########################################################################
 ## lime suite library
 ########################################################################
+if(WIN32)
+add_subdirectory(sqlite-3.12)
+include_directories(sqlite-3.12)
+set (SQLITE3_LIBRARY sqlite3_static)
+else()
 find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
 find_library(SQLITE3_LIBRARY sqlite3)
 if(NOT SQLITE3_INCLUDE_DIR)
@@ -87,6 +92,7 @@ message(STATUS "SQLITE3")
 
 message(STATUS ${SQLITE3_INCLUDE_DIR})
 message(STATUS ${SQLITE3_LIBRARY})
+endif()
 
 set(LIME_SUITE_SOURCES
     ErrorReporting.cpp
