@@ -302,15 +302,20 @@ liblms7_status LMS7002M::EnableChannel(const bool isTx, const bool enable)
     return LIBLMS7_SUCCESS;
 }
 
+/*!
+ * Helpful macro to check the connection before doing SPI work.
+ */
+#define checkConnection() { \
+    if (controlPort == nullptr) return ReportError(ENOTCONN, "no connection object"); \
+    if (not controlPort->IsOpen()) {ReportError(ENOTCONN, "connection is not open"); return LIBLMS7_NOT_CONNECTED;} \
+}
+
 /** @brief Sends reset signal to chip, after reset enables B channel controls
     @return 0-success, other-failure
 */
 liblms7_status LMS7002M::ResetChip()
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     int status = controlPort->DeviceReset();
     if (status == 0) Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
@@ -604,10 +609,7 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     }
 
     this->SetActiveChannel(ChA);
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
     return LIBLMS7_SUCCESS;
 }
 
@@ -1068,10 +1070,7 @@ liblms7_status LMS7002M::SetFrequencyCGEN(const float_type freq_MHz, const bool 
 */
 liblms7_status LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 	int8_t i;
 	uint8_t cmphl; //comparators
 	int16_t csw_lowest = -1;
@@ -1236,10 +1235,7 @@ liblms7_status LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_
 */
 liblms7_status LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
 {
-	if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500; //threshold to enable additional divider
     float_type VCOfreq;
@@ -1481,10 +1477,7 @@ liblms7_status LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const 
 */
 liblms7_status LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount)
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     liblms7_status status = -1;
     uint8_t index;
@@ -1549,7 +1542,7 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, liblms7_status *sta
     if (!controlPort)
     {
         if (status)
-            *status = LIBLMS7_NO_CONNECTION_MANAGER;
+            *status = ReportError(ENOTCONN, "no connection object");
         return 0;
     }
     if (controlPort->IsOpen() == false || fromChip == false)
@@ -1589,10 +1582,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
     }
 
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     return controlPort->TransactSPI(addrLMS7002M, data.data(), nullptr, cnt);
 }
@@ -1605,10 +1595,7 @@ liblms7_status LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t
 */
 liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt)
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     std::vector<uint32_t> dataWr(cnt);
     std::vector<uint32_t> dataRd(cnt);
@@ -1643,10 +1630,7 @@ liblms7_status LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiDa
 liblms7_status LMS7002M::RegistersTest()
 {
     char chex[16];
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     liblms7_status status;
     Channel ch = this->GetActiveChannel();
@@ -1915,10 +1899,7 @@ isSyncedEnding:
 */
 liblms7_status LMS7002M::UploadAll()
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
 
     Channel ch = this->GetActiveChannel(); //remember used channel
 
@@ -1971,10 +1952,7 @@ liblms7_status LMS7002M::UploadAll()
 */
 liblms7_status LMS7002M::DownloadAll()
 {
-    if (!controlPort)
-        return LIBLMS7_NO_CONNECTION_MANAGER;
-    if (controlPort->IsOpen() == false)
-        return LIBLMS7_NOT_CONNECTED;
+    checkConnection();
     liblms7_status status;
     Channel ch = this->GetActiveChannel(false);
 
