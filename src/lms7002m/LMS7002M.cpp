@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <set>
 #include "IConnection.h"
+#include "ErrorReporting.h"
 #include "INI.h"
 #include <cmath>
 #include <iostream>
@@ -336,7 +337,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
     if (f.good() == false) //file not found
     {
         f.close();
-        return LIBLMS7_FILE_NOT_FOUND;
+        return ReportError("LoadConfigLegacyFile(%s) - file not found", filename);
     }
     f.close();
     uint16_t addr = 0;
@@ -346,7 +347,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
     typedef INI<string, string, string> ini_t;
     ini_t parser(filename, true);
     if (parser.select("FILE INFO") == false)
-        return LIBLMS7_FILE_INVALID_FORMAT;
+        return ReportError("LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename);
 
     string type = "";
     type = parser.get("type", "undefined");
@@ -354,7 +355,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
     if (type.find("LMS7002 configuration") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return LIBLMS7_FILE_INVALID_FORMAT;
+        return ReportError("LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename);
     }
 
     int fileVersion = 0;
@@ -507,7 +508,7 @@ liblms7_status LMS7002M::LoadConfigLegacyFile(const char* filename)
         return LIBLMS7_SUCCESS;
     }
     else
-        return LIBLMS7_FILE_INVALID_FORMAT;
+        return ReportError("LoadConfigLegacyFile(%s) - invalid format", filename);
     return LIBLMS7_FAILURE;
 }
 
@@ -521,7 +522,7 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     if (f.good() == false) //file not found
     {
         f.close();
-        return LIBLMS7_FILE_NOT_FOUND;
+        return ReportError("LoadConfigLegacyFile(%s) - file not found", filename);
     }
     f.close();
     uint16_t addr = 0;
@@ -544,7 +545,7 @@ liblms7_status LMS7002M::LoadConfig(const char* filename)
     if (type.find("lms7002m_minimal_config") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return LIBLMS7_FILE_INVALID_FORMAT;
+        return ReportError("LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename);
     }
 
     int fileVersion = 0;
