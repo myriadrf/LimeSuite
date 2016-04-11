@@ -188,20 +188,7 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     }
     if (status != LIBLMS7_SUCCESS)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            switch (rgrFilterSelection->GetSelection())
-            {
-            case 0:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gRxLPF_low_lower_limit, LMS7002M::gRxLPF_low_higher_limit), _("Warning"));
-                break;
-            case 1:
-                wxMessageBox(wxString::Format(_("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gRxLPF_high_lower_limit, LMS7002M::gRxLPF_high_higher_limit), _("Warning"));
-                break;
-            }
-        }
-        else
-            wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelection->GetSelection())
     {

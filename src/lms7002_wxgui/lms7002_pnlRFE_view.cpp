@@ -244,13 +244,7 @@ void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
     liblms7_status status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1);
     if (status != LIBLMS7_SUCCESS)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            int g_tia = lmsControl->Get_SPI_Reg_bits(G_TIA_RFE);
-            wxMessageBox(wxString::Format("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz", g_tia == 1 ? LMS7002M::gRxTIA_lower_limit_g1 : LMS7002M::gRxTIA_lower_limit_g23, LMS7002M::gRxTIA_higher_limit));
-        }
-        else
-            wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else
     {

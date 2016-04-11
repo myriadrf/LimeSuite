@@ -148,20 +148,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     }
     if (status != LIBLMS7_SUCCESS)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            switch (rgrFilterSelection->GetSelection())
-            {
-            case 0:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gHighband_lower_limit, LMS7002M::gHighband_higher_limit), _("Warning"));
-                break;
-            case 1:
-                wxMessageBox(wxString::Format(_("Selected frequency out of range. Ladder range is from %.2f MHz to %.2f MHz, Realpole range is from %.2f MHz to %.2f MHz"), LMS7002M::gLadder_lower_limit, LMS7002M::gLadder_higher_limit, LMS7002M::gRealpole_lower_limit, LMS7002M::gRealpole_higher_limit));
-                break;
-            }
-        }
-        else
-            wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelection->GetSelection())
     {
@@ -195,20 +182,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     }
     if (status != LIBLMS7_SUCCESS)
     {
-        if (status == LIBLMS7_FREQUENCY_OUT_OF_RANGE)
-        {
-            switch (rgrFilterSelectionTest->GetSelection())
-            {
-            case 0:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gLadder_lower_limit, LMS7002M::gLadder_higher_limit), _("Warning"));
-                break;
-            case 1:
-                wxMessageBox(wxString::Format( _("Selected frequency out of range. Available range is from %.2f MHz to %.2f MHz"), LMS7002M::gRealpole_lower_limit, LMS7002M::gRealpole_higher_limit), _("Warning"));
-                break;
-            }
-        }
-        else
-            wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelectionTest->GetSelection())
     {

@@ -6,6 +6,7 @@
 
 #include "LMS7002M.h"
 #include "IConnection.h"
+#include "ErrorReporting.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
@@ -223,7 +224,9 @@ liblms7_status LMS7002M::TuneTxFilter(LMS7002M::TxFilter type, float_type cutoff
 
     if (cutoff_MHz < lowLimit || cutoff_MHz > highLimit)
     {
-        status = LIBLMS7_FREQUENCY_OUT_OF_RANGE;
+        status = ReportError("TuneTxFilter(%s, %g MHz) out of range [%g, %g] MHz",
+            (type == TX_LADDER)?"LADDER":((type == TX_REALPOLE)?"REALPOLE":"HIGHBAND"),
+            cutoff_MHz, lowLimit, highLimit);
         goto TxFilterTuneEnd;
     }
 
@@ -404,7 +407,8 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
 
     if (bandwidth < gLadder_lower_limit || bandwidth > gLadder_higher_limit)
     {
-        status = LIBLMS7_FREQUENCY_OUT_OF_RANGE;
+        status = ReportError("TuneTxFilterLowBandChain(bandwidth = %g MHz) out of range [%g, %g] MHz",
+            bandwidth, gLadder_lower_limit, gLadder_higher_limit);
         goto TxFilterLowBandChainEnd;
     }
 
@@ -419,7 +423,8 @@ liblms7_status LMS7002M::TuneTxFilterLowBandChain(float_type bandwidth, float_ty
 
     if (realpole_MHz < gRealpole_lower_limit || realpole_MHz > gRealpole_higher_limit)
     {
-        status = LIBLMS7_FREQUENCY_OUT_OF_RANGE;
+        status = ReportError("TuneTxFilterLowBandChain(realpole = %g MHz) out of range [%g, %g] MHz",
+            realpole_MHz, gLadder_lower_limit, gRealpole_higher_limit);
         goto TxFilterLowBandChainEnd;
     }
 
@@ -541,7 +546,9 @@ liblms7_status LMS7002M::TuneRxFilter(RxFilter filter, float_type bandwidth_MHz)
         higherLimit = gRxLPF_high_higher_limit;
     }
     if (bandwidth_MHz < lowerLimit || bandwidth_MHz > higherLimit)
-        return LIBLMS7_FREQUENCY_OUT_OF_RANGE;
+        return ReportError("TuneRxFilter(%s, %g MHz) out of range [%g, %g] MHz",
+            (filter == RX_TIA)?"TIA":((filter == RX_LPF_LOWBAND)?"LOWBAND":"HIGHBAND"),
+            bandwidth_MHz, lowerLimit, higherLimit);
 
     auto backup = BackupRegisterMap();
 
