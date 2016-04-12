@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionSTREAM.h"
-#include "LMS_StreamBoard.h"
 #include "StreamerLTE.h"
 #include "fifo.h" //from StreamerLTE
 #include <LMS7002M.h>
@@ -47,24 +46,27 @@ struct USBStreamService : StreamerLTE
         mRxFIFO->Reset(2*4096, channelsCount);
         mTxFIFO->Reset(2*4096, channelsCount);
 
-        //switch off Rx
-        uint16_t regVal = Reg_read(dataPort, 0x0005);
-        regVal &= ~0x46;
+        //switch off Rx/Tx
+        uint16_t interface_ctrl_000A = Reg_read(dataPort, 0x000A);
+        Reg_write(dataPort, 0x000A, interface_ctrl_000A & ~0x3);
+
         //reset hardware timestamp to 0
-        Reg_write(mDataPort, 0x0005, regVal);
-        Reg_write(mDataPort, 0x0005, regVal | 0x40);
-        Reg_write(mDataPort, 0x0005, regVal);
+        uint16_t interface_ctrl_0009 = Reg_read(dataPort, 0x0009);
+        Reg_write(dataPort, 0x0009, interface_ctrl_0009 & ~0x3);
+        Reg_write(dataPort, 0x0009, interface_ctrl_0009 | 0x3);
+        Reg_write(dataPort, 0x0009, interface_ctrl_0009 & ~0x3);
 
         //enable MIMO mode, 12 bit compressed values
+        uint16_t smpl_width = 0x2; // 0-16 bit, 1-14 bit, 2-12 bit
         if (channelsCount == 2)
         {
-            Reg_write(dataPort, 0x0001, 0x0003);
-            Reg_write(dataPort, 0x0007, 0x000A);
+            Reg_write(dataPort, 0x0007, 0x0003); //channel enables
+            Reg_write(dataPort, 0x0008, 0x0100 | smpl_width);
         }
         else
         {
-            Reg_write(dataPort, 0x0001, 0x0001);
-            Reg_write(dataPort, 0x0007, 0x0008);
+            Reg_write(dataPort, 0x0007, 0x0001); //channel enables
+            Reg_write(dataPort, 0x0008, 0x0000 | smpl_width);
         }
 
         //USB FIFO reset
@@ -175,15 +177,8 @@ struct USBStreamService : StreamerLTE
         ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(mDataPort));
 
         //switch on Rx
-        auto regVal = Reg_read(mDataPort, 0x0005);
-        int resetTimestamp = 0 << 6; //rising edge resets timestamp to 0
-        int syncDis = 0 << 5;//synchronization enabled, can be disabled for each packet in it's header
-        int rxTxEnb = 1 << 2; //streaming on
-        int txFromRam = 0 << 1; //off
-        int txNormal = 1 << 0; //normal op
-        regVal = (regVal & ~0x67) | resetTimestamp | syncDis | txFromRam | txNormal;
-        Reg_write(mDataPort, 0x0005, regVal); //first set configuration
-        Reg_write(mDataPort, 0x0005, regVal | rxTxEnb); //enable Rx/Tx after config is set
+        uint16_t interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
+        Reg_write(mDataPort, 0x000A, interface_ctrl_000A | 0x1);
 
         this->updateThreadState();
     }
@@ -193,8 +188,8 @@ struct USBStreamService : StreamerLTE
         //stop threads first, then disable FPGA
         this->updateThreadState(true);
         //stop Tx Rx if they were active
-        uint32_t regVal = Reg_read(mDataPort, 0x0005);
-        Reg_write(mDataPort, 0x0005, regVal & ~(1 << 2));
+        uint16_t interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
+        Reg_write(mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
     }
 
     void handleRxStatus(const int status, const uint64_t &counter)
@@ -533,13 +528,14 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
     return -1;
 }
 
-/** @warning LMS7002 Rx/Tx PLL must be locked to configure FPGA PLL
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
+void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
-    std::cout << "LMS_StreamBoard::ConfigurePLL(tx=" << txRate/1e6 << "MHz, rx=" << rxRate/1e6  << "MHz)" << std::endl;
-    LMS_StreamBoard::ConfigurePLL(this, 2*txRate/1e6, 2*rxRate/1e6, 90, 90);
-    if (mStreamService) mStreamService->mHwCounterRate = rxRate;
+    std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz << "Hz, rx=" << rxRate_Hz << "Hz)" << std::endl;
+    ConfigureFPGA_PLL(0, 2 * txRate_Hz, 90);
+    ConfigureFPGA_PLL(1, 2 * rxRate_Hz, 90);
+    if(mStreamService) mStreamService->mHwCounterRate = rxRate_Hz;
 }
 
 void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)

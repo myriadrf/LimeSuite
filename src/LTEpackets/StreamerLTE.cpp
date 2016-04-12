@@ -138,9 +138,9 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
                 auto byte0 = pkt[pktIndex].reserved[0];
                 if ((byte0 & (1 << 3)) != 0 and ignoreTxLateCount == 0)
                 {
-                    auto reg7 = Reg_read(dataPort, 0x0007);
-                    Reg_write(dataPort, 0x0007, reg7 | (1 << 15));
-                    Reg_write(dataPort, 0x0007, reg7 & ~(1 << 15));
+                    auto reg9 = Reg_read(dataPort, 0x0009);
+                    Reg_write(dataPort, 0x0009, reg9 | (1 << 1));
+                    Reg_write(dataPort, 0x0009, reg9 & ~(1 << 1));
                     if (report) report(STATUS_FLAG_TX_LATE, pkt[pktIndex].counter);
                     ignoreTxLateCount = 16;
                 }
@@ -475,29 +475,31 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     uint64_t timestamp = 0;
     int timeout_ms = 1000;
 
-    //switch off Rx
-    uint16_t regVal = Reg_read(pthis->mDataPort, 0x0005);
-    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x46);
+    //switch off Rx/Tx
+    uint16_t interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
+    Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
+
+    //reset hardware timestamp to 0
+    uint16_t interface_ctrl_0009 = Reg_read(pthis->mDataPort, 0x0009);
+    Reg_write(pthis->mDataPort, 0x0009, interface_ctrl_0009 & ~0x3);
+    Reg_write(pthis->mDataPort, 0x0009, interface_ctrl_0009 | 0x3);
+    Reg_write(pthis->mDataPort, 0x0009, interface_ctrl_0009 & ~0x3);
 
     //enable MIMO mode, 12 bit compressed values
-    if (channelsCount == 2)
-    {
-        Reg_write(pthis->mDataPort, 0x0001, 0x0003);
-        Reg_write(pthis->mDataPort, 0x0007, 0x000A);
-    }
-    else
-    {
-        Reg_write(pthis->mDataPort, 0x0001, 0x0001);
-        Reg_write(pthis->mDataPort, 0x0007, 0x0008);
-    }
+    uint16_t smpl_width = 0x2; // 0-16 bit, 1-14 bit, 2-12 bit
+    uint16_t channelEnables = 0;
+    const uint16_t MIMO_INT_EN = 1 << 8;
+    for(int i = 0; i < channelsCount; ++i)
+        channelEnables |= 1 << i;
+    Reg_write(pthis->mDataPort, 0x0007, channelEnables);
+    Reg_write(pthis->mDataPort, 0x0008, MIMO_INT_EN | smpl_width);
 
     //USB FIFO reset
     ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
-    //switch on Rx
-    regVal = Reg_read(pthis->mDataPort, 0x0005);
-    bool async = false;
-    Reg_write(pthis->mDataPort, 0x0005, (regVal & ~0x60) | 0x6 | (async << 5));
+     //switch on Rx
+    interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
+    Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A | 0x1);
     gDataPort = pthis->mDataPort;
 
     atomic<bool> stopRx(0);
@@ -581,8 +583,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     threadRx.join();
 
     //stop Tx Rx if they were active
-    regVal = Reg_read(pthis->mDataPort, 0x0005);
-    Reg_write(pthis->mDataPort, 0x0005, regVal & ~0x6);
+    interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
+    Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
 
     kiss_fft_free(m_fftCalcPlan);
 

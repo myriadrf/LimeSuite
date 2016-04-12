@@ -129,7 +129,8 @@ public:
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 	void EnterSelfCalibration(const size_t channel);
 	void ExitSelfCalibration(const size_t channel);
-
+protected:
+    OperationStatus ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
 
     eConnectionType GetType(void)

@@ -2181,29 +2181,7 @@ void LMS7002M::ExitSelfCalibration(void)
 {
     mSelfCalDepth--;
     if (mSelfCalDepth == 0)
-    {
-        uint16_t regValue;
-        bool txLocked;
-        bool rxLocked;
-        auto chBackup = GetActiveChannel();
-        SetActiveChannel(ChSXR); //Rx
-        regValue = SPI_read(VCO_CMPLO.address, true);
-        rxLocked = ((regValue >> VCO_CMPLO.lsb) & 0x3) == 0x2; //checking both CMPHO and CMPLO
-
-        SetActiveChannel(ChSXT); //Tx
-        regValue = SPI_read(VCO_CMPLO.address, true);
-        txLocked = ((regValue >> VCO_CMPLO.lsb) & 0x3) == 0x2; //checking both CMPHO and CMPLO
-        SetActiveChannel(chBackup);
-
-        if(rxLocked && txLocked)
-            controlPort->UpdateExternalDataRate(
-                this->GetActiveChannelIndex(),
-                this->GetSampleRate(Tx),
-                this->GetSampleRate(Rx));
-        else
-            printf("Skipping FPGA PLL config: LMS7002 Rx/Tx PLL must be configured first\n");
         controlPort->ExitSelfCalibration(this->GetActiveChannelIndex());
-    }
 }
 
 LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
