@@ -663,9 +663,9 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
         printf("input clock: %f\n", inputClock_Hz);
         printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
 #endif
-        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != NOERROR)
+        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != 0)
             return ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
-        return NOERROR;
+        return 0;
     }
 
     //if interface frequency >= 5MHz, configure PLLs
@@ -674,7 +674,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     //select FPGA index
     pllIndex = pllIndex & 0x1F;
     uint16_t reg3val = 0;
-    if(ReadRegister(0x0003, reg3val) != NOERROR)
+    if(ReadRegister(0x0003, reg3val) != 0)
         return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, failed to read register");
     reg3val &= 0x1F << 3; //clear PLL index
     reg3val &= ~1; //clear PLLCFG_START
@@ -749,9 +749,9 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
         addrs.push_back(baseAddr + 0x0003);
         values.push_back(reg3val & ~0x2); //PHCFG_START
 
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != NOERROR)
+        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0  )
             ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
-        return NOERROR;
+        return 0;
     }
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
 }
