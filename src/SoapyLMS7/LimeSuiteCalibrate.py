@@ -321,10 +321,6 @@ def LimeSuiteCalibrate(
     info = limeSDR.getHardwareInfo()
     for k in info.keys(): print("%s:%s"%(k,info[k]))
 
-    #FIXME work around so set sample rate programs the rates
-    limeSDR.setFrequency(SOAPY_SDR_RX, 0, "RF", 1e9, dict(CORRECTIONS="false"))
-    limeSDR.setFrequency(SOAPY_SDR_TX, 0, "RF", 1e9, dict(CORRECTIONS="false"))
-
     #initialize parameters
     print('#'*40)
     print('## Initialize "%s"'%(str(limeSDR)))

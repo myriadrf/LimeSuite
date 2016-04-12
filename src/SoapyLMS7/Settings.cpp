@@ -641,6 +641,11 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         this->getMasterClockRate()/1e6,
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
+
+    _conn->UpdateExternalDataRate(
+        rfic->GetActiveChannelIndex(),
+        rfic->GetSampleRate(LMS7002M::Tx),
+        rfic->GetSampleRate(LMS7002M::Rx));
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
