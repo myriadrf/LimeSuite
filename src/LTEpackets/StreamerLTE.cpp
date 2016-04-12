@@ -487,16 +487,12 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
     //enable MIMO mode, 12 bit compressed values
     uint16_t smpl_width = 0x2; // 0-16 bit, 1-14 bit, 2-12 bit
-    if (channelsCount == 2)
-    {
-        Reg_write(pthis->mDataPort, 0x0007, 0x0003); //channel enables
-        Reg_write(pthis->mDataPort, 0x0008, 0x0100 | smpl_width);
-    }
-    else
-    {
-        Reg_write(pthis->mDataPort, 0x0007, 0x0001); //channel enables
-        Reg_write(pthis->mDataPort, 0x0008, 0x0000 | smpl_width);
-    }
+    uint16_t channelEnables = 0;
+    const uint16_t MIMO_INT_EN = 1 << 8;
+    for(int i = 0; i < channelsCount; ++i)
+        channelEnables |= 1 << i;
+    Reg_write(pthis->mDataPort, 0x0007, channelEnables);
+    Reg_write(pthis->mDataPort, 0x0008, MIMO_INT_EN | smpl_width);
 
     //USB FIFO reset
     ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
