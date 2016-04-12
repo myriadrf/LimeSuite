@@ -630,11 +630,11 @@ void ConnectionSTREAM::AbortSending()
 @param phaseShift_deg IQ phase shift in degrees
 @return 0-success, other-failure
 */
-OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
+int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
 {
     const uint16_t baseAddr = 0x0020;
     if(IsOpen() == false)
-        return OperationStatus::FAILED;
+        return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, device not connected");
 
     uint16_t drct_clk_ctrl_0005 = 0;
     ReadRegister(0x0005, drct_clk_ctrl_0005);
@@ -663,9 +663,9 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
         printf("input clock: %f\n", inputClock_Hz);
         printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
 #endif
-        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != OperationStatus::SUCCESS)
-            return OperationStatus::FAILED;
-        return OperationStatus::SUCCESS;
+        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != NOERROR)
+            return ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        return NOERROR;
     }
 
     //if interface frequency >= 5MHz, configure PLLs
@@ -674,9 +674,8 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
     //select FPGA index
     pllIndex = pllIndex & 0x1F;
     uint16_t reg3val = 0;
-    OperationStatus status = ReadRegister(0x0003, reg3val);
-    if(status != OperationStatus::SUCCESS)
-        return status;
+    if(ReadRegister(0x0003, reg3val) != NOERROR)
+        return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, failed to read register");
     reg3val &= 0x1F << 3; //clear PLL index
     reg3val &= ~1; //clear PLLCFG_START
     reg3val &= ~(1 << 2); //clear PLL reset
@@ -750,8 +749,9 @@ OperationStatus ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const
         addrs.push_back(baseAddr + 0x0003);
         values.push_back(reg3val & ~0x2); //PHCFG_START
 
-        status = WriteRegisters(addrs.data(), values.data(), values.size());
-        return status;
+        if(WriteRegisters(addrs.data(), values.data(), values.size()) != NOERROR)
+            ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        return NOERROR;
     }
-    return OperationStatus::FAILED;
+    return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
 }
