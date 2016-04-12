@@ -149,34 +149,34 @@ int ConnectionEVB7COM::Open(const char *comName, int baudrate)
 	{
 		// Set Events
 		if (!SetCommMask(hComm, 0))
-			errorCode = FAILURE;
+            errorCode = GetLastError();
 
 		// Set Timeouts
 		GetCommTimeouts(hComm, &m_ctmoOld);
 		if (!SetCommTimeouts(hComm, &m_ctmoNew))
-			errorCode = FAILURE;
+            errorCode = GetLastError();
 
 		// Set DCB
 		if (!SetCommState(hComm, &m_dcbCommPort))
-			errorCode = FAILURE;
+            errorCode = GetLastError();
 	}
 	else
 	{
-		errorCode = FAILURE;
+        errorCode = GetLastError();
 	};
 
 	// Check the results
-	if (errorCode != 0)
+    if(errorCode != NOERROR)
 	{
 		//unsigned long err = GetLastError();
 		CloseHandle(hComm);
 		hComm = INVALID_HANDLE_VALUE;
-		return errorCode;
+        return ReportError(errorCode, "Error setting up COM connection");
 	}
 	else
 	{
 		PurgeComm(hComm, PURGE_TXCLEAR | PURGE_RXCLEAR);
-		return SUCCESS;
+		return NOERROR;
 	}
 #else
     hComm = open(comName, O_RDWR | O_NOCTTY | O_SYNC);
