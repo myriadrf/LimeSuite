@@ -638,6 +638,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
 
     uint16_t drct_clk_ctrl_0005 = 0;
     ReadRegister(0x0005, drct_clk_ctrl_0005);
+
     if(interfaceClk_Hz < 5e6)
     {
         //enable direct clocking
@@ -665,6 +666,9 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
 #endif
         if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != 0)
             return ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        const uint16_t LOAD_PH_REG = 1 << 10;
+        WriteRegister(0x0006, drct_clk_ctrl_0006 | LOAD_PH_REG);
+        WriteRegister(0x0006, drct_clk_ctrl_0006);
         return 0;
     }
 
@@ -697,7 +701,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     int M, C;
     const short bufSize = 64;
 
-    float fOut_MHz = interfaceClk_Hz/2 / 1e6;
+    float fOut_MHz = interfaceClk_Hz / 1e6;
     float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;
     M = C = (int)coef;
     int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
@@ -705,7 +709,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
 
     addrs.clear();
     values.clear();
-    if(interfaceClk_Hz/2*M/1e6 > vcoLimits_MHz[0] && interfaceClk_Hz/2*M/1e6 < vcoLimits_MHz[1])
+    if(interfaceClk_Hz*M/1e6 > vcoLimits_MHz[0] && interfaceClk_Hz*M/1e6 < vcoLimits_MHz[1])
     {
         //bypass N
         addrs.push_back(baseAddr + 0x0006);

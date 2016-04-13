@@ -79,7 +79,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             float interfaceTx_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx);
             if (interpolation != 7)
                 interfaceTx_MHz /= pow(2.0, interpolation);
-            streamBoardPort->UpdateExternalDataRate(0, interfaceTx_MHz * 1e6, interfaceRx_MHz * 1e6);
+            streamBoardPort->UpdateExternalDataRate(0, interfaceTx_MHz/2 * 1e6, interfaceRx_MHz/2 * 1e6);
             if (status != LMS_StreamBoard::SUCCESS)
                 wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
             else
