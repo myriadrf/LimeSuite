@@ -470,6 +470,16 @@ uint32_t LMS7002M::GetRSSI()
 */
 liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
+    if(mCalibrationByMCU)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+        {
+            if(mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
+                return LIBLMS7_FAILURE;
+        }
+    }
+
     Channel ch = this->GetActiveChannel();
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
     uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
@@ -515,13 +525,6 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useExt
     }
 
     LMS7002M_SelfCalState state(this);
-
-    uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
-    {
-        if(mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
-            return LIBLMS7_FAILURE;
-    }
 
     liblms7_status status;
     Log("Tx calibration started", LOG_INFO);
@@ -855,6 +858,16 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
 */
 liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
+    if(mCalibrationByMCU)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+        {
+            if(mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
+                return LIBLMS7_FAILURE;
+        }
+    }
+
     Channel ch = this->GetActiveChannel();
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
     uint8_t channel = ch == 1 ? 0 : 1;
@@ -898,13 +911,6 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useExt
         }
     }
     LMS7002M_SelfCalState state(this);
-
-    uint8_t mcuID = mcuControl->ReadMCUProgramID();
-    if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
-    {
-        if(mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM) != 0)
-            return LIBLMS7_FAILURE;
-    }
 
     Log("Rx calibration started", LOG_INFO);
     Log("Saving registers state", LOG_INFO);
