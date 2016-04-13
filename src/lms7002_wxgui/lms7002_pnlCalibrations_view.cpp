@@ -40,7 +40,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
     liblms7_status status;
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
-        status = lmsControl->CalibrateRx(bandwidth, chkTxUseFFT->IsChecked());
+        status = lmsControl->CalibrateRx(bandwidth, chkUseExtLoopback->IsChecked());
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -63,7 +63,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
     liblms7_status status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
-        status = lmsControl->CalibrateTx(bandwidth, chkTxUseFFT->IsChecked());
+        status = lmsControl->CalibrateTx(bandwidth, chkUseExtLoopback->IsChecked());
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
@@ -85,13 +85,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     liblms7_status status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
-        status = lmsControl->CalibrateTx(bandwidth, chkTxUseFFT->IsChecked());
+        status = lmsControl->CalibrateTx(bandwidth, chkUseExtLoopback->IsChecked());
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
-        status = lmsControl->CalibrateRx(bandwidth, chkTxUseFFT->IsChecked());
+        status = lmsControl->CalibrateRx(bandwidth, chkUseExtLoopback->IsChecked());
     }
     if (status != LIBLMS7_SUCCESS)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(liblms7_status2string(status))));

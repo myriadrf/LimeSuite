@@ -2148,12 +2148,12 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* ID_STATICTEXT9;
 		NumericSlider* cmbDCCORRQ_TXTSP;
 		wxButton* btnCalibrateTx;
-		wxCheckBox* chkTxUseFFT;
 		wxButton* btnCalibrateAll;
 		wxStaticText* m_staticText431;
 		wxStaticText* lblCGENrefClk;
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
+		wxCheckBox* chkUseExtLoopback;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }

@@ -107,8 +107,8 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-    liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool useFFT = false);
-    liblms7_status CalibrateTx(float_type bandwidth_MHz, const bool useFFT = false);
+    liblms7_status CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback = false);
+    liblms7_status CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback = false);
     ///@}
 
     ///@name Filters tuning
@@ -337,10 +337,10 @@ protected:
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
-    liblms7_status CalibrateTxSetup(const float_type bandwidth_MHz, const bool useFFT);
-    liblms7_status CalibrateRxSetup(const float_type bandwidth_MHz, const bool useFFT);
-    liblms7_status CheckSaturationRx(const float_type bandwidth_MHz, const bool useFFT);
-    liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useFFT);
+    liblms7_status CalibrateTxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
+    liblms7_status CalibrateRxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
+    liblms7_status CheckSaturationRx(const float_type bandwidth_MHz, const bool useExtLoopback);
+    liblms7_status CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useExtLoopback);
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
 

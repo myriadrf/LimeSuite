@@ -5,8 +5,8 @@
 #include "mcu_programs.h"
 #include "LMS64CProtocol.h"
 #include <vector>
+#include <ciso646>
 
-//#define RSSI_FROM_MCU
 #define LMS_VERBOSE_OUTPUT
 
 ///define for parameter enumeration if prefix might be needed
@@ -188,7 +188,7 @@ bool sign(const int number)
 /** @brief Parameters setup instructions for Tx calibration
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useExtLoopback)
 {
     //Stage 2
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
@@ -198,7 +198,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool u
     //rfe
     //reset RFE to defaults
     SetDefaults(RFE);
-    if(useFFT)
+    if(useExtLoopback)
     {
         int LNAselection = 1;
         Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), LNAselection); //SEL_PATH_RFE 3
@@ -268,7 +268,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool u
 
     //TRF
     Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0); //L_LOOPB_TXPAD_TRF 0
-    if(useFFT)
+    if(useExtLoopback)
     {
         Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 0); //EN_LOOPB_TXPAD_TRF 1
         Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
@@ -328,7 +328,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool u
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
     Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    if(useFFT)
+    if(useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     SetNCOFrequency(Tx, 0, bandwidth_MHz / calibUserBwDivider);
@@ -339,7 +339,7 @@ liblms7_status LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool u
     Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
-    if(useFFT)
+    if(useExtLoopback)
     {
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
@@ -468,7 +468,7 @@ uint32_t LMS7002M::GetRSSI()
 /** @brief Calibrates Transmitter. DC correction, IQ gains, IQ phase correction
 @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
     Channel ch = this->GetActiveChannel();
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
@@ -528,7 +528,7 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useFFT
     BackupAllRegisters();
 
     Log("Setup stage", LOG_INFO);
-    status = CalibrateTxSetup(bandwidth_MHz, useFFT);
+    status = CalibrateTxSetup(bandwidth_MHz, useExtLoopback);
     if(status != LIBLMS7_SUCCESS)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if(mCalibrationByMCU)
@@ -544,10 +544,10 @@ liblms7_status LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useFFT
     }
     else
     {
-        CheckSaturationTxRx(bandwidth_MHz, useFFT);
+        CheckSaturationTxRx(bandwidth_MHz, useExtLoopback);
 
         Modify_SPI_Reg_bits(EN_G_TRF, 0);
-        if(!useFFT)
+        if(!useExtLoopback)
             CalibrateRxDC_RSSI();
         CalibrateTxDC_RSSI(bandwidth_MHz);
 
@@ -680,13 +680,13 @@ void LMS7002M::CalibrateRxDC_RSSI()
 @param bandwidth_MHz filter bandwidth in MHz
 @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool useExtLoopback)
 {
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
 
     //rfe
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
-    if(not useFFT)
+    if(not useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 3);
     Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
     Modify_SPI_Reg_bits(0x010C, 1, 1, 0); //PD_TIA 0
@@ -699,7 +699,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
     //TRF
     //reset TRF to defaults
     SetDefaults(TRF);
-    if(not useFFT)
+    if(not useExtLoopback)
     {
         Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
         Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
@@ -710,7 +710,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
 
     {
         uint8_t selPath;
-        if(useFFT) //use PA1
+        if(useExtLoopback) //use PA1
             selPath = 3;
         else
             selPath = Get_SPI_Reg_bits(SEL_PATH_RFE);
@@ -809,7 +809,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
     Modify_SPI_Reg_bits(0x040C, 4, 4, 1); //
     Modify_SPI_Reg_bits(0x040C, 3, 3, 1); //
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
-    if(not useFFT)
+    if(not useExtLoopback)
     {
         Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1); //AGC_MODE 1
         Modify_SPI_Reg_bits(0x040C, 7, 7, 0x1); //CMIX_BYP 1
@@ -829,7 +829,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
 
     SetNCOFrequency(Rx, 0, bandwidth_MHz/calibUserBwDivider - 0.1);
 
-    if(useFFT)
+    if(useExtLoopback)
     {
         //limelight
         Modify_SPI_Reg_bits(LML1_FIDM, 1);
@@ -853,7 +853,7 @@ liblms7_status LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool u
 /** @brief Calibrates Receiver. DC offset, IQ gains, IQ phase correction
     @return 0-success, other-failure
 */
-liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
     Channel ch = this->GetActiveChannel();
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
@@ -913,7 +913,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useFFT
         return LIBLMS7_BAD_SEL_PATH;
 
     Log("Setup stage", LOG_INFO);
-    status = CalibrateRxSetup(bandwidth_MHz, useFFT);
+    status = CalibrateRxSetup(bandwidth_MHz, useExtLoopback);
     if(status != LIBLMS7_SUCCESS)
         goto RxCalibrationEndStage;
 
@@ -937,7 +937,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useFFT
         // RXIQ calibration
         Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
-        if(not useFFT)
+        if(not useExtLoopback)
         {
             if (sel_path_rfe == 2)
             {
@@ -962,7 +962,7 @@ liblms7_status LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useFFT
         }
         Modify_SPI_Reg_bits(MAC, ch);
 
-        CheckSaturationRx(bandwidth_MHz, useFFT);
+        CheckSaturationRx(bandwidth_MHz, useExtLoopback);
 
         Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
         Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -1110,7 +1110,7 @@ void LMS7002M::RestoreAllRegisters()
     SPI_write(0x0020, x0020val);
 }
 
-liblms7_status LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const bool useExtLoopback)
 {
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -1122,7 +1122,7 @@ liblms7_status LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const
     //0x0B000 = -3 dBFS
     uint32_t rssi = GetRSSI();
 
-    if(useFFT)
+    if(useExtLoopback)
     {
         const float_type target_dBFS = -14;
         int loss_main_txpad = Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF);
@@ -1234,9 +1234,9 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
     }
 }
 
-liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useFFT)
+liblms7_status LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useExtLoopback)
 {
-    if(useFFT)
+    if(useExtLoopback)
     {
         SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz - 0.1 + bandwidth_MHz / calibUserBwDivider);
 

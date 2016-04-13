@@ -8965,9 +8965,6 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	btnCalibrateTx = new wxButton( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Calibrate TX"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer248->Add( btnCalibrateTx, 0, wxALL, 5 );
 	
-	chkTxUseFFT = new wxCheckBox( sbSizer148->GetStaticBox(), wxID_ANY, wxT("use FFT"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( chkTxUseFFT, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	
 	
 	sbSizer148->Add( fgSizer248, 1, wxEXPAND, 5 );
 	
@@ -9007,6 +9004,9 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	
 	fgSizer309->Add( sbSizer165, 0, 0, 5 );
+	
+	chkUseExtLoopback = new wxCheckBox( this, wxID_ANY, wxT("use external loopback"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer309->Add( chkUseExtLoopback, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	this->SetSizer( fgSizer309 );
