@@ -121,9 +121,6 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-    int CalibrateRx(float_type bandwidth_MHz, const bool TDD = false);
-    int CalibrateTx(float_type bandwidth_MHz);
-
     /*!
      * Store the digital corrections for the current channel.
      * The corrections are written to the calibration database.
@@ -143,6 +140,8 @@ public:
      */
     int ApplyDigitalCorrections(const bool isTx);
 
+    int CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback = false);
+    int CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback = false);
     ///@}
 
     ///@name Filters tuning
@@ -419,11 +418,12 @@ protected:
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
-    int CalibrateTxSetup(const float_type bandwidth_MHz);
-    int CalibrateRxSetup(const float_type bandwidth_MHz, const bool TDD = false);
-    int FixRXSaturation();
-    int CheckSaturation();
-    int CheckSaturationTxRx(const float_type bandwidth_MHz);
+
+    int CalibrateTxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
+    int CalibrateRxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
+    int CheckSaturationRx(const float_type bandwidth_MHz, const bool useExtLoopback);
+    int CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useExtLoopback);
+
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
 

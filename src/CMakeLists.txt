@@ -107,7 +107,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
-    lms7002m/mcu_dc_iq_calibration_RxTDD.cpp
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp

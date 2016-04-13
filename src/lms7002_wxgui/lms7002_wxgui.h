@@ -2135,7 +2135,6 @@ class pnlCalibrations_view : public wxPanel
 		NumericSlider* cmbDCOFFQ_RFE;
 		wxCheckBox* chkEN_DCOFF_RXFE_RFE;
 		wxButton* btnCalibrateRx;
-		wxButton* btnCalibrateRxTDD;
 		wxStaticText* ID_STATICTEXT5;
 		NumericSlider* cmbGCORRI_TXTSP;
 		wxStaticText* ID_STATICTEXT4;
@@ -2149,22 +2148,19 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* ID_STATICTEXT9;
 		NumericSlider* cmbDCCORRQ_TXTSP;
 		wxButton* btnCalibrateTx;
-		wxButton* btnCalibrateTxTDD;
 		wxButton* btnCalibrateAll;
-		wxButton* btnCalibrateAllTDD;
 		wxStaticText* m_staticText431;
 		wxStaticText* lblCGENrefClk;
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
+		wxCheckBox* chkUseExtLoopback;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateRx( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnCalibrateRxTDD( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateTx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnCalibrateAllTDD( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

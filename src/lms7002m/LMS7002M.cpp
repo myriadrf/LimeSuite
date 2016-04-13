@@ -27,17 +27,13 @@
 #include "MCU_BD.h"
 const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
-#define MCU_ID_DC_IQ_CALIBRATIONS_TDD 0x02
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
-#define MCU_FUNCTION_READ_RSSI 3
 
 using namespace std;
 using namespace lime;
 
 #include "MCU_BD.h"
-
-#define RSSI_FROM_MCU
 
 #define LMS_VERBOSE_OUTPUT
 

@@ -1081,39 +1081,16 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
     unsigned short value = 0;
-    list<uint8_t> return_codes;
-    const int valueSettlingCount = 5;
 
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         t2 = chrono::high_resolution_clock::now();
         value = mSPI_read(0x0001) & 0xFF;
-        return_codes.push_back(value);
 
-        if (return_codes.size() > valueSettlingCount)
-            return_codes.pop_front();
-
-        bool valueStable = false;
-        if (return_codes.size() == valueSettlingCount)
-        {
-            valueStable = true;
-            for (auto prev_value : return_codes)
-                if (prev_value != value)
-                {
-                    valueStable = false;
-                    break;
-                }
-        }
-
-        if (!valueStable)
+        if (value == 0xFF) //working
             continue;
-
-        if (value == 0) //working
-            continue;
-        if (value == 0x80) //idle, success
-            break;
-        else
+        else //finished
             break;
     }
     mSPI_write(0x0006, 0); //return SPI control to PC
@@ -1181,6 +1158,6 @@ MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* va
 uint8_t MCU_BD::ReadMCUProgramID()
 {
     CallMCU(255);
-    auto statusMcu = WaitForMCU(1000);
+    auto statusMcu = WaitForMCU(10);
     return statusMcu & 0x7F;
 }
