@@ -1576,7 +1576,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         //write which register cache based on MAC bits
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
-        bool wr1 = ((mac & 0x2) != 0) and (spiAddr[i] >= 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
 
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1620,7 +1620,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
         //write which register cache based on MAC bits
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
-        bool wr1 = ((mac & 0x2) != 0) and (spiAddr[i] >= 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
 
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
