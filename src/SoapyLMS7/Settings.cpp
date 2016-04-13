@@ -92,8 +92,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         st = _rfics.back()->SoftReset();
         if (st != 0) throw std::runtime_error("SoftReset() failed");
 
-        st = _rfics.back()->DownloadAll();
-        if (st != 0) throw std::runtime_error("DownloadAll() failed");
+        st = _rfics.back()->UploadAll();
+        if (st != 0) throw std::runtime_error("UploadAll() failed");
 
         calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }
