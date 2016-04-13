@@ -31,6 +31,7 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
+    chkUseExtLoopback->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)

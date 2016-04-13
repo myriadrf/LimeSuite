@@ -472,6 +472,8 @@ uint32_t LMS7002M::GetRSSI()
 */
 int LMS7002M::CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
+    if(useExtLoopback)
+        return ReportError(EPERM, "Calibration with external loopback not yet implemented");
     int status;
     if(mCalibrationByMCU)
     {
@@ -862,6 +864,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_MHz, const bool useExtLoopba
 */
 int LMS7002M::CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback)
 {
+    if(useExtLoopback)
+        return ReportError(EPERM, "Calibration with external loopback not yet implemented");
     int status;
     if(mCalibrationByMCU)
     {
