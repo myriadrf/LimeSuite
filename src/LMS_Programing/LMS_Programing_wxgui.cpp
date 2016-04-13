@@ -235,17 +235,20 @@ void LMS_Programing_wxgui::DoProgramming()
     if(status == 0)
         evt.SetString(_("Programming Completed!"));
     else
+    {
         evt.SetString(_("Programming failed!"));
+        mProgrammingInProgress.store(false);
+        return;
+    }
 
     //if programming FX3 firmware, inform user about device reset
     if(device == 1 && progMode == 2)
     {   
         status = serPort->ProgramWrite(nullptr, 0, 0, device, nullptr);
-        evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
-        wxPostEvent(this, evt);
+        if(status == 0)
+            evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
     }
-    else
-        wxPostEvent(this, evt);
+    wxPostEvent(this, evt);
     mProgrammingInProgress.store(false);
 }
 

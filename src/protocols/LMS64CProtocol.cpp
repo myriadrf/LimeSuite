@@ -617,7 +617,13 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     bool abortProgramming = false;
     int bytesSent = 0;
 
-    if(length == 0)
+    bool needsData = true;
+    if(device == FPGA && prog_mode == 2)
+        needsData = false;
+    if(device == FX3 && (prog_mode == 0 || prog_mode == 1))
+        needsData = false;
+
+    if(length == 0 && needsData)
     {
         return ReportError(EIO, "ProgramWrite length should be > 0");
     }
@@ -644,12 +650,6 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
             abortProgramming = callback(bytesSent, length, progressMsg);
         return ReportError(progressMsg);
     }
-
-    bool needsData = true;
-    if(device == FPGA && prog_mode == 2)
-        needsData = false;
-    if(device == FX3 && (prog_mode == 0 || prog_mode == 1))
-        needsData = false;
 
     unsigned char ctrbuf[64];
     unsigned char inbuf[64];
