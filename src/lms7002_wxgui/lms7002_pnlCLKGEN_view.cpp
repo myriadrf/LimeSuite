@@ -98,8 +98,8 @@ void lms7002_pnlCLKGEN_view::Initialize(LMS7002M* pControl)
     lmsControl = pControl;
     assert(lmsControl != nullptr);
 
-    txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN_MHz()));
-    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
+    txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN() / 1e6));
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx) / 1e6));
 }
 
 void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxSpinEvent& event)
@@ -147,10 +147,10 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    int status = lmsControl->SetFrequencyCGEN(freqMHz, true);
+    int status = lmsControl->SetFrequencyCGEN(freqMHz * 1e6, true);
     if (status != 0)
         wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(GetLastErrorMessage())));
-    lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
+    lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN() / 1e6));
     UpdateGUI();
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
@@ -177,9 +177,9 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     OnbtnReadComparators(evt);
     UpdateInterfaceFrequencies();
     UpdateCLKL();
-    lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN_MHz()));
-    txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN_MHz()));
-    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
+    lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), lmsControl->GetFrequencyCGEN() / 1e6));
+    txtFrequency->SetValue(wxString::Format(_("%.3f"), lmsControl->GetFrequencyCGEN() / 1e6));
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx) / 1e6 ));
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_CGEN_LSB, false);
     lblFRAC_SDM_CGEN->SetLabel(wxString::Format("%i", fracValue));
     lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_OUTCH_CGEN)+1));
@@ -187,8 +187,8 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
-    lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx)));
-    lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx)));
+    lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_TSP(LMS7002M::Rx) / 1e6));
+    lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_TSP(LMS7002M::Tx) / 1e6));
 }
 
 void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)

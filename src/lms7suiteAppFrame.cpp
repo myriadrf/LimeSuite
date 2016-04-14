@@ -50,7 +50,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        int status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN_MHz(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+        int status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
         if (status == 0)
         {
             wxCommandEvent evt;
@@ -72,31 +72,32 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         {
             //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
             int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
-            float interfaceRx_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            float interfaceRx_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
             if (decimation != 7)
-                interfaceRx_MHz /= pow(2.0, decimation);
+                interfaceRx_Hz /= pow(2.0, decimation);
             int interpolation = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP);
-            float interfaceTx_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx);
+            float interfaceTx_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Tx);
             if (interpolation != 7)
-                interfaceTx_MHz /= pow(2.0, interpolation);
-            streamBoardPort->UpdateExternalDataRate(0, interfaceTx_MHz/2 * 1e6, interfaceRx_MHz/2 * 1e6);
+                interfaceTx_Hz /= pow(2.0, interpolation);
+            const int channelsCount = 2;
+            streamBoardPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
             if (status != LMS_StreamBoard::SUCCESS)
                 wxMessageBox(_("Failed to configure Stream board PLL"), _("Warning"));
             else
             {
                 wxCommandEvent evt;
                 evt.SetEventType(LOG_MESSAGE);
-                evt.SetString(wxString::Format(_("Stream board PLL configured Tx: %.3f MHz Rx: %.3f MHz Angle: %.0f deg"), interfaceTx_MHz, interfaceRx_MHz, 90.0));
+                evt.SetString(wxString::Format(_("Stream board PLL configured Tx: %.3f MHz Rx: %.3f MHz Angle: %.0f deg"), interfaceTx_Hz/1e6, interfaceRx_Hz/1e6, 90.0));
                 wxPostEvent(this, evt);
             }
         }
         if (fftviewer)
         {
             int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
-            float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+            float samplingFreq_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
             if (decimation != 7)
-                samplingFreq_MHz /= pow(2.0, decimation+1);
-            fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
+                samplingFreq_Hz /= pow(2.0, decimation+1);
+            fftviewer->SetNyquistFrequency(samplingFreq_Hz / 2);
         }
     }
 
@@ -300,10 +301,10 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
         int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
-        float samplingFreq_MHz = lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        float samplingFreq_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
         if (decimation != 7)
-            samplingFreq_MHz /= pow(2.0, decimation+1);
-        fftviewer->SetNyquistFrequency(samplingFreq_MHz / 2);
+            samplingFreq_Hz /= pow(2.0, decimation+1);
+        fftviewer->SetNyquistFrequency(samplingFreq_Hz / 2);
     }
     fftviewer->Initialize(streamBoardPort);
 }

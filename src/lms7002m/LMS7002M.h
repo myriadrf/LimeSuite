@@ -140,8 +140,8 @@ public:
      */
     int ApplyDigitalCorrections(const bool isTx);
 
-    int CalibrateRx(float_type bandwidth_MHz, const bool useExtLoopback = false);
-    int CalibrateTx(float_type bandwidth_MHz, const bool useExtLoopback = false);
+    int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
+    int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
     ///@}
 
     ///@name Filters tuning
@@ -262,12 +262,12 @@ public:
     ///@}
 
     ///@name CGEN and PLL
-	void SetReferenceClk_SX(bool tx, float_type freq_MHz);
+	void SetReferenceClk_SX(bool tx, float_type freq_Hz);
 	float_type GetReferenceClk_SX(bool tx);
-	float_type GetFrequencyCGEN_MHz();
-	int SetFrequencyCGEN(float_type freq_MHz, const bool retainNCOfrequencies = false);
-	float_type GetFrequencySX_MHz(bool tx);
-	int SetFrequencySX(bool tx, float_type freq_MHz);
+	float_type GetFrequencyCGEN();
+	int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false);
+	float_type GetFrequencySX(bool tx);
+	int SetFrequencySX(bool tx, float_type freq_Hz);
     ///VCO modules available for tuning
     enum VCO_Module
     {
@@ -278,17 +278,17 @@ public:
 
     ///@name TSP
 	int LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q);
-	int SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz);
-	float_type GetNCOFrequency_MHz(bool tx, uint8_t index, bool fromChip = true);
+	int SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz);
+	float_type GetNCOFrequency(bool tx, uint8_t index, bool fromChip = true);
     int SetNCOPhaseOffsetForMode0(bool tx, float_type angle_Deg);
 	int SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_Deg);
 	float_type GetNCOPhaseOffset_Deg(bool tx, uint8_t index);
 	int SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *coef, uint8_t coefCount);
 	int GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount);
-    float_type GetReferenceClk_TSP_MHz(bool tx);
+    float_type GetReferenceClk_TSP(bool tx);
     ///@}
 
-    int SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation);
+    int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     //! Get the sample rate in Hz
     float_type GetSampleRate(bool tx);
@@ -419,10 +419,10 @@ protected:
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
 
-    int CalibrateTxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
-    int CalibrateRxSetup(const float_type bandwidth_MHz, const bool useExtLoopback);
-    int CheckSaturationRx(const float_type bandwidth_MHz, const bool useExtLoopback);
-    int CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useExtLoopback);
+    int CalibrateTxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
+    int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
+    int CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback);
+    int CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback);
 
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);

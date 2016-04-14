@@ -306,10 +306,10 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
         return wxString::Format(_("%.0f B/s"), dataRate / 1000.0);
 }
 
-void fftviewer_frFFTviewer::SetNyquistFrequency(float freqMHz)
+void fftviewer_frFFTviewer::SetNyquistFrequency(float freqHz)
 {
-    txtNyquistFreqMHz->SetValue(wxString::Format(_("%f"), freqMHz));
-    mFFTpanel->SetInitialDisplayArea(-freqMHz * 1000000, freqMHz * 1000000, -100, 0);
+    txtNyquistFreqMHz->SetValue(wxString::Format(_("%f"), freqHz / 1e6));
+    mFFTpanel->SetInitialDisplayArea(-freqHz, freqHz, -100, 0);
 }
 
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)

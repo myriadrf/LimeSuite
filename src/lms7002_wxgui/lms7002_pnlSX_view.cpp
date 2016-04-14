@@ -52,7 +52,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     wndId2Enum[cmbVDIV_VCO] = VDIV_VCO;
     wndId2Enum[chkPD_FBDIV] = PD_FBDIV;
     wndId2Enum[chkEN_DIR_SXRSXT] = EN_DIR_SXRSXT;
-    wndId2Enum[lblINT_SDM] = INT_SDM;    
+    wndId2Enum[lblINT_SDM] = INT_SDM;
     wndId2Enum[lblEN_DIV2_DIVPROG] = EN_DIV2_DIVPROG;
 
     char ctemp[80];
@@ -420,7 +420,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
 }
 
 void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
-{   
+{
     assert(lmsControl != nullptr);
     int value;
     value = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO);
@@ -431,7 +431,7 @@ void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
         lblVCO_CMPHO->SetBackgroundColour(*wxRED);
 
     value = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO);
-    lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));    
+    lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 0)
         lblVCO_CMPLO->SetBackgroundColour(*wxGREEN);
     else
@@ -442,20 +442,20 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
     wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter reference clock, MHz"), _("Reference clock"));
-    double refClkMHz;    
+    double refClkMHz;
     dlg->SetTextValidator(wxFILTER_NUMERIC);
     const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
     const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
-    dlg->SetValue(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(isTx)));
+    dlg->SetValue(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(isTx)/1e6));
     if (dlg->ShowModal() == wxID_OK)
     {
         dlg->GetValue().ToDouble(&refClkMHz);
         if (refClkMHz != 0)
         {
-            double currentFreq;
-            txtFrequency->GetValue().ToDouble(&currentFreq);
-            lmsControl->SetReferenceClk_SX(isTx, refClkMHz);
-            int status = lmsControl->SetFrequencySX(isTx, currentFreq);
+            double currentFreq_MHz;
+            txtFrequency->GetValue().ToDouble(&currentFreq_MHz);
+            lmsControl->SetReferenceClk_SX(isTx, refClkMHz * 1e6);
+            int status = lmsControl->SetFrequencySX(isTx, currentFreq_MHz * 1e6);
             if (status != 0)
                 wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
             UpdateGUI();
@@ -477,9 +477,9 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
-    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz);
+    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz * 1e6);
     int status;
-    status = lmsControl->SetFrequencySX(isTx, freqMHz);
+    status = lmsControl->SetFrequencySX(isTx, freqMHz * 1e6);
     if (status != 0)
         wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
     else
@@ -516,10 +516,10 @@ void lms7002_pnlSX_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
     const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
-    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(isTx)));
-    double freq = lmsControl->GetFrequencySX_MHz(isTx);
-    lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq));
-    txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(isTx) / 1e6));
+    double freq = lmsControl->GetFrequencySX(isTx);
+    lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
+    txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
     lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
 
     int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);

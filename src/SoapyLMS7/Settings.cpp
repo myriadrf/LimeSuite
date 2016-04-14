@@ -514,7 +514,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency);
 
     if (name == "RF")
     {
@@ -522,7 +522,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         double targetRfFreq = frequency;
         if (targetRfFreq < 30e6) targetRfFreq = 30e6;
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
-        rfic->SetFrequencySX(lmsDir, targetRfFreq/1e6);
+        rfic->SetFrequencySX(lmsDir, targetRfFreq);
 
         //optional way to skip corrections (used by cal utility)
         if (args.count("CORRECTIONS") != 0 and args.at("CORRECTIONS") == "false") return;
@@ -550,7 +550,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         case SOAPY_SDR_RX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
         case SOAPY_SDR_TX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
         }
-        rfic->SetNCOFrequency(lmsDir, 0, frequency/1e6);
+        rfic->SetNCOFrequency(lmsDir, 0, frequency);
         return;
     }
 
@@ -565,12 +565,12 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "RF")
     {
-        return rfic->GetFrequencySX_MHz(lmsDir)*1e6;
+        return rfic->GetFrequencySX(lmsDir);
     }
 
     if (name == "BB")
     {
-        return rfic->GetNCOFrequency_MHz(lmsDir, 0)*1e6;
+        return rfic->GetNCOFrequency(lmsDir, 0);
     }
 
     throw std::runtime_error("SoapyLMS7::getFrequency("+name+") unknown name");
@@ -597,7 +597,7 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
     }
     if (name == "BB")
     {
-        const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
+        const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
         ranges.push_back(SoapySDR::Range(-dspRate/2, dspRate/2));
     }
     return ranges;
@@ -614,7 +614,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     LMS7002M_SelfCalState state(rfic);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
+    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
     const double factor = dspRate/rate;
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), baseRate %g MHz, factor %g", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
@@ -638,7 +638,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     }
 
     rfic->SetInterfaceFrequency(
-        this->getMasterClockRate()/1e6,
+        this->getMasterClockRate(),
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
 
@@ -663,7 +663,7 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    const double dspRate = rfic->GetReferenceClk_TSP_MHz(lmsDir)*1e6;
+    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
     std::vector<double> rates;
     for (int i = 5; i >= 0; i--)
     {
@@ -695,11 +695,11 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
-        auto status = 0;//rfic->CalibrateRx(bw/1e6);
+        auto status = 0;//rfic->CalibrateRx(bw);
         if (status == 0)
         {
             SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
-            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw/1e6);
+            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw);
         }
         if (!bypass && status == 0)
         {
@@ -715,7 +715,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
                 filter = LMS7002M::RX_LPF_LOWBAND;
             }
 
-            status = rfic->TuneRxFilter(filter, bw/1e6);
+            status = rfic->TuneRxFilter(filter, bw);
         }
         if (status != 0)
         {
@@ -730,7 +730,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
-        auto status = 0;//rfic->CalibrateTx(bw/1e6);
+        auto status = 0;//rfic->CalibrateTx(bw);
         if (!bypass && status == 0)
         {
             LMS7002M::TxFilter filter;
@@ -750,7 +750,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
                 filter = LMS7002M::TX_REALPOLE;
             }
 
-            status = rfic->TuneTxFilter(filter, bw/1e6);
+            status = rfic->TuneTxFilter(filter, bw);
         }
         if (status != 0)
         {
@@ -803,14 +803,14 @@ void SoapyLMS7::setMasterClockRate(const double rate)
         //make tx rx rates equal
         rfic->Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN, 0);
         rfic->Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN, 2);
-        rfic->SetFrequencyCGEN(rate/1e6);
+        rfic->SetFrequencyCGEN(rate);
     }
 }
 
 double SoapyLMS7::getMasterClockRate(void) const
 {
     auto rfic = this->getRFIC(0); //same for all RFIC
-    return rfic->GetFrequencyCGEN_MHz()*1e6;
+    return rfic->GetFrequencyCGEN();
 }
 
 /*******************************************************************

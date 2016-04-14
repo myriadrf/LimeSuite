@@ -456,7 +456,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     pthis->mTxFIFO->Reset(2*4096, channelsCount);
 
     DataToGUI localDataResults;
-    localDataResults.nyquist_MHz = 7.68*1000000;
+    localDataResults.nyquist_Hz = 7.68e6;
     localDataResults.samplesI[0].resize(fftSize, 0);
     localDataResults.samplesI[1].resize(fftSize, 0);
     localDataResults.samplesQ[0].resize(fftSize, 0);

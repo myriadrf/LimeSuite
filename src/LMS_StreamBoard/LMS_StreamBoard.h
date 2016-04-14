@@ -39,14 +39,14 @@ public:
         FAILURE,
     };
 
-    static Status ConfigurePLL(IConnection *serPort, const float fOutTx_MHz, const float fOutRx_MHz, const float phaseShiftTx_deg, const float phaseShiftRx_deg);
+    static Status ConfigurePLL(IConnection *serPort, const float fOutTx_Hz, const float fOutRx_Hz, const float phaseShiftTx_deg, const float phaseShiftRx_deg);
 
     struct DataToGUI
     {
         std::vector<float> samplesI;
         std::vector<float> samplesQ;
         std::vector<float> fftBins_dbFS;
-        float nyquist_MHz;
+        float nyquist_Hz;
     };
 
     struct ProgressStats

@@ -23,7 +23,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     wndId2Enum[rgrMODE_RX] = MODE_RX;
     wndId2Enum[chkBSTART_RXTSP] = BSTART_RXTSP;
     wndId2Enum[chkCMIX_BYP_RXTSP] = CMIX_BYP_RXTSP;
-    wndId2Enum[cmbCMIX_GAIN_RXTSP] = CMIX_GAIN_RXTSP;    
+    wndId2Enum[cmbCMIX_GAIN_RXTSP] = CMIX_GAIN_RXTSP;
     wndId2Enum[chkDC_BYP_RXTSP] = DC_BYP_RXTSP;
     wndId2Enum[chkEN_RXTSP] = EN_RXTSP;
     wndId2Enum[cmbGCORRI_RXTSP] = GCORRI_RXTSP;
@@ -368,9 +368,9 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
     {
         for (int i = 0; i < 16; ++i)
         {
-            double freq;
-            txtNCOinputs[i]->GetValue().ToDouble(&freq);
-            lmsControl->SetNCOFrequency(LMS7002M::Rx, i, freq);
+            double freq_MHz;
+            txtNCOinputs[i]->GetValue().ToDouble(&freq_MHz);
+            lmsControl->SetNCOFrequency(LMS7002M::Rx, i, freq_MHz * 1e6);
         }
         long value;
         txtFCWPHOmodeAdditional->GetValue().ToLong(&value);
@@ -385,9 +385,9 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
             txtNCOinputs[i]->GetValue().ToLong(&value);
             lmsControl->SPI_write(0x0444 + i, value);
         }
-        double freq;
-        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
-        lmsControl->SetNCOFrequency(LMS7002M::Rx, 0, freq);
+        double freq_MHz;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
+        lmsControl->SetNCOFrequency(LMS7002M::Rx, 0, freq_MHz * 1e6);
     }
 }
 
@@ -395,11 +395,11 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
 {
     bool fromChip = false;
     assert(txtNCOinputs.size() == 16);
-    if (rgrMODE_RX->GetSelection() == 0) //FCW mode        
+    if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
         for (int i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency_MHz(LMS7002M::Rx, i, fromChip)));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency(LMS7002M::Rx, i, fromChip)/1e6));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%i"), lmsControl->SPI_read(0x0441, fromChip)));
         lblFCWPHOmodeName->SetLabel(_("PHO"));
@@ -410,7 +410,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0 / 360.0)*lmsControl->GetNCOPhaseOffset_Deg(LMS7002M::Rx, i)));
         }
-        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency_MHz(LMS7002M::Rx, 0, fromChip)));
+        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency(LMS7002M::Rx, 0, fromChip)/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));
     }
 }
@@ -419,7 +419,7 @@ void lms7002_pnlRxTSP_view::UpdateGUI()
 {
     bool fromChip = false;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    lblRefClk->SetLabel(wxString::Format(_("%3.3f"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Rx)));
+    lblRefClk->SetLabel(wxString::Format(_("%3.3f"), lmsControl->GetReferenceClk_TSP(LMS7002M::Rx)/1e6));
 
     int16_t iqcorr_value = lmsControl->Get_SPI_Reg_bits(IQCORR_RXTSP, fromChip);
     int bitsToShift = (15 - IQCORR_RXTSP.msb - IQCORR_RXTSP.lsb);

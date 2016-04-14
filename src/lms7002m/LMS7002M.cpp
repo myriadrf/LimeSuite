@@ -37,8 +37,8 @@ using namespace lime;
 
 #define LMS_VERBOSE_OUTPUT
 
-float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800, 5222 }, { 4961, 6754 }, {6306, 7714} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000, 2700};
+float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
 
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
@@ -364,8 +364,8 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     {
         if (parser.select("Reference clocks"))
         {
-            this->SetReferenceClk_SX(Rx, parser.get("SXR reference frequency MHz", 30.72));
-            this->SetReferenceClk_SX(Tx, parser.get("SXT reference frequency MHz", 30.72));
+            this->SetReferenceClk_SX(Rx, parser.get("SXR reference frequency MHz", 30.72) * 1e6);
+            this->SetReferenceClk_SX(Tx, parser.get("SXT reference frequency MHz", 30.72) * 1e6);
         }
 
         if (parser.select("LMS7002 registers ch.A") == true)
@@ -600,8 +600,8 @@ int LMS7002M::LoadConfig(const char* filename)
         this->SetActiveChannel(ch);
 
         parser.select("reference_clocks");
-        this->SetReferenceClk_SX(Rx, parser.get("sxr_ref_clk_mhz", 30.72));
-        this->SetReferenceClk_SX(Tx, parser.get("sxt_ref_clk_mhz", 30.72));
+        this->SetReferenceClk_SX(Rx, parser.get("sxr_ref_clk_mhz", 30.72) * 1e6);
+        this->SetReferenceClk_SX(Tx, parser.get("sxt_ref_clk_mhz", 30.72) * 1e6);
     }
 
     this->SetActiveChannel(ChA);
@@ -663,8 +663,8 @@ int LMS7002M::SaveConfig(const char* filename)
     this->SetActiveChannel(ch); //retore previously used channel
 
     parser.create("reference_clocks");
-    parser.set("sxt_ref_clk_mhz", this->GetReferenceClk_SX(Tx));
-    parser.set("sxr_ref_clk_mhz", this->GetReferenceClk_SX(Rx));
+    parser.set("sxt_ref_clk_mhz", this->GetReferenceClk_SX(Tx) / 1e6);
+    parser.set("sxr_ref_clk_mhz", this->GetReferenceClk_SX(Rx) / 1e6);
     parser.save(filename);
     return 0;
 }
@@ -958,28 +958,28 @@ void LMS7002M::UpdateExternalBandSelect(void)
         int(this->GetPathRFE()));
 }
 
-void LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_MHz)
+void LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 {
     if(controlPort == nullptr)
         return; //TODO return error
-    if (tx) controlPort->SetTxReferenceClockRate(freq_MHz*1e6);
-    else controlPort->SetReferenceClockRate(freq_MHz*1e6);
+    if (tx) controlPort->SetTxReferenceClockRate(freq_Hz);
+    else controlPort->SetReferenceClockRate(freq_Hz);
 }
 
-/**	@brief Returns reference clock in MHz used for SXT or SXR
+/**	@brief Returns reference clock in Hz used for SXT or SXR
 	@param Tx transmitter or receiver selection
 */
 float_type LMS7002M::GetReferenceClk_SX(bool tx)
 {
     if(controlPort == nullptr)
-        return 30.72; //return default reference clock
-    return (tx ? controlPort->GetTxReferenceClockRate() : controlPort->GetReferenceClockRate())/1e6;
+        return 30.72e6; //return default reference clock
+    return (tx ? controlPort->GetTxReferenceClockRate() : controlPort->GetReferenceClockRate());
 }
 
-/**	@return Current CLKGEN frequency in MHz
+/**	@return Current CLKGEN frequency in Hz
     Returned frequency depends on reference clock used for Receiver
 */
-float_type LMS7002M::GetFrequencyCGEN_MHz()
+float_type LMS7002M::GetFrequencyCGEN()
 {
     float_type dMul = (GetReferenceClk_SX(Rx)/2.0)/(Get_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN))+1); //DIV_OUTCH_CGEN
     uint16_t gINT = Get_SPI_Reg_bits(0x0088, 13, 0); //read whole register to reduce SPI transfers
@@ -989,11 +989,11 @@ float_type LMS7002M::GetFrequencyCGEN_MHz()
 
 /** @brief Returns TSP reference frequency
     @param tx TxTSP or RxTSP selection
-    @return TSP reference frequency in MHz
+    @return TSP reference frequency in Hz
 */
-float_type LMS7002M::GetReferenceClk_TSP_MHz(bool tx)
+float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 {
-    float_type cgenFreq = GetFrequencyCGEN_MHz();
+    float_type cgenFreq = GetFrequencyCGEN();
 	float_type clklfreq = cgenFreq/pow(2.0, Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN)));
     if(Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN)) == 0)
         return tx ? clklfreq : cgenFreq/4.0;
@@ -1002,10 +1002,10 @@ float_type LMS7002M::GetReferenceClk_TSP_MHz(bool tx)
 }
 
 /** @brief Sets CLKGEN frequency, calculations use receiver'r reference clock
-    @param freq_MHz desired frequency in MHz
+    @param freq_Hz desired frequency in Hz
     @return 0-succes, other-cannot deliver desired frequency
 */
-int LMS7002M::SetFrequencyCGEN(const float_type freq_MHz, const bool retainNCOfrequencies)
+int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies)
 {
     LMS7002M_SelfCalState state(this);
     float_type dFvco;
@@ -1026,14 +1026,14 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_MHz, const bool retainNCOfr
         {
             this->SetActiveChannel((ch == 0)?ChA:ChB);
             for (int i = 0; i < 16 && rxModeNCO == 0; ++i)
-                rxNCO[ch].push_back(GetNCOFrequency_MHz(LMS7002M::Rx, i, false));
+                rxNCO[ch].push_back(GetNCOFrequency(LMS7002M::Rx, i, false));
             for (int i = 0; i < 16 && txModeNCO == 0; ++i)
-                txNCO[ch].push_back(GetNCOFrequency_MHz(LMS7002M::Tx, i, false));
+                txNCO[ch].push_back(GetNCOFrequency(LMS7002M::Tx, i, false));
         }
     }
     //VCO frequency selection according to F_CLKH
-    iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_MHz) - 1;
-	dFvco = 2*(iHdiv+1) * freq_MHz;
+    iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_Hz) - 1;
+	dFvco = 2*(iHdiv+1) * freq_Hz;
 
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
@@ -1057,6 +1057,9 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_MHz, const bool retainNCOfr
             SetNCOFrequency(LMS7002M::Tx, i, txNCO[ch][i]);
     }
     this->SetActiveChannel(chBck);
+#ifndef NDEBUG
+    printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq_Hz/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
+#endif // NDEBUG
     return TuneVCO(VCO_CGEN);
 }
 
@@ -1225,15 +1228,14 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, c
 
 /** @brief Sets SX frequency
     @param Tx Rx/Tx module selection
-    @param freq_MHz desired frequency in MHz
-	@param refClk_MHz reference clock in MHz
+    @param freq_Hz desired frequency in Hz
     @return 0-success, other-cannot deliver requested frequency
 */
-int LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
+int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
 {
     checkConnection();
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
-    const float_type m_dThrF = 5500; //threshold to enable additional divider
+    const float_type m_dThrF = 5500e6; //threshold to enable additional divider
     float_type VCOfreq;
     int8_t div_loch;
     int8_t sel_vco;
@@ -1247,7 +1249,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
     {
-        VCOfreq = (1 << (div_loch + 1)) * freq_MHz;
+        VCOfreq = (1 << (div_loch + 1)) * freq_Hz;
         if ((VCOfreq >= gVCO_frequency_table[0][0]) && (VCOfreq <= gVCO_frequency_table[2][sxVCO_N - 1]))
         {
             canDeliverFrequency = true;
@@ -1255,11 +1257,11 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
         }
     }
     if (canDeliverFrequency == false)
-        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_MHz);
+        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
 
-    const float_type refClk_MHz = GetReferenceClk_SX(tx);
-    integerPart = (uint16_t)(VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))) - 4);
-    fractionalPart = (uint32_t)((VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_MHz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
+    const float_type refClk_Hz = GetReferenceClk_SX(tx);
+    integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
+    fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
 
     Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(tx?ChSXT:ChSXR);
@@ -1278,7 +1280,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     int csw_query;
     if(useCache)
     {
-        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_MHz*1e6, mdevIndex, tx, &vco_query, &csw_query) == 0);
+        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
     }
     if(foundInCache)
     {
@@ -1318,21 +1320,21 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_MHz)
     }
     if(useCache && !foundInCache)
     {
-        valueCache.InsertVCO_CSW(boardId, freq_MHz*1e6, mdevIndex, tx, sel_vco, csw_value);
+        valueCache.InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
-        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_MHz);
+        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
     return 0;
 }
 
 /**	@brief Returns currently set SXR/SXT frequency
-	@return SX frequency MHz
+	@return SX frequency Hz
 */
-float_type LMS7002M::GetFrequencySX_MHz(bool tx)
+float_type LMS7002M::GetFrequencySX(bool tx)
 {
     Channel ch = this->GetActiveChannel(); //remember previously used channel
 	float_type dMul;
@@ -1340,8 +1342,8 @@ float_type LMS7002M::GetFrequencySX_MHz(bool tx)
 	uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0);	// read whole register to reduce SPI transfers
     uint32_t gFRAC = ((gINT&0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
 
-    const float_type refClk_MHz = GetReferenceClk_SX(tx);
-    dMul = (float_type)refClk_MHz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
+    const float_type refClk_Hz = GetReferenceClk_SX(tx);
+    dMul = (float_type)refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
     //Calculate real frequency according to the calculated parameters
     dMul = dMul * ((gINT >> 4) + 4 + (float_type)gFRAC / 1048576.0) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
     this->SetActiveChannel(ch); //restore used channel
@@ -1351,37 +1353,37 @@ float_type LMS7002M::GetFrequencySX_MHz(bool tx)
 /** @brief Sets chosen NCO's frequency
     @param tx transmitter or receiver selection
     @param index NCO index from 0 to 15
-    @param freq_MHz desired NCO frequency
+    @param freq_Hz desired NCO frequency
     @return 0-success, other-failure
 */
-int LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_MHz)
+int LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz)
 {
     if(index > 15)
         return ReportError("SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
-    float_type refClk_MHz = GetReferenceClk_TSP_MHz(tx);
+    float_type refClk_Hz = GetReferenceClk_TSP(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
-	uint32_t fcw = (uint32_t)((freq_MHz/refClk_MHz)*4294967296);
+	uint32_t fcw = (uint32_t)((freq_Hz/refClk_Hz)*4294967296);
     SPI_write(addr+2+index*2, (fcw >> 16)); //NCO frequency control word register MSB part.
     SPI_write(addr+3+index*2, fcw); //NCO frequency control word register LSB part.
     return 0;
 }
 
-/** @brief Returns chosen NCO's frequency in MHz
+/** @brief Returns chosen NCO's frequency in Hz
     @param tx transmitter or receiver selection
     @param index NCO index from 0 to 15
     @param fromChip read frequency directly from chip or local registers
-    @return NCO frequency in MHz
+    @return NCO frequency in Hz
 */
-float_type LMS7002M::GetNCOFrequency_MHz(bool tx, uint8_t index, bool fromChip)
+float_type LMS7002M::GetNCOFrequency(bool tx, uint8_t index, bool fromChip)
 {
     if(index > 15)
         return ReportError("GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", int(index));
-    float_type refClk_MHz = GetReferenceClk_TSP_MHz(tx);
+    float_type refClk_Hz = GetReferenceClk_TSP(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
     uint32_t fcw = 0;
     fcw |= SPI_read(addr + 2 + index * 2, fromChip) << 16; //NCO frequency control word register MSB part.
     fcw |= SPI_read(addr + 3 + index * 2, fromChip); //NCO frequency control word register LSB part.
-    return refClk_MHz*(fcw/4294967296.0);
+    return refClk_Hz*(fcw/4294967296.0);
 }
 
 /** @brief Sets chosen NCO phase offset angle when memory table MODE is 0
@@ -1993,12 +1995,12 @@ int LMS7002M::DownloadAll()
 /** @brief Configures interfaces for desired frequency
     Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
 */
-int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_MHz, const uint8_t interpolation, const uint8_t decimation)
+int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
 {
     LMS7002M_SelfCalState state(this);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    int status = SetFrequencyCGEN(cgen_freq_MHz);
+    int status = SetFrequencyCGEN(cgen_freq_Hz);
     if (status != 0) return status;
 
     if (decimation == 7 || decimation == 0) //bypass
@@ -2043,18 +2045,18 @@ float_type LMS7002M::GetSampleRate(bool tx)
     if (tx)
     {
         int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
-        float_type interfaceTx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Tx);
+        float_type interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
-            interfaceTx_MHz /= 2*pow(2.0, interpolation);
-        return interfaceTx_MHz*1e6;
+            interfaceTx_Hz /= 2*pow(2.0, interpolation);
+        return interfaceTx_Hz;
     }
     else
     {
         int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
-        float_type interfaceRx_MHz = GetReferenceClk_TSP_MHz(LMS7002M::Rx);
+        float_type interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         if (decimation != 7)
-            interfaceRx_MHz /= 2*pow(2.0, decimation);
-        return interfaceRx_MHz*1e6;
+            interfaceRx_Hz /= 2*pow(2.0, decimation);
+        return interfaceRx_Hz;
     }
 }
 

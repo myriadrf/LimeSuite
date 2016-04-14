@@ -134,7 +134,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     temp.clear();
     for (int i = 0; i<16; ++i)
         temp.push_back(wxString::Format(_("%i"), i));
-    cmbDTHBIT_TX->Set(temp);    
+    cmbDTHBIT_TX->Set(temp);
 
     temp.clear();
     temp.push_back("2^1");
@@ -187,9 +187,9 @@ void lms7002_pnlTxTSP_view::ParameterChangeHandler( wxCommandEvent& event )
     }
     long value = event.GetInt();
     if (parameter == IQCORR_TXTSP)
-    {   
+    {
         float angle = atan(value / 2048.0) * 180 / 3.141596;
-        txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));        
+        txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
     }
     else if (event.GetEventObject() == rgrTSGFCW_TXTSP)
     {
@@ -219,24 +219,24 @@ void lms7002_pnlTxTSP_view::OnNCOSelectionChange(wxCommandEvent& event)
 }
 
 void lms7002_pnlTxTSP_view::onbtnReadBISTSignature( wxCommandEvent& event )
-{    
+{
     int value;
     value = lmsControl->Get_SPI_Reg_bits(BSTATE_TXTSP);
     lblBSTATE_TXTSP->SetLabel(wxString::Format("%i", value));
     value = lmsControl->Get_SPI_Reg_bits(BSIGI_TXTSP);
     lblBSIGI_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));
     value = lmsControl->Get_SPI_Reg_bits(BSIGQ_TXTSP);
-    lblBSIGQ_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));    
+    lblBSIGQ_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));
 }
 
 void lms7002_pnlTxTSP_view::OnbtnLoadDCIClick( wxCommandEvent& event )
-{   
+{
     long value = 0;
     txtDC_REG_TXTSP->GetValue().ToLong(&value, 16);
     lmsControl->Modify_SPI_Reg_bits(DC_REG_TXTSP, value);
     lmsControl->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
     lmsControl->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 1);
-    lmsControl->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);    
+    lmsControl->Modify_SPI_Reg_bits(TSGDCLDI_TXTSP, 0);
 }
 
 void lms7002_pnlTxTSP_view::OnbtnLoadDCQClick( wxCommandEvent& event )
@@ -329,9 +329,9 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
     {
         for (int i = 0; i < 16; ++i)
         {
-            double freq;
-            txtNCOinputs[i]->GetValue().ToDouble(&freq);
-            lmsControl->SetNCOFrequency(LMS7002M::Tx, i, freq);
+            double freq_MHz;
+            txtNCOinputs[i]->GetValue().ToDouble(&freq_MHz);
+            lmsControl->SetNCOFrequency(LMS7002M::Tx, i, freq_MHz * 1e6);
         }
         long value;
         txtFCWPHOmodeAdditional->GetValue().ToLong(&value);
@@ -342,13 +342,13 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
         long value;
         for (int i = 0; i < 16; ++i)
         {
-            
+
             txtNCOinputs[i]->GetValue().ToLong(&value);
             lmsControl->SPI_write(0x0244+i, value);
-        }        
-        double freq;
-        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
-        lmsControl->SetNCOFrequency(LMS7002M::Tx, 0, freq);
+        }
+        double freq_MHz;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
+        lmsControl->SetNCOFrequency(LMS7002M::Tx, 0, freq_MHz * 1e6);
     }
 }
 
@@ -356,11 +356,11 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
 {
     bool fromChip = false;
     assert(txtNCOinputs.size() == 16);
-    if (rgrMODE_TX->GetSelection() == 0) //FCW mode        
-    {   
+    if (rgrMODE_TX->GetSelection() == 0) //FCW mode
+    {
         for (int i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency_MHz(LMS7002M::Tx, i, fromChip)));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency(LMS7002M::Tx, i, fromChip)/1e6));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%i"), lmsControl->SPI_read(0x0241, fromChip)));
         lblFCWPHOmodeName->SetLabel(_("PHO"));
@@ -371,7 +371,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0/360.0)*lmsControl->GetNCOPhaseOffset_Deg(LMS7002M::Tx, i)));
         }
-        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency_MHz(LMS7002M::Tx, 0, fromChip)));
+        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), lmsControl->GetNCOFrequency(LMS7002M::Tx, 0, fromChip)/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));
     }
 }
@@ -380,7 +380,7 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
 {
     bool fromChip = false;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    lblRefClk->SetLabel(wxString::Format(_("%3.3f"), lmsControl->GetReferenceClk_TSP_MHz(LMS7002M::Tx)));
+    lblRefClk->SetLabel(wxString::Format(_("%3.3f"), lmsControl->GetReferenceClk_TSP(LMS7002M::Tx)/1e6));
 
     long hbi = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, fromChip);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));

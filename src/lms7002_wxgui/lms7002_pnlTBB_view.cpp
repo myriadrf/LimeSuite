@@ -140,10 +140,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND, input1);
+        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND, input1*1e6);
         break;
     case 1:
-        status = lmsControl->TuneTxFilterLowBandChain(input1, input2);
+        status = lmsControl->TuneTxFilterLowBandChain(input1*1e6, input2*1e6);
         break;
     }
     if (status != 0)
@@ -174,10 +174,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     switch (rgrFilterSelectionTest->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_LADDER, input1);
+        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_LADDER, input1*1e6);
         break;
     case 1:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2);
+        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2*1e6);
         break;
     }
     if (status != 0)

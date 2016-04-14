@@ -659,7 +659,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
 
         realToFrac(CLK[i].multisynthDivider, DivA, DivB, DivC);
         ss << "  Multisynth Divider " << DivA << " " << DivB << "/" << DivC;
-        ss << "  R divider = " << CLK[i].outputDivider << " source = " << (CLK[i].pllSource == 0 ? "PLLA" : "PLLB") << endl;
+        ss << "  R divider = " << CLK[i].outputDivider << " source = " << (CLK[i].pllSource == 0 ? "PLLA" : "PLLB");
 
         Log(ss.str(), LOG_INFO);
 

@@ -180,10 +180,10 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND, input1);
+        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND, input1*1e6);
         break;
     case 1:
-        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_HIGHBAND, input2);
+        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_HIGHBAND, input2*1e6);
         break;
     }
     if (status != 0)
