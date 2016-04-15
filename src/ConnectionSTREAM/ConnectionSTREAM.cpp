@@ -359,6 +359,10 @@ void callback_libusbtransfer(libusb_transfer *trans)
     case LIBUSB_TRANSFER_STALL:
         printf("transfer stalled\n");
         break;
+    case LIBUSB_TRANSFER_NO_DEVICE:
+        printf("transfer no device\n");
+
+        break;
 	}
 	context->transferLock.unlock();
 	context->cv.notify_one();

@@ -130,7 +130,8 @@ std::vector<std::string> ConnectionEVB7COMEntry::FindAllComPorts()
     char tempBuffer[256];
     string result = "";
 #warning Currently searching only for ACM connections
-    system( "ls /dev | grep ttyACM > /tmp/foundSerialPorts.txt");
+    if (system( "ls /dev | grep ttyACM > /tmp/foundSerialPorts.txt") == -1)
+        return comPortList;
 
     fstream fin;
     fin.open("/tmp/foundSerialPorts.txt", ios::in);

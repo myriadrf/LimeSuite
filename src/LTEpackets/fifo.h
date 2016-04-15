@@ -32,7 +32,7 @@ public:
         std::unique_lock<std::mutex> lck2(readLock);
         std::unique_lock<std::mutex> lck(writeLock);
         BufferInfo stats;
-        stats.size = (uint32_t)mBufferSize;
+        stats.size = mBufferSize;
         stats.itemsFilled = mElementsFilled.load();
         return stats;
     }
@@ -166,7 +166,7 @@ public:
         {
             delete[]mBuffer;
             mBuffer = new PacketFrame[bufLength];
-            for (int i = 0; i < bufLength; ++i)
+            for (size_t i = 0; i < bufLength; ++i)
                 mBuffer[i].Initialize(channelsCount);
             mBufferSize = bufLength;
         }
@@ -183,7 +183,7 @@ public:
 	
 protected:
     int8_t mChannelsCount;
-    int32_t mBufferSize;
+    uint32_t mBufferSize;
 	PacketFrame* mBuffer;
     std::atomic<uint32_t> mHead;
     std::atomic<uint32_t> mTail;
