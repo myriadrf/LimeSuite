@@ -140,11 +140,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
-        //status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND, input1*1e6);
         status = lmsControl->TuneTxFilterFixed(input1*1e6);
         break;
     case 1:
-        status = lmsControl->TuneTxFilterLowBandChain(input1*1e6, input2*1e6);
+        status = lmsControl->TuneTxFilter(input1*1e6);
         break;
     }
     if (status != 0)
