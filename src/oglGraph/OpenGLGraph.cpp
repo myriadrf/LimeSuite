@@ -625,7 +625,7 @@ void OpenGLGraph::Draw()
     {
         return;
     }
-    SetCurrent();
+    SetCurrent(*m_glContext);
     int w, h;
     if(oglOk == false)
     {

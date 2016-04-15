@@ -395,6 +395,7 @@ private:
 
 	bool m_currentlyDrawing;
 	wxTimer* m_timer;
+	wxGLContext *m_glContext;
 
 };
 
