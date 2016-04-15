@@ -166,7 +166,7 @@ const uint16_t backupAddrs[] = {
 0x040B, 0x040C, 0x040D, 0x0442, 0x0443
 };
 uint16_t backupRegs[sizeof(backupAddrs) / 2];
-const uint16_t backupSXAddr[] = { 0x011C, 0x011D, 0x011E, 0x011F, 0x01200, 0x0121, 0x0122, 0x0123, 0x0124 };
+const uint16_t backupSXAddr[] = { 0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123, 0x0124 };
 uint16_t backupRegsSXR[sizeof(backupSXAddr) / 2];
 uint16_t backupRegsSXT[sizeof(backupSXAddr) / 2];
 int16_t rxGFIR3_backup[sizeof(firCoefs)];

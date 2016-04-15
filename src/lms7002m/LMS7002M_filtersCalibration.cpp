@@ -10,6 +10,7 @@
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
+#include <assert.h>
 #ifdef _MSC_VER
 #include <ciso646>
 #endif
@@ -32,6 +33,21 @@ const float_type LMS7002M::gRxLPF_low_lower_limit = 1e6;
 const float_type LMS7002M::gRxLPF_low_higher_limit = 20e6;
 const float_type LMS7002M::gRxLPF_high_lower_limit = 20e6;
 const float_type LMS7002M::gRxLPF_high_higher_limit = 70e6;
+
+inline uint16_t pow2(const uint8_t power)
+{
+    assert(power >= 0 && power < 16);
+    return 1 << power;
+}
+
+int clamp(int value, int minBound, int maxBound)
+{
+    if(value < minBound)
+        return minBound;
+    if(value > maxBound)
+        return maxBound;
+    return value;
+}
 
 LMS7002M_RegistersMap *LMS7002M::BackupRegisterMap(void)
 {
@@ -962,4 +978,408 @@ int LMS7002M::RxLPFHigh_Calibration(float_type RxLPFH_freq_Hz)
         prevRSSIbigger = rssi > rssi_value_50k;
     }
     return ReportError("RxLPFHigh_Calibration(%g MHz) - c_ctl_lpfh_rbb loop failed", RxLPFH_freq_Hz / 1e6);
+}
+
+//----------------------------------------------------------------------
+
+uint32_t LMS7002M::GetAvgRSSI(const int avgCount)
+{
+    float_type sum = 0;
+    for(int i=0; i<avgCount; ++i)
+        sum += GetRSSI();
+    return sum/avgCount;
+}
+
+int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_rf)
+{
+    auto registersBackup = BackupRegisterMap();
+    int g_tia_rfe = Get_SPI_Reg_bits(G_TIA_RFE);
+
+    int status;
+    status = TuneRxFilterSetup(rx_lpf_freq_rf);
+    if(status != 0)
+        return status;
+
+    int g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    uint32_t rssi = GetRSSI();
+    while(rssi < 0x2700 || g_rxloopb_rfe < 14)
+    {
+        g_rxloopb_rfe += 2;
+        Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
+        rssi = GetRSSI();
+    }
+    int cg_iamp_tbb = Get_SPI_Reg_bits(CG_IAMP_TBB);
+    while(rssi < 0x2700 || cg_iamp_tbb < 30)
+    {
+        cg_iamp_tbb += 2;
+        Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp_tbb);
+        rssi = GetRSSI();
+    }
+
+    const int rssiAvgCount = 5;
+    uint32_t rssi_value_dc = GetAvgRSSI(rssiAvgCount);
+    const uint32_t rssi_3dB = rssi_value_dc * 0.7071 * pow(10, (-0.0018e6 - rx_lpf_freq_rf)/20);
+
+    if(rx_lpf_freq_rf <= 54e6)
+    {
+        status = SetFrequencySX(LMS7002M::Rx, 539.9e6-rx_lpf_freq_rf*1.3);
+        if(status != 0)
+            return status;
+        status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_freq_rf*1.3);
+        if(status != 0)
+            return status;
+
+        if(rx_lpf_freq_rf < 15.4e6)
+        {
+            //LPFL START
+            status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, rssiAvgCount, 2048);
+            if(status != 0)
+                return status;
+            //LPFL END
+        }
+        if(rx_lpf_freq_rf < 15.4e6)
+        {
+            //LPFH START
+            status = RxFilterSearch(C_CTL_LPFH_RBB, rssi_3dB, rssiAvgCount, 256);
+            if(status != 0)
+                return status;
+            //LPFH END
+        }
+        status = SetFrequencySX(LMS7002M::Rx, 539.9e6-rx_lpf_freq_rf);
+        if(status != 0)
+            return status;
+        status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_freq_rf);
+        if(status != 0)
+            return status;
+
+        Modify_SPI_Reg_bits(CFB_TIA_RFE, g_tia_rfe);
+        int cfb_tia_rfe;
+        if(g_tia_rfe == 3 || g_tia_rfe == 2)
+            cfb_tia_rfe = int( 1680e6 / (rx_lpf_freq_rf * 0.72) - 10);
+        else if(g_tia_rfe == 1)
+            cfb_tia_rfe = int( 5400e6 / (rx_lpf_freq_rf * 0.72) - 15);
+        else
+            return ReportError(EINVAL, "g_tia_rfe not allowed value");
+        cfb_tia_rfe = clamp(cfb_tia_rfe, 0, 4095);
+        Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
+
+        int ccomp_tia_rfe;
+        if(g_tia_rfe == 3 || g_tia_rfe == 2)
+            ccomp_tia_rfe = cfb_tia_rfe / 100;
+        else if(g_tia_rfe == 1)
+            ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
+        else
+            return ReportError(EINVAL, "g_tia_rfe not allowed value");
+        ccomp_tia_rfe = clamp(ccomp_tia_rfe, 0, 15);
+
+        int rcomp_tia_rfe = 15 - cfb_tia_rfe/100;
+        rcomp_tia_rfe = clamp(rcomp_tia_rfe, 0, 15);
+        Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
+
+        //START TIA
+        status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, rssiAvgCount, 4096);
+        if(status != 0)
+            return status;
+        //END TIA
+    }
+    if(rx_lpf_freq_rf > 54e6)
+    {
+        status = SetFrequencySX(LMS7002M::Rx, 539.9e6 - rx_lpf_freq_rf);
+        if(status != 0)
+            return status;
+        status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_freq_rf);
+        if(status != 0)
+            return status;
+
+        //START TIA
+        status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, rssiAvgCount, 4096);
+        if(status != 0)
+            return status;
+        //END TIA
+    }
+
+    //Restore settings
+    int cfb_tia_rfe = Get_SPI_Reg_bits(CFB_TIA_RFE);
+    int ccomp_tia_rfe = Get_SPI_Reg_bits(CCOMP_TIA_RFE);
+    int rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
+    int rcc_ctl_lpfl_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFL_RBB);
+    int c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
+    int c_ctl_pga_rbb = Get_SPI_Reg_bits(C_CTL_PGA_RBB);
+    int rcc_ctl_pga_rbb = Get_SPI_Reg_bits(RCC_CTL_PGA_RBB);
+    int rcc_ctl_lpfh_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFH_RBB);
+    int c_ctl_lpfh_rbb = Get_SPI_Reg_bits(C_CTL_LPFH_RBB);
+    int pd_lpfl_rbb = Get_SPI_Reg_bits(PD_LPFL_RBB);
+    int pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
+    int input_ctl_pga_rbb = Get_SPI_Reg_bits(INPUT_CTL_PGA_RBB);
+
+    RestoreRegisterMap(registersBackup);
+
+    Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
+    Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
+    Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
+    Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl_lpfl_rbb);
+    Modify_SPI_Reg_bits(C_CTL_LPFL_RBB, c_ctl_lpfl_rbb);
+    Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+    Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+    Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl_lpfh_rbb);
+    Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
+    Modify_SPI_Reg_bits(PD_LPFL_RBB, pd_lpfl_rbb);
+    Modify_SPI_Reg_bits(PD_LPFH_RBB, pd_lpfh_rbb);
+    Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, input_ctl_pga_rbb);
+    Modify_SPI_Reg_bits(ICT_LPF_IN_RBB, 12);
+    Modify_SPI_Reg_bits(ICT_LPF_OUT_RBB, 12);
+    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
+    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
+    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
+    Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
+}
+
+int LMS7002M::RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit)
+{
+    int value = Get_SPI_Reg_bits(param);
+    int stepIncrease = 0;
+    int stepSize;
+    uint32_t rssi = GetAvgRSSI(rssiAvgCnt);
+    if(rssi == rssi_3dB)
+        return 0;
+    if(rssi < rssi_3dB)
+        while(rssi < rssi_3dB)
+        {
+            stepSize = pow2(stepIncrease);
+            value -= stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "step size out of range");
+        }
+    else if(rssi > rssi_3dB)
+        while(rssi > rssi_3dB)
+        {
+            stepSize = pow2(stepIncrease);
+            value += stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "step size out of range");
+        }
+
+    if(stepSize == 1)
+        return 0;
+    while(stepSize != 1)
+    {
+        rssi = GetAvgRSSI(rssiAvgCnt);
+        stepSize /= 2;
+        if(rssi >= rssi_3dB)
+            value += stepSize;
+        else
+            value -= stepSize;
+        Modify_SPI_Reg_bits(param, value);
+    }
+    return 0;
+}
+
+int LMS7002M::TuneRxFilterSetup(float_type rx_lpf_freq_rf)
+{
+    int status;
+    int ch = Get_SPI_Reg_bits(MAC);
+    int g_tia_rfe = Get_SPI_Reg_bits(G_TIA_RFE);
+    int g_pga_rbb = Get_SPI_Reg_bits(G_PGA_RBB);
+    //RFE
+    SetDefaults(RFE);
+    Modify_SPI_Reg_bits(SEL_PATH_RFE, 2);
+    Modify_SPI_Reg_bits(G_RXLOOPB_RFE, 1);
+    Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 0);
+    Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 0);
+    Modify_SPI_Reg_bits(PD_MXLOBUF_RFE, 0);
+    Modify_SPI_Reg_bits(PD_QGEN_RFE, 0);
+    Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
+    Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+
+    if(rx_lpf_freq_rf <= 54e6)
+    {
+        Modify_SPI_Reg_bits(CFB_TIA_RFE, 1);
+        Modify_SPI_Reg_bits(CCOMP_TIA_RFE, 0);
+        Modify_SPI_Reg_bits(RCOMP_TIA_RFE, 15);
+    }
+    else
+    {
+        int cfb_tia_rfe;
+        int ccomp_tia_rfe;
+        int rcomp_tia_rfe;
+        if(g_tia_rfe == 3 || g_tia_rfe == 2)
+        {
+            cfb_tia_rfe = int( 1680e6/rx_lpf_freq_rf - 10);
+            ccomp_tia_rfe = cfb_tia_rfe/100;
+        }
+        else if(g_tia_rfe == 1)
+        {
+            cfb_tia_rfe = int( 5400e6/rx_lpf_freq_rf - 15);
+            ccomp_tia_rfe = cfb_tia_rfe/100 + 1;
+        }
+        else
+            return ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
+        cfb_tia_rfe = clamp(cfb_tia_rfe, 0, 4095);
+        ccomp_tia_rfe = clamp(ccomp_tia_rfe, 0, 15);
+        rcomp_tia_rfe = 15-cfb_tia_rfe/100;
+        rcomp_tia_rfe = clamp(rcomp_tia_rfe, 0, 15);
+        Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
+        Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
+        Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
+    }
+
+    //RBB
+    SetDefaults(RBB);
+    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
+    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
+    Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+    int c_ctl_pga_rbb;
+    if(g_pga_rbb < 8)
+        c_ctl_pga_rbb = 3;
+    else if(g_pga_rbb < 13)
+        c_ctl_pga_rbb = 2;
+    else if(g_pga_rbb < 21)
+        c_ctl_pga_rbb = 1;
+    else
+        c_ctl_pga_rbb = 0;
+    Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+
+    int rcc_ctl_pga_rbb = (430 * pow(0.65, g_pga_rbb/10) - 110.35)/20.45 + 16;
+    rcc_ctl_pga_rbb = clamp(rcc_ctl_pga_rbb, 0, 31);
+    Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+
+    if(rx_lpf_freq_rf < 15.4e6)
+    {
+        Modify_SPI_Reg_bits(PD_LPFL_RBB, 0);
+        Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
+        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0);
+        int c_ctl_lpfl_rbb = int(2160e6/(rx_lpf_freq_rf*1.3) - 103);
+        c_ctl_lpfl_rbb = clamp(c_ctl_lpfl_rbb, 0, 2047);
+        Modify_SPI_Reg_bits(C_CTL_LPFL_RBB, c_ctl_lpfl_rbb);
+        int rcc_ctl_lpfl_rbb;
+        if(rx_lpf_freq_rf*1.3 < 1.4e6)
+            rcc_ctl_lpfl_rbb = 0;
+        else if(rx_lpf_freq_rf*1.3 < 3e6)
+            rcc_ctl_lpfl_rbb = 1;
+        else if(rx_lpf_freq_rf*1.3 < 5e6)
+            rcc_ctl_lpfl_rbb = 2;
+        else if(rx_lpf_freq_rf*1.3 < 10e6)
+            rcc_ctl_lpfl_rbb = 3;
+        else if(rx_lpf_freq_rf*1.3 < 15e6)
+            rcc_ctl_lpfl_rbb = 4;
+        else
+            rcc_ctl_lpfl_rbb = 5;
+        Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl_lpfl_rbb);
+    }
+    else if(rx_lpf_freq_rf <= 54e6)
+    {
+        Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
+        Modify_SPI_Reg_bits(PD_LPFH_RBB, 0);
+        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 1);
+        int c_ctl_lpfh_rbb = int( 6000e6/(rx_lpf_freq_rf*1.3) - 50);
+        c_ctl_lpfh_rbb = clamp(c_ctl_lpfh_rbb, 0, 255);
+        Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
+        int rcc_ctl_lpfh_rbb = int(rx_lpf_freq_rf*1.3/10) - 3;
+        rcc_ctl_lpfh_rbb = clamp(rcc_ctl_lpfh_rbb, 0, 8);
+    }
+    else // rx_lpf_freq_rf > 54e6
+    {
+        Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
+        Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
+        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 2);
+    }
+
+    //TRF
+    SetDefaults(TRF);
+    Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
+    Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
+    Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+    Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
+
+    //TBB
+    SetDefaults(TBB);
+    Modify_SPI_Reg_bits(CG_IAMP_TBB, 1);
+    Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 1);
+    Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
+
+    //AFE
+    SetDefaults(AFE);
+    if(ch == 2)
+        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
+    Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
+
+    //BIAS
+    int rp_calib_bias = Get_SPI_Reg_bits(RP_CALIB_BIAS);
+    SetDefaults(BIAS);
+    Modify_SPI_Reg_bits(RP_CALIB_BIAS, rp_calib_bias);
+
+    //LDO
+    //do nothing
+
+    //XBUF
+    Modify_SPI_Reg_bits(PD_XBUF_RX, 0);
+    Modify_SPI_Reg_bits(PD_XBUF_TX, 0);
+    Modify_SPI_Reg_bits(EN_G_XBUF, 1);
+
+    //CGEN
+    SetDefaults(CGEN);
+    int cgenMultiplier = rx_lpf_freq_rf*20 / 46.08e6 + 0.5;
+    cgenMultiplier = clamp(cgenMultiplier, 2, 13);
+
+    status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
+    if(status != 0)
+        return status;
+
+    //SXR
+    Modify_SPI_Reg_bits(MAC, 1);
+    SetDefaults(SX);
+    status = SetFrequencySX(LMS7002M::Rx, 539.9e6);
+    if(status != 0)
+        return status;
+
+    //SXT
+    Modify_SPI_Reg_bits(MAC, 2);
+    SetDefaults(SX);
+    status = SetFrequencySX(LMS7002M::Tx, 550e6);
+    if(status != 0)
+        return status;
+
+    //LimeLight & PAD
+    //do nothing
+
+    //TxTSP
+    SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
+    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1);
+    Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
+    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
+    LoadDC_REG_IQ(LMS7002M::Tx, 0x7fff, 0x8000);
+    SetNCOFrequency(LMS7002M::Tx, 0, 10e6);
+
+    //RxTSP
+    SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
+    Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
+    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 1);
+    Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4);
+    Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP, 0);
+    SetNCOFrequency(LMS7002M::Rx, 0, 0);
+
+    if(ch == 2)
+    {
+        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+        Modify_SPI_Reg_bits(MAC, ch);
+    }
+
+    return 0;
 }

@@ -158,6 +158,9 @@ public:
 	int TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
     ///@}
 
+    int TuneRxFilter(float_type rx_lpf_freq_rf);
+    int TuneRxFilterSetup(float_type rx_lpf_freq_rf);
+
     ///@name High level gain configuration
 
     /*!
@@ -415,6 +418,7 @@ protected:
     void BackupAllRegisters();
     void RestoreAllRegisters();
     uint32_t GetRSSI();
+    uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC_RSSI();
     void CalibrateTxDC_RSSI(const float_type bandwidth);
@@ -426,6 +430,7 @@ protected:
 
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
+    int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
     void FilterTuning_AdjustGains();
     int TuneTxFilterSetup(TxFilter type, float_type cutoff_MHz);
