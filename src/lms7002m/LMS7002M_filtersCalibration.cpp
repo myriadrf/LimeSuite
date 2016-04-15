@@ -1664,13 +1664,13 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
     SPI_write(0x0107, 0x318C);
     Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 0);
     Modify_SPI_Reg_bits(GFIR1_L_TXTSP, 0);
-    Modify_SPI_Reg_bits(GFIR1_N_TXTSP, hbi_ovr-1);
+    Modify_SPI_Reg_bits(GFIR1_N_TXTSP, pow2(hbi_ovr+1)-1);
 
     float_type filterCoef = 0;
 
     if(txSampleRate <= 245.76e6)
     {
-        const float_type fs = txSampleRate;
+        const float_type fs = txSampleRate/1e6;
         const float_type p1 = 8.24603662172681E-22;
         const float_type p2 = -6.48290995818812E-18;
         const float_type p3 = 1.69838694770354E-14;
@@ -1696,8 +1696,10 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
     coefs[8] = coef2;
     SetGFIRCoefficients(true, 0, coefs, 9);
 
+    if(filterCoef < 0)
+        filterCoef *= -1;
     return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
-Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log(filterCoef*2));
+Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
 }
 
 int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_LAD, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index)
