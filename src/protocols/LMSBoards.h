@@ -51,7 +51,7 @@ const char LMS_DEV_NAMES[][80] =
     "QSpark",
 };
 
-static const char* GetDeviceName(const eLMS_DEV device)
+static inline const char* GetDeviceName(const eLMS_DEV device)
 {
     if (LMS_DEV_UNKNOWN < device && device < LMS_DEV_COUNT)
         return LMS_DEV_NAMES[device];
@@ -89,7 +89,7 @@ const char EXP_BOARD_NAMES[][80] =
     "Myriad7 Novena",
 };
 
-static const char* GetExpansionBoardName(const eEXP_BOARD board)
+static inline const char* GetExpansionBoardName(const eEXP_BOARD board)
 {
     if (EXP_BOARD_UNKNOWN < board && board < EXP_BOARD_COUNT)
         return EXP_BOARD_NAMES[board];
