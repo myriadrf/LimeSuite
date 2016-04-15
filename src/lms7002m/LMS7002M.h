@@ -156,6 +156,7 @@ public:
 	int TuneTxFilter(TxFilter filterType, float_type bandwidth_MHz);
 	int TuneTxFilterLowBandChain(float_type ladder_bw_MHz, float_type realpole_bw_MHz);
 	int TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
+	int TuneTxFilterFixed(const float_type fixedBandwidth);
     ///@}
 
     int TuneRxFilter(const float_type rx_lpf_freq_RF);
@@ -430,6 +431,8 @@ protected:
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
     int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
+    int TxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
+    int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
 
     void FilterTuning_AdjustGains();
     int TuneTxFilterSetup(TxFilter type, float_type cutoff_MHz);
@@ -438,6 +441,7 @@ protected:
     int RxLPFLow_Calibration(float_type RxLPFL_freq_MHz);
     int RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz);
     int TuneRxFilterSetup(const float_type rx_lpf_freq);
+    int TuneTxFilterFixedSetup();
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt);

@@ -1143,7 +1143,7 @@ int LMS7002M::RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB
 {
     int value = Get_SPI_Reg_bits(param);
     int stepIncrease = 0;
-    int stepSize;
+    int stepSize = 1;
     uint32_t rssi = GetAvgRSSI(rssiAvgCnt);
     if(rssi == rssi_3dB)
         return 0;
@@ -1177,6 +1177,50 @@ int LMS7002M::RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB
         rssi = GetAvgRSSI(rssiAvgCnt);
         stepSize /= 2;
         if(rssi >= rssi_3dB)
+            value += stepSize;
+        else
+            value -= stepSize;
+        Modify_SPI_Reg_bits(param, value);
+    }
+    return 0;
+}
+
+int LMS7002M::TxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit)
+{
+    int value = Get_SPI_Reg_bits(param);
+    int stepIncrease = 0;
+    int stepSize = 1;
+    uint32_t rssi = GetAvgRSSI(rssiAvgCnt);
+    if(rssi > rssi_3dB)
+        while(rssi > rssi_3dB)
+        {
+            stepSize = pow2(stepIncrease);
+            value -= stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "%s step size out of range", param.name);
+        }
+    else if(rssi < rssi_3dB)
+        while(rssi < rssi_3dB)
+        {
+            stepSize = pow2(stepIncrease);
+            value += stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "%s step size out of range", param.name);
+        }
+
+    if(stepSize == 1)
+        return 0;
+    while(stepSize != 1)
+    {
+        rssi = GetAvgRSSI(rssiAvgCnt);
+        stepSize /= 2;
+        if(rssi <= rssi_3dB)
             value += stepSize;
         else
             value -= stepSize;
@@ -1390,5 +1434,327 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_freq)
         Modify_SPI_Reg_bits(MAC, ch);
     }
 
+    return 0;
+}
+
+int LMS7002M::TuneTxFilterFixedSetup()
+{
+    int status;
+    int ch = Get_SPI_Reg_bits(MAC);
+
+    //RFE
+    Modify_SPI_Reg_bits(EN_G_RFE, 0);
+    Modify_SPI_Reg_bits(0x010D, 4, 1, 0xF);
+
+    //RBB
+    SetDefaults(RBB);
+    Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
+    Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 3);
+    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
+    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
+    Modify_SPI_Reg_bits(C_CTL_PGA_RBB, 3);
+    Modify_SPI_Reg_bits(G_PGA_RBB, 12);
+    Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, 0);
+
+    //TRF
+    Modify_SPI_Reg_bits(EN_G_TRF, 0);
+
+    //TBB
+    SetDefaults(TBB);
+    Modify_SPI_Reg_bits(CG_IAMP_TBB, 1);
+    Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 1);
+    Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
+    Modify_SPI_Reg_bits(LOOPB_TBB, 3);
+
+    //if FIXED_BW = true
+    Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
+    Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
+    Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
+    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 5);
+    Modify_SPI_Reg_bits(RCAL_LPFS5_TBB, 255);
+    Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 255);
+
+    //AFE
+    const int isel_dac_afe = Get_SPI_Reg_bits(ISEL_DAC_AFE);
+    SetDefaults(AFE);
+    Modify_SPI_Reg_bits(ISEL_DAC_AFE, isel_dac_afe);
+    Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
+    if(ch == 2)
+        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
+
+    //BIAS
+    const int rp_calib_bias = Get_SPI_Reg_bits(RP_CALIB_BIAS);
+    SetDefaults(BIAS);
+    Modify_SPI_Reg_bits(RP_CALIB_BIAS, rp_calib_bias);
+
+    //LDO
+    //do nothing
+
+    //XBUF
+    Modify_SPI_Reg_bits(PD_XBUF_RX, 0);
+    Modify_SPI_Reg_bits(PD_XBUF_TX, 0);
+    Modify_SPI_Reg_bits(EN_G_XBUF, 1);
+
+    //CGEN
+    SetDefaults(CGEN);
+    status = SetFrequencyCGEN(184.32e6);
+    if(status != 0)
+        return status;
+
+    //SXR
+    Modify_SPI_Reg_bits(MAC, 1);
+    Modify_SPI_Reg_bits(PD_VCO, 1);
+
+    //SXT
+    Modify_SPI_Reg_bits(MAC, 2);
+    Modify_SPI_Reg_bits(PD_VCO, 1);
+
+    Modify_SPI_Reg_bits(MAC, ch);
+
+    //TxTSP
+    SetDefaults(TxTSP);
+    SetDefaults(TxNCO);
+    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1);
+    Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
+    LoadDC_REG_IQ(LMS7002M::Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    const float_type txNCO_freqs[] = {0.1e6, 4.5e6, 2.5e6, 5e6, 7.5e6, 10e6};
+    for(int i=0; i<6; ++i)
+        SetNCOFrequency(LMS7002M::Tx, i, txNCO_freqs[i]);
+
+    //RxTSP
+    SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
+    Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 1);
+    Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4);
+
+    const float_type rxNCO_freqs[] = {0, 4.4e6, 2.4e6, 4.9e6, 7.4e6, 9.9e6};
+    for(int i=0; i<6; ++i)
+        SetNCOFrequency(LMS7002M::Rx, i, rxNCO_freqs[i]);
+    return 0;
+}
+
+int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
+{
+    int status;
+    float_type txSampleRate;
+    auto registersBackup = BackupRegisterMap();
+    const int tx_lpf_fixed = fixedBandwidth;
+    float_type cgenFreq = GetFrequencyCGEN();
+    int en_adcclkh_clkgn = Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN);
+    int clkh_ov_clkl_cgen = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
+    int hbi_ovr = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+
+    if(hbi_ovr == 7)
+        hbi_ovr = -1;
+    if(en_adcclkh_clkgn == 0)
+        txSampleRate = cgenFreq / pow2(clkh_ov_clkl_cgen) / pow2(hbi_ovr+1);
+    else
+        txSampleRate = cgenFreq / pow2(hbi_ovr+1);
+
+    status = TuneTxFilterFixedSetup();
+    if(status != 0)
+        return status;
+
+    Modify_SPI_Reg_bits(SEL_RX, 0);
+    Modify_SPI_Reg_bits(SEL_TX, 0);
+    uint32_t rssi = GetRSSI();
+    int cg_iamp_tbb = Get_SPI_Reg_bits(CG_IAMP_TBB);
+    while(rssi < 0x2700 && cg_iamp_tbb < 43)
+    {
+        cg_iamp_tbb += 1;
+        Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp_tbb);
+        rssi = GetRSSI();
+    }
+
+    const int rssiAvgCount = 5;
+    uint32_t rssi_dc_s5 = GetAvgRSSI(rssiAvgCount);
+    const uint32_t rssi_3dB_s5 = rssi_dc_s5 * 0.7071;
+
+    Modify_SPI_Reg_bits(SEL_RX, 1);
+    Modify_SPI_Reg_bits(SEL_TX, 1);
+
+    rssi = GetAvgRSSI(rssiAvgCount);
+    int ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
+    if(rssi < rssi_3dB_s5)
+        while(rssi < rssi_3dB_s5 && ccal_lpflad_tbb > 0)
+        {
+            ccal_lpflad_tbb -= 1;
+            Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+            rssi = GetAvgRSSI(rssiAvgCount);
+        }
+    else if(rssi > rssi_3dB_s5)
+    {
+        status = TxFilterSearch(RCAL_LPFS5_TBB, rssi_3dB_s5, rssiAvgCount, 256);
+        if(status != 0)
+            return status;
+    }
+
+    Modify_SPI_Reg_bits(SEL_RX, 0);
+    Modify_SPI_Reg_bits(SEL_TX, 0);
+
+    Modify_SPI_Reg_bits(CG_IAMP_TBB, 1);
+    Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
+    Modify_SPI_Reg_bits(LOOPB_TBB, 2);
+    Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 0);
+
+    rssi = GetAvgRSSI(rssiAvgCount);
+    while(rssi < 0x2700 && cg_iamp_tbb < 43)
+    {
+        cg_iamp_tbb += 1;
+        Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp_tbb);
+        rssi = GetAvgRSSI(rssiAvgCount);
+    }
+
+    int nco_fixed;
+    if(tx_lpf_fixed == 5e6)
+    {
+        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 0);
+        nco_fixed = 2;
+    }
+    else if(tx_lpf_fixed == 10e6)
+    {
+        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 35);
+        nco_fixed = 3;
+    }
+    else if(tx_lpf_fixed == 15e6)
+    {
+        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 80);
+        nco_fixed = 4;
+    }
+    else if(tx_lpf_fixed == 20e6)
+    {
+        Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, 122);
+        nco_fixed = 5;
+    }
+    else
+        ReportError(ERANGE, "Tx Filter fixed bandwidth out of range");
+
+    uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
+    uint32_t rssi_3dB_LAD = rssi_dc_lad * 0.7071;
+
+    Modify_SPI_Reg_bits(SEL_TX, nco_fixed);
+    Modify_SPI_Reg_bits(SEL_RX, nco_fixed);
+
+    rssi = GetAvgRSSI(rssiAvgCount);
+
+    status = TxFilterSearch_LAD(RCAL_LPFLAD_TBB, &rssi_3dB_LAD, rssiAvgCount, 256, nco_fixed);
+    if(status != 0)
+        return status;
+
+    //ENDING
+    ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
+    int rcal_lpfs5_tbb = Get_SPI_Reg_bits(RCAL_LPFS5_TBB);
+    int rcal_lpflad_tbb = Get_SPI_Reg_bits(RCAL_LPFLAD_TBB);
+    RestoreRegisterMap(registersBackup);
+
+    Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
+    Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
+    Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
+    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+    Modify_SPI_Reg_bits(RCAL_LPFS5_TBB, rcal_lpfs5_tbb);
+    Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, rcal_lpflad_tbb);
+    SPI_write(0x0106, 0x318C);
+    SPI_write(0x0107, 0x318C);
+    Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 0);
+    Modify_SPI_Reg_bits(GFIR1_L_TXTSP, 0);
+    Modify_SPI_Reg_bits(GFIR1_N_TXTSP, hbi_ovr-1);
+
+    float_type filterCoef = 0;
+
+    if(txSampleRate <= 245.76e6)
+    {
+        const float_type fs = txSampleRate;
+        const float_type p1 = 8.24603662172681E-22;
+        const float_type p2 = -6.48290995818812E-18;
+        const float_type p3 = 1.69838694770354E-14;
+        const float_type p4 = -1.90568792519939E-11;
+        const float_type p5 = 9.96598303870807E-09;
+        const float_type p6 = -2.51533592592281E-06;
+        const float_type p7 = 3.10736686547122E-04;
+        const float_type p8 = -1.88288098239891E-02;
+        const float_type p9 = 5.51766213029623E-01;
+        filterCoef = p1*pow(fs, 8) + p2*pow(fs, 7) + p3*pow(fs, 6) + p4*pow(fs, 5) +
+            p5*pow(fs, 4) + p6*pow(fs, 3) + p7*pow(fs, 2) + p8*fs + p9;
+    }
+    else
+    {
+        filterCoef = 0.0284*(245.76e6/txSampleRate);
+    }
+    float_type coef1 = pow(2, 15) * (-0.5+filterCoef);
+    float_type coef2 = pow(2, 15) * (0.5+filterCoef);
+    int16_t coefs[9];
+    for(int i=0; i<9; ++i)
+        coefs[i] = 0;
+    coefs[0] = coef1;
+    coefs[8] = coef2;
+    SetGFIRCoefficients(true, 0, coefs, 9);
+
+    return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
+Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log(filterCoef*2));
+}
+
+int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_LAD, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index)
+{
+    int value = Get_SPI_Reg_bits(param);
+    int stepIncrease = 0;
+    int stepSize = 1;
+    uint32_t rssi = GetAvgRSSI(rssiAvgCnt);
+    if(rssi < *rssi_3dB_LAD)
+        while(rssi < *rssi_3dB_LAD)
+        {
+            stepSize = pow2(stepIncrease);
+            value += stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            Modify_SPI_Reg_bits(SEL_TX, 0);
+            Modify_SPI_Reg_bits(SEL_RX, 0);
+            *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
+            Modify_SPI_Reg_bits(SEL_TX, NCO_index);
+            Modify_SPI_Reg_bits(SEL_RX, NCO_index);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "%s step size out of range", param.name);
+        }
+    else if(rssi > *rssi_3dB_LAD)
+        while(rssi > *rssi_3dB_LAD)
+        {
+            stepSize = pow2(stepIncrease);
+            value -= stepSize;
+            Modify_SPI_Reg_bits(param, value);
+            Modify_SPI_Reg_bits(SEL_TX, 0);
+            Modify_SPI_Reg_bits(SEL_RX, 0);
+            *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
+            Modify_SPI_Reg_bits(SEL_TX, NCO_index);
+            Modify_SPI_Reg_bits(SEL_RX, NCO_index);
+            rssi = GetAvgRSSI(rssiAvgCnt);
+            stepIncrease += 1;
+            if(stepSize == stepLimit)
+                return ReportError(ERANGE, "%s step size out of range", param.name);
+        }
+
+    if(stepSize == 1)
+        return 0;
+    while(stepSize != 1)
+    {
+        rssi = GetAvgRSSI(rssiAvgCnt);
+        stepSize /= 2;
+        if(rssi <= *rssi_3dB_LAD)
+            value += stepSize;
+        else
+            value -= stepSize;
+        Modify_SPI_Reg_bits(param, value);
+        Modify_SPI_Reg_bits(SEL_TX, 0);
+        Modify_SPI_Reg_bits(SEL_RX, 0);
+        *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
+        Modify_SPI_Reg_bits(SEL_TX, NCO_index);
+        Modify_SPI_Reg_bits(SEL_RX, NCO_index);
+    }
     return 0;
 }
