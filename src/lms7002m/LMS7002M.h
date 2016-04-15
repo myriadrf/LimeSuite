@@ -158,8 +158,7 @@ public:
 	int TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
     ///@}
 
-    int TuneRxFilter(float_type rx_lpf_freq_rf);
-    int TuneRxFilterSetup(float_type rx_lpf_freq_rf);
+    int TuneRxFilter(const float_type rx_lpf_freq_RF);
 
     ///@name High level gain configuration
 
@@ -438,6 +437,7 @@ protected:
     int RFE_TIA_Calibration(float_type TIA_freq_MHz);
     int RxLPFLow_Calibration(float_type RxLPFL_freq_MHz);
     int RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz);
+    int TuneRxFilterSetup(const float_type rx_lpf_freq);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt);
