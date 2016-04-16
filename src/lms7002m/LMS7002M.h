@@ -145,22 +145,10 @@ public:
     ///@}
 
     ///@name Filters tuning
-	enum TxFilter
-	{
-		TX_LADDER, TX_REALPOLE, TX_HIGHBAND
-	};
-    enum RxFilter
-    {
-        RX_TIA, RX_LPF_LOWBAND, RX_LPF_HIGHBAND
-    };
-	int TuneTxFilter(TxFilter filterType, float_type bandwidth_MHz);
-	int TuneTxFilterLowBandChain(float_type ladder_bw_MHz, float_type realpole_bw_MHz);
-	int TuneRxFilter(RxFilter filterType, float_type bandwidth_MHz);
 	int TuneTxFilterFixed(const float_type fixedBandwidth);
 	int TuneTxFilter(const float_type bandwidth);
+	int TuneRxFilter(const float_type rx_lpf_freq_RF);
     ///@}
-
-    int TuneRxFilter(const float_type rx_lpf_freq_RF);
 
     ///@name High level gain configuration
 
@@ -381,21 +369,6 @@ public:
     };
     virtual int SetDefaults(MemorySection module);
 
-    static const float_type gLadder_lower_limit;
-    static const float_type gLadder_higher_limit;
-    static const float_type gRealpole_lower_limit;
-    static const float_type gRealpole_higher_limit;
-    static const float_type gHighband_lower_limit;
-    static const float_type  gHighband_higher_limit;
-
-    static const float_type gRxTIA_higher_limit;
-    static const float_type gRxTIA_lower_limit_g1;
-    static const float_type gRxTIA_lower_limit_g23;
-    static const float_type gRxLPF_low_lower_limit;
-    static const float_type gRxLPF_low_higher_limit;
-    static const float_type gRxLPF_high_lower_limit;
-    static const float_type gRxLPF_high_higher_limit;
-
     static float_type gVCO_frequency_table[3][2];
     static float_type gCGEN_VCO_frequencies[2];
 
@@ -436,12 +409,6 @@ protected:
     int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
     int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
-    void FilterTuning_AdjustGains();
-    int TuneTxFilterSetup(TxFilter type, float_type cutoff_MHz);
-    int TuneRxFilterSetup(RxFilter type, float_type cutoff_MHz);
-    int RFE_TIA_Calibration(float_type TIA_freq_MHz);
-    int RxLPFLow_Calibration(float_type RxLPFL_freq_MHz);
-    int RxLPFHigh_Calibration(float_type RxLPFH_freq_MHz);
     int TuneRxFilterSetup(const float_type rx_lpf_freq);
     int TuneTxFilterFixedSetup();
     int TuneTxFilterSetup(const float_type tx_lpf_freq);

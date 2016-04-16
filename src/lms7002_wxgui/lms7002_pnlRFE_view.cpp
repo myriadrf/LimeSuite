@@ -236,23 +236,3 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
     }
     lmsControl->Modify_SPI_Reg_bits(parameter, value);
 }
-
-void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
-{
-    double input1;
-    txtTIA_BW_MHz->GetValue().ToDouble(&input1);
-    int status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1*1e6);
-    if (status != 0)
-    {
-        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
-    }
-    else
-    {
-        wxMessageBox(_("Rx TIA calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Rx TIA calibrated"));
-        wxPostEvent(this, evt);
-    }
-    UpdateGUI();
-}

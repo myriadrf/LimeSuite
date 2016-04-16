@@ -20,8 +20,7 @@ class lms7002_pnlRFE_view : public pnlRFE_view
 	protected:
 		// Handlers for pnlRFE_view events.
 		void ParameterChangeHandler( wxCommandEvent& event );
-        void ParameterChangeHandler(wxSpinEvent& event);		
-        void OnbtnTuneTIA(wxCommandEvent& event);
+        void ParameterChangeHandler(wxSpinEvent& event);
 	public:
 		/** Constructor */
 		lms7002_pnlRFE_view( wxWindow* parent);
