@@ -102,7 +102,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     }
 
     //in case of Novena board, need to update GPIO
-    if (lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
+    if (lms7controlPort && lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
         (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
     {
         //update external band-selection to match
@@ -116,9 +116,9 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         const wxObject* eventSource = event.GetEventObject();
         const int bandIndex = event.GetInt();
         //update HPM7 if changes were made outside of it
-        if (lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
+        if (lms7controlPort && lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
             hpm7->SelectBand(bandIndex);
-        if (eventSource == hpm7)
+        if (lms7controlPort && eventSource == hpm7)
         {
             lmsControl->Modify_SPI_Reg_bits(SEL_BAND1_TRF, bandIndex == 0);
             lmsControl->Modify_SPI_Reg_bits(SEL_BAND2_TRF, bandIndex == 1);
@@ -130,9 +130,9 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         const wxObject* eventSource = event.GetEventObject();
         const int pathIndex = event.GetInt();
         //update HPM7 if changes were made outside of it
-        if (lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
+        if (lms7controlPort && lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
             hpm7->SelectRxPath(pathIndex);
-        if (eventSource == hpm7)
+        if (lms7controlPort && eventSource == hpm7)
         {
             lmsControl->Modify_SPI_Reg_bits(SEL_PATH_RFE, pathIndex);
             mContent->mTabRFE->UpdateGUI();

@@ -2168,7 +2168,7 @@ void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI,
 
 void LMS7002M::EnterSelfCalibration(void)
 {
-    if (mSelfCalDepth == 0)
+    if (controlPort && mSelfCalDepth == 0)
     {
         controlPort->EnterSelfCalibration(this->GetActiveChannelIndex());
     }
@@ -2178,7 +2178,7 @@ void LMS7002M::EnterSelfCalibration(void)
 void LMS7002M::ExitSelfCalibration(void)
 {
     mSelfCalDepth--;
-    if (mSelfCalDepth == 0)
+    if (controlPort && mSelfCalDepth == 0)
         controlPort->ExitSelfCalibration(this->GetActiveChannelIndex());
 }
 
