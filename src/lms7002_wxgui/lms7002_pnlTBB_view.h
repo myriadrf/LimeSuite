@@ -21,7 +21,6 @@ class lms7002_pnlTBB_view : public pnlTBB_view
 		// Handlers for pnlTBB_view events.
 		void ParameterChangeHandler( wxCommandEvent& event );
         void ParameterChangeHandler(wxSpinEvent& event);
-        virtual void OnFilterSelectionChange( wxCommandEvent& event );
 		virtual void OnbtnTuneFilter( wxCommandEvent& event );
 	public:
 		/** Constructor */

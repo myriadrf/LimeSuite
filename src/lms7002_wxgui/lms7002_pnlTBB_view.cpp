@@ -115,51 +115,17 @@ void lms7002_pnlTBB_view::UpdateGUI()
     }
 }
 
-void lms7002_pnlTBB_view::OnFilterSelectionChange( wxCommandEvent& event )
-{
-    txtFilterFrequency2->Disable();
-	switch (rgrFilterSelection->GetSelection())
-	{
-	case 0:
-		lblFilterInputName->SetLabelText("High BW (MHz)");
-		break;
-	case 1:
-		lblFilterInputName->SetLabelText("Ladder BW (MHz)");
-		txtFilterFrequency2->Enable();
-		break;
-	}
-}
-
 void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
 {
     double input1;
-    double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
-    txtFilterFrequency2->GetValue().ToDouble(&input2);
     int status;
-    switch (rgrFilterSelection->GetSelection())
-    {
-    case 0:
+    if(input1 == 5 || input1 == 10 || input1 == 15 || input1 == 20)
         status = lmsControl->TuneTxFilterFixed(input1*1e6);
-        break;
-    case 1:
+    else
         status = lmsControl->TuneTxFilter(input1*1e6);
-        break;
-    }
     if (status != 0)
-    {
         wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
-    }
-    else switch (rgrFilterSelection->GetSelection())
-    {
-    case 0:
-        wxMessageBox(_("Tx High band calibration finished"), _("INFO"));
-        break;
-    case 1:
-        wxMessageBox(_("Tx Low band calibration finished"), _("INFO"));
-        break;
-
-    }
     lmsControl->DownloadAll();
     UpdateGUI();
 }
