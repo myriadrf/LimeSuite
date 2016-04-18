@@ -396,6 +396,7 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
     void EnableValuesCache(bool enabled = true);
+    bool IsValuesCacheEnabled();
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
 protected:

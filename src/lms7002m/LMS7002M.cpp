@@ -2198,6 +2198,11 @@ void LMS7002M::EnableValuesCache(bool enabled)
     useCache = enabled;
 }
 
+bool LMS7002M::IsValuesCacheEnabled()
+{
+    return useCache;
+}
+
 MCU_BD* LMS7002M::GetMCUControls() const
 {
     return mcuControl;
