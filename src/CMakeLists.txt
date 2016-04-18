@@ -317,3 +317,11 @@ feature_summary(WHAT DISABLED_FEATURES)
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Lime Suite Version: ${LIME_SUITE_VERSION}")
 message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")
+
+#########################################################################
+# tests
+#########################################################################
+set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
