@@ -6,18 +6,15 @@
 
 #ifndef LMS7002M_PARAMETERS_H
 #define LMS7002M_PARAMETERS_H
+#include <stdint.h>
 
-#include <cstdint>
-#include <vector>
-
-namespace lime{
-
-struct LMS7Parameter;
-extern std::vector<const LMS7Parameter*> LMS7parameterList;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct LMS7Parameter
 {
-    LMS7Parameter() : address(0), msb(0), lsb(0), defaultValue(0), name(nullptr), tooltip(nullptr)
+   /* LMS7Parameter() : address(0), msb(0), lsb(0), defaultValue(0), name(nullptr), tooltip(nullptr)
     {
     }
 
@@ -25,7 +22,7 @@ struct LMS7Parameter
         : address(address), msb(msb), lsb(lsb), defaultValue(defaultValue), name(name), tooltip(tooltip)
     {
         LMS7parameterList.push_back(this);
-    }
+    }*/
 
     uint16_t address;
     uint8_t msb;
@@ -33,12 +30,12 @@ struct LMS7Parameter
     uint16_t defaultValue;
     const char* name;
     const char* tooltip;
-    inline bool operator==(const LMS7Parameter& obj)
+   /* inline bool operator==(const LMS7Parameter& obj)
     {
         if (address == obj.address && msb == obj.msb && lsb == obj.lsb)
             return true;
         return false;
-    };
+    };*/
 };
 
 extern const struct LMS7Parameter LRST_TX_B;
@@ -611,6 +608,8 @@ extern const struct LMS7Parameter CAPD;
 extern const struct LMS7Parameter DTHBIT_RX;
 extern const struct LMS7Parameter SEL_RX;
 extern const struct LMS7Parameter MODE_RX;
-
+#ifdef __cplusplus
 }
+#endif
+
 #endif
