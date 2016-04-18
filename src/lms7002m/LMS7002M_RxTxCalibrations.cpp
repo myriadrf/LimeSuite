@@ -298,7 +298,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useExtLoopba
     //power up VCO
     Modify_SPI_Reg_bits(0x0086, 2, 2, 0);
 
-    int status = SetFrequencyCGEN(46.08 * cgenMultiplier);
+    int status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
     if(status != 0)
         return status;
 
