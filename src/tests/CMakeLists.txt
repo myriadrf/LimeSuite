@@ -30,6 +30,7 @@ include_directories("${source_dir}/include")
 
 add_executable(tests 
     main.cpp
+    streaming.cpp
 )
 
 target_link_libraries(tests

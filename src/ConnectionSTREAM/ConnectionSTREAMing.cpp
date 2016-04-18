@@ -99,6 +99,9 @@ struct USBStreamService : StreamerLTE
 
         dataPort->TransferPacket(pkt);
 
+        //switch on Rx
+        interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
+        Reg_write(mDataPort, 0x000A, interface_ctrl_000A | 0x1);
     }
 
     ~USBStreamService(void)
