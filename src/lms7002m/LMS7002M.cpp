@@ -334,7 +334,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     if (f.good() == false) //file not found
     {
         f.close();
-        return ReportError("LoadConfigLegacyFile(%s) - file not found", filename);
+        return ReportError(ENOENT, "LoadConfigLegacyFile(%s) - file not found", filename);
     }
     f.close();
     uint16_t addr = 0;
@@ -344,7 +344,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     typedef INI<string, string, string> ini_t;
     ini_t parser(filename, true);
     if (parser.select("FILE INFO") == false)
-        return ReportError("LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename);
+        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing FILE INFO section", filename);
 
     string type = "";
     type = parser.get("type", "undefined");
@@ -352,7 +352,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
     if (type.find("LMS7002 configuration") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return ReportError("LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename);
+        return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format, missing LMS7002 configuration", filename);
     }
 
     int fileVersion = 0;
@@ -504,7 +504,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
         this->SetActiveChannel(ch);
         return 0;
     }
-    return ReportError("LoadConfigLegacyFile(%s) - invalid format", filename);
+    return ReportError(EINVAL, "LoadConfigLegacyFile(%s) - invalid format", filename);
 }
 
 /** @brief Reads configuration file and uploads registers to chip
@@ -517,7 +517,7 @@ int LMS7002M::LoadConfig(const char* filename)
     if (f.good() == false) //file not found
     {
         f.close();
-        return ReportError("LoadConfigLegacyFile(%s) - file not found", filename);
+        return ReportError(ENOENT, "LoadConfig(%s) - file not found", filename);
     }
     f.close();
     uint16_t addr = 0;
@@ -540,7 +540,7 @@ int LMS7002M::LoadConfig(const char* filename)
     if (type.find("lms7002m_minimal_config") == string::npos)
     {
         ss << "File " << filename << " not recognized" << endl;
-        return ReportError("LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename);
+        return ReportError(EINVAL, "LoadConfig(%s) - invalid format, missing lms7002m_minimal_config", filename);
     }
 
     int fileVersion = 0;
@@ -1101,7 +1101,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	// Initialization
 	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
-        return ReportError("TuneVCO(%s) - VCO is powered down",
+        return ReportError(-1, "TuneVCO(%s) - VCO is powered down",
             (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
@@ -1149,7 +1149,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     this->SetActiveChannel(ch); //restore previously used channel
 
     if(cmphl == 2) return 0;
-    return ReportError("TuneVCO(%s) - failed to lock (cmphl != 2)",
+    return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)",
         (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
 }
 
@@ -1257,7 +1257,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
         }
     }
     if (canDeliverFrequency == false)
-        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
+        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
 
     const float_type refClk_Hz = GetReferenceClk_SX(tx);
     integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
@@ -1327,7 +1327,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
-        return ReportError("SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
+        return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
     return 0;
 }
 
@@ -1359,7 +1359,7 @@ float_type LMS7002M::GetFrequencySX(bool tx)
 int LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz)
 {
     if(index > 15)
-        return ReportError("SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
     float_type refClk_Hz = GetReferenceClk_TSP(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
 	uint32_t fcw = (uint32_t)((freq_Hz/refClk_Hz)*4294967296);
@@ -1377,7 +1377,7 @@ int LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz)
 float_type LMS7002M::GetNCOFrequency(bool tx, uint8_t index, bool fromChip)
 {
     if(index > 15)
-        return ReportError("GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "GetNCOFrequency_MHz(index = %d) - index out of range [0, 15]", int(index));
     float_type refClk_Hz = GetReferenceClk_TSP(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
     uint32_t fcw = 0;
@@ -1408,7 +1408,7 @@ int LMS7002M::SetNCOPhaseOffsetForMode0(bool tx, float_type angle_deg)
 int LMS7002M::SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_deg)
 {
     if(index > 15)
-        return ReportError("SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "SetNCOPhaseOffset(index = %d) - index out of range [0, 15]", int(index));
     uint16_t addr = tx ? 0x0244 : 0x0444;
 	uint16_t pho = (uint16_t)(65536*(angle_deg / 360));
     SPI_write(addr+index, pho);
@@ -1423,7 +1423,7 @@ int LMS7002M::SetNCOPhaseOffset(bool tx, uint8_t index, float_type angle_deg)
 float_type LMS7002M::GetNCOPhaseOffset_Deg(bool tx, uint8_t index)
 {
     if(index > 15)
-        return ReportError("GetNCOPhaseOffset_Deg(index = %d) - index out of range [0, 15]", int(index));
+        return ReportError(ERANGE, "GetNCOPhaseOffset_Deg(index = %d) - index out of range [0, 15]", int(index));
     uint16_t addr = tx ? 0x0244 : 0x0444;
     uint16_t pho = SPI_read(addr+index);
     float_type angle = 360*pho/65536.0;
@@ -1458,7 +1458,7 @@ int LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *co
     else
         coefLimit = 120;
     if (coefCount > coefLimit)
-        return ReportError("SetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
+        return ReportError(ERANGE, "SetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
     vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
         addresses.push_back(startAddr + index + 24 * (index / 40));
@@ -1495,7 +1495,7 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
     else
         coefLimit = 120;
     if (coefCount > coefLimit)
-        return ReportError("GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
+        return ReportError(ERANGE, "GetGFIRCoefficients(coefCount=%d) - exceeds coefLimit=%d", int(coefCount), int(coefLimit));
 
     std::vector<uint16_t> addresses;
     for (index = 0; index < coefCount; ++index)
@@ -1721,7 +1721,7 @@ int LMS7002M::RegistersTest()
     fout.close();
 
     if (allTestSuccess) return 0;
-    return ReportError("RegistersTest() failed - %s", GetLastErrorMessage());
+    return ReportError(-1, "RegistersTest() failed - %s", GetLastErrorMessage());
 }
 
 /** @brief Performs registers test for given address interval by writing given pattern data
@@ -1790,7 +1790,7 @@ int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16
         ss << "\tRegisters OK (" << ctemp << ")\n";
     }
     if (registersMatch) return 0;
-    return ReportError("RegistersTestInterval(startAddr=0x%x, endAddr=0x%x) - failed", startAddr, endAddr);
+    return ReportError(-1, "RegistersTestInterval(startAddr=0x%x, endAddr=0x%x) - failed", startAddr, endAddr);
 }
 
 /** @brief Sets Rx Dc offsets by converting two's complementary numbers to sign and magnitude
