@@ -86,8 +86,7 @@ int fpga_send(unsigned const int addr, const char* buf, const int len)
         return -1;
     }
 
-    void* virt_addr;
-    virt_addr = mem_base + (addr & map_mask);
+    size_t virt_addr = size_t(mem_base) + (size_t(addr) & map_mask);
     for(unsigned i=0; i<len/sizeof(unsigned short); ++i)
     {
         *(unsigned short*)(virt_addr+i*2) = ((unsigned short*)buf)[i];
@@ -127,9 +126,8 @@ int fpga_read(unsigned const int addr, unsigned short *buf, const int len)
         printf("error mapping memory\n");
         return -1;
     }
-    void* virt_addr;
-    virt_addr = mem_base + (addr & map_mask);
-    memcpy(buf, virt_addr, len);
+    size_t virt_addr = size_t(mem_base) + (size_t(addr) & map_mask);
+    memcpy(buf, (void *)virt_addr, len);
     if(munmap(mem_base, map_size) == -1)
     {
         printf("munmap failed\n");

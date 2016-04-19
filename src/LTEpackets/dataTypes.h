@@ -119,6 +119,7 @@ public:
         {
             memcpy(samples[i], pkt.samples[i], sizeof(complex16_t)*samplesCount);
         }
+        return *this;
     }
 };
 

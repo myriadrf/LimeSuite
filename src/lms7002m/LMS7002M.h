@@ -258,8 +258,10 @@ public:
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN();
 	int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false);
+	bool GetCGENLocked(void);
 	float_type GetFrequencySX(bool tx);
 	int SetFrequencySX(bool tx, float_type freq_Hz);
+	bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
     {
@@ -373,6 +375,7 @@ public:
     static float_type gCGEN_VCO_frequencies[2];
 
     void EnableValuesCache(bool enabled = true);
+    bool IsValuesCacheEnabled();
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
 protected:

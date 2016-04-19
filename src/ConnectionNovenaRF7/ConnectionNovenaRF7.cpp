@@ -143,21 +143,21 @@ int ConnectionNovenaRF7::Write(const unsigned char *buffer, int length, int time
     rxbuf.clear();
     int bytesReceived = 0;
     char rxbytes[2];
-    while(bytesWritten < length)
+    while(int(bytesWritten) < length)
     {
         int toWrite = length-bytesWritten > cSPI_BUF_SIZE ? cSPI_BUF_SIZE : length-bytesWritten;
         for(int i=0; i<toWrite; i+=2)
         {
             if(buffer[i] < 0x80) //reading
             {
-                write(fd, &buffer[i+bytesWritten], 2);
+                if (write(fd, &buffer[i+bytesWritten], 2) != 2) return 0;
                 bytesReceived += read(fd, rxbytes, 2);
                 rxbuf.push_back(rxbytes[0]);
                 rxbuf.push_back(rxbytes[1]);
             }
             else //writing
             {
-                write(fd, &buffer[i+bytesWritten], 4);
+                if (write(fd, &buffer[i+bytesWritten], 4) != 4) return 0;
                 i+=2; //data bytes have been written
             }
         }
@@ -183,7 +183,7 @@ int ConnectionNovenaRF7::Read(unsigned char *buffer, int length, int timeout_ms)
     if(fd < 0)
         return 0;
     //because transfer is done in full duplex, function returns data from last transfer
-    int tocpy = length > rxbuf.size() ? rxbuf.size() : length;
+    int tocpy = length > int(rxbuf.size()) ? rxbuf.size() : length;
     memcpy(buffer, &rxbuf[0], tocpy);
     rxbuf.clear();
     return tocpy;

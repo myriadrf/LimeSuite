@@ -70,7 +70,7 @@ void StreamerLTE::ReceivePackets(const StreamerLTE_ThreadData &args)
     auto getCmd = args.getCmd;
 
     //at this point Rx must be enabled in FPGA
-    int rxDroppedSamples = 0;
+    unsigned long rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
     uint32_t samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
@@ -297,7 +297,7 @@ void StreamerLTE::ReceivePacketsUncompressed(const StreamerLTE_ThreadData &args)
     auto dataRate_Bps = args.dataRate_Bps;
 
     //at this point Rx must be enabled in FPGA
-    int rxDroppedSamples = 0;
+    unsigned long rxDroppedSamples = 0;
     const int channelsCount = 1;
     uint32_t samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();

@@ -198,6 +198,22 @@ public:
     void setHardwareTime(const long long timeNs, const std::string &what = "");
 
     /*******************************************************************
+     * Sensor API
+     ******************************************************************/
+
+    std::vector<std::string> listSensors(void) const;
+
+    SoapySDR::ArgInfo getSensorInfo(const std::string &name) const;
+
+    std::string readSensor(const std::string &name) const;
+
+    std::vector<std::string> listSensors(const int direction, const size_t channel) const;
+
+    SoapySDR::ArgInfo getSensorInfo(const int direction, const size_t channel, const std::string &name) const;
+
+    std::string readSensor(const int direction, const size_t channel, const std::string &name) const;
+
+    /*******************************************************************
      * Register API
      ******************************************************************/
 

@@ -15,8 +15,8 @@ void ConnectionSTREAMEntry::handle_libusb_events()
     tv.tv_usec = 250000;
     while(mProcessUSBEvents.load() == true)
     {
-        if(libusb_handle_events_timeout_completed(ctx, &tv, NULL) != 0)
-            printf("error libusb_handle_events %i\n");
+        int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
+        if(r != 0) printf("error libusb_handle_events %s\n", libusb_strerror(libusb_error(r)));
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }

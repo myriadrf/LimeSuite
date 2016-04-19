@@ -26,11 +26,6 @@ public:
 
     bool IsOpen(void);
 
-    std::vector<std::string> GetDeviceNames(){}
-    int RefreshDeviceList(){}
-    void ClearComm(){}
-    //! -------------------------------------------------------------
-
 private:
 
     int Open(const char *comName, int baudrate);

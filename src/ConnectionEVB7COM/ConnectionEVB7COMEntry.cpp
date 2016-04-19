@@ -36,7 +36,8 @@ std::vector<ConnectionHandle> ConnectionEVB7COMEntry::enumerate(const Connection
         handle.media = "COM";
         handle.name = "EVB7 ("+comName+")";
         handle.addr = comName;
-        result.push_back(handle);
+        if(hint.addr.length() == 0 || hint.addr == handle.addr)
+            result.push_back(handle);
     }
     return result;
 }
@@ -130,7 +131,8 @@ std::vector<std::string> ConnectionEVB7COMEntry::FindAllComPorts()
     char tempBuffer[256];
     string result = "";
 #warning Currently searching only for ACM connections
-    system( "ls /dev | grep ttyACM > /tmp/foundSerialPorts.txt");
+    if (system( "ls /dev | grep ttyACM > /tmp/foundSerialPorts.txt") == -1)
+        return comPortList;
 
     fstream fin;
     fin.open("/tmp/foundSerialPorts.txt", ios::in);

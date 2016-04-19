@@ -853,6 +853,78 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 }
 
 /*******************************************************************
+ * Sensor API
+ ******************************************************************/
+
+std::vector<std::string> SoapyLMS7::listSensors(void) const
+{
+    std::vector<std::string> sensors;
+    sensors.push_back("clock_locked");
+    return sensors;
+}
+
+SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const std::string &name) const
+{
+    SoapySDR::ArgInfo info;
+    if (name == "clock_locked")
+    {
+        info.key = "clock_locked";
+        info.name = "Clock Locked";
+        info.type = SoapySDR::ArgInfo::BOOL;
+        info.value = "false";
+        info.description = "CGEN clock is locked, good VCO selection.";
+    }
+    return info;
+}
+
+std::string SoapyLMS7::readSensor(const std::string &name) const
+{
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+
+    if (name == "clock_locked")
+    {
+        return _rfics.front()->GetCGENLocked()?"true":"false";
+    }
+
+    throw std::runtime_error("SoapyLMS7::readSensor("+name+") - unknown sensor name");
+}
+
+std::vector<std::string> SoapyLMS7::listSensors(const int /*direction*/, const size_t /*channel*/) const
+{
+    std::vector<std::string> sensors;
+    sensors.push_back("lo_locked");
+    return sensors;
+}
+
+SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const int direction, const size_t channel, const std::string &name) const
+{
+    SoapySDR::ArgInfo info;
+    if (name == "lo_locked")
+    {
+        info.key = "lo_locked";
+        info.name = "LO Locked";
+        info.type = SoapySDR::ArgInfo::BOOL;
+        info.value = "false";
+        info.description = "LO synthesizer is locked, good VCO selection.";
+    }
+    return info;
+}
+
+std::string SoapyLMS7::readSensor(const int direction, const size_t channel, const std::string &name) const
+{
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    auto rfic = getRFIC(channel);
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+
+    if (name == "lo_locked")
+    {
+        return rfic->GetSXLocked(lmsDir)?"true":"false";
+    }
+
+    throw std::runtime_error("SoapyLMS7::readSensor("+name+") - unknown sensor name");
+}
+
+/*******************************************************************
  * Register API
  ******************************************************************/
 

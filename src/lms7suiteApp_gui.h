@@ -50,6 +50,7 @@ class AppFrame_view : public wxFrame
 		wxMenuBar* mbar;
 		wxMenu* fileMenu;
 		wxMenu* mnuOptions;
+		wxMenuItem* mnuCacheValues;
 		wxMenu* mnuModules;
 		wxMenu* helpMenu;
 		wxStatusBar* statusBar;

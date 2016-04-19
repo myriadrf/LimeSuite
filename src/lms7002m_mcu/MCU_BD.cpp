@@ -1094,7 +1094,7 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
             break;
     }
     mSPI_write(0x0006, 0); //return SPI control to PC
-    std::printf("MCU algorithm time: %i ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
 }
 
