@@ -1080,6 +1080,7 @@ bool LMS7002M::GetSXLocked(bool tx)
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
+    const char* moduleName = (module == VCO_CGEN) ? "CGEN" : ((module == VCO_SXR) ? "SXR" : "SXT");
     checkConnection();
 	int8_t i;
 	uint8_t cmphl; //comparators
@@ -1112,8 +1113,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 	// Initialization
 	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
-        return ReportError(-1, "TuneVCO(%s) - VCO is powered down",
-            (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
+        return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
 	if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
 	else
@@ -1160,8 +1160,8 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     this->SetActiveChannel(ch); //restore previously used channel
 
     if(cmphl == 2) return 0;
-    return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)",
-        (module == VCO_CGEN)?"CGEN":((module == VCO_SXR)?"SXR":"SXT"));
+    
+    return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)", moduleName);
 }
 
 /** @brief Returns given parameter value from chip register
