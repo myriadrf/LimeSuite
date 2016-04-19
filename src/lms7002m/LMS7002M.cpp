@@ -1063,6 +1063,17 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     return TuneVCO(VCO_CGEN);
 }
 
+bool LMS7002M::GetCGENLocked(void)
+{
+    return (Get_SPI_Reg_bits(VCO_CMPHO_CGEN.address, 13, 12, true) & 0x3) == 2;
+}
+
+bool LMS7002M::GetSXLocked(bool tx)
+{
+    SetActiveChannel(tx?ChSXT:ChSXR);
+    return (Get_SPI_Reg_bits(VCO_CMPHO.address, 13, 12, true) & 0x3) == 2;
+}
+
 /** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
     @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
     @return 0-success, other-failure
@@ -1997,11 +2008,19 @@ int LMS7002M::DownloadAll()
 */
 int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
 {
+    int status = 0;
     LMS7002M_SelfCalState state(this);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
-    int status = SetFrequencyCGEN(cgen_freq_Hz);
-    if (status != 0) return status;
+
+    //clock rate already set because the readback frequency is pretty-close,
+    //dont set the cgen frequency again to save time due to VCO selection
+    const auto freqDiff = std::abs(this->GetFrequencyCGEN() - cgen_freq_Hz);
+    if (not this->GetCGENLocked() or freqDiff > 10.0)
+    {
+        status = SetFrequencyCGEN(cgen_freq_Hz);
+        if (status != 0) return status;
+    }
 
     if (decimation == 7 || decimation == 0) //bypass
     {
