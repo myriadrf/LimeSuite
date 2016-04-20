@@ -41,6 +41,7 @@ float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
 
 ///define for parameter enumeration if prefix might be needed
+extern std::vector<const LMS7Parameter*> LMS7parameterList;
 #define LMS7param(id) id
 
 //module addresses needs to be sorted in ascending order

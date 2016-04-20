@@ -242,6 +242,30 @@ API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device, float_type *
     return LMS_SUCCESS;
 }
 
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    return lms->DACWrite(val);
+}
+
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    int ret = lms->DACRead();
+    *val = ret;
+    return ret < 0 ? -1 : 0;
+}
+
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device * device, bool dir_tx)
 {
     if (device == nullptr)
@@ -1005,7 +1029,7 @@ API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags
     return lms->SetStreamingMode(flags);   
 }
 
-API_EXPORT int CALL_CONV LMS_ConfigRx(lms_device *device, size_t num_buffers, size_t buffer_size)
+API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_buffers, size_t buffer_size)
 {
     if (device == nullptr)
     {
@@ -1014,24 +1038,11 @@ API_EXPORT int CALL_CONV LMS_ConfigRx(lms_device *device, size_t num_buffers, si
     }
     
     LMS7_Device* lms = (LMS7_Device*)device;  
-    lms->ConfigureRxStream(num_buffers,buffer_size,0);
-    
-    return LMS_SUCCESS;
+    if (tx)
+        return lms->ConfigureTxStream(num_buffers,buffer_size,0);
+    else
+        return lms->ConfigureRxStream(num_buffers,buffer_size,0);
 }
-
-API_EXPORT int CALL_CONV LMS_ConfigTx(lms_device *device, size_t num_buffers, size_t buffer_size)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    lms->ConfigureTxStream(num_buffers,buffer_size,0);
-    return LMS_SUCCESS;
-}
-
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device,int16_t **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
 {

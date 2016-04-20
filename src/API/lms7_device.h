@@ -86,6 +86,8 @@ public:
     virtual int ProgramFW(const char* data, size_t len, lms_storage_t mode);
     virtual int ProgramFW(std::string name, lms_storage_t mode);
     virtual int ProgramMCU(const char* data= nullptr, size_t len=0, lms_storage_t mode=LMS_STORAGE_RAM);
+    virtual int DACWrite(uint16_t val);
+    virtual int DACRead();
     
 private:
     lms_channel_info* tx_channels;
@@ -111,6 +113,10 @@ private:
     std::mutex rx_lock;
     std::mutex tx_lock;
     int channelsCount;
+    enum { MODE_AUTO,
+           MODE_SISO,
+           MODE_MIMO
+    }forced_mode;
   
     int rx_packetsToBatch;
     int rx_buffersCount; // must be power of 2   

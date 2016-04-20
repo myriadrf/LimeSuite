@@ -16,3 +16,18 @@ add_library(lmsAPI SHARED ${LMS_API_SRC})
 
 target_link_libraries(lmsAPI LimeSuite lms_gfir)  
 
+set(FLTK_SKIP_FLUID true)
+find_package(FLTK REQUIRED)
+#get fltk required flags
+execute_process(COMMAND fltk-config --ldflags OUTPUT_VARIABLE FLTK_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+include_directories(${FLTK_INCLUDE_DIR})
+
+add_executable(api_test main.cpp Lms_glWindow.cpp)
+
+target_link_libraries(api_test
+		      lmsAPI
+		      ${FLTK_LDFLAGS}
+		      ${FLTK_LIBRARIES} 
+		      ${GLUT_LIBRARY}
+		      )
+

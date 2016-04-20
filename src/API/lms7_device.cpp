@@ -97,7 +97,7 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
             
             if (bandwidth > 0)
             {
-                if (TuneRxFilter(LMS7002M::RX_LPF_HIGHBAND, bandwidth*1.3)!=0)
+                if (TuneRxFilter(lime::LMS7002M::RX_LPF_HIGHBAND, bandwidth*1.3)!=0)
                     return -1;
             }
         }
@@ -280,8 +280,8 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
                 || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,0,true)!=0)
                 || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,0,true)!=0)
                 || (Modify_SPI_Reg_bits(BYPLADDER_TBB,0,true)!=0)
-                || (TuneTxFilter(LMS7002M::TX_REALPOLE,bandwidth > gRealpole_higher_limit ? gRealpole_higher_limit : bandwidth)!=0)
-                || (TuneTxFilter(LMS7002M::TX_LADDER,bandwidth )!=0))
+                || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth > gRealpole_higher_limit ? gRealpole_higher_limit : bandwidth)!=0)
+                || (TuneTxFilter(lime::LMS7002M::TX_LADDER,bandwidth )!=0))
                         return -1; 
             }
             else
@@ -290,7 +290,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
                 || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,1,true)!=0)
                 || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,0,true)!=0)
                 || (Modify_SPI_Reg_bits(BYPLADDER_TBB,1,true)!=0)
-                || (TuneTxFilter(LMS7002M::TX_REALPOLE,bandwidth)!=0))
+                || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth)!=0))
                         return -1; 
             }
         }
@@ -301,7 +301,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
             if ((Modify_SPI_Reg_bits(PD_LPFH_TBB,0,true)!=0)
             || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,1,true)!=0)
             || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,1,true)!=0)
-            || (TuneTxFilter(LMS7002M::TX_HIGHBAND,bandwidth)!=0))
+            || (TuneTxFilter(lime::LMS7002M::TX_HIGHBAND,bandwidth)!=0))
                     return -1; 
         }
     }
@@ -650,12 +650,12 @@ double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
     if (tx)
     {
         ratio = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
-        interface_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
+        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
         ratio = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
-        interface_Hz = GetReferenceClk_TSP(LMS7002M::Rx);       
+        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);       
     }
    
     if (ratio == 7)
@@ -1630,11 +1630,13 @@ int LMS7_Device::EnableTX(size_t ch, bool enable)
         return -1;
     
     tx_channels[ch].enabled = enable;
-
-    if ((tx_channels[0].enabled && tx_channels[1].enabled) || (rx_channels[0].enabled && rx_channels[1].enabled))
-        channelsCount = 2;
-    else
-        channelsCount = 1;
+    if (forced_mode == MODE_AUTO)
+    {
+        if ((tx_channels[0].enabled && tx_channels[1].enabled) || (rx_channels[0].enabled && rx_channels[1].enabled))
+            channelsCount = 2;
+        else
+            channelsCount = 1;
+    }
     
     return ConfigureSamplePositionsTx();
 }
@@ -1667,12 +1669,33 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
             return -1;
     
     rx_channels[ch].enabled = enable;
+    if (forced_mode == MODE_AUTO)
+    {
+        if ((tx_channels[0].enabled && tx_channels[1].enabled) || (rx_channels[0].enabled && rx_channels[1].enabled))
+            channelsCount = 2;
+        else
+            channelsCount = 1;
+    }
     
     return ConfigureSamplePositionsRx();
 }
 
 int LMS7_Device::SetStreamingMode(uint32_t flags)
 {
+    if ((flags & LMS_STREAM_MIMO)==LMS_STREAM_MIMO)
+    {
+        forced_mode = MODE_MIMO;
+        channelsCount = 2;
+    }
+    else if ((flags & LMS_STREAM_SISO)==LMS_STREAM_SISO)
+    {
+        forced_mode = MODE_SISO;
+        channelsCount = 1;
+    }
+    else
+    {
+        forced_mode = MODE_AUTO;
+    }
     return 0;
 }
 
@@ -1697,7 +1720,6 @@ int LMS7_Device::RecvStream(int16_t **data,size_t numSamples, lms_stream_metadat
     static uint64_t rx_meta = 0;
     static int index = bufferSize;
     static bool started = false;
-    int ret;
     
     rx_lock.lock();
     
@@ -1858,6 +1880,20 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_storage_t target)
     return 0;
 }
 
+int LMS7_Device::DACWrite(uint16_t val)
+{
+    uint8_t id=0;
+    double dval= val; 
+    return controlPort->CustomParameterWrite(&id,&dval,1,NULL);
+}
+
+int LMS7_Device::DACRead()
+{
+    uint8_t id=0;
+    double dval=0; 
+    int ret = controlPort->CustomParameterRead(&id,&dval,1,NULL);
+    return ret >=0 ? dval : -1;
+}
 
 
 int LMS7_Device::SendStream(const int16_t **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
@@ -1925,14 +1961,14 @@ int LMS7_Device::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
 
     if (controlPort->WaitForReading(rx_handles[bi], timeout) == false)
     {
-        printf("Timeout\n");
+     
         return -1;
     }
 
     long bytesReceived = controlPort->FinishDataReading(&rx_buffers[bi*bufferSize], bufferSize, rx_handles[bi]);
     if (bytesReceived > 0)
     {    
-		lime::PacketLTE* pkt= (lime::PacketLTE*)&rx_buffers[bi*bufferSize];
+	lime::PacketLTE* pkt= (lime::PacketLTE*)&rx_buffers[bi*bufferSize];
         
         *timestamp = pkt->counter; 
         *metadata = *((uint64_t*)(&pkt->reserved));
@@ -1998,15 +2034,17 @@ int LMS7_Device::Start()
 
 
     //enable MIMO mode, 12 bit compressed values
-    if (channelsCount == 2)
+    if ((channelsCount == 2 && forced_mode == MODE_AUTO) || (forced_mode == MODE_MIMO))
     {
         controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
         controlPort->WriteRegister(0x0007, 0x0003);
+        printf("MIMO\n");
     }
     else
     {
         controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
         controlPort->WriteRegister(0x0007, 0x0001);
+        printf("SISO\n");
     }
 
     //USB FIFO reset
@@ -2175,7 +2213,10 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     if (tx_bufferUsed[bi])
     {
         if (controlPort->WaitForSending(tx_handles[bi], timeout) == false)
+        {
+            printf("tx timeout\n");
             return -1;
+        }
         
         int bytesSent;
         if ((bytesSent = controlPort->FinishDataSending(&tx_buffers[bi*bufferSize], bufferSize, tx_handles[bi]))<bufferSize)
@@ -2205,7 +2246,7 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
                 pkt[p].data[i + 2] = (data[n] >> 4) & 0xFF;
                 n++;
         }
-        timestamp += SAMPLES12_PACKET;
+        timestamp += SAMPLES12_PACKET/channelsCount;
     }
 
     tx_handles[bi] = controlPort->BeginDataSending(&tx_buffers[bi*bufferSize], bufferSize);

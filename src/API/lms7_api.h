@@ -880,7 +880,7 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device,
  * 
  * @param device      Device handle previously obtained by LMS_Open().
  * @param clock_Hz    reference clock in Hz.
- * @return 
+ * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device * device,
                                                float_type clock_Hz);
@@ -890,10 +890,30 @@ API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device * device,
  * 
  * @param device      Device handle previously obtained by LMS_Open().
  * @param clock_Hz    reference clock in Hz.
- * @return 
+ * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device,
                                                float_type * clock_Hz);
+
+/**
+ * Write value to VCTCXO trim DAC
+ *
+ * @param   devive      Device handle previously obtained by LMS_Open().
+ * @param   val         Value to write to VCTCXO trim DAC
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val);
+
+/**
+ * Read value from VCTCXO trim DAC.
+ *
+ * @param[in]   dev     Device handle previously obtained by LMS_Open().
+ * @param[out]  val     Value to read from VCTCXO trim DAC
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val);
 
 /** @} (End FN_LOW_LVL) */
 
@@ -947,10 +967,11 @@ typedef struct
  * Flags for configuring device streaming mode
  * @{
  */
-#define LMS_STREAM_SISO     0x0000  /**<Stream data from single channel*/
-#define LMS_STREAM_MIMO     0x0001  /**<Stream data from multiple channels*/
-#define LMS_STREAM_SAMPLE12 0x0000  /**<Use compressed 12-bit sample values*/
-#define LMS_STREAM_SAMPLE16 0x0002  /**<Use uncompressed 16-bit sample values*/
+#define LMS_STREAM_AUTO     0x0000  /**<Automatic stream configuration*/
+#define LMS_STREAM_SISO     0x0001  /**<Stream data from single channel*/
+#define LMS_STREAM_MIMO     0x0003  /**<Stream data from multiple channels*/
+#define LMS_STREAM_SAMPLE12 0x0010  /**<Use compressed 12-bit sample values*/
+#define LMS_STREAM_SAMPLE16 0x0030  /**<Use uncompressed 16-bit sample values*/
 
 /** @} (End FN_STREAM_FLAGS) */
 
@@ -966,28 +987,17 @@ typedef struct
 API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags);
 
 /**
- * Initializes/configures receive stream. 
+ * Initializes/configures RX/TX stream. 
  * 
  * @param device        Device handle previously obtained by LMS_Open().
+ * @param dir_tx        Select RX or TX
  * @param num_buffers   Number of in-flight buffers used for data transfer
  * @param buffer_size   Size of a single transfer buffer in bytes
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ConfigRx(lms_device *device, size_t num_buffers,
-                                        size_t buffer_size);
-
-/**
- * Initializes/configures transmit stream. 
- * 
- * @param device        Device handle previously obtained by LMS_Open().
- * @param num_buffers   Number of in-flight buffers used for data transfer
- * @param buffer_size   Size of a single transfer buffer in bytes
- * 
- * @return      0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_ConfigTx(lms_device *device, size_t num_buffers,
-                                        size_t buffer_size);
+API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool dir_tx,
+                                        size_t num_buffers, size_t buffer_size);
 
 
 /**
