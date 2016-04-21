@@ -1,5 +1,4 @@
 #include "lms7002_dlgVCOfrequencies.h"
-#include "LMS7002M.h"
 #include <wx/filedlg.h>
 #include <vector>
 #include <fstream>
@@ -7,45 +6,46 @@
 using namespace std;
 using namespace lime;
 
-lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , LMS7002M* plmsControl)
+lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_device* plmsControl)
 :
 dlgVCOfrequencies( parent )
 {
     lmsControl = plmsControl;
     double multiplier = 0.001;
-    txtVCOL_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[0][0] * multiplier));
-    txtVCOL_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[0][1] * multiplier));
-    txtVCOM_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[1][0] * multiplier));
-    txtVCOM_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[1][1] * multiplier));
-    txtVCOH_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[2][0] * multiplier));
-    txtVCOH_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[2][1] * multiplier));
-    txtVCOCGEN_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gCGEN_VCO_frequencies[0] * multiplier));
-    txtVCOCGEN_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gCGEN_VCO_frequencies[1] * multiplier));
+    lms_range_t range;
+    LMS_GetVCORange(lmsControl,0,&range);
+    txtVCOL_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOL_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    LMS_GetVCORange(lmsControl,1,&range);
+    txtVCOM_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOM_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    LMS_GetVCORange(lmsControl,2,&range);
+    txtVCOH_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOH_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    LMS_GetVCORange(lmsControl,3,&range);
+    txtVCOCGEN_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOCGEN_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
 }
 
 void lms7002_dlgVCOfrequencies::OnBtnOkClick( wxCommandEvent& event )
 {
-    double freq;
     double multiplier = 1000;
-    txtVCOL_low->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[0][0] = freq * multiplier;
-    txtVCOL_high->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[0][1] = freq * multiplier;
+    lms_range_t range;
+    txtVCOL_low->GetValue().ToDouble(&range.min);
+    txtVCOL_high->GetValue().ToDouble(&range.max);
+    LMS_SetVCORange(lmsControl,0,range);
+    
+    txtVCOM_low->GetValue().ToDouble(&range.min);
+    txtVCOM_high->GetValue().ToDouble(&range.max);
+    LMS_SetVCORange(lmsControl,1,range);
+    
+    txtVCOH_low->GetValue().ToDouble(&range.min);
+    txtVCOH_high->GetValue().ToDouble(&range.max);
+    LMS_SetVCORange(lmsControl,2,range);
 
-    txtVCOM_low->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[1][0] = freq * multiplier;
-    txtVCOM_high->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[1][1] = freq * multiplier;
-
-    txtVCOH_low->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[2][0] = freq * multiplier;
-    txtVCOH_high->GetValue().ToDouble(&freq);
-    lmsControl->gVCO_frequency_table[2][1] = freq * multiplier;
-
-    txtVCOCGEN_low->GetValue().ToDouble(&freq);
-    lmsControl->gCGEN_VCO_frequencies[0] = freq * multiplier;
-    txtVCOCGEN_high->GetValue().ToDouble(&freq);
-    lmsControl->gCGEN_VCO_frequencies[1] = freq * multiplier;
+    txtVCOCGEN_low->GetValue().ToDouble(&range.min);
+    txtVCOCGEN_high->GetValue().ToDouble(&range.max);
+    LMS_SetVCORange(lmsControl,3,range);
 
     EndModal(wxID_OK);
 }

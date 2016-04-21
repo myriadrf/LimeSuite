@@ -151,7 +151,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlRFE_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlRFE_view::Initialize(lms_device* pControl)
 {
 	lmsControl = pControl;
 	assert(lmsControl != nullptr);
@@ -160,27 +160,30 @@ void lms7002_pnlRFE_view::Initialize(LMS7002M* pControl)
 void lms7002_pnlRFE_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    int value = lmsControl->Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(G_LNA_RFE),&value);
     cmbG_LNA_RFE->SetSelection( value2index(value, g_lna_rfe_IndexValuePairs));
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
+    LMS_ReadParam(lmsControl,LMS7param(G_TIA_RFE),&value);
     cmbG_TIA_RFE->SetSelection( value2index(value, g_tia_rfe_IndexValuePairs));
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFI_RFE),&value);
     int16_t dcvalue = value & 0x3F;
     if((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFI_RFE->SetValue(dcvalue);
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFQ_RFE),&value);
     dcvalue = value & 0x3F;
     if((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFQ_RFE->SetValue(dcvalue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
+    if (value >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
+        if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }
@@ -222,7 +225,7 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         if (value < 0)
             valToSend |= 0x40;
         valToSend |= labs(value);
-        lmsControl->Modify_SPI_Reg_bits(parameter, valToSend);
+        LMS_WriteParam(lmsControl,parameter,valToSend);
         return;
     }
 
@@ -234,13 +237,14 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         evt.SetInt(event.GetInt());
         wxPostEvent(this, evt);
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, value);
+    LMS_WriteParam(lmsControl,parameter,value);
 }
 
 void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
 {
     double input1;
     txtTIA_BW_MHz->GetValue().ToDouble(&input1);
+    
     int status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1*1e6);
     if (status != 0)
     {

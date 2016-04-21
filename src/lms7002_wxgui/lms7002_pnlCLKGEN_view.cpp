@@ -93,7 +93,7 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlCLKGEN_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlCLKGEN_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -125,7 +125,7 @@ void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
 
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 
     if (LMS7ParameterCompare(parameter,LMS7param(EN_ADCCLKH_CLKGN))==0)
         UpdateInterfaceFrequencies();

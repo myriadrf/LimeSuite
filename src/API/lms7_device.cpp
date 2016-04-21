@@ -132,16 +132,14 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
          
     if (tx)
     {
-        if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false,true)!=0)
-            return -1;
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false,true);
                 
     }
     else       
     {
-        if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP),enabled==false,true)!=0)
-              return -1;  
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP),enabled==false,true);
             
@@ -283,6 +281,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     {
         if (bandwidth < gLadder_higher_limit)
         {
+            //low band chain
             if (bandwidth >= gRealpole_higher_limit)
             {
                 if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true)!=0)
@@ -305,6 +304,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
         }
         else
         {
+            // high band
             if (bandwidth < gHighband_lower_limit)
                 bandwidth = gHighband_lower_limit;
             if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
@@ -1038,151 +1038,6 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
    return 0; 
 }
 
-int LMS7_Device::SetDCOffset(bool dir_tx, size_t chan, int16_t dc_i, int16_t dc_q)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    if (dir_tx)
-    {
-        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP),dc_i,true);
-        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP),dc_q,true);  
-    }
-    else
-    {
-     if (dc_i < 0)
-        dc_i = (dc_i^0xFFBF)+1;                
-     Modify_SPI_Reg_bits(LMS7param(DCOFFI_RFE),dc_i,true);
-     if (dc_q < 0)
-        dc_q = (dc_q^0xFFBF)+1;   
-     Modify_SPI_Reg_bits(LMS7param(DCOFFQ_RFE),dc_q,true); 
-     }
-    return 0;
-}
-
-int LMS7_Device::GetDCOffset(bool dir_tx, size_t chan, int16_t *dc_i, int16_t *dc_q)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    if (dir_tx)
-    {  
-        *dc_i =((int16_t)Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP),true)<<8);
-        *dc_i >>= 8;
-        *dc_q =((int16_t)Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP),true)<<8);
-        *dc_q >>= 8;
-    }
-    else
-    {
-        *dc_i =Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE),true);
-        if (*dc_i & 64)
-            *dc_i = (*dc_i^0xFFBF)+1; 
-        *dc_q =Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE),true);
-        if (*dc_q & 64)
-            *dc_q = (*dc_q^0xFFBF)+1; 
-    }
-	return 0;
-}
-
-lms_range_t LMS7_Device::GetDCOffsetRange(bool dir_tx) const
-{
-    lms_range_t ret;
-    if (dir_tx)
-    {
-      ret.min = -128;
-      ret.max = 127;   
-    }
-    else
-    {
-      ret.min = -63;
-      ret.max = 63;      
-     }
-    ret.step = 1;
-    return ret;
-}
-
-int LMS7_Device::SetIQGain(bool dir_tx, size_t chan, unsigned gain_i, unsigned gain_q)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    if (dir_tx)
-    {
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP),gain_i,true);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP),gain_q,true);
-    }
-    else
-    {
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP),gain_i,true);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP),gain_q,true);
-     }
-	return 0;
-}
-int LMS7_Device::GetIQGain(bool dir_tx, size_t chan, unsigned *gain_i, unsigned *gain_q)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    if (dir_tx)
-    {
-        *gain_i = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP),true);
-        *gain_q = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP),true);
-    }
-    else
-    {
-       *gain_i = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP),true);
-       *gain_q = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP),true); 
-     }
-    return 0;
-} 
-lms_range_t LMS7_Device::GetIQGainRange(bool dir_tx) const
-{
-    lms_range_t ret;
-    ret.min = 0;
-    ret.max = 2047;
-    ret.step = 1;      
-    return ret;
-}
-int LMS7_Device::SetIQPhase(bool dir_tx, size_t chan, int16_t phase)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    if (dir_tx)
-    {
-     Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP),phase,true);  
-    }
-    else
-    {
-     Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP),phase,true); 
-     }
-	return 0;
-}
-int16_t LMS7_Device::GetIQPhase(bool dir_tx, size_t chan)
-{
-    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
-    int16_t phase;
-    if (dir_tx)
-    {
-        phase =((int16_t)Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP),true)<<4);
-        phase >>= 4; 
-    }
-    else
-    {       
-        phase =((int16_t)Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP),true)<<4);
-        phase >>= 4;
-     }
-    
-    return phase;
-}
-lms_range_t LMS7_Device::GetIQPhaseRange(bool dir_tx) const
-{
-    lms_range_t ret;
-    ret.min = -2048;
-    ret.max = 2047;
-    ret.step = 1;
-    return ret;
-}
-
-int LMS7_Device::CalibrateCh(bool tx, size_t chan,double bandwidth)
-{
-     Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
-     if (tx)
-        return CalibrateTx(bandwidth);   
-     else
-        return CalibrateRx(bandwidth,false);
-}
-
 int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
@@ -1552,6 +1407,7 @@ int LMS7_Device::Init()
      ||(Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2),0,true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2),0,true)!=0)) 
         return -1;
+   DownloadAll();
    return ConfigureSamplePositions();
 }
 

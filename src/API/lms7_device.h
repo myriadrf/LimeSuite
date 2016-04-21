@@ -55,16 +55,6 @@ public:
     virtual int SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count);
     virtual int GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef);
     virtual int SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled);
-    virtual int SetDCOffset(bool dir_tx, size_t chan, int16_t dc_i, int16_t dc_q);
-    virtual int GetDCOffset(bool dir_tx, size_t chan, int16_t *dc_i, int16_t *dc_q);
-    virtual lms_range_t GetDCOffsetRange(bool dir_tx) const ;
-    virtual int SetIQGain(bool dir_tx, size_t chan, unsigned gain_i, unsigned gain_q);
-    virtual int GetIQGain(bool dir_tx, size_t chan, unsigned *gain_i, unsigned *gain_q);
-    virtual lms_range_t GetIQGainRange(bool dir_tx) const;
-    virtual int SetIQPhase(bool dir_tx, size_t chan, int16_t phase);
-    virtual int16_t GetIQPhase(bool dir_tx, size_t chan);
-    virtual lms_range_t GetIQPhaseRange(bool dir_tx) const;
-    virtual int CalibrateCh(bool tx,size_t chan,float_type bandwidth);
     virtual int SetNormalizedGain(bool dir_tx, size_t chan,float_type gain);
     virtual float_type GetNormalizedGain(bool dir_tx, size_t chan);
     virtual int SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig,int16_t dc_i =0, int16_t dc_q = 0);

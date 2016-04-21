@@ -99,7 +99,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device *device)
     LMS7_Device* lms = (LMS7_Device*)device;
     if (lms->ResetChip()!=0)
         return -1;
-
+    lms->DownloadAll();
     return LMS_SUCCESS;   
 }
 
@@ -264,6 +264,58 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val)
     int ret = lms->DACRead();
     *val = ret;
     return ret < 0 ? -1 : 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id, lms_range_t* range)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    if (vco_id < 3)
+    {
+        range->min=lms->gVCO_frequency_table[vco_id][0];
+        range->max=lms->gVCO_frequency_table[vco_id][1];
+    }
+    else if (vco_id == 3)
+    {
+        range->min=lms->gCGEN_VCO_frequencies[0];
+        range->max=lms->gCGEN_VCO_frequencies[1];
+    }
+    else
+    {
+        lime::ReportError(EINVAL, "VCO ID out of range.");
+        return -1;
+    }
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id, lms_range_t range)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    if (vco_id < 3)
+    {
+        lms->gVCO_frequency_table[vco_id][0]=range.min;
+        lms->gVCO_frequency_table[vco_id][1]=range.max;
+    }
+    else if (vco_id == 3)
+    {
+        lms->gCGEN_VCO_frequencies[0]=range.min;
+        lms->gCGEN_VCO_frequencies[1]=range.max;
+    }
+    else
+    {
+        lime::ReportError(EINVAL, "VCO ID out of range.");
+        return -1;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device * device, bool dir_tx)
@@ -639,7 +691,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device *device, bool dir_tx, 
     return LMS_SUCCESS;   
 }
 
-API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, size_t chan, double bw)
+API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, size_t chan, double bw, unsigned flags)
 {
     if (device == nullptr)
     {
@@ -654,8 +706,13 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, size_t c
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    
-    return lms->CalibrateCh(dir_tx,chan,bw);
+    lms->EnableCalibrationByMCU(true);
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
+    if (dir_tx)
+       return lms->CalibrateTx(bw,flags!=0);   
+    else
+       return lms->CalibrateRx(bw,flags!=0);
+
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, char *filename)

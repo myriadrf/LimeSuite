@@ -113,7 +113,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlLimeLightPAD_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlLimeLightPAD_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -141,19 +141,20 @@ void lms7002_pnlLimeLightPAD_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlLimeLightPAD_view::onbtnReadVerRevMask( wxCommandEvent& event )
 {
-    int value = 0;
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(VER));
+    uint16_t value = 0;
+
+    LMS_ReadParam(lmsControl,LMS7param(VER),&value);
     lblVER->SetLabel(wxString::Format(_("%i"), value));
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(REV));
+    LMS_ReadParam(lmsControl,LMS7param(REV),&value);
     lblREV->SetLabel(wxString::Format(_("%i"), value));
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(MASK));
+    LMS_ReadParam(lmsControl,LMS7param(MASK),&value);
     lblMASK->SetLabel(wxString::Format(_("%i"), value));
 }
 

@@ -73,7 +73,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlTBB_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlTBB_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -101,16 +101,19 @@ void lms7002_pnlTBB_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlTBB_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
+    if (value >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
+        if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }

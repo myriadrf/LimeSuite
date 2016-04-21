@@ -439,7 +439,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device *device, bool dir_tx,
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, 
-                                        size_t chan, double bw);
+                                        size_t chan, double bw, unsigned flags);
 
 /**
  * Load LMS chip configuration from a file
@@ -531,6 +531,7 @@ typedef enum
     LMS_GFIR2,
     LMS_GFIR3
 }lms_gfir_t;
+
 
 /**Number of NCO frequency/phase offset values*/
 const size_t LMS_NCO_VAL_COUNT = 16;
@@ -914,6 +915,31 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val);
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val);
+
+
+/**
+ * Get VCO value range. 
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   vco_id  VCO identifier
+ * @param   range   VCO range
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id,
+                                         lms_range_t* range);
+
+/**
+ * Set VCO value range. 
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   vco_id  VCO identifier
+ * @param   range   VCO range
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id,
+                                         lms_range_t range);
 
 /** @} (End FN_LOW_LVL) */
 

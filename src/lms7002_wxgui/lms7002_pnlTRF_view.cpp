@@ -82,7 +82,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlTRF_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlTRF_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -104,7 +104,8 @@ void lms7002_pnlTRF_view::ParameterChangeHandler(wxCommandEvent& event)
     long value = event.GetInt();
     if(event.GetEventObject() == cmbEN_AMPHF_PDET_TRF)
         value = index2value(value, en_amphf_pdet_trfIndexValuePairs);
-    lmsControl->Modify_SPI_Reg_bits(parameter, value);
+    
+    LMS_WriteParam(lmsControl,parameter,value);
 }
 
 void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
@@ -112,20 +113,20 @@ void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
     switch (cmbTXFEoutput->GetSelection())
     {
     case 0:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), true);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),true);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),false);
         break;
     case 1:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), true);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),true);
         break;
     case 2:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),false);
         break;
     default:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),false);
     }
     wxCommandEvent evt;
     evt.SetEventType(LMS7_TXBAND_CHANGED);
@@ -138,11 +139,14 @@ void lms7002_pnlTRF_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
-    long value = lmsControl->Get_SPI_Reg_bits(LMS7param(EN_AMPHF_PDET_TRF));
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(EN_AMPHF_PDET_TRF),&value);
     cmbEN_AMPHF_PDET_TRF->SetSelection(value2index(value, en_amphf_pdet_trfIndexValuePairs));
 
-    long SEL_BAND1_TRFvalue = lmsControl->Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    long SEL_BAND2_TRFvalue = lmsControl->Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
+    uint16_t SEL_BAND1_TRFvalue;
+    LMS_ReadParam(lmsControl,LMS7param(SEL_BAND1_TRF),&SEL_BAND1_TRFvalue);
+    uint16_t SEL_BAND2_TRFvalue;
+    LMS_ReadParam(lmsControl,LMS7param(SEL_BAND2_TRF),&SEL_BAND2_TRFvalue);
     long TXFEoutputValue = 0;
     if (!SEL_BAND1_TRFvalue && !SEL_BAND2_TRFvalue)
         TXFEoutputValue = 2;
@@ -153,15 +157,17 @@ void lms7002_pnlTRF_view::UpdateGUI()
     else
     {
         TXFEoutputValue = 2;
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),false);
+        LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),false);
     }
     cmbTXFEoutput->SetSelection(TXFEoutputValue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
+    if (value >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
+        if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }

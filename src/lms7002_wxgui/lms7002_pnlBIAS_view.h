@@ -25,10 +25,10 @@ class lms7002_pnlBIAS_view : public pnlBIAS_view
 		lms7002_pnlBIAS_view( wxWindow* parent );
 	//// end generated class members
 	lms7002_pnlBIAS_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lime::LMS7002M* pControl);
+    void Initialize(lms_device* pControl);
     void UpdateGUI();
 protected:
-    lime::LMS7002M* lmsControl;
+    lms_device* lmsControl;
 	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 

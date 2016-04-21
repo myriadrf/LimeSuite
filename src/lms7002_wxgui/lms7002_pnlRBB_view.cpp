@@ -86,7 +86,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlRBB_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlRBB_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -114,7 +114,7 @@ void lms7002_pnlRBB_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlRBB_view::OncmbBBLoopbackSelected( wxCommandEvent& event )
@@ -122,20 +122,20 @@ void lms7002_pnlRBB_view::OncmbBBLoopbackSelected( wxCommandEvent& event )
     switch (cmbBBLoopback->GetSelection())
     {
     case 0:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB), true);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB), false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),true);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),false);
         break;
     case 1:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB), true);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),true);
         break;
     case 2:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB), false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),false);
         break;
     default:
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB), false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),false);
     }
 }
 
@@ -145,9 +145,11 @@ void lms7002_pnlRBB_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     long BBloopbackValue = 0;
-    long EN_LB_LPFH_RBBvalue = lmsControl->Get_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB));
+    uint16_t EN_LB_LPFH_RBBvalue;
+    LMS_ReadParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),&EN_LB_LPFH_RBBvalue);
 
-    long EN_LB_LPFL_RBBvalue = lmsControl->Get_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB));
+    uint16_t EN_LB_LPFL_RBBvalue;
+    LMS_ReadParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),&EN_LB_LPFL_RBBvalue);
     if (!EN_LB_LPFH_RBBvalue && !EN_LB_LPFL_RBBvalue)
         BBloopbackValue = 2;
     else if (EN_LB_LPFH_RBBvalue && !EN_LB_LPFL_RBBvalue)
@@ -157,15 +159,17 @@ void lms7002_pnlRBB_view::UpdateGUI()
     else //invalid combination
     {
         BBloopbackValue = 2;
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFH_RBB), false);
-        lmsControl->Modify_SPI_Reg_bits(LMS7param(EN_LB_LPFL_RBB), false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFH_RBB),false);
+        LMS_WriteParam(lmsControl,LMS7param(EN_LB_LPFL_RBB),false);
     }
     cmbBBLoopback->SetSelection(BBloopbackValue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
+    if (value >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
+        if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }

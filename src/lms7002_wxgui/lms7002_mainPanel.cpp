@@ -16,7 +16,6 @@
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlXBUF_view.h"
 #include "lms7002_pnlCalibrations_view.h"
-#include "LMS7002M.h"
 #include "ErrorReporting.h"
 #include <wx/time.h>
 #include <wx/msgdlg.h>
@@ -108,7 +107,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 #endif
 }
 
-void lms7002_mainPanel::Initialize(LMS7002M* pControl)
+void lms7002_mainPanel::Initialize(lms_device* pControl)
 {
     assert(pControl != nullptr);
     lmsControl = pControl;

@@ -4,19 +4,19 @@
 @brief 	Common functions used by all panels
 */
 #include <map>
-#include "LMS7002M_parameters.h"
 #include <vector>
+#include "lms7_api.h"
 class wxPanel;
 class wxWindow;
 
 namespace lime{
-class LMS7002M;
+
 }
 
 namespace LMS7002_WXGUI
 {
 
-void UpdateControlsByMap(wxPanel* panel, lime::LMS7002M* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param);
+void UpdateControlsByMap(wxPanel* panel, lms_device* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param);
 
 typedef std::pair<int, int> indexValuePair;
 typedef std::vector < indexValuePair > indexValueMap;

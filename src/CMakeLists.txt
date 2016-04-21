@@ -176,7 +176,11 @@ find_package(wxWidgets COMPONENTS richtext xml html xrc adv aui core base gl)
 message(STATUS "wxWidgets_DEFINITIONS: ${wxWidgets_DEFINITIONS}")
 message(STATUS "wxWidgets_INCLUDE_DIRS: ${wxWidgets_INCLUDE_DIRS}")
 message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
-
+########################################################################
+## API
+########################################################################
+add_subdirectory(API)
+include_directories(API)
 ########################################################################
 ## lms7suite gui app
 ########################################################################
@@ -255,7 +259,7 @@ if (ENABLE_LMS7_GUI)
     add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite lmsAPI oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
@@ -301,10 +305,7 @@ if (DEFINED UDEV_RULES_PATH)
         DESTINATION ${UDEV_RULES_PATH})
 endif()
 
-########################################################################
-## API
-########################################################################
-add_subdirectory(API)
+
 #########################################################################
 # summary
 #########################################################################

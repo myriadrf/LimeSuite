@@ -15,17 +15,17 @@
 #include <wx/spinctrl.h>
 #include <wx/object.h>
 #include <wx/tooltip.h>
-#include <LMS7002M.h>
+
 using namespace lime;
 
-void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
+void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
 {
     if (panel == nullptr || lmsControl == nullptr)
         return;
     panel->Freeze();
 
     wxObject *wnd;
-    unsigned long value = 0;
+    uint16_t value = 0;
     wxClassInfo *wndClass;
     wxClassInfo *cmbInfo = wxClassInfo::FindClass(_("wxComboBox"));
     wxClassInfo *chkInfo = wxClassInfo::FindClass(_("wxCheckBox"));
@@ -48,7 +48,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, LMS7002M* lmsControl, co
 
         // read only from local copy to increase performance
         bool fromChip = false;
-        value = lmsControl->Get_SPI_Reg_bits(idParam.second, fromChip);
+        LMS_ReadParam(lmsControl,idParam.second,&value);
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
         {
