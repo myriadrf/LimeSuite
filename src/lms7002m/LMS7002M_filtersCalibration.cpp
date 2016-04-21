@@ -16,7 +16,6 @@
 using namespace lime;
 
 ///define for parameter enumeration if prefix might be needed
-#define LMS7param(id) id
 
 const float_type LMS7002M::gLadder_lower_limit = 2e6;
 const float_type LMS7002M::gLadder_higher_limit = 16e6;
@@ -617,7 +616,7 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb); //16
         //Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb); //3 - set by formula based on PGA gain by SetRBBPGA_dB()
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x9);
-        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x0);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 0x0);
         if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_Hz, idx, Rx, int(filter), rcc_ctl_lpfl_rbb, c_ctl_lpfl_rbb);
     }
     else if (filter == RX_LPF_HIGHBAND)
@@ -629,7 +628,7 @@ RxFilterTuneEnd:
         Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), r_ctl_lpf_rbb); //16
         //Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb); //3 - set by formula based on PGA gain by SetRBBPGA_dB()
         Modify_SPI_Reg_bits(0x0115, 3, 0, 0x5);
-        Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0x1);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 0x1);
         if (storeInCache) valueCache.InsertFilter_RC(boardId, bandwidth_Hz, idx, Rx, int(filter), rcc_ctl_lpfh_rbb, c_ctl_lpfh_rbb);
     }
 

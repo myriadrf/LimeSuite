@@ -61,12 +61,12 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
     bandwidth /= 1e6;
     if (ch == 0)
     {
-        if (Modify_SPI_Reg_bits(MAC,1,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
             return -1;
     }
     else
     {
-        if (Modify_SPI_Reg_bits(MAC,2,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
             return -1;
     }
     
@@ -79,10 +79,11 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
         }
         if (bandwidth < 20)
         {
-            if ((Modify_SPI_Reg_bits(PD_LPFL_RBB,0,true)!=0)
-            ||(Modify_SPI_Reg_bits(PD_LPFH_RBB,1,true)!=0) 
-            ||(Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB,0,true)!=0))
-                    return -1;
+            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0,true)!=0)
+                   return -1; 
+            Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true);
+            Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),0,true);
+                    
             
             if (bandwidth > 0)
             {
@@ -92,10 +93,11 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
         }
         else
         {
-            if ((Modify_SPI_Reg_bits(PD_LPFL_RBB,1,true)!=0)
-            ||(Modify_SPI_Reg_bits(PD_LPFH_RBB,0,true)!=0)
-            ||(Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB,1,true)!=0))
+            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),1,true)!=0)
                 return -1;
+            Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),0,true);
+            Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),1,true);
+                
             
             if (bandwidth > 0)
             {
@@ -106,10 +108,11 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(PD_LPFL_RBB,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(PD_LPFH_RBB,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB,2,true)!=0))
-            return -1;   
+        if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),1,true)!=0)
+            return -1;     
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),2,true);
+              
     }
 
     return 0;
@@ -124,22 +127,24 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
     
     bandwidth /= 1e6;
    
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
          
     if (tx)
     {
-        if ((Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP,enabled==false,true)!=0)
-        || (Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP,enabled==false,true)!=0)
-        || (Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP,enabled==false,true)!= 0))
-                return -1;
+        if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false,true)!=0)
+            return -1;
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false,true);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false,true);
+                
     }
     else       
     {
-        if ((Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP,enabled==false,true)!=0)
-        ||(Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP,enabled==false,true)!=0)
-        ||(Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP,enabled==false,true)!=0))
-            return -1;
+        if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP),enabled==false,true)!=0)
+              return -1;  
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP),enabled==false,true);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP),enabled==false,true);
+            
     }    
     
     if (bandwidth < 0)
@@ -153,12 +158,12 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
         
         if (tx)
         {
-          ratio = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+          ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
           interface_MHz = GetReferenceClk_TSP(lime::LMS7002M::Tx)/1e6;
         }
         else
         {
-          ratio =Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+          ratio =Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
           interface_MHz = GetReferenceClk_TSP(lime::LMS7002M::Rx)/1e6;
         }
         
@@ -231,23 +236,25 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
   
     if (tx)
     {
-      if ((Modify_SPI_Reg_bits(GFIR1_L_TXTSP,L,true)!=0)
-      ||(Modify_SPI_Reg_bits(GFIR1_N_TXTSP,div,true)!=0) 
-      ||(Modify_SPI_Reg_bits(GFIR2_L_TXTSP,L,true)!=0)
-      ||(Modify_SPI_Reg_bits(GFIR2_N_TXTSP,div,true)!=0) 
-      ||(Modify_SPI_Reg_bits(GFIR3_L_TXTSP,L,true)!=0) 
-      ||(Modify_SPI_Reg_bits(GFIR3_N_TXTSP,div,true)!=0))
-          return -1;
+      if (Modify_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP),L,true)!=0)
+           return -1;   
+      Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP),div,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR2_L_TXTSP),L,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP),div,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP),L,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP),div,true);
+          
     }
     else
     {
-      if ((Modify_SPI_Reg_bits(GFIR1_L_RXTSP,L,true)!=0) 
-      || (Modify_SPI_Reg_bits(GFIR1_N_RXTSP,div,true)!=0) 
-      || (Modify_SPI_Reg_bits(GFIR2_L_RXTSP,L,true)!=0) 
-      || (Modify_SPI_Reg_bits(GFIR2_N_RXTSP,div,true)!=0)
-      || (Modify_SPI_Reg_bits(GFIR3_L_RXTSP,L,true)!=0)
-      || (Modify_SPI_Reg_bits(GFIR3_N_RXTSP,div,true)!=0))
-              return -1;
+      if (Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0) 
+          return -1;
+      Modify_SPI_Reg_bits(LMS7param(GFIR1_N_RXTSP),div,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR2_L_RXTSP),L,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR2_N_RXTSP),div,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP),L,true);
+      Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP),div,true);
+              
     }
     
     if ((SetGFIRCoefficients(tx,0,gfir2,40)!=0)
@@ -264,12 +271,12 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     bandwidth /= 1e6;
     if (ch == 1)
     {
-        if (Modify_SPI_Reg_bits(MAC,2,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
             return -1;
     }
     else
     {
-       if (Modify_SPI_Reg_bits(MAC,1,true)!=0)
+       if (Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
            return -1;
     }
     if (enabled)
@@ -278,20 +285,20 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
         {
             if (bandwidth >= gRealpole_higher_limit)
             {
-                if ((Modify_SPI_Reg_bits(PD_LPFH_TBB,1,true)!=0)
-                || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,0,true)!=0)
-                || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,0,true)!=0)
-                || (Modify_SPI_Reg_bits(BYPLADDER_TBB,0,true)!=0)
+                if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),0,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(BYPLADDER_TBB),0,true)!=0)
                 || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth > gRealpole_higher_limit ? gRealpole_higher_limit : bandwidth)!=0)
                 || (TuneTxFilter(lime::LMS7002M::TX_LADDER,bandwidth )!=0))
                         return -1; 
             }
             else
             {
-                if ((Modify_SPI_Reg_bits(PD_LPFH_TBB,1,true)!=0)
-                || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,1,true)!=0)
-                || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,0,true)!=0)
-                || (Modify_SPI_Reg_bits(BYPLADDER_TBB,1,true)!=0)
+                if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),1,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true)!=0)
+                || (Modify_SPI_Reg_bits(LMS7param(BYPLADDER_TBB),1,true)!=0)
                 || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth)!=0))
                         return -1; 
             }
@@ -300,43 +307,42 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
         {
             if (bandwidth < gHighband_lower_limit)
                 bandwidth = gHighband_lower_limit;
-            if ((Modify_SPI_Reg_bits(PD_LPFH_TBB,0,true)!=0)
-            || (Modify_SPI_Reg_bits(PD_LPFLAD_TBB,1,true)!=0)
-            || (Modify_SPI_Reg_bits(PD_LPFS5_TBB,1,true)!=0)
+            if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),1,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),1,true)!=0)
             || (TuneTxFilter(lime::LMS7002M::TX_HIGHBAND,bandwidth)!=0))
                     return -1; 
         }
     }
     else
     {
-        Modify_SPI_Reg_bits(PD_LPFLAD_TBB,1,true);
-        Modify_SPI_Reg_bits(PD_LPFS5_TBB,1,true);
-        return Modify_SPI_Reg_bits(PD_LPFH_TBB,1,true);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),1,true);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),1,true);
+        return Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true);
     }
     return 0;
 }
 
 int LMS7_Device::ConfigureSamplePositions() 
 {
-    if ((Modify_SPI_Reg_bits(LML2_BQP,3,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML2_BIP,2,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML2_AQP,1,true)!=0) 
-    ||(Modify_SPI_Reg_bits(LML2_AIP,0,true)!=0)  
-    ||(Modify_SPI_Reg_bits(LML1_BQP,3,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_BIP,2,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_AQP,1,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_AIP,0,true)!=0))
+    if (Modify_SPI_Reg_bits(LMS7param(LML2_BQP),3,true)!=0)
         return -1;
-    
-    if ((Modify_SPI_Reg_bits(LML1_S3S,2,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_S2S,3,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_S1S,0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML1_S0S,1,true)!=0) 
-    ||(Modify_SPI_Reg_bits(LML2_S3S,2,true)!=0) 
-    ||(Modify_SPI_Reg_bits(LML2_S2S,3,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML2_S1S,0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LML2_S0S,1,true)!=0))
-        return -1;
+    Modify_SPI_Reg_bits(LMS7param(LML2_BIP),2,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_AQP),1,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_AIP),0,true); 
+    Modify_SPI_Reg_bits(LMS7param(LML1_BQP),3,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_BIP),2,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_AQP),1,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_AIP),0,true);
+        
+    Modify_SPI_Reg_bits(LMS7param(LML1_S3S),2,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_S2S),3,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_S1S),0,true);
+    Modify_SPI_Reg_bits(LMS7param(LML1_S0S),1,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_S3S),2,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_S2S),3,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_S1S),0,true);
+    Modify_SPI_Reg_bits(LMS7param(LML2_S0S),1,true);
 
    return 0;
 }
@@ -386,19 +392,19 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
        return -1;
    }
    if ((SetFrequencyCGEN(cgen)!=0)
-   ||(Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN,0)!=0)
-   ||(Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN,2)!=0) 
-   ||(Modify_SPI_Reg_bits(MAC,2,true)!=0)
-   ||(Modify_SPI_Reg_bits(HBD_OVR_RXTSP, decim)!=0)
-   ||(Modify_SPI_Reg_bits(HBI_OVR_TXTSP, decim)!=0)
-   ||(Modify_SPI_Reg_bits(MAC,1,true)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN),0)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),2)!=0) 
+   ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
    ||(SetInterfaceFrequency(GetFrequencyCGEN(),decim,decim)!=0))
            return -1;
 
     float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx) /
-                            pow(2.0, Get_SPI_Reg_bits(HBI_OVR_TXTSP));
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
     float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
-                            pow(2.0, Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
     
     this->controlPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
    return 0;
@@ -433,7 +439,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     if (tx)
     {
         interpolation = tmp;
-        decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         rx_clock = GetReferenceClk_TSP(lime::LMS7002M::Rx);
         tx_clock = f_Hz*ratio;
         cgen = tx_clock;
@@ -441,7 +447,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     else
     {
         decimation = tmp;
-        interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         tx_clock = GetReferenceClk_TSP(lime::LMS7002M::Tx);
         rx_clock = f_Hz * ratio;
         cgen = rx_clock * 4;
@@ -568,12 +574,12 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     }
     
    if ((SetFrequencyCGEN(cgen)!=0)
-   ||(Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN,clk_mux)!=0)
-   ||(Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN,clk_div)!=0) 
-   ||(Modify_SPI_Reg_bits(MAC,2,true)!=0)
-   ||(Modify_SPI_Reg_bits(HBD_OVR_RXTSP, decimation)!=0)
-   ||(Modify_SPI_Reg_bits(HBI_OVR_TXTSP, interpolation)!=0)
-   ||(Modify_SPI_Reg_bits(MAC,1,true)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN),clk_mux)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),clk_div)!=0) 
+   ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation)!=0)
+   ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
    ||(SetInterfaceFrequency(GetFrequencyCGEN(),interpolation,decimation)!=0))
            return -1;
     
@@ -587,17 +593,17 @@ double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
     double interface_Hz;
     int ratio;
     
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     
     if (tx)
     {
-        ratio = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
-        ratio = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);       
     }
    
@@ -645,19 +651,19 @@ std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, size_t chan) con
 
 int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (tx==false)
     { 
-        if ((Modify_SPI_Reg_bits(SEL_PATH_RFE,path,true)!=0)
-        || (Modify_SPI_Reg_bits(EN_INSHSW_L_RFE,path!=2,true)!=0)
-        || (Modify_SPI_Reg_bits(EN_INSHSW_W_RFE,path!=3,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE),path!=2,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE),path!=3,true)!=0))
             return -1;
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(SEL_BAND1_TRF,path==2,true)!=0)
-        || (Modify_SPI_Reg_bits(SEL_BAND2_TRF,path==1,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),path==2,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),path==1,true)!=0))
             return -1;
     }   
     return 0;
@@ -665,19 +671,19 @@ int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
 
 size_t LMS7_Device::GetPath(bool tx, size_t chan)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (tx)
     {
-        if (Get_SPI_Reg_bits(SEL_BAND1_TRF,true))
+        if (Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),true))
             return 2;
-        else if (Get_SPI_Reg_bits(SEL_BAND2_TRF,true))
+        else if (Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),true))
             return 1;
         else
             return 0;  
     }
     
-    return Get_SPI_Reg_bits(SEL_PATH_RFE,true);    
+    return Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),true);    
 }
 
 lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
@@ -737,7 +743,7 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
 
 int LMS7_Device::SetBandwidth(bool tx, size_t chan, float_type bandwidth)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;    
     if (tx)
     {
@@ -853,7 +859,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
         return -1;
     }
     
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
  
     double interface_Hz;
@@ -861,12 +867,12 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
 
     if (tx)
     {
-      ratio = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+      ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
       interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
-      ratio =Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+      ratio =Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
       interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
@@ -927,20 +933,20 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     {
       if (filt ==LMS_GFIR1)
       {
-          if ((Modify_SPI_Reg_bits(GFIR1_L_TXTSP,L,true)!=0)
-          || (Modify_SPI_Reg_bits(GFIR1_N_TXTSP,div,true)!=0))
+          if ((Modify_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP),L,true)!=0)
+          || (Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP),div,true)!=0))
               return -1;
       }
       else if (filt ==LMS_GFIR2)
       {
-          if ((Modify_SPI_Reg_bits(GFIR2_L_TXTSP,L,true)!=0)
-          || (Modify_SPI_Reg_bits(GFIR2_N_TXTSP,div,true)!=0))
+          if ((Modify_SPI_Reg_bits(LMS7param(GFIR2_L_TXTSP),L,true)!=0)
+          || (Modify_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP),div,true)!=0))
               return -1;
       }
       else if (filt ==LMS_GFIR3)
       {
-          if ((Modify_SPI_Reg_bits(GFIR3_L_TXTSP,L,true)!=0) 
-          || (Modify_SPI_Reg_bits(GFIR3_N_TXTSP,div,true)!=0))
+          if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP),L,true)!=0) 
+          || (Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP),div,true)!=0))
               return -1;
       }
     }
@@ -948,20 +954,20 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     {
       if (filt ==LMS_GFIR1)
       {
-        if ((Modify_SPI_Reg_bits(GFIR1_L_RXTSP,L,true)!=0) 
-        || (Modify_SPI_Reg_bits(GFIR1_N_RXTSP,div,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0) 
+        || (Modify_SPI_Reg_bits(LMS7param(GFIR1_N_RXTSP),div,true)!=0))
             return -1;
       }
       else if (filt ==LMS_GFIR2)
       {
-        if ((Modify_SPI_Reg_bits(GFIR2_L_RXTSP,L,true)!=0)
-        || (Modify_SPI_Reg_bits(GFIR2_N_RXTSP,div,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(GFIR2_L_RXTSP),L,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(GFIR2_N_RXTSP),div,true)!=0))
             return -1;
       }
       else if (filt ==LMS_GFIR3)
       {
-        if ((Modify_SPI_Reg_bits(GFIR3_L_RXTSP,L,true)!=0) 
-        || (Modify_SPI_Reg_bits(GFIR3_N_RXTSP,div,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP),L,true)!=0) 
+        || (Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP),div,true)!=0))
             return -1;
       }
     }
@@ -971,7 +977,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
 
 int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef)
 {
-   if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+   if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
        return -1;
    int16_t coef16[120];
    
@@ -990,23 +996,23 @@ int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* 
 
 int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (tx)
     {
         if (filt ==LMS_GFIR1)
         {
-            if (Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false,true)!=0)
                 return -1;
         }
         else if (filt == LMS_GFIR2)
         {
-            if (Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false,true)!=0)
                 return -1;
         }
         else if (filt == LMS_GFIR3)
         {
-            if (Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false,true)!=0)
                 return -1;
         }
     }
@@ -1014,17 +1020,17 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
     {
         if (filt ==LMS_GFIR1)
         {
-            if (Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP),enabled==false,true)!=0)
                 return -1;
         }
         else if (filt == LMS_GFIR2)
         {
-            if (Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP),enabled==false,true)!=0)
                 return -1;
         }
         else if (filt == LMS_GFIR3)
         {
-            if (Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP,enabled==false,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP),enabled==false,true)!=0)
                 return -1;
         }
     }  
@@ -1034,40 +1040,40 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
 
 int LMS7_Device::SetDCOffset(bool dir_tx, size_t chan, int16_t dc_i, int16_t dc_q)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     if (dir_tx)
     {
-        Modify_SPI_Reg_bits(DCCORRI_TXTSP,dc_i,true);
-        Modify_SPI_Reg_bits(DCCORRQ_TXTSP,dc_q,true);  
+        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP),dc_i,true);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP),dc_q,true);  
     }
     else
     {
      if (dc_i < 0)
         dc_i = (dc_i^0xFFBF)+1;                
-     Modify_SPI_Reg_bits(DCOFFI_RFE,dc_i,true);
+     Modify_SPI_Reg_bits(LMS7param(DCOFFI_RFE),dc_i,true);
      if (dc_q < 0)
         dc_q = (dc_q^0xFFBF)+1;   
-     Modify_SPI_Reg_bits(DCOFFQ_RFE,dc_q,true); 
+     Modify_SPI_Reg_bits(LMS7param(DCOFFQ_RFE),dc_q,true); 
      }
     return 0;
 }
 
 int LMS7_Device::GetDCOffset(bool dir_tx, size_t chan, int16_t *dc_i, int16_t *dc_q)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     if (dir_tx)
     {  
-        *dc_i =((int16_t)Get_SPI_Reg_bits(DCCORRI_TXTSP,true)<<8);
+        *dc_i =((int16_t)Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP),true)<<8);
         *dc_i >>= 8;
-        *dc_q =((int16_t)Get_SPI_Reg_bits(DCCORRQ_TXTSP,true)<<8);
+        *dc_q =((int16_t)Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP),true)<<8);
         *dc_q >>= 8;
     }
     else
     {
-        *dc_i =Get_SPI_Reg_bits(DCOFFI_RFE,true);
+        *dc_i =Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE),true);
         if (*dc_i & 64)
             *dc_i = (*dc_i^0xFFBF)+1; 
-        *dc_q =Get_SPI_Reg_bits(DCOFFQ_RFE,true);
+        *dc_q =Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE),true);
         if (*dc_q & 64)
             *dc_q = (*dc_q^0xFFBF)+1; 
     }
@@ -1093,31 +1099,31 @@ lms_range_t LMS7_Device::GetDCOffsetRange(bool dir_tx) const
 
 int LMS7_Device::SetIQGain(bool dir_tx, size_t chan, unsigned gain_i, unsigned gain_q)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     if (dir_tx)
     {
-        Modify_SPI_Reg_bits(GCORRI_TXTSP,gain_i,true);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP,gain_q,true);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP),gain_i,true);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP),gain_q,true);
     }
     else
     {
-        Modify_SPI_Reg_bits(GCORRI_RXTSP,gain_i,true);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP,gain_q,true);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP),gain_i,true);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP),gain_q,true);
      }
 	return 0;
 }
 int LMS7_Device::GetIQGain(bool dir_tx, size_t chan, unsigned *gain_i, unsigned *gain_q)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     if (dir_tx)
     {
-        *gain_i = Get_SPI_Reg_bits(GCORRI_TXTSP,true);
-        *gain_q = Get_SPI_Reg_bits(GCORRQ_TXTSP,true);
+        *gain_i = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP),true);
+        *gain_q = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP),true);
     }
     else
     {
-       *gain_i = Get_SPI_Reg_bits(GCORRI_RXTSP,true);
-       *gain_q = Get_SPI_Reg_bits(GCORRQ_RXTSP,true); 
+       *gain_i = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP),true);
+       *gain_q = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP),true); 
      }
     return 0;
 } 
@@ -1131,29 +1137,29 @@ lms_range_t LMS7_Device::GetIQGainRange(bool dir_tx) const
 }
 int LMS7_Device::SetIQPhase(bool dir_tx, size_t chan, int16_t phase)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     if (dir_tx)
     {
-     Modify_SPI_Reg_bits(IQCORR_TXTSP,phase,true);  
+     Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP),phase,true);  
     }
     else
     {
-     Modify_SPI_Reg_bits(IQCORR_RXTSP,phase,true); 
+     Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP),phase,true); 
      }
 	return 0;
 }
 int16_t LMS7_Device::GetIQPhase(bool dir_tx, size_t chan)
 {
-    Modify_SPI_Reg_bits(MAC,chan+1,true); 
+    Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true); 
     int16_t phase;
     if (dir_tx)
     {
-        phase =((int16_t)Get_SPI_Reg_bits(IQCORR_TXTSP,true)<<4);
+        phase =((int16_t)Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP),true)<<4);
         phase >>= 4; 
     }
     else
     {       
-        phase =((int16_t)Get_SPI_Reg_bits(IQCORR_RXTSP,true)<<4);
+        phase =((int16_t)Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP),true)<<4);
         phase >>= 4;
      }
     
@@ -1170,7 +1176,7 @@ lms_range_t LMS7_Device::GetIQPhaseRange(bool dir_tx) const
 
 int LMS7_Device::CalibrateCh(bool tx, size_t chan,double bandwidth)
 {
-     Modify_SPI_Reg_bits(MAC,chan+1,true);
+     Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
      if (tx)
         return CalibrateTx(bandwidth);   
      else
@@ -1179,13 +1185,13 @@ int LMS7_Device::CalibrateCh(bool tx, size_t chan,double bandwidth)
 
 int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     
     if (dir_tx)
     {
         int g = (63*gain+0.49);
-        if (Modify_SPI_Reg_bits(CG_IAMP_TBB,g,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g,true)!=0)
             return -1;
     }
     else
@@ -1223,9 +1229,9 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
             sum -= w_pga;
         }
              
-        if ((Modify_SPI_Reg_bits(G_LNA_RFE,lna+1,true)!=0)
-          ||(Modify_SPI_Reg_bits(G_TIA_RFE,tia+1,true)!=0)
-          ||(Modify_SPI_Reg_bits(G_PGA_RBB,pga,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1,true)!=0)
+          ||(Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1,true)!=0)
+          ||(Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga,true)!=0))
             return -1;
     }
     return 0;
@@ -1233,11 +1239,11 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 
 double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (dir_tx)
     {
-        double ret = Get_SPI_Reg_bits(CG_IAMP_TBB,true);
+        double ret = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
         ret /= 63.0;
         return ret;
     }
@@ -1247,9 +1253,9 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
         const int w_tia = 5;
         const int w_pga = 1;
         const int w_total = 14*w_lna + 2*w_tia + 31*w_pga;         
-        int lna = Get_SPI_Reg_bits(G_LNA_RFE,true)-1;
-        int tia = Get_SPI_Reg_bits(G_TIA_RFE,true)-1;
-        int pga = Get_SPI_Reg_bits(G_PGA_RBB,true);
+        int lna = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE),true)-1;
+        int tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true)-1;
+        int pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB),true);
         double ret = lna*w_lna+tia*w_tia+pga*w_pga;
         ret /= w_total;
         return ret;
@@ -1259,21 +1265,21 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
 
 int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
 {     
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     
     if (dir_tx==false)
     {      
-        if ((Modify_SPI_Reg_bits(INSEL_RXTSP,sig!=LMS_TESTSIG_NONE,true)!=0)
-        ||(Modify_SPI_Reg_bits(TSGFCW_RXTSP,sig,true)!=0)
-        ||(Modify_SPI_Reg_bits(TSGMODE_RXTSP,sig==LMS_TESTSIG_DC,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP),sig!=LMS_TESTSIG_NONE,true)!=0)
+        ||(Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP),sig,true)!=0)
+        ||(Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP),sig==LMS_TESTSIG_DC,true)!=0))
             return -1;
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(INSEL_TXTSP,sig!=LMS_TESTSIG_NONE,true)!=0)
-        ||(Modify_SPI_Reg_bits(TSGFCW_TXTSP,sig,true)!=0)
-        ||(Modify_SPI_Reg_bits(TSGMODE_TXTSP,sig==LMS_TESTSIG_DC,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP),sig!=LMS_TESTSIG_NONE,true)!=0)
+        ||(Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP),sig,true)!=0)
+        ||(Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP),sig==LMS_TESTSIG_DC,true)!=0))
             return -1;
     }
     
@@ -1285,32 +1291,32 @@ int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig, int16
 
 int LMS7_Device::GetTestSignal(bool dir_tx, size_t chan)
 {
-    if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     
     if (dir_tx==false)
     {   
-        if (Get_SPI_Reg_bits(INSEL_TXTSP,true)==0)
+        if (Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP),true)==0)
         {
             return LMS_TESTSIG_NONE;
         }
-        else if (Get_SPI_Reg_bits(TSGMODE_TXTSP,true)!=0)
+        else if (Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP),true)!=0)
         {
             return LMS_TESTSIG_DC;
         }  
-        else return Get_SPI_Reg_bits(TSGFCW_TXTSP,true);
+        else return Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP),true);
     }
     else
     {
-        if (Get_SPI_Reg_bits(INSEL_RXTSP,true)==0)
+        if (Get_SPI_Reg_bits(LMS7param(INSEL_RXTSP),true)==0)
         {
             return LMS_TESTSIG_NONE;
         }
-        else if (Get_SPI_Reg_bits(TSGMODE_RXTSP,true)!=0)
+        else if (Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP),true)!=0)
         {
             return LMS_TESTSIG_DC;
         }  
-        else return Get_SPI_Reg_bits(TSGFCW_RXTSP,true);
+        else return Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP),true);
     }
     return 0;  
 }
@@ -1318,7 +1324,7 @@ int LMS7_Device::GetTestSignal(bool dir_tx, size_t chan)
 
 int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_type pho)
 { 
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     
     float_type rf_rate;
@@ -1336,21 +1342,21 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
     }
     if (tx)
     {
-        if ((Modify_SPI_Reg_bits(CMIX_BYP_TXTSP,0,true)!=0)
-        || (Modify_SPI_Reg_bits(SEL_TX,0,true)!=0)
-        || (Modify_SPI_Reg_bits(CMIX_SC_TXTSP,0,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),0,true)!=0))
             return -1;
-        if (Modify_SPI_Reg_bits(MODE_TX,0,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),0,true)!=0)
             return -1;
         tx_channels[ch].nco_pho = pho;
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(CMIX_BYP_RXTSP,0,true)!=0)
-        || (Modify_SPI_Reg_bits(SEL_RX,0,true)!=0)
-        || (Modify_SPI_Reg_bits(CMIX_SC_RXTSP,0,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),0,true)!=0))
             return -1;
-        if (Modify_SPI_Reg_bits(MODE_RX,0,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),0,true)!=0)
             return -1;
         rx_channels[ch].nco_pho = pho;
     }
@@ -1359,18 +1365,18 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
 
 int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     if (ind == -1)
     {
         if (tx)
         {
-            if (Modify_SPI_Reg_bits(CMIX_BYP_TXTSP,1,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
                 return -1;
         }
         else
         {
-            if (Modify_SPI_Reg_bits(CMIX_BYP_RXTSP,1,true)!=0)
+            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),1,true)!=0)
                 return -1;
         }
     }
@@ -1378,16 +1384,16 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
     {
         if (tx)
         {
-            if ((Modify_SPI_Reg_bits(CMIX_BYP_TXTSP,0,true)!=0)
-            || (Modify_SPI_Reg_bits(SEL_TX,ind,true)!=0)
-            || (Modify_SPI_Reg_bits(CMIX_SC_TXTSP,down,true)!=0))
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),ind,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),down,true)!=0))
                 return -1;
         }
         else
         {
-            if ((Modify_SPI_Reg_bits(CMIX_BYP_RXTSP,0,true)!=0)
-            || (Modify_SPI_Reg_bits(SEL_RX,ind,true)!=0)
-            || (Modify_SPI_Reg_bits(CMIX_SC_RXTSP,down,true)!=0))
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),ind,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),down,true)!=0))
                 return -1;
         }
     }
@@ -1397,12 +1403,12 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
 
 int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     for (int i = 0; i < 16; i++)
     {
         freq[i] = GetNCOFrequency(tx,i,true);
-        uint16_t neg = tx ? Get_SPI_Reg_bits(CMIX_SC_TXTSP,true) : Get_SPI_Reg_bits(CMIX_SC_RXTSP,true);
+        uint16_t neg = tx ? Get_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),true) : Get_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),true);
         freq[i] = neg ? -freq[i] : freq[i];
     }
     *pho = tx ? tx_channels[ch].nco_pho : rx_channels[ch].nco_pho;
@@ -1411,7 +1417,7 @@ int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho
 
 int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_type fcw)
 { 
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
     for (int i = 0; i < 16; i++)
@@ -1420,26 +1426,26 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
             return -1;
     }
     
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     
     if (tx)
     {
-        if ((Modify_SPI_Reg_bits(CMIX_BYP_TXTSP,0,true)!=0)
-        || (Modify_SPI_Reg_bits(SEL_TX,0,true)!=0)
-        || (Modify_SPI_Reg_bits(CMIX_SC_TXTSP,0,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),0,true)!=0))
             return -1;
-        if (Modify_SPI_Reg_bits(MODE_TX,1,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),1,true)!=0)
             return -1;
         tx_channels[ch].nco_pho = fcw;
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(CMIX_BYP_RXTSP,0,true)!=0)
-        || (Modify_SPI_Reg_bits(SEL_RX,0,true)!=0)
-        || (Modify_SPI_Reg_bits(CMIX_SC_RXTSP,0,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),0,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),0,true)!=0))
             return -1;
-        if (Modify_SPI_Reg_bits(MODE_RX,1,true)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),1,true)!=0)
             return -1;
         rx_channels[ch].nco_pho = fcw;
     }
@@ -1450,7 +1456,7 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
 
 int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *fcw)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     for (int i = 0; i < 16; i++)
     {
@@ -1462,21 +1468,21 @@ int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *f
 
 size_t LMS7_Device::GetNCO(bool tx, size_t ch)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -2;
     if (tx)
     {
-        if (Get_SPI_Reg_bits(CMIX_BYP_TXTSP,true)!=0)
+        if (Get_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),true)!=0)
         {
             lime::ReportError(ENODEV, "NCO is disabled");
             return -1;
         }
-        return Get_SPI_Reg_bits(SEL_TX,true);
+        return Get_SPI_Reg_bits(LMS7param(SEL_TX),true);
     }
     
-    if (Get_SPI_Reg_bits(CMIX_BYP_RXTSP,true)!=0)
+    if (Get_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),true)!=0)
         return -1;
-    return Get_SPI_Reg_bits(SEL_RX,true);
+    return Get_SPI_Reg_bits(LMS7param(SEL_RX),true);
 }
 
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
@@ -1530,21 +1536,21 @@ lms_range_t LMS7_Device::GetFrequencyRange(bool tx) const
 int LMS7_Device::Init()
 { 
    if ((ResetChip()!=0)
-     ||(Modify_SPI_Reg_bits(MAC,2,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
      ||(Modify_SPI_Reg_bits(0x208, 8, 0, 0x1F3, true)!=0)  //TXTSP bypasses
      ||(Modify_SPI_Reg_bits(0x40C, 7, 0, 0xFB, true)!=0)   //RXTSP bypasses
-     ||(Modify_SPI_Reg_bits(ICT_LNA_RFE,0x1F,true)!=0)
-     ||(Modify_SPI_Reg_bits(ICT_LODC_RFE,0x1F,true)!=0)  
-     ||(Modify_SPI_Reg_bits(MAC,1,true)!=0)    
+     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LNA_RFE),0x1F,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE),0x1F,true)!=0)  
+     ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)    
      ||(Modify_SPI_Reg_bits(0x208, 8, 0, 0x1F3, true)!=0)
      ||(Modify_SPI_Reg_bits(0x40C, 7, 0, 0xFB, true)!=0)
-     ||(Modify_SPI_Reg_bits(ICT_LNA_RFE,0x1F,true)!=0)
-     ||(Modify_SPI_Reg_bits(ICT_LODC_RFE,0x1F,true)!=0)
-     ||(Modify_SPI_Reg_bits(LML1_MODE,0,true)!=0)
-     ||(Modify_SPI_Reg_bits(LML2_MODE,0,true)!=0)
-     ||(Modify_SPI_Reg_bits(DIQ1_DS,1,true)!=0)    
-     ||(Modify_SPI_Reg_bits(PD_TX_AFE2,0,true)!=0)
-     ||(Modify_SPI_Reg_bits(PD_RX_AFE2,0,true)!=0)) 
+     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LNA_RFE),0x1F,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE),0x1F,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(LML1_MODE),0,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(LML2_MODE),0,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(DIQ1_DS),1,true)!=0)    
+     ||(Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2),0,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2),0,true)!=0)) 
         return -1;
    return ConfigureSamplePositions();
 }
@@ -1552,24 +1558,24 @@ int LMS7_Device::Init()
 
 int LMS7_Device::EnableTX(size_t ch, bool enable)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     
     if (ch == 1)
     {
-        if (Modify_SPI_Reg_bits(EN_NEXTTX_TRF,enable)!=0);
+        if (Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF),enable)!=0);
             return -1;
     }
            
-    if ((Modify_SPI_Reg_bits(SEL_BAND1_TRF,enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(SEL_BAND2_TRF,0,true)!=0)   
-    ||(Modify_SPI_Reg_bits(PD_TLOBUF_TRF,enable == 0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_TXPAD_TRF,enable == 0,true)!=0) 
-    ||(Modify_SPI_Reg_bits(PD_LPFH_TBB,enable == 0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_LPFIAMP_TBB,enable == 0,true)!= 0)
-    ||(Modify_SPI_Reg_bits(EN_G_TBB,enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_G_TRF,enable,true)!=0)  
-    ||(Modify_SPI_Reg_bits(EN_TXTSP,enable,true)!=0)) 
+    if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),enable,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),0,true)!=0)   
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_TLOBUF_TRF),enable == 0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_TXPAD_TRF),enable == 0,true)!=0) 
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),enable == 0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFIAMP_TBB),enable == 0,true)!= 0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_TBB),enable,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_TRF),enable,true)!=0)  
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_TXTSP),enable,true)!=0)) 
         return -1;
     
     tx_channels[ch].enabled = enable;
@@ -1586,29 +1592,29 @@ int LMS7_Device::EnableTX(size_t ch, bool enable)
 
 int LMS7_Device::EnableRX(const size_t ch, const bool enable)
 {
-    if (Modify_SPI_Reg_bits(MAC,ch+1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     
     if (ch == 1)
     {
-        if (Modify_SPI_Reg_bits(EN_NEXTRX_RFE,enable)!=0)
+        if (Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE),enable)!=0)
             return -1;
     }
           
-    if ((Modify_SPI_Reg_bits(MAC,1,true)!=0)
-    ||(Modify_SPI_Reg_bits(SEL_PATH_RFE,enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_INSHSW_L_RFE,1,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_INSHSW_W_RFE,1,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_LNA_RFE,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_MXLOBUF_RFE,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_QGEN_RFE,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_TIA_RFE,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_PGA_RBB,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_G_RFE,enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_G_RBB,enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_LPFL_RBB,enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(PD_LPFH_RBB,1,true)!=0)
-    ||(Modify_SPI_Reg_bits(EN_RXTSP,enable,true)!=0))
+    if ((Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),enable,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE),1,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE),1,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_MXLOBUF_RFE),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_QGEN_RFE),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_RFE),enable,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_RBB),enable,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),enable==0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true)!=0)
+    ||(Modify_SPI_Reg_bits(LMS7param(EN_RXTSP),enable,true)!=0))
             return -1;
     
     rx_channels[ch].enabled = enable;

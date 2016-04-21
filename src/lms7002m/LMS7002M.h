@@ -20,6 +20,8 @@ class MCU_BD;
 
 typedef double float_type;
 
+#define LMS7param(id) LMS7_ ## id
+
 class LMS7002M
 {
 public:

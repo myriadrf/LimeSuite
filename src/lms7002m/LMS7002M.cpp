@@ -42,7 +42,6 @@ float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
-#define LMS7param(id) id
 
 //module addresses needs to be sorted in ascending order
 const uint16_t LMS7002M::readOnlyRegisters[] =      { 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F };
@@ -195,103 +194,103 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     //--- LML ---
     if (ch == ChA)
     {
-        if (isTx) this->Modify_SPI_Reg_bits(TXEN_A, enable?1:0);
-        else      this->Modify_SPI_Reg_bits(RXEN_A, enable?1:0);
+        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(TXEN_A), enable?1:0);
+        else      this->Modify_SPI_Reg_bits(LMS7param(RXEN_A), enable?1:0);
     }
     else
     {
-        if (isTx) this->Modify_SPI_Reg_bits(TXEN_B, enable?1:0);
-        else      this->Modify_SPI_Reg_bits(RXEN_B, enable?1:0);
+        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(TXEN_B), enable?1:0);
+        else      this->Modify_SPI_Reg_bits(LMS7param(RXEN_B), enable?1:0);
     }
 
     //--- ADC/DAC ---
-    this->Modify_SPI_Reg_bits(EN_DIR_AFE, 1);
-    this->Modify_SPI_Reg_bits(EN_G_AFE, enable?1:0);
-    this->Modify_SPI_Reg_bits(PD_AFE, enable?0:1);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_AFE), 1);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_G_AFE), enable?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(PD_AFE), enable?0:1);
     if (ch == ChA)
     {
-        if (isTx) this->Modify_SPI_Reg_bits(PD_TX_AFE1, enable?0:1);
-        else      this->Modify_SPI_Reg_bits(PD_RX_AFE1, enable?0:1);
+        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), enable?0:1);
+        else      this->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), enable?0:1);
     }
     else
     {
-        if (isTx) this->Modify_SPI_Reg_bits(PD_TX_AFE2, enable?0:1);
-        else      this->Modify_SPI_Reg_bits(PD_RX_AFE2, enable?0:1);
+        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), enable?0:1);
+        else      this->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), enable?0:1);
     }
 
     //--- digital ---
     if (isTx)
     {
-        this->Modify_SPI_Reg_bits(EN_TXTSP, enable?1:0);
-        this->Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, 1);
-        this->Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, 1);
-        this->Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_TXTSP), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), 1);
     }
     else
     {
-        this->Modify_SPI_Reg_bits(EN_RXTSP, enable?1:0);
-        this->Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 2); //bypass
-        this->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(GC_BYP_RXTSP, 1);
-        this->Modify_SPI_Reg_bits(PH_BYP_RXTSP, 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_RXTSP), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 2); //bypass
+        this->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(GC_BYP_RXTSP), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(PH_BYP_RXTSP), 1);
     }
 
     //--- baseband ---
     if (isTx)
     {
-        this->Modify_SPI_Reg_bits(EN_DIR_TBB, 1);
-        this->Modify_SPI_Reg_bits(EN_G_TBB, enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_TBB), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G_TBB), enable?1:0);
     }
     else
     {
-        this->Modify_SPI_Reg_bits(EN_DIR_RBB, 1);
-        this->Modify_SPI_Reg_bits(EN_G_RBB, enable?1:0);
-        this->Modify_SPI_Reg_bits(PD_PGA_RBB, enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_RBB), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB), enable?0:1);
     }
 
     //--- frontend ---
     if (isTx)
     {
-        this->Modify_SPI_Reg_bits(EN_DIR_TRF, 1);
-        this->Modify_SPI_Reg_bits(EN_G_TRF, enable?1:0);
-        this->Modify_SPI_Reg_bits(PD_TLOBUF_TRF, enable?0:1);
-        this->Modify_SPI_Reg_bits(PD_TXPAD_TRF, enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_TRF), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_TLOBUF_TRF), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_TXPAD_TRF), enable?0:1);
     }
     else
     {
-        this->Modify_SPI_Reg_bits(EN_DIR_RFE, 1);
-        this->Modify_SPI_Reg_bits(EN_G_RFE, enable?1:0);
-        this->Modify_SPI_Reg_bits(PD_MXLOBUF_RFE, enable?0:1);
-        this->Modify_SPI_Reg_bits(PD_QGEN_RFE, enable?0:1);
-        this->Modify_SPI_Reg_bits(PD_TIA_RFE, enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_RFE), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_MXLOBUF_RFE), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_QGEN_RFE), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), enable?0:1);
     }
 
     //--- synthesizers ---
     if (isTx)
     {
         this->SetActiveChannel(ChSXT);
-        this->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
-        this->Modify_SPI_Reg_bits(EN_G, enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G), enable?1:0);
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
-            this->Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
         }
     }
     else
     {
         this->SetActiveChannel(ChSXR);
-        this->Modify_SPI_Reg_bits(EN_DIR_SXRSXT, 1);
-        this->Modify_SPI_Reg_bits(EN_G, enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G), enable?1:0);
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
-            this->Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
         }
     }
     this->SetActiveChannel(ch);
@@ -675,7 +674,7 @@ int LMS7002M::SetRBBPGA_dB(const float_type value)
     int g_pga_rbb = (int)(value + 12.5);
     if (g_pga_rbb > 0x1f) g_pga_rbb = 0x1f;
     if (g_pga_rbb < 0) g_pga_rbb = 0;
-    int ret = this->Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+    int ret = this->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga_rbb);
 
     int rcc_ctl_pga_rbb = (430.0*pow(0.65, (g_pga_rbb/10.0))-110.35)/20.4516 + 16;
 
@@ -685,14 +684,14 @@ int LMS7002M::SetRBBPGA_dB(const float_type value)
     if (13 <= g_pga_rbb && g_pga_rbb < 21) c_ctl_pga_rbb = 1;
     if (21 <= g_pga_rbb) c_ctl_pga_rbb = 0;
 
-    ret |= this->Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
-    ret |= this->Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+    ret |= this->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), rcc_ctl_pga_rbb);
+    ret |= this->Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
     return ret;
 }
 
 float_type LMS7002M::GetRBBPGA_dB(void)
 {
-    auto g_pga_rbb = this->Get_SPI_Reg_bits(G_PGA_RBB);
+    auto g_pga_rbb = this->Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
     return g_pga_rbb - 12;
 }
 
@@ -718,13 +717,13 @@ int LMS7002M::SetRFELNA_dB(const float_type value)
     else if (val >= -27) g_lna_rfe = 2;
     else g_lna_rfe = 1;
 
-    return this->Modify_SPI_Reg_bits(G_LNA_RFE, g_lna_rfe);
+    return this->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna_rfe);
 }
 
 float_type LMS7002M::GetRFELNA_dB(void)
 {
     const double gmax = 30;
-    auto g_lna_rfe = this->Get_SPI_Reg_bits(G_LNA_RFE);
+    auto g_lna_rfe = this->Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
     switch (g_lna_rfe)
     {
     case 15: return gmax-0;
@@ -769,13 +768,13 @@ int LMS7002M::SetRFELoopbackLNA_dB(const float_type gain)
     else if (val >= -24) g_rxloopb_rfe = 1;
     else g_rxloopb_rfe = 0;
 
-    return this->Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
+    return this->Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), g_rxloopb_rfe);
 }
 
 float_type LMS7002M::GetRFELoopbackLNA_dB(void)
 {
     const double gmax = 40;
-    auto g_rxloopb_rfe = this->Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    auto g_rxloopb_rfe = this->Get_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE));
     switch (g_rxloopb_rfe)
     {
     case 15: return gmax-0;
@@ -807,13 +806,13 @@ int LMS7002M::SetRFETIA_dB(const float_type value)
     else if (val >= -3) g_tia_rfe = 2;
     else g_tia_rfe = 1;
 
-    return this->Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
+    return this->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia_rfe);
 }
 
 float_type LMS7002M::GetRFETIA_dB(void)
 {
     const double gmax = 12;
-    auto g_tia_rfe = this->Get_SPI_Reg_bits(G_TIA_RFE);
+    auto g_tia_rfe = this->Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
     switch (g_tia_rfe)
     {
     case 3: return gmax-0;
@@ -839,15 +838,15 @@ int LMS7002M::SetTRFPAD_dB(const float_type value)
     int loss_int = (int)(loss + 0.5);
 
     int ret = 0;
-    ret |= this->Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF, loss_int);
-    ret |= this->Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, loss_int);
+    ret |= this->Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF), loss_int);
+    ret |= this->Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF), loss_int);
     return ret;
 }
 
 float_type LMS7002M::GetTRFPAD_dB(void)
 {
     const double pmax = 0;
-    auto loss_int = this->Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF);
+    auto loss_int = this->Get_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF));
     if (loss_int > 10) return pmax-10-2*(loss_int-10);
     return pmax-loss_int;
 }
@@ -861,12 +860,12 @@ int LMS7002M::SetTRFLoopbackPAD_dB(const float_type gain)
     else if (gain >= (-3.3-4.3)/2) val = 2;
     else                           val = 3;
 
-    return this->Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, val);
+    return this->Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), val);
 }
 
 float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
 {
-    switch (this->Get_SPI_Reg_bits(L_LOOPB_TXPAD_TRF))
+    switch (this->Get_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF)))
     {
     case 0: return 0.0;
     case 1: return -1.4;
@@ -904,18 +903,18 @@ int LMS7002M::SetPathRFE(PathRFE path)
     int en_inshsw_lb1_rfe = (path == PATH_RFE_LB1)?0:1;
     int en_inshsw_lb2_rfe = (path == PATH_RFE_LB2)?0:1;
 
-    this->Modify_SPI_Reg_bits(PD_LNA_RFE, pd_lna_rfe);
-    this->Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, pd_rloopb_1_rfe);
-    this->Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, pd_rloopb_2_rfe);
-    this->Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, en_inshsw_lb1_rfe);
-    this->Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, en_inshsw_lb2_rfe);
-    this->Modify_SPI_Reg_bits(EN_INSHSW_L_RFE, en_inshsw_l_rfe);
-    this->Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, en_inshsw_w_rfe);
-    this->Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_path_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), pd_lna_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), pd_rloopb_1_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), pd_rloopb_2_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), en_inshsw_lb1_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), en_inshsw_lb2_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), en_inshsw_l_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), en_inshsw_w_rfe);
+    this->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), sel_path_rfe);
 
     //enable/disable the loopback path
     const bool loopback = (path == PATH_RFE_LB1) or (path == PATH_RFE_LB2);
-    this->Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, loopback?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), loopback?1:0);
 
     //update external band-selection to match
     this->UpdateExternalBandSelect();
@@ -925,18 +924,18 @@ int LMS7002M::SetPathRFE(PathRFE path)
 
 LMS7002M::PathRFE LMS7002M::GetPathRFE(void)
 {
-    if (this->Get_SPI_Reg_bits(EN_INSHSW_LB1_RFE) != 0) return PATH_RFE_LB1;
-    if (this->Get_SPI_Reg_bits(EN_INSHSW_LB2_RFE) != 0) return PATH_RFE_LB2;
-    if (this->Get_SPI_Reg_bits(EN_INSHSW_L_RFE) != 0) return PATH_RFE_LNAL;
-    if (this->Get_SPI_Reg_bits(EN_INSHSW_W_RFE) != 0) return PATH_RFE_LNAW;
-    if (this->Get_SPI_Reg_bits(PD_LNA_RFE) != 0) return PATH_RFE_NONE;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE)) != 0) return PATH_RFE_LB1;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE)) != 0) return PATH_RFE_LB2;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE)) != 0) return PATH_RFE_LNAL;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE)) != 0) return PATH_RFE_LNAW;
+    if (this->Get_SPI_Reg_bits(LMS7param(PD_LNA_RFE)) != 0) return PATH_RFE_NONE;
     return PATH_RFE_LNAH;
 }
 
 int LMS7002M::SetBandTRF(const int band)
 {
-    this->Modify_SPI_Reg_bits(SEL_BAND1_TRF, (band==1)?1:0);
-    this->Modify_SPI_Reg_bits(SEL_BAND2_TRF, (band==2)?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), (band==1)?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), (band==2)?1:0);
 
     //update external band-selection to match
     this->UpdateExternalBandSelect();
@@ -946,8 +945,8 @@ int LMS7002M::SetBandTRF(const int band)
 
 int LMS7002M::GetBandTRF(void)
 {
-    if (this->Get_SPI_Reg_bits(SEL_BAND1_TRF) == 1) return 1;
-    if (this->Get_SPI_Reg_bits(SEL_BAND2_TRF) == 1) return 2;
+    if (this->Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF)) == 1) return 1;
+    if (this->Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF)) == 1) return 2;
     return 0;
 }
 
@@ -1021,8 +1020,8 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     bool txModeNCO = false;
     if(retainNCOfrequencies)
     {
-        rxModeNCO = Get_SPI_Reg_bits(MODE_RX, true);
-        txModeNCO = Get_SPI_Reg_bits(MODE_TX, true);
+        rxModeNCO = Get_SPI_Reg_bits(LMS7param(MODE_RX), true);
+        txModeNCO = Get_SPI_Reg_bits(LMS7param(MODE_TX), true);
         for (int ch = 0; ch < 2; ++ch)
         {
             this->SetActiveChannel((ch == 0)?ChA:ChB);
@@ -2045,7 +2044,7 @@ float_type LMS7002M::GetSampleRate(bool tx)
     //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
     if (tx)
     {
-        int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         float_type interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
             interfaceTx_Hz /= 2*pow(2.0, interpolation);
@@ -2053,7 +2052,7 @@ float_type LMS7002M::GetSampleRate(bool tx)
     }
     else
     {
-        int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float_type interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         if (decimation != 7)
             interfaceRx_Hz /= 2*pow(2.0, decimation);
@@ -2076,15 +2075,15 @@ void LMS7002M::ConfigureLML_RF2BB(
 
     //load the same config on both LMLs
     //only one will get used based on direction
-    this->Modify_SPI_Reg_bits(LML1_S3S, m[s3]);
-    this->Modify_SPI_Reg_bits(LML1_S2S, m[s2]);
-    this->Modify_SPI_Reg_bits(LML1_S1S, m[s1]);
-    this->Modify_SPI_Reg_bits(LML1_S0S, m[s0]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S3S), m[s3]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S2S), m[s2]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S1S), m[s1]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_S0S), m[s0]);
 
-    this->Modify_SPI_Reg_bits(LML2_S3S, m[s3]);
-    this->Modify_SPI_Reg_bits(LML2_S2S, m[s2]);
-    this->Modify_SPI_Reg_bits(LML2_S1S, m[s1]);
-    this->Modify_SPI_Reg_bits(LML2_S0S, m[s0]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), m[s3]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), m[s2]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), m[s1]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), m[s0]);
 }
 
 void LMS7002M::ConfigureLML_BB2RF(
@@ -2102,42 +2101,42 @@ void LMS7002M::ConfigureLML_BB2RF(
 
     //load the same config on both LMLs
     //only one will get used based on direction
-    this->Modify_SPI_Reg_bits(LML1_BQP, m[BQ]);
-    this->Modify_SPI_Reg_bits(LML1_BIP, m[BI]);
-    this->Modify_SPI_Reg_bits(LML1_AQP, m[AQ]);
-    this->Modify_SPI_Reg_bits(LML1_AIP, m[AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BQP), m[BQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_BIP), m[BI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AQP), m[AQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML1_AIP), m[AI]);
 
-    this->Modify_SPI_Reg_bits(LML2_BQP, m[BQ]);
-    this->Modify_SPI_Reg_bits(LML2_BIP, m[BI]);
-    this->Modify_SPI_Reg_bits(LML2_AQP, m[AQ]);
-    this->Modify_SPI_Reg_bits(LML2_AIP, m[AI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BQP), m[BQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_BIP), m[BI]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AQP), m[AQ]);
+    this->Modify_SPI_Reg_bits(LMS7param(LML2_AIP), m[AI]);
 }
 
 int LMS7002M::SetRxDCRemoval(const bool enable)
 {
-    this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, enable?0:1);
-    this->Modify_SPI_Reg_bits(DCCORR_AVG_RXTSP, 0x7);
+    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), enable?0:1);
+    this->Modify_SPI_Reg_bits(LMS7param(DCCORR_AVG_RXTSP), 0x7);
     return 0;
 }
 
 bool LMS7002M::GetRxDCRemoval(void)
 {
-    return this->Get_SPI_Reg_bits(DC_BYP_RXTSP) == 0;
+    return this->Get_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP)) == 0;
 }
 
 int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
 {
     const bool bypass = I == 0.0 and Q == 0.0;
-    this->Modify_SPI_Reg_bits(DC_BYP_RXTSP, bypass?1:0);
-    this->Modify_SPI_Reg_bits(DCCORRI_TXTSP, std::lrint(I*128));
-    this->Modify_SPI_Reg_bits(DCCORRQ_TXTSP, std::lrint(Q*128));
+    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), bypass?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*128));
+    this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*128));
 	return 0;
 }
 
 void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
 {
-    I = int8_t(this->Get_SPI_Reg_bits(DCCORRI_TXTSP))/128.0; //signed 8-bit
-    Q = int8_t(this->Get_SPI_Reg_bits(DCCORRQ_TXTSP))/128.0; //signed 8-bit
+    I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP)))/128.0; //signed 8-bit
+    Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP)))/128.0; //signed 8-bit
 }
 
 int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
@@ -2148,19 +2147,19 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
     int gcorri = std::lrint(2047*gainI);
     int gcorrq = std::lrint(2047*gainQ);
 
-    this->Modify_SPI_Reg_bits(tx?PH_BYP_TXTSP:PH_BYP_RXTSP, bypassPhase?1:0);
-    this->Modify_SPI_Reg_bits(tx?GC_BYP_TXTSP:GC_BYP_RXTSP, bypassGain?1:0);
-    this->Modify_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP, iqcorr);
-    this->Modify_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP, gcorri);
-    this->Modify_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP, gcorrq);
+    this->Modify_SPI_Reg_bits(tx?LMS7param(PH_BYP_TXTSP):LMS7param(PH_BYP_RXTSP), bypassPhase?1:0);
+    this->Modify_SPI_Reg_bits(tx?LMS7param(GC_BYP_TXTSP):LMS7param(GC_BYP_RXTSP), bypassGain?1:0);
+    this->Modify_SPI_Reg_bits(tx?LMS7param(IQCORR_TXTSP):LMS7param(IQCORR_RXTSP), iqcorr);
+    this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRI_TXTSP):LMS7param(GCORRI_RXTSP), gcorri);
+    this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRQ_TXTSP):LMS7param(GCORRQ_RXTSP), gcorrq);
 	return 0;
 }
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
 {
-    int iqcorr = int16_t(this->Get_SPI_Reg_bits(tx?IQCORR_TXTSP:IQCORR_RXTSP) << 4) >> 4; //sign extend 12-bit
-    int gcorri = int16_t(this->Get_SPI_Reg_bits(tx?GCORRI_TXTSP:GCORRI_RXTSP)); //unsigned 11-bit
-    int gcorrq = int16_t(this->Get_SPI_Reg_bits(tx?GCORRQ_TXTSP:GCORRQ_RXTSP)); //unsigned 11-bit
+    int iqcorr = int16_t(this->Get_SPI_Reg_bits(tx?LMS7param(IQCORR_TXTSP):LMS7param(IQCORR_RXTSP)) << 4) >> 4; //sign extend 12-bit
+    int gcorri = int16_t(this->Get_SPI_Reg_bits(tx?LMS7param(GCORRI_TXTSP):LMS7param(GCORRI_RXTSP))); //unsigned 11-bit
+    int gcorrq = int16_t(this->Get_SPI_Reg_bits(tx?LMS7param(GCORRQ_TXTSP):LMS7param(GCORRQ_RXTSP))); //unsigned 11-bit
 
     phase = (M_PI/2)*iqcorr/2047.0;
     gainI = gcorri/2047.0;

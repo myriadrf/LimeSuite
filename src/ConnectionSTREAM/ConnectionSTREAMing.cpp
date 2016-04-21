@@ -49,12 +49,12 @@ struct USBStreamService : StreamerLTE
         //configure LML clocking
         LMS7002M rfic;
         rfic.SetConnection(dataPort);
-        rfic.Modify_SPI_Reg_bits(FCLK1_INV, 1, true);
-        rfic.Modify_SPI_Reg_bits(FCLK2_INV, 1, true);
-        rfic.Modify_SPI_Reg_bits(LML1_FIDM, 0, true); //Frame start=0
-        rfic.Modify_SPI_Reg_bits(LML2_FIDM, 0, true); //Frame start=0
-        rfic.Modify_SPI_Reg_bits(LML1_MODE, 0, true); //TRXIQ
-        rfic.Modify_SPI_Reg_bits(LML2_MODE, 0, true); //TRXIQ
+        rfic.Modify_SPI_Reg_bits(LMS7param(FCLK1_INV), 1, true);
+        rfic.Modify_SPI_Reg_bits(LMS7param(FCLK2_INV), 1, true);
+        rfic.Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0, true); //Frame start=0
+        rfic.Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0, true); //Frame start=0
+        rfic.Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0, true); //TRXIQ
+        rfic.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, true); //TRXIQ
 
         //switch off Rx/Tx
         uint16_t interface_ctrl_000A = Reg_read(dataPort, 0x000A);
