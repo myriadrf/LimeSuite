@@ -42,7 +42,7 @@ class lms7002_pnlRxTSP_view : public pnlRxTSP_view
 protected:
     void PHOinputChanged(wxCommandEvent& event);
     lime::LMS7002M* lmsControl;
-    std::map<wxWindow*, lime::LMS7Parameter> wndId2Enum;
+    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 
     std::vector<wxStaticText*> lblNCOangles;
     std::vector<wxRadioButton*> rgrNCOselections;

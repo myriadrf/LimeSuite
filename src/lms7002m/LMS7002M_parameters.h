@@ -38,6 +38,9 @@ struct LMS7Parameter
     };*/
 };
 
+int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b);
+
+
 extern const struct LMS7Parameter LMS7_LRST_TX_B;
 extern const struct LMS7Parameter LMS7_MRST_TX_B;
 extern const struct LMS7Parameter LMS7_LRST_TX_A;

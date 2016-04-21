@@ -18,17 +18,17 @@ pnlCalibrations_view( parent )
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : pnlCalibrations_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[cmbIQCORR_TXTSP] = IQCORR_TXTSP;
-    wndId2Enum[cmbDCCORRI_TXTSP] = DCCORRI_TXTSP;
-    wndId2Enum[cmbDCCORRQ_TXTSP] = DCCORRQ_TXTSP;
-    wndId2Enum[cmbGCORRI_TXTSP] = GCORRI_TXTSP;
-    wndId2Enum[cmbGCORRQ_TXTSP] = GCORRQ_TXTSP;
-    wndId2Enum[cmbGCORRI_RXTSP] = GCORRI_RXTSP;
-    wndId2Enum[cmbGCORRQ_RXTSP] = GCORRQ_RXTSP;
-    wndId2Enum[cmbIQCORR_RXTSP] = IQCORR_RXTSP;
-    wndId2Enum[chkEN_DCOFF_RXFE_RFE] = EN_DCOFF_RXFE_RFE;
-    wndId2Enum[cmbDCOFFI_RFE] = DCOFFI_RFE;
-    wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
+    wndId2Enum[cmbIQCORR_TXTSP] = LMS7param(IQCORR_TXTSP);
+    wndId2Enum[cmbDCCORRI_TXTSP] = LMS7param(DCCORRI_TXTSP);
+    wndId2Enum[cmbDCCORRQ_TXTSP] = LMS7param(DCCORRQ_TXTSP);
+    wndId2Enum[cmbGCORRI_TXTSP] = LMS7param(GCORRI_TXTSP);
+    wndId2Enum[cmbGCORRQ_TXTSP] = LMS7param(GCORRQ_TXTSP);
+    wndId2Enum[cmbGCORRI_RXTSP] = LMS7param(GCORRI_RXTSP);
+    wndId2Enum[cmbGCORRQ_RXTSP] = LMS7param(GCORRQ_RXTSP);
+    wndId2Enum[cmbIQCORR_RXTSP] = LMS7param(IQCORR_RXTSP);
+    wndId2Enum[chkEN_DCOFF_RXFE_RFE] = LMS7param(EN_DCOFF_RXFE_RFE);
+    wndId2Enum[cmbDCOFFI_RFE] = LMS7param(DCOFFI_RFE);
+    wndId2Enum[cmbDCOFFQ_RFE] = LMS7param(DCOFFQ_RFE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
     chkUseExtLoopback->Hide();
@@ -130,7 +130,7 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    if(parameter == DCOFFI_RFE || parameter == DCOFFQ_RFE)
+    if(LMS7ParameterCompare(parameter,LMS7param(DCOFFI_RFE))==0 || LMS7ParameterCompare(parameter,LMS7param(DCOFFQ_RFE))==0)
     {
         int16_t value = (event.GetInt() < 0) << 6;
         value |= abs(event.GetInt()) & 0x2F;
@@ -143,32 +143,32 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
 void lms7002_pnlCalibrations_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    int16_t value = lmsControl->Get_SPI_Reg_bits(IQCORR_RXTSP);
-    int bitsToShift = (15 - IQCORR_RXTSP.msb - IQCORR_RXTSP.lsb);
+    int16_t value = lmsControl->Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP));
+    int bitsToShift = (15 - LMS7param(IQCORR_RXTSP).msb - LMS7param(IQCORR_RXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_RXTSP->SetValue(value);
 
-    value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP);
-    bitsToShift = (15 - IQCORR_TXTSP.msb - IQCORR_TXTSP.lsb);
+    value = lmsControl->Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
+    bitsToShift = (15 - LMS7param(IQCORR_TXTSP).msb - LMS7param(IQCORR_TXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
 
-    value = lmsControl->Get_SPI_Reg_bits(DCOFFI_RFE);
+    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
     int16_t dcvalue = value & 0x3F;
     if ((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFI_RFE->SetValue(dcvalue);
-    value = lmsControl->Get_SPI_Reg_bits(DCOFFQ_RFE);
+    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
     dcvalue = value & 0x3F;
     if ((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFQ_RFE->SetValue(dcvalue);
 
-    int8_t dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRI_TXTSP);
+    int8_t dccorr = lmsControl->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
     cmbDCCORRI_TXTSP->SetValue(dccorr);
-    dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRQ_TXTSP);
+    dccorr = lmsControl->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
     lblCGENrefClk->SetLabel(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));

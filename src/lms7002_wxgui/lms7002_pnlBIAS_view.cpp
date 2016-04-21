@@ -14,13 +14,13 @@ pnlBIAS_view( parent )
 lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlBIAS_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[chkPD_BIAS_MASTER] = PD_BIAS_MASTER;
-    wndId2Enum[cmbMUX_BIAS_OUT] = MUX_BIAS_OUT;
-    wndId2Enum[chkPD_FRP_BIAS] = PD_FRP_BIAS;
-    wndId2Enum[chkPD_F_BIAS] = PD_F_BIAS;
-    wndId2Enum[chkPD_PTRP_BIAS] = PD_PTRP_BIAS;
-    wndId2Enum[chkPD_PT_BIAS] = PD_PT_BIAS;
-    wndId2Enum[cmbRP_CALIB_BIAS] = RP_CALIB_BIAS;
+    wndId2Enum[chkPD_BIAS_MASTER] = LMS7param(PD_BIAS_MASTER);
+    wndId2Enum[cmbMUX_BIAS_OUT] = LMS7param(MUX_BIAS_OUT);
+    wndId2Enum[chkPD_FRP_BIAS] = LMS7param(PD_FRP_BIAS);
+    wndId2Enum[chkPD_F_BIAS] = LMS7param(PD_F_BIAS);
+    wndId2Enum[chkPD_PTRP_BIAS] = LMS7param(PD_PTRP_BIAS);
+    wndId2Enum[chkPD_PT_BIAS] = LMS7param(PD_PT_BIAS);
+    wndId2Enum[cmbRP_CALIB_BIAS] = LMS7param(RP_CALIB_BIAS);
 
     wxArrayString temp;
     temp.clear();

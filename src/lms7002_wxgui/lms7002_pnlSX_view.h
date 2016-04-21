@@ -36,7 +36,7 @@ class lms7002_pnlSX_view : public pnlSX_view
     void UpdateGUI();
 protected:
     lime::LMS7002M* lmsControl;
-	std::map<wxWindow*, lime::LMS7Parameter> wndId2Enum;
+	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 
 #endif // __lms7002_pnlSX_view__

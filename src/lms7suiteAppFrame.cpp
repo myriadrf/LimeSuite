@@ -50,32 +50,32 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        int status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN(), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP));
+        int status = lmsControl->SetInterfaceFrequency(lmsControl->GetFrequencyCGEN(), lmsControl->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lmsControl->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
         if (status == 0)
         {
             wxCommandEvent evt;
             evt.SetEventType(LOG_MESSAGE);
             wxString msg;
             msg += _("Parameters modified: ");
-            msg += wxString::Format(_("HBI_OVR: %i "), lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, false));
-            msg += wxString::Format(_("TXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(TXTSPCLKA_DIV, false));
-            msg += wxString::Format(_("TXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(TXDIVEN, false));
-            msg += wxString::Format(_("MCLK1SRC: %i "), lmsControl->Get_SPI_Reg_bits(MCLK1SRC, false));
-            msg += wxString::Format(_("HBD_OVR: %i "), lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP, false));
-            msg += wxString::Format(_("RXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(RXTSPCLKA_DIV, false));
-            msg += wxString::Format(_("RXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(RXDIVEN, false));
-            msg += wxString::Format(_("MCLK2SRC: %i "), lmsControl->Get_SPI_Reg_bits(MCLK2SRC, false));
+            msg += wxString::Format(_("HBI_OVR: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), false));
+            msg += wxString::Format(_("TXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), false));
+            msg += wxString::Format(_("TXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(TXDIVEN), false));
+            msg += wxString::Format(_("MCLK1SRC: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(MCLK1SRC), false));
+            msg += wxString::Format(_("HBD_OVR: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), false));
+            msg += wxString::Format(_("RXTSPCLKA_DIV: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), false));
+            msg += wxString::Format(_("RXDIVEN: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(RXDIVEN), false));
+            msg += wxString::Format(_("MCLK2SRC: %i "), lmsControl->Get_SPI_Reg_bits(LMS7param(MCLK2SRC), false));
             evt.SetString(msg);
             wxPostEvent(this, evt);
         }
         if (streamBoardPort && streamBoardPort->IsOpen() && streamBoardPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA))
         {
             //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
-            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            int decimation = lmsControl->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
             float interfaceRx_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
             if (decimation != 7)
                 interfaceRx_Hz /= pow(2.0, decimation);
-            int interpolation = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+            int interpolation = lmsControl->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
             float interfaceTx_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Tx);
             if (interpolation != 7)
                 interfaceTx_Hz /= pow(2.0, interpolation);
@@ -93,7 +93,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         }
         if (fftviewer)
         {
-            int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+            int decimation = lmsControl->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
             float samplingFreq_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
             if (decimation != 7)
                 samplingFreq_Hz /= pow(2.0, decimation+1);
@@ -120,8 +120,8 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             hpm7->SelectBand(bandIndex);
         if (lms7controlPort && eventSource == hpm7)
         {
-            lmsControl->Modify_SPI_Reg_bits(SEL_BAND1_TRF, bandIndex == 0);
-            lmsControl->Modify_SPI_Reg_bits(SEL_BAND2_TRF, bandIndex == 1);
+            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), bandIndex == 0);
+            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), bandIndex == 1);
             mContent->mTabTRF->UpdateGUI();
         }
     }
@@ -134,7 +134,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             hpm7->SelectRxPath(pathIndex);
         if (lms7controlPort && eventSource == hpm7)
         {
-            lmsControl->Modify_SPI_Reg_bits(SEL_PATH_RFE, pathIndex);
+            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), pathIndex);
             mContent->mTabRFE->UpdateGUI();
         }
     }
@@ -300,7 +300,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
-        int decimation = lmsControl->Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        int decimation = lmsControl->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float samplingFreq_Hz = lmsControl->GetReferenceClk_TSP(LMS7002M::Rx);
         if (decimation != 7)
             samplingFreq_Hz /= pow(2.0, decimation+1);

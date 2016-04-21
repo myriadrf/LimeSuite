@@ -17,43 +17,43 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
     //ids for updating from chip
-    wndId2Enum[chkBYPLDO_VCO] = BYPLDO_VCO;
-    wndId2Enum[cmbCP2_PLL] = CP2_PLL;
-    wndId2Enum[cmbCP3_PLL] = CP3_PLL;
-    wndId2Enum[ctrCSW_VCO] = CSW_VCO;
-    wndId2Enum[chkCURLIM_VCO] = CURLIM_VCO;
-    wndId2Enum[cmbCZ] = CZ;
-    wndId2Enum[ctrDIV_LOCH] = DIV_LOCH;
-    wndId2Enum[chkEN_COARSEPLL] = EN_COARSEPLL;
-    wndId2Enum[chkEN_DIV2_DIVPROGenabled] = EN_DIV2_DIVPROG;
-    wndId2Enum[chkEN_G] = EN_G;
-    wndId2Enum[chkEN_INTONLY_SDM] = EN_INTONLY_SDM;
-    wndId2Enum[chkEN_SDM_CLK] = EN_SDM_CLK;
-    wndId2Enum[cmbICT_VCO] = ICT_VCO;
-    wndId2Enum[cmbIOFFSET_CP] = IOFFSET_CP;
-    wndId2Enum[cmbIPULSE_CP] = IPULSE_CP;
-    wndId2Enum[chkPD_CP] = PD_CP;
-    wndId2Enum[chkPD_FDIV] = PD_FDIV;
-    wndId2Enum[chkPD_LOCH_T2RBUF] = PD_LOCH_T2RBUF;
-    wndId2Enum[chkPD_SDM] = PD_SDM;
-    wndId2Enum[chkPD_VCO] = PD_VCO;
-    wndId2Enum[chkPD_VCO_COMP] = PD_VCO_COMP;
-    wndId2Enum[ctrPW_DIV2_LOCH] = PW_DIV2_LOCH;
-    wndId2Enum[ctrPW_DIV4_LOCH] = PW_DIV4_LOCH;
-    wndId2Enum[chkRESET_N] = RESET_N;
-    wndId2Enum[chkREVPH_PFD] = REVPH_PFD;
-    wndId2Enum[chkREV_SDMCLK] = REV_SDMCLK;
-    wndId2Enum[cmbRSEL_LDO_VCO] = RSEL_LDO_VCO;
-    wndId2Enum[cmbSEL_SDMCLK] = SEL_SDMCLK;
-    wndId2Enum[rgrSEL_VCO] = SEL_VCO;
-    wndId2Enum[chkSPDUP_VCO] = SPDUP_VCO;
-    wndId2Enum[chkSX_DITHER_EN] = SX_DITHER_EN;
-    wndId2Enum[cmbTST_SX] = TST_SX;
-    wndId2Enum[cmbVDIV_VCO] = VDIV_VCO;
-    wndId2Enum[chkPD_FBDIV] = PD_FBDIV;
-    wndId2Enum[chkEN_DIR_SXRSXT] = EN_DIR_SXRSXT;
-    wndId2Enum[lblINT_SDM] = INT_SDM;
-    wndId2Enum[lblEN_DIV2_DIVPROG] = EN_DIV2_DIVPROG;
+    wndId2Enum[chkBYPLDO_VCO] = LMS7param(BYPLDO_VCO);
+    wndId2Enum[cmbCP2_PLL] = LMS7param(CP2_PLL);
+    wndId2Enum[cmbCP3_PLL] = LMS7param(CP3_PLL);
+    wndId2Enum[ctrCSW_VCO] = LMS7param(CSW_VCO);
+    wndId2Enum[chkCURLIM_VCO] = LMS7param(CURLIM_VCO);
+    wndId2Enum[cmbCZ] = LMS7param(CZ);
+    wndId2Enum[ctrDIV_LOCH] = LMS7param(DIV_LOCH);
+    wndId2Enum[chkEN_COARSEPLL] = LMS7param(EN_COARSEPLL);
+    wndId2Enum[chkEN_DIV2_DIVPROGenabled] = LMS7param(EN_DIV2_DIVPROG);
+    wndId2Enum[chkEN_G] = LMS7param(EN_G);
+    wndId2Enum[chkEN_INTONLY_SDM] = LMS7param(EN_INTONLY_SDM);
+    wndId2Enum[chkEN_SDM_CLK] = LMS7param(EN_SDM_CLK);
+    wndId2Enum[cmbICT_VCO] = LMS7param(ICT_VCO);
+    wndId2Enum[cmbIOFFSET_CP] = LMS7param(IOFFSET_CP);
+    wndId2Enum[cmbIPULSE_CP] = LMS7param(IPULSE_CP);
+    wndId2Enum[chkPD_CP] = LMS7param(PD_CP);
+    wndId2Enum[chkPD_FDIV] = LMS7param(PD_FDIV);
+    wndId2Enum[chkPD_LOCH_T2RBUF] = LMS7param(PD_LOCH_T2RBUF);
+    wndId2Enum[chkPD_SDM] = LMS7param(PD_SDM);
+    wndId2Enum[chkPD_VCO] = LMS7param(PD_VCO);
+    wndId2Enum[chkPD_VCO_COMP] = LMS7param(PD_VCO_COMP);
+    wndId2Enum[ctrPW_DIV2_LOCH] = LMS7param(PW_DIV2_LOCH);
+    wndId2Enum[ctrPW_DIV4_LOCH] = LMS7param(PW_DIV4_LOCH);
+    wndId2Enum[chkRESET_N] = LMS7param(RESET_N);
+    wndId2Enum[chkREVPH_PFD] = LMS7param(REVPH_PFD);
+    wndId2Enum[chkREV_SDMCLK] = LMS7param(REV_SDMCLK);
+    wndId2Enum[cmbRSEL_LDO_VCO] = LMS7param(RSEL_LDO_VCO);
+    wndId2Enum[cmbSEL_SDMCLK] = LMS7param(SEL_SDMCLK);
+    wndId2Enum[rgrSEL_VCO] = LMS7param(SEL_VCO);
+    wndId2Enum[chkSPDUP_VCO] = LMS7param(SPDUP_VCO);
+    wndId2Enum[chkSX_DITHER_EN] = LMS7param(SX_DITHER_EN);
+    wndId2Enum[cmbTST_SX] = LMS7param(TST_SX);
+    wndId2Enum[cmbVDIV_VCO] = LMS7param(VDIV_VCO);
+    wndId2Enum[chkPD_FBDIV] = LMS7param(PD_FBDIV);
+    wndId2Enum[chkEN_DIR_SXRSXT] = LMS7param(EN_DIR_SXRSXT);
+    wndId2Enum[lblINT_SDM] = LMS7param(INT_SDM);
+    wndId2Enum[lblEN_DIV2_DIVPROG] = LMS7param(EN_DIV2_DIVPROG);
 
     char ctemp[80];
     wxArrayString temp;
@@ -412,7 +412,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
     }
     lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
 
-    if (parameter == CSW_VCO) //for convenience refresh comparator values
+    if (0==LMS7ParameterCompare(parameter, LMS7param(CSW_VCO))) //for convenience refresh comparator values
     {
         wxCommandEvent evt;
         OnbtnReadComparators(evt);
@@ -423,14 +423,14 @@ void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
     int value;
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO);
+    value = lmsControl->Get_SPI_Reg_bits(LMS7param(VCO_CMPHO));
     lblVCO_CMPHO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 1)
         lblVCO_CMPHO->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO->SetBackgroundColour(*wxRED);
 
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO);
+    value = lmsControl->Get_SPI_Reg_bits(LMS7param(VCO_CMPLO));
     lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 0)
         lblVCO_CMPLO->SetBackgroundColour(*wxGREEN);
@@ -520,15 +520,15 @@ void lms7002_pnlSX_view::UpdateGUI()
     double freq = lmsControl->GetFrequencySX(isTx);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
-    lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
+    lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(LMS7param(DIV_LOCH))));
 
-    int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);
+    int fracValue = (lmsControl->Get_SPI_Reg_bits(LMS7param(FRAC_SDM_MSB), false) << 16) | lmsControl->Get_SPI_Reg_bits(LMS7param(FRAC_SDM_LSB), false);
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
     //check if B channel is enabled
     if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
     {
-        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
+        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
         {
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
             return;

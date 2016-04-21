@@ -37,7 +37,7 @@ class lms7002_pnlCLKGEN_view : public pnlCLKGEN_view
 protected:
     void UpdateCLKL();
     lime::LMS7002M* lmsControl;
-	std::map<wxWindow*, lime::LMS7Parameter> wndId2Enum;
+	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 
 #endif // __lms7002_pnlCLKGEN_view__

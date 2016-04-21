@@ -30,7 +30,7 @@ class lms7002_pnlTRF_view : public pnlTRF_view
     void UpdateGUI();
 protected:
     lime::LMS7002M* lmsControl;
-	std::map<wxWindow*, lime::LMS7Parameter> wndId2Enum;
+	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 
 #endif // __lms7002_pnlTRF_view__

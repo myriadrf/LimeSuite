@@ -15,26 +15,26 @@ pnlCDS_view( parent )
 lms7002_pnlCDS_view::lms7002_pnlCDS_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlCDS_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[chkCDSN_MCLK1] = CDSN_MCLK1;
-    wndId2Enum[chkCDSN_MCLK2] = CDSN_MCLK2;
-    wndId2Enum[chkCDSN_RXALML] = CDSN_RXALML;
-    wndId2Enum[chkCDSN_RXATSP] = CDSN_RXATSP;
-    wndId2Enum[chkCDSN_RXBLML] = CDSN_RXBLML;
-    wndId2Enum[chkCDSN_RXBTSP] = CDSN_RXBTSP;
-    wndId2Enum[chkCDSN_TXALML] = CDSN_TXALML;
-    wndId2Enum[chkCDSN_TXATSP] = CDSN_TXATSP;
-    wndId2Enum[chkCDSN_TXBLML] = CDSN_TXBLML;
-    wndId2Enum[chkCDSN_TXBTSP] = CDSN_TXBTSP;
-    wndId2Enum[rgrCDS_MCLK1] = CDS_MCLK1;
-    wndId2Enum[rgrCDS_MCLK2] = CDS_MCLK2;
-    wndId2Enum[rgrCDS_RXALML] = CDS_RXALML;
-    wndId2Enum[rgrCDS_RXATSP] = CDS_RXATSP;
-    wndId2Enum[rgrCDS_RXBLML] = CDS_RXBLML;
-    wndId2Enum[rgrCDS_RXBTSP] = CDS_RXBTSP;
-    wndId2Enum[rgrCDS_TXALML] = CDS_TXALML;
-    wndId2Enum[rgrCDS_TXATSP] = CDS_TXATSP;
-    wndId2Enum[rgrCDS_TXBLML] = CDS_TXBLML;
-    wndId2Enum[rgrCDS_TXBTSP] = CDS_TXBTSP;
+    wndId2Enum[chkCDSN_MCLK1] = LMS7param(CDSN_MCLK1);
+    wndId2Enum[chkCDSN_MCLK2] = LMS7param(CDSN_MCLK2);
+    wndId2Enum[chkCDSN_RXALML] = LMS7param(CDSN_RXALML);
+    wndId2Enum[chkCDSN_RXATSP] = LMS7param(CDSN_RXATSP);
+    wndId2Enum[chkCDSN_RXBLML] = LMS7param(CDSN_RXBLML);
+    wndId2Enum[chkCDSN_RXBTSP] = LMS7param(CDSN_RXBTSP);
+    wndId2Enum[chkCDSN_TXALML] = LMS7param(CDSN_TXALML);
+    wndId2Enum[chkCDSN_TXATSP] = LMS7param(CDSN_TXATSP);
+    wndId2Enum[chkCDSN_TXBLML] = LMS7param(CDSN_TXBLML);
+    wndId2Enum[chkCDSN_TXBTSP] = LMS7param(CDSN_TXBTSP);
+    wndId2Enum[rgrCDS_MCLK1] = LMS7param(CDS_MCLK1);
+    wndId2Enum[rgrCDS_MCLK2] = LMS7param(CDS_MCLK2);
+    wndId2Enum[rgrCDS_RXALML] = LMS7param(CDS_RXALML);
+    wndId2Enum[rgrCDS_RXATSP] = LMS7param(CDS_RXATSP);
+    wndId2Enum[rgrCDS_RXBLML] = LMS7param(CDS_RXBLML);
+    wndId2Enum[rgrCDS_RXBTSP] = LMS7param(CDS_RXBTSP);
+    wndId2Enum[rgrCDS_TXALML] = LMS7param(CDS_TXALML);
+    wndId2Enum[rgrCDS_TXATSP] = LMS7param(CDS_TXATSP);
+    wndId2Enum[rgrCDS_TXBLML] = LMS7param(CDS_TXBLML);
+    wndId2Enum[rgrCDS_TXBTSP] = LMS7param(CDS_TXBTSP);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }

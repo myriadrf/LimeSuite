@@ -29,7 +29,7 @@ class lms7002_pnlBIAS_view : public pnlBIAS_view
     void UpdateGUI();
 protected:
     lime::LMS7002M* lmsControl;
-	std::map<wxWindow*, lime::LMS7Parameter> wndId2Enum;
+	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 
 #endif // __lms7002_pnlBIAS_view__

@@ -17,28 +17,28 @@ pnlTBB_view( parent )
 lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlTBB_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[chkBYPLADDER_TBB] = BYPLADDER_TBB;
-    wndId2Enum[cmbCCAL_LPFLAD_TBB] = CCAL_LPFLAD_TBB;
-    wndId2Enum[cmbCG_IAMP_TBB] = CG_IAMP_TBB;
-    wndId2Enum[chkEN_G_TBB] = EN_G_TBB;
-    wndId2Enum[cmbICT_IAMP_FRP_TBB] = ICT_IAMP_FRP_TBB;
-    wndId2Enum[cmbICT_IAMP_GG_FRP_TBB] = ICT_IAMP_GG_FRP_TBB;
-    wndId2Enum[cmbICT_LPFH_F_TBB] = ICT_LPFH_F_TBB;
-    wndId2Enum[cmbICT_LPFLAD_F_TBB] = ICT_LPFLAD_F_TBB;
-    wndId2Enum[cmbICT_LPFLAD_PT_TBB] = ICT_LPFLAD_PT_TBB;
-    wndId2Enum[cmbICT_LPFS5_F_TBB] = ICT_LPFS5_F_TBB;
-    wndId2Enum[cmbICT_LPFS5_PT_TBB] = ICT_LPFS5_PT_TBB;
-    wndId2Enum[cmbICT_LPF_H_PT_TBB] = ICT_LPF_H_PT_TBB;
-    wndId2Enum[cmbLOOPB_TBB] = LOOPB_TBB;
-    wndId2Enum[chkPD_LPFH_TBB] = PD_LPFH_TBB;
-    wndId2Enum[chkPD_LPFIAMP_TBB] = PD_LPFIAMP_TBB;
-    wndId2Enum[chkPD_LPFLAD_TBB] = PD_LPFLAD_TBB;
-    wndId2Enum[chkPD_LPFS5_TBB] = PD_LPFS5_TBB;
-    wndId2Enum[cmbRCAL_LPFH_TBB] = RCAL_LPFH_TBB;
-    wndId2Enum[cmbRCAL_LPFLAD_TBB] = RCAL_LPFLAD_TBB;
-    wndId2Enum[cmbRCAL_LPFS5_TBB] = RCAL_LPFS5_TBB;
-    wndId2Enum[cmbTSTIN_TBB] = TSTIN_TBB;
-    wndId2Enum[chkEN_DIR_TBB] = EN_DIR_TBB;
+    wndId2Enum[chkBYPLADDER_TBB] = LMS7param(BYPLADDER_TBB);
+    wndId2Enum[cmbCCAL_LPFLAD_TBB] = LMS7param(CCAL_LPFLAD_TBB);
+    wndId2Enum[cmbCG_IAMP_TBB] = LMS7param(CG_IAMP_TBB);
+    wndId2Enum[chkEN_G_TBB] = LMS7param(EN_G_TBB);
+    wndId2Enum[cmbICT_IAMP_FRP_TBB] = LMS7param(ICT_IAMP_FRP_TBB);
+    wndId2Enum[cmbICT_IAMP_GG_FRP_TBB] = LMS7param(ICT_IAMP_GG_FRP_TBB);
+    wndId2Enum[cmbICT_LPFH_F_TBB] = LMS7param(ICT_LPFH_F_TBB);
+    wndId2Enum[cmbICT_LPFLAD_F_TBB] = LMS7param(ICT_LPFLAD_F_TBB);
+    wndId2Enum[cmbICT_LPFLAD_PT_TBB] = LMS7param(ICT_LPFLAD_PT_TBB);
+    wndId2Enum[cmbICT_LPFS5_F_TBB] = LMS7param(ICT_LPFS5_F_TBB);
+    wndId2Enum[cmbICT_LPFS5_PT_TBB] = LMS7param(ICT_LPFS5_PT_TBB);
+    wndId2Enum[cmbICT_LPF_H_PT_TBB] = LMS7param(ICT_LPF_H_PT_TBB);
+    wndId2Enum[cmbLOOPB_TBB] = LMS7param(LOOPB_TBB);
+    wndId2Enum[chkPD_LPFH_TBB] = LMS7param(PD_LPFH_TBB);
+    wndId2Enum[chkPD_LPFIAMP_TBB] = LMS7param(PD_LPFIAMP_TBB);
+    wndId2Enum[chkPD_LPFLAD_TBB] = LMS7param(PD_LPFLAD_TBB);
+    wndId2Enum[chkPD_LPFS5_TBB] = LMS7param(PD_LPFS5_TBB);
+    wndId2Enum[cmbRCAL_LPFH_TBB] = LMS7param(RCAL_LPFH_TBB);
+    wndId2Enum[cmbRCAL_LPFLAD_TBB] = LMS7param(RCAL_LPFLAD_TBB);
+    wndId2Enum[cmbRCAL_LPFS5_TBB] = LMS7param(RCAL_LPFS5_TBB);
+    wndId2Enum[cmbTSTIN_TBB] = LMS7param(TSTIN_TBB);
+    wndId2Enum[chkEN_DIR_TBB] = LMS7param(EN_DIR_TBB);
 
     wxArrayString temp;
     temp.clear();
@@ -110,7 +110,7 @@ void lms7002_pnlTBB_view::UpdateGUI()
     //check if B channel is enabled
     if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
     {
-        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
+        if (lmsControl->Get_SPI_Reg_bits(LMS7param(MIMO_SISO)) != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }
