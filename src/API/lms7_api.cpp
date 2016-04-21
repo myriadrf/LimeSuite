@@ -1029,7 +1029,7 @@ API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags
     return lms->SetStreamingMode(flags);   
 }
 
-API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_buffers, size_t buffer_size)
+API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_buffers, size_t buffer_size, size_t fifo_size)
 {
     if (device == nullptr)
     {
@@ -1039,12 +1039,12 @@ API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_
     
     LMS7_Device* lms = (LMS7_Device*)device;  
     if (tx)
-        return lms->ConfigureTxStream(num_buffers,buffer_size,0);
+        return lms->ConfigureTxStream(num_buffers,buffer_size,fifo_size);
     else
-        return lms->ConfigureRxStream(num_buffers,buffer_size,0);
+        return lms->ConfigureRxStream(num_buffers,buffer_size,fifo_size);
 }
 
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device,int16_t **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples, size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
 {
     if (device == nullptr)
     {
@@ -1056,7 +1056,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device,int16_t **samples,siz
     return lms->RecvStream(samples,sample_count,meta,timeout_ms);
     
 }
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, const int16_t **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, const void **samples, size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
 {
     if (device == nullptr)
     {

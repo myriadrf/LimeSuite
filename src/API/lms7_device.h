@@ -29,8 +29,7 @@ public:
     virtual ~LMS7_Device();
     virtual int EnableTX(size_t ch,bool);
     virtual int EnableRX(size_t ch,bool);
-    virtual int ConfigureSamplePositionsRx();
-    virtual int ConfigureSamplePositionsTx();
+    virtual int ConfigureSamplePositions();
     virtual int Init();
     virtual int SetReferenceClock(const float_type refCLK_MHz);
     virtual size_t GetNumChannels(const bool tx) const;
@@ -77,10 +76,10 @@ public:
     virtual int GetNCOPhase(bool tx,size_t ch, float_type * phase,float_type *fcw);
     virtual size_t GetNCO(bool tx,size_t ch);
     virtual int SetStreamingMode(uint32_t flags);
-    virtual int ConfigureRxStream(size_t numBuffers, size_t bufSize,uint32_t flags);
-    virtual int ConfigureTxStream(size_t numBuffers, size_t bufSize,uint32_t flags);
-    virtual int RecvStream(int16_t **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
-    virtual int SendStream(const int16_t **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
+    virtual int ConfigureRxStream(size_t numBuffers, size_t bufSize,size_t fifo);
+    virtual int ConfigureTxStream(size_t numBuffers, size_t bufSize,size_t fifo);
+    virtual int RecvStream(void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
+    virtual int SendStream(const void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
     virtual int ProgramFPGA(const char* data, size_t len, lms_storage_t mode);
     virtual int ProgramFPGA(std::string name, lms_storage_t mode);
     virtual int ProgramFW(const char* data, size_t len, lms_storage_t mode);
@@ -93,6 +92,10 @@ private:
     lms_channel_info* tx_channels;
     lms_channel_info* rx_channels;
     static const double LMS_CGEN_MAX;
+    int RecvStreamFloat(float **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms);
+    int SendStreamFloat(const float **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms);
+    int RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms);
+    int SendStreamInt16(const int16_t **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms);
     int ConfigureRXLPF(bool enabled,int ch,float_type bandwidth);
     int ConfigureTXLPF(bool enabled,int ch,float_type bandwidth);
     int ConfigureGFIR(bool enabled,bool tx, float_type bandwidth,size_t ch);
@@ -117,8 +120,13 @@ private:
            MODE_SISO,
            MODE_MIMO
     }forced_mode;
+    enum { 
+        FMT_INT16,
+        FMT_FLOAT,
+    }sample_fmt;
   
     int rx_packetsToBatch;
+   
     int rx_buffersCount; // must be power of 2   
     int *rx_handles;
     char *rx_buffers;

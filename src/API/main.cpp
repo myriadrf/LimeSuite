@@ -23,19 +23,19 @@ unsigned char filebuffer[(1<<27)]={0};
 void StreamTest()
 {
     int channelsCount = 2;
-    int16_t** buffers;
-    buffers = new int16_t*[channelsCount];
+    float** buffers;
+    buffers = new float*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
-        buffers[i] = new int16_t[1024*1024*64];
+        buffers[i] = new float[1024*1024*64];
     uint64_t last_ts = 0;
-    LMS_SetStreamingMode(device, LMS_STREAM_MIMO);
-    LMS_InitStream(device,LMS_CH_TX,32,4096*2);
-    LMS_InitStream(device,LMS_CH_RX,32,4096*2);
+    LMS_SetStreamingMode(device, LMS_STREAM_MD_SISO | LMS_STREAM_FMT_F32);
+    LMS_InitStream(device,LMS_CH_TX,32,4096*2,0);
+    LMS_InitStream(device,LMS_CH_RX,32,4096*2,0);
     int totalBytesSent = 0;  
     static auto t1 = chrono::high_resolution_clock::now();
     static auto t2 = chrono::high_resolution_clock::now();
     static auto t3 = chrono::high_resolution_clock::now();
-    const int test_count = 4096;//4096*16;
+    const int test_count = 9999;//4096*16;
     const int fftSize = 8192;
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
@@ -47,22 +47,22 @@ void StreamTest()
     lms_stream_metadata meta;
     meta.start_of_burst = true;
     meta.end_of_burst = false;
-    LMS_RecvStream(device,buffers,test_count,&meta,0);
+    LMS_RecvStream(device,(void**)buffers,test_count,&meta,0);
     meta.timestamp += 1024*400;
-    LMS_SendStream(device,(const int16_t**)buffers,test_count,&meta,0);
+    LMS_SendStream(device,(const void**)buffers,test_count,&meta,0);
     meta.start_of_burst = false;
     //meta.end_of_burst = false;
     while ((time--)&&(running))
     {
         last_ts = meta.timestamp;
-        int ret = LMS_RecvStream(device,buffers,test_count,&meta,100);
+        int ret = LMS_RecvStream(device,(void**)buffers,test_count,&meta,100);
         if (ret <= 0)
         {
             printf("rx error\n");
         }
         totalBytesSent += 4*ret;
         meta.timestamp += 1024*400;
-        LMS_SendStream(device,(const int16_t**)buffers,test_count,&meta,100);
+        LMS_SendStream(device,(const void**)buffers,test_count,&meta,100);
     
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -101,12 +101,12 @@ void StreamTest()
                 }
             
              kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
-                for (int i = 0; i < fftSize; ++i)
+                /*for (int i = 0; i < fftSize; ++i)
                 {
                     // normalize FFT results
                     m_fftCalcOut[i].r /= fftSize;
                     m_fftCalcOut[i].i /= fftSize;
-                }
+                }*/
 
                 int output_index = 0;
                 for (int i = fftSize / 2 + 1; i < fftSize; ++i)
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
         printf("%s\n",list[1]);
         if (LMS_Open(&device,NULL)!=0)
             error();
-#if 0       
+     
         printf("%d\n",LMS_GetNumChannels(device,LMS_CH_RX));
         
         if ( LMS_Init(device)!=0)
@@ -199,10 +199,10 @@ int main(int argc, char** argv)
 
        
         
-        if (LMS_SetLOFrequency(device,LMS_CH_RX, 0, 900000000)!=0)
+        if (LMS_SetLOFrequency(device,LMS_CH_RX, 0, 2600000000)!=0)
             error();
         
-        if (LMS_SetLOFrequency(device,LMS_CH_TX, 0, 900000000)!=0)
+        if (LMS_SetLOFrequency(device,LMS_CH_TX, 0, 2600000000)!=0)
             error();
         
        if (LMS_GetLOFrequencyRange(device,LMS_CH_RX, &range)!=0)
@@ -248,14 +248,14 @@ int main(int argc, char** argv)
             error();
         printf("Gain %0.4f\n",f1);
         
-        if (LMS_SetTestSignal(device,LMS_CH_RX,0,LMS_TESTSIG_NONE,0,0)!=0)
+        if (LMS_SetTestSignal(device,LMS_CH_RX,0,LMS_TESTSIG_NCODIV8,0,0)!=0)
             error();
         uint16_t val;
         LMS_ReadFPGAReg(device, 0x1F, &val);
         printf("%d\n",val);
         
-        if (LMS_Calibrate(device,LMS_CH_RX,0,4500000)!=0)
-            error();
+       /* if (LMS_Calibrate(device,LMS_CH_RX,0,4500000)!=0)
+            error();*/
        /*float_type f_nco[16];
         for (int i = 0; i<16;i++)
             f_nco[i]= 100000*i;
@@ -287,7 +287,6 @@ int main(int argc, char** argv)
 #endif      
         LMS_VCTCXORead(device,&val);
         printf("%d\n",val);
-#endif
         std::thread thread = std::thread(StreamTest);
         //StreamTest();
         Fl::run();

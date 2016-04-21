@@ -967,11 +967,13 @@ typedef struct
  * Flags for configuring device streaming mode
  * @{
  */
-#define LMS_STREAM_AUTO     0x0000  /**<Automatic stream configuration*/
-#define LMS_STREAM_SISO     0x0001  /**<Stream data from single channel*/
-#define LMS_STREAM_MIMO     0x0003  /**<Stream data from multiple channels*/
-#define LMS_STREAM_SAMPLE12 0x0010  /**<Use compressed 12-bit sample values*/
-#define LMS_STREAM_SAMPLE16 0x0030  /**<Use uncompressed 16-bit sample values*/
+#define LMS_STREAM_MD_AUTO  0x0000  /**<Automatic stream configuration*/
+#define LMS_STREAM_MD_SISO  0x0001  /**<Stream data from single channel*/
+#define LMS_STREAM_MD_MIMO  0x0002  /**<Stream data from multiple channels*/
+#define LMS_STREAM_SMP_12B  0x0000  /**<Use compressed 12-bit sample values*/
+#define LMS_STREAM_SMP_16B  0x0010  /**<Use uncompressed 16-bit sample values*/
+#define LMS_STREAM_FMT_I16  0x0000  
+#define LMS_STREAM_FMT_F32  0x0200
 
 /** @} (End FN_STREAM_FLAGS) */
 
@@ -987,17 +989,18 @@ typedef struct
 API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags);
 
 /**
- * Initializes/configures RX/TX stream. 
+ * Initializes/configures RX/TX stream buffers. 
  * 
  * @param device        Device handle previously obtained by LMS_Open().
  * @param dir_tx        Select RX or TX
- * @param num_buffers   Number of in-flight buffers used for data transfer
- * @param buffer_size   Size of a single transfer buffer in bytes
+ * @param num_tranfers  Number of  buffers used for data transfer
+ * @param transfer_size Size of a single transfer buffer in bytes
+ * @param fifo_size     Size of FIFO buffer (0 = Disabled)
  * 
  * @return      0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool dir_tx,
-                                        size_t num_buffers, size_t buffer_size);
+                   size_t num_tranfers, size_t transfer_size, size_t fifo_size);
 
 
 /**
@@ -1015,7 +1018,7 @@ API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, int16_t **samples,
+API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples,
          size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
 
 /**
@@ -1033,7 +1036,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, int16_t **samples,
  * @return      0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, 
-                              const int16_t **samples,size_t sample_count, 
+                              const void **samples,size_t sample_count, 
                               lms_stream_metadata *meta, unsigned timeout_ms);
 
 /** @} (End FN_STREAM) */

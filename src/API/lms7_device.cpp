@@ -51,6 +51,8 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
     tx_buffers = nullptr;
     tx_bufferUsed = nullptr; 
     tx_running = false;
+    forced_mode = MODE_AUTO;
+    sample_fmt = FMT_INT16;
     EnableValuesCache(true);
 }
 
@@ -314,88 +316,29 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     return 0;
 }
 
-int LMS7_Device::ConfigureSamplePositionsTx() 
+int LMS7_Device::ConfigureSamplePositions() 
 {
-   if ((tx_channels[0].enabled) && (tx_channels[1].enabled))
-    {   
-       if ((Modify_SPI_Reg_bits(LML2_BQP,3,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_BIP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_AQP,1,true)!=0) 
-       ||(Modify_SPI_Reg_bits(LML2_AIP,0,true)!=0)  
-       ||(Modify_SPI_Reg_bits(LML1_BQP,3,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_BIP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AQP,1,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AIP,0,true)!=0))
-           return -1;
-    }
-    else if (tx_channels[1].enabled)
-    {
-       if ((Modify_SPI_Reg_bits(LML2_BQP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_BIP,0,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_AQP,3,true)!=0) 
-       ||(Modify_SPI_Reg_bits(LML2_AIP,1,true)!=0)  
-       ||(Modify_SPI_Reg_bits(LML1_BQP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_BIP,0,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AQP,3,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AIP,1,true)!=0))
-           return -1;  
-    }
-    else if (tx_channels[0].enabled)
-    {     
-       if ((Modify_SPI_Reg_bits(LML2_BQP,3,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_BIP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML2_AQP,1,true)!=0) 
-       ||(Modify_SPI_Reg_bits(LML2_AIP,0,true)!=0)  
-       ||(Modify_SPI_Reg_bits(LML1_BQP,3,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_BIP,2,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AQP,1,true)!=0)
-       ||(Modify_SPI_Reg_bits(LML1_AIP,0,true)!=0))
-           return -1;
-    }
+    if ((Modify_SPI_Reg_bits(LML2_BQP,3,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML2_BIP,2,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML2_AQP,1,true)!=0) 
+    ||(Modify_SPI_Reg_bits(LML2_AIP,0,true)!=0)  
+    ||(Modify_SPI_Reg_bits(LML1_BQP,3,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_BIP,2,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_AQP,1,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_AIP,0,true)!=0))
+        return -1;
+    
+    if ((Modify_SPI_Reg_bits(LML1_S3S,2,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_S2S,3,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_S1S,0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML1_S0S,1,true)!=0) 
+    ||(Modify_SPI_Reg_bits(LML2_S3S,2,true)!=0) 
+    ||(Modify_SPI_Reg_bits(LML2_S2S,3,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML2_S1S,0,true)!=0)
+    ||(Modify_SPI_Reg_bits(LML2_S0S,1,true)!=0))
+        return -1;
+
    return 0;
-}
-
-
-
-int LMS7_Device::ConfigureSamplePositionsRx()
-{
-    if ((rx_channels[0].enabled) && (rx_channels[1].enabled))
-    {   
-        if ((Modify_SPI_Reg_bits(LML1_S3S,3,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S1S,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S0S,0,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S3S,3,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S1S,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S0S,0,true)!=0))
-            return -1;
-    }
-    else if (rx_channels[1].enabled)
-    {
-        if ((Modify_SPI_Reg_bits(LML1_S3S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S1S,3,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S0S,3,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S3S,2,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S1S,3,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S0S,3,true)!=0))
-            return -1; 
-    }
-    else if (rx_channels[0].enabled)
-    {     
-        if ((Modify_SPI_Reg_bits(LML1_S3S,3,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S1S,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML1_S0S,0,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S3S,3,true)!=0) 
-        ||(Modify_SPI_Reg_bits(LML2_S2S,2,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S1S,1,true)!=0)
-        ||(Modify_SPI_Reg_bits(LML2_S0S,0,true)!=0))
-            return -1;
-    }
-    return 0;
 }
 
 LMS7_Device::~LMS7_Device() {
@@ -704,7 +647,7 @@ int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
 {
     if (Modify_SPI_Reg_bits(MAC,chan+1,true)!=0)
         return -1;
-    if (tx)
+    if (tx==false)
     { 
         if ((Modify_SPI_Reg_bits(SEL_PATH_RFE,path,true)!=0)
         || (Modify_SPI_Reg_bits(EN_INSHSW_L_RFE,path!=2,true)!=0)
@@ -1603,7 +1546,7 @@ int LMS7_Device::Init()
      ||(Modify_SPI_Reg_bits(PD_TX_AFE2,0,true)!=0)
      ||(Modify_SPI_Reg_bits(PD_RX_AFE2,0,true)!=0)) 
         return -1;
-   return 0;
+   return ConfigureSamplePositions();
 }
 
 
@@ -1632,13 +1575,13 @@ int LMS7_Device::EnableTX(size_t ch, bool enable)
     tx_channels[ch].enabled = enable;
     if (forced_mode == MODE_AUTO)
     {
-        if ((tx_channels[0].enabled && tx_channels[1].enabled) || (rx_channels[0].enabled && rx_channels[1].enabled))
+        if (tx_channels[1].enabled || rx_channels[1].enabled)
             channelsCount = 2;
         else
             channelsCount = 1;
     }
     
-    return ConfigureSamplePositionsTx();
+    return 0;
 }
 
 int LMS7_Device::EnableRX(const size_t ch, const bool enable)
@@ -1671,23 +1614,23 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
     rx_channels[ch].enabled = enable;
     if (forced_mode == MODE_AUTO)
     {
-        if ((tx_channels[0].enabled && tx_channels[1].enabled) || (rx_channels[0].enabled && rx_channels[1].enabled))
+        if (tx_channels[1].enabled || rx_channels[1].enabled)
             channelsCount = 2;
         else
             channelsCount = 1;
     }
     
-    return ConfigureSamplePositionsRx();
+    return 0;
 }
 
 int LMS7_Device::SetStreamingMode(uint32_t flags)
 {
-    if ((flags & LMS_STREAM_MIMO)==LMS_STREAM_MIMO)
+    if ((flags & LMS_STREAM_MD_MIMO)==LMS_STREAM_MD_MIMO)
     {
         forced_mode = MODE_MIMO;
         channelsCount = 2;
     }
-    else if ((flags & LMS_STREAM_SISO)==LMS_STREAM_SISO)
+    else if ((flags & LMS_STREAM_MD_SISO)==LMS_STREAM_MD_SISO)
     {
         forced_mode = MODE_SISO;
         channelsCount = 1;
@@ -1696,23 +1639,30 @@ int LMS7_Device::SetStreamingMode(uint32_t flags)
     {
         forced_mode = MODE_AUTO;
     }
+    
+    if ((flags & LMS_STREAM_FMT_F32)==LMS_STREAM_FMT_F32)
+    {
+        sample_fmt = FMT_FLOAT;
+    }
+    else sample_fmt = FMT_INT16;
+    
     return 0;
 }
 
-int LMS7_Device::ConfigureRxStream(size_t numBuffers, size_t bufSize,uint32_t flags)
+int LMS7_Device::ConfigureRxStream(size_t numBuffers, size_t bufSize, size_t fifo)
 {
     StartRx(bufSize/sizeof(lime::PacketLTE),numBuffers);
     return 0;
 }
 
-int LMS7_Device::ConfigureTxStream(size_t numBuffers, size_t bufSize,uint32_t flags)
+int LMS7_Device::ConfigureTxStream(size_t numBuffers, size_t bufSize, size_t fifo)
 {
     StartTx(bufSize/sizeof(lime::PacketLTE),numBuffers);
     return 0;
 }
 
 
-int LMS7_Device::RecvStream(int16_t **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
+int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
 {
     const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
@@ -1720,6 +1670,7 @@ int LMS7_Device::RecvStream(int16_t **data,size_t numSamples, lms_stream_metadat
     static uint64_t rx_meta = 0;
     static int index = bufferSize;
     static bool started = false;
+    int ret;
     
     rx_lock.lock();
     
@@ -1734,27 +1685,12 @@ int LMS7_Device::RecvStream(int16_t **data,size_t numSamples, lms_stream_metadat
                 rx_handles[i] = controlPort->BeginDataReading(&rx_buffers[i*size], size);
         }
     }
-       
-    for (int i = 0; i < numSamples ; i++)
-    {
-        if (index == bufferSize)
-        {
-            index = 0;
-            if ((_read(buffer,&ts,&rx_meta,timeout_ms))!=bufferSize)
-            {
-                rx_lock.unlock();
-                return i;   
-            }           
-        }
-        
-        for (int ch = 0;ch<channelsCount;ch++)
-        {
-            data[ch][2*i] = buffer[2*index];
-            data[ch][2*i+1] = buffer[2*index+1];
-            index++;
-        }
-    }
     
+    if (sample_fmt == FMT_FLOAT)
+        ret = RecvStreamFloat((float**)data, buffer, numSamples, &ts, index, &rx_meta, timeout_ms);
+    else
+        ret = RecvStreamInt16((int16_t**)data, buffer, numSamples, &ts, index, &rx_meta, timeout_ms);
+                
     if (meta->end_of_burst)
     {
         index = bufferSize;  
@@ -1771,7 +1707,58 @@ int LMS7_Device::RecvStream(int16_t **data,size_t numSamples, lms_stream_metadat
     
    meta->timestamp = ts+index/channelsCount-numSamples;
    rx_lock.unlock();
-   return numSamples;
+   return ret;
+}
+
+int LMS7_Device::RecvStreamFloat(float **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms)
+{
+    const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
+    
+    for (int i = 0; i < numSamples ; i++)
+    {
+        if (index == bufferSize)
+        {
+            index = 0;
+            if ((_read(buffer,ts,rx_meta,timeout_ms))!=bufferSize)
+            {
+                return i;   
+            }           
+        }
+        
+        for (int ch = 0;ch<channelsCount;ch++)
+        {
+            data[ch][2*i] = (float)buffer[2*index]/2047.0;
+            data[ch][2*i+1] = (float)buffer[2*index+1]/2047.0;
+            index++;
+        }
+    }
+    return numSamples;
+}
+
+
+int LMS7_Device::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms)
+{
+    const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
+    
+    for (int i = 0; i < numSamples ; i++)
+    {
+        if (index == bufferSize)
+        {
+            index = 0;
+            if ((_read(buffer,ts,rx_meta,timeout_ms))!=bufferSize)
+            {
+                return i;   
+            }           
+        }
+        
+        for (int ch = 0;ch<channelsCount;ch++)
+        {
+            data[ch][2*i] = buffer[2*index];
+            data[ch][2*i+1] = buffer[2*index+1];
+            index++;
+        }
+    }
+    return numSamples;
 }
 
 int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_storage_t mode)
@@ -1896,11 +1883,16 @@ int LMS7_Device::DACRead()
 }
 
 
-int LMS7_Device::SendStream(const int16_t **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
+
+void SendCopyRaw(const void* src, int16_t* dst)
+{
+    *((uint32_t*)dst) = *((uint32_t*)src);
+}
+
+int LMS7_Device::SendStream(const void **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
 {
     const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
-    static uint64_t ts = 0;
     uint64_t tx_meta = 0;
     static int index = 0;
     
@@ -1911,40 +1903,79 @@ int LMS7_Device::SendStream(const int16_t **data,size_t numSamples, lms_stream_m
         tx_meta |= (1 << 4); //ignore timestamp
     
     tx_lock.lock();
-    for (int i = 0; i < numSamples ; i++)
-    {
-        for (int ch = 0;ch<channelsCount;ch++)
-        {
-            buffer[2*index] = data[ch][2*i];
-            buffer[2*index+1] =  data[ch][2*i+1];      
-            index++;
-        }
-        
-        if (index == bufferSize)
-        {
-             ts = meta->timestamp + i - bufferSize/channelsCount;
-             index = 0;
-             if (_write(buffer,ts,tx_meta,timeout_ms)!=bufferSize)
-             {
-                tx_lock.unlock();
-                return i;
-             }
-        }
-    }
-   
+    int ret;
+    
+    if (sample_fmt == FMT_FLOAT)
+        ret = SendStreamFloat((const float**)data, buffer, numSamples, meta->timestamp, index, tx_meta, timeout_ms);
+    else
+        ret = SendStreamInt16((const int16_t**)data, buffer, numSamples, meta->timestamp, index, tx_meta, timeout_ms);
+    
     if (meta->end_of_burst)
     {
         for (int i = index; i <bufferSize;i++)
         {
             buffer[2*i] = 0;
             buffer[2*i+1] = 0;     
-        }
-       ts = meta->timestamp + numSamples - index/channelsCount;
+        }    
+       uint64_t ts = meta->timestamp + numSamples - index/channelsCount;
        _write(buffer,ts,tx_meta,timeout_ms);
        index = 0; 
     }
     
    tx_lock.unlock();
+   return ret;
+}
+
+
+int LMS7_Device::SendStreamInt16(const int16_t **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms)
+{
+    const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
+
+    for (int i = 0; i < numSamples ; i++)
+    {
+       for (int ch = 0;ch<channelsCount;ch++)
+        {
+           buffer[2*index] = data[ch][2*i];
+           buffer[2*index+1] = data[ch][2*i+1];
+           index++;
+        }
+        
+        if (index == bufferSize)
+        {
+             ts = ts + i - bufferSize/channelsCount;
+             index = 0;
+             if (_write(buffer,ts,tx_meta,timeout_ms)!=bufferSize)
+             {
+                return i;
+             }
+        }
+    }  
+   return numSamples;
+}
+
+int LMS7_Device::SendStreamFloat(const float **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms)
+{
+    const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
+
+    for (int i = 0; i < numSamples ; i++)
+    {
+       for (int ch = 0;ch<channelsCount;ch++)
+        {
+           buffer[2*index] = data[ch][2*i]*2047.0;
+           buffer[2*index+1] = data[ch][2*i+1]*2047.0;
+           index++;
+        }
+        
+        if (index == bufferSize)
+        {
+             ts = ts + i - bufferSize/channelsCount;
+             index = 0;
+             if (_write(buffer,ts,tx_meta,timeout_ms)!=bufferSize)
+             {
+                return i;
+             }
+        }
+    }  
    return numSamples;
 }
 
@@ -2038,13 +2069,11 @@ int LMS7_Device::Start()
     {
         controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
         controlPort->WriteRegister(0x0007, 0x0003);
-        printf("MIMO\n");
     }
     else
     {
         controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
         controlPort->WriteRegister(0x0007, 0x0001);
-        printf("SISO\n");
     }
 
     //USB FIFO reset
@@ -2214,7 +2243,6 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     {
         if (controlPort->WaitForSending(tx_handles[bi], timeout) == false)
         {
-            printf("tx timeout\n");
             return -1;
         }
         
@@ -2230,7 +2258,7 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     {
         uint32_t statusFlags = 0;
 
-		lime::PacketLTE* pkt = (lime::PacketLTE*)&tx_buffers[bi*bufferSize];
+        lime::PacketLTE* pkt = (lime::PacketLTE*)&tx_buffers[bi*bufferSize];
         pkt[p].counter = timestamp;
         
         pkt[p].reserved[0] = (meta & 0xFF);
