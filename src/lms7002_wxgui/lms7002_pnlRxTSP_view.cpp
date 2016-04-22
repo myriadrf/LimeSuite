@@ -325,8 +325,8 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
     lmsControl->Modify_SPI_Reg_bits(CAPTURE, 0);
     lmsControl->Modify_SPI_Reg_bits(CAPTURE, 1);
     lmsControl->Modify_SPI_Reg_bits(CAPTURE, 0);
-    value = lmsControl->SPI_read(0x040E);
-    value2 = lmsControl->SPI_read(0x040F);
+    value = lmsControl->SPI_read(0x040E, true);
+    value2 = lmsControl->SPI_read(0x040F, true);
     valrez = ((value & 0x3) | (value2 << 2)) & 0x3FFFF;
     lblRSSI->SetLabel(wxString::Format("0x%0.5X", valrez));
 
@@ -334,8 +334,8 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
     lmsControl->Modify_SPI_Reg_bits(CAPSEL, 1);
     lmsControl->Modify_SPI_Reg_bits(CAPTURE, 1);
     lmsControl->Modify_SPI_Reg_bits(CAPTURE, 0);
-    value = lmsControl->SPI_read(0x040E);
-    value2 = lmsControl->SPI_read(0x040F);
+    value = lmsControl->SPI_read(0x040E, true);
+    value2 = lmsControl->SPI_read(0x040F, true);
     lblADCI->SetLabel(wxString::Format("0x%0.3X", value & 0x3ff));
     lblADCQ->SetLabel(wxString::Format("0x%0.3X", value2 & 0x3ff));
 }
