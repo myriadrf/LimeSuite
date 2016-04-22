@@ -325,11 +325,77 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
-    SetDefaults(TxTSP);
+    //check if user uses GFIR
+    bool GFIR_active[3] = { false, false, false };
+    uint8_t gfir_byps[3];
+    uint8_t gfir_l[3];
+    uint8_t gfir_n[3];
+    const uint8_t coefsToCheck = 5;
+    int16_t txGFIR_coefs[coefsToCheck];
+    gfir_byps[0] = Get_SPI_Reg_bits(GFIR1_BYP_TXTSP);
+    gfir_byps[1] = Get_SPI_Reg_bits(GFIR2_BYP_TXTSP);
+    gfir_byps[2] = Get_SPI_Reg_bits(GFIR3_BYP_TXTSP);
+
+    if(gfir_byps[0] == 0)
+    {
+        GetGFIRCoefficients(LMS7002M::Tx, 0, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[0] = true;
+                gfir_l[0] = Get_SPI_Reg_bits(GFIR1_L_TXTSP);
+                gfir_n[0] = Get_SPI_Reg_bits(GFIR1_N_TXTSP);
+                break;
+            }
+    }
+    if(gfir_byps[1] == 0)
+    {   
+        GetGFIRCoefficients(LMS7002M::Tx, 1, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[1] = true;
+                gfir_l[1] = Get_SPI_Reg_bits(GFIR2_L_TXTSP);
+                gfir_n[1] = Get_SPI_Reg_bits(GFIR2_N_TXTSP);
+                break;
+            }
+    }
+    if(gfir_byps[2] == 0)
+    {
+        GetGFIRCoefficients(LMS7002M::Tx, 2, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[2] = true;
+                gfir_l[2] = Get_SPI_Reg_bits(GFIR3_L_TXTSP);
+                gfir_n[2] = Get_SPI_Reg_bits(GFIR3_N_TXTSP);
+                break;
+            }
+    }
+    SetDefaults(TxTSP); //GFIR coefficients are not reset
     SetDefaults(TxNCO);
+    if(GFIR_active[0])
+    {
+        Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, gfir_byps[0]);
+        Modify_SPI_Reg_bits(GFIR1_L_TXTSP, gfir_l[0]);
+        Modify_SPI_Reg_bits(GFIR1_N_TXTSP, gfir_n[0]);
+    }
+    if(GFIR_active[1])
+    {
+        Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, gfir_byps[1]);
+        Modify_SPI_Reg_bits(GFIR2_L_TXTSP, gfir_l[1]);
+        Modify_SPI_Reg_bits(GFIR2_N_TXTSP, gfir_n[1]);
+    }
+    if(GFIR_active[2])
+    {
+        Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, gfir_byps[2]);
+        Modify_SPI_Reg_bits(GFIR3_L_TXTSP, gfir_l[2]);
+        Modify_SPI_Reg_bits(GFIR3_N_TXTSP, gfir_n[2]);
+    }
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+    if(!GFIR_active[0] && !GFIR_active[1] && !GFIR_active[2])
+        Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     if(useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
