@@ -375,20 +375,17 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     SetDefaults(TxTSP); //GFIR coefficients are not reset
     SetDefaults(TxNCO);
     if(GFIR_active[0])
-    {
-        Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, gfir_byps[0]);
+    {  
         Modify_SPI_Reg_bits(GFIR1_L_TXTSP, gfir_l[0]);
         Modify_SPI_Reg_bits(GFIR1_N_TXTSP, gfir_n[0]);
     }
     if(GFIR_active[1])
     {
-        Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, gfir_byps[1]);
         Modify_SPI_Reg_bits(GFIR2_L_TXTSP, gfir_l[1]);
         Modify_SPI_Reg_bits(GFIR2_N_TXTSP, gfir_n[1]);
     }
     if(GFIR_active[2])
     {
-        Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, gfir_byps[2]);
         Modify_SPI_Reg_bits(GFIR3_L_TXTSP, gfir_l[2]);
         Modify_SPI_Reg_bits(GFIR3_N_TXTSP, gfir_n[2]);
     }
@@ -396,6 +393,12 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
     if(!GFIR_active[0] && !GFIR_active[1] && !GFIR_active[2])
         Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+    else
+    {
+        Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, gfir_byps[0]);
+        Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, gfir_byps[1]);
+        Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, gfir_byps[2]);
+    }
     if(useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
@@ -417,7 +420,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     {
         Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-        Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x1);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier - 1);
@@ -1449,10 +1452,11 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
     uint32_t rssi = GetRSSI();
     int g_pga = Get_SPI_Reg_bits(G_PGA_RBB);
     int g_rxlooop = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
-    while(rssi < 0x0B000 && g_rxlooop < 15)
+    const int saturationLevel = 0x0B000;
+    while(rssi < saturationLevel && g_rxlooop < 15)
     {
         rssi = GetRSSI();
-        if(rssi < 0x0B000)
+        if(rssi < saturationLevel)
         {
             g_rxlooop += 1;
             Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxlooop);
@@ -1461,7 +1465,7 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
             break;
     }
     rssi = GetRSSI();
-    while(g_pga < 18 && g_rxlooop == 15 && rssi < 0x0B000)
+    while(g_pga < 18 && g_rxlooop == 15 && rssi < saturationLevel)
     {
         g_pga += 1;
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
