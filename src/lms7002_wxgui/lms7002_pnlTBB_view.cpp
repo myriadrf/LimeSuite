@@ -120,12 +120,37 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     double input1;
     txtFilterFrequency->GetValue().ToDouble(&input1);
     int status;
-    if(input1 == 5 || input1 == 10 || input1 == 15 || input1 == 20)
-        status = lmsControl->TuneTxFilterFixed(input1*1e6);
-    else
+    if(rgrTxFilterType->GetSelection() == 0)
+    {
         status = lmsControl->TuneTxFilter(input1*1e6);
+    }
+    else
+    {
+        switch(cmbTxFixedBW->GetSelection())
+        {
+        case 0: input1 = 5; break;
+        case 1: input1 = 10; break;
+        case 2: input1 = 15; break;
+        case 3: input1 = 20; break;
+        }
+        status = lmsControl->TuneTxFilterFixed(input1*1e6);
+    }   
     if (status != 0)
         wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
     lmsControl->DownloadAll();
     UpdateGUI();
+}
+
+void lms7002_pnlTBB_view::OnTxFilterTypeChange(wxCommandEvent& event)
+{
+    if(rgrTxFilterType->GetSelection() == 0)
+    {
+        txtFilterFrequency->Enable(true);
+        cmbTxFixedBW->Enable(false);
+    }
+    else
+    {
+        txtFilterFrequency->Enable(false);
+        cmbTxFixedBW->Enable(true);
+    }
 }

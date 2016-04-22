@@ -1629,23 +1629,53 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	wxStaticBoxSizer* sbSizerRxFilters;
 	sbSizerRxFilters = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Tx Filters") ), wxVERTICAL );
 	
+	wxFlexGridSizer* fgSizer244;
+	fgSizer244 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer244->SetFlexibleDirection( wxBOTH );
+	fgSizer244->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxString rgrTxFilterTypeChoices[] = { wxT("Custom"), wxT("Fixed") };
+	int rgrTxFilterTypeNChoices = sizeof( rgrTxFilterTypeChoices ) / sizeof( wxString );
+	rgrTxFilterType = new wxRadioBox( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("Type"), wxDefaultPosition, wxDefaultSize, rgrTxFilterTypeNChoices, rgrTxFilterTypeChoices, 1, wxRA_SPECIFY_COLS );
+	rgrTxFilterType->SetSelection( 0 );
+	fgSizer244->Add( rgrTxFilterType, 0, 0, 5 );
+	
 	wxFlexGridSizer* fgSizer199;
 	fgSizer199 = new wxFlexGridSizer( 0, 3, 5, 5 );
 	fgSizer199->SetFlexibleDirection( wxBOTH );
 	fgSizer199->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	wxFlexGridSizer* fgSizer245;
+	fgSizer245 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer245->SetFlexibleDirection( wxBOTH );
+	fgSizer245->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	lblFilterInputName = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("RF bandwidth (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblFilterInputName->Wrap( -1 );
-	fgSizer199->Add( lblFilterInputName, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer245->Add( lblFilterInputName, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFilterFrequency = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("56"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer199->Add( txtFilterFrequency, 0, 0, 5 );
+	fgSizer245->Add( txtFilterFrequency, 0, 0, 5 );
+	
+	wxString cmbTxFixedBWChoices[] = { wxT("5 MHz"), wxT("10 MHz"), wxT("15 MHz"), wxT("20 MHz") };
+	int cmbTxFixedBWNChoices = sizeof( cmbTxFixedBWChoices ) / sizeof( wxString );
+	cmbTxFixedBW = new wxChoice( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbTxFixedBWNChoices, cmbTxFixedBWChoices, 0 );
+	cmbTxFixedBW->SetSelection( 0 );
+	cmbTxFixedBW->Enable( false );
+	
+	fgSizer245->Add( cmbTxFixedBW, 0, wxEXPAND, 5 );
+	
+	
+	fgSizer199->Add( fgSizer245, 1, wxEXPAND, 5 );
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer199->Add( btnTuneFilter, 0, wxEXPAND, 5 );
 	
 	
-	sbSizerRxFilters->Add( fgSizer199, 1, wxEXPAND, 5 );
+	fgSizer244->Add( fgSizer199, 1, wxEXPAND, 5 );
+	
+	
+	sbSizerRxFilters->Add( fgSizer244, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer57->Add( sbSizerRxFilters, 1, wxEXPAND, 5 );
@@ -1678,6 +1708,7 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbRCAL_LPFLAD_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbRCAL_LPFS5_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	rgrTxFilterType->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnTxFilterTypeChange ), NULL, this );
 	btnTuneFilter->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
 }
 
@@ -1706,6 +1737,7 @@ pnlTBB_view::~pnlTBB_view()
 	cmbRCAL_LPFLAD_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbRCAL_LPFS5_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	rgrTxFilterType->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnTxFilterTypeChange ), NULL, this );
 	btnTuneFilter->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
 	
 }
