@@ -66,18 +66,13 @@ enum
 	MCU_FAILURE = 0x81,
 };
 
-/**	@brief Returns reference clock frequency
-	Special case because calibrations use fixed CLKGEN frequency, reference clock is
-	deduced from CLKGEN INT coefficient
+/**	@brief Reads reference clock from LMS register
 */
-float_type GetReferenceClock_MHz()
+void UpdateReferenceClock()
 {	
-	uint16_t Nint = Get_SPI_Reg_bits(0x0088, 13<<4 | 4);
-	if( Nint == 41 || Nint == 48) //52 MHz ref
-		mRefClkSXR_MHz = 52.0;
-	else
-		mRefClkSXR_MHz = 30.72;
-	return mRefClkSXR_MHz;
+	uint16_t regValue = SPI_read(MCU_PARAMETER_ADDRESS);
+	mRefClkSXR_MHz = (regValue & 0xFF10) >> 9; //integer part MHz
+	mRefClkSXR_MHz += (regValue & 0x7F) / 100.0; //fractional part MHz
 }
 
 /**	@return Current CLKGEN frequency in MHz
@@ -166,10 +161,24 @@ uint32_t GetRSSI()
     return ((uint32_t)(SPI_read(0x040F) << 2)) | (uint32_t)(Get_SPI_Reg_bits(0x040E, 1 << 4 | 0));
 }
 
-#define RSSI_READ_COUNT 30
+uint8_t RSSI_READ_COUNT = 20;
+#
+uint8_t Update_RSSI_COUNT()
+{
+	uint8_t newCount = SPI_read(MCU_PARAMETER_ADDRESS);
+	if(newCount > 64 || newCount == 0)
+		return MCU_FAILURE + 5;
+	else
+	{
+		RSSI_READ_COUNT = newCount;
+		return MCU_IDLE;
+	}
+}
+
 uint32_t ReadRSSI()
 {	
-	xdata uint16_t ram_buff[RSSI_READ_COUNT];
+	xdata uint16_t ram_buff[64];
+	uint8_t avgCount = RSSI_READ_COUNT > 4 ? 4 : RSSI_READ_COUNT;
 	uint32_t temp;
 	uint8_t i, j;
 	Modify_SPI_Reg_bits(CAPSEL, 0);
@@ -196,9 +205,9 @@ uint32_t ReadRSSI()
 
 	//calculate avg from lowest values
 	temp = 0;
-	for(i = 0; i<4; ++i)
+	for(i = 0; i<avgCount; ++i)
 		temp += ram_buff[i];
-	temp /= 4; 
+	temp /= avgCount; 
 	results_ram = temp;
 	return temp;
 }
@@ -359,8 +368,7 @@ uint8_t CalibrateTx()
     uint16_t gainAddr;
     int16_t phaseOffset;
     int16_t gain = 1983;
-	mRefClkSXR_MHz = GetReferenceClock_MHz();
-	//get calibration bandwidth, register value is kHz
+	//get calibration bandwidth, register value is MHz
 	bandwidth_MHz = SPI_read(MCU_PARAMETER_ADDRESS);
 
     CheckSaturationTxRx();
@@ -475,7 +483,6 @@ uint8_t CalibrateRx()
 	//get calibration bandwidth, register value is kHz
 	bandwidth_MHz = SPI_read(MCU_PARAMETER_ADDRESS);
 
-	mRefClkSXR_MHz = GetReferenceClock_MHz();
 	CalibrateRxDC_RSSI();
 	Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
 	
@@ -615,6 +622,17 @@ void main()  //main routine
 				P1 = MCU_WORKING;
 				ReadRSSI();
 				P1 = MCU_IDLE;
+			}
+			else if(currentInstruction == 4)
+			{
+				P1 = MCU_WORKING;
+				UpdateReferenceClock();
+				P1 = MCU_IDLE;
+			}
+			else if(currentInstruction == 5)
+			{
+				P1 = MCU_WORKING;
+			 	P1 = Update_RSSI_COUNT();
 			}
 			else if(currentInstruction == 255) // return program ID
 			{	
