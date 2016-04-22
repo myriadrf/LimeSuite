@@ -10,7 +10,7 @@ using namespace lime;
 
 LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
-    mRxFrameStart.store(true);
+    mRxFrameStart.store(false);
     mDataPort = dataPort;
     mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
     mTxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
