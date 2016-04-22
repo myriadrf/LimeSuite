@@ -160,7 +160,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     boardControlsGui = nullptr;
 
     lmsControl = new LMS7002M();
-    lmsControl->EnableValuesCache(true);
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
