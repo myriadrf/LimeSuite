@@ -539,7 +539,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
         uint32_t samplesPopped = pthis->mRxFIFO->pop_samples((complex16_t**)buffers, samplesToRead, channelsCount, &timestamp, timeout_ms);
         ++updateCounter;
         //Transmit earlier received packets with a counter delay
-        uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms);
+        uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms, STATUS_FLAG_TX_TIME);
 
         if (updateCounter & 0x40)
         {
