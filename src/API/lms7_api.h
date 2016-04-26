@@ -449,7 +449,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, char *filename);
+API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, const char *filename);
 
 /**
  * Save LMS chip configuration to a file
@@ -459,7 +459,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, char *filename);
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, char *filename);
+API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, const char *filename);
 
 /**
  * Apply the specified loopback mode
@@ -726,6 +726,30 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device *device, bool dir_tx,
                         size_t chan, size_t *index);
 
 /**
+ * Read device parameter. Parameter defines specific bits in device register.
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param param     Parameter.
+ * @param val       Current parameter value.
+ * 
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device,
+                                     struct LMS7Parameter param, uint16_t *val);
+
+/**
+ * Write device parameter. Parameter defines specific bits in device register.
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param param     Parameter.
+ * @param val       Parameter value to write
+ * 
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device,
+                                      struct LMS7Parameter param, uint16_t val);
+
+/**
  * Generates LPF coefficients for LMS GFIR.
  * Pass and stop band frequencies are relative to sampling rate.
  * 
@@ -826,6 +850,15 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint16_t address,
                                       uint16_t val);
 
 /**
+ * Perform register test
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * 
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device *device);
+
+/**
  * Read device FPGA register
  * 
  * @param device    Device handle previously obtained by LMS_Open().
@@ -848,31 +881,6 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device *device, uint16_t address,
  */
 API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device *device, uint16_t address,
                                       uint16_t val);
-
-
-/**
- * Read device parameter. Parameter defines specific bits in device register.
- * 
- * @param device    Device handle previously obtained by LMS_Open().
- * @param param     Parameter.
- * @param val       Current parameter value.
- * 
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device,
-                                     struct LMS7Parameter param, uint16_t *val);
-
-/**
- * Write device parameter. Parameter defines specific bits in device register.
- * 
- * @param device    Device handle previously obtained by LMS_Open().
- * @param param     Parameter.
- * @param val       Parameter value to write
- * 
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device,
-                                      struct LMS7Parameter param, uint16_t val);
 
 /**
  * Changes device reference clock used by API for various calculations.
@@ -941,6 +949,76 @@ API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id,
 API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id,
                                          lms_range_t range);
 
+typedef enum
+{
+    LMS_RX_LPF_TIA,
+    LMS_RX_LPF_LOWBAND,
+    LMS_RX_LPF_HIGHBAND,   
+    LMS_TX_LPF_REALPOLE,
+    LMS_TX_LPF_LADDER,
+    LMS_TX_LPF_HIGHBAND,
+    LMS_TX_LPF_LOWCHAIN     /**<tunes TX REALPOLE and TX LADDER filters,
+                             * requires 2 bandwidth values to be passed*/
+}lms_filter_t;
+
+/**
+ * Tune filter for the specified bandwidth. 
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   chan    channel index
+ * @param   filt    filter
+ * @param   bw      filter bandwidth
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device *device, size_t chan, lms_filter_t filt,
+                                         const float_type *bw);
+
+
+
+/**
+ * @defgroup LMS_CLOCK_ID   Streaming mode flags
+ *
+ * Flags for configuring device streaming mode
+ * @{
+ */
+#define LMS_CLOCK_REF   0x0000
+#define LMS_CLOCK_SXR   0x0001  /**<*/
+#define LMS_CLOCK_SXT   0x0002  /**<*/
+#define LMS_CLOCK_CGEN  0x0003
+#define LMS_CLOCK_RXTSP 0x0004
+#define LMS_CLOCK_TXTSP 0x0005
+
+
+/** @} (End LMS_CLOCK_ID) */
+
+/**
+ * Get frequency of the specified clock. 
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   clk_id  Clock identifier
+ * @param   freq    Clock frequency in Hz  
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device *device, size_t clk_id,
+                                         float_type *freq);
+
+/**
+ * Set frequency of the specified clock 
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   clk_id  Clock identifier
+ * @param   freq    Clock frequency in Hz. Pass zero or negative value to only
+ *                  perform tune (if supported) without recalculating values
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device *device, size_t clk_id, 
+                                         float_type freq);
+
+
+
 /** @} (End FN_LOW_LVL) */
 
 /** @} (End FN_ADVANCED) */
@@ -988,7 +1066,7 @@ typedef struct
 
 
 /**
- * @defgroup FN_STREAM_FLAGS   Streaming mode flags
+ * @defgroup LMS_STREAM_FLAGS   Streaming mode flags
  *
  * Flags for configuring device streaming mode
  * @{
@@ -1001,14 +1079,14 @@ typedef struct
 #define LMS_STREAM_FMT_I16  0x0000  
 #define LMS_STREAM_FMT_F32  0x0200
 
-/** @} (End FN_STREAM_FLAGS) */
+/** @} (End LMS_STREAM_FLAGS) */
 
 /**
  * Configures devices for specific streaming mode overriding default/automatic
  * settings.
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param flags     Mode flags. Refer to \ref FN_STREAM_FLAGS.
+ * @param flags     Mode flags. Refer to \ref LMS_STREAM_FLAGS.
  * 
  * @return      0 on success, (-1) on failure
  */
@@ -1079,9 +1157,10 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device,
 /**Enumeration of device programming target*/
 typedef enum 
 {
-    LMS_STORAGE_RAM = 0,        /**<load firmware/bitstream to volatile storage*/
-    LMS_STORAGE_FLASH = 1       /**<load firmware/bitstream to non-volatile storage*/
-}lms_storage_t;
+    LMS_TARGET_RAM = 0,    /**<load firmware/bitstream to volatile storage*/
+    LMS_TARGET_FLASH = 1,  /**<load firmware/bitstream to non-volatile storage*/
+    LMS_TARGET_BOOT = 2
+}lms_target_t;
 
 /**Maximum length of device serial number*/
 const int LMS_MAX_SERIAL_LEN = 16;
@@ -1138,7 +1217,7 @@ API_EXPORT int CALL_CONV LMS_GetFPGAversion(lms_device *device, char *version);
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
-                                            size_t size, lms_storage_t target);
+                                            size_t size, lms_target_t target);
 
 /**
  * Read FPGA image from the specified file and write it to device.
@@ -1149,7 +1228,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
-                                        const char *file, lms_storage_t target);
+                                        const char *file, lms_target_t target);
 
 /**
  * Write firmware image to device.
@@ -1161,7 +1240,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *data,
-                                            size_t size, lms_storage_t target);
+                                            size_t size, lms_target_t target);
 
 /**
  * Read firmware image from file and write it to device.
@@ -1172,7 +1251,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *dat
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
-                                        const char *file, lms_storage_t target);
+                                        const char *file, lms_target_t target);
 
 /**
  * Program LMS7 internal MCU.
@@ -1185,7 +1264,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
-                                             size_t size, lms_storage_t target);
+                                             size_t size, lms_target_t target);
 /**
  * Boots LMS7 internal MCU from flash memory.
  * 
@@ -1193,7 +1272,7 @@ API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
  * 
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_RebootMCU(lms_device *device);
+API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device *device);
 
 /** @} (End FN_VERSION) */
 

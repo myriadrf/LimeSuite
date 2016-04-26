@@ -32,7 +32,7 @@ public:
     virtual int ConfigureSamplePositions();
     virtual int Init();
     virtual int SetReferenceClock(const float_type refCLK_MHz);
-    virtual size_t GetNumChannels(const bool tx) const;
+    virtual size_t GetNumChannels(const bool tx=false) const;
     virtual int SetRate(float_type f_MHz, int oversample);
     virtual int SetRate(bool tx, float_type f_MHz, size_t oversample = 0);
     virtual float_type GetRate(bool tx,size_t chan,float_type *rf_rate_Hz = NULL);
@@ -70,11 +70,11 @@ public:
     virtual int ConfigureTxStream(size_t numBuffers, size_t bufSize,size_t fifo);
     virtual int RecvStream(void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
     virtual int SendStream(const void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
-    virtual int ProgramFPGA(const char* data, size_t len, lms_storage_t mode);
-    virtual int ProgramFPGA(std::string name, lms_storage_t mode);
-    virtual int ProgramFW(const char* data, size_t len, lms_storage_t mode);
-    virtual int ProgramFW(std::string name, lms_storage_t mode);
-    virtual int ProgramMCU(const char* data= nullptr, size_t len=0, lms_storage_t mode=LMS_STORAGE_RAM);
+    virtual int ProgramFPGA(const char* data, size_t len, lms_target_t mode);
+    virtual int ProgramFPGA(std::string name, lms_target_t mode);
+    virtual int ProgramFW(const char* data, size_t len, lms_target_t mode);
+    virtual int ProgramFW(std::string name, lms_target_t mode);
+    virtual int ProgramMCU(const char* data= nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM);
     virtual int DACWrite(uint16_t val);
     virtual int DACRead();
     

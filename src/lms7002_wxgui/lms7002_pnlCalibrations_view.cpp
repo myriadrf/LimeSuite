@@ -42,7 +42,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         uint16_t ch;
-        LMS_ReadParam(lmsControl,LMS7param(MAC),ch);
+        LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
         status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
@@ -60,13 +60,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
-    lmsControl->EnableCalibrationByMCU(true);
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
-        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        uint16_t ch;
+        LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
@@ -85,16 +86,18 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
     {
         wxBusyInfo wait("Please wait, calibrating transmitter...");
-        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
-        status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
@@ -103,7 +106,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     UpdateGUI();
 }
 
-void lms7002_pnlCalibrations_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlCalibrations_view::Initialize(lms_device* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -135,42 +138,47 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
     {
         int16_t value = (event.GetInt() < 0) << 6;
         value |= abs(event.GetInt()) & 0x2F;
-        lmsControl->Modify_SPI_Reg_bits(parameter, value);
+        LMS_WriteParam(lmsControl,parameter,value);
     }
     else
-        lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+        LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlCalibrations_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    int16_t value = lmsControl->Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP));
+    int16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(IQCORR_RXTSP),(uint16_t*)&value);
     int bitsToShift = (15 - LMS7param(IQCORR_RXTSP).msb - LMS7param(IQCORR_RXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_RXTSP->SetValue(value);
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
+    LMS_ReadParam(lmsControl,LMS7param(IQCORR_TXTSP),(uint16_t*)&value);
     bitsToShift = (15 - LMS7param(IQCORR_TXTSP).msb - LMS7param(IQCORR_TXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
 
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFI_RFE),(uint16_t*)&value);
     int16_t dcvalue = value & 0x3F;
     if ((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFI_RFE->SetValue(dcvalue);
-    value = lmsControl->Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFQ_RFE),(uint16_t*)&value);
     dcvalue = value & 0x3F;
     if ((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFQ_RFE->SetValue(dcvalue);
 
-    int8_t dccorr = lmsControl->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
+    int8_t dccorr;
+    LMS_ReadParam(lmsControl,LMS7param(DCCORRI_TXTSP),(uint16_t*)&value);
+    dccorr = value;
     cmbDCCORRI_TXTSP->SetValue(dccorr);
-    dccorr = lmsControl->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+    LMS_ReadParam(lmsControl,LMS7param(DCCORRQ_TXTSP),(uint16_t*)&value);
+    dccorr = value;
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
-
-    lblCGENrefClk->SetLabel(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
+    float_type freq;
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    lblCGENrefClk->SetLabel(wxString::Format(_("%f"), freq));
 }

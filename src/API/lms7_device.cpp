@@ -354,10 +354,10 @@ LMS7_Device::~LMS7_Device() {
     delete [] rx_channels;
 }
 
-int LMS7_Device::SetReferenceClock(const double refCLK_MHz)
+int LMS7_Device::SetReferenceClock(const double refCLK_Hz)
 {
-    SetReferenceClk_SX(false, refCLK_MHz);
-    SetReferenceClk_SX(true, refCLK_MHz);
+    SetReferenceClk_SX(false, refCLK_Hz);
+    SetReferenceClk_SX(true, refCLK_Hz);
     return 0;
 }
 
@@ -847,6 +847,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     short gfir[120];
     int L;
     int div = 1;
+    int ret = 0;
     
     if (count > 120)
     {
@@ -889,8 +890,10 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     {
        if (L*15 < count)
        {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           return -1;
+           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");         
+           ret = -1;;
+           L = 1+(count-1)/15;
+           div = L-1;
        }
     }
     else
@@ -898,7 +901,9 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
        if (L*5 < count)
        {
            lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           return -1;
+           ret = -1;
+           L = 1+(count-1)/5;
+           div = L-1;
        }
     }
     
@@ -972,7 +977,9 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
       }
     }
     
-   return SetGFIRCoefficients(tx,filt,gfir,filt==LMS_GFIR3 ? 120 : 40);
+   if (SetGFIRCoefficients(tx,filt,gfir,filt==LMS_GFIR3 ? 120 : 40)!=0)
+       return -1;
+   return ret;
 }
 
 int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef)
@@ -1417,22 +1424,7 @@ int LMS7_Device::EnableTX(size_t ch, bool enable)
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     
-    if (ch == 1)
-    {
-        if (Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF),enable)!=0);
-            return -1;
-    }
-           
-    if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),0,true)!=0)   
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_TLOBUF_TRF),enable == 0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_TXPAD_TRF),enable == 0,true)!=0) 
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),enable == 0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFIAMP_TBB),enable == 0,true)!= 0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_TBB),enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_TRF),enable,true)!=0)  
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_TXTSP),enable,true)!=0)) 
-        return -1;
+    this->EnableChannel(true,enable);
     
     tx_channels[ch].enabled = enable;
     if (forced_mode == MODE_AUTO)
@@ -1450,28 +1442,9 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    
-    if (ch == 1)
-    {
-        if (Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE),enable)!=0)
-            return -1;
-    }
+   
           
-    if ((Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE),1,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE),1,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_MXLOBUF_RFE),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_QGEN_RFE),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_RFE),enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_G_RBB),enable,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),enable==0,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true)!=0)
-    ||(Modify_SPI_Reg_bits(LMS7param(EN_RXTSP),enable,true)!=0))
-            return -1;
+    this->EnableChannel(false,enable);
     
     rx_channels[ch].enabled = enable;
     if (forced_mode == MODE_AUTO)
@@ -1623,9 +1596,9 @@ int LMS7_Device::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamp
     return numSamples;
 }
 
-int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_storage_t mode)
+int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode)
 {
-    if (mode > LMS_STORAGE_FLASH)
+    if (mode > LMS_TARGET_BOOT)
     {
         lime::ReportError(ENOTSUP, "Unsupported target storage type");
         return -1;
@@ -1635,7 +1608,7 @@ int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_storage_t mode)
     return GetConnection()->ProgramWrite(data,len,mode,2,nullptr);
 }
 
-int LMS7_Device::ProgramFPGA(std::string fname, lms_storage_t mode)
+int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode)
 {
     std::ifstream file(fname);
     int len;
@@ -1660,9 +1633,9 @@ int LMS7_Device::ProgramFPGA(std::string fname, lms_storage_t mode)
 }
 
 //TODO: fx3 needs restart
-int LMS7_Device::ProgramFW(const char* data, size_t len, lms_storage_t mode)
+int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode)
 {
-    if (mode != LMS_STORAGE_FLASH)
+    if (mode != LMS_TARGET_FLASH)
     {
         lime::ReportError(ENOTSUP, "Unsupported target storage type");
         return -1;
@@ -1672,7 +1645,7 @@ int LMS7_Device::ProgramFW(const char* data, size_t len, lms_storage_t mode)
     return GetConnection()->ProgramWrite(data,len,2,1,nullptr);
 }
 
-int LMS7_Device::ProgramFW(std::string fname, lms_storage_t mode)
+int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode)
 {
     std::ifstream file(fname);
     int len;
@@ -1696,13 +1669,13 @@ int LMS7_Device::ProgramFW(std::string fname, lms_storage_t mode)
     return ret;
 }
 
-int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_storage_t target)
+int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target)
 {
     lime::MCU_BD mcu;
-	lime::MCU_BD::MEMORY_MODE mode;
+    lime::MCU_BD::MEMORY_MODE mode;
     uint8_t bin[8192];
     
-    if (data == nullptr) //boot from FLAH
+    if ((data == nullptr)||(target==LMS_TARGET_BOOT)) //boot from FLAH
     {
         mode = lime::MCU_BD::SRAM_FROM_EEPROM;
     }
@@ -1711,11 +1684,11 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_storage_t target)
         memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
     }
     
-    if (target == LMS_STORAGE_RAM)
+    if (target == LMS_TARGET_RAM)
     {
         mode = lime::MCU_BD::SRAM;
     }
-    else if (target == LMS_STORAGE_FLASH)
+    else if (target == LMS_TARGET_FLASH)
     {
         mode = lime::MCU_BD::EEPROM_AND_SRAM;
     }

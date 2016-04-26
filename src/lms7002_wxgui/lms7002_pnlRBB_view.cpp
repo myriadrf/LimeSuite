@@ -165,6 +165,7 @@ void lms7002_pnlRBB_view::UpdateGUI()
     cmbBBLoopback->SetSelection(BBloopbackValue);
 
     //check if B channel is enabled
+    uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
     if (value >= 2)
     {
@@ -180,14 +181,19 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     double input2;
     txtLowBW_MHz->GetValue().ToDouble(&input1);
     txtHighBW_MHz->GetValue().ToDouble(&input2);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
+    float_type freq;
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND, input1*1e6);
+        freq = input1*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_LOWBAND,&freq);
         break;
     case 1:
-        status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_HIGHBAND, input2*1e6);
+        freq = input1*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_HIGHBAND,&freq);
         break;
     }
     if (status != 0)
@@ -215,6 +221,5 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
         break;
         }
     }
-    lmsControl->DownloadAll();
     UpdateGUI();
 }

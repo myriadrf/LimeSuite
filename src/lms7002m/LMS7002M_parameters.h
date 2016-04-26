@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+#define LMS7param(id) LMS7_ ## id
+    
 struct LMS7Parameter
 {
    /* LMS7Parameter() : address(0), msb(0), lsb(0), defaultValue(0), name(nullptr), tooltip(nullptr)

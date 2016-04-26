@@ -139,14 +139,21 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
     txtFilterFrequency2->GetValue().ToDouble(&input2);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    float_type freq[2];
     int status;
     switch (rgrFilterSelection->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND, input1*1e6);
+        freq[0] = input1*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_TX_LPF_HIGHBAND,freq);
         break;
     case 1:
-        status = lmsControl->TuneTxFilterLowBandChain(input1*1e6, input2*1e6);
+        freq[0] = input1*1e6;
+        freq[1] = input2*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_TX_LPF_LOWCHAIN,freq);
+        
         break;
     }
     if (status != 0)
@@ -163,7 +170,6 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
         break;
 
     }
-    lmsControl->DownloadAll();
     UpdateGUI();
 }
 
@@ -173,14 +179,19 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     double input2;
     txtLadderFrequency->GetValue().ToDouble(&input1);
     txtRealpoleFrequency->GetValue().ToDouble(&input2);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    float_type freq;
     int status;
     switch (rgrFilterSelectionTest->GetSelection())
     {
     case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_LADDER, input1*1e6);
+        freq = input1*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_TX_LPF_LADDER,&freq);
         break;
     case 1:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2*1e6);
+        freq = input1*1e6;
+        status = LMS_TuneFilter(lmsControl,ch-1,LMS_TX_LPF_REALPOLE,&freq);
         break;
     }
     if (status != 0)
@@ -208,6 +219,5 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
         break;
         }
     }
-    lmsControl->DownloadAll();
     UpdateGUI();
 }
