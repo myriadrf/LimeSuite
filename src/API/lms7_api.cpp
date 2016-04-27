@@ -6,6 +6,7 @@
 #include "ErrorReporting.h"
 #include "errno.h"
 #include "MCU_BD.h"
+#include <cmath>
 
 
 using namespace std;
@@ -41,9 +42,21 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device** device, lms_info_str info)
         return -1;
     }
      
-    *device = nullptr;
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
+    LMS7_Device* lms;
+    if (*device == nullptr)
+    {
+        lms = new LMS7_Device();
+        *device = lms;
+    }
+    else
+    {
+        lms = (LMS7_Device*)*device;
+        auto conn = lms->GetConnection();
+        if (conn != nullptr)
+		lime::ConnectionRegistry::freeConnection(conn);
+    }
 
     for (int i = 0; i < handles.size(); i++)
     {
@@ -55,19 +68,23 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device** device, lms_info_str info)
                 if (info != NULL)
                 {
                     lime::ReportError(EBUSY, "Failed to open. Device is busy.");
+                    delete lms;
                     return -1;
                 }
                 else 
                     continue;
             }
-            LMS7_Device* lms = new LMS7_Device();
             lms->SetConnection(conn,0);
-            *device = lms;
+            lms->DownloadAll();
             return LMS_SUCCESS;
         }
     }  
     
+    if (info == NULL)
+       return LMS_SUCCESS;
+    
     lime::ReportError(ENODEV, "Specified device could not be found");
+    delete lms;
     return -1;    
 }
 
@@ -430,9 +447,24 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device *device, size_t clk_id, flo
                 return lms->TuneVCO(lime::LMS7002M::VCO_SXT);
             return lms->SetFrequencySX(true,freq);
         case LMS_CLOCK_CGEN:
+        {
+            int ret;
+            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
+            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
             if (freq <= 0)
-                return lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
-            return lms->SetFrequencyCGEN(freq,true);
+            {
+                ret = lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
+            }
+            else
+            {
+                ret = lms->SetInterfaceFrequency(freq, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+            }
+            if (ret != 0)
+                return -1;
+            
+            lms->GetConnection()->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+            return 0;
+        }
         case LMS_CLOCK_RXTSP:
                 lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
                 return -1;     
@@ -1070,7 +1102,7 @@ API_EXPORT int CALL_CONV LMS_GenerateLPFCoef(size_t n, float_type w1, float_type
     
 }
 
-API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint16_t address, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -1084,7 +1116,7 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint16_t address, ui
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint16_t address, uint16_t val)
+API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address, uint16_t val)
 {
     if (device == nullptr)
     {

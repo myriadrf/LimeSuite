@@ -20,15 +20,12 @@ ConnectionHandle::ConnectionHandle(void):
 std::string ConnectionHandle::serialize(void) const
 {
     std::string out;
-
-    if (not module.empty()) out += ", module="+module;
-    if (not media.empty()) out += ", media="+media;
-    if (not name.empty()) out += ", name="+name;
+    if (not name.empty()) out += name;
+    if (not media.empty()) out += ", media="+media; 
+    if (not module.empty()) out += ", module="+module;  
     if (not addr.empty()) out += ", addr="+addr;
     if (not serial.empty()) out += ", serial="+serial;
     if (index != -1) out += ", index="+std::to_string(index);
-
-    if (not out.empty()) out = out.substr(2); //remove comma+space
 
     return out;
 }

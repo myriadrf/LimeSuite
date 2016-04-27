@@ -2,23 +2,21 @@
 #include "StreamerLTE.h"
 #include <wx/timer.h>
 #include <vector>
-#include "LMS_StreamBoard.h"
-#include "StreamerNovena.h"
-#include "IConnection.h"
 #include "OpenGLGraph.h"
 #include <LMSBoards.h>
+#include "kiss_fft.h"
 
 using namespace std;
 using namespace lime;
 
-void fftviewer_frFFTviewer::Initialize(IConnection* pDataPort)
+void fftviewer_frFFTviewer::Initialize(lms_device* pDataPort)
 {
-    mDataPort = pDataPort;
+    lmsControl = pDataPort;
 }
 
 fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
 :
-frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullptr), mStreamRunning(false)
+frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
 {
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
@@ -106,7 +104,7 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if(!mDataPort)
+    if(!lmsControl)
     {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
@@ -114,33 +112,31 @@ void fftviewer_frFFTviewer::StartStreaming()
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
-    mStreamRunning = true;
+    
+    if (mStreamRunning.load() == true)
+        return;
+    stopProcessing.store(false);
+    
+    
+    
+    
+    
     switch (cmbStreamType->GetSelection())
     {
     case 0:
-        assert(mStreamBrd == nullptr);
-        if (mDataPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_NOVENA))
-            mStreamBrd = new StreamerNovena(mDataPort);
-        else
-            mStreamBrd = new LMS_StreamBoard(mDataPort);
-        mStreamBrd->StartReceiving(spinFFTsize->GetValue());
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
         break;
     case 1: //SISO
-        assert(mLTEstreamer == nullptr);
-        mLTEstreamer = new StreamerLTE(mDataPort);
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1, StreamerLTE::STREAM_12_BIT_COMPRESSED);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
         break;
     case 2: //MIMO
-        assert(mLTEstreamer == nullptr);
-        mLTEstreamer = new StreamerLTE(mDataPort);
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_COMPRESSED);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 2, LMS_STREAM_MD_MIMO);
         break;
     case 3: //SISO uncompressed samples
-        assert(mLTEstreamer == nullptr);
-        mLTEstreamer = new StreamerLTE(mDataPort);
-        mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_IN_16);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
         break;
     }
+    mStreamRunning.store(true);
     btnStartStop->SetLabel(_("STOP"));
     mGUIupdater->Start(50);
 }
@@ -148,29 +144,12 @@ void fftviewer_frFFTviewer::StartStreaming()
 void fftviewer_frFFTviewer::StopStreaming()
 {
     txtNyquistFreqMHz->Enable();
-    mGUIupdater->Stop();
-    switch (cmbStreamType->GetSelection())
-    {
-    case 0:
-        if (mStreamBrd)
-        {
-            mStreamBrd->StopReceiving();
-            delete mStreamBrd;
-            mStreamBrd = nullptr;
-        }
-        break;
-    case 1:
-    case 2:
-    case 3:
-        if (mLTEstreamer)
-        {
-            mLTEstreamer->StopStreaming();
-            delete mLTEstreamer;
-            mLTEstreamer = nullptr;
-        }
-        break;
-    }
-    mStreamRunning = false;
+    mGUIupdater->Stop();   
+    if (mStreamRunning.load() == false)
+        return;
+    stopProcessing.store(true);
+    threadProcessing.join();
+    mStreamRunning.store(false);
     btnStartStop->SetLabel(_("START"));
     cmbStreamType->Enable();
     spinFFTsize->Enable();
@@ -183,90 +162,41 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     float RxRate = 0;
     float TxRate = 0;
 
-    switch (cmbStreamType->GetSelection())
+    RxRate = streamData.rxDataRate_Bps;
+    TxRate = streamData.txDataRate_Bps;
+
+    if (streamData.fftBins_dbFS[0].size() > 0)
     {
-        case 0:
+        std::vector<float> freqs;
+        freqs.reserve(streamData.fftBins_dbFS[0].size());
+        double nyquistMHz;
+        txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
+                        const float step = 2*nyquistMHz / streamData.samplesI[0].size();
+        for (int i = 0; i < streamData.fftBins_dbFS[0].size(); ++i)
+            freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
+        vector<float> indexes;
+        indexes.reserve(streamData.samplesI[0].size());
+        for (int i = 0; i < streamData.samplesI[0].size(); ++i)
+            indexes.push_back(i);
+        if (chkFreezeTimeDomain->IsChecked() == false)
         {
-            assert(mStreamBrd != nullptr);
-            LMS_StreamBoard::DataToGUI data = mStreamBrd->GetIncomingData();
-            LMS_StreamBoard::ProgressStats stats = mStreamBrd->GetStats();
-            RxFilled = stats.RxFIFOfilled;
-            TxFilled = stats.TxFIFOfilled;
-            RxRate = stats.RxRate_Bps;
-            TxRate = stats.TxRate_Bps;
-
-			std::vector<float> freqs;
-			freqs.reserve(data.fftBins_dbFS.size());
-			double nyquistMHz;
-			txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
-			const float step = 2*nyquistMHz / data.samplesI.size();
-			for (int i = 0; i < data.fftBins_dbFS.size(); ++i)
-				freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
-			vector<float> indexes;
-			indexes.reserve(data.samplesI.size());
-			for (int i = 0; i < data.samplesI.size(); ++i)
-				indexes.push_back(i);
-            if (chkFreezeTimeDomain->IsChecked() == false)
-            {
-                mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0], data.samplesI.size());
-                mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0], data.samplesQ.size());
-            }
-            if (chkFreezeConstellation->IsChecked() == false)
-            {
-                mConstelationPanel->series[0]->AssignValues(&data.samplesI[0], &data.samplesQ[0], data.samplesQ.size());
-            }
-            if (chkFreezeFFT->IsChecked() == false)
-            {
-                mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0], data.fftBins_dbFS.size());
-            }
-            break;
+            mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &streamData.samplesI[0][0], streamData.samplesI[0].size());
+            mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &streamData.samplesQ[0][0], streamData.samplesQ[0].size());
+            mTimeDomainPanel->series[2]->AssignValues(&indexes[0], &streamData.samplesI[1][0], streamData.samplesI[1].size());
+            mTimeDomainPanel->series[3]->AssignValues(&indexes[0], &streamData.samplesQ[1][0], streamData.samplesQ[1].size());
         }
-        case 1:
-        case 2:
-        case 3:
+        if (chkFreezeConstellation->IsChecked() == false)
         {
-            assert(mLTEstreamer != nullptr);
-            StreamerLTE::DataToGUI data = mLTEstreamer->GetIncomingData();
-            StreamerLTE::Stats info = mLTEstreamer->GetStats();
-            RxFilled = 100.0*info.rxBufFilled / info.rxBufSize;
-            TxFilled = 100.0*info.txBufFilled / info.txBufSize;
-            RxRate = data.rxDataRate_Bps;
-            TxRate = data.txDataRate_Bps;
-
-            if (data.fftBins_dbFS[0].size() > 0)
-            {
-                std::vector<float> freqs;
-                freqs.reserve(data.fftBins_dbFS[0].size());
-                double nyquistMHz;
-                txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
-				const float step = 2*nyquistMHz / data.samplesI[0].size();
-                for (int i = 0; i < data.fftBins_dbFS[0].size(); ++i)
-                    freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
-                vector<float> indexes;
-                indexes.reserve(data.samplesI[0].size());
-                for (int i = 0; i < data.samplesI[0].size(); ++i)
-                    indexes.push_back(i);
-                if (chkFreezeTimeDomain->IsChecked() == false)
-                {
-                    mTimeDomainPanel->series[0]->AssignValues(&indexes[0], &data.samplesI[0][0], data.samplesI[0].size());
-                    mTimeDomainPanel->series[1]->AssignValues(&indexes[0], &data.samplesQ[0][0], data.samplesQ[0].size());
-                    mTimeDomainPanel->series[2]->AssignValues(&indexes[0], &data.samplesI[1][0], data.samplesI[1].size());
-                    mTimeDomainPanel->series[3]->AssignValues(&indexes[0], &data.samplesQ[1][0], data.samplesQ[1].size());
-                }
-                if (chkFreezeConstellation->IsChecked() == false)
-                {
-                    mConstelationPanel->series[0]->AssignValues(&data.samplesI[0][0], &data.samplesQ[0][0], data.samplesQ[0].size());
-                    mConstelationPanel->series[1]->AssignValues(&data.samplesI[1][0], &data.samplesQ[1][0], data.samplesQ[1].size());
-                }
-                if (chkFreezeFFT->IsChecked() == false)
-                {
-                    mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0][0], data.fftBins_dbFS[0].size());
-                    mFFTpanel->series[1]->AssignValues(&freqs[0], &data.fftBins_dbFS[1][0], data.fftBins_dbFS[1].size());
-                }
-            }
-            break;
+            mConstelationPanel->series[0]->AssignValues(&streamData.samplesI[0][0], &streamData.samplesQ[0][0], streamData.samplesQ[0].size());
+            mConstelationPanel->series[1]->AssignValues(&streamData.samplesI[1][0], &streamData.samplesQ[1][0], streamData.samplesQ[1].size());
+        }
+        if (chkFreezeFFT->IsChecked() == false)
+        {
+            mFFTpanel->series[0]->AssignValues(&freqs[0], &streamData.fftBins_dbFS[0][0], streamData.fftBins_dbFS[0].size());
+            mFFTpanel->series[1]->AssignValues(&freqs[0], &streamData.fftBins_dbFS[1][0], streamData.fftBins_dbFS[1].size());
         }
     }
+
 
     if (chkFreezeTimeDomain->IsChecked() == false)
     {
@@ -286,14 +216,116 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
         mFFTpanel->Draw();
     }
 
-    if(RxFilled > 100)
-        RxFilled = 100;
-    if(TxFilled > 100)
-        TxFilled = 100;
     gaugeRxBuffer->SetValue((int)RxFilled);
     gaugeTxBuffer->SetValue((int)TxFilled);
     lblRxDataRate->SetLabel(printDataRate(RxRate));
     lblTxDataRate->SetLabel(printDataRate(TxRate));
+}
+
+void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
+{
+    const int test_count = 4096*16;//4096*16;
+    const int bytes_per_sample = 3*channelsCount;
+    float** buffers;
+    double rxdataRate_Bps=0;
+    double txdataRate_Bps=0;
+    int totalBytesReceived=0;
+    int totalBytesSend=0;
+    DataToGUI localDataResults;
+    localDataResults.nyquist_Hz = 7.68e6;
+    localDataResults.samplesI[0].resize(fftSize, 0);
+    localDataResults.samplesI[1].resize(fftSize, 0);
+    localDataResults.samplesQ[0].resize(fftSize, 0);
+    localDataResults.samplesQ[1].resize(fftSize, 0);
+    localDataResults.fftBins_dbFS[0].resize(fftSize, 0);
+    localDataResults.fftBins_dbFS[1].resize(fftSize, 0);   
+    buffers = new float*[channelsCount];
+    for (int i = 0; i < channelsCount; ++i)
+        buffers[i] = new float[test_count*2];
+
+    LMS_SetStreamingMode(pthis->lmsControl, format | LMS_STREAM_FMT_F32);
+    LMS_InitStream(pthis->lmsControl,LMS_CH_TX,32,4096*2,0);
+    LMS_InitStream(pthis->lmsControl,LMS_CH_RX,32,4096*2,0);
+    static auto t1 = chrono::high_resolution_clock::now();
+    static auto t2 = chrono::high_resolution_clock::now();
+    
+    kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
+    kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
+    kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
+    unsigned updateCounter = 0;
+    lms_stream_metadata meta;
+    meta.start_of_burst = true;
+    meta.end_of_burst = false;
+    LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,100);
+    meta.timestamp += 1024*512;
+    LMS_SendStream(pthis->lmsControl,(const void**)buffers,test_count,&meta,100);
+    meta.start_of_burst = false;
+    //meta.end_of_burst = false;
+    while (pthis->stopProcessing.load() == false)
+    {
+        ++updateCounter;
+        
+        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,100);    
+        if (samplesPopped <= 0)
+            break;
+        //Transmit earlier received packets with a counter delay
+        meta.timestamp += 1024*512;     
+        uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,100);
+         if (samplesPushed <= 0)
+            break;
+        
+        totalBytesReceived += bytes_per_sample*samplesPopped;
+        totalBytesSend += bytes_per_sample*samplesPushed;
+        
+        if (updateCounter & 0x40)
+        {
+
+            for (int ch = 0; ch < channelsCount; ++ch)
+            {
+
+                for (int i = 0; i < fftSize; ++i)
+                {
+                    localDataResults.samplesI[ch][i] = m_fftCalcIn[i].r = buffers[ch][2 * i];
+                    localDataResults.samplesQ[ch][i] = m_fftCalcIn[i].i = buffers[ch][2 * i + 1];
+                }
+                kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+
+                int output_index = 0;
+                for (int i = fftSize / 2 + 1; i < fftSize; ++i)
+                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                for (int i = 0; i < fftSize / 2 + 1; ++i)
+                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                for (int s = 0; s < fftSize; ++s)
+                    localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
+            }
+            {
+                pthis->streamData = localDataResults;
+            }
+            updateCounter = 0;
+        }
+        
+        t2 = chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            //total number of bytes sent per second
+            double rx_dataRate = 1000.0*totalBytesReceived / timePeriod;
+            double tx_dataRate = 1000.0*totalBytesSend / timePeriod;
+            localDataResults.rxDataRate_Bps = rx_dataRate;
+            localDataResults.txDataRate_Bps = tx_dataRate;
+            //total number of samples from all channels per second
+            t1 = t2;
+            totalBytesReceived = 0;
+            totalBytesSend = 0;
+        }
+    }
+    kiss_fft_free(m_fftCalcPlan);
+    pthis->mGUIupdater->Stop();   
+    pthis->stopProcessing.store(true);
+    pthis->mStreamRunning.store(false);
+    pthis->btnStartStop->SetLabel(_("START"));
+    pthis->cmbStreamType->Enable();
+    pthis->spinFFTsize->Enable();
 }
 
 wxString fftviewer_frFFTviewer::printDataRate(float dataRate)

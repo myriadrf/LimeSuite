@@ -834,7 +834,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device *device);
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address,
                                      uint16_t *val);
 
 /**
@@ -846,7 +846,7 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint16_t address,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address,
                                       uint16_t val);
 
 /**

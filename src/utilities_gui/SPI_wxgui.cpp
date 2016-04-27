@@ -1,5 +1,4 @@
 #include "SPI_wxgui.h"
-#include "IConnection.h"
 
 using namespace lime;
 
@@ -8,16 +7,14 @@ SPI_wxgui::SPI_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, con
 SPI_view( parent )
 {
     ctrPort = nullptr;
-    dataPort = nullptr;
 }
 
-void SPI_wxgui::Initialize(IConnection* pCtrPort, IConnection* pDataPort, const size_t devIndex)
+void SPI_wxgui::Initialize(lms_device* pCtrPort, const size_t devIndex)
 {
     ctrPort = pCtrPort;
-    dataPort = pDataPort;
     if (ctrPort != nullptr)
     {
-        m_rficSpiAddr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        //m_rficSpiAddr = ctrPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
     }
 }
 
@@ -32,11 +29,9 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
 
     if (ctrPort == nullptr)
         return;
-    uint32_t dataWr = (1 << 31);
-    dataWr |= (addr & 0xFFFF) << 16;
-    dataWr |=  data & 0xFFFF;
+    
     int status;
-    status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
+    status = LMS_WriteLMSReg(ctrPort,addr,data);
 
     if (status == 0)
         lblLMSwriteStatus->SetLabel(_("Write success"));
@@ -54,8 +49,9 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
         return;
 
     const uint32_t dataWr = (addr & 0x7FFF) << 16;
-    uint32_t dataRd = 0;
-    int status = ctrPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
+    uint16_t dataRd = 0;
+    int status;
+    status = LMS_ReadLMSReg(ctrPort,addr,&dataRd);
 
     if (status == 0)
     {
@@ -76,15 +72,12 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
     long data = 0;
     value.ToLong(&data, 16);
 
-    assert(dataPort != nullptr);
-    if (dataPort == nullptr)
+    assert(ctrPort != nullptr);
+    if (ctrPort == nullptr)
         return;
 
-    uint32_t dataWr = (1 << 31);
-    dataWr |= (addr & 0xFFFF) << 16;
-    dataWr |=  data & 0xFFFF;
     int status;
-    status = dataPort->WriteRegister(addr, data);
+    status = LMS_WriteFPGAReg(ctrPort,addr,data);
 
     if (status == 0)
         lblBoardwriteStatus->SetLabel(_("Write success"));
@@ -98,12 +91,12 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
     long addr = 0;
     address.ToLong(&addr, 16);
 
-    assert(dataPort != nullptr);
-    if (dataPort == nullptr)
+    assert(ctrPort != nullptr);
+    if (ctrPort == nullptr)
         return;
 
-    uint32_t dataRd = 0;
-    int status = dataPort->ReadRegister(addr, dataRd);
+    uint16_t dataRd = 0;
+    int status = LMS_ReadFPGAReg(ctrPort,addr,&dataRd);
 
     if (status == 0)
     {

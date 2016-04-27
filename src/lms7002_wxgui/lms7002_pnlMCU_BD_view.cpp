@@ -140,7 +140,7 @@ void lms7002_pnlMCU_BD_view::OnButton_LOADHexClick( wxCommandEvent& event )
 
 void lms7002_pnlMCU_BD_view::OnchkResetClick( wxCommandEvent& event )
 {
-    assert(mcuControl != nullptr);
+    assert(lmsControl != nullptr);
     if (chkReset->IsChecked())
     {
         // MODE=0
@@ -933,7 +933,7 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
         }
        // ++stepsDone;
 #ifndef NDEBUG
-        printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
+        //printf("MCU reading IRAM: %2i/256\r", stepsDone.load());
 #endif
         Wait_CLK_Cycles(64);
 	}
@@ -987,7 +987,7 @@ int lms7002_pnlMCU_BD_view::Erase_IRAM()
             }
             //++stepsDone;
 #ifndef NDEBUG
-            printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
+            //printf("MCU erasing IRAM: %2i/256\r", stepsDone.load());
 #endif
 	}
 #ifndef NDEBUG
