@@ -635,7 +635,7 @@ void ConnectionSTREAM::AbortSending()
 @return 0-success, other-failure
 */
 int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
-{   
+{
     eLMS_DEV boardType = GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_QSPARK) ? LMS_DEV_QSPARK : LMS_DEV_UNKNOWN;
     const uint16_t busyAddr = 0x0021;
     if(IsOpen() == false)
@@ -689,7 +689,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     const uint16_t PLLCFG_START = 0x1;
     const uint16_t PHCFG_START = 0x2;
     const uint16_t PLLRST_START = 0x4;
-    const uint16_t PHCFG_UPDN = 0x1;
+    const uint16_t PHCFG_UPDN = 1 << 13;
     reg23val &= 0x1F << 3; //clear PLL index
     reg23val &= ~PLLCFG_START; //clear PLLCFG_START
     reg23val &= ~PHCFG_START; //clear PHCFG
@@ -721,7 +721,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     values.clear();
     addrs.push_back(0x0023);
     values.push_back(reg23val & ~PLLRST_START);
-    
+
     //configure FPGA PLLs
     const float vcoLimits_MHz[2] = { 600, 1300 };
     int M, C;
@@ -781,7 +781,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
         } while(!done && errorCode == 0);
         if(errorCode != 0)
             return ReportError(EBUSY, "ConnectionSTREAM: error configuring PLLCFG");
-           
+
         addrs.clear();
         values.clear();
         addrs.push_back(0x0023);
