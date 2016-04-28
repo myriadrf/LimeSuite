@@ -4,7 +4,7 @@
 using namespace lime;
 
 LMS7002M_Novena_wxgui::LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
-    :mSerPort(nullptr)
+    :lmsControl(nullptr)
 {
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
 #ifdef WIN32
@@ -55,19 +55,19 @@ LMS7002M_Novena_wxgui::~LMS7002M_Novena_wxgui()
 
 void LMS7002M_Novena_wxgui::UpdatePanel()
 {
-    if (mSerPort == nullptr)
+    if (lmsControl == nullptr)
         return;
 
-    if (mSerPort->IsOpen() == false)
+   /* if (mSerPort->IsOpen() == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
-    }
+    }*/
 
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
-    uint32_t dataRd = 0;
+    uint16_t dataRd = 0;
     int status;
-    status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, &dataRd, 1);
+    LMS_ReadLMSReg(lmsControl,dataWr>>16,&dataRd);
 
     if (status != 0)
     {
@@ -84,12 +84,12 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     lms_gpio0->SetValue((value >> 0)&1);
 }
 
-void LMS7002M_Novena_wxgui::Initialize(IConnection* serPort, const size_t devIndex)
+void LMS7002M_Novena_wxgui::Initialize(lms_device_t* serPort, const size_t devIndex)
 {
-    mSerPort = serPort;
-    if (mSerPort != nullptr)
+   lmsControl = serPort;
+    if (lmsControl != nullptr)
     {
-        m_rficSpiAddr = mSerPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
+        //m_rficSpiAddr = mSerPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
     }
 }
 
@@ -107,15 +107,14 @@ lms_gpio2 - tx output selection:
 */
 void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 {
-    assert(mSerPort != nullptr);
-    if (mSerPort == nullptr)
+    if (lmsControl == nullptr)
         return;
 
-    if (mSerPort->IsOpen() == false)
+ /*   if (mSerPort->IsOpen() == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
-    }
+    }*/
 
     unsigned int value = 0;
     value |= lms_reset->GetValue() << 5;
@@ -126,7 +125,7 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     value |= lms_gpio0->GetValue() << 0;
     uint32_t dataWr = (1 << 31) | (0x0806 << 16) | (value & 0xFFFF);
     int status;
-    status = mSerPort->TransactSPI(m_rficSpiAddr, &dataWr, nullptr, 1);
+    LMS_WriteLMSReg(lmsControl,dataWr>>16,value);
     if (status != 0)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);

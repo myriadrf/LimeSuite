@@ -440,7 +440,7 @@ void LMS7SuiteAppFrame::OnShowDeviceInfo(wxCommandEvent& event)
     else
     {
         deviceInfo = new dlgDeviceInfo(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
-     //   deviceInfo->Initialize(lmsControl);
+        deviceInfo->Initialize(lmsControl);
         deviceInfo->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnDeviceInfoClose), NULL, this);
         deviceInfo->Show();
     }
@@ -459,7 +459,7 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
     else
     {
         spi = new SPI_wxgui(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
-    //    spi->Initialize();
+        spi->Initialize(lmsControl,0);
         spi->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSPIClose), NULL, this);
         spi->Show();
     }
@@ -503,7 +503,7 @@ void LMS7SuiteAppFrame::OnShowNovena(wxCommandEvent& event)
     else
     {
         novenaGui = new LMS7002M_Novena_wxgui(this, wxNewId(), _("Novena"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
-      //  novenaGui->Initialize(lmsControl);
+        novenaGui->Initialize(lmsControl);
         novenaGui->UpdatePanel();
         novenaGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnNovenaClose), NULL, this);
         novenaGui->Show();
@@ -523,7 +523,7 @@ void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
     else
     {
         boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-   //     boardControlsGui->Initialize(lmsControl);
+        boardControlsGui->Initialize(lmsControl);
         boardControlsGui->UpdatePanel();
         boardControlsGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnBoardControlsClose), NULL, this);
         boardControlsGui->Show();

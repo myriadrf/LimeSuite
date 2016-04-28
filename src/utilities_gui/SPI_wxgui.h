@@ -28,9 +28,9 @@ class SPI_wxgui : public SPI_view
         SPI_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
 
         //devIndex is an RFIC index (0 when only one is present)
-        virtual void Initialize(lms_device* pCtrPort, const size_t devIndex = 0);
+        virtual void Initialize(lms_device_t* pCtrPort, const size_t devIndex = 0);
     protected:
-        lms_device* ctrPort;
+        lms_device_t* ctrPort;
 
         int m_rficSpiAddr;
 };

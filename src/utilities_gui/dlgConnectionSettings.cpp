@@ -17,7 +17,7 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 {
     mListLMS7ports->Clear();
     mListStreamports->Clear();
-    lms_info_str list[32];
+    lms_info_str_t list[32];
   
     //select the currently opened index
     lmsOpenedIndex = -1;
@@ -34,7 +34,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
     if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
     {
-        lms_info_str list[32];
+        lms_info_str_t list[32];
         int ret = LMS_GetDeviceList(list);
         LMS_Open(&lmsControl,list[mListLMS7ports->GetSelection()]); 
     }

@@ -40,7 +40,7 @@ class lms7002_pnlMCU_BD_view : public pnlMCU_BD_view
 		lms7002_pnlMCU_BD_view( wxWindow* parent );
 	//// end generated class members
         ~lms7002_pnlMCU_BD_view();
-        void Initialize(lms_device *ptr);
+        void Initialize(lms_device_t *ptr);
         void OnProgressPoll(wxTimerEvent& evt);
 protected:    
     int GetProgramCode(const char* inFileName, bool bin);
@@ -67,7 +67,7 @@ protected:
     bool mThreadWorking;
     std::thread mWorkerThread;
     wxTimer* progressPooler;
-    lms_device* lmsControl;
+    lms_device_t* lmsControl;
     int m_iTestNo;
     int m_iInstrNo;
     int m_iPCvalue;

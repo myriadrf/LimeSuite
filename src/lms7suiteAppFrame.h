@@ -75,7 +75,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 		static const int cDeviceVerRevMaskCollumn = 2;
         void UpdateConnections();
 
-        lms_device* lmsControl;
+        lms_device_t* lmsControl;
         pnlMiniLog* mMiniLog;
         fftviewer_frFFTviewer* fftviewer;
 

@@ -32,10 +32,10 @@ class lms7002_pnlSX_view : public pnlSX_view
 		lms7002_pnlSX_view( wxWindow* parent );
 	//// end generated class members
     lms7002_pnlSX_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device* pControl);
+    void Initialize(lms_device_t* pControl);
     void UpdateGUI();
 protected:
-    lms_device* lmsControl;
+    lms_device_t* lmsControl;
 	std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 };
 

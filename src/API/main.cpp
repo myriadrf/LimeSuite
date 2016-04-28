@@ -14,7 +14,7 @@ using namespace std;
 #endif
 #endif
 int running = 1;
-lms_device* device;
+lms_device_t* device;
 Lms_glWindow* win;
 
 int filesize;
@@ -44,7 +44,7 @@ void StreamTest()
     int time = ~0;//100000000/test_count;
     unsigned a = 0;
     unsigned nco = 0;
-    lms_stream_metadata meta;
+    lms_stream_meta_t meta;
     meta.start_of_burst = true;
     meta.end_of_burst = false;
     LMS_RecvStream(device,(void**)buffers,test_count,&meta,0);
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
     win = new Lms_glWindow(0,0,640,480);
     win->show();
     win->SetDisplayLimits(-2500,2500,-200,2);
-    lms_info_str list[16]={0};
+    lms_info_str_t list[16]={0};
     
     if ((file = fopen("/home/ignas/wcdma.wfm","r"))!=NULL)
     {

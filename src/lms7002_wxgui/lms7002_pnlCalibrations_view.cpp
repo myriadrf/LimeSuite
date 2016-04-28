@@ -106,7 +106,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     UpdateGUI();
 }
 
-void lms7002_pnlCalibrations_view::Initialize(lms_device* pControl)
+void lms7002_pnlCalibrations_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

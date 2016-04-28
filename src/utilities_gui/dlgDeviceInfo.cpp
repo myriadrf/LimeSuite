@@ -7,21 +7,22 @@ dlgDeviceInfo::dlgDeviceInfo(wxWindow* parent, wxWindowID id, const wxString &ti
 :
 dlgDeviceInfo_view( parent, id, title, pos, size, styles)
 {
-    ctrPort = nullptr;
-    dataPort = nullptr;
+    lmsControl = nullptr;
+
 }
 
-void dlgDeviceInfo::Initialize(IConnection* pCtrPort, IConnection* pDataPort)
+void dlgDeviceInfo::Initialize(lms_device_t* lms)
 {
-    ctrPort = pCtrPort;
-    dataPort = pDataPort;
+    lmsControl = lms;
+
 }
 
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {
-    if (ctrPort != nullptr && ctrPort->IsOpen() == true)
+    lms_dev_info_t info;
+    
+    if (LMS_GetDeviceInfo(lmsControl,&info)==0)
     {
-        auto info = ctrPort->GetDeviceInfo();
         lblDeviceCtr->SetLabel(info.deviceName);
         lblExpansionCtr->SetLabel(info.expansionName);
         lblFirmwareCtr->SetLabel(info.firmwareVersion);
@@ -37,21 +38,5 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblProtocolCtr->SetLabel("???");
     }
 
-    if (dataPort != nullptr && dataPort->IsOpen() == true)
-    {
-        auto info = dataPort->GetDeviceInfo();
-        lblDeviceData->SetLabel(info.deviceName);
-        lblExpansionData->SetLabel(info.expansionName);
-        lblFirmwareData->SetLabel(info.firmwareVersion);
-        lblHardwareData->SetLabel(info.hardwareVersion);
-        lblProtocolData->SetLabel(info.protocolVersion);
-    }
-    else
-    {
-        lblDeviceData->SetLabel("???");
-        lblExpansionData->SetLabel("???");
-        lblFirmwareData->SetLabel("???");
-        lblHardwareData->SetLabel("???");
-        lblProtocolData->SetLabel("???");
-    }
+
 }

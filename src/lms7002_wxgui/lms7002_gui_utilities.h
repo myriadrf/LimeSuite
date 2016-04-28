@@ -16,7 +16,7 @@ namespace lime{
 namespace LMS7002_WXGUI
 {
 
-void UpdateControlsByMap(wxPanel* panel, lms_device* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param);
+void UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param);
 
 typedef std::pair<int, int> indexValuePair;
 typedef std::vector < indexValuePair > indexValueMap;

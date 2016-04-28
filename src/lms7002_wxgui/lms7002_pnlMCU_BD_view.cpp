@@ -1066,7 +1066,7 @@ void lms7002_pnlMCU_BD_view::OnRegWriteRead( wxCommandEvent& event )
     }
 }
 
-void lms7002_pnlMCU_BD_view::Initialize(lms_device* pControl)
+void lms7002_pnlMCU_BD_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

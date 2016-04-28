@@ -1497,7 +1497,7 @@ int LMS7_Device::ConfigureTxStream(size_t numBuffers, size_t bufSize, size_t fif
 }
 
 
-int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
+int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
@@ -1540,7 +1540,7 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_metadata *
         started = false;
     }
     
-   meta->timestamp = ts+index/channelsCount-numSamples;
+   meta->timestamp = ts+index/channelsCount-ret;
    rx_lock.unlock();
    return ret;
 }
@@ -1724,7 +1724,7 @@ void SendCopyRaw(const void* src, int16_t* dst)
     *((uint32_t*)dst) = *((uint32_t*)src);
 }
 
-int LMS7_Device::SendStream(const void **data,size_t numSamples, lms_stream_metadata *meta, unsigned timeout_ms)
+int LMS7_Device::SendStream(const void **data,size_t numSamples, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];

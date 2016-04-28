@@ -12,7 +12,7 @@
 using namespace std;
 
 
-API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str * dev_list)
+API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
 {
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
@@ -24,8 +24,8 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str * dev_list)
             string str = handles[i].serialize();
             if (dev_list[i] == nullptr)
                 return -1;
-            strncpy(dev_list[i],str.c_str(),sizeof(lms_info_str)-1);
-            dev_list[i][sizeof(lms_info_str)-1]=0;
+            strncpy(dev_list[i],str.c_str(),sizeof(lms_info_str_t)-1);
+            dev_list[i][sizeof(lms_info_str_t)-1]=0;
         }  
     } 
     return handles.size();
@@ -34,7 +34,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str * dev_list)
 
 
 
-API_EXPORT int CALL_CONV LMS_Open(lms_device** device, lms_info_str info)
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info)
 {
     if (device == nullptr)
     {
@@ -88,7 +88,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device** device, lms_info_str info)
     return -1;    
 }
 
-API_EXPORT int CALL_CONV LMS_Close(lms_device * device)
+API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
 {
     if (device == nullptr)
     {
@@ -106,7 +106,7 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device * device)
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_Reset(lms_device *device)
+API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
 {
     if (device == nullptr)
     {
@@ -121,7 +121,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device *device)
     return LMS_SUCCESS;   
 }
 
-API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device * device, bool dir_tx, size_t chan, bool enabled)
+API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, size_t chan, bool enabled)
 {
     if (device == nullptr)
     {
@@ -152,7 +152,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device * device, bool dir_tx, siz
 
 
 
-API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device * device, float_type rate, size_t oversample)
+API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t * device, float_type rate, size_t oversample)
 {
     if (device == nullptr)
     {
@@ -165,7 +165,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device * device, float_type rate,
    return lms->SetRate(rate, oversample);
 }
 
-API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device *device, bool dir_tx, float_type rate, size_t oversample)
+API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx, float_type rate, size_t oversample)
 {
     if (device == nullptr)
     {
@@ -179,7 +179,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device *device, bool dir_tx, f
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device *device, bool dir_tx, size_t chan, float_type *host_Hz, float_type *rf_Hz)
+API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t *device, bool dir_tx, size_t chan, float_type *host_Hz, float_type *rf_Hz)
 {
     if (device == nullptr)
     {
@@ -203,7 +203,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device *device, bool dir_tx, size
    
 }
 
-API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device *device, bool dir_tx, lms_range_t *range)
+API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
 {
     if (device == nullptr)
     {
@@ -222,7 +222,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device *device, bool dir_tx,
 
 
 
-API_EXPORT int CALL_CONV LMS_Init(lms_device * device)
+API_EXPORT int CALL_CONV LMS_Init(lms_device_t * device)
 {
     if (device == nullptr)
     {
@@ -235,7 +235,7 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device * device)
     return lms->Init(); 
 }
 
-API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device *device, float_type clock_Hz)
+API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device_t *device, float_type clock_Hz)
 {
     if (device == nullptr)
     {
@@ -247,7 +247,7 @@ API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device *device, float_type cl
     return lms->SetReferenceClock(clock_Hz);
 }
 
-API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device, float_type * clock_Hz)
+API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device_t * device, float_type * clock_Hz)
 {
     if (device == nullptr)
     {
@@ -260,7 +260,37 @@ API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device, float_type *
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val)
+API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
+                           uint16_t param_id, float_type *val, lms_name_t units)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    } 
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    uint8_t id=param_id;
+    std::string str;
+    int ret=lms->GetConnection()->CustomParameterRead(&id,val,1,&str);
+    strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
+    return ret;
+}
+
+API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
+                        uint16_t param_id, float_type val, const lms_name_t units)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    uint8_t id=param_id;
+    std::string str = units == nullptr ? "":units;
+    return lms->GetConnection()->CustomParameterWrite(&id,&val,1,&str);
+}
+
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
 {
     if (device == nullptr)
     {
@@ -271,7 +301,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val)
     return lms->DACWrite(val);
 }
 
-API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -284,7 +314,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val)
     return ret < 0 ? -1 : 0;
 }
 
-API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id, lms_range_t* range)
+API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * device, size_t vco_id, lms_range_t* range)
 {
     if (device == nullptr)
     {
@@ -310,7 +340,7 @@ API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id, lms
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id, lms_range_t range)
+API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id, lms_range_t range)
 {
     if (device == nullptr)
     {
@@ -336,7 +366,7 @@ API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id, lms
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device * device, size_t chan, lms_filter_t filt, const float_type *bw)
+API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t * device, size_t chan, lms_filter_t filt, const float_type *bw)
 {
     if (device == nullptr)
     {
@@ -383,7 +413,7 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device * device, size_t chan, lms_fi
     return -1;
 }
 
-API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device *device, size_t clk_id, float_type *freq)
+API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, float_type *freq)
 {
     if (device == nullptr)
     {
@@ -418,7 +448,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device *device, size_t clk_id, flo
     }
 }
 
-API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device *device, size_t clk_id, float_type freq)
+API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
 {
     if (device == nullptr)
     {
@@ -479,7 +509,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device *device, size_t clk_id, flo
 
 
 
-API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device * device, bool dir_tx)
+API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
 {
     if (device == nullptr)
     {
@@ -492,7 +522,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device * device, bool dir_tx)
 }
 
 
-API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device *device, bool dir_tx, size_t chan, float_type frequency)
+API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type frequency)
 {
     if (device == nullptr)
     {
@@ -523,7 +553,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device *device, bool dir_tx, siz
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device *device, bool dir_tx, size_t chan, float_type *frequency)
+API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
 {
     if (device == nullptr)
     {
@@ -543,7 +573,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device *device, bool dir_tx, siz
     return LMS_SUCCESS;  
 }
 
-API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device *device, bool dir_tx, lms_range_t *range)
+API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
 {
     if (device == nullptr)
     {
@@ -556,7 +586,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device *device, bool dir_tx
     return LMS_SUCCESS; 
 }
 
-API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device *device, bool dir_tx, size_t chan, lms_name *list)
+API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx, size_t chan, lms_name_t *list)
 {
     if (device == nullptr)
     {
@@ -575,13 +605,13 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device *device, bool dir_tx, siz
     auto names = lms->GetPathNames(dir_tx,chan);
     for (int i = 0; i<names.size();i++)
     {
-      strncpy(list[i],names[i].c_str(),sizeof(lms_name)-1);  
-      list[i][sizeof(lms_name)-1] = 0;
+      strncpy(list[i],names[i].c_str(),sizeof(lms_name_t)-1);  
+      list[i][sizeof(lms_name_t)-1] = 0;
     }
     return names.size();  
 }
 
-API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device *device, bool dir_tx, size_t chan, size_t path)
+API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t path)
 {
     if (device == nullptr)
     {
@@ -603,7 +633,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device *device, bool dir_tx, size_t 
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device *device, bool dir_tx, size_t chan, size_t *path)
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t *path)
 {
     if (device == nullptr)
     {
@@ -619,7 +649,7 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device *device, bool dir_tx, size_t 
 
 
 
-API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device *device, bool dir_tx, size_t chan, size_t path, lms_range_t *range)
+API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, size_t chan, size_t path, lms_range_t *range)
 {
     if (device == nullptr)
     {
@@ -637,7 +667,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device *device, bool dir_tx, size_
 }
 
 
-API_EXPORT int CALL_CONV LMS_SetBW(lms_device *device, bool dir_tx, size_t chan, float_type bandwidth)
+API_EXPORT int CALL_CONV LMS_SetBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
 {
     if (device == nullptr)
     {
@@ -657,7 +687,7 @@ API_EXPORT int CALL_CONV LMS_SetBW(lms_device *device, bool dir_tx, size_t chan,
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetBW(lms_device *device, bool dir_tx, size_t chan, float_type *bandwidth)
+API_EXPORT int CALL_CONV LMS_GetBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
 {
     if (device == nullptr)
     {
@@ -679,7 +709,7 @@ API_EXPORT int CALL_CONV LMS_GetBW(lms_device *device, bool dir_tx, size_t chan,
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device *device, bool dir_tx, lms_range_t *range)
+API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
 {
     if (device == nullptr)
     {
@@ -695,7 +725,7 @@ API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device *device, bool dir_tx, lms_ran
 }
 
 
-API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device *device, bool dir_tx, size_t chan, float_type bandwidth)
+API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
 {
     if (device == nullptr)
     {
@@ -720,7 +750,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device *device, bool dir_tx, size_t ch
     return lms->SetLPF(dir_tx,chan,true,true,bandwidth);
 }
 
-API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device *device, bool dir_tx, size_t chan, float_type *bandwidth)
+API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
 {
     if (device == nullptr)
     {
@@ -739,7 +769,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device *device, bool dir_tx, size_t ch
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_SetLPF(lms_device *device, bool dir_tx, size_t chan, bool enabled)
+API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled)
 {
     if (device == nullptr)
     {
@@ -765,7 +795,7 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device *device, bool dir_tx, size_t chan
 }
 
 
-API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device *device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
+API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
 {
     if (device == nullptr)
     {
@@ -790,7 +820,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device *device, bool dir_tx, size_t 
     return lms->SetLPF(dir_tx,chan,false,enabled,bandwidth);
 }
 
-API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device *device, bool dir_tx, lms_range_t *range)
+API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
 {
     if (device == nullptr)
     {
@@ -806,7 +836,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device *device, bool dir_tx, lms_
 }
 
 
-API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device *device, bool dir_tx, size_t chan, float_type gain)
+API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan, float_type gain)
 {
     if (device == nullptr)
     {
@@ -830,7 +860,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device *device, bool dir_tx, 
    return lms->SetNormalizedGain(dir_tx,chan,gain);
 }
 
-API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device *device, bool dir_tx, size_t chan,float_type *gain)
+API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
 {
     if (device == nullptr)
     {
@@ -852,7 +882,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device *device, bool dir_tx, 
     return LMS_SUCCESS;   
 }
 
-API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, size_t chan, double bw, unsigned flags)
+API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t chan, double bw, unsigned flags)
 {
     if (device == nullptr)
     {
@@ -876,7 +906,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, size_t c
 
 }
 
-API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, const char *filename)
+API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)
 {
     if (device == nullptr)
     {
@@ -889,7 +919,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, const char *filename
     return lms->LoadConfig(filename);
 }
 
-API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, const char *filename)
+API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filename)
 {
     if (device == nullptr)
     {
@@ -901,7 +931,7 @@ API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, const char *filename
     
     return lms->SaveConfig(filename);  
 }
-API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device *device, bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
+API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device_t *device, bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
 {
     if (device == nullptr)
     {
@@ -928,7 +958,7 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device *device, bool dir_tx, size
     return LMS_SUCCESS;  
 }
 
-API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device *device, bool dir_tx, size_t chan, lms_testsig_t *sig)
+API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t *device, bool dir_tx, size_t chan, lms_testsig_t *sig)
 {
     if (device == nullptr)
     {
@@ -952,7 +982,7 @@ API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device *device, bool dir_tx, size
     return LMS_SUCCESS;  
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device *device, bool dir_tx, size_t ch, const float_type *freq, float_type pho)
+API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx, size_t ch, const float_type *freq, float_type pho)
 {
     if (device == nullptr)
     {
@@ -972,7 +1002,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device *device, bool dir_tx, si
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device *device, bool dir_tx, size_t chan, float_type *freq, float_type *pho)
+API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *freq, float_type *pho)
 {
     if (device == nullptr)
     {
@@ -991,7 +1021,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device *device, bool dir_tx, si
     return lms->GetNCOFreq(dir_tx,chan,freq,pho);
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device *device, bool dir_tx, size_t ch, const float_type *phase, float_type fcw)
+API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, const float_type *phase, float_type fcw)
 {
     if (device == nullptr)
     {
@@ -1011,7 +1041,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device *device, bool dir_tx, size_t
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device *device, bool dir_tx, size_t ch, size_t index, float_type *phase, float_type *fcw)
+API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, size_t index, float_type *phase, float_type *fcw)
 {
     if (device == nullptr)
     {
@@ -1030,7 +1060,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device *device, bool dir_tx, size_t
     return lms->GetNCOPhase(dir_tx,ch,phase,fcw);
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device *device, bool dir_tx, size_t chan, size_t index,bool down)
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, size_t index,bool down)
 {
     if (device == nullptr)
     {
@@ -1049,7 +1079,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device *device, bool dir_tx, size_t
     return lms->SetNCO(dir_tx,chan,index,down);
 }
 
-API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device *device, bool dir_tx, size_t chan, size_t *index)
+API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, size_t *index)
 {
     if (device == nullptr)
     {
@@ -1102,7 +1132,7 @@ API_EXPORT int CALL_CONV LMS_GenerateLPFCoef(size_t n, float_type w1, float_type
     
 }
 
-API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -1116,7 +1146,7 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address, ui
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address, uint16_t val)
+API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)
 {
     if (device == nullptr)
     {
@@ -1129,7 +1159,7 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address, u
     return LMS_SUCCESS;  
 }
 
-API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device *device)
+API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device)
 {
     if (device == nullptr)
     {
@@ -1142,7 +1172,7 @@ API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device *device)
 }
 
 
-API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device *device, uint16_t address, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -1158,7 +1188,7 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device *device, uint16_t address, u
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device *device, uint16_t address, uint16_t val)
+API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint16_t address, uint16_t val)
 {
     if (device == nullptr)
     {
@@ -1171,7 +1201,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device *device, uint16_t address, 
     return LMS_SUCCESS;  
 }
 
-API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device, struct LMS7Parameter param, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Parameter param, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -1186,7 +1216,7 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device, struct LMS7Parameter 
 
 
 
-API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device, struct LMS7Parameter param, uint16_t val)
+API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Parameter param, uint16_t val)
 {
     if (device == nullptr)
     {
@@ -1198,7 +1228,7 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device, struct LMS7Parameter
     return lms->Modify_SPI_Reg_bits(param,val);
 }
 
-API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device * device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count)
+API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device_t * device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count)
 {
     if (device == nullptr)
     {
@@ -1215,7 +1245,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device * device, bool dir_tx, size
     return lms->SetGFIRCoef(dir_tx,chan,filt,coef,count);
 }
 
-API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device * device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
+API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx, size_t chan, lms_gfir_t filt, float_type* coef)
 {
     if (device == nullptr)
     {
@@ -1231,7 +1261,7 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device * device, bool dir_tx, size
     }
     return lms->GetGFIRCoef(dir_tx,chan,filt,coef);
 }
-API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device * device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
+API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx, size_t chan, lms_gfir_t filt, bool enabled)
 {
     if (device == nullptr)
     {
@@ -1249,7 +1279,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device * device, bool dir_tx, size_t ch
     return lms->SetGFIR(dir_tx,chan,filt,enabled);
 }
 
-API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags)
+API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device_t *device, uint32_t flags)
 {
     if (device == nullptr)
     {
@@ -1260,7 +1290,7 @@ API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags
     return lms->SetStreamingMode(flags);   
 }
 
-API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_buffers, size_t buffer_size, size_t fifo_size)
+API_EXPORT int CALL_CONV LMS_InitStream(lms_device_t *device, bool tx, size_t num_buffers, size_t buffer_size, size_t fifo_size)
 {
     if (device == nullptr)
     {
@@ -1275,7 +1305,22 @@ API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool tx, size_t num_
         return lms->ConfigureRxStream(num_buffers,buffer_size,fifo_size);
 }
 
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples, size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)device;  
+    if (dir_tx)
+        return lms->StopTx();
+    else
+        return lms->StopRx();
+}
+
+API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (device == nullptr)
     {
@@ -1287,7 +1332,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples, size
     return lms->RecvStream(samples,sample_count,meta,timeout_ms);
     
 }
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, const void **samples, size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (device == nullptr)
     {
@@ -1299,7 +1344,8 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, const void **samples
     return lms->SendStream(samples,sample_count,meta,timeout_ms);
 }
 
-API_EXPORT int CALL_CONV LMS_GetSerial(lms_device *device, char *serial)
+
+API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t *info)
 {
     if (device == nullptr)
     {
@@ -1308,52 +1354,25 @@ API_EXPORT int CALL_CONV LMS_GetSerial(lms_device *device, char *serial)
     } 
     
     LMS7_Device* lms = (LMS7_Device*)device;
-    uint32_t serInt = lms->GetConnection()->GetDeviceInfo().boardSerialNumber;
-    std::string serStr = std::to_string(serInt);
-    strncpy(serial,serStr.c_str(),LMS_MAX_SERIAL_LEN);
+    
+    if (!lms->GetConnection()->IsOpen())
+    {
+       lime::ReportError(EINVAL, "No cennection to board.");
+       return -1;
+    }
+
+    memset(info,0,sizeof(lms_dev_info_t));
+    auto devinfo =lms->GetConnection()->GetDeviceInfo();
+    strncpy(info->deviceName,devinfo.deviceName.c_str(),sizeof(info->deviceName)-1);
+    strncpy(info->expansionName,devinfo.expansionName.c_str(),sizeof(info->expansionName)-1);
+    strncpy(info->firmwareVersion,devinfo.firmwareVersion.c_str(),sizeof(info->firmwareVersion)-1);
+    strncpy(info->hardwareVersion,devinfo.hardwareVersion.c_str(),sizeof(info->hardwareVersion)-1);
+    strncpy(info->protocolVersion,devinfo.protocolVersion.c_str(),sizeof(info->protocolVersion)-1);
+    info->boardSerialNumber = devinfo.boardSerialNumber;
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_GetHWversion(lms_device *device, char *version)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    } 
-    
-    LMS7_Device* lms = (LMS7_Device*)device;       
-    std::string str = lms->GetConnection()->GetDeviceInfo().hardwareVersion;
-    strncpy(version,str.c_str(),LMS_MAX_VER_LEN);
-}
-
-API_EXPORT int CALL_CONV LMS_GetFWversion(lms_device *device, char *version)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    } 
-    
-    LMS7_Device* lms = (LMS7_Device*)device;
-    std::string str = lms->GetConnection()->GetDeviceInfo().firmwareVersion;
-    strncpy(version,str.c_str(),LMS_MAX_VER_LEN);
-}
-
-API_EXPORT int CALL_CONV LMS_GetFPGAversion(lms_device *device, char *version)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    } 
-    
-    LMS7_Device* lms = (LMS7_Device*)device;
-    std::string str = lms->GetConnection()->GetDeviceInfo().protocolVersion;
-    strncpy(version,str.c_str(),LMS_MAX_VER_LEN);
-}
-
-API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
                                             size_t size, lms_target_t target)
 {
     if (device == nullptr)
@@ -1367,7 +1386,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
     return lms->ProgramFPGA(data,size,target);  
 }
 
-API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
+API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
                                         const char *file, lms_target_t target)
 {
     if (device == nullptr)
@@ -1382,7 +1401,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
 }
 
 
-API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *data,
                                             size_t size, lms_target_t target)
 {
     if (device == nullptr)
@@ -1397,7 +1416,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *dat
 }
 
 
-API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
+API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
                                          const char *file, lms_target_t target)
 {
     if (device == nullptr)
@@ -1411,7 +1430,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
     return lms->ProgramFW(file,target);   
 }
 
-API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,
                                               size_t size, lms_target_t target)
 {
     if (device == nullptr)
@@ -1425,7 +1444,7 @@ API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
     return lms->ProgramMCU(data,size,target);  
 }
 
-API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device *device)
+API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device_t *device)
 {
     if (device == nullptr)
     {

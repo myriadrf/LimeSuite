@@ -37,10 +37,10 @@ class lms7002_mainPanel : public mainPanel
         void UpdateVisiblePanel();
         ~lms7002_mainPanel();
         void UpdateGUI();
-        void Initialize(lms_device* pControl);
+        void Initialize(lms_device_t* pControl);
 protected:
         lms7002_pnlMCU_BD_view *mTabMCU;
-        lms_device* lmsControl;
+        lms_device_t* lmsControl;
 };
 
 #endif // __lms7002_mainPanel__

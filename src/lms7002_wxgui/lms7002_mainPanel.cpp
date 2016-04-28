@@ -108,7 +108,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 #endif
 }
 
-void lms7002_mainPanel::Initialize(lms_device* pControl)
+void lms7002_mainPanel::Initialize(lms_device_t* pControl)
 {
     assert(pControl != nullptr);
     lmsControl = pControl;

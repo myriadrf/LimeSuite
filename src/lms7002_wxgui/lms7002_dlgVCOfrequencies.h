@@ -22,10 +22,10 @@ class lms7002_dlgVCOfrequencies : public dlgVCOfrequencies
         void OnLoadFile(wxCommandEvent& event);
 	public:
 		/** Constructor */
-		lms7002_dlgVCOfrequencies( wxWindow* parent, lms_device *plmsControl);
+		lms7002_dlgVCOfrequencies( wxWindow* parent, lms_device_t *plmsControl);
 	//// end generated class members
 protected:
-    lms_device* lmsControl;
+    lms_device_t* lmsControl;
 	
 };
 

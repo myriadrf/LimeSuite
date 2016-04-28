@@ -9,7 +9,7 @@
 using namespace std;
 using namespace lime;
 
-void fftviewer_frFFTviewer::Initialize(lms_device* pDataPort)
+void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
 {
     lmsControl = pDataPort;
 }
@@ -47,7 +47,7 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
-    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -2048, 2048);
+    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -1.0, 1.0);
     mTimeDomainPanel->settings.title = "IQ samples";
     mTimeDomainPanel->series[0]->color = 0xFF0000FF;
     mTimeDomainPanel->series[1]->color = 0x0000FFFF;
@@ -60,7 +60,7 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
     mConstelationPanel->AddSerie(new cDataSerie());
     mConstelationPanel->series[0]->color = 0xFF0000FF;
     mConstelationPanel->series[1]->color = 0x0000FFFF;
-    mConstelationPanel->SetInitialDisplayArea(-2048, 2048, -2048, 2048);
+    mConstelationPanel->SetInitialDisplayArea(-1.0, 1, -1.0, 1.0);
     mConstelationPanel->SetDrawingMode(GLG_POINTS);
     mConstelationPanel->settings.title = "I versus Q";
     mConstelationPanel->settings.titleXaxis = "I";
@@ -116,11 +116,7 @@ void fftviewer_frFFTviewer::StartStreaming()
     if (mStreamRunning.load() == true)
         return;
     stopProcessing.store(false);
-    
-    
-    
-    
-    
+  
     switch (cmbStreamType->GetSelection())
     {
     case 0:
@@ -144,15 +140,11 @@ void fftviewer_frFFTviewer::StartStreaming()
 void fftviewer_frFFTviewer::StopStreaming()
 {
     txtNyquistFreqMHz->Enable();
-    mGUIupdater->Stop();   
+    //mGUIupdater->Stop();   
     if (mStreamRunning.load() == false)
         return;
     stopProcessing.store(true);
     threadProcessing.join();
-    mStreamRunning.store(false);
-    btnStartStop->SetLabel(_("START"));
-    cmbStreamType->Enable();
-    spinFFTsize->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
@@ -244,8 +236,8 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
         buffers[i] = new float[test_count*2];
 
     LMS_SetStreamingMode(pthis->lmsControl, format | LMS_STREAM_FMT_F32);
-    LMS_InitStream(pthis->lmsControl,LMS_CH_TX,32,4096*2,0);
-    LMS_InitStream(pthis->lmsControl,LMS_CH_RX,32,4096*2,0);
+    LMS_InitStream(pthis->lmsControl,LMS_CH_TX,32,4096*16,0);
+    LMS_InitStream(pthis->lmsControl,LMS_CH_RX,32,4096*16,0);
     static auto t1 = chrono::high_resolution_clock::now();
     static auto t2 = chrono::high_resolution_clock::now();
     
@@ -253,23 +245,24 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
     unsigned updateCounter = 0;
-    lms_stream_metadata meta;
+    lms_stream_meta_t meta;
     meta.start_of_burst = true;
+    meta.has_timestamp = false;
     meta.end_of_burst = false;
-    LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,100);
-    meta.timestamp += 1024*512;
+    LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,500);
+    //printf("TS:%lu\n",meta.timestamp);
     LMS_SendStream(pthis->lmsControl,(const void**)buffers,test_count,&meta,100);
     meta.start_of_burst = false;
-    //meta.end_of_burst = false;
+    //meta.has_timestamp = true;
     while (pthis->stopProcessing.load() == false)
     {
         ++updateCounter;
         
-        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,100);    
+        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,250);    
         if (samplesPopped <= 0)
             break;
         //Transmit earlier received packets with a counter delay
-        meta.timestamp += 1024*512;     
+        meta.timestamp += 1024*128;     
         uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,100);
          if (samplesPushed <= 0)
             break;
@@ -319,13 +312,26 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
             totalBytesSend = 0;
         }
     }
+    meta.start_of_burst = false;
+    meta.has_timestamp = false;
+    meta.end_of_burst = true;
+    LMS_RecvStream(pthis->lmsControl,(void**)buffers,0,&meta,100);
+    LMS_SendStream(pthis->lmsControl,(const void**)buffers,0,&meta,100);
     kiss_fft_free(m_fftCalcPlan);
     pthis->mGUIupdater->Stop();   
     pthis->stopProcessing.store(true);
-    pthis->mStreamRunning.store(false);
+    LMS_StopStream(pthis->lmsControl,LMS_CH_TX);
+    LMS_StopStream(pthis->lmsControl,LMS_CH_RX);
+
+    for (int i = 0; i < channelsCount; ++i)
+        delete [] buffers[i];     
+    delete [] buffers;
+    delete [] m_fftCalcIn;
+    delete [] m_fftCalcOut;
     pthis->btnStartStop->SetLabel(_("START"));
     pthis->cmbStreamType->Enable();
     pthis->spinFFTsize->Enable();
+    pthis->mStreamRunning.store(false);
 }
 
 wxString fftviewer_frFFTviewer::printDataRate(float dataRate)

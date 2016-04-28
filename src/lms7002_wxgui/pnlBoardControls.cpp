@@ -1,5 +1,6 @@
 #include "pnlBoardControls.h"
 #include "wx/wxprec.h"
+#include "lms7_api.h"
 #ifdef __BORLANDC__
 #pragma hdrstop
 #endif //__BORLANDC__
@@ -58,7 +59,7 @@ static wxString power2unitsString(char powerx3)
     }
 }
 
-pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style), serPort(nullptr)
+pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style), lmsControl(nullptr)
 {
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 	wxFlexGridSizer* fgSizer247;
@@ -214,7 +215,7 @@ pnlBoardControls::~pnlBoardControls()
 
 void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 {
-    if (serPort == nullptr || serPort->IsOpen() == false)
+    if (lmsControl == nullptr)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -231,18 +232,20 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         units.push_back("");
     }
 
-    int status = serPort->CustomParameterRead(ids.data(), values.data(), ids.size(), units.data());
-    if (status != 0)
-    {
-        wxMessageBox(_("Failed to read values"), _("Warning"));
-        return;
-    }
-
+    
     for (int i = 0; i < mADCparameters.size(); ++i)
     {
+        float_type value;
+        lms_name_t units;
+        int status = LMS_ReadCustomBoardParam(lmsControl,mADCparameters[i].channel,&value,units);
+        if (status != 0)
+        {
+            wxMessageBox(_("Failed to read values"), _("Warning"));
+            return;
+        }
         mADCparameters[i].channel = ids[i];
-        mADCparameters[i].units = units[i];
-        mADCparameters[i].value = values[i];
+        mADCparameters[i].units = units;
+        mADCparameters[i].value = value;
     }
     for (int i = 0; i < mDACparameters.size(); ++i)
     {
@@ -262,7 +265,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
-    if (serPort == nullptr || serPort->IsOpen() == false)
+    if (lmsControl == nullptr )
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -276,24 +279,24 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
     {
         ids.push_back(mDACparameters[i].channel);
         values.push_back(mDACparameters[i].value);
-    }
-
-    int status = serPort->CustomParameterWrite(ids.data(), values.data(), ids.size(), nullptr);
-    if (status != 0)
-    {
-        wxMessageBox(_("Failes to write values"), _("Warning"));
-        return;
+        int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,NULL);
+        if (status != 0)
+        {
+            wxMessageBox(_("Failes to write values"), _("Warning"));
+            return;
+        }
     }
 }
 
-void pnlBoardControls::Initialize(IConnection* controlPort)
+void pnlBoardControls::Initialize(lms_device_t* controlPort)
 {
     if(controlPort == nullptr)
         return;
-    serPort = controlPort;
-    SetupControls(serPort->GetDeviceInfo().deviceName);
-    if (serPort->IsOpen())
+    lmsControl = controlPort;
+    lms_dev_info_t info;
+    if (LMS_GetDeviceInfo(lmsControl,&info)==0)
     {
+        SetupControls(info.deviceName);
         wxCommandEvent evt;
         OnReadAll(evt);
     }
@@ -431,14 +434,13 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
         {
             mDACparameters[i].value = mDAC_GUI_widgets[i]->value->GetValue();
             //write to chip
-            uint8_t ids = mDACparameters[i].channel;
-            double value = mDACparameters[i].value;
-            string units = mDACparameters[i].units;
-
-            if (serPort || serPort->IsOpen() == false)
+            lms_name_t units;
+            strncpy(units,mDACparameters[i].units.c_str(),sizeof(lms_name_t)-1);
+            
+            if (lmsControl)
                 return;
-
-            int status = serPort->CustomParameterWrite(&ids, &value, 1, &units);
+            
+            int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,units);
             if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
@@ -453,7 +455,7 @@ void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
-    if (serPort == nullptr || serPort->IsOpen() == false)
+    if (lmsControl == nullptr)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -461,9 +463,9 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
     uint8_t id = spinCustomChannelRd->GetValue();
     double value = 0;
-    string units = "";
+    lms_name_t units;
 
-    int status = serPort->CustomParameterRead(&id, &value, 1, &units);
+    int status = LMS_ReadCustomBoardParam(lmsControl,id,&value,units);
     if (status != 0)
     {
         wxMessageBox(_("Failed to read value"), _("Warning"));
@@ -476,7 +478,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
-    if (serPort == nullptr || serPort->IsOpen() == false)
+    if (lmsControl == nullptr)
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -484,11 +486,13 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 
     uint8_t id = spinCustomChannelWr->GetValue();
     int powerOf10 = cmbCustomPowerOf10Wr->GetSelection()*3;
-    string units = adcUnits2string(cmbCustomUnitsWr->GetSelection());
-
+    lms_name_t units;
+    strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
+ 
     double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
 
-    int status = serPort->CustomParameterWrite(&id, &value, 1, &units);
+
+    int status = LMS_WriteCustomBoardParam(lmsControl,id,value,units);
     if (status != 0)
     {
         wxMessageBox(_("Failed to write value"), _("Warning"));

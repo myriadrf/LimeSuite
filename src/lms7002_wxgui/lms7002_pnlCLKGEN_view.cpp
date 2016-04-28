@@ -93,7 +93,7 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlCLKGEN_view::Initialize(lms_device* pControl)
+void lms7002_pnlCLKGEN_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -187,7 +187,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_SXR,&freq);
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"),freq / 1e6 ));
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(FRAC_SDM_CGEN_MSB),&value);
@@ -202,9 +202,9 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
     float_type freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_SXR,&freq);
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
     lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_SXT,&freq);
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
     lblTxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
 }
 

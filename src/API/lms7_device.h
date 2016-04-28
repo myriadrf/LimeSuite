@@ -68,8 +68,8 @@ public:
     virtual int SetStreamingMode(uint32_t flags);
     virtual int ConfigureRxStream(size_t numBuffers, size_t bufSize,size_t fifo);
     virtual int ConfigureTxStream(size_t numBuffers, size_t bufSize,size_t fifo);
-    virtual int RecvStream(void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
-    virtual int SendStream(const void **samples,size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
+    virtual int RecvStream(void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
+    virtual int SendStream(const void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
     virtual int ProgramFPGA(const char* data, size_t len, lms_target_t mode);
     virtual int ProgramFPGA(std::string name, lms_target_t mode);
     virtual int ProgramFW(const char* data, size_t len, lms_target_t mode);
@@ -77,6 +77,8 @@ public:
     virtual int ProgramMCU(const char* data= nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM);
     virtual int DACWrite(uint16_t val);
     virtual int DACRead();
+    int StopRx();
+    int StopTx();
     
 private:
     lms_channel_info* tx_channels;
@@ -93,8 +95,7 @@ private:
     int _write(int16_t *data, uint64_t timestamp, uint64_t metadata, unsigned timeout);
     int StartRx(int packetsToBatch=4, int numTransfers=32);
     int StartTx(int packetsToBatch=4, int numTransfers=32);
-    int StopRx();
-    int StopTx();
+
     int Start();
     int Stop();
     

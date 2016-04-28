@@ -39,7 +39,7 @@ lms7002_pnlCDS_view::lms7002_pnlCDS_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlCDS_view::Initialize(lms_device* pControl)
+void lms7002_pnlCDS_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

@@ -18,7 +18,7 @@
 
 using namespace lime;
 
-void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
+void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
 {
     if (panel == nullptr || lmsControl == nullptr)
         return;

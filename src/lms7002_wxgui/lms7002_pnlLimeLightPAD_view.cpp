@@ -113,7 +113,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlLimeLightPAD_view::Initialize(lms_device* pControl)
+void lms7002_pnlLimeLightPAD_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

@@ -75,10 +75,10 @@ static const int LMS_SUCCESS = 0;
  */
 
 /**LMS Device handle */
-typedef void lms_device;
+typedef void lms_device_t;
 
 /**Convenience type for fixed length LMS Device information string*/  
-typedef char lms_info_str[256];
+typedef char lms_info_str_t[256];
 
 /**
  * Obtain a list of LMS devices attached to the system
@@ -87,7 +87,7 @@ typedef char lms_info_str[256];
  *
  * @return      number of devices in the list on success, (-1) on failure
  */  
-API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str *dev_list);
+API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
 
 /**
  * Opens device specified by the provided ::lms_dev_info string
@@ -101,7 +101,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str *dev_list);
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Open(lms_device **device, lms_info_str info);
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info);
 
 /**
  * Close device
@@ -115,7 +115,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device **device, lms_info_str info);
  * 
  * @return   0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Close(lms_device *device);
+API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 
 /** @} (End FN_INIT) */
 
@@ -168,7 +168,7 @@ typedef enum
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Init(lms_device *device);
+API_EXPORT int CALL_CONV LMS_Init(lms_device_t *device);
 
 /**
  * Obtain number of RX or TX channels. Use this to determine the maximum 
@@ -180,7 +180,7 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device *device);
  * 
  * @return          Number of channels on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device *device, bool dir_tx);
+API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t *device, bool dir_tx);
 
 /**
  * Enable or disable specified RX channel.
@@ -192,7 +192,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device *device, bool dir_tx);
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t *device, bool dir_tx,
                                            size_t chan, bool enabled);
 
 /**
@@ -208,7 +208,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device *device, float_type rate,
+API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t *device, float_type rate,
                                            size_t oversample);
 
 /**
@@ -223,7 +223,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device *device, float_type rate,
  * 
  * @return       0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t *device, bool dir_tx,
                                            size_t chan, float_type *host_Hz,
                                            float_type *rf_Hz);
 /**
@@ -235,7 +235,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device *device, bool dir_tx,
  * 
  * @return              0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_tx,
                                                 lms_range_t *range);
 
 /**
@@ -254,7 +254,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device *device, bool dir_tx,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx,
                                             size_t chan, float_type frequency);
 
 /**
@@ -267,7 +267,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx,
                                             size_t chan, float_type *frequency);
 
 /**
@@ -280,7 +280,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device *device,bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device,bool dir_tx,
                                                  lms_range_t *range);
 
 /**
@@ -293,7 +293,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device *device,bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetBW(lms_device *device, bool dir_tx, size_t chan,
+API_EXPORT int CALL_CONV LMS_SetBW(lms_device_t *device, bool dir_tx, size_t chan,
                                    float_type bandwidth);
 
 /**
@@ -306,7 +306,7 @@ API_EXPORT int CALL_CONV LMS_SetBW(lms_device *device, bool dir_tx, size_t chan,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetBW(lms_device *device, bool dir_tx, size_t chan,
+API_EXPORT int CALL_CONV LMS_GetBW(lms_device_t *device, bool dir_tx, size_t chan,
                                    float_type *bandwidth);
 
 /**
@@ -319,7 +319,7 @@ API_EXPORT int CALL_CONV LMS_GetBW(lms_device *device, bool dir_tx, size_t chan,
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device_t *device, bool dir_tx,
                                         lms_range_t *range);
 
 /**
@@ -335,7 +335,7 @@ API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device *device, bool dir_tx,
  *                      maximum gain
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx,
                                                 size_t chan,float_type gain);
 
 /**
@@ -348,7 +348,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device *device, bool dir_tx,
  *                          the maximum gain                    
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx,
                                                 size_t chan,float_type *gain);
 
 /**
@@ -362,7 +362,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx,
                                              size_t chan, float_type bandwidth);
 
 /**
@@ -375,7 +375,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx,
                                             size_t chan, float_type *bandwidth);
 
 /**
@@ -388,7 +388,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device *device,
+API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device,
                                   bool dir_tx, lms_range_t *range);
 
 /**
@@ -401,7 +401,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device *device,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetLPF(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx,
                                     size_t chan, bool enabled);
 
 /**
@@ -418,7 +418,7 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx,
                                size_t chan, bool enabled, float_type bandwidth);
 
 /**
@@ -438,7 +438,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx, 
+API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, 
                                         size_t chan, double bw, unsigned flags);
 
 /**
@@ -449,7 +449,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, const char *filename);
+API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename);
 
 /**
  * Save LMS chip configuration to a file
@@ -459,7 +459,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device *device, const char *filename
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, const char *filename);
+API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filename);
 
 /**
  * Apply the specified loopback mode
@@ -470,7 +470,7 @@ API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device *device, const char *filename
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetLoopback(lms_device *device,
+API_EXPORT int CALL_CONV LMS_SetLoopback(lms_device_t *device,
                                          lms_loopback_t mode);
 /**
  * Get the current loopback mode
@@ -480,7 +480,7 @@ API_EXPORT int CALL_CONV LMS_SetLoopback(lms_device *device,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLoopback(lms_device *device,
+API_EXPORT int CALL_CONV LMS_GetLoopback(lms_device_t *device,
                                          lms_loopback_t* mode);
 
 
@@ -496,7 +496,7 @@ API_EXPORT int CALL_CONV LMS_GetLoopback(lms_device *device,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device_t *device, bool dir_tx,
                     size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q);
 /**
  * Get the currently active test signal
@@ -508,7 +508,7 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device *device, bool dir_tx,
  *
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t *device, bool dir_tx,
                                                size_t chan, lms_testsig_t *sig);
 
 /** @} (End FN_HIGH_LVL) */
@@ -538,7 +538,7 @@ const size_t LMS_NCO_VAL_COUNT = 16;
 
 
 /** Convenience type for fixed length name string*/  
-typedef char lms_name[16];
+typedef char lms_name_t[16];
 
 /**
  * Obtain antenna list with names. First item in the list is the name of antenna
@@ -551,8 +551,8 @@ typedef char lms_name[16];
  * 
  * @return      number of items in the list on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device *device, bool dir_tx,
-                                        size_t chan, lms_name *list);
+API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx,
+                                        size_t chan, lms_name_t *list);
 
 /**
  * Select the antenna for the specified RX or TX channel.
@@ -568,7 +568,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx,
                                         size_t chan, size_t index);
 
 /**
@@ -581,7 +581,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device *device, bool dir_tx, size_t chan, size_t *index);
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t *index);
 
 /**
  * Obtains bandwidth (lower and upper frequency) of the specified antenna
@@ -594,7 +594,7 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device *device, bool dir_tx, size_t 
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device *device, bool dir_tx, size_t chan, size_t index, lms_range_t *range);
+API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, size_t chan, size_t index, lms_range_t *range);
 
 /**
  * Set sampling rate for all RX or TX channels. Sample rate is in complex
@@ -616,7 +616,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device *device, bool dir_tx, size_
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx,
                                             float_type rate, size_t oversample);
 
 /**
@@ -638,7 +638,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx,
                      size_t chan, const float_type *freq, float_type pho);
 
 /**
@@ -653,7 +653,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx,
                           size_t chan, float_type *freq, float_type *pho);
 
 /**
@@ -675,7 +675,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx,
                    size_t chan, const float_type *phases, float_type fcw);
 
 /**
@@ -690,7 +690,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
                         size_t chan, float_type *phases, float_type *fcw);
 
 /**
@@ -709,7 +709,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device *device, bool dir_tx,
  * 
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx,
                         size_t chan, size_t index, bool downconv);
 
 /**
@@ -722,7 +722,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device *device, bool dir_tx,
  * 
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx,
                         size_t chan, size_t *index);
 
 /**
@@ -734,7 +734,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device *device, bool dir_tx,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device,
+API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device,
                                      struct LMS7Parameter param, uint16_t *val);
 
 /**
@@ -746,7 +746,7 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device *device,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_WriteParam(lms_device *device,
+API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device,
                                       struct LMS7Parameter param, uint16_t val);
 
 /**
@@ -777,7 +777,7 @@ API_EXPORT int CALL_CONV LMS_GenerateLPFCoef(size_t n, float_type w1,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device * device, bool dir_tx, 
+API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device_t * device, bool dir_tx, 
              size_t chan, lms_gfir_t filt, const float_type* coef,size_t count);
 
 /**
@@ -792,7 +792,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device * device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device * device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx,
                                 size_t chan, lms_gfir_t filt, float_type* coef);
 
 /**
@@ -806,7 +806,7 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device * device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device * device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
                                     size_t chan, lms_gfir_t filt, bool enabled);
 
 /**
@@ -823,7 +823,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device * device, bool dir_tx,
  *  
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Reset(lms_device *device);
+API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device);
 
 /**
  * Read device LMS chip register
@@ -834,7 +834,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device *device);
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address,
+API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address,
                                      uint16_t *val);
 
 /**
@@ -846,7 +846,7 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device *device, uint32_t address,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address,
+API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address,
                                       uint16_t val);
 
 /**
@@ -856,7 +856,7 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device *device, uint32_t address,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device *device);
+API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device);
 
 /**
  * Read device FPGA register
@@ -867,7 +867,7 @@ API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device *device);
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address,
                                      uint16_t *val);
 
 /**
@@ -879,8 +879,34 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device *device, uint16_t address,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint16_t address,
                                       uint16_t val);
+
+/**
+ * Read custom parameter from board
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param param_id  Register address
+ * @param val       Current register value
+ * @param units     [optional] measurement units of parameter if available
+ * 
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
+                           uint16_t param_id, float_type *val, lms_name_t units);
+
+/**
+ * Write custom parameter from board
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param param_id  Register address
+ * @param val       Value to write
+ * @param units     [optional] measurement units of parameter if available
+ * 
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
+                        uint16_t address, float_type val, const lms_name_t units);
 
 /**
  * Changes device reference clock used by API for various calculations.
@@ -891,7 +917,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device *device, uint16_t address,
  * @param clock_Hz    reference clock in Hz.
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device * device,
+API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device_t * device,
                                                float_type clock_Hz);
 
 /**
@@ -901,7 +927,7 @@ API_EXPORT int CALL_CONV LMS_SetReferenceClock(lms_device * device,
  * @param clock_Hz    reference clock in Hz.
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device,
+API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device_t * device,
                                                float_type * clock_Hz);
 
 /**
@@ -912,7 +938,7 @@ API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device * device,
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val);
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val);
 
 /**
  * Read value from VCTCXO trim DAC.
@@ -922,8 +948,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device * device, uint16_t val);
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val);
-
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val);
 
 /**
  * Get VCO value range. 
@@ -934,7 +959,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device * device, uint16_t *val);
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id,
+API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * device, size_t vco_id,
                                          lms_range_t* range);
 
 /**
@@ -946,7 +971,7 @@ API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device * device, size_t vco_id,
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device * device, size_t vco_id,
+API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id,
                                          lms_range_t range);
 
 typedef enum
@@ -971,7 +996,7 @@ typedef enum
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device *device, size_t chan, lms_filter_t filt,
+API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t *device, size_t chan, lms_filter_t filt,
                                          const float_type *bw);
 
 
@@ -1001,7 +1026,7 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device *device, size_t chan, lms_fil
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device *device, size_t clk_id,
+API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id,
                                          float_type *freq);
 
 /**
@@ -1014,7 +1039,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device *device, size_t clk_id,
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device *device, size_t clk_id, 
+API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, 
                                          float_type freq);
 
 
@@ -1060,7 +1085,7 @@ typedef struct
      * was received*/
     bool packet_droped;
     
-}lms_stream_metadata;
+}lms_stream_meta_t;
 
 
 
@@ -1090,7 +1115,7 @@ typedef struct
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags);
+API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device_t *device, uint32_t flags);
 
 /**
  * Initializes/configures RX/TX stream buffers. 
@@ -1103,9 +1128,18 @@ API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device *device, uint32_t flags
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool dir_tx,
+API_EXPORT int CALL_CONV LMS_InitStream(lms_device_t *device, bool dir_tx,
                    size_t num_tranfers, size_t transfer_size, size_t fifo_size);
 
+/**
+ * Completely stops RX/TX stream buffers. 
+ * 
+ * @param device        Device handle previously obtained by LMS_Open().
+ * @param dir_tx        Select RX or TX
+ * 
+ * @return      0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx);
 
 /**
  * Receive samples from all active RX channels.
@@ -1122,8 +1156,8 @@ API_EXPORT int CALL_CONV LMS_InitStream(lms_device *device, bool dir_tx,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples,
-         size_t sample_count, lms_stream_metadata *meta, unsigned timeout_ms);
+API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
+         size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /**
  * Send samples to active TX channels.
@@ -1139,9 +1173,9 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device *device, void **samples,
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device *device, 
+API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, 
                               const void **samples,size_t sample_count, 
-                              lms_stream_metadata *meta, unsigned timeout_ms);
+                              lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /** @} (End FN_STREAM) */
 
@@ -1162,50 +1196,43 @@ typedef enum
     LMS_TARGET_BOOT = 2
 }lms_target_t;
 
-/**Maximum length of device serial number*/
-const int LMS_MAX_SERIAL_LEN = 16;
-/**Maximum length of device version string*/
-const int LMS_MAX_VER_LEN = 8;
+
+
+/**Device information structure*/
+typedef struct 
+{
+    //! The displayable name for the device
+    char deviceName[32];
+
+    /*! The displayable name for the expansion card
+     */
+    char expansionName[32];
+
+    //! The firmware version as a string
+    char firmwareVersion[16];
+
+    //! The hardware version as a string
+    char hardwareVersion[16];
+
+    //! The protocol version as a string
+    char protocolVersion[16];
+
+    //! A unique board serial number
+    uint32_t boardSerialNumber;
+    
+    uint32_t reserved[15];
+}lms_dev_info_t;
 
 /**
- * Get device serial number
+ * Get device serial number and version information
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param serial    Serial number string. Must be at least ::LMS_MAX_SERIAL_LEN
- *                  length;
+ * @param info      Device information. See the ::lms_dev_info.
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetSerial(lms_device *device, char *serial);
+API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t *info);
 
-/**
- * Get device hardware version
- * 
- * @param device    Device handle previously obtained by LMS_Open().
- * @param version   Hardware version string. Must be at least ::LMS_MAX_VER_LEN
- *                  length
- * @return          0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetHWversion(lms_device *device, char *version);
 
-/**
- * Get device firmware version version
- * 
- * @param device    Device handle previously obtained by LMS_Open().
- * @param version   Firmware version string. Must be at least ::LMS_MAX_VER_LEN
- *                  length
- * @return          0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetFWversion(lms_device *device, char *version);
-
-/**
- * Get device FPGA version
- * 
- * @param device    Device handle previously obtained by LMS_Open().
- * @param version   FPGA version string. Must be at least ::LMS_MAX_VER_LEN
- *                  length
- * @return          0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetFPGAversion(lms_device *device, char *version);
 
 /**
  * Write binary FPGA image to device.
@@ -1216,7 +1243,7 @@ API_EXPORT int CALL_CONV LMS_GetFPGAversion(lms_device *device, char *version);
  * @param target    load to volatile or non-volatile storage
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
                                             size_t size, lms_target_t target);
 
 /**
@@ -1227,7 +1254,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device *device, const char *data,
  * @param target    load to volatile or non-volatile storage
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
+API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
                                         const char *file, lms_target_t target);
 
 /**
@@ -1239,7 +1266,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device *device,
  * @param target    load to volatile or non-volatile storage
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *data,
                                             size_t size, lms_target_t target);
 
 /**
@@ -1250,7 +1277,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device *device, const char *dat
  * @param target    load to volatile or non-volatile storage
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
+API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
                                         const char *file, lms_target_t target);
 
 /**
@@ -1263,7 +1290,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device *device,
  * 
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
+API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,
                                              size_t size, lms_target_t target);
 /**
  * Boots LMS7 internal MCU from flash memory.
@@ -1272,7 +1299,7 @@ API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device *device, const char *data,
  * 
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device *device);
+API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device_t *device);
 
 /** @} (End FN_VERSION) */
 

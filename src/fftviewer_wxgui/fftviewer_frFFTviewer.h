@@ -32,7 +32,7 @@ protected:
 		fftviewer_frFFTviewer( wxWindow* parent );
         ~fftviewer_frFFTviewer();
 	//// end generated class members
-        void Initialize(lms_device* pDataPort);
+        void Initialize(lms_device_t* pDataPort);
         void SetNyquistFrequency(float freqMHz);
 
         void StartStreaming();
@@ -75,7 +75,7 @@ protected:
     std::thread threadProcessing;
     wxString printDataRate(float dataRate);
 
-    lms_device* lmsControl;
+    lms_device_t* lmsControl;
     wxTimer* mGUIupdater;
 };
 

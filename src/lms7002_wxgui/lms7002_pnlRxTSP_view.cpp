@@ -235,7 +235,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     dlg->Destroy();
 }
 
-void lms7002_pnlRxTSP_view::Initialize(lms_device* pControl)
+void lms7002_pnlRxTSP_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

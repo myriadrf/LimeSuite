@@ -24,7 +24,7 @@ lms7002_pnlBIST_view::lms7002_pnlBIST_view( wxWindow* parent, wxWindowID id, con
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlBIST_view::Initialize(lms_device* pControl)
+void lms7002_pnlBIST_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);

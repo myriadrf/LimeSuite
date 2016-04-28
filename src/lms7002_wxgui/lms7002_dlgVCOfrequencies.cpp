@@ -6,7 +6,7 @@
 using namespace std;
 using namespace lime;
 
-lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_device* plmsControl)
+lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_device_t* plmsControl)
 :
 dlgVCOfrequencies( parent )
 {

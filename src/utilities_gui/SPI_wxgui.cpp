@@ -9,7 +9,7 @@ SPI_view( parent )
     ctrPort = nullptr;
 }
 
-void SPI_wxgui::Initialize(lms_device* pCtrPort, const size_t devIndex)
+void SPI_wxgui::Initialize(lms_device_t* pCtrPort, const size_t devIndex)
 {
     ctrPort = pCtrPort;
     if (ctrPort != nullptr)
