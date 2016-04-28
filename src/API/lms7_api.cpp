@@ -534,7 +534,7 @@ API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev, float_type clki
     
     LMS7_Device* lms = (LMS7_Device*)dev;     
     lime::Si5351C obj;
-
+    obj.Initialize(lms->GetConnection());
     if (clks != nullptr)
     {
         obj.SetPLL(0,clkin,src);
@@ -564,7 +564,7 @@ API_EXPORT int CALL_CONV LMS_StatusSi5351C(lms_device_t *dev, uint32_t *status)
     
     LMS7_Device* lms = (LMS7_Device*)dev;     
     lime::Si5351C obj; 
-    
+    obj.Initialize(lms->GetConnection());
     if (status != nullptr)
     {
         lime::Si5351C::StatusBits stat = obj.GetStatusBits();

@@ -272,6 +272,27 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     txtFreq_CLK6->GetValue().ToDouble(&freq[6]);
     txtFreq_CLK7->GetValue().ToDouble(&freq[7]);
     
+    for (int i = 0; i < 8 ; i++)
+        freq[i] *= 1e6;
+    
+    if (chkEN_CLK0->GetValue()) freq[0]  = 0;
+    if (chkEN_CLK1->GetValue()) freq[1]  = 0;
+    if (chkEN_CLK2->GetValue()) freq[2]  = 0;
+    if (chkEN_CLK3->GetValue()) freq[3]  = 0;
+    if (chkEN_CLK4->GetValue()) freq[4]  = 0;
+    if (chkEN_CLK5->GetValue()) freq[5]  = 0;
+    if (chkEN_CLK6->GetValue()) freq[6]  = 0;
+    if (chkEN_CLK7->GetValue()) freq[7]  = 0;
+    
+    if (chkInvert_CLK0->GetValue()) freq[0] *= -1;
+    if (chkInvert_CLK1->GetValue()) freq[1] *= -1;
+    if (chkInvert_CLK2->GetValue()) freq[2] *= -1;
+    if (chkInvert_CLK3->GetValue()) freq[3] *= -1;
+    if (chkInvert_CLK4->GetValue()) freq[4] *= -1;
+    if (chkInvert_CLK5->GetValue()) freq[5] *= -1;
+    if (chkInvert_CLK6->GetValue()) freq[6] *= -1;
+    if (chkInvert_CLK7->GetValue()) freq[7] *= -1;
+
    if (LMS_ConfigureSi5351C(lmsControl,clkin, rgrClkSrc->GetSelection(), freq)!=0)
        wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }

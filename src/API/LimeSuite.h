@@ -1079,10 +1079,6 @@ API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev,
 API_EXPORT int CALL_CONV LMS_StatusSi5351C(lms_device_t *dev, uint32_t *status);
 
 
-
-
-
-
 /** @} (End FN_LOW_LVL) */
 
 /** @} (End FN_ADVANCED) */
