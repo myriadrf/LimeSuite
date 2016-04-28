@@ -1,7 +1,7 @@
 #include "IConnection.h"
 #include "ConnectionRegistry.h"
 #include "lms_gfir.h"
-#include "lms7_api.h"
+#include "LimeSuite.h"
 #include "lms7_device.h"
 #include "ErrorReporting.h"
 #include "errno.h"

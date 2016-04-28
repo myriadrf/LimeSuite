@@ -24,7 +24,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
 #include "lms7002_pnlBuffers_view.h"
-#include "lms7_api.h"
+#include "LimeSuite.h"
 using namespace std;
 using namespace lime;
 

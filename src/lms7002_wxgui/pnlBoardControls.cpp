@@ -1,6 +1,6 @@
 #include "pnlBoardControls.h"
 #include "wx/wxprec.h"
-#include "lms7_api.h"
+#include "LimeSuite.h"
 #ifdef __BORLANDC__
 #pragma hdrstop
 #endif //__BORLANDC__

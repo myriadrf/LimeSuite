@@ -8,7 +8,7 @@
 #ifndef LMS7_DEVICE_H
 #define	LMS7_DEVICE_H
 #include "LMS7002M.h"
-#include "lms7_api.h"
+#include "LimeSuite.h"
 #include <mutex>
 #include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 

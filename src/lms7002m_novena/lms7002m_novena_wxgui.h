@@ -8,7 +8,7 @@
 #define LMS7002M_NOVENA_WXGUI_H
 
 #include <wx/wx.h>
-#include "lms7_api.h"
+#include "LimeSuite.h"
 namespace lime{
 
 }

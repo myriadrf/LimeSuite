@@ -5,7 +5,7 @@
 */
 #include <map>
 #include <vector>
-#include "lms7_api.h"
+#include "LimeSuite.h"
 class wxPanel;
 class wxWindow;
 

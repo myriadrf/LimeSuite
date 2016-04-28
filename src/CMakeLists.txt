@@ -31,31 +31,8 @@ set(LIME_SUITE_ABI 1)
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
-    ErrorReporting.h
-    LimeSuiteConfig.h
-    ADF4002/ADF4002.h
-    version.h
-    lms7002m_mcu/MCU_BD.h
-    lms7002m_mcu/MCU_File.h
-    ConnectionRegistry/IConnection.h
-    ConnectionRegistry/ConnectionHandle.h
-    ConnectionRegistry/ConnectionRegistry.h
-    lms7002m_novena/StreamerNovena.h
-    lms7002m/LMS7002M.h
-    lms7002m/CalibrationCache.h
-    lms7002m/cpp-feather-ini-parser/INI.h
-    lms7002m/LMS7002M_RegistersMap.h
+    API/LimeSuite.h
     lms7002m/LMS7002M_parameters.h
-    protocols/ADCUnits.h
-    protocols/LMS64CCommands.h
-    protocols/LMS64CProtocol.h
-    protocols/LMSBoards.h
-    LTEpackets/dataTypes.h
-    LTEpackets/fifo.h
-    LTEpackets/StreamerLTE.h
-    Si5351C/Si5351C.h
-    LMS_StreamBoard/LMS_StreamBoard.h
-    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
 )
 
 include(FeatureSummary)
@@ -94,6 +71,8 @@ message(STATUS ${SQLITE3_INCLUDE_DIR})
 message(STATUS ${SQLITE3_LIBRARY})
 endif()
 
+add_subdirectory(GFIR)
+
 set(LIME_SUITE_SOURCES
     ErrorReporting.cpp
     ADF4002/ADF4002.cpp
@@ -114,6 +93,8 @@ set(LIME_SUITE_SOURCES
     Si5351C/Si5351C.cpp
     LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
+    API/lms7_api.cpp
+    API/lms7_device.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -129,14 +110,16 @@ include_directories(LTEpackets)
 include_directories(Si5351C)
 include_directories(LMS_StreamBoard)
 include_directories(kissFFT)
+include_directories(API)
+include_directories(GFIR)
 
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
-    add_library(LimeSuite ${LIME_SUITE_SOURCES})
-    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
+    add_library(LimeSuite SHARED ${LIME_SUITE_SOURCES})
+    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY} lms_gfir)
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
@@ -176,11 +159,7 @@ find_package(wxWidgets COMPONENTS richtext xml html xrc adv aui core base gl)
 message(STATUS "wxWidgets_DEFINITIONS: ${wxWidgets_DEFINITIONS}")
 message(STATUS "wxWidgets_INCLUDE_DIRS: ${wxWidgets_INCLUDE_DIRS}")
 message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
-########################################################################
-## API
-########################################################################
-add_subdirectory(API)
-include_directories(API)
+
 ########################################################################
 ## lms7suite gui app
 ########################################################################
