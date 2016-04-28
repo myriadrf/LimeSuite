@@ -74,7 +74,7 @@ END_EVENT_TABLE()
 
 Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, int styles, wxString idname)
 {
-    m_pModule = NULL;
+    lmsControl = NULL;
 
     wxFlexGridSizer* FlexGridSizer4;
     wxFlexGridSizer* FlexGridSizer3;
@@ -226,9 +226,9 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     Connect(ID_BUTTON3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnConfigureClockClick);
 }
 
-void Si5351C_wxgui::Initialize(Si5351C* pModule)
+void Si5351C_wxgui::Initialize(lms_device_t* pModule)
 {
-    m_pModule = pModule;
+    lmsControl = pModule;
 }
 
 void Si5351C_wxgui::BuildContent(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size)
@@ -246,51 +246,39 @@ Si5351C_wxgui::~Si5351C_wxgui()
 
 void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
 {
-    wxFileDialog openFileDialog(this, _("Open project file"), "", "", "Register Files (*.h)|*.h|Text files (*.txt)|*.TXT", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+   wxFileDialog openFileDialog(this, _("Open project file"), "", "", "Register Files (*.h)|*.h|Text files (*.txt)|*.TXT", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
     if (openFileDialog.ShowModal() == wxID_CANCEL)
         return;
 
-    m_pModule->LoadRegValuesFromFile( openFileDialog.GetPath().ToStdString().c_str() );
-    if(m_pModule->UploadConfiguration() != 0)
+    if(LMS_LoadConfigSi5351C(lmsControl,openFileDialog.GetPath().ToStdString().c_str())!=0)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
 {
     double refFreq;
-    double freq;
     if (rgrClkSrc->GetSelection() == 0)
         refFreq = (rgrXTALfreq->GetSelection() == 0 ? 25 : 27);
     else
         txtCLKIN_MHz->GetValue().ToDouble(&refFreq);
-    m_pModule->SetPLL(0, refFreq * 1000000, rgrClkSrc->GetSelection());
-    m_pModule->SetPLL(1, refFreq * 1000000, rgrClkSrc->GetSelection());
-
-    txtFreq_CLK0->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(0, freq*1000000, chkEN_CLK0->GetValue(), chkInvert_CLK0->GetValue());
-    txtFreq_CLK1->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(1, freq*1000000, chkEN_CLK1->GetValue(), chkInvert_CLK1->GetValue());
-    txtFreq_CLK2->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(2, freq*1000000, chkEN_CLK2->GetValue(), chkInvert_CLK2->GetValue());
-    txtFreq_CLK3->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(3, freq*1000000, chkEN_CLK3->GetValue(), chkInvert_CLK3->GetValue());
-    txtFreq_CLK4->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(4, freq*1000000, chkEN_CLK4->GetValue(), chkInvert_CLK4->GetValue());
-    txtFreq_CLK5->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(5, freq*1000000, chkEN_CLK5->GetValue(), chkInvert_CLK5->GetValue());
-    txtFreq_CLK6->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(6, freq*1000000, chkEN_CLK6->GetValue(), chkInvert_CLK6->GetValue());
-    txtFreq_CLK7->GetValue().ToDouble(&freq);
-    m_pModule->SetClock(7, freq*1000000, chkEN_CLK7->GetValue(), chkInvert_CLK7->GetValue());
-
-    if( m_pModule->ConfigureClocks() == Si5351C::SUCCESS )
-        m_pModule->UploadConfiguration();
+    float_type freq[8];
+    float_type clkin = refFreq * 1000000;
+    txtFreq_CLK0->GetValue().ToDouble(&freq[0]);
+    txtFreq_CLK1->GetValue().ToDouble(&freq[1]);
+    txtFreq_CLK2->GetValue().ToDouble(&freq[2]);
+    txtFreq_CLK3->GetValue().ToDouble(&freq[3]);
+    txtFreq_CLK4->GetValue().ToDouble(&freq[4]);
+    txtFreq_CLK5->GetValue().ToDouble(&freq[5]);
+    txtFreq_CLK6->GetValue().ToDouble(&freq[6]);
+    txtFreq_CLK7->GetValue().ToDouble(&freq[7]);
+    
+   if (LMS_ConfigureSi5351C(lmsControl,clkin, rgrClkSrc->GetSelection(), freq)!=0)
+       wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnResetToDefaultsClick(wxCommandEvent& event)
 {
-    m_pModule->Reset();
-    m_pModule->UploadConfiguration();
+    LMS_ConfigureSi5351C(lmsControl,0, 0, nullptr);
 }
 
 
@@ -298,7 +286,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
 {
     for(int i=0; i<8; ++i)
         ClockEnable(i, true);
-    if(board == GetDeviceName(LMS_DEV_STREAM))
+   /* if(board == GetDeviceName(LMS_DEV_STREAM))
     {
         lblCLK0->SetLabel(_("CLK0 - CLK_IN"));
         lblCLK1->SetLabel(_("CLK1"));
@@ -314,7 +302,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         rgrClkSrc->SetSelection(1);
     }
     else if (board == GetDeviceName(LMS_DEV_LIMESDR))
-    {
+    {*/
         lblCLK0->SetLabel(_("CLK0"));
         lblCLK1->SetLabel(_("CLK1"));
         lblCLK2->SetLabel(_("CLK2"));
@@ -324,7 +312,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         lblCLK6->SetLabel(_("CLK6"));
         lblCLK7->SetLabel(_("CLK7"));
         rgrClkSrc->SetSelection(0);
-    }
+   /* }
     else
     {
         lblCLK0->SetLabel(_("CLK0 - PLL CLK"));
@@ -340,7 +328,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         lblCLK7->SetLabel(_("CLK7"));
         ClockEnable(7, false);
         rgrClkSrc->SetSelection(1);
-    }
+    }*/
     Layout();
 }
 
@@ -403,18 +391,19 @@ void Si5351C_wxgui::ClockEnable(unsigned int i, bool enabled)
 
 void Si5351C_wxgui::OnbtnReadStatusClick(wxCommandEvent& event)
 {
-    Si5351C::StatusBits stat = m_pModule->GetStatusBits();
+    uint32_t stat;
+    LMS_StatusSi5351C(lmsControl,&stat);
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\
 LOL_A:	%i  	LOL_A_STKY:	%i\n\
-LOS:	%i  	LOS_STKY:	%i", stat.sys_init, stat.sys_init_stky, stat.lol_b, stat.lol_b_stky, stat.lol_a, stat.lol_a_stky, stat.los, stat.los_stky);
+LOS:	%i  	LOS_STKY:	%i", stat&64 ? 1:0, stat&128 ? 1:0, stat&4 ? 1:0, stat&8 ? 1:0, stat&1 ? 1:0, stat&2 ? 1: 0, stat&16 ? 1:0, stat&32 ? 1:0);
     lblStatus->SetLabel(text);
 }
 
 void Si5351C_wxgui::OnbtnClearStatusClick(wxCommandEvent& event)
 {
-    m_pModule->ClearStatus();
+    LMS_StatusSi5351C(lmsControl,nullptr);
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\

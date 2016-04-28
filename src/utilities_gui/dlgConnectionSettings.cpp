@@ -25,7 +25,10 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
     if (ret <= 0)
         return;
     for (unsigned i = 0; i<ret; ++i)
-        mListLMS7ports->Append(std::string(list[i]));
+    {
+        std::string str = list[i];
+        mListLMS7ports->Append(str.substr(0,str.find(',')));
+    }
     if (lmsOpenedIndex >= 0 && lmsOpenedIndex < mListLMS7ports->GetCount())
         mListLMS7ports->SetSelection(lmsOpenedIndex);
 }

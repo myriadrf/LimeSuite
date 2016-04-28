@@ -201,9 +201,9 @@ void LMS_Programing_wxgui::OnAbortProgramming(wxCommandEvent& event)
     mAbortProgramming.store(true);
 }
 
-void LMS_Programing_wxgui::SetConnection(IConnection* port)
+void LMS_Programing_wxgui::SetConnection(lms_device_t* port)
 {
-    serPort = port;
+    lmsControl = port;
 }
 
 bool LMS_Programing_wxgui::OnProgrammingCallback(int bsent, int btotal, const char* progressMsg)
@@ -224,9 +224,16 @@ void LMS_Programing_wxgui::DoProgramming()
     IConnection::ProgrammingCallback callback = bind(&LMS_Programing_wxgui::OnProgrammingCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     int device = cmbDevice->GetSelection();
     int progMode = cmbProgMode->GetSelection();
-    if(device == 1) // for FX3 show only option to program firmware
-        progMode = 2;
-    auto status = serPort->ProgramWrite(mProgramData.data(), mProgramData.size(), progMode, device, callback);
+    int status = -1;
+    if (device == 1)
+    {
+        // for FX3 show only option to program firmware
+        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), LMS_TARGET_FLASH);
+    }
+    else if (device == 2)
+    {
+       status = LMS_ProgramFPGA(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode); 
+    }
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
@@ -244,7 +251,7 @@ void LMS_Programing_wxgui::DoProgramming()
     //if programming FX3 firmware, inform user about device reset
     if(device == 1 && progMode == 2)
     {   
-        status = serPort->ProgramWrite(nullptr, 0, 0, device, nullptr);
+        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
     }

@@ -16,9 +16,7 @@
 #include "lms7suiteEvents.h"
 #include "fftviewer_frFFTviewer.h"
 #include "LMS_StreamBoard.h"
-#include "ADF4002.h"
 #include "ADF4002_wxgui.h"
-#include "Si5351C.h"
 #include "Si5351C_wxgui.h"
 #include "LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
@@ -162,7 +160,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
 	Fit();
 
     SetMinSize(GetSize());
-   // UpdateConnections(lmsControl);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -343,7 +340,7 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
     else
     {
         programmer = new LMS_Programing_wxgui(this, wxNewId(), _("Programing"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-   //     programmer->SetConnection(lmsControl);
+        programmer->SetConnection(lmsControl);
         programmer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnProgramingClose), NULL, this);
         programmer->Show();
     }
@@ -367,7 +364,7 @@ void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
     else
     {
         rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-     //   rfspark->Initialize(lmsControl);
+        //rfspark->Initialize(lmsControl);
         rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
         rfspark->Show();
     }

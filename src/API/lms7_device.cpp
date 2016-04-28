@@ -1635,14 +1635,17 @@ int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode)
 //TODO: fx3 needs restart
 int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode)
 {
-    if (mode != LMS_TARGET_FLASH)
+    if (mode != LMS_TARGET_FLASH && mode != LMS_TARGET_BOOT)
     {
         lime::ReportError(ENOTSUP, "Unsupported target storage type");
         return -1;
     }
     //device fx3(1)
     //mode program_flash(2))
-    return GetConnection()->ProgramWrite(data,len,2,1,nullptr);
+    if (mode == LMS_TARGET_FLASH)
+        return GetConnection()->ProgramWrite(data,len,2,1,nullptr);
+    else
+        return GetConnection()->ProgramWrite(nullptr,0,0,1,nullptr);
 }
 
 int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode)

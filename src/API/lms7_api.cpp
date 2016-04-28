@@ -6,6 +6,7 @@
 #include "ErrorReporting.h"
 #include "errno.h"
 #include "MCU_BD.h"
+#include "Si5351C.h"
 #include <cmath>
 
 
@@ -505,6 +506,80 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
             lime::ReportError(EINVAL, "Invalid clock ID.");
             return -1;
     }
+}
+
+API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev, const char* filename)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)dev;  
+    
+    lime::Si5351C obj;
+    obj.Initialize(lms->GetConnection());
+    obj.LoadRegValuesFromFile(std::string(filename));
+    return obj.UploadConfiguration();
+}
+
+API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev, float_type clkin, unsigned src, float_type *clks)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)dev;     
+    lime::Si5351C obj;
+
+    if (clks != nullptr)
+    {
+        obj.SetPLL(0,clkin,src);
+        obj.SetPLL(1,clkin,src);
+
+        for (int i = 0; i < 8;i++)
+        {
+            unsigned clock = abs(clks[i]);
+            obj.SetClock(i,clock,clock!=0,clks[i]<0);
+        }
+
+        if (obj.ConfigureClocks()!=0)
+            return -1;
+    }
+    else obj.Reset();
+      
+    return obj.UploadConfiguration();
+}
+
+API_EXPORT int CALL_CONV LMS_StatusSi5351C(lms_device_t *dev, uint32_t *status)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)dev;     
+    lime::Si5351C obj; 
+    
+    if (status != nullptr)
+    {
+        lime::Si5351C::StatusBits stat = obj.GetStatusBits();
+        *status = 0;
+        *status |= stat.lol_a;
+        *status |= stat.lol_a_stky<<1;
+        *status |= stat.lol_b<<2;
+        *status |= stat.lol_b_stky<<3;
+        *status |= stat.los<<4;
+        *status |= stat.los_stky<<5;
+        *status |= stat.sys_init<<6;
+        *status |= stat.sys_init_stky<<7;
+        return 0;
+    }
+    return obj.ClearStatus();
 }
 
 
