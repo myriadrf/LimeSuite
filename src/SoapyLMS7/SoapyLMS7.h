@@ -235,6 +235,8 @@ public:
 
     void writeSetting(const std::string &key, const std::string &value);
 
+    SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const;
+
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
 
     /*******************************************************************

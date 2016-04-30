@@ -1047,6 +1047,41 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
     }
 }
 
+SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_t channel) const
+{
+    SoapySDR::ArgInfoList infos;
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "TSP_CONST";
+        info.name = "TSP DC Level";
+        info.type = SoapySDR::ArgInfo::INT;
+        info.description = "Digital DC level in LMS7002M TSP chain.";
+        info.range = SoapySDR::Range(0, (1 << 15)-1);
+        infos.push_back(info);
+    }
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "STORE_CORRECTIONS";
+        info.name = "Store corrections";
+        info.type = SoapySDR::ArgInfo::INT;
+        info.description = "Store digital corrections with the current LO frequency.";
+        infos.push_back(info);
+    }
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "APPLY_CORRECTIONS";
+        info.name = "Apply corrections";
+        info.type = SoapySDR::ArgInfo::INT;
+        info.description = "Apply digital corrections for the current LO frequency.";
+        infos.push_back(info);
+    }
+
+    return infos;
+}
+
 void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
