@@ -134,6 +134,11 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
     //also triggers internal stream threads ~ its hacky
     _conn->SetHardwareTimestamp(0);
+
+    //reset flags for user calls
+    _fixedClockRate = false;
+    _fixedRxSampRate.clear();
+    _fixedTxSampRate.clear();
 }
 
 SoapyLMS7::~SoapyLMS7(void)
@@ -607,6 +612,28 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
  * Sample Rate API
  ******************************************************************/
 
+static double calculateClockRate(
+    const int adcFactorRx,
+    const int dacFactorTx,
+    const double rateRx,
+    const double rateTx,
+    int &dspFactorRx,
+    int &dspFactorTx)
+{
+    for (dspFactorRx = 2; dspFactorRx <= 32; dspFactorRx *= 2)
+    {
+        const double rateClock = rateRx*dspFactorRx*adcFactorRx;
+        for (dspFactorTx = 2; dspFactorTx <= 32; dspFactorTx *= 2)
+        {
+            const double actualRateTx = rateClock/(dspFactorTx*dacFactorTx);
+            //good if we got the same output rate with small margin of error
+            if (std::abs(actualRateTx-rateTx) < 10.0) return rateClock;
+        }
+    }
+    SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(Rx %g MHz, Tx %g MHz) Failed -- no common clock rate", rateRx/1e6, rateTx/1e6);
+    throw std::runtime_error("SoapyLMS7::setSampleRate() -- no common clock rate");
+}
+
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
@@ -614,7 +641,23 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     LMS7002M_SelfCalState state(rfic);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
+    double clockRate = this->getMasterClockRate();
+    const double dspFactor = clockRate/rfic->GetReferenceClk_TSP(lmsDir);
+
+    //select automatic clock rate
+    if (not _fixedClockRate)
+    {
+        double rxRate = rate, txRate = rate;
+        if (direction != SOAPY_SDR_RX and _fixedRxSampRate[channel]) rxRate = this->getSampleRate(SOAPY_SDR_RX, channel);
+        if (direction != SOAPY_SDR_TX and _fixedTxSampRate[channel]) txRate = this->getSampleRate(SOAPY_SDR_TX, channel);
+        clockRate = calculateClockRate(
+            clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Rx),
+            clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Tx),
+            rxRate, txRate, _decims[channel], _interps[channel]
+        );
+    }
+
+    const double dspRate = clockRate/dspFactor;
     const double factor = dspRate/rate;
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), baseRate %g MHz, factor %g", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
@@ -626,19 +669,17 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
     switch (direction)
     {
-    case SOAPY_SDR_TX: _interps[channel] = intFactor; break;
-    case SOAPY_SDR_RX: _decims[channel] = intFactor; break;
+    case SOAPY_SDR_TX:
+        _fixedTxSampRate[channel] = true;
+        _interps[channel] = intFactor;
+        break;
+    case SOAPY_SDR_RX:
+        _fixedRxSampRate[channel] = true;
+        _decims[channel] = intFactor;
+        break;
     }
 
-    //when only setting the tx rate, also set rx if its not already
-    //this is a workaround https://github.com/limemicro/lms7suite/issues/29
-    if (direction == SOAPY_SDR_TX and _decims.count(channel) == 0)
-    {
-        this->setSampleRate(SOAPY_SDR_RX, channel, rate);
-    }
-
-    rfic->SetInterfaceFrequency(
-        this->getMasterClockRate(),
+    rfic->SetInterfaceFrequency(clockRate,
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
 
@@ -805,6 +846,7 @@ void SoapyLMS7::setMasterClockRate(const double rate)
         rfic->Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN, 2);
         rfic->SetFrequencyCGEN(rate);
     }
+    _fixedClockRate = true;
 }
 
 double SoapyLMS7::getMasterClockRate(void) const
