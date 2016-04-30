@@ -15,6 +15,7 @@
 #include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
 #include <cstdlib>
+#include <algorithm>
 
 using namespace lime;
 
@@ -22,6 +23,10 @@ using namespace lime;
 
 //lazy fix for the const call issue -- FIXME
 #define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
+
+//reasonable limits when advertising the rate
+#define MIN_SAMP_RATE 1e5
+#define MAX_SAMP_RATE 60e6
 
 /*******************************************************************
  * Special LMS7002M with log forwarding
@@ -703,13 +708,66 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-
-    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
     std::vector<double> rates;
-    for (int i = 5; i >= 0; i--)
+
+    const double clockRate = this->getMasterClockRate();
+    const double dacFactor = clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Tx);
+    const double adcFactor = clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Rx);
+    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
+    const bool fixedRx = _fixedRxSampRate.count(channel) != 0 and _fixedRxSampRate.at(channel);
+    const bool fixedTx = _fixedTxSampRate.count(channel) != 0 and _fixedTxSampRate.at(channel);
+
+    //clock rate is fixed, only half-band chain is configurable
+    if (_fixedClockRate)
     {
-        rates.push_back(dspRate/(1 << i));
+        for (int i = 32; i >= 2; i /= 2) rates.push_back(dspRate/i);
     }
+
+    //special rates when looking for rx rates and tx is fixed
+    //return all rates where the tx sample rate is achievable
+    else if (direction == SOAPY_SDR_RX and fixedTx)
+    {
+        const double txRate = this->getSampleRate(SOAPY_SDR_TX, channel);
+        for (int iTx = 32; iTx >= 2; iTx /= 2)
+        {
+            const double clockRate = txRate*dacFactor*iTx;
+            for (int iRx = 32; iRx >= 2; iRx /= 2)
+            {
+                const double rxRate = clockRate/(adcFactor*iRx);
+                if (rxRate > MAX_SAMP_RATE) continue;
+                if (rxRate < MIN_SAMP_RATE) continue;
+                rates.push_back(rxRate);
+            }
+        }
+    }
+
+    //special rates when looking for tx rates and rx is fixed
+    //return all rates where the rx sample rate is achievable
+    else if (direction == SOAPY_SDR_TX and fixedRx)
+    {
+        const double rxRate = this->getSampleRate(SOAPY_SDR_RX, channel);
+        for (int iRx = 32; iRx >= 2; iRx /= 2)
+        {
+            const double clockRate = rxRate*adcFactor*iRx;
+            for (int iTx = 32; iTx >= 2; iTx /= 2)
+            {
+                const double txRate = clockRate/(dacFactor*iTx);
+                if (txRate > MAX_SAMP_RATE) continue;
+                if (txRate < MIN_SAMP_RATE) continue;
+                rates.push_back(txRate);
+            }
+        }
+    }
+
+    //otherwise, the clock is the only limiting factor
+    //just give a reasonable high and low
+    else
+    {
+        rates.push_back(MIN_SAMP_RATE);
+        rates.push_back(MAX_SAMP_RATE);
+    }
+
+    std::sort(rates.begin(), rates.end());
     return rates;
 }
 
