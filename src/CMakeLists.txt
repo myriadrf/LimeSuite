@@ -325,3 +325,17 @@ set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+########################################################################
+# uninstall target
+########################################################################
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+#only add uninstall target if this is the top project
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
