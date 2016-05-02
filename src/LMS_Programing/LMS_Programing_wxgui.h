@@ -41,13 +41,14 @@ protected:
     wxButton* btnOpen;
 
     void DoProgramming();
-    bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
+    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
+    static bool test(int bsent, int btotal, const char* progressMsg);
     std::vector<char> mProgramData;
     lms_device_t* lmsControl;
     std::atomic<bool> mProgrammingInProgress;
     std::atomic<bool> mAbortProgramming;
     std::thread mWorkerThread;
-
+    static LMS_Programing_wxgui* obj_ptr;
     static const long ID_PROGRAMING_FINISHED_EVENT;
     static const long ID_PROGRAMING_STATUS_EVENT;
     static const long ID_BUTTON1;

@@ -4,7 +4,6 @@
 @brief  panel for uploading data to FPGA
 */
 #include "LMS_Programing_wxgui.h"
-#include "IConnection.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -206,33 +205,36 @@ void LMS_Programing_wxgui::SetConnection(lms_device_t* port)
     lmsControl = port;
 }
 
+LMS_Programing_wxgui* LMS_Programing_wxgui::obj_ptr=nullptr;
 bool LMS_Programing_wxgui::OnProgrammingCallback(int bsent, int btotal, const char* progressMsg)
 {
     wxCommandEvent evt;
-    evt.SetEventObject(this);
+    evt.SetEventObject(obj_ptr);
     evt.SetInt(100.0 * bsent / btotal); //round to int
     evt.SetString(wxString::From8BitData(progressMsg));
     evt.SetEventType(wxEVT_COMMAND_THREAD);
     evt.SetId(ID_PROGRAMING_STATUS_EVENT);
-    wxPostEvent(this, evt);
-    return mAbortProgramming.load();
+    wxPostEvent(obj_ptr, evt);
+    return obj_ptr->mAbortProgramming.load();
 }
+
 
 void LMS_Programing_wxgui::DoProgramming()
 {
     mProgrammingInProgress.store(true);
-    IConnection::ProgrammingCallback callback = bind(&LMS_Programing_wxgui::OnProgrammingCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    obj_ptr = this;
     int device = cmbDevice->GetSelection();
     int progMode = cmbProgMode->GetSelection();
     int status = -1;
     if (device == 1)
     {
         // for FX3 show only option to program firmware
-        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), LMS_TARGET_FLASH);
+        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), LMS_TARGET_FLASH,OnProgrammingCallback);
     }
     else if (device == 2)
     {
-       status = LMS_ProgramFPGA(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode); 
+
+       status = LMS_ProgramFPGA(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode,OnProgrammingCallback); 
     }
     wxCommandEvent evt;
     evt.SetEventObject(this);
@@ -251,7 +253,7 @@ void LMS_Programing_wxgui::DoProgramming()
     //if programming FX3 firmware, inform user about device reset
     if(device == 1 && progMode == 2)
     {   
-        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT);
+        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
     }

@@ -7,6 +7,7 @@
 #include "errno.h"
 #include "MCU_BD.h"
 #include "Si5351C.h"
+#include "ADF4002.h"
 #include <cmath>
 
 
@@ -524,7 +525,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev, const char* fi
     return obj.UploadConfiguration();
 }
 
-API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev, float_type clkin, unsigned src, float_type *clks)
+API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev, float_type clkin,  float_type *clks, unsigned src)
 {
     if (dev == nullptr)
     {
@@ -580,6 +581,70 @@ API_EXPORT int CALL_CONV LMS_StatusSi5351C(lms_device_t *dev, uint32_t *status)
         return 0;
     }
     return obj.ClearStatus();
+}
+
+API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_conf_t *config)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)dev;     
+    lime::ADF4002 obj; 
+    auto serPort = lms->GetConnection();
+
+    //reference counter latch
+    obj.SetReferenceCounterLatch(config->lockDetectPrec, config->antiBacklash, config->referenceCounter);
+
+    //n counter latch
+    obj.SetNCounterLatch(config->cpGain, config->nCounter);
+
+    //function latch
+    obj.SetFunctionLatch(config->flCurrent1, config->flCurrent2, config->flTimerCounter, config->flFastlock, config->flMuxCtrl);
+    obj.SetFunctionLatchRgr(config->flPDPolarity, config->flPD1, config->flPD2, config->flCounterReset, config->flCPState);
+
+    //Initialization latch
+    obj.SetInitializationLatch(config->ilCurrent1, config->ilCurrent2, config->ilTimerCounter, config->ilFastlock, config->ilMuxCtrl);
+    obj.SetInitializationLatchRgr(config->ilPDPolarity, config->ilPD1, config->ilPD2, config->ilCounterReset, config->ilCPState);
+
+    if (config->fRef > 0 && config->fVCO)
+    {
+      int rcnt;
+      int ncnt;
+      obj.SetFrefFvco(config->fRef, config->fVCO, rcnt, ncnt);  
+    }
+    
+    config->fRef = obj.lblFcomp;
+    config->fVCO = obj.lblFvco;
+
+    unsigned char data[12];
+    obj.GetConfig(data);
+
+    vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    int status;
+    // ADF4002 needs to be writen 4 values of 24 bits
+    int adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+    status = serPort->TransactSPI(adf4002SpiAddr, dataWr.data(), nullptr, 4);
+}
+
+API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+     LMS7_Device* lms = (LMS7_Device*)dev;  
+     
+    if (toChip)
+        return lms->UploadAll();
+    else
+        return lms->DownloadAll();
 }
 
 
@@ -1448,7 +1513,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t 
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
-                                            size_t size, lms_target_t target)
+                                            size_t size, lms_target_t target, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {
@@ -1457,12 +1522,11 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
     } 
     
     LMS7_Device* lms = (LMS7_Device*)device; 
-    
-    return lms->ProgramFPGA(data,size,target);  
+    return lms->ProgramFPGA(data,size,target, callback);  
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
-                                        const char *file, lms_target_t target)
+                                        const char *file, lms_target_t target, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {
@@ -1472,12 +1536,12 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
     
     LMS7_Device* lms = (LMS7_Device*)device; 
     std::string str = file;
-    return lms->ProgramFPGA(str,target);  
+    return lms->ProgramFPGA(str,target, callback);  
 }
 
 
 API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *data,
-                                            size_t size, lms_target_t target)
+                                            size_t size, lms_target_t target, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {
@@ -1487,12 +1551,12 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *d
     
     LMS7_Device* lms = (LMS7_Device*)device; 
     
-    return lms->ProgramFW(data,size,target);   
+    return lms->ProgramFW(data,size,target,callback);   
 }
 
 
 API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
-                                         const char *file, lms_target_t target)
+                                         const char *file, lms_target_t target, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {
@@ -1502,11 +1566,11 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
     
     LMS7_Device* lms = (LMS7_Device*)device; 
     
-    return lms->ProgramFW(file,target);   
+    return lms->ProgramFW(file,target,callback);   
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,
-                                              size_t size, lms_target_t target)
+                                              size_t size, lms_target_t target, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {

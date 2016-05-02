@@ -293,13 +293,13 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     if (chkInvert_CLK6->GetValue()) freq[6] *= -1;
     if (chkInvert_CLK7->GetValue()) freq[7] *= -1;
 
-   if (LMS_ConfigureSi5351C(lmsControl,clkin, rgrClkSrc->GetSelection(), freq)!=0)
+   if (LMS_ConfigureSi5351C(lmsControl,clkin, freq,rgrClkSrc->GetSelection())!=0)
        wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnResetToDefaultsClick(wxCommandEvent& event)
 {
-    LMS_ConfigureSi5351C(lmsControl,0, 0, nullptr);
+    LMS_ConfigureSi5351C(lmsControl,0, nullptr,0);
 }
 
 

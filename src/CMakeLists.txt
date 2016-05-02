@@ -238,7 +238,7 @@ if (ENABLE_LMS7_GUI)
     add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite lmsAPI oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)

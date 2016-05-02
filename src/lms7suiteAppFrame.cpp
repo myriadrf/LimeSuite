@@ -156,8 +156,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
  /*   adfModule = new ADF4002();
     si5351module = new Si5351C();
 */
-	Layout();
-	Fit();
+    Layout();
+    Fit();
 
     SetMinSize(GetSize());
 }
@@ -301,7 +301,7 @@ void LMS7SuiteAppFrame::OnShowADF4002(wxCommandEvent& event)
     {
         adfGUI = new ADF4002_wxgui(this, wxNewId(), _("ADF4002"));
         adfGUI->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnADF4002Close), NULL, this);
-     //   adfGUI->Initialize(lmsControl);
+        adfGUI->Initialize(lmsControl);
         adfGUI->Show();
     }
 }

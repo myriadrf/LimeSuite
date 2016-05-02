@@ -262,7 +262,7 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
 
 void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
-    int status = 0;//lmsControl->DownloadAll();
+    int status = LMS_Synchronize(lmsControl,false);
     if (status != 0)
         wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
     UpdateVisiblePanel();
@@ -270,7 +270,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
-    int status = 0;//lmsControl->UploadAll();
+    int status = LMS_Synchronize(lmsControl,true);
     if (status != 0)
         wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
     wxCommandEvent evt;

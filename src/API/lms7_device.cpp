@@ -1596,7 +1596,7 @@ int LMS7_Device::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamp
     return numSamples;
 }
 
-int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode)
+int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
 {
     if (mode > LMS_TARGET_BOOT)
     {
@@ -1605,10 +1605,10 @@ int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode)
     }
     //device FPGA(2)
     //mode to RAM(0), to FLASH (1)
-    return GetConnection()->ProgramWrite(data,len,mode,2,nullptr);
+    return GetConnection()->ProgramWrite(data,len,mode,2,callback);
 }
 
-int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode)
+int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
 {
     std::ifstream file(fname);
     int len;
@@ -1627,13 +1627,13 @@ int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode)
         lime::ReportError(ENOENT, "Unable to open the specified file");
         return -1;
     }
-    int ret = ProgramFPGA(data,len,mode);
+    int ret = ProgramFPGA(data,len,mode,callback);
     delete [] data;
     return ret;
 }
 
 //TODO: fx3 needs restart
-int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode)
+int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
 {
     if (mode != LMS_TARGET_FLASH && mode != LMS_TARGET_BOOT)
     {
@@ -1643,12 +1643,12 @@ int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode)
     //device fx3(1)
     //mode program_flash(2))
     if (mode == LMS_TARGET_FLASH)
-        return GetConnection()->ProgramWrite(data,len,2,1,nullptr);
+        return GetConnection()->ProgramWrite(data,len,2,1,callback);
     else
-        return GetConnection()->ProgramWrite(nullptr,0,0,1,nullptr);
+        return GetConnection()->ProgramWrite(nullptr,0,0,1,callback);
 }
 
-int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode)
+int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
 {
     std::ifstream file(fname);
     int len;
@@ -1667,12 +1667,12 @@ int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode)
         lime::ReportError(ENOENT, "Unable to open the specified file");
         return -1;
     }
-    int ret = ProgramFW(data,len,mode);
+    int ret = ProgramFW(data,len,mode,callback);
     delete [] data;
     return ret;
 }
 
-int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target)
+int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,lime::IConnection::ProgrammingCallback callback)
 {
     lime::MCU_BD mcu;
     lime::MCU_BD::MEMORY_MODE mode;

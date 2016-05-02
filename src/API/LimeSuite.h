@@ -1057,27 +1057,85 @@ API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev,
  * Configure Si5351C frequencies
  *
  * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   clkin       PLLs input clock. 
- * @param   src         input clock source 0-XTAL, 1-CLKIN
+ * @param   clkin       PLLs input clock frequency. 
  * @param   clks        output clock frequencies (must be 8). 
  *                      0 - disabled, negative - inverted
+ * @param   src         input clock source 0-XTAL, 1-CLKIN
  * 
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ConfigureSi5351C(lms_device_t *dev,
-                   float_type clkin, unsigned src, float_type *clks);
+                   float_type clkin, float_type *clks, uint32_t src);
 
 
 /**
  * Get Si5351C status bits
  *
  * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   status      Status bits 
+ * @param   status      Status bits. Pass Null to clear status bits 
  * 
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_StatusSi5351C(lms_device_t *dev, uint32_t *status);
 
+
+typedef struct
+{
+    double fRef;
+    double fVCO;
+    //Reference counter latch
+    unsigned lockDetectPrec;   /**<3 cycles (0), or 5 cycles (1)*/
+    unsigned antiBacklash;     /**<2.9ns (0), 6ns (1)*/
+    unsigned referenceCounter; /**<range [0, 16383]*/
+    //N counter latch
+    unsigned cpGain;           /**<0 or 1*/
+    unsigned nCounter;         /**<range [0, 8191]*/
+    //Function latch
+    unsigned flCurrent1;
+    unsigned flCurrent2;
+    unsigned flTimerCounter;
+    unsigned flFastlock;
+    unsigned flMuxCtrl;
+    unsigned flPDPolarity;
+    unsigned flPD1;
+    unsigned flPD2;
+    unsigned flCounterReset;
+    unsigned flCPState;
+    //Initialization latch
+    unsigned ilCurrent1;
+    unsigned ilCurrent2;
+    unsigned ilTimerCounter;
+    unsigned ilFastlock;
+    unsigned ilMuxCtrl;
+    unsigned ilPDPolarity;
+    unsigned ilPD1;
+    unsigned ilPD2;
+    unsigned ilCounterReset;
+    unsigned ilCPState;
+    //Extra
+    uint32_t flags;
+    
+}lms_adf4002_conf_t;
+
+/**
+ * Get Si5351C status bits
+ *
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   config      ADF4002 configuration structure ::lms_adf4002_conf_t
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_conf_t *config);
+
+/**
+ * Synchronizes register values between API cache and chip
+ *
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   toChip      if true copies values from API cache to chip.
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip);
 
 /** @} (End FN_LOW_LVL) */
 
@@ -1186,7 +1244,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx);
  * @param device        Device handle previously obtained by LMS_Open().
  * @param samples       pointers to sample buffers (for each active channel).
  * @param sample_count  Number of samples to read from each channel
- * @param meta          Metadata. See the ::lms_stream_metadata description.
+ * @param meta          Metadata. See the ::lms_stream_meta_t description.
  * @param timeout_ms    how long to wait for data before timing out(0=infinite).
  * 
  * @return      0 on success, (-1) on failure
@@ -1203,7 +1261,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
  * @param device        Device handle previously obtained by LMS_Open().
  * @param samples       pointers to sample buffers (for each active channel).
  * @param sample_count  Number of samples to write to each channel
- * @param meta          Metadata. See the ::lms_stream_metadata description.
+ * @param meta          Metadata. See the ::lms_stream_meta_t description.
  * @param timeout_ms    how long to wait for data before timing out(0=infinite).
  * 
  * @return      0 on success, (-1) on failure
@@ -1268,6 +1326,14 @@ typedef struct
 API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t *info);
 
 
+/*!
+ * Callback from programming processes
+ * @param bsent number of bytes transferred
+ * @param btotal total number of bytes to send
+ * @param progressMsg string describing current progress state
+ * @return 0-continue programming, 1-abort operation
+ */
+typedef bool (*lms_prog_callback_t)(int bsent, int btotal, const char* progressMsg);
 
 /**
  * Write binary FPGA image to device.
@@ -1279,7 +1345,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t 
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
-                                            size_t size, lms_target_t target);
+                 size_t size, lms_target_t target,lms_prog_callback_t callback);
 
 /**
  * Read FPGA image from the specified file and write it to device.
@@ -1290,7 +1356,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
-                                        const char *file, lms_target_t target);
+           const char *file, lms_target_t target, lms_prog_callback_t callback);
 
 /**
  * Write firmware image to device.
@@ -1302,7 +1368,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFPGAFile(lms_device_t *device,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *data,
-                                            size_t size, lms_target_t target);
+                size_t size, lms_target_t target, lms_prog_callback_t callback);
 
 /**
  * Read firmware image from file and write it to device.
@@ -1313,7 +1379,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *d
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
-                                        const char *file, lms_target_t target);
+           const char *file, lms_target_t target, lms_prog_callback_t callback);
 
 /**
  * Program LMS7 internal MCU.
@@ -1326,7 +1392,7 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,
-                                             size_t size, lms_target_t target);
+                size_t size, lms_target_t target, lms_prog_callback_t callback);
 /**
  * Boots LMS7 internal MCU from flash memory.
  * 

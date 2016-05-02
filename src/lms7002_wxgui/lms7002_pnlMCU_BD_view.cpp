@@ -208,7 +208,7 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
                 target = LMS_TARGET_RAM;
             else if (mode0 == 1 && mode1 == 1)
                 target = LMS_TARGET_BOOT;
-            retval = LMS_ProgramLMSMCU(pthis->lmsControl,(const char*)pthis->byte_array,8192,target);
+            retval = LMS_ProgramLMSMCU(pthis->lmsControl,(const char*)pthis->byte_array,8192,target,nullptr);
         }
         wxThreadEvent *evt = new wxThreadEvent();
         evt->SetInt(retval);
