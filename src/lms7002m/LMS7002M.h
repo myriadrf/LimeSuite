@@ -378,6 +378,7 @@ public:
     bool IsValuesCacheEnabled();
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
+    float_type GetTemperature();
 protected:
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;

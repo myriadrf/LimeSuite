@@ -37,6 +37,7 @@ class lms7002_pnlXBUF_view;
 #include <wx/settings.h>
 #include <wx/radiobut.h>
 #include <wx/sizer.h>
+#include <wx/stattext.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -44,7 +45,6 @@ class lms7002_pnlXBUF_view;
 #include <wx/notebook.h>
 #include <wx/checkbox.h>
 #include <wx/statbox.h>
-#include <wx/stattext.h>
 #include <wx/combobox.h>
 #include <wx/spinctrl.h>
 #include <wx/radiobox.h>
@@ -99,6 +99,8 @@ class mainPanel : public wxPanel
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
+		wxStaticText* txtTemperature;
+		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -110,6 +112,7 @@ class mainPanel : public wxPanel
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	
