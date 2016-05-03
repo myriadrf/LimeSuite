@@ -1700,8 +1700,9 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,li
         lime::ReportError(ENOTSUP, "Unsupported target storage type");
         return -1;
     }
-    mcu.Initialize(GetConnection());
+    mcu.Initialize(GetConnection());    mcu.callback = callback;
     mcu.Program_MCU(bin,mode);
+    mcu.callback = nullptr;
     return 0;
 }
 

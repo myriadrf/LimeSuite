@@ -58,11 +58,11 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     if (lmsControl == nullptr)
         return;
 
-   /* if (mSerPort->IsOpen() == false)
+    if (LMS_IsOpen(lmsControl) == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
-    }*/
+    }
 
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint16_t dataRd = 0;

@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <string>
+#include "IConnection.h"
 
 namespace lime{
 
@@ -97,6 +98,7 @@ class MCU_BD
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
         void Initialize(IConnection* pSerPort);
+        lime::IConnection::ProgrammingCallback callback;
 };
 }
 #endif // MCU_BD_H

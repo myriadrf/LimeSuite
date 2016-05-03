@@ -25,6 +25,7 @@ MCU_BD::MCU_BD()
     stepsTotal = 0;
     stepsDone = 0;
     aborted = false;
+    callback = nullptr;
     //ctor
     int i=0;
     m_serPort=NULL;
@@ -679,6 +680,8 @@ int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
     stepsTotal.store(8192);
     stepsDone.store(0);
     aborted.store(false);
+    if (callback)
+        callback(stepsDone,stepsTotal,"");
 
     for(int16_t CntEnd=0; CntEnd<8192; CntEnd+=32)
     {
@@ -691,6 +694,8 @@ int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
         m_serPort->TransferPacket(pkt);
         status = pkt.status;
         stepsDone.store(stepsDone.load() + 32);
+        if (callback)
+            callback(stepsDone,stepsTotal,"");
 #ifndef NDEBUG
         printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
 #endif
@@ -707,6 +712,8 @@ int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
         {
             stepsDone.store(1);
             stepsTotal.store(1);
+            if (callback)
+                callback(stepsDone,stepsTotal,"");
             break;
         }
 	};

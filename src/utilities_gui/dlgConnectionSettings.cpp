@@ -13,6 +13,11 @@ dlgConnectionSettings::dlgConnectionSettings( wxWindow* parent )
 	lmsControl = nullptr;
 }
 
+void dlgConnectionSettings::SetConnectionManagers(lms_device_t** lms)
+{
+    lmsControl = lms;
+}
+
 void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 {
     mListLMS7ports->Clear();
@@ -39,7 +44,13 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     {
         lms_info_str_t list[32];
         int ret = LMS_GetDeviceList(list);
-        LMS_Open(&lmsControl,list[mListLMS7ports->GetSelection()]); 
+        LMS_Disconnect(*lmsControl);
+        LMS_Open(lmsControl,list[mListLMS7ports->GetSelection()]); 
+        
+        wxCommandEvent evt;
+        evt.SetEventType(CONTROL_PORT_CONNECTED);
+        if(GetParent())
+            wxPostEvent(GetParent(), evt);
     }
     Destroy();
 }
@@ -51,10 +62,9 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
-    if (lmsControl != nullptr)
+    if (*lmsControl != nullptr)
     {
-        lmsControl = nullptr;
-        LMS_Close(lmsControl);
+        LMS_Disconnect(*lmsControl);
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_DISCONNECTED);
         if(GetParent())

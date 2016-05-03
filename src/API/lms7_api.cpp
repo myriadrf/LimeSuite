@@ -108,6 +108,38 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
     return LMS_SUCCESS;
 }
 
+API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+     
+    LMS7_Device* lms = (LMS7_Device*)device;
+    auto conn = lms->GetConnection();
+    if (conn != nullptr)
+    {
+		lime::ConnectionRegistry::freeConnection(conn);
+                lms->SetConnection(nullptr);
+    }
+    return LMS_SUCCESS; 
+}
+
+API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device)
+{
+    if (device == nullptr)
+        return false;
+    
+    LMS7_Device* lms = (LMS7_Device*)device;
+    auto conn = lms->GetConnection();
+    if (conn != nullptr)
+    {
+        return conn->IsOpen();
+    }
+    return false; 
+}
+
 API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
 {
     if (device == nullptr)
@@ -413,6 +445,19 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t * device, size_t chan, lms_
         return lms->DownloadAll();
     
     return -1;
+}
+
+API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int))
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev;
+    
+    lms->GetConnection()->SetDataLogCallback(func);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, float_type *freq)
@@ -1580,7 +1625,7 @@ API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *dat
     
     LMS7_Device* lms = (LMS7_Device*)device; 
     
-    return lms->ProgramMCU(data,size,target);  
+    return lms->ProgramMCU(data,size,target,callback);  
 }
 
 API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device_t *device)

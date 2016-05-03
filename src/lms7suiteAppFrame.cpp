@@ -40,6 +40,8 @@ using namespace lime;
 
 ///////////////////////////////////////////////////////////////////////////
 
+LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr=nullptr;
+
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
 
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
@@ -152,14 +154,13 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
-
- /*   adfModule = new ADF4002();
-    si5351module = new Si5351C();
-*/
     Layout();
     Fit();
-
     SetMinSize(GetSize());
+    
+    obj_ptr = this;
+    wxCommandEvent event;
+    OnControlBoardConnect(event);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -185,7 +186,7 @@ void LMS7SuiteAppFrame::OnShowConnectionSettings( wxCommandEvent& event )
     if (fftviewer)
         fftviewer->StopStreaming();
 
-    dlg.SetConnectionManagers(lmsControl);
+    dlg.SetConnectionManagers(&lmsControl);
     Bind(CONTROL_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
     Bind(DATA_PORT_CONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnDataBoardConnect), this);
     Bind(CONTROL_PORT_DISCONNECTED, wxCommandEventHandler(LMS7SuiteAppFrame::OnControlBoardConnect), this);
@@ -199,17 +200,47 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
     dlg.ShowModal();
 }
 
+void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
+{
+
+    if(si5351gui)
+        si5351gui->Initialize(lmsControl);
+    if(fftviewer)
+        fftviewer->Initialize(lmsControl);
+    if(adfGUI)
+        adfGUI->Initialize(lmsControl);
+    /*if(rfspark)
+        rfspark->Initialize(lmsControl);
+    if(hpm7)
+        hpm7->Initialize(lmsControl);
+    if(fpgaControls)
+        fpgaControls->Initialize(lmsControl);
+    if(myriad7)
+        myriad7->Initialize(lmsControl);*/
+    if(deviceInfo)
+        deviceInfo->Initialize(lmsControl);
+    if(spi)
+        spi->Initialize(lmsControl);
+    if(novenaGui)
+        novenaGui->Initialize(lmsControl);
+    if(boardControlsGui)
+        boardControlsGui->Initialize(lmsControl);
+    if(programmer)
+        programmer->SetConnection(lmsControl);
+}
+
 
 void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
-    //UpdateConnections(lmsControl);
+    UpdateConnections(lmsControl);
     const int controlCollumn = 1;
-   /* if (lms7controlPort && lms7controlPort->IsOpen())
+    if (LMS_IsOpen(lmsControl))
     {
         //bind callback for spi data logging
-        lms7controlPort->SetDataLogCallback(bind(&LMS7SuiteAppFrame::OnLogDataTransfer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-        DeviceInfo info = lms7controlPort->GetDeviceInfo();
+        obj_ptr = this;
+        LMS_SetDataLogCallback(lmsControl,OnLogDataTransfer);
+        lms_dev_info_t info;
+        LMS_GetDeviceInfo(lmsControl,  &info);
         wxString controlDev = _("Control port: ");
         controlDev.Append(info.deviceName);
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
@@ -224,7 +255,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         if (boardControlsGui)
             boardControlsGui->SetupControls(info.deviceName);
     }
-    else*/
+    else
     {
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
@@ -465,7 +496,7 @@ void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
 #include <iomanip>
 void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
 {
-    if (mMiniLog == nullptr || mMiniLog->chkLogData->IsChecked() == false)
+    if (obj_ptr->mMiniLog == nullptr || obj_ptr->mMiniLog->chkLogData->IsChecked() == false)
         return;
     std::stringstream ss;
     ss << (Tx ? "Wr(" : "Rd(");
@@ -488,9 +519,9 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     cout << ss.str() << endl;
     wxCommandEvent *evt = new wxCommandEvent();
     evt->SetString(ss.str());
-    evt->SetEventObject(this);
+    evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
-    wxQueueEvent(this, evt);
+    wxQueueEvent(obj_ptr, evt);
 }
 
 void LMS7SuiteAppFrame::OnShowNovena(wxCommandEvent& event)

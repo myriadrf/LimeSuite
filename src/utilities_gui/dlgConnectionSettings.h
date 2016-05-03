@@ -25,9 +25,9 @@ class dlgConnectionSettings : public dlgConnectionSettings_view
 		/** Constructor */
 		dlgConnectionSettings( wxWindow* parent );
 	//// end generated class members
-        void SetConnectionManagers(lms_device_t* lms){};
+        void SetConnectionManagers(lms_device_t** lms);
 	protected:
-        lms_device_t* lmsControl;
+        lms_device_t** lmsControl;
         int lmsOpenedIndex;
 };
 

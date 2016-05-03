@@ -53,6 +53,8 @@ protected:
     int One_byte_command(unsigned short data1, unsigned char * rdata1);
     int Three_byte_command(unsigned char data1,unsigned char data2,unsigned char data3,
 		unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3);
+    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
+    void OnProgramingStatusUpdate(wxCommandEvent& event);
     int WaitUntilWritten();
     int RunProductionTest_MCU();
     int Read_IRAM();
@@ -91,6 +93,9 @@ protected:
     int m_iLoopTries;
     unsigned char m_IRAM[256];
     unsigned char m_SFR[256];
+    static lms7002_pnlMCU_BD_view* obj_ptr;
+    static const long ID_PROGRAMING_STATUS_EVENT;
+    static const long ID_PROGRAMING_FINISH_EVENT;
 };
 
 #endif // __lms7002_pnlMCU_BD_view__

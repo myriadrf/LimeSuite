@@ -68,17 +68,17 @@ class LMS7SuiteAppFrame : public AppFrame_view
 	//// end generated class members
 		virtual ~LMS7SuiteAppFrame();
 	protected:
-        void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
+        static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
         void OnLogMessage(wxCommandEvent &event);
 		static const wxString cWindowTitle;
 		static const int cDeviceInfoCollumn = 1;
 		static const int cDeviceVerRevMaskCollumn = 2;
-        void UpdateConnections();
+        void UpdateConnections(lms_device_t* port);
 
         lms_device_t* lmsControl;
         pnlMiniLog* mMiniLog;
         fftviewer_frFFTviewer* fftviewer;
-
+        static LMS7SuiteAppFrame* obj_ptr;
         ADF4002_wxgui* adfGUI;
 
         Si5351C_wxgui* si5351gui;

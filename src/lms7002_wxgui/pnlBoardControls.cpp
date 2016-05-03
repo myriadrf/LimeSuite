@@ -215,7 +215,7 @@ pnlBoardControls::~pnlBoardControls()
 
 void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 {
-    if (lmsControl == nullptr)
+    if (!LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -265,7 +265,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
-    if (lmsControl == nullptr )
+    if (!LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -290,9 +290,9 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 
 void pnlBoardControls::Initialize(lms_device_t* controlPort)
 {
-    if(controlPort == nullptr)
-        return;
     lmsControl = controlPort;
+    if(!LMS_IsOpen(lmsControl))
+        return;
     lms_dev_info_t info;
     if (LMS_GetDeviceInfo(lmsControl,&info)==0)
     {
@@ -455,7 +455,7 @@ void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
-    if (lmsControl == nullptr)
+    if (!LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -478,7 +478,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
-    if (lmsControl == nullptr)
+    if (!LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;

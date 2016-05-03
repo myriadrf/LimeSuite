@@ -110,12 +110,34 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info);
  *
  * @post     device is deallocated and may no longer be used.
  *
- * @param[   device  Device handle previously obtained by LMS_Open(). This
+ * @param    device  Device handle previously obtained by LMS_Open(). This
  *              function does nothing  and returns (-1) if device is NULL.
  * 
  * @return   0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
+
+
+/**
+ * Disconnect device but keep configuration cache (device is not deallocated).
+ *
+ * @param   device  Device handle previously obtained by LMS_Open(). This
+ *                  function does nothing  and returns (-1) if device is NULL.
+ * 
+ * @return   0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
+
+/**
+ * Checks if device is opened
+ *
+ * @param   device  Device handle previously obtained by LMS_Open(). This
+ *                  function does nothing  and returns (-1) if device is NULL.
+ * 
+ * @return   true(1) if device is open, false (0) if device is closed
+ */
+API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device);
+
 
 /** @} (End FN_INIT) */
 
@@ -999,6 +1021,16 @@ typedef enum
 API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t *dev, size_t chan, lms_filter_t filt,
                                          const float_type *bw);
 
+/**
+ *  
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   func    callback function
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int));
+
 
 
 /**
@@ -1271,6 +1303,8 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device,
                               lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /** @} (End FN_STREAM) */
+
+
 
 
 /**
