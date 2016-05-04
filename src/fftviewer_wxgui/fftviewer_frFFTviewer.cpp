@@ -108,6 +108,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
     }
+    
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
@@ -115,6 +116,9 @@ void fftviewer_frFFTviewer::StartStreaming()
     if (mStreamRunning.load() == true)
         return;
     stopProcessing.store(false);
+    
+    if (threadProcessing.joinable())
+        threadProcessing.join();
   
     switch (cmbStreamType->GetSelection())
     {

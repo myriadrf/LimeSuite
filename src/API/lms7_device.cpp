@@ -1554,12 +1554,12 @@ int LMS7_Device::RecvStreamFloat(float **data, int16_t* buffer, size_t numSample
     for (int i = 0; i < numSamples ; i++)
     {
         if (index == bufferSize)
-        {
-            index = 0;
+        {       
             if ((_read(buffer,ts,rx_meta,timeout_ms))!=bufferSize)
             {
                 return i;   
-            }           
+            }    
+            index = 0;
         }
         
         for (int ch = 0;ch<channelsCount;ch++)
