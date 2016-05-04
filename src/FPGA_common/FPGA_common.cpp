@@ -116,6 +116,8 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
 
     //check if all clocks are above 5MHz
     const double PLLlowerLimit = 5e6;
+    if(inputFreq < PLLlowerLimit)
+        return ReportError(ERANGE, "SetPllFrequency: input frequency must be >=%g MHz", PLLlowerLimit/1e6);
     for(int i=0; i<clockCount; ++i)
         if(clocks[i].outFrequency < PLLlowerLimit && not clocks[i].bypass)
             return ReportError(ERANGE, "SetPllFrequency: clock(%i) must be >=%g MHz", i, PLLlowerLimit/1e6);
@@ -210,7 +212,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
             float coef = (it.first / inputFreq);
             int Ntemp = 1;
             int Mtemp = int(coef + 0.5);
-            while(inputFreq / (Ntemp + 1)> 5e6)
+            while(inputFreq / (Ntemp + 1) > PLLlowerLimit)
             {
                 ++Ntemp;
                 Mtemp = int(coef*Ntemp + 0.5);
@@ -242,7 +244,12 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
 
-    addrs.push_back(0x0026); values.push_back((M%2 << 3) | (N%2 << 1));
+    uint16_t M_N_odd_byp = (M%2 << 3) | (N%2 << 1);
+    if(M == 1)
+        M_N_odd_byp |= 1 << 2; //bypass M
+    if(N == 1)
+        M_N_odd_byp |= 1; //bypass N
+    addrs.push_back(0x0026); values.push_back(M_N_odd_byp);
     int nlow = N / 2;
     int nhigh = nlow + N % 2;
     addrs.push_back(0x002A); values.push_back(nhigh << 8 | nlow); //N_high_cnt, N_low_cnt
@@ -259,13 +266,13 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         int chigh = clow + C % 2;
         if(i < 8)
         {
-            if(not clocks[i].bypass)
+            if(not clocks[i].bypass && C != 1)
                 c7_c0_odds_byps &= ~(1 << (i*2)); //enable output
             c7_c0_odds_byps |= (C % 2) << (i*2+1); //odd bit
         }
         else
         {
-            if(not clocks[i].bypass)
+            if(not clocks[i].bypass && C != 1)
                 c15_c8_odds_byps &= ~(1 << ((i-8)*2)); //enable output
             c15_c8_odds_byps |= (C % 2) << ((i-8)*2+1); //odd bit
         }
@@ -366,12 +373,12 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
     uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
     const float actualPhaseShift_deg = 360 * inputFreq / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("########################################");
+    printf("########################################\n");
     printf("Direct clocking. clock index: %i\n", clockIndex);
     printf("phase_reg_select : %i\n", phase_reg_select);
     printf("input clock: %g MHz\n", inputFreq/1e6);
     printf("phase shift(desired/actual) : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-    printf("########################################");
+    printf("########################################\n");
 #endif
     addres.push_back(0x0004); values.push_back(phase_reg_select);
     //LOAD_PH_REG = 1 << 10;
