@@ -636,7 +636,8 @@ void ConnectionSTREAM::AbortSending()
 */
 int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
 {
-    const uint16_t baseAddr = 0x0020;
+    eLMS_DEV boardType = GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_QSPARK) ? LMS_DEV_QSPARK : LMS_DEV_UNKNOWN;
+    const uint16_t busyAddr = 0x0021;
     if(IsOpen() == false)
         return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, device not connected");
 
@@ -681,24 +682,45 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
 
     //select FPGA index
     pllIndex = pllIndex & 0x1F;
-    uint16_t reg3val = 0;
-    if(ReadRegister(0x0003, reg3val) != 0)
+    uint16_t reg23val = 0;
+    if(ReadRegister(0x0003, reg23val) != 0)
         return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, failed to read register");
-    reg3val &= 0x1F << 3; //clear PLL index
-    reg3val &= ~1; //clear PLLCFG_START
-    reg3val &= ~(1 << 2); //clear PLL reset
-    reg3val &= ~(1 << 13); //clear PHCFG_UpDn
-    reg3val |= pllIndex << 3;
 
+    const uint16_t PLLCFG_START = 0x1;
+    const uint16_t PHCFG_START = 0x2;
+    const uint16_t PLLRST_START = 0x4;
+    const uint16_t PHCFG_UPDN = 1 << 13;
+    reg23val &= 0x1F << 3; //clear PLL index
+    reg23val &= ~PLLCFG_START; //clear PLLCFG_START
+    reg23val &= ~PHCFG_START; //clear PHCFG
+    reg23val &= ~PLLRST_START; //clear PLL reset
+    reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
+    reg23val |= pllIndex << 3;
+
+    uint16_t statusReg;
+    bool done = false;
+    uint8_t errorCode = 0;
     vector<uint32_t> addrs;
     vector<uint32_t> values;
-    addrs.push_back(baseAddr + 0x0003);
-    values.push_back(reg3val); //PLL_IND
-    addrs.push_back(baseAddr + 0x0003);
-    values.push_back(reg3val | 0x4); //PLLRST_START
-    addrs.push_back(baseAddr + 0x0003);
-    values.push_back(reg3val & ~0x4);
+    addrs.push_back(0x0023);
+    values.push_back(reg23val); //PLL_IND
+    addrs.push_back(0x0023);
+    values.push_back(reg23val | PLLRST_START); //PLLRST_START
     WriteRegisters(addrs.data(), values.data(), values.size());
+
+    if(boardType == LMS_DEV_QSPARK) do //wait for reset to activate
+    {
+        ReadRegister(busyAddr, statusReg);
+        done = statusReg & 0x1;
+        errorCode = (statusReg >> 7) & 0xFF;
+    } while(!done && errorCode == 0);
+    if(errorCode != 0)
+        return ReportError(EBUSY, "ConnectionSTREAM: error resetting PLL");
+
+    addrs.clear();
+    values.clear();
+    addrs.push_back(0x0023);
+    values.push_back(reg23val & ~PLLRST_START);
 
     //configure FPGA PLLs
     const float vcoLimits_MHz[2] = { 600, 1300 };
@@ -716,22 +738,22 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     if(interfaceClk_Hz*M/1e6 > vcoLimits_MHz[0] && interfaceClk_Hz*M/1e6 < vcoLimits_MHz[1])
     {
         //bypass N
-        addrs.push_back(baseAddr + 0x0006);
+        addrs.push_back(0x0026);
         values.push_back(0x0001 | (M % 2 ? 0x8 : 0));
 
-        addrs.push_back(baseAddr + 0x0007);
+        addrs.push_back(0x0027);
         values.push_back(0x5550 | (C % 2 ? 0xA : 0)); //bypass c7-c1
-        addrs.push_back(baseAddr + 0x0008);
+        addrs.push_back(0x0028);
         values.push_back(0x5555); //bypass c15-c8
 
-        addrs.push_back(baseAddr + 0x000A);
+        addrs.push_back(0x002A);
         values.push_back(0x0101); //N_high_cnt, N_low_cnt
-        addrs.push_back(baseAddr + 0x000B);
+        addrs.push_back(0x002B);
         values.push_back(chigh << 8 | clow); //M_high_cnt, M_low_cnt
 
         for(int i = 0; i <= 1; ++i)
         {
-            addrs.push_back(baseAddr + 0x000E + i);
+            addrs.push_back(0x002E + i);
             values.push_back(chigh << 8 | clow); // ci_high_cnt, ci_low_cnt
         }
 
@@ -739,26 +761,49 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
         float Fstep_deg = (360 * Fstep_us) / (1 / fOut_MHz);
         short nSteps = phaseShift_deg / Fstep_deg;
 
-        addrs.push_back(baseAddr + 0x0004);
+        addrs.push_back(0x0024);
         values.push_back(nSteps);
 
-        addrs.push_back(baseAddr + 0x0003);
+        addrs.push_back(0x0023);
         int cnt_ind = 0x3 & 0x1F;
-        reg3val = reg3val | (1 << 13) | (cnt_ind << 8);
-        values.push_back(reg3val); //PHCFG_UpDn, CNT_IND
+        reg23val = reg23val | PHCFG_UPDN | (cnt_ind << 8);
+        values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
 
-        addrs.push_back(baseAddr + 0x0003);
-        values.push_back(reg3val | 0x1); //PLLCFG_START
-        addrs.push_back(baseAddr + 0x0003);
-        values.push_back(reg3val & ~0x1); //PLLCFG_START
+        addrs.push_back(0x0023);
+        values.push_back(reg23val | PLLCFG_START); //PLLCFG_START
+        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+            ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        if(boardType == LMS_DEV_QSPARK) do //wait for config to activate
+        {
+            ReadRegister(busyAddr, statusReg);
+            done = statusReg & 0x1;
+            errorCode = (statusReg >> 7) & 0xFF;
+        } while(!done && errorCode == 0);
+        if(errorCode != 0)
+            return ReportError(EBUSY, "ConnectionSTREAM: error configuring PLLCFG");
 
-        addrs.push_back(baseAddr + 0x0003);
-        values.push_back(reg3val | 0x2); //PHCFG_START
-        addrs.push_back(baseAddr + 0x0003);
-        values.push_back(reg3val & ~0x2); //PHCFG_START
-
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0  )
-            ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        addrs.clear();
+        values.clear();
+        addrs.push_back(0x0023);
+        values.push_back(reg23val & ~PLLCFG_START); //PLLCFG_START
+        addrs.push_back(0x0023);
+        values.push_back(reg23val | PHCFG_START); //PHCFG_START
+        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+            ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
+        if(boardType == LMS_DEV_QSPARK) do
+        {
+            ReadRegister(busyAddr, statusReg);
+            done = statusReg & 0x1;
+            errorCode = (statusReg >> 7) & 0xFF;
+        } while(!done && errorCode == 0);
+        if(errorCode != 0)
+            return ReportError(EBUSY, "ConnectionSTREAM: error configuring PHCFG");
+        addrs.clear();
+        values.clear();
+        addrs.push_back(0x0023);
+        values.push_back(reg23val & ~PHCFG_START); //PHCFG_START
+        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+            ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
         return 0;
     }
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");

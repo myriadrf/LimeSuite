@@ -156,10 +156,16 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Layout();
     Fit();
     SetMinSize(GetSize());
+
     
     obj_ptr = this;
     wxCommandEvent event;
     OnControlBoardConnect(event);
+
+    UpdateConnections(lmsControl);
+
+    //mnuCacheValues();
+
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()

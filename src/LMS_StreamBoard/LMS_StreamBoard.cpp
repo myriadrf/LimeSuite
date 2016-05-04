@@ -8,200 +8,9 @@
 using namespace std;
 using namespace lime;
 
-LMS_StreamBoard::Status LMS_StreamBoard::ConfigurePLL(IConnection *serPort, const float fOutTx_Hz, const float fOutRx_Hz, const float phaseShiftTx_deg, const float phaseShiftRx_deg)
-{
-    //switch between case for GSM sampling rate 541666 Hz and normal PLL
-    const uint16_t direct_clocking_addr = 0x0016;
-    uint16_t phase_reg_select = 0x15;
-    const uint16_t directClockingEnable = 0x0100;
-    uint16_t regVal;
-    if(serPort->ReadRegister(direct_clocking_addr, regVal) != 0)
-        return FAILURE;
-    regVal &= ~0x1FF;
-    if(fOutRx_Hz < 5e6 && fOutTx_Hz < 5e6)
-    {
-        float inputClock_Hz = 541e3;
-        inputClock_Hz = fOutTx_Hz;
-        const float oversampleClock_Hz = 100e6;
-        const int registerChainSize = 128;
-        const float phaseShift_deg = 90;
-        const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
-        const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
-        phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
-        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
-
-        printf("reg value : %i\n", phase_reg_select);
-        printf("input clock: %f\n", inputClock_Hz);
-        printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-
-        regVal |= phase_reg_select|directClockingEnable;
-        if(serPort->WriteRegister(direct_clocking_addr, regVal) != 0)
-            return FAILURE;
-        return SUCCESS;
-    }
-    else
-        if(serPort->WriteRegister(direct_clocking_addr, regVal) != 0)
-            return FAILURE;
-
-    if(fOutRx_Hz < 5e6 || fOutTx_Hz < 5e6)
-    {
-        printf("WARNING: FPGA PLL frequency should not be lower than 5 MHz\n");
-        return FAILURE;
-    }
-
-    if (serPort == nullptr)
-        return FAILURE;
-    if (serPort->IsOpen() == false)
-        return FAILURE;
-    const float vcoLimits_Hz[2] = { 600e6, 1300e6 };
-    int M, C;
-    const short bufSize = 64;
-
-    float fOut_Hz = fOutTx_Hz;
-    float coef = 0.8*vcoLimits_Hz[1] / fOut_Hz;
-    M = C = (int)coef;
-    int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
-    int clow = ((int)coef) / 2;
-
-    vector<uint8_t> outBuffer;
-    unsigned short reg2 = 0;
-    if (fOut_Hz*M > vcoLimits_Hz[0] && fOut_Hz*M < vcoLimits_Hz[1])
-    {
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x0F);
-        outBuffer.push_back(0x15); //c4-c2_bypassed
-        outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x08);
-        outBuffer.push_back(1); //N_high_cnt
-        outBuffer.push_back(1);//N_low_cnt
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x09);
-        outBuffer.push_back(chigh); //M_high_cnt
-        outBuffer.push_back(clow);	 //M_low_cnt
-        for (int i = 0; i <= 1; ++i)
-        {
-            outBuffer.push_back(0x00);
-            outBuffer.push_back(0x0A + i);
-            outBuffer.push_back(chigh); //cX_high_cnt
-            outBuffer.push_back(clow);	 //cX_low_cnt
-        }
-
-        float Fstep_us = 1 / (8 * fOutTx_Hz*C);
-        float Fstep_deg = (360 * Fstep_us) / (1 / fOutTx_Hz);
-        short nSteps = phaseShiftTx_deg / Fstep_deg;
-        reg2 = 0x0400 | (nSteps & 0x3FF);
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x02);
-        outBuffer.push_back((reg2 >> 8));
-        outBuffer.push_back(reg2); //phase
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x03);
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x01);
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x03);
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x00);
-
-        reg2 = reg2 | 0x800;
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x02);
-        outBuffer.push_back((reg2 >> 8));
-        outBuffer.push_back(reg2);
-        //temporary solution
-        vector<uint32_t> addrs;
-        vector<uint32_t> values;
-        for(int i=0; i<outBuffer.size(); i+=4)
-        {
-            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
-            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
-        }
-        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            return FAILURE;
-    }
-    else
-        return FAILURE;
-
-    fOut_Hz = fOutRx_Hz;
-    coef = 0.8*vcoLimits_Hz[1] / fOut_Hz;
-    M = C = (int)coef;
-    chigh = (((int)coef) / 2) + ((int)(coef) % 2);
-    clow = ((int)coef) / 2;
-    if (fOut_Hz*M > vcoLimits_Hz[0] && fOut_Hz*M < vcoLimits_Hz[1])
-    {
-        short index = 0;
-        outBuffer.clear();
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x0F);
-        outBuffer.push_back(0x15); //c4-c2_bypassed
-        outBuffer.push_back(0x01 | ((M % 2 != 0) ? 0x08 : 0x00) | ((C % 2 != 0) ? 0x20 : 0x00)); //N_bypassed
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x08);
-        outBuffer.push_back(1); //N_high_cnt
-        outBuffer.push_back(1);//N_low_cnt
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x09);
-        outBuffer.push_back(chigh); //M_high_cnt
-        outBuffer.push_back(clow);	 //M_low_cnt
-        for (int i = 0; i <= 1; ++i)
-        {
-            outBuffer.push_back(0x00);
-            outBuffer.push_back(0x0A + i);
-            outBuffer.push_back(chigh); //cX_high_cnt
-            outBuffer.push_back(clow);	 //cX_low_cnt
-        }
-
-        float Fstep_us = 1 / (8 * fOutRx_Hz*C);
-        float Fstep_deg = (360 * Fstep_us) / (1 / fOutRx_Hz);
-        short nSteps = phaseShiftRx_deg / Fstep_deg;
-        reg2 = reg2 & ~0x3FF;
-        reg2 |= (0x2000 | (nSteps & 0x3FF));
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x02);
-        outBuffer.push_back((reg2 >> 8));
-        outBuffer.push_back(reg2); //phase
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x03);
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x02);
-
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x03);
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x00);
-
-        reg2 = reg2 | 0x4000;
-        outBuffer.push_back(0x00);
-        outBuffer.push_back(0x02);
-        outBuffer.push_back((reg2 >> 8));
-        outBuffer.push_back(reg2);
-
-        //temporary solution
-        vector<uint32_t> addrs;
-        vector<uint32_t> values;
-        for(int i=0; i<outBuffer.size(); i+=4)
-        {
-            addrs.push_back(((uint16_t)outBuffer[i] << 8) | outBuffer[i+1]);
-            values.push_back(((uint16_t)outBuffer[i+2] << 8) | outBuffer[i+3]);
-        }
-        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            return FAILURE;
-    }
-    else
-        return FAILURE;
-    return SUCCESS;
-}
-
-
 LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
 {
-    mRxFrameStart.store(true);
+    mRxFrameStart.store(false);
     mDataPort = dataPort;
     mRxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
     mTxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
@@ -294,8 +103,9 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
 
     ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(pthis->mDataPort));
 
-    uint16_t regVal = pthis->Reg_read(0x0005);
-    pthis->Reg_write(0x0005, regVal | 0x4);
+    //start Rx
+    uint16_t regVal = pthis->Reg_read(0x000A);
+    pthis->Reg_write(0x000A, regVal | 0x1);
 
     for (int i = 0; i<buffers_count; ++i)
         handles[i] = pthis->mDataPort->BeginDataReading(&buffers[i*buffer_size], buffer_size);
@@ -381,8 +191,8 @@ void LMS_StreamBoard::ReceivePackets(LMS_StreamBoard* pthis)
         pthis->mDataPort->FinishDataReading(&buffers[j*buffer_size], bytesToRead, handles[j]);
     }
 
-    regVal = pthis->Reg_read(0x0005);
-    pthis->Reg_write(0x0005, regVal & ~0x4);
+    regVal = pthis->Reg_read(0x000A);
+    pthis->Reg_write(0x000A, regVal & ~0x1);
 
     delete[] buffers;
 #ifndef NDEBUG

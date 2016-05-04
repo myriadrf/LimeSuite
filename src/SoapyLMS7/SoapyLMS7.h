@@ -167,6 +167,12 @@ public:
 
     std::vector<double> listSampleRates(const int direction, const size_t channel) const;
 
+    //rate fixing flags applied when user makes a call
+    //helps to determine flexible sample rate requirements
+    bool _fixedClockRate;
+    std::map<size_t, bool> _fixedRxSampRate;
+    std::map<size_t, bool> _fixedTxSampRate;
+
     /*******************************************************************
      * Bandwidth API
      ******************************************************************/
@@ -198,6 +204,22 @@ public:
     void setHardwareTime(const long long timeNs, const std::string &what = "");
 
     /*******************************************************************
+     * Sensor API
+     ******************************************************************/
+
+    std::vector<std::string> listSensors(void) const;
+
+    SoapySDR::ArgInfo getSensorInfo(const std::string &name) const;
+
+    std::string readSensor(const std::string &name) const;
+
+    std::vector<std::string> listSensors(const int direction, const size_t channel) const;
+
+    SoapySDR::ArgInfo getSensorInfo(const int direction, const size_t channel, const std::string &name) const;
+
+    std::string readSensor(const int direction, const size_t channel, const std::string &name) const;
+
+    /*******************************************************************
      * Register API
      ******************************************************************/
 
@@ -212,6 +234,8 @@ public:
     SoapySDR::ArgInfoList getSettingInfo(void) const;
 
     void writeSetting(const std::string &key, const std::string &value);
+
+    SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const;
 
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
 

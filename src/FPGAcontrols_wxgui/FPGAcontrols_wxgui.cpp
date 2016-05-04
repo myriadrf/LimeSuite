@@ -232,16 +232,28 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
+<<<<<<< HEAD
     /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
     mStreamer->Reg_write(0x0005, regData | 0x3);*/
+=======
+    assert(mStreamer != nullptr);
+    uint16_t regData = mStreamer->Reg_read(0x000A);
+    mStreamer->Reg_write(0x000A, regData | 0x3);
+>>>>>>> master
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
+<<<<<<< HEAD
     /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
     mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);*/
+=======
+    assert(mStreamer != nullptr);
+    uint16_t regData = mStreamer->Reg_read(0x000A);
+    mStreamer->Reg_write(0x000A, (regData & ~0x2));
+>>>>>>> master
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
@@ -287,8 +299,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint16_t regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, regData & ~0x7);
+    uint16_t regData = mStreamer->Reg_read(0x000A);
+    mStreamer->Reg_write(0x000A, regData & ~0x7);
 
     while(sent<outLen)
     {
@@ -311,8 +323,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
 
-    regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, regData | 0x3);
+    regData = mStreamer->Reg_read(0x000A);
+    mStreamer->Reg_write(0x000A, regData | 0x6);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
@@ -415,7 +427,7 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
         return;
     }
 
-    const uint16_t address = 0x0016;
+    const uint16_t address = 0x0008;
     uint32_t dataRd = 0;
     int status;
     status = m_serPort->ReadRegister(address, dataRd);
@@ -424,7 +436,7 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     if (status == 0)
         regValue = dataRd & 0xFFFF;
 
-    regValue = (regValue & 0xFFFE) | chkDigitalLoopbackEnable->IsChecked();
+    regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
 
     status = m_serPort->WriteRegister(address, regValue);
 

@@ -99,6 +99,9 @@ struct USBStreamService : StreamerLTE
 
         dataPort->TransferPacket(pkt);
 
+        //switch on Rx
+        interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
+        Reg_write(mDataPort, 0x000A, interface_ctrl_000A | 0x1);
     }
 
     ~USBStreamService(void)
@@ -535,7 +538,7 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 */
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
-    std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz << "Hz, rx=" << rxRate_Hz << "Hz)" << std::endl;
+    std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
     ConfigureFPGA_PLL(0, 2 * txRate_Hz, 90);
     ConfigureFPGA_PLL(1, 2 * rxRate_Hz, 90);
     if(mStreamService) mStreamService->mHwCounterRate = rxRate_Hz;

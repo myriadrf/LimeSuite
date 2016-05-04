@@ -26,16 +26,14 @@ def siggen_app(
 ):
     if waveFreq is None: waveFreq = rate/10
 
-    if rxRate is None: rxRate = rate
-
     sdr = SoapySDR.Device(args)
     #set clock rate first
     if clockRate is not None: sdr.setMasterClockRate(clockRate)
 
-    sdr.setFrequency(SOAPY_SDR_RX, txChan, freq)
+    if freq is not None: sdr.setFrequency(SOAPY_SDR_RX, txChan, freq)
     #set sample rate
     sdr.setSampleRate(SOAPY_SDR_TX, txChan, rate)
-    sdr.setBandwidth(SOAPY_SDR_TX, txChan, 10e6)
+    if rxRate is not None: sdr.setSampleRate(SOAPY_SDR_RX, txChan, rxRate)
 
     print("Actual Rx Rate %f Msps"%(sdr.getSampleRate(SOAPY_SDR_RX, rxChan)/1e6))
     print("Actual Tx Rate %f Msps"%(sdr.getSampleRate(SOAPY_SDR_TX, txChan)/1e6))

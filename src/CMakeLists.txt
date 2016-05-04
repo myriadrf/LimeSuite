@@ -301,3 +301,25 @@ feature_summary(WHAT DISABLED_FEATURES)
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Lime Suite Version: ${LIME_SUITE_VERSION}")
 message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")
+
+#########################################################################
+# tests
+#########################################################################
+set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
+
+########################################################################
+# uninstall target
+########################################################################
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+#only add uninstall target if this is the top project
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()

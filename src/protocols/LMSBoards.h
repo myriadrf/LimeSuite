@@ -23,9 +23,17 @@ enum eLMS_DEV
 	LMS_DEV_RFSPARK,
 	LMS_DEV_LMS6002USB,
 	LMS_DEV_RFESPARK,
+<<<<<<< HEAD
         LMS_DEV_LIMESDR,
         LMS_DEV_LIMESDR_PCIE,
         LMS_DEV_QSPARK,
+=======
+    LMS_DEV_LIMESDR,
+    LMS_DEV_LIMESDR_PCIE,
+    LMS_DEV_QSPARK,
+    LMS_DEV_ULIMESDR,
+    LMS_DEV_USTREAM,
+>>>>>>> master
 
 	LMS_DEV_COUNT
 };
@@ -49,6 +57,8 @@ const char LMS_DEV_NAMES[][80] =
     "LimeSDR",
     "LimeSDR PCI-E",
     "QSpark",
+    "uLimeSDR",
+    "uStream",
 };
 
 static inline const char* GetDeviceName(const eLMS_DEV device)

@@ -15,12 +15,13 @@
 
 using namespace lime;
 
-float_type calibUserBwDivider = 5e6;
+float_type calibUserBwDivider = 5;
 const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
 #define MCU_FUNCTION_READ_RSSI 3
+#define MCU_FUNCTION_UPDATE_REF_CLK 4
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
     #include "kiss_fft.h"
@@ -28,7 +29,7 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
     bool rssiFromFFT = false;
 #endif // ENABLE_CALIBRATION_USING_FFT
 
-const float calibrationSXOffset_MHz = 4e6;
+const float calibrationSXOffset_Hz = 4e6;
 
 const int16_t firCoefs[] =
 {
@@ -187,7 +188,7 @@ bool sign(const int number)
 /** @brief Parameters setup instructions for Tx calibration
     @return 0-success, other-failure
 */
-int LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useExtLoopback)
+int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopback)
 {
     //Stage 2
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
@@ -308,9 +309,9 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useExtLoopba
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
     Modify_SPI_Reg_bits(LMS7param(ICT_VCO), 200);
     {
-        float_type SXTfreqMHz = GetFrequencySX(Tx);
-        float_type SXRfreqMHz = SXTfreqMHz - bandwidth_MHz / calibUserBwDivider - calibrationSXOffset_MHz;
-        status = SetFrequencySX(Rx, SXRfreqMHz);
+        float_type SXTfreq = GetFrequencySX(Tx);
+        float_type SXRfreq = SXTfreq - bandwidth_Hz / calibUserBwDivider - calibrationSXOffset_Hz;
+        status = SetFrequencySX(Rx, SXRfreq);
         if(status != 0)
             return status;
         status = TuneVCO(VCO_SXR);
@@ -324,15 +325,81 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_MHz, const bool useExtLoopba
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
-    SetDefaults(TxTSP);
+    //check if user uses GFIR
+    bool GFIR_active[3] = { false, false, false };
+    uint8_t gfir_byps[3];
+    uint8_t gfir_l[3];
+    uint8_t gfir_n[3];
+    const uint8_t coefsToCheck = 5;
+    int16_t txGFIR_coefs[coefsToCheck];
+    gfir_byps[0] = Get_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP));
+    gfir_byps[1] = Get_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP));
+    gfir_byps[2] = Get_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP));
+
+    if(gfir_byps[0] == 0)
+    {
+        GetGFIRCoefficients(LMS7002M::Tx, 0, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[0] = true;
+                gfir_l[0] = Get_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP));
+                gfir_n[0] = Get_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP));
+                break;
+            }
+    }
+    if(gfir_byps[1] == 0)
+    {   
+        GetGFIRCoefficients(LMS7002M::Tx, 1, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[1] = true;
+                gfir_l[1] = Get_SPI_Reg_bits(LMS7param(GFIR2_L_TXTSP));
+                gfir_n[1] = Get_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP));
+                break;
+            }
+    }
+    if(gfir_byps[2] == 0)
+    {
+        GetGFIRCoefficients(LMS7002M::Tx, 2, txGFIR_coefs, coefsToCheck);
+        for(int i = 0; i < coefsToCheck; ++i)
+            if(txGFIR_coefs[i] != 0)
+            {
+                GFIR_active[2] = true;
+                gfir_l[2] = Get_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP));
+                gfir_n[2] = Get_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP));
+                break;
+            }
+    }
+    SetDefaults(TxTSP); //GFIR coefficients are not reset
     SetDefaults(TxNCO);
+    if(GFIR_active[0])
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), gfir_byps[0]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP), gfir_l[0]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP), gfir_n[0]);
+    }
+    if(GFIR_active[1])
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), gfir_byps[1]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_L_TXTSP), gfir_l[1]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP), gfir_n[1]);
+    }
+    if(GFIR_active[2])
+    {
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), gfir_byps[2]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP), gfir_l[2]);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP), gfir_n[2]);
+    }
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+    if(!GFIR_active[0] && !GFIR_active[1] && !GFIR_active[2])
+        Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     if(useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
-    SetNCOFrequency(Tx, 0, bandwidth_MHz / calibUserBwDivider);
+    SetNCOFrequency(Tx, 0, bandwidth_Hz / calibUserBwDivider);
 
     //RXTSP
     SetDefaults(RxTSP);
@@ -540,11 +607,17 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback)
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if(mCalibrationByMCU)
-    {
+    {        
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        uint16_t refClkToMCU = (int(refClk / 1000000) << 9) | ((refClk % 1000000) / 10000);
+        SPI_write(MCU_PARAMETER_ADDRESS, refClkToMCU);
+        mcuControl->CallMCU(MCU_FUNCTION_UPDATE_REF_CLK);
+        auto statusMcu = mcuControl->WaitForMCU(100);
         //set bandwidth for MCU to read from register, value is integer stored in MHz
         SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)(bandwidth_Hz / 1e6));
         mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
-        auto statusMcu = mcuControl->WaitForMCU(30000);
+        statusMcu = mcuControl->WaitForMCU(30000);
         if(statusMcu == 0)
         {
             printf("MCU working too long %i\n", statusMcu);
@@ -563,7 +636,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0);
 
-        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz - 0.1e6);
+        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - 0.1e6);
 
         //coarse gain
         uint32_t rssiIgain;
@@ -934,10 +1007,17 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, const bool useExtLoopback)
 
     if(mCalibrationByMCU)
     {
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        uint16_t refClkToMCU = (int(refClk / 1000000) << 9) | ((refClk % 1000000) / 10000);
+        SPI_write(MCU_PARAMETER_ADDRESS, refClkToMCU);
+        mcuControl->CallMCU(MCU_FUNCTION_UPDATE_REF_CLK);
+        auto statusMcu = mcuControl->WaitForMCU(100);
+
         //set bandwidth for MCU to read from register, value is integer stored in MHz
         SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)(bandwidth_Hz / 1e6));
         mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
-        auto statusMcu = mcuControl->WaitForMCU(30000);
+        statusMcu = mcuControl->WaitForMCU(30000);
         if(statusMcu == 0)
         {
             printf("MCU working too long %i\n", statusMcu);
@@ -1126,11 +1206,11 @@ void LMS7002M::RestoreAllRegisters()
     SPI_write(0x0020, x0020val);
 }
 
-int LMS7002M::CheckSaturationRx(const float_type bandwidth_MHz, const bool useExtLoopback)
+int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback)
 {
     Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
-    SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_MHz / calibUserBwDivider - 0.1e6);
+    SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz / calibUserBwDivider - 0.1e6);
 
     uint32_t rssi = GetRSSI();
 #ifdef ENABLE_CALIBRATION_USING_FFT
@@ -1250,11 +1330,11 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
     }
 }
 
-int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz, const bool useExtLoopback)
+int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback)
 {
     if(useExtLoopback)
     {
-        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz - 0.1e6 + bandwidth_MHz / calibUserBwDivider);
+        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - 0.1e6 + bandwidth_Hz / calibUserBwDivider);
 
         const float target_dBFS = -10;
         int g_tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
@@ -1297,7 +1377,7 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz, const bool use
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
-        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz + 0.1e6 + bandwidth_MHz / calibUserBwDivider);
+        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz + 0.1e6 + bandwidth_Hz / calibUserBwDivider);
         Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
     //---------IQ calibration-----------------
@@ -1364,7 +1444,7 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_MHz, const bool use
     //----------------------------------------
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
-    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz - 0.1e6 + (bandwidth_MHz / calibUserBwDivider) * 2);
+    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - 0.1e6 + (bandwidth_Hz / calibUserBwDivider) * 2);
 
     uint32_t rssi = GetRSSI();
     int g_pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
@@ -1397,7 +1477,7 @@ void LMS7002M::CalibrateTxDC_RSSI(const float_type bandwidth)
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
-    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_MHz - 0.1e6 + (bandwidth / calibUserBwDivider));
+    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - 0.1e6 + (bandwidth / calibUserBwDivider));
 
     int16_t corrI = 64;
     int16_t corrQ = 64;
