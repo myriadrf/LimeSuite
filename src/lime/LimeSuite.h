@@ -911,27 +911,27 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
  * Read custom parameter from board
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param param_id  Register address
+ * @param id        Parameter identifier
  * @param val       Current register value
  * @param units     [optional] measurement units of parameter if available
  * 
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
-                           uint16_t param_id, float_type *val, lms_name_t units);
+                                 uint8_t id, float_type *val, lms_name_t units);
 
 /**
  * Write custom parameter from board
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param param_id  Register address
+ * @param id        Parameter identifier
  * @param val       Value to write
  * @param units     [optional] measurement units of parameter if available
  * 
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
-                        uint16_t address, float_type val, const lms_name_t units);
+                            uint8_t id, float_type val, const lms_name_t units);
 
 /**
  * Changes device reference clock used by API for various calculations.

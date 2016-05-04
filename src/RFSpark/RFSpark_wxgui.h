@@ -22,9 +22,11 @@ class RFSpark_wxgui: public wxFrame
 		struct ADCdata
 		{
 			unsigned char channel;
-			unsigned char units;
+                        std::string units;
+                        double value;
+			/*unsigned char units;
 			char powerOf10coefficient;
-			short value;
+			short value;*/
 		};
 
 		struct ADCdataGUI

@@ -304,7 +304,7 @@ API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device_t * device, float_type
 }
 
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
-                           uint16_t param_id, float_type *val, lms_name_t units)
+                           uint8_t param_id, float_type *val, lms_name_t units)
 {
     if (device == nullptr)
     {
@@ -312,15 +312,14 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
         return -1;
     } 
     LMS7_Device* lms = (LMS7_Device*)device; 
-    uint8_t id=param_id;
     std::string str;
-    int ret=lms->GetConnection()->CustomParameterRead(&id,val,1,&str);
+    int ret=lms->GetConnection()->CustomParameterRead(&param_id,val,1,&str);
     strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
     return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
-                        uint16_t param_id, float_type val, const lms_name_t units)
+                        uint8_t param_id, float_type val, const lms_name_t units)
 {
     if (device == nullptr)
     {
@@ -328,9 +327,8 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device; 
-    uint8_t id=param_id;
     std::string str = units == nullptr ? "":units;
-    return lms->GetConnection()->CustomParameterWrite(&id,&val,1,&str);
+    return lms->GetConnection()->CustomParameterWrite(&param_id,&val,1,&str);
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
