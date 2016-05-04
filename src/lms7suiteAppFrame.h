@@ -29,11 +29,11 @@ class pnlBoardControls;
 class LMS7SuiteAppFrame : public AppFrame_view
 {
 	protected:
-		// Handlers for AppFrame events.
-		void OnClose( wxCloseEvent& event );
-		void OnQuit( wxCommandEvent& event );
-		void OnShowConnectionSettings( wxCommandEvent& event );
-		void OnAbout( wxCommandEvent& event );
+        // Handlers for AppFrame events.
+        void OnClose( wxCloseEvent& event );
+        void OnQuit( wxCommandEvent& event );
+        void OnShowConnectionSettings( wxCommandEvent& event );
+        void OnAbout( wxCommandEvent& event );
         void OnControlBoardConnect(wxCommandEvent& event);
         void OnDataBoardConnect(wxCommandEvent& event);
         void HandleLMSevent(wxCommandEvent& event);
@@ -61,7 +61,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowNovena(wxCommandEvent& event);
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
-        void OnChangeCacheSettings(wxCommandEvent& event){};
+        void OnChangeCacheSettings(wxCommandEvent& event);
     public:
 		/** Constructor */
 		LMS7SuiteAppFrame( wxWindow* parent );

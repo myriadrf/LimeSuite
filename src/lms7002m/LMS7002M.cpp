@@ -1065,13 +1065,13 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 
 bool LMS7002M::GetCGENLocked(void)
 {
-    return (Get_SPI_Reg_bits(VCO_CMPHO_CGEN.address, 13, 12, true) & 0x3) == 2;
+    return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO_CGEN).address, 13, 12, true) & 0x3) == 2;
 }
 
 bool LMS7002M::GetSXLocked(bool tx)
 {
     SetActiveChannel(tx?ChSXT:ChSXR);
-    return (Get_SPI_Reg_bits(VCO_CMPHO.address, 13, 12, true) & 0x3) == 2;
+    return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true) & 0x3) == 2;
 }
 
 /** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules

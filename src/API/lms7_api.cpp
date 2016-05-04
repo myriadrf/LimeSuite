@@ -36,7 +36,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
 
 
 
-API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info)
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, void* args)
 {
     if (device == nullptr)
     {
@@ -54,12 +54,9 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info)
     }
     else
     {
-        lms = (LMS7_Device*)*device;
-        auto conn = lms->GetConnection();
-        if (conn != nullptr)
-		lime::ConnectionRegistry::freeConnection(conn);
+        LMS_Disconnect(*device);
     }
-
+    
     for (int i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
@@ -76,10 +73,13 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info)
                 else 
                     continue;
             }
-            lms->SetConnection(conn,0);
-            lms->streamPort = conn;
+            lms->SetConnection(conn,0);          
             lms->DownloadAll();
-            return LMS_SUCCESS;
+            if (args == nullptr)
+            {
+                lms->streamPort = conn;
+                return LMS_SUCCESS;
+            }
         }
     }  
     
@@ -725,7 +725,7 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
      return lms->GetConnection()->GPIOWrite(buffer,len);
 }
 
-API_EXPORT int CALL_CONV LMS_APICommand(lms_device_t *dev, int cmd, void* data)
+API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
 {
     if (dev == nullptr)
     {
@@ -733,25 +733,8 @@ API_EXPORT int CALL_CONV LMS_APICommand(lms_device_t *dev, int cmd, void* data)
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev; 
-    
-    switch (cmd)
-    {
-        case 0:
-        {
-            if (data == nullptr)
-            {
-                lime::ReportError(EINVAL, "Cammand requires 1 bool parameter.");
-                return -1;
-            }
-            bool val = *((bool*)data);
-            lms->EnableValuesCache(val);
-            return 0;
-        }
-        default:
-            lime::ReportError(EINVAL, "Unknown command.");
-            return -1;
-    }
-    
+    lms->EnableValuesCache(enable);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
@@ -1417,7 +1400,7 @@ API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device)
 }
 
 
-API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address, uint16_t *val)
 {
     if (device == nullptr)
     {
@@ -1433,7 +1416,7 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address,
     return LMS_SUCCESS;
 }
 
-API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint16_t address, uint16_t val)
+API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address, uint16_t val)
 {
     if (device == nullptr)
     {

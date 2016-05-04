@@ -235,7 +235,8 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 {
-/*
+
+    /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
@@ -283,7 +284,6 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 {
-
 /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;

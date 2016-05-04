@@ -144,7 +144,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     novenaGui = nullptr;
     boardControlsGui = nullptr;
-    LMS_Open(&lmsControl,nullptr);
+    LMS_Open(&lmsControl,nullptr,nullptr);
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -164,7 +164,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
 
     UpdateConnections(lmsControl);
 
-    //mnuCacheValues();
+    mnuCacheValues->Check(true);
 
 }
 
@@ -567,6 +567,13 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 {
     boardControlsGui->Destroy();
     boardControlsGui = nullptr;
+    
+}
+
+void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
+{
+    int checked = event.GetInt();
+    LMS_EnableCalibCache(lmsControl,checked);
 }
 
 

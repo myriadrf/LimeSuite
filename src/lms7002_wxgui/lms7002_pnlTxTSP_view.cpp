@@ -402,12 +402,9 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     LMS_ReadParam(lmsControl,LMS7param(HBI_OVR_TXTSP),&hbi);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
-<<<<<<< HEAD
     int16_t value;
     LMS_ReadParam(lmsControl,LMS7param(TSGFCW_RXTSP),(uint16_t*)&value);
-=======
-    int16_t value = lmsControl->Get_SPI_Reg_bits(TSGFCW_TXTSP, fromChip);
->>>>>>> master
+
     rgrTSGFCW_TXTSP->SetSelection(value2index(value, tsgfcw_txtsp_IndexValuePairs));
 
     LMS_ReadParam(lmsControl,LMS7param(IQCORR_TXTSP),(uint16_t*)&value);

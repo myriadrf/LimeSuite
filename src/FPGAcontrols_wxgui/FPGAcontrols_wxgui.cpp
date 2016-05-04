@@ -232,28 +232,19 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
-<<<<<<< HEAD
     /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
     mStreamer->Reg_write(0x0005, regData | 0x3);*/
-=======
-    assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData | 0x3);
->>>>>>> master
+
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
-<<<<<<< HEAD
+
     /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
     mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);*/
-=======
-    assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, (regData & ~0x2));
->>>>>>> master
+
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)

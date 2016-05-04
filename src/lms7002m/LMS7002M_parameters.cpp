@@ -6,7 +6,6 @@
 
 #include "LMS7002M_parameters.h"
 #include <vector>
-//namespace lime{
 
 int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b)
 {

@@ -98,10 +98,12 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
  * @param[out]  device      Updated with device handle on success
  * @param[in]   info        Device information string. If NULL, the first
  *                          available device will be opened.
+ * @param[in]   args        additional arguments. Can be NULL. 
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info);
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info,
+                                   void* args);
 
 /**
  * Close device
@@ -129,13 +131,13 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
 
 /**
- * Checks if device is opened
+ * Checks if device port is opened
  *
  * @param   device  Device handle previously obtained by LMS_Open(). This
  *                  function does nothing  and returns (-1) if device is NULL.
  * @param   port    0 - control port, 1- data port
  * 
- * @return   true(1) if device is open, false (0) if device is closed
+ * @return   true(1) if port is open, false (0) if - closed
  */
 API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port);
 
@@ -890,7 +892,7 @@ API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device);
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
                                      uint16_t *val);
 
 /**
@@ -902,7 +904,7 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint16_t address,
  * 
  * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint16_t address,
+API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address,
                                       uint16_t val);
 
 /**
@@ -1192,14 +1194,14 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev, uint8_t* buffer, size_t
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
 
 /**
- *
+ *  Enables or disable caching of calibration values
+ * 
  * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   cmd         values to write
- * @param   data        command data
+ * @param   enable      true to enable cache
  * 
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_APICommand(lms_device_t *dev, int cmd, void* data);
+API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
 
 /** @} (End FN_LOW_LVL) */
 
