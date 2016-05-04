@@ -38,6 +38,7 @@
 #include "pnlBoardControls.h"
 #include <ConnectionRegistry.h>
 #include <LMSBoards.h>
+#include <pnlQSpark.h>
 
 using namespace std;
 using namespace lime;
@@ -158,6 +159,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     novenaGui = nullptr;
     boardControlsGui = nullptr;
+    qSparkGui = nullptr;
 
     lmsControl = new LMS7002M();
     lmsControl->EnableValuesCache(true);
@@ -585,10 +587,33 @@ void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnect
         boardControlsGui->Initialize(lms7controlPort);
     if(programmer)
         programmer->SetConnection(lms7controlPort);
+    if(qSparkGui)
+        qSparkGui->Initialize(lms7controlPort);
+
 }
 
 void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
 {
     int checked = event.GetInt();
     lmsControl->EnableValuesCache(checked);
+}
+
+void LMS7SuiteAppFrame::OnShowQSpark(wxCommandEvent& event)
+{
+    if(qSparkGui) //it's already opened
+        qSparkGui->Show();
+    else
+    {
+        qSparkGui = new pnlQSpark(this, wxNewId(), _("QSpark controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        qSparkGui->Initialize(lms7controlPort);
+        qSparkGui->UpdatePanel();
+        qSparkGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnQSparkClose), NULL, this);
+        qSparkGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnQSparkClose(wxCloseEvent& event)
+{
+    qSparkGui->Destroy();
+    qSparkGui = nullptr;
 }

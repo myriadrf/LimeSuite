@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <complex>
 #include <ciso646>
+#include <FPGA_common.h>
 
 using namespace lime;
 
@@ -539,8 +540,40 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
     std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz << "Hz, rx=" << rxRate_Hz << "Hz)" << std::endl;
-    ConfigureFPGA_PLL(0, 2 * txRate_Hz, 90);
-    ConfigureFPGA_PLL(1, 2 * rxRate_Hz, 90);
+    const float txInterfaceClk = 2 * txRate_Hz;
+    const float rxInterfaceClk = 2 * rxRate_Hz;
+    if(txInterfaceClk >= 5e6)
+    {
+        lime::fpga::FPGA_PLL_clock clocks[2];
+        clocks[0].bypass = false;
+        clocks[0].index = 0;
+        clocks[0].outFrequency = txInterfaceClk;
+        clocks[0].phaseShift_deg = 0;
+        clocks[1].bypass = false;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txInterfaceClk;
+        clocks[1].phaseShift_deg = 90;
+        lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
+    }
+    else
+        lime::fpga::SetDirectClocking(this, 0, txInterfaceClk, 90);
+
+    if(rxInterfaceClk >= 5e6)
+    {
+        lime::fpga::FPGA_PLL_clock clocks[2];
+        clocks[0].bypass = false;
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxInterfaceClk;
+        clocks[0].phaseShift_deg = 0;
+        clocks[1].bypass = false;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = rxInterfaceClk;
+        clocks[1].phaseShift_deg = 90;
+        lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
+    }
+    else
+        lime::fpga::SetDirectClocking(this, 1, rxInterfaceClk, 90);
+
     if(mStreamService) mStreamService->mHwCounterRate = rxRate_Hz;
 }
 

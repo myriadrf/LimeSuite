@@ -314,13 +314,15 @@ void pnlBoardControls::UpdatePanel()
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == GetDeviceName(LMS_DEV_LIMESDR))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDR) 
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
+        || boardID == GetDeviceName(LMS_DEV_QSPARK))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
         dacVoltage.channel = 0;
         dacVoltage.powerOf10 = 0;
-        dacVoltage.units = VOLTAGE;
+        dacVoltage.units = adcUnits2string(RAW);
         dacVoltage.value = 0;
         paramList.push_back(dacVoltage);
 
@@ -328,7 +330,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
         temperature.name = "Temperature";
         temperature.channel = 1;
         temperature.powerOf10 = 0;
-        temperature.units = TEMPERATURE;
+        temperature.units = adcUnits2string(TEMPERATURE);
         temperature.value = 0;
         paramList.push_back(temperature);
     }
@@ -338,7 +340,9 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std::string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if (boardID == GetDeviceName(LMS_DEV_LIMESDR))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
+        || boardID == GetDeviceName(LMS_DEV_QSPARK))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
