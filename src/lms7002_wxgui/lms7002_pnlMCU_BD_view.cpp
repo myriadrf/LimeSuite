@@ -1,12 +1,10 @@
 #include <fstream>
 #include "lms7002_pnlMCU_BD_view.h"
-#include "MCU_BD.h"
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
 #include "dlgViewIRAM.h"
 #include "dlgViewSFR.h"
 #include "MCU_File.h"
-using namespace lime;
 
 
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_STATUS_EVENT = wxNewId();

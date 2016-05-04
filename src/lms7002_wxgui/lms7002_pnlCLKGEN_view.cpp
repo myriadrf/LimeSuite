@@ -1,6 +1,4 @@
 #include "lms7002_pnlCLKGEN_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <map>
 #include <wx/msgdlg.h>
 #include "lms7002_gui_utilities.h"
@@ -151,7 +149,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     txtFrequency->GetValue().ToDouble(&freqMHz);
     int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,freqMHz * 1e6);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
@@ -169,7 +167,7 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
     int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,-1); //tune CGEN
     if (status != 0)
-        wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(CSW_VCO_CGEN),&value);
     cmbCSW_VCO_CGEN->SetValue(value);

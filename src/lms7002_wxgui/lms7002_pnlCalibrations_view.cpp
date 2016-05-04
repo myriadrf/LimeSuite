@@ -1,7 +1,5 @@
 #include "lms7002_pnlCalibrations_view.h"
 #include "lms7002_gui_utilities.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
@@ -46,7 +44,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
@@ -70,7 +68,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
@@ -94,13 +92,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     {
         wxBusyInfo wait("Please wait, calibrating receiver...");
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
 
     wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();

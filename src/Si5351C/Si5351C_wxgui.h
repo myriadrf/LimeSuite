@@ -14,7 +14,7 @@
 #include <wx/button.h>
 #include <wx/radiobox.h>
 #include <string>
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 
 class Si5351C_wxgui: public wxFrame
 {

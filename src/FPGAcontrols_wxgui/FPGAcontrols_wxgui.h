@@ -16,19 +16,16 @@ class wxStaticBoxSizer;
 class wxToggleButton;
 class wxCheckBox;
 
+#include <lime/LimeSuite.h>
 #include <vector>
 #include <map>
 
-namespace lime{
-class IConnection;
-class LMS_StreamBoard;
-}
 
 class FPGAcontrols_wxgui: public wxFrame
 {
 	public:
         FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-        virtual void Initialize(lime::IConnection* dataPort);
+        virtual void Initialize(lms_device_t* dataPort);
         virtual ~FPGAcontrols_wxgui();
 
         int UploadFile(const wxString &filename);
@@ -79,8 +76,7 @@ class FPGAcontrols_wxgui: public wxFrame
 
 	protected:
         wxString fileForCyclicTransmitting;
-        lime::IConnection* m_serPort;
-        lime::LMS_StreamBoard* mStreamer;
+        lms_device_t* lmsControl;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()
 };

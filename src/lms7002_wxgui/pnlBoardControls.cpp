@@ -1,6 +1,6 @@
 #include "pnlBoardControls.h"
 #include "wx/wxprec.h"
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 #ifdef __BORLANDC__
 #pragma hdrstop
 #endif //__BORLANDC__
@@ -8,7 +8,6 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
-#include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
 #include <assert.h>

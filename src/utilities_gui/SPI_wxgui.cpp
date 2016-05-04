@@ -1,6 +1,5 @@
 #include "SPI_wxgui.h"
 
-using namespace lime;
 
 SPI_wxgui::SPI_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :

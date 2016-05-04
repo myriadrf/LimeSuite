@@ -15,7 +15,6 @@
 #include "dlgConnectionSettings.h"
 #include "lms7suiteEvents.h"
 #include "fftviewer_frFFTviewer.h"
-#include "LMS_StreamBoard.h"
 #include "ADF4002_wxgui.h"
 #include "Si5351C_wxgui.h"
 #include "LMS_Programing_wxgui.h"
@@ -209,14 +208,14 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         fftviewer->Initialize(lmsControl);
     if(adfGUI)
         adfGUI->Initialize(lmsControl);
-    /*if(rfspark)
+    if(rfspark)
         rfspark->Initialize(lmsControl);
-    if(hpm7)
+    /*if(hpm7)
         hpm7->Initialize(lmsControl);
     if(fpgaControls)
-        fpgaControls->Initialize(lmsControl);
+        fpgaControls->Initialize(lmsControl);*/
     if(myriad7)
-        myriad7->Initialize(lmsControl);*/
+        myriad7->Initialize(lmsControl);
     if(deviceInfo)
         deviceInfo->Initialize(lmsControl);
     if(spi)
@@ -395,7 +394,7 @@ void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
     else
     {
         rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        //rfspark->Initialize(lmsControl);
+        rfspark->Initialize(lmsControl);
         rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
         rfspark->Show();
     }
@@ -449,7 +448,7 @@ void LMS7SuiteAppFrame::OnShowMyriad7(wxCommandEvent& event)
     else
     {
         myriad7 = new Myriad7_wxgui(this, wxNewId(), _("Myriad7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-     //   myriad7->Initialize(lmsControl);
+        myriad7->Initialize(lmsControl);
         myriad7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnMyriad7Close), NULL, this);
         myriad7->Show();
     }

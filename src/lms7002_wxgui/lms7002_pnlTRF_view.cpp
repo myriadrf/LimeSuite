@@ -1,5 +1,4 @@
 #include "lms7002_pnlTRF_view.h"
-#include "LMS7002M.h"
 #include <map>
 #include <vector>
 #include "lms7002_gui_utilities.h"

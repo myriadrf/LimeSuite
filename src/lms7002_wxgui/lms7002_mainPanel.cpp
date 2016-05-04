@@ -16,7 +16,6 @@
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlXBUF_view.h"
 #include "lms7002_pnlCalibrations_view.h"
-#include "ErrorReporting.h"
 #include <wx/time.h>
 #include <wx/msgdlg.h>
 #include <iostream>
@@ -24,7 +23,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
 #include "lms7002_pnlBuffers_view.h"
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 using namespace std;
 using namespace lime;
 
@@ -139,7 +138,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
     int status = LMS_Reset(lmsControl);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxNotebookEvent evt;
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
@@ -190,7 +189,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     int status = LMS_LoadConfig(lmsControl,dlg.GetPath().To8BitData());
     if (status != 0)
     {
-            wxMessageBox(wxString::Format(_("Failed to load file: %s"), GetLastErrorMessage()), _("Warning"));
+            wxMessageBox(wxString::Format(_("Failed to load file: %s"), LMS_GetLastErrorMessage()), _("Warning"));
     }
     wxCommandEvent tevt;
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
@@ -264,7 +263,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,false);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     UpdateVisiblePanel();
 }
 
@@ -272,7 +271,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,true);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);

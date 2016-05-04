@@ -5,7 +5,6 @@
 */
 
 #include "Si5351C_wxgui.h"
-#include "Si5351C.h"
 
 #include <LMSBoards.h>
 

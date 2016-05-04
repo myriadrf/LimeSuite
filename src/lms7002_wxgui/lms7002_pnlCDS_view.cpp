@@ -1,5 +1,4 @@
 #include "lms7002_pnlCDS_view.h"
-#include "LMS7002M.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
 

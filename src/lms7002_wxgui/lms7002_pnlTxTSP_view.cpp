@@ -1,7 +1,5 @@
 #include "lms7002_pnlTxTSP_view.h"
 #include "lms7002_gui_utilities.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
 
@@ -260,7 +258,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR1, &coefficients[0]);
     if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -271,7 +269,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
         coefficients = dlg->GetCoefficients();
         status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR1, &coefficients[0],coefficients.size());
         if (status != 0)
-            wxMessageBox(wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+            wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
 }
@@ -287,7 +285,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR2, &coefficients[0]);
     if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -297,7 +295,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
         coefficients = dlg->GetCoefficients();
         status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR2, &coefficients[0],coefficients.size());
         if (status != 0)
-            wxMessageBox(wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+            wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
 }
@@ -313,7 +311,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR3, &coefficients[0]);
     if (status != 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -323,7 +321,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
         coefficients = dlg->GetCoefficients();
         status = LMS_SetGFIRCoeff(lmsControl, LMS_CH_TX, ch-1, LMS_GFIR3, &coefficients[0],coefficients.size());
         if (status != 0)
-            wxMessageBox(wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+            wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
 }

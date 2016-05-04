@@ -1,6 +1,4 @@
 #include "lms7002_pnlRBB_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <map>
 #include <wx/msgdlg.h>
 #include "numericSlider.h"
@@ -198,7 +196,7 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     }
     if (status != 0)
     {
-        wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelection->GetSelection())
     {

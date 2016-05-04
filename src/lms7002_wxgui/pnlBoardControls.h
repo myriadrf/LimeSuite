@@ -19,7 +19,7 @@
 #include <wx/statbox.h>
 #include <wx/frame.h>
 #include <wx/spinctrl.h>
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 #include <vector>
 #include <string>
 #include <stdint.h>

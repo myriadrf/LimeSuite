@@ -10,7 +10,7 @@
 //(*Headers(ADF4002_wxgui)
 #include <wx/frame.h>
 #include <wx/wx.h>
-#include <LimeSuite.h>
+#include <lime/LimeSuite.h>
 class wxSpinEvent;
 class wxTextCtrl;
 class wxComboBox;

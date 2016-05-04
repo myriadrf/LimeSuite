@@ -16,8 +16,6 @@
 #include <wx/msgdlg.h>
 #include <wx/wfstream.h>
 
-using namespace lime;
-
 const long LMS_Programing_wxgui::ID_PROGRAMING_FINISHED_EVENT = wxNewId();
 const long LMS_Programing_wxgui::ID_PROGRAMING_STATUS_EVENT = wxNewId();
 const long LMS_Programing_wxgui::ID_BUTTON1 = wxNewId();

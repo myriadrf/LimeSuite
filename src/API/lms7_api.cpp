@@ -1,7 +1,7 @@
 #include "IConnection.h"
 #include "ConnectionRegistry.h"
 #include "lms_gfir.h"
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 #include "lms7_device.h"
 #include "ErrorReporting.h"
 #include "errno.h"
@@ -690,6 +690,30 @@ API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
         return lms->UploadAll();
     else
         return lms->DownloadAll();
+}
+
+
+API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev,  uint8_t* buffer, size_t len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev; 
+    return lms->GetConnection()->GPIORead(buffer,len);
+}
+
+
+API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer, size_t len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+     LMS7_Device* lms = (LMS7_Device*)dev; 
+     return lms->GetConnection()->GPIOWrite(buffer,len);
 }
 
 

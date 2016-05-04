@@ -1,5 +1,4 @@
 #include "fftviewer_frFFTviewer.h"
-#include "StreamerLTE.h"
 #include <wx/timer.h>
 #include <vector>
 #include "OpenGLGraph.h"
@@ -313,7 +312,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
         }
     }
     meta.start_of_burst = false;
-    meta.has_timestamp = false;
+    meta.has_timestamp = true;
     meta.end_of_burst = true;
     LMS_RecvStream(pthis->lmsControl,(void**)buffers,0,&meta,100);
     LMS_SendStream(pthis->lmsControl,(const void**)buffers,0,&meta,100);

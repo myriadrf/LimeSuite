@@ -1,6 +1,4 @@
 #include "lms7002_pnlTBB_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
@@ -158,7 +156,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     }
     if (status != 0)
     {
-        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelection->GetSelection())
     {
@@ -196,7 +194,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
     }
     if (status != 0)
     {
-        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     }
     else switch (rgrFilterSelectionTest->GetSelection())
     {

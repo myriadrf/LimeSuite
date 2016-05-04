@@ -31,7 +31,7 @@ set(LIME_SUITE_ABI 1)
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
-    API/LimeSuite.h
+    API/lime/LimeSuite.h
     lms7002m/LMS7002M_parameters.h
 )
 

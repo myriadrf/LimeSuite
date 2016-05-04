@@ -11,7 +11,6 @@
 #include <wx/combobox.h>
 #include <wx/msgdlg.h>
 
-#include "IConnection.h"
 #include <LMSBoards.h>
 
 using namespace lime;
@@ -62,21 +61,21 @@ Myriad7_wxgui::~Myriad7_wxgui()
 {
 }
 
-void Myriad7_wxgui::Initialize(IConnection* pSerPort)
+void Myriad7_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    serPort = pSerPort;
+    lmsControl = pSerPort;
 }
 
 void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 {
-    if (serPort == nullptr)
+    if (lmsControl == nullptr)
         return;
     unsigned rxInput = cmbGPIO_1_0->GetSelection();
     unsigned txOutput = cmbGPIO2->GetSelection();
     uint8_t value = txOutput << 2 | rxInput;
 
     int status;
-    status = serPort->GPIOWrite(&value, 1);
+    status = LMS_GPIOWrite(lmsControl,&value,1);
 
     if (status != 0)
     {
@@ -87,11 +86,15 @@ void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 
 void Myriad7_wxgui::UpdatePanel()
 {
-    if (serPort == nullptr || serPort->GetDeviceInfo().expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
+    if (lmsControl == nullptr)
         return;
-
+    lms_dev_info_t info;
+    LMS_GetDeviceInfo(lmsControl,&info);
+    if (info.expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
+            return;
+    
     uint8_t dataRd[64];
-    int status = serPort->GPIORead(dataRd, 64);
+    int status = LMS_GPIORead(lmsControl,dataRd, 64);
 
     if (status != 0)
     {

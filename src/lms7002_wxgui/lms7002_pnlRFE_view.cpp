@@ -1,6 +1,4 @@
 #include "lms7002_pnlRFE_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <wx/msgdlg.h>
 #include <map>
 #include <vector>
@@ -250,7 +248,7 @@ void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
     int status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_TIA,&freq);
     if (status != 0)
     {
-        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     }
     else
     {

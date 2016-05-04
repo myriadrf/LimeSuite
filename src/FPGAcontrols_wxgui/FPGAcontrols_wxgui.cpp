@@ -21,7 +21,6 @@
 #include "wx/checkbox.h"
 
 #include <vector>
-#include "IConnection.h"
 #include <fstream>
 #include <wx/ffile.h>
 #include <wx/dir.h>
@@ -52,10 +51,9 @@ const wxString gWFMdirectory = "lms7suite_wfm";
 
 FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles)
 {
-    mStreamer = nullptr;
+    lmsControl = nullptr;
     fileForCyclicTransmitting = _("");
     mStreamingTimer = new wxTimer(this, ID_STREAMING_TIMER);
-    m_serPort = nullptr;
 
 	wxFlexGridSizer* FlexGridSizer10;
 	wxFlexGridSizer* FlexGridSizer3;
@@ -152,20 +150,17 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
         dir.Make(gWFMdirectory);
 }
 
-void FPGAcontrols_wxgui::Initialize(IConnection* dataPort)
+void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
 {
-    m_serPort = dataPort;
-    if (mStreamer)
-        delete mStreamer;
-    mStreamer = new LMS_StreamBoard(m_serPort);
+    lmsControl = dataPort;
+
 }
 
 FPGAcontrols_wxgui::~FPGAcontrols_wxgui()
 {
     wxCommandEvent evt;
     OnbtnStopStreamingClick(evt);
-    if (mStreamer)
-        delete mStreamer;
+
 }
 
 /** @brief Reads WFM file and outputs iq sample pairs
@@ -237,21 +232,21 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
-    assert(mStreamer != nullptr);
+    /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, regData | 0x3);
+    mStreamer->Reg_write(0x0005, regData | 0x3);*/
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
-    assert(mStreamer != nullptr);
+    /*assert(mStreamer != nullptr);
     uint16_t regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);
+    mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);*/
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
-    assert(mStreamer != nullptr);
+    /*assert(mStreamer != nullptr);
     if (!m_serPort || m_serPort->IsOpen() == false)
     {
         wxMessageBox(_("Device not connected"), _("Error"));
@@ -328,7 +323,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 		return -3;
 	}
 	else
-		return 0;
+		return 0;*/
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
@@ -371,10 +366,12 @@ void FPGAcontrols_wxgui::OnbtnLoadCustomClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnUpdateStats(wxTimerEvent& event)
 {
-    if (mStreamer == nullptr)
+  /*  if (mStreamer == nullptr)
         return;
     LMS_StreamBoard::ProgressStats stats = mStreamer->GetStats();
     txtDataRate->SetLabelText(wxString::Format(_("Data rate: %.1f kB/s"), stats.TxRate_Bps/1000));
+
+   */
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
@@ -401,18 +398,18 @@ void FPGAcontrols_wxgui::OnbtnStartStreamingClick(wxCommandEvent& event)
         wxMessageBox(_("No samples were loaded"));
         return;
     }
-    mStreamer->StartCyclicTransmitting(&isamples[0], &qsamples[0], framesCount);
+   // mStreamer->StartCyclicTransmitting(&isamples[0], &qsamples[0], framesCount);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 {
     mStreamingTimer->Stop();
-    mStreamer->StopCyclicTransmitting();
+    //mStreamer->StopCyclicTransmitting();
 }
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 {
-    if(!m_serPort)
+   /* if(!m_serPort)
     {
         wxMessageBox(_("FPGA controls: Connection not initialized"), _("ERROR"));
         return;
@@ -432,5 +429,5 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     status = m_serPort->WriteRegister(address, regValue);
 
     if (status != 0)
-        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
+        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);*/
 }

@@ -8,7 +8,7 @@
 #ifndef LMS7_DEVICE_H
 #define	LMS7_DEVICE_H
 #include "LMS7002M.h"
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 #include <mutex>
 #include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 
@@ -121,6 +121,7 @@ private:
     int rx_buffersCount; // must be power of 2   
     int *rx_handles;
     char *rx_buffers;
+    bool rx_started;
     
     int tx_packetsToBatch;
     int tx_buffersCount; // must be power of 2   

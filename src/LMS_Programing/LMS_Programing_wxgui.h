@@ -16,10 +16,7 @@ class wxChoice;
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "LimeSuite.h"
-namespace lime{
-class LMS_Programing;
-}
+#include "lime/LimeSuite.h"
 
 class LMS_Programing_wxgui : public wxFrame
 {

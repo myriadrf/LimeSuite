@@ -44,6 +44,7 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
     rx_handles = nullptr;
     rx_buffers = nullptr;
     rx_running = false;
+    rx_started = false;
     
     tx_packetsToBatch = 4;
     tx_buffersCount = 32; // must be power of 2
@@ -1502,9 +1503,8 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
     const long bufferSize = rx_packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
     static uint64_t ts = 0;
-    static uint64_t rx_meta = 0;
+    uint64_t rx_meta = 0;
     static int index = bufferSize;
-    static bool started = false;
     int ret;
     
     rx_lock.lock();
@@ -1512,10 +1512,12 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
     if (meta->start_of_burst)
     {
         index = bufferSize;
+        ts =0;
+        memset(buffer,0,sizeof(buffer));
         int size = rx_packetsToBatch*sizeof(lime::PacketLTE);
-        if (started == false)
+        if (rx_started == false)
         {
-            started = true;
+            rx_started = true;
             for (int i = 0; i<rx_buffersCount; ++i)
                 rx_handles[i] = controlPort->BeginDataReading(&rx_buffers[i*size], size);
         }
@@ -1537,7 +1539,7 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
             controlPort->WaitForReading(rx_handles[j], 30);
             controlPort->FinishDataReading(&rx_buffers[j*size], bytesToRead, rx_handles[j]); 
         }
-        started = false;
+        rx_started = false;
     }
     
    meta->timestamp = ts+index/channelsCount-ret;
@@ -1831,7 +1833,6 @@ int LMS7_Device::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
 
     if (controlPort->WaitForReading(rx_handles[bi], timeout) == false)
     {
-     
         return -1;
     }
 
@@ -2021,6 +2022,7 @@ int LMS7_Device::StopRx()
         
     if (tx_running == false)
         Stop();  
+    rx_started = false;
     rx_lock.unlock();
 	return 0;
 }

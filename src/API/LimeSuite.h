@@ -1,5 +1,5 @@
 /**
- * @file LimeSuite.h
+ * @file lime/LimeSuite.h
  *
  * @brief LMS API library
  *
@@ -1168,6 +1168,27 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip);
+
+
+/**
+ *
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   buffer      read values
+ * @param   len         number of bytes to read
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev, uint8_t* buffer, size_t len);
+
+/**
+ *
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   buffer      values to write
+ * @param   len         number bytes to write
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
 
 /** @} (End FN_LOW_LVL) */
 

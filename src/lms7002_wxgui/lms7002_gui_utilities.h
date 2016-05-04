@@ -5,7 +5,7 @@
 */
 #include <map>
 #include <vector>
-#include "LimeSuite.h"
+#include "lime/LimeSuite.h"
 class wxPanel;
 class wxWindow;
 

@@ -4,7 +4,6 @@
 @brief 	wxWidgets panel for interacting with RFSpark board
 */
 #include "RFSpark_wxgui.h"
-#include "ErrorReporting.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -16,7 +15,6 @@
 #include <wx/msgdlg.h>
 
 #include <vector>
-#include "LMS64CProtocol.h"
 #include <ADCUnits.h>
 
 using namespace lime;
@@ -74,7 +72,7 @@ wxString power2unitsString(char powerx3)
 
 RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& title, const wxPoint& pos,const wxSize& size, long style)
 {
-    m_serPort = nullptr;
+    lmsControl = nullptr;
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, style, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
@@ -185,10 +183,9 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     Connect(ID_BTNREADGPIO, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnReadGPIO);
 }
 
-void RFSpark_wxgui::Initialize(IConnection* pSerPort)
+void RFSpark_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
-    assert(m_serPort != nullptr);
+    lmsControl = pSerPort;
     wxCommandEvent evt;
     OnbtnReadGPIO(evt);
     OnbtnRefreshAllADC(evt);
@@ -210,18 +207,17 @@ void RFSpark_wxgui::UpdateADClabels()
 
 void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    if (LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
 
-    LMS64CProtocol::GenericPacket pkt;
+   /* LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
     
     for (int i = 0; i < mADCdata.size(); ++i)
         pkt.outBuffer.push_back(i);
-    assert(m_serPort != nullptr);
 
     if (m_serPort->TransferPacket(pkt) != 0)
     {
@@ -239,24 +235,24 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 		mADCdata[i].powerOf10coefficient = mADCdata[i].powerOf10coefficient >> 4;				
         mADCdata[i].value = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
 	}
-	UpdateADClabels();
+	UpdateADClabels();*/
 }
 
 void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    if (LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-
+/*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
-	int index = cmbADCselect->GetSelection();
-	pkt.outBuffer.push_back(index);
+    int index = cmbADCselect->GetSelection();
+    
+    pkt.outBuffer.push_back(index);
     assert(m_serPort != nullptr);
-	
     if (m_serPort->TransferPacket(pkt) != 0)
     {
         wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
@@ -273,17 +269,17 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 		mADCdata[index].powerOf10coefficient = mADCdata[index].powerOf10coefficient >> 4;
         mADCdata[index].value = pkt.inBuffer[2] << 8 | pkt.inBuffer[3];
 	}
-	UpdateADClabels();
+	UpdateADClabels();*/
 }
 
 void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 {   
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    if (LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-
+/*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_WR;
     
@@ -297,16 +293,17 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 	}    
     if (m_serPort->TransferPacket(pkt) != 0)		
         wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+  */
 }
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    if (LMS_IsOpen(lmsControl))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-
+/*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;
     assert(m_serPort != nullptr);
@@ -326,4 +323,5 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 			mGPIOboxes[gpioIndex++]->SetValue( pkt.inBuffer[gpioByte] & (0x1 << j) );
 		++gpioByte;
 	}	
+ */
 }

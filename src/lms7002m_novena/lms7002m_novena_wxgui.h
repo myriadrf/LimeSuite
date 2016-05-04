@@ -8,10 +8,8 @@
 #define LMS7002M_NOVENA_WXGUI_H
 
 #include <wx/wx.h>
-#include "LimeSuite.h"
-namespace lime{
+#include "lime/LimeSuite.h"
 
-}
 
 class LMS7002M_Novena_wxgui : public wxFrame
 {
