@@ -385,7 +385,7 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     long hbi = lmsControl->Get_SPI_Reg_bits(HBI_OVR_TXTSP, fromChip);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
-    int16_t value = lmsControl->Get_SPI_Reg_bits(TSGFCW_RXTSP, fromChip);
+    int16_t value = lmsControl->Get_SPI_Reg_bits(TSGFCW_TXTSP, fromChip);
     rgrTSGFCW_TXTSP->SetSelection(value2index(value, tsgfcw_txtsp_IndexValuePairs));
 
     value = lmsControl->Get_SPI_Reg_bits(IQCORR_TXTSP, fromChip);
