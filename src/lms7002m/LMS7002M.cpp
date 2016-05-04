@@ -35,8 +35,6 @@ using namespace lime;
 
 #include "MCU_BD.h"
 
-#define LMS_VERBOSE_OUTPUT
-
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
 
@@ -2022,11 +2020,12 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         if (status != 0) return status;
     }
 
+    int mclk2src = Get_SPI_Reg_bits(LMS7param(MCLK2SRC));
     if (decimation == 7 || decimation == 0) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), 3);
+        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), mclk2src & 1 | 0x2);
     }
     else
     {
@@ -2036,13 +2035,14 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), 1);
+        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), mclk2src & 1);
     }
+    int mclk1src = Get_SPI_Reg_bits(LMS7param(MCLK1SRC));
     if (interpolation == 7 || interpolation == 0) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 2);
+        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1 | 0x2);
     }
     else
     {
@@ -2052,7 +2052,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 0);
+        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
     }
 
     return status;

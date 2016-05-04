@@ -56,6 +56,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     Si5351C/Si5351C.h
     LMS_StreamBoard/LMS_StreamBoard.h
     LMS_StreamBoard/LMS_StreamBoard_FIFO.h
+    FPGA_common/FPGA_common.h
 )
 
 include(FeatureSummary)
@@ -114,6 +115,7 @@ set(LIME_SUITE_SOURCES
     Si5351C/Si5351C.cpp
     LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
+    FPGA_common/FPGA_common.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -129,6 +131,7 @@ include_directories(LTEpackets)
 include_directories(Si5351C)
 include_directories(LMS_StreamBoard)
 include_directories(kissFFT)
+include_directories(FPGA_common)
 
 include(FeatureSummary)
 include(CMakeDependentOption)
@@ -230,6 +233,7 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
+    boards_wxgui/pnlQSpark.cpp
 )
 
 include(FeatureSummary)
@@ -247,6 +251,7 @@ if (ENABLE_LMS7_GUI)
     include_directories(myriad7)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
+    include_directories(boards_wxgui)
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
 

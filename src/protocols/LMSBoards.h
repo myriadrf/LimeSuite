@@ -48,7 +48,7 @@ const char LMS_DEV_NAMES[][80] =
 	"RF-Spark",
 	"LMS6002-USB Stick",
 	"RF-ESpark",
-    "LimeSDR",
+    "LimeSDR USB",
     "LimeSDR PCI-E",
     "QSpark",
     "uLimeSDR",
