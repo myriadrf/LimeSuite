@@ -79,11 +79,12 @@ public:
     virtual int DACRead();
     int StopRx();
     int StopTx();
-    
+    lime::IConnection* streamPort;
 private:
     lms_channel_info* tx_channels;
     lms_channel_info* rx_channels;
     static const double LMS_CGEN_MAX;
+    
     int RecvStreamFloat(float **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms);
     int SendStreamFloat(const float **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms);
     int RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms);

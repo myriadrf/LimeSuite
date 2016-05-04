@@ -160,11 +160,6 @@ HPM7_wxgui::~HPM7_wxgui()
 
 void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
 
     int tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < cmbSSC1.size(); ++tunerIndex)
@@ -183,11 +178,7 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
+
     int tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < tunerIds.size(); ++tunerIndex)
         if (event.GetId() == tunerIds[tunerIndex])
@@ -232,11 +223,7 @@ void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
 
 void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
+
    /* LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_MYRIAD_RD;
     pkt.outBuffer.push_back(0x10);
@@ -275,11 +262,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
 void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
+
   /*  LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_MYRIAD_WR;
 
@@ -313,11 +296,7 @@ void HPM7_wxgui::SelectRxPath(unsigned int i)
 
 bool HPM7_wxgui::UploadGPIO()
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Uploading HPM7 GPIO, board not connected"), _("Warning"));
-        return false;
-    }
+
 
     /*LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_MYRIAD_WR;

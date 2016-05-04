@@ -103,7 +103,7 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if(!LMS_IsOpen(lmsControl))
+    if(!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;

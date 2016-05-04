@@ -77,6 +77,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info)
                     continue;
             }
             lms->SetConnection(conn,0);
+            lms->streamPort = conn;
             lms->DownloadAll();
             return LMS_SUCCESS;
         }
@@ -96,15 +97,10 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
-    }
-     
+    }   
+    LMS_Disconnect(device);
     LMS7_Device* lms = (LMS7_Device*)device;
-    auto conn = lms->GetConnection();
     delete lms;
-    if (conn != nullptr)
-    {
-		lime::ConnectionRegistry::freeConnection(conn);
-    }
     return LMS_SUCCESS;
 }
 
@@ -118,6 +114,11 @@ API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
      
     LMS7_Device* lms = (LMS7_Device*)device;
     auto conn = lms->GetConnection();
+    if (conn != lms->streamPort && lms->streamPort!=nullptr)
+    {
+       lime::ConnectionRegistry::freeConnection(lms->streamPort); 
+       lms->streamPort = nullptr;
+    }
     if (conn != nullptr)
     {
 		lime::ConnectionRegistry::freeConnection(conn);
@@ -126,16 +127,24 @@ API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
     return LMS_SUCCESS; 
 }
 
-API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device)
+API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
 {
     if (device == nullptr)
         return false;
     
     LMS7_Device* lms = (LMS7_Device*)device;
-    auto conn = lms->GetConnection();
-    if (conn != nullptr)
+    if (port == 0)
     {
-        return conn->IsOpen();
+        auto conn = lms->GetConnection();
+        if (conn != nullptr)
+        {
+            return conn->IsOpen();
+        }
+    }
+    if (port == 1)
+    {
+        if (lms->streamPort != nullptr)
+            return lms->streamPort->IsOpen();
     }
     return false; 
 }
@@ -716,7 +725,34 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
      return lms->GetConnection()->GPIOWrite(buffer,len);
 }
 
-
+API_EXPORT int CALL_CONV LMS_APICommand(lms_device_t *dev, int cmd, void* data)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev; 
+    
+    switch (cmd)
+    {
+        case 0:
+        {
+            if (data == nullptr)
+            {
+                lime::ReportError(EINVAL, "Cammand requires 1 bool parameter.");
+                return -1;
+            }
+            bool val = *((bool*)data);
+            lms->EnableValuesCache(val);
+            return 0;
+        }
+        default:
+            lime::ReportError(EINVAL, "Unknown command.");
+            return -1;
+    }
+    
+}
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
 {

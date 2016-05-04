@@ -214,12 +214,6 @@ pnlBoardControls::~pnlBoardControls()
 
 void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 {
-    if (!LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
     vector<uint8_t> ids;
     vector<double> values;
     vector<string> units;
@@ -239,7 +233,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         int status = LMS_ReadCustomBoardParam(lmsControl,mADCparameters[i].channel,&value,units);
         if (status != 0)
         {
-            wxMessageBox(_("Failed to read values"), _("Warning"));
+            wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
             return;
         }
         mADCparameters[i].channel = ids[i];
@@ -264,7 +258,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
-    if (!LMS_IsOpen(lmsControl))
+    if (!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -290,7 +284,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 void pnlBoardControls::Initialize(lms_device_t* controlPort)
 {
     lmsControl = controlPort;
-    if(!LMS_IsOpen(lmsControl))
+    if(!LMS_IsOpen(lmsControl,0))
         return;
     lms_dev_info_t info;
     if (LMS_GetDeviceInfo(lmsControl,&info)==0)
@@ -454,7 +448,7 @@ void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl))
+    if (!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
@@ -477,7 +471,7 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl))
+    if (!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;

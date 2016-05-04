@@ -207,11 +207,6 @@ void RFSpark_wxgui::UpdateADClabels()
 
 void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
 
    /* LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
@@ -240,11 +235,6 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
 /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
@@ -274,11 +264,6 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 {   
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
 /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_WR;
@@ -298,11 +283,7 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 {
-    if (LMS_IsOpen(lmsControl))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
+
 /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;

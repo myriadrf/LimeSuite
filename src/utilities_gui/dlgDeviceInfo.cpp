@@ -12,7 +12,6 @@ dlgDeviceInfo_view( parent, id, title, pos, size, styles)
 void dlgDeviceInfo::Initialize(lms_device_t* lms)
 {
     lmsControl = lms;
-
 }
 
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
@@ -26,6 +25,12 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblFirmwareCtr->SetLabel(info.firmwareVersion);
         lblHardwareCtr->SetLabel(info.hardwareVersion);
         lblProtocolCtr->SetLabel(info.protocolVersion);
+        
+        lblDeviceData->SetLabel(info.deviceName);
+        lblExpansionData->SetLabel(info.expansionName);
+        lblFirmwareData->SetLabel(info.firmwareVersion);
+        lblHardwareData->SetLabel(info.hardwareVersion);
+        lblProtocolData->SetLabel(info.protocolVersion);
     }
     else
     {
@@ -34,6 +39,12 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblFirmwareCtr->SetLabel("???");
         lblHardwareCtr->SetLabel("???");
         lblProtocolCtr->SetLabel("???");
+        
+        lblDeviceData->SetLabel("???");
+        lblExpansionData->SetLabel("???");
+        lblFirmwareData->SetLabel("???");
+        lblHardwareData->SetLabel("???");
+        lblProtocolData->SetLabel("???");
     }
 
 

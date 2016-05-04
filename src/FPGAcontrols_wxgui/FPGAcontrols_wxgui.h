@@ -16,7 +16,7 @@ class wxStaticBoxSizer;
 class wxToggleButton;
 class wxCheckBox;
 
-#include <lime/LimeSuite.h>
+#include "lime/LimeSuite.h"
 #include <vector>
 #include <map>
 

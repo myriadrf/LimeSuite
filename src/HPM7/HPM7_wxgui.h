@@ -16,7 +16,7 @@ class wxComboBox;
 class wxCheckBox;
 
 #include <vector>
-#include <lime/LimeSuite.h>
+#include "lime/LimeSuite.h"
 
 class HPM7_wxgui : public wxFrame
 {

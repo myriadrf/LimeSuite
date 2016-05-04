@@ -407,7 +407,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
     float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
                             pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
     
-    this->controlPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+    this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
    return 0;
 }
 
@@ -1519,7 +1519,7 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
         {
             rx_started = true;
             for (int i = 0; i<rx_buffersCount; ++i)
-                rx_handles[i] = controlPort->BeginDataReading(&rx_buffers[i*size], size);
+                rx_handles[i] = streamPort->BeginDataReading(&rx_buffers[i*size], size);
         }
     }
     
@@ -1531,13 +1531,13 @@ int LMS7_Device::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
     if (meta->end_of_burst)
     {
         index = bufferSize;  
-        controlPort->AbortReading();
+        streamPort->AbortReading();
         int size = rx_packetsToBatch*sizeof(lime::PacketLTE);
         for (int j = 0; j<rx_buffersCount; j++)
         {
             long bytesToRead = size;
-            controlPort->WaitForReading(rx_handles[j], 30);
-            controlPort->FinishDataReading(&rx_buffers[j*size], bytesToRead, rx_handles[j]); 
+            streamPort->WaitForReading(rx_handles[j], 30);
+            streamPort->FinishDataReading(&rx_buffers[j*size], bytesToRead, rx_handles[j]); 
         }
         rx_started = false;
     }
@@ -1607,7 +1607,7 @@ int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode,lim
     }
     //device FPGA(2)
     //mode to RAM(0), to FLASH (1)
-    return GetConnection()->ProgramWrite(data,len,mode,2,callback);
+    return streamPort->ProgramWrite(data,len,mode,2,callback);
 }
 
 int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
@@ -1645,9 +1645,9 @@ int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode,lime:
     //device fx3(1)
     //mode program_flash(2))
     if (mode == LMS_TARGET_FLASH)
-        return GetConnection()->ProgramWrite(data,len,2,1,callback);
+        return streamPort->ProgramWrite(data,len,2,1,callback);
     else
-        return GetConnection()->ProgramWrite(nullptr,0,0,1,callback);
+        return streamPort->ProgramWrite(nullptr,0,0,1,callback);
 }
 
 int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
@@ -1702,7 +1702,8 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,li
         lime::ReportError(ENOTSUP, "Unsupported target storage type");
         return -1;
     }
-    mcu.Initialize(GetConnection());    mcu.callback = callback;
+    mcu.Initialize(GetConnection());
+    mcu.callback = callback;
     mcu.Program_MCU(bin,mode);
     mcu.callback = nullptr;
     return 0;
@@ -1712,14 +1713,14 @@ int LMS7_Device::DACWrite(uint16_t val)
 {
     uint8_t id=0;
     double dval= val; 
-    return controlPort->CustomParameterWrite(&id,&dval,1,NULL);
+    return streamPort->CustomParameterWrite(&id,&dval,1,NULL);
 }
 
 int LMS7_Device::DACRead()
 {
     uint8_t id=0;
     double dval=0; 
-    int ret = controlPort->CustomParameterRead(&id,&dval,1,NULL);
+    int ret = streamPort->CustomParameterRead(&id,&dval,1,NULL);
     return ret >=0 ? dval : -1;
 }
 
@@ -1831,12 +1832,12 @@ int LMS7_Device::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
     static int bi = 0;
     int n = 0;
 
-    if (controlPort->WaitForReading(rx_handles[bi], timeout) == false)
+    if (streamPort->WaitForReading(rx_handles[bi], timeout) == false)
     {
         return -1;
     }
 
-    long bytesReceived = controlPort->FinishDataReading(&rx_buffers[bi*bufferSize], bufferSize, rx_handles[bi]);
+    long bytesReceived = streamPort->FinishDataReading(&rx_buffers[bi*bufferSize], bufferSize, rx_handles[bi]);
     if (bytesReceived > 0)
     {    
 	lime::PacketLTE* pkt= (lime::PacketLTE*)&rx_buffers[bi*bufferSize];
@@ -1869,14 +1870,14 @@ int LMS7_Device::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
 
     // Re-submit this request to keep the queue full
     memset(&rx_buffers[bi*bufferSize], 0, bufferSize);
-    rx_handles[bi] = controlPort->BeginDataReading(&rx_buffers[bi*bufferSize], bufferSize);
+    rx_handles[bi] = streamPort->BeginDataReading(&rx_buffers[bi*bufferSize], bufferSize);
     bi = (bi + 1) & buffersCountMask;
     return n/2;    
 }
 
 void LMS7_Device::ResetUSBFIFO()
 {
-	lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(controlPort);
+	lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(streamPort);
 // TODO : USB FIFO reset command for IConnection
     if (port == nullptr) return;
 	lime::LMS64CProtocol::GenericPacket ctrPkt;
@@ -1895,41 +1896,41 @@ int LMS7_Device::Start()
     
     uint32_t dataRd = 0;
     // Stop Tx Rx if they were active
-    controlPort->ReadRegister(0x000A,dataRd);
-    controlPort->WriteRegister(0x000A, dataRd & ~0x3);
+    streamPort->ReadRegister(0x000A,dataRd);
+    streamPort->WriteRegister(0x000A, dataRd & ~0x3);
     //reset hardware timestamp to 0
-    controlPort->ReadRegister(0x0009,dataRd);
-    controlPort->WriteRegister(0x0009, dataRd & ~0x3);
-    controlPort->WriteRegister(0x0009, dataRd | 0x3);
-    controlPort->WriteRegister(0x0009, dataRd & ~0x3);
+    streamPort->ReadRegister(0x0009,dataRd);
+    streamPort->WriteRegister(0x0009, dataRd & ~0x3);
+    streamPort->WriteRegister(0x0009, dataRd | 0x3);
+    streamPort->WriteRegister(0x0009, dataRd & ~0x3);
 
 
     //enable MIMO mode, 12 bit compressed values
     if ((channelsCount == 2 && forced_mode == MODE_AUTO) || (forced_mode == MODE_MIMO))
     {
-        controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
-        controlPort->WriteRegister(0x0007, 0x0003);
+        streamPort->WriteRegister(0x0008, (1<<8)|(0x0002));
+        streamPort->WriteRegister(0x0007, 0x0003);
     }
     else
     {
-        controlPort->WriteRegister(0x0008, (1<<8)|(0x0002));
-        controlPort->WriteRegister(0x0007, 0x0001);
+        streamPort->WriteRegister(0x0008, (1<<8)|(0x0002));
+        streamPort->WriteRegister(0x0007, 0x0001);
     }
 
     //USB FIFO reset
     ResetUSBFIFO();
 
     //switch on Rx
-    controlPort->ReadRegister(0x000A,dataRd);
-    controlPort->WriteRegister(0x000A, dataRd & ~0x3); 
-    controlPort->WriteRegister(0x000A, dataRd | 0x1);   
+    streamPort->ReadRegister(0x000A,dataRd);
+    streamPort->WriteRegister(0x000A, dataRd & ~0x3); 
+    streamPort->WriteRegister(0x000A, dataRd | 0x1);   
 }
 
 int LMS7_Device::Stop()
 {
     uint32_t dataRd = 0;
-    controlPort->ReadRegister(0x000A,dataRd);
-    controlPort->WriteRegister(0x000A, dataRd & ~0x3);
+    streamPort->ReadRegister(0x000A,dataRd);
+    streamPort->WriteRegister(0x000A, dataRd & ~0x3);
 	return 0;
 }
 
@@ -1998,14 +1999,14 @@ int LMS7_Device::StopRx()
     rx_lock.lock();
     int bufferSize = rx_packetsToBatch*sizeof(lime::PacketLTE);
     rx_running = false;
-    controlPort->AbortReading();
+    streamPort->AbortReading();
     
     if (rx_handles != nullptr)
     for (int j = 0; j<rx_buffersCount; j++)
     {
         long bytesToRead = bufferSize;
-        controlPort->WaitForReading(rx_handles[j], 30);
-        controlPort->FinishDataReading(&rx_buffers[j*bufferSize], bytesToRead, rx_handles[j]); 
+        streamPort->WaitForReading(rx_handles[j], 30);
+        streamPort->FinishDataReading(&rx_buffers[j*bufferSize], bytesToRead, rx_handles[j]); 
     }
     
     if (rx_handles != nullptr)
@@ -2033,7 +2034,7 @@ int LMS7_Device::StopTx()
     int bufferSize = tx_packetsToBatch*sizeof(lime::PacketLTE);
     tx_running = false;
     // Wait for all the queued requests to be cancelled
-    controlPort->AbortSending();
+    streamPort->AbortSending();
     
     if (tx_bufferUsed != nullptr)
         for (int j = 0; j<tx_buffersCount; j++)
@@ -2041,8 +2042,8 @@ int LMS7_Device::StopTx()
             long bytesToSend = bufferSize;
             if (tx_bufferUsed[j])
             {
-                controlPort->WaitForSending(tx_handles[j], 30);
-                controlPort->FinishDataSending(&tx_buffers[j*bufferSize], bytesToSend, tx_handles[j]);
+                streamPort->WaitForSending(tx_handles[j], 30);
+                streamPort->FinishDataSending(&tx_buffers[j*bufferSize], bytesToSend, tx_handles[j]);
             }
         }
     
@@ -2082,13 +2083,13 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     
     if (tx_bufferUsed[bi])
     {
-        if (controlPort->WaitForSending(tx_handles[bi], timeout) == false)
+        if (streamPort->WaitForSending(tx_handles[bi], timeout) == false)
         {
             return -1;
         }
         
         int bytesSent;
-        if ((bytesSent = controlPort->FinishDataSending(&tx_buffers[bi*bufferSize], bufferSize, tx_handles[bi]))<bufferSize)
+        if ((bytesSent = streamPort->FinishDataSending(&tx_buffers[bi*bufferSize], bufferSize, tx_handles[bi]))<bufferSize)
             return bytesSent;
 
         tx_bufferUsed[bi] = false;
@@ -2118,7 +2119,7 @@ int LMS7_Device::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
         timestamp += SAMPLES12_PACKET/channelsCount;
     }
 
-    tx_handles[bi] = controlPort->BeginDataSending(&tx_buffers[bi*bufferSize], bufferSize);
+    tx_handles[bi] = streamPort->BeginDataSending(&tx_buffers[bi*bufferSize], bufferSize);
     tx_bufferUsed[bi] = true;
 
     bi = (bi + 1) & buffersCountMask;   

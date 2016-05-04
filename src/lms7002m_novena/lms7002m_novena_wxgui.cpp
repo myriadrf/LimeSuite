@@ -57,11 +57,6 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     if (lmsControl == nullptr)
         return;
 
-    if (LMS_IsOpen(lmsControl) == false)
-    {
-        wxMessageBox(_("Device not connected"), _("Error"), wxICON_ERROR | wxOK);
-        return;
-    }
 
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint16_t dataRd = 0;
@@ -70,7 +65,7 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
 
     if (status != 0)
     {
-        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
 
