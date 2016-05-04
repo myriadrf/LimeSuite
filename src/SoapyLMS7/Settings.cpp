@@ -690,32 +690,15 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     if (direction == SOAPY_SDR_RX)
     {
-        const bool hb = bw >= 20.0e6;
         const bool bypass = bw > 60.0e6;
 
         //run the calibration for this bandwidth setting
         //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
         auto status = 0;//rfic->CalibrateRx(bw);
-        if (status == 0)
-        {
-            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_TIA)");
-            status = rfic->TuneRxFilter(LMS7002M::RX_TIA, bw);
-        }
         if (!bypass && status == 0)
         {
-            LMS7002M::RxFilter filter;
-            if (hb)
-            {
-                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_LPF_HIGHBAND)");
-                filter = LMS7002M::RX_LPF_HIGHBAND;
-            }
-            else
-            {
-                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter(RX_LPF_LOWBAND)");
-                filter = LMS7002M::RX_LPF_LOWBAND;
-            }
-
-            status = rfic->TuneRxFilter(filter, bw);
+            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter()");
+            status = rfic->TuneRxFilter(bw);
         }
         if (status != 0)
         {
@@ -725,7 +708,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     if (direction == SOAPY_SDR_TX)
     {
-        const bool hb = bw >= 18.5e6;
         const bool bypass = bw > 54.0e6;
 
         //run the calibration for this bandwidth setting
@@ -733,24 +715,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         auto status = 0;//rfic->CalibrateTx(bw);
         if (!bypass && status == 0)
         {
-            LMS7002M::TxFilter filter;
-            if (hb)
-            {
-                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_HIGHBAND)");
-                filter = LMS7002M::TX_HIGHBAND;
-            }
-            else if (bw >= 2.4e6)
-            {
-                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_LADDER)");
-                filter = LMS7002M::TX_LADDER;
-            }
-            else
-            {
-                SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_REALPOLE)");
-                filter = LMS7002M::TX_REALPOLE;
-            }
-
-            status = rfic->TuneTxFilter(filter, bw);
+            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_REALPOLE)");
+            status = rfic->TuneTxFilter(bw);
         }
         if (status != 0)
         {
