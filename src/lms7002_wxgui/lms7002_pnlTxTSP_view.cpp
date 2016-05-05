@@ -221,11 +221,11 @@ void lms7002_pnlTxTSP_view::OnNCOSelectionChange(wxCommandEvent& event)
 void lms7002_pnlTxTSP_view::onbtnReadBISTSignature( wxCommandEvent& event )
 {
     int value;
-    value = lmsControl->Get_SPI_Reg_bits(BSTATE_TXTSP);
+    value = lmsControl->Get_SPI_Reg_bits(BSTATE_TXTSP, true);
     lblBSTATE_TXTSP->SetLabel(wxString::Format("%i", value));
-    value = lmsControl->Get_SPI_Reg_bits(BSIGI_TXTSP);
+    value = lmsControl->Get_SPI_Reg_bits(BSIGI_TXTSP, true);
     lblBSIGI_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));
-    value = lmsControl->Get_SPI_Reg_bits(BSIGQ_TXTSP);
+    value = lmsControl->Get_SPI_Reg_bits(BSIGQ_TXTSP, true);
     lblBSIGQ_TXTSP->SetLabel(wxString::Format("0x%0.6X", value));
 }
 

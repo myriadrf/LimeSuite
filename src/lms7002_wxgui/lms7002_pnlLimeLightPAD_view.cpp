@@ -147,13 +147,13 @@ void lms7002_pnlLimeLightPAD_view::ParameterChangeHandler(wxCommandEvent& event)
 void lms7002_pnlLimeLightPAD_view::onbtnReadVerRevMask( wxCommandEvent& event )
 {
     int value = 0;
-    value = lmsControl->Get_SPI_Reg_bits(VER);
+    value = lmsControl->Get_SPI_Reg_bits(VER, true);
     lblVER->SetLabel(wxString::Format(_("%i"), value));
 
-    value = lmsControl->Get_SPI_Reg_bits(REV);
+    value = lmsControl->Get_SPI_Reg_bits(REV, true);
     lblREV->SetLabel(wxString::Format(_("%i"), value));
 
-    value = lmsControl->Get_SPI_Reg_bits(MASK);
+    value = lmsControl->Get_SPI_Reg_bits(MASK, true);
     lblMASK->SetLabel(wxString::Format(_("%i"), value));
 }
 

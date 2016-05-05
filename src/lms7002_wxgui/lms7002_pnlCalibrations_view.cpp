@@ -171,5 +171,5 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     dccorr = lmsControl->Get_SPI_Reg_bits(DCCORRQ_TXTSP);
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
-    lblCGENrefClk->SetLabel(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)));
+    lblCGENrefClk->SetLabel(wxString::Format(_("%g"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)/1e6));
 }

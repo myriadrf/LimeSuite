@@ -49,13 +49,13 @@ void lms7002_pnlBIST_view::ParameterChangeHandler(wxCommandEvent& event)
 void lms7002_pnlBIST_view::onbtnReadBIST( wxCommandEvent& event )
 {
     int value;
-    value = lmsControl->Get_SPI_Reg_bits(BSIGC);
+    value = lmsControl->Get_SPI_Reg_bits(BSIGC, true);
     lblBSIGC->SetLabel(wxString::Format(_("0x%0.6X"), value));
-    value = lmsControl->Get_SPI_Reg_bits(BSIGR);
+    value = lmsControl->Get_SPI_Reg_bits(BSIGR, true);
     lblBSIGR->SetLabel(wxString::Format(_("0x%0.6X"), value));
-    value = lmsControl->Get_SPI_Reg_bits(BSIGT);
+    value = lmsControl->Get_SPI_Reg_bits(BSIGT, true);
     lblBSIGT->SetLabel(wxString::Format(_("0x%0.6X"), value));
-    value = lmsControl->Get_SPI_Reg_bits(BSTATE);
+    value = lmsControl->Get_SPI_Reg_bits(BSTATE, true);
     lblBSTATE->SetLabel(wxString::Format(_("0x%X"), value));
 }
 

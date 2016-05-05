@@ -194,14 +194,14 @@ void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)
 {
     int param;
-    param = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO_CGEN);
+    param = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO_CGEN, true);
     lblVCO_CMPHO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 1)
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxRED);
 
-    param = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO_CGEN);
+    param = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO_CGEN, true);
     lblVCO_CMPLO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 0)
         lblVCO_CMPLO_CGEN->SetBackgroundColour(*wxGREEN);
@@ -212,10 +212,10 @@ void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)
 void lms7002_pnlCLKGEN_view::OnbtnUpdateCoarse(wxCommandEvent& event)
 {
     int param;
-    param = lmsControl->Get_SPI_Reg_bits(COARSE_STEPDONE);
+    param = lmsControl->Get_SPI_Reg_bits(COARSE_STEPDONE, true);
     lblCOARSE_STEPDONE_CGEN->SetLabel(wxString::Format(_("%i"), param));
 
-    param = lmsControl->Get_SPI_Reg_bits(COARSEPLL_COMPO_CGEN);
+    param = lmsControl->Get_SPI_Reg_bits(COARSEPLL_COMPO_CGEN, true);
     lblCOARSEPLL_COMPO_CGEN->SetLabel(wxString::Format(_("%i"), param));
 }
 

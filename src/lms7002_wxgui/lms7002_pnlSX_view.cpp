@@ -423,14 +423,14 @@ void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
     int value;
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO);
+    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO, true);
     lblVCO_CMPHO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 1)
         lblVCO_CMPHO->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO->SetBackgroundColour(*wxRED);
 
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO);
+    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO, true);
     lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 0)
         lblVCO_CMPLO->SetBackgroundColour(*wxGREEN);
