@@ -36,6 +36,7 @@ public:
     virtual int StartTx();
     virtual int StopRx();
     virtual int StopTx();
+    virtual int GetInfo(lms_stream_status_t* info){ return 0;};
     
 protected:
     void ResetUSBFIFO();
@@ -81,6 +82,7 @@ class StreamerFIFO : public StreamerAPI
     int StartTx();
     int StopRx();
     int StopTx();
+    int GetInfo(lms_stream_status_t* info);
         
     enum StreamDataFormat
     {

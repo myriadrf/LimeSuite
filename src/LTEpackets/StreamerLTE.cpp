@@ -514,7 +514,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     threadRxArgs.FIFO = pthis->mRxFIFO;
     threadRxArgs.terminate = &stopRx;
     threadRxArgs.dataRate_Bps = &rxRate_Bps;
-
+    pthis->mRxFIFO->GetInfo()
     StreamerLTE_ThreadData threadTxArgs;
     threadTxArgs.dataPort = pthis->mDataPort;
     threadTxArgs.FIFO = pthis->mTxFIFO;

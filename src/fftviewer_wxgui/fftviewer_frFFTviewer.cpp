@@ -241,7 +241,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     lms_stream_conf_t conf;
     conf.channels = channelsCount == 1 ? 1 : 3;
     conf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
-    conf.fifoSize = 0;
+    conf.fifoSize = 1024*1024;
     conf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
     conf.numTransfers = 32;
     conf.transferSize = 4096*16;

@@ -1233,13 +1233,6 @@ typedef struct
      * if the buffer is not full yet).*/
     bool end_of_burst;
     
-    /**Indicates that previous packet(s) were dropped.
-     * This usually happens when:
-     * TX: The data arrived to HW too late based on timestamp
-     * RX: Packet(s) were discarded because RX buffers were full when new data
-     * was received*/
-    bool packet_droped;
-    
 }lms_stream_meta_t;
 
 
@@ -1265,6 +1258,17 @@ typedef struct
     }linkFmt;
     
 }lms_stream_conf_t;
+
+
+typedef struct
+{
+    double rxRate;
+    double txRate;
+    uint32_t rx_fifo_filled;
+    uint32_t tx_fifo_filled;
+    uint32_t rx_fifo_size;
+    uint32_t tx_fifo_size;
+}lms_stream_status_t;
 
 
 /**
@@ -1316,6 +1320,16 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx);
  */
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
          size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
+
+/**
+ * Get stream operation status 
+ * 
+ * @param device        Device handle previously obtained by LMS_Open().
+ * @param status        status structure. See the ::lms_stream_status_t description.
+ * 
+ * @return      0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t *status);
 
 /**
  * Send samples to active TX channels.

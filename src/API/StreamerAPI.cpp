@@ -968,6 +968,17 @@ void StreamerFIFO::TransmitPackets(const StreamerLTE_ThreadData &args)
     delete[]outSamples;
 }
 
+int StreamerFIFO::GetInfo(lms_stream_status_t* info)
+{
+    info->rxRate = mRxDataRate;
+    info->txRate = mTxDataRate;
+    auto status = mRxFIFO->GetInfo();
+    info->rx_fifo_filled = status.itemsFilled;
+    info->rx_fifo_size = status.size;
+    status = mRxFIFO->GetInfo();
+    info->tx_fifo_filled = status.itemsFilled;
+    info->tx_fifo_size = status.size;
+}
 
 
 
