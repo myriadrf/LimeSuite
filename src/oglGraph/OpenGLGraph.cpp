@@ -821,7 +821,7 @@ GLvoid OpenGLGraph::glRenderText(float posx, float posy, float angle, float scal
 	//if font has been loaded
 	glEnable(GL_TEXTURE_2D);
 	if(m_font != NULL)
-		m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
+            m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
 
 	glPopMatrix();
     glDisable(GL_TEXTURE_2D);

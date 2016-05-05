@@ -8,6 +8,7 @@
 #include "MCU_BD.h"
 #include "Si5351C.h"
 #include "ADF4002.h"
+#include "StreamerAPI.h"
 #include <cmath>
 
 
@@ -1505,18 +1506,9 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx, size_t 
     return lms->SetGFIR(dir_tx,chan,filt,enabled);
 }
 
-API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device_t *device, uint32_t flags)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    return lms->SetStreamingMode(flags);   
-}
 
-API_EXPORT int CALL_CONV LMS_InitStream(lms_device_t *device, bool tx, size_t num_buffers, size_t buffer_size, size_t fifo_size)
+
+API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t conf)
 {
     if (device == nullptr)
     {
@@ -1525,10 +1517,33 @@ API_EXPORT int CALL_CONV LMS_InitStream(lms_device_t *device, bool tx, size_t nu
     }
     
     LMS7_Device* lms = (LMS7_Device*)device;  
-    if (tx)
-        return lms->ConfigureTxStream(num_buffers,buffer_size,fifo_size);
+    
+    if (lms->streamer != nullptr)
+        delete lms->streamer;
+    if (conf.fifoSize == 0)
+        lms->streamer = new StreamerAPI(lms->streamPort);
     else
-        return lms->ConfigureRxStream(num_buffers,buffer_size,fifo_size);
+        lms->streamer = new StreamerFIFO(lms->streamPort);
+    lms->streamer->SetupStream(conf);
+}
+
+API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)device;  
+    
+    if (lms->streamer == nullptr)
+        lms->streamer = new StreamerFIFO(lms->streamPort);
+    
+    if (dir_tx)
+        return lms->streamer->StartTx();
+    else
+        return lms->streamer->StartRx(); 
 }
 
 API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
@@ -1541,9 +1556,10 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
     
     LMS7_Device* lms = (LMS7_Device*)device;  
     if (dir_tx)
-        return lms->StopTx();
+        return lms->streamer->StopTx();
     else
-        return lms->StopRx();
+        return lms->streamer->StopRx();
+
 }
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
@@ -1555,7 +1571,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, si
     }
     
     LMS7_Device* lms = (LMS7_Device*)device;  
-    return lms->RecvStream(samples,sample_count,meta,timeout_ms);
+    return lms->streamer->RecvStream(samples,sample_count,meta,timeout_ms);
     
 }
 API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
@@ -1567,7 +1583,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **sampl
     }
     
     LMS7_Device* lms = (LMS7_Device*)device;  
-    return lms->SendStream(samples,sample_count,meta,timeout_ms);
+    return lms->streamer->SendStream(samples,sample_count,meta,timeout_ms);
 }
 
 

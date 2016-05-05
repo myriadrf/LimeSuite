@@ -95,6 +95,7 @@ set(LIME_SUITE_SOURCES
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
+    API/StreamerAPI.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

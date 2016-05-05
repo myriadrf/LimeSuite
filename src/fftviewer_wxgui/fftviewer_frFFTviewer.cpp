@@ -123,16 +123,16 @@ void fftviewer_frFFTviewer::StartStreaming()
     switch (cmbStreamType->GetSelection())
     {
     case 0:
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
         break;
     case 1: //SISO
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
         break;
     case 2: //MIMO
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 2, LMS_STREAM_MD_MIMO);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 2, 0);
         break;
     case 3: //SISO uncompressed samples
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, LMS_STREAM_MD_SISO);
+        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
         break;
     }
     mStreamRunning.store(true);
@@ -238,9 +238,16 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     for (int i = 0; i < channelsCount; ++i)
         buffers[i] = new float[test_count*2];
 
-    LMS_SetStreamingMode(pthis->lmsControl, format | LMS_STREAM_FMT_F32);
-    LMS_InitStream(pthis->lmsControl,LMS_CH_TX,32,4096*16,0);
-    LMS_InitStream(pthis->lmsControl,LMS_CH_RX,32,4096*16,0);
+    lms_stream_conf_t conf;
+    conf.channels = channelsCount == 1 ? 1 : 3;
+    conf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
+    conf.fifoSize = 0;
+    conf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
+    conf.numTransfers = 32;
+    conf.transferSize = 4096*16;
+    
+    LMS_SetupStream(pthis->lmsControl, conf);
+
     static auto t1 = chrono::high_resolution_clock::now();
     static auto t2 = chrono::high_resolution_clock::now();
     
@@ -249,24 +256,22 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
     unsigned updateCounter = 0;
     lms_stream_meta_t meta;
-    meta.start_of_burst = true;
+
     meta.has_timestamp = false;
     meta.end_of_burst = false;
-    LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,500);
-    //printf("TS:%lu\n",meta.timestamp);
-    LMS_SendStream(pthis->lmsControl,(const void**)buffers,test_count,&meta,100);
-    meta.start_of_burst = false;
     //meta.has_timestamp = true;
+    LMS_StartStream(pthis->lmsControl,LMS_CH_TX);
+    LMS_StartStream(pthis->lmsControl,LMS_CH_RX);
     while (pthis->stopProcessing.load() == false)
     {
         ++updateCounter;
         
-        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,250);    
+        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,1000);    
         if (samplesPopped <= 0)
             break;
         //Transmit earlier received packets with a counter delay
         meta.timestamp += 1024*128;     
-        uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,100);
+        uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,250);
          if (samplesPushed <= 0)
             break;
         
@@ -315,11 +320,6 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
             totalBytesSend = 0;
         }
     }
-    meta.start_of_burst = false;
-    meta.has_timestamp = true;
-    meta.end_of_burst = true;
-    LMS_RecvStream(pthis->lmsControl,(void**)buffers,0,&meta,100);
-    LMS_SendStream(pthis->lmsControl,(const void**)buffers,0,&meta,100);
     kiss_fft_free(m_fftCalcPlan);
     pthis->mGUIupdater->Stop();   
     pthis->stopProcessing.store(true);

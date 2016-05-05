@@ -1228,10 +1228,6 @@ typedef struct
      * synchronization based on timestamp.*/
     bool has_timestamp;    
     
-    /**Indicates the beginning of send/receive transaction. When set attempts
-     * to discard old data in transfer buffers and start new transactions*/
-    bool start_of_burst;
-    
     /**Indicates the end of send/receive transaction. Discards data remainder
      * in buffer (if there is any) in RX or flushes transfer buffer in TX (even 
      * if the buffer is not full yet).*/
@@ -1249,49 +1245,52 @@ typedef struct
 
 
 
-/**
- * @defgroup LMS_STREAM_FLAGS   Streaming mode flags
- *
- * Flags for configuring device streaming mode
- * @{
- */
-#define LMS_STREAM_MD_AUTO  0x0000  /**<Automatic stream configuration*/
-#define LMS_STREAM_MD_SISO  0x0001  /**<Stream data from single channel*/
-#define LMS_STREAM_MD_MIMO  0x0002  /**<Stream data from multiple channels*/
-#define LMS_STREAM_SMP_12B  0x0000  /**<Use compressed 12-bit sample values*/
-#define LMS_STREAM_SMP_16B  0x0010  /**<Use uncompressed 16-bit sample values*/
-#define LMS_STREAM_FMT_I16  0x0000  
-#define LMS_STREAM_FMT_F32  0x0200
+typedef struct
+{
+    size_t fifoSize;
+    size_t transferSize;
+    size_t numTransfers;
+    uint32_t channels;
+    enum
+    {
+      LMS_FMT_F32=0,
+      LMS_FMT_I16
+    }dataFmt;
+    
+    enum
+    {
+        LMS_LINK_AUTO=0,
+        LMS_LINK_12BIT,
+        LMS_LINK_16BIT
+    }linkFmt;
+    
+}lms_stream_conf_t;
 
-/** @} (End LMS_STREAM_FLAGS) */
 
 /**
  * Configures devices for specific streaming mode overriding default/automatic
  * settings.
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param flags     Mode flags. Refer to \ref LMS_STREAM_FLAGS.
+ * @param conf      Configuration .See the ::lms_stream_conf_t description.
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetStreamingMode(lms_device_t *device, uint32_t flags);
+API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t conf);
 
 /**
- * Initializes/configures RX/TX stream buffers. 
+ * Starts RX/TX stream
  * 
  * @param device        Device handle previously obtained by LMS_Open().
  * @param dir_tx        Select RX or TX
- * @param num_tranfers  Number of  buffers used for data transfer
- * @param transfer_size Size of a single transfer buffer in bytes
- * @param fifo_size     Size of FIFO buffer (0 = Disabled)
  * 
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_InitStream(lms_device_t *device, bool dir_tx,
-                   size_t num_tranfers, size_t transfer_size, size_t fifo_size);
+API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx);
+
 
 /**
- * Completely stops RX/TX stream buffers. 
+ * Stops RX/TX stream 
  * 
  * @param device        Device handle previously obtained by LMS_Open().
  * @param dir_tx        Select RX or TX
@@ -1381,7 +1380,6 @@ typedef struct
     //! A unique board serial number
     uint32_t boardSerialNumber;
     
-    uint32_t reserved[15];
 }lms_dev_info_t;
 
 /**
