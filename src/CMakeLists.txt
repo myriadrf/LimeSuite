@@ -4,21 +4,14 @@
 cmake_minimum_required(VERSION 3.1.3)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
 project("lms7suite")
+
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 cmake_policy(SET CMP0015 OLD)
 if(${CMAKE_MAJOR_VERSION} GREATER 2)
-	cmake_policy(SET CMP0043 NEW)
+    cmake_policy(SET CMP0043 NEW)
 endif()
-ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-endif()
-
-if (MSVC)
-	SET( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
-	SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
-endif(MSVC)
 
 #version numbers built into shared library
 #todo version number, example could be date, standard major.minor.patch
@@ -26,6 +19,28 @@ endif(MSVC)
 #maybe parse version.h for info?
 set(LIME_SUITE_VERSION 0.0.0)
 set(LIME_SUITE_ABI 1)
+
+########################################################################
+## compiler flags
+########################################################################
+
+#gcc c++11 enable flags
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+endif()
+
+#visual studio compiler flags
+if (MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
+    set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
+endif(MSVC)
+
+#enable c++11 extensions for OSX
+if (APPLE)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
+   add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
+endif(APPLE)
 
 ########################################################################
 ## public headers

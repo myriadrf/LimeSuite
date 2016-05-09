@@ -13,6 +13,10 @@
     #include <Windows.h>
 #endif
 
+#ifdef __APPLE__
+    #define thread_local __thread
+#endif
+
 #define MAX_MSG_LEN 1024
 thread_local int _reportedErrorCode;
 thread_local char _reportedErrorMessage[MAX_MSG_LEN];

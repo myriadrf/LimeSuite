@@ -8,7 +8,11 @@
 #define OPENGL_GRAPH
 
 #include "glew/GL/glew.h"
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 #include <wx/wx.h>
 #include <wx/glcanvas.h>
 #include <wx/timer.h>
