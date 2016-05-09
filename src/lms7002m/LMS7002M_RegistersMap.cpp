@@ -14,7 +14,7 @@ LMS7002M_RegistersMap::~LMS7002M_RegistersMap()
 
 uint16_t LMS7002M_RegistersMap::GetDefaultValue(uint16_t address) const
 {
-    std::map<uint16_t, Register>::const_iterator iter = mChannelA.find(address);
+    auto iter = mChannelA.find(address);
     if( iter != mChannelA.end())
         return iter->second.defaultValue;
     else
