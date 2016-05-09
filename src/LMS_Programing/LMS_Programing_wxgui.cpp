@@ -166,7 +166,7 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
     int deviceSelection = cmbDevice->GetSelection();
     cmbProgMode->Clear();
     if(deviceSelection == 2)
-    {   
+    {
         cmbProgMode->Append("Bitstream to FPGA");
         cmbProgMode->Append("Bitstream to Flash");
         cmbProgMode->Append("Bitstream from Flash");
@@ -178,7 +178,7 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
         cmbProgMode->SetSelection(0);
     }
     else if(deviceSelection == 0)
-    {   
+    {
         cmbProgMode->Append(_("Flash"));
         for(int i=1; i<=8; ++i)
             cmbProgMode->Append(wxString::Format("%i", i));
@@ -237,13 +237,14 @@ void LMS_Programing_wxgui::DoProgramming()
     else
     {
         evt.SetString(_("Programming failed!"));
+        wxPostEvent(this, evt);
         mProgrammingInProgress.store(false);
         return;
     }
 
     //if programming FX3 firmware, inform user about device reset
     if(device == 1 && progMode == 2)
-    {   
+    {
         status = serPort->ProgramWrite(nullptr, 0, 0, device, nullptr);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
