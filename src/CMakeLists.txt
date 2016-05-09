@@ -12,7 +12,7 @@ if(${CMAKE_MAJOR_VERSION} GREATER 2)
 endif()
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wl,-z,defs")
 endif()
 
 if (MSVC)
@@ -71,8 +71,6 @@ message(STATUS ${SQLITE3_INCLUDE_DIR})
 message(STATUS ${SQLITE3_LIBRARY})
 endif()
 
-add_subdirectory(GFIR)
-
 set(LIME_SUITE_SOURCES
     ErrorReporting.cpp
     ADF4002/ADF4002.cpp
@@ -120,7 +118,7 @@ cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite SHARED ${LIME_SUITE_SOURCES})
-    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY} lms_gfir)
+    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
@@ -132,6 +130,7 @@ if (ENABLE_LIBRARY)
         RUNTIME DESTINATION bin              # .dll file
     )
 
+    add_subdirectory(GFIR)
     set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
@@ -147,7 +146,7 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
 )
 
-target_sources(LimeSuite PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
+target_sources(LimeSuite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
 
 ########################################################################
 ## wx widgets dependency

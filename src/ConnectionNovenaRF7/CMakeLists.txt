@@ -28,4 +28,4 @@ endif()
 ########################################################################
 ## Add to library
 ########################################################################
-target_sources(LimeSuite PUBLIC ${CONNECTION_NOVENARF7_SOURCES})
+target_sources(LimeSuite PRIVATE ${CONNECTION_NOVENARF7_SOURCES})
