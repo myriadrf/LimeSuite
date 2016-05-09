@@ -1586,13 +1586,27 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **sampl
     return lms->streamer->SendStream(samples,sample_count,meta,timeout_ms);
 }
 
-
-API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t *info)
+API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_t *device)
 {
+	if (device == nullptr)
+	{
+		lime::ReportError(EINVAL, "Device cannot be NULL.");
+		return nullptr;
+	}
+	LMS7_Device* lms = (LMS7_Device*)device;
+	return lms->streamer->GetInfo();
+}
+
+
+API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device)
+{
+
+	static lms_dev_info_t info;
+
     if (device == nullptr)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
+        return nullptr;
     } 
     
     LMS7_Device* lms = (LMS7_Device*)device;
@@ -1600,18 +1614,18 @@ API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t 
     if (!lms->GetConnection()->IsOpen())
     {
        lime::ReportError(EINVAL, "No cennection to board.");
-       return -1;
+	   return nullptr;
     }
 
-    memset(info,0,sizeof(lms_dev_info_t));
+    memset(&info,0,sizeof(lms_dev_info_t));
     auto devinfo =lms->GetConnection()->GetDeviceInfo();
-    strncpy(info->deviceName,devinfo.deviceName.c_str(),sizeof(info->deviceName)-1);
-    strncpy(info->expansionName,devinfo.expansionName.c_str(),sizeof(info->expansionName)-1);
-    strncpy(info->firmwareVersion,devinfo.firmwareVersion.c_str(),sizeof(info->firmwareVersion)-1);
-    strncpy(info->hardwareVersion,devinfo.hardwareVersion.c_str(),sizeof(info->hardwareVersion)-1);
-    strncpy(info->protocolVersion,devinfo.protocolVersion.c_str(),sizeof(info->protocolVersion)-1);
-    info->boardSerialNumber = devinfo.boardSerialNumber;
-    return 0;
+    strncpy(info.deviceName,devinfo.deviceName.c_str(),sizeof(info.deviceName)-1);
+    strncpy(info.expansionName,devinfo.expansionName.c_str(),sizeof(info.expansionName)-1);
+    strncpy(info.firmwareVersion,devinfo.firmwareVersion.c_str(),sizeof(info.firmwareVersion)-1);
+    strncpy(info.hardwareVersion,devinfo.hardwareVersion.c_str(),sizeof(info.hardwareVersion)-1);
+    strncpy(info.protocolVersion,devinfo.protocolVersion.c_str(),sizeof(info.protocolVersion)-1);
+    info.boardSerialNumber = devinfo.boardSerialNumber;
+    return &info;
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
@@ -1710,4 +1724,3 @@ API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
 {
     return lime::GetLastErrorMessage();
 }
-

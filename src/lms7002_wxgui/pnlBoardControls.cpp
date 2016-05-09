@@ -286,10 +286,10 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
     lmsControl = controlPort;
     if(!LMS_IsOpen(lmsControl,0))
         return;
-    lms_dev_info_t info;
-    if (LMS_GetDeviceInfo(lmsControl,&info)==0)
+    const lms_dev_info_t* info;
+    if ((info = LMS_GetDeviceInfo(lmsControl))==0)
     {
-        SetupControls(info.deviceName);
+        SetupControls(info->deviceName);
         wxCommandEvent evt;
         OnReadAll(evt);
     }

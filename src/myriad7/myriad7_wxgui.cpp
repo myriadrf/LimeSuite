@@ -3,7 +3,6 @@
 @author Lime Microsystems
 @brief	panel for controlling Myriad7 board GPIO
 */
-#include "myriad7_wxgui.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -11,6 +10,7 @@
 #include <wx/combobox.h>
 #include <wx/msgdlg.h>
 
+#include "myriad7_wxgui.h"
 #include <LMSBoards.h>
 
 using namespace lime;
@@ -88,9 +88,10 @@ void Myriad7_wxgui::UpdatePanel()
 {
     if (lmsControl == nullptr)
         return;
-    lms_dev_info_t info;
-    LMS_GetDeviceInfo(lmsControl,&info);
-    if (info.expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
+    const lms_dev_info_t* info;
+	if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
+		return;
+    if (info->expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
             return;
     
     uint8_t dataRd[64];

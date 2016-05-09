@@ -244,11 +244,12 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         //bind callback for spi data logging
         obj_ptr = this;
         LMS_SetDataLogCallback(lmsControl,OnLogDataTransfer);
-        lms_dev_info_t info;
-        LMS_GetDeviceInfo(lmsControl,  &info);
+        const lms_dev_info_t* info;
+		if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
+			return;
         wxString controlDev = _("Control port: ");
-        controlDev.Append(info.deviceName);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
+        controlDev.Append(info->deviceName);
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         wxCommandEvent evt;
@@ -256,9 +257,9 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         evt.SetString(_("Connected ") + controlDev);
         wxPostEvent(this, evt);
         if (si5351gui)
-            si5351gui->ModifyClocksGUI(info.deviceName);
+            si5351gui->ModifyClocksGUI(info->deviceName);
         if (boardControlsGui)
-            boardControlsGui->SetupControls(info.deviceName);
+            boardControlsGui->SetupControls(info->deviceName);
     }
     else
     {
@@ -575,6 +576,5 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
     int checked = event.GetInt();
     LMS_EnableCalibCache(lmsControl,checked);
 }
-
 
 

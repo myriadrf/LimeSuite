@@ -1325,11 +1325,10 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
  * Get stream operation status 
  * 
  * @param device        Device handle previously obtained by LMS_Open().
- * @param status        status structure. See the ::lms_stream_status_t description.
  * 
- * @return      0 on success, (-1) on failure
+ * @return      pointer to device status structure
  */
-API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t *status);
+API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_t *device);
 
 /**
  * Send samples to active TX channels.
@@ -1400,10 +1399,9 @@ typedef struct
  * Get device serial number and version information
  * 
  * @param device    Device handle previously obtained by LMS_Open().
- * @param info      Device information. See the ::lms_dev_info.
- * @return          0 on success, (-1) on failure
+ * @return          pointer to device info structure
  */
-API_EXPORT int CALL_CONV LMS_GetDeviceInfo(lms_device_t *device, lms_dev_info_t *info);
+API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device);
 
 
 /*!

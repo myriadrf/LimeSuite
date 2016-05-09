@@ -57,6 +57,7 @@ StreamerAPI::~StreamerAPI()
     
     if (streamConf.channels == 3)
         channelsCount = 2;
+	return 0;
  }
 
 int StreamerAPI::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *meta, unsigned timeout_ms)
@@ -317,7 +318,8 @@ int StreamerAPI::Start()
 
     //switch on Rx
     streamPort->ReadRegister(0x000A,dataRd);
-    streamPort->WriteRegister(0x000A, dataRd | 0x1);   
+    streamPort->WriteRegister(0x000A, dataRd | 0x1);  
+	return 0;
 }
 
 int StreamerAPI::Stop()
@@ -527,12 +529,18 @@ int StreamerAPI::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     return packetsToBatch*SAMPLES12_PACKET;
 }
 
+const lms_stream_status_t* StreamerAPI::GetInfo()
+{
+	return &streamInfo;
+}
+
 
 
 StreamerFIFO::StreamerFIFO(lime::IConnection* dataPort):StreamerAPI(dataPort)
 {
-    mRxFIFO = new lime::LMS_SamplesFIFO(1, 1);
-    mTxFIFO = new lime::LMS_SamplesFIFO(1, 1);
+    streamConf.fifoSize = packetsToBatch*16;
+    mRxFIFO = new lime::LMS_SamplesFIFO(streamConf.fifoSize, channelsCount);
+    mTxFIFO = new lime::LMS_SamplesFIFO(streamConf.fifoSize, channelsCount);
     stopRx = false;
     stopTx = false;
 }
@@ -547,12 +555,27 @@ StreamerFIFO::~StreamerFIFO()
 
 int StreamerFIFO::SetupStream(lms_stream_conf_t conf)
 {
-    streamConf = conf;
-    if (streamConf.channels == 3)
-        channelsCount = 2;
-    else
-        channelsCount = 1;
-    return 0;
+
+	streamConf = conf;
+
+	int buffersCount = 1; // must be power of 2
+	while (buffersCount < streamConf.numTransfers)
+		buffersCount <<= 1;
+	streamConf.numTransfers = buffersCount;
+
+	packetsToBatch = 1 + (conf.transferSize - 1) / sizeof(lime::PacketLTE);
+	if (packetsToBatch > MAX_PACKETS_BATCH)
+		packetsToBatch = MAX_PACKETS_BATCH;
+
+	streamConf.fifoSize /= sizeof(lime::PacketLTE);
+
+
+	if (streamConf.fifoSize < 2 * packetsToBatch)
+		streamConf.fifoSize = 2 * packetsToBatch;
+
+	if (streamConf.channels == 3)
+		channelsCount = 2;
+	return 0;
 }
 
 int StreamerFIFO::StartRx()
@@ -560,15 +583,11 @@ int StreamerFIFO::StartRx()
     if (rx_running == true)
         return 0;
     stopRx.store(false);
-    StreamerLTE_ThreadData threadRxArgs;
-    threadRxArgs.dataPort = streamPort;
-    threadRxArgs.FIFO = mRxFIFO;
-    threadRxArgs.terminate = &stopRx;
-    threadRxArgs.dataRate_Bps = &mRxDataRate;
+
     if (threadRx.joinable())
         threadRx.join();
-    mRxFIFO->Reset(2*4096, channelsCount);
-    threadRx = std::thread(ReceivePackets, threadRxArgs); 
+	mRxFIFO->Reset(streamConf.fifoSize, channelsCount);
+    threadRx = std::thread(ReceivePackets, this); 
     rx_running = true;
     if (tx_running == false)
         Start(); 
@@ -579,13 +598,9 @@ int StreamerFIFO::StartTx()
     if (tx_running == true)
         return 0;
     stopTx.store(false);
-    StreamerLTE_ThreadData threadTxArgs;
-    threadTxArgs.dataPort = streamPort;
-    threadTxArgs.FIFO = mTxFIFO;
-    threadTxArgs.terminate = &stopTx;
-    threadTxArgs.dataRate_Bps = &mTxDataRate;
-    mTxFIFO->Reset(2*4096, channelsCount);
-    threadTx = std::thread(TransmitPackets, threadTxArgs);
+
+	mTxFIFO->Reset(streamConf.fifoSize, channelsCount);
+    threadTx = std::thread(TransmitPackets, this);
     tx_running = true;
     if (rx_running == false)
         Start(); 
@@ -673,12 +688,13 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, lms_strea
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerFIFO::ReceivePackets(const StreamerLTE_ThreadData &args)
+void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
 {
-    auto dataPort = args.dataPort;
-    auto rxFIFO = args.FIFO;
-    auto terminate = args.terminate;
-    auto dataRate_Bps = args.dataRate_Bps;
+	auto dataPort = pthis->streamPort;
+	auto rxFIFO = pthis->mRxFIFO;
+;
+    auto terminate = &pthis->stopRx;
+    auto dataRate_Bps = &pthis->mRxDataRate;
 
     //at this point Rx must be enabled in FPGA
     unsigned long rxDroppedSamples = 0;
@@ -687,10 +703,10 @@ void StreamerFIFO::ReceivePackets(const StreamerLTE_ThreadData &args)
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    const int bufferSize = 65536;
-    const int buffersCount = 16; // must be power of 2
+    const int bufferSize = pthis->packetsToBatch*sizeof(lime::PacketLTE);
+    const int buffersCount = pthis->streamConf.numTransfers; // must be power of 2
     const int buffersCountMask = buffersCount - 1;
-    int handles[buffersCount];
+    int *handles = new int[buffersCount];
     memset(handles, 0, sizeof(int)*buffersCount);
     std::vector<char>buffers;
     try
@@ -793,7 +809,7 @@ void StreamerFIFO::ReceivePackets(const StreamerLTE_ThreadData &args)
             t1 = t2;
             totalBytesReceived = 0;
             if (dataRate_Bps)
-                dataRate_Bps->store((long)dataRate);
+                dataRate_Bps->store((uint32_t)dataRate);
             m_bufferFailures = 0;
 
             rxDroppedSamples = 0;
@@ -811,6 +827,7 @@ void StreamerFIFO::ReceivePackets(const StreamerLTE_ThreadData &args)
         dataPort->WaitForReading(handles[j], 1000);
         dataPort->FinishDataReading(&buffers[j*bufferSize], bytesToRead, handles[j]);
     }
+	delete[] handles;
 }
 
 /** @brief Functions dedicated for transmitting packets to board
@@ -818,19 +835,19 @@ void StreamerFIFO::ReceivePackets(const StreamerLTE_ThreadData &args)
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void StreamerFIFO::TransmitPackets(const StreamerLTE_ThreadData &args)
+void StreamerFIFO::TransmitPackets(StreamerFIFO *pthis)
 {
-    auto dataPort = args.dataPort;
-    auto txFIFO = args.FIFO;
-    auto terminate = args.terminate;
-    auto dataRate_Bps = args.dataRate_Bps;
+    auto dataPort = pthis->streamPort;
+    auto txFIFO = pthis->mTxFIFO;
+    auto terminate = &pthis->stopTx;
+    auto dataRate_Bps = &pthis->mTxDataRate;
 
     const int channelsCount = txFIFO->GetChannelsCount();
-    const int packetsToBatch = 16;
-    const int bufferSize = 65536;
-    const int buffersCount = 16; // must be power of 2
+    const int packetsToBatch = pthis->packetsToBatch;
+	const int bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
+    const int buffersCount = pthis->streamConf.numTransfers; // must be power of 2
     const int buffersCountMask = buffersCount - 1;
-    int handles[buffersCount];
+    int *handles = new int[buffersCount];
     memset(handles, 0, sizeof(int)*buffersCount);
     std::vector<char> buffers;
     try
@@ -843,9 +860,9 @@ void StreamerFIFO::TransmitPackets(const StreamerLTE_ThreadData &args)
         return;
     }
     memset(&buffers[0], 0, buffersCount*bufferSize);
-    bool bufferUsed[buffersCount];
+    bool *bufferUsed = new bool [buffersCount];
     memset(bufferUsed, 0, sizeof(bool)*buffersCount);
-    uint32_t bytesToSend[buffersCount];
+    uint32_t *bytesToSend = new uint32_t[buffersCount];
     memset(bytesToSend, 0, sizeof(uint32_t)*buffersCount);
 
     int bi = 0; //buffer index
@@ -938,7 +955,7 @@ void StreamerFIFO::TransmitPackets(const StreamerLTE_ThreadData &args)
             //total number of samples from all channels per second
             float samplingRate = 1000.0*samplesSent / timePeriod;
             if(dataRate_Bps)
-                dataRate_Bps->store(m_dataRate);
+                dataRate_Bps->store((uint32_t)m_dataRate);
             samplesSent = 0;
             t1 = t2;
             totalBytesSent = 0;
@@ -966,18 +983,22 @@ void StreamerFIFO::TransmitPackets(const StreamerLTE_ThreadData &args)
         delete[]outSamples[i];
     }
     delete[]outSamples;
+	delete[] handles;
+	delete[] bufferUsed;
+	delete[] bytesToSend;
 }
 
-int StreamerFIFO::GetInfo(lms_stream_status_t* info)
+const lms_stream_status_t* StreamerFIFO::GetInfo()
 {
-    info->rxRate = mRxDataRate;
-    info->txRate = mTxDataRate;
+    streamInfo.rxRate = mRxDataRate;
+	streamInfo.txRate = mTxDataRate;
     auto status = mRxFIFO->GetInfo();
-    info->rx_fifo_filled = status.itemsFilled;
-    info->rx_fifo_size = status.size;
+	streamInfo.rx_fifo_filled = status.itemsFilled;
+	streamInfo.rx_fifo_size = status.size;
     status = mRxFIFO->GetInfo();
-    info->tx_fifo_filled = status.itemsFilled;
-    info->tx_fifo_size = status.size;
+	streamInfo.tx_fifo_filled = status.itemsFilled;
+	streamInfo.tx_fifo_size = status.size;
+	return &streamInfo;
 }
 
 

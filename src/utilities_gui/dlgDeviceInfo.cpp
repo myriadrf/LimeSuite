@@ -16,21 +16,21 @@ void dlgDeviceInfo::Initialize(lms_device_t* lms)
 
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {
-    lms_dev_info_t info;
+    const lms_dev_info_t* info;
     
-    if (LMS_GetDeviceInfo(lmsControl,&info)==0)
+    if ((info = LMS_GetDeviceInfo(lmsControl))==0)
     {
-        lblDeviceCtr->SetLabel(info.deviceName);
-        lblExpansionCtr->SetLabel(info.expansionName);
-        lblFirmwareCtr->SetLabel(info.firmwareVersion);
-        lblHardwareCtr->SetLabel(info.hardwareVersion);
-        lblProtocolCtr->SetLabel(info.protocolVersion);
+        lblDeviceCtr->SetLabel(info->deviceName);
+        lblExpansionCtr->SetLabel(info->expansionName);
+        lblFirmwareCtr->SetLabel(info->firmwareVersion);
+        lblHardwareCtr->SetLabel(info->hardwareVersion);
+        lblProtocolCtr->SetLabel(info->protocolVersion);
         
-        lblDeviceData->SetLabel(info.deviceName);
-        lblExpansionData->SetLabel(info.expansionName);
-        lblFirmwareData->SetLabel(info.firmwareVersion);
-        lblHardwareData->SetLabel(info.hardwareVersion);
-        lblProtocolData->SetLabel(info.protocolVersion);
+        lblDeviceData->SetLabel(info->deviceName);
+        lblExpansionData->SetLabel(info->expansionName);
+        lblFirmwareData->SetLabel(info->firmwareVersion);
+        lblHardwareData->SetLabel(info->hardwareVersion);
+        lblProtocolData->SetLabel(info->protocolVersion);
     }
     else
     {
