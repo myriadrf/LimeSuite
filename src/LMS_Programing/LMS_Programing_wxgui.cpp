@@ -221,7 +221,7 @@ bool LMS_Programing_wxgui::OnProgrammingCallback(int bsent, int btotal, const ch
 void LMS_Programing_wxgui::DoProgramming()
 {
     mProgrammingInProgress.store(true);
-    IConnection::ProgrammingCallback callback = bind(&LMS_Programing_wxgui::OnProgrammingCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    IConnection::ProgrammingCallback callback = std::bind(&LMS_Programing_wxgui::OnProgrammingCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     int device = cmbDevice->GetSelection();
     int progMode = cmbProgMode->GetSelection();
     if(device == 1) // for FX3 show only option to program firmware
