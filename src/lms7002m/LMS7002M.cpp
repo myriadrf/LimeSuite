@@ -1109,7 +1109,9 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         addrCMP = LMS7param(VCO_CMPHO_CGEN).address;
     }
 	// Initialization
-	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
+    int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
+    if(status != 0)
+        return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
 	if(module == VCO_CGEN)
@@ -1929,7 +1931,6 @@ int LMS7002M::UploadAll()
         dataToWrite.push_back(mRegistersMap->GetValue(0, address));
 
     status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-    status = 0;
     if (status != 0)
         return status;
     //after all channel A registers have been written, update 0x0020 register value
@@ -2002,13 +2003,16 @@ int LMS7002M::DownloadAll()
 }
 
 /** @brief Configures interfaces for desired frequency
+    @return 0-success, other-failure
     Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
 */
 int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
 {
     int status = 0;
     LMS7002M_SelfCalState state(this);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    status = Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    if(status != 0)
+        return status;
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
 
     //clock rate already set because the readback frequency is pretty-close,
