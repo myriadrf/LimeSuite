@@ -614,11 +614,11 @@ int LMS7002M::LoadConfig(const char* filename)
 int LMS7002M::SaveConfig(const char* filename)
 {
     int status;
-    typedef INI<> ini_t;
-    ini_t parser(filename, true);
-    parser.create("file_info");
-    parser.set("type", "lms7002m_minimal_config");
-    parser.set("version", 1);
+    ofstream fout;
+    fout.open(filename);
+    fout << "[file_info]" << endl;
+    fout << "type=lms7002m_minimal_config" << endl;
+    fout << "version=1" << endl;
 
     char addr[80];
     char value[80];
@@ -632,17 +632,17 @@ int LMS7002M::SaveConfig(const char* filename)
     vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
 
-    parser.create("lms7002_registers_a");
+    fout << "[lms7002_registers_a]" << endl;
     this->SetActiveChannel(ChA);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
-        parser.set(addr, value);
+        fout << addr << "=" << value << endl;
     }
 
-    parser.create("lms7002_registers_b");
+    fout << "[lms7002_registers_b]" << endl;
     addrToRead.clear(); //add only B channel addresses
     for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
         for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
@@ -655,15 +655,15 @@ int LMS7002M::SaveConfig(const char* filename)
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
-        parser.set(addr, value);
+        fout << addr << "=" << value << endl;
     }
 
     this->SetActiveChannel(ch); //retore previously used channel
 
-    parser.create("reference_clocks");
-    parser.set("sxt_ref_clk_mhz", this->GetReferenceClk_SX(Tx) / 1e6);
-    parser.set("sxr_ref_clk_mhz", this->GetReferenceClk_SX(Rx) / 1e6);
-    parser.save(filename);
+    fout << "[reference_clocks]" << endl;
+    fout << "sxt_ref_clk_mhz=" << this->GetReferenceClk_SX(Tx) / 1e6 << endl;
+    fout << "sxr_ref_clk_mhz=" << this->GetReferenceClk_SX(Rx) / 1e6 << endl;
+    fout.close();
     return 0;
 }
 
@@ -1158,7 +1158,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     this->SetActiveChannel(ch); //restore previously used channel
 
     if(cmphl == 2) return 0;
-    
+
     return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)", moduleName);
 }
 
