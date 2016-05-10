@@ -258,6 +258,13 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
         rbChannelA->Enable();
         rbChannelB->Enable();
     }
+
+    //force show the page selected by the event (needed on apple)
+    if (event.GetSelection() != -1)
+    {
+        tabsNotebook->GetPage(event.GetSelection())->Show(true);
+    }
+
     UpdateVisiblePanel();
 }
 
