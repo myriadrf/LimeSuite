@@ -3,7 +3,7 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
-project("lms7suite")
+project("LimeSuite")
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
