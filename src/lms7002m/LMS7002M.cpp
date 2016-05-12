@@ -385,7 +385,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -432,7 +432,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 }
             }
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
 
@@ -452,7 +452,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -568,13 +568,13 @@ int LMS7002M::LoadConfig(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
             this->SetActiveChannel(ChB);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
 
@@ -592,7 +592,7 @@ int LMS7002M::LoadConfig(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
         this->SetActiveChannel(ch);
@@ -1548,24 +1548,22 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data)
 */
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
 {
-    if (!controlPort)
+    if (!controlPort || fromChip == false)
     {
-        if (status)
-            *status = ReportError(ENOTCONN, "no connection object");
-        return 0;
-    }
-    if (controlPort->IsOpen() == false || fromChip == false)
-    {
+        if (status && !controlPort)
+            *status = ReportError(ENOTCONN, "chip not connected");
         int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
         int regNo = (mac == 2)? 1 : 0; //only when MAC is B -> use register space B
         if (address < 0x0100) regNo = 0; //force A when below MAC mapped register space
         return mRegistersMap->GetValue(regNo, address);
     }
-
-    uint16_t data = 0;
-    int st = this->SPI_read_batch(&address, &data, 1);
-    if (status != nullptr) *status = st;
-    return data;
+    if(controlPort)
+    {
+        uint16_t data = 0;
+        int st = this->SPI_read_batch(&address, &data, 1);
+        if (status != nullptr) *status = st;
+    }
+    return 0;
 }
 
 /** @brief Batches multiple register writes into least ammount of transactions
