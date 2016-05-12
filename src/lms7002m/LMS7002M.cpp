@@ -1562,6 +1562,7 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
         uint16_t data = 0;
         int st = this->SPI_read_batch(&address, &data, 1);
         if (status != nullptr) *status = st;
+        return data;
     }
     return 0;
 }
