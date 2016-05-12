@@ -11,9 +11,9 @@ Build-Depends:
     libi2c-dev,
     libsqlite3-dev
 Standards-Version: 3.9.5
-Homepage: https://github.com/limemicro/lms7suite/wiki
-Vcs-Git: https://github.com/limemicro/lms7suite.git
-Vcs-Browser: https://github.com/limemicro/lms7suite
+Homepage: https://myriadrf.org/projects/lime-suite/
+Vcs-Git: https://github.com/myriadrf/LimeSuite.git
+Vcs-Browser: https://github.com/myriadrf/LimeSuite.git
 
 Package: liblimesuite1
 Section: libs
