@@ -37,6 +37,7 @@ class lms7002_pnlXBUF_view;
 #include <wx/settings.h>
 #include <wx/radiobut.h>
 #include <wx/sizer.h>
+#include <wx/stattext.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -44,11 +45,10 @@ class lms7002_pnlXBUF_view;
 #include <wx/notebook.h>
 #include <wx/checkbox.h>
 #include <wx/statbox.h>
-#include <wx/stattext.h>
 #include <wx/combobox.h>
 #include <wx/spinctrl.h>
-#include <wx/textctrl.h>
 #include <wx/radiobox.h>
+#include <wx/textctrl.h>
 #include <wx/choice.h>
 #include <wx/gauge.h>
 #include <wx/grid.h>
@@ -99,6 +99,8 @@ class mainPanel : public wxPanel
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
+		wxStaticText* txtTemperature;
+		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -110,6 +112,7 @@ class mainPanel : public wxPanel
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	
@@ -204,8 +207,6 @@ class pnlRFE_view : public wxPanel
 			ID_G_LNA_RFE,
 			ID_G_RXLOOPB_RFE,
 			ID_G_TIA_RFE,
-			ID_TXT_TIA_BW_MHZ,
-			ID_BTN_TUNE_TIA,
 			ID_ICT_LOOPB_RFE,
 			ID_ICT_TIAMAIN_RFE,
 			ID_ICT_TIAOUT_RFE,
@@ -258,9 +259,6 @@ class pnlRFE_view : public wxPanel
 		wxComboBox* cmbG_RXLOOPB_RFE;
 		wxStaticText* ID_STATICTEXT18;
 		wxComboBox* cmbG_TIA_RFE;
-		wxStaticText* m_staticText311;
-		wxTextCtrl* txtTIA_BW_MHz;
-		wxButton* btnTuneTIA;
 		wxStaticText* ID_STATICTEXT9;
 		wxComboBox* cmbICT_LOOPB_RFE;
 		wxStaticText* ID_STATICTEXT10;
@@ -275,7 +273,6 @@ class pnlRFE_view : public wxPanel
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnbtnTuneTIA( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -308,9 +305,7 @@ class pnlRBB_view : public wxPanel
 			ID_R_CTL_LPF_RBB,
 			ID_C_CTL_LPFH_RBB,
 			ID_C_CTL_LPFL_RBB,
-			ID_FILTER_SELECTION,
 			ID_TXT_LOWBW,
-			ID_TXT_HIGHBW,
 			ID_BTN_TUNE_FILTER,
 			ID_RCC_CTL_LPFH_RBB,
 			ID_RCC_CTL_LPFL_RBB,
@@ -341,11 +336,8 @@ class pnlRBB_view : public wxPanel
 		NumericSlider* cmbC_CTL_LPFH_RBB;
 		wxStaticText* ID_STATICTEXT6;
 		NumericSlider* cmbC_CTL_LPFL_RBB;
-		wxRadioBox* rgrFilterSelection;
 		wxStaticText* m_staticText309;
 		wxTextCtrl* txtLowBW_MHz;
-		wxStaticText* m_staticText310;
-		wxTextCtrl* txtHighBW_MHz;
 		wxButton* btnTuneFilter;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbRCC_CTL_LPFH_RBB;
@@ -494,9 +486,7 @@ class pnlTBB_view : public wxPanel
 			ID_RCAL_LPFLAD_TBB,
 			ID_RCAL_LPFS5_TBB,
 			ID_CCAL_LPFLAD_TBB,
-			ID_FILTER_SELECTION,
-			ID_BTN_TUNE_FILTER,
-			ID_BTN_TUNE_FILTER_TEST
+			ID_BTN_TUNE_FILTER
 		};
 		
 		wxCheckBox* chkPD_LPFH_TBB;
@@ -536,25 +526,17 @@ class pnlTBB_view : public wxPanel
 		NumericSlider* cmbRCAL_LPFS5_TBB;
 		wxStaticText* ID_STATICTEXT14;
 		NumericSlider* cmbCCAL_LPFLAD_TBB;
-		wxRadioBox* rgrFilterSelection;
+		wxRadioBox* rgrTxFilterType;
 		wxStaticText* lblFilterInputName;
 		wxTextCtrl* txtFilterFrequency;
-		wxStaticText* m_staticText310;
-		wxTextCtrl* txtFilterFrequency2;
+		wxChoice* cmbTxFixedBW;
 		wxButton* btnTuneFilter;
-		wxRadioBox* rgrFilterSelectionTest;
-		wxStaticText* lblTxFiltersBWname1;
-		wxTextCtrl* txtLadderFrequency;
-		wxStaticText* m_staticText3101;
-		wxTextCtrl* txtRealpoleFrequency;
-		wxButton* btnTuneFilterTest;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnFilterSelectionChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTxFilterTypeChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneFilter( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnTuneFilterTest( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

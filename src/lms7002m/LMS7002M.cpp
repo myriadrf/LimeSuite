@@ -2234,3 +2234,57 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 {
     mCalibrationByMCU = enabled;
 }
+
+float_type LMS7002M::GetTemperature()
+{
+    auto ch = GetActiveChannel();
+    auto regMap = BackupRegisterMap();
+    Modify_SPI_Reg_bits(MAC, 1);
+
+    //RFE
+    Modify_SPI_Reg_bits(EN_G_RFE, 0);
+    //RBB
+    Modify_SPI_Reg_bits(EN_G_RBB, 0);
+    //AFE
+    Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
+    Modify_SPI_Reg_bits(MUX_AFE_1, 2);
+    Modify_SPI_Reg_bits(EN_G_AFE, 1);
+    //BIAS
+    Modify_SPI_Reg_bits(MUX_BIAS_OUT, 2);
+    //RxTSP
+    SetDefaults(RxTSP);
+    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
+    Modify_SPI_Reg_bits(GCORRI_RXTSP, 0);
+    Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 7);
+    Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
+
+    //READ ADCQ value
+    Modify_SPI_Reg_bits(CAPSEL, 1);
+    Modify_SPI_Reg_bits(CAPTURE, 0);
+    int negativeCount = 0;
+    int signMeasureCount = 19;
+    int sign = -1;
+    for(int i = 0; i < signMeasureCount; ++i)
+    {
+        Modify_SPI_Reg_bits(CAPTURE, 1);
+        Modify_SPI_Reg_bits(CAPTURE, 0);
+        int16_t adcq = SPI_read(0x040F, true);
+        if(adcq & 0x200)
+            ++negativeCount;
+    }
+    if(negativeCount > signMeasureCount / 2)
+        sign = 1;
+
+    Modify_SPI_Reg_bits(CAPSEL, 0);
+    Modify_SPI_Reg_bits(CAPTURE, 0);
+    Modify_SPI_Reg_bits(CAPTURE, 1);
+    uint32_t rssi = (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
+    double temperature = (rssi / 16.0) * 0.443892 * sign + 40.5;
+
+    RestoreRegisterMap(regMap);
+    return temperature;
+}

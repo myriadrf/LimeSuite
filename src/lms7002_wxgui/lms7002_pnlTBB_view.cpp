@@ -115,96 +115,42 @@ void lms7002_pnlTBB_view::UpdateGUI()
     }
 }
 
-void lms7002_pnlTBB_view::OnFilterSelectionChange( wxCommandEvent& event )
-{
-    txtFilterFrequency2->Disable();
-	switch (rgrFilterSelection->GetSelection())
-	{
-	case 0:
-		lblFilterInputName->SetLabelText("High BW (MHz)");
-		break;
-	case 1:
-		lblFilterInputName->SetLabelText("Ladder BW (MHz)");
-		txtFilterFrequency2->Enable();
-		break;
-	}
-}
-
 void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
 {
     double input1;
-    double input2;
     txtFilterFrequency->GetValue().ToDouble(&input1);
-    txtFilterFrequency2->GetValue().ToDouble(&input2);
     int status;
-    switch (rgrFilterSelection->GetSelection())
+    if(rgrTxFilterType->GetSelection() == 0)
     {
-    case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND, input1*1e6);
-        break;
-    case 1:
-        status = lmsControl->TuneTxFilterLowBandChain(input1*1e6, input2*1e6);
-        break;
+        status = lmsControl->TuneTxFilter(input1*1e6);
     }
+    else
+    {
+        switch(cmbTxFixedBW->GetSelection())
+        {
+        case 0: input1 = 5; break;
+        case 1: input1 = 10; break;
+        case 2: input1 = 15; break;
+        case 3: input1 = 20; break;
+        }
+        status = lmsControl->TuneTxFilterFixed(input1*1e6);
+    }   
     if (status != 0)
-    {
         wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
-    }
-    else switch (rgrFilterSelection->GetSelection())
-    {
-    case 0:
-        wxMessageBox(_("Tx High band calibration finished"), _("INFO"));
-        break;
-    case 1:
-        wxMessageBox(_("Tx Low band calibration finished"), _("INFO"));
-        break;
-
-    }
     lmsControl->DownloadAll();
     UpdateGUI();
 }
 
-void lms7002_pnlTBB_view::OnbtnTuneFilterTest( wxCommandEvent& event )
+void lms7002_pnlTBB_view::OnTxFilterTypeChange(wxCommandEvent& event)
 {
-    double input1;
-    double input2;
-    txtLadderFrequency->GetValue().ToDouble(&input1);
-    txtRealpoleFrequency->GetValue().ToDouble(&input2);
-    int status;
-    switch (rgrFilterSelectionTest->GetSelection())
+    if(rgrTxFilterType->GetSelection() == 0)
     {
-    case 0:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_LADDER, input1*1e6);
-        break;
-    case 1:
-        status = lmsControl->TuneTxFilter(LMS7002M::TxFilter::TX_REALPOLE, input2*1e6);
-        break;
+        txtFilterFrequency->Enable(true);
+        cmbTxFixedBW->Enable(false);
     }
-    if (status != 0)
+    else
     {
-        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
+        txtFilterFrequency->Enable(false);
+        cmbTxFixedBW->Enable(true);
     }
-    else switch (rgrFilterSelectionTest->GetSelection())
-    {
-    case 0:
-        {
-        wxMessageBox(_("Tx Ladder calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Tx Ladder calibrated"));
-        wxPostEvent(this, evt);
-        break;
-        }
-    case 1:
-        {
-        wxMessageBox(_("Tx Realpole calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Tx Realpole calibrated"));
-        wxPostEvent(this, evt);
-        break;
-        }
-    }
-    lmsControl->DownloadAll();
-    UpdateGUI();
 }

@@ -288,3 +288,9 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
     wxPostEvent(this, evt);
     UpdateVisiblePanel();
 }
+
+void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
+{
+    double t = lmsControl->GetTemperature();
+    txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));
+}

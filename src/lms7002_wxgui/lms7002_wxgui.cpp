@@ -89,6 +89,13 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	fgSizer299->Add( fgSizer300, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT, 10 );
 	
+	txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtTemperature->Wrap( -1 );
+	fgSizer299->Add( txtTemperature, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
+	
 	
 	fgSizer298->Add( fgSizer299, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP|wxBOTTOM, 10 );
 	
@@ -146,6 +153,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
+	btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 }
 
@@ -160,6 +168,7 @@ mainPanel::~mainPanel()
 	btnDownloadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
+	btnReadTemperature->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	tabsNotebook->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 	
 }
@@ -561,25 +570,6 @@ pnlRFE_view::pnlRFE_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	sbSizerGainControls->Add( fgSizer50, 0, wxALL|wxEXPAND|wxALIGN_LEFT, 0 );
 	
-	wxFlexGridSizer* fgSizer201;
-	fgSizer201 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer201->AddGrowableRow( 0 );
-	fgSizer201->SetFlexibleDirection( wxBOTH );
-	fgSizer201->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText311 = new wxStaticText( sbSizerGainControls->GetStaticBox(), wxID_ANY, wxT("TIA BW(MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText311->Wrap( -1 );
-	fgSizer201->Add( m_staticText311, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	txtTIA_BW_MHz = new wxTextCtrl( sbSizerGainControls->GetStaticBox(), ID_TXT_TIA_BW_MHZ, wxT("7"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
-	fgSizer201->Add( txtTIA_BW_MHz, 0, wxEXPAND, 5 );
-	
-	btnTuneTIA = new wxButton( sbSizerGainControls->GetStaticBox(), ID_BTN_TUNE_TIA, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer201->Add( btnTuneTIA, 0, 0, 5 );
-	
-	
-	sbSizerGainControls->Add( fgSizer201, 0, wxEXPAND|wxLEFT, 10 );
-	
 	
 	fgSizer191->Add( sbSizerGainControls, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
@@ -690,7 +680,6 @@ pnlRFE_view::pnlRFE_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbG_LNA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_RXLOOPB_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_TIA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
-	btnTuneTIA->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRFE_view::OnbtnTuneTIA ), NULL, this );
 	cmbICT_LOOPB_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_TIAMAIN_RFE->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_TIAOUT_RFE->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
@@ -731,7 +720,6 @@ pnlRFE_view::~pnlRFE_view()
 	cmbG_LNA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_RXLOOPB_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_TIA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
-	btnTuneTIA->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRFE_view::OnbtnTuneTIA ), NULL, this );
 	cmbICT_LOOPB_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_TIAMAIN_RFE->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_TIAOUT_RFE->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
@@ -900,33 +888,12 @@ pnlRBB_view::pnlRBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	fgSizer199->SetFlexibleDirection( wxBOTH );
 	fgSizer199->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString rgrFilterSelectionChoices[] = { wxT("Low"), wxT("High") };
-	int rgrFilterSelectionNChoices = sizeof( rgrFilterSelectionChoices ) / sizeof( wxString );
-	rgrFilterSelection = new wxRadioBox( sbSizerRxFilters->GetStaticBox(), ID_FILTER_SELECTION, wxT("Filter"), wxDefaultPosition, wxDefaultSize, rgrFilterSelectionNChoices, rgrFilterSelectionChoices, 1, wxRA_SPECIFY_COLS );
-	rgrFilterSelection->SetSelection( 0 );
-	fgSizer199->Add( rgrFilterSelection, 0, 0, 5 );
-	
-	wxFlexGridSizer* fgSizer200;
-	fgSizer200 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer200->SetFlexibleDirection( wxBOTH );
-	fgSizer200->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText309 = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("Low BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText309 = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("RF bandwidth (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText309->Wrap( -1 );
-	fgSizer200->Add( m_staticText309, 0, 0, 5 );
+	fgSizer199->Add( m_staticText309, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLowBW_MHz = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), ID_TXT_LOWBW, wxT("10"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer200->Add( txtLowBW_MHz, 0, 0, 5 );
-	
-	m_staticText310 = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("High BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText310->Wrap( -1 );
-	fgSizer200->Add( m_staticText310, 0, 0, 5 );
-	
-	txtHighBW_MHz = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), ID_TXT_HIGHBW, wxT("34"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer200->Add( txtHighBW_MHz, 0, 0, 5 );
-	
-	
-	fgSizer199->Add( fgSizer200, 1, wxEXPAND, 5 );
+	fgSizer199->Add( txtLowBW_MHz, 0, 0, 5 );
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer199->Add( btnTuneFilter, 0, wxEXPAND, 5 );
@@ -1671,94 +1638,56 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	wxStaticBoxSizer* sbSizerRxFilters;
 	sbSizerRxFilters = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Tx Filters") ), wxVERTICAL );
 	
+	wxFlexGridSizer* fgSizer244;
+	fgSizer244 = new wxFlexGridSizer( 0, 2, 0, 5 );
+	fgSizer244->SetFlexibleDirection( wxBOTH );
+	fgSizer244->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxString rgrTxFilterTypeChoices[] = { wxT("Custom"), wxT("Fixed") };
+	int rgrTxFilterTypeNChoices = sizeof( rgrTxFilterTypeChoices ) / sizeof( wxString );
+	rgrTxFilterType = new wxRadioBox( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("Type"), wxDefaultPosition, wxDefaultSize, rgrTxFilterTypeNChoices, rgrTxFilterTypeChoices, 1, wxRA_SPECIFY_COLS );
+	rgrTxFilterType->SetSelection( 0 );
+	fgSizer244->Add( rgrTxFilterType, 0, 0, 5 );
+	
 	wxFlexGridSizer* fgSizer199;
 	fgSizer199 = new wxFlexGridSizer( 0, 3, 5, 5 );
 	fgSizer199->SetFlexibleDirection( wxBOTH );
 	fgSizer199->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString rgrFilterSelectionChoices[] = { wxT("High"), wxT("Low") };
-	int rgrFilterSelectionNChoices = sizeof( rgrFilterSelectionChoices ) / sizeof( wxString );
-	rgrFilterSelection = new wxRadioBox( sbSizerRxFilters->GetStaticBox(), ID_FILTER_SELECTION, wxT("Filter"), wxDefaultPosition, wxDefaultSize, rgrFilterSelectionNChoices, rgrFilterSelectionChoices, 1, wxRA_SPECIFY_COLS );
-	rgrFilterSelection->SetSelection( 0 );
-	fgSizer199->Add( rgrFilterSelection, 0, 0, 5 );
+	wxFlexGridSizer* fgSizer245;
+	fgSizer245 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer245->SetFlexibleDirection( wxBOTH );
+	fgSizer245->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxFlexGridSizer* fgSizer200;
-	fgSizer200 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer200->SetFlexibleDirection( wxBOTH );
-	fgSizer200->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	lblFilterInputName = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("High BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblFilterInputName = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("RF bandwidth (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblFilterInputName->Wrap( -1 );
-	fgSizer200->Add( lblFilterInputName, 0, 0, 5 );
+	fgSizer245->Add( lblFilterInputName, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFilterFrequency = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("56"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer200->Add( txtFilterFrequency, 0, 0, 5 );
+	fgSizer245->Add( txtFilterFrequency, 0, 0, 5 );
 	
-	m_staticText310 = new wxStaticText( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("Realpole BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText310->Wrap( -1 );
-	fgSizer200->Add( m_staticText310, 0, 0, 5 );
+	wxString cmbTxFixedBWChoices[] = { wxT("5 MHz"), wxT("10 MHz"), wxT("15 MHz"), wxT("20 MHz") };
+	int cmbTxFixedBWNChoices = sizeof( cmbTxFixedBWChoices ) / sizeof( wxString );
+	cmbTxFixedBW = new wxChoice( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbTxFixedBWNChoices, cmbTxFixedBWChoices, 0 );
+	cmbTxFixedBW->SetSelection( 0 );
+	cmbTxFixedBW->Enable( false );
 	
-	txtFilterFrequency2 = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("2"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtFilterFrequency2->Enable( false );
-	
-	fgSizer200->Add( txtFilterFrequency2, 0, 0, 5 );
+	fgSizer245->Add( cmbTxFixedBW, 0, wxEXPAND, 5 );
 	
 	
-	fgSizer199->Add( fgSizer200, 1, wxEXPAND, 5 );
+	fgSizer199->Add( fgSizer245, 1, wxEXPAND, 5 );
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer199->Add( btnTuneFilter, 0, wxEXPAND, 5 );
 	
 	
-	sbSizerRxFilters->Add( fgSizer199, 1, wxEXPAND, 5 );
+	fgSizer244->Add( fgSizer199, 1, wxEXPAND, 5 );
+	
+	
+	sbSizerRxFilters->Add( fgSizer244, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer57->Add( sbSizerRxFilters, 1, wxEXPAND, 5 );
-	
-	wxStaticBoxSizer* sbSizerRxFilters1;
-	sbSizerRxFilters1 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Tx Filters Test") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer1991;
-	fgSizer1991 = new wxFlexGridSizer( 0, 3, 5, 5 );
-	fgSizer1991->SetFlexibleDirection( wxBOTH );
-	fgSizer1991->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxString rgrFilterSelectionTestChoices[] = { wxT("Ladder"), wxT("Realpole") };
-	int rgrFilterSelectionTestNChoices = sizeof( rgrFilterSelectionTestChoices ) / sizeof( wxString );
-	rgrFilterSelectionTest = new wxRadioBox( sbSizerRxFilters1->GetStaticBox(), ID_FILTER_SELECTION, wxT("Filter"), wxDefaultPosition, wxDefaultSize, rgrFilterSelectionTestNChoices, rgrFilterSelectionTestChoices, 1, wxRA_SPECIFY_COLS );
-	rgrFilterSelectionTest->SetSelection( 0 );
-	fgSizer1991->Add( rgrFilterSelectionTest, 0, 0, 5 );
-	
-	wxFlexGridSizer* fgSizer2001;
-	fgSizer2001 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer2001->SetFlexibleDirection( wxBOTH );
-	fgSizer2001->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	lblTxFiltersBWname1 = new wxStaticText( sbSizerRxFilters1->GetStaticBox(), wxID_ANY, wxT("Ladder BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblTxFiltersBWname1->Wrap( -1 );
-	fgSizer2001->Add( lblTxFiltersBWname1, 0, 0, 5 );
-	
-	txtLadderFrequency = new wxTextCtrl( sbSizerRxFilters1->GetStaticBox(), wxID_ANY, wxT("14"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer2001->Add( txtLadderFrequency, 0, 0, 5 );
-	
-	m_staticText3101 = new wxStaticText( sbSizerRxFilters1->GetStaticBox(), wxID_ANY, wxT("Realpole BW (MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText3101->Wrap( -1 );
-	fgSizer2001->Add( m_staticText3101, 0, 0, 5 );
-	
-	txtRealpoleFrequency = new wxTextCtrl( sbSizerRxFilters1->GetStaticBox(), wxID_ANY, wxT("2"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer2001->Add( txtRealpoleFrequency, 0, 0, 5 );
-	
-	
-	fgSizer1991->Add( fgSizer2001, 1, wxEXPAND, 5 );
-	
-	btnTuneFilterTest = new wxButton( sbSizerRxFilters1->GetStaticBox(), ID_BTN_TUNE_FILTER_TEST, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1991->Add( btnTuneFilterTest, 0, wxEXPAND, 5 );
-	
-	
-	sbSizerRxFilters1->Add( fgSizer1991, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer57->Add( sbSizerRxFilters1, 1, wxEXPAND, 5 );
 	
 	
 	this->SetSizer( fgSizer57 );
@@ -1788,10 +1717,8 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbRCAL_LPFLAD_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbRCAL_LPFS5_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
-	rgrFilterSelection->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnFilterSelectionChange ), NULL, this );
+	rgrTxFilterType->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnTxFilterTypeChange ), NULL, this );
 	btnTuneFilter->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
-	rgrFilterSelectionTest->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnFilterSelectionChange ), NULL, this );
-	btnTuneFilterTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilterTest ), NULL, this );
 }
 
 pnlTBB_view::~pnlTBB_view()
@@ -1819,10 +1746,8 @@ pnlTBB_view::~pnlTBB_view()
 	cmbRCAL_LPFLAD_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbRCAL_LPFS5_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
-	rgrFilterSelection->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnFilterSelectionChange ), NULL, this );
+	rgrTxFilterType->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnTxFilterTypeChange ), NULL, this );
 	btnTuneFilter->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
-	rgrFilterSelectionTest->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::OnFilterSelectionChange ), NULL, this );
-	btnTuneFilterTest->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilterTest ), NULL, this );
 	
 }
 
