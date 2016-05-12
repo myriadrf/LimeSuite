@@ -57,8 +57,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/ConnectionRegistry.h
     lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M.h
-    lms7002m/CalibrationCache.h
-    lms7002m/cpp-feather-ini-parser/INI.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
     protocols/ADCUnits.h

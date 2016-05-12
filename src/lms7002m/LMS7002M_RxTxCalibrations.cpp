@@ -1,4 +1,5 @@
 #include "LMS7002M.h"
+#include "CalibrationCache.h"
 #include "ErrorReporting.h"
 #include <assert.h>
 #include "MCU_BD.h"
@@ -586,7 +587,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, const bool useExtLoopback)
     {
         int dcI, dcQ, gainI, gainQ, phOffset;
 
-        foundInCache = (valueCache.GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
+        foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         if(foundInCache)
         {
             printf("Tx calibration: using cached values\n");
@@ -717,7 +718,7 @@ TxCalibrationEnd:
     }
 
     if(useCache)
-        valueCache.InsertDC_IQ(boardId, txFreq*1e6, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
+        mValueCache->InsertDC_IQ(boardId, txFreq*1e6, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
@@ -982,7 +983,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, const bool useExtLoopback)
     if(useCache)
     {
         int dcI, dcQ, gainI, gainQ, phOffset;
-        foundInCache = (valueCache.GetDC_IQ(boardId, rxFreq, channel, false, lna, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
+        foundInCache = (mValueCache->GetDC_IQ(boardId, rxFreq, channel, false, lna, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         dcoffi = dcI;
         dcoffq = dcQ;
         mingcorri = gainI;
@@ -1161,7 +1162,7 @@ RxCalibrationEndStage:
         return status;
     }
     if(useCache)
-        valueCache.InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, mingcorri, mingcorrq, phaseOffset);
+        mValueCache->InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, mingcorri, mingcorrq, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
@@ -1629,7 +1630,7 @@ int LMS7002M::StoreDigitalCorrections(const bool isTx)
         phaseOffset = int16_t(Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP)) << 4) >> 4;
     }
 
-    return valueCache.InsertDC_IQ(boardId, freq, idx, isTx, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
+    return mValueCache->InsertDC_IQ(boardId, freq, idx, isTx, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
 }
 
 int LMS7002M::ApplyDigitalCorrections(const bool isTx)
@@ -1640,7 +1641,7 @@ int LMS7002M::ApplyDigitalCorrections(const bool isTx)
     int band = 0; //TODO
 
     int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
-    int rc = valueCache.GetDC_IQ_Interp(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset);
+    int rc = mValueCache->GetDC_IQ_Interp(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset);
     if (rc != 0) return rc;
 
     if (isTx)

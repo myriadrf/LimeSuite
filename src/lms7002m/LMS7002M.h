@@ -8,7 +8,6 @@
 #define LMS7API_H
 
 #include "LMS7002M_parameters.h"
-#include "CalibrationCache.h"
 #include <cstdint>
 
 #include <sstream>
@@ -16,6 +15,7 @@
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
+class CalibrationCache;
 class MCU_BD;
 
 typedef double float_type;
@@ -383,7 +383,7 @@ protected:
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;
     bool useCache;
-    CalibrationCache valueCache;
+    CalibrationCache *mValueCache;
     LMS7002M_RegistersMap *mRegistersMap;
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];

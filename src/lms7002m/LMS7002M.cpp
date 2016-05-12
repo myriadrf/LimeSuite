@@ -19,6 +19,7 @@
 #include <fstream>
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
+#include "CalibrationCache.h"
 #include <math.h>
 #include <assert.h>
 #include <chrono>
@@ -91,7 +92,8 @@ LMS7002M::LMS7002M() :
     mdevIndex(0),
     mSelfCalDepth(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
-    useCache(0)
+    useCache(0),
+    mValueCache(new CalibrationCache())
 {
     mCalibrationByMCU = true;
 
@@ -1291,7 +1293,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     int csw_query;
     if(useCache)
     {
-        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
+        foundInCache = (mValueCache->GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
     }
     if(foundInCache)
     {
@@ -1331,7 +1333,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     }
     if(useCache && !foundInCache)
     {
-        valueCache.InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
+        mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
