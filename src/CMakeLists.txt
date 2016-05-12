@@ -27,6 +27,10 @@ endif(MSVC)
 set(LIME_SUITE_VERSION 0.0.0)
 set(LIME_SUITE_ABI 1)
 
+if (CMAKE_BUILD_TYPE STREQUAL "")
+   set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 ########################################################################
 ## public headers
 ########################################################################
@@ -138,9 +142,9 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-include(ConnectionEVB7COM/CMakeLists.txt)
+#include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionSTREAM/CMakeLists.txt)
-include(ConnectionNovenaRF7/CMakeLists.txt)
+#include(ConnectionNovenaRF7/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp

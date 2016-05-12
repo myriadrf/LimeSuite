@@ -287,7 +287,7 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
     if(!LMS_IsOpen(lmsControl,0))
         return;
     const lms_dev_info_t* info;
-    if ((info = LMS_GetDeviceInfo(lmsControl))==0)
+    if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
         SetupControls(info->deviceName);
         wxCommandEvent evt;
@@ -352,6 +352,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std:
 
 void pnlBoardControls::SetupControls(const std::string &boardID)
 {
+
     if (boardID == GetDeviceName(LMS_DEV_UNKNOWN))
         pnlCustomControls->Show();
     else

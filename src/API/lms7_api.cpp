@@ -1609,7 +1609,7 @@ API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device)
 {
 
-	static lms_dev_info_t info;
+    static lms_dev_info_t info;
 
     if (device == nullptr)
     {

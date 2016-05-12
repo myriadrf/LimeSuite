@@ -18,7 +18,7 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {
     const lms_dev_info_t* info;
     
-    if ((info = LMS_GetDeviceInfo(lmsControl))==0)
+    if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
         lblDeviceCtr->SetLabel(info->deviceName);
         lblExpansionCtr->SetLabel(info->expansionName);

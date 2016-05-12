@@ -178,5 +178,5 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
-    lblCGENrefClk->SetLabel(wxString::Format(_("%f"), freq));
+    lblCGENrefClk->SetLabel(wxString::Format(_("%f"), freq/1e6));
 }

@@ -1340,11 +1340,13 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
     {
         SetPath(false,0,LMS_PATH_LOW);
         SetPath(false,1,LMS_PATH_LOW);
+        printf("RX LNA_L path selected\n");
     }
     else 
     {
         SetPath(false,0,LMS_PATH_WIDE);
         SetPath(false,1,LMS_PATH_WIDE);
+        printf("RX LNA_W path selected\n");
     }
     return 0;  
 }
@@ -1359,9 +1361,11 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
     {
         SetPath(true,0,LMS_PATH_LOW);
         SetPath(true,1,LMS_PATH_LOW);
+        printf("TX BAND 1 selected\n");
     }
     else 
     {
+        printf("Tx BAND 2 selected\n");
         SetPath(true,0,LMS_PATH_HIGH);
         SetPath(true,1,LMS_PATH_HIGH);
     }
