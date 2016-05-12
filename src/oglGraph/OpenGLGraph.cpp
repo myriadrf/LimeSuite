@@ -9,8 +9,13 @@
 #include <stdarg.h>
 #include <cmath>
 #include <iostream>
-#include "GL/gl.h"
-#include "GL/glu.h"
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 #include "GLFont.h"
 #include "StaticFontHeader.h"
 #include "dlgMarkers.h"
@@ -146,7 +151,7 @@ bool OpenGLGraph::Initialize(int width, int height)
 	initialized = true;
 
 	m_font = new GLFont();
-	m_font->loadFromArray(standardStaticFont, sizeof(standardStaticFont));
+	m_font->loadFromArray((const char *)standardStaticFont, sizeof(standardStaticFont));
 	return true;
 }
 

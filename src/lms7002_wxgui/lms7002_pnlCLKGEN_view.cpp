@@ -208,14 +208,18 @@ void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 
 void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)
 {
+
     uint16_t param;
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPHO_CGEN),&param);
+    
     lblVCO_CMPHO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 1)
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxRED);
+
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPLO_CGEN),&param);
+    
     lblVCO_CMPLO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 0)
         lblVCO_CMPLO_CGEN->SetBackgroundColour(*wxGREEN);

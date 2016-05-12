@@ -16,7 +16,7 @@
 #include <sys/time.h>
 #endif
 
-#ifdef __unix__
+#ifdef __linux__
 #include <sys/mman.h>
 #include <stdint.h>
 #include <stdint.h>
@@ -48,7 +48,7 @@ using namespace lime;
 
 static const int cSPI_SPEED = 5000000;
 
-#ifdef __unix__
+#ifdef __linux__
 static int   *mem_32 = 0;
 static short *mem_16 = 0;
 static char  *mem_8 = 0;
@@ -61,7 +61,7 @@ bool eim_configured = false;
 
 int fpga_send(unsigned const int addr, const char* buf, const int len)
 {
-#ifdef __unix__
+#ifdef __linux__
     void* mem_base = 0;
     if(mem_32)
         munmap(mem_32, 0xFFFF);
@@ -100,7 +100,7 @@ int fpga_send(unsigned const int addr, const char* buf, const int len)
 
 int fpga_read(unsigned const int addr, unsigned short *buf, const int len)
 {
-#ifdef __unix__
+#ifdef __linux__
     void* mem_base = 0;
 
     if(mem_32)
@@ -140,7 +140,7 @@ int fpga_read(unsigned const int addr, unsigned short *buf, const int len)
 
 int readKernelMemory(long offset, int virtualized, int size)
 {
-#ifdef __unix__
+#ifdef __linux__
     int result;
 
     int *mem_range = (int *)(offset & ~0xFFFF);
@@ -214,7 +214,7 @@ int readKernelMemory(long offset, int virtualized, int size)
 
 int writeKernelMemory(long offset, long value, int virtualized, int size)
 {
-#ifdef __unix__
+#ifdef __linux__
     int old_value = readKernelMemory(offset, virtualized, size);
     int scaled_offset = (offset - (offset&~0xFFFF));
     if (size == 1)
@@ -233,7 +233,7 @@ int writeKernelMemory(long offset, long value, int virtualized, int size)
             mem_32[scaled_offset / sizeof(long)] = value;
     }
     return old_value;
-#endif // __unix__
+#endif // __linux__
     return 0;
 }
 

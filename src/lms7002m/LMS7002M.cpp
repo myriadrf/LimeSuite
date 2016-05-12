@@ -35,8 +35,6 @@ using namespace lime;
 
 #include "MCU_BD.h"
 
-#define LMS_VERBOSE_OUTPUT
-
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
 
@@ -387,7 +385,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -434,7 +432,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 }
             }
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
 
@@ -454,7 +452,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
 
             //parse FCW or PHO
@@ -570,13 +568,13 @@ int LMS7002M::LoadConfig(const char* filename)
                 dataToWrite.push_back(value);
             }
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
             status = SPI_write(0x0020, x0020_value);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
             this->SetActiveChannel(ChB);
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
 
@@ -594,7 +592,7 @@ int LMS7002M::LoadConfig(const char* filename)
             }
             this->SetActiveChannel(ChB); //select B channel
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-            if (status != 0 && controlPort == nullptr)
+            if (status != 0 && controlPort != nullptr)
                 return status;
         }
         this->SetActiveChannel(ch);
@@ -616,11 +614,11 @@ int LMS7002M::LoadConfig(const char* filename)
 int LMS7002M::SaveConfig(const char* filename)
 {
     int status;
-    typedef INI<> ini_t;
-    ini_t parser(filename, true);
-    parser.create("file_info");
-    parser.set("type", "lms7002m_minimal_config");
-    parser.set("version", 1);
+    ofstream fout;
+    fout.open(filename);
+    fout << "[file_info]" << endl;
+    fout << "type=lms7002m_minimal_config" << endl;
+    fout << "version=1" << endl;
 
     char addr[80];
     char value[80];
@@ -634,17 +632,17 @@ int LMS7002M::SaveConfig(const char* filename)
     vector<uint16_t> dataReceived;
     dataReceived.resize(addrToRead.size(), 0);
 
-    parser.create("lms7002_registers_a");
+    fout << "[lms7002_registers_a]" << endl;
     this->SetActiveChannel(ChA);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
-        parser.set(addr, value);
+        fout << addr << "=" << value << endl;
     }
 
-    parser.create("lms7002_registers_b");
+    fout << "[lms7002_registers_b]" << endl;
     addrToRead.clear(); //add only B channel addresses
     for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
         for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
@@ -657,15 +655,15 @@ int LMS7002M::SaveConfig(const char* filename)
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
-        parser.set(addr, value);
+        fout << addr << "=" << value << endl;
     }
 
     this->SetActiveChannel(ch); //retore previously used channel
 
-    parser.create("reference_clocks");
-    parser.set("sxt_ref_clk_mhz", this->GetReferenceClk_SX(Tx) / 1e6);
-    parser.set("sxr_ref_clk_mhz", this->GetReferenceClk_SX(Rx) / 1e6);
-    parser.save(filename);
+    fout << "[reference_clocks]" << endl;
+    fout << "sxt_ref_clk_mhz=" << this->GetReferenceClk_SX(Tx) / 1e6 << endl;
+    fout << "sxr_ref_clk_mhz=" << this->GetReferenceClk_SX(Rx) / 1e6 << endl;
+    fout.close();
     return 0;
 }
 
@@ -1111,7 +1109,9 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         addrCMP = LMS7param(VCO_CMPHO_CGEN).address;
     }
 	// Initialization
-	Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
+    int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
+    if(status != 0)
+        return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
 	if(module == VCO_CGEN)
@@ -1160,7 +1160,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     this->SetActiveChannel(ch); //restore previously used channel
 
     if(cmphl == 2) return 0;
-    
+
     return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)", moduleName);
 }
 
@@ -1548,24 +1548,23 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data)
 */
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
 {
-    if (!controlPort)
+    if (!controlPort || fromChip == false)
     {
-        if (status)
-            *status = ReportError(ENOTCONN, "no connection object");
-        return 0;
-    }
-    if (controlPort->IsOpen() == false || fromChip == false)
-    {
+        if (status && !controlPort)
+            *status = ReportError(ENOTCONN, "chip not connected");
         int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
         int regNo = (mac == 2)? 1 : 0; //only when MAC is B -> use register space B
         if (address < 0x0100) regNo = 0; //force A when below MAC mapped register space
         return mRegistersMap->GetValue(regNo, address);
     }
-
-    uint16_t data = 0;
-    int st = this->SPI_read_batch(&address, &data, 1);
-    if (status != nullptr) *status = st;
-    return data;
+    if(controlPort)
+    {
+        uint16_t data = 0;
+        int st = this->SPI_read_batch(&address, &data, 1);
+        if (status != nullptr) *status = st;
+        return data;
+    }
+    return 0;
 }
 
 /** @brief Batches multiple register writes into least ammount of transactions
@@ -1931,7 +1930,6 @@ int LMS7002M::UploadAll()
         dataToWrite.push_back(mRegistersMap->GetValue(0, address));
 
     status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size());
-    status = 0;
     if (status != 0)
         return status;
     //after all channel A registers have been written, update 0x0020 register value
@@ -2004,13 +2002,16 @@ int LMS7002M::DownloadAll()
 }
 
 /** @brief Configures interfaces for desired frequency
+    @return 0-success, other-failure
     Sets interpolation and decimation, changes MCLK sources and TSP clock dividers accordingly to selected interpolation and decimation
 */
 int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
 {
     int status = 0;
     LMS7002M_SelfCalState state(this);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    status = Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
+    if(status != 0)
+        return status;
     Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation);
 
     //clock rate already set because the readback frequency is pretty-close,
@@ -2022,11 +2023,12 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         if (status != 0) return status;
     }
 
+    int mclk2src = Get_SPI_Reg_bits(LMS7param(MCLK2SRC));
     if (decimation == 7 || decimation == 0) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), 3);
+        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), mclk2src & 1 | 0x2);
     }
     else
     {
@@ -2036,13 +2038,14 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), 1);
+        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), mclk2src & 1);
     }
+    int mclk1src = Get_SPI_Reg_bits(LMS7param(MCLK1SRC));
     if (interpolation == 7 || interpolation == 0) //bypass
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 2);
+        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1 | 0x2);
     }
     else
     {
@@ -2052,7 +2055,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), 0);
+        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
     }
 
     return status;

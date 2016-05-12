@@ -45,8 +45,9 @@ void lms7002_pnlBIST_view::ParameterChangeHandler(wxCommandEvent& event)
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
-void lms7002_pnlBIST_view::onbtnReadBIST( wxCommandEvent& event )
+void lms7002_pnlBIST_view::onbtnReadSignature( wxCommandEvent& event )
 {
+
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(BSIGC),&value);
     lblBSIGC->SetLabel(wxString::Format(_("0x%0.6X"), value));

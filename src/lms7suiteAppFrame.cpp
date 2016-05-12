@@ -33,6 +33,7 @@
 #include "pnlBoardControls.h"
 #include <LMSBoards.h>
 #include <sstream>
+#include <pnlQSpark.h>
 
 using namespace std;
 using namespace lime;
@@ -145,6 +146,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     novenaGui = nullptr;
     boardControlsGui = nullptr;
     LMS_Open(&lmsControl,nullptr,nullptr);
+    qSparkGui = nullptr;
+
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -568,7 +571,6 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 {
     boardControlsGui->Destroy();
     boardControlsGui = nullptr;
-    
 }
 
 void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
@@ -577,4 +579,24 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
     LMS_EnableCalibCache(lmsControl,checked);
 }
 
+
+void LMS7SuiteAppFrame::OnShowQSpark(wxCommandEvent& event)
+{
+    if(qSparkGui) //it's already opened
+        qSparkGui->Show();
+    else
+    {
+        qSparkGui = new pnlQSpark(this, wxNewId(), _("QSpark controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        qSparkGui->Initialize(lmsControl);
+        qSparkGui->UpdatePanel();
+        qSparkGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnQSparkClose), NULL, this);
+        qSparkGui->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnQSparkClose(wxCloseEvent& event)
+{
+    qSparkGui->Destroy();
+    qSparkGui = nullptr;
+}
 

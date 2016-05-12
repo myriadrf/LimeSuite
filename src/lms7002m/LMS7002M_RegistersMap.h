@@ -29,6 +29,13 @@ public:
     uint16_t GetDefaultValue(uint16_t address) const;
     std::vector<uint16_t> GetUsedAddresses(const uint8_t channel) const;
 
+    LMS7002M_RegistersMap &operator=(const LMS7002M_RegistersMap &other)
+    {
+        mChannelA.insert(other.mChannelA.begin(), other.mChannelA.end());
+        mChannelB.insert(other.mChannelB.begin(), other.mChannelB.end());
+        return *this;
+    }
+
 protected:
     std::map<const uint16_t, Register> mChannelA;
     std::map<const uint16_t, Register> mChannelB;

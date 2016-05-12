@@ -2,23 +2,16 @@
 ## Create lime-suite project
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE TYPE INTERNAL FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
 project("lms7suite")
+
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 cmake_policy(SET CMP0015 OLD)
 if(${CMAKE_MAJOR_VERSION} GREATER 2)
-	cmake_policy(SET CMP0043 NEW)
+    cmake_policy(SET CMP0043 NEW)
 endif()
-ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wl,-z,defs")
-endif()
-
-if (MSVC)
-	SET( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
-	SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
-endif(MSVC)
 
 #version numbers built into shared library
 #todo version number, example could be date, standard major.minor.patch
@@ -32,11 +25,44 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 
 ########################################################################
+## compiler flags
+########################################################################
+
+#gcc c++11 enable flags
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+endif()
+
+#visual studio compiler flags
+if (MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
+    set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
+endif(MSVC)
+
+#enable c++11 extensions for OSX
+if (APPLE)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
+   add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
+endif(APPLE)
+
+########################################################################
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
     lms7002m/LMS7002M_parameters.h
+    protocols/ADCUnits.h
+    protocols/LMS64CCommands.h
+    protocols/LMS64CProtocol.h
+    protocols/LMSBoards.h
+    LTEpackets/dataTypes.h
+    LTEpackets/fifo.h
+    LTEpackets/StreamerLTE.h
+    Si5351C/Si5351C.h
+    LMS_StreamBoard/LMS_StreamBoard.h
+    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
+    FPGA_common/FPGA_common.h
 )
 
 include(FeatureSummary)
@@ -98,6 +124,7 @@ set(LIME_SUITE_SOURCES
     API/lms7_api.cpp
     API/lms7_device.cpp
     API/StreamerAPI.cpp
+    FPGA_common/FPGA_common.cpp
 )
 
 
@@ -116,6 +143,7 @@ include_directories(LMS_StreamBoard)
 include_directories(kissFFT)
 include_directories(API)
 include_directories(GFIR)
+include_directories(FPGA_common)
 
 include(FeatureSummary)
 include(CMakeDependentOption)
@@ -218,6 +246,7 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
+    boards_wxgui/pnlQSpark.cpp
 )
 
 include(FeatureSummary)
@@ -235,6 +264,7 @@ if (ENABLE_LMS7_GUI)
     include_directories(myriad7)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
+    include_directories(boards_wxgui)
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
 

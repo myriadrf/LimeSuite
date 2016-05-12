@@ -15,6 +15,7 @@
 #include <fstream>
 #include "ErrorReporting.h"
 #include "MCU_BD.h"
+#include "FPGA_common.h"
 
 
 static const size_t LMS_PATH_NONE = 0;
@@ -388,7 +389,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
                             pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
     float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
                             pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
-    
+
     this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
    return 0;
 }

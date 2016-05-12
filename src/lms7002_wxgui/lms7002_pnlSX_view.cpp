@@ -422,6 +422,7 @@ void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
     assert(lmsControl != nullptr);
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPHO),&value);
+
     lblVCO_CMPHO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 1)
         lblVCO_CMPHO->SetBackgroundColour(*wxGREEN);

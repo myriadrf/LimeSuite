@@ -20,7 +20,7 @@ class lms7002_pnlBIST_view : public pnlBIST_view
 	protected:
 		// Handlers for pnlBIST_view events.
 		void ParameterChangeHandler( wxCommandEvent& event );
-		void onbtnReadBIST( wxCommandEvent& event );
+		void onbtnReadSignature( wxCommandEvent& event );
 	public:
 		/** Constructor */
 		lms7002_pnlBIST_view( wxWindow* parent );
