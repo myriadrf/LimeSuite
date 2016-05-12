@@ -46,7 +46,7 @@ void lms7002_pnlBIST_view::ParameterChangeHandler(wxCommandEvent& event)
     lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
 }
 
-void lms7002_pnlBIST_view::onbtnReadBIST( wxCommandEvent& event )
+void lms7002_pnlBIST_view::onbtnReadSignature( wxCommandEvent& event )
 {
     int value;
     value = lmsControl->Get_SPI_Reg_bits(BSIGC, true);
