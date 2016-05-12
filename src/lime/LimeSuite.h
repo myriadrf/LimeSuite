@@ -1346,7 +1346,7 @@ API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_
  */
 API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, 
                               const void **samples,size_t sample_count, 
-                              lms_stream_meta_t *meta, unsigned timeout_ms);
+                            const lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /** @} (End FN_STREAM) */
 

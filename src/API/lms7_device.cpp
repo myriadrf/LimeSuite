@@ -37,12 +37,11 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
     
     streamer = nullptr;
 
-    EnableValuesCache(true);
+    EnableValuesCache(false);
 }
 
 int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
 {
-    bandwidth /= 1e6;
     if (ch == 0)
     {
         if (Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
@@ -61,7 +60,8 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
             if (TuneRxFilter(RX_TIA,bandwidth)!=0)
                 return -1;
         }
-        if (bandwidth < 20)
+        
+        if (bandwidth < lime::LMS7002M::gRxLPF_low_higher_limit)
         {
             if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0,true)!=0)
                    return -1; 
@@ -263,7 +263,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     }
     if (enabled)
     {
-        if (bandwidth < gLadder_higher_limit)
+        /*if (bandwidth < gLadder_higher_limit)
         {
             //low band chain
             if (bandwidth >= gRealpole_higher_limit)
@@ -286,7 +286,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
                         return -1; 
             }
         }
-        else
+        else*/
         {
             // high band
             if (bandwidth < gHighband_lower_limit)
@@ -1419,7 +1419,7 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
    
           
     this->EnableChannel(false,enable);
-    
+    Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE),0,true);
     rx_channels[ch].enabled = enable;
     
     return 0;

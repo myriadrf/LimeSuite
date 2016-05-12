@@ -224,8 +224,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
 {
     const int test_count = 4096*16;//4096*16;
     float** buffers;
-    double rxdataRate_Bps=0;
-    double txdataRate_Bps=0;
+    
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
     localDataResults.samplesI[0].resize(fftSize, 0);
@@ -241,9 +240,9 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     lms_stream_conf_t conf;
     conf.channels = channelsCount == 1 ? 1 : 3;
     conf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
-    conf.fifoSize = 1024*1024;
+    conf.fifoSize = 32*1024*1024;
     conf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
-    conf.numTransfers = 32;
+    conf.numTransfers = 16;
     conf.transferSize = 4096*16;
     
     LMS_SetupStream(pthis->lmsControl, conf);
@@ -256,7 +255,6 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
 
     meta.has_timestamp = true;
     meta.end_of_burst = false;
-    //meta.has_timestamp = true;
     LMS_StartStream(pthis->lmsControl,LMS_CH_TX);
     LMS_StartStream(pthis->lmsControl,LMS_CH_RX);
     while (pthis->stopProcessing.load() == false)
@@ -267,7 +265,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
         if (samplesPopped <= 0)
             break;
         //Transmit earlier received packets with a counter delay
-        meta.timestamp += 1024*1024;     
+        meta.timestamp += 512*1024;     
         uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,250);
          if (samplesPushed <= 0)
             break;

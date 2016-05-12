@@ -56,6 +56,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
     else
     {
         LMS_Disconnect(*device);
+        lms = (LMS7_Device*)*device;
     }
     
     for (int i = 0; i < handles.size(); i++)
@@ -426,24 +427,31 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t * device, size_t chan, lms_
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     
-    int ret;
+    int ret = 0;
     
     switch (filt)
     {
         case LMS_RX_LPF_TIA:
                 ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_TIA, *bw);
+                break;
         case LMS_RX_LPF_LOWBAND: 
                 ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_LPF_LOWBAND, *bw);
+                break;
         case LMS_RX_LPF_HIGHBAND:
                 ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_LPF_HIGHBAND, *bw);
+                break;
         case LMS_TX_LPF_HIGHBAND:
                 ret = lms->TuneTxFilter(lime::LMS7002M::TX_HIGHBAND,*bw);
+                break;
         case LMS_TX_LPF_REALPOLE:
                 ret = lms->TuneTxFilter(lime::LMS7002M::TX_REALPOLE,*bw);
+                break;
         case LMS_TX_LPF_LADDER:
                 ret = lms->TuneTxFilter(lime::LMS7002M::TX_LADDER,*bw);
+                break;
         case LMS_TX_LPF_LOWCHAIN:
                 ret = lms->TuneTxFilterLowBandChain(bw[0],bw[1]);
+                break;
         default: 
                 lime::ReportError(EINVAL, "Invalid filter parameter");
                 return -1;
@@ -452,7 +460,7 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t * device, size_t chan, lms_
     if (ret == 0)
         return lms->DownloadAll();
     
-    return -1;
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int))
@@ -685,7 +693,7 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
     status = serPort->TransactSPI(adf4002SpiAddr, dataWr.data(), nullptr, 4);
 }
 
-API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
+API_EXPORT  int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
 {
     if (dev == nullptr)
     {
@@ -1574,7 +1582,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, si
     return lms->streamer->RecvStream(samples,sample_count,meta,timeout_ms);
     
 }
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **samples, size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (device == nullptr)
     {

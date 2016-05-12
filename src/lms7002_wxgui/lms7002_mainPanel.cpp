@@ -204,7 +204,7 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Save config file"), "", "", "Project-File (*.ini)|*.ini", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    int status = LMS_LoadConfig(lmsControl,dlg.GetPath().To8BitData());
+    int status = LMS_SaveConfig(lmsControl,dlg.GetPath().To8BitData());
     if (status != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
 }

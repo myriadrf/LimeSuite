@@ -31,7 +31,7 @@ public:
     
     virtual int SetupStream(lms_stream_conf_t conf);
     virtual int RecvStream(void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
-    virtual int SendStream(const void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
+    virtual int SendStream(const void **samples,size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms);
     virtual int StartRx();
     virtual int StartTx();
     virtual int StopRx();
@@ -78,12 +78,12 @@ class StreamerFIFO : public StreamerAPI
     virtual ~StreamerFIFO(); 
     int SetupStream(lms_stream_conf_t conf);
     int RecvStream(void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
-    int SendStream(const void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
+    int SendStream(const void **samples,size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms);
     int StartRx();
     int StartTx();
     int StopRx();
     int StopTx();
-	const lms_stream_status_t* GetInfo();
+    const lms_stream_status_t* GetInfo();
         
     enum StreamDataFormat
     {

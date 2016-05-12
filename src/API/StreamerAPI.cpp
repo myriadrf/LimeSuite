@@ -9,7 +9,6 @@
 #include "dataTypes.h"
 #include <chrono>
 
-
 static const int MAX_PACKETS_BATCH = 16;
 static const int SAMPLES12_PACKET = 1360;
 static const int SAMPLES16_PACKET = 1020;
@@ -135,7 +134,7 @@ int StreamerAPI::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamp
     return numSamples;
 }
 
-int StreamerAPI::SendStream(const void **data,size_t numSamples, lms_stream_meta_t *meta, unsigned timeout_ms)
+int StreamerAPI::SendStream(const void **data,size_t numSamples, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
@@ -657,7 +656,7 @@ int StreamerFIFO::RecvStream(void **samples,size_t sample_count, lms_stream_meta
     return mRxFIFO->pop_samples((lime::complex16_t**)samples, sample_count, channelsCount, &meta->timestamp, timeout_ms);   
 }
 
-int StreamerFIFO::SendStream(const void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
+int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (streamConf.dataFmt == lms_stream_conf_t::LMS_FMT_F32)
     {
@@ -665,7 +664,7 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, lms_strea
        for (int i = 0; i<channelsCount;i++)
            buffers[i] = new lime::complex16_t[sample_count];
        
-        int ret = mTxFIFO->push_samples((const lime::complex16_t**)buffers, sample_count, channelsCount, meta->timestamp, timeout_ms, 0);
+        int ret = mTxFIFO->push_samples((const lime::complex16_t**)buffers, sample_count, channelsCount, meta->timestamp, timeout_ms, meta->has_timestamp);
         for (int i = 0; i < sample_count;i++)
         {
             for (int ch = 0;ch<channelsCount;ch++)
@@ -680,8 +679,14 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, lms_strea
         delete [] buffers;
         return ret;
     }
-    return mTxFIFO->push_samples((const lime::complex16_t**)samples, sample_count, channelsCount, meta->timestamp, timeout_ms, 0);
+    return mTxFIFO->push_samples((const lime::complex16_t**)samples, sample_count, channelsCount, meta->timestamp, timeout_ms, meta->has_timestamp);
 }
+
+/*
+void flThread()
+{
+    Fl::run();
+}*/
 
 /** @brief Function dedicated for receiving data samples from board
     @param rxFIFO FIFO to store received data
@@ -690,12 +695,12 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, lms_strea
 */
 void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
 {
-	auto dataPort = pthis->streamPort;
-	auto rxFIFO = pthis->mRxFIFO;
-;
+    
+    auto dataPort = pthis->streamPort;
+    auto rxFIFO = pthis->mRxFIFO;
     auto terminate = &pthis->stopRx;
     auto dataRate_Bps = &pthis->mRxDataRate;
-
+    
     //at this point Rx must be enabled in FPGA
     unsigned long rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
@@ -736,7 +741,11 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
     bool currentRxCmdValid = false;
     lime::RxCommand currentRxCmd;
 
-
+    
+    /*Lms_glWindow* win = new Lms_glWindow(0,0,640,480);
+    win->show();
+    win->SetDisplayLimits(0,1360,-2200,2200);
+    auto fltk = std::thread(flThread);*/
     while (terminate->load() == false)
     {
 
@@ -788,8 +797,19 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
                 tempPacket.last = samplesCollected;
 
                 uint32_t samplesPushed = rxFIFO->push_samples((const lime::complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10, statusFlags);
-
+                std::this_thread::yield();
                 samplesCollected = 0;
+                
+               /* for (int i = 0 ; i < 1360; i++)
+                    if (tempPacket.samples[0][i].i > 0x1FF)
+                    {
+                        float databins[1360];
+                        for (int ii = 0 ; ii < 1360; ii++)
+                            databins[ii] = tempPacket.samples[0][ii].i;
+
+                        win->SetData(databins,1360,0,1360-1);
+                        break;
+                    }*/
             }
         }
         else
@@ -945,7 +965,8 @@ void StreamerFIFO::TransmitPackets(StreamerFIFO *pthis)
         bytesToSend[bi] = sizeof(lime::PacketLTE)*i;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
-
+        std::this_thread::yield();
+        
         t2 = std::chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
@@ -991,14 +1012,14 @@ void StreamerFIFO::TransmitPackets(StreamerFIFO *pthis)
 const lms_stream_status_t* StreamerFIFO::GetInfo()
 {
     streamInfo.rxRate = mRxDataRate;
-	streamInfo.txRate = mTxDataRate;
+    streamInfo.txRate = mTxDataRate;
     auto status = mRxFIFO->GetInfo();
-	streamInfo.rx_fifo_filled = status.itemsFilled;
-	streamInfo.rx_fifo_size = status.size;
-    status = mRxFIFO->GetInfo();
-	streamInfo.tx_fifo_filled = status.itemsFilled;
-	streamInfo.tx_fifo_size = status.size;
-	return &streamInfo;
+    streamInfo.rx_fifo_filled = status.itemsFilled;
+    streamInfo.rx_fifo_size = status.size;
+    status = mTxFIFO->GetInfo();
+    streamInfo.tx_fifo_filled = status.itemsFilled;
+    streamInfo.tx_fifo_size = status.size;
+    return &streamInfo;
 }
 
 
