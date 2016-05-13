@@ -284,6 +284,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1); //EN_LOOPB_TXPAD_TRF 1
 
     //AFE
+    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0); //PD_RX_AFE1 0
     Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0); //PD_RX_AFE2 0
 
     //BIAS
@@ -297,7 +298,6 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //CGEN
     //reset CGEN to defaults
     const float_type cgenFreq = GetFrequencyCGEN();
-    SetDefaults(CGEN);
     int cgenMultiplier = int((cgenFreq / 46.08e6) + 0.5);
     if(cgenMultiplier < 2)
         cgenMultiplier = 2;
@@ -332,82 +332,18 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
-    //check if user uses GFIR
-    bool GFIR_active[3] = { false, false, false };
-    uint8_t gfir_byps[3];
-    uint8_t gfir_l[3];
-    uint8_t gfir_n[3];
-    const uint8_t coefsToCheck = 5;
-    int16_t txGFIR_coefs[coefsToCheck];
-    gfir_byps[0] = Get_SPI_Reg_bits(GFIR1_BYP_TXTSP);
-    gfir_byps[1] = Get_SPI_Reg_bits(GFIR2_BYP_TXTSP);
-    gfir_byps[2] = Get_SPI_Reg_bits(GFIR3_BYP_TXTSP);
-
-    if(gfir_byps[0] == 0)
-    {
-        GetGFIRCoefficients(LMS7002M::Tx, 0, txGFIR_coefs, coefsToCheck);
-        for(int i = 0; i < coefsToCheck; ++i)
-            if(txGFIR_coefs[i] != 0)
-            {
-                GFIR_active[0] = true;
-                gfir_l[0] = Get_SPI_Reg_bits(GFIR1_L_TXTSP);
-                gfir_n[0] = Get_SPI_Reg_bits(GFIR1_N_TXTSP);
-                break;
-            }
-    }
-    if(gfir_byps[1] == 0)
-    {
-        GetGFIRCoefficients(LMS7002M::Tx, 1, txGFIR_coefs, coefsToCheck);
-        for(int i = 0; i < coefsToCheck; ++i)
-            if(txGFIR_coefs[i] != 0)
-            {
-                GFIR_active[1] = true;
-                gfir_l[1] = Get_SPI_Reg_bits(GFIR2_L_TXTSP);
-                gfir_n[1] = Get_SPI_Reg_bits(GFIR2_N_TXTSP);
-                break;
-            }
-    }
-    if(gfir_byps[2] == 0)
-    {
-        GetGFIRCoefficients(LMS7002M::Tx, 2, txGFIR_coefs, coefsToCheck);
-        for(int i = 0; i < coefsToCheck; ++i)
-            if(txGFIR_coefs[i] != 0)
-            {
-                GFIR_active[2] = true;
-                gfir_l[2] = Get_SPI_Reg_bits(GFIR3_L_TXTSP);
-                gfir_n[2] = Get_SPI_Reg_bits(GFIR3_N_TXTSP);
-                break;
-            }
-    }
-    SetDefaults(TxTSP); //GFIR coefficients are not reset
-    SetDefaults(TxNCO);
-    if(GFIR_active[0])
-    {  
-        Modify_SPI_Reg_bits(GFIR1_L_TXTSP, gfir_l[0]);
-        Modify_SPI_Reg_bits(GFIR1_N_TXTSP, gfir_n[0]);
-    }
-    if(GFIR_active[1])
-    {
-        Modify_SPI_Reg_bits(GFIR2_L_TXTSP, gfir_l[1]);
-        Modify_SPI_Reg_bits(GFIR2_N_TXTSP, gfir_n[1]);
-    }
-    if(GFIR_active[2])
-    {
-        Modify_SPI_Reg_bits(GFIR3_L_TXTSP, gfir_l[2]);
-        Modify_SPI_Reg_bits(GFIR3_N_TXTSP, gfir_n[2]);
-    }
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    if(!GFIR_active[0] && !GFIR_active[1] && !GFIR_active[2])
-        Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    else
-    {
-        Modify_SPI_Reg_bits(GFIR1_BYP_TXTSP, gfir_byps[0]);
-        Modify_SPI_Reg_bits(GFIR2_BYP_TXTSP, gfir_byps[1]);
-        Modify_SPI_Reg_bits(GFIR3_BYP_TXTSP, gfir_byps[2]);
-    }
     if(useExtLoopback)
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
+    else
+        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0);
+    Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
+    Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
+    Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
+    Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
+    Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
+    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     SetNCOFrequency(Tx, 0, bandwidth_Hz / calibUserBwDivider);
 
@@ -427,10 +363,16 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     {
         Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-        Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x1);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier - 1);
+
+        if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
+        {
+            int clkh_ov = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier/pow2(clkh_ov) - 1);
+        }
+        else
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier - 1);
 
         SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
     }
@@ -1365,15 +1307,15 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
         while(GetRSSI() < target_dBFS && g_tia <= 3)
         {
             g_tia += 1;
-            Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), g_tia);
+            Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia);
         }
         if(g_tia > 3)
             g_tia = 3;
-        Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), g_tia);
+        Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia);
         if(GetRSSI() >= target_dBFS)
             goto rxGainFound;
 
-        while(GetRSSI() < target_dBFS && g_pga < 6)
+        while(GetRSSI() < target_dBFS && g_pga < 18)
         {
             g_pga += 2;
             Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
