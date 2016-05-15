@@ -42,30 +42,6 @@ endif()
 ########################################################################
 ## lime suite library
 ########################################################################
-if(WIN32)
-add_subdirectory(sqlite-3.12)
-include_directories(sqlite-3.12)
-set (SQLITE3_LIBRARY sqlite3_static)
-else()
-find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
-find_library(SQLITE3_LIBRARY sqlite3)
-if(NOT SQLITE3_INCLUDE_DIR)
-    message(SEND_ERROR "Failed to find sqlite3.h, please install libsqlite3-dev")
-else()
-    include_directories(${SQLITE3_INCLUDE_DIR})
-endif()
-if(NOT SQLITE3_LIBRARY)
-    message(SEND_ERROR "Failed to find the sqlite3 library, please install libsqlite3-dev")
-else()
-    list(APPEND LIME_SUITE_LIBRARIES ${SQLITE3_LIBRARY})
-endif()
-
-message(STATUS "SQLITE3")
-
-message(STATUS ${SQLITE3_INCLUDE_DIR})
-message(STATUS ${SQLITE3_LIBRARY})
-endif()
-
 set(LIME_SUITE_SOURCES
     ErrorReporting.cpp
     ADF4002/ADF4002.cpp
@@ -111,9 +87,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+#sqlite depedency
+list(APPEND LIME_SUITE_INCLUDES ${SQLITE3_INCLUDE_DIRS})
+list(APPEND LIME_SUITE_LIBRARIES ${SQLITE3_LIBRARIES})
+
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
+cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "SQLITE3_FOUND" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})

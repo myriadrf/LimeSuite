@@ -43,6 +43,26 @@ if (APPLE)
 endif(APPLE)
 
 ########################################################################
+## sqlite dependency
+########################################################################
+if(WIN32)
+    set(SQLITE3_SRC_DIR external/sqlite-3.12)
+    add_subdirectory(${SQLITE3_SRC_DIR})
+    set(SQLITE3_FOUND TRUE)
+    set(SQLITE3_INCLUDE_DIRS ${SQLITE3_SRC_DIR})
+    set(SQLITE3_LIBRARIES sqlite3_static)
+else()
+    find_package(SQLite3)
+    if (NOT SQLITE3_FOUND)
+        message(SEND_ERROR "Failed to find sqlite3 devel, please install libsqlite3-dev")
+    endif()
+
+    message(STATUS "SQLITE3: ${SQLITE3_FOUND}")
+    message(STATUS "SQLITE3_INCLUDE_DIRS: ${SQLITE3_INCLUDE_DIRS}")
+    message(STATUS "SQLITE3_LIBRARIES: ${SQLITE3_LIBRARIES}")
+endif()
+
+########################################################################
 ## lime suite build
 ########################################################################
 add_subdirectory(src)
