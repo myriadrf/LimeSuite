@@ -3,7 +3,7 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
-project("lms7suite")
+project("LimeSuite")
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -57,8 +57,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/ConnectionRegistry.h
     lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M.h
-    lms7002m/CalibrationCache.h
-    lms7002m/cpp-feather-ini-parser/INI.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
     protocols/ADCUnits.h
