@@ -1,48 +1,4 @@
 ########################################################################
-## Create lime-suite project
-########################################################################
-cmake_minimum_required(VERSION 3.1.3)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
-project("LimeSuite")
-
-#include modules for finding CyAPI
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-
-cmake_policy(SET CMP0015 OLD)
-if(${CMAKE_MAJOR_VERSION} GREATER 2)
-    cmake_policy(SET CMP0043 NEW)
-endif()
-
-#version numbers built into shared library
-#todo version number, example could be date, standard major.minor.patch
-#todo abi compatibility, could be version, date, incrementing number
-#maybe parse version.h for info?
-set(LIME_SUITE_VERSION 0.0.0)
-set(LIME_SUITE_ABI 1)
-
-########################################################################
-## compiler flags
-########################################################################
-
-#gcc c++11 enable flags
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-endif()
-
-#visual studio compiler flags
-if (MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
-    set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
-endif(MSVC)
-
-#enable c++11 extensions for OSX
-if (APPLE)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
-   add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
-endif(APPLE)
-
-########################################################################
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
@@ -86,28 +42,6 @@ endif()
 ########################################################################
 ## lime suite library
 ########################################################################
-if(WIN32)
-add_subdirectory(sqlite-3.12)
-include_directories(sqlite-3.12)
-set (SQLITE3_LIBRARY sqlite3_static)
-else()
-find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
-find_library(SQLITE3_LIBRARY sqlite3)
-if(NOT SQLITE3_INCLUDE_DIR)
-    message(SEND_ERROR "Failed to find sqlite3.h, please install libsqlite3-dev")
-else()
-    include_directories(${SQLITE3_INCLUDE_DIR})
-endif()
-if(NOT SQLITE3_LIBRARY)
-    message(SEND_ERROR "Failed to find the sqlite3 library, please install libsqlite3-dev")
-endif()
-
-message(STATUS "SQLITE3")
-
-message(STATUS ${SQLITE3_INCLUDE_DIR})
-message(STATUS ${SQLITE3_LIBRARY})
-endif()
-
 set(LIME_SUITE_SOURCES
     ErrorReporting.cpp
     ADF4002/ADF4002.cpp
@@ -131,40 +65,50 @@ set(LIME_SUITE_SOURCES
     FPGA_common/FPGA_common.cpp
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(ADF4002)
-include_directories(lms7002m_mcu)
-include_directories(ConnectionRegistry)
-include_directories(lms7002m_novena)
-include_directories(lms7002m)
-include_directories(lms7002m/cpp-feather-ini-parser)
-include_directories(HPM7)
-include_directories(protocols)
-include_directories(LTEpackets)
-include_directories(Si5351C)
-include_directories(LMS_StreamBoard)
-include_directories(kissFFT)
-include_directories(FPGA_common)
+set(LIME_SUITE_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    protocols
+    ConnectionRegistry
+    lms7002m_mcu
+    ADF4002
+    Si5351C
+    lms7002m
+    LTEpackets
+    LMS_StreamBoard
+    FPGA_common
+    lms7002m_mcu
+    lms7002m_novena
+    ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
+    HPM7
+    kissFFT
+)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    list(APPEND LIME_SUITE_LIBRARIES -pthread)
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
+#sqlite depedency
+list(APPEND LIME_SUITE_INCLUDES ${SQLITE3_INCLUDE_DIRS})
+list(APPEND LIME_SUITE_LIBRARIES ${SQLITE3_LIBRARIES})
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
+cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "SQLITE3_FOUND" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})
-    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
+    target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
     set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
+    target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
 
     install(TARGETS LimeSuite
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
-
-    set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
 ########################################################################
@@ -273,7 +217,7 @@ if (ENABLE_LMS7_GUI)
     add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
@@ -296,45 +240,15 @@ endif()
 # Lime Util -- command line utility for quick testing connections
 ########################################################################
 add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil ${LIME_SUITE_LIBS})
+target_link_libraries(LimeUtil LimeSuite)
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
     add_executable(boardEmulator boardEmulator.cpp)
+    target_link_libraries(boardEmulator LimeSuite)
 endif()
-
-########################################################################
-## SoapySDR bindings for LMS7 RFIC driver
-########################################################################
-add_subdirectory(SoapyLMS7)
-
-########################################################################
-## udev rules for linux usb
-########################################################################
-if (DEFINED UDEV_RULES_PATH)
-    install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/../udev-rules/64-limesuite.rules
-        DESTINATION ${UDEV_RULES_PATH})
-endif()
-
-#########################################################################
-# summary
-#########################################################################
-include(FeatureSummary)
-message(STATUS "")
-message(STATUS "######################################################")
-message(STATUS "## ${PROJECT_NAME} enabled features")
-message(STATUS "######################################################")
-feature_summary(WHAT ENABLED_FEATURES)
-message(STATUS "######################################################")
-message(STATUS "## ${PROJECT_NAME} disabled features")
-message(STATUS "######################################################")
-feature_summary(WHAT DISABLED_FEATURES)
-message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Lime Suite Version: ${LIME_SUITE_VERSION}")
-message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")
 
 #########################################################################
 # tests
@@ -342,18 +256,4 @@ message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
     add_subdirectory(tests)
-endif()
-
-########################################################################
-# uninstall target
-########################################################################
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
-
-#only add uninstall target if this is the top project
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()

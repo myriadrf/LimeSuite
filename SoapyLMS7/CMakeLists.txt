@@ -32,7 +32,7 @@ SOAPY_SDR_MODULE_UTIL(
         Settings.cpp
         Streaming.cpp
     LIBRARIES
-        ${LIME_SUITE_LIBS}
+        LimeSuite
 )
 
 ########################################################################
