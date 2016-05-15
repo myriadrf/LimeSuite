@@ -78,7 +78,7 @@ set(LIME_SUITE_INCLUDES
     FPGA_common
     lms7002m_mcu
     lms7002m_novena
-    lms7002m/cpp-feather-ini-parser
+    ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
     kissFFT
 )

@@ -46,10 +46,9 @@ endif(APPLE)
 ## sqlite dependency
 ########################################################################
 if(WIN32)
-    set(SQLITE3_SRC_DIR external/sqlite-3.12)
-    add_subdirectory(${SQLITE3_SRC_DIR})
+    add_subdirectory(external/sqlite-3.12)
     set(SQLITE3_FOUND TRUE)
-    set(SQLITE3_INCLUDE_DIRS ${SQLITE3_SRC_DIR})
+    set(SQLITE3_INCLUDE_DIRS)
     set(SQLITE3_LIBRARIES sqlite3_static)
 else()
     find_package(SQLite3)
