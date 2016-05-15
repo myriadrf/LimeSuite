@@ -12,7 +12,7 @@ export DH_OPTIONS
 
 
 %:
-	dh $@ --buildsystem=cmake --sourcedirectory=src
+	dh $@ --buildsystem=cmake
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
