@@ -56,6 +56,8 @@ else()
 endif()
 if(NOT SQLITE3_LIBRARY)
     message(SEND_ERROR "Failed to find the sqlite3 library, please install libsqlite3-dev")
+else()
+    list(APPEND LIME_SUITE_LIBRARIES ${SQLITE3_LIBRARY})
 endif()
 
 message(STATUS "SQLITE3")
@@ -87,20 +89,27 @@ set(LIME_SUITE_SOURCES
     FPGA_common/FPGA_common.cpp
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(ADF4002)
-include_directories(lms7002m_mcu)
-include_directories(ConnectionRegistry)
-include_directories(lms7002m_novena)
-include_directories(lms7002m)
-include_directories(lms7002m/cpp-feather-ini-parser)
-include_directories(HPM7)
-include_directories(protocols)
-include_directories(LTEpackets)
-include_directories(Si5351C)
-include_directories(LMS_StreamBoard)
-include_directories(kissFFT)
-include_directories(FPGA_common)
+set(LIME_SUITE_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    protocols
+    ConnectionRegistry
+    lms7002m_mcu
+    ADF4002
+    Si5351C
+    lms7002m
+    LTEpackets
+    LMS_StreamBoard
+    FPGA_common
+    lms7002m_mcu
+    lms7002m_novena
+    lms7002m/cpp-feather-ini-parser
+    HPM7
+    kissFFT
+)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    list(APPEND LIME_SUITE_LIBRARIES -pthread)
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 include(FeatureSummary)
 include(CMakeDependentOption)
@@ -108,19 +117,18 @@ cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})
-    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
+    target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
     set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
+    target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
 
     install(TARGETS LimeSuite
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
-
-    set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
 ########################################################################
@@ -229,7 +237,7 @@ if (ENABLE_LMS7_GUI)
     add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
         set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
@@ -252,19 +260,15 @@ endif()
 # Lime Util -- command line utility for quick testing connections
 ########################################################################
 add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil ${LIME_SUITE_LIBS})
+target_link_libraries(LimeUtil LimeSuite)
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
     add_executable(boardEmulator boardEmulator.cpp)
+    target_link_libraries(boardEmulator LimeSuite)
 endif()
-
-########################################################################
-## SoapySDR bindings for LMS7 RFIC driver
-########################################################################
-add_subdirectory(SoapyLMS7)
 
 #########################################################################
 # tests
