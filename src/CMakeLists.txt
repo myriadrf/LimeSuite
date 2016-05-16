@@ -2,6 +2,7 @@
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    VersionInfo.h
     ErrorReporting.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
@@ -82,6 +83,10 @@ set(LIME_SUITE_INCLUDES
     HPM7
     kissFFT
 )
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
+list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)
