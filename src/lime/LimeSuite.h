@@ -309,45 +309,6 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device,bool dir_t
                                                  lms_range_t *range);
 
 /**
- * Configure analog front-end for the specified bandwidth.
- *
- * @param   device      Device handle previously obtained by LMS_Open().
- * @param   dir_tx      Select RX or TX
- * @param   chan        Channel index
- * @param   bandwidth   RF bandwidth in Hz 
- *
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_SetBW(lms_device_t *device, bool dir_tx, size_t chan,
-                                   float_type bandwidth);
-
-/**
- * Get the current bandwidth configuration used for analog front-end.
- *
- * @param       device      Device handle previously obtained by LMS_Open().
- * @param       dir_tx      Select RX or TX
- * @param       chan        channel index
- * @param[out]  bandwidth   Currently configured bandwidth in Hz 
- *
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetBW(lms_device_t *device, bool dir_tx, size_t chan,
-                                   float_type *bandwidth);
-
-/**
- * Get the range of supported analog front-end bandwidth values 
- *
- * @param       device      Device handle previously obtained by LMS_Open().
- * @param       dir_tx      Select RX or TX
- * @param       chan        channel index
- * @param[out]  range       supported bandwidth range 
- *
- * @return      0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device_t *device, bool dir_tx,
-                                        lms_range_t *range);
-
-/**
  * Set the combined gain value
  *
  * This function computes and sets the optimal gain values of various amplifiers
@@ -999,31 +960,6 @@ API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * dev, size_t vco_id,
 API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * dev, size_t vco_id,
                                          lms_range_t range);
 
-typedef enum
-{
-    LMS_RX_LPF_TIA,
-    LMS_RX_LPF_LOWBAND,
-    LMS_RX_LPF_HIGHBAND,   
-    LMS_TX_LPF_REALPOLE,
-    LMS_TX_LPF_LADDER,
-    LMS_TX_LPF_HIGHBAND,
-    LMS_TX_LPF_LOWCHAIN     /**<tunes TX REALPOLE and TX LADDER filters,
-                             * requires 2 bandwidth values to be passed*/
-}lms_filter_t;
-
-/**
- * Tune filter for the specified bandwidth. 
- *
- * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   chan    channel index
- * @param   filt    filter
- * @param   bw      filter bandwidth
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t *dev, size_t chan, lms_filter_t filt,
-                                         const float_type *bw);
-
 /**
  *  
  *
@@ -1033,7 +969,6 @@ API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t *dev, size_t chan, lms_filt
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int));
-
 
 
 /**

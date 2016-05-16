@@ -38,7 +38,9 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
     {
+#ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
+#endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
         status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
@@ -62,7 +64,9 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
     {
+#ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
+#endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
@@ -88,13 +92,17 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
     {
+#ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
+#endif        
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     {
+#ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
+#endif
         LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
     }
     if (status != 0)

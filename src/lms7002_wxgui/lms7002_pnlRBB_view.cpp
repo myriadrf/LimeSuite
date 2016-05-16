@@ -178,46 +178,13 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
     double input1;
     double input2;
     txtLowBW_MHz->GetValue().ToDouble(&input1);
-    txtHighBW_MHz->GetValue().ToDouble(&input2);
+
+    int status;
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status;
-    float_type freq;
-    switch (rgrFilterSelection->GetSelection())
-    {
-    case 0:
-        freq = input1*1e6;
-        status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_LOWBAND,&freq);
-        break;
-    case 1:
-        freq = input1*1e6;
-        status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_HIGHBAND,&freq);
-        break;
-    }
+    LMS_SetLPFBW(lmsControl,LMS_CH_RX,ch-1,input1*1e6);
     if (status != 0)
-    {
         wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
-    }
-    else switch (rgrFilterSelection->GetSelection())
-    {
-    case 0:
-        {
-        wxMessageBox(_("Rx Low band calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Rx Low band calibrated"));
-        wxPostEvent(this, evt);
-        break;
-        }
-    case 1:
-        {
-        wxMessageBox(_("Rx High band calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Rx High band calibrated"));
-        wxPostEvent(this, evt);
-        break;
-        }
-    }
+    LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }

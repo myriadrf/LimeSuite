@@ -409,60 +409,6 @@ API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id, l
     return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_TuneFilter(lms_device_t * device, size_t chan, lms_filter_t filt, const float_type *bw)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    
-    if (chan >= lms->GetNumChannels())
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-    
-    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
-        return -1;
-    
-    int ret = 0;
-    
-    switch (filt)
-    {
-        case LMS_RX_LPF_TIA:
-                ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_TIA, *bw);
-                break;
-        case LMS_RX_LPF_LOWBAND: 
-                ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_LPF_LOWBAND, *bw);
-                break;
-        case LMS_RX_LPF_HIGHBAND:
-                ret = lms->TuneRxFilter(lime::LMS7002M::RxFilter::RX_LPF_HIGHBAND, *bw);
-                break;
-        case LMS_TX_LPF_HIGHBAND:
-                ret = lms->TuneTxFilter(lime::LMS7002M::TX_HIGHBAND,*bw);
-                break;
-        case LMS_TX_LPF_REALPOLE:
-                ret = lms->TuneTxFilter(lime::LMS7002M::TX_REALPOLE,*bw);
-                break;
-        case LMS_TX_LPF_LADDER:
-                ret = lms->TuneTxFilter(lime::LMS7002M::TX_LADDER,*bw);
-                break;
-        case LMS_TX_LPF_LOWCHAIN:
-                ret = lms->TuneTxFilterLowBandChain(bw[0],bw[1]);
-                break;
-        default: 
-                lime::ReportError(EINVAL, "Invalid filter parameter");
-                return -1;
-        
-    }
-    if (ret == 0)
-        return lms->DownloadAll();
-    
-    return ret;
-}
-
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int))
 {
     if (dev == nullptr)
@@ -900,65 +846,6 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
     
     return LMS_SUCCESS;    
 }
-
-
-API_EXPORT int CALL_CONV LMS_SetBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    
-    if (chan >= lms->GetNumChannels(dir_tx))
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-    
-    return lms->SetBandwidth(dir_tx,chan,bandwidth);
-}
-
-
-API_EXPORT int CALL_CONV LMS_GetBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    
-    if (chan >= lms->GetNumChannels(dir_tx))
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-    
-    *bandwidth = lms->GetBandwidth(dir_tx,chan);
-    
-    return LMS_SUCCESS;  
-}
-
-
-API_EXPORT int CALL_CONV LMS_GetBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    
-    *range = lms->GetBandwidthRange(dir_tx);
-    
-    return LMS_SUCCESS;  
-}
-
 
 API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
 {

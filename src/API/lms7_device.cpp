@@ -43,52 +43,21 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
 
 int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
 {
-    if (ch == 0)
-    {
-        if (Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
-            return -1;
-    }
-    else
-    {
-        if (Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
-            return -1;
-    }
+
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch-1,true)!=0)
+        return -1;
     
     if (enabled)
     {
+        if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0,true)!=0)
+            return -1;     
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),0,true);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),0,true);
+        
         if (bandwidth > 0)
         {
-            if (TuneRxFilter(RX_TIA,bandwidth)!=0)
+            if (TuneRxFilter(bandwidth)!=0)
                 return -1;
-        }
-        
-        if (bandwidth < lime::LMS7002M::gRxLPF_low_higher_limit)
-        {
-            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0,true)!=0)
-                   return -1; 
-            Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true);
-            Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),0,true);
-                    
-            
-            if (bandwidth > 0)
-            {
-                if (TuneRxFilter(RX_LPF_LOWBAND, bandwidth)!=0)
-                    return -1;
-            }       
-        }
-        else
-        {
-            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),1,true)!=0)
-                return -1;
-            Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),0,true);
-            Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),1,true);
-                
-            
-            if (bandwidth > 0)
-            {
-                if (TuneRxFilter(lime::LMS7002M::RX_LPF_HIGHBAND, bandwidth*1.3)!=0)
-                    return -1;
-            }
         }
     }
     else
@@ -251,7 +220,6 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
 
 int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
 {
-    bandwidth /= 1e6;
     if (ch == 1)
     {
         if (Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
@@ -264,40 +232,15 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     }
     if (enabled)
     {
-        /*if (bandwidth < gLadder_higher_limit)
-        {
-            //low band chain
-            if (bandwidth >= gRealpole_higher_limit)
-            {
-                if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),0,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(BYPLADDER_TBB),0,true)!=0)
-                || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth > gRealpole_higher_limit ? gRealpole_higher_limit : bandwidth)!=0)
-                || (TuneTxFilter(lime::LMS7002M::TX_LADDER,bandwidth )!=0))
-                        return -1; 
-            }
-            else
-            {
-                if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),1,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),1,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true)!=0)
-                || (Modify_SPI_Reg_bits(LMS7param(BYPLADDER_TBB),1,true)!=0)
-                || (TuneTxFilter(lime::LMS7002M::TX_REALPOLE,bandwidth)!=0))
-                        return -1; 
-            }
-        }
-        else*/
-        {
-            // high band
-            if (bandwidth < gHighband_lower_limit)
-                bandwidth = gHighband_lower_limit;
-            if ((Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),1,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),1,true)!=0)
-            || (TuneTxFilter(lime::LMS7002M::TX_HIGHBAND,bandwidth)!=0))
+           
+            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
+                return -1;
+            Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),0,true);
+            Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true);
+            
+            if (bandwidth > 0)
+            if (TuneTxFilter(bandwidth)!=0)
                     return -1; 
-        }
     }
     else
     {
@@ -724,43 +667,6 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
 
   return ret; 
 }
-
-int LMS7_Device::SetBandwidth(bool tx, size_t chan, float_type bandwidth)
-{
-    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
-        return -1;    
-    if (tx)
-    {
-        tx_channels[chan].bandwidth= bandwidth;
-    }
-    else
-    {
-        rx_channels[chan].bandwidth = bandwidth;
-        if (TuneRxFilter(RX_TIA,bandwidth/1e6)!=0)
-            return -1;
-    }
-    return 0;
-}
-
-float_type LMS7_Device::GetBandwidth(bool tx,size_t chan)
-{
-    if (tx)
-        return tx_channels[chan].bandwidth;
-    else
-        return rx_channels[chan].bandwidth;
-
-}
-
-lms_range_t LMS7_Device::GetBandwidthRange(bool tx) const
-{
-    lms_range_t ret; 
-    ret.max = 320000000;
-    ret.min = 1000000;
-    ret.step = 1;
-    return ret;  
-}
-
-
 
 int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type bandwidth)
 {

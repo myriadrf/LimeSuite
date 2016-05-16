@@ -3,7 +3,7 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
-project("lms7suite")
+project("LimeSuite")
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -51,6 +51,18 @@ endif(APPLE)
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
+    ErrorReporting.h
+    LimeSuiteConfig.h
+    ADF4002/ADF4002.h
+    version.h
+    lms7002m_mcu/MCU_BD.h
+    lms7002m_mcu/MCU_File.h
+    ConnectionRegistry/IConnection.h
+    ConnectionRegistry/ConnectionHandle.h
+    ConnectionRegistry/ConnectionRegistry.h
+    lms7002m_novena/StreamerNovena.h
+    lms7002m/LMS7002M.h
+    lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h

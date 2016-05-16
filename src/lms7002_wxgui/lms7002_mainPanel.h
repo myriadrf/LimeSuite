@@ -30,6 +30,7 @@ class lms7002_mainPanel : public mainPanel
         void OnSwitchToChannelB(wxCommandEvent& event);
 		void Onnotebook_modulesPageChanged( wxNotebookEvent& event );
         void OnResetChip(wxCommandEvent& event);
+        void OnReadTemperature(wxCommandEvent& event);
 	public:
 		/** Constructor */
 		lms7002_mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );

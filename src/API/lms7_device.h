@@ -17,7 +17,6 @@ typedef struct
 {
     bool enabled;
     bool half_duplex;
-    float_type bandwidth;
     float_type lpf_bw;
     float_type nco_pho;
     
@@ -47,9 +46,6 @@ public:
     virtual lms_range_t GetFrequencyRange(bool tx) const;
     virtual lms_range_t GetRxPathBand(size_t path, size_t chan) const;
     virtual lms_range_t GetTxPathBand(size_t path, size_t chan) const;
-    virtual int SetBandwidth(bool tx,size_t chan, float_type bandwidth);
-    virtual float_type GetBandwidth(bool tx,size_t chan);
-    virtual lms_range_t GetBandwidthRange(bool tx) const;
     virtual int SetLPF(bool tx, size_t chan, bool f, bool en, float_type bandwidth=-1);
     virtual float_type GetLPFBW(bool tx,size_t chan, bool filt);
     virtual lms_range_t GetLPFRange(bool tx,size_t chan,bool f);  

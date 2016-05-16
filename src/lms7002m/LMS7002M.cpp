@@ -19,6 +19,7 @@
 #include <fstream>
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
+#include "CalibrationCache.h"
 #include <math.h>
 #include <assert.h>
 #include <chrono>
@@ -91,7 +92,8 @@ LMS7002M::LMS7002M() :
     mdevIndex(0),
     mSelfCalDepth(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
-    useCache(0)
+    useCache(0),
+    mValueCache(new CalibrationCache())
 {
     mCalibrationByMCU = true;
 
@@ -1291,7 +1293,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     int csw_query;
     if(useCache)
     {
-        foundInCache = (valueCache.GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
+        foundInCache = (mValueCache->GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
     }
     if(foundInCache)
     {
@@ -1331,7 +1333,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     }
     if(useCache && !foundInCache)
     {
-        valueCache.InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
+        mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
@@ -2233,4 +2235,57 @@ MCU_BD* LMS7002M::GetMCUControls() const
 void LMS7002M::EnableCalibrationByMCU(bool enabled)
 {
     mCalibrationByMCU = enabled;
+}
+
+float_type LMS7002M::GetTemperature()
+{
+    auto ch = GetActiveChannel();
+    auto regMap = BackupRegisterMap();
+    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+
+    //RFE
+    Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
+    //RBB
+    Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), 0);
+    //AFE
+    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
+    Modify_SPI_Reg_bits(LMS7param(MUX_AFE_1), 2);
+    Modify_SPI_Reg_bits(LMS7param(EN_G_AFE), 1);
+    //BIAS
+    Modify_SPI_Reg_bits(LMS7param(MUX_BIAS_OUT), 2);
+    //RxTSP
+    SetDefaults(RxTSP);
+    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 7);
+    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
+
+    //READ ADCQ value
+    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 1);
+    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
+    int negativeCount = 0;
+    int signMeasureCount = 19;
+    int sign = -1;
+    for(int i = 0; i < signMeasureCount; ++i)
+    {
+        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
+        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
+        int16_t adcq = SPI_read(0x040F, true);
+        if(adcq & 0x200)
+            ++negativeCount;
+    }
+    if(negativeCount > signMeasureCount / 2)
+        sign = 1;
+
+    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
+    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
+    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
+    uint32_t rssi = (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
+    double temperature = (rssi / 16.0) * 0.443892 * sign + 40.5;
+    RestoreRegisterMap(regMap);
+    return temperature;
 }

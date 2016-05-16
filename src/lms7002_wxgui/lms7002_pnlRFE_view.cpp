@@ -237,26 +237,3 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
     }
     LMS_WriteParam(lmsControl,parameter,value);
 }
-
-void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
-{
-    double input1;
-    txtTIA_BW_MHz->GetValue().ToDouble(&input1);
-    uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    float_type freq = input1*1e6;
-    int status = LMS_TuneFilter(lmsControl,ch-1,LMS_RX_LPF_TIA,&freq);
-    if (status != 0)
-    {
-        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
-    }
-    else
-    {
-        wxMessageBox(_("Rx TIA calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Rx TIA calibrated"));
-        wxPostEvent(this, evt);
-    }
-    UpdateGUI();
-}
