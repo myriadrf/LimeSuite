@@ -25,6 +25,9 @@ public:
 
     ConnectionHandle(void);
 
+    //! Create from serialized string with key=value pairs
+    ConnectionHandle(const std::string &args);
+
     /*!
      * The name of the IConnection support module.
      * Example EVB7COM, EVB7STREAM, NOVENA7.

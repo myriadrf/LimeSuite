@@ -62,6 +62,7 @@ endif()
 
 #visual studio compiler flags
 if (MSVC)
+    include_directories(${PROJECT_SOURCE_DIR}/external/msvc)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
     set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
