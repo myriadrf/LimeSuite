@@ -125,7 +125,7 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     int status;
     if(rgrTxFilterType->GetSelection() == 0)
     {
-        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1);
+        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
     }
     else
     {
@@ -136,10 +136,13 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
         case 2: input1 = 15; break;
         case 3: input1 = 20; break;
         }
-        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1);
+        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
     }   
+    
     if (status != 0)
-        LMS_Synchronize(lmsControl,false);
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+    
+    LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }
 

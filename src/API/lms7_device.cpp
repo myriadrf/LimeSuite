@@ -239,8 +239,12 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
             Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true);
             
             if (bandwidth > 0)
-            if (TuneTxFilter(bandwidth)!=0)
-                    return -1; 
+            {
+                if (bandwidth < 6.5e6)
+                    bandwidth = 6.5e6;
+                if (TuneTxFilter(bandwidth)!=0)
+                        return -1; 
+            }
     }
     else
     {
@@ -1369,6 +1373,42 @@ int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode,lime::IConnect
         return -1;
     }
     int ret = ProgramFPGA(data,len,mode,callback);
+    delete [] data;
+    return ret;
+}
+
+int LMS7_Device::ProgramHPM7(const char* data, size_t len, int mode,lime::IConnection::ProgrammingCallback callback)
+{
+    if (mode > LMS_TARGET_BOOT)
+    {
+        lime::ReportError(ENOTSUP, "Unsupported target storage type");
+        return -1;
+    }
+    //device FPGA(2)
+    //mode to RAM(0), to FLASH (1)
+    return streamPort->ProgramWrite(data,len,mode,0,callback);
+}
+
+int LMS7_Device::ProgramHPM7(std::string fname, int mode,lime::IConnection::ProgrammingCallback callback)
+{
+    std::ifstream file(fname);
+    int len;
+    char* data;
+    if (file.is_open())
+    {
+        file.seekg (0, file.end);
+        len = file.tellg();
+        file.seekg (0, file.beg);
+        data = new char[len];
+        file.read(data,len);
+        file.close();
+    }
+    else
+    {
+        lime::ReportError(ENOENT, "Unable to open the specified file");
+        return -1;
+    }
+    int ret = ProgramHPM7(data,len,mode,callback);
     delete [] data;
     return ret;
 }

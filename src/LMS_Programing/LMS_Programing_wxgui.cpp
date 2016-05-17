@@ -234,6 +234,10 @@ void LMS_Programing_wxgui::DoProgramming()
 
        status = LMS_ProgramFPGA(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode,OnProgrammingCallback); 
     }
+    else if (device == 0)
+    {
+       status = LMS_ProgramHPM7(lmsControl, mProgramData.data(), mProgramData.size(), progMode,OnProgrammingCallback); 
+    }
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);

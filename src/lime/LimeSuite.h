@@ -1129,6 +1129,18 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev, uint8_t* buffer, size_t
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
 
 /**
+ * Low-level data transfer using LMS64C protocol
+ * 
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   cmd         command
+ * @param   data        in/out data
+ * @param   len         data length
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len);
+
+/**
  *  Enables or disable caching of calibration values
  * 
  * @param   dev         Device handle previously obtained by LMS_Open().
@@ -1137,6 +1149,19 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
+
+/**
+ * Read LMS7 chip internal temperature sensor
+ * 
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   ind         chip index
+ * @param   temp        temperature value
+ * 
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind,
+                                                float_type *temp);
+
 
 /** @} (End FN_LOW_LVL) */
 
@@ -1393,6 +1418,28 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmware(lms_device_t *device, const char *d
  */
 API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
            const char *file, lms_target_t target, lms_prog_callback_t callback);
+
+
+/**
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param data      Pointer to memory containing image
+ * @param size      Size of image in bytes.
+ * @param mode      programming mode
+ * @return          0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ProgramHPM7(lms_device_t *device, const char *data,
+                size_t size, unsigned mode, lms_prog_callback_t callback);
+
+/**
+ * 
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param file      File containing image
+ * @param mode      programming mode
+ * @return          0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ProgramHPM7File(lms_device_t *device,
+                const char *file, unsigned mode, lms_prog_callback_t callback);
 
 /**
  * Program LMS7 internal MCU.

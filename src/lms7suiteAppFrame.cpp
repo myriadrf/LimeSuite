@@ -422,7 +422,7 @@ void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
     else
     {
         hpm7 = new HPM7_wxgui(this, wxNewId(), _("HPM7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-    //    hpm7->Initialize(lmsControl);
+        hpm7->Initialize(lmsControl);
         hpm7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnHPM7Close), NULL, this);
         hpm7->Show();
     }

@@ -678,6 +678,33 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
      return lms->GetConnection()->GPIOWrite(buffer,len);
 }
 
+API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    
+    LMS7_Device* lms = (LMS7_Device*)dev; 
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::eCMD_LMS(cmd);
+    for (int i = 0; i < *len; ++i)
+        pkt.outBuffer.push_back(data[i]);
+    lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(lms->GetConnection());
+    if (port->TransferPacket(pkt) != 0)
+    {
+        return -1;
+    }
+    
+    for (int i = 0; i < pkt.inBuffer.size(); ++i)
+        data[i] = pkt.inBuffer[i];
+    *len = pkt.inBuffer.size();
+            
+    return 0;
+}
+
+
 API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
 {
     if (dev == nullptr)
@@ -687,6 +714,18 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
     }
     LMS7_Device* lms = (LMS7_Device*)dev; 
     lms->EnableValuesCache(enable);
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, float_type *temp)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev; 
+    *temp = lms->GetTemperature();
     return 0;
 }
 
@@ -1578,6 +1617,32 @@ API_EXPORT int CALL_CONV LMS_ProgramFirmwareFile(lms_device_t *device,
     LMS7_Device* lms = (LMS7_Device*)device; 
     
     return lms->ProgramFW(file,target,callback);   
+}
+
+
+API_EXPORT int CALL_CONV LMS_ProgramHPM7(lms_device_t *device, const char *data, size_t size, unsigned mode, lms_prog_callback_t callback)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    } 
+    
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    return lms->ProgramHPM7(data,size,mode,callback);
+}
+
+
+API_EXPORT int CALL_CONV LMS_ProgramHPM7File(lms_device_t *device, const char *file, unsigned mode, lms_prog_callback_t callback)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    } 
+    
+    LMS7_Device* lms = (LMS7_Device*)device;
+    return lms->ProgramHPM7(file,mode,callback); 
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,

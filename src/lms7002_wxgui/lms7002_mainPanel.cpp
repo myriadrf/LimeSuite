@@ -290,6 +290,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
     
-   /* double t = lmsControl->GetTemperature();
-    txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));*/
+    double t;
+    LMS_GetChipTemperature(lmsControl,0,&t);
+    txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));
 }
