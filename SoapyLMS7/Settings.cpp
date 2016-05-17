@@ -789,17 +789,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     if (direction == SOAPY_SDR_RX)
     {
-        const bool bypass = bw > 60.0e6;
-
-        //run the calibration for this bandwidth setting
-        //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateRx(...)");
-        auto status = 0;//rfic->CalibrateRx(bw);
-        if (!bypass && status == 0)
-        {
-            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneRxFilter()");
-            status = rfic->TuneRxFilter(bw);
-        }
-        if (status != 0)
+        if (rfic->TuneRxFilterWithCaching(bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }
@@ -807,17 +797,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     if (direction == SOAPY_SDR_TX)
     {
-        const bool bypass = bw > 54.0e6;
-
-        //run the calibration for this bandwidth setting
-        //SoapySDR::log(SOAPY_SDR_DEBUG, "CalibrateTx(...)");
-        auto status = 0;//rfic->CalibrateTx(bw);
-        if (!bypass && status == 0)
-        {
-            SoapySDR::log(SOAPY_SDR_DEBUG, "TuneTxFilter(TX_REALPOLE)");
-            status = rfic->TuneTxFilter(bw);
-        }
-        if (status != 0)
+        if (rfic->TuneTxFilterWithCaching(bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
         }

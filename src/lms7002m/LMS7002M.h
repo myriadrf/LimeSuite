@@ -148,6 +148,8 @@ public:
 	int TuneTxFilterFixed(const float_type fixedBandwidth);
 	int TuneTxFilter(const float_type bandwidth);
 	int TuneRxFilter(const float_type rx_lpf_freq_RF);
+	int TuneTxFilterWithCaching(const float_type bandwidth);
+	int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
     ///@}
 
     ///@name High level gain configuration
