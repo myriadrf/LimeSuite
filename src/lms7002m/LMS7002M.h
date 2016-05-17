@@ -9,8 +9,8 @@
 
 #include "LMS7002M_parameters.h"
 #include <cstdint>
-
 #include <sstream>
+#include <stdarg.h>
 
 namespace lime{
 class IConnection;
@@ -431,6 +431,16 @@ protected:
         LOG_DATA
     };
     virtual void Log(const char* text, LogType type);
+
+    void Log(LogType type, const char *format, ...)
+    {
+        va_list argList;
+        va_start(argList, format);
+        Log(type, format, argList);
+        va_end(argList);
+    }
+
+    void Log(LogType type, const char *format, va_list argList);
 
     ///port used for communicating with LMS7002M
     IConnection* controlPort;

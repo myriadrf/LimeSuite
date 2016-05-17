@@ -990,8 +990,9 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
 
     if(filterCoef < 0)
         filterCoef *= -1;
-    return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
-Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
+    Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
+        "Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
+    return 0;
 }
 
 int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_LAD, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index)
@@ -1182,8 +1183,9 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
         Modify_SPI_Reg_bits(RCAL_LPFS5_TBB, rcal_lpfs5_tbb);
         Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, rcal_lpflad_tbb);
-        return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
-Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lpf_freq/1e6 * 2);
+        Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
+            "Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lpf_freq/1e6 * 2);
+        return 0;
     }
     else
     {
@@ -1192,6 +1194,7 @@ Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lp
         Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
         Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
         Modify_SPI_Reg_bits(RCAL_LPFH_TBB, rcal_lpfh_tbb);
-        return ReportError("Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_freq/1e6);
+        Log(LOG_INFO, "Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_freq/1e6);
+        return 0;
     }
 }
