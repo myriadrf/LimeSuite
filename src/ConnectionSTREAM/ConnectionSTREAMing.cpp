@@ -519,7 +519,8 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             stream->nextTimestamp,
             timeout_ms,
             statusFlags);
-        stream->nextTimestamp = 0;
+        if (actualEob) stream->nextTimestamp = 0;
+        else stream->nextTimestamp += sampsPushed;
     }
 
     return samplesCount;
