@@ -15,7 +15,7 @@ Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git
 Vcs-Browser: https://github.com/myriadrf/LimeSuite.git
 
-Package: liblimesuite1
+Package: liblimesuite16.5-1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -29,7 +29,7 @@ Package: liblimesuite-dev
 Section: libdevel
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${misc:Depends}
 Description: Lime Suite - development files
  Lime Suite application software.
@@ -38,7 +38,7 @@ Package: lms7suite
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends}
 Description: Lime Suite - GUI application
@@ -48,7 +48,7 @@ Package: soapysdr-lms7
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends}
 Description: Lime Suite - SoapySDR bindings

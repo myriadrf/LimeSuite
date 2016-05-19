@@ -1,5 +1,5 @@
-limesuite (0.0.0) unstable; urgency=low
+limesuite (16.5.12.816) unstable; urgency=low
 
-  * TODO
+  * debian packaging work for lime suite
 
- -- Lime Microsystems <info@limemicro.com>  Sat, 02 Apr 2016 08:45:19 -0700
+ -- Lime Microsystems <info@limemicro.com>  Wed, 18 May 2016 18:18:06 -0700
