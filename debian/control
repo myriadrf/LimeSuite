@@ -34,14 +34,14 @@ Depends:
 Description: Lime Suite - development files
  Lime Suite application software.
 
-Package: lms7suite
+Package: limesuite
 Section: comm
 Architecture: any
 Depends:
     liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends}
-Description: Lime Suite - GUI application
+Description: Lime Suite - Library applications
  Lime Suite application software.
 
 Package: soapysdr-lms7
