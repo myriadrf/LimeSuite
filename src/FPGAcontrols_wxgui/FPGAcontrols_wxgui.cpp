@@ -3,7 +3,6 @@
 @author Lime Microsystems
 @brief 	panel for uploading WFM files to Stream board
 */
-#include "FPGAcontrols_wxgui.h"
 
 #include <wx/artprov.h>
 #include <wx/sizer.h>
@@ -20,6 +19,7 @@
 #include <wx/msgdlg.h>
 #include "wx/checkbox.h"
 
+#include "FPGAcontrols_wxgui.h"
 #include <vector>
 #include <fstream>
 #include <wx/ffile.h>
@@ -325,8 +325,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 		wxMessageBox(_("Failed to upload WFM file"), _("Error"));
 		return -3;
 	}
-	else
-		return 0;*/
+	else*/
+	return 0;
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)

@@ -135,7 +135,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
         break;
     }
-    mStreamRunning.store(true);
+    
     btnStartStop->SetLabel(_("STOP"));
     mGUIupdater->Start(50);
 }
@@ -143,11 +143,14 @@ void fftviewer_frFFTviewer::StartStreaming()
 void fftviewer_frFFTviewer::StopStreaming()
 {
     txtNyquistFreqMHz->Enable();
-    //mGUIupdater->Stop();   
+    mGUIupdater->Stop();   
     if (mStreamRunning.load() == false)
         return;
     stopProcessing.store(true);
     threadProcessing.join();
+	btnStartStop->SetLabel(_("START"));
+	cmbStreamType->Enable();
+	spinFFTsize->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
@@ -157,6 +160,8 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     float RxRate = 0;
     float TxRate = 0;
 
+	if (mStreamRunning.load() == false)
+		return;
 	auto stats = LMS_GetStreamStatus(lmsControl);
 	RxFilled = (float)stats->rx_fifo_filled *100/ stats->rx_fifo_size;
 	TxFilled = (float)stats->tx_fifo_filled *100/ stats->tx_fifo_size;
@@ -257,6 +262,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     meta.end_of_burst = false;
     LMS_StartStream(pthis->lmsControl,LMS_CH_TX);
     LMS_StartStream(pthis->lmsControl,LMS_CH_RX);
+	pthis->mStreamRunning.store(true);
     while (pthis->stopProcessing.load() == false)
     {
         ++updateCounter;
@@ -299,20 +305,15 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
         }
     }
     kiss_fft_free(m_fftCalcPlan);
-    pthis->mGUIupdater->Stop();   
     pthis->stopProcessing.store(true);
+	pthis->mStreamRunning.store(false);
     LMS_StopStream(pthis->lmsControl,LMS_CH_TX);
     LMS_StopStream(pthis->lmsControl,LMS_CH_RX);
-
     for (int i = 0; i < channelsCount; ++i)
         delete [] buffers[i];     
     delete [] buffers;
     delete [] m_fftCalcIn;
     delete [] m_fftCalcOut;
-    pthis->btnStartStop->SetLabel(_("START"));
-    pthis->cmbStreamType->Enable();
-    pthis->spinFFTsize->Enable();
-    pthis->mStreamRunning.store(false);
 }
 
 wxString fftviewer_frFFTviewer::printDataRate(float dataRate)

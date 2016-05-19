@@ -3,7 +3,6 @@
 @author Lime Microsystems
 @brief 	wxWidgets panel for interacting with RFSpark board
 */
-#include "RFSpark_wxgui.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -14,6 +13,7 @@
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
 
+#include "RFSpark_wxgui.h"
 #include <vector>
 #include <ADCUnits.h>
 
@@ -302,7 +302,7 @@ void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 {  
     
-    uint8_t values[mGPIOboxes.size()/8];
+	uint8_t* values = new uint8_t[mGPIOboxes.size() / 8];
     int gpioIndex = 0;
     for (int i = 0; i < mGPIOboxes.size()/8; ++i)
     { 
@@ -314,6 +314,8 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
     
     if (LMS_GPIOWrite(lmsControl,values,mGPIOboxes.size()/8) != 0)		
         wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+
+	delete [] values;
 
 /*
     LMS64CProtocol::GenericPacket pkt;
@@ -335,7 +337,7 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 {
     
-    uint8_t values[mGPIOboxes.size()/8];
+    uint8_t* values = new uint8_t[mGPIOboxes.size()/8];
     
     if (LMS_GPIORead(lmsControl,values,mGPIOboxes.size()/8) != 0)	
         wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
@@ -349,6 +351,7 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
             ++gpioByte;
     }
     
+	delete[] values;
 /*
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_RD;
