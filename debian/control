@@ -50,7 +50,8 @@ Architecture: any
 Depends:
     liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
-    ${misc:Depends}
+    ${misc:Depends},
+    python, python-soapysdr
 Description: Lime Suite - SoapySDR bindings
  Lime Suite application software.
 
