@@ -42,6 +42,47 @@ make -j4
 sudo make install
 ```
 
+### Install udev rules
+
+On linux, you may want to install udev rules for usb support:
+
+```
+cd LimeSuite/
+udev-rules
+sudo ./install.sh
+```
+
+## Lime Suite binaries
+
+### Ubuntu PPA
+
+The drivers PPA for Ubuntu has a recent build of LimeSuite:
+
+```
+sudo add-apt-repository -y ppa:myriadrf/drivers
+sudo apt-get update
+sudo apt-get install limesuite limesuite-udev soapysdr-lms7
+```
+
+### Windows
+
+Windows binaries can be found in build/bin/Release directory
+
+LimeSuite is also bundled with the PothoSDR development environment.
+Use applications like GQRX, Pothos, CubicSDR, and GNU Radio:
+https://github.com/pothosware/PothosSDR/wiki
+
+### OSX
+
+The following homebrew tap has a build recipe for LimeSuite:
+https://github.com/pothosware/homebrew-pothos/wiki
+
+```
+brew tap pothosware/homebrew-pothos
+brew update
+brew install limesuite
+```
+
 ## Help and support
 
 * https://discourse.myriadrf.org/
