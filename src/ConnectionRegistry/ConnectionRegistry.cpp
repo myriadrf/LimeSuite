@@ -133,6 +133,18 @@ void ConnectionRegistry::freeConnection(IConnection *conn)
     //we can do it here, but they should never really grow indefinitely
 }
 
+std::vector<std::string> ConnectionRegistry::moduleNames(void)
+{
+    __loadAllConnections();
+    std::vector<std::string> names;
+    std::lock_guard<std::mutex> lock(registryMutex());
+    for (const auto &entry : registryEntries)
+    {
+        names.push_back(entry.first);
+    }
+    return names;
+}
+
 /*******************************************************************
  * Entry implementation
  ******************************************************************/

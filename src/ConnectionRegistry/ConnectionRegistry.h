@@ -44,6 +44,9 @@ public:
      * Free an connection created by makeConnection().
      */
     static void freeConnection(IConnection *conn);
+
+    //! Get a list of available registry entry modules by name
+    static std::vector<std::string> moduleNames(void);
 };
 
 /*******************************************************************

@@ -2,6 +2,7 @@
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    VersionInfo.h
     ErrorReporting.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
@@ -83,6 +84,10 @@ set(LIME_SUITE_INCLUDES
     kissFFT
 )
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
+list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp)
+
 if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)
 endif(CMAKE_COMPILER_IS_GNUCXX)
@@ -99,8 +104,8 @@ if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})
     target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-    set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
-    set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
+    set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
+    set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_LIBVER})
     set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
     target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
 
@@ -237,10 +242,11 @@ if(AUTO_UPDATE_VERSION)
 endif()
 
 ########################################################################
-# Lime Util -- command line utility for quick testing connections
+# Lime Util -- command line utility, info and connections
 ########################################################################
 add_executable(LimeUtil LimeUtil.cpp)
 target_link_libraries(LimeUtil LimeSuite)
+install(TARGETS LimeUtil DESTINATION bin)
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
