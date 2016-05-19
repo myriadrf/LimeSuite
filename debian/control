@@ -9,6 +9,7 @@ Build-Depends:
     libwxbase3.0-dev,
     libsoapysdr-dev,
     libi2c-dev,
+    freeglut3-dev,
     libsqlite3-dev
 Standards-Version: 3.9.5
 Homepage: https://myriadrf.org/projects/lime-suite/
