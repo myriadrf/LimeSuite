@@ -21,7 +21,7 @@ endif()
 # in the future, this might be recoreded directly here
 # use the date stamp and build number to make a dotted version
 file(READ "${PROJECT_SOURCE_DIR}/src/version.h" version_h)
-string(REGEX MATCH "static const int year = ([0-9]+)" VERSION_MATCHES "${version_h}")
+string(REGEX MATCH "static const int year = 20([0-9]+)" VERSION_MATCHES "${version_h}")
 set(VERSION_MAJOR ${CMAKE_MATCH_1})
 string(REGEX MATCH "static const int month = ([0-9]+)" VERSION_MATCHES "${version_h}")
 set(VERSION_MINOR ${CMAKE_MATCH_1})
