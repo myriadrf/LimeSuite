@@ -41,7 +41,8 @@ Architecture: any
 Depends:
     liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
-    ${misc:Depends}
+    ${misc:Depends},
+    xdg-utils
 Description: Lime Suite - Library applications
  Lime Suite application software.
 
