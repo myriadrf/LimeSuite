@@ -415,9 +415,9 @@ protected:
     int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
     int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
-    int TuneRxFilterSetup(const float_type rx_lpf_freq);
+    int TuneRxFilterSetup(const float_type rx_lpf_IF);
     int TuneTxFilterFixedSetup();
-    int TuneTxFilterSetup(const float_type tx_lpf_freq);
+    int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt);
