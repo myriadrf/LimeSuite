@@ -1028,6 +1028,7 @@ float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 */
 int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies)
 {
+    stringstream ss;
     LMS7002M_SelfCalState state(this);
     float_type dFvco;
     float_type dFrac;
@@ -1054,7 +1055,16 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     }
     //VCO frequency selection according to F_CLKH
     iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_Hz) - 1;
-	dFvco = 2*(iHdiv+1) * freq_Hz;
+    if(iHdiv > 255)
+    {
+        iHdiv = (int16_t)((gCGEN_VCO_frequencies[0]/ 2) / freq_Hz) - 1;
+        if(iHdiv > 255)
+            return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz/1e6);
+    }
+    dFvco = 2*(iHdiv+1) * freq_Hz;
+    if(dFvco < gCGEN_VCO_frequencies[0] || dFvco > gCGEN_VCO_frequencies[1])
+        return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - required VCO(%g MHz) out of range [%g-%g]",
+                           freq_Hz/1e6, dFvco/1e6, gCGEN_VCO_frequencies[0]/1e6, gCGEN_VCO_frequencies[1]/1e6);
 
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
@@ -1067,6 +1077,11 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     Modify_SPI_Reg_bits(0x0087, 15, 0, gFRAC&0xFFFF); //INT_SDM_CGEN[15:0]
     Modify_SPI_Reg_bits(0x0088, 3, 0, gFRAC>>16); //INT_SDM_CGEN[19:16]
     Modify_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN), iHdiv); //DIV_OUTCH_CGEN
+
+    ss << "INT: " << gINT << "\tFRAC: " << gFRAC
+        << "\tDIV_OUTCH_CGEN: " << (uint16_t)iHdiv << endl;
+    ss << "VCO: " << dFvco/1e6 << " MHz";
+    ss << "\tRefClk: " << GetReferenceClk_SX(Rx)/1e6 << " MHz" << endl;
 
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
@@ -1081,7 +1096,12 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 #ifndef NDEBUG
     printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq_Hz/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
 #endif // NDEBUG
-    return TuneVCO(VCO_CGEN);
+    if(TuneVCO(VCO_CGEN) != 0)
+    {
+        ss << GetLastErrorMessage();
+        return ReportError(-1, "SetFrequencyCGEN(%g MHz) failed:\n%s", freq_Hz/1e6, ss.str().c_str());
+    }
+    return 0;
 }
 
 bool LMS7002M::GetCGENLocked(void)
@@ -1101,63 +1121,73 @@ bool LMS7002M::GetSXLocked(bool tx)
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
+    stringstream ss; //tune progress report
+    int16_t csw = 0;
     const char* moduleName = (module == VCO_CGEN) ? "CGEN" : ((module == VCO_SXR) ? "SXR" : "SXT");
     checkConnection();
-	int8_t i;
-	uint8_t cmphl; //comparators
-	int16_t csw_lowest = -1;
-	uint16_t addrVCOpd; // VCO power down address
-	uint16_t addrCSW_VCO;
-	uint16_t addrCMP; //comparator address
-	uint8_t lsb; //SWC lsb index
-	uint8_t msb; //SWC msb index
+    int8_t i;
+    uint8_t cmphl; //comparators
+    uint16_t csw_highest;
+    int16_t csw_lowest = -1;
+    uint16_t addrVCOpd; // VCO power down address
+    uint16_t addrCSW_VCO;
+    uint16_t addrCMP; //comparator address
+    uint8_t lsb; //SWC lsb index
+    uint8_t msb; //SWC msb index
 
-	Channel ch = this->GetActiveChannel(); //remember used channel
+    Channel ch = this->GetActiveChannel(); //remember used channel
 
-	if(module != VCO_CGEN) //set addresses to SX module
-	{
+    if(module != VCO_CGEN) //set addresses to SX module
+    {
         this->SetActiveChannel(Channel(module));
         addrVCOpd = LMS7param(PD_VCO).address;
         addrCSW_VCO = LMS7param(CSW_VCO).address;
         lsb = LMS7param(CSW_VCO).lsb;
         msb = LMS7param(CSW_VCO).msb;
         addrCMP = LMS7param(VCO_CMPHO).address;
-	}
-	else //set addresses to CGEN module
+        ss << "ICT_VCO: " << Get_SPI_Reg_bits(ICT_VCO) << endl;
+    }
+    else //set addresses to CGEN module
     {
         addrVCOpd = LMS7param(PD_VCO_CGEN).address;
         addrCSW_VCO = LMS7param(CSW_VCO_CGEN).address;
         lsb = LMS7param(CSW_VCO_CGEN).lsb;
         msb = LMS7param(CSW_VCO_CGEN).msb;
         addrCMP = LMS7param(VCO_CMPHO_CGEN).address;
+        ss << "ICT_VCO_CGEN: " << Get_SPI_Reg_bits(ICT_VCO_CGEN) << endl;
     }
-	// Initialization
+    // Initialization
     int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
     if(status != 0)
         return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
-	if(module == VCO_CGEN)
+    if(module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-	else
+    else
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-	Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0); //Set SWC_VCO<7:0>=<00000000>
+    Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0); //Set SWC_VCO<7:0>=<00000000>
 
-	i=7;
-	while(i>=0)
-	{
+    i=7;
+    while(i>=0)
+    {
+        csw |= 1 << i;
         Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 1); // CSW_VCO<i>=1
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        ss << "csw=" << csw << "\t" << "cmphl=" << (int16_t)cmphl << endl;
         if ( (cmphl&0x01) == 1) // reduce CSW
+        {
             Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 0); // CSW_VCO<i>=0
+            csw &= ~(1 << i);
+        }
         if( cmphl == 2 && csw_lowest < 0)
             csw_lowest = Get_SPI_Reg_bits(addrCSW_VCO, msb, lsb);
-		--i;
-	}
-	if(csw_lowest >= 0)
+        --i;
+    }
+    if(csw_lowest >= 0)
     {
-        uint16_t csw_highest = Get_SPI_Reg_bits(addrCSW_VCO, msb, lsb);
+        csw_highest = Get_SPI_Reg_bits(addrCSW_VCO, msb, lsb);
         if(csw_lowest == csw_highest)
         {
             while(csw_lowest>=0)
@@ -1174,17 +1204,31 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             }
         }
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest+(csw_highest-csw_lowest)/2);
+        ss << "CSW_lowest  =" << csw_lowest << endl;
+        ss << "CSW_highest =" << csw_highest << endl;
+        ss << "CSW_selected=" << csw_lowest+(csw_highest-csw_lowest)/2;
     }
     if (module == VCO_CGEN)
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
     else
         Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+    ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
 
+    if(csw_highest-csw_lowest == 1)
+    {
+        //check both values, comparators might have changed after SPDUP_VCO toggle
+        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        if(cmphl == 2)
+            return 0;
+        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_highest);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+    }
     if(cmphl == 2) return 0;
 
-    return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)", moduleName);
+    return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)\n%s", moduleName, ss.str().c_str());
 }
 
 /** @brief Returns given parameter value from chip register
@@ -1267,6 +1311,8 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, c
 */
 int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
 {
+    stringstream ss; //VCO tuning report
+    const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
     checkConnection();
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500e6; //threshold to enable additional divider
@@ -1291,7 +1337,10 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
         }
     }
     if (canDeliverFrequency == false)
-        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
+        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - required VCO frequency is out of range [%g-%g] MHz",
+                            tx?"T":"R", freq_Hz / 1e6,
+                            gVCO_frequency_table[0][0]/1e6,
+                            gVCO_frequency_table[2][sxVCO_N - 1]/1e6);
 
     const float_type refClk_Hz = GetReferenceClk_SX(tx);
     integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
@@ -1304,6 +1353,10 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
     Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
+
+    ss << "INT: " << integerPart << "\tFRAC: " << fractionalPart << endl;
+    ss << "DIV_LOCH: " << (int16_t)div_loch << "\t EN_DIV2_DIVPROG: " << (VCOfreq > m_dThrF) << endl;
+    ss << "VCO: " << VCOfreq/1e6 << "MHz\tRefClk: " << refClk_Hz/1e6 << " MHz" << endl;
 
     //find which VCO supports required frequency
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
@@ -1324,7 +1377,6 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     }
     else
     {
-        int cswBackup = Get_SPI_Reg_bits(LMS7param(CSW_VCO)); //remember to restore previous tune value
         canDeliverFrequency = false;
         int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
@@ -1335,6 +1387,8 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
             tuneScore[sel_vco] = -128 + csw;
             if (status == 0)
                 canDeliverFrequency = true;
+            ss << vcoNames[sel_vco] << " : csw=" << tuneScore[sel_vco]+128 << " ";
+            ss << (status == 0 ? "tune ok" : "tune fail") << endl;
         }
         if (abs(tuneScore[0]) < abs(tuneScore[1]))
         {
@@ -1351,6 +1405,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
                 sel_vco = 2;
         }
         csw_value = tuneScore[sel_vco] + 128;
+        ss << "\tSelected : " << vcoNames[sel_vco] << endl;
     }
     if(useCache && !foundInCache)
     {
@@ -1361,7 +1416,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
-        return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency", tx?"T":"R", freq_Hz / 1e6);
+        return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
     return 0;
 }
 
