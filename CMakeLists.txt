@@ -49,7 +49,7 @@ if (NOT LIME_SUITE_EXTVER)
 endif()
 
 set(LIME_SUITE_VERSION "${LIME_SUITE_LIBVER}-${LIME_SUITE_EXTVER}")
-string(TIMESTAMP BUILD_TIMESTAMP "%Y-%M-%d")
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 
 ########################################################################
 ## compiler flags
