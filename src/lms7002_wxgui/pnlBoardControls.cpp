@@ -7,6 +7,7 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
+#include "pnluLimeSDR.h"
 #include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
@@ -60,6 +61,7 @@ static wxString power2unitsString(char powerx3)
 
 pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style), serPort(nullptr)
 {
+    additionalControls = nullptr;
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 	wxFlexGridSizer* fgSizer247;
 	fgSizer247 = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -191,6 +193,8 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 
 	fgSizer247->Add( fgSizer249, 1, wxEXPAND, 5 );
 
+    sizerAdditionalControls = new wxFlexGridSizer(0, 1, 0, 0);
+    fgSizer247->Add(sizerAdditionalControls, 1, wxEXPAND, 5);
 
 	this->SetSizer( fgSizer247 );
 	this->Layout();
@@ -360,6 +364,11 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std:
 
 void pnlBoardControls::SetupControls(const std::string &boardID)
 {
+    if(additionalControls)
+    {
+        additionalControls->Destroy();
+        additionalControls = nullptr;
+    }
     if (boardID == GetDeviceName(LMS_DEV_UNKNOWN))
         pnlCustomControls->Show();
     else
@@ -417,6 +426,15 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     }
     sizerAnalogRd->Layout();
     sizerAnalogWr->Layout();
+
+    if(boardID == GetDeviceName(LMS_DEV_ULIMESDR))
+    {
+        pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
+        pnl->Initialize(serPort);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+
     Fit();
 }
 

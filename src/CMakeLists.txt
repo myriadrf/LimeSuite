@@ -197,6 +197,7 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
     boards_wxgui/pnlQSpark.cpp
+    boards_wxgui/pnluLimeSDR.cpp
 )
 
 include(FeatureSummary)
