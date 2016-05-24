@@ -6,7 +6,7 @@
 #cmakedefine ENABLE_EVB7COM
 #cmakedefine ENABLE_STREAM
 #cmakedefine ENABLE_NOVENARF7
-#cmakedefine ENABLE_NOVENARF7
+#cmakedefine ENABLE_uLimeSDR
 
 void __loadConnectionEVB7COMEntry(void);
 void __loadConnectionSTREAMEntry(void);
@@ -21,6 +21,9 @@ void __loadAllConnections(void)
 
     #ifdef ENABLE_STREAM
     __loadConnectionSTREAMEntry();
+    #endif
+
+    #ifdef ENABLE_uLimeSDR
     __loadConnection_uLimeSDREntry();
     #endif
 
