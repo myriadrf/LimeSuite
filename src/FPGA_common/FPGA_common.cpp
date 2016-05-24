@@ -309,6 +309,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         short nSteps = clocks[i].phaseShift_deg / Fstep_deg;
         addrs.push_back(0x0024); values.push_back(nSteps); //CNT_PHASE
         int cnt_ind = (clocks[i].index + 2) & 0x1F; //C0 index 2, C1 index 3...
+	reg23val &= ~(0xF<<8);
         reg23val = reg23val | (cnt_ind << 8);
         if(clocks[i].phaseShift_deg >= 0)
             reg23val |= PHCFG_UPDN;
