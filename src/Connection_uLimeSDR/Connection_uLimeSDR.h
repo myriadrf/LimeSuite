@@ -42,9 +42,6 @@ public:
         {
             id = idCounter++;
 #ifndef __unix__
-            inOvLap = new OVERLAPPED;
-            memset(inOvLap, 0, sizeof(OVERLAPPED));
-            inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
             context = NULL;
 #else
             transfer = libusb_alloc_transfer(0);
@@ -56,8 +53,7 @@ public:
         ~USBTransferContext()
         {
 #ifndef __unix__
-            CloseHandle(inOvLap->hEvent);
-            delete inOvLap;
+
 #else
             libusb_free_transfer(transfer);
 #endif
@@ -66,11 +62,6 @@ public:
         {
             if(used)
                 return false;
-#ifndef __unix__
-            CloseHandle(inOvLap->hEvent);
-            memset(inOvLap, 0, sizeof(OVERLAPPED));
-            inOvLap->hEvent = CreateEvent(NULL, false, false, NULL);
-#endif
             return true;
         }
         bool used;
@@ -78,7 +69,7 @@ public:
         static int idCounter;
 #ifndef __unix__
         PUCHAR context;
-        OVERLAPPED *inOvLap;
+        OVERLAPPED inOvLap;
 #else
         libusb_transfer* transfer;
         long bytesXfered;
@@ -145,7 +136,8 @@ protected:
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
     bool isConnected;
 #ifndef __unix__
-    FT_HANDLE mFTHandle;    
+    FT_HANDLE mFTHandle;   
+	std::atomic<bool> firstShot;
 #else  
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);

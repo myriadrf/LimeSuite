@@ -2,9 +2,11 @@
 ## Support for USB uLimeSDR connection
 ########################################################################
 
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Connection_uLimeSDR)
+
 if(WIN32)
     set(USB_INCLUDE_DIRS  ${THIS_SOURCE_DIR}/FTD3XXLibrary)
-    set(USB_LIBRARIES ${THIS_SOURCE_DIR}/Win32/Static/FTD3XX.lib SetupAPI)
+    set(USB_LIBRARIES ${USB_INCLUDE_DIRS}/Win32/FTD3XX.lib SetupAPI)
 elseif(UNIX)
     find_package(libusb-1.0)
     set(USB_FOUND ${LIBUSB_1_FOUND})
@@ -14,8 +16,6 @@ endif()
 
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
-
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Connection_uLimeSDR)
 
 set(CONNECTION_uLimeSDR_SOURCES
     ${THIS_SOURCE_DIR}/Connection_uLimeSDREntry.cpp

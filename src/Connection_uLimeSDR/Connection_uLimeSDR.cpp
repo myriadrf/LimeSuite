@@ -22,13 +22,14 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
 {
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
-    mUsbCounter = 0;
     isConnected = false;
 #ifndef __unix__
-    mFTHandle = NULL;
+	mFTHandle = NULL;
+	firstShot.store(true);
 #else
     dev_handle = 0;
     devs = 0;
+	mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
 }
@@ -39,13 +40,14 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
 {
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
-    mUsbCounter = 0;
     isConnected = false;
 #ifndef __unix__
     mFTHandle = NULL;
+	firstShot.store(true);
 #else
     dev_handle = 0;
     devs = 0;
+	mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
     if(this->Open(index, vid, pid) != 0)
@@ -59,7 +61,7 @@ Connection_uLimeSDR::~Connection_uLimeSDR()
     mStreamService.reset();
     Close();
 }
-
+#ifdef __unix__
 int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
@@ -109,6 +111,7 @@ int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
         return -1;
     return 0;
 }
+#endif
 
 /**	@brief Tries to open connected USB device and find communication endpoints.
 @return Returns 0-Success, other-EndPoints not found or device didn't connect.
@@ -116,35 +119,26 @@ int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
 int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
-    DWORD devCount;
-    FT_STATUS ftStatus = FT_OK;
-    DWORD dwNumDevices = 0;
-    ftStatus = FT_ListDevices(&dwNumDevices, NULL, FT_LIST_NUMBER_ONLY);
-    if(FT_FAILED(ftStatus))
-        return ReportError(ENODEV, "Failed to list USB Devices");
-    
-    if(index >= devCount)
-        return ReportError(ENODEV, "USB Device index %i does not exist", index);
+	DWORD devCount;
+	FT_STATUS ftStatus = FT_OK;
+	DWORD dwNumDevices = 0;
+	//
+	// Open a device
+	//
+	ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
+	if (FT_FAILED(ftStatus))
+	{
+		ReportError(ENODEV, "Failed to list USB Devices");
+		return -1;
+	}
 
-    if(pDriver->Initialize(EOPEN_BY_INDEX, (void*)&index) == false)
-    {
-        pDriver->Cleanup();
-        return ReportError(ENODEV, "Failed to open USB Device index %i", index);
-    }
-
-    UCHAR rdEndPtCount;
-    UCHAR wrEndPtCount;
-    UCHAR m_ucWriteEP[4];
-    UCHAR m_ucReadEP[4];
-    if(!pDriver->GetEP(&rdEndPtCount, &wrEndPtCount, m_ucReadEP, m_ucWriteEP))
-    {
-        pDriver->Cleanup();
-        return ReportError(ENODEV, "Failed to get USB end points");
-    }
-
-    //checkfor endpoints
-    isConnected = true;
-    return 0;
+	ftStatus = FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
+	ftStatus = FT_FlushPipe(mFTHandle, 0x82);
+	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
+	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x82, 64);
+	//checkfor endpoints
+	isConnected = true;
+	return 0;
 #else
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 
@@ -184,7 +178,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 void Connection_uLimeSDR::Close()
 {
 #ifndef __unix__
-    pDriver->Cleanup();
+	FT_Close(mFTHandle);
 #else
     if(dev_handle != 0)
     {
@@ -222,12 +216,42 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
 #ifndef __unix__
-    ULONG bytesTransferred = 0;
-    int ftStatus = pDriver->WritePipe(mCtrlWrEndPtAddr, wbuffer, length, &bytesTransferred, NULL);
-    if(FT_FAILED(ftStatus))
-        len = 0;
-    else
-        len = bytesTransferred;
+
+	//
+	// Write to channel 1 ep 0x02
+	//
+	ULONG ulBytesWrite = 0;
+	FT_STATUS ftStatus = FT_OK;
+	OVERLAPPED	vOverlapped = { 0 };
+	memset(&vOverlapped, 0, sizeof(OVERLAPPED));
+	ftStatus = FT_InitializeOverlapped(mFTHandle, &vOverlapped);
+	if (FT_FAILED(ftStatus))
+	{
+		ReportError(ENODEV, "FT_InitializeOverlapped failed! status=0x%x", ftStatus);
+		return -1;
+	}
+	ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
+	if (ftStatus != FT_IO_PENDING)
+	{
+		FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+		return -1;
+	}
+
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 2000);
+	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+	{
+		ftStatus = FT_GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE);
+		if (FT_FAILED(ftStatus))
+		{
+			ulBytesWrite = -1;
+		}
+	}
+	else
+	{
+		ulBytesWrite = -1;
+	}
+	FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+	return ulBytesWrite;
 #else
     int actual = 0;
     libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, USB_TIMEOUT);
@@ -251,12 +275,43 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
     if(IsOpen() == false)
         return 0;
 #ifndef __unix__
-    ULONG bytesTransferred = 0;
-    int ftStatus = pDriver->ReadPipe(mCtrlRdEndPtAddr, buffer, length, &bytesTransferred, NULL);
-    if(FT_FAILED(ftStatus))
-        len = 0;
-    else
-        len = bytesTransferred;
+	//
+	// Read from channel 1 ep 0x82
+	// FT_ReadPipe is a blocking/synchronous function.
+	// It will not return until it has received all data requested
+	//
+	ULONG ulBytesRead = 0;
+	FT_STATUS ftStatus = FT_OK;
+	OVERLAPPED	vOverlapped = { 0 };
+	memset(&vOverlapped, 0, sizeof(OVERLAPPED));
+	ftStatus = FT_InitializeOverlapped(mFTHandle, &vOverlapped);
+	if (FT_FAILED(ftStatus))
+	{
+		ReportError(ENODEV, "FT_InitializeOverlapped failed! status=0x%x", ftStatus);
+		return -1;
+	}
+	ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, &vOverlapped);
+	if (ftStatus != FT_IO_PENDING)
+	{
+		FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+		return -1;;
+	}
+
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 2000);
+	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+	{
+		ftStatus = FT_GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE);
+		if (FT_FAILED(ftStatus))
+		{
+			ulBytesRead = -1;
+		}
+	}
+	else
+	{
+		ulBytesRead = -1;
+	}
+	FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+	return ulBytesRead;
 #else
     int actual = 0;
     libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, USB_TIMEOUT);
@@ -343,9 +398,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, long length)
     }
     contexts[i].used = true;
 #ifndef __unix__
-    if(InEndPt)
-        contexts[i].context = InEndPt->BeginDataXfer((unsigned char*)buffer, length, contexts[i].inOvLap);
-    return i;
+ 
 #else
     unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
@@ -378,9 +431,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
     {
         int status = 0;
 #ifndef __unix__
-        if(InEndPt)
-            status = InEndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
-        return status;
+		return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
         auto t2 = chrono::high_resolution_clock::now();
@@ -411,12 +462,103 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int conte
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
-        int status = 0;
-        if(InEndPt)
-            status = InEndPt->FinishDataXfer((unsigned char*)buffer, length, contexts[contextHandle].inOvLap, contexts[contextHandle].context);
-        contexts[contextHandle].used = false;
-        contexts[contextHandle].reset();
-        return length;
+		static UCHAR ppBuffers[USB_MAX_CONTEXTS][65536] = { 0 };
+		contexts[contextHandle].used = false;
+		FT_STATUS ftStatus;
+		ULONG i = 0;
+
+		FT_HANDLE ftHandle = mFTHandle;
+
+		ULONG ulActualBytesTransferred = 0;
+		const ULONG ulActualBytesToTransfer = length;
+		ULONG len = 0;
+		const ULONG m_ulQueueSize = USB_MAX_CONTEXTS;
+
+		if (firstShot.load() == true)
+		{
+			firstShot.store(false);
+			ftStatus = FT_SetStreamPipe(ftHandle, FALSE, FALSE, mStreamWrEndPtAddr, length);
+			ftStatus = FT_SetStreamPipe(ftHandle, FALSE, FALSE, mStreamRdEndPtAddr, length);
+			if (FT_FAILED(ftStatus))
+			{
+				return -1;
+			}
+
+			for (i = 0; i < m_ulQueueSize; i++)
+			{
+				memset(&contexts[i].inOvLap, 0, sizeof(OVERLAPPED));
+				ftStatus = FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
+				if (FT_FAILED(ftStatus))
+				{
+					ReportError(ENODEV, "FT_InitializeOverlapped failed! status=0x%x", ftStatus);
+					return -1;
+				}
+				ftStatus = FT_ReadPipe(ftHandle, mStreamRdEndPtAddr, &ppBuffers[i][0], ulActualBytesToTransfer, &ulActualBytesTransferred, &contexts[i].inOvLap);
+				if (ftStatus != FT_IO_PENDING)
+				{
+					return -1;
+				}
+			}
+	}
+
+		ulActualBytesTransferred = 0;
+		contexts[contextHandle].inOvLap.InternalHigh = 0;
+		while (1)
+		{
+			DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, 1000);
+			if (dwRet == WAIT_OBJECT_0)
+			{
+				ftStatus = FT_GetOverlappedResult(ftHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+				len = ulActualBytesTransferred;
+				memcpy(buffer, &ppBuffers[contextHandle][0], len);
+				if (ftStatus == FT_DEVICE_NOT_CONNECTED)
+				{
+					return -1;
+				}
+				else if (FT_FAILED(ftStatus))
+				{
+					return -1;
+				}
+
+				break;
+			}
+			else if (dwRet == WAIT_TIMEOUT)
+			{
+				ftStatus = FT_GetOverlappedResult(ftHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+				len = ulActualBytesTransferred;
+				memcpy(buffer, &ppBuffers[contextHandle][0], len);
+				if (FT_FAILED(ftStatus))
+				{
+					return -1;
+				}
+
+				return -1;
+			}
+			else
+			{
+				return -1;
+			}
+		}
+
+		/*ftStatus = FT_ReleaseOverlapped(ftHandle, &contexts[contextHandle].inOvLap);
+		if (FT_FAILED(ftStatus))
+		{
+		return -1;
+		}
+
+		memset(&contexts[contextHandle].inOvLap, 0, sizeof(OVERLAPPED));
+		ftStatus = FT_InitializeOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
+		if (FT_FAILED(ftStatus))
+		{
+		return -1;
+		}*/
+
+		ftStatus = FT_ReadPipe(mFTHandle, mStreamRdEndPtAddr, &ppBuffers[contextHandle][0], length, &ulActualBytesTransferred, &contexts[contextHandle].inOvLap);
+		if (ftStatus != FT_IO_PENDING)
+		{
+			return -1;
+		}
+		return len;
 #else
         length = contexts[contextHandle].bytesXfered;
         contexts[contextHandle].used = false;
@@ -431,7 +573,7 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int conte
 int Connection_uLimeSDR::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
 {
 #ifndef __unix__
-    return InEndPt->XferData((unsigned char*)buffer, length);
+	return 0;
 #else
     return 0;
 #endif
@@ -444,7 +586,15 @@ int Connection_uLimeSDR::ReadDataBlocking(char *buffer, long &length, int timeou
 void Connection_uLimeSDR::AbortReading()
 {
 #ifndef __unix__
-    InEndPt->Abort();
+	FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
+	FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
+	FT_ClearStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr);
+	firstShot.store(true);
+	for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+	{
+		contexts[i].used = false;
+		FT_ReleaseOverlapped(mFTHandle, &contexts[i].inOvLap);
+	}
 #else
     
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -479,9 +629,20 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
         return -1;
     contextsToSend[i].used = true;
 #ifndef __unix__
-    if(OutEndPt)
-        contextsToSend[i].context = OutEndPt->BeginDataXfer((unsigned char*)buffer, length, contextsToSend[i].inOvLap);
-    return i;
+	FT_STATUS ftStatus = FT_OK;
+	ULONG ulActualBytesSend = 0;
+	memset(&contextsToSend[i].inOvLap, 0, sizeof(OVERLAPPED));
+	ftStatus = FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
+	if (FT_FAILED(ftStatus))
+	{
+		ReportError(ENODEV, "FT_InitializeOverlapped failed! status=0x%x", ftStatus);
+		return -1;
+	}
+	ftStatus = FT_WritePipe(mFTHandle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
+	if (ftStatus != FT_IO_PENDING)
+	{
+		return -1;
+	}
 #else
     int actual;
    
@@ -515,10 +676,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     if(contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-        int status = 0;
-        if(OutEndPt)
-            status = OutEndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
-        return status;
+		return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
         auto t2 = chrono::high_resolution_clock::now();
@@ -548,11 +706,44 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, long &length, int
     if(contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-        if(OutEndPt)
-            OutEndPt->FinishDataXfer((unsigned char*)buffer, length, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
-        contextsToSend[contextHandle].used = false;
-        contextsToSend[contextHandle].reset();
-        return length;
+		FT_STATUS ftStatus = FT_OK;
+		ULONG ulActualBytesTransferred = 0;
+		contextsToSend[contextHandle].inOvLap.InternalHigh = 0;
+		while (1)
+		{
+			DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, 1000);
+			if (dwRet == WAIT_OBJECT_0)
+			{
+				ftStatus = FT_GetOverlappedResult(mFTHandle, &contextsToSend[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+				if (FT_FAILED(ftStatus))
+				{
+					return -1;
+				}
+
+				break;
+			}
+			else if (dwRet == WAIT_TIMEOUT)
+			{
+
+				ftStatus = FT_GetOverlappedResult(mFTHandle, &contextsToSend[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+				if (FT_FAILED(ftStatus))
+				{
+					return -1;
+				}
+				break;
+			}
+			else
+			{
+				return -1;
+			}
+		}
+		ftStatus = FT_ReleaseOverlapped(mFTHandle, &contextsToSend[contextHandle].inOvLap);
+		if (FT_FAILED(ftStatus))
+		{
+			return -1;
+		}
+		contextsToSend[contextHandle].used = false;
+		return length;
 #else
         length = contextsToSend[contextHandle].bytesXfered;
         contextsToSend[contextHandle].used = false;
@@ -570,7 +761,16 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, long &length, int
 void Connection_uLimeSDR::AbortSending()
 {
 #ifndef __unix__
-    OutEndPt->Abort();
+	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
+	FT_FlushPipe(mFTHandle, mStreamWrEndPtAddr);
+	for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+	{
+		if (contextsToSend[i].used == true)
+		{
+			FT_ReleaseOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
+			contextsToSend[i].used = false;
+		}
+	}
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {

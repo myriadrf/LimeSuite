@@ -62,10 +62,9 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
     std::vector<ConnectionHandle> handles;
 
 #ifndef __unix__
-    DWORD devCount;
+    DWORD devCount = 0;
     FT_STATUS ftStatus = FT_OK;
-    DWORD dwNumDevices = 0;
-    ftStatus = FT_ListDevices(&dwNumDevices, NULL, FT_LIST_NUMBER_ONLY);
+    ftStatus = FT_ListDevices(&devCount, NULL, FT_LIST_NUMBER_ONLY);
     if(FT_FAILED(ftStatus))
         return handles;
     if (devCount > 0)
