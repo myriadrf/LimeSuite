@@ -8,7 +8,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-MASTER_ICON=${DIR}/../src/resources/LMS_ICO.png
+MASTER_ICON=${DIR}/../src/resources/LMS_ICO.ico[0]
 
 for size in 16 22 32 48 64 128; do
     echo "Generating lime-suite-${size}.png..."
