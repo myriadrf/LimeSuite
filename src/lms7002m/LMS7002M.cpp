@@ -69,6 +69,27 @@ void LMS7002M::Log(const char* text, LogType type)
     }
 }
 
+//Compatibility for vasprintf under MSVC
+#ifdef _MSC_VER
+int vasprintf(char **strp, const char *fmt, va_list ap)
+{
+    int r = _vscprintf(fmt, ap);
+    if (r < 0) return r;
+    *strp = (char *)malloc(r+1);
+    return vsprintf_s(*strp, r+1, fmt, ap);
+}
+#endif
+
+void LMS7002M::Log(LogType type, const char *format, va_list argList)
+{
+    char *message = NULL;
+    if (vasprintf(&message, format, argList) != -1)
+    {
+        Log(message, type);
+        free(message);
+    }
+}
+
 /** @brief Sets connection which is used for data communication with chip
 */
 void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)

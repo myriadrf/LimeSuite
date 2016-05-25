@@ -575,15 +575,16 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
             updateCounter = 0;
         }
     }
+
+    //stop Tx Rx if they were active
+    interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
+    Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
+
     stopTx.store(true);
     stopRx.store(true);
 
     threadTx.join();
     threadRx.join();
-
-    //stop Tx Rx if they were active
-    interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
-    Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
 
     kiss_fft_free(m_fftCalcPlan);
 

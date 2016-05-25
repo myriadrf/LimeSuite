@@ -620,22 +620,35 @@ size_t LMS7_Device::GetPath(bool tx, size_t chan)
 lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
 {
   lms_range_t ret; 
+  ret.step = 1;
+  if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
+  {
+      if (path == 2)
+      {
+        ret.max = 3800000000;
+        ret.min = 50000000; 
+      }
+      else
+      {
+            ret.max = 0;
+            ret.min = 0; 
+            ret.step = 0; 
+      }
+  }
+  else
   switch (path)
   {
       case 1:
             ret.max = 3800000000;
-            ret.min = 2000000000;
-            ret.step = 1; 
+            ret.min = 2000000000;             
             break;
       case 3:
             ret.max = 3800000000;
             ret.min = 1000000000;
-            ret.step = 1; 
             break;
       case 2:
             ret.max = 1000000000;
             ret.min = 100000000;
-            ret.step = 1; 
             break;
       default: 
             ret.max = 0;
@@ -650,17 +663,32 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
 lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
 {
   lms_range_t ret; 
+  
+  ret.step = 1;
+  if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
+  {
+      if (path == 1)
+      {
+        ret.max = 3800000000;
+        ret.min = 50000000; 
+      }
+      else
+      {
+            ret.max = 0;
+            ret.min = 0;  
+            ret.step = 0; 
+      }
+  }
+  else
   switch (path)
   {
       case 1:
             ret.max = 3800000000;
             ret.min = 1500000000;
-            ret.step = 1; 
             break;
       case 2:
             ret.max = 1500000000;
             ret.min = 100000000;
-            ret.step = 1; 
             break;
       default: 
             ret.max = 0;

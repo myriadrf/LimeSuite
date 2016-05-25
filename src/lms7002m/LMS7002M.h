@@ -9,8 +9,8 @@
 
 #include "LMS7002M_parameters.h"
 #include <cstdint>
-
 #include <sstream>
+#include <stdarg.h>
 
 namespace lime{
 class IConnection;
@@ -148,6 +148,8 @@ public:
 	int TuneTxFilterFixed(const float_type fixedBandwidth);
 	int TuneTxFilter(const float_type bandwidth);
 	int TuneRxFilter(const float_type rx_lpf_freq_RF);
+	int TuneTxFilterWithCaching(const float_type bandwidth);
+	int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
     ///@}
 
     ///@name High level gain configuration
@@ -431,6 +433,16 @@ protected:
         LOG_DATA
     };
     virtual void Log(const char* text, LogType type);
+
+    void Log(LogType type, const char *format, ...)
+    {
+        va_list argList;
+        va_start(argList, format);
+        Log(type, format, argList);
+        va_end(argList);
+    }
+
+    void Log(LogType type, const char *format, va_list argList);
 
     ///port used for communicating with LMS7002M
     IConnection* controlPort;

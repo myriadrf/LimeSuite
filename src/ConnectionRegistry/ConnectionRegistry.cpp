@@ -51,6 +51,9 @@ std::vector<ConnectionHandle> ConnectionRegistry::findConnections(const Connecti
     std::vector<ConnectionHandle> results;
     for (const auto &entry : registryEntries)
     {
+        //filter by module name when specified
+        if (not hint.module.empty() and hint.module != entry.first) continue;
+
         for (auto handle : entry.second->enumerate(hint))
         {
             //insert the module name, which can be filtered on in makeConnection()
@@ -128,6 +131,18 @@ void ConnectionRegistry::freeConnection(IConnection *conn)
 
     //we never actually clear out the cache entries when they are empty
     //we can do it here, but they should never really grow indefinitely
+}
+
+std::vector<std::string> ConnectionRegistry::moduleNames(void)
+{
+    __loadAllConnections();
+    std::vector<std::string> names;
+    std::lock_guard<std::mutex> lock(registryMutex());
+    for (const auto &entry : registryEntries)
+    {
+        names.push_back(entry.first);
+    }
+    return names;
 }
 
 /*******************************************************************

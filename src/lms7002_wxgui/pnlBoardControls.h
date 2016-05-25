@@ -115,6 +115,9 @@ class pnlBoardControls : public wxFrame
         wxFlexGridSizer* sizerAnalogRd;
         wxFlexGridSizer* sizerAnalogWr;
 
+        wxFlexGridSizer* sizerAdditionalControls;
+        wxPanel* additionalControls;
+
         std::vector<ADC_DAC> getBoardADCs(const std::string &boardID);
         std::vector<ADC_DAC> getBoardDACs(const std::string &boardID);
 

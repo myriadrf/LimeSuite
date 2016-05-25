@@ -7,6 +7,7 @@
 #include "LMS7002M.h"
 #include "IConnection.h"
 #include "ErrorReporting.h"
+#include "CalibrationCache.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
 #include <iostream>
@@ -988,8 +989,9 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
 
     if(filterCoef < 0)
         filterCoef *= -1;
-    return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
-Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
+    Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
+        "Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
+    return 0;
 }
 
 int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_LAD, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index)
@@ -1180,8 +1182,9 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal_lpfs5_tbb);
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad_tbb);
-        return ReportError("Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz.\
-Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lpf_freq/1e6 * 2);
+        Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
+            "Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lpf_freq/1e6 * 2);
+        return 0;
     }
     else
     {
@@ -1190,6 +1193,153 @@ Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lp
         Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
         Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), rcal_lpfh_tbb);
-        return ReportError("Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_freq/1e6);
+        Log(LOG_INFO, "Filter calibrated. Filter order-2nd, set to %g MHz", tx_lpf_freq/1e6);
+        return 0;
     }
+}
+
+//arbitrary IDs for filter table lookup
+static int RFE_TIA_FILTNUM = 100;
+static int RBB_LPFL_FILTNUM = 200;
+static int RBB_LPFH_FILTNUM = 300;
+static int TBB_LPFLAD_FILTNUM = 400;
+static int TBB_LPFS5_FILTNUM = 500;
+static int TBB_LPFH_FILTNUM = 600;
+
+int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
+{
+    int ret = 0;
+    bool found = true;
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+
+    //read filter cache
+    int rcal_lpflad_tbb, ccal_lpflad_tbb;
+    int rcal_lpfs5_tbb;
+    int rcal_lpfh_tbb;
+    const bool lpfladFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFLAD_FILTNUM, &rcal_lpflad_tbb, &ccal_lpflad_tbb) == 0);
+    const bool lpfs5Found = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFS5_FILTNUM, &rcal_lpfs5_tbb, &ccal_lpflad_tbb) == 0);
+    const bool lpfhFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFH_FILTNUM, &rcal_lpfh_tbb, &ccal_lpflad_tbb) == 0);
+
+    //apply the calibration
+    SPI_write(0x0106, 0x318C);
+    SPI_write(0x0107, 0x318C);
+    if (bandwidth <= 16e6)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal_lpfs5_tbb);
+        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad_tbb);
+        if (not lpfladFound) found = false;
+        if (not lpfs5Found) found = false;
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), rcal_lpfh_tbb);
+        if (not lpfhFound) found = false;
+    }
+
+    //all results found in cache, done applying!
+    Log(LOG_INFO, "Tx Filter calibrated from cache");
+    if (found) return ret;
+
+    //perform calibration and store results
+    ret = this->TuneTxFilter(bandwidth);
+    if (ret != 0) return ret;
+
+    if (Get_SPI_Reg_bits(LMS7param(PD_LPFH_TBB)) == 0) ret = mValueCache->InsertFilter_RC(
+        boardId, bandwidth, idx, Tx, TBB_LPFH_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB)), Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB)));
+
+    if (Get_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB)) == 0) ret = mValueCache->InsertFilter_RC(
+        boardId, bandwidth, idx, Tx, TBB_LPFLAD_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB)), Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB)));
+
+    if (Get_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB)) == 0) ret = mValueCache->InsertFilter_RC(
+        boardId, bandwidth, idx, Tx, TBB_LPFS5_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB)), Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB)));
+
+    return ret;
+}
+
+int LMS7002M::TuneRxFilterWithCaching(const float_type bandwidth)
+{
+    int ret = 0;
+    bool found = true;
+    const int idx = this->GetActiveChannelIndex();
+    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+
+    //read filter cache
+    int rcomp_tia_rfe, ccomp_tia_rfe, cfb_tia_rfe;
+    int rcc_ctl_lpfl_rbb, c_ctl_lpfl_rbb;
+    int rcc_ctl_lpfh_rbb, c_ctl_lpfh_rbb;
+    const bool tiaFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RFE_TIA_FILTNUM, &rcomp_tia_rfe, &ccomp_tia_rfe, &cfb_tia_rfe) == 0);
+    const bool lphlFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFL_FILTNUM, &rcc_ctl_lpfl_rbb, &c_ctl_lpfl_rbb) == 0);
+    const bool lphhFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFH_FILTNUM, &rcc_ctl_lpfh_rbb, &c_ctl_lpfh_rbb) == 0);
+
+    //apply the calibration
+    if (not tiaFound) found = false;
+    Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
+    Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
+    Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
+    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB), rcc_ctl_lpfl_rbb);
+    Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB), c_ctl_lpfl_rbb);
+    //Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+    //Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB), rcc_ctl_lpfh_rbb);
+    Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFH_RBB), c_ctl_lpfh_rbb);
+    if (bandwidth < 15.4e6)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 0);
+        if (not lphlFound) found = false;
+    }
+    else if (bandwidth <= 54e6)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 1);
+        if (not lphlFound) found = false;
+    }
+    else // bandwidth > 54e6
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 2);
+    }
+    Modify_SPI_Reg_bits(LMS7param(ICT_LPF_IN_RBB), 12);
+    Modify_SPI_Reg_bits(LMS7param(ICT_LPF_OUT_RBB), 12);
+    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 20);
+    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 20);
+    Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), 16);
+    Modify_SPI_Reg_bits(LMS7param(RFB_TIA_RFE), 16);
+
+    //all results found in cache, done applying!
+    Log(LOG_INFO, "Rx Filter calibrated from cache");
+    if (found) return ret;
+
+    //perform calibration and store results
+    ret = this->TuneRxFilter(bandwidth);
+    if (ret != 0) return ret;
+
+    ret = mValueCache->InsertFilter_RC(boardId, bandwidth, idx, Rx, RFE_TIA_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE)), Get_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE)), Get_SPI_Reg_bits(LMS7param(CFB_TIA_RFE)));
+
+    switch(Get_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB)))
+    {
+    case 0: ret = mValueCache->InsertFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFL_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB)), Get_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB))); break;
+    case 1: ret = mValueCache->InsertFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFH_FILTNUM,
+        Get_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB)), Get_SPI_Reg_bits(LMS7param(C_CTL_LPFH_RBB))); break;
+    default: break;
+    }
+
+    return ret;
 }

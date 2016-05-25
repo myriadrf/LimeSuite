@@ -6,16 +6,17 @@ Build-Depends:
     debhelper (>= 9.0.0),
     cmake (>= 3.1.3),
     libusb-1.0-0-dev,
-    libwxbase3.0-dev,
+    libwxgtk3.0-dev,
     libsoapysdr-dev,
     libi2c-dev,
+    freeglut3-dev,
     libsqlite3-dev
 Standards-Version: 3.9.5
 Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git
 Vcs-Browser: https://github.com/myriadrf/LimeSuite.git
 
-Package: liblimesuite1
+Package: liblimesuite16.5-1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -29,28 +30,30 @@ Package: liblimesuite-dev
 Section: libdevel
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${misc:Depends}
 Description: Lime Suite - development files
  Lime Suite application software.
 
-Package: lms7suite
+Package: limesuite
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
-    ${misc:Depends}
-Description: Lime Suite - GUI application
+    ${misc:Depends},
+    xdg-utils
+Description: Lime Suite - Library applications
  Lime Suite application software.
 
 Package: soapysdr-lms7
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite1 (= ${binary:Version}),
+    liblimesuite16.5-1 (= ${binary:Version}),
     ${shlibs:Depends},
-    ${misc:Depends}
+    ${misc:Depends},
+    python, python-soapysdr
 Description: Lime Suite - SoapySDR bindings
  Lime Suite application software.
 

@@ -39,7 +39,6 @@ struct USBStreamService : StreamerLTE
         mTxThread(nullptr),
         mRxThread(nullptr),
         rxStreamingContinuous(false),
-        txTimeEnabled(false),
         mLastRxTimestamp(0),
         mTimestampOffset(0),
         mHwCounterRate(0.0)
@@ -226,7 +225,7 @@ struct USBStreamService : StreamerLTE
 
         if (isTx)
         {
-            if (metadata.lateTimestamp and txTimeEnabled)
+            if (metadata.lateTimestamp)
             {
                 std::cout << "L" << std::flush;
                 mTxStatQueue.push(metadata);
@@ -253,7 +252,6 @@ struct USBStreamService : StreamerLTE
     //! was the last rx command for continuous streaming?
     //! this lets us restore streaming after calibration
     std::atomic<bool> rxStreamingContinuous;
-    std::atomic<bool> txTimeEnabled;
     std::atomic<uint64_t> mLastRxTimestamp;
     std::atomic<int64_t> mTimestampOffset;
     std::atomic<double> mHwCounterRate;
@@ -485,7 +483,8 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     if (metadata.hasTimestamp)
     {
         stream->nextTimestamp = metadata.timestamp - mStreamService->mTimestampOffset;
-        stream->nextTimestamp -= stream->bufferOffset; //applies to front of usb packet
+        stream->nextTimestamp -= stream->bufferOffset; //applies to front of usb packet,
+        //but note that this really only makes sense when used at the start of a burst
         //std::cout << "TX TIME " << stream->nextTimestamp << std::endl;
     }
 
@@ -511,7 +510,7 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     if (stream->sampsRemaining == 0)
     {
         uint32_t statusFlags = 0;
-        if (mStreamService->txTimeEnabled) statusFlags |= STATUS_FLAG_TX_TIME;
+        if (stream->nextTimestamp != 0) statusFlags |= STATUS_FLAG_TX_TIME;
         if (actualEob) statusFlags |= STATUS_FLAG_TX_END;
         size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
             (const complex16_t **)stream->FIFOBuffers.data(),
@@ -520,7 +519,8 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             stream->nextTimestamp,
             timeout_ms,
             statusFlags);
-        stream->nextTimestamp += sampsPushed;
+        if (actualEob) stream->nextTimestamp = 0;
+        else stream->nextTimestamp += sampsPushed;
     }
 
     return samplesCount;
