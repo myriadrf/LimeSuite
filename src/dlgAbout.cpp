@@ -21,5 +21,6 @@ void dlgAbout::OnInit( wxInitDialogEvent& event )
 
 void dlgAbout::OnbtnClose( wxCommandEvent& event )
 {
+	EndModal(wxID_OK);
 	Destroy();
 }
