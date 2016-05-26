@@ -147,11 +147,6 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 	FT_AbortPipe(mFTHandle, 0x82);
 	FT_AbortPipe(mFTHandle, 0x02);
 	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
-	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
-	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x82, 64);
-	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, 65536);
-	ftStatus = FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, 65536);
-	//checkfor endpoints
 	isConnected = true;
 	return 0;
 #else
@@ -398,6 +393,11 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, long length)
     }
     contexts[i].used = true;
 #ifndef __unix__
+	if (length != rxSize)
+	{
+		rxSize = length;
+		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, rxSize);
+	}
 	memset(&contexts[i].inOvLap, 0, sizeof(OVERLAPPED));
 	contexts[i].inOvLap.hEvent = CreateEvent(NULL, false, false, NULL);
 	ULONG ulActual;
@@ -520,7 +520,7 @@ void Connection_uLimeSDR::AbortReading()
 			contexts[i].used = false;
 		}
 	}
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, 65536);
+	rxSize = 0;
 #else
     
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -557,7 +557,12 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
         contextsToSend[i].used = true;
 #ifndef __unix__
 	FT_STATUS ftStatus = FT_OK;
-	ULONG ulActualBytesSend = 0;
+	ULONG ulActualBytesSend;
+	if (length != txSize)
+	{
+		txSize = length;
+		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, txSize);
+	}
 	memset(&contextsToSend[i].inOvLap, 0, sizeof(OVERLAPPED));
 	contextsToSend[i].inOvLap.hEvent = CreateEvent(NULL, false, false, NULL);
 	ftStatus = FT_WritePipe(mFTHandle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
@@ -669,7 +674,7 @@ void Connection_uLimeSDR::AbortSending()
 			contextsToSend[i].used = false;
 		}
 	}
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, 65536);
+	txSize = 0;
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {

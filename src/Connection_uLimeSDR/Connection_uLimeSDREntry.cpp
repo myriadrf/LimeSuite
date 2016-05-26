@@ -73,7 +73,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
         {
             ConnectionHandle handle;
             handle.media = "USB";
-            //handle.name = DeviceName(i);
+            handle.name = "uLimeSDR";
             handle.index = i;
             handles.push_back(handle);
         }
