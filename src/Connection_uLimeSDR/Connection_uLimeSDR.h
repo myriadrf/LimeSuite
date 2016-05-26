@@ -135,6 +135,8 @@ protected:
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
     bool isConnected;
+    uint32_t txSize;
+    uint32_t rxSize;
 #ifndef __unix__
     FT_HANDLE mFTHandle;   
 	std::atomic<bool> firstShot;
