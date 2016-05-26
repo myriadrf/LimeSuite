@@ -23,6 +23,8 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
     isConnected = false;
+    txSize = 0;
+    rxSize = 0;
 #ifndef __unix__
 	mFTHandle = NULL;
 #else
@@ -40,6 +42,8 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
     isConnected = false;
+    txSize = 0;
+    rxSize = 0;
 #ifndef __unix__
     mFTHandle = NULL;
 #else
@@ -64,6 +68,16 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
+    
+    mUsbCounter++;
+    wbuffer[0] = (mUsbCounter)&0xFF;
+    wbuffer[1] = (mUsbCounter>>8)&0xFF;
+    wbuffer[2] = (mUsbCounter>>16)&0xFF;
+    wbuffer[3] = (mUsbCounter>>24)&0xFF;
+    wbuffer[4] = ep;
+    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, USB_TIMEOUT);
+    if (actual != 20)
+        return -1;
     
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;
@@ -165,8 +179,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
         return ReportError("Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     printf("Claimed Interface\n");
-    FT_SetStreamPipe(mStreamRdEndPtAddr,65536);
-    FT_SetStreamPipe(mStreamWrEndPtAddr,65536);    
+    
     FT_SetStreamPipe(0x82,64);
     FT_SetStreamPipe(0x02,64);
     isConnected = true;
@@ -393,6 +406,11 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, long length)
 		return -1;
 	}
 #else
+    if (length != rxSize)
+    {
+        rxSize = length;
+        FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);    
+    }
     unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], Timeout);
@@ -511,6 +529,7 @@ void Connection_uLimeSDR::AbortReading()
             libusb_cancel_transfer(contexts[i].transfer);
     }
     FT_FlushPipe(mStreamRdEndPtAddr);
+    rxSize = 0;
 #endif
 }
 
@@ -535,7 +554,7 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
     }
     if(!contextFound)
         return -1;
-    contextsToSend[i].used = true;
+        contextsToSend[i].used = true;
 #ifndef __unix__
 	FT_STATUS ftStatus = FT_OK;
 	ULONG ulActualBytesSend = 0;
@@ -547,8 +566,11 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
 		return -1;
 	}
 #else
-    int actual;
-   
+    if (length != txSize)
+    {
+        txSize = length;
+        FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);    
+    }  
     unsigned int Timeout = 500;
     libusb_transfer *tr = contextsToSend[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
@@ -654,6 +676,8 @@ void Connection_uLimeSDR::AbortSending()
         if(contextsToSend[i].used)
             libusb_cancel_transfer(contextsToSend[i].transfer);
     }
+    FT_FlushPipe(mStreamWrEndPtAddr);
+    txSize = 0;
 #endif
 }
 
