@@ -16,6 +16,7 @@
 
 #ifndef __unix__
 #include "windows.h"
+#define FTD3XX_STATIC
 #include "FTD3XXLibrary/FTD3XX.h"
 #else
 #include <libusb-1.0/libusb.h>
@@ -137,7 +138,6 @@ protected:
     bool isConnected;
 #ifndef __unix__
     FT_HANDLE mFTHandle;   
-	std::atomic<bool> firstShot;
 #else  
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);
