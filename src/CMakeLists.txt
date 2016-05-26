@@ -219,7 +219,7 @@ if (ENABLE_LMS7_GUI)
 
     set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
-    add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
+    add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
     set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
     target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
