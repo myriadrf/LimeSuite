@@ -33,6 +33,8 @@ using namespace std;
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
 
+#define EXPECTED_FW_VERSION "5"
+
 using namespace lime;
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
@@ -55,8 +57,19 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     if (this->Open(index, vid, pid) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
 
-    //must configure synthesizer before using LimeSDR
     DeviceInfo info = this->GetDeviceInfo();
+
+    //check and warn about firmware mismatch problems
+    if (info.firmwareVersion != EXPECTED_FW_VERSION) std::cerr << std::endl
+        << "########################################################" << std::endl
+        << "##   !!!  Warning: firmware version mismatch  !!!" << std::endl
+        << "## Expected firmware version " << EXPECTED_FW_VERSION << ", but found version " << info.firmwareVersion << std::endl
+        << "## Follow the FW and FPGA upgrade instructions:" << std::endl
+        << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
+        << "########################################################" << std::endl
+        << std::endl;
+
+    //must configure synthesizer before using LimeSDR
     if (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
     {
         std::shared_ptr<Si5351C> si5351module(new Si5351C());
