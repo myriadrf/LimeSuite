@@ -2,6 +2,7 @@
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    lime/LimeSuite.h
     VersionInfo.h
     ErrorReporting.h
     LimeSuiteConfig.h
