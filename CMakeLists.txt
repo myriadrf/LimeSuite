@@ -13,6 +13,10 @@ if(${CMAKE_MAJOR_VERSION} GREATER 2)
     cmake_policy(SET CMP0043 NEW)
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "")
+   set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 ########################################################################
 # gather version information
 ########################################################################

@@ -576,13 +576,14 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
             updateCounter = 0;
         }
     }
+
     stopTx.store(true);
     stopRx.store(true);
 
     threadTx.join();
     threadRx.join();
-
-    //stop Tx Rx if they were active
+    
+        //stop Tx Rx if they were active
     interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
     Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
 

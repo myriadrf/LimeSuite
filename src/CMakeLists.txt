@@ -122,6 +122,7 @@ endif()
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionSTREAM/CMakeLists.txt)
 include(ConnectionNovenaRF7/CMakeLists.txt)
+include(Connection_uLimeSDR/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
@@ -196,6 +197,7 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
     boards_wxgui/pnlQSpark.cpp
+    boards_wxgui/pnluLimeSDR.cpp
 )
 
 include(FeatureSummary)
