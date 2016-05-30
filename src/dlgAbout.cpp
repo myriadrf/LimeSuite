@@ -1,6 +1,6 @@
 #include "dlgAbout.h"
 #include "VersionInfo.h"
-#include "splash_image.h"
+#include "resources/splash.h"
 dlgAbout::dlgAbout( wxWindow* parent )
 :
 dlgAbout_view( parent )
@@ -21,5 +21,6 @@ void dlgAbout::OnInit( wxInitDialogEvent& event )
 
 void dlgAbout::OnbtnClose( wxCommandEvent& event )
 {
+	EndModal(wxID_OK);
 	Destroy();
 }

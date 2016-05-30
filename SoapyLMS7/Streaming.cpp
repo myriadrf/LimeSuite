@@ -137,6 +137,9 @@ int SoapyLMS7::activateStream(
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 
+    if (_conn->GetHardwareTimestampRate() == 0.0)
+        throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
+
     StreamMetadata metadata;
     metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
     metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;

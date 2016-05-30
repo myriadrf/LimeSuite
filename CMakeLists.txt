@@ -53,7 +53,7 @@ if (NOT LIME_SUITE_EXTVER)
 endif()
 
 set(LIME_SUITE_VERSION "${LIME_SUITE_LIBVER}-${LIME_SUITE_EXTVER}")
-string(TIMESTAMP BUILD_TIMESTAMP "%Y-%M-%d")
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 
 ########################################################################
 ## compiler flags
@@ -77,6 +77,30 @@ if (APPLE)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
    add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
 endif(APPLE)
+
+########################################################################
+# rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
+########################################################################
+# use, i.e. don't skip the full RPATH for the build tree
+option(CMAKE_SKIP_BUILD_RPATH "skip rpath build" FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+option(CMAKE_BUILD_WITH_INSTALL_RPATH "build with install rpath" FALSE)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "build with automatic rpath" TRUE)
+
+if(APPLE)
+    set(CMAKE_MACOSX_RPATH ON)
+endif()
 
 ########################################################################
 ## sqlite dependency

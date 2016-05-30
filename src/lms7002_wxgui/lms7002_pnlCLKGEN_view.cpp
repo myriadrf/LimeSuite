@@ -149,7 +149,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     txtFrequency->GetValue().ToDouble(&freqMHz);
     int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,freqMHz * 1e6);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Set frequency CGEN: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));

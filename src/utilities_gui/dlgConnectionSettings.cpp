@@ -63,11 +63,13 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
         if(GetParent())
             wxPostEvent(GetParent(), evt);
     }*/
+    EndModal(wxID_OK);
     Destroy();
 }
 
 void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 {
+	EndModal(wxID_CANCEL);
 	Destroy();
 }
 

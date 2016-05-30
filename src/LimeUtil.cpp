@@ -9,6 +9,7 @@
 #include <IConnection.h>
 #include <iostream>
 #include <cstdlib>
+#include <ciso646>
 #include <getopt.h>
 
 using namespace lime;
@@ -72,9 +73,25 @@ static int makeDevice(void)
 
     std::cout << "Make device " << argStr << std::endl;
     auto conn = ConnectionRegistry::makeConnection(handle);
-    std::cout << "OK" << std::endl;
-    std::cout << "  Pointer: 0x" << std::hex << size_t(conn) << std::dec << std::endl;
-    std::cout << "  IsOpen? " << conn->IsOpen() << std::endl;
+    if (conn == nullptr)
+    {
+        std::cout << "No available device!" << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (not conn->IsOpen())
+    {
+        std::cout << "Connection not open!" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    auto info = conn->GetDeviceInfo();
+    std::cout << "  Device name: " << info.deviceName << std::endl;
+    std::cout << "  Expansion name: " << info.expansionName << std::endl;
+    std::cout << "  Firmware version: " << info.firmwareVersion << std::endl;
+    std::cout << "  Hardware version: " << info.hardwareVersion << std::endl;
+    std::cout << "  Protocol version: " << info.protocolVersion << std::endl;
+    std::cout << "  Serial number: " << std::hex << "0x" << info.boardSerialNumber << std::dec << std::endl;
+
     std::cout << "  Free connection... " << std::flush;
     ConnectionRegistry::freeConnection(conn);
     std::cout << "OK" << std::endl;
