@@ -1452,8 +1452,8 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t
     
     LMS7_Device* lms = (LMS7_Device*)device;  
     
-    if (lms->streamer != nullptr)
-        delete lms->streamer;
+	if (lms->streamer != nullptr)
+		delete lms->streamer;
     if (conf.fifoSize == 0)
         lms->streamer = new StreamerAPI(lms->streamPort);
     else

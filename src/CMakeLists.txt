@@ -68,6 +68,7 @@ set(LIME_SUITE_SOURCES
     API/lms7_device.cpp
     API/StreamerAPI.cpp
     FPGA_common/FPGA_common.cpp
+    lime/LimeSuite.h
 )
 
 set(LIME_SUITE_INCLUDES
@@ -121,6 +122,10 @@ if (ENABLE_LIBRARY)
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
+	
+	if (MSVC)
+		set_target_properties(LimeSuite PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+	endif(MSVC)
 
     add_subdirectory(GFIR)
     set(LIME_SUITE_LIBS LimeSuite)
@@ -208,6 +213,7 @@ set(LMS7SUITE_GUI_SOURCES
     lms7suiteEvents/lms7suiteEvents.cpp
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
+    kissFFT/kiss_fft.c
 )
 
 include(FeatureSummary)
@@ -237,7 +243,7 @@ if (ENABLE_LMS7_GUI)
     target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
-        set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+		set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
     endif(MSVC)
 
     install(TARGETS lms7suite DESTINATION bin)

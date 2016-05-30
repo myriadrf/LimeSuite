@@ -1,5 +1,3 @@
-#include "pnlQSpark.h"
-
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/button.h>
@@ -10,11 +8,10 @@
 #include <wx/msgdlg.h>
 #include <wx/radiobox.h>
 
+#include "pnlQSpark.h"
 #include <ciso646>
 #include <map>
 
-#include <IConnection.h>
-#include <ErrorReporting.h>
 #include <FPGA_common.h>
 using namespace lime;
 using namespace std;
@@ -267,7 +264,7 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     regValue |= (event.GetInt() << reg.lsb) & mask;
 
     if(LMS_ReadFPGAReg(lmsControl,reg.address,&regValue) != 0)
-        wxMessageBox(GetLastErrorMessage(), "Error");
+        wxMessageBox(LMS_GetLastErrorMessage(), "Error");
 }
 
 pnlQSpark::~pnlQSpark()
@@ -355,7 +352,7 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
     {
        if (LMS_WriteFPGAReg(lmsControl,addrs[i],values[i]) !=0)
        {
-          wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK); 
+          wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK); 
           return;
        }
     }       
