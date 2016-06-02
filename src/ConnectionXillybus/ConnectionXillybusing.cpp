@@ -1,10 +1,10 @@
-    /**
+/**
     @file ConnectionSTREAMing.cpp
     @author Lime Microsystems
     @brief Implementation of STREAM board connection (streaming API)
 */
 
-#include "ConnectionSTREAM.h"
+#include "ConnectionXillybus.h"
 #include "StreamerLTE.h"
 #include "fifo.h" //from StreamerLTE
 #include <LMS7002M.h>
@@ -301,7 +301,7 @@ struct USBStreamServiceChannel
  * Streaming API implementation
  **********************************************************************/
 
-std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &config)
+std::string ConnectionXillybus::SetupStream(size_t &streamID, const StreamConfig &config)
 {
     streamID = ~0;
 
@@ -341,7 +341,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     return ""; //success
 }
 
-void ConnectionSTREAM::CloseStream(const size_t streamID)
+void ConnectionXillybus::CloseStream(const size_t streamID)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
     if (stream->isTx) mStreamService->txStreamUseCount--;
@@ -349,12 +349,12 @@ void ConnectionSTREAM::CloseStream(const size_t streamID)
     delete stream;
 }
 
-size_t ConnectionSTREAM::GetStreamSize(const size_t streamID)
+size_t ConnectionXillybus::GetStreamSize(const size_t streamID)
 {
     return STREAM_MTU;
 }
 
-bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
+bool ConnectionXillybus::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
@@ -372,7 +372,7 @@ bool ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable, c
     return true;
 }
 
-int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+int ConnectionXillybus::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
@@ -443,7 +443,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void * const *buffs, con
     return samplesCount;
 }
 
-int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+int ConnectionXillybus::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
     //TODO check fifo has space with timeout
@@ -526,7 +526,7 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     return samplesCount;
 }
 
-int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
+int ConnectionXillybus::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
@@ -537,7 +537,7 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
+void ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
     std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
     const float txInterfaceClk = 2 * txRate_Hz;
@@ -577,28 +577,28 @@ void ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double
     if(mStreamService) mStreamService->mHwCounterRate = rxRate_Hz;
 }
 
-void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)
+void ConnectionXillybus::EnterSelfCalibration(const size_t channel)
 {
     if (mStreamService) mStreamService->stop();
 }
 
-void ConnectionSTREAM::ExitSelfCalibration(const size_t channel)
+void ConnectionXillybus::ExitSelfCalibration(const size_t channel)
 {
     if (mStreamService) mStreamService->start();
 }
 
-uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
+uint64_t ConnectionXillybus::GetHardwareTimestamp(void)
 {
     return mStreamService->mLastRxTimestamp + mStreamService->mTimestampOffset;
 }
 
-void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
+void ConnectionXillybus::SetHardwareTimestamp(const uint64_t now)
 {
     if (not mStreamService) mStreamService.reset(new USBStreamService(this));
     mStreamService->mTimestampOffset = int64_t(now)-int64_t(mStreamService->mLastRxTimestamp);
 }
 
-double ConnectionSTREAM::GetHardwareTimestampRate(void)
+double ConnectionXillybus::GetHardwareTimestampRate(void)
 {
     return mStreamService->mHwCounterRate;
 }
