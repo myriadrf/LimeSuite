@@ -60,6 +60,7 @@ public:
         COM_PORT = 0,
         USB_PORT = 1,
         SPI_PORT = 2,
+        PCIE_PORT = 3,
         //insert new types here
         CONNECTION_TYPES_COUNT //used only for memory allocation
     };
