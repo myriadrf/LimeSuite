@@ -119,11 +119,7 @@ public:
 private:
     #ifndef __unix__
     std::string DeviceName(unsigned int index);
-    CCyUSBDevice *USBDevicePrimary;
     #else
-    std::thread mUSBProcessingThread;
-    void handle_libusb_events();
-    std::atomic<bool> mProcessUSBEvents;
     #endif
 };
 
