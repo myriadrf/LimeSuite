@@ -285,7 +285,7 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 #else
 	if (hRead == -1)
 #endif
-		return -1;
+            return -1;
  
 	unsigned long totalBytesReaded = 0;
 	unsigned long bytesToRead = length;
@@ -321,36 +321,29 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 		}
 	   CloseHandle(vOverlapped.hEvent);
 #else
-	unsigned long totalBytesReaded = 0;
-	unsigned long bytesToRead = length;
-	auto t1 = chrono::high_resolution_clock::now();
-	auto t2 = chrono::high_resolution_clock::now();
-
-	while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
-	{
-		int bytesReceived = 0;
-        if ((bytesReceived = read(hRead, buffer+ totalBytesReaded, bytesToRead))<0)
-        {
-            if(errno == EINTR)
-                 continue;
-            else if (errno != EAGAIN)
+            int bytesReceived = 0;
+            if ((bytesReceived = read(hRead, buffer+ totalBytesReaded, bytesToRead))<0)
             {
-                ReportError(errno);
-                return totalBytesReaded;
+                if(errno == EINTR)
+                     continue;
+                else if (errno != EAGAIN)
+                {
+                    ReportError(errno);
+                    return totalBytesReaded;
+                }
             }
-        }
-		else
+            else
 #endif
-			totalBytesReaded += bytesReceived;
-		if (totalBytesReaded < length)
-		{
-			bytesToRead -= bytesReceived;
-			t2 = chrono::high_resolution_clock::now();
-		}
-		else
-			break;
-}
-	return totalBytesReaded;
+            totalBytesReaded += bytesReceived;
+            if (totalBytesReaded < length)
+            {
+                    bytesToRead -= bytesReceived;
+                    t2 = chrono::high_resolution_clock::now();
+            }
+            else
+               break;
+        }
+    return totalBytesReaded;
 }
 
 /**
@@ -459,7 +452,7 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
         if (totalBytesReaded < length) 
         {
             bytesToRead -= bytesReceived;
-			std::this_thread::yield();
+	    std::this_thread::yield();
             t2 = chrono::high_resolution_clock::now();
         }
         else
