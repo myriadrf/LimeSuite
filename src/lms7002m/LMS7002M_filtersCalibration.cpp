@@ -388,6 +388,8 @@ int LMS7002M::TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_
         {
             stepSize = pow2(stepIncrease);
             value -= stepSize;
+            if(value < 0)
+                value = 0;
             Modify_SPI_Reg_bits(param, value);
             rssi = GetAvgRSSI(rssiAvgCnt);
             stepIncrease += 1;
@@ -399,6 +401,8 @@ int LMS7002M::TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_
         {
             stepSize = pow2(stepIncrease);
             value += stepSize;
+            if(value > stepLimit - 1)
+                value = stepLimit - 1;
             Modify_SPI_Reg_bits(param, value);
             rssi = GetAvgRSSI(rssiAvgCnt);
             stepIncrease += 1;
@@ -720,9 +724,11 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_freq)
     //CGEN
     SetDefaults(CGEN);
     int cgenMultiplier = tx_lpf_freq*20/46.08e6 + 0.5;
+    if(cgenMultiplier > 9 && cgenMultiplier < 12)
+        cgenMultiplier = 12;
     cgenMultiplier = clamp(cgenMultiplier, 2, 13);
 
-    status = SetFrequencyCGEN(46.08e6*cgenMultiplier);
+    status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
     if(status != 0)
         return status;
 
@@ -1116,8 +1122,8 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     auto registersBackup = BackupRegisterMap();
 
     float_type tx_lpf_freq = tx_lpf_freq_RF/2;
-    if(tx_lpf_freq < 2.5e6 || tx_lpf_freq > 65e6)
-        return ReportError(ERANGE, "Tx lpf out of range 2.5-16 MHz and 25-65 MHz");
+    if(tx_lpf_freq_RF < 5e6 || tx_lpf_freq_RF > 130e6)
+        return ReportError(ERANGE, "Tx lpf out of range 5-32 MHz and 50-130 MHz");
 
     if(tx_lpf_freq > 16e6 && tx_lpf_freq < 25e6)
         tx_lpf_freq = 25e6;
@@ -1186,10 +1192,13 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         uint32_t rssi_3dB_S5 = rssi_dc_S5*0.7071;
         Modify_SPI_Reg_bits(SEL_TX, 1);
         Modify_SPI_Reg_bits(SEL_RX, 1);
-
-        status = TxFilterSearch_S5(RCAL_LPFS5_TBB, rssi_3dB_S5, rssiAvgCount, 256);
-        if(status != 0)
-            return status;
+        rssi = GetRSSI();
+        if(rssi > rssi_3dB_S5)
+        {
+            status = TxFilterSearch_S5(RCAL_LPFS5_TBB, rssi_3dB_S5, rssiAvgCount, 256);
+            if(status != 0)
+                return status;
+        }
     }
 
     if(tx_lpf_freq > 16e6)
