@@ -20,6 +20,9 @@ using namespace lime;
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
 
+static const int E_DECREASE_R = 0x0080;
+static const int E_INCREASE_R = 0x0081;
+
 inline uint16_t pow2(const uint8_t power)
 {
     assert(power >= 0 && power < 16);
@@ -89,8 +92,8 @@ uint32_t LMS7002M::GetAvgRSSI(const int avgCount)
 int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
 {
     const float rx_lpf_freq = rx_lpf_freq_RF/2;
-    if(0.7e6 > rx_lpf_freq || rx_lpf_freq > 65e6)
-        return ReportError(ERANGE, "RxLPF frequency out of range, available range from 0.7 to 65 MHz");
+    if(1.4e6 > rx_lpf_freq_RF || rx_lpf_freq_RF > 130e6)
+        return ReportError(ERANGE, "RxLPF frequency out of range, available range from 1.4 to 130 MHz");
 
     auto registersBackup = BackupRegisterMap();
     int g_tia_rfe = Get_SPI_Reg_bits(G_TIA_RFE);
@@ -129,19 +132,66 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         if(status != 0)
             return status;
 
-        if(rx_lpf_freq < 15.4e6)
+        if(rx_lpf_freq < 18e6)
         {
             //LPFL START
             status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, rssiAvgCount, 2048);
-            if(status != 0)
+            if(status == E_DECREASE_R)
+            {
+                int r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
+                while(r_ctl_lpf > 1)
+                {
+                    r_ctl_lpf /= 2;
+                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
+                    status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, rssiAvgCount, 2048);
+                }
+            }
+            if(status == E_INCREASE_R)
+            {
+                int r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
+                while(r_ctl_lpf < 31)
+                {
+                    r_ctl_lpf += 4;
+                    if(r_ctl_lpf > 31)
+                        break;
+                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
+                    status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, rssiAvgCount, 2048);
+                }
+            }
+            else if(status != 0)
                 return status;
             //LPFL END
         }
-        if(rx_lpf_freq >= 15.4e6)
+        if(rx_lpf_freq >= 18e6)
         {
             //LPFH START
             status = RxFilterSearch(C_CTL_LPFH_RBB, rssi_3dB, rssiAvgCount, 256);
-            if(status != 0)
+            if(status == E_DECREASE_R)
+            {
+                int r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
+                while(r_ctl_lpf > 0)
+                {
+                    r_ctl_lpf -= 1;
+                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
+                    rssi = GetRSSI();
+                    if(rssi < rssi_3dB)
+                        break;
+                }
+            }
+            if(status == E_INCREASE_R)
+            {
+                int r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
+                while(r_ctl_lpf < 31)
+                {
+                    r_ctl_lpf += 1;
+                    if(r_ctl_lpf > 31)
+                        break;
+                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
+                    if(rssi > rssi_3dB)
+                        break;
+                }
+            }
+            else if(status != 0)
                 return status;
             //LPFH END
         }
@@ -252,18 +302,20 @@ int LMS7002M::RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB
             rssi = GetAvgRSSI(rssiAvgCnt);
             stepIncrease += 1;
             if(stepSize == stepLimit)
-                return ReportError(ERANGE, "%s step size out of range", param.name);
+                return ReportError(E_INCREASE_R, "%s step size out of range", param.name);
         }
     else if(rssi > rssi_3dB)
         while(rssi > rssi_3dB)
         {
             stepSize = pow2(stepIncrease);
             value += stepSize;
+            if(value > stepLimit-1)
+                value = stepLimit-1;
             Modify_SPI_Reg_bits(param, value);
             rssi = GetAvgRSSI(rssiAvgCnt);
             stepIncrease += 1;
             if(stepSize == stepLimit)
-                return ReportError(ERANGE, "%s step size out of range", param.name);
+                return ReportError(E_DECREASE_R, "%s step size out of range", param.name);
         }
 
     if(stepSize == 1)
@@ -440,7 +492,7 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_freq)
     rcc_ctl_pga_rbb = clamp(rcc_ctl_pga_rbb, 0, 31);
     Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
 
-    if(rx_lpf_freq < 15.4e6)
+    if(rx_lpf_freq < 18e6)
     {
         Modify_SPI_Reg_bits(PD_LPFL_RBB, 0);
         Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
@@ -517,9 +569,11 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_freq)
     //CGEN
     SetDefaults(CGEN);
     int cgenMultiplier = rx_lpf_freq*20 / 46.08e6 + 0.5;
+    if(cgenMultiplier > 9 && cgenMultiplier < 12)
+        cgenMultiplier = 12;
     cgenMultiplier = clamp(cgenMultiplier, 2, 13);
 
-    status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
+    status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
     if(status != 0)
         return status;
 
@@ -1296,7 +1350,7 @@ int LMS7002M::TuneRxFilterWithCaching(const float_type bandwidth)
     //Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
     Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl_lpfh_rbb);
     Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
-    if (bandwidth < 15.4e6)
+    if (bandwidth < 18e6)
     {
         Modify_SPI_Reg_bits(PD_LPFL_RBB, 0);
         Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
