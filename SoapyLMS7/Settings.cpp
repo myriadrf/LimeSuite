@@ -792,6 +792,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         if (rfic->TuneRxFilterWithCaching(bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
+            throw std::runtime_error(lime::GetLastErrorMessage());
         }
     }
 
@@ -800,6 +801,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
         if (rfic->TuneTxFilterWithCaching(bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
+            throw std::runtime_error(lime::GetLastErrorMessage());
         }
     }
 
