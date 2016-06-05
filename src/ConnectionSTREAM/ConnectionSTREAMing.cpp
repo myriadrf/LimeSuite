@@ -330,7 +330,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     //configure LML based on channel config
     LMS7002M rfic;
     rfic.SetConnection(this);
-    if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
+    if (config.isTx) rfic.ConfigureLML_BB2RF(s1, s0, s3, s2); //intentional swap
     else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
     if (config.isTx) mStreamService->txStreamUseCount++;
