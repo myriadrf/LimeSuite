@@ -781,6 +781,7 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
 
 void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const double bw)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
     //save dc offset mode
@@ -815,6 +816,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
 double SoapyLMS7::getBandwidth(const int direction, const size_t channel) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     try
     {
         return _actualBw.at(direction).at(channel);
@@ -861,6 +863,7 @@ void SoapyLMS7::setMasterClockRate(const double rate)
 
 double SoapyLMS7::getMasterClockRate(void) const
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = this->getRFIC(0); //same for all RFIC
     return rfic->GetFrequencyCGEN();
 }
