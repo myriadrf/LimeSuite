@@ -135,6 +135,10 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
         this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
         this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
+        this->setDCOffsetMode(SOAPY_SDR_RX, channel, true);
+        this->setDCOffset(SOAPY_SDR_TX, channel, 0.0);
+        this->setIQBalance(SOAPY_SDR_RX, channel, 1.0);
+        this->setIQBalance(SOAPY_SDR_TX, channel, 1.0);
     }
 
     //also triggers internal stream threads ~ its hacky
@@ -1012,7 +1016,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "TXTSP_CONST")
+    else if (key == "TXTSP_CONST")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
@@ -1020,7 +1024,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "STORE_RX_CORRECTIONS")
+    else if (key == "STORE_RX_CORRECTIONS")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
@@ -1028,7 +1032,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "STORE_TX_CORRECTIONS")
+    else if (key == "STORE_TX_CORRECTIONS")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
@@ -1036,7 +1040,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "APPLY_RX_CORRECTIONS")
+    else if (key == "APPLY_RX_CORRECTIONS")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
@@ -1044,13 +1048,15 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    if (key == "APPLY_TX_CORRECTIONS")
+    else if (key == "APPLY_TX_CORRECTIONS")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "APPLY_CORRECTIONS", value);
         }
     }
+
+    else throw std::runtime_error("unknown setting key: "+key);
 }
 
 SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_t channel) const
@@ -1103,18 +1109,20 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         rfic->LoadDC_REG_IQ(isTx, ampl, 0);
     }
 
-    if (key == "STORE_CORRECTIONS")
+    else if (key == "STORE_CORRECTIONS")
     {
         rfic->StoreDigitalCorrections(isTx);
     }
 
-    if (key == "APPLY_CORRECTIONS")
+    else if (key == "APPLY_CORRECTIONS")
     {
         if (rfic->ApplyDigitalCorrections(isTx) != 0)
         {
             throw std::runtime_error(lime::GetLastErrorMessage());
         }
     }
+
+    else throw std::runtime_error("unknown setting key: "+key);
 }
 
 /*******************************************************************
