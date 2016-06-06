@@ -1112,7 +1112,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     {
         if (output)
         {
-            output->success == false;
+            output->success = false;
             output->csw = Get_SPI_Reg_bits(CSW_VCO_CGEN);
         }
         ss << GetLastErrorMessage();

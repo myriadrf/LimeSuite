@@ -301,6 +301,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
     Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
     Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
+    return 0;
 }
 
 int LMS7002M::RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit)
