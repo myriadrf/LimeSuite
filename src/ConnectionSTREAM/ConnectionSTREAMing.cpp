@@ -330,7 +330,7 @@ std::string ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &
     //configure LML based on channel config
     LMS7002M rfic;
     rfic.SetConnection(this);
-    if (config.isTx) rfic.ConfigureLML_BB2RF(s0, s1, s2, s3);
+    if (config.isTx) rfic.ConfigureLML_BB2RF(s1, s0, s3, s2); //intentional swap
     else             rfic.ConfigureLML_RF2BB(s0, s1, s2, s3);
 
     if (config.isTx) mStreamService->txStreamUseCount++;
@@ -510,7 +510,8 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
     if (stream->sampsRemaining == 0)
     {
         uint32_t statusFlags = 0;
-        if (stream->nextTimestamp != 0) statusFlags |= STATUS_FLAG_TX_TIME;
+        const bool hasTime = stream->nextTimestamp != 0;
+        if (hasTime) statusFlags |= STATUS_FLAG_TX_TIME;
         if (actualEob) statusFlags |= STATUS_FLAG_TX_END;
         size_t sampsPushed = mStreamService->GetTxFIFO()->push_samples(
             (const complex16_t **)stream->FIFOBuffers.data(),
@@ -519,8 +520,12 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void * const *buf
             stream->nextTimestamp,
             timeout_ms,
             statusFlags);
+
+        //on end of burst, always clear the timestamp counter regardless
         if (actualEob) stream->nextTimestamp = 0;
-        else stream->nextTimestamp += sampsPushed;
+
+        //when this is a timed packet, increment the time for the next push
+        else if (hasTime) stream->nextTimestamp += sampsPushed;
     }
 
     return samplesCount;

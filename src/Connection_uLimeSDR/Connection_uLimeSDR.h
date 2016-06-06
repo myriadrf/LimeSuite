@@ -16,7 +16,6 @@
 
 #ifndef __unix__
 #include "windows.h"
-#define FTD3XX_STATIC
 #include "FTD3XXLibrary/FTD3XX.h"
 #else
 #include <libusb-1.0/libusb.h>

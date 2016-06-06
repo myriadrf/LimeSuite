@@ -77,7 +77,7 @@ inline int lime::ReportError(const char *format, ...)
 {
     va_list argList;
     va_start(argList, format);
-    int status = lime::ReportError(0, format, argList);
+    int status = lime::ReportError(-1, format, argList);
     va_end(argList);
     return status;
 }

@@ -28,6 +28,31 @@ public:
         Rx, Tx
     };
 
+    struct CGEN_details
+    {
+        float_type frequency;
+        float_type frequencyVCO;
+        float_type referenceClock;
+        uint32_t INT;
+        uint32_t FRAC;
+        uint8_t div_outch_cgen;
+        uint16_t csw;
+        bool success;
+    };
+    struct SX_details
+    {
+        float_type frequency;
+        float_type frequencyVCO;
+        float_type referenceClock;
+        uint32_t INT;
+        uint32_t FRAC;
+        uint8_t div_loch;
+        bool en_div2_divprog;
+        uint16_t sel_vco;
+        uint16_t csw;
+        bool success;
+    };
+
 	LMS7002M();
 
     /*!
@@ -259,10 +284,10 @@ public:
 	void SetReferenceClk_SX(bool tx, float_type freq_Hz);
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN();
-	int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false);
+    int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
 	bool GetCGENLocked(void);
 	float_type GetFrequencySX(bool tx);
-	int SetFrequencySX(bool tx, float_type freq_Hz);
+    int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
 	bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
@@ -415,9 +440,9 @@ protected:
     int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
     int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
-    int TuneRxFilterSetup(const float_type rx_lpf_freq);
+    int TuneRxFilterSetup(const float_type rx_lpf_IF);
     int TuneTxFilterFixedSetup();
-    int TuneTxFilterSetup(const float_type tx_lpf_freq);
+    int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
     int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt);

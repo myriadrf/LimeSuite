@@ -9,6 +9,14 @@ from optparse import OptionParser
 import time
 import os
 import math
+import signal
+
+RUNNING = [True]
+
+def handler(signum, frame):
+    RUNNING[0] = False
+
+signal.signal(signal.SIGINT, handler)
 
 def siggen_app(
     args,
@@ -52,8 +60,7 @@ def siggen_app(
 
     if txTSP:
         sdr.setFrequency(SOAPY_SDR_TX, txChan, "BB", waveFreq)
-        sdr.writeSetting("ACTIVE_CHANNEL", {0:"A",1:"B"}[txChan])
-        sdr.writeSetting("ENABLE_TXTSP_CONST", "true");
+        sdr.writeSetting("TXTSP_CONST", str((1 << 14)))
 
     #tx loop
     #create tx stream
@@ -68,7 +75,7 @@ def siggen_app(
     
     timeLastPrint = time.time()
     totalSamps = 0
-    while True:
+    while RUNNING[0]:
         phaseAccNext = phaseAcc + streamMTU*phaseInc
         sampsCh0 = ampl*np.exp(1j*np.linspace(phaseAcc, phaseAccNext, streamMTU)).astype(np.complex64)
         phaseAcc = phaseAccNext

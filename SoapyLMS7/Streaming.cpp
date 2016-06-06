@@ -115,6 +115,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
 
 void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 
