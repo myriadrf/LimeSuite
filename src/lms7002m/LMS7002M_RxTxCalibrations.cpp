@@ -301,6 +301,8 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     int cgenMultiplier = int((cgenFreq / 46.08e6) + 0.5);
     if(cgenMultiplier < 2)
         cgenMultiplier = 2;
+    if(cgenMultiplier > 9 && cgenMultiplier < 12)
+        cgenMultiplier = 12;
     if(cgenMultiplier > 13)
         cgenMultiplier = 13;
     //power up VCO
@@ -790,6 +792,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     int cgenMultiplier = int(cgenFreq / 46.08e6 + 0.5);
     if(cgenMultiplier < 2)
         cgenMultiplier = 2;
+    if(cgenMultiplier > 9 && cgenMultiplier < 12)
+        cgenMultiplier = 12;
     if(cgenMultiplier > 13)
         cgenMultiplier = 13;
     //power up VCO
