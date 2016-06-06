@@ -7765,7 +7765,6 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbAGC_AVG_RXTSP->Append( wxT("2^12") );
 	cmbAGC_AVG_RXTSP->Append( wxT("2^13") );
 	cmbAGC_AVG_RXTSP->Append( wxT("2^14") );
-	cmbAGC_AVG_RXTSP->Append( wxT("2^0") );
 	cmbAGC_AVG_RXTSP->SetToolTip( wxT("AGC Averaging window size") );
 	
 	fgSizer173->Add( cmbAGC_AVG_RXTSP, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
