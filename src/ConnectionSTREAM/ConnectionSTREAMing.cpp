@@ -99,6 +99,10 @@ struct USBStreamService : StreamerLTE
 
         dataPort->TransferPacket(pkt);
 
+        //reset/clear LML FIFOs and other state
+        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0x00);
+        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0xff);
+
         //switch on Rx
         interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
         Reg_write(mDataPort, 0x000A, interface_ctrl_000A | 0x1);
@@ -188,6 +192,12 @@ struct USBStreamService : StreamerLTE
         if (mHwCounterRate == 0.0) return; //not configured
         //clear any residual data from FIFO
         ResetUSBFIFO(dynamic_cast<LMS64CProtocol *>(mDataPort));
+
+        //reset/clear LML FIFOs and other state
+        LMS7002M rfic;
+        rfic.SetConnection(mDataPort);
+        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0x00);
+        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0xff);
 
         //switch on Rx
         uint16_t interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
