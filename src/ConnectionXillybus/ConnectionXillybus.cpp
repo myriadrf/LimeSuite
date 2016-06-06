@@ -215,14 +215,14 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 500);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesSent, FALSE) == FALSE)
+			if (GetOverlappedResult(hWrite, &vOverlapped, &bytesSent, FALSE) == FALSE)
 			{
 				bytesSent = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hWrite);
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
@@ -422,14 +422,14 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
 		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesReceived, TRUE) == FALSE)
+			if (GetOverlappedResult(hReadStream, &vOverlapped, &bytesReceived, TRUE) == FALSE)
 			{
 				bytesReceived = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hReadStream);
 			bytesReceived = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
@@ -535,14 +535,14 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
 		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 200);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesSent, TRUE) == FALSE)
+			if (GetOverlappedResult(hWriteStream, &vOverlapped, &bytesSent, TRUE) == FALSE)
 			{
 				bytesSent = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hWriteStream);
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
