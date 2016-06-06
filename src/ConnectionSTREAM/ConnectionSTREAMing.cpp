@@ -1,4 +1,4 @@
-/**
+    /**
     @file ConnectionSTREAMing.cpp
     @author Lime Microsystems
     @brief Implementation of STREAM board connection (streaming API)
