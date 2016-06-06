@@ -186,7 +186,11 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
                     Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
                     rssi = GetRSSI();
                     if(rssi < rssi_3dB)
+                    {
+                        status = 0;
                         break;
+                    }
+
                 }
             }
             if(status == E_INCREASE_R)
@@ -199,7 +203,10 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
                         break;
                     Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
                     if(rssi > rssi_3dB)
+                    {
+                        status = 0;
                         break;
+                    }
                 }
             }
             else if(status != 0)
