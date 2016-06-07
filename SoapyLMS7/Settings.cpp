@@ -781,6 +781,8 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
 
 void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const double bw)
 {
+    if (bw == 0.0) return; //special ignore value
+
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
