@@ -238,6 +238,30 @@ dlgDeviceInfo_view::dlgDeviceInfo_view( wxWindow* parent, wxWindowID id, const w
 	lblProtocolCtr->Wrap( -1 );
 	fgSizer8->Add( lblProtocolCtr, 0, wxALL, 5 );
 	
+	m_staticText41 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText41->Wrap( -1 );
+	fgSizer8->Add( m_staticText41, 0, wxALL, 5 );
+	
+	lblGatewareCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareCtr->Wrap( -1 );
+	fgSizer8->Add( lblGatewareCtr, 0, wxALL, 5 );
+	
+	m_staticText43 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware rev:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText43->Wrap( -1 );
+	fgSizer8->Add( m_staticText43, 0, wxALL, 5 );
+	
+	lblGatewareRevCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareRevCtr->Wrap( -1 );
+	fgSizer8->Add( lblGatewareRevCtr, 0, wxALL, 5 );
+	
+	m_staticText45 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware target:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText45->Wrap( -1 );
+	fgSizer8->Add( m_staticText45, 0, wxALL, 5 );
+	
+	lblGatewareTargetCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareTargetCtr->Wrap( -1 );
+	fgSizer8->Add( lblGatewareTargetCtr, 0, wxALL, 5 );
+	
 	
 	sbSizerControlPort->Add( fgSizer8, 1, wxEXPAND, 5 );
 	
@@ -291,6 +315,30 @@ dlgDeviceInfo_view::dlgDeviceInfo_view( wxWindow* parent, wxWindowID id, const w
 	lblProtocolData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblProtocolData->Wrap( -1 );
 	fgSizer81->Add( lblProtocolData, 0, wxALL, 5 );
+	
+	m_staticText47 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText47->Wrap( -1 );
+	fgSizer81->Add( m_staticText47, 0, wxALL, 5 );
+	
+	lblGatewareData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareData->Wrap( -1 );
+	fgSizer81->Add( lblGatewareData, 0, wxALL, 5 );
+	
+	m_staticText49 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware rev:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText49->Wrap( -1 );
+	fgSizer81->Add( m_staticText49, 0, wxALL, 5 );
+	
+	lblGatewareRevData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareRevData->Wrap( -1 );
+	fgSizer81->Add( lblGatewareRevData, 0, wxALL, 5 );
+	
+	m_staticText51 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware target:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText51->Wrap( -1 );
+	fgSizer81->Add( m_staticText51, 0, wxALL, 5 );
+	
+	lblGatewareTargetData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareTargetData->Wrap( -1 );
+	fgSizer81->Add( lblGatewareTargetData, 0, wxALL, 5 );
 	
 	
 	sbSizerDataPort->Add( fgSizer81, 1, wxEXPAND, 5 );

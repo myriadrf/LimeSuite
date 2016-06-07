@@ -39,6 +39,13 @@ struct DeviceInfo
     //! The firmware version as a string
     std::string firmwareVersion;
 
+    //! Gateware version as a string
+    std::string gatewareVersion;
+    //! Gateware revision as a string
+    std::string gatewareRevision;
+    //! Which board should use this gateware
+    std::string gatewareTargetBoard;
+
     //! The hardware version as a string
     std::string hardwareVersion;
 

@@ -146,6 +146,15 @@ public:
 
     LMSinfo GetInfo();
 
+    struct FPGAinfo
+    {
+        int boardID;
+        int gatewareVersion;
+        int gatewareRevision;
+    };
+
+    FPGAinfo GetFPGAInfo();
+
     //! implement in base class
     virtual eConnectionType GetType(void) = 0;
 

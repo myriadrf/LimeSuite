@@ -308,6 +308,12 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.addrSi5351 = Si5351_I2C_ADDR;
     devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     devInfo.boardSerialNumber = lmsInfo.boardSerialNumber;
+
+    FPGAinfo gatewareInfo = this->GetFPGAInfo();
+    devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
+    devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
+    devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
+
     return devInfo;
 }
 
@@ -336,6 +342,33 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
     }
     return info;
 }
+
+/** @brief Returns information from FPGA gateware
+*/
+LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
+{
+    FPGAinfo info;
+    info.boardID = 0;
+    info.gatewareVersion = 0;
+    info.gatewareRevision = 0;
+    GenericPacket pkt;
+    pkt.cmd = CMD_BRDSPI_RD;
+    const uint16_t addrs[] = {0x0000, 0x0001, 0x0002};
+    for (size_t i = 0; i < 3; ++i)
+    {
+        pkt.outBuffer.push_back(addrs[i] >> 8);
+        pkt.outBuffer.push_back(addrs[i] & 0xFF);
+    }
+    int status = this->TransferPacket(pkt);
+    if (status == 0 && pkt.inBuffer.size() >= sizeof(addrs)*2)
+    {
+        info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+        info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
+        info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+    }
+    return info;
+}
+
 
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data

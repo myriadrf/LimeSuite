@@ -17,7 +17,7 @@ void dlgDeviceInfo::Initialize(lms_device_t* lms)
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {
     const lms_dev_info_t* info;
-    
+
     if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
         lblDeviceCtr->SetLabel(info->deviceName);
@@ -25,26 +25,38 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblFirmwareCtr->SetLabel(info->firmwareVersion);
         lblHardwareCtr->SetLabel(info->hardwareVersion);
         lblProtocolCtr->SetLabel(info->protocolVersion);
-        
+        lblGatewareCtr->SetLabel(info->gatewareVersion);
+        lblGatewareRevCtr->SetLabel(info->gatewareRevision);
+        lblGatewareTargetCtr->SetLabel(info->gatewareTargetBoard);
+
         lblDeviceData->SetLabel(info->deviceName);
         lblExpansionData->SetLabel(info->expansionName);
         lblFirmwareData->SetLabel(info->firmwareVersion);
         lblHardwareData->SetLabel(info->hardwareVersion);
         lblProtocolData->SetLabel(info->protocolVersion);
+        lblGatewareData->SetLabel(info->gatewareVersion);
+        lblGatewareRevData->SetLabel(info->gatewareRevision);
+        lblGatewareTargetData->SetLabel(info->gatewareTargetBoard);
     }
     else
     {
-        lblDeviceCtr->SetLabel("???");
-        lblExpansionCtr->SetLabel("???");
-        lblFirmwareCtr->SetLabel("???");
-        lblHardwareCtr->SetLabel("???");
-        lblProtocolCtr->SetLabel("???");
-        
-        lblDeviceData->SetLabel("???");
-        lblExpansionData->SetLabel("???");
-        lblFirmwareData->SetLabel("???");
-        lblHardwareData->SetLabel("???");
-        lblProtocolData->SetLabel("???");
+        lblDeviceCtr->SetLabel(_("???"));
+        lblExpansionCtr->SetLabel(_("???"));
+        lblFirmwareCtr->SetLabel(_("???"));
+        lblHardwareCtr->SetLabel(_("???"));
+        lblProtocolCtr->SetLabel(_("???"));
+        lblGatewareCtr->SetLabel(_("???"));
+        lblGatewareRevCtr->SetLabel(_("???"));
+        lblGatewareTargetCtr->SetLabel(_("???"));
+
+        lblDeviceData->SetLabel(_("???"));
+        lblExpansionData->SetLabel(_("???"));
+        lblFirmwareData->SetLabel(_("???"));
+        lblHardwareData->SetLabel(_("???"));
+        lblProtocolData->SetLabel(_("???"));
+        lblGatewareData->SetLabel(_("???"));
+        lblGatewareRevData->SetLabel(_("???"));
+        lblGatewareTargetData->SetLabel(_("???"));
     }
 
 
