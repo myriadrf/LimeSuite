@@ -121,6 +121,12 @@ class dlgDeviceInfo_view : public wxDialog
 		wxStaticText* lblHardwareCtr;
 		wxStaticText* m_staticText14;
 		wxStaticText* lblProtocolCtr;
+		wxStaticText* m_staticText41;
+		wxStaticText* lblGatewareCtr;
+		wxStaticText* m_staticText43;
+		wxStaticText* lblGatewareRevCtr;
+		wxStaticText* m_staticText45;
+		wxStaticText* lblGatewareTargetCtr;
 		wxStaticText* m_staticText61;
 		wxStaticText* lblDeviceData;
 		wxStaticText* m_staticText81;
@@ -131,6 +137,12 @@ class dlgDeviceInfo_view : public wxDialog
 		wxStaticText* lblHardwareData;
 		wxStaticText* m_staticText141;
 		wxStaticText* lblProtocolData;
+		wxStaticText* m_staticText47;
+		wxStaticText* lblGatewareData;
+		wxStaticText* m_staticText49;
+		wxStaticText* lblGatewareRevData;
+		wxStaticText* m_staticText51;
+		wxStaticText* lblGatewareTargetData;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnGetInfo( wxCommandEvent& event ) { event.Skip(); }

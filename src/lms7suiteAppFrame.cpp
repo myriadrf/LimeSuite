@@ -181,6 +181,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     UpdateConnections(lms7controlPort, streamBoardPort);
 
     mnuCacheValues->Check(lmsControl->IsValuesCacheEnabled());
+    const int statusWidths[] = {-1, -3, -3};
+    statusBar->SetStatusWidths(3, statusWidths);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -235,7 +237,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         DeviceInfo info = lms7controlPort->GetDeviceInfo();
         wxString controlDev = _("Control port: ");
         controlDev.Append(info.deviceName);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion, info.gatewareVersion, info.gatewareRevision));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         wxCommandEvent evt;
@@ -269,7 +271,7 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
         DeviceInfo info = streamBoardPort->GetDeviceInfo();
         wxString controlDev = _("Data port: ");
         controlDev.Append(info.deviceName);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion));
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s"), info.firmwareVersion, info.hardwareVersion, info.protocolVersion, info.gatewareVersion, info.gatewareRevision));
         statusBar->SetStatusText(controlDev, dataCollumn);
 
         wxCommandEvent evt;
