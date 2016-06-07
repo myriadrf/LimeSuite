@@ -83,7 +83,7 @@ def siggen_app(
         if not const:
             phaseAccNext = phaseAcc + streamMTU*phaseInc
             sampsCh0 = ampl*np.exp(1j*np.linspace(phaseAcc, phaseAccNext, streamMTU)).astype(np.complex64)
-            phaseAcc = phaseAccNext
+            phaseAcc = phaseAccNext + phaseInc
             while phaseAcc > math.pi*2: phaseAcc -= math.pi*2
 
         sr = sdr.writeStream(txStream, [sampsCh0], sampsCh0.size)
