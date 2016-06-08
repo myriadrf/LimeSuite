@@ -355,24 +355,10 @@ void ConnectionSTREAM::CloseStream(const size_t streamID)
 {
     auto *stream = (USBStreamServiceChannel *)streamID;
 
-    /*!
-     * End of burst packet + sleep to flush out remaining TX
-     */
-    if (stream->isTx)
-    {
-        uint32_t statusFlags = STATUS_FLAG_TX_END;
-        mStreamService->GetTxFIFO()->push_samples(
-            (const complex16_t **)stream->FIFOBuffers.data(),
-            STREAM_MTU,
-            stream->channelsCount,
-            stream->nextTimestamp,
-            long(1e6), //1 sec timeout
-            statusFlags);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-
     if (stream->isTx) mStreamService->txStreamUseCount--;
     if (!stream->isTx) mStreamService->rxStreamUseCount--;
+    mStreamService->updateThreadState();
+
     delete stream;
 }
 
