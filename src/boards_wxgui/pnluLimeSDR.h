@@ -1,9 +1,9 @@
 #ifndef PNL_ULIMESDR_H
 #define PNL_ULIMESDR_H
 
+#include "lime/LimeSuite.h"
 #include <map>
 #include <wx/panel.h>
-#include "lime/LimeSuite.h"
 class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;

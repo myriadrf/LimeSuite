@@ -1500,8 +1500,17 @@ API_EXPORT int CALL_CONV LMS_GetLastError(void);
  */
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
 
-
 /** @} (End FN_ERRORS) */
+
+/**
+ * @brief Returns library build type
+*/
+API_EXPORT const char* LMS_GetBuildTimestamp();
+
+/**
+* @brief Returns library version
+*/
+API_EXPORT const char* LMS_GetLibraryVersion();
 
 #ifdef __cplusplus
 } //extern "C"

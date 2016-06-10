@@ -10,6 +10,7 @@
 #include "ADF4002.h"
 #include "StreamerAPI.h"
 #include <cmath>
+#include "VersionInfo.h"
 
 
 using namespace std;
@@ -1855,4 +1856,18 @@ API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device)
         wfmThread.join();
     wfmRunning.store(false);
     return 0;
+}
+
+static char buildTimestamp[32];
+API_EXPORT const char* LMS_GetBuildTimestamp()
+{
+    sprintf(buildTimestamp, lime::GetBuildTimestamp().c_str());
+    return buildTimestamp;
+}
+
+static char libraryVersion[32];
+API_EXPORT const char* LMS_GetLibraryVersion()
+{
+    sprintf(libraryVersion, lime::GetLibraryVersion().c_str());
+    return libraryVersion;
 }
