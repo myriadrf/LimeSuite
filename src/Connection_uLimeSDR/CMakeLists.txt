@@ -43,5 +43,5 @@ endif()
 ## Add to library
 ########################################################################
 target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS})
-target_sources(LimeSuite PUBLIC ${CONNECTION_uLimeSDR_SOURCES})
+target_sources(LimeSuite PRIVATE ${CONNECTION_uLimeSDR_SOURCES})
 target_link_libraries(LimeSuite ${CONNECTION_uLimeSDR_LIBRARIES})
