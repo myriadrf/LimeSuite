@@ -1370,7 +1370,7 @@ int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
         boardId, bandwidth, idx, Tx, TBB_LPFLAD_FILTNUM,
         Get_SPI_Reg_bits(RCAL_LPFLAD_TBB), Get_SPI_Reg_bits(CCAL_LPFLAD_TBB));
 
-    if (Get_SPI_Reg_bits(RCAL_LPFS5_TBB) == 0) ret = mValueCache->InsertFilter_RC(
+    if (Get_SPI_Reg_bits(PD_LPFS5_TBB) == 0) ret = mValueCache->InsertFilter_RC(
         boardId, bandwidth, idx, Tx, TBB_LPFS5_FILTNUM,
         Get_SPI_Reg_bits(RCAL_LPFS5_TBB), Get_SPI_Reg_bits(CCAL_LPFLAD_TBB));
 
