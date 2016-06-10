@@ -76,9 +76,9 @@ int InitializeStreaming(IConnection* serPort, const StreamConfig &config)
 
     //enable MIMO mode, 12 bit compressed values
     uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
-    if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
+    if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
         smpl_width = 0x0;
-    else if(config.format == StreamConfig::STREAM_12_BIT_COMPRESSED)
+    else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
         smpl_width = 0x2;
     else
         smpl_width = 0x2;
