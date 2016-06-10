@@ -269,5 +269,7 @@ target_link_libraries(utilityTools LimeSuite)
 
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
+    add_executable(RxTest utilityTools/RxTest.cpp)
+    target_link_libraries(RxTest LimeSuite)
     add_subdirectory(tests)
 endif()
