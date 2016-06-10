@@ -611,10 +611,6 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx,
  * Automatically starts NCO with frequency at index 0
  * Use LMS_SetNCOindex() to switch between NCO frequencies.
  *
- * @note LMS_SetLOFrequency() may configure NCO in oder to achieve certain RF
- * center frequencies (bellow 100 MHz). This function will override those
- * settings.
- *
  * @param       dev        Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       Channel index
@@ -648,10 +644,6 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx,
  * Automatically starts NCO with phase at index 0
  * Use LMS_SetNCOindex() to switch between NCO phases.
  *
- * @note LMS_SetLOFrequency() may configure NCO in oder to achieve certain RF
- * center frequencies (bellow 100 MHz). This function will override those
- * settings.
- *
  * @param       dev        Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       Channel index
@@ -682,10 +674,6 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
 /**
  * Switches between configured list of NCO frequencies/phase offsets. Also
  * Allows to switch CMIX mode to either downconvert or upconvert.
- *
- * @note LMS_SetLOFrequency() may configure NCO in oder to achieve certain RF
- * center frequencies (bellow 100 MHz). This function will override those
- * settings.
  *
  * @param dev       Device handle previously obtained by LMS_Open().
  * @param dir_tx    Select RX or TX
@@ -1228,6 +1216,7 @@ typedef struct
     uint32_t tx_fifo_filled;
     uint32_t rx_fifo_size;
     uint32_t tx_fifo_size;
+    uint32_t reserved[8];
 }lms_stream_status_t;
 
 
@@ -1282,13 +1271,14 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
          size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /**
- * Get stream operation status
- *
- * @param device        Device handle previously obtained by LMS_Open().
- *
- * @return      pointer to device status structure
+ * Get stream operation status 
+ * 
+ * @param device     Device handle previously obtained by LMS_Open().
+ * @param status     Streaming status
+ *    
+ * @return      0 on success, (-1) on failure
  */
-API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t* status);
 
 /**
  * Send samples to active TX channels.
@@ -1363,7 +1353,12 @@ typedef struct
 
 /**
  * Get device serial number and version information
- *
+ * 
+ * @note This function returns pointer to internal data structure that gets
+ * deallocated when device is closed. Do not attempt to read from it after
+ * closing the device. If you need to keep using device info returned by this 
+ * function after closing the device, make a copy before closing the device.
+ * 
  * @param device    Device handle previously obtained by LMS_Open().
  * @return          pointer to device info structure
  */

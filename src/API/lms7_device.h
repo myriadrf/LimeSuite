@@ -71,9 +71,12 @@ public:
     virtual int ProgramMCU(const char* data=nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM,lime::IConnection::ProgrammingCallback callback=nullptr);
     virtual int DACWrite(uint16_t val);
     virtual int DACRead();
+    virtual lms_dev_info_t* GetInfo();
     lime::IConnection* streamPort;
     StreamerAPI* streamer;
+    
 private:
+    lms_dev_info_t devInfo;
     lms_channel_info* tx_channels;
     lms_channel_info* rx_channels;
     static const double LMS_CGEN_MAX;

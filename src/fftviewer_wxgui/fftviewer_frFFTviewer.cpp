@@ -162,11 +162,12 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
 
 	if (mStreamRunning.load() == false)
 		return;
-	auto stats = LMS_GetStreamStatus(lmsControl);
-	RxFilled = (float)stats->rx_fifo_filled *100/ stats->rx_fifo_size;
-	TxFilled = (float)stats->tx_fifo_filled *100/ stats->tx_fifo_size;
-	RxRate = stats->rxRate;
-	TxRate = stats->txRate;
+        lms_stream_status_t stats;     
+	LMS_GetStreamStatus(lmsControl,&stats);
+	RxFilled = (float)stats.rx_fifo_filled *100/ stats.rx_fifo_size;
+	TxFilled = (float)stats.tx_fifo_filled *100/ stats.tx_fifo_size;
+	RxRate = stats.rxRate;
+	TxRate = stats.txRate;
 
     if (streamData.fftBins_dbFS[0].size() > 0)
     {

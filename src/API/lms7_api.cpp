@@ -315,7 +315,13 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
     }
     LMS7_Device* lms = (LMS7_Device*)device;
     std::string str;
-    int ret=lms->GetConnection()->CustomParameterRead(&param_id,val,1,&str);
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    int ret=conn->CustomParameterRead(&param_id,val,1,&str);
     strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
     return ret;
 }
@@ -329,8 +335,14 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
     std::string str = units == nullptr ? "":units;
-    return lms->GetConnection()->CustomParameterWrite(&param_id,&val,1,&str);
+    return conn->CustomParameterWrite(&param_id,&val,1,&str);
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
@@ -417,8 +429,13 @@ API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
-
-    lms->GetConnection()->SetDataLogCallback(func);
+    auto conn = lms->GetConnection();
+    if (conn != nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    conn->SetDataLogCallback(func);
     return 0;
 }
 
@@ -500,8 +517,13 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
             }
             if (ret != 0)
                 return -1;
-
-            lms->GetConnection()->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+            auto conn = lms->GetConnection();
+            if (conn == nullptr)
+            {
+                lime::ReportError(EINVAL, "Device not connected");
+                return -1;
+            }
+            conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
             return 0;
         }
         case LMS_CLOCK_RXTSP:
@@ -601,6 +623,11 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
     LMS7_Device* lms = (LMS7_Device*)dev;
     lime::ADF4002 obj;
     auto serPort = lms->GetConnection();
+    if (serPort == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
 
     //reference counter latch
     obj.SetReferenceCounterLatch(config->lockDetectPrec, config->antiBacklash, config->referenceCounter);
@@ -663,7 +690,13 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev,  uint8_t* buffer, size_
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
-    return lms->GetConnection()->GPIORead(buffer,len);
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    return conn->GPIORead(buffer,len);
 }
 
 
@@ -675,7 +708,13 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
         return -1;
     }
      LMS7_Device* lms = (LMS7_Device*)dev;
-     return lms->GetConnection()->GPIOWrite(buffer,len);
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+       lime::ReportError(EINVAL, "Device not connected");
+       return -1;
+    }
+     return conn->GPIOWrite(buffer,len);
 }
 
 API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
@@ -688,10 +727,18 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
 
     LMS7_Device* lms = (LMS7_Device*)dev;
     lime::LMS64CProtocol::GenericPacket pkt;
+    
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    
     pkt.cmd = lime::eCMD_LMS(cmd);
     for (int i = 0; i < *len; ++i)
         pkt.outBuffer.push_back(data[i]);
-    lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(lms->GetConnection());
+    lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(conn);
     if (port->TransferPacket(pkt) != 0)
     {
         return -1;
@@ -712,6 +759,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
+    
     LMS7_Device* lms = (LMS7_Device*)dev;
     lms->EnableValuesCache(enable);
     return 0;
@@ -1344,7 +1392,13 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
     LMS7_Device* lms = (LMS7_Device*)device;
     uint32_t addr = address;
     uint32_t data;
-    *val = lms->GetConnection()->ReadRegisters(&addr,&data,1);
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    *val = conn->ReadRegisters(&addr,&data,1);
     *val = data;
     return LMS_SUCCESS;
 }
@@ -1358,7 +1412,13 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    val = lms->GetConnection()->WriteRegister(address,val);
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    val = conn->WriteRegister(address,val);
     return LMS_SUCCESS;
 }
 
@@ -1450,10 +1510,10 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-	if (lms->streamer != nullptr)
-		delete lms->streamer;
+    LMS7_Device* lms = (LMS7_Device*)device;  
+    
+    if (lms->streamer != nullptr)
+	delete lms->streamer;
     if (conf.fifoSize == 0)
         lms->streamer = new StreamerAPI(lms->streamPort);
     else
@@ -1487,8 +1547,14 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
+    
+    LMS7_Device* lms = (LMS7_Device*)device; 
+    
+    if (lms->streamer == nullptr)
+    {
+        lime::ReportError(EINVAL, "Stream not active.");
+        return -1;
+    }
     if (dir_tx)
         return lms->streamer->StopTx();
     else
@@ -1502,9 +1568,13 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, si
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
+    }   
+    LMS7_Device* lms = (LMS7_Device*)device;  
+    if (lms->streamer == nullptr)
+    {
+        lime::ReportError(EINVAL, "Stream not active.");
+        return -1;
     }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
     return lms->streamer->RecvStream(samples,sample_count,meta,timeout_ms);
 
 }
@@ -1515,28 +1585,36 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **sampl
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
+    LMS7_Device* lms = (LMS7_Device*)device;  
+    if (lms->streamer == nullptr)
+    {
+        lime::ReportError(EINVAL, "Stream not active.");
+        return -1;
+    }
     return lms->streamer->SendStream(samples,sample_count,meta,timeout_ms);
 }
 
-API_EXPORT const lms_stream_status_t * CALL_CONV LMS_GetStreamStatus(lms_device_t *device)
+API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t* status)
 {
-	if (device == nullptr)
-	{
-		lime::ReportError(EINVAL, "Device cannot be NULL.");
-		return nullptr;
-	}
-	LMS7_Device* lms = (LMS7_Device*)device;
-	return lms->streamer->GetInfo();
+    if (device == nullptr)
+    {
+            lime::ReportError(EINVAL, "Device cannot be NULL.");
+            return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device;
+    if (lms->streamer == nullptr)
+    {
+        lime::ReportError(EINVAL, "Stream not active.");
+        return -1;
+    }
+    memcpy(status,lms->streamer->GetInfo(),sizeof(lms_stream_status_t));
+    return 0;
+    
 }
 
 
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device)
 {
-
-    static lms_dev_info_t info;
-
     if (device == nullptr)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
@@ -1544,25 +1622,19 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *devic
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    if (!lms->GetConnection()->IsOpen())
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return nullptr;
+    }
+    if (!conn->IsOpen())
     {
        lime::ReportError(EINVAL, "No cennection to board.");
 	   return nullptr;
     }
-
-    memset(&info,0,sizeof(lms_dev_info_t));
-    auto devinfo =lms->GetConnection()->GetDeviceInfo();
-    strncpy(info.deviceName,devinfo.deviceName.c_str(),sizeof(info.deviceName)-1);
-    strncpy(info.expansionName,devinfo.expansionName.c_str(),sizeof(info.expansionName)-1);
-    strncpy(info.firmwareVersion,devinfo.firmwareVersion.c_str(),sizeof(info.firmwareVersion)-1);
-    strncpy(info.hardwareVersion,devinfo.hardwareVersion.c_str(),sizeof(info.hardwareVersion)-1);
-    strncpy(info.protocolVersion,devinfo.protocolVersion.c_str(),sizeof(info.protocolVersion)-1);
-    strncpy(info.gatewareVersion,devinfo.gatewareVersion.c_str(),sizeof(info.gatewareVersion)-1);
-    strncpy(info.gatewareRevision,devinfo.gatewareRevision.c_str(),sizeof(info.gatewareRevision)-1);
-    strncpy(info.gatewareTargetBoard,devinfo.gatewareTargetBoard.c_str(),sizeof(info.gatewareTargetBoard)-1);
-    info.boardSerialNumber = devinfo.boardSerialNumber;
-    return &info;
+    
+    return lms->GetInfo();
 }
 
 API_EXPORT int CALL_CONV LMS_ProgramFPGA(lms_device_t *device, const char *data,
