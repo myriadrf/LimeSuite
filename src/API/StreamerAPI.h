@@ -1,5 +1,5 @@
 /* 
- * File:   SteamerAPI.h
+ * File:   StreamerAPI.h
  * Author: ignas
  *
  * Created on May 5, 2016, 11:01 AM

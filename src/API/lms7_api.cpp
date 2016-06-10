@@ -664,6 +664,7 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
     // ADF4002 needs to be writen 4 values of 24 bits
     int adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
     status = serPort->TransactSPI(adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    return 0;
 }
 
 API_EXPORT  int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
@@ -1519,6 +1520,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t
     else
         lms->streamer = new StreamerFIFO(lms->streamPort);
     lms->streamer->SetupStream(conf);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx)
@@ -1556,10 +1558,16 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
         return -1;
     }
     if (dir_tx)
-        return lms->streamer->StopTx();
+    {
+        if (lms->streamer != nullptr)
+            return lms->streamer->StopTx();
+    }
     else
-        return lms->streamer->StopRx();
-
+    {
+        if (lms->streamer != nullptr)
+            return lms->streamer->StopRx();
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
@@ -1609,7 +1617,6 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_st
     }
     memcpy(status,lms->streamer->GetInfo(),sizeof(lms_stream_status_t));
     return 0;
-    
 }
 
 
@@ -1758,4 +1765,94 @@ API_EXPORT int CALL_CONV LMS_GetLastError()
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
 {
     return lime::GetLastErrorMessage();
+}
+
+std::thread wfmThread;
+std::atomic<bool> stopWFM(false);
+lime::complex16_t** wfmBuffers = nullptr;
+int wfmLength = 0;
+std::atomic<bool> wfmRunning(false);
+const int chCount = 2;
+int LoopWFM(lms_device_t *device)
+{
+    wfmRunning.store(true);
+    const int maxTransmitSamples = 1360/chCount*16;
+    lime::complex16_t** txbuffers = new lime::complex16_t*[chCount];
+    for(int i=0; i<chCount; ++i)
+        txbuffers[i] = new lime::complex16_t[maxTransmitSamples];
+    int srcPos[chCount];
+
+    int timeout_ms = 1000;
+    lime::complex16_t** srcBuf = new lime::complex16_t*[chCount];
+    for(int i=0; i<chCount; ++i)
+    {
+        srcPos[i] = 0;
+        srcBuf[i] = txbuffers[i];
+    }
+    lms_stream_meta_t meta;
+    meta.has_timestamp = false;
+    meta.timestamp = 0;
+    while(!stopWFM.load())
+    {
+        for(int i=0; i<chCount; ++i)
+            srcBuf[i] = txbuffers[i];
+        for(int ch=0; ch<chCount; ++ch)
+        {
+            for(int i=0; i < maxTransmitSamples; ++i)
+            {
+                txbuffers[ch][i].i = wfmBuffers[ch][srcPos[ch]].i;
+                txbuffers[ch][i].q = wfmBuffers[ch][srcPos[ch]].q;
+                ++srcPos[ch];
+                if(srcPos[ch] >= wfmLength)
+                    srcPos[ch] = 0;
+            }
+        }
+        int samplesToPush = maxTransmitSamples;
+        while(samplesToPush > 0 && !stopWFM.load())
+        {
+            LMS7_Device* lms = (LMS7_Device*)device;
+
+            int samplesWritten = lms->streamer->SendStream((const void**)srcBuf,samplesToPush, &meta,timeout_ms);
+            samplesToPush -= samplesWritten;
+            for(int i=0; i<chCount; ++i)
+                srcBuf[i] = srcBuf[i]+samplesWritten*sizeof(lime::complex16_t);
+        }
+    }
+    for(int i=0; i<chCount; ++i)
+        delete txbuffers[i];
+    delete txbuffers;
+    txbuffers = nullptr;
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device, const void **samples, size_t sample_count)
+{
+    LMS_StreamStopLoopWFM(device);
+
+    lime::complex16_t** src = (lime::complex16_t**)samples;
+    if(wfmBuffers)
+    {
+        for(int i=0; i<chCount; ++i)
+            delete wfmBuffers[i];
+        delete wfmBuffers;
+    }
+    wfmBuffers = new lime::complex16_t*[chCount];
+    for(int i=0; i<chCount; ++i)
+    {
+        wfmBuffers[i] = new lime::complex16_t[sample_count];
+        memcpy(wfmBuffers[i], src[i], sample_count*sizeof(lime::complex16_t));
+    }
+    wfmLength = sample_count;
+    stopWFM.store(false);
+    wfmThread = std::thread(LoopWFM, device);
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device)
+{
+    stopWFM.store(true);    
+    if(wfmRunning.load() && wfmThread.joinable())
+        wfmThread.join();
+    wfmRunning.store(false);
+    return 0;
 }

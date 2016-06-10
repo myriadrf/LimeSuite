@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   SteamerAPI.cpp
  * Author: ignas
- * 
+ *
  * Created on May 5, 2016, 11:01 AM
  */
 
@@ -15,7 +15,7 @@ static const int SAMPLES16_PACKET = 1020;
 
 StreamerAPI::StreamerAPI(lime::IConnection* port)
 {
-    
+
     rx_handles = nullptr;
     rx_buffers = nullptr;
     rx_running = false;
@@ -23,13 +23,13 @@ StreamerAPI::StreamerAPI(lime::IConnection* port)
 
     tx_handles = nullptr;
     tx_buffers = nullptr;
-    tx_bufferUsed = nullptr; 
+    tx_bufferUsed = nullptr;
     tx_running = false;
- 
+
     packetsToBatch = 2;
     channelsCount = 1;
-    streamConf.dataFmt == lms_stream_conf_t::LMS_FMT_F32;
-    streamConf.linkFmt == lms_stream_conf_t::LMS_LINK_12BIT;
+    streamConf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
+    streamConf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
     streamConf.fifoSize = 0;
 }
 
@@ -44,16 +44,16 @@ StreamerAPI::~StreamerAPI()
  int StreamerAPI::SetupStream(lms_stream_conf_t conf)
  {
     streamConf = conf;
-     
+
     int buffersCount = 1; // must be power of 2
     while (buffersCount < streamConf.numTransfers)
         buffersCount <<=1;
-    streamConf.numTransfers = buffersCount; 
-    
+    streamConf.numTransfers = buffersCount;
+
     packetsToBatch = 1+(conf.transferSize-1)/sizeof(lime::PacketLTE);
     if (packetsToBatch > MAX_PACKETS_BATCH)
         packetsToBatch = MAX_PACKETS_BATCH;
-    
+
     if (streamConf.channels == 3)
         channelsCount = 2;
 	return 0;
@@ -61,23 +61,23 @@ StreamerAPI::~StreamerAPI()
 
 int StreamerAPI::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
     static uint64_t ts = 0;
     uint64_t rx_meta = 0;
     static int index = bufferSize;
     int ret;
-    
+
     rx_lock.lock();
- 
+
     if (streamConf.dataFmt == lms_stream_conf_t::LMS_FMT_F32)
         ret = RecvStreamFloat((float**)data, buffer, numSamples, &ts, index, &rx_meta, timeout_ms);
     else
         ret = RecvStreamInt16((int16_t**)data, buffer, numSamples, &ts, index, &rx_meta, timeout_ms);
-                
+
     if (meta->end_of_burst)
-        index = bufferSize;  
-    
+        index = bufferSize;
+
    meta->timestamp = ts+index/channelsCount-ret;
    rx_lock.unlock();
    return ret;
@@ -85,19 +85,19 @@ int StreamerAPI::RecvStream(void **data,size_t numSamples, lms_stream_meta_t *me
 
 int StreamerAPI::RecvStreamFloat(float **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
-    
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
+
     for (int i = 0; i < numSamples ; i++)
     {
         if (index == bufferSize)
-        {       
+        {
             if ((_read(buffer,ts,rx_meta,timeout_ms))!=bufferSize)
             {
-                return i;   
-            }    
+                return i;
+            }
             index = 0;
         }
-        
+
         for (int ch = 0;ch<channelsCount;ch++)
         {
             data[ch][2*i] = (float)buffer[2*index]/2047.0;
@@ -111,8 +111,8 @@ int StreamerAPI::RecvStreamFloat(float **data, int16_t* buffer, size_t numSample
 
 int StreamerAPI::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamples, uint64_t* ts, int &index, uint64_t* rx_meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
-    
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
+
     for (int i = 0; i < numSamples ; i++)
     {
         if (index == bufferSize)
@@ -120,10 +120,10 @@ int StreamerAPI::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamp
             index = 0;
             if ((_read(buffer,ts,rx_meta,timeout_ms))!=bufferSize)
             {
-                return i;   
-            }           
+                return i;
+            }
         }
-        
+
         for (int ch = 0;ch<channelsCount;ch++)
         {
             data[ch][2*i] = buffer[2*index];
@@ -136,34 +136,34 @@ int StreamerAPI::RecvStreamInt16(int16_t **data, int16_t* buffer, size_t numSamp
 
 int StreamerAPI::SendStream(const void **data,size_t numSamples, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
     static int16_t buffer[MAX_PACKETS_BATCH*SAMPLES12_PACKET*2];
     uint64_t tx_meta = 0;
     static int index = 0;
-    
+
     if(meta->has_timestamp == false)
         tx_meta |= (1 << 4); //ignore timestamp
-    
+
     tx_lock.lock();
     int ret;
-    
+
     if (streamConf.dataFmt == lms_stream_conf_t::LMS_FMT_F32)
         ret = SendStreamFloat((const float**)data, buffer, numSamples, meta->timestamp, index, tx_meta, timeout_ms);
     else
         ret = SendStreamInt16((const int16_t**)data, buffer, numSamples, meta->timestamp, index, tx_meta, timeout_ms);
-    
+
     if (meta->end_of_burst)
     {
         for (int i = index; i <bufferSize;i++)
         {
             buffer[2*i] = 0;
-            buffer[2*i+1] = 0;     
-        }    
+            buffer[2*i+1] = 0;
+        }
        uint64_t ts = meta->timestamp + numSamples - index/channelsCount;
        _write(buffer,ts,tx_meta,timeout_ms);
-       index = 0; 
+       index = 0;
     }
-    
+
    tx_lock.unlock();
    return ret;
 }
@@ -171,7 +171,7 @@ int StreamerAPI::SendStream(const void **data,size_t numSamples, const lms_strea
 
 int StreamerAPI::SendStreamInt16(const int16_t **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
 
     for (int i = 0; i < numSamples ; i++)
     {
@@ -181,7 +181,7 @@ int StreamerAPI::SendStreamInt16(const int16_t **data, int16_t* buffer, size_t n
            buffer[2*index+1] = data[ch][2*i+1];
            index++;
         }
-        
+
         if (index == bufferSize)
         {
              ts = ts + i - bufferSize/channelsCount;
@@ -191,13 +191,13 @@ int StreamerAPI::SendStreamInt16(const int16_t **data, int16_t* buffer, size_t n
                 return i;
              }
         }
-    }  
+    }
    return numSamples;
 }
 
 int StreamerAPI::SendStreamFloat(const float **data, int16_t* buffer, size_t numSamples, uint64_t ts, int &index, uint64_t tx_meta, unsigned timeout_ms)
 {
-    const long bufferSize = packetsToBatch*SAMPLES12_PACKET; 
+    const long bufferSize = packetsToBatch*SAMPLES12_PACKET;
 
     for (int i = 0; i < numSamples ; i++)
     {
@@ -207,7 +207,7 @@ int StreamerAPI::SendStreamFloat(const float **data, int16_t* buffer, size_t num
            buffer[2*index+1] = data[ch][2*i+1]*2047.0;
            index++;
         }
-        
+
         if (index == bufferSize)
         {
              ts = ts + i - bufferSize/channelsCount;
@@ -217,7 +217,7 @@ int StreamerAPI::SendStreamFloat(const float **data, int16_t* buffer, size_t num
                 return i;
              }
         }
-    }  
+    }
    return numSamples;
 }
 
@@ -226,7 +226,7 @@ int StreamerAPI::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
 {
     if (rx_running == false)
         return 0;
-    
+
     long bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
     const int buffersCountMask = streamConf.numTransfers - 1;
     static int bi = 0;
@@ -239,13 +239,13 @@ int StreamerAPI::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
 
     long bytesReceived = streamPort->FinishDataReading(&rx_buffers[bi*bufferSize], bufferSize, rx_handles[bi]);
     if (bytesReceived > 0)
-    {    
+    {
 	lime::PacketLTE* pkt= (lime::PacketLTE*)&rx_buffers[bi*bufferSize];
-        
-        *timestamp = pkt->counter; 
+
+        *timestamp = pkt->counter;
         *metadata = *((uint64_t*)(&pkt->reserved));
         for (int p = 0; p<packetsToBatch;p++)
-        {     
+        {
             for (int i = 0; i<sizeof(pkt[p].data);i+=3)
             {
                 //I sample
@@ -264,7 +264,7 @@ int StreamerAPI::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
                 data[n++] = sample;
             }
         }
-        
+
     }
     else return -1;
 
@@ -272,7 +272,7 @@ int StreamerAPI::_read(int16_t *data, uint64_t *timestamp, uint64_t *metadata, u
     memset(&rx_buffers[bi*bufferSize], 0, bufferSize);
     rx_handles[bi] = streamPort->BeginDataReading(&rx_buffers[bi*bufferSize], bufferSize);
     bi = (bi + 1) & buffersCountMask;
-    return n/2;    
+    return n/2;
 }
 
 void StreamerAPI::ResetUSBFIFO()
@@ -287,9 +287,9 @@ void StreamerAPI::ResetUSBFIFO()
     ctrPkt.outBuffer[0] = 0x00;
     port->TransferPacket(ctrPkt);
 }
-    
+
 int StreamerAPI::Start()
-{   
+{
     uint32_t dataRd = 0;
     // Stop Tx Rx if they were active
     streamPort->ReadRegister(0x000A,dataRd);
@@ -317,7 +317,7 @@ int StreamerAPI::Start()
 
     //switch on Rx
     streamPort->ReadRegister(0x000A,dataRd);
-    streamPort->WriteRegister(0x000A, dataRd | 0x1);  
+    streamPort->WriteRegister(0x000A, dataRd | 0x1);
 	return 0;
 }
 
@@ -331,34 +331,34 @@ int StreamerAPI::Stop()
 
 
 int StreamerAPI::StartRx()
-{ 
+{
     rx_lock.lock();
-    
+
     if (rx_running)
     {
         rx_lock.unlock();
         return 0;
     }
-    
-    unsigned bufferSize = packetsToBatch*sizeof(lime::PacketLTE);  
-     
+
+    unsigned bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
+
     if (rx_handles != nullptr)
         delete [] rx_handles;
     rx_handles = new int[streamConf.numTransfers];
     memset(rx_handles, 0, streamConf.numTransfers*sizeof(int));
-    
+
     if (rx_buffers != nullptr)
         delete [] rx_buffers;
     rx_buffers = new char[streamConf.numTransfers*bufferSize];
     memset(rx_buffers,0,streamConf.numTransfers*bufferSize);
-    
+
     rx_running = true;
     if (tx_running == false)
         Start();
-    
+
     for (int i = 0; i<streamConf.numTransfers; ++i)
         rx_handles[i] = streamPort->BeginDataReading(&rx_buffers[i*bufferSize], bufferSize);
-        
+
     rx_lock.unlock();
     return 0;
 }
@@ -373,19 +373,19 @@ int StreamerAPI::StartTx()
         return 0;
     }
 
-    
+
     int bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
-    
+
     if (tx_handles != nullptr)
         delete [] tx_handles;
     tx_handles = new int[streamConf.numTransfers];
     memset(tx_handles, 0, streamConf.numTransfers*sizeof(int));
-    
+
     if (tx_buffers != nullptr)
         delete [] tx_buffers;
     tx_buffers = new char[streamConf.numTransfers*bufferSize];
     memset(tx_buffers,0,streamConf.numTransfers*bufferSize);
-    
+
     if (tx_bufferUsed != nullptr)
         delete [] tx_bufferUsed;
     tx_bufferUsed = new bool[streamConf.numTransfers];
@@ -403,29 +403,29 @@ int StreamerAPI::StopRx()
     int bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
     rx_running = false;
     streamPort->AbortReading();
-    
+
     if (rx_handles != nullptr)
     for (int j = 0; j<streamConf.numTransfers; j++)
     {
         long bytesToRead = bufferSize;
         streamPort->WaitForReading(rx_handles[j], 30);
-        streamPort->FinishDataReading(&rx_buffers[j*bufferSize], bytesToRead, rx_handles[j]); 
+        streamPort->FinishDataReading(&rx_buffers[j*bufferSize], bytesToRead, rx_handles[j]);
     }
-    
+
     if (rx_handles != nullptr)
     {
         delete [] rx_handles;
         rx_handles = nullptr;
     }
-    
+
     if (rx_buffers != nullptr)
     {
         delete [] rx_buffers;
         rx_buffers = nullptr;
     }
-        
+
     if (tx_running == false)
-        Stop();  
+        Stop();
     rx_lock.unlock();
 	return 0;
 }
@@ -437,7 +437,7 @@ int StreamerAPI::StopTx()
     tx_running = false;
     // Wait for all the queued requests to be cancelled
     streamPort->AbortSending();
-    
+
     if (tx_bufferUsed != nullptr)
         for (int j = 0; j<streamConf.numTransfers; j++)
         {
@@ -448,27 +448,27 @@ int StreamerAPI::StopTx()
                 streamPort->FinishDataSending(&tx_buffers[j*bufferSize], bytesToSend, tx_handles[j]);
             }
         }
-    
+
     if (tx_handles != nullptr)
     {
         delete [] tx_handles;
         tx_handles = nullptr;
     }
-    
+
     if (tx_buffers != nullptr)
     {
         delete [] tx_buffers;
         tx_buffers = nullptr;
     }
-    
+
     if (tx_bufferUsed != nullptr)
     {
-        delete [] tx_bufferUsed; 
+        delete [] tx_bufferUsed;
         tx_bufferUsed = nullptr;
     }
-        
+
     if (rx_running == false)
-        Stop(); 
+        Stop();
     tx_lock.unlock();
 	return 0;
 }
@@ -482,21 +482,21 @@ int StreamerAPI::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     long bufferSize = packetsToBatch*sizeof(lime::PacketLTE);
     const int buffersCountMask = streamConf.numTransfers - 1;
     static int bi = 0; //buffer index
-    
+
     if (tx_bufferUsed[bi])
     {
         if (streamPort->WaitForSending(tx_handles[bi], timeout) == false)
         {
             return -1;
         }
-        
+
         int bytesSent;
         if ((bytesSent = streamPort->FinishDataSending(&tx_buffers[bi*bufferSize], bufferSize, tx_handles[bi]))<bufferSize)
             return bytesSent;
 
         tx_bufferUsed[bi] = false;
     }
-    
+
     int n = 0;
     for (int p = 0; p < packetsToBatch;p++)
     {
@@ -504,9 +504,9 @@ int StreamerAPI::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
 
         lime::PacketLTE* pkt = (lime::PacketLTE*)&tx_buffers[bi*bufferSize];
         pkt[p].counter = timestamp;
-        
+
         pkt[p].reserved[0] = (meta & 0xFF);
-       
+
         for (int i = 0; i<sizeof(pkt[p].data);i+=3)
         {
                 //I sample
@@ -524,7 +524,7 @@ int StreamerAPI::_write(int16_t *data, uint64_t timestamp, uint64_t meta, unsign
     tx_handles[bi] = streamPort->BeginDataSending(&tx_buffers[bi*bufferSize], bufferSize);
     tx_bufferUsed[bi] = true;
 
-    bi = (bi + 1) & buffersCountMask;   
+    bi = (bi + 1) & buffersCountMask;
     return packetsToBatch*SAMPLES12_PACKET;
 }
 
@@ -586,10 +586,12 @@ int StreamerFIFO::StartRx()
     if (threadRx.joinable())
         threadRx.join();
 	mRxFIFO->Reset(streamConf.fifoSize, channelsCount);
-    threadRx = std::thread(ReceivePackets, this); 
-    rx_running = true;
     if (tx_running == false)
-        Start(); 
+        Start();
+    threadRx = std::thread(ReceivePackets, this);
+    rx_running = true;
+   
+    return 0;
 }
 
 int StreamerFIFO::StartTx()
@@ -602,7 +604,8 @@ int StreamerFIFO::StartTx()
     threadTx = std::thread(TransmitPackets, this);
     tx_running = true;
     if (rx_running == false)
-        Start(); 
+        Start();
+    return 0;
 }
 
 int StreamerFIFO::StopRx()
@@ -614,7 +617,8 @@ int StreamerFIFO::StopRx()
         threadRx.join();
     rx_running = false;
     if (tx_running == false)
-        Stop();  
+        Stop();
+    return 0;
 }
 
 int StreamerFIFO::StopTx()
@@ -623,20 +627,21 @@ int StreamerFIFO::StopTx()
         return 0;
     stopTx.store(true);
     if (threadTx.joinable())
-     threadTx.join();
+        threadTx.join();
     tx_running = false;
     if (rx_running == false)
-        Stop();  
+        Stop();
+    return 0;
 }
 
 int StreamerFIFO::RecvStream(void **samples,size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
-{ 
+{
     if (streamConf.dataFmt == lms_stream_conf_t::LMS_FMT_F32)
     {
        lime::complex16_t** buffers = new lime::complex16_t*[channelsCount];
        for (int i = 0; i<channelsCount;i++)
            buffers[i] = new lime::complex16_t[sample_count];
-           
+
        int ret = mRxFIFO->pop_samples(buffers, sample_count, channelsCount, &meta->timestamp, timeout_ms);
        for (int i = 0; i < sample_count;i++)
        {
@@ -646,14 +651,14 @@ int StreamerFIFO::RecvStream(void **samples,size_t sample_count, lms_stream_meta
             ((float*)samples[ch])[2*i+1] = (float)buffers[ch][i].q/2047.0;
         }
        }
-       
+
        for (int i = 0; i<channelsCount;i++)
            delete [] buffers[i];
        delete [] buffers;
-       
+
        return ret;
     }
-    return mRxFIFO->pop_samples((lime::complex16_t**)samples, sample_count, channelsCount, &meta->timestamp, timeout_ms);   
+    return mRxFIFO->pop_samples((lime::complex16_t**)samples, sample_count, channelsCount, &meta->timestamp, timeout_ms);
 }
 
 int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
@@ -663,7 +668,7 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms
        lime::complex16_t** buffers = new lime::complex16_t*[channelsCount];
        for (int i = 0; i<channelsCount;i++)
            buffers[i] = new lime::complex16_t[sample_count];
-       
+
         int ret = mTxFIFO->push_samples((const lime::complex16_t**)buffers, sample_count, channelsCount, meta->timestamp, timeout_ms, meta->has_timestamp);
         for (int i = 0; i < sample_count;i++)
         {
@@ -675,7 +680,7 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms
         }
         for (int i = 0; i<channelsCount;i++)
            delete [] buffers[i];
-           
+
         delete [] buffers;
         return ret;
     }
@@ -695,12 +700,12 @@ void flThread()
 */
 void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
 {
-    
+
     auto dataPort = pthis->streamPort;
     auto rxFIFO = pthis->mRxFIFO;
     auto terminate = &pthis->stopRx;
     auto dataRate_Bps = &pthis->mRxDataRate;
-    
+
     //at this point Rx must be enabled in FPGA
     unsigned long rxDroppedSamples = 0;
     const int channelsCount = rxFIFO->GetChannelsCount();
@@ -741,7 +746,7 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
     bool currentRxCmdValid = false;
     lime::RxCommand currentRxCmd;
 
-    
+
     /*Lms_glWindow* win = new Lms_glWindow(0,0,640,480);
     win->show();
     win->SetDisplayLimits(0,1360,-2200,2200);
@@ -799,7 +804,7 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
                 uint32_t samplesPushed = rxFIFO->push_samples((const lime::complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10, statusFlags);
                 std::this_thread::yield();
                 samplesCollected = 0;
-                
+
                /* for (int i = 0 ; i < 1360; i++)
                     if (tempPacket.samples[0][i].i > 0x1FF)
                     {
@@ -830,9 +835,16 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
             totalBytesReceived = 0;
             if (dataRate_Bps)
                 dataRate_Bps->store((uint32_t)dataRate);
+
+            #ifndef NDEBUG
+            printf("Rx rate: %.3f MB/s Fs: %.3f MHz |  failures: %u | TS: %li\n", dataRate / 1000000.0, samplingRate / 1000000.0, m_bufferFailures, 0);
+            #endif
+
             m_bufferFailures = 0;
 
             rxDroppedSamples = 0;
+
+
         }
 
         // Re-submit this request to keep the queue full
@@ -966,7 +978,7 @@ void StreamerFIFO::TransmitPackets(StreamerFIFO *pthis)
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
         std::this_thread::yield();
-        
+
         t2 = std::chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
@@ -1021,7 +1033,3 @@ const lms_stream_status_t* StreamerFIFO::GetInfo()
     streamInfo.tx_fifo_size = status.size;
     return &streamInfo;
 }
-
-
-
-   

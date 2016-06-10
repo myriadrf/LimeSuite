@@ -1265,7 +1265,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx);
  * @param meta          Metadata. See the ::lms_stream_meta_t description.
  * @param timeout_ms    how long to wait for data before timing out(0=infinite).
  *
- * @return      0 on success, (-1) on failure
+ * @return      on success number of samples received, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
          size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
@@ -1297,6 +1297,19 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_st
 API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device,
                               const void **samples,size_t sample_count,
                             const lms_stream_meta_t *meta, unsigned timeout_ms);
+
+/**
+ *
+ * @pre TX stream is configured using LMS_ConfigTx()
+ *
+ * @param device        Device handle previously obtained by LMS_Open().
+ * @param samples       pointers to sample buffers (for each active channel).
+ * @param sample_count  Number of samples to write to each channel
+ * @return      0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device,
+                            const void **samples,size_t sample_count);
+API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device);
 
 /** @} (End FN_STREAM) */
 
