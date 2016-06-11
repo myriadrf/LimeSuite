@@ -566,14 +566,15 @@ int StreamerFIFO::SetupStream(lms_stream_conf_t conf)
 	if (packetsToBatch > MAX_PACKETS_BATCH)
 		packetsToBatch = MAX_PACKETS_BATCH;
 
-	streamConf.fifoSize /= sizeof(lime::PacketLTE);
-
+    if (streamConf.channels == 3)
+        channelsCount = 2;
+    //recalculate requested number of samples to packets count
+    lime::PacketLTE pkt;
+    streamConf.fifoSize /= sizeof(pkt.data) / sizeof(lime::complex16_t) / channelsCount;
 
 	if (streamConf.fifoSize < 2 * packetsToBatch)
 		streamConf.fifoSize = 2 * packetsToBatch;
 
-	if (streamConf.channels == 3)
-		channelsCount = 2;
 	return 0;
 }
 

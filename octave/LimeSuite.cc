@@ -144,7 +144,7 @@ DEFUN_DLD (LimeLoadConfig, args, nargout,
 }
 
 DEFUN_DLD (LimeStartStreaming, args, nargout,
-           "Starts Receiver and Transmitter threads")
+           "Starts Receiver and Transmitter threads, first parameter internal buffer length in samples")
 {
     int nargin = args.length();
     if(lmsDev == NULL)
@@ -154,7 +154,10 @@ DEFUN_DLD (LimeStartStreaming, args, nargout,
     }
 
     lms_stream_conf_t streamConfig;
-    streamConfig.fifoSize = 4096;
+    if(nargin > 0)
+        streamConfig.fifoSize = args(0).int_value();
+    else
+        streamConfig.fifoSize = 1360*64;
     streamConfig.transferSize = 65536;
     streamConfig.numTransfers = 16;
     streamConfig.channels = 1;
