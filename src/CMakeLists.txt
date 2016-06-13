@@ -278,7 +278,16 @@ endif()
 #########################################################################
 # tests
 #########################################################################
+include_directories(utilityTools)
+set(utility_src_files utilityTools/pllTest.cpp)
+add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
+target_link_libraries(utilityTools LimeSuite)
+
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
+    add_executable(RxTest utilityTools/RxTest.cpp)
+    add_executable(RxTest2 utilityTools/RxTest2.cpp)
+    target_link_libraries(RxTest LimeSuite)
+    target_link_libraries(RxTest2 LimeSuite)
     add_subdirectory(tests)
 endif()

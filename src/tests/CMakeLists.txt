@@ -28,6 +28,10 @@ set_target_properties(libgtest PROPERTIES
 )
 include_directories("${source_dir}/include")
 
+set(LIME_SUITE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
+include_directories(${LIME_SUITE_DIR}/ConnectionRegistry)
+include_directories(${LIME_SUITE_DIR}/lms7002m)
+
 add_executable(tests 
     main.cpp
     streaming.cpp
@@ -35,5 +39,5 @@ add_executable(tests
 
 target_link_libraries(tests
     libgtest
-    ${LIME_SUITE_LIBS}
+    LimeSuite
 )

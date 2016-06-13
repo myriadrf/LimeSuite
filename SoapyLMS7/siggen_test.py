@@ -9,6 +9,14 @@ from optparse import OptionParser
 import time
 import os
 import math
+import signal
+
+RUNNING = [True]
+
+def handler(signum, frame):
+    RUNNING[0] = False
+
+signal.signal(signal.SIGINT, handler)
 
 def siggen_app(
     args,
@@ -23,6 +31,7 @@ def siggen_app(
     clockRate=None,
     waveFreq=None,
     txTSP=False,
+    const=False,
 ):
     if waveFreq is None: waveFreq = rate/10
 
@@ -52,8 +61,10 @@ def siggen_app(
 
     if txTSP:
         sdr.setFrequency(SOAPY_SDR_TX, txChan, "BB", waveFreq)
-        sdr.writeSetting("ACTIVE_CHANNEL", {0:"A",1:"B"}[txChan])
-        sdr.writeSetting("ENABLE_TXTSP_CONST", "true");
+        sdr.writeSetting("TXTSP_CONST", str((1 << 14)))
+
+    if const:
+        sdr.setFrequency(SOAPY_SDR_TX, txChan, "BB", waveFreq)
 
     #tx loop
     #create tx stream
@@ -68,11 +79,12 @@ def siggen_app(
     
     timeLastPrint = time.time()
     totalSamps = 0
-    while True:
-        phaseAccNext = phaseAcc + streamMTU*phaseInc
-        sampsCh0 = ampl*np.exp(1j*np.linspace(phaseAcc, phaseAccNext, streamMTU)).astype(np.complex64)
-        phaseAcc = phaseAccNext
-        while phaseAcc > math.pi*2: phaseAcc -= math.pi*2
+    while RUNNING[0]:
+        if not const:
+            phaseAccNext = phaseAcc + streamMTU*phaseInc
+            sampsCh0 = ampl*np.exp(1j*np.linspace(phaseAcc, phaseAccNext, streamMTU)).astype(np.complex64)
+            phaseAcc = phaseAccNext + phaseInc
+            while phaseAcc > math.pi*2: phaseAcc -= math.pi*2
 
         sr = sdr.writeStream(txStream, [sampsCh0], sampsCh0.size)
         if sr.ret != sampsCh0.size:
@@ -103,6 +115,7 @@ def main():
     parser.add_option("--waveFreq", type="float", dest="waveFreq", help="Baseband waveform freq (Hz)", default=None)
     parser.add_option("--clockRate", type="float", dest="clockRate", help="Optional clock rate (Hz)", default=None)
     parser.add_option("--txTSP", action="store_true", dest="txTSP", help="Use internal TX siggen w/ CORDIC", default=False)
+    parser.add_option("--const", action="store_true", dest="const", help="Use constant waveform w/ CORDIC", default=False)
     (options, args) = parser.parse_args()
     siggen_app(
         args=options.args,
@@ -116,6 +129,7 @@ def main():
         clockRate=options.clockRate,
         waveFreq=options.waveFreq,
         txTSP=options.txTSP,
+        const=options.const,
     )
 
 if __name__ == '__main__': main()

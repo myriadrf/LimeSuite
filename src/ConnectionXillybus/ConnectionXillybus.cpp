@@ -185,8 +185,8 @@ bool ConnectionXillybus::IsOpen()
 */
 int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
-    unsigned long totalBytesWritten = 0;
-    unsigned long bytesToWrite = length;
+    long totalBytesWritten = 0;
+    long bytesToWrite = length;
 
 #ifndef __unix__
 	if (hWrite == INVALID_HANDLE_VALUE)
@@ -198,7 +198,7 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 500)
     {
 #ifndef __unix__    
 		DWORD bytesSent = 0;
@@ -212,17 +212,17 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 			return totalBytesWritten;
 		}
 		std::this_thread::yield();
-		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
+		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 500);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesSent, FALSE) == FALSE)
+			if (GetOverlappedResult(hWrite, &vOverlapped, &bytesSent, FALSE) == FALSE)
 			{
 				bytesSent = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hWrite);
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
@@ -292,7 +292,7 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 	auto t1 = chrono::high_resolution_clock::now();
 	auto t2 = chrono::high_resolution_clock::now();
 
-	while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
+	while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 1000)
 	{
  #ifndef __unix__
 	   DWORD bytesReceived = 0;
@@ -306,7 +306,7 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 		 return totalBytesReaded;
 	   }
 	   std::this_thread::yield();
-	   DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
+	   DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 1000);
 	   if (dwRet == WAIT_OBJECT_0)
 	   {
 		   if (GetOverlappedResult(hRead, &vOverlapped, &bytesReceived, TRUE) == FALSE)
@@ -406,7 +406,7 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 200)
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
     { 
  #ifndef __unix__
 		DWORD bytesReceived = 0;
@@ -419,18 +419,17 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
 			CloseHandle(vOverlapped.hEvent);
 			return totalBytesReaded;
 		}
-		std::this_thread::yield();
 		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesReceived, TRUE) == FALSE)
+			if (GetOverlappedResult(hReadStream, &vOverlapped, &bytesReceived, TRUE) == FALSE)
 			{
 				bytesReceived = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hReadStream);
 			bytesReceived = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
@@ -452,7 +451,6 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
         if (totalBytesReaded < length) 
         {
             bytesToRead -= bytesReceived;
-	    std::this_thread::yield();
             t2 = chrono::high_resolution_clock::now();
         }
         else
@@ -481,10 +479,7 @@ void ConnectionXillybus::AbortReading()
     if (hReadStream != INVALID_HANDLE_VALUE)
     {
         CloseHandle(hReadStream);
-		//CloseHandle(hWriteStream);
-		//hWriteStream = INVALID_HANDLE_VALUE;
-	hReadStream = INVALID_HANDLE_VALUE;
-        //hReadStream = CreateFileA("\\\\.\\xillybus_read_32", GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		hReadStream = INVALID_HANDLE_VALUE;
     }
 #else
     if (hReadStream >= 0)
@@ -537,18 +532,17 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
 			CloseHandle(vOverlapped.hEvent);
 			return totalBytesWritten;
 		}
-		std::this_thread::yield();
-		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
+		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 200);
 		if (dwRet == WAIT_OBJECT_0)
 		{
-			if (GetOverlappedResult(hRead, &vOverlapped, &bytesSent, TRUE) == FALSE)
+			if (GetOverlappedResult(hWriteStream, &vOverlapped, &bytesSent, TRUE) == FALSE)
 			{
 				bytesSent = 0;
 			}
 		}
 		else
 		{
-			CancelIo(hRead);
+			CancelIo(hWriteStream);
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
@@ -628,7 +622,6 @@ void ConnectionXillybus::AbortSending()
     {
         CloseHandle(hWriteStream);
 		hWriteStream = INVALID_HANDLE_VALUE;
-        //hWriteStream = CreateFileA("\\\\.\\xillybus_write_32", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     }
 #else
     if (hWriteStream >= 0)

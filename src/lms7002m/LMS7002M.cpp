@@ -37,7 +37,7 @@ using namespace lime;
 #include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {2000e6, 2700e6};
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1950e6, 2700e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
@@ -1024,9 +1024,11 @@ float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 
 /** @brief Sets CLKGEN frequency, calculations use receiver'r reference clock
     @param freq_Hz desired frequency in Hz
+    @param retainNCOfrequencies recalculate NCO coefficients to keep currently set frequencies
+    @param output if not null outputs calculated CGEN parameters
     @return 0-succes, other-cannot deliver desired frequency
 */
-int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies)
+int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies, CGEN_details* output)
 {
     stringstream ss;
     LMS7002M_SelfCalState state(this);
@@ -1054,18 +1056,17 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         }
     }
     //VCO frequency selection according to F_CLKH
-    iHdiv = (int16_t)((gCGEN_VCO_frequencies[1]/ 2) / freq_Hz) - 1;
-    if(iHdiv > 255)
+    vector<float_type> vcoFreqs;
+    for (iHdiv = 0; iHdiv < 256; ++iHdiv)
     {
-        iHdiv = (int16_t)((gCGEN_VCO_frequencies[0]/ 2) / freq_Hz) - 1;
-        if(iHdiv > 255)
-            return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz/1e6);
+        dFvco = 2 * (iHdiv + 1) * freq_Hz;
+        if (dFvco >= gCGEN_VCO_frequencies[0] && dFvco <= gCGEN_VCO_frequencies[1])
+            vcoFreqs.push_back(dFvco);
     }
-    dFvco = 2*(iHdiv+1) * freq_Hz;
-    if(dFvco < gCGEN_VCO_frequencies[0] || dFvco > gCGEN_VCO_frequencies[1])
-        return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - required VCO(%g MHz) out of range [%g-%g]",
-                           freq_Hz/1e6, dFvco/1e6, gCGEN_VCO_frequencies[0]/1e6, gCGEN_VCO_frequencies[1]/1e6);
-
+    if (vcoFreqs.size() == 0)
+        return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
+    dFvco = vcoFreqs[vcoFreqs.size() / 2];
+    iHdiv = dFvco / freq_Hz / 2 - 1;
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
 
@@ -1083,6 +1084,17 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     ss << "VCO: " << dFvco/1e6 << " MHz";
     ss << "\tRefClk: " << GetReferenceClk_SX(Rx)/1e6 << " MHz" << endl;
 
+    if (output)
+    {
+        output->frequency = freq_Hz;
+        output->frequencyVCO = dFvco;
+        output->referenceClock = GetReferenceClk_SX(LMS7002M::Rx);
+        output->INT = gINT;
+        output->FRAC = gFRAC;
+        output->div_outch_cgen = iHdiv;
+        output->success = true;
+    }
+
     //recalculate NCO
     for (int ch = 0; ch < 2 && retainNCOfrequencies; ++ch)
     {
@@ -1098,9 +1110,16 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 #endif // NDEBUG
     if(TuneVCO(VCO_CGEN) != 0)
     {
+        if (output)
+        {
+            output->success = false;
+            output->csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO_CGEN));
+        }
         ss << GetLastErrorMessage();
         return ReportError(-1, "SetFrequencyCGEN(%g MHz) failed:\n%s", freq_Hz/1e6, ss.str().c_str());
     }
+    if (output)
+        output->csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO_CGEN));
     return 0;
 }
 
@@ -1162,10 +1181,6 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
-    if(module == VCO_CGEN)
-        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-    else
-        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 1); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
     Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0); //Set SWC_VCO<7:0>=<00000000>
 
     i=7;
@@ -1208,10 +1223,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         ss << "CSW_highest =" << csw_highest << endl;
         ss << "CSW_selected=" << csw_lowest+(csw_highest-csw_lowest)/2;
     }
-    if (module == VCO_CGEN)
-        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO_CGEN), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
-    else
-        Modify_SPI_Reg_bits(LMS7param(SPDUP_VCO), 0); //SHORT_NOISEFIL=1 SPDUP_VCO_ Short the noise filter resistor to speed up the settling time
+
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
@@ -1307,9 +1319,10 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, c
 /** @brief Sets SX frequency
     @param Tx Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
+    @param output if not null outputs intermediate calculation values
     @return 0-success, other-cannot deliver requested frequency
 */
-int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
+int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 {
     stringstream ss; //VCO tuning report
     const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
@@ -1357,6 +1370,17 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     ss << "INT: " << integerPart << "\tFRAC: " << fractionalPart << endl;
     ss << "DIV_LOCH: " << (int16_t)div_loch << "\t EN_DIV2_DIVPROG: " << (VCOfreq > m_dThrF) << endl;
     ss << "VCO: " << VCOfreq/1e6 << "MHz\tRefClk: " << refClk_Hz/1e6 << " MHz" << endl;
+
+    if (output)
+    {
+        output->frequency = freq_Hz;
+        output->frequencyVCO = VCOfreq;
+        output->referenceClock = GetReferenceClk_SX(tx);
+        output->INT = integerPart;
+        output->FRAC = fractionalPart;
+        output->en_div2_divprog = (VCOfreq > m_dThrF);
+        output->div_loch = div_loch;
+    }
 
     //find which VCO supports required frequency
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
@@ -1410,6 +1434,13 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz)
     if(useCache && !foundInCache)
     {
         mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
+    }
+    if (output)
+    {
+        if (canDeliverFrequency)
+            output->success = true;
+        output->sel_vco = sel_vco;
+        output->csw = csw_value;
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);

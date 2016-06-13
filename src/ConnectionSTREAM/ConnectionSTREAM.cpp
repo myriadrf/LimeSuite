@@ -33,8 +33,6 @@ using namespace std;
 #define CTR_R_VALUE 0x0000
 #define CTR_R_INDEX 0x0000
 
-#define EXPECTED_FW_VERSION "5"
-
 using namespace lime;
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
@@ -59,11 +57,27 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 
     DeviceInfo info = this->GetDeviceInfo();
 
+    //expected version numbers based on HW number
+    std::string expectedFirmware, expectedGateware = "1";
+    if (info.hardwareVersion == "1") expectedFirmware = "5";
+    else if (info.hardwareVersion == "2") expectedFirmware = "0";
+    else std::cerr << "Unknown hardware version " << info.hardwareVersion << std::endl;
+
     //check and warn about firmware mismatch problems
-    if (info.firmwareVersion != EXPECTED_FW_VERSION) std::cerr << std::endl
+    if (info.firmwareVersion != expectedFirmware) std::cerr << std::endl
         << "########################################################" << std::endl
         << "##   !!!  Warning: firmware version mismatch  !!!" << std::endl
-        << "## Expected firmware version " << EXPECTED_FW_VERSION << ", but found version " << info.firmwareVersion << std::endl
+        << "## Expected firmware version " << expectedFirmware << ", but found version " << info.firmwareVersion << std::endl
+        << "## Follow the FW and FPGA upgrade instructions:" << std::endl
+        << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
+        << "########################################################" << std::endl
+        << std::endl;
+
+    //check and warn about gateware mismatch problems
+    if (info.gatewareVersion != expectedGateware) std::cerr << std::endl
+        << "########################################################" << std::endl
+        << "##   !!!  Warning: gateware version mismatch  !!!" << std::endl
+        << "## Expected gateware version " << expectedGateware << ", but found version " << info.gatewareVersion << std::endl
         << "## Follow the FW and FPGA upgrade instructions:" << std::endl
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
         << "########################################################" << std::endl

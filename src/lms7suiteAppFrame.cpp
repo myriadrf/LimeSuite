@@ -252,6 +252,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 		if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
 			return;
         wxString controlDev = _("Control port: ");
+
         controlDev.Append(info->deviceName);
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision));
         statusBar->SetStatusText(controlDev, controlCollumn);

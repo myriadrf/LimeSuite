@@ -90,6 +90,9 @@ static int makeDevice(void)
     std::cout << "  Firmware version: " << info.firmwareVersion << std::endl;
     std::cout << "  Hardware version: " << info.hardwareVersion << std::endl;
     std::cout << "  Protocol version: " << info.protocolVersion << std::endl;
+    std::cout << "  Gateware version: " << info.gatewareVersion << std::endl;
+    std::cout << "  Gateware revision: " << info.gatewareRevision << std::endl;
+    std::cout << "  Gateware target: " << info.gatewareTargetBoard << std::endl;
     std::cout << "  Serial number: " << std::hex << "0x" << info.boardSerialNumber << std::dec << std::endl;
 
     std::cout << "  Free connection... " << std::flush;
