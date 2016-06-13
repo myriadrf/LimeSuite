@@ -56,10 +56,9 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
     }
     else
     {
-        LMS_Disconnect(*device);
         lms = (LMS7_Device*)*device;
     }
-
+    LMS_Disconnect(lms);
     for (int i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
@@ -729,14 +728,14 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
 
     LMS7_Device* lms = (LMS7_Device*)dev;
     lime::LMS64CProtocol::GenericPacket pkt;
-    
+
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
         lime::ReportError(EINVAL, "Device not connected");
         return -1;
     }
-    
+
     pkt.cmd = lime::eCMD_LMS(cmd);
     for (int i = 0; i < *len; ++i)
         pkt.outBuffer.push_back(data[i]);
@@ -761,7 +760,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    
+
     LMS7_Device* lms = (LMS7_Device*)dev;
     lms->EnableValuesCache(enable);
     return 0;
@@ -1512,8 +1511,8 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;  
-    
+    LMS7_Device* lms = (LMS7_Device*)device;
+
     if (lms->streamer != nullptr)
 	delete lms->streamer;
     if (conf.fifoSize == 0)
@@ -1550,9 +1549,9 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    
-    LMS7_Device* lms = (LMS7_Device*)device; 
-    
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
     if (lms->streamer == nullptr)
     {
         lime::ReportError(EINVAL, "Stream not active.");
@@ -1577,8 +1576,8 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, si
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
-    }   
-    LMS7_Device* lms = (LMS7_Device*)device;  
+    }
+    LMS7_Device* lms = (LMS7_Device*)device;
     if (lms->streamer == nullptr)
     {
         lime::ReportError(EINVAL, "Stream not active.");
@@ -1594,7 +1593,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **sampl
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;  
+    LMS7_Device* lms = (LMS7_Device*)device;
     if (lms->streamer == nullptr)
     {
         lime::ReportError(EINVAL, "Stream not active.");
@@ -1641,7 +1640,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *devic
        lime::ReportError(EINVAL, "No cennection to board.");
 	   return nullptr;
     }
-    
+
     return lms->GetInfo();
 }
 
@@ -1851,7 +1850,7 @@ API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device, const void
 
 API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device)
 {
-    stopWFM.store(true);    
+    stopWFM.store(true);
     if(wfmRunning.load() && wfmThread.joinable())
         wfmThread.join();
     wfmRunning.store(false);

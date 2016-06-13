@@ -108,18 +108,18 @@ void fftviewer_frFFTviewer::StartStreaming()
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
     }
-    
+
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
-    
+
     if (mStreamRunning.load() == true)
         return;
     stopProcessing.store(false);
-    
+
     if (threadProcessing.joinable())
         threadProcessing.join();
-  
+
     switch (cmbStreamType->GetSelection())
     {
     case 0:
@@ -135,7 +135,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
         break;
     }
-    
+
     btnStartStop->SetLabel(_("STOP"));
     mGUIupdater->Start(50);
 }
@@ -143,7 +143,7 @@ void fftviewer_frFFTviewer::StartStreaming()
 void fftviewer_frFFTviewer::StopStreaming()
 {
     txtNyquistFreqMHz->Enable();
-    mGUIupdater->Stop();   
+    mGUIupdater->Stop();
     if (mStreamRunning.load() == false)
         return;
     stopProcessing.store(true);
@@ -162,7 +162,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
 
 	if (mStreamRunning.load() == false)
 		return;
-        lms_stream_status_t stats;     
+        lms_stream_status_t stats;
 	LMS_GetStreamStatus(lmsControl,&stats);
 	RxFilled = (float)stats.rx_fifo_filled *100/ stats.rx_fifo_size;
 	TxFilled = (float)stats.tx_fifo_filled *100/ stats.tx_fifo_size;
@@ -230,7 +230,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
 {
     const int test_count = 4096*16;//4096*16;
     float** buffers;
-    
+
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
     localDataResults.samplesI[0].resize(fftSize, 0);
@@ -238,7 +238,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     localDataResults.samplesQ[0].resize(fftSize, 0);
     localDataResults.samplesQ[1].resize(fftSize, 0);
     localDataResults.fftBins_dbFS[0].resize(fftSize, 0);
-    localDataResults.fftBins_dbFS[1].resize(fftSize, 0);   
+    localDataResults.fftBins_dbFS[1].resize(fftSize, 0);
     buffers = new float*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
         buffers[i] = new float[test_count*2];
@@ -246,13 +246,13 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     lms_stream_conf_t conf;
     conf.channels = channelsCount == 1 ? 1 : 3;
     conf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
-    conf.fifoSize = 32*1024*1024;
+    conf.fifoSize = 16 * 1024 * 1024;
     conf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
     conf.numTransfers = 16;
     conf.transferSize = 4096*16;
-    
+
     LMS_SetupStream(pthis->lmsControl, conf);
-    
+
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
@@ -267,17 +267,17 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     while (pthis->stopProcessing.load() == false)
     {
         ++updateCounter;
-        
-        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,1000);    
+
+        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,1000);
         if (samplesPopped <= 0)
             break;
         //Transmit earlier received packets with a counter delay
-        meta.timestamp += 512*1024;     
+        meta.timestamp += 512 * 1024;
         uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,250);
-         if (samplesPushed <= 0)
+        if (samplesPushed < samplesPopped)
             break;
-        
-        
+
+
         if (updateCounter & 0x40)
         {
 
@@ -311,7 +311,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     LMS_StopStream(pthis->lmsControl,LMS_CH_TX);
     LMS_StopStream(pthis->lmsControl,LMS_CH_RX);
     for (int i = 0; i < channelsCount; ++i)
-        delete [] buffers[i];     
+        delete [] buffers[i];
     delete [] buffers;
     delete [] m_fftCalcIn;
     delete [] m_fftCalcOut;

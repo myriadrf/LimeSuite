@@ -555,16 +555,16 @@ StreamerFIFO::~StreamerFIFO()
 int StreamerFIFO::SetupStream(lms_stream_conf_t conf)
 {
 
-	streamConf = conf;
+    streamConf = conf;
 
-	int buffersCount = 1; // must be power of 2
-	while (buffersCount < streamConf.numTransfers)
-		buffersCount <<= 1;
-	streamConf.numTransfers = buffersCount;
+    int buffersCount = 1; // must be power of 2
+    while (buffersCount < streamConf.numTransfers && buffersCount < 64)
+        buffersCount <<= 1;
+    streamConf.numTransfers = buffersCount;
 
-	packetsToBatch = 1 + (conf.transferSize - 1) / sizeof(lime::PacketLTE);
-	if (packetsToBatch > MAX_PACKETS_BATCH)
-		packetsToBatch = MAX_PACKETS_BATCH;
+    packetsToBatch = 1 + (conf.transferSize - 1) / sizeof(lime::PacketLTE);
+    if (packetsToBatch > MAX_PACKETS_BATCH)
+        packetsToBatch = MAX_PACKETS_BATCH;
 
     if (streamConf.channels == 3)
         channelsCount = 2;
@@ -572,10 +572,16 @@ int StreamerFIFO::SetupStream(lms_stream_conf_t conf)
     lime::PacketLTE pkt;
     streamConf.fifoSize /= sizeof(pkt.data) / sizeof(lime::complex16_t) / channelsCount;
 
-	if (streamConf.fifoSize < 2 * packetsToBatch)
-		streamConf.fifoSize = 2 * packetsToBatch;
+    if (streamConf.fifoSize < 2 * packetsToBatch)
+        streamConf.fifoSize = 2 * packetsToBatch;
 
-	return 0;
+    //Force power of 2 FIFO size
+    size_t iSize = 2;
+    while (iSize < streamConf.fifoSize && iSize < (1 << 31))
+            iSize <<= 1;
+    streamConf.fifoSize = iSize;
+
+    return 0;
 }
 
 int StreamerFIFO::StartRx()
@@ -586,12 +592,12 @@ int StreamerFIFO::StartRx()
 
     if (threadRx.joinable())
         threadRx.join();
-	mRxFIFO->Reset(streamConf.fifoSize, channelsCount);
+    mRxFIFO->Reset(streamConf.fifoSize, channelsCount);
     if (tx_running == false)
         Start();
     threadRx = std::thread(ReceivePackets, this);
     rx_running = true;
-   
+
     return 0;
 }
 
@@ -601,11 +607,11 @@ int StreamerFIFO::StartTx()
         return 0;
     stopTx.store(false);
 
-	mTxFIFO->Reset(streamConf.fifoSize, channelsCount);
-    threadTx = std::thread(TransmitPackets, this);
-    tx_running = true;
+    mTxFIFO->Reset(streamConf.fifoSize, channelsCount);
     if (rx_running == false)
         Start();
+    threadTx = std::thread(TransmitPackets, this);
+    tx_running = true;
     return 0;
 }
 
@@ -669,8 +675,6 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms
        lime::complex16_t** buffers = new lime::complex16_t*[channelsCount];
        for (int i = 0; i<channelsCount;i++)
            buffers[i] = new lime::complex16_t[sample_count];
-
-        int ret = mTxFIFO->push_samples((const lime::complex16_t**)buffers, sample_count, channelsCount, meta->timestamp, timeout_ms, meta->has_timestamp);
         for (int i = 0; i < sample_count;i++)
         {
             for (int ch = 0;ch<channelsCount;ch++)
@@ -679,6 +683,7 @@ int StreamerFIFO::SendStream(const void **samples,size_t sample_count, const lms
                 buffers[ch][i].q = ((float*)samples[ch])[2*i+1]*2047.0;
             }
         }
+        int ret = mTxFIFO->push_samples((const lime::complex16_t**)buffers, sample_count, channelsCount, meta->timestamp, timeout_ms, meta->has_timestamp);
         for (int i = 0; i<channelsCount;i++)
            delete [] buffers[i];
 
