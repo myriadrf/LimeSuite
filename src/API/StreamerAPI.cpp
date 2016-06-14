@@ -808,6 +808,8 @@ void StreamerFIFO::ReceivePackets(StreamerFIFO *pthis)
                 tempPacket.last = samplesCollected;
 
                 uint32_t samplesPushed = rxFIFO->push_samples((const lime::complex16_t**)tempPacket.samples, samplesCollected, channelsCount, tempPacket.timestamp, 10, statusFlags);
+                if (samplesPushed != samplesCollected)
+                    printf("Rx samples dropped : %i \n", samplesCollected - samplesPushed);
                 std::this_thread::yield();
                 samplesCollected = 0;
 

@@ -1523,6 +1523,21 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+    if (lms->streamer != nullptr)
+        delete lms->streamer;
+    lms->streamer = nullptr;
+    return 0;
+}
+
 API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx)
 {
     if (device == nullptr)
@@ -1772,7 +1787,7 @@ std::atomic<bool> stopWFM(false);
 lime::complex16_t** wfmBuffers = nullptr;
 int wfmLength = 0;
 std::atomic<bool> wfmRunning(false);
-const int chCount = 2;
+const int chCount = 1;
 int LoopWFM(lms_device_t *device)
 {
     wfmRunning.store(true);
@@ -1840,7 +1855,10 @@ API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device, const void
     for(int i=0; i<chCount; ++i)
     {
         wfmBuffers[i] = new lime::complex16_t[sample_count];
-        memcpy(wfmBuffers[i], src[i], sample_count*sizeof(lime::complex16_t));
+        if (src[i] != nullptr)
+            memcpy(wfmBuffers[i], src[i], sample_count*sizeof(lime::complex16_t));
+        else
+            memset(wfmBuffers[i], 0, sample_count*sizeof(lime::complex16_t));
     }
     wfmLength = sample_count;
     stopWFM.store(false);

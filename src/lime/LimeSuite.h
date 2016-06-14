@@ -1232,6 +1232,15 @@ typedef struct
 API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t conf);
 
 /**
+* Deallocates memory used for streaming
+*
+* @param device    Device handle previously obtained by LMS_Open().
+*
+* @return      0 on success, (-1) on failure
+*/
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device);
+
+/**
  * Starts RX/TX stream
  *
  * @param device        Device handle previously obtained by LMS_Open().
