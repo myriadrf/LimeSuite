@@ -2,7 +2,8 @@
 LoadLimeSuite
 
 %Generate waveform
-src = 0.7*complex(sin(0:pi/4:1000*pi-pi/4), cos(0:pi/4:1000*pi-pi/4));
+phase = pi/8;
+src = 0.7*complex(sin(0:phase:1000*pi-phase), cos(0:phase:1000*pi-phase));
 
 %%initialize LimeSuite
 %if several boards are connected
@@ -16,16 +17,15 @@ LimeInitialize();
 LimeLoadConfig('rxTest.ini');
 
 %activate Tx and Rx streaming
-LimeStartStreaming();
+LimeStartStreaming(1000000);
 
 %Load waveform to be continuosly transmitted
 LimeLoopWFMStart(src);
 
 %receive samples
-for i=1:1000
+for i=1:10000
 	samples = LimeReceiveSamples(1360);
-	plot(samples);
-	disp(i);
+	%plot(samples);
 	pause(0.001);
 end
 

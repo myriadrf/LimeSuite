@@ -7,6 +7,8 @@
 
 using namespace std;
 
+void FreeResources();
+
 lms_device_t* lmsDev = NULL;
 
 struct complex16_t
@@ -63,6 +65,7 @@ DEFUN_DLD (LimeGetDeviceList, args, nargout,
 DEFUN_DLD (LimeInitialize, args, nargout,
            "Lime Suite initialization, connects device and allocates buffer memory")
 {
+    FreeResources();
     int status;
     int nargin = args.length ();
     if(nargin > 0)
@@ -105,14 +108,7 @@ DEFUN_DLD (LimeGetDeviceInfo, args, nargout,
 DEFUN_DLD (LimeDestroy, args, nargout,
            "Stops all streams, deallocates memory and disconnects device")
 {
-    if(lmsDev)
-    {
-        if(WFMrunning)
-            LMS_StreamStopLoopWFM(lmsDev);
-        StopStream();
-        LMS_Close(lmsDev);
-        lmsDev = NULL;
-    }
+    FreeResources();
     return octave_value_list();
 }
 
@@ -188,35 +184,37 @@ DEFUN_DLD (LimeStopStreaming, args, nargout,
     return octave_value_list();
 }
 
-DEFUN_DLD (LimeReceiveSamples, args, , "wfm, timestamp = LimeReceiveSamples( samplesCount )")
+DEFUN_DLD (LimeReceiveSamples, args, , "wfm = LimeReceiveSamplesLarge( samplesCount ), performs long read, returning one large buffer")
 {
     int nargin = args.length ();
-    int check=0;
     if (nargin != 1)
     {
         print_usage ();
         return octave_value_list ();
     }
-    int myVecSize = args(0).int_value (); // this fails nicely with numbers, real->int, complex->real->integer, array->firstElement
+    const int samplesToReceive = args(0).int_value ();
+
+    Complex val=Complex(0.0,0.0);
+    ComplexRowVector iqdata( samplesToReceive, val ); // index 0 to N-1
 
     const int timeout_ms = 1000;
     lms_stream_meta_t meta;
-    int samplesRead = myVecSize;
-    samplesRead = LMS_RecvStream(lmsDev, (void**)rxbuffers, myVecSize, &meta, timeout_ms);
-
-    Complex val=Complex(0.0,0.0);
-    ComplexRowVector iqdata( samplesRead, val ); // index 0 to N-1
-
-    short tempI1 = 0;
-    short tempQ1 = 0;
-
-    for(int i=0; i<samplesRead && i<samplesMaxCount; ++i)
+    int samplesCollected = 0;
+    
+    while(samplesCollected < samplesToReceive)
     {
-        tempI1 = rxbuffers[0][i].i;
-        tempQ1 = rxbuffers[0][i].q;
-        iqdata(i)=Complex(tempI1/2048.0,tempQ1/2048.0);
+        int samplesToRead = 0;
+        if(samplesToReceive-samplesCollected > samplesMaxCount)
+            samplesToRead = samplesMaxCount;
+        else
+            samplesToRead = samplesToReceive-samplesCollected;
+        int samplesRead = LMS_RecvStream(lmsDev, (void**)rxbuffers, samplesToRead, &meta, timeout_ms);
+        for(int i=0; i<samplesRead; ++i)
+        {
+            iqdata(samplesCollected+i)=Complex(rxbuffers[0][i].i/2048.0,rxbuffers[0][i].q/2048.0);
+        }
+        samplesCollected += samplesRead;
     }
-
     return octave_value(iqdata);
 }
 
@@ -312,34 +310,40 @@ DEFUN_DLD (LimeLoopWFMStop, args, , "LimeTxLoopWFMStop")
     return octave_value ();
 }
 
+void FreeResources()
+{
+    if(lmsDev)
+    {
+        if(WFMrunning)
+            LMS_StreamStopLoopWFM(lmsDev);
+        StopStream();
+        LMS_DestroyStream(lmsDev);
+        LMS_Close(lmsDev);
+        lmsDev = NULL;
+    }
+    if(rxbuffers)
+    {
+        for(int i=0; i<chCount; ++i)
+            delete rxbuffers[i];
+        delete rxbuffers;
+        rxbuffers = NULL;
+    }
+    if(txbuffers)
+    {
+        for(int i=0; i<chCount; ++i)
+            delete txbuffers[i];
+        delete txbuffers;
+        txbuffers = NULL;
+    }
+}
+
 class ResourceDeallocator
 {
 public:
     ResourceDeallocator() {};
     ~ResourceDeallocator()
     {
-        if(lmsDev)
-        {
-            if(WFMrunning)
-                LMS_StreamStopLoopWFM(lmsDev);
-            StopStream();
-            LMS_Close(lmsDev);
-            lmsDev = NULL;
-        }
-        if(rxbuffers)
-        {
-            for(int i=0; i<chCount; ++i)
-                delete rxbuffers[i];
-            delete rxbuffers;
-            rxbuffers = NULL;
-        }
-        if(txbuffers)
-        {
-            for(int i=0; i<chCount; ++i)
-                delete txbuffers[i];
-            delete txbuffers;
-            txbuffers = NULL;
-        }
+        FreeResources();
     };
 };
 
