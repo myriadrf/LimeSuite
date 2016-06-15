@@ -56,15 +56,23 @@ void LMS7002M::Log(const char* text, LogType type)
     {
     case LOG_INFO:
         printf("%s\n", text);
+        if(log_callback)
+            log_callback(text, type);
         break;
     case LOG_WARNING:
         printf("Warning: %s\n", text);
+        if(log_callback)
+            log_callback(text, type);
         break;
     case LOG_ERROR:
         printf("ERROR: %s\n", text);
+        if(log_callback)
+            log_callback(text, type);
         break;
     case LOG_DATA:
         printf("DATA: %s\n", text);
+        if(log_callback)
+            log_callback(text, type);
         break;
     }
 }
@@ -1223,7 +1231,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         ss << "CSW_highest =" << csw_highest << endl;
         ss << "CSW_selected=" << csw_lowest+(csw_highest-csw_lowest)/2;
     }
-    
+
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
@@ -2396,4 +2404,9 @@ float_type LMS7002M::GetTemperature()
 
     RestoreRegisterMap(regMap);
     return temperature;
+}
+
+void LMS7002M::SetLogCallback(std::function<void(const char*, int)> callback)
+{
+    log_callback = callback;
 }

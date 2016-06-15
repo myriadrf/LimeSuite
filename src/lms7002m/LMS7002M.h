@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <sstream>
 #include <stdarg.h>
+#include <functional>
 
 namespace lime{
 class IConnection;
@@ -406,6 +407,15 @@ public:
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
+
+    enum LogType
+    {
+        LOG_INFO,
+        LOG_WARNING,
+        LOG_ERROR,
+        LOG_DATA
+    };
+    void SetLogCallback(std::function<void(const char*, int)> callback);
 protected:
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;
@@ -450,13 +460,6 @@ protected:
     int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
     ///@}
 
-    enum LogType
-    {
-        LOG_INFO,
-        LOG_WARNING,
-        LOG_ERROR,
-        LOG_DATA
-    };
     virtual void Log(const char* text, LogType type);
 
     void Log(LogType type, const char *format, ...)
@@ -467,6 +470,7 @@ protected:
         va_end(argList);
     }
 
+    std::function<void(const char*, int)> log_callback;
     void Log(LogType type, const char *format, va_list argList);
 
     ///port used for communicating with LMS7002M

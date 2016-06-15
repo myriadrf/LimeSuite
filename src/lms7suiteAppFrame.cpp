@@ -141,6 +141,28 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     }
 }
 
+void LMS7SuiteAppFrame::OnLogEvent(const char* text, int type)
+{
+    wxCommandEvent evt;
+    evt.SetEventType(LOG_MESSAGE);
+    wxString msg;
+
+    switch(type)
+    {
+    case lime::LMS7002M::LOG_INFO:
+        msg = wxString::Format("INFO: %s", text);
+        break;
+    case lime::LMS7002M::LOG_WARNING:
+        msg = wxString::Format("Warning: %s", text);
+        break;
+    case lime::LMS7002M::LOG_ERROR:
+        msg = wxString::Format("ERROR: %s", text);
+        break;
+    }
+    evt.SetString(msg);
+    wxPostEvent(this, evt);
+}
+
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     AppFrame_view( parent ), lms7controlPort(nullptr), streamBoardPort(nullptr)
 {
@@ -183,6 +205,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     mnuCacheValues->Check(lmsControl->IsValuesCacheEnabled());
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
+    lmsControl->SetLogCallback(bind(&LMS7SuiteAppFrame::OnLogEvent, this, std::placeholders::_1, std::placeholders::_2));;
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
