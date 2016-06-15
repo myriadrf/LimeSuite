@@ -452,8 +452,8 @@ int main(int argc, char** argv)
             lmsControl->SetInterfaceFrequency(cgenFreq, 0, decimation);
         }
 
-        auto txRate = lmsControl->GetSampleRate(LMS7002M::Tx);
-        auto rxRate = lmsControl->GetSampleRate(LMS7002M::Rx);
+        auto txRate = lmsControl->GetSampleRate(LMS7002M::Tx, LMS7002M::Channel::ChA);
+        auto rxRate = lmsControl->GetSampleRate(LMS7002M::Rx, LMS7002M::Channel::ChA);
         serPort->UpdateExternalDataRate(0, txRate, rxRate);
         printf("Sampling rates - Tx : %g MHz\t Rx : %g MHz\n", txRate/1e6, rxRate/1e6);
 
