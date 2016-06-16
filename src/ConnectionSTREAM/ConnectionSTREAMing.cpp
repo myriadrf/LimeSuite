@@ -41,7 +41,7 @@ struct USBStreamService : StreamerLTE
         rxStreamingContinuous(false),
         mLastRxTimestamp(0),
         mTimestampOffset(0),
-        mHwCounterRate(0.0)
+        mHwCounterRate(10e6)
     {
         mRxFIFO->Reset(2*4096, channelsCount);
         mTxFIFO->Reset(2*4096, channelsCount);
