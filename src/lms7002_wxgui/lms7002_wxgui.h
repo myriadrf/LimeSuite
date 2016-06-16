@@ -2136,6 +2136,7 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
 		wxCheckBox* chkUseExtLoopback;
+		wxRadioBox* rgrCalibrationMethod;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
@@ -2143,6 +2144,7 @@ class pnlCalibrations_view : public wxPanel
 		virtual void OnbtnCalibrateRx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateTx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnExtLoopbackChecked( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

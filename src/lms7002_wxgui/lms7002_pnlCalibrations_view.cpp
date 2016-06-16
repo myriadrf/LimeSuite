@@ -31,11 +31,16 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
-    chkUseExtLoopback->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+    }
     lmsControl->EnableCalibrationByMCU(true);
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
@@ -61,7 +66,12 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
-    lmsControl->EnableCalibrationByMCU(true);
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -86,6 +96,12 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -180,4 +196,9 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
     lblCGENrefClk->SetLabel(wxString::Format(_("%g"), lmsControl->GetReferenceClk_SX(LMS7002M::Rx)/1e6));
+}
+
+void lms7002_pnlCalibrations_view::OnExtLoopbackChecked( wxCommandEvent& event )
+{
+    rgrCalibrationMethod->Enable(!chkUseExtLoopback->IsChecked());
 }

@@ -1465,7 +1465,7 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
 
 #ifdef DRAW_GNU_PLOTS
     bool scanFFT = useFFT;
-    bool scanRSSI = true;
+    bool scanRSSI = !useFFT;
     std::vector<uint32_t> plotValues;
     std::vector<uint32_t> fftSweepValues;
     std::vector<uint32_t> sweepRSSIValues;

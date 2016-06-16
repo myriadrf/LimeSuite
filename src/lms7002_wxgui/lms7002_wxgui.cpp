@@ -8928,11 +8928,25 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	sbSizer165->Add( fgSizer328, 1, wxEXPAND, 5 );
 	
+	wxFlexGridSizer* fgSizer246;
+	fgSizer246 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer246->SetFlexibleDirection( wxVERTICAL );
+	fgSizer246->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	chkUseExtLoopback = new wxCheckBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("use external loopback"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer246->Add( chkUseExtLoopback, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("RSSI") };
+	int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
+	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration method"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
+	rgrCalibrationMethod->SetSelection( 0 );
+	fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, 5 );
+	
+	
+	sbSizer165->Add( fgSizer246, 0, 0, 5 );
+	
 	
 	fgSizer309->Add( sbSizer165, 0, 0, 5 );
-	
-	chkUseExtLoopback = new wxCheckBox( this, wxID_ANY, wxT("use external loopback"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer309->Add( chkUseExtLoopback, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	this->SetSizer( fgSizer309 );
@@ -8954,6 +8968,7 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	cmbDCCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	chkUseExtLoopback->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnExtLoopbackChecked ), NULL, this );
 }
 
 pnlCalibrations_view::~pnlCalibrations_view()
@@ -8973,6 +8988,7 @@ pnlCalibrations_view::~pnlCalibrations_view()
 	cmbDCCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	chkUseExtLoopback->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnExtLoopbackChecked ), NULL, this );
 	
 }
 
