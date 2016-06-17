@@ -313,7 +313,7 @@ public:
     int SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation);
 
     //! Get the sample rate in Hz
-    float_type GetSampleRate(bool tx);
+    float_type GetSampleRate(bool tx, Channel ch);
 
     ///@name LML
     enum LMLSampleSource

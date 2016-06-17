@@ -2178,8 +2178,11 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     return status;
 }
 
-float_type LMS7002M::GetSampleRate(bool tx)
+float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
 {
+    float_type interface_Hz;
+    auto chBck = GetActiveChannel();
+    SetActiveChannel(ch);
     //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
     if (tx)
     {
@@ -2187,7 +2190,7 @@ float_type LMS7002M::GetSampleRate(bool tx)
         float_type interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
             interfaceTx_Hz /= 2*pow(2.0, interpolation);
-        return interfaceTx_Hz;
+        interface_Hz = interfaceTx_Hz;
     }
     else
     {
@@ -2195,8 +2198,10 @@ float_type LMS7002M::GetSampleRate(bool tx)
         float_type interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         if (decimation != 7)
             interfaceRx_Hz /= 2*pow(2.0, decimation);
-        return interfaceRx_Hz;
+        interface_Hz = interfaceRx_Hz;
     }
+    SetActiveChannel(chBck);
+    return interface_Hz/2;
 }
 
 void LMS7002M::ConfigureLML_RF2BB(

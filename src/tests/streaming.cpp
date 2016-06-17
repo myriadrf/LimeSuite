@@ -41,8 +41,8 @@ TEST_F (StreamingFixture, startStop)
         lmsControl.Modify_SPI_Reg_bits(TSGFC_RXTSP, 0);
         lmsControl.SetActiveChannel(LMS7002M::ChA);
 
-        auto txRate = lmsControl.GetSampleRate(LMS7002M::Tx);
-        auto rxRate = lmsControl.GetSampleRate(LMS7002M::Rx);
+        auto txRate = lmsControl.GetSampleRate(LMS7002M::Tx, LMS7002M::Channel::ChA);
+        auto rxRate = lmsControl.GetSampleRate(LMS7002M::Rx, LMS7002M::Channel::ChA);
         int ch = lmsControl.GetActiveChannelIndex();
         float cgenFreq = 30.72e6 * 2;
         lmsControl.SetInterfaceFrequency(cgenFreq, 0, 0);

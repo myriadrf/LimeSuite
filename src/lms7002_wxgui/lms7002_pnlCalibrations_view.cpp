@@ -31,11 +31,18 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
-    chkUseExtLoopback->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+        useExtLoopback = true;
+    }
     lmsControl->EnableCalibrationByMCU(true);
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
@@ -44,7 +51,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
 #endif
-        status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
@@ -61,7 +68,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
-    lmsControl->EnableCalibrationByMCU(true);
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+        useExtLoopback = true;
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -69,7 +83,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
 #endif
-        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
@@ -86,6 +100,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lmsControl->EnableCalibrationByMCU(true);
+    else
+    {
+        lmsControl->EnableCalibrationByMCU(false);
+        useExtLoopback = true;
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -93,7 +115,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
 #endif
-        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        status = lmsControl->CalibrateTx(bandwidth_MHz * 1e6, useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
@@ -101,7 +123,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
 #endif
-        status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, chkUseExtLoopback->IsChecked());
+        status = lmsControl->CalibrateRx(bandwidth_MHz * 1e6, useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(GetLastErrorMessage())));
