@@ -10,6 +10,7 @@
 #include <ciso646>
 #include <vector>
 #include <stdio.h>
+#include <cmath>
 #define LMS_VERBOSE_OUTPUT
 
 ///define for parameter enumeration if prefix might be needed
@@ -33,7 +34,7 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
     int fftBin = 0; //which bin to use when calibrating using FFT
     int srcBin = 569; //recalculated to be at 100 kHz bin;
 
-    #define DRAW_GNU_PLOTS
+//    #define DRAW_GNU_PLOTS
     #ifdef DRAW_GNU_PLOTS
         #include <gnuPlotPipe.h>
         GNUPlotPipe gp;
@@ -381,7 +382,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0); //Decimation HBD ratio
+    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
 
     if(useExtLoopback)
     {
@@ -398,10 +399,16 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
         {
             int clkh_ov = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
-            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier/pow2(clkh_ov) - 1);
+            int gfir3n = 4 * cgenMultiplier/pow2(clkh_ov);
+            gfir3n = pow2(int(log2(gfir3n)));
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
         }
         else
-            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4 * cgenMultiplier - 1);
+        {
+            int gfir3n = 4 * cgenMultiplier;
+            gfir3n = pow2(int(log2(gfir3n)));
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
+        }
         SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
 #ifdef ENABLE_CALIBRATION_USING_FFT
         if(useFFT) //fft does not need GFIR
@@ -1043,7 +1050,19 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 4*cgenMultiplier - 1);
+        if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
+        {
+            int clkh_ov = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
+            int gfir3n = 4 * cgenMultiplier/pow2(clkh_ov);
+            gfir3n = pow2(int(log2(gfir3n)));
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
+        }
+        else
+        {
+            int gfir3n = 4 * cgenMultiplier;
+            gfir3n = pow2(int(log2(gfir3n)));
+            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
+        }
         SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
     }
     else
