@@ -22,6 +22,9 @@ integer number of cycles of the frequency you are looking for.
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
+#include <stdint.h>
+
+static const double PI = 3.14159265359;
 
 // Number of input data points and
 // number of spectral points, i.e. number of bins all the interval is divided to
@@ -88,7 +91,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
   int n, k;         // loop variables
 
   // Prepare for computation
-  wn = M_PI/Sp;
+  wn = PI/Sp;
   // Loop through all the bins
   //for(k=0; k<Sp; k++)
   k = fftBin;
