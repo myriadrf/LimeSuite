@@ -29,11 +29,17 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[cmbDCOFFQ_RFE] = LMS7param(DCOFFQ_RFE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
-    chkUseExtLoopback->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        useExtLoopback = false;
+    else
+    {
+        useExtLoopback = true;
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -43,7 +49,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 #endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
+        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -60,6 +66,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 {
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        useExtLoopback = false;
+    else
+    {
+        useExtLoopback = true;
+    }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
@@ -69,7 +82,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 #endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -86,6 +99,11 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 {
+    bool useExtLoopback = false;
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        useExtLoopback = false;
+    else
+        useExtLoopback = true;
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     uint16_t ch;
@@ -94,8 +112,8 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     {
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
-#endif        
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
+#endif
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -103,7 +121,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
 #endif
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,chkUseExtLoopback->IsChecked());
+        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));

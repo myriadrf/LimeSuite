@@ -8928,11 +8928,22 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	
 	sbSizer165->Add( fgSizer328, 1, wxEXPAND, 5 );
 	
+	wxFlexGridSizer* fgSizer246;
+	fgSizer246 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer246->SetFlexibleDirection( wxVERTICAL );
+	fgSizer246->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("External Loopback") };
+	int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
+	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration method"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
+	rgrCalibrationMethod->SetSelection( 0 );
+	fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, 5 );
+	
+	
+	sbSizer165->Add( fgSizer246, 0, 0, 5 );
+	
 	
 	fgSizer309->Add( sbSizer165, 0, 0, 5 );
-	
-	chkUseExtLoopback = new wxCheckBox( this, wxID_ANY, wxT("use external loopback"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer309->Add( chkUseExtLoopback, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	this->SetSizer( fgSizer309 );

@@ -694,8 +694,8 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
     _conn->UpdateExternalDataRate(
         rfic->GetActiveChannelIndex(),
-        rfic->GetSampleRate(LMS7002M::Tx),
-        rfic->GetSampleRate(LMS7002M::Rx));
+        rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
+        rfic->GetSampleRate(LMS7002M::Rx, rfic->GetActiveChannel()));
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
@@ -704,7 +704,7 @@ double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    return rfic->GetSampleRate(lmsDir);
+    return rfic->GetSampleRate(lmsDir, rfic->GetActiveChannel());
 }
 
 std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const

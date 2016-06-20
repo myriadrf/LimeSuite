@@ -127,6 +127,30 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
  */
 }
 
+void LMS7SuiteAppFrame::OnLogEvent(const char* text, int type)
+{
+    wxCommandEvent evt;
+    evt.SetEventType(LOG_MESSAGE);
+    wxString msg;
+
+    switch(type)
+    {
+    /*
+    case lime::LMS7002M::LOG_INFO:
+        msg = wxString::Format("INFO: %s", text);
+        break;
+    case lime::LMS7002M::LOG_WARNING:
+        msg = wxString::Format("Warning: %s", text);
+        break;
+    case lime::LMS7002M::LOG_ERROR:
+        msg = wxString::Format("ERROR: %s", text);
+        break;
+    */
+    }
+    evt.SetString(msg);
+    wxPostEvent(this, evt);
+}
+
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     AppFrame_view( parent ), lmsControl(nullptr)
 {
@@ -170,6 +194,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     mnuCacheValues->Check(false);
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
+    // TODO add logging callback to API
+    //lmsControl->SetLogCallback(bind(&LMS7SuiteAppFrame::OnLogEvent, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -247,7 +273,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     {
         //bind callback for spi data logging
         obj_ptr = this;
-        LMS_SetDataLogCallback(lmsControl,OnLogDataTransfer);
+        //LMS_SetDataLogCallback(lmsControl,OnLogDataTransfer);
         const lms_dev_info_t* info;
 		if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
 			return;
