@@ -2201,7 +2201,7 @@ float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
         interface_Hz = interfaceRx_Hz;
     }
     SetActiveChannel(chBck);
-    return interface_Hz/2;
+    return interface_Hz;
 }
 
 void LMS7002M::ConfigureLML_RF2BB(

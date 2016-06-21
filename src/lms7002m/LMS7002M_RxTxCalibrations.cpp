@@ -765,10 +765,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     {
 #ifdef ENABLE_CALIBRATION_USING_FFT
         {
-            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/2/gFFTSize;
+            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
             offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
         }
-        srcBin = (gFFTSize/2)*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
+        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
         fftBin = srcBin;
 #endif // ENABLE_CALIBRATION_USING_FFT
         CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
