@@ -24,6 +24,9 @@ using namespace lime;
 //lazy fix for the const call issue -- FIXME
 #define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
 
+// arbitrary upper limit for CGEN automatic tune
+#define MAX_CGEN_RATE 480e6
+
 //reasonable limits when advertising the rate
 #define MIN_SAMP_RATE 1e5
 #define MAX_SAMP_RATE 60e6
@@ -634,6 +637,7 @@ static double calculateClockRate(
     for (int decim = 2; decim <= 32; decim *= 2)
     {
         const double rateClock = rateRx*decim*adcFactorRx;
+        if (rateClock > MAX_CGEN_RATE) continue;
         if (rateClock < bestClockRate) continue;
         for (int interp = 2; interp <= 32; interp *= 2)
         {
