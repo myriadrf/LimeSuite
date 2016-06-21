@@ -572,11 +572,11 @@ std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, size_t chan) con
 {
     if (dir_tx)
     {
-       return {"NONE", "LNA_H", "LNA_L", "LNA_W"};
+        return {"NONE", "TX_PATH1", "TX_PATH2"};
     }
     else
     {
-       return {"NONE", "TX_PATH1", "TX_PATH2"};
+        return {"NONE", "LNA_H", "LNA_L", "LNA_W"};
     }
 }
 
