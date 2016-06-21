@@ -629,16 +629,29 @@ static double calculateClockRate(
     int &dspFactorRx,
     int &dspFactorTx)
 {
-    for (dspFactorRx = 2; dspFactorRx <= 32; dspFactorRx *= 2)
+    double bestClockRate = 0.0;
+
+    for (int decim = 2; decim <= 32; decim *= 2)
     {
-        const double rateClock = rateRx*dspFactorRx*adcFactorRx;
-        for (dspFactorTx = 2; dspFactorTx <= 32; dspFactorTx *= 2)
+        const double rateClock = rateRx*decim*adcFactorRx;
+        if (rateClock < bestClockRate) continue;
+        for (int interp = 2; interp <= 32; interp *= 2)
         {
-            const double actualRateTx = rateClock/(dspFactorTx*dacFactorTx);
+            const double actualRateTx = rateClock/(interp*dacFactorTx);
+
             //good if we got the same output rate with small margin of error
-            if (std::abs(actualRateTx-rateTx) < 10.0) return rateClock;
+            if (std::abs(actualRateTx-rateTx) < 10.0)
+            {
+                bestClockRate = rateClock;
+                dspFactorRx = decim;
+                dspFactorTx = interp;
+            }
         }
     }
+
+    //return the best possible match
+    if (bestClockRate != 0.0) return bestClockRate;
+
     SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(Rx %g MHz, Tx %g MHz) Failed -- no common clock rate", rateRx/1e6, rateTx/1e6);
     throw std::runtime_error("SoapyLMS7::setSampleRate() -- no common clock rate");
 }
@@ -669,7 +682,10 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     const double dspRate = clockRate/dspFactor;
     const double factor = dspRate/rate;
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), baseRate %g MHz, factor %g", dirName, int(channel), rate/1e6, dspRate/1e6, factor);
+    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), CGEN=%g MHz, %s=%g MHz, %s=%g",
+        dirName, int(channel), rate/1e6, clockRate/1e6,
+        (direction == SOAPY_SDR_RX)?"ADC":"DAC", dspRate/1e6,
+        (direction == SOAPY_SDR_RX)?"decim":"interp", factor);
     if (intFactor < 2) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too high");
     if (intFactor > 32) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too low");
 
