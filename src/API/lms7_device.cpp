@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   lms7_device.cpp
  * Author: ignas
- * 
+ *
  * Created on March 9, 2016, 12:54 PM
  */
 
@@ -26,7 +26,7 @@ static const size_t LMS_PATH_WIDE = 3;
 const double LMS7_Device::LMS_CGEN_MAX = 640000000;
 
 LMS7_Device::LMS7_Device() : LMS7002M(){
-    
+
     tx_channels = new lms_channel_info[2];
     rx_channels = new lms_channel_info[2];
     tx_channels[0].enabled = true;
@@ -35,7 +35,7 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
     rx_channels[1].enabled = false;
     rx_channels[0].half_duplex = false;
     rx_channels[1].half_duplex = false;
-    
+
     streamer = nullptr;
 
     EnableValuesCache(false);
@@ -46,14 +46,14 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
 
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch-1,true)!=0)
         return -1;
-    
+
     if (enabled)
     {
         if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0,true)!=0)
-            return -1;     
+            return -1;
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),0,true);
         Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),0,true);
-        
+
         if (bandwidth > 0)
         {
             if (TuneRxFilter(bandwidth)!=0)
@@ -63,10 +63,10 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
     else
     {
         if (Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),1,true)!=0)
-            return -1;     
+            return -1;
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true);
         Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),2,true);
-              
+
     }
 
     return 0;
@@ -78,36 +78,36 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
     double w,w2;
     int L;
     int div = 1;
-    
+
     bandwidth /= 1e6;
-   
+
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-         
+
     if (tx)
     {
         Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false,true);
-                
+
     }
-    else       
+    else
     {
         Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP),enabled==false,true);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP),enabled==false,true);
-            
-    }    
-    
+
+    }
+
     if (bandwidth < 0)
         return 0;
-    
+
     if (enabled)
     {
-        
+
         double interface_MHz;
         int ratio;
-        
+
         if (tx)
         {
           ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
@@ -118,30 +118,30 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
           ratio =Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
           interface_MHz = GetReferenceClk_TSP(lime::LMS7002M::Rx)/1e6;
         }
-        
+
         if (ratio == 7)
             interface_MHz /= 2;
         else
             div = (2<<(ratio));
-        
+
         w = (bandwidth/2)/(interface_MHz/div);
-        
+
         L = div > 8 ? 8 : div;
         div -= 1;
-        
+
         w *=0.95;
         w2 = w*1.1;
         if (w2 > 0.495)
         {
          w2 = w*1.05;
-         if (w2 > 0.495)  
+         if (w2 > 0.495)
          {
-             return 0; //Filter disabled    
+             return 0; //Filter disabled
          }
         }
-    }     
+    }
     else return 0;
-  
+
   double coef[120];
   double coef2[40];
   short gfir1[120];
@@ -149,7 +149,7 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
 
   GenerateFilter(L*15, w, w2, 1.0, 0, coef);
   GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
-  
+
     int sample = 0;
     for(int i=0; i<15; i++)
     {
@@ -158,14 +158,14 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
             if( (j < L) && (sample < L*15) )
             {
                 gfir1[i*8+j] = (coef[sample]*32767.0);
-		sample++;              
+		sample++;
             }
-            else 
+            else
             {
 		gfir1[i*8+j] = 0;
             }
 	}
-    } 
+    }
 
     sample = 0;
     for(int i=0; i<5; i++)
@@ -175,45 +175,45 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
             if( (j < L) && (sample < L*5) )
             {
                 gfir2[i*8+j] = (coef2[sample]*32767.0);
-		sample++;             
+		sample++;
             }
-            else 
+            else
             {
 		gfir2[i*8+j] = 0;
             }
 	}
-    } 
-    
-    L-=1; 
-  
+    }
+
+    L-=1;
+
     if (tx)
     {
       if (Modify_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP),L,true)!=0)
-           return -1;   
+           return -1;
       Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP),div,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR2_L_TXTSP),L,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR2_N_TXTSP),div,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP),L,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP),div,true);
-          
+
     }
     else
     {
-      if (Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0) 
+      if (Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0)
           return -1;
       Modify_SPI_Reg_bits(LMS7param(GFIR1_N_RXTSP),div,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR2_L_RXTSP),L,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR2_N_RXTSP),div,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP),L,true);
       Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP),div,true);
-              
+
     }
-    
+
     if ((SetGFIRCoefficients(tx,0,gfir2,40)!=0)
     ||(SetGFIRCoefficients(tx,1,gfir2,40)!=0)
     ||(SetGFIRCoefficients(tx,2,gfir1,120)!=0))
         return -1;
- 
+
   return 0;
 }
 
@@ -232,18 +232,18 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     }
     if (enabled)
     {
-           
+
             if (Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
                 return -1;
             Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),0,true);
             Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true);
-            
+
             if (bandwidth > 0)
             {
                 if (bandwidth < 6.5e6)
                     bandwidth = 6.5e6;
                 if (TuneTxFilter(bandwidth)!=0)
-                        return -1; 
+                        return -1;
             }
     }
     else
@@ -255,18 +255,18 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     return 0;
 }
 
-int LMS7_Device::ConfigureSamplePositions() 
+int LMS7_Device::ConfigureSamplePositions()
 {
     if (Modify_SPI_Reg_bits(LMS7param(LML2_BQP),3,true)!=0)
         return -1;
     Modify_SPI_Reg_bits(LMS7param(LML2_BIP),2,true);
     Modify_SPI_Reg_bits(LMS7param(LML2_AQP),1,true);
-    Modify_SPI_Reg_bits(LMS7param(LML2_AIP),0,true); 
+    Modify_SPI_Reg_bits(LMS7param(LML2_AIP),0,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_BQP),3,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_BIP),2,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_AQP),1,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_AIP),0,true);
-        
+
     Modify_SPI_Reg_bits(LMS7param(LML1_S3S),2,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_S2S),3,true);
     Modify_SPI_Reg_bits(LMS7param(LML1_S1S),0,true);
@@ -300,21 +300,21 @@ size_t LMS7_Device::GetNumChannels(const bool tx) const
 int LMS7_Device::SetRate(float_type f_Hz, int oversample)
 {
    int decim = 0;
-   
+
    if (oversample > 1)
    {
        for (decim = 0; decim < 4; decim++)
        {
             if ( (1<<decim) >= (oversample+1)/2)
             {
-             break;  
+             break;
             }
        }
    }
    else if (oversample == 0)
        decim = 0;
    else decim = 7;
-   
+
    int ratio = oversample <= 2 ? 2 : (2<<decim);
    float_type cgen = f_Hz*4*ratio;
    if (cgen > LMS_CGEN_MAX)
@@ -324,7 +324,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
    }
    if ((SetFrequencyCGEN(cgen)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN),0)!=0)
-   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),2)!=0) 
+   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),2)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim)!=0)
@@ -346,27 +346,27 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     float_type tx_clock;
     float_type rx_clock;
     float_type cgen;
-    
+
     int decimation;
     int interpolation;
     int tmp;
-    
+
     if (oversample > 1)
     {
         for (tmp = 0; tmp < 4; tmp++)
         {
              if ( (1<<tmp) >= (oversample+1)/2)
              {
-              break;  
+              break;
              }
         }
     }
     else if (oversample == 0)
         tmp = 0;
     else tmp = 7;
-    
-    int ratio = oversample <= 2 ? 2 : (2<<tmp); 
-    
+
+    int ratio = oversample <= 2 ? 2 : (2<<tmp);
+
     if (tx)
     {
         interpolation = tmp;
@@ -384,8 +384,8 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         cgen = rx_clock * 4;
     }
 
-    int div_index = floor(log2(tx_clock/rx_clock)+0.5); 
-    
+    int div_index = floor(log2(tx_clock/rx_clock)+0.5);
+
     while (div_index < -1)
     {
         if (tx)
@@ -408,14 +408,14 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
              interpolation++;
              div_index++;
            }
-           else 
+           else
            {
                div_index = -1;
-               break; 
+               break;
            }
         }
     }
-    
+
     while (div_index > 5)
     {
         if (tx)
@@ -445,26 +445,26 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
            }
         }
     }
-    
+
     int clk_mux;
     int clk_div;
-    
+
     switch (div_index)
     {
         case -1://2:1
-                clk_mux = 0; 
-                clk_div = 3;    
+                clk_mux = 0;
+                clk_div = 3;
                 break;
-        case 0://1:1 
-                clk_mux = 0;   
+        case 0://1:1
+                clk_mux = 0;
                 clk_div = 2;
                 break;
         case 1: //1:2
-                clk_mux = 0; 
+                clk_mux = 0;
                 clk_div = 1;
-                break;  
+                break;
         case 2://1:4
-                clk_mux = 0; 
+                clk_mux = 0;
                 clk_div = 0;
                 break;
         case 3: //1:8
@@ -478,10 +478,10 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         case 5: //1:32
                 clk_mux = 1;
                 clk_div = 3;
-                break; 
+                break;
     }
-    
-    if ((tx && clk_mux == 0)||(tx == false && clk_mux == 1)) 
+
+    if ((tx && clk_mux == 0)||(tx == false && clk_mux == 1))
     {
         while (cgen*(1<<clk_div)>LMS_CGEN_MAX)
         {
@@ -497,36 +497,36 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         }
         cgen *= (1 << clk_div);
     }
-  
+
     if (cgen > LMS_CGEN_MAX)
     {
         lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
-        return -1; 
+        return -1;
     }
-    
+
    if ((SetFrequencyCGEN(cgen)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN),clk_mux)!=0)
-   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),clk_div)!=0) 
+   ||(Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),clk_div)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation)!=0)
    ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
    ||(SetInterfaceFrequency(GetFrequencyCGEN(),interpolation,decimation)!=0))
            return -1;
-    
+
    return 0;
 }
 
 
 double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
 {
-     
+
     double interface_Hz;
     int ratio;
-    
+
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
-    
+
     if (tx)
     {
         ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
@@ -535,24 +535,24 @@ double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
     else
     {
         ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);       
+        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
-   
+
     if (ratio == 7)
-       interface_Hz /= 2; 
-   
+       interface_Hz /= 2;
+
     if (rf_rate_Hz)
         *rf_rate_Hz = interface_Hz;
 
     if (ratio != 7)
         interface_Hz /= 2*pow(2.0, ratio);
 
-    return interface_Hz; 
+    return interface_Hz;
 }
 
 lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
 {
-  lms_range_t ret; 
+  lms_range_t ret;
   ret.max = 30000000;
   ret.min = 100000;
   ret.step = 1;
@@ -561,7 +561,7 @@ lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
 
 lms_range_t LMS7_Device::GetTxRateRange(size_t chan) const
 {
-  lms_range_t ret; 
+  lms_range_t ret;
   ret.max = 30000000;
   ret.min = 100000;
   ret.step = 1;
@@ -569,14 +569,14 @@ lms_range_t LMS7_Device::GetTxRateRange(size_t chan) const
 }
 
 std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, size_t chan) const
-{  
+{
     if (dir_tx)
     {
-       return {"NONE", "LNA_H", "LNA_L", "LNA_W"}; 
+       return {"NONE", "LNA_H", "LNA_L", "LNA_W"};
     }
     else
     {
-       return {"NONE", "TX_PATH1", "TX_PATH2"}; 
+       return {"NONE", "TX_PATH1", "TX_PATH2"};
     }
 }
 
@@ -585,7 +585,7 @@ int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (tx==false)
-    { 
+    {
         if ((Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path,true)!=0)
         || (Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE),path!=2,true)!=0)
         || (Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE),path!=3,true)!=0))
@@ -596,7 +596,7 @@ int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
         if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),path==2,true)!=0)
         || (Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),path==1,true)!=0))
             return -1;
-    }   
+    }
     return 0;
 }
 
@@ -611,28 +611,28 @@ size_t LMS7_Device::GetPath(bool tx, size_t chan)
         else if (Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),true))
             return 1;
         else
-            return 0;  
+            return 0;
     }
-    
-    return Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),true);    
+
+    return Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),true);
 }
 
 lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
 {
-  lms_range_t ret; 
+  lms_range_t ret;
   ret.step = 1;
   if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
   {
       if (path == 2)
       {
         ret.max = 3800000000;
-        ret.min = 50000000; 
+        ret.min = 50000000;
       }
       else
       {
             ret.max = 0;
-            ret.min = 0; 
-            ret.step = 0; 
+            ret.min = 0;
+            ret.step = 0;
       }
   }
   else
@@ -640,7 +640,7 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
   {
       case 1:
             ret.max = 3800000000;
-            ret.min = 2000000000;             
+            ret.min = 2000000000;
             break;
       case 3:
             ret.max = 3800000000;
@@ -650,33 +650,33 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
             ret.max = 1000000000;
             ret.min = 100000000;
             break;
-      default: 
+      default:
             ret.max = 0;
             ret.min = 0;
-            ret.step = 0; 
+            ret.step = 0;
             break;
   }
 
-  return ret;  
+  return ret;
 }
 
 lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
 {
-  lms_range_t ret; 
-  
+  lms_range_t ret;
+
   ret.step = 1;
   if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
   {
       if (path == 1)
       {
         ret.max = 3800000000;
-        ret.min = 50000000; 
+        ret.min = 50000000;
       }
       else
       {
             ret.max = 0;
-            ret.min = 0;  
-            ret.step = 0; 
+            ret.min = 0;
+            ret.step = 0;
       }
   }
   else
@@ -690,33 +690,33 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
             ret.max = 1500000000;
             ret.min = 100000000;
             break;
-      default: 
+      default:
             ret.max = 0;
             ret.min = 0;
-            ret.step = 0; 
+            ret.step = 0;
             break;
   }
 
-  return ret; 
+  return ret;
 }
 
 int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type bandwidth)
 {
-    
+
     if (filt)
-    {  
+    {
        if (tx)
        {
           if(en)
-            tx_channels[chan].lpf_bw = bandwidth; 
-          
+            tx_channels[chan].lpf_bw = bandwidth;
+
           return ConfigureTXLPF(en,chan,bandwidth)!=0;
        }
        else
        {
           if (en)
-            rx_channels[chan].lpf_bw = bandwidth; 
-          
+            rx_channels[chan].lpf_bw = bandwidth;
+
           return ConfigureRXLPF(en,chan,bandwidth);
        }
     }
@@ -728,9 +728,9 @@ int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type band
 
 float_type LMS7_Device::GetLPFBW(bool tx,size_t chan, bool filt)
 {
-    
+
     if (filt)
-    {  
+    {
        if (tx)
        {
            return tx_channels[chan].lpf_bw;
@@ -749,18 +749,18 @@ float_type LMS7_Device::GetLPFBW(bool tx,size_t chan, bool filt)
 
 lms_range_t LMS7_Device::GetLPFRange(bool tx, size_t chan, bool filt)
 {
-    lms_range_t ret; 
+    lms_range_t ret;
     if (filt)
     {
-      ret.max = 160000000; 
+      ret.max = 160000000;
     }
     else
     {
-      ret.max = GetRate(false,chan)/1.03; 
+      ret.max = GetRate(false,chan)/1.03;
     }
     ret.min = 1000000;
     ret.step = 1;
-    return ret;  
+    return ret;
 }
 
 
@@ -770,7 +770,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     int L;
     int div = 1;
     int ret = 0;
-    
+
     if (count > 120)
     {
         lime::ReportError(ERANGE, "Max number of coefficients for GFIR3 is 120 and for GFIR1(2) - 40");
@@ -781,10 +781,10 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
         lime::ReportError(ERANGE, "Max number of coefficients for GFIR1(2) is 40");
         return -1;
     }
-    
+
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
- 
+
     double interface_Hz;
     int ratio;
 
@@ -807,12 +807,12 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
 
     L = div > 8 ? 8 : div;
     div -= 1;
-    
+
     if (filt==LMS_GFIR3)
     {
        if (L*15 < count)
        {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");         
+           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
            ret = -1;;
            L = 1+(count-1)/15;
            div = L-1;
@@ -828,33 +828,33 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
            div = L-1;
        }
     }
-    
+
     float_type max=0;
-    for (int i=0; i< filt==LMS_GFIR3 ? 120 : 40; i++)
+    for (int i=0; i< (filt==LMS_GFIR3 ? 120 : 40); i++)
         if (fabs(coef[i])>max)
             max=fabs(coef[i]);
-    
+
     if (max < 1.0)
         max = 1.0;
-    
+
     int sample = 0;
-    for(int i=0; i< filt==LMS_GFIR3 ? 15 : 5; i++)
+    for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
     {
 	for(int j=0; j<8; j++)
         {
             if( (j < L) && (sample < count) )
             {
                 gfir[i*8+j] = (coef[sample]*32767.0/max);
-		sample++;              
+		sample++;
             }
-            else 
+            else
             {
 		gfir[i*8+j] = 0;
             }
 	}
-    } 
- 
-    L-=1; 
+    }
+
+    L-=1;
 
     if (tx)
     {
@@ -872,7 +872,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
       }
       else if (filt ==LMS_GFIR3)
       {
-          if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP),L,true)!=0) 
+          if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_TXTSP),L,true)!=0)
           || (Modify_SPI_Reg_bits(LMS7param(GFIR3_N_TXTSP),div,true)!=0))
               return -1;
       }
@@ -881,7 +881,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     {
       if (filt ==LMS_GFIR1)
       {
-        if ((Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0) 
+        if ((Modify_SPI_Reg_bits(LMS7param(GFIR1_L_RXTSP),L,true)!=0)
         || (Modify_SPI_Reg_bits(LMS7param(GFIR1_N_RXTSP),div,true)!=0))
             return -1;
       }
@@ -893,12 +893,12 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
       }
       else if (filt ==LMS_GFIR3)
       {
-        if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP),L,true)!=0) 
+        if ((Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP),L,true)!=0)
         || (Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP),div,true)!=0))
             return -1;
       }
     }
-    
+
    if (SetGFIRCoefficients(tx,filt,gfir,filt==LMS_GFIR3 ? 120 : 40)!=0)
        return -1;
    return ret;
@@ -909,18 +909,18 @@ int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* 
    if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
        return -1;
    int16_t coef16[120];
-   
+
    if (GetGFIRCoefficients(tx,filt,coef16,filt==LMS_GFIR3 ? 120 : 40)!=0)
        return -1;
    if (coef != NULL)
    {
-       for (int i = 0; i < filt==LMS_GFIR3 ? 120 : 40 ; i++)
+       for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
        {
            coef[i] = coef16[i];
            coef[i] /= (1<<15);
-       }   
+       }
    }
-   return filt==LMS_GFIR3 ? 120 : 40; 
+   return filt==LMS_GFIR3 ? 120 : 40;
 }
 
 int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
@@ -945,7 +945,7 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
                 return -1;
         }
     }
-    else       
+    else
     {
         if (filt ==LMS_GFIR1)
         {
@@ -962,16 +962,16 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
             if (Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP),enabled==false,true)!=0)
                 return -1;
         }
-    }  
-    
-   return 0; 
+    }
+
+   return 0;
 }
 
 int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
-    
+
     if (dir_tx)
     {
         int g = (63*gain+0.49);
@@ -987,7 +987,7 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
         int target = gain*w_total+0.49;
         unsigned lna = 0, tia = 0, pga = 11;
         int sum = w_lna*lna+w_tia*tia+w_pga*pga;
-        
+
         while (target > sum)
         {
             if (tia < 2)
@@ -1012,7 +1012,7 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
             pga--;
             sum -= w_pga;
         }
-             
+
         if ((Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1,true)!=0)
           ||(Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1,true)!=0)
           ||(Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga,true)!=0))
@@ -1036,7 +1036,7 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
         const int w_lna = 2;
         const int w_tia = 5;
         const int w_pga = 1;
-        const int w_total = 14*w_lna + 2*w_tia + 31*w_pga;         
+        const int w_total = 14*w_lna + 2*w_tia + 31*w_pga;
         int lna = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE),true)-1;
         int tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true)-1;
         int pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB),true);
@@ -1048,12 +1048,12 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
 }
 
 int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig, int16_t dc_i, int16_t dc_q)
-{     
+{
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
-    
+
     if (dir_tx==false)
-    {      
+    {
         if ((Modify_SPI_Reg_bits(LMS7param(INSEL_RXTSP),sig!=LMS_TESTSIG_NONE,true)!=0)
         ||(Modify_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP),sig,true)!=0)
         ||(Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP),sig==LMS_TESTSIG_DC,true)!=0))
@@ -1066,20 +1066,20 @@ int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig, int16
         ||(Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP),sig==LMS_TESTSIG_DC,true)!=0))
             return -1;
     }
-    
+
    if (sig==LMS_TESTSIG_DC)
         return LoadDC_REG_IQ(dir_tx,dc_i,dc_q);
-    
-    return 0;  
+
+    return 0;
 }
 
 int LMS7_Device::GetTestSignal(bool dir_tx, size_t chan)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
-    
+
     if (dir_tx==false)
-    {   
+    {
         if (Get_SPI_Reg_bits(LMS7param(INSEL_TXTSP),true)==0)
         {
             return LMS_TESTSIG_NONE;
@@ -1087,7 +1087,7 @@ int LMS7_Device::GetTestSignal(bool dir_tx, size_t chan)
         else if (Get_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP),true)!=0)
         {
             return LMS_TESTSIG_DC;
-        }  
+        }
         else return Get_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP),true);
     }
     else
@@ -1099,18 +1099,18 @@ int LMS7_Device::GetTestSignal(bool dir_tx, size_t chan)
         else if (Get_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP),true)!=0)
         {
             return LMS_TESTSIG_DC;
-        }  
+        }
         else return Get_SPI_Reg_bits(LMS7param(TSGFCW_RXTSP),true);
     }
-    return 0;  
+    return 0;
 }
 
 
 int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_type pho)
-{ 
+{
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    
+
     float_type rf_rate;
     GetRate(tx,ch,&rf_rate);
     rf_rate /=2;
@@ -1200,7 +1200,7 @@ int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho
 }
 
 int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_type fcw)
-{ 
+{
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
@@ -1209,10 +1209,10 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
         if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
             return -1;
     }
-    
+
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    
+
     if (tx)
     {
         if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
@@ -1233,7 +1233,7 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
             return -1;
         rx_channels[ch].nco_pho = fcw;
     }
-    
+
     return SetNCOFrequency(tx,0,fcw);
 }
 
@@ -1263,7 +1263,7 @@ size_t LMS7_Device::GetNCO(bool tx, size_t ch)
         }
         return Get_SPI_Reg_bits(LMS7param(SEL_TX),true);
     }
-    
+
     if (Get_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),true)!=0)
         return -1;
     return Get_SPI_Reg_bits(LMS7param(SEL_RX),true);
@@ -1281,17 +1281,17 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
         SetPath(false,1,LMS_PATH_LOW);
         printf("RX LNA_L path selected\n");
     }
-    else 
+    else
     {
         SetPath(false,0,LMS_PATH_WIDE);
         SetPath(false,1,LMS_PATH_WIDE);
         printf("RX LNA_W path selected\n");
     }
-    return 0;  
+    return 0;
 }
 
 int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
-{    
+{
     rx_channels[0].half_duplex = false;
     rx_channels[1].half_duplex = false;
     if (SetFrequencySX(true,f_Hz)!=0)
@@ -1302,43 +1302,43 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
         SetPath(true,1,LMS_PATH_LOW);
         printf("TX BAND 1 selected\n");
     }
-    else 
+    else
     {
         printf("Tx BAND 2 selected\n");
         SetPath(true,0,LMS_PATH_HIGH);
         SetPath(true,1,LMS_PATH_HIGH);
     }
-    return 0;  
+    return 0;
 }
 
 
 lms_range_t LMS7_Device::GetFrequencyRange(bool tx) const
 {
-  lms_range_t ret; 
+  lms_range_t ret;
   ret.max = 3800000000;
   ret.min = 100000000;
   ret.step = 1;
-  return ret; 
+  return ret;
 }
 
 int LMS7_Device::Init()
-{ 
+{
    if ((ResetChip()!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(MAC),2,true)!=0)
      ||(Modify_SPI_Reg_bits(0x208, 8, 0, 0x1F3, true)!=0)  //TXTSP bypasses
      ||(Modify_SPI_Reg_bits(0x40C, 7, 0, 0xFB, true)!=0)   //RXTSP bypasses
      ||(Modify_SPI_Reg_bits(LMS7param(ICT_LNA_RFE),0x1F,true)!=0)
-     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE),0x1F,true)!=0)  
-     ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)    
+     ||(Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE),0x1F,true)!=0)
+     ||(Modify_SPI_Reg_bits(LMS7param(MAC),1,true)!=0)
      ||(Modify_SPI_Reg_bits(0x208, 8, 0, 0x1F3, true)!=0)
      ||(Modify_SPI_Reg_bits(0x40C, 7, 0, 0xFB, true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(ICT_LNA_RFE),0x1F,true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(ICT_LODC_RFE),0x1F,true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(LML1_MODE),0,true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(LML2_MODE),0,true)!=0)
-     ||(Modify_SPI_Reg_bits(LMS7param(DIQ1_DS),1,true)!=0)    
+     ||(Modify_SPI_Reg_bits(LMS7param(DIQ1_DS),1,true)!=0)
      ||(Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2),0,true)!=0)
-     ||(Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2),0,true)!=0)) 
+     ||(Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2),0,true)!=0))
         return -1;
    DownloadAll();
    return ConfigureSamplePositions();
@@ -1349,9 +1349,9 @@ int LMS7_Device::EnableTX(size_t ch, bool enable)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    
+
     this->EnableChannel(true,enable);
-    
+
     return 0;
 }
 
@@ -1359,12 +1359,12 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-   
-          
+
+
     this->EnableChannel(false,enable);
     Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE),0,true);
     rx_channels[ch].enabled = enable;
-    
+
     return 0;
 }
 
@@ -1486,16 +1486,16 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,li
     lime::MCU_BD mcu;
     lime::MCU_BD::MEMORY_MODE mode;
     uint8_t bin[8192];
-    
+
     if ((data == nullptr)||(target==LMS_TARGET_BOOT)) //boot from FLAH
     {
         mode = lime::MCU_BD::SRAM_FROM_EEPROM;
     }
     else
-    { 
+    {
         memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
     }
-    
+
     if (target == LMS_TARGET_RAM)
     {
         mode = lime::MCU_BD::SRAM;
@@ -1519,14 +1519,14 @@ int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,li
 int LMS7_Device::DACWrite(uint16_t val)
 {
     uint8_t id=0;
-    double dval= val; 
+    double dval= val;
     return streamPort->CustomParameterWrite(&id,&dval,1,NULL);
 }
 
 int LMS7_Device::DACRead()
 {
     uint8_t id=0;
-    double dval=0; 
+    double dval=0;
     int ret = streamPort->CustomParameterRead(&id,&dval,1,NULL);
     return ret >=0 ? dval : -1;
 }
