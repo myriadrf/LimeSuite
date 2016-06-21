@@ -1490,7 +1490,7 @@ int LMS7002M::SetNCOFrequency(bool tx, uint8_t index, float_type freq_Hz)
         return ReportError(ERANGE, "SetNCOFrequency(index = %d) - index out of range [0, 15]", int(index));
     float_type refClk_Hz = GetReferenceClk_TSP(tx);
     uint16_t addr = tx ? 0x0240 : 0x0440;
-	uint32_t fcw = (uint32_t)((freq_Hz/refClk_Hz)*4294967296);
+	uint32_t fcw = int32_t((freq_Hz/refClk_Hz)*4294967296);
     SPI_write(addr+2+index*2, (fcw >> 16)); //NCO frequency control word register MSB part.
     SPI_write(addr+3+index*2, fcw); //NCO frequency control word register LSB part.
     return 0;
@@ -1511,7 +1511,7 @@ float_type LMS7002M::GetNCOFrequency(bool tx, uint8_t index, bool fromChip)
     uint32_t fcw = 0;
     fcw |= SPI_read(addr + 2 + index * 2, fromChip) << 16; //NCO frequency control word register MSB part.
     fcw |= SPI_read(addr + 3 + index * 2, fromChip); //NCO frequency control word register LSB part.
-    return refClk_Hz*(fcw/4294967296.0);
+    return refClk_Hz*(int32_t(fcw)/4294967296.0);
 }
 
 /** @brief Sets chosen NCO phase offset angle when memory table MODE is 0
