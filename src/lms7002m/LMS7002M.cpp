@@ -1154,7 +1154,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     checkConnection();
     int8_t i;
     uint8_t cmphl; //comparators
-    uint16_t csw_highest;
+    int16_t csw_highest = -1;
     int16_t csw_lowest = -1;
     uint16_t addrVCOpd; // VCO power down address
     uint16_t addrCSW_VCO;
