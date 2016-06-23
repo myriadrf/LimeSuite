@@ -28,6 +28,7 @@
 #include <wx/filename.h>
 #include <iostream>
 #include "LMS_StreamBoard.h"
+#include "StreamerLTE.h"
 
 using namespace std;
 using namespace lime;
@@ -272,21 +273,8 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         wxMessageBox(_("File not found ") + filename, _("Error"));
         return -1;
     }
-    int bufferSize = isamples.size() * 2; //IQ samples interleaved
-    int16_t *buffer = new int16_t[bufferSize];
-    memset(buffer, 0, bufferSize);
-    int bufPos = 0;
-    for(unsigned i=0; i<isamples.size(); ++i)
-    {
-        buffer[bufPos] = (isamples[i] & 0xFFF) | 0x1000; //add iq select bit
-        buffer[bufPos + 1] = (qsamples[i] & 0xFFF);
-        bufPos += 2;
-    }
-    const long outLen = bufPos*2;
-    int packetSize = 65536;
-    progressBar->SetRange(outLen/packetSize+1);
+    progressBar->SetRange(isamples.size());
     progressBar->SetValue(0);
-    int sent = 0;
     bool success = true;
 
     btnPlayWFM->Enable(false);
@@ -295,22 +283,49 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     uint16_t regData = mStreamer->Reg_read(0x000A);
     mStreamer->Reg_write(0x000A, regData & ~0x7);
 
-    while(sent<outLen)
+    int chCount = 0;
+    uint16_t channelFlags = mStreamer->Reg_read(0x0007);
+    for(int i=0; i<16; ++i)
+        chCount += (channelFlags >> i) & 1;
+
+    PacketLTE pkt;
+    int samplesUsed = 0;
+
+    while(samplesUsed<isamples.size())
     {
-        char *outBuf = (char*)buffer;
-        const long toSendBytes = outLen-sent > packetSize ? packetSize : outLen-sent;
-        long toSend = toSendBytes;
-        int context = m_serPort->BeginDataSending(&outBuf[sent], toSend);
-        if(m_serPort->WaitForSending(context, 5000) == false)
+        pkt.counter = 0;
+        pkt.reserved[0] = 0;
+        int bufPos = 0;
+        for(int i=0; i<1360/chCount && samplesUsed < isamples.size(); ++i)
+        {
+            for(int ch = 0; ch < chCount; ++ch)
+            {
+                pkt.data[bufPos] = isamples[samplesUsed] & 0xFF;
+                pkt.data[bufPos+1] = (isamples[samplesUsed] >> 8) & 0x0F;
+                pkt.data[bufPos+1] |= (qsamples[samplesUsed] << 4) & 0xF0;
+                pkt.data[bufPos+2] = (qsamples[samplesUsed] >> 4) & 0xFF;
+                bufPos += 3;
+            }
+            ++samplesUsed;
+        }
+        int payloadSize = bufPos / 4;
+        if(bufPos % 4 != 0)
+            printf("Packet samples count not multiple of 4\n");
+        pkt.reserved[1] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[2] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = sizeof(pkt);
+        int context = m_serPort->BeginDataSending((char*)&pkt, bToSend );
+        if(m_serPort->WaitForSending(context, 250) == false)
         {
             success = false;
-            m_serPort->FinishDataSending(&outBuf[sent], toSend, context);
+            m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
             break;
         }
-        m_serPort->FinishDataSending(&outBuf[sent], toSend, context);
-        sent += toSendBytes;
-        progressBar->SetValue(progressBar->GetValue()+1);
-        lblProgressPercent->SetLabel(wxString::Format(_("%3.0f%%"), 100.0*sent/outLen));
+        m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
+        progressBar->SetValue(samplesUsed);
+        lblProgressPercent->SetLabel(wxString::Format(_("%3.0f%%"), 100.0*samplesUsed/isamples.size()));
         wxYield();
     }
     progressBar->SetValue(progressBar->GetRange());
