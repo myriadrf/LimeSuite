@@ -117,6 +117,7 @@ public:
 
     DataToGUI GetIncomingData();
     Stats GetStats();
+    void SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount);
 protected:
     static STATUS Reg_write(IConnection* dataPort, uint16_t address, uint16_t data);
     static uint16_t Reg_read(IConnection* dataPort, uint16_t address);
@@ -146,5 +147,9 @@ protected:
 
     std::atomic<uint32_t> mRxDataRate;
     std::atomic<uint32_t> mTxDataRate;
+
+    bool captureToFile;
+    uint32_t samplesToCapture;
+    std::string captureFilename;
 };
 }

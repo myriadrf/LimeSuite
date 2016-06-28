@@ -70,6 +70,8 @@ public:
 
     Status Reg_write(uint16_t address, uint16_t data);
     uint16_t Reg_read(uint16_t address);
+
+    void SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount);
 protected:
     static int FindFrameStart(const char* buffer, const int bufLen, const bool frameStart);
     std::mutex mLockIncomingPacket;
@@ -102,6 +104,10 @@ protected:
     std::atomic_bool mTxCyclicRunning;
     std::thread threadTxCyclic;
     std::atomic_bool stopTxCyclic;
+
+    bool captureToFile;
+    uint32_t samplesToCapture;
+    std::string captureFilename;
 };
 }
 #endif

@@ -19,6 +19,9 @@ StreamerLTE::StreamerLTE(IConnection* dataPort)
     mRxFIFO = new LMS_SamplesFIFO(1, 1);
     mTxFIFO = new LMS_SamplesFIFO(1, 1);
     mStreamRunning.store(false);
+    captureToFile = false;
+    samplesToCapture = 0;
+    captureFilename = "";
 }
 
 StreamerLTE::~StreamerLTE()
@@ -467,6 +470,11 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
 
+    vector<int16_t> capturedSamples;
+    bool captureToFile = pthis->captureToFile;
+    if(captureToFile)
+        capturedSamples.reserve(2*pthis->samplesToCapture*channelsCount);
+
     const int samplesToRead = fftSize;
     int16_t** buffers;
     buffers = new int16_t*[channelsCount];
@@ -537,6 +545,19 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     while (pthis->stopProcessing.load() == false)
     {
         uint32_t samplesPopped = pthis->mRxFIFO->pop_samples((complex16_t**)buffers, samplesToRead, channelsCount, &timestamp, timeout_ms);
+
+        if(captureToFile && capturedSamples.size() < pthis->samplesToCapture*2*channelsCount)
+        {
+            for(int i=0; i<samplesToRead && capturedSamples.size() < pthis->samplesToCapture*2*channelsCount; ++i)
+            {
+                for(int ch=0; ch<channelsCount; ++ch)
+                {
+                    capturedSamples.push_back(buffers[ch][2 * i]); //I
+                    capturedSamples.push_back(buffers[ch][2 * i+1]); //Q
+                }
+            }
+        }
+
         ++updateCounter;
         //Transmit earlier received packets with a counter delay
         uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms, STATUS_FLAG_TX_TIME);
@@ -582,7 +603,7 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
     threadTx.join();
     threadRx.join();
-    
+
         //stop Tx Rx if they were active
     interface_ctrl_000A = Reg_read(pthis->mDataPort, 0x000A);
     Reg_write(pthis->mDataPort, 0x000A, interface_ctrl_000A & ~0x3);
@@ -592,6 +613,23 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     for (int i = 0; i < channelsCount; ++i)
         delete[] buffers[i];
     delete []buffers;
+
+    if(captureToFile)
+    {
+        ofstream fout;
+        fout.open(pthis->captureFilename.c_str());
+        fout << "AI\tAQ";
+        if(channelsCount > 1)
+            fout << "\tBI\tBQ";
+        fout << endl;
+        int samplesCnt = capturedSamples.size();
+        for(int i=0; i<samplesCnt; ++i)
+        {
+            fout << capturedSamples[i] << "\t";
+            if((i+1) % (2*channelsCount) == 0)
+                fout << endl;
+        }
+    }
 #ifndef NDEBUG
     printf("Processing finished\n");
 #endif
@@ -941,4 +979,11 @@ uint16_t StreamerLTE::Reg_read(IConnection* dataPort, uint16_t address)
         return dataRd & 0xFFFF;
     else
         return 0;
+}
+
+void StreamerLTE::SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount)
+{
+    captureToFile = enable;
+    captureFilename = filename;
+    samplesToCapture = samplesCount;
 }
