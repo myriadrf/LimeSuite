@@ -318,7 +318,7 @@ void pnlBoardControls::UpdatePanel()
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDR) 
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_QSPARK))
     {
@@ -457,7 +457,7 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
             double value = mDACparameters[i].value;
             string units = mDACparameters[i].units;
 
-            if (serPort || serPort->IsOpen() == false)
+            if (serPort == nullptr || serPort->IsOpen() == false)
                 return;
 
             int status = serPort->CustomParameterWrite(&ids, &value, 1, &units);
