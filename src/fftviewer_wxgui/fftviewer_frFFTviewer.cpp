@@ -117,6 +117,7 @@ void fftviewer_frFFTviewer::StartStreaming()
     chkCaptureToFile->Disable();
     mStreamRunning = true;
     spinCaptureCount->Disable();
+    cmbWindowFunc->Disable();
     bool capturing = chkCaptureToFile->IsChecked();
     string filename = "";
     if(capturing)
@@ -135,24 +136,28 @@ void fftviewer_frFFTviewer::StartStreaming()
             mStreamBrd = new StreamerNovena(mDataPort);
         else
             mStreamBrd = new LMS_StreamBoard(mDataPort);
+        mStreamBrd->SetWidowFunction(cmbWindowFunc->GetSelection());
         mStreamBrd->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mStreamBrd->StartReceiving(spinFFTsize->GetValue());
         break;
     case 1: //SISO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
         mLTEstreamer->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 2: //MIMO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
         mLTEstreamer->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 3: //SISO uncompressed samples
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_IN_16);
         break;
     }
@@ -191,6 +196,7 @@ void fftviewer_frFFTviewer::StopStreaming()
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
+    cmbWindowFunc->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)

@@ -118,6 +118,7 @@ public:
     DataToGUI GetIncomingData();
     Stats GetStats();
     void SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount);
+    void SetWidowFunction(int func);
 protected:
     static STATUS Reg_write(IConnection* dataPort, uint16_t address, uint16_t data);
     static uint16_t Reg_read(IConnection* dataPort, uint16_t address);
@@ -151,5 +152,6 @@ protected:
     bool captureToFile;
     uint32_t samplesToCapture;
     std::string captureFilename;
+    int windowFunction;
 };
 }

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <ciso646>
 #include "fifo.h"
-
+#include "windowFunction.h"
 #include "kiss_fft.h"
 
 using namespace std;
@@ -22,6 +22,7 @@ StreamerLTE::StreamerLTE(IConnection* dataPort)
     captureToFile = false;
     samplesToCapture = 0;
     captureFilename = "";
+    windowFunction = 0;
 }
 
 StreamerLTE::~StreamerLTE()
@@ -458,6 +459,10 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     pthis->mRxFIFO->Reset(2*4096, channelsCount);
     pthis->mTxFIFO->Reset(2*4096, channelsCount);
 
+    vector<float> wndFunc;
+    float ampCorr = 1;
+    GenerateWindowCoefficients(pthis->windowFunction, fftSize, wndFunc, ampCorr);
+
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
     localDataResults.samplesI[0].resize(fftSize, 0);
@@ -569,8 +574,10 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
             {
                 for (int i = 0; i < fftSize; ++i)
                 {
-                    localDataResults.samplesI[ch][i] = m_fftCalcIn[i].r = buffers[ch][2 * i];
-                    localDataResults.samplesQ[ch][i] = m_fftCalcIn[i].i = buffers[ch][2 * i + 1];
+                    localDataResults.samplesI[ch][i] = buffers[ch][2 * i];
+                    localDataResults.samplesQ[ch][i] = buffers[ch][2 * i + 1];
+                    m_fftCalcIn[i].r = buffers[ch][2 * i] * wndFunc[i] * ampCorr;
+                    m_fftCalcIn[i].i = buffers[ch][2 * i + 1] * wndFunc[i] * ampCorr;
                 }
                 kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
                 for (int i = 0; i < fftSize; ++i)
@@ -986,4 +993,9 @@ void StreamerLTE::SetCaptureToFile(bool enable, const char* filename, uint32_t s
     captureToFile = enable;
     captureFilename = filename;
     samplesToCapture = samplesCount;
+}
+
+void StreamerLTE::SetWidowFunction(int func)
+{
+    windowFunction = func;
 }

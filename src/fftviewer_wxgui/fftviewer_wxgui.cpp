@@ -151,6 +151,18 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	sbSizer2->Add( fgSizer12, 1, wxEXPAND, 5 );
 	
+	wxStaticBoxSizer* sbSizer6;
+	sbSizer6 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Window function:") ), wxVERTICAL );
+	
+	wxString cmbWindowFuncChoices[] = { wxT("Rectangular"), wxT("Blackman-harris"), wxT("Hamming"), wxT("Hanning") };
+	int cmbWindowFuncNChoices = sizeof( cmbWindowFuncChoices ) / sizeof( wxString );
+	cmbWindowFunc = new wxChoice( sbSizer6->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbWindowFuncNChoices, cmbWindowFuncChoices, 0 );
+	cmbWindowFunc->SetSelection( 0 );
+	sbSizer6->Add( cmbWindowFunc, 0, wxEXPAND, 5 );
+	
+	
+	sbSizer2->Add( sbSizer6, 0, wxEXPAND, 5 );
+	
 	wxStaticBoxSizer* sbSizer51;
 	sbSizer51 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Capture to file") ), wxVERTICAL );
 	

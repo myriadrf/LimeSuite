@@ -72,6 +72,7 @@ public:
     uint16_t Reg_read(uint16_t address);
 
     void SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount);
+    void SetWidowFunction(int func);
 protected:
     static int FindFrameStart(const char* buffer, const int bufLen, const bool frameStart);
     std::mutex mLockIncomingPacket;
@@ -108,6 +109,7 @@ protected:
     bool captureToFile;
     uint32_t samplesToCapture;
     std::string captureFilename;
+    int windowFunction;
 };
 }
 #endif
