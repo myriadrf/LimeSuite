@@ -11,6 +11,9 @@
 #include <cstdlib>
 #include <ciso646>
 #include <getopt.h>
+#include <fstream>
+#include "ErrorReporting.h"
+#include "LMS64CProtocol.h"
 
 using namespace lime;
 
@@ -25,6 +28,8 @@ static int printHelp(void)
     std::cout << "    --info \t\t\t\t Print module information" << std::endl;
     std::cout << "    --find[=\"module=foo,serial=bar\"] \t Discover available devices" << std::endl;
     std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
+    std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
+    std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }
@@ -103,6 +108,118 @@ static int makeDevice(void)
 }
 
 /***********************************************************************
+ * Program gateware
+ **********************************************************************/
+static int programGateware(void)
+{
+    //load file
+    std::ifstream file;
+    file.open(optarg, std::ios::in | std::ios::binary);
+    if(not file.good())
+    {
+        std::cout << "File not found: " << optarg << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::streampos fileSize;
+    file.seekg(0, std::ios::end);
+    fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<char> progData(fileSize, 0);
+    file.read(progData.data(), fileSize);
+
+    auto handles = ConnectionRegistry::findConnections();
+    if(handles.size() == 0)
+    {
+        std::cout << "No devices found" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+
+    auto progCallback = [](int bsent, int btotal, const char* progressMsg)
+    {
+        printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        return 0;
+    };
+
+    int device = LMS64CProtocol::FPGA; //Altera FPGA
+    int progMode = 1; //Bitstream to FLASH
+    auto status = conn->ProgramWrite(progData.data(), progData.size(), progMode, device, progCallback);
+
+    std::cout << std::endl;
+    if(status == 0)
+    {
+        //boot from FLASH
+        status = conn->ProgramWrite(nullptr, 0, 2, device, nullptr);
+        if(status == 0)
+            std::cout << "FPGA boot from FLASH completed!" << std::endl;
+        else
+            std::cout << "FPGA boot from FLASH failed!"<< GetLastErrorMessage() << std::endl;
+    }
+    else
+        std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
+    ConnectionRegistry::freeConnection(conn);
+    return EXIT_SUCCESS;
+}
+
+/***********************************************************************
+ * Program gateware
+ **********************************************************************/
+static int programFirmware(void)
+{
+    //load file
+    std::ifstream file;
+    file.open(optarg, std::ios::in | std::ios::binary);
+    if(not file.good())
+    {
+        std::cout << "File not found: " << optarg << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::streampos fileSize;
+    file.seekg(0, std::ios::end);
+    fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<char> progData(fileSize, 0);
+    file.read(progData.data(), fileSize);
+
+    auto handles = ConnectionRegistry::findConnections();
+    if(handles.size() == 0)
+    {
+        std::cout << "No devices found" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+
+    auto progCallback = [](int bsent, int btotal, const char* progressMsg)
+    {
+        printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        return 0;
+    };
+
+    int device = LMS64CProtocol::FX3; //FX3
+    int progMode = 2; //Firmware to FLASH
+    auto status = conn->ProgramWrite(progData.data(), progData.size(), progMode, device, progCallback);
+
+    std::cout << std::endl;
+    if(status == 0)
+    {
+        //Reset device
+        status = conn->ProgramWrite(nullptr, 0, 0, device, nullptr);
+        if(status == 0)
+            std::cout << "FX3 firmware uploaded, device has been reset" << std::endl;
+        else
+            std::cout << "FX3 firmware uploaded, failed to reset device" << std::endl;
+    }
+    else
+        std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
+    ConnectionRegistry::freeConnection(conn);
+    return EXIT_SUCCESS;
+}
+
+/***********************************************************************
  * main entry point
  **********************************************************************/
 int main(int argc, char *argv[])
@@ -112,6 +229,8 @@ int main(int argc, char *argv[])
         {"info", optional_argument, 0, 'i'},
         {"find", optional_argument, 0, 'f'},
         {"make", optional_argument, 0, 'm'},
+        {"fpga", required_argument, 0, 'g'},
+        {"fw",   required_argument, 0, 'w'},
         {0, 0, 0,  0}
     };
     int long_index = 0;
@@ -124,6 +243,8 @@ int main(int argc, char *argv[])
         case 'i': return printInfo();
         case 'f': return findDevices();
         case 'm': return makeDevice();
+        case 'g': return programGateware();
+        case 'w': return programFirmware();
         }
     }
 

@@ -647,6 +647,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     auto t1 = std::chrono::high_resolution_clock::now();
 #endif
     char progressMsg[128];
+    sprintf(progressMsg, "in progress...");
     bool abortProgramming = false;
     int bytesSent = 0;
 
@@ -681,7 +682,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
         sprintf(progressMsg, "Programming failed! Target device not supported");
         if(callback)
             abortProgramming = callback(bytesSent, length, progressMsg);
-        return ReportError(progressMsg);
+        return ReportError(ENOTSUP, progressMsg);
     }
 
     unsigned char ctrbuf[64];
@@ -722,13 +723,13 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
         {
             if(callback)
                 callback(bytesSent, length, "Programming failed! Write operation failed");
-            return ReportError("Programming failed! Write operation failed");
+            return ReportError(EIO, "Programming failed! Write operation failed");
         }
         if(Read(inbuf, sizeof(inbuf)) != sizeof(ctrbuf))
         {
             if(callback)
                 callback(bytesSent, length, "Programming failed! Read operation failed");
-            return ReportError("Programming failed! Read operation failed");
+            return ReportError(EIO, "Programming failed! Read operation failed");
         }
         data_left -= data_cnt;
         status = inbuf[1];
@@ -739,29 +740,19 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
             sprintf(progressMsg, "Programming failed! %s", status2string(status));
             if(callback)
                 abortProgramming = callback(bytesSent, length, progressMsg);
-#ifndef NDEBUG
-            printf("\n%s\n", progressMsg);
-#endif
-            return ReportError(EPROTO);
+            return ReportError(EPROTO, progressMsg);
         }
         if(needsData == false) //only one packet is needed to initiate bitstream from flash
         {
             bytesSent = length;
             break;
         }
-        sprintf(progressMsg, "programing: %6i/%i", portionNumber, portionsCount - 1);
         if(callback)
             abortProgramming = callback(bytesSent, length, progressMsg);
-#ifndef NDEBUG
-        printf("%s\r", progressMsg);
-#endif
     }
     if (abortProgramming == true)
     {
         sprintf(progressMsg, "programming: aborted by user");
-#ifndef NDEBUG
-        printf("\n%s\n", progressMsg);
-#endif
         if(callback)
             callback(bytesSent, length, progressMsg);
         return ReportError(ECONNABORTED, "user aborted programming");
@@ -772,9 +763,9 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
 	if ((device == 2 && prog_mode == 2) == false)
-        printf("\nProgramming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+        printf("Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
-		printf("\nFPGA configuring initiated\n");
+		printf("FPGA configuring initiated\n");
 #endif
     return 0;
 }
