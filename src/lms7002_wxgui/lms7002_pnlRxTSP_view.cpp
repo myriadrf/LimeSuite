@@ -370,7 +370,11 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         {
             double freq_MHz;
             txtNCOinputs[i]->GetValue().ToDouble(&freq_MHz);
-            lmsControl->SetNCOFrequency(LMS7002M::Rx, i, freq_MHz * 1e6);
+            if(lmsControl->SetNCOFrequency(LMS7002M::Rx, i, freq_MHz * 1e6) != 0)
+            {
+                wxMessageBox(wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+                break;
+            }
         }
         long value;
         txtFCWPHOmodeAdditional->GetValue().ToLong(&value);
@@ -387,7 +391,8 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         }
         double freq_MHz;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
-        lmsControl->SetNCOFrequency(LMS7002M::Rx, 0, freq_MHz * 1e6);
+        if(lmsControl->SetNCOFrequency(LMS7002M::Rx, 0, freq_MHz * 1e6) != 0)
+            wxMessageBox(wxString::From8BitData(GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
 }
 
