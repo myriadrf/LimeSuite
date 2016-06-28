@@ -37,14 +37,8 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	m_splitter3 = new wxSplitterWindow( mTimeConstellationPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D );
 	m_splitter3->Connect( wxEVT_IDLE, wxIdleEventHandler( frFFTviewer::m_splitter3OnIdle ), NULL, this );
 	
-    int GLCanvasAttributes_1[] = {
-        WX_GL_RGBA,
-        WX_GL_DOUBLEBUFFER,
-        WX_GL_DEPTH_SIZE, 16,
-        WX_GL_STENCIL_SIZE, 0,
-        0, 0 };
-    mTimeDomainPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
-    mConstelationPanel = new OpenGLGraph(m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
+	mTimeDomainPanel = new OpenGLGraph( m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	mConstelationPanel = new OpenGLGraph( m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_splitter3->SplitVertically( mTimeDomainPanel, mConstelationPanel, 0 );
 	fgSizer9->Add( m_splitter3, 1, wxEXPAND, 5 );
 	
@@ -52,7 +46,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	mTimeConstellationPanel->SetSizer( fgSizer9 );
 	mTimeConstellationPanel->Layout();
 	fgSizer9->Fit( mTimeConstellationPanel );
-    mFFTpanel = new OpenGLGraph(mPlotsSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _(""), GLCanvasAttributes_1);
+	mFFTpanel = new OpenGLGraph( mPlotsSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	mPlotsSplitter->SplitHorizontally( mTimeConstellationPanel, mFFTpanel, 0 );
 	fgSizer7->Add( mPlotsSplitter, 1, wxEXPAND, 5 );
 	
@@ -156,6 +150,45 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	
 	sbSizer2->Add( fgSizer12, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer6;
+	sbSizer6 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Window function:") ), wxVERTICAL );
+	
+	wxString cmbWindowFuncChoices[] = { wxT("Rectangular"), wxT("Blackman-harris"), wxT("Hamming"), wxT("Hanning") };
+	int cmbWindowFuncNChoices = sizeof( cmbWindowFuncChoices ) / sizeof( wxString );
+	cmbWindowFunc = new wxChoice( sbSizer6->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbWindowFuncNChoices, cmbWindowFuncChoices, 0 );
+	cmbWindowFunc->SetSelection( 0 );
+	sbSizer6->Add( cmbWindowFunc, 0, wxEXPAND, 5 );
+	
+	
+	sbSizer2->Add( sbSizer6, 0, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer51;
+	sbSizer51 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Capture to file") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer121;
+	fgSizer121 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer121->SetFlexibleDirection( wxBOTH );
+	fgSizer121->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	chkCaptureToFile = new wxCheckBox( sbSizer51->GetStaticBox(), wxID_ANY, wxT("Capture enable"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer121->Add( chkCaptureToFile, 0, 0, 5 );
+	
+	
+	fgSizer121->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText12 = new wxStaticText( sbSizer51->GetStaticBox(), wxID_ANY, wxT("Samples to capture:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText12->Wrap( -1 );
+	fgSizer121->Add( m_staticText12, 0, wxALL, 5 );
+	
+	spinCaptureCount = new wxSpinCtrl( sbSizer51->GetStaticBox(), wxID_ANY, wxT("16384"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 30000000, 16384 );
+	fgSizer121->Add( spinCaptureCount, 0, 0, 5 );
+	
+	
+	sbSizer51->Add( fgSizer121, 1, wxEXPAND, 5 );
+	
+	
+	sbSizer2->Add( sbSizer51, 0, wxTOP, 5 );
 	
 	
 	fgSizer10->Add( sbSizer2, 1, wxEXPAND, 5 );

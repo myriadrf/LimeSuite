@@ -65,6 +65,7 @@ set(LIME_SUITE_SOURCES
     LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
     FPGA_common/FPGA_common.cpp
+    windowFunction.cpp
 )
 
 set(LIME_SUITE_INCLUDES

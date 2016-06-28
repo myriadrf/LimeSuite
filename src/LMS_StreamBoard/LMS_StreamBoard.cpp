@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <iostream>
 #include "kiss_fft.h"
+#include <fstream>
+#include "windowFunction.h"
 
 using namespace std;
 using namespace lime;
@@ -16,6 +18,10 @@ LMS_StreamBoard::LMS_StreamBoard(IConnection* dataPort)
     mTxFIFO = new LMS_StreamBoard_FIFO<SamplesPacket>(1024*2);
     mStreamRunning.store(false);
     mTxCyclicRunning.store(false);
+    captureToFile = false;
+    samplesToCapture = 0;
+    captureFilename = "";
+    windowFunction = 0;
 }
 
 LMS_StreamBoard::~LMS_StreamBoard()
@@ -213,8 +219,17 @@ void LMS_StreamBoard::ProcessPackets(LMS_StreamBoard* pthis, unsigned int fftSiz
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
 
+    vector<int16_t> capturedSamples;
+    bool captureToFile = pthis->captureToFile;
+    if(captureToFile)
+        capturedSamples.reserve(2*pthis->samplesToCapture);
+
     const int framesInPacket = 16384;
     const int packetsCountForFFT = fftSize / framesInPacket + ((fftSize % framesInPacket) != 0);
+
+    vector<float> wndFunc;
+    float ampCorr;
+    GenerateWindowCoefficients(pthis->windowFunction, fftSize, wndFunc, ampCorr);
 
     SamplesPacket* pkt = new SamplesPacket[packetsCountForFFT];
     while (pthis->stopProcessing.load() == false)
@@ -231,11 +246,22 @@ void LMS_StreamBoard::ProcessPackets(LMS_StreamBoard* pthis, unsigned int fftSiz
             }
         }
 
+        if(captureToFile && capturedSamples.size() < pthis->samplesToCapture*2)
+        {
+            for(int i=0; i<fftSize && capturedSamples.size() < pthis->samplesToCapture*2; ++i)
+            {
+                capturedSamples.push_back(pkt[i / (2*framesInPacket)].iqdata[(2 * i) % (2*framesInPacket)]); //I
+                capturedSamples.push_back(pkt[i / (2*framesInPacket)].iqdata[(2 * i + 1) % (2*framesInPacket)]); //Q
+            }
+        }
+
         unsigned int samplesUsed = 0;
         for (int i = 0; i < fftSize; ++i)
         {
-            localDataResults.samplesI[i] = m_fftCalcIn[i].r = pkt[i / (2*framesInPacket)].iqdata[(2 * i) % (2*framesInPacket)];
-            localDataResults.samplesQ[i] = m_fftCalcIn[i].i = pkt[i / (2*framesInPacket)].iqdata[(2 * i + 1) % (2*framesInPacket)];
+            localDataResults.samplesI[i] = pkt[i / (2*framesInPacket)].iqdata[(2 * i) % (2*framesInPacket)];
+            localDataResults.samplesQ[i] = pkt[i / (2*framesInPacket)].iqdata[(2 * i + 1) % (2*framesInPacket)];
+            m_fftCalcIn[i].r = localDataResults.samplesI[i] * wndFunc[i] * ampCorr;
+            m_fftCalcIn[i].i = localDataResults.samplesQ[i] * wndFunc[i] * ampCorr;
         }
         kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
 
@@ -260,6 +286,15 @@ void LMS_StreamBoard::ProcessPackets(LMS_StreamBoard* pthis, unsigned int fftSiz
 
     }
     delete[] pkt;
+    if(pthis->captureToFile)
+    {
+        std::ofstream fout;
+        fout.open(pthis->captureFilename.c_str());
+        fout << "AI\tAQ" << endl;
+        int samplesCnt = capturedSamples.size();
+        for(int i=0; i<samplesCnt; i+=2)
+            fout << capturedSamples[i] << "\t" << capturedSamples[i+1] << endl;
+    }
 #ifndef NDEBUG
     printf("Processing finished\n");
 #endif
@@ -570,4 +605,16 @@ LMS_StreamBoard::Status LMS_StreamBoard::StopCyclicTransmitting()
         mTxCyclicRunning.store(false);
     }
     return LMS_StreamBoard::SUCCESS;
+}
+
+void LMS_StreamBoard::SetCaptureToFile(bool enable, const char* filename, uint32_t samplesCount)
+{
+    captureToFile = enable;
+    captureFilename = filename;
+    samplesToCapture = samplesCount;
+}
+
+void LMS_StreamBoard::SetWidowFunction(int func)
+{
+    windowFunction = func;
 }

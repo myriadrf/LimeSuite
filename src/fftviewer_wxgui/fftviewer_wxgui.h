@@ -59,6 +59,10 @@ class frFFTviewer : public wxFrame
 		wxStaticText* lblTxDataRate;
 		wxStaticText* m_staticText10;
 		wxStaticText* lblFFTrate;
+		wxChoice* cmbWindowFunc;
+		wxCheckBox* chkCaptureToFile;
+		wxStaticText* m_staticText12;
+		wxSpinCtrl* spinCaptureCount;
 		wxCheckBox* chkFreezeTimeDomain;
 		wxCheckBox* chkFreezeConstellation;
 		wxCheckBox* chkFreezeFFT;

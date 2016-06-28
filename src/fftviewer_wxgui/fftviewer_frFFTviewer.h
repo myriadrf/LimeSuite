@@ -27,6 +27,7 @@ class fftviewer_frFFTviewer : public frFFTviewer
 		void OnWindowFunctionChanged( wxCommandEvent& event );
 		void OnbtnStartStop( wxCommandEvent& event );
         void OnChannelVisibilityChange(wxCommandEvent& event);
+        void OnbtnCaptureClick(wxCommandEvent& event);
 
         void OnUpdatePlots(wxTimerEvent& event);
 	public:

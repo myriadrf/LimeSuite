@@ -114,7 +114,20 @@ void fftviewer_frFFTviewer::StartStreaming()
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
+    chkCaptureToFile->Disable();
     mStreamRunning = true;
+    spinCaptureCount->Disable();
+    cmbWindowFunc->Disable();
+    bool capturing = chkCaptureToFile->IsChecked();
+    string filename = "";
+    if(capturing)
+    {
+        wxFileDialog dlg(this, _("Save samples file"), "", "", "Text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+        if (dlg.ShowModal() == wxID_CANCEL)
+            capturing = false;
+        else
+            filename = dlg.GetPath().To8BitData();
+    }
     switch (cmbStreamType->GetSelection())
     {
     case 0:
@@ -123,21 +136,28 @@ void fftviewer_frFFTviewer::StartStreaming()
             mStreamBrd = new StreamerNovena(mDataPort);
         else
             mStreamBrd = new LMS_StreamBoard(mDataPort);
+        mStreamBrd->SetWidowFunction(cmbWindowFunc->GetSelection());
+        mStreamBrd->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mStreamBrd->StartReceiving(spinFFTsize->GetValue());
         break;
     case 1: //SISO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
+        mLTEstreamer->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 1, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 2: //MIMO
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
+        mLTEstreamer->SetCaptureToFile(capturing, filename.c_str(), spinCaptureCount->GetValue());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_COMPRESSED);
         break;
     case 3: //SISO uncompressed samples
         assert(mLTEstreamer == nullptr);
         mLTEstreamer = new StreamerLTE(mDataPort);
+        mLTEstreamer->SetWidowFunction(cmbWindowFunc->GetSelection());
         mLTEstreamer->StartStreaming(spinFFTsize->GetValue(), 2, StreamerLTE::STREAM_12_BIT_IN_16);
         break;
     }
@@ -174,6 +194,9 @@ void fftviewer_frFFTviewer::StopStreaming()
     btnStartStop->SetLabel(_("START"));
     cmbStreamType->Enable();
     spinFFTsize->Enable();
+    chkCaptureToFile->Enable();
+    spinCaptureCount->Enable();
+    cmbWindowFunc->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
@@ -340,4 +363,9 @@ void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
     mConstelationPanel->series[1]->visible = visibilities[1];
     mFFTpanel->series[0]->visible = visibilities[0];
     mFFTpanel->series[1]->visible = visibilities[1];
+}
+
+void fftviewer_frFFTviewer::OnbtnCaptureClick(wxCommandEvent& event)
+{
+
 }
