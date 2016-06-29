@@ -19,9 +19,11 @@
 
 
 static const size_t LMS_PATH_NONE = 0;
-static const size_t LMS_PATH_LOW = 2;
 static const size_t LMS_PATH_HIGH = 1;
+static const size_t LMS_PATH_LOW = 2;
 static const size_t LMS_PATH_WIDE = 3;
+static const size_t LMS_PATH_TX1 = 1;
+static const size_t LMS_PATH_TX2 = 2;
 
 const double LMS7_Device::LMS_CGEN_MAX = 640000000;
 
@@ -240,8 +242,6 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
 
             if (bandwidth > 0)
             {
-                if (bandwidth < 6.5e6)
-                    bandwidth = 6.5e6;
                 if (TuneTxFilter(bandwidth)!=0)
                         return -1;
             }
@@ -593,8 +593,8 @@ int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
     }
     else
     {
-        if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),path==2,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),path==1,true)!=0))
+        if ((Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),path==LMS_PATH_TX1,true)!=0)
+        || (Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),path==LMS_PATH_TX2,true)!=0))
             return -1;
     }
     return 0;
@@ -606,10 +606,10 @@ size_t LMS7_Device::GetPath(bool tx, size_t chan)
         return -1;
     if (tx)
     {
-        if (Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),true))
-            return 2;
-        else if (Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),true))
-            return 1;
+        if (Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF),true))
+            return LMS_PATH_TX2;
+        else if (Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF),true))
+            return LMS_PATH_TX1;
         else
             return 0;
     }
@@ -623,10 +623,10 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
   ret.step = 1;
   if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
   {
-      if (path == 2)
+      if (path == LMS_PATH_LOW)
       {
         ret.max = 3800000000;
-        ret.min = 50000000;
+        ret.min = 30000000;
       }
       else
       {
@@ -638,17 +638,17 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
   else
   switch (path)
   {
-      case 1:
+      case LMS_PATH_HIGH:
             ret.max = 3800000000;
             ret.min = 2000000000;
             break;
-      case 3:
+      case LMS_PATH_WIDE:
             ret.max = 3800000000;
-            ret.min = 1000000000;
+            ret.min = 700000000;
             break;
-      case 2:
-            ret.max = 1000000000;
-            ret.min = 100000000;
+      case LMS_PATH_LOW:
+            ret.max = 1100000000;
+            ret.min = 30000000;
             break;
       default:
             ret.max = 0;
@@ -667,10 +667,10 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   ret.step = 1;
   if (GetConnection()->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
   {
-      if (path == 1)
+      if (path == LMS_PATH_TX2)
       {
         ret.max = 3800000000;
-        ret.min = 50000000;
+        ret.min = 30000000;
       }
       else
       {
@@ -682,13 +682,13 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   else
   switch (path)
   {
-      case 1:
+      case LMS_PATH_TX2:
             ret.max = 3800000000;
             ret.min = 1500000000;
             break;
-      case 2:
+      case LMS_PATH_TX1:
             ret.max = 1500000000;
-            ret.min = 100000000;
+            ret.min = 30000000;
             break;
       default:
             ret.max = 0;
@@ -752,13 +752,23 @@ lms_range_t LMS7_Device::GetLPFRange(bool tx, size_t chan, bool filt)
     lms_range_t ret;
     if (filt)
     {
-      ret.max = 160000000;
+        if (tx)
+        {
+            ret.max = 130000000;
+            ret.min = 5000000;
+        }
+        else
+        {
+            ret.max = 130000000;
+            ret.min = 14000000;
+        }
     }
     else
     {
       ret.max = GetRate(false,chan)/1.03;
+      ret.min = ret.max/30;
     }
-    ret.min = 1000000;
+
     ret.step = 1;
     return ret;
 }
@@ -1296,17 +1306,17 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
     rx_channels[1].half_duplex = false;
     if (SetFrequencySX(true,f_Hz)!=0)
         return -1;
-    if (f_Hz < GetTxPathBand(LMS_PATH_LOW,chan).max)
+    if (f_Hz < GetTxPathBand(LMS_PATH_TX1,chan).max)
     {
-        SetPath(true,0,LMS_PATH_LOW);
-        SetPath(true,1,LMS_PATH_LOW);
+        SetPath(true,0,LMS_PATH_TX1);
+        SetPath(true,1,LMS_PATH_TX1);
         printf("TX BAND 1 selected\n");
     }
     else
     {
         printf("Tx BAND 2 selected\n");
-        SetPath(true,0,LMS_PATH_HIGH);
-        SetPath(true,1,LMS_PATH_HIGH);
+        SetPath(true,0,LMS_PATH_TX2);
+        SetPath(true,1,LMS_PATH_TX2);
     }
     return 0;
 }
@@ -1316,7 +1326,7 @@ lms_range_t LMS7_Device::GetFrequencyRange(bool tx) const
 {
   lms_range_t ret;
   ret.max = 3800000000;
-  ret.min = 100000000;
+  ret.min = 30000000;
   ret.step = 1;
   return ret;
 }
