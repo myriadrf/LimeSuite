@@ -564,10 +564,16 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     {
         switch (direction)
         {
-        case SOAPY_SDR_RX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
-        case SOAPY_SDR_TX: rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
+        case SOAPY_SDR_RX:
+            rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(CMIX_SC_RXTSP, (frequency < 0)?1:0);
+            break;
+        case SOAPY_SDR_TX:
+            rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(CMIX_SC_TXTSP, (frequency < 0)?1:0);
+            break;
         }
-        rfic->SetNCOFrequency(lmsDir, 0, frequency);
+        rfic->SetNCOFrequency(lmsDir, 0, abs(frequency));
         return;
     }
 
@@ -587,7 +593,8 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "BB")
     {
-        return rfic->GetNCOFrequency(lmsDir, 0);
+        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?CMIX_BYP_TXTSP:CMIX_BYP_RXTSP) == 0 ? 1 : -1;
+        return rfic->GetNCOFrequency(lmsDir, 0) * sign;
     }
 
     throw std::runtime_error("SoapyLMS7::getFrequency("+name+") unknown name");
