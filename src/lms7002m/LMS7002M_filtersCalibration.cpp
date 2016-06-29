@@ -112,7 +112,10 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     int status;
     status = TuneRxFilterSetup(rx_lpf_IF);
     if(status != 0)
+    {
+        RestoreRegisterMap(registersBackup);
         return status;
+    }
 
     int g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
     uint32_t rssi = GetRSSI();
@@ -138,10 +141,16 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     {
         status = SetFrequencySX(LMS7002M::Rx, 539.9e6-rx_lpf_IF*1.3);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
         status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_IF*1.3);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
 
         if(rx_lpf_IF < 18e6)
         {
@@ -215,11 +224,16 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         }
         status = SetFrequencySX(LMS7002M::Rx, 539.9e6-rx_lpf_IF);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
         status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_IF);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
-
+        }
         Modify_SPI_Reg_bits(CFB_TIA_RFE, g_tia_rfe);
         int cfb_tia_rfe;
         if(g_tia_rfe == 3 || g_tia_rfe == 2)
@@ -227,7 +241,10 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         else if(g_tia_rfe == 1)
             cfb_tia_rfe = int( 5400e6 / (rx_lpf_IF * 0.72) - 15);
         else
+        {
+            RestoreRegisterMap(registersBackup);
             return ReportError(EINVAL, "g_tia_rfe not allowed value");
+        }
         cfb_tia_rfe = clamp(cfb_tia_rfe, 0, 4095);
         Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
 
@@ -237,7 +254,10 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         else if(g_tia_rfe == 1)
             ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
         else
+        {
+            RestoreRegisterMap(registersBackup);
             return ReportError(EINVAL, "g_tia_rfe not allowed value");
+        }
         ccomp_tia_rfe = clamp(ccomp_tia_rfe, 0, 15);
         Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
 
@@ -248,22 +268,33 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         //START TIA
         status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, rssiAvgCount, 4096);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
         //END TIA
     }
     if(rx_lpf_IF > 54e6)
     {
         status = SetFrequencySX(LMS7002M::Rx, 539.9e6 - rx_lpf_IF);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
         status = SetNCOFrequency(LMS7002M::Rx, 0, rx_lpf_IF);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
-
+        }
         //START TIA
         status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, rssiAvgCount, 4096);
         if(status != 0)
+        {
+            RestoreRegisterMap(registersBackup);
             return status;
+        }
         //END TIA
     }
 
@@ -941,7 +972,10 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
 
     status = TuneTxFilterFixedSetup();
     if(status != 0)
+    {
+        RestoreRegisterMap(registersBackup);
         return status;
+    }
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
     Modify_SPI_Reg_bits(SEL_TX, 0);
@@ -1015,7 +1049,10 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
         nco_fixed = 5;
     }
     else
+    {
+        RestoreRegisterMap(registersBackup);
         ReportError(ERANGE, "Tx Filter fixed bandwidth out of range");
+    }
 
     uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
     uint32_t rssi_3dB_LAD = rssi_dc_lad * 0.7071;
@@ -1027,7 +1064,10 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
 
     status = TxFilterSearch_LAD(RCAL_LPFLAD_TBB, &rssi_3dB_LAD, rssiAvgCount, 256, nco_fixed);
     if(status != 0)
+    {
+        RestoreRegisterMap(registersBackup);
         return status;
+    }
 
     //ENDING
     ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
@@ -1152,7 +1192,6 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
 {
     int status;
     float_type txSampleRate;
-    auto registersBackup = BackupRegisterMap();
 
     if(tx_lpf_freq_RF < TxLPF_RF_LimitLow || tx_lpf_freq_RF > TxLPF_RF_LimitHigh)
         return ReportError(ERANGE, "Tx lpf(%g MHz) out of range %g-%g MHz and %g-%g MHz", tx_lpf_freq_RF/1e6,
@@ -1168,10 +1207,13 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
                         TxLPF_RF_LimitMidHigh/1e6);
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     }
-
+    auto registersBackup = BackupRegisterMap();
     status = TuneTxFilterSetup(tx_lpf_IF);
     if(status != 0)
+    {
+        RestoreRegisterMap(registersBackup);
         return status;
+    }
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
     Modify_SPI_Reg_bits(SEL_TX, 0);
@@ -1237,8 +1279,6 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         if(rssi > rssi_3dB_S5)
         {
             status = TxFilterSearch_S5(RCAL_LPFS5_TBB, rssi_3dB_S5, rssiAvgCount, 256);
-            if(status != 0)
-                return status;
         }
     }
 
