@@ -1148,14 +1148,17 @@ bool LMS7002M::GetSXLocked(bool tx)
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
+    struct CSWInteval
+    {
+        int16_t high;
+        int16_t low;
+    };
+    CSWInteval cswSearch[2];
     stringstream ss; //tune progress report
     int16_t csw = 0;
     const char* moduleName = (module == VCO_CGEN) ? "CGEN" : ((module == VCO_SXR) ? "SXR" : "SXT");
     checkConnection();
-    int8_t i;
     uint8_t cmphl; //comparators
-    uint16_t csw_highest;
-    int16_t csw_lowest = -1;
     uint16_t addrVCOpd; // VCO power down address
     uint16_t addrCSW_VCO;
     uint16_t addrCMP; //comparator address
@@ -1183,71 +1186,84 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         addrCMP = LMS7param(VCO_CMPHO_CGEN).address;
         ss << "ICT_VCO_CGEN: " << Get_SPI_Reg_bits(ICT_VCO_CGEN) << endl;
     }
-    // Initialization
-    int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0); //activate VCO and comparator
-    if(status != 0)
+    // Initialization activate VCO and comparator
+    if(int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0) != 0)
         return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
-    Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0); //Set SWC_VCO<7:0>=<00000000>
 
-    i=7;
-    while(i>=0)
+    //search intervals [0-127][128-255]
+    for(int t=0; t<2; ++t)
     {
-        csw |= 1 << i;
-        Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 1); // CSW_VCO<i>=1
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-        ss << "csw=" << csw << "\t" << "cmphl=" << (int16_t)cmphl << endl;
-        if ( (cmphl&0x01) == 1) // reduce CSW
+        cswSearch[t].low = 128*(t+1);
+        cswSearch[t].high = 128*t; //search interval lowest value
+        Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , cswSearch[t].high);
+        for(int i=6; i>=0; --i)
         {
-            Modify_SPI_Reg_bits (addrCSW_VCO, lsb + i, lsb + i, 0); // CSW_VCO<i>=0
-            csw &= ~(1 << i);
+            cswSearch[t].high |= 1 << i; //CSW_VCO<i>=1
+            Modify_SPI_Reg_bits (addrCSW_VCO, msb, lsb, cswSearch[t].high);
+            //might need delay depending on communication speed
+            //std::this_thread::sleep_for(std::chrono::microseconds(5));
+            cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+            ss << "csw=" << cswSearch[t].high << "\t" << "cmphl=" << (int16_t)cmphl << endl;
+            if(cmphl & 0x01) // reduce CSW
+                cswSearch[t].high &= ~(1 << i); //CSW_VCO<i>=0
+            if(cmphl == 2 && cswSearch[t].high < cswSearch[t].low)
+                cswSearch[t].low = cswSearch[t].high;
         }
-        if( cmphl == 2 && csw_lowest < 0)
-            csw_lowest = Get_SPI_Reg_bits(addrCSW_VCO, msb, lsb);
-        --i;
-    }
-    if(csw_lowest >= 0)
-    {
-        csw_highest = Get_SPI_Reg_bits(addrCSW_VCO, msb, lsb);
-        if(csw_lowest == csw_highest)
+        while(cswSearch[t].low <= cswSearch[t].high && cswSearch[t].low > t*128)
         {
-            while(csw_lowest>=0)
+            --cswSearch[t].low;
+            Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswSearch[t].low);
+            //might need delay depending on communication speed
+            //std::this_thread::sleep_for(std::chrono::microseconds(5));
+            if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) != 2)
             {
-                Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-                if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) == 0)
-                {
-                    ++csw_lowest;
-                    break;
-                }
-                else
-                    --csw_lowest;
+                ++cswSearch[t].low;
+                break;
             }
         }
-        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest+(csw_highest-csw_lowest)/2);
-        ss << "CSW_lowest  =" << csw_lowest << endl;
-        ss << "CSW_highest =" << csw_highest << endl;
-        ss << "CSW_selected=" << csw_lowest+(csw_highest-csw_lowest)/2;
+        if(cmphl == 2)
+        {
+            ss << "CSW_lowest  =" << cswSearch[t].low << endl;
+            ss << "CSW_highest =" << cswSearch[t].high << endl;
+            ss << "CSW_selected=" << cswSearch[t].low+(cswSearch[t].high-cswSearch[t].low)/2 << endl;
+        }
+        else
+            ss << "Failed to lock" << endl;
     }
 
+    //check if the intervals are joined
+    int16_t cswHigh, cswLow;
+    if(cswSearch[0].high == cswSearch[1].low-1)
+    {
+        cswHigh = cswSearch[1].high;
+        cswLow = cswSearch[0].low;
+    }
+    //compare which interval is wider
+    else
+    {
+        uint8_t intervalIndex = (cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low);
+        cswHigh = cswSearch[intervalIndex].high;
+        cswLow = cswSearch[intervalIndex].low;
+    }
+
+    if(cswHigh-cswLow == 1)
+    {
+        //check which of two values really locks
+        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        if(cmphl != 2)
+            Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswHigh);
+    }
+    else
+        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow+(cswHigh-cswLow)/2);
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
 
-    if(csw_highest-csw_lowest == 1)
-    {
-        //check both values, comparators might have changed after SPDUP_VCO toggle
-        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_lowest);
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-        if(cmphl == 2)
-            return 0;
-        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, csw_highest);
-        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-    }
-    if(cmphl == 2) return 0;
-
+    if(cmphl == 2)
+        return 0;
     return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)\n%s", moduleName, ss.str().c_str());
 }
 
@@ -1415,10 +1431,11 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
         {
             Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
             int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
-            int csw = Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
-            tuneScore[sel_vco] = -128 + csw;
-            if (status == 0)
+            if(status == 0)
+            {
+                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
                 canDeliverFrequency = true;
+            }
             ss << vcoNames[sel_vco] << " : csw=" << tuneScore[sel_vco]+128 << " ";
             ss << (status == 0 ? "tune ok" : "tune fail") << endl;
         }
