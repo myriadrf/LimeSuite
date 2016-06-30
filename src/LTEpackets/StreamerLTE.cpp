@@ -449,6 +449,7 @@ void StreamerLTE::ResetUSBFIFO(LMS64CProtocol* port)
 */
 void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize, const int channelsCount, const StreamDataFormat format)
 {
+    const bool transmitReceivedSamples = false;
     if(pthis->mDataPort == nullptr)
     {
     #ifndef NDEBUG
@@ -537,12 +538,14 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     if (format == STREAM_12_BIT_COMPRESSED)
     {
         threadRx = std::thread(ReceivePackets, threadRxArgs);
-        threadTx = std::thread(TransmitPackets, threadTxArgs);
+        if(transmitReceivedSamples)
+            threadTx = std::thread(TransmitPackets, threadTxArgs);
     }
     else
     {
         threadRx = std::thread(ReceivePacketsUncompressed, threadRxArgs);
-        threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
+        if(transmitReceivedSamples)
+            threadTx = std::thread(TransmitPacketsUncompressed, threadTxArgs);
     }
 
     int updateCounter = 0;
@@ -565,7 +568,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
         ++updateCounter;
         //Transmit earlier received packets with a counter delay
-        uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms, STATUS_FLAG_TX_TIME);
+        if(transmitReceivedSamples)
+            uint32_t samplesPushed = pthis->mTxFIFO->push_samples((const complex16_t**)buffers, samplesPopped, channelsCount, timestamp + 1024 * 1024, timeout_ms, STATUS_FLAG_TX_TIME);
 
         if (updateCounter & 0x40)
         {
@@ -608,7 +612,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     stopTx.store(true);
     stopRx.store(true);
 
-    threadTx.join();
+    if(transmitReceivedSamples)
+        threadTx.join();
     threadRx.join();
 
         //stop Tx Rx if they were active
