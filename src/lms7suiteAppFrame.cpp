@@ -199,7 +199,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
 	Layout();
 	Fit();
 
-    SetMinSize(GetSize());
+    SetMinSize(GetBestSize());
     UpdateConnections(lms7controlPort, streamBoardPort);
 
     mnuCacheValues->Check(lmsControl->IsValuesCacheEnabled());

@@ -140,6 +140,8 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer298->Add( fgSizer299, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND|wxBOTTOM, 10 );
 	
 	tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
+	tabsNotebook->SetMinSize( wxSize( 1050,-1 ) );
+	
 	mTabCalibrations = new lms7002_pnlCalibrations_view( tabsNotebook, ID_TAB_CALIBRATIONS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabCalibrations, wxT("Calibrations"), true );
 	mTabRFE = new lms7002_pnlRFE_view( tabsNotebook, ID_TAB_RFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );

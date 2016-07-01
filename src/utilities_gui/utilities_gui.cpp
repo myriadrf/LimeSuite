@@ -35,10 +35,14 @@ dlgConnectionSettings_view::dlgConnectionSettings_view( wxWindow* parent, wxWind
 	m_staticText473->Wrap( -1 );
 	fgSizer212->Add( m_staticText473, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 	
-	mListLMS7ports = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxSize( -1,150 ), 0, NULL, 0 ); 
+	mListLMS7ports = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
+	mListLMS7ports->SetMinSize( wxSize( 300,150 ) );
+	
 	fgSizer212->Add( mListLMS7ports, 0, wxALL|wxEXPAND, 5 );
 	
 	mListStreamports = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	mListStreamports->SetMinSize( wxSize( 300,150 ) );
+	
 	fgSizer212->Add( mListStreamports, 0, wxALL|wxEXPAND, 5 );
 	
 	
@@ -53,16 +57,16 @@ dlgConnectionSettings_view::dlgConnectionSettings_view( wxWindow* parent, wxWind
 	fgSizer213->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	btnConnect = new wxButton( this, wxID_ANY, wxT("Connect"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer213->Add( btnConnect, 0, wxALL, 5 );
+	fgSizer213->Add( btnConnect, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	btnCancel = new wxButton( this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer213->Add( btnCancel, 0, wxALL, 5 );
+	fgSizer213->Add( btnCancel, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	btnDisconnect = new wxButton( this, wxID_ANY, wxT("Disconnect"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer213->Add( btnDisconnect, 0, wxALL, 5 );
+	fgSizer213->Add( btnDisconnect, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
-	fgSizer211->Add( fgSizer213, 1, wxALIGN_CENTER_HORIZONTAL|wxEXPAND, 5 );
+	fgSizer211->Add( fgSizer213, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
 	this->SetSizer( fgSizer211 );
