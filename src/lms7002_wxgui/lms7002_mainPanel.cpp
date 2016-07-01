@@ -146,10 +146,6 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 
 void lms7002_mainPanel::UpdateGUI()
 {
-    wxLongLong t1, t2;
-    t1 = wxGetUTCTimeMillis();
-    lmsControl->IsSynced();
-    t2 = wxGetUTCTimeMillis();
     LMS7002M::Channel channel = lmsControl->GetActiveChannel();
     if (channel == LMS7002M::ChA)
     {
@@ -169,9 +165,6 @@ void lms7002_mainPanel::UpdateGUI()
     }
 
     UpdateVisiblePanel();
-#ifndef NDEBUG
-    cout << "GUI update time: " << (t2 - t1).ToString() << endl;
-#endif
 }
 
 void lms7002_mainPanel::OnNewProject( wxCommandEvent& event )

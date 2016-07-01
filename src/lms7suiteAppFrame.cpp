@@ -271,6 +271,21 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
             si5351gui->ModifyClocksGUI(info.deviceName);
         if (boardControlsGui)
             boardControlsGui->SetupControls(info.deviceName);
+
+        /*
+        if(lmsControl->IsSynced() == false)
+        {
+            wxString choices[3] = {_("GUI->Chip"), _("Chip->GUI"), _("Do nothing")};
+            wxSingleChoiceDialog dlg(this, _("GUI does not match Chip settings. Synchronize?"), _("Warning"), 3, choices, (void**)0);
+            if(dlg.ShowModal() == wxID_OK)
+            {
+                if(dlg.GetSelection() == 0)
+                    lmsControl->UploadAll();
+                else if(dlg.GetSelection() == 1)
+                    lmsControl->DownloadAll();
+            }
+        }
+        */
     }
     else
     {

@@ -981,6 +981,7 @@ int LMS7002M::GetBandTRF(void)
 
 void LMS7002M::UpdateExternalBandSelect(void)
 {
+    if(controlPort)
     return controlPort->UpdateExternalBandSelect(
         this->GetActiveChannelIndex(),
         this->GetBandTRF(),
@@ -1720,7 +1721,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         //write which register cache based on MAC bits
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
-        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) and (spiAddr[i] >= 0x0100);
 
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1764,7 +1765,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
         //write which register cache based on MAC bits
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) or (spiAddr[i] < 0x0100);
-        bool wr1 = ((mac & 0x2) != 0) or (spiAddr[i] < 0x0100);
+        bool wr1 = ((mac & 0x2) != 0) and (spiAddr[i] >= 0x0100);
 
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1987,27 +1988,37 @@ bool LMS7002M::IsSynced()
     dataReceived.resize(addrToRead.size(), 0);
 
     this->SetActiveChannel(ChA);
-    status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
+    std::vector<uint32_t> dataWr(addrToRead.size());
+    std::vector<uint32_t> dataRd(addrToRead.size());
+    for(size_t i = 0; i < addrToRead.size(); ++i)
+        dataWr[i] = (uint32_t(addrToRead[i]) << 16);
+    status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
+    for(int i=0; i<addrToRead.size(); ++i)
+        dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)
     {
         isSynced = false;
         goto isSyncedEnding;
     }
 
-    //mask out readonly bits
-    for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
-        for (uint16_t k = 0; k < addrToRead.size(); ++k)
-            if (readOnlyRegisters[j] == addrToRead[k])
-            {
-                dataReceived[k] &= readOnlyRegistersMasks[j];
-                break;
-            }
-
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
-        if (dataReceived[i] != mRegistersMap->GetValue(0, addrToRead[i]))
+        uint16_t regValue = mRegistersMap->GetValue(0, addrToRead[i]);
+        if(addrToRead[i] <= readOnlyRegisters[sizeof(readOnlyRegisters)/sizeof(uint16_t)-1] && addrToRead[i] >= readOnlyRegisters[0])
         {
+            //mask out readonly bits
+            for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
+                if (readOnlyRegisters[j] == addrToRead[i])
+                {
+                    dataReceived[i] &= readOnlyRegistersMasks[j];
+                    regValue &= readOnlyRegistersMasks[j];
+                    break;
+                }
+        }
+        if (dataReceived[i] != regValue)
+        {
+            printf("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X\n", addrToRead[i], regValue, dataReceived[i]);
             isSynced = false;
             goto isSyncedEnding;
         }
@@ -2015,28 +2026,42 @@ bool LMS7002M::IsSynced()
 
     addrToRead.clear(); //add only B channel addresses
     addrToRead = mRegistersMap->GetUsedAddresses(1);
-
-    //mask out readonly bits
-    for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
-        for (uint16_t k = 0; k < addrToRead.size(); ++k)
-            if (readOnlyRegisters[j] == addrToRead[k])
-            {
-                dataReceived[k] &= readOnlyRegistersMasks[j];
-                break;
-            }
-
-    this->SetActiveChannel(ChB);
-    status = SPI_read_batch(&addrToRead[0], &dataReceived[0], addrToRead.size());
+    dataWr.resize(addrToRead.size());
+    dataRd.resize(addrToRead.size());
+    for(size_t i = 0; i < addrToRead.size(); ++i)
+        dataWr[i] = (uint32_t(addrToRead[i]) << 16);
+    status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
+    for(int i=0; i<addrToRead.size(); ++i)
+        dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)
-        return false;
+    {
+        isSynced = false;
+        goto isSyncedEnding;
+    }
+    this->SetActiveChannel(ChB);
+
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
-        if (dataReceived[i] != mRegistersMap->GetValue(1, addrToRead[i]))
+    {
+        uint16_t regValue = mRegistersMap->GetValue(1, addrToRead[i]);
+        if(addrToRead[i] <= readOnlyRegisters[sizeof(readOnlyRegisters)/sizeof(uint16_t)-1] && addrToRead[i] >= readOnlyRegisters[0])
         {
-            isSynced = false;
-            break;
+            //mask out readonly bits
+            for (uint16_t j = 0; j < sizeof(readOnlyRegisters) / sizeof(uint16_t); ++j)
+                if (readOnlyRegisters[j] == addrToRead[i])
+                {
+                    dataReceived[i] &= readOnlyRegistersMasks[j];
+                    regValue &= readOnlyRegistersMasks[j];
+                    break;
+                }
         }
-
+        if (dataReceived[i] != regValue)
+        {
+            printf("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X\n", addrToRead[i], regValue, dataReceived[i]);
+            isSynced = false;
+            goto isSyncedEnding;
+        }
+    }
 isSyncedEnding:
     this->SetActiveChannel(ch); //restore previously used channel
     return isSynced;
@@ -2441,8 +2466,6 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
 
     vector<uint16_t> addrToWrite;
     addrToWrite = mRegistersMap->GetUsedAddresses(1);
-    //remove 0x0020 register from list, to not change MAC
-    addrToWrite.erase( find(addrToWrite.begin(), addrToWrite.end(), 0x0020) );
     if(!copySX)
     {
         for(uint32_t address = MemorySectionAddresses[SX][0]; address <= MemorySectionAddresses[SX][1]; ++address)
