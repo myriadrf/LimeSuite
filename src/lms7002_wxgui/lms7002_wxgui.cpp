@@ -55,15 +55,15 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	ID_BUTTON1 = new wxButton( this, wxID_ANY, wxT("New"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_BUTTON1->SetDefault(); 
-	fgSizer299->Add( ID_BUTTON1, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer299->Add( ID_BUTTON1, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	ID_BUTTON2 = new wxButton( this, wxID_ANY, wxT("Open"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_BUTTON2->SetDefault(); 
-	fgSizer299->Add( ID_BUTTON2, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer299->Add( ID_BUTTON2, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	ID_BUTTON3 = new wxButton( this, wxID_ANY, wxT("Save"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_BUTTON3->SetDefault(); 
-	fgSizer299->Add( ID_BUTTON3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer299->Add( ID_BUTTON3, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	wxFlexGridSizer* fgSizer300;
 	fgSizer300 = new wxFlexGridSizer( 0, 5, 0, 0 );
@@ -71,11 +71,30 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer300->SetFlexibleDirection( wxBOTH );
 	fgSizer300->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	wxFlexGridSizer* fgSizer248;
+	fgSizer248 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer248->SetFlexibleDirection( wxBOTH );
+	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	wxFlexGridSizer* fgSizer249;
+	fgSizer249 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer249->SetFlexibleDirection( wxBOTH );
+	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	rbChannelA = new wxRadioButton( this, ID_BTN_CH_A, wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer300->Add( rbChannelA, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	fgSizer249->Add( rbChannelA, 0, wxEXPAND, 5 );
 	
 	rbChannelB = new wxRadioButton( this, ID_BTN_CH_B, wxT("B CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer300->Add( rbChannelB, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	fgSizer249->Add( rbChannelB, 0, wxEXPAND, 5 );
+	
+	
+	fgSizer248->Add( fgSizer249, 0, 0, 5 );
+	
+	chkSyncAB = new wxCheckBox( this, wxID_ANY, wxT("Synchronize A to B"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer248->Add( chkSyncAB, 0, 0, 5 );
+	
+	
+	fgSizer300->Add( fgSizer248, 1, wxEXPAND, 5 );
 	
 	btnDownloadAll = new wxButton( this, ID_BTN_CHIP_TO_GUI, wxT("Chip-->GUI"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer300->Add( btnDownloadAll, 0, 0, 5 );
@@ -84,14 +103,22 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer300->Add( btnUploadAll, 0, 0, 5 );
 	
 	btnResetChip = new wxButton( this, ID_BTN_RESET_CHIP, wxT("Reset"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer300->Add( btnResetChip, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer300->Add( btnResetChip, 0, 0, 5 );
+	
+	wxFlexGridSizer* fgSizer247;
+	fgSizer247 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer247->SetFlexibleDirection( wxBOTH );
+	fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	
+	fgSizer300->Add( fgSizer247, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer299->Add( fgSizer300, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT, 10 );
 	
 	txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtTemperature->Wrap( -1 );
-	fgSizer299->Add( txtTemperature, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	fgSizer299->Add( txtTemperature, 0, wxALL, 5 );
 	
 	btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
@@ -150,6 +177,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	ID_BUTTON3->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	rbChannelA->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
+	chkSyncAB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
@@ -165,6 +193,7 @@ mainPanel::~mainPanel()
 	ID_BUTTON3->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	rbChannelA->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
+	chkSyncAB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );

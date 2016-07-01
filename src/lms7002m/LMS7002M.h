@@ -115,6 +115,7 @@ public:
     int UploadAll();
     int DownloadAll();
     bool IsSynced();
+    int CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
 	int ResetChip();
 

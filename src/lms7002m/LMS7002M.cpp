@@ -2434,3 +2434,29 @@ void LMS7002M::SetLogCallback(std::function<void(const char*, int)> callback)
 {
     log_callback = callback;
 }
+
+int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const bool copySX)
+{
+    Channel ch = this->GetActiveChannel(); //remember used channel
+
+    vector<uint16_t> addrToWrite;
+    addrToWrite = mRegistersMap->GetUsedAddresses(1);
+    //remove 0x0020 register from list, to not change MAC
+    addrToWrite.erase( find(addrToWrite.begin(), addrToWrite.end(), 0x0020) );
+    if(!copySX)
+    {
+        for(uint32_t address = MemorySectionAddresses[SX][0]; address <= MemorySectionAddresses[SX][1]; ++address)
+            addrToWrite.erase( find(addrToWrite.begin(), addrToWrite.end(), address));
+    }
+    for (auto address : addrToWrite)
+    {
+        uint16_t data = mRegistersMap->GetValue(src == ChA ? 0 : 1, address);
+        mRegistersMap->SetValue(dest == ChA ? 0 : 1, address, data);
+    }
+    if(controlPort)
+        UploadAll();
+    this->SetActiveChannel(ch);
+    //update external band-selection to match
+    this->UpdateExternalBandSelect();
+    return 0;
+}

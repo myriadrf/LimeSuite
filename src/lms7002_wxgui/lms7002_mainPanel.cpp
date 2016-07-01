@@ -254,9 +254,14 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else
     {
-        lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
-        rbChannelA->Enable();
-        rbChannelB->Enable();
+        if(chkSyncAB->IsChecked())
+            lmsControl->SetActiveChannel(LMS7002M::ChAB);
+        else
+        {
+            lmsControl->SetActiveChannel(rbChannelA->GetValue() == 1 ? LMS7002M::ChA : LMS7002M::ChB);
+            rbChannelA->Enable();
+            rbChannelB->Enable();
+        }
     }
 
 #ifdef __APPLE__
@@ -293,4 +298,27 @@ void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
     double t = lmsControl->GetTemperature();
     txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));
+}
+
+void lms7002_mainPanel::OnSyncABchecked(wxCommandEvent& event)
+{
+    rbChannelA->Enable(!chkSyncAB->IsChecked());
+    rbChannelB->Enable(!chkSyncAB->IsChecked());
+    if(chkSyncAB->IsChecked())
+    {
+        int status = lmsControl->CopyChannelRegisters(LMS7002M::ChA, LMS7002M::ChB, false);
+        if(status != 0)
+            wxMessageBox(wxString::Format(_("Failed to copy A to B: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Error"));
+        wxNotebookPage* page = tabsNotebook->GetCurrentPage();
+        if(page != mTabSXR && page != mTabSXT)
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChAB);
+    }
+    else
+    {
+        if(rbChannelA->GetValue() != 0)
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChA);
+        else
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChB);
+    }
+    UpdateVisiblePanel();
 }
