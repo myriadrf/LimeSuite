@@ -101,6 +101,7 @@ class mainPanel : public wxPanel
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
 		wxStaticText* txtTemperature;
+		wxCheckBox* chkEnableMIMO;
 		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
 		
@@ -114,6 +115,7 @@ class mainPanel : public wxPanel
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		

@@ -116,15 +116,28 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	fgSizer299->Add( fgSizer300, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT, 10 );
 	
+	wxFlexGridSizer* fgSizer251;
+	fgSizer251 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer251->SetFlexibleDirection( wxBOTH );
+	fgSizer251->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtTemperature->Wrap( -1 );
-	fgSizer299->Add( txtTemperature, 0, wxALL, 5 );
+	fgSizer251->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
+	
+	chkEnableMIMO = new wxCheckBox( this, wxID_ANY, wxT("Enable MIMO"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnableMIMO->SetToolTip( wxT("Enables required registers for MIMO mode") );
+	
+	fgSizer251->Add( chkEnableMIMO, 0, 0, 5 );
+	
+	
+	fgSizer299->Add( fgSizer251, 1, wxEXPAND, 5 );
 	
 	btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
 	
 	
-	fgSizer298->Add( fgSizer299, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP|wxBOTTOM, 10 );
+	fgSizer298->Add( fgSizer299, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND|wxBOTTOM, 10 );
 	
 	tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
 	mTabCalibrations = new lms7002_pnlCalibrations_view( tabsNotebook, ID_TAB_CALIBRATIONS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -181,6 +194,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
+	chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 }
@@ -197,6 +211,7 @@ mainPanel::~mainPanel()
 	btnDownloadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
+	chkEnableMIMO->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	btnReadTemperature->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	tabsNotebook->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 	

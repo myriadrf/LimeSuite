@@ -178,11 +178,19 @@ void lms7002_pnlRFE_view::UpdateGUI()
     cmbDCOFFQ_RFE->SetValue(dcvalue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    auto ch = lmsControl->GetActiveChannel();
+    if (ch >= LMS7002M::ChB)
     {
+        lmsControl->SetActiveChannel(LMS7002M::ChA);
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
+        if (lmsControl->Get_SPI_Reg_bits(EN_NEXTRX_RFE) != 1)
+            wxMessageBox(_("Rx MIMO mode not enabled, EN_NEXTRX_RFE=0"), _("Warning"));
+        lmsControl->SetActiveChannel(ch);
+        chkEN_NEXTRX_RFE->Hide();
     }
+    else
+        chkEN_NEXTRX_RFE->Show();
 }
 
 void lms7002_pnlRFE_view::ParameterChangeHandler(wxSpinEvent& event)

@@ -159,9 +159,17 @@ void lms7002_pnlTRF_view::UpdateGUI()
     cmbTXFEoutput->SetSelection(TXFEoutputValue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    auto ch = lmsControl->GetActiveChannel();
+    if (ch >= LMS7002M::ChB)
     {
+        lmsControl->SetActiveChannel(LMS7002M::ChA);
         if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
+        if (lmsControl->Get_SPI_Reg_bits(EN_NEXTTX_TRF) != 1)
+            wxMessageBox(_("Tx MIMO mode not enabled, EN_NEXTTX_TRF=0"), _("Warning"));
+        lmsControl->SetActiveChannel(ch);
+        chkEN_NEXTTX_TRF->Hide();
     }
+    else
+        chkEN_NEXTTX_TRF->Show();
 }

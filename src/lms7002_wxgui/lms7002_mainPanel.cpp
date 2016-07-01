@@ -315,3 +315,19 @@ void lms7002_mainPanel::OnSyncABchecked(wxCommandEvent& event)
     }
     UpdateVisiblePanel();
 }
+
+void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
+{
+    auto ch = lmsControl->GetActiveChannel();
+    bool enable = chkEnableMIMO->IsChecked();
+    lmsControl->SetActiveChannel(LMS7002M::ChA);
+    lmsControl->Modify_SPI_Reg_bits(EN_NEXTRX_RFE, enable);
+    lmsControl->Modify_SPI_Reg_bits(EN_NEXTTX_TRF, enable);
+    lmsControl->Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
+    lmsControl->Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
+    lmsControl->Modify_SPI_Reg_bits(PD_TX_AFE1, 0);
+    lmsControl->Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
+    lmsControl->Modify_SPI_Reg_bits(MIMO_SISO, 0);
+    lmsControl->SetActiveChannel(ch);
+    UpdateVisiblePanel();
+}
