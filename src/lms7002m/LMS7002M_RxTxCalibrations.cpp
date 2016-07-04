@@ -425,19 +425,22 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
-    //need to update interface frequency for samples acquisition
-    //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
-    int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-    float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
-    if (decimation != 7)
-        interfaceRx_Hz /= pow(2.0, decimation);
-    int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    float interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
-    if (interpolation != 7)
-        interfaceTx_Hz /= pow(2.0, interpolation);
-    const int channelsCount = 2;
-    SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-    controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+if(useExtLoopback || useFFT)
+    {
+        //need to update interface frequency for samples acquisition
+        //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
+        int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
+        if (decimation != 7)
+            interfaceRx_Hz /= pow(2.0, decimation);
+        int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        float interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
+        if (interpolation != 7)
+            interfaceTx_Hz /= pow(2.0, interpolation);
+        const int channelsCount = 2;
+        SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
+        controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+    }
 #endif
     return 0;
 }
