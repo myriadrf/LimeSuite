@@ -593,7 +593,7 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "BB")
     {
-        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?CMIX_BYP_TXTSP:CMIX_BYP_RXTSP) == 0 ? 1 : -1;
+        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?CMIX_SC_TXTSP:CMIX_SC_RXTSP) == 0 ? 1 : -1;
         return rfic->GetNCOFrequency(lmsDir, 0) * sign;
     }
 
