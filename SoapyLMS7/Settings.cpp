@@ -573,11 +573,14 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
             rfic->Modify_SPI_Reg_bits(CMIX_SC_TXTSP, (frequency < 0)?1:0);
             break;
         }
-        rfic->SetNCOFrequency(lmsDir, 0, abs(frequency));
+        if (rfic->SetNCOFrequency(lmsDir, 0, abs(frequency)) != 0)
+        {
+            throw std::runtime_error(lime::GetLastErrorMessage());
+        }
         return;
     }
 
-    throw std::runtime_error("SoapyLMS7::getFrequency("+name+") unknown name");
+    throw std::runtime_error("SoapyLMS7::setFrequency("+name+") unknown name");
 }
 
 double SoapyLMS7::getFrequency(const int direction, const size_t channel, const std::string &name) const
@@ -624,6 +627,13 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
         const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
         ranges.push_back(SoapySDR::Range(-dspRate/2, dspRate/2));
     }
+    return ranges;
+}
+
+SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size_t channel) const
+{
+    SoapySDR::RangeList ranges;
+    ranges.push_back(SoapySDR::Range(0.0, 3.8e9));
     return ranges;
 }
 
