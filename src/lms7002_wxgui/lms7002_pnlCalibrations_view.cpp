@@ -43,7 +43,6 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         lmsControl->EnableCalibrationByMCU(false);
         useExtLoopback = true;
     }
-    lmsControl->EnableCalibrationByMCU(true);
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
     int status;
