@@ -473,7 +473,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
     }
 #endif
     return 0;
@@ -548,7 +548,7 @@ uint32_t LMS7002M::GetRSSI()
     std::vector<float_type> windowF;
     float_type amplitudeCorr = 1;
     GenerateWindowCoefficients(2, fftSize, windowF, amplitudeCorr);
-    IConnection* port = controlPort;
+    IConnection* port = dataPort;
 
     fpga::StopStreaming(port);
     StreamConfig config;
@@ -1168,7 +1168,7 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
     }
 #endif
     return 0;

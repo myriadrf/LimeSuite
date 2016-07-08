@@ -601,7 +601,7 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::UpdateConnections(IConnection* lms7controlPort, IConnection* streamBoardPort)
 {
     if(lmsControl)
-        lmsControl->SetConnection(lms7controlPort);
+        lmsControl->SetConnection(lms7controlPort, 0, streamBoardPort);
     if(si5351module)
         si5351module->Initialize(lms7controlPort);
     if(fftviewer)

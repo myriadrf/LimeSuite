@@ -100,7 +100,7 @@ void LMS7002M::Log(LogType type, const char *format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
+void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnection* samplesPort)
 {
     controlPort = port;
     mdevIndex = devIndex;
@@ -110,6 +110,10 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
         addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
         mcuControl->Initialize(port);
     }
+    if(samplesPort == nullptr)
+        dataPort = controlPort;
+    else
+        dataPort = samplesPort;
 }
 
 /** @brief Creates LMS7002M main control object.
@@ -117,6 +121,7 @@ It requires IConnection to be set by SetConnection() to communicate with chip
 */
 LMS7002M::LMS7002M() :
     controlPort(nullptr),
+    dataPort(nullptr),
     addrLMS7002M(-1),
     mdevIndex(0),
     mSelfCalDepth(0),
