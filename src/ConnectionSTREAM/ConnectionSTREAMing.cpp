@@ -19,8 +19,6 @@
 using namespace lime;
 using namespace std;
 
-#define STREAM_MTU (PacketFrame::maxSamplesInPacket/(2))
-
 /***********************************************************************
  * Streaming API implementation
  **********************************************************************/
@@ -67,7 +65,22 @@ int ConnectionSTREAM::CloseStream(const size_t streamID)
 
 size_t ConnectionSTREAM::GetStreamSize(const size_t streamID)
 {
-    return 680;
+    uint16_t channelEnables = 0;
+    for(uint8_t i=0; i<mRxStreams.size(); ++i)
+        channelEnables |= (1 << mRxStreams[i]->config.channelID);
+    for(uint8_t i=0; i<mTxStreams.size(); ++i)
+        channelEnables |= (1 << mTxStreams[i]->config.channelID);
+    uint8_t uniqueChannelCount = 0;
+    for(uint8_t i=0; i<16; ++i)
+    {
+        uniqueChannelCount += (channelEnables & 0x1);
+        channelEnables >>= 1;
+    }
+    //if no channels are setup return smallest number of samples in packet
+    if(uniqueChannelCount == 0)
+        return 680;
+    else
+        return 1360/uniqueChannelCount;
 }
 
 int ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable)
