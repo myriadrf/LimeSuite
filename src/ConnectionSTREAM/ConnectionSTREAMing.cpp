@@ -108,10 +108,14 @@ int ConnectionSTREAM::WriteStream(const size_t streamID, const void* buffs, cons
 
 int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
 {
-    //auto *stream = (USBStreamServiceChannel *)streamID;
-
-   //TODO
-    return -1;
+    assert(streamID != 0);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
+    StreamChannel::Info info = channel->GetInfo();
+    metadata.hasTimestamp = true;
+    metadata.timestamp = info.timestamp;
+    metadata.lateTimestamp = info.underrun > 0;
+    metadata.packetDropped = info.droppedPackets > 0;
+    return 0;
 }
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
