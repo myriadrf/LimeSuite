@@ -27,6 +27,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     LMS_StreamBoard/LMS_StreamBoard.h
     LMS_StreamBoard/LMS_StreamBoard_FIFO.h
     FPGA_common/FPGA_common.h
+    lime/LimeSuite.h
 )
 
 include(FeatureSummary)
@@ -66,7 +67,7 @@ set(LIME_SUITE_SOURCES
     API/lms7_api.cpp
     API/lms7_device.cpp
     FPGA_common/FPGA_common.cpp
-    lime/LimeSuite.h
+    windowFunction.cpp
 )
 
 set(LIME_SUITE_INCLUDES

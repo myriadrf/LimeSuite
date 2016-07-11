@@ -230,7 +230,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         units.push_back("");
     }
 
-    
+
     for (int i = 0; i < mADCparameters.size(); ++i)
     {
         float_type value;
@@ -315,7 +315,7 @@ void pnlBoardControls::UpdatePanel()
 std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDR) 
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_QSPARK))
     {
@@ -454,10 +454,10 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
             //write to chip
             lms_name_t units;
             strncpy(units,mDACparameters[i].units.c_str(),sizeof(lms_name_t)-1);
-            
-            if (lmsControl)
+
+            if (lmsControl == nullptr)
                 return;
-            
+
             int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,units);
             if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
@@ -506,7 +506,7 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
     int powerOf10 = cmbCustomPowerOf10Wr->GetSelection()*3;
     lms_name_t units;
     strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
- 
+
     double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
 
 

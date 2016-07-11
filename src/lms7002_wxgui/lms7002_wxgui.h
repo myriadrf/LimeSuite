@@ -37,13 +37,13 @@ class lms7002_pnlXBUF_view;
 #include <wx/settings.h>
 #include <wx/radiobut.h>
 #include <wx/sizer.h>
+#include <wx/checkbox.h>
 #include <wx/stattext.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/notebook.h>
-#include <wx/checkbox.h>
 #include <wx/statbox.h>
 #include <wx/combobox.h>
 #include <wx/spinctrl.h>
@@ -96,10 +96,12 @@ class mainPanel : public wxPanel
 		wxButton* ID_BUTTON3;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
+		wxCheckBox* chkSyncAB;
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
 		wxStaticText* txtTemperature;
+		wxCheckBox* chkEnableMIMO;
 		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
 		
@@ -109,9 +111,11 @@ class mainPanel : public wxPanel
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSyncABchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		

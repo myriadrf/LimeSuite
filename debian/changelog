@@ -1,3 +1,10 @@
+limesuite (16.6.6.818) unstable; urgency=low
+
+  * updated debian packaging for latest version.h
+
+ -- Lime Microsystems <info@limemicro.com>  Sun, 26 Jun 2016 09:24:35 -0700
+
+
 limesuite (16.5.12.816) unstable; urgency=low
 
   * debian packaging work for lime suite

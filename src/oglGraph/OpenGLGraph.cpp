@@ -26,6 +26,13 @@ using namespace std;
 const unsigned int OpenGLGraph::mMarkerColors[] = {0x000000FF, 0x0000FFFF, 0xFF0000FF, 0xFF7F00FF, 0x007FFFFF, 0xFF00FFFF, 0x007F00FF, 0x00007FFF, 0x7F0000FF, 0x00FF00FF};
 const long markers_timer_id = wxNewId();
 
+const int OpenGLGraph::GLCanvasAttributes[8] = {
+    WX_GL_RGBA,
+    WX_GL_DOUBLEBUFFER,
+    WX_GL_DEPTH_SIZE, 16,
+    WX_GL_STENCIL_SIZE, 0,
+    0, 0 } ;
+
 GLG_settings::GLG_settings() :
 	title(""), titleXaxis(""), titleYaxis(""),
 	xUnits(""), yUnits(""),
@@ -53,8 +60,8 @@ GLG_settings::GLG_settings() :
 OpenGLGraph::OpenGLGraph(wxWindow* parent,  wxWindowID id = -1,
                     const wxPoint& pos = wxDefaultPosition,
                     const wxSize& size = wxDefaultSize,
-                    long style=0, const wxString& name="GLCanvas",
-                    int* args = 0)
+                    long style=0, const wxString& name,
+                    const int* args)
     : wxGLCanvas(parent, id, args, pos, size, wxNO_FULL_REPAINT_ON_RESIZE),
 initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
 {

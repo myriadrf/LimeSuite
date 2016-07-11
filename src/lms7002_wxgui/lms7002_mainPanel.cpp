@@ -33,6 +33,8 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 {
     mTabMCU = new lms7002_pnlMCU_BD_view(tabsNotebook);
     tabsNotebook->AddPage(mTabMCU, _("MCU"));
+
+    chkSyncAB->Hide();
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
@@ -168,9 +170,6 @@ void lms7002_mainPanel::UpdateGUI()
     }
 
     UpdateVisiblePanel();
-#ifndef NDEBUG
-    cout << "GUI update time: " << (t2 - t1).ToString() << endl;
-#endif
 }
 
 void lms7002_mainPanel::OnNewProject( wxCommandEvent& event )
@@ -252,9 +251,14 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
-        rbChannelA->Enable();
-        rbChannelB->Enable();
+        if(chkSyncAB->IsChecked())
+            LMS_WriteParam(lmsControl,LMS7param(MAC), 3);
+        else
+        {
+            LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
+            rbChannelA->Enable();
+            rbChannelB->Enable();
+        }
     }
 
 #ifdef __APPLE__
@@ -289,8 +293,50 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
-    
+
     double t;
     LMS_GetChipTemperature(lmsControl,0,&t);
     txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));
+}
+
+void lms7002_mainPanel::OnSyncABchecked(wxCommandEvent& event)
+{
+    /*
+    rbChannelA->Enable(!chkSyncAB->IsChecked());
+    rbChannelB->Enable(!chkSyncAB->IsChecked());
+    if(chkSyncAB->IsChecked())
+    {
+        int status = lmsControl->CopyChannelRegisters(LMS7002M::ChA, LMS7002M::ChB, false);
+        if(status != 0)
+            wxMessageBox(wxString::Format(_("Failed to copy A to B: %s"), wxString::From8BitData(GetLastErrorMessage())), _("Error"));
+        wxNotebookPage* page = tabsNotebook->GetCurrentPage();
+        if(page != mTabSXR && page != mTabSXT)
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChAB);
+    }
+    else
+    {
+        if(rbChannelA->GetValue() != 0)
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChA);
+        else
+            lmsControl->SetActiveChannel(lime::LMS7002M::ChB);
+    }
+    UpdateVisiblePanel();
+    */
+}
+
+void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
+{
+    uint16_t chBck;
+    LMS_ReadParam(lmsControl, LMS7param(MAC), &chBck);
+    bool enable = chkEnableMIMO->IsChecked();
+    LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
+    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTRX_RFE), enable);
+    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTTX_TRF), enable);
+    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE1), 0);
+    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE2), 0);
+    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE1), 0);
+    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE2), 0);
+    LMS_WriteParam(lmsControl, LMS7param(MIMO_SISO), 0);
+    LMS_WriteParam(lmsControl, LMS7param(MAC), chBck);
+    UpdateVisiblePanel();
 }

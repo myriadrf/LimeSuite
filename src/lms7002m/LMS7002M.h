@@ -60,8 +60,9 @@ public:
      * Set the connection for the LMS7002M driver.
      * \param port the connection interface
      * \param devIndex which RFIC index (default 0 for most devices)
+     * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(IConnection* port, const size_t devIndex = 0);
+    void SetConnection(IConnection* port, const size_t devIndex = 0, IConnection* dataPort = nullptr);
 
     IConnection *GetConnection(void) const
     {
@@ -115,6 +116,7 @@ public:
     int UploadAll();
     int DownloadAll();
     bool IsSynced();
+    int CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
 	int ResetChip();
 
@@ -475,6 +477,7 @@ protected:
 
     ///port used for communicating with LMS7002M
     IConnection* controlPort;
+    IConnection* dataPort; //device for samples data
     int addrLMS7002M;
     size_t mdevIndex;
     size_t mSelfCalDepth;

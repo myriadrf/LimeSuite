@@ -31,7 +31,6 @@ int fftBin = 0; //which bin to use when calibrating using FFT
 #ifdef ENABLE_CALIBRATION_USING_FFT
     bool useFFT = false; //digital RSSI or FFT from GetRSSI()
     const int gFFTSize = 16384;
-    int fftBin = 0; //which bin to use when calibrating using FFT
     int srcBin = 569; //recalculated to be at 100 kHz bin;
 
 //    #define DRAW_GNU_PLOTS
@@ -389,6 +388,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), 3000); //to filter aliasing
+        Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0);
     }
     else
     {
@@ -425,14 +425,47 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
-if(useExtLoopback || useFFT)
+    if(useExtLoopback || useFFT)
     {
+        //limelight
+        Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
+        if(ch == 1)
+        {
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1); //pos0, AQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0); //pos1, AI
+        }
+        else if(ch == 2)
+        {
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 3); //pos0, BQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 2); //pos1, BI
+        }
         //need to update interface frequency for samples acquisition
         //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
         int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
+        //need to adjust decimation to fit into USB speed
+        float rateLimit_Bps;
+        DeviceInfo info = controlPort->GetDeviceInfo();
+        if(info.deviceName == GetDeviceName(LMS_DEV_STREAM))
+            rateLimit_Bps = 110e6;
+        else if(info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
+            rateLimit_Bps = 300e6;
+        else if(info.deviceName == GetDeviceName(LMS_DEV_ULIMESDR))
+            rateLimit_Bps = 300e6;
+        else
+            rateLimit_Bps = 400e6;
+
+        decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
+        if(decimation < 0)
+            decimation = 0;
+        if(decimation > 4)
+            decimation = 4;
         if (decimation != 7)
             interfaceRx_Hz /= pow(2.0, decimation);
+
         int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         float interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
@@ -514,13 +547,12 @@ uint32_t LMS7002M::GetRSSI()
     std::vector<float_type> windowF;
     float_type amplitudeCorr = 1;
     GenerateWindowCoefficients(2, fftSize, windowF, amplitudeCorr);
-    IConnection* port = controlPort;
+    IConnection* port = dataPort;
 
     fpga::StopStreaming(port);
     StreamConfig config;
-    const int channelsCount = 2;
+    const int channelsCount = 1;
     config.channels.push_back(0);
-    config.channels.push_back(1);
     config.format = StreamConfig::STREAM_12_BIT_IN_16;
     config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
     config.isTx = false;
@@ -741,7 +773,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     LMS7002M_SelfCalState state(this);
 
     Log("Tx calibration started", LOG_INFO);
-    BackupAllRegisters();
+    auto registersBackup = BackupRegisterMap();
 
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_Hz, useExtLoopback);
@@ -768,10 +800,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     {
 #ifdef ENABLE_CALIBRATION_USING_FFT
         {
-            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/2/gFFTSize;
+            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
             offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
         }
-        srcBin = (gFFTSize/2)*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
+        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
         fftBin = srcBin;
 #endif // ENABLE_CALIBRATION_USING_FFT
         CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
@@ -848,7 +880,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 TxCalibrationEnd:
     Log("Restoring registers state", LOG_INFO);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-    RestoreAllRegisters();
+    RestoreRegisterMap(registersBackup);
+    //RestoreAllRegisters();
 
     if(status != 0)
     {
@@ -1073,19 +1106,9 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0);
     }
-
     SetNCOFrequency(Rx, 0, bandwidth_Hz/calibUserBwDivider - offsetNCO);
-
-    if(useExtLoopback)
-    {
-        //limelight
-        Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 1);
-        Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 1);
-        Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
-        Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
-    }
-
     //modifications when calibrating channel B
     if(ch == 2)
     {
@@ -1099,9 +1122,41 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 #ifdef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback || useFFT)
     {
+        //limelight
+        Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
+        if(ch == 1)
+        {
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1); //pos0, AQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0); //pos1, AI
+        }
+        else if(ch == 2)
+        {
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 3); //pos0, BQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 2); //pos1, BI
+        }
         //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
         int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
+        //need to adjust decimation to fit into USB speed
+        float rateLimit_Bps;
+        DeviceInfo info = controlPort->GetDeviceInfo();
+        if(info.deviceName == GetDeviceName(LMS_DEV_STREAM))
+            rateLimit_Bps = 110e6;
+        else if(info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
+            rateLimit_Bps = 300e6;
+        else if(info.deviceName == GetDeviceName(LMS_DEV_ULIMESDR))
+            rateLimit_Bps = 300e6;
+        else
+            rateLimit_Bps = 400e6;
+
+        decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
+        if(decimation < 0)
+            decimation = 0;
+        if(decimation > 4)
+            decimation = 4;
         if (decimation != 7)
             interfaceRx_Hz /= pow(2.0, decimation);
         int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
@@ -1110,7 +1165,7 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
     }
 #endif
     return 0;
@@ -1190,7 +1245,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     Log("Rx calibration started", LOG_INFO);
     Log("Saving registers state", LOG_INFO);
-    BackupAllRegisters();
+    //BackupAllRegisters();
+    auto registersBackup = BackupRegisterMap();
     if(sel_path_rfe == 1 || sel_path_rfe == 0)
         return ReportError(EINVAL, "Rx Calibration: bad SEL_PATH");
 
@@ -1338,7 +1394,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
 RxCalibrationEndStage:
     Log("Restoring registers state", LOG_INFO);
-    RestoreAllRegisters();
+    //RestoreAllRegisters();
+    RestoreRegisterMap(registersBackup);
 
     if (status != 0)
     {

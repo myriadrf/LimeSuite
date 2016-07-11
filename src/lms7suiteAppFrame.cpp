@@ -189,6 +189,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     wxCommandEvent event;
     OnControlBoardConnect(event);
 
+    SetMinSize(GetBestSize());
     UpdateConnections(lmsControl);
 
     mnuCacheValues->Check(false);

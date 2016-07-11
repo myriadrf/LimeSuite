@@ -20,6 +20,9 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
 :
 frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
 {
+    chkCaptureToFile->Disable();
+    spinCaptureCount->Disable();
+    cmbWindowFunc->Disable();
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
@@ -415,4 +418,9 @@ void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
     mConstelationPanel->series[1]->visible = visibilities[1];
     mFFTpanel->series[0]->visible = visibilities[0];
     mFFTpanel->series[1]->visible = visibilities[1];
+}
+
+void fftviewer_frFFTviewer::OnbtnCaptureClick(wxCommandEvent& event)
+{
+
 }

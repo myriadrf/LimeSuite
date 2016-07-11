@@ -36,6 +36,7 @@ public:
 
     void StartStreaming();
     void StopStreaming();
+    void OnbtnCaptureClick(wxCommandEvent& event);
 
 protected:
 
