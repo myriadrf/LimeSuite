@@ -108,12 +108,9 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info,
 /**
  * Close device
  *
- * @note     Failing to close a device will result in memory leaks.
- *
  * @post     device is deallocated and may no longer be used.
  *
- * @param    device  Device handle previously obtained by LMS_Open(). This
- *              function does nothing  and returns (-1) if device is NULL.
+ * @param    device  Device handle previously obtained by LMS_Open().
  *
  * @return   0 on success, (-1) on failure
  */
@@ -123,8 +120,7 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 /**
  * Disconnect device but keep configuration cache (device is not deallocated).
  *
- * @param   device  Device handle previously obtained by LMS_Open(). This
- *                  function does nothing  and returns (-1) if device is NULL.
+ * @param   device  Device handle previously obtained by LMS_Open().
  *
  * @return   0 on success, (-1) on failure
  */
@@ -133,8 +129,7 @@ API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
 /**
  * Checks if device port is opened
  *
- * @param   device  Device handle previously obtained by LMS_Open(). This
- *                  function does nothing  and returns (-1) if device is NULL.
+ * @param   device  Device handle previously obtained by LMS_Open().
  * @param   port    0 - control port, 1- data port
  *
  * @return   true(1) if port is open, false (0) if - closed
@@ -421,6 +416,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx,
  * @param   dir_tx      Select RX or TX
  * @param   chan        channel index
  * @param   bw          bandwidth
+ * @param   flags       additional calibration flags (normally should be 0)
  *
  * @return  0 on success, (-1) on failure
  */
@@ -1166,163 +1162,158 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind,
 /**Metadata structure used in sample transfers*/
 typedef struct
 {
-    /* Timestamp is a value of HW counter with a tick based on sample rate.
+    /**Timestamp is a value of HW counter with a tick based on sample rate.
      * In RX: time when the first sample in the returned buffer was received
      * In TX: time when the first sample in the submitted buffer should be send
      */
     uint64_t timestamp;
 
+    //! Enables usage of timestamp
+    bool enableTimestamp;
+
     /**In TX indicated whether submitted buffer should be sent using
      * synchronization based on timestamp.*/
-    bool has_timestamp;
+    bool waitForTimestamp;
 
     /**Indicates the end of send/receive transaction. Discards data remainder
      * in buffer (if there is any) in RX or flushes transfer buffer in TX (even
      * if the buffer is not full yet).*/
-    bool end_of_burst;
+    bool flushPartialPacket;
 
 }lms_stream_meta_t;
 
-
-
-
+/**Stream structure*/
 typedef struct
 {
-    size_t fifoSize;
-    size_t transferSize;
-    size_t numTransfers;
-    uint32_t channels;
+    /**Stream handle. Should not be modified manually.
+     * Assigned by LMS_SetupStream().
+     */
+    size_t handle;
+
+    //! Indicates whether stream is TX (true) or RX (false)
+    bool isTx;
+
+    //! Channel number. Starts at 0.
+    uint32_t channel;
+
+    //! FIFO size (in samples) used by stream.
+    uint32_t fifoSize;
+
+    //! @todo document throuhputVsLatency
+    float throuhputVsLatency;
+
+    //! Data output format
     enum
     {
-      LMS_FMT_F32=0,
-      LMS_FMT_I16
+        LMS_FMT_F32=0,    /**<32-bit floating point*/
+        LMS_FMT_I16       /**<16-bit integers*/
     }dataFmt;
+}lms_stream_t;
 
-    enum
-    {
-        LMS_LINK_AUTO=0,
-        LMS_LINK_12BIT,
-        LMS_LINK_16BIT
-    }linkFmt;
-
-}lms_stream_conf_t;
-
-
+/**Streaming status structure*/
 typedef struct
 {
-    double rxRate;
-    double txRate;
-    uint32_t rx_fifo_filled;
-    uint32_t tx_fifo_filled;
-    uint32_t rx_fifo_size;
-    uint32_t tx_fifo_size;
-    uint32_t reserved[8];
-}lms_stream_status_t;
+    /**Indicates whether the stream is currently active*/
+    bool active;
+    /**Number of samples in FIFO buffer*/
+    uint32_t fifoFilledCount;
+    /**Size of FIFO buffer*/
+    uint32_t fifoSize;
+    /**FIFO underrun count*/
+    uint32_t underrun;
+    /**FIFO overrun count*/
+    uint32_t overrun;
+    /**Number of dropped packets by HW*/
+    uint32_t droppedPackets;
+    /**Sampling rate of the stream*/
+    float_type sampleRate;
+    /**Combined data rate of all stream of the same direction (TX or RX)*/
+    float_type linkRate;
+    /**Current HW timestamp*/
+    uint64_t timestamp;
 
+} lms_stream_status_t;
 
 /**
- * Configures devices for specific streaming mode overriding default/automatic
- * settings.
+ * Create new stream based on parameters passed in configuration structure.
+ * The structure is initialized with stream handle.
  *
  * @param device    Device handle previously obtained by LMS_Open().
- * @param conf      Configuration .See the ::lms_stream_conf_t description.
+ * @param stream    Stream configuration .See the ::lms_stream_t description.
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t conf);
+API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *stream);
 
 /**
-* Deallocates memory used for streaming
-*
-* @param device    Device handle previously obtained by LMS_Open().
-*
-* @return      0 on success, (-1) on failure
-*/
-API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device);
-
-/**
- * Starts RX/TX stream
+ * Deallocate memory used for stream.
+ * @todo
+ * @param stream Stream structure previously initialized with LMS_SetupStream().
  *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param dir_tx        Select RX or TX
- *
- * @return      0 on success, (-1) on failure
+ * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx);
-
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream);
 
 /**
- * Stops RX/TX stream
+ * Start stream
  *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param dir_tx        Select RX or TX
+ * @param stream Stream structure previously initialized with LMS_SetupStream().
  *
- * @return      0 on success, (-1) on failure
+ * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx);
+API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream);
+
 
 /**
- * Receive samples from all active RX channels.
- * The number of sample buffers must be at least the same as active channels.
- * Sample buffers must be big enough to hold requested number of samples.
+ * Stop stream
  *
- * @pre RX stream is configured using LMS_ConfigRx()
+ * @param stream Stream structure previously initialized with LMS_SetupStream().
  *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param samples       pointers to sample buffers (for each active channel).
- * @param sample_count  Number of samples to read from each channel
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *conf);
+
+/**
+ * Read samples from the FIFO of the specified stream.
+ * Sample buffer must be big enough to hold requested number of samples.
+ *
+ * @param stream        structure previously initialized with LMS_SetupStream().
+ * @param samples       sample buffer.
+ * @param sample_count  Number of samples to read
  * @param meta          Metadata. See the ::lms_stream_meta_t description.
  * @param timeout_ms    how long to wait for data before timing out(0=infinite).
  *
- * @return      on success number of samples received, (-1) on failure
+ * @return number of samples received on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples,
-         size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
+ API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples,
+             size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms);
 
 /**
- * Get stream operation status 
- * 
- * @param device     Device handle previously obtained by LMS_Open().
- * @param status     Streaming status
- *    
- * @return      0 on success, (-1) on failure
+ * Get stream operation status
+ *
+ * @param stream    structure previously initialized with LMS_SetupStream().
+ * @param status    Stream status. See the ::lms_stream_status_t for description
+ *
+ * @return  0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t* status);
+API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t* status);
 
 /**
- * Send samples to active TX channels.
- * The number of sample buffers must be at least the same as active channels.
+ * Write samples to the FIFO of the specified stream.
  *
- * @pre TX stream is configured using LMS_ConfigTx()
- *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param samples       pointers to sample buffers (for each active channel).
- * @param sample_count  Number of samples to write to each channel
+ * @param stream        structure previously initialized with LMS_SetupStream().
+ * @param samples       sample buffer.
+ * @param sample_count  Number of samples to write
  * @param meta          Metadata. See the ::lms_stream_meta_t description.
  * @param timeout_ms    how long to wait for data before timing out(0=infinite).
  *
- * @return      0 on success, (-1) on failure
+ * @return number of samples send on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device,
-                              const void **samples,size_t sample_count,
+API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
+                            const void *samples,size_t sample_count,
                             const lms_stream_meta_t *meta, unsigned timeout_ms);
 
-/**
- *
- * @pre TX stream is configured using LMS_ConfigTx()
- *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param samples       pointers to sample buffers (for each active channel).
- * @param sample_count  Number of samples to write to each channel
- * @return      0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device,
-                            const void **samples,size_t sample_count);
-API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device);
-
 /** @} (End FN_STREAM) */
-
-
 
 
 /**
@@ -1375,17 +1366,26 @@ typedef struct
 
 /**
  * Get device serial number and version information
- * 
+ *
  * @note This function returns pointer to internal data structure that gets
  * deallocated when device is closed. Do not attempt to read from it after
- * closing the device. If you need to keep using device info returned by this 
+ * closing the device. If you need to keep using device info returned by this
  * function after closing the device, make a copy before closing the device.
- * 
+ *
  * @param device    Device handle previously obtained by LMS_Open().
  * @return          pointer to device info structure
  */
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device);
 
+/**
+ * @brief Returns API library build type
+*/
+API_EXPORT const char* LMS_GetBuildTimestamp();
+
+/**
+* @brief Returns API library version
+*/
+API_EXPORT const char* LMS_GetLibraryVersion();
 
 /*!
  * Callback from programming processes
@@ -1510,16 +1510,6 @@ API_EXPORT int CALL_CONV LMS_GetLastError(void);
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
 
 /** @} (End FN_ERRORS) */
-
-/**
- * @brief Returns library build type
-*/
-API_EXPORT const char* LMS_GetBuildTimestamp();
-
-/**
-* @brief Returns library version
-*/
-API_EXPORT const char* LMS_GetLibraryVersion();
 
 #ifdef __cplusplus
 } //extern "C"

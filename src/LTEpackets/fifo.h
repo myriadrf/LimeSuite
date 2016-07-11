@@ -41,17 +41,17 @@ public:
 		@param bufLength FIFO size, must be power of 2
 	*/
 	LMS_SamplesFIFO(uint32_t bufLength, uint8_t channelsCount)
-	{   
+	{
         mBuffer = nullptr;
         mBufferSize = 0;
         Reset(bufLength, channelsCount);
 	}
-	
+
 	~LMS_SamplesFIFO()
-    {   
+    {
         delete []mBuffer;
     };
-	
+
     /** @brief inserts samples to FIFO, operation is thread-safe
     @param buffer pointers to arrays containing samples data of each channel
     @param samplesCount number of samples to insert from each buffer channel
@@ -66,7 +66,7 @@ public:
         uint32_t samplesTaken = 0;
         std::unique_lock<std::mutex> lck(writeLock);
         while (samplesTaken < samplesCount)
-        {   
+        {
             while (mElementsFilled.load() >= mBufferSize) //buffer might be full, wait for free slots
             {
                 if (canWrite.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
@@ -84,7 +84,7 @@ public:
                 {
                     const int sampleIndex = mBuffer[tailIndex].last;
                     for (int ch = 0; ch < channelsCount; ++ch)
-                    { 
+                    {
                         mBuffer[tailIndex].samples[ch][sampleIndex] = buffer[ch][samplesTaken];
                     }
                     ++samplesTaken;
@@ -98,7 +98,7 @@ public:
         }
         return samplesTaken;
     }
-	
+
     /** @brief Takes samples out of FIFO, operation is thread-safe
         @param buffer pointers to destination arrays for each channel's samples data, each array must be big enough to contain \samplesCount number of samples.
         @param samplesCount number of samples to pop
@@ -109,32 +109,31 @@ public:
         @return number of samples popped
     */
     uint32_t pop_samples(complex16_t** buffer, const uint32_t samplesCount, const uint8_t channelsCount, uint64_t *timestamp, const uint32_t timeout_ms, uint32_t *flags = nullptr)
-	{   
+	{
         assert(buffer != nullptr);
-        uint32_t samplesFilled = 0;		
-		*timestamp = 0;
+        uint32_t samplesFilled = 0;
         if (flags != nullptr) *flags = 0;
         std::unique_lock<std::mutex> lck(readLock);
         while (samplesFilled < samplesCount)
-        {   
+        {
             while (mElementsFilled.load() == 0) //buffer might be empty, wait for packets
             {
                 if (timeout_ms == 0) return samplesFilled;
                 if (canRead.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
                     return samplesFilled;
             }
-			if(samplesFilled == 0)
+			if(samplesFilled == 0 && timestamp != nullptr)
                 *timestamp = mBuffer[mHead.load()].timestamp + mBuffer[mHead.load()].first;
-			
+
 			while(mElementsFilled.load() > 0 && samplesFilled < samplesCount)
-			{	
+			{
 				int headIndex = mHead.load();
                 if (flags != nullptr) *flags |= mBuffer[headIndex].flags;
                 while (mBuffer[headIndex].first < mBuffer[headIndex].last && samplesFilled < samplesCount)
 				{
                     for (int ch = 0; ch < channelsCount; ++ch)
-                    {   
-                        buffer[ch][samplesFilled] = mBuffer[headIndex].samples[ch][mBuffer[headIndex].first];                        
+                    {
+                        buffer[ch][samplesFilled] = mBuffer[headIndex].samples[ch][mBuffer[headIndex].first];
                     }
                     ++mBuffer[headIndex].first;
                     ++samplesFilled;
@@ -153,7 +152,7 @@ public:
         }
         return samplesFilled;
 	}
-	
+
     /** @brief Changes FIFO length and resets internal counter
 		@param bufLength FIFO length, must be power of 2
     */
@@ -170,7 +169,7 @@ public:
                 mBuffer[i].Initialize(channelsCount);
             mBufferSize = bufLength;
         }
-        
+
 		mHead.store(0);
 		mTail.store(0);
         mElementsFilled.store(0);
@@ -180,7 +179,7 @@ public:
     {
         return mChannelsCount;
     }
-	
+
 protected:
     int8_t mChannelsCount;
     uint32_t mBufferSize;

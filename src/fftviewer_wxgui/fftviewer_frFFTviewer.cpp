@@ -4,6 +4,9 @@
 #include "OpenGLGraph.h"
 #include <LMSBoards.h>
 #include "kiss_fft.h"
+#include "IConnection.h"
+#include "dataTypes.h"
+#include "LMS7002M.h"
 
 using namespace std;
 using namespace lime;
@@ -46,7 +49,7 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
     mTimeDomainPanel->AddSerie(new cDataSerie());
-    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -1.0, 1.0);
+    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -2050, 2050);
     mTimeDomainPanel->settings.title = "IQ samples";
     mTimeDomainPanel->series[0]->color = 0xFF0000FF;
     mTimeDomainPanel->series[1]->color = 0x0000FFFF;
@@ -59,7 +62,7 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
     mConstelationPanel->AddSerie(new cDataSerie());
     mConstelationPanel->series[0]->color = 0xFF0000FF;
     mConstelationPanel->series[1]->color = 0x0000FFFF;
-    mConstelationPanel->SetInitialDisplayArea(-1.0, 1, -1.0, 1.0);
+    mConstelationPanel->SetInitialDisplayArea(-2050, 2050, -2050, 2050);
     mConstelationPanel->SetDrawingMode(GLG_POINTS);
     mConstelationPanel->settings.title = "I versus Q";
     mConstelationPanel->settings.titleXaxis = "I";
@@ -123,16 +126,16 @@ void fftviewer_frFFTviewer::StartStreaming()
     switch (cmbStreamType->GetSelection())
     {
     case 0:
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
+        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
         break;
     case 1: //SISO
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
+        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
         break;
     case 2: //MIMO
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 2, 0);
+        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 2, 0);
         break;
     case 3: //SISO uncompressed samples
-        threadProcessing = std::thread(Streamer, this, spinFFTsize->GetValue(), 1, 0);
+        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
         break;
     }
 
@@ -160,17 +163,22 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     float RxRate = 0;
     float TxRate = 0;
 
-	if (mStreamRunning.load() == false)
-		return;
-        lms_stream_status_t stats;
-	LMS_GetStreamStatus(lmsControl,&stats);
-	RxFilled = (float)stats.rx_fifo_filled *100/ stats.rx_fifo_size;
-	TxFilled = (float)stats.tx_fifo_filled *100/ stats.tx_fifo_size;
-	RxRate = stats.rxRate;
-	TxRate = stats.txRate;
+    if (mStreamRunning.load() == false)
+        return;
+
+    lms_stream_status_t rxStats;
+    lms_stream_status_t txStats;
+    LMS_GetStreamStatus(&rxStreams[0],&rxStats);
+    LMS_GetStreamStatus(&txStreams[0],&txStats);
+    RxFilled = 100*(float)rxStats.fifoFilledCount/rxStats.fifoSize;
+    TxFilled = 100*(float)txStats.fifoFilledCount/txStats.fifoSize;
+
+    RxRate = rxStats.linkRate;
+    TxRate = txStats.linkRate;
 
     if (streamData.fftBins_dbFS[0].size() > 0)
     {
+        std::unique_lock<std::mutex> lck(graphsDataLock);
         std::vector<float> freqs;
         freqs.reserve(streamData.fftBins_dbFS[0].size());
         double nyquistMHz;
@@ -226,10 +234,11 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
     lblTxDataRate->SetLabel(printDataRate(TxRate));
 }
 
-void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
+void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
-    const int test_count = 4096*16;//4096*16;
-    float** buffers;
+    const int cMaxChCount = 2;
+    const int test_count = 680*26;//4096*16;
+    lime::complex16_t** buffers;
 
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
@@ -239,57 +248,93 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     localDataResults.samplesQ[1].resize(fftSize, 0);
     localDataResults.fftBins_dbFS[0].resize(fftSize, 0);
     localDataResults.fftBins_dbFS[1].resize(fftSize, 0);
-    buffers = new float*[channelsCount];
+    buffers = new lime::complex16_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
-        buffers[i] = new float[test_count*2];
+        buffers[i] = new complex16_t[test_count];
 
-    lms_stream_conf_t conf;
-    conf.channels = channelsCount == 1 ? 1 : 3;
-    conf.dataFmt = lms_stream_conf_t::LMS_FMT_F32;
-    conf.fifoSize = 16 * 1024 * 1024;
-    conf.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
-    conf.numTransfers = 16;
-    conf.transferSize = 4096*16;
+    for(int i=0; i<channelsCount; ++i)
+    {
+        pthis->rxStreams[i].channel = i;
+        pthis->rxStreams[i].fifoSize = test_count*40;
+        pthis->rxStreams[i].isTx = false;
+        pthis->rxStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
+        pthis->rxStreams[i].throuhputVsLatency = 1;
+        LMS_SetupStream(pthis->lmsControl, &pthis->rxStreams[i]);
 
-    LMS_SetupStream(pthis->lmsControl, conf);
+        pthis->txStreams[i].channel = i;
+        pthis->txStreams[i].fifoSize = test_count*40;
+        pthis->txStreams[i].isTx = true;
+        pthis->txStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
+        pthis->txStreams[i].throuhputVsLatency = 1;
+        LMS_SetupStream(pthis->lmsControl, &pthis->txStreams[i]);
+    }
 
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
     unsigned updateCounter = 0;
-    lms_stream_meta_t meta;
 
-    meta.has_timestamp = true;
-    meta.end_of_burst = false;
-    LMS_StartStream(pthis->lmsControl,LMS_CH_TX);
-    LMS_StartStream(pthis->lmsControl,LMS_CH_RX);
-	pthis->mStreamRunning.store(true);
+    for(int i=0; i<channelsCount; ++i)
+    {
+        LMS_StartStream(&pthis->rxStreams[i]);
+        LMS_StartStream(&pthis->txStreams[i]);
+    }
+
+    pthis->mStreamRunning.store(true);
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
+    lms_stream_meta_t meta;
+    meta.waitForTimestamp = false;
+    meta.enableTimestamp = true;
+
     while (pthis->stopProcessing.load() == false)
     {
         ++updateCounter;
+        uint32_t samplesPopped[2] = {0, 0};
+        uint64_t ts[2];
+        for(int i=0; i<channelsCount; ++i)
+        {
+            samplesPopped[i] += LMS_RecvStream(&pthis->rxStreams[i], &buffers[i][samplesPopped[i]], test_count, &meta, 1000);
+            ts[i] = meta.timestamp + 1024 * 1024*2;
+        }
 
-        uint32_t samplesPopped = LMS_RecvStream(pthis->lmsControl,(void**)buffers,test_count,&meta,1000);
-        if (samplesPopped <= 0)
-            break;
-        //Transmit earlier received packets with a counter delay
-        meta.timestamp += 512 * 1024;
-        uint32_t samplesPushed = LMS_SendStream(pthis->lmsControl,(const void**)buffers,samplesPopped,&meta,250);
-        if (samplesPushed < samplesPopped)
-            break;
+        uint32_t samplesPushed[2] = {0, 0};
+        for(int i=0; i<channelsCount; ++i)
+        {
+            meta.timestamp = ts[i];
+            meta.enableTimestamp = true;
+            samplesPushed[i] += LMS_SendStream(&pthis->txStreams[i], &buffers[i][samplesPushed[i]], test_count, &meta, 1000);
+        }
 
+        t2 = chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            t1 = t2;
+            lms_stream_status_t rxStats;
+            LMS_GetStreamStatus(&pthis->rxStreams[0], &rxStats);
+            lms_stream_status_t txStats;
+            LMS_GetStreamStatus(&pthis->txStreams[0], &txStats);
+            printf("Rx FIFO %2.1f%% \t\t Tx FIFO %2.1f%%\n", 100.0*rxStats.fifoFilledCount/rxStats.fifoSize, 100.0*txStats.fifoFilledCount/txStats.fifoSize);
+        }
 
         if (updateCounter & 0x40)
         {
-
             for (int ch = 0; ch < channelsCount; ++ch)
             {
 
                 for (unsigned i = 0; i < fftSize; ++i)
                 {
-                    localDataResults.samplesI[ch][i] = m_fftCalcIn[i].r = buffers[ch][2 * i];
-                    localDataResults.samplesQ[ch][i] = m_fftCalcIn[i].i = buffers[ch][2 * i + 1];
+                    localDataResults.samplesI[ch][i] = m_fftCalcIn[i].r = buffers[ch][i].i;
+                    localDataResults.samplesQ[ch][i] = m_fftCalcIn[i].i = buffers[ch][i].q;
                 }
                 kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+
+                for(unsigned int i=0; i<fftSize; ++i)
+                {
+                    m_fftCalcOut[i].r /= fftSize;
+                    m_fftCalcOut[i].i /= fftSize;
+                }
 
                 int output_index = 0;
                 for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
@@ -300,6 +345,7 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
             }
             {
+                std::unique_lock<std::mutex> lck(pthis->graphsDataLock);
                 pthis->streamData = localDataResults;
             }
             updateCounter = 0;
@@ -307,9 +353,17 @@ void fftviewer_frFFTviewer::Streamer(fftviewer_frFFTviewer* pthis, const unsigne
     }
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
-	pthis->mStreamRunning.store(false);
-    LMS_StopStream(pthis->lmsControl,LMS_CH_TX);
-    LMS_StopStream(pthis->lmsControl,LMS_CH_RX);
+    pthis->mStreamRunning.store(false);
+    for(int i=0; i<channelsCount; ++i)
+    {
+        LMS_StopStream(&pthis->txStreams[i]);
+        LMS_StopStream(&pthis->rxStreams[i]);
+    }
+    for(int i=0; i<channelsCount; ++i)
+    {
+        LMS_DestroyStream(pthis->lmsControl, &pthis->txStreams[i]);
+        LMS_DestroyStream(pthis->lmsControl, &pthis->rxStreams[i]);
+    }
     for (int i = 0; i < channelsCount; ++i)
         delete [] buffers[i];
     delete [] buffers;

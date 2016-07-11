@@ -17,7 +17,6 @@ void ConnectionSTREAMEntry::handle_libusb_events()
     {
         int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
         if(r != 0) printf("error libusb_handle_events %s\n", libusb_strerror(libusb_error(r)));
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 }
 #endif // __UNIX__
@@ -150,7 +149,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     //read device name
                     char data[255];
                     memset(data, 0, 255);
-                    int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                    libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";

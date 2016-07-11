@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   lms7_device.h
  * Author: ignas
  *
@@ -10,16 +10,12 @@
 #include "LMS7002M.h"
 #include "lime/LimeSuite.h"
 #include <mutex>
-#include "StreamerAPI.h"
 #include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
 
 typedef struct
 {
-    bool enabled;
-    bool half_duplex;
     float_type lpf_bw;
     float_type nco_pho;
-    
 } lms_channel_info;
 
 class LMS7_Device : public lime::LMS7002M
@@ -48,7 +44,7 @@ public:
     virtual lms_range_t GetTxPathBand(size_t path, size_t chan) const;
     virtual int SetLPF(bool tx, size_t chan, bool f, bool en, float_type bandwidth=-1);
     virtual float_type GetLPFBW(bool tx,size_t chan, bool filt);
-    virtual lms_range_t GetLPFRange(bool tx,size_t chan,bool f);  
+    virtual lms_range_t GetLPFRange(bool tx,size_t chan,bool f);
     virtual int SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count);
     virtual int GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef);
     virtual int SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled);
@@ -73,18 +69,17 @@ public:
     virtual int DACRead();
     virtual lms_dev_info_t* GetInfo();
     lime::IConnection* streamPort;
-    StreamerAPI* streamer;
-    
+
 private:
     lms_dev_info_t devInfo;
     lms_channel_info* tx_channels;
     lms_channel_info* rx_channels;
     static const double LMS_CGEN_MAX;
-    
+
     int ConfigureRXLPF(bool enabled,int ch,float_type bandwidth);
     int ConfigureTXLPF(bool enabled,int ch,float_type bandwidth);
     int ConfigureGFIR(bool enabled,bool tx, float_type bandwidth,size_t ch);
-   
+
 };
 
 #endif	/* LMS7_DEVICE_H */

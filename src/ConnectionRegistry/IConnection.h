@@ -127,7 +127,9 @@ struct StreamConfig
      *  - Example MIMO on RFIC0: [0, 1]
      *  - Example MIMO on RFIC1: [2, 3]
      */
-    std::vector<size_t> channels;
+    uint8_t channelID;
+
+    float performanceLatency;
 
     //! Possible stream data formats
     enum StreamDataFormat
@@ -359,16 +361,17 @@ public:
      *
      * @param [out] streamID the configured stream identifier
      * @param config the requested stream configuration
-     * @return an error message or empty string on success
+     * @return 0-success, other failure
      */
-    virtual std::string SetupStream(size_t &streamID, const StreamConfig &config);
+    virtual int SetupStream(size_t &streamID, const StreamConfig &config);
 
     /*!
      * Close an open stream give the stream ID.
      * This invalidates the stream ID
      * @param streamID the configured stream identifier
+     * @return 0-success, other failure
      */
-    virtual void CloseStream(const size_t streamID);
+    virtual int CloseStream(const size_t streamID);
 
     /*!
      * Get the transfer size per buffer in samples.
@@ -384,21 +387,15 @@ public:
     /*!
      * Control streaming activation, bursts, and timing.
      * While SetupStream() sets up and allocates resources,
-     * ControlStream() is resonsible for dis/enabling the
-     * stream and providing advanced burst and timing controls.
+     * ControlStream() is resonsible for dis/enabling the stream
      *
      * - Use enable to activate/deactivate the stream.
-     * - Use the metadata's optional timestamp to control stream time
-     * - Use the metadata's end of burst to request stream bursts
-     * - Without end of burst, the burstSize affects continuous streaming
      *
      * @param streamID the stream index number
      * @param enable true to enable streaming, false to halt streaming
-     * @param burstSize the burst size when metadata has end of burst
-     * @param metadata time and burst options
      * @return true for success, otherwise false
      */
-    virtual bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
+    virtual int ControlStream(const size_t streamID, const bool enable);
 
     /*!
      * Read blocking data from the stream into the specified buffer.
@@ -410,7 +407,7 @@ public:
      * @param [out] metadata optional stream metadata
      * @return the number of samples read or error code
      */
-    virtual int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+    virtual int ReadStream(const size_t streamID, void* buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 
     /*!
      * Write blocking data into the stream from the specified buffer.
@@ -425,7 +422,7 @@ public:
      * @param metadata optional stream metadata
      * @return the number of samples written or error code
      */
-    virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+    virtual int WriteStream(const size_t streamID, const void *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
     /*!
      * Read reported stream status events such as
@@ -572,6 +569,55 @@ int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     data = ReadType(data32);
     return st;
 }
+
+class IStreamChannel
+{
+public:
+    struct Info
+    {
+        float sampleRate;
+        int fifoSize;
+        int fifoItemsCount;
+        int overrun;
+        int underrun;
+        bool active;
+        float linkRate;
+        int droppedPackets;
+        uint64_t timestamp;
+    };
+    IStreamChannel(){};
+    IStreamChannel(IConnection* port){};
+    virtual int Start() = 0;
+    virtual int Stop() = 0;
+    virtual ~IStreamChannel(){};
+
+    struct Metadata
+    {
+        enum
+        {
+            SYNC_TIMESTAMP = 1,
+        };
+        uint64_t timestamp;
+        uint32_t flags;
+    };
+
+    /** @brief Returns samples from receiver FIFO
+        @param samples destination array of data type used in SetupStream()
+        @param count number of samples to read
+        @param
+        @return number of samples received
+    */
+    virtual int Read(void* samples, const uint32_t count, Metadata* metadata, const int32_t timeout_ms = 100) = 0;
+
+    /** @brief Writes samples to transmitter FIFO
+        @param samples source array of data type used in SetupStream()
+        @param count number of samples to write
+        @return number of samples transmitted
+    */
+    virtual int Write(const void* samples, const uint32_t count, const Metadata* metadata, const int32_t timeout_ms = 100) = 0;
+
+    virtual Info GetInfo() = 0;
+};
 
 }
 #endif

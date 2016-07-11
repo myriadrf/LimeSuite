@@ -23,7 +23,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/LMSBoards.h
     LTEpackets/dataTypes.h
     LTEpackets/fifo.h
-    LTEpackets/StreamerLTE.h
     Si5351C/Si5351C.h
     LMS_StreamBoard/LMS_StreamBoard.h
     LMS_StreamBoard/LMS_StreamBoard_FIFO.h
@@ -61,13 +60,11 @@ set(LIME_SUITE_SOURCES
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp
-    LTEpackets/StreamerLTE.cpp
     Si5351C/Si5351C.cpp
     LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
-    API/StreamerAPI.cpp
     FPGA_common/FPGA_common.cpp
     lime/LimeSuite.h
 )
@@ -279,10 +276,13 @@ endif()
 #########################################################################
 # tests
 #########################################################################
-include_directories(utilityTools)
-set(utility_src_files utilityTools/pllTest.cpp)
-add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
-target_link_libraries(utilityTools LimeSuite)
+set(BUILD_UTILITIES OFF CACHE BOOL "Additional utility programs for testing")
+if(BUILD_UTILITIES)
+    include_directories(utilityTools)
+    set(utility_src_files utilityTools/pllTest.cpp)
+    add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
+    target_link_libraries(utilityTools LimeSuite)
+endif()
 
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)

@@ -8,10 +8,9 @@
 #include "MCU_BD.h"
 #include "Si5351C.h"
 #include "ADF4002.h"
-#include "StreamerAPI.h"
 #include <cmath>
 #include "VersionInfo.h"
-
+#include <assert.h>
 
 using namespace std;
 
@@ -77,9 +76,10 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
             }
             lms->SetConnection(conn,0);
             lms->DownloadAll();
+            lms->streamPort = conn;
             if (args == nullptr)
             {
-                lms->streamPort = conn;
+
                 return LMS_SUCCESS;
             }
         }
@@ -125,6 +125,8 @@ API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
     {
 		lime::ConnectionRegistry::freeConnection(conn);
                 lms->SetConnection(nullptr);
+                if (conn == lms->streamPort)
+                    lms->streamPort = nullptr;
     }
     return LMS_SUCCESS;
 }
@@ -1503,135 +1505,94 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx, size_t 
 }
 
 
-
-API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_conf_t conf)
+/**
+ * @brief Initializes samples streaming channels with given parameters
+ * @param[in]   device LMS device to be used for streaming
+ * @param[out]  stream Handle to be used with LMS_RecvStream()/LMS_SendStream()
+ * @return      0-success
+*/
+API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *stream)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
+    if(device == nullptr)
+        return lime::ReportError(EINVAL, "Device is NULL.");
+    if(stream == nullptr)
+        return lime::ReportError(EINVAL, "stream is NULL.");
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    if (lms->streamer != nullptr)
-	delete lms->streamer;
-    if (conf.fifoSize == 0)
-        lms->streamer = new StreamerAPI(lms->streamPort);
+    lime::StreamConfig config;
+    config.bufferLength = 65536;
+    config.channelID = stream->channel;
+    if(stream->dataFmt == lms_stream_t::LMS_FMT_I16) //TODO
+        config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
     else
-        lms->streamer = new StreamerFIFO(lms->streamPort);
-    lms->streamer->SetupStream(conf);
-    return 0;
+        config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
+    config.isTx = stream->isTx;
+    return lms->GetConnection()->SetupStream(stream->handle, config);
 }
 
-API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device)
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
+    if(stream == nullptr)
+        return lime::ReportError(EINVAL, "stream is NULL.");
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    if (lms->streamer != nullptr)
-        delete lms->streamer;
-    lms->streamer = nullptr;
-    return 0;
+    return lms->GetConnection()->CloseStream(stream->handle);
 }
 
-API_EXPORT int CALL_CONV LMS_StartStream(lms_device_t *device, bool dir_tx)
+API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-    if (lms->streamer == nullptr)
-        lms->streamer = new StreamerFIFO(lms->streamPort);
-
-    if (dir_tx)
-        return lms->streamer->StartTx();
-    else
-        return lms->streamer->StartRx();
+    assert(stream != nullptr);
+    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Start();
 }
 
-API_EXPORT int CALL_CONV LMS_StopStream(lms_device_t *device, bool dir_tx)
+API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *stream)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-    if (lms->streamer == nullptr)
-    {
-        lime::ReportError(EINVAL, "Stream not active.");
-        return -1;
-    }
-    if (dir_tx)
-    {
-        if (lms->streamer != nullptr)
-            return lms->streamer->StopTx();
-    }
-    else
-    {
-        if (lms->streamer != nullptr)
-            return lms->streamer->StopRx();
-    }
-    return 0;
+    assert(stream != nullptr);
+    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Stop();
 }
 
-API_EXPORT int CALL_CONV LMS_RecvStream(lms_device_t *device, void **samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
+API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    if (lms->streamer == nullptr)
-    {
-        lime::ReportError(EINVAL, "Stream not active.");
-        return -1;
-    }
-    return lms->streamer->RecvStream(samples,sample_count,meta,timeout_ms);
-
-}
-API_EXPORT int CALL_CONV LMS_SendStream(lms_device_t *device, const void **samples, size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    if (lms->streamer == nullptr)
-    {
-        lime::ReportError(EINVAL, "Stream not active.");
-        return -1;
-    }
-    return lms->streamer->SendStream(samples,sample_count,meta,timeout_ms);
+    assert(stream != nullptr);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    assert(channel != nullptr);
+    lime::IStreamChannel::Metadata metadata;
+    metadata.flags = 0;
+    metadata.flags |= meta->enableTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+    metadata.timestamp = meta ? meta->timestamp : 0;
+    int status = channel->Read(samples, sample_count, &metadata, timeout_ms);
+    meta->timestamp = metadata.timestamp;
+    return status;
 }
 
-API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_device_t *device, lms_stream_status_t* status)
+API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *samples, size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    if (device == nullptr)
-    {
-            lime::ReportError(EINVAL, "Device cannot be NULL.");
-            return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    if (lms->streamer == nullptr)
-    {
-        lime::ReportError(EINVAL, "Stream not active.");
-        return -1;
-    }
-    memcpy(status,lms->streamer->GetInfo(),sizeof(lms_stream_status_t));
+    assert(stream != nullptr);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    assert(channel != nullptr);
+    lime::IStreamChannel::Metadata metadata;
+    metadata.flags = 0;
+    metadata.flags |= meta->enableTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+    metadata.timestamp = meta ? meta->timestamp : 0;
+    return channel->Write(samples, sample_count, &metadata, timeout_ms);
+}
+
+API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t* status)
+{
+    assert(stream != nullptr);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    lime::IStreamChannel::Info info = channel->GetInfo();
+
+    status->active = false;
+    status->droppedPackets = 0;
+    status->fifoFilledCount = info.fifoItemsCount;
+    status->fifoSize = info.fifoSize;
+    status->linkRate = info.linkRate;
+    status->overrun = 0;
+    status->underrun = 0;
+    status->sampleRate = 0;
+    status->timestamp = 0;
     return 0;
 }
 
@@ -1783,109 +1744,18 @@ API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
     return lime::GetLastErrorMessage();
 }
 
-std::thread wfmThread;
-std::atomic<bool> stopWFM(false);
-lime::complex16_t** wfmBuffers = nullptr;
-int wfmLength = 0;
-std::atomic<bool> wfmRunning(false);
-const int chCount = 1;
-int LoopWFM(lms_device_t *device)
-{
-    wfmRunning.store(true);
-    const int maxTransmitSamples = 1360/chCount*16;
-    lime::complex16_t** txbuffers = new lime::complex16_t*[chCount];
-    for(int i=0; i<chCount; ++i)
-        txbuffers[i] = new lime::complex16_t[maxTransmitSamples];
-    int srcPos[chCount];
 
-    int timeout_ms = 1000;
-    lime::complex16_t** srcBuf = new lime::complex16_t*[chCount];
-    for(int i=0; i<chCount; ++i)
-    {
-        srcPos[i] = 0;
-        srcBuf[i] = txbuffers[i];
-    }
-    lms_stream_meta_t meta;
-    meta.has_timestamp = false;
-    meta.timestamp = 0;
-    while(!stopWFM.load())
-    {
-        for(int i=0; i<chCount; ++i)
-            srcBuf[i] = txbuffers[i];
-        for(int ch=0; ch<chCount; ++ch)
-        {
-            for(int i=0; i < maxTransmitSamples; ++i)
-            {
-                txbuffers[ch][i].i = wfmBuffers[ch][srcPos[ch]].i;
-                txbuffers[ch][i].q = wfmBuffers[ch][srcPos[ch]].q;
-                ++srcPos[ch];
-                if(srcPos[ch] >= wfmLength)
-                    srcPos[ch] = 0;
-            }
-        }
-        int samplesToPush = maxTransmitSamples;
-        while(samplesToPush > 0 && !stopWFM.load())
-        {
-            LMS7_Device* lms = (LMS7_Device*)device;
-
-            int samplesWritten = lms->streamer->SendStream((const void**)srcBuf,samplesToPush, &meta,timeout_ms);
-            samplesToPush -= samplesWritten;
-            for(int i=0; i<chCount; ++i)
-                srcBuf[i] = srcBuf[i]+samplesWritten*sizeof(lime::complex16_t);
-        }
-    }
-    for(int i=0; i<chCount; ++i)
-        delete txbuffers[i];
-    delete txbuffers;
-    txbuffers = nullptr;
-    return 0;
-}
-
-API_EXPORT int CALL_CONV LMS_StreamStartLoopWFM(lms_device_t *device, const void **samples, size_t sample_count)
-{
-    LMS_StreamStopLoopWFM(device);
-
-    lime::complex16_t** src = (lime::complex16_t**)samples;
-    if(wfmBuffers)
-    {
-        for(int i=0; i<chCount; ++i)
-            delete wfmBuffers[i];
-        delete wfmBuffers;
-    }
-    wfmBuffers = new lime::complex16_t*[chCount];
-    for(int i=0; i<chCount; ++i)
-    {
-        wfmBuffers[i] = new lime::complex16_t[sample_count];
-        if (src[i] != nullptr)
-            memcpy(wfmBuffers[i], src[i], sample_count*sizeof(lime::complex16_t));
-        else
-            memset(wfmBuffers[i], 0, sample_count*sizeof(lime::complex16_t));
-    }
-    wfmLength = sample_count;
-    stopWFM.store(false);
-    wfmThread = std::thread(LoopWFM, device);
-    return 0;
-}
-
-API_EXPORT int CALL_CONV LMS_StreamStopLoopWFM(lms_device_t *device)
-{
-    stopWFM.store(true);
-    if(wfmRunning.load() && wfmThread.joinable())
-        wfmThread.join();
-    wfmRunning.store(false);
-    return 0;
-}
 
 static char buildTimestamp[32];
 API_EXPORT const char* LMS_GetBuildTimestamp()
 {
-    sprintf(buildTimestamp, lime::GetBuildTimestamp().c_str());
+    sprintf(buildTimestamp, "%.32s", lime::GetBuildTimestamp().c_str());
     return buildTimestamp;
 }
 
 static char libraryVersion[32];
 API_EXPORT const char* LMS_GetLibraryVersion()
 {
-    sprintf(libraryVersion, lime::GetLibraryVersion().c_str());
+    sprintf(libraryVersion, "%.32s", lime::GetLibraryVersion().c_str());
     return libraryVersion;
 }

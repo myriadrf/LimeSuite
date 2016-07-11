@@ -171,15 +171,15 @@ double IConnection::GetHardwareTimestampRate(void)
  * Stream API
  **********************************************************************/
 
-std::string IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
+int IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
 {
     streamID = ~0;
-    return "SetupStream not implemented";
+    return ReportError(EPERM, "SetupStream not implemented");
 }
 
-void IConnection::CloseStream(const size_t streamID)
+int IConnection::CloseStream(const size_t streamID)
 {
-    return;
+    return ReportError(EPERM, "CloseStream not implemented");
 }
 
 size_t IConnection::GetStreamSize(const size_t streamID)
@@ -189,25 +189,24 @@ size_t IConnection::GetStreamSize(const size_t streamID)
     return 16*1024;
 }
 
-bool IConnection::ControlStream(const size_t streamID, const bool enable, const size_t burstSize, const StreamMetadata &metadata)
+int IConnection::ControlStream(const size_t streamID, const bool enable)
 {
-    return false;
+    return ReportError(EPERM, "ControlStream not implemented");
 }
 
-int IConnection::ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+int IConnection::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
-    return -1;
+    return ReportError(EPERM, "ReadStream not implemented");
 }
 
-int IConnection::WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+int IConnection::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
 {
-    return -1;
+    return ReportError(EPERM, "WriteStream not implemented");
 }
 
 int IConnection::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
-    return -1;
+    return ReportError(EPERM, "ReadStreamStatus not implemented");
 }
 
 /** @brief Sets callback function which gets called each time data is sent or received
@@ -223,13 +222,13 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
 
 int IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "ProgramWrite not supported");
     return -1;
 }
 
 int IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "ProgramRead not supported");
     return -1;
 }
 
@@ -239,13 +238,13 @@ int IConnection::ProgramRead(char *buffer, const size_t length, const int index,
 
 int IConnection::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "GPIOWrite not supported");
     return -1;
 }
 
 int IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "GPIORead not supported");
     return -1;
 }
 
@@ -255,13 +254,13 @@ int IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
 
 int IConnection::WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "WriteRegisters not supported");
     return -1;
 }
 
 int IConnection::ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "ReadRegisters not supported");
     return -1;
 }
 
@@ -276,12 +275,12 @@ int IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
 
 int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "CustomParameterWrite not supported");
     return -1;
 }
 
 int IConnection::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
 {
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "CustomParameterRead not supported");
     return -1;
 }

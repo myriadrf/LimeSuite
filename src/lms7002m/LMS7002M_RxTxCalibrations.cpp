@@ -26,8 +26,8 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
 #define MCU_FUNCTION_READ_RSSI 3
 #define MCU_FUNCTION_UPDATE_REF_CLK 4
 
-#define ENABLE_CALIBRATION_USING_FFT
-
+//#define ENABLE_CALIBRATION_USING_FFT
+int fftBin = 0; //which bin to use when calibrating using FFT
 #ifdef ENABLE_CALIBRATION_USING_FFT
     bool useFFT = false; //digital RSSI or FFT from GetRSSI()
     const int gFFTSize = 16384;

@@ -31,14 +31,6 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
 
     tx_channels = new lms_channel_info[2];
     rx_channels = new lms_channel_info[2];
-    tx_channels[0].enabled = true;
-    rx_channels[0].enabled = true;
-    tx_channels[1].enabled = false;
-    rx_channels[1].enabled = false;
-    rx_channels[0].half_duplex = false;
-    rx_channels[1].half_duplex = false;
-
-    streamer = nullptr;
 
     EnableValuesCache(false);
 }
@@ -930,7 +922,7 @@ int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* 
            coef[i] /= (1<<15);
        }
    }
-   return filt==LMS_GFIR3 ? 120 : 40;
+   return (filt==LMS_GFIR3) ? 120 : 40;
 }
 
 int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
@@ -1281,8 +1273,6 @@ size_t LMS7_Device::GetNCO(bool tx, size_t ch)
 
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
 {
-    rx_channels[0].half_duplex = false;
-    rx_channels[1].half_duplex = false;
     if (SetFrequencySX(false,f_Hz)!=0)
         return -1;
     if (f_Hz < GetRxPathBand(LMS_PATH_LOW,chan).max)
@@ -1302,8 +1292,6 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
 
 int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
 {
-    rx_channels[0].half_duplex = false;
-    rx_channels[1].half_duplex = false;
     if (SetFrequencySX(true,f_Hz)!=0)
         return -1;
     if (f_Hz < GetTxPathBand(LMS_PATH_TX1,chan).max)
@@ -1373,7 +1361,6 @@ int LMS7_Device::EnableRX(const size_t ch, const bool enable)
 
     this->EnableChannel(false,enable);
     Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE),0,true);
-    rx_channels[ch].enabled = enable;
 
     return 0;
 }

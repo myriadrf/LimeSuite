@@ -41,3 +41,5 @@ target_link_libraries(tests
     libgtest
     LimeSuite
 )
+
+add_dependencies(tests LimeSuite)

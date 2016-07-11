@@ -75,14 +75,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
     }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
-    int status;
+    int status = 0;
     {
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
 #endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));

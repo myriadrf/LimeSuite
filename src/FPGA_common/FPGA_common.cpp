@@ -84,11 +84,13 @@ int InitializeStreaming(IConnection* serPort, const StreamConfig &config)
         smpl_width = 0x2;
     serPort->WriteRegister(0x0008, 0x0100 | smpl_width);
 
+    /* TODO stream
     uint16_t channelEnables = 0;
     for(int i=0; i<config.channels.size(); ++i)
         channelEnables |= (1 << config.channels[i]);
     serPort->WriteRegister(0x0007, channelEnables);
-    return 0;
+    */
+    return -1;
 }
 
 /** @brief Configures board FPGA clocks
