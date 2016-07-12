@@ -281,7 +281,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnStopWFM->Enable(false);
 
     uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData & ~0x7);
+    mStreamer->Reg_write(0x000A, (regData & ~0x3) | 0x4);
 
     int chCount = 0;
     uint16_t channelFlags = mStreamer->Reg_read(0x0007);
@@ -308,14 +308,14 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
             }
             ++samplesUsed;
         }
-        int payloadSize = bufPos / 4;
+        int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
             printf("Packet samples count not multiple of 4\n");
-        pkt.reserved[1] = (payloadSize >> 8) & 0xFF; //WFM loading
-        pkt.reserved[2] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
         pkt.reserved[0] = 0x1 << 5; //WFM loading
 
-        long bToSend = sizeof(pkt);
+        long bToSend = 16+payloadSize;
         int context = m_serPort->BeginDataSending((char*)&pkt, bToSend );
         if(m_serPort->WaitForSending(context, 250) == false)
         {
@@ -332,7 +332,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     lblProgressPercent->SetLabelText(_("100%"));
 
     regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData | 0x6);
+    mStreamer->Reg_write(0x000A, (regData | 0x6) & ~0x4);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
