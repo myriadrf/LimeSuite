@@ -174,7 +174,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 #else
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
     if(dev_handle == nullptr)
-        return ReportError("ConnectionSTREAM: libusb_open failed");
+        return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
     if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
     {
         printf("Kernel Driver Active\n");
@@ -183,7 +183,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     }
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
     if(r < 0)
-        return ReportError("ConnectionSTREAM: Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
+        return ReportError(-1, "ConnectionSTREAM: Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     isConnected = true;
     return 0;
 #endif
