@@ -16,8 +16,6 @@
 
 using namespace std;
 
-#define USB_TIMEOUT 1000
-
 #define CTR_W_REQCODE 0xC1
 #define CTR_W_VALUE 0x0000
 #define CTR_W_INDEX 0x0000
@@ -254,7 +252,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
     else
         len = 0;
     #else
-        len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, USB_TIMEOUT);
+        len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
     #endif
     delete wbuffer;
     return len;
@@ -280,7 +278,7 @@ int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_
     else
         len = 0;
 #else
-    len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, USB_TIMEOUT);
+    len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, timeout_ms);
 #endif
     return len;
 }
