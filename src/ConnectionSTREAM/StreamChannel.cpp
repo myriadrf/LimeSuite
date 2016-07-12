@@ -16,15 +16,45 @@ ConnectionSTREAM::StreamChannel::~StreamChannel()
 
 int ConnectionSTREAM::StreamChannel::Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms)
 {
-    complex16_t** ptr = (complex16_t**)&samples;
-    int popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
+    int popped = 0;
+    if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && !config.isTx)
+    {
+        //in place conversion
+        complex16_t** ptr = (complex16_t**)&samples;
+        int16_t* samplesShort = (int16_t*)samples;
+        float* samplesFloat = (float*)samples;
+        popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
+        for(int i=2*popped-1; i>=0; --i)
+            samplesFloat[i] = samplesShort[i]/2048.0;
+    }
+    //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
+    else
+    {
+        complex16_t** ptr = (complex16_t**)&samples;
+        popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
+    }
     return popped;
 }
 
 int ConnectionSTREAM::StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
 {
-    const complex16_t** ptr = (const complex16_t**)&samples;
-    int pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
+    int pushed = 0;
+    if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && config.isTx)
+    {
+        const float* samplesFloat = (const float*)samples;
+        int16_t* samplesShort = new int16_t[2*count];
+        for(int i=0; i<2*count; ++i)
+            samplesShort[i] = samplesFloat[i]*2047;
+        const complex16_t** ptr = (const complex16_t**)&samplesShort ;
+        pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
+        delete samplesShort;
+    }
+    //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
+    else
+    {
+        const complex16_t** ptr = (const complex16_t**)&samples;
+        pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
+    }
     return pushed;
 }
 
