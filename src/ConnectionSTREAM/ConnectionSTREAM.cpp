@@ -32,6 +32,8 @@ using namespace lime;
 */
 ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vid, const int pid)
 {
+    mTimestampOffset = 0;
+    rxLastTimestamp.store(0);
     mExpectedSampleRate = 0;
     generateData.store(false);
     rxRunning.store(false);
@@ -670,6 +672,7 @@ int ConnectionSTREAM::UpdateThreads()
         args.channels = mRxStreams;
         args.generateData = &generateData;
         args.safeToConfigInterface = &safeToConfigInterface;
+        args.lastTimestamp = &rxLastTimestamp;;
 
         rxRunning.store(true);
         terminateRx.store(false);
@@ -684,6 +687,7 @@ int ConnectionSTREAM::UpdateThreads()
         args.channels = mTxStreams;
         args.generateData = &generateData;
         args.safeToConfigInterface = &safeToConfigInterface;
+        args.lastTimestamp = nullptr;
 
         txRunning.store(true);
         terminateTx.store(false);

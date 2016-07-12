@@ -155,6 +155,7 @@ protected:
         std::vector<StreamChannel*> channels; //! channels FIFOs
         std::atomic<bool>* generateData; //! generate data
         std::condition_variable* safeToConfigInterface;
+        std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
     };
     static void ReceivePacketsLoop(const ThreadData args);
     static void TransmitPacketsLoop(const ThreadData args);
@@ -184,6 +185,8 @@ protected:
     std::atomic<uint32_t> txDataRate_Bps;
     std::vector<StreamChannel*> mRxStreams;
     std::vector<StreamChannel*> mTxStreams;
+    std::atomic<uint64_t> rxLastTimestamp;
+    uint64_t mTimestampOffset;
 
     eConnectionType GetType(void) {return USB_PORT;}
 

@@ -190,14 +190,23 @@ void ConnectionSTREAM::ExitSelfCalibration(const size_t channel)
 
 uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
 {
-    //return mStreamService->mLastRxTimestamp + mStreamService->mTimestampOffset;
-    return 0;
+    if(not rxRunning.load() and not txRunning.load())
+    {
+        //stop streaming just in case the board has not been configured
+        fpga::StopStreaming(this);
+        fpga::ResetTimestamp(this);
+        mTimestampOffset = 0;
+        return 0;
+    }
+    else
+    {
+        return rxLastTimestamp.load()+mTimestampOffset;
+    }
 }
 
 void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
 {
-    //if (not mStreamService) mStreamService.reset(new USBStreamService(this));
-    //mStreamService->mTimestampOffset = int64_t(now)-int64_t(mStreamService->mLastRxTimestamp);
+    mTimestampOffset = now - rxLastTimestamp.load();
 }
 
 double ConnectionSTREAM::GetHardwareTimestampRate(void)
@@ -342,6 +351,8 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 packetLoss += (pkt[pktIndex].counter - prevTs)/(1360.0/chCount);
             }
             prevTs = pkt[pktIndex].counter;
+            if(args.lastTimestamp)
+                args.lastTimestamp->store(pkt[pktIndex].counter);
             for(int ch=0; ch<chCount; ++ch)
             {
                 chFrames[ch].timestamp = pkt[pktIndex].counter;
