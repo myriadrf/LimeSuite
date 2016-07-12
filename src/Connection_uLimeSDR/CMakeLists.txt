@@ -48,6 +48,7 @@ set(CONNECTION_uLimeSDR_SOURCES
     ${THIS_SOURCE_DIR}/Connection_uLimeSDREntry.cpp
     ${THIS_SOURCE_DIR}/Connection_uLimeSDR.cpp
     ${THIS_SOURCE_DIR}/Connection_uLimeSDRing.cpp
+    ${THIS_SOURCE_DIR}/StreamChannel.cpp
 )
 
 set(CONNECTION_uLimeSDR_LIBRARIES

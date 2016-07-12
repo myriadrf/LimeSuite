@@ -1,11 +1,10 @@
 /**
     @file Connection_uLimeSDREntry.cpp
     @author Lime Microsystems
-    @brief Implementation of STREAM board connection.
+    @brief Implementation of uLimeSDR board connection.
 */
 
 #include "Connection_uLimeSDR.h"
-//#include "ConnectionSTREAM.h"
 using namespace lime;
 
 #ifdef __unix__
@@ -94,7 +93,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
 
             if( vid == 0x0403)
             {
-		if(pid == 0x601F)
+                if(pid == 0x601F)
                 {
                     libusb_device_handle *tempDev_handle;
                     tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
@@ -154,6 +153,5 @@ IConnection *Connection_uLimeSDREntry::make(const ConnectionHandle &handle)
     const auto pid = std::stoi(pidvid.substr(0, splitPos));
     const auto vid = std::stoi(pidvid.substr(splitPos+1));
     return new Connection_uLimeSDR(ctx, handle.index, vid, pid);
-    //return new ConnectionSTREAM(ctx, handle.index, vid, pid);
 #endif
 }
