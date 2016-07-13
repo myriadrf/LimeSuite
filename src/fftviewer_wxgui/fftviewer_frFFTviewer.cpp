@@ -261,14 +261,14 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         pthis->rxStreams[i].fifoSize = test_count*40;
         pthis->rxStreams[i].isTx = false;
         pthis->rxStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
-        pthis->rxStreams[i].throuhputVsLatency = 1;
+        pthis->rxStreams[i].throughputVsLatency = 1;
         LMS_SetupStream(pthis->lmsControl, &pthis->rxStreams[i]);
 
         pthis->txStreams[i].channel = i;
         pthis->txStreams[i].fifoSize = test_count*40;
         pthis->txStreams[i].isTx = true;
         pthis->txStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
-        pthis->txStreams[i].throuhputVsLatency = 1;
+        pthis->txStreams[i].throughputVsLatency = 1;
         LMS_SetupStream(pthis->lmsControl, &pthis->txStreams[i]);
     }
 

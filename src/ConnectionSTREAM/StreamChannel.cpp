@@ -25,7 +25,7 @@ int ConnectionSTREAM::StreamChannel::Read(void* samples, const uint32_t count, M
         float* samplesFloat = (float*)samples;
         popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
         for(int i=2*popped-1; i>=0; --i)
-            samplesFloat[i] = samplesShort[i]/2048.0;
+            samplesFloat[i] = (float)samplesShort[i]/2048.0;
     }
     //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else

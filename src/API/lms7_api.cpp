@@ -1523,10 +1523,11 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     lime::StreamConfig config;
     config.bufferLength = 65536;
     config.channelID = stream->channel;
+    config.performanceLatency = stream->throughputVsLatency;
     if(stream->dataFmt == lms_stream_t::LMS_FMT_I16) //TODO
         config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
     else
-        config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
+        config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
     config.isTx = stream->isTx;
     return lms->GetConnection()->SetupStream(stream->handle, config);
 }

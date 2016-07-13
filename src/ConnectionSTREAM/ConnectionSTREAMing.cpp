@@ -230,9 +230,17 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
 
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = args.channels.size();
-    const uint8_t packetsToBatch = 64;
+
+    double latency=0;
+    for (int i = 0; i < chCount; i++)
+    {
+           latency += args.channels[i]->config.performanceLatency/chCount;
+    }
+    const unsigned tmp_cnt = (latency * 6)+0.5;
+
+    const uint8_t packetsToBatch = (1<<tmp_cnt);
     const uint32_t bufferSize = packetsToBatch*sizeof(PacketLTE);
-    const uint8_t buffersCount = 16; // must be power of 2
+    const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
     vector<ConnectionSTREAM::StreamChannel::Frame> chFrames;
@@ -415,9 +423,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
             //each channel sample rate
             float samplingRate = 1000.0*samplesReceived[0] / timePeriod;
-//#ifndef NDEBUG
+#ifndef NDEBUG
             printf("Rx: %.3f MB/s, Fs: %.3f MHz, overrun: %i, loss: %i \n", dataRate / 1000000.0, samplingRate / 1000000.0, droppedSamples, packetLoss);
-//#endif
+#endif
             samplesReceived[0] = 0;
             totalBytesReceived = 0;
             m_bufferFailures = 0;
@@ -459,9 +467,16 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = args.channels.size();
 
+    double latency=0;
+    for (int i = 0; i < chCount; i++)
+    {
+           latency += args.channels[i]->config.performanceLatency/chCount;
+    }
+    const unsigned tmp_cnt = (latency * 6)+0.5;
+
     const uint8_t buffersCount = 16; // must be power of 2
     assert(buffersCount % 2 == 0);
-    const uint8_t packetsToBatch = 64; //packets in single USB transfer
+    const uint8_t packetsToBatch = (1<<tmp_cnt); //packets in single USB transfer
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 100;
 
@@ -569,9 +584,9 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
             samplesSent = 0;
             totalBytesSent = 0;
             t1 = t2;
-//#ifndef NDEBUG
+#ifndef NDEBUG
             printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i, ts:%li\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures, timestamp);
-//#endif
+#endif
         }
         bi = (bi + 1) & (buffersCount-1);
     }

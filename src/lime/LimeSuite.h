@@ -95,6 +95,8 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
  * This function should be used to open a device based upon the results of
  * LMS_GetDeviceList()
  *
+ * @pre device should be initialized to NULL
+ *
  * @param[out]  device      Updated with device handle on success
  * @param[in]   info        Device information string. If NULL, the first
  *                          available device will be opened.
@@ -333,7 +335,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
                                                 size_t chan,float_type *gain);
 
 /**
- * Configure analog LPF of the LMS chip.
+ * Configure analog LPF of the LMS chip for the desired RF bandwidth.
  * This function automatically enables LPF.
  *
  * @param   device      Device handle previously obtained by LMS_Open().
@@ -347,7 +349,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx,
                                              size_t chan, float_type bandwidth);
 
 /**
- * Get the currently configured analog LPF bandwidth.
+ * Get the currently configured analog LPF RF bandwidth.
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
@@ -360,12 +362,12 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx,
                                             size_t chan, float_type *bandwidth);
 
 /**
- * Get the bandwidth setting range supported by the analog LPF of LMS chip
+ * Get the RF bandwidth setting range supported by the analog LPF of LMS chip
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index
- * @param[out]  range       Supported bandwidth range in Hz
+ * @param[out]  range       Supported RF bandwidth range in Hz
  *
  * @return  0 on success, (-1) on failure
  */
@@ -387,7 +389,7 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx,
 
 /**
  * Set up digital LPF using LMS chip GFIRS. This is a convenience function to
- * quickly configure GFIRS as LPF with desired bandwidth.
+ * quickly configure GFIRS as LPF with desired RF bandwidth.
  *
  * @pre sampling rate must be set
  *
@@ -956,17 +958,17 @@ API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(
 
 
 /**
- * @defgroup LMS_CLOCK_ID   Streaming mode flags
+ * @defgroup LMS_CLOCK_ID   Clock definitions
  *
- * Flags for configuring device streaming mode
+ * Clock definitions for accessing specific internal clocks
  * @{
  */
-#define LMS_CLOCK_REF   0x0000
-#define LMS_CLOCK_SXR   0x0001  /**<*/
-#define LMS_CLOCK_SXT   0x0002  /**<*/
-#define LMS_CLOCK_CGEN  0x0003
-#define LMS_CLOCK_RXTSP 0x0004
-#define LMS_CLOCK_TXTSP 0x0005
+#define LMS_CLOCK_REF   0x0000  /**<Chip reference clock*/
+#define LMS_CLOCK_SXR   0x0001  /**<RX LO clock*/
+#define LMS_CLOCK_SXT   0x0002  /**<TX LO clock*/
+#define LMS_CLOCK_CGEN  0x0003  /**<CGEN clock*/
+#define LMS_CLOCK_RXTSP 0x0004  /**<RXTSP reference clock*/
+#define LMS_CLOCK_TXTSP 0x0005  /**TXTSP reference clock*/
 
 
 /** @} (End LMS_CLOCK_ID) */
@@ -1199,8 +1201,12 @@ typedef struct
     //! FIFO size (in samples) used by stream.
     uint32_t fifoSize;
 
-    //! @todo document throuhputVsLatency
-    float throuhputVsLatency;
+    /**Parameter for controlling configuration bias toward low latency or high
+     * data throughput range [0,1.0].
+     * 0 - lowest latency, usually results in lower throughput
+     * 1 - higher throughput, usually results in higher latency
+     */
+    float throughputVsLatency;
 
     //! Data output format
     enum
