@@ -239,15 +239,15 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData | 0x3);
+    uint16_t regData = mStreamer->Reg_read(0x000D);
+    mStreamer->Reg_write(0x000D, regData | 0x2);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
     assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, (regData & ~0x2));
+    uint16_t regData = mStreamer->Reg_read(0x000D);
+    mStreamer->Reg_write(0x000D, (regData & ~0x2));
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
@@ -280,13 +280,10 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, (regData & ~0x3) | 0x4);
-
-    int chCount = 0;
-    uint16_t channelFlags = mStreamer->Reg_read(0x0007);
-    for(int i=0; i<16; ++i)
-        chCount += (channelFlags >> i) & 1;
+    int chCount = 1;
+    mStreamer->Reg_write(0x000C, 0x1); //channel 0
+    mStreamer->Reg_write(0x000E, 0x2); //12bit samples
+    mStreamer->Reg_write(0x000D, 0x0004); //WFM_LOAD
 
     PacketLTE pkt;
     int samplesUsed = 0;
@@ -330,9 +327,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     }
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
-
-    regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, (regData | 0x6) & ~0x4);
+    mStreamer->Reg_write(0x000D, 0x0002); //WFM_PLAY
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
