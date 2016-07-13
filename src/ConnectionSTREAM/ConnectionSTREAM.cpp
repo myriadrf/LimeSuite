@@ -10,6 +10,7 @@
 #include <iostream>
 #include "Si5351C.h"
 #include "FPGA_common.h"
+#include "LMS7002M.h"
 
 #include <thread>
 #include <chrono>
@@ -652,6 +653,33 @@ int ConnectionSTREAM::UpdateThreads()
         for(uint8_t i=0; i<mTxStreams.size(); ++i)
             channelEnables |= (1 << mTxStreams[i]->config.channelID);
         WriteRegister(0x0007, channelEnables);
+
+        LMS7002M lmsControl;
+        lmsControl.SetConnection(this);
+        bool fromChip = true;
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0, fromChip);
+
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2, fromChip);
+
+        if(channelEnables & 0x2) //enable MIMO
+        {
+            uint16_t macBck = lmsControl.Get_SPI_Reg_bits(LMS7param(MAC), fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 1, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
+        }
+
         fpga::StartStreaming(this);
     }
     else if(not needTx and not needRx)

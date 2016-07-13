@@ -351,7 +351,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
-            if(pkt[pktIndex].counter - prevTs != 1360/chCount)
+            if(pkt[pktIndex].counter - prevTs != 1360/chCount && pkt[pktIndex].counter != prevTs)
             {
 #ifndef NDEBUG
                 printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, (pkt[pktIndex].counter - prevTs)/(1360.0/chCount));
