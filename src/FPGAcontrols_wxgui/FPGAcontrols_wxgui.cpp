@@ -27,7 +27,6 @@
 #include <wx/filename.h>
 #include <iostream>
 #include "LMS_StreamBoard.h"
-#include "StreamerLTE.h"
 
 using namespace std;
 using namespace lime;

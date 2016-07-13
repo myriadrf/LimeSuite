@@ -110,7 +110,7 @@ public:
         int Stop();
         StreamConfig config;
     protected:
-        LMS_SamplesFIFO* fifo;
+        RingFIFO* fifo;
         ConnectionSTREAM* port;
         bool mActive;
     private:

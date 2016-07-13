@@ -241,7 +241,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
     const uint8_t packetsToBatch = (1<<tmp_cnt);
-    const uint32_t bufferSize = packetsToBatch*sizeof(PacketLTE);
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
@@ -336,9 +336,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 ++m_bufferFailures;
         }
         bool txLate=false;
-        for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(PacketLTE); ++pktIndex)
+        for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
-            const PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+            const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
             const uint8_t byte0 = pkt[pktIndex].reserved[0];
             if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
             {
@@ -527,7 +527,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
         while(i<packetsToBatch)
         {
             IStreamChannel::Metadata meta;
-            PacketLTE* pkt = reinterpret_cast<PacketLTE*>(&buffers[bi*bufferSize]);
+            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<chCount; ++ch)
             {
                 int samplesPopped = args.channels[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);

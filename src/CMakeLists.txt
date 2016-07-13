@@ -21,8 +21,8 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
     protocols/LMSBoards.h
-    LTEpackets/dataTypes.h
-    LTEpackets/fifo.h
+    protocols/dataTypes.h
+    protocols/fifo.h
     Si5351C/Si5351C.h
     LMS_StreamBoard/LMS_StreamBoard.h
     LMS_StreamBoard/LMS_StreamBoard_FIFO.h
