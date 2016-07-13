@@ -111,9 +111,14 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 ConnectionSTREAM::~ConnectionSTREAM()
 {
     for(auto i : mTxStreams)
-        delete i;
+        ControlStream((size_t)i, false);
     for(auto i : mRxStreams)
-        delete i;
+        ControlStream((size_t)i, false);
+    for(auto i : mTxStreams)
+        CloseStream((size_t)i);
+    for(auto i : mRxStreams)
+        CloseStream((size_t)i);
+    UpdateThreads();
     Close();
 }
 

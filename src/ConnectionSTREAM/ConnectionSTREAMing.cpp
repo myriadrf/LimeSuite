@@ -48,6 +48,7 @@ int ConnectionSTREAM::CloseStream(const size_t streamID)
     {
         if(*i==stream)
         {
+            delete *i;
             mRxStreams.erase(i);
             break;
         }
@@ -56,6 +57,7 @@ int ConnectionSTREAM::CloseStream(const size_t streamID)
     {
         if(*i==stream)
         {
+            delete *i;
             mTxStreams.erase(i);
             break;
         }
