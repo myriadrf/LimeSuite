@@ -1170,11 +1170,11 @@ typedef struct
      */
     uint64_t timestamp;
 
-    //! Enables usage of timestamp
-    bool enableTimestamp;
-
-    /**In TX indicated whether submitted buffer should be sent using
-     * synchronization based on timestamp.*/
+    /**In TX: wait for the specified HW timestamp before broadcasting data over
+     * the air
+     * In RX: wait for the specified HW timestamp before starting to receive
+     * samples
+     */
     bool waitForTimestamp;
 
     /**Indicates the end of send/receive transaction. Discards data remainder

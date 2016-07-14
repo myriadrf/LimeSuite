@@ -287,8 +287,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
     lms_stream_meta_t meta;
-    meta.waitForTimestamp = false;
-    meta.enableTimestamp = true;
+    meta.waitForTimestamp = true;
 
     while (pthis->stopProcessing.load() == false)
     {
@@ -305,7 +304,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         for(int i=0; i<channelsCount; ++i)
         {
             meta.timestamp = ts[i];
-            meta.enableTimestamp = true;
+            meta.waitForTimestamp = true;
             samplesPushed[i] += LMS_SendStream(&pthis->txStreams[i], &buffers[i][samplesPushed[i]], test_count, &meta, 1000);
         }
 

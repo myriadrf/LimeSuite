@@ -1560,7 +1560,7 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, siz
     assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
-    metadata.flags |= meta->enableTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+    metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
     metadata.timestamp = meta ? meta->timestamp : 0;
     int status = channel->Read(samples, sample_count, &metadata, timeout_ms);
     meta->timestamp = metadata.timestamp;
@@ -1574,7 +1574,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
     assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
-    metadata.flags |= meta->enableTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+    metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
     metadata.timestamp = meta ? meta->timestamp : 0;
     return channel->Write(samples, sample_count, &metadata, timeout_ms);
 }

@@ -33,6 +33,16 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
 {
     m_hardwareName = "";
     isConnected = false;
+    mTimestampOffset = 0;
+    rxLastTimestamp.store(0);
+    mExpectedSampleRate = 0;
+    generateData.store(false);
+    rxRunning.store(false);
+    txRunning.store(false);
+    terminateRx.store(false);
+    terminateTx.store(false);
+    rxDataRate_Bps.store(0);
+    txDataRate_Bps.store(0);
 #ifndef __unix__
     hWrite = INVALID_HANDLE_VALUE;
     hRead = INVALID_HANDLE_VALUE;

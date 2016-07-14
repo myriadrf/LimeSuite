@@ -533,12 +533,16 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
     #else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
-    std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
+
     while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
         //blocking not to waste CPU
+#ifndef NDEBUG
         printf("Wait Tx\n");
-        contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(900));
+#endif
+        //moving lock here somehow solves locking issue with Eurecom stack
+        std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
+        contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
 	return contextsToSend[contextHandle].done == true;
