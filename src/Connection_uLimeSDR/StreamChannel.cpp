@@ -6,7 +6,7 @@ Connection_uLimeSDR::StreamChannel::StreamChannel(lime::IConnection* port) :
     mActive(false)
 {
     this->port = dynamic_cast<Connection_uLimeSDR*>(port);
-    fifo = new LMS_SamplesFIFO(1024*8, 1);
+    fifo = new RingFIFO(1024*8);
 }
 
 Connection_uLimeSDR::StreamChannel::~StreamChannel()
@@ -20,7 +20,7 @@ int Connection_uLimeSDR::StreamChannel::Read(void* samples, const uint32_t count
     if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && !config.isTx)
     {
         //in place conversion
-        complex16_t** ptr = (complex16_t**)&samples;
+        complex16_t* ptr = (complex16_t*)samples;
         int16_t* samplesShort = (int16_t*)samples;
         float* samplesFloat = (float*)samples;
         popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
@@ -30,7 +30,7 @@ int Connection_uLimeSDR::StreamChannel::Read(void* samples, const uint32_t count
     //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else
     {
-        complex16_t** ptr = (complex16_t**)&samples;
+        complex16_t* ptr = (complex16_t*)samples;
         popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
     }
     return popped;
@@ -45,14 +45,14 @@ int Connection_uLimeSDR::StreamChannel::Write(const void* samples, const uint32_
         int16_t* samplesShort = new int16_t[2*count];
         for(int i=0; i<2*count; ++i)
             samplesShort[i] = samplesFloat[i]*2047;
-        const complex16_t** ptr = (const complex16_t**)&samplesShort ;
+        const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
         delete samplesShort;
     }
     //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else
     {
-        const complex16_t** ptr = (const complex16_t**)&samples;
+        const complex16_t* ptr = (const complex16_t*)samples;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
     }
     return pushed;
@@ -61,7 +61,7 @@ int Connection_uLimeSDR::StreamChannel::Write(const void* samples, const uint32_
 IStreamChannel::Info Connection_uLimeSDR::StreamChannel::GetInfo()
 {
     Info stats;
-    LMS_SamplesFIFO::BufferInfo info = fifo->GetInfo();
+    RingFIFO::BufferInfo info = fifo->GetInfo();
     stats.fifoSize = info.size;
     stats.fifoItemsCount = info.itemsFilled;
     stats.active = mActive;
@@ -80,6 +80,7 @@ bool Connection_uLimeSDR::StreamChannel::IsActive() const
 int Connection_uLimeSDR::StreamChannel::Start()
 {
     mActive = true;
+    fifo->Clear();
     return port->UpdateThreads();
 }
 

@@ -5,7 +5,6 @@
 */
 
 #include "Connection_uLimeSDR.h"
-#include "StreamerLTE.h"
 #include "fifo.h" //from StreamerLTE
 #include <LMS7002M.h>
 #include <iostream>
@@ -50,6 +49,7 @@ int Connection_uLimeSDR::CloseStream(const size_t streamID)
     {
         if(*i==stream)
         {
+            delete *i;
             mRxStreams.erase(i);
             break;
         }
@@ -58,6 +58,7 @@ int Connection_uLimeSDR::CloseStream(const size_t streamID)
     {
         if(*i==stream)
         {
+            delete *i;
             mTxStreams.erase(i);
             break;
         }
@@ -228,7 +229,7 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = args.channels.size();
     const uint8_t packetsToBatch = 64;
-    const uint32_t bufferSize = packetsToBatch*sizeof(PacketLTE);
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint8_t buffersCount = 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
@@ -323,9 +324,9 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
                 ++m_bufferFailures;
         }
         bool txLate=false;
-        for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(PacketLTE); ++pktIndex)
+        for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
-            const PacketLTE* pkt = (PacketLTE*)&buffers[bi*bufferSize];
+            const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
             const uint8_t byte0 = pkt[pktIndex].reserved[0];
             if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
             {
@@ -340,7 +341,7 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
-            if(pkt[pktIndex].counter - prevTs != 1360/chCount)
+            if(pkt[pktIndex].counter - prevTs != 1360/chCount && pkt[pktIndex].counter != prevTs)
             {
 #ifndef NDEBUG
                 printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, (pkt[pktIndex].counter - prevTs)/(1360.0/chCount));
@@ -459,7 +460,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
     const uint8_t buffersCount = 16; // must be power of 2
     assert(buffersCount % 2 == 0);
     const uint8_t packetsToBatch = 64; //packets in single USB transfer
-    const uint32_t bufferSize = packetsToBatch*4096;
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint32_t popTimeout_ms = 100;
 
     const int maxSamplesBatch = 1360/chCount;
@@ -507,7 +508,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
         while(i<packetsToBatch)
         {
             IStreamChannel::Metadata meta;
-            PacketLTE* pkt = reinterpret_cast<PacketLTE*>(&buffers[bi*bufferSize]);
+            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<chCount; ++ch)
             {
                 int samplesPopped = args.channels[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
@@ -547,7 +548,6 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
             ++i;
         }
 
-        //bytesToSend[bi] = sizeof(PacketLTE)*i;
         bytesToSend[bi] = bufferSize;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
@@ -566,9 +566,9 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
             samplesSent = 0;
             totalBytesSent = 0;
             t1 = t2;
-//#ifndef NDEBUG
+#ifndef NDEBUG
             printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i, ts:%li\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures, timestamp);
-//#endif
+#endif
         }
         bi = (bi + 1) & (buffersCount-1);
     }

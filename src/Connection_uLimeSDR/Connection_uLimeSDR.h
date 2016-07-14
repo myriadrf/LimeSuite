@@ -98,7 +98,7 @@ public:
         int Stop();
         StreamConfig config;
     protected:
-        LMS_SamplesFIFO* fifo;
+        RingFIFO* fifo;
         Connection_uLimeSDR* port;
         bool mActive;
     private:
