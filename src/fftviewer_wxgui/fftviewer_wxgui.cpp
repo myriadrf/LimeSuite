@@ -101,14 +101,15 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	wxFlexGridSizer* fgSizer91;
 	fgSizer91 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer91->AddGrowableCol( 0 );
 	fgSizer91->SetFlexibleDirection( wxBOTH );
 	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString cmbStreamTypeChoices[] = { wxT("IQ samples"), wxT("LTE packets"), wxT("LTE packets MIMO"), wxT("LTE packets uncompressed") };
+	wxString cmbStreamTypeChoices[] = { wxT("Packets SISO"), wxT("Packets MIMO") };
 	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
 	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
 	cmbStreamType->SetSelection( 0 );
-	fgSizer91->Add( cmbStreamType, 0, 0, 5 );
+	fgSizer91->Add( cmbStreamType, 0, wxEXPAND, 5 );
 	
 	btnStartStop = new wxButton( sbSizer2->GetStaticBox(), wxID_ANY, wxT("START"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer91->Add( btnStartStop, 1, wxEXPAND, 5 );

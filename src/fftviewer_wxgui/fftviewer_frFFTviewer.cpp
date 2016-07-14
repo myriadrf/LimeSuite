@@ -128,17 +128,11 @@ void fftviewer_frFFTviewer::StartStreaming()
 
     switch (cmbStreamType->GetSelection())
     {
-    case 0:
+    case 0: //SISO
         threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
         break;
-    case 1: //SISO
-        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
-        break;
-    case 2: //MIMO
+    case 1: //MIMO
         threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 2, 0);
-        break;
-    case 3: //SISO uncompressed samples
-        threadProcessing = std::thread(StreamingLoop, this, spinFFTsize->GetValue(), 1, 0);
         break;
     }
 
