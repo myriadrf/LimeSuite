@@ -89,6 +89,8 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     btnLoadWCDMA = new wxToggleButton(this, ID_BUTTON7, _T("W-CDMA"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
     btnLoadWCDMA->SetToolTip(_T("Loads file named wcdma.wfm from ") + gWFMdirectory + _("directory"));
 	FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
+    FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
 	FlexGridSizer6->Add(FlexGridSizer8, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer10 = new wxFlexGridSizer(0, 3, 0, 5);
 	FlexGridSizer10->AddGrowableCol(2);
@@ -280,8 +282,10 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    int chCount = 1;
-    mStreamer->Reg_write(0x000C, 0x1); //channel 0
+    int chCount = 2;
+    bool MIMO = chkMIMO->IsChecked();
+    mStreamer->Reg_write(0x000C, 0x3); //channels 0,1
+   
     mStreamer->Reg_write(0x000E, 0x2); //12bit samples
     mStreamer->Reg_write(0x000D, 0x0004); //WFM_LOAD
 
@@ -297,6 +301,14 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         {
             for(int ch = 0; ch < chCount; ++ch)
             {
+                if(MIMO == false && ch > 0)
+                {
+                    pkt.data[bufPos] = 0;
+                    pkt.data[bufPos + 1] = 0;
+                    pkt.data[bufPos + 2] = 0;
+                    bufPos += 3;
+                    continue;
+                }
                 pkt.data[bufPos] = isamples[samplesUsed] & 0xFF;
                 pkt.data[bufPos+1] = (isamples[samplesUsed] >> 8) & 0x0F;
                 pkt.data[bufPos+1] |= (qsamples[samplesUsed] << 4) & 0xF0;

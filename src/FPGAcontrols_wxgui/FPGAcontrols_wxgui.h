@@ -46,6 +46,7 @@ class FPGAcontrols_wxgui: public wxFrame
         wxButton* btnStartStreaming;
         wxButton* btnStopStreaming;
         wxCheckBox* chkDigitalLoopbackEnable;
+        wxCheckBox* chkMIMO;
 
 	protected:
         static const long ID_BUTTON6;
