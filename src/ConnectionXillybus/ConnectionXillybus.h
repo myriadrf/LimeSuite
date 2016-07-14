@@ -13,6 +13,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -29,8 +30,35 @@ namespace lime{
 class ConnectionXillybus : public LMS64CProtocol
 {
 public:
-    ConnectionXillybus(const unsigned index);
+    class StreamChannel : public IStreamChannel
+    {
+    public:
+        struct Frame
+        {
+            uint64_t timestamp;
+            static const uint16_t samplesCount = 1360;
+            complex16_t samples[samplesCount];
+        };
+        StreamChannel(IConnection* port);
+        ~StreamChannel();
 
+        int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
+        int Write(const void* samples, const uint32_t count, const Metadata* meta, const int32_t timeout_ms = 100);
+        IStreamChannel::Info GetInfo();
+
+        bool IsActive() const;
+        int Start();
+        int Stop();
+        StreamConfig config;
+    protected:
+        RingFIFO* fifo;
+        ConnectionXillybus* port;
+        bool mActive;
+    private:
+        StreamChannel() = default;
+    };
+
+    ConnectionXillybus(const unsigned index);
     ~ConnectionXillybus(void);
 
 	int Open(const unsigned index);
@@ -41,35 +69,65 @@ public:
 	int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
 	int Read(unsigned char *buffer, int length, int timeout_ms = 0);
 
-	virtual int BeginDataReading(char *buffer, long length);
-	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-	virtual int FinishDataReading(char *buffer, long &length, int contextHandle);
-	virtual void AbortReading();
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms);
-
-	virtual int BeginDataSending(const char *buffer, long length);
-	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms);
-	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
-	virtual void AbortSending();
-
 	uint64_t GetHardwareTimestamp(void);
 	void SetHardwareTimestamp(const uint64_t now);
 	double GetHardwareTimestampRate(void);
 
 	//IConnection stream API implementation
-	std::string SetupStream(size_t &streamID, const StreamConfig &config);
-	void CloseStream(const size_t streamID);
-	size_t GetStreamSize(const size_t streamID);
-	bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
-	int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
-	int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-	int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
+    int SetupStream(size_t& streamID, const StreamConfig& config);
+    int CloseStream(const size_t streamID);
+    size_t GetStreamSize(const size_t streamID);
+    int ControlStream(const size_t streamID, const bool enable);
+    int ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata& metadata);
+    int WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata& metadata);
+    int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata& metadata);
 
 	//hooks to update FPGA plls when baseband interface data rate is changed
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 	void EnterSelfCalibration(const size_t channel);
 	void ExitSelfCalibration(const size_t channel);
 protected:
+    struct ThreadData
+    {
+        ConnectionXillybus* dataPort; //! Connection interface
+        std::atomic<bool>* terminate; //! true exit loop
+        std::atomic<uint32_t>* dataRate_Bps; //! report rate
+        std::vector<StreamChannel*> channels; //! channels FIFOs
+        std::atomic<bool>* generateData; //! generate data
+        std::condition_variable* safeToConfigInterface;
+        std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
+    };
+    static void ReceivePacketsLoop(const ThreadData args);
+    static void TransmitPacketsLoop(const ThreadData args);
+    int UpdateThreads();
+
+    virtual int BeginDataReading(char* buffer, uint32_t length);
+    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortReading();
+
+    virtual int BeginDataSending(const char* buffer, uint32_t length);
+    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortSending();
+
+	std::thread rxThread;
+    std::thread txThread;
+    std::atomic<bool> rxRunning;
+    std::atomic<bool> txRunning;
+    std::atomic<bool> terminateRx;
+    std::atomic<bool> terminateTx;
+    std::mutex streamStateLock;
+    std::condition_variable safeToConfigInterface;
+    std::atomic<bool> generateData;
+    float mExpectedSampleRate; //rate used for generating data
+    std::atomic<uint32_t> rxDataRate_Bps;
+    std::atomic<uint32_t> txDataRate_Bps;
+    std::vector<StreamChannel*> mRxStreams;
+    std::vector<StreamChannel*> mTxStreams;
+    std::atomic<uint64_t> rxLastTimestamp;
+    uint64_t mTimestampOffset;
+
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
 
@@ -88,14 +146,14 @@ private:
 
 #ifndef __unix__
     HANDLE hWrite;
-    HANDLE hRead;	
+    HANDLE hRead;
     HANDLE hWriteStream;
-    HANDLE hReadStream;	
+    HANDLE hReadStream;
     std::string writeStreamPort;
     std::string readStreamPort;
 #else
     int hWrite;
-    int hRead;	
+    int hRead;
     int hWriteStream;
     int hReadStream;
     std::string writeStreamPort;
