@@ -7,6 +7,7 @@
 #include "IConnection.h"
 #include "dataTypes.h"
 #include "LMS7002M.h"
+#include "windowFunction.h"
 
 using namespace std;
 using namespace lime;
@@ -25,7 +26,6 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
     updateGUI.store(true);
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
-    cmbWindowFunc->Disable();
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
@@ -100,7 +100,7 @@ void fftviewer_frFFTviewer::OnFFTsamplesCountChanged( wxSpinEvent& event )
 
 void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
 {
-// TODO: Implement OnWindowFunctionChanged
+    windowFunctionID.store(cmbWindowFunc->GetSelection());
 }
 
 void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
@@ -243,6 +243,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     const int cMaxChCount = 2;
     const int test_count = fftSize;// / 680*26;//4096*16;
     int avgCount = pthis->spinAvgCount->GetValue();
+    int wndFunction = pthis->windowFunctionID.load();
+
+    vector<float> wndCoef;
+    float amplitudeCorrection = 1;
+    GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, amplitudeCorrection);
+
     lime::complex16_t** buffers;
 
     DataToGUI localDataResults;
@@ -316,7 +322,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             lms_stream_status_t rxStats;
             LMS_GetStreamStatus(&pthis->rxStreams[0],&rxStats);
             float RxFilled = 100*(float)rxStats.fifoFilledCount/rxStats.fifoSize;
-            if(RxFilled > 75) //Skip FFT if calculations too slow
+            if(RxFilled > 25) //Skip FFT if calculations too slow
                 break;
 
             for (int ch = 0; ch < channelsCount; ++ch)
@@ -331,8 +337,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 }
                 for (unsigned i = 0; i < fftSize; ++i)
                 {
-                    m_fftCalcIn[i].r = buffers[ch][i].i;
-                    m_fftCalcIn[i].i = buffers[ch][i].q;
+                    m_fftCalcIn[i].r = buffers[ch][i].i * amplitudeCorrection * wndCoef[i];
+                    m_fftCalcIn[i].i = buffers[ch][i].q * amplitudeCorrection * wndCoef[i];
                 }
 
                 kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
@@ -344,15 +350,15 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 }
                 int output_index = 0;
                 for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
-                    localDataResults.fftBins_dbFS[ch][output_index++] += (m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                    localDataResults.fftBins_dbFS[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
                 for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
-                    localDataResults.fftBins_dbFS[ch][output_index++] += (m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                    localDataResults.fftBins_dbFS[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
             }
         }
 
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        if (timePeriod >= 33 && fftCounter > 0 && pthis->updateGUI.load() == true)
+        if (timePeriod >= 33 && fftCounter >= avgCount && pthis->updateGUI.load() == true)
         {
             t1 = t2;
             //shift fft, convert to dBfs
@@ -361,7 +367,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 for (unsigned s = 0; s < fftSize; ++s)
                 {
                     localDataResults.fftBins_dbFS[ch][s] /= fftCounter;
-                    localDataResults.fftBins_dbFS[ch][s] = sqrt(localDataResults.fftBins_dbFS[ch][s]);
+                    //localDataResults.fftBins_dbFS[ch][s] = sqrt(localDataResults.fftBins_dbFS[ch][s]);
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
                 }
             }
@@ -373,6 +379,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             fftCounter = 0;
         }
         avgCount = pthis->averageCount.load();
+        int wndFunctionSelection = pthis->windowFunctionID.load();
+        if(wndFunctionSelection != wndFunction)
+        {
+            wndFunction = wndFunctionSelection;
+            GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, amplitudeCorrection);
+        }
     }
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
@@ -450,4 +462,9 @@ void fftviewer_frFFTviewer::OnAvgChange(wxSpinEvent& event)
 void fftviewer_frFFTviewer::OnAvgChangeEnter(wxCommandEvent& event)
 {
     averageCount.store(spinAvgCount->GetValue());
+}
+
+void fftviewer_frFFTviewer::OnWindowFunctionChange(wxCommandEvent& event)
+{
+    windowFunctionID.store(cmbWindowFunc->GetSelection());
 }

@@ -30,6 +30,7 @@ protected:
     void OnChannelVisibilityChange(wxCommandEvent& event);
     void OnAvgChange(wxSpinEvent& event);
     void OnAvgChangeEnter(wxCommandEvent& event);
+    void OnWindowFunctionChange(wxCommandEvent& event);
     static void StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format);
 
     void OnUpdateStats(wxTimerEvent& event);

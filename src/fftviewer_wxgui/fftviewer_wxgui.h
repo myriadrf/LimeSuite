@@ -78,6 +78,7 @@ class frFFTviewer : public wxFrame
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnWindowFunctionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAvgChange( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnAvgChangeEnter( wxCommandEvent& event ) { event.Skip(); }

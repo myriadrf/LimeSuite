@@ -297,6 +297,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	// Connect Events
 	spinFFTsize->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
 	btnStartStop->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
+	cmbWindowFunc->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );
 	spinAvgCount->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnAvgChange ), NULL, this );
 	spinAvgCount->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( frFFTviewer::OnAvgChangeEnter ), NULL, this );
@@ -307,6 +308,7 @@ frFFTviewer::~frFFTviewer()
 	// Disconnect Events
 	spinFFTsize->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
 	btnStartStop->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
+	cmbWindowFunc->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );
 	spinAvgCount->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnAvgChange ), NULL, this );
 	spinAvgCount->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( frFFTviewer::OnAvgChangeEnter ), NULL, this );
