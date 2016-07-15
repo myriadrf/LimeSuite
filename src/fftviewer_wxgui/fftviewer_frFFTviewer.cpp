@@ -8,6 +8,7 @@
 #include "dataTypes.h"
 #include "LMS7002M.h"
 #include "windowFunction.h"
+#include <fstream>
 
 using namespace std;
 using namespace lime;
@@ -21,11 +22,10 @@ fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
 :
 frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
 {
+    captureSamples.store(false);
     averageCount.store(1);
     spinAvgCount->SetValue(averageCount);
     updateGUI.store(true);
-    chkCaptureToFile->Disable();
-    spinCaptureCount->Disable();
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
@@ -142,6 +142,20 @@ void fftviewer_frFFTviewer::StartStreaming()
     for (unsigned i = 0; i < fftSize; ++i)
         timeXAxis[i] = i;
 
+    if(chkCaptureToFile->GetValue() == true)
+    {
+        captureSamples.store(true);
+        wxFileDialog dlg(this, _("Save samples file"), "", "", "Text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+        if (dlg.ShowModal() == wxID_CANCEL)
+            captureSamples.store(false);
+        else
+            captureFilename = dlg.GetPath().To8BitData();
+    }
+    else
+        captureSamples.store(false);
+    chkCaptureToFile->Disable();
+    spinCaptureCount->Disable();
+
     switch (cmbStreamType->GetSelection())
     {
     case 0: //SISO
@@ -167,6 +181,8 @@ void fftviewer_frFFTviewer::StopStreaming()
 	btnStartStop->SetLabel(_("START"));
 	cmbStreamType->Enable();
 	spinFFTsize->Enable();
+	chkCaptureToFile->Enable();
+	spinCaptureCount->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
@@ -263,6 +279,15 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     for (int i = 0; i < channelsCount; ++i)
         buffers[i] = new complex16_t[test_count];
 
+    vector<complex16_t> captureBuffer[cMaxChCount];
+    uint32_t samplesToCapture[cMaxChCount];
+    if(pthis->captureSamples.load() == true)
+        for(int ch=0; ch<channelsCount; ++ch)
+        {
+            samplesToCapture[ch] = pthis->spinCaptureCount->GetValue();
+            captureBuffer[ch].resize(samplesToCapture[ch]);
+        }
+
     for(int i=0; i<channelsCount; ++i)
     {
         pthis->rxStreams[i].channel = i;
@@ -317,6 +342,18 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 meta.timestamp = ts[i];
                 meta.waitForTimestamp = true;
                 samplesPushed[i] += LMS_SendStream(&pthis->txStreams[i], &buffers[i][samplesPushed[i]], samplesPopped[i], &meta, 1000);
+            }
+
+            if(pthis->captureSamples.load())
+            {
+                for(int ch=0; ch<channelsCount; ++ch)
+                {
+                    uint32_t samplesToCopy = samplesPopped[ch] < samplesToCapture[ch] ? samplesPopped[ch] : samplesToCapture[ch];
+                    if(samplesToCopy <= 0)
+                        break;
+                    memcpy(captureBuffer[ch].data(), buffers[ch], samplesPopped[ch]*sizeof(complex16_t));
+                    samplesToCapture[ch] -= samplesPopped[ch];
+                }
             }
 
             lms_stream_status_t rxStats;
@@ -386,6 +423,27 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, amplitudeCorrection);
         }
     }
+
+    if(pthis->captureSamples.load() == true)
+    {
+        ofstream fout;
+        fout.open(pthis->captureFilename.c_str());
+        fout << "AI\tAQ";
+        if(channelsCount > 1)
+            fout << "\tBI\tBQ";
+        fout << endl;
+
+        int samplesCnt = captureBuffer[0].size();
+        for(int i=0; i<samplesCnt; ++i)
+        {
+            for(int ch=0; ch<channelsCount; ++ch)
+            {
+                fout << captureBuffer[ch][i].i << "\t" << captureBuffer[ch][i].q << "\t";
+            }
+            fout << endl;
+        }
+    }
+
     kiss_fft_free(m_fftCalcPlan);
     pthis->stopProcessing.store(true);
     pthis->mStreamRunning.store(false);

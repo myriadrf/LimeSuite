@@ -23,6 +23,7 @@ protected:
     std::atomic<bool> captureSamples;
     std::atomic<int> averageCount;
     std::atomic<bool> updateGUI;
+    std::string captureFilename;
 	// Handlers for frFFTviewer events.
 	void OnFFTsamplesCountChanged( wxSpinEvent& event );
 	void OnWindowFunctionChanged( wxCommandEvent& event );
