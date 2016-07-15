@@ -68,6 +68,8 @@ class frFFTviewer : public wxFrame
 		wxCheckBox* chkFreezeFFT;
 		wxStaticText* m_staticText11;
 		wxChoice* cmbChannelVisibility;
+		wxStaticText* m_staticText13;
+		wxSpinCtrl* spinAvgCount;
 		wxStaticText* m_staticText15;
 		wxGauge* gaugeRxBuffer;
 		wxStaticText* m_staticText16;
@@ -77,6 +79,8 @@ class frFFTviewer : public wxFrame
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAvgChange( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnAvgChangeEnter( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
