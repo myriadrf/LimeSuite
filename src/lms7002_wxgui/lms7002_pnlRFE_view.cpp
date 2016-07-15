@@ -179,7 +179,7 @@ void lms7002_pnlRFE_view::UpdateGUI()
     //check if B channel is enabled
     uint16_t macBck;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&macBck);
-    if (value >= 2)
+    if (macBck >= 2)
     {
         LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
         if (value != 0)
