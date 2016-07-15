@@ -4,7 +4,7 @@
 @brief 	Implementation of common functions used by all panels
 */
 #include "lms7002_gui_utilities.h"
-#include <wx/defs.h> 
+#include <wx/defs.h>
 #include <wx/panel.h>
 #include <wx/combobox.h>
 #include <wx/checkbox.h>
@@ -34,7 +34,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
     wxClassInfo *spinCtrlInfo = wxClassInfo::FindClass(_("wxSpinCtrl"));
     wxClassInfo *labelInfo = wxClassInfo::FindClass(_("wxStaticText"));
     wxClassInfo *radioBtnInfo = wxClassInfo::FindClass(_("wxRadioButton"));
-        
+
     for (auto idParam : wndId2param)
     {
         wnd = idParam.first;
@@ -56,14 +56,14 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
             if (box->GetCount() <= value)
             {
                 wxString str;
-                str = wxString::Format(_("combobox value(%li) is out of range [0-%i]"), value, box->GetCount() - 1);
+                str = wxString::Format(_("combobox value(%i) is out of range [0-%u]"), value, box->GetCount() - 1);
                 //wxMessageBox(str, "WARNING!");
                 value = 0;
             }
             box->SetSelection(value);
         }
         else if (wndClass->IsKindOf(chkInfo))
-        {   
+        {
             wxStaticCast(wnd, wxCheckBox)->SetValue(value);
         }
         else if (wndClass->IsKindOf(rgrInfo))
@@ -72,7 +72,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
             if (box->GetCount() <= value)
             {
                 wxString str;
-                str = wxString::Format(_("radiogroup value(%i) is out of range [0-%i]"), value, box->GetCount() - 1);
+                str = wxString::Format(_("radiogroup value(%i) is out of range [0-%u]"), value, box->GetCount() - 1);
                 //wxMessageBox(str, "WARNING!");
                 value = 0;
                 continue;
@@ -81,7 +81,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
         }
         else if (wndClass->IsKindOf(labelInfo))
         {
-            wxStaticCast(wnd, wxStaticText)->SetLabel(wxString::Format(_("%li"), value));
+            wxStaticCast(wnd, wxStaticText)->SetLabel(wxString::Format(_("%i"), value));
         }
         else if (wndClass->IsKindOf(numericSliderInfo))
         {
@@ -128,11 +128,11 @@ int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
     @param replace Replace all tooltips with new ones, or keep old ones and just add missing ones
 */
 void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wndId2param, bool replace)
-{   
+{
     wxString sttip = _("");
     std::map<wxWindow*, LMS7Parameter>::const_iterator iter;
     for (iter = wndId2param.begin(); iter != wndId2param.end(); ++iter)
-    {        
+    {
         wxToolTip *ttip = NULL;
         ttip = iter->first->GetToolTip();
         if (ttip)
@@ -145,7 +145,7 @@ void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wnd
 
         if (sttip.length() != 0)
             sttip += _("\n");
-                
+
         int bitCount = iter->second.msb - iter->second.lsb +1;
         if (bitCount == 1)
             sttip += wxString::Format(_("0x%.4X[%i]"), iter->second.address, iter->second.lsb);

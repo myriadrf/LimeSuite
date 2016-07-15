@@ -401,7 +401,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     bool fromChip = false;
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
     if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
         float_type freq[16];

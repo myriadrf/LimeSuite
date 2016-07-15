@@ -331,7 +331,7 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
     LMS_WriteParam(lmsControl,LMS7param(MODE_TX),rgrMODE_TX->GetSelection());
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);  
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     if (rgrMODE_TX->GetSelection() == 0)
     {
         float_type nco_freq[16];
@@ -362,7 +362,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
     bool fromChip = false;
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
     if (rgrMODE_TX->GetSelection() == 0) //FCW mode
     {
         float_type freq[16];
@@ -372,7 +372,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
-        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%f"), pho, fromChip));
+        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%f"), pho));
         lblFCWPHOmodeName->SetLabel(_("PHO"));
     }
     else //PHO mode
@@ -397,8 +397,8 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), freq/1e6));
 
-    
-    uint16_t hbi; 
+
+    uint16_t hbi;
     LMS_ReadParam(lmsControl,LMS7param(HBI_OVR_TXTSP),&hbi);
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
