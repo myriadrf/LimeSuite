@@ -295,6 +295,7 @@ int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_
 void callback_libusbtransfer(libusb_transfer *trans)
 {
 	USBTransferContext *context = reinterpret_cast<USBTransferContext*>(trans->user_data);
+	std::unique_lock<std::mutex> lck(context->transferLock);
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
@@ -336,7 +337,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 
         break;
 	}
-	context->transferLock.unlock();
+	lck.unlock();
 	context->cv.notify_one();
 }
 #endif
@@ -384,8 +385,6 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length)
         contexts[i].used = false;
         return -1;
     }
-    else
-        contexts[i].transferLock.lock();
     #endif
     return i;
 }
@@ -413,8 +412,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
     while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
         //blocking not to waste CPU
-        printf("Wait Rx\n");
-        contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(900));
+        contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
 	return contexts[contextHandle].done.load() == true;
@@ -509,8 +507,6 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length)
         contextsToSend[i].used = false;
         return -1;
     }
-    else
-        contextsToSend[i].transferLock.lock();
     #endif
     return i;
 }
@@ -534,14 +530,10 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
+    std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
     while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
         //blocking not to waste CPU
-#ifndef NDEBUG
-        printf("Wait Tx\n");
-#endif
-        //moving lock here somehow solves locking issue with Eurecom stack
-        std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
         contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
