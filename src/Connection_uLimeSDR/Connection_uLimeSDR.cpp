@@ -13,6 +13,7 @@
 #include <chrono>
 #include <FPGA_common.h>
 #include <LMS7002M.h>
+#include <ciso646>
 
 using namespace std;
 using namespace lime;
@@ -274,7 +275,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
 		return -1;
 	}
 
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, USB_TIMEOUT);
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 	{
 		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE)==FALSE)
@@ -326,7 +327,7 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
 		return -1;;
 	}
 
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, USB_TIMEOUT);
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 	{
 		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
@@ -476,7 +477,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
         int status = 0;
 #ifndef __unix__
 		contexts[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, USB_TIMEOUT);
+		DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else
@@ -630,7 +631,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     {
 #ifndef __unix__
 		contextsToSend[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, USB_TIMEOUT);
+		DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else

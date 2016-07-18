@@ -11,6 +11,7 @@
 #include "Si5351C.h"
 #include "FPGA_common.h"
 #include "LMS7002M.h"
+#include <ciso646>
 
 #include <thread>
 #include <chrono>
@@ -134,7 +135,6 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     if(USBDevicePrimary->Open(index) == false)
         return ReportError(-1, "ConnectionSTREAM: Failed to open device");
 
-    m_hardwareDesc = USBDevicePrimary->Product;
     unsigned int pos;
 
     if (InCtrlEndPt3)
@@ -435,11 +435,12 @@ int ConnectionSTREAM::FinishDataReading(char *buffer, uint32_t length, int conte
     {
     #ifndef __unix__
     int status = 0;
+    long len = length;
     if(InEndPt)
-        status = InEndPt->FinishDataXfer((unsigned char*)buffer, length, contexts[contextHandle].inOvLap, contexts[contextHandle].context);
+        status = InEndPt->FinishDataXfer((unsigned char*)buffer, len, contexts[contextHandle].inOvLap, contexts[contextHandle].context);
     contexts[contextHandle].used = false;
     contexts[contextHandle].reset();
-    return length;
+    return len;
     #else
 	length = contexts[contextHandle].bytesXfered;
 	contexts[contextHandle].used = false;
@@ -555,18 +556,19 @@ int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int
 {
     if( contextsToSend[contextHandle].used == true)
     {
-    #ifndef __unix__
+#ifndef __unix__
+    long len = length;
 	if(OutEndPt)
-        OutEndPt->FinishDataXfer((unsigned char*)buffer, length, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
+        OutEndPt->FinishDataXfer((unsigned char*)buffer, len, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
     contextsToSend[contextHandle].used = false;
     contextsToSend[contextHandle].reset();
-    return length;
-    #else
+    return len;
+#else
 	length = contextsToSend[contextHandle].bytesXfered;
 	contextsToSend[contextHandle].used = false;
     contextsToSend[contextHandle].reset();
 	return length;
-    #endif
+#endif
     }
     else
         return 0;

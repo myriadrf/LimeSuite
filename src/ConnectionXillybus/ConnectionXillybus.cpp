@@ -19,6 +19,7 @@
 #include "Si5351C.h"
 #include <FPGA_common.h>
 #include <LMS7002M.h>
+#include <ciso646>
 
 #include <thread>
 #include <chrono>

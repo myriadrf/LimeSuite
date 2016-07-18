@@ -2,21 +2,22 @@
 #define LMS_DATA_TYPES_H
 
 #include <string.h>
+#include <stdint.h>
 
 namespace lime{
 
-typedef struct
+struct FPGA_DataPacket
 {
     uint8_t reserved[8];
     uint64_t counter;
     uint8_t data[4080];
-} FPGA_DataPacket;
+};
 
-typedef struct
+struct complex16_t
 {
     int16_t i;
     int16_t q;
-} complex16_t;
+};
 
 class SamplesPacket
 {

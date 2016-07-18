@@ -207,6 +207,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
     kissFFT/kiss_fft.c
+    windowFunction.cpp
 )
 
 include(FeatureSummary)
