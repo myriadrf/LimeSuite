@@ -13,7 +13,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/IConnection.h
     ConnectionRegistry/ConnectionHandle.h
     ConnectionRegistry/ConnectionRegistry.h
-    lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
@@ -24,8 +23,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/dataTypes.h
     protocols/fifo.h
     Si5351C/Si5351C.h
-    LMS_StreamBoard/LMS_StreamBoard.h
-    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
     FPGA_common/FPGA_common.h
     lime/LimeSuite.h
 )
@@ -51,7 +48,6 @@ set(LIME_SUITE_SOURCES
     ConnectionRegistry/IConnection.cpp
     ConnectionRegistry/ConnectionHandle.cpp
     ConnectionRegistry/ConnectionRegistry.cpp
-    lms7002m_novena/StreamerNovena.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
@@ -62,7 +58,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp
     Si5351C/Si5351C.cpp
-    LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
@@ -81,10 +76,8 @@ set(LIME_SUITE_INCLUDES
     Si5351C
     lms7002m
     LTEpackets
-    LMS_StreamBoard
     FPGA_common
     lms7002m_mcu
-    lms7002m_novena
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
     kissFFT
@@ -198,7 +191,7 @@ set(LMS7SUITE_GUI_SOURCES
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    lms7002m_novena/lms7002m_novena_wxgui.cpp
+    boards_wxgui/lms7002m_novena_wxgui.cpp
     RFSpark/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
@@ -293,3 +286,4 @@ if(BUILD_TESTS)
     target_link_libraries(RxTest2 LimeSuite)
     add_subdirectory(tests)
 endif()
+

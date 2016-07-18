@@ -26,10 +26,8 @@
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <iostream>
-#include "LMS_StreamBoard.h"
 
 using namespace std;
-using namespace lime;
 
 const long FPGAcontrols_wxgui::ID_BUTTON6 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON7 = wxNewId();

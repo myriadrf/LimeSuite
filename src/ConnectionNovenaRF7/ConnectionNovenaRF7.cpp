@@ -223,3 +223,67 @@ void ConnectionNovenaRF7::UpdateExternalBandSelect(const size_t channel, const i
     }
     */
 }
+
+int ConnectionNovenaRF7::UpdateThreads()
+{
+    bool needRx = false;
+
+    //check which threads are needed
+    for(auto i : mRxStreams)
+        if(i->IsActive())
+        {
+            needRx = true;
+            break;
+        }
+
+    //stop threads if not needed
+    if(not needRx and rxRunning.load())
+    {
+        terminateRx.store(true);
+        rxThread.join();
+        rxRunning.store(false);
+    }
+
+    //configure FPGA on first start, or disable FPGA when not streaming
+    if(needRx && not rxRunning.load())
+    {
+        //Stop streaming in case it was running
+        uint16_t regVal = 0;
+        ReadRegister(0x000A, regVal);
+        WriteRegister(0x000A, regVal & ~0x1);
+
+        //USB FIFO reset
+        LMS64CProtocol::GenericPacket ctrPkt;
+        ctrPkt.cmd = CMD_USB_FIFO_RST;
+        ctrPkt.outBuffer.push_back(0x01);
+        TransferPacket(ctrPkt);
+        ctrPkt.outBuffer[0] = 0x00;
+        TransferPacket(ctrPkt);
+
+        //StartStreaming
+        ReadRegister(0x000A, regVal);
+        WriteRegister(0x000A, regVal | 0x1);
+    }
+    else if(not needRx)
+    {
+        //Stop streaming
+        uint16_t regVal = 0;
+        ReadRegister(0x000A, regVal);
+        WriteRegister(0x000A, regVal & ~0x1);
+    }
+
+    //FPGA should be configured and activated, start needed threads
+    if(needRx and not rxRunning.load())
+    {
+        ThreadData args;
+        args.terminate = &terminateRx;
+        args.dataPort = this;
+        args.dataRate_Bps = &rxDataRate_Bps;
+        args.channels = mRxStreams;
+
+        rxRunning.store(true);
+        terminateRx.store(false);
+        rxThread = std::thread(ReceivePacketsLoop, args);
+    }
+    return 0;
+}

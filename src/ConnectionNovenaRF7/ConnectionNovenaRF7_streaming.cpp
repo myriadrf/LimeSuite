@@ -1,4 +1,4 @@
-#include "StreamerNovena.h"
+#include "ConnectionNovenaRF7.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 #include "IConnection.h"
+#include "ErrorReporting.h"
 
 #if defined(__GNUC__) || defined(__GNUG__)
 #include <unistd.h>
@@ -394,59 +395,14 @@ int prep_eim_burst()
     return 0;
 }
 
-StreamerNovena::StreamerNovena(IConnection* dataPort) : LMS_StreamBoard(dataPort)
-{
-
-}
-
-StreamerNovena::~StreamerNovena()
-{
-
-}
-
-LMS_StreamBoard::Status StreamerNovena::StartReceiving(unsigned int fftSize)
-{
-    if (mStreamRunning.load() == true)
-        return FAILURE;
-    if (mDataPort->IsOpen() == false)
-        return FAILURE;
-    mRxFIFO->reset();
-    stopRx.store(false);
-    stopProcessing.store(false);
-    threadRx = std::thread(ReceivePackets, this);
-    threadProcessing = std::thread(ProcessPackets, this, fftSize);
-    mStreamRunning.store(true);
-    return LMS_StreamBoard::SUCCESS;
-}
-
-LMS_StreamBoard::Status StreamerNovena::StopReceiving()
-{
-    if (mStreamRunning.load() == false)
-        return FAILURE;
-    stopTx.store(true);
-    stopProcessing.store(true);
-    stopRx.store(true);
-    threadProcessing.join();
-    threadRx.join();
-    mStreamRunning.store(false);
-    return SUCCESS;
-}
-
-LMS_StreamBoard::Status StreamerNovena::StartCyclicTransmitting(const int16_t* isamples, const int16_t* qsamples, uint32_t framesCount)
-{
-    return LMS_StreamBoard::FAILURE;
-}
-
-LMS_StreamBoard::Status StreamerNovena::StopCyclicTransmitting()
-{
-    return LMS_StreamBoard::SUCCESS;
-}
-
-void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
+void ConnectionNovenaRF7::ReceivePacketsLoop(const ThreadData args)
 {
     prep_eim_burst();
-    StreamerNovena *pthis = pStreamer;
-    LMS_StreamBoard::SamplesPacket pkt;
+    ConnectionNovenaRF7 *pthis = args.dataPort;
+    auto dataPort = args.dataPort;
+    auto terminate = args.terminate;
+    auto dataRate_Bps = args.dataRate_Bps;
+
     int samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
@@ -455,35 +411,41 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
     char buffer[buffer_size];
     memset(buffer, 0, buffer_size);
 
-    int packetsReceived = 0;
     unsigned long totalBytesReceived = 0;
     int m_bufferFailures = 0;
-    short sample;
+    int16_t sample;
 
     const int bytesToRead = 4096;
     const int FPGAbufferSize = 32768*2;
 
     int dataSource = 0;
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
-    uint16_t controlRegValue = pthis->Reg_read(NOVENA_DATA_SRC_ADDR);
+    uint16_t controlRegValue = 0;
+    pthis->ReadRegister(NOVENA_DATA_SRC_ADDR, controlRegValue);
 
     dataSource = (controlRegValue >> 12) & 0x3;
     //reset FIFO
-    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+    pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+    pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
     //set data source
     //pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x8FFF) | (dataSource << 12));
     //request data
-    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-    pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+    pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+    pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
-    while (pthis->stopRx.load() == false)
+    vector<complex16_t> samples(FPGAbufferSize/4);
+    uint64_t timestamp = 0;
+    uint32_t droppedSamples = 0;
+
+    while (terminate->load() == false)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
         int bytesReceived = 0;
-	printf("--- FPGA FIFO UPDATE ---\n");
+#ifndef NDEBUG
+        printf("--- FPGA FIFO UPDATE ---\n");
+#endif
         for (int bb = 0; bb<FPGAbufferSize; bb += bytesToRead)
         {
             fpga_read(0xC000000, (unsigned short*)&buffer[bb], bytesToRead);
@@ -491,34 +453,43 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
             bytesReceived += bytesToRead;
         }
 	//reset FIFO
-	pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
-        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
-        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
+        pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);
+        pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
         //request data
-        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
-        pthis->Reg_write(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
+        pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF));
+        pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0xBFFF)| 0x4000);
 
         if (bytesReceived > 0)
         {
-            ++packetsReceived;
             char* bufStart = buffer;
-            for (int p = 0; p < bytesReceived; p += 2)
+            for (int p = 0; p < bytesReceived; p += 4)
             {
                 sample = (bufStart[p + 1] & 0x0F);
                 sample = sample << 8;
                 sample |= (bufStart[p] & 0xFF);
                 sample = sample << 4;
                 sample = sample >> 4;
-                pkt.iqdata[samplesCollected] = sample;
+                samples[samplesCollected].i = sample;
+
+                sample = (bufStart[p + 1] & 0x0F);
+                sample = sample << 8;
+                sample |= (bufStart[p] & 0xFF);
+                sample = sample << 4;
+                sample = sample >> 4;
+                samples[samplesCollected].q = sample;
+
                 ++samplesCollected;
-                if (pkt.samplesCount == samplesCollected)
-                {
-                    samplesCollected = 0;
-                    if (pthis->mRxFIFO->push_back(pkt, 200) == false)
-                        ++m_bufferFailures;
-                    break;
-                }
             }
+
+            IStreamChannel::Metadata meta;
+            meta.timestamp = timestamp;
+            timestamp += samplesCollected;
+            meta.flags = 0;
+            uint32_t samplesPushed = args.channels[0]->Write((const void*)samples.data(), samplesCollected, &meta, 100);
+            if(samplesPushed != samplesCollected)
+                droppedSamples += samplesCollected-samplesPushed;
+            samplesCollected = 0;
         }
         else
         {
@@ -532,14 +503,14 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
             float m_dataRate = 1000.0*totalBytesReceived / timePeriod;
             t1 = t2;
             totalBytesReceived = 0;
-            LMS_StreamBoard_FIFO<LMS_StreamBoard::SamplesPacket>::Status rxstats = pthis->mRxFIFO->GetStatus();
 
-            pthis->mRxDataRate.store(m_dataRate);
-            pthis->mRxFIFOfilled.store(100.0*rxstats.filledElements / rxstats.maxElements);
+            if(dataRate_Bps)
+                dataRate_Bps->store(m_dataRate);
 #ifndef NDEBUG
-            printf("Rx: %.1f%% \t rate: %.0f kB/s failures:%i\n", 100.0*rxstats.filledElements / rxstats.maxElements, m_dataRate / 1000.0, m_bufferFailures);
+            printf("Rx: %.0f kB/s failures:%i\n", m_dataRate / 1000.0, m_bufferFailures);
 #endif
             m_bufferFailures = 0;
+            droppedSamples = 0;
         }
         memset(buffer, 0, buffer_size);
     }
@@ -548,7 +519,81 @@ void StreamerNovena::ReceivePackets(StreamerNovena* pStreamer)
 #endif
 }
 
-void StreamerNovena::TransmitPackets(StreamerNovena* pthis)
+int ConnectionNovenaRF7::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
 {
+    assert(streamID != 0);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
+    lime::IStreamChannel::Metadata meta;
+    meta.flags = 0;
+    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
+    meta.timestamp = metadata.timestamp;
+    int status = channel->Read(buffs, length, &meta, timeout_ms);
+    metadata.timestamp = meta.timestamp;
+    return status;
+}
 
+int ConnectionNovenaRF7::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
+{
+    return -1;
+}
+
+int ConnectionNovenaRF7::SetupStream(size_t &streamID, const StreamConfig &config)
+{
+    if(rxRunning.load() == true)
+        return ReportError(EPERM, "All streams must be stopped before doing setups");
+    streamID = ~0;
+    StreamChannel* stream = new StreamChannel(this);
+    stream->config = config;
+    //TODO check for duplicate streams
+    if(config.isTx)
+        return ReportError(ENOTSUP, "Transmitting not supported");
+    else
+        mRxStreams.push_back(stream);
+    streamID = size_t(stream);
+    return 0; //success
+}
+
+int ConnectionNovenaRF7::CloseStream(const size_t streamID)
+{
+    if(rxRunning.load() == true)
+        return ReportError(EPERM, "All streams must be stopped before closing");
+    StreamChannel *stream = (StreamChannel*)streamID;
+    for(auto i=mRxStreams.begin(); i!=mRxStreams.end(); ++i)
+    {
+        if(*i==stream)
+        {
+            delete *i;
+            mRxStreams.erase(i);
+            break;
+        }
+    }
+    return 0;
+}
+
+size_t ConnectionNovenaRF7::GetStreamSize(const size_t streamID)
+{
+    return 16384;
+}
+
+int ConnectionNovenaRF7::ControlStream(const size_t streamID, const bool enable)
+{
+    auto *stream = (StreamChannel* )streamID;
+    assert(stream != nullptr);
+
+    if(enable)
+        return stream->Start();
+    else
+        return stream->Stop();
+}
+
+int ConnectionNovenaRF7::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
+{
+    assert(streamID != 0);
+    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
+    StreamChannel::Info info = channel->GetInfo();
+    metadata.hasTimestamp = false;
+    metadata.timestamp = info.timestamp;
+    metadata.lateTimestamp = info.underrun > 0;
+    metadata.packetDropped = info.droppedPackets > 0;
+    return 0;
 }

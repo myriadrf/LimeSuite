@@ -7,6 +7,8 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionNovenaRF7)
 set(CONNECTION_NOVENARF7_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionNovenaRF7Entry.cpp
     ${THIS_SOURCE_DIR}/ConnectionNovenaRF7.cpp
+    ${THIS_SOURCE_DIR}/ConnectionNovenaRF7_streaming.cpp
+    ${THIS_SOURCE_DIR}/StreamChannel.cpp
 )
 
 include(CheckIncludeFile)
