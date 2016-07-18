@@ -51,7 +51,7 @@ public:
     /*!
      * Set the reference using the Si5351C when available
      */
-    void SetReferenceClockRate(const double rate);
+    int SetReferenceClockRate(const double rate);
 
     /// Supported connection types.
     enum eConnectionType

@@ -993,12 +993,14 @@ void LMS7002M::UpdateExternalBandSelect(void)
         int(this->GetPathRFE()));
 }
 
-void LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
+int LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 {
     if(controlPort == nullptr)
-        return; //TODO return error
-    if (tx) controlPort->SetTxReferenceClockRate(freq_Hz);
-    else controlPort->SetReferenceClockRate(freq_Hz);
+        return ReportError(ENODEV, "Device not connected");
+    if (tx)
+        return controlPort->SetTxReferenceClockRate(freq_Hz);
+    else
+        return controlPort->SetReferenceClockRate(freq_Hz);
 }
 
 /**	@brief Returns reference clock in Hz used for SXT or SXR

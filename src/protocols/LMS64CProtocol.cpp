@@ -128,7 +128,7 @@ double LMS64CProtocol::GetReferenceClockRate(void)
     return _cachedRefClockRate;
 }
 
-void LMS64CProtocol::SetReferenceClockRate(const double rate)
+int LMS64CProtocol::SetReferenceClockRate(const double rate)
 {
     Si5351C pll;
     pll.Initialize(this);
@@ -137,6 +137,7 @@ void LMS64CProtocol::SetReferenceClockRate(const double rate)
 
     //stash the actual reference
     _cachedRefClockRate = rate;
+    return 0;
 }
 
 /***********************************************************************
@@ -244,8 +245,7 @@ int LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const size_t size
 
 int LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    //TODO
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "ReadADF4002SPI not supported");
     return -1;
 }
 

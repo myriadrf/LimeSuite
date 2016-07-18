@@ -133,9 +133,9 @@ double IConnection::GetReferenceClockRate(void)
     return 61.44e6/2;
 }
 
-void IConnection::SetReferenceClockRate(const double rate)
+int IConnection::SetReferenceClockRate(const double rate)
 {
-    return;
+    return ReportError(EPERM, "SetReferenceClockRate not implemented");
 }
 
 double IConnection::GetTxReferenceClockRate(void)
@@ -143,7 +143,7 @@ double IConnection::GetTxReferenceClockRate(void)
     return this->GetReferenceClockRate();
 }
 
-void IConnection::SetTxReferenceClockRate(const double rate)
+int IConnection::SetTxReferenceClockRate(const double rate)
 {
     return this->SetReferenceClockRate(rate);
 }

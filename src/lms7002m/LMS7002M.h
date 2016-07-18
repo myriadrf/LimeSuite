@@ -284,7 +284,7 @@ public:
     ///@}
 
     ///@name CGEN and PLL
-	void SetReferenceClk_SX(bool tx, float_type freq_Hz);
+	int SetReferenceClk_SX(bool tx, float_type freq_Hz);
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN();
     int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);

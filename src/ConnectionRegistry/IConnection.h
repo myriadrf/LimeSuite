@@ -307,7 +307,7 @@ public:
      * Some implementations use the programmable Si5351C.
      * @param rate the clock rate in Hz
      */
-    virtual void SetReferenceClockRate(const double rate);
+    virtual int SetReferenceClockRate(const double rate);
 
     /*!
      * Query the TX frequency of the reference clock.
@@ -323,7 +323,7 @@ public:
      * this call simply forwards to SetReferenceClockRate()
      * @param rate the clock rate in Hz
      */
-    virtual void SetTxReferenceClockRate(const double rate);
+    virtual int SetTxReferenceClockRate(const double rate);
 
     /***********************************************************************
      * Timestamp API
