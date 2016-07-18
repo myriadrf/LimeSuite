@@ -19,6 +19,7 @@
 #include <wx/msgdlg.h>
 #include "wx/checkbox.h"
 
+#include "dataTypes.h"
 #include "FPGAcontrols_wxgui.h"
 #include <vector>
 #include <fstream>
@@ -84,6 +85,8 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     btnLoadWCDMA = new wxToggleButton(this, ID_BUTTON7, _T("W-CDMA"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
     btnLoadWCDMA->SetToolTip(_T("Loads file named wcdma.wfm from ") + gWFMdirectory + _("directory"));
 	FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
+    FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
 	FlexGridSizer6->Add(FlexGridSizer8, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer10 = new wxFlexGridSizer(0, 3, 0, 5);
 	FlexGridSizer10->AddGrowableCol(2);
@@ -230,25 +233,21 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
-    /*assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, regData | 0x3);*/
-
+    uint16_t regData = 0;
+    LMS_ReadFPGAReg(lmsControl, 0x000D, &regData);
+    LMS_WriteFPGAReg(lmsControl, 0x000D, regData | 0x2);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
-
-    /*assert(mStreamer != nullptr);
-    uint16_t regData = mStreamer->Reg_read(0x0005);
-    mStreamer->Reg_write(0x0005, (regData & ~0x2) | 0x1);*/
-
+    uint16_t regData = 0;
+    LMS_ReadFPGAReg(lmsControl, 0x000D, &regData);
+    LMS_WriteFPGAReg(lmsControl, 0x000D, (regData & ~0x2));
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
-    /*assert(mStreamer != nullptr);
-    if (!m_serPort || m_serPort->IsOpen() == false)
+    if (!lmsControl)
     {
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
@@ -275,15 +274,14 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint16_t regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData & ~0x7);
+    int chCount = 2;
+    bool MIMO = chkMIMO->IsChecked();
+    LMS_WriteFPGAReg(lmsControl, 0x000C, 0x3); //channels 0,1
 
-    int chCount = 0;
-    uint16_t channelFlags = mStreamer->Reg_read(0x0007);
-    for(int i=0; i<16; ++i)
-        chCount += (channelFlags >> i) & 1;
+    LMS_WriteFPGAReg(lmsControl, 0x000E, 0x2); //12bit samples
+    LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0004); //WFM_LOAD
 
-    PacketLTE pkt;
+    lime::FPGA_DataPacket pkt;
     int samplesUsed = 0;
 
     while(samplesUsed<isamples.size())
@@ -295,6 +293,14 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         {
             for(int ch = 0; ch < chCount; ++ch)
             {
+                if(MIMO == false && ch > 0)
+                {
+                    pkt.data[bufPos] = 0;
+                    pkt.data[bufPos + 1] = 0;
+                    pkt.data[bufPos + 2] = 0;
+                    bufPos += 3;
+                    continue;
+                }
                 pkt.data[bufPos] = isamples[samplesUsed] & 0xFF;
                 pkt.data[bufPos+1] = (isamples[samplesUsed] >> 8) & 0x0F;
                 pkt.data[bufPos+1] |= (qsamples[samplesUsed] << 4) & 0xF0;
@@ -303,42 +309,40 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
             }
             ++samplesUsed;
         }
-        int payloadSize = bufPos / 4;
+        int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
             printf("Packet samples count not multiple of 4\n");
-        pkt.reserved[1] = (payloadSize >> 8) & 0xFF; //WFM loading
-        pkt.reserved[2] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
         pkt.reserved[0] = 0x1 << 5; //WFM loading
 
-        long bToSend = sizeof(pkt);
-        int context = m_serPort->BeginDataSending((char*)&pkt, bToSend );
-        if(m_serPort->WaitForSending(context, 250) == false)
+        long bToSend = 16+payloadSize;
+        //int context = m_serPort->BeginDataSending((char*)&pkt, bToSend );
+        //if(m_serPort->WaitForSending(context, 250) == false)
         {
             success = false;
-            m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
+            //m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
             break;
         }
-        m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
+        //m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
         progressBar->SetValue(samplesUsed);
         lblProgressPercent->SetLabel(wxString::Format(_("%3.0f%%"), 100.0*samplesUsed/isamples.size()));
         wxYield();
     }
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
-
-    regData = mStreamer->Reg_read(0x000A);
-    mStreamer->Reg_write(0x000A, regData | 0x6);
+    LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0002); //WFM_PLAY
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
 
-	if (!success)
-	{
-		wxMessageBox(_("Failed to upload WFM file"), _("Error"));
-		return -3;
-	}
-	else*/
-	return 0;
+    if (!success)
+    {
+        wxMessageBox(_("Failed to upload WFM file"), _("Error"));
+        return -3;
+    }
+    else
+        return 0;
 }
 
 void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
@@ -424,16 +428,16 @@ void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 {
-   /* if(!m_serPort)
+    if(!lmsControl)
     {
         wxMessageBox(_("FPGA controls: Connection not initialized"), _("ERROR"));
         return;
     }
 
     const uint16_t address = 0x0008;
-    uint32_t dataRd = 0;
+    uint16_t dataRd = 0;
     int status;
-    status = m_serPort->ReadRegister(address, dataRd);
+    status = LMS_ReadFPGAReg(lmsControl, address, &dataRd);
     unsigned short regValue = 0;
 
     if (status == 0)
@@ -441,8 +445,8 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 
     regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
 
-    status = m_serPort->WriteRegister(address, regValue);
+    status = LMS_WriteFPGAReg(lmsControl, address, regValue);
 
     if (status != 0)
-        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);*/
+        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }
