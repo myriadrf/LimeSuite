@@ -532,22 +532,6 @@ public:
     */
     virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
 
-    /***********************************************************************
-     * !!! Below is the old IConnection Streaming API
-     * It remains here to enable compiling until its replaced
-     **********************************************************************/
-
-	virtual int BeginDataReading(char *buffer, long length){ return -1; };
-	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataReading(char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortReading(){};
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms){ return 0; }
-
-	virtual int BeginDataSending(const char *buffer, long length){ return -1; };
-	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortSending(){};
-
     /** @brief Sets callback function which gets called each time data is sent or received
     */
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
