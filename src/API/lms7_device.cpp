@@ -330,8 +330,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
     float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
                             pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
 
-    this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
-   return 0;
+    return this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
 }
 
 int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)

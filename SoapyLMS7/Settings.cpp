@@ -729,10 +729,13 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
 
-    _conn->UpdateExternalDataRate(
+    int status = 0;
+    status = _conn->UpdateExternalDataRate(
         rfic->GetActiveChannelIndex(),
         rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
         rfic->GetSampleRate(LMS7002M::Rx, rfic->GetActiveChannel()));
+    if(status != 0)
+        SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const

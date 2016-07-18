@@ -448,7 +448,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         //need to adjust decimation to fit into USB speed
         float rateLimit_Bps;
-        DeviceInfo info = controlPort->GetDeviceInfo();
+        DeviceInfo info = dataPort->GetDeviceInfo();
         if(info.deviceName == GetDeviceName(LMS_DEV_STREAM))
             rateLimit_Bps = 110e6;
         else if(info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
@@ -472,7 +472,8 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        controlPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        if(dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount) != 0)
+            printf(GetLastErrorMessage());
     }
 #endif
     return 0;
@@ -1165,7 +1166,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        if(dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount) != 0)
+            printf(GetLastErrorMessage());
     }
 #endif
     return 0;

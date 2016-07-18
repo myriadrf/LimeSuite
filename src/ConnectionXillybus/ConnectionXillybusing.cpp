@@ -135,12 +135,13 @@ int ConnectionXillybus::ReadStreamStatus(const size_t streamID, const long timeo
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-void ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
+int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
     std::cout << "ConnectionXillybus::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     mExpectedSampleRate = rxRate_Hz;
+    int status = 0;
     if(txInterfaceClk >= 5e6)
     {
         lime::fpga::FPGA_PLL_clock clocks[2];
@@ -152,10 +153,12 @@ void ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doub
         clocks[1].index = 1;
         clocks[1].outFrequency = txInterfaceClk;
         clocks[1].phaseShift_deg = 90;
-        lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
+        status = lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
     }
     else
-        lime::fpga::SetDirectClocking(this, 0, txInterfaceClk, 90);
+        status = lime::fpga::SetDirectClocking(this, 0, txInterfaceClk, 90);
+    if(status != 0)
+        return status;
 
     if(rxInterfaceClk >= 5e6)
     {
@@ -168,10 +171,11 @@ void ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doub
         clocks[1].index = 1;
         clocks[1].outFrequency = rxInterfaceClk;
         clocks[1].phaseShift_deg = 90;
-        lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
+        status = lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
     }
     else
-        lime::fpga::SetDirectClocking(this, 1, rxInterfaceClk, 90);
+        status = lime::fpga::SetDirectClocking(this, 1, rxInterfaceClk, 90);
+    return status;
 }
 
 void ConnectionXillybus::EnterSelfCalibration(const size_t channel)

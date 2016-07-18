@@ -108,9 +108,9 @@ void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBa
     return;
 }
 
-void IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
+int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
-    return;
+    return ReportError(EPERM, "UpdateExternalDataRate not implemented");
 }
 
 void IConnection::EnterSelfCalibration(const size_t channel)

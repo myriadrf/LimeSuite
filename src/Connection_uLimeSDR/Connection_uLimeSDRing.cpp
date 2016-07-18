@@ -136,12 +136,13 @@ int Connection_uLimeSDR::ReadStreamStatus(const size_t streamID, const long time
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-void Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
+int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
     std::cout << "Connection_uLimeSDR::UpdateExternalDataRate(tx=" << txRate_Hz / 1e6 << "MHz, rx=" << rxRate_Hz / 1e6 << "MHz)" << std::endl;
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     mExpectedSampleRate = rxRate_Hz;
+    int status = 0;
     if ((txInterfaceClk >= 5e6) && (rxInterfaceClk >= 5e6))
     {
         lime::fpga::FPGA_PLL_clock clocks[4];
@@ -161,11 +162,11 @@ void Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const dou
         clocks[3].index = 3;
         clocks[3].outFrequency = rxInterfaceClk;
         clocks[3].phaseShift_deg = 90;
-        lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 4);
+        return lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 4);
     }
     else
     {
-        ReportError(-1, "uLimeSDR FPGA sampling rate must be >=2.5 MHz");
+        return ReportError(-1, "uLimeSDR FPGA sampling rate must be >=2.5 MHz");
     }
 }
 

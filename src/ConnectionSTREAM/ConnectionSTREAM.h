@@ -142,7 +142,7 @@ public:
     int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata& metadata);
 
     //hooks to update FPGA plls when baseband interface data rate is changed
-    void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
+    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
     void EnterSelfCalibration(const size_t channel);
     void ExitSelfCalibration(const size_t channel);
 
