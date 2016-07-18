@@ -16,6 +16,7 @@
 #include "ErrorReporting.h"
 #include "MCU_BD.h"
 #include "FPGA_common.h"
+#include "LMS64CProtocol.h"
 
 
 static const size_t LMS_PATH_NONE = 0;

@@ -93,11 +93,6 @@ fftviewer_frFFTviewer::~fftviewer_frFFTviewer()
         StopStreaming();
 }
 
-void fftviewer_frFFTviewer::OnFFTsamplesCountChanged( wxSpinEvent& event )
-{
-// TODO: Implement OnFFTsamplesCountChanged
-}
-
 void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
 {
     windowFunctionID.store(cmbWindowFunc->GetSelection());

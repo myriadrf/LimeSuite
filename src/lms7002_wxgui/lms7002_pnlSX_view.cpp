@@ -465,11 +465,6 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     }
 }
 
-void lms7002_pnlSX_view::OnDIV2PrescalerChange( wxCommandEvent& event )
-{
-// TODO: Implement OnDIV2PrescalerChange
-}
-
 void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);

@@ -25,7 +25,6 @@ protected:
     std::atomic<bool> updateGUI;
     std::string captureFilename;
 	// Handlers for frFFTviewer events.
-	void OnFFTsamplesCountChanged( wxSpinEvent& event );
 	void OnWindowFunctionChanged( wxCommandEvent& event );
 	void OnbtnStartStop( wxCommandEvent& event );
     void OnChannelVisibilityChange(wxCommandEvent& event);

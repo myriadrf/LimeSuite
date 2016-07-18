@@ -10,7 +10,8 @@
 #include "LMS7002M.h"
 #include "lime/LimeSuite.h"
 #include <mutex>
-#include "LMS64CProtocol.h" //TODO remove when reset usb is abstracted
+#include <vector>
+#include <IConnection.h>
 
 typedef struct
 {

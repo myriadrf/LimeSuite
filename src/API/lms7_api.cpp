@@ -11,6 +11,7 @@
 #include <cmath>
 #include "VersionInfo.h"
 #include <assert.h>
+#include "LMS64CProtocol.h"
 
 using namespace std;
 
@@ -1524,7 +1525,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     config.bufferLength = 65536;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
-    if(stream->dataFmt == lms_stream_t::LMS_FMT_I16) //TODO
+    if(stream->dataFmt == lms_stream_t::LMS_FMT_I16)
         config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
     else
         config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;

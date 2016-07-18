@@ -23,7 +23,6 @@ class lms7002_pnlSX_view : public pnlSX_view
         void ParameterChangeHandler( wxSpinEvent& event);
         void OnbtnReadComparators(wxCommandEvent& event);
 		void OnbtnChangeRefClkClick( wxCommandEvent& event );
-		void OnDIV2PrescalerChange( wxCommandEvent& event );
 		void OnbtnCalculateClick( wxCommandEvent& event );
 		void OnbtnTuneClick( wxCommandEvent& event );
         void OnShowVCOclicked(wxCommandEvent& event);

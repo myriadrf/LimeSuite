@@ -270,10 +270,10 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     txtFreq_CLK5->GetValue().ToDouble(&freq[5]);
     txtFreq_CLK6->GetValue().ToDouble(&freq[6]);
     txtFreq_CLK7->GetValue().ToDouble(&freq[7]);
-    
+
     for (int i = 0; i < 8 ; i++)
         freq[i] *= 1e6;
-    
+
     if (chkEN_CLK0->GetValue()) freq[0]  = 0;
     if (chkEN_CLK1->GetValue()) freq[1]  = 0;
     if (chkEN_CLK2->GetValue()) freq[2]  = 0;
@@ -282,7 +282,7 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     if (chkEN_CLK5->GetValue()) freq[5]  = 0;
     if (chkEN_CLK6->GetValue()) freq[6]  = 0;
     if (chkEN_CLK7->GetValue()) freq[7]  = 0;
-    
+
     if (chkInvert_CLK0->GetValue()) freq[0] *= -1;
     if (chkInvert_CLK1->GetValue()) freq[1] *= -1;
     if (chkInvert_CLK2->GetValue()) freq[2] *= -1;
@@ -306,7 +306,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
 {
     for(int i=0; i<8; ++i)
         ClockEnable(i, true);
-   /* if(board == GetDeviceName(LMS_DEV_STREAM))
+    if(board == GetDeviceName(LMS_DEV_STREAM))
     {
         lblCLK0->SetLabel(_("CLK0 - CLK_IN"));
         lblCLK1->SetLabel(_("CLK1"));
@@ -321,8 +321,8 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         lblCLK7->SetLabel(_("CLK7 - CLK_FPGA1"));
         rgrClkSrc->SetSelection(1);
     }
-    else if (board == GetDeviceName(LMS_DEV_LIMESDR))
-    {*/
+    else
+    {
         lblCLK0->SetLabel(_("CLK0"));
         lblCLK1->SetLabel(_("CLK1"));
         lblCLK2->SetLabel(_("CLK2"));
@@ -332,23 +332,7 @@ void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
         lblCLK6->SetLabel(_("CLK6"));
         lblCLK7->SetLabel(_("CLK7"));
         rgrClkSrc->SetSelection(0);
-   /* }
-    else
-    {
-        lblCLK0->SetLabel(_("CLK0 - PLL CLK"));
-        lblCLK1->SetLabel(_("CLK1"));
-        ClockEnable(1, false);
-        lblCLK2->SetLabel(_("CLK2 - RxCLK"));
-        ClockEnable(2, false);
-        lblCLK3->SetLabel(_("CLK3 - RxCLK_C"));
-        lblCLK4->SetLabel(_("CLK4 - TxCLK"));
-        lblCLK5->SetLabel(_("CLK5 - TxCLK_C"));
-        lblCLK6->SetLabel(_("CLK6"));
-        ClockEnable(6, false);
-        lblCLK7->SetLabel(_("CLK7"));
-        ClockEnable(7, false);
-        rgrClkSrc->SetSelection(1);
-    }*/
+    }
     Layout();
 }
 

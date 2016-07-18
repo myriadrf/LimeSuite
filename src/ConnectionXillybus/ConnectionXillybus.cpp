@@ -855,7 +855,6 @@ int ConnectionXillybus::UpdateThreads()
         fpga::StopStreaming(this);
         fpga::ResetTimestamp(this);
         //USB FIFO reset
-        // TODO : USB FIFO reset command for IConnection
         LMS64CProtocol::GenericPacket ctrPkt;
         ctrPkt.cmd = CMD_USB_FIFO_RST;
         ctrPkt.outBuffer.push_back(0x01);
