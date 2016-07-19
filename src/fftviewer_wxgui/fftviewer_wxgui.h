@@ -72,6 +72,19 @@ class frFFTviewer : public wxFrame
 		wxGauge* gaugeRxBuffer;
 		wxStaticText* m_staticText16;
 		wxGauge* gaugeTxBuffer;
+		wxStaticText* m_staticText13;
+		wxStaticText* m_staticText14;
+		wxStaticText* m_staticText151;
+		wxTextCtrl* txtCenterOffset1;
+		wxTextCtrl* txtCenterOffset2;
+		wxStaticText* m_staticText161;
+		wxTextCtrl* txtBW1;
+		wxTextCtrl* txtBW2;
+		wxStaticText* m_staticText17;
+		wxStaticText* lblPower1;
+		wxStaticText* lblPower2;
+		wxStaticText* m_staticText20;
+		wxStaticText* lbldBc;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }

@@ -23,7 +23,7 @@ frFFTviewer(parent), mLTEstreamer(nullptr), mDataPort(nullptr), mStreamBrd(nullp
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
-    SetSize(800, 600);
+    SetSize(1000, 700);
     mFFTpanel->settings.useVBO = true;
     mFFTpanel->AddSerie(new cDataSerie());
     mFFTpanel->AddSerie(new cDataSerie());
@@ -262,7 +262,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
                 freqs.reserve(data.fftBins_dbFS[0].size());
                 double nyquistMHz;
                 txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
-				const float step = 2*nyquistMHz / data.samplesI[0].size();
+                const float step = 2*nyquistMHz / data.samplesI[0].size();
                 for (int i = 0; i < data.fftBins_dbFS[0].size(); ++i)
                     freqs.push_back(1000000*(-nyquistMHz + (i+1)*step));
                 vector<float> indexes;
@@ -286,6 +286,41 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxTimerEvent& event)
                     mFFTpanel->series[0]->AssignValues(&freqs[0], &data.fftBins_dbFS[0][0], data.fftBins_dbFS[0].size());
                     mFFTpanel->series[1]->AssignValues(&freqs[0], &data.fftBins_dbFS[1][0], data.fftBins_dbFS[1].size());
                 }
+
+                float chPwr[2];
+                double cFreq[2] = {0, 0};
+                txtCenterOffset1->GetValue().ToDouble(&cFreq[0]);
+                cFreq[0] *= 1000000;
+                txtCenterOffset2->GetValue().ToDouble(&cFreq[1]);
+                cFreq[1] *= 1000000;
+                double bw[2] = {1e6, 1e6};
+                txtBW1->GetValue().ToDouble(&bw[0]);
+                bw[0] *= 1000000;
+                txtBW2->GetValue().ToDouble(&bw[1]);
+                bw[1] *= 1000000;
+                char ctemp[512];
+                for(int c=0; c<2; ++c)
+                {
+                    float f0 = cFreq[c]-bw[c]/2;
+                    float fn = cFreq[c]+bw[c]/2;
+                    float sum = 0;
+                    int bins = 0;
+                    const int fftSize = data.fftBins[0].size();
+                    for(int i=0; i<fftSize; ++i)
+                        if(f0 <= freqs[i] && freqs[i] <= fn)
+                        {
+                            double val = data.fftBins[0][i];
+                            sum += val;
+                            ++bins;
+                        }
+                    chPwr[c] = sum;
+                }
+
+                float pwr1  = (chPwr[0] != 0 ? (20 * log10(chPwr[0])) - 69.2369 : -300);
+                lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
+                float pwr2 = (chPwr[1] != 0 ? (20 * log10(chPwr[1])) - 69.2369 : -300);
+                lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
+                lbldBc->SetLabel(wxString::Format("%.3f", 20*log10(chPwr[1]/chPwr[0])));
             }
             break;
         }

@@ -472,6 +472,8 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
     localDataResults.samplesQ[1].resize(fftSize, 0);
     localDataResults.fftBins_dbFS[0].resize(fftSize, 0);
     localDataResults.fftBins_dbFS[1].resize(fftSize, 0);
+    localDataResults.fftBins[0].resize(fftSize, 0);
+    localDataResults.fftBins[1].resize(fftSize, 0);
     kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
     kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
     kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
@@ -593,9 +595,15 @@ void StreamerLTE::ProcessPackets(StreamerLTE* pthis, const unsigned int fftSize,
 
                 int output_index = 0;
                 for (int i = fftSize / 2 + 1; i < fftSize; ++i)
-                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                {
+                    localDataResults.fftBins_dbFS[ch][output_index] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                    localDataResults.fftBins[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                }
                 for (int i = 0; i < fftSize / 2 + 1; ++i)
-                    localDataResults.fftBins_dbFS[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                {
+                    localDataResults.fftBins_dbFS[ch][output_index] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                    localDataResults.fftBins[ch][output_index++] = sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                }
                 for (int s = 0; s < fftSize; ++s)
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
             }
