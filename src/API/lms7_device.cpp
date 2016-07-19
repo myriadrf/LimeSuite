@@ -32,7 +32,14 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
 
     tx_channels = new lms_channel_info[2];
     rx_channels = new lms_channel_info[2];
-
+    tx_channels[0].cF_offset_nco = 0;
+    rx_channels[0].cF_offset_nco = 0;
+    tx_channels[1].cF_offset_nco = 0;
+    rx_channels[1].cF_offset_nco = 0;
+    tx_channels[0].sample_rate = 30e6;
+    rx_channels[0].sample_rate = 30e6;
+    tx_channels[1].sample_rate = 30e6;
+    rx_channels[1].sample_rate = 30e6;
     EnableValuesCache(false);
 }
 
@@ -293,6 +300,27 @@ size_t LMS7_Device::GetNumChannels(const bool tx) const
 int LMS7_Device::SetRate(float_type f_Hz, int oversample)
 {
    int decim = 0;
+   float_type nco_f=0;
+   for (int i = 0; i < GetNumChannels(false);i++)
+   {
+        if (rx_channels[i].cF_offset_nco > nco_f)
+            nco_f = rx_channels[i].cF_offset_nco;
+        if (tx_channels[i].cF_offset_nco > nco_f)
+            nco_f = tx_channels[i].cF_offset_nco;
+        tx_channels[i].sample_rate = f_Hz;
+        rx_channels[i].sample_rate = f_Hz;
+   }
+
+   if (nco_f != 0)
+   {
+       int nco_over = 2+2*(nco_f-1)/f_Hz;
+       oversample = oversample > nco_over ? oversample : nco_over;
+       if (oversample > 32)
+       {
+           lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
+           return -1;
+       }
+   }
 
    if (oversample > 1)
    {
@@ -343,6 +371,37 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     int interpolation;
     int tmp;
 
+   float_type nco_rx=0;
+   float_type nco_tx=0;
+   int min_int = 1;
+   int min_dec = 1;
+
+   for (int i = 0; i < GetNumChannels(false);i++)
+   {
+        if (rx_channels[i].cF_offset_nco > nco_rx)
+            nco_rx = rx_channels[i].cF_offset_nco;
+        if (tx_channels[i].cF_offset_nco > nco_tx)
+            nco_tx = tx_channels[i].cF_offset_nco;
+        if (tx)
+            tx_channels[i].sample_rate = f_Hz;
+        else
+            rx_channels[i].sample_rate = f_Hz;
+   }
+
+
+   if (nco_rx != 0 || nco_rx != 0)
+   {
+       min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
+       min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
+       int nco_over = tx ? min_int : min_dec;
+       oversample = oversample > nco_over ? oversample : nco_over;
+       if (oversample > 32)
+       {
+           lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
+           return -1;
+       }
+   }
+
     if (oversample > 1)
     {
         for (tmp = 0; tmp < 4; tmp++)
@@ -365,7 +424,6 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         rx_clock = GetReferenceClk_TSP(lime::LMS7002M::Rx);
         tx_clock = f_Hz*ratio;
-        cgen = tx_clock;
     }
     else
     {
@@ -373,7 +431,6 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         tx_clock = GetReferenceClk_TSP(lime::LMS7002M::Tx);
         rx_clock = f_Hz * ratio;
-        cgen = rx_clock * 4;
     }
 
     int div_index = floor(log2(tx_clock/rx_clock)+0.5);
@@ -382,9 +439,14 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     {
         if (tx)
         {
-           if (decimation > 0)
+           if ((decimation > 0) && (min_dec <= (1<<decimation)))
            {
              decimation--;
+             div_index++;
+           }
+           else if (interpolation < 4)
+           {
+             interpolation++;
              div_index++;
            }
            else
@@ -398,6 +460,11 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
            if (interpolation < 4)
            {
              interpolation++;
+             div_index++;
+           }
+           else if ((decimation > 0) && (min_dec <= (1<<decimation)))
+           {
+             decimation--;
              div_index++;
            }
            else
@@ -417,6 +484,11 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
              decimation++;
              div_index--;
            }
+           else if ((interpolation > 0) && (min_int <= (1<<interpolation)))
+           {
+             interpolation--;
+             div_index--;
+           }
            else
            {
              div_index = 5;
@@ -425,9 +497,14 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         }
         else
         {
-           if (interpolation > 0)
+           if ((interpolation > 0) && (min_int <= (1<<interpolation)))
            {
              interpolation--;
+             div_index--;
+           }
+           else if (decimation < 4)
+           {
+             decimation++;
              div_index--;
            }
            else
@@ -436,6 +513,12 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
                break;
            }
         }
+    }
+
+    if (min_int > (2<<interpolation) || min_dec > (2<<decimation))
+    {
+        lime::ReportError(ERANGE, "Unable to meet NCO oversampling requirements");
+        return -1;
     }
 
     int clk_mux;
@@ -471,6 +554,19 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
                 clk_mux = 1;
                 clk_div = 3;
                 break;
+    }
+
+
+
+    if (tx)
+    {
+        ratio = oversample <= 2 ? 2 : (2<<interpolation);
+        cgen = f_Hz*ratio;
+    }
+    else
+    {
+        ratio = oversample <= 2 ? 2 : (2<<decimation);
+        cgen = f_Hz * ratio * 4;
     }
 
     if ((tx && clk_mux == 0)||(tx == false && clk_mux == 1))
@@ -1116,7 +1212,7 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
     float_type rf_rate;
     GetRate(tx,ch,&rf_rate);
     rf_rate /=2;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         if (freq[i] < 0 || freq[i] > rf_rate)
         {
@@ -1153,7 +1249,7 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    if (ind == -1)
+    if (ind >= LMS_NCO_VAL_COUNT)
     {
         if (tx)
         {
@@ -1191,11 +1287,9 @@ int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         freq[i] = GetNCOFrequency(tx,i,true);
-        uint16_t neg = tx ? Get_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),true) : Get_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),true);
-        freq[i] = neg ? -freq[i] : freq[i];
     }
     *pho = tx ? tx_channels[ch].nco_pho : rx_channels[ch].nco_pho;
     return 0;
@@ -1206,7 +1300,7 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
             return -1;
@@ -1244,7 +1338,7 @@ int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *f
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         phase[i] = GetNCOPhaseOffset_Deg(tx,i);
     }
@@ -1273,8 +1367,26 @@ size_t LMS7_Device::GetNCO(bool tx, size_t ch)
 
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
 {
-    if (SetFrequencySX(false,f_Hz)!=0)
-        return -1;
+    if (f_Hz < 30e6)
+    {
+        float_type freq[LMS_NCO_VAL_COUNT]={0};
+        if (SetFrequencySX(false,30e6)!=0)
+            return -1;
+        rx_channels[chan].cF_offset_nco = 30e6-f_Hz;
+        if (SetRate(false,GetRate(true,chan),2)!=0)
+            return -1;
+        freq[0] = 30e6-f_Hz;
+        SetNCOFreq(false,chan,freq,0);
+        SetNCO(false,chan,0,true);
+    }
+    else
+    {
+        if (rx_channels[chan].cF_offset_nco != 0)
+            SetNCO(false,chan,~0,true);
+        rx_channels[chan].cF_offset_nco = 0;
+        if (SetFrequencySX(false,f_Hz)!=0)
+            return -1;
+    }
     if (f_Hz < GetRxPathBand(LMS_PATH_LOW,chan).max)
     {
         SetPath(false,0,LMS_PATH_LOW);
@@ -1290,14 +1402,40 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
     return 0;
 }
 
+
+float_type LMS7_Device::GetTRXFrequency(bool tx, size_t chan)
+{
+   double offset = tx ? tx_channels[chan].cF_offset_nco : rx_channels[chan].cF_offset_nco;
+   return GetFrequencySX(tx) - offset;
+}
+
 int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
 {
-    if (SetFrequencySX(true,f_Hz)!=0)
-        return -1;
-    if (f_Hz < GetTxPathBand(LMS_PATH_TX1,chan).max)
+    if (f_Hz < 30e6)
     {
-        SetPath(true,0,LMS_PATH_TX1);
-        SetPath(true,1,LMS_PATH_TX1);
+        float_type freq[LMS_NCO_VAL_COUNT]={0};
+        if (SetFrequencySX(true,30e6)!=0)
+            return -1;
+        tx_channels[chan].cF_offset_nco = 30e6-f_Hz;
+        if (SetRate(true,GetRate(true,chan),2)!=0)
+            return -1;
+        freq[0] = 30e6-f_Hz;
+        SetNCOFreq(false,chan,freq,0);
+        SetNCO(false,chan,0,false);
+    }
+    else
+    {
+        if (tx_channels[chan].cF_offset_nco != 0)
+            SetNCO(false,chan,~0,false);
+        tx_channels[chan].cF_offset_nco = 0;
+        if (SetFrequencySX(true,f_Hz)!=0)
+            return -1;
+    }
+
+    if (f_Hz < GetTxPathBand(LMS_PATH_LOW,chan).max)
+    {
+        SetPath(true,0,LMS_PATH_LOW);
+        SetPath(true,1,LMS_PATH_LOW);
         printf("TX BAND 1 selected\n");
     }
     else

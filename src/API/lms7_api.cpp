@@ -840,7 +840,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    *frequency = lms->GetFrequencySX(dir_tx);
+    *frequency = lms->GetTRXFrequency(dir_tx, chan);
     return LMS_SUCCESS;
 }
 

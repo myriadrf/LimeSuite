@@ -17,6 +17,8 @@ typedef struct
 {
     float_type lpf_bw;
     float_type nco_pho;
+    float_type cF_offset_nco;
+    float_type sample_rate;
 } lms_channel_info;
 
 class LMS7_Device : public lime::LMS7002M
@@ -40,6 +42,7 @@ public:
     virtual size_t GetPath(bool tx, size_t chan);
     virtual int SetRxFrequency(size_t chan, float_type f_Hz);
     virtual int SetTxFrequency(size_t chan, float_type f_Hz);
+    virtual float_type GetTRXFrequency(bool tx, size_t chan);
     virtual lms_range_t GetFrequencyRange(bool tx) const;
     virtual lms_range_t GetRxPathBand(size_t path, size_t chan) const;
     virtual lms_range_t GetTxPathBand(size_t path, size_t chan) const;
