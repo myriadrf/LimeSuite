@@ -27,9 +27,10 @@ class dlgMarkers: public wxDialog
 
 		dlgMarkers(wxWindow* parent,wxWindowID id=wxID_ANY,const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize);
 		virtual ~dlgMarkers();
-        OpenGLGraph* parent_graph;
+                OpenGLGraph* parent_graph;
 		void AddMarker(int id);
-		std::vector<float> marker_values;
+		std::vector<float> marker_valuesA;
+                std::vector<float> marker_valuesB;
 		std::vector<wxStaticText*> labels;
 		std::vector<wxTextCtrl*> freqs;
 		std::vector<wxCheckBox*> enables;
