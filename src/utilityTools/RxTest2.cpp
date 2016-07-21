@@ -17,7 +17,6 @@
 #include "fifo.h"
 #include "FPGA_common.h"
 #include "LMS64CProtocol.h"
-#include "StreamerLTE.h"
 //#define DRAW_GNUPLOT
 
 #ifdef DRAW_GNUPLOT

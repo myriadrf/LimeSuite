@@ -288,3 +288,8 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+set(BUILD_EXAMPLES ON CACHE BOOL "API Examples")
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+

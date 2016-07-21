@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <cstdio>
+#include <stdarg.h>
 
 class GNUPlotPipe
 {

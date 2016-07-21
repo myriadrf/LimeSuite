@@ -70,6 +70,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
                 {
                     lime::ReportError(EBUSY, "Failed to open. Device is busy.");
                     delete lms;
+                    *device = nullptr;
                     return -1;
                 }
                 else
@@ -91,6 +92,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
 
     lime::ReportError(ENODEV, "Specified device could not be found");
     delete lms;
+    *device = nullptr;
     return -1;
 }
 
@@ -185,16 +187,11 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, s
         return -1;
     }
 
-    if (dir_tx)
-    {
-       if (lms->EnableTX(chan,enabled)!=0)
-           return -1;
-    }
-    else
-    {
-       if (lms->EnableRX(chan,enabled)!=0)
-           return -1;
-    }
+    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
+        return -1;
+
+    lms->EnableChannel(dir_tx,enabled);
+
     return LMS_SUCCESS;
 }
 
@@ -873,12 +870,13 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    auto names = lms->GetPathNames(dir_tx,chan);
-    for (int i = 0; i<names.size();i++)
-    {
-      strncpy(list[i],names[i].c_str(),sizeof(lms_name_t)-1);
-      list[i][sizeof(lms_name_t)-1] = 0;
-    }
+    auto names = lms->GetPathNames(dir_tx, chan);
+    if (list != nullptr)
+        for (int i = 0; i < names.size(); i++)
+        {
+            strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
+            list[i][sizeof(lms_name_t) - 1] = 0;
+        }
     return names.size();
 }
 
@@ -904,7 +902,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx, size_
 }
 
 
-API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t *path)
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan)
 {
     if (device == nullptr)
     {
@@ -914,8 +912,7 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    *path = lms->GetPath(dir_tx, chan);
-    return *path < 0 ? -1 : LMS_SUCCESS;
+    return lms->GetPath(dir_tx, chan);
 }
 
 
@@ -1292,7 +1289,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
     return lms->SetNCO(dir_tx,chan,index,down);
 }
 
-API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, size_t *index)
+API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan)
 {
     if (device == nullptr)
     {
@@ -1308,10 +1305,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size
         return -1;
     }
 
-    *index = lms->GetNCO(dir_tx,chan);
-    if (*index < 0)
-        return -1;
-    return LMS_SUCCESS;
+    return lms->GetNCO(dir_tx, chan);
 }
 
 API_EXPORT int CALL_CONV LMS_GenerateLPFCoef(size_t n, float_type w1, float_type w2, float_type g_stop, float_type *coef)
@@ -1560,10 +1554,16 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, siz
     assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
-    metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
-    metadata.timestamp = meta ? meta->timestamp : 0;
+    if (meta)
+    {
+        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+        metadata.timestamp = meta->timestamp;
+    }
+    else metadata.timestamp = 0;
+
     int status = channel->Read(samples, sample_count, &metadata, timeout_ms);
-    meta->timestamp = metadata.timestamp;
+    if (meta)
+        meta->timestamp = metadata.timestamp;
     return status;
 }
 
@@ -1574,8 +1574,13 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
     assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
-    metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
-    metadata.timestamp = meta ? meta->timestamp : 0;
+    if (meta)
+    {
+        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+        metadata.timestamp = meta->timestamp;
+    }
+    else metadata.timestamp = 0;
+
     return channel->Write(samples, sample_count, &metadata, timeout_ms);
 }
 

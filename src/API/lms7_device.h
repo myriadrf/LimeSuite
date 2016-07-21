@@ -26,9 +26,6 @@ class LMS7_Device : public lime::LMS7002M
 public:
     LMS7_Device();
     virtual ~LMS7_Device();
-    virtual int EnableTX(size_t ch,bool);
-    virtual int EnableRX(size_t ch,bool);
-    virtual int ConfigureSamplePositions();
     virtual int Init();
     virtual int SetReferenceClock(const float_type refCLK_MHz);
     virtual size_t GetNumChannels(const bool tx=false) const;

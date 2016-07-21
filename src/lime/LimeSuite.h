@@ -174,8 +174,10 @@ typedef enum {
 typedef enum
 {
     LMS_TESTSIG_NONE=0,     /**<Disable test signals. Return to normal operation*/
-    LMS_TESTSIG_NCODIV8,    /**<Test signal from NCO*/
-    LMS_TESTSIG_NCODIV4,    /**<Test signal from NCO*/
+    LMS_TESTSIG_NCODIV8,    /**<Test signal from NCO half scale*/
+    LMS_TESTSIG_NCODIV4,    /**<Test signal from NCO half scale*/
+    LMS_TESTSIG_NCODIV8F,   /**<Test signal from NCO full scale*/
+    LMS_TESTSIG_NCODIV4F,   /**<Test signal from NCO full scale*/
     LMS_TESTSIG_DC          /**<DC test signal*/
 }lms_testsig_t;
 
@@ -533,7 +535,7 @@ typedef char lms_name_t[16];
  * @param       chan        channel index
  * @param[out]  list        List of antenna names (can be NULL)
  *
- * @return      number of items in the list on success, (-1) on failure
+ * @return      number of available antennae, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx,
                                         size_t chan, lms_name_t *list);
@@ -561,11 +563,10 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx,
  * @param       dev        Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       channel index
- * @param       index      Index of the currently selected antenna
  *
- * @return      0 on success, (-1) on failure
+ * @return     Index of selected antenna on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t *index);
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan);
 
 /**
  * Obtains bandwidth (lower and upper frequency) of the specified antenna
@@ -667,7 +668,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx,
  * @return      0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
-                        size_t chan, float_type *phases, float_type *fcw);
+                            size_t chan, float_type *phases, float_type *fcw);
 
 /**
  * Switches between configured list of NCO frequencies/phase offsets. Also
@@ -682,7 +683,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx,
-                        size_t chan, size_t index, bool downconv);
+                                    size_t chan, size_t index, bool downconv);
 
 /**
  * Get the currently active NCO frequency/phase offset index
@@ -690,12 +691,11 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx,
  * @param       dev       Device handle previously obtained by LMS_Open().
  * @param       dir_tx    Select RX or TX
  * @param       chan      Channel index
- * @param[out]  index     Current NCO frequency/phase index.
  *
- * @return 0 on success, (-1) on failure
+ * @return Current NCO frequency/phase index on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx,
-                        size_t chan, size_t *index);
+                                        size_t chan);
 
 /**
  * Read device parameter. Parameter defines specific bits in device register.
