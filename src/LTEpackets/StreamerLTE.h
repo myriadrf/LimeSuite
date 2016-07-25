@@ -10,6 +10,7 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <string>
 #include <functional>
 #include "dataTypes.h"
 

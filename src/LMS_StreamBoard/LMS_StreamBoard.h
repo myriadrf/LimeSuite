@@ -5,6 +5,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+#include <string>
 #include "LMS_StreamBoard_FIFO.h"
 
 namespace lime{
