@@ -296,7 +296,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
                 len = actual;
             #endif
         }
-		delete wbuffer;
+        delete[] wbuffer;
     }
     else
         return 0;
