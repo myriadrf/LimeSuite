@@ -622,7 +622,8 @@ uint32_t LMS7002M::GetRSSI()
                 sample = sample << 4;
                 sample = sample >> 4;
                 m_fftCalcIn[samplesCollected].r = sample;
-                xi[samplesCollected][0] = sample;
+                if(samplesCollected < SP)
+                    xi[samplesCollected][0] = sample;
 
                 //Q sample
                 sample = pktStart[b + 2 + 3 * ch] << 4;
@@ -630,7 +631,8 @@ uint32_t LMS7002M::GetRSSI()
                 sample = sample << 4;
                 sample = sample >> 4;
                 m_fftCalcIn[samplesCollected].i = sample;
-                xi[samplesCollected][1] = sample;
+                if (samplesCollected < SP)
+                    xi[samplesCollected][1] = sample;
                 if(samplesCollected >= fftSize)
                     break;
             }
