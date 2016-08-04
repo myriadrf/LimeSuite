@@ -905,7 +905,7 @@ void StreamerLTE::TransmitPacketsUncompressed(const StreamerLTE_ThreadData &args
                 {
                     //I sample
                     dataStart[b + 4 * ch] = outSamples[ch][samplesCollected].i & 0xFF;
-                    dataStart[b + 1 + 4 * ch] = (outSamples[ch][samplesCollected].i >> 8) & 0x0F | 0x10;
+                    dataStart[b + 1 + 4 * ch] = ((outSamples[ch][samplesCollected].i >> 8) & 0x0F) | 0x10;
 
                     //Q sample
                     dataStart[b + 2 + 4 * ch] |= (outSamples[ch][samplesCollected].q ) & 0xFF;

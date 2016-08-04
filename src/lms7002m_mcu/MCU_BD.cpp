@@ -881,6 +881,8 @@ int MCU_BD::RunProductionTest_MCU()
 
     //Baseband gets back the control over SPI switch
     mSPI_write(0x0006, 0x0000); //REG6 write
+
+    return 0;
 }
 
 void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug) {
@@ -1094,7 +1096,7 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
             break;
     }
     mSPI_write(0x0006, 0); //return SPI control to PC
-    std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    std::printf("MCU algorithm time: %lli ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
 }
 

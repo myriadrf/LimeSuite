@@ -262,7 +262,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, USB_TIMEOUT);
     len = actual;
 #endif
-    delete wbuffer;
+    delete[] wbuffer;
     return len;
 }
 

@@ -1898,7 +1898,7 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
     }
     for (int i = 0; i < fieldSize; ++i)
         delete rssiField[i];
-    delete rssiField;
+    delete[] rssiField;
 #endif
     valueI = minI;
     valueQ = minQ;

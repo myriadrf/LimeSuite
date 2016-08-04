@@ -37,8 +37,8 @@ int64_t c64to48(int64_t x);
 
 int64_t resize_int(int64_t x, int16_t n)
 {
-    int64_t mask = ~(0xFFFFFFFFFFFFFFFF << n-1);
-    int64_t sign = (x >> n+1) & ~mask;
+    int64_t mask = ~(0xFFFFFFFFFFFFFFFF << (n-1));
+    int64_t sign = (x >> (n+1)) & ~mask;
     // print out masks
     /*cout << hex << setw(16) << right << setfill('0') << sign << " | ";
     cout << hex << setw(16) << right << setfill('0') << mask << endl;*/
@@ -115,7 +115,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 
       mul  = (c >> a) * (lr1 >> b);
       mul  = resize_int(mul, mul_length);
-      mul  = (mul >> trig_length-a-b-2);
+      mul  = (mul >> (trig_length-a-b-2));
 
       lr1 = resize_int(mul, add_length) - resize_int(lr2, add_length) + resize_int(x_n, add_length);
       lr2 = temp;
@@ -132,7 +132,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 
       mul  = (c >> a) * (li1 >> b);
       mul  = resize_int(mul, mul_length);
-      mul  = (mul >> trig_length-a-b-2);
+      mul  = (mul >> (trig_length-a-b-2));
 
       li1 = resize_int(mul, add_length) - resize_int(li2, add_length) + resize_int(x_n, add_length);
       li2 = temp;
@@ -142,8 +142,8 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
       #endif
       li1 = resize_int(li1, register_length);
     }
-    real[k] = (int64_t)( resize_int( resize_int( (c >> a)*(lr1 >> b), mul_length) >> trig_length-a-b-1, add_length) - resize_int(lr2, add_length) - resize_int( resize_int((s >> a) * (li1 >> b), mul_length )>> trig_length-a-b-1, add_length) );
-    imag[k] = (int64_t)( resize_int( resize_int( (c >> a)*(li1 >> b), mul_length) >> trig_length-a-b-1, add_length) - resize_int(li2, add_length) + resize_int( resize_int((s >> a) * (lr1 >> b), mul_length )>> trig_length-a-b-1, add_length) );
+    real[k] = (int64_t)( resize_int( resize_int( (c >> a)*(lr1 >> b), mul_length) >> (trig_length-a-b-1), add_length) - resize_int(lr2, add_length) - resize_int( resize_int((s >> a) * (li1 >> b), mul_length )>> (trig_length-a-b-1), add_length) );
+    imag[k] = (int64_t)( resize_int( resize_int( (c >> a)*(li1 >> b), mul_length) >> (trig_length-a-b-1), add_length) - resize_int(li2, add_length) + resize_int( resize_int((s >> a) * (lr1 >> b), mul_length )>> (trig_length-a-b-1), add_length) );
   }
   #ifdef DEBUG_MODE
     /*
