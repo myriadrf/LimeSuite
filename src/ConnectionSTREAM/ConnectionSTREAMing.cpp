@@ -197,8 +197,9 @@ struct USBStreamService : StreamerLTE
         //reset/clear LML FIFOs and other state
         LMS7002M rfic;
         rfic.SetConnection(mDataPort);
-        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0x00);
-        rfic.Modify_SPI_Reg_bits(0x0020, 15, 6, 0xff);
+        uint16_t reg20 = rfic.SPI_read(0x0020, true);
+        rfic.SPI_write(0x0020, reg20 & ~0xAA00);
+        rfic.SPI_write(0x0020, reg20);
 
         //switch on Rx
         uint16_t interface_ctrl_000A = Reg_read(mDataPort, 0x000A);
