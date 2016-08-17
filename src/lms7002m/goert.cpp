@@ -92,7 +92,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
   int n, k;         // loop variables
 
   // Prepare for computation
-  wn = M_PI/Sp;
+  wn = PI / Sp;
   // Loop through all the bins
   //for(k=0; k<Sp; k++)
   /*if(fftBin != 0)
