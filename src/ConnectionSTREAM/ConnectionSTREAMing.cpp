@@ -111,7 +111,7 @@ struct USBStreamService : StreamerLTE
 
     ~USBStreamService(void)
     {
-        this->updateThreadState(true);
+        this->stop();
     }
 
     void updateThreadState(const bool forceStop = false)
