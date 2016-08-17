@@ -29,6 +29,7 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
 #define ENABLE_CALIBRATION_USING_FFT
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
+#include "windowFunction.h"
     bool useFFT = false; //digital RSSI or FFT from GetRSSI()
     const int gFFTSize = 16384;
     int fftBin = 0; //which bin to use when calibrating using FFT
@@ -449,15 +450,15 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         //need to adjust decimation to fit into USB speed
         float rateLimit_Bps;
-        DeviceInfo info = controlPort->GetDeviceInfo();
+        DeviceInfo info = dataPort->GetDeviceInfo();
         if(info.deviceName == GetDeviceName(LMS_DEV_STREAM))
             rateLimit_Bps = 110e6;
         else if(info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
             rateLimit_Bps = 300e6;
         else if(info.deviceName == GetDeviceName(LMS_DEV_ULIMESDR))
-            rateLimit_Bps = 300e6;
+            rateLimit_Bps = 100e6;
         else
-            rateLimit_Bps = 400e6;
+            rateLimit_Bps = 100e6;
 
         decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
         if(decimation < 0)
@@ -479,61 +480,6 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     return 0;
 }
 
-#ifdef ENABLE_CALIBRATION_USING_FFT
-/** @brief Calculates selected window function coefficients
-    @param func window function index
-    @param fftsize number of samples for FFT calculations
-*/
-static void GenerateWindowCoefficients(int func, int fftsize, std::vector<float_type> &windowFcoefs, float_type &amplitudeCorrection)
-{
-    windowFcoefs.clear();
-
-    windowFcoefs.resize(fftsize);
-    float a0 = 0.35875;
-    float a1 = 0.48829;
-    float a2 = 0.14128;
-    float a3 = 0.01168;
-    float a4 = 1;
-    int N = fftsize;
-	float PI = 3.14159265359;
-    switch(func)
-    {
-    case 0:
-        amplitudeCorrection = 1;
-        break;
-	case 1: //blackman-harris
-		for (int i = 0; i<N; ++i)
-		{
-			windowFcoefs[i] = a0 - a1*cos((2 * PI*i) / (N - 1)) + a2*cos((4 * PI*i) / (N - 1)) - a3*cos((6 * PI*i) / (N - 1));
-			amplitudeCorrection += windowFcoefs[i];
-		}
-		amplitudeCorrection = 1.0 / (amplitudeCorrection / N);
-		break;
-    case 2: //hamming
-        amplitudeCorrection = 0;
-        a0 = 0.54;
-        for(int i=0; i<N; ++i)
-        {
-            windowFcoefs[i] = a0 -(1-a0)*cos((2*PI*i)/(N));
-            amplitudeCorrection += windowFcoefs[i];
-        }
-        amplitudeCorrection = 1.0/(amplitudeCorrection/N);
-        break;
-    case 3: //hanning
-        amplitudeCorrection = 0;
-        for(int i=0; i<N; ++i)
-        {
-            windowFcoefs[i] = 0.5 *(1 - cos((2*PI*i)/(N)));
-            amplitudeCorrection += windowFcoefs[i];
-        }
-        amplitudeCorrection = 1.0/(amplitudeCorrection/N);
-        break;
-    default:
-        amplitudeCorrection = 1;
-    }
-}
-#endif
-
 /** @brief Flips the CAPTURE bit and returns digital RSSI value
 
     If calibration using FFT is enabled, GetRSSI() can return value calculated
@@ -545,14 +491,13 @@ uint32_t LMS7002M::GetRSSI()
     if(useFFT)
     {
     int fftSize = gFFTSize;
-    std::vector<float_type> windowF;
-    float_type amplitudeCorr = 1;
-    GenerateWindowCoefficients(2, fftSize, windowF, amplitudeCorr);
+    std::vector<float> windowF;
+    float amplitudeCorr = 1;
+    GenerateWindowCoefficients(3, fftSize, windowF, amplitudeCorr);
     IConnection* port = dataPort;
 
     fpga::StopStreaming(port);
     StreamConfig config;
-    const int channelsCount = 1;
     config.channels.push_back(0);
     config.format = StreamConfig::STREAM_12_BIT_IN_16;
     config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
@@ -574,51 +519,57 @@ uint32_t LMS7002M::GetRSSI()
 
     //goertzel
     // number of spectral points, i.e. number of bins all the interval is divided to
-    const int SP  = 65536/16*2;
-    int xi[SP][2];    // Raw data (integer numbers)
-    int64_t reali[SP], imagi[SP]; // Calculated Goertzel bins, integer numbers
+    const int SP  = fftSize/2;
+    auto xi = new int[SP][2];    // Raw data (integer numbers)
+    // Calculated Goertzel bins, integer numbers
+    int64_t *reali = new int64_t[SP];
+    int64_t *imagi = new int64_t[SP];
 
-    const int bufferSize = 4096*(fftSize/(1360/channelsCount)+1);
+    //number of packets to skip from the buffer start
+    const int packetsPadding = 32;
+    const int bufferSize = 4096*((fftSize/(1360)+1) + packetsPadding);
     char *buffer = new char[bufferSize];
     const int maxTransferSize = bufferSize;
-    long bytesReceived = 0;
 
     std::vector<int> handles(int(bufferSize/maxTransferSize), 0);
     std::vector<int> transferSizes;
-    for(int i=0; i<handles.size(); ++i)
-    {
-        if(bufferSize-i*maxTransferSize > maxTransferSize)
-            transferSizes.push_back(maxTransferSize);
-        else
-            transferSizes.push_back(bufferSize-i*maxTransferSize);
-        handles[i] = port->BeginDataReading(&buffer[maxTransferSize*i], transferSizes[i]);
-    }
-    fpga::StartStreaming(port);
-    for(int i=0; i<handles.size(); ++i)
-    {
-        if (port->WaitForReading(handles[i], 1000) == false)
-            printf("Failed to get FFT RSSI\n");
-        long bytesToRead = transferSizes[i];
-        bytesReceived += port->FinishDataReading(&buffer[maxTransferSize*i], bytesToRead, handles[i]);
-    }
-    long samplesCollected = 0;
-    int16_t sample = 0;
-    if(bytesReceived < bufferSize)
-        printf("Data not received for FFT\n");
+    std::vector<float> fftBins_dbFS(fftSize, 0);
 
-    for (int pktIndex = 0; pktIndex < bytesReceived / 4096 && samplesCollected < fftSize; ++pktIndex)
+    const int avgCount = 5;
+    for(int a=0; a<avgCount; ++a)
     {
-        uint8_t* pktStart = (uint8_t*)buffer+(pktIndex*4096)+16;
-        const int stepSize = channelsCount * 3;
-        for (uint16_t b = 0; b < 4080; b += stepSize)
+        long bytesReceived = 0;
+        fpga::StopStreaming(port);
+        fpga::StartStreaming(port);
+        for(int i=0; i<handles.size(); ++i)
         {
-            for (int ch = 0; ch < channelsCount; ++ch)
+            if(bufferSize-i*maxTransferSize > maxTransferSize)
+                transferSizes.push_back(maxTransferSize);
+            else
+                transferSizes.push_back(bufferSize-i*maxTransferSize);
+            handles[i] = port->BeginDataReading(&buffer[maxTransferSize*i], transferSizes[i]);
+        }
+        for(int i=0; i<handles.size(); ++i)
+        {
+            if (port->WaitForReading(handles[i], 1000) == false)
+                printf("Failed to get FFT RSSI\n");
+            long bytesToRead = transferSizes[i];
+            bytesReceived += port->FinishDataReading(&buffer[maxTransferSize*i], bytesToRead, handles[i]);
+        }
+        long samplesCollected = 0;
+        int16_t sample = 0;
+        if(bytesReceived < bufferSize)
+            printf("Data not received for FFT\n");
+
+        for (int pktIndex = packetsPadding; pktIndex < bytesReceived / 4096 && samplesCollected < fftSize; ++pktIndex)
+        {
+            uint8_t* pktStart = (uint8_t*)buffer+(pktIndex*4096)+16;
+            const int stepSize = 3;
+            for (uint16_t b = 0; b < 4080; b += stepSize)
             {
-                if(ch == 1)
-                    continue;
                 //I sample
-                sample = (pktStart[b + 1 + 3 * ch] & 0x0F) << 8;
-                sample |= (pktStart[b + 3 * ch] & 0xFF);
+                sample = (pktStart[b + 1] & 0x0F) << 8;
+                sample |= (pktStart[b] & 0xFF);
                 sample = sample << 4;
                 sample = sample >> 4;
                 m_fftCalcIn[samplesCollected].r = sample;
@@ -626,31 +577,31 @@ uint32_t LMS7002M::GetRSSI()
                     xi[samplesCollected][0] = sample;
 
                 //Q sample
-                sample = pktStart[b + 2 + 3 * ch] << 4;
-                sample |= (pktStart[b + 1 + 3 * ch] >> 4) & 0x0F;
+                sample = pktStart[b + 2] << 4;
+                sample |= (pktStart[b + 1] >> 4) & 0x0F;
                 sample = sample << 4;
                 sample = sample >> 4;
                 m_fftCalcIn[samplesCollected].i = sample;
                 if (samplesCollected < SP)
                     xi[samplesCollected][1] = sample;
+
+                ++samplesCollected;
                 if(samplesCollected >= fftSize)
                     break;
             }
-            ++samplesCollected;
-            if(samplesCollected >= fftSize)
-                break;
         }
-    }
-    for(int i=0; i<fftSize; ++i)
-    {
-        m_fftCalcIn[i].i *= windowF[i] * amplitudeCorr;
-        m_fftCalcIn[i].r *= windowF[i] * amplitudeCorr;
-    }
-    kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
-    for (int i = 0; i < fftSize; ++i) // normalize FFT results
-    {
-        m_fftCalcOut[i].r /= fftSize;
-        m_fftCalcOut[i].i /= fftSize;
+        for(int i=0; i<fftSize; ++i)
+        {
+            m_fftCalcIn[i].i *= windowF[i] * amplitudeCorr;
+            m_fftCalcIn[i].r *= windowF[i] * amplitudeCorr;
+        }
+        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+        for (int i = 0; i < fftSize; ++i)
+        {
+            m_fftCalcOut[i].r /= fftSize;
+            m_fftCalcOut[i].i /= fftSize;
+            fftBins_dbFS[i] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+        }
     }
 
     CalcGoertzelI(xi, reali, imagi, SP);
@@ -658,14 +609,14 @@ uint32_t LMS7002M::GetRSSI()
     goertzBins_dbFS.resize(SP, 0);
     for (int i = 0; i < SP; ++i)
     {
-        goertzBins_dbFS[i] = (reali[i]/(SP/2.0) * reali[i]/(SP/2.0) + imagi[i]/(SP/2.0) * imagi[i]/(SP/2.0));
-        goertzBins_dbFS[i] = (goertzBins_dbFS[i] != 0) ? (20 * log10(sqrt(goertzBins_dbFS[i])) - 69.2369) : -150;
+        goertzBins_dbFS[i] = sqrt(reali[i] * reali[i] + imagi[i] * imagi[i])/float(SP)/4096.0;
+        goertzBins_dbFS[i] = (goertzBins_dbFS[i] != 0) ? (20 * log10(goertzBins_dbFS[i])) : -150;
     }
-    std::vector<float> fftBins_dbFS(fftSize, 0);
+
     for (int i = 0; i < fftSize; ++i)
     {
-        fftBins_dbFS[i] = (m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
-        fftBins_dbFS[i] = (fftBins_dbFS[i] != 0) ? (20 * log10(sqrt(fftBins_dbFS[i])) - 69.2369) : -150;
+        fftBins_dbFS[i] /= avgCount;
+        fftBins_dbFS[i] = (fftBins_dbFS[i] != 0) ? (20 * log10((fftBins_dbFS[i])) - 69.2369) : -150;
     }
 #ifdef DRAW_GNU_PLOTS
     const int binsToShow = srcBin*12;
@@ -691,6 +642,11 @@ uint32_t LMS7002M::GetRSSI()
 #endif
     kiss_fft_free(m_fftCalcPlan);
     delete[]buffer;
+    delete[] m_fftCalcOut;
+    delete[] m_fftCalcIn;
+    delete[] xi;
+    delete[] reali;
+    delete[] imagi;
     return dBFS_2_RSSI(useGoertzel ? goertzBins_dbFS[fftBin] : fftBins_dbFS[fftBin]);
     }
 #endif
@@ -997,7 +953,7 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
         }
         else
-            return ReportError("CalibrateRxSetup() - SEL_PATH_RFE must be LNAL or LNAW");
+            return ReportError(EINVAL, "CalibrateRxSetup() - SEL_PATH_RFE must be LNAL or LNAW");
     }
 
     //TBB
@@ -1023,7 +979,6 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //CGEN
     //reset CGEN to defaults
     const float_type cgenFreq = GetFrequencyCGEN();
-    SetDefaults(CGEN);
     int cgenMultiplier = int(cgenFreq / 46.08e6 + 0.5);
     if(cgenMultiplier < 2)
         cgenMultiplier = 2;
@@ -1045,8 +1000,10 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         //in TDD do nothing
         Modify_SPI_Reg_bits(MAC, 1);
         SetDefaults(SX);
-        SetFrequencySX(false, GetFrequencySX(true) - bandwidth_Hz / calibUserBwDivider - 9e6);
-        Modify_SPI_Reg_bits(PD_VCO, 1);
+        status = SetFrequencySX(false, GetFrequencySX(true) - bandwidth_Hz / calibUserBwDivider - 9e6);
+        if(status != 0)
+            return status;
+        Modify_SPI_Reg_bits(PD_VCO, 0);
     }
     else
     {
@@ -1146,15 +1103,15 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         //need to adjust decimation to fit into USB speed
         float rateLimit_Bps;
-        DeviceInfo info = controlPort->GetDeviceInfo();
+        DeviceInfo info = dataPort->GetDeviceInfo();
         if(info.deviceName == GetDeviceName(LMS_DEV_STREAM))
             rateLimit_Bps = 110e6;
         else if(info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
-            rateLimit_Bps = 300e6;
+            rateLimit_Bps = 200e6;
         else if(info.deviceName == GetDeviceName(LMS_DEV_ULIMESDR))
-            rateLimit_Bps = 300e6;
+            rateLimit_Bps = 100e6;
         else
-            rateLimit_Bps = 400e6;
+            rateLimit_Bps = 100e6;
 
         decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
         if(decimation < 0)
@@ -1252,7 +1209,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     Log("Saving registers state", LOG_INFO);
     //BackupAllRegisters();
     auto registersBackup = BackupRegisterMap();
-    if(sel_path_rfe == 1 || sel_path_rfe == 0)
+    if((sel_path_rfe == 1 || sel_path_rfe == 0) && not useExtLoopback)
         return ReportError(EINVAL, "Rx Calibration: bad SEL_PATH");
 
     Log("Setup stage", LOG_INFO);
@@ -1280,6 +1237,14 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     }
     else
     {
+#ifdef ENABLE_CALIBRATION_USING_FFT
+        {
+            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
+            offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
+        }
+        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
+        fftBin = srcBin;
+#endif // ENABLE_CALIBRATION_USING_FFT
         Log("Rx DC calibration", LOG_INFO);
 
         CalibrateRxDC_RSSI();

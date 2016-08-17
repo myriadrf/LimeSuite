@@ -37,13 +37,14 @@ int64_t c64to48(int64_t x);
 
 int64_t resize_int(int64_t x, int16_t n)
 {
-    int64_t mask = ~(0xFFFFFFFFFFFFFFFF << (n-1));
+    /*int64_t mask = ~(0xFFFFFFFFFFFFFFFF << (n-1));
     int64_t sign = (x >> (n+1)) & ~mask;
     // print out masks
     /*cout << hex << setw(16) << right << setfill('0') << sign << " | ";
     cout << hex << setw(16) << right << setfill('0') << mask << endl;*/
-    return sign + (mask & x);
+    return x; //sign + (mask & x);
 }
+
 #include <string.h>
 void checkForMinMax(int64_t lr, int64_t & lr_min, int64_t & lr_max)
 {
@@ -58,10 +59,10 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 {
   const int16_t a = 0;
   const int16_t b = 0;
-  const int16_t register_length = 32;
-  const int16_t trig_length = 16;
+  const int16_t register_length = 64;
+  const int16_t trig_length = 15;
   const int16_t mul_length  = register_length+trig_length-a-b;
-  const int16_t add_length  = register_length+2;
+  const int16_t add_length  = register_length+1;
 
   memset(real, Sp, sizeof(int64_t)*Sp);
   memset(imag, Sp, sizeof(int64_t)*Sp);
@@ -81,7 +82,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
       li2_min = LLONG_MAX;
       li2_max = LLONG_MIN;
   #endif
-  int64_t c, s;     // cosine and sine 16 bits registers
+  int16_t c, s;     // cosine and sine 16 bits registers
   int16_t x_n;      // sample (bin)
 
   int64_t lr1, lr2, li1, li2, temp; // algorithm registers
@@ -91,9 +92,12 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
   int n, k;         // loop variables
 
   // Prepare for computation
-  wn = PI/Sp;
+  wn = M_PI/Sp;
   // Loop through all the bins
   //for(k=0; k<Sp; k++)
+  /*if(fftBin != 0)
+    k = fftBin-1;
+  else*/
   k = fftBin;
   {
     lr1 = lr2 = 0;
@@ -102,9 +106,8 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
     mul = 0;
     // Precompute the constants for the current bin
     phi = wn * k;
-    c = (cos(phi) * 32768 );
-    s = (sin(phi) * 32768 );
-
+    c = (cos(phi) * ((1 << (trig_length-1)) ) );
+    s = (sin(phi) * ((1 << (trig_length-1)) ) );
     // Emulate data shift
     for(n=0; n<Sp; n++)
     {
@@ -115,7 +118,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 
       mul  = (c >> a) * (lr1 >> b);
       mul  = resize_int(mul, mul_length);
-      mul  = (mul >> (trig_length-a-b-2));
+      mul  = (mul >> (trig_length-a-b-1)) << 1;
 
       lr1 = resize_int(mul, add_length) - resize_int(lr2, add_length) + resize_int(x_n, add_length);
       lr2 = temp;
@@ -132,7 +135,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 
       mul  = (c >> a) * (li1 >> b);
       mul  = resize_int(mul, mul_length);
-      mul  = (mul >> (trig_length-a-b-2));
+      mul  = (mul >> (trig_length-a-b-1)) << 1;
 
       li1 = resize_int(mul, add_length) - resize_int(li2, add_length) + resize_int(x_n, add_length);
       li2 = temp;
