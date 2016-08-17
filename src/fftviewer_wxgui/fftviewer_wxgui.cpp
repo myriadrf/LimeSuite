@@ -232,11 +232,11 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	cmbChannelVisibility->SetSelection( 0 );
 	fgSizer101->Add( cmbChannelVisibility, 0, 0, 5 );
 	
-	m_staticText13 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Average:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText13->Wrap( -1 );
-	m_staticText13->SetToolTip( wxT("Number of FFTs to average") );
+	m_staticText23 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Average:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText23->Wrap( -1 );
+	m_staticText23->SetToolTip( wxT("Number of FFTs to average") );
 	
-	fgSizer101->Add( m_staticText13, 0, wxALL, 5 );
+	fgSizer101->Add( m_staticText23, 0, wxALL, 5 );
 	
 	spinAvgCount = new wxSpinCtrl( sbSizer3->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 128, 1 );
 	spinAvgCount->SetToolTip( wxT("Number of FFTs to average") );
@@ -283,6 +283,81 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	
 	fgSizer10->Add( sbSizer5, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer7;
+	sbSizer7 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Measurement") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer122;
+	fgSizer122 = new wxFlexGridSizer( 0, 3, 5, 5 );
+	fgSizer122->AddGrowableCol( 1 );
+	fgSizer122->AddGrowableCol( 2 );
+	fgSizer122->SetFlexibleDirection( wxBOTH );
+	fgSizer122->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	
+	fgSizer122->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText13 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Ch 1"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText13->Wrap( -1 );
+	fgSizer122->Add( m_staticText13, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	m_staticText14 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Ch 2"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText14->Wrap( -1 );
+	fgSizer122->Add( m_staticText14, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	m_staticText151 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Center offset (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText151->Wrap( -1 );
+	fgSizer122->Add( m_staticText151, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtCenterOffset1 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtCenterOffset1->SetMinSize( wxSize( 32,-1 ) );
+	
+	fgSizer122->Add( txtCenterOffset1, 0, wxEXPAND, 5 );
+	
+	txtCenterOffset2 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtCenterOffset2->SetMinSize( wxSize( 32,-1 ) );
+	
+	fgSizer122->Add( txtCenterOffset2, 0, wxEXPAND, 5 );
+	
+	m_staticText161 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText161->Wrap( -1 );
+	fgSizer122->Add( m_staticText161, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtBW1 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtBW1->SetMinSize( wxSize( 32,-1 ) );
+	
+	fgSizer122->Add( txtBW1, 0, wxEXPAND, 5 );
+	
+	txtBW2 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtBW2->SetMinSize( wxSize( 32,-1 ) );
+	
+	fgSizer122->Add( txtBW2, 0, wxEXPAND, 5 );
+	
+	m_staticText17 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Power(dbFS):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText17->Wrap( -1 );
+	fgSizer122->Add( m_staticText17, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblPower1 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblPower1->Wrap( -1 );
+	fgSizer122->Add( lblPower1, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblPower2 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblPower2->Wrap( -1 );
+	fgSizer122->Add( lblPower2, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	m_staticText20 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("dBc"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText20->Wrap( -1 );
+	fgSizer122->Add( m_staticText20, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lbldBc = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
+	lbldBc->Wrap( -1 );
+	fgSizer122->Add( lbldBc, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	sbSizer7->Add( fgSizer122, 1, wxEXPAND|wxLEFT, 5 );
+	
+	
+	fgSizer10->Add( sbSizer7, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer7->Add( fgSizer10, 1, wxEXPAND, 5 );

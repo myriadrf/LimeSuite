@@ -34,6 +34,7 @@ static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket 
     case STATUS_COMPLETED_CMD: return 0;
     case STATUS_UNKNOWN_CMD:
         return ReportError(EPROTONOSUPPORT, "unknown lms64c protocol command");
+    default: break;
     }
     return ReportError(EPROTO, status2string(pkt.status));
 }
@@ -485,7 +486,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
         ParsePacket(pkt, inBuffer, inDataPos, protocol);
     }
     delete outBuffer;
-    delete inBuffer;
+    delete[] inBuffer;
     return status;
 }
 

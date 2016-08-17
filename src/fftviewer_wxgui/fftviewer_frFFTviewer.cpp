@@ -29,7 +29,7 @@ frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
-    SetSize(800, 600);
+    SetSize(1000, 700);
     mFFTpanel->settings.useVBO = true;
     mFFTpanel->AddSerie(new cDataSerie());
     mFFTpanel->AddSerie(new cDataSerie());
@@ -245,6 +245,45 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         mFFTpanel->Refresh();
         mFFTpanel->Draw();
     }
+
+    float chPwr[2] = {0, 0};
+    double cFreq[2] = {0, 0};
+    txtCenterOffset1->GetValue().ToDouble(&cFreq[0]);
+    cFreq[0] *= 1000000;
+    txtCenterOffset2->GetValue().ToDouble(&cFreq[1]);
+    cFreq[1] *= 1000000;
+    double bw[2] = {1e6, 1e6};
+    txtBW1->GetValue().ToDouble(&bw[0]);
+    bw[0] *= 1000000;
+    txtBW2->GetValue().ToDouble(&bw[1]);
+    bw[1] *= 1000000;
+    char ctemp[512];
+    /*
+    // TODO
+    for(int c=0; c<2; ++c)
+    {
+        float f0 = cFreq[c]-bw[c]/2;
+        float fn = cFreq[c]+bw[c]/2;
+        float sum = 0;
+        int bins = 0;
+        const int fftSize = streamData.fftBins_dbFS[0].size();
+        for(int i=0; i<fftSize; ++i)
+            if(f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
+            {
+                double val = streamData.fftBins_dbFS[0][i];
+                sum += val;
+                ++bins;
+            }
+        chPwr[c] = sum;
+    }
+    */
+
+    float pwr1  = (chPwr[0] != 0 ? (20 * log10(chPwr[0])) - 69.2369 : -300);
+    lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
+    float pwr2 = (chPwr[1] != 0 ? (20 * log10(chPwr[1])) - 69.2369 : -300);
+    lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
+    lbldBc->SetLabel(wxString::Format("%.3f", 20*log10(chPwr[1]/chPwr[0])));
+
     updateGUI.store(true);
 }
 
@@ -399,10 +438,10 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 for (unsigned s = 0; s < fftSize; ++s)
                 {
                     localDataResults.fftBins_dbFS[ch][s] /= fftCounter;
-                    //localDataResults.fftBins_dbFS[ch][s] = sqrt(localDataResults.fftBins_dbFS[ch][s]);
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
                 }
             }
+
             pthis->streamData = localDataResults;
             wxThreadEvent evt;
             evt.SetEventObject(pthis);

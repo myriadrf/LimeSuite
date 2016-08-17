@@ -928,6 +928,7 @@ int LMS7002M::SetPathRFE(PathRFE path)
     case PATH_RFE_LNAH:
     case PATH_RFE_LNAL:
     case PATH_RFE_LNAW: pd_lna_rfe = 0; break;
+    default: break;
     }
 
     int pd_rloopb_1_rfe = (path == PATH_RFE_LB1)?0:1;
@@ -1909,7 +1910,7 @@ int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16
     for (uint16_t j = 0; j < addrToWrite.size(); ++j)
     {
         if (addrToWrite[j] == 0x00A6)
-            dataToWrite.push_back(0x1 | pattern & ~0x2);
+            dataToWrite.push_back(0x1 | (pattern & ~0x2));
         else if (addrToWrite[j] == 0x0084)
             dataToWrite.push_back(pattern & ~0x19);
         else
@@ -2196,7 +2197,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     {
         Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), mclk2src & 1 | 0x2);
+        Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), (mclk2src & 1) | 0x2);
     }
     else
     {
@@ -2213,7 +2214,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1 | 0x2);
+        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
     }
     else
     {

@@ -1267,28 +1267,35 @@ void OpenGLGraph::DrawMarkers()
 		for(unsigned i=0; i<markers.size(); ++i)
 		{
 		    if(markers[i].used == false)
-                continue;
-			markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
-			// X axis grid lines
-			posY = settings.marginBottom + ((series[0]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
-			posX = settings.marginLeft + ((markers[i].posX-settings.visibleArea.x1)/pixelXvalue);
-			markers[i].iposX = posX;
-			markers[i].iposY = posY;
-			markers[i].size = 10;
-			if(posX >= settings.marginLeft && posX <= settings.windowWidth-settings.marginRight)
-			{
-			    markers[i].color = mMarkerColors[i];
-				glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
-				if( posY >= settings.marginBottom && posY <= settings.windowHeight-settings.marginTop)
-				{
-					glVertex3f( posX, posY, 10);
-					glVertex3f( posX+markers[i].size, posY+markers[i].size, 10);
-					glVertex3f( posX-markers[i].size, posY+markers[i].size, 10);
-				}
-				glVertex3f( posX, settings.marginBottom+markers[i].size, 10);
-				glVertex3f( posX-markers[i].size, settings.marginBottom, 10);
-				glVertex3f( posX+markers[i].size, settings.marginBottom, 10);
-			}
+                        continue;
+                    for(unsigned int j=0; j<series.size(); j++)
+                    {
+                        if(series[j]->size > 0 && series[j]->visible)
+                        {
+                            markers[i].posY = series[j]->values[markers[i].dataValueIndex+1];
+                            // X axis grid lines
+                            posY = settings.marginBottom + ((series[j]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
+                            posX = settings.marginLeft + ((markers[i].posX-settings.visibleArea.x1)/pixelXvalue);
+                            markers[i].iposX = posX;
+                            markers[i].iposY = posY;
+                            markers[i].size = 10;
+
+                            if(posX >= settings.marginLeft && posX <= settings.windowWidth-settings.marginRight)
+                            {
+                                markers[i].color = mMarkerColors[i];
+                                    glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
+                                    if( posY >= settings.marginBottom && posY <= settings.windowHeight-settings.marginTop)
+                                    {
+                                            glVertex3f( posX, posY, 10);
+                                            glVertex3f( posX+markers[i].size, posY+markers[i].size, 10);
+                                            glVertex3f( posX-markers[i].size, posY+markers[i].size, 10);
+                                    }
+                                    glVertex3f( posX, settings.marginBottom+markers[i].size, 10);
+                                    glVertex3f( posX-markers[i].size, settings.marginBottom, 10);
+                                    glVertex3f( posX+markers[i].size, settings.marginBottom, 10);
+                            }
+                        }
+                    }
 		}
 		glEnd();
 		glFlush();
@@ -1300,17 +1307,22 @@ void OpenGLGraph::DrawMarkers()
 		for(unsigned i=0; i<markers.size(); ++i)
 		{
 		    if(markers[i].used == false)
-                continue;
-			glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
-			sprintf(text, "M%i: % .3f MHz / %#+3.1f dBFS", i, series[0]->values[markers[i].dataValueIndex]/1000000, series[0]->values[markers[i].dataValueIndex+1]);
-			markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
-			posX = settings.marginLeft;
-			posY = settings.windowHeight-settings.marginTop - hpos;
-			//glPrint(posX, posY, 0, textScale, "%s", text);
-			if(markers[i].show == false)
-                continue;
-            hpos += textScale*m_font->lineHeight();
-			glRenderText(posX, posY, 0, textScale*m_font->lineHeight(), markers[i].color.getColor4b(), "%s", text);
+                        continue;
+                    glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
+                    int cnt = sprintf(text, "M%i: % .3f MHz ", i, series[0]->values[markers[i].dataValueIndex]/1000000);
+
+                    for(unsigned int j=0; j<series.size(); j++)
+                        if(series[j]->size > 0 && series[j]->visible)
+                            cnt += sprintf(text+cnt, "/ Ch %c: %#+3.1f dBFS ", 65+j, series[j]->values[markers[i].dataValueIndex+1]);
+
+                    markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
+                    posX = settings.marginLeft;
+                    posY = settings.windowHeight-settings.marginTop - hpos;
+                    //glPrint(posX, posY, 0, textScale, "%s", text);
+                    if(markers[i].show == false)
+                        continue;
+                    hpos += textScale*m_font->lineHeight();
+		    glRenderText(posX, posY, 0, textScale*m_font->lineHeight(), markers[i].color.getColor4b(), "%s", text);
 		}
 	}
 }
@@ -1329,12 +1341,26 @@ int OpenGLGraph::clickedOnMarker(int X, int Y)
             continue;
 		if( X > markers[i].iposX-markers[i].size &&  X < markers[i].iposX+markers[i].size )
 		{
-			if( (Y > settings.marginBottom && Y < settings.marginBottom+markers[i].size) ||
-				(Y > markers[i].iposY && Y < markers[i].iposY+markers[i].size) )
+			if(Y > settings.marginBottom && Y < settings.marginBottom+markers[i].size)
 			{
 				printf("selected %i marker\n", i);
-                return i;
-            }
+                                return i;
+                        }
+
+                        for(unsigned int j=0; j<series.size(); j++)
+                        {
+                            if(series[j]->size > 0 && series[j]->visible)
+                            {
+                              float pixelYvalue = (settings.visibleArea.y2 - settings.visibleArea.y1)/  settings.dataViewHeight;
+                              int posY = settings.marginBottom + ((series[j]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
+                              if(Y > posY && Y < posY+markers[i].size)
+                              {
+                                printf("selected %i marker\n", i);
+                                return i;
+                              }
+                            }
+                        }
+
 		}
 	}
 	return -1;
@@ -1600,17 +1626,42 @@ void OpenGLGraph::onReset(wxCommandEvent& event)
 bool OpenGLGraph::SearchPeak()
 {
     bool found = false;
-    //check if series have any data to mark
-    if(series[0]->size > 0)
+    double maxValue;
+    unsigned maxPos;
+    //Init max value
+    for(unsigned int i=0; i<series.size(); i++)
     {
-        unsigned int maxPos = 1;
-        for(unsigned i=0; i<series[0]->size; ++i)
+        if(series[i]->size > 0 && series[i]->visible)
         {
-            if(series[0]->values[maxPos] < series[0]->values[2*i+1])
-                maxPos = 2*i+1;
+            maxValue = series[i]->values[1];
+            found = true;
+            break;
         }
-        AddMarkerAtValue(series[0]->values[maxPos-1]);
-        found = true;
+    }
+    //Find max position
+    for(unsigned int i=0; i<series.size(); i++)
+    {
+        if(series[i]->size > 0 && series[i]->visible)
+        {
+            for(unsigned j=0; j<series[i]->size; ++j)
+            {
+                if(maxValue < series[i]->values[2*j+1])
+                {
+                    maxValue = series[i]->values[2*j+1];
+                    maxPos = 2*j+1;
+                }
+            }
+        }
+    }
+
+    //Mark max position
+    for(unsigned int i=0; i<series.size(); i++)
+    {
+        if(series[i]->size > 0 && series[i]->visible)
+        {
+            AddMarkerAtValue(series[i]->values[maxPos-1]);
+            break;
+        }
     }
     return found;
 }
