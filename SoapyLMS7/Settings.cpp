@@ -903,8 +903,8 @@ void SoapyLMS7::setMasterClockRate(const double rate)
 double SoapyLMS7::getMasterClockRate(void) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = this->getRFIC(0); //same for all RFIC
-    return rfic->GetFrequencyCGEN();
+    //assume same rate for all RFIC in this wrapper
+    return _rfics.front()->GetFrequencyCGEN();
 }
 
 /*******************************************************************
