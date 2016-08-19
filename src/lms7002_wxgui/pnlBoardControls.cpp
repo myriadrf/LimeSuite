@@ -8,12 +8,14 @@
 #endif //WX_PRECOMP
 
 #include "pnluLimeSDR.h"
+#include "pnlLimeSDR.h"
 #include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
 #include <vector>
+#include "lms7suiteEvents.h"
 
 using namespace std;
 using namespace lime;
@@ -288,6 +290,14 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         wxMessageBox(_("Failes to write values"), _("Warning"));
         return;
     }
+
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(WRITE_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
+    }
 }
 
 void pnlBoardControls::Initialize(IConnection* controlPort)
@@ -312,6 +322,14 @@ void pnlBoardControls::UpdatePanel()
         mADC_GUI_widgets[i]->title->SetLabel(wxString(mADCparameters[i].name));
         mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%i"), mADCparameters[i].value));
         mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mADCparameters[i].units));
+    }
+
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(READ_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
     }
 }
 
@@ -430,6 +448,13 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     if(boardID == GetDeviceName(LMS_DEV_ULIMESDR))
     {
         pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
+        pnl->Initialize(serPort);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+    else if(boardID == GetDeviceName(LMS_DEV_LIMESDR))
+    {
+        pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
         pnl->Initialize(serPort);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
