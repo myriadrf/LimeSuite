@@ -20,7 +20,10 @@ public:
     virtual ~pnluLimeSDR();
     virtual void UpdatePanel();
     void OnLoopbackChange(wxCommandEvent &event);
-    
+
+    void OnReadAll(wxCommandEvent &event);
+    void OnWriteAll(wxCommandEvent &event);
+
 protected:
     wxCheckBox* chkRFLB_A_EN;
     wxCheckBox* chkRFLB_B_EN;
