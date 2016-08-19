@@ -69,7 +69,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
 void pnlLimeSDR::Initialize(IConnection* pControl)
 {
     mSerPort = pControl;
-    if(mSerPort->GetDeviceInfo().hardwareVersion != "3")
+    if(mSerPort && mSerPort->GetDeviceInfo().hardwareVersion != "3")
         Hide();
 }
 
