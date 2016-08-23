@@ -24,37 +24,44 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
 {
     mSerPort = nullptr;
 
-    wxFlexGridSizer* controlsSizer;
-
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-    wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
+    mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
     controlsSizer = new wxFlexGridSizer(0, 2, 5, 5);
 
     SetSizer(mainSizer);
-    chkRFLB_A_EN = new wxCheckBox(this, wxNewId(), _("RFLB_A_EN"));
+    chkRFLB_A_EN = new wxCheckBox(this, wxNewId(), _("RF loopback ch.A"));
+    chkRFLB_A_EN->SetToolTip(_("[RFLB_A_EN] External RF loopback TxBAND2->RxLNAH channel A"));
     Connect(chkRFLB_A_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkRFLB_A_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkRFLB_B_EN = new wxCheckBox(this, wxNewId(), _("RFLB_B_EN"));
+    chkRFLB_B_EN = new wxCheckBox(this, wxNewId(), _("RF loopback ch.A"));
+    chkRFLB_B_EN->SetToolTip(_("[RFLB_B_EN] External RF loopback TxBAND2->RxLNAH channel B"));
     Connect(chkRFLB_B_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkRFLB_B_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    chkTX1_2_LB_SH = new wxCheckBox(this, wxNewId(), _("TX1_2_LB_SH"));
+    chkTX1_2_LB_SH = new wxCheckBox(this, wxNewId(), _("Ch.A shunt"));
+    chkTX1_2_LB_SH->SetToolTip(_("[TX1_2_LB_SH]"));
     Connect(chkTX1_2_LB_SH->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX1_2_LB_SH, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkTX2_2_LB_SH = new wxCheckBox(this, wxNewId(), _("TX2_2_LB_SH"));
+    chkTX2_2_LB_SH = new wxCheckBox(this, wxNewId(), _("Ch.B shunt"));
+    chkTX2_2_LB_SH->SetToolTip(_("[TX2_2_LB_SH]"));
     Connect(chkTX2_2_LB_SH->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX2_2_LB_SH, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkTX1_2_LB_AT = new wxCheckBox(this, wxNewId(), _("TX1_2_LB_AT"));
+    chkTX1_2_LB_AT = new wxCheckBox(this, wxNewId(), _("Ch.A attenuator"));
+    chkTX1_2_LB_AT->SetToolTip(_("[TX1_2_LB_AT]"));
     Connect(chkTX1_2_LB_AT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX1_2_LB_AT, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkTX2_2_LB_AT = new wxCheckBox(this, wxNewId(), _("TX2_2_LB_AT"));
+    chkTX2_2_LB_AT = new wxCheckBox(this, wxNewId(), _("Ch.B attenuator"));
+    chkTX2_2_LB_AT->SetToolTip(_("[TX2_2_LB_AT]"));
     Connect(chkTX2_2_LB_AT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX2_2_LB_AT, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    wxStaticBoxSizer *groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GPIO") ), wxVERTICAL );
+    groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("External loopback controls") ), wxVERTICAL );
+    lblWarning = new wxStaticText(this, wxID_ANY, _(""));
+    lblWarning->Hide();
+    groupSizer->Add(lblWarning, 0, wxALIGN_LEFT | wxALIGN_TOP, 5);
     groupSizer->Add(controlsSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
@@ -64,19 +71,34 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
 
     Bind(READ_ALL_VALUES, &pnlLimeSDR::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnGPIOChange, this, this->GetId());
-    Hide();
 }
 
 void pnlLimeSDR::Initialize(IConnection* pControl)
 {
     mSerPort = pControl;
     if(mSerPort)
-        if(mSerPort->GetDeviceInfo().hardwareVersion != "3")
+    {
+        std::string hw = mSerPort->GetDeviceInfo().hardwareVersion;
+        if(hw != "3")
         {
-            Hide();
+            auto controls = controlsSizer->GetChildren();
+            for(auto i : controls)
+                i->GetWindow()->Disable();
+            lblWarning->SetLabel(wxString::Format(_("Requires HW:3, your HW:%s"), hw));
+            lblWarning->Show();
         }
         else
-            Show();
+        {
+            lblWarning->SetLabel(_(""));
+            lblWarning->Hide();
+            auto controls = controlsSizer->GetChildren();
+            for(auto i : controls)
+                i->GetWindow()->Enable();
+        }
+    }
+    
+    mainSizer->Fit(this);
+    mainSizer->SetSizeHints(this);
     Layout();
 }
 

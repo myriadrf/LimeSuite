@@ -6,6 +6,7 @@
 class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;
+class wxStaticBoxSizer;
 
 namespace lime
 {
@@ -31,6 +32,10 @@ protected:
     wxCheckBox* chkTX1_2_LB_AT;
     wxCheckBox* chkTX2_2_LB_SH;
     wxCheckBox* chkTX2_2_LB_AT;
+    wxStaticText* lblWarning;
+    wxFlexGridSizer* controlsSizer;
+    wxStaticBoxSizer *groupSizer;
+    wxFlexGridSizer* mainSizer;
     lime::IConnection *mSerPort;
     DECLARE_EVENT_TABLE()
 };
