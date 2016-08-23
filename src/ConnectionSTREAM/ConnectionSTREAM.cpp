@@ -15,8 +15,6 @@
 
 using namespace std;
 
-#define USB_TIMEOUT 1000
-
 #define HW_LDIGIRED L"DigiRed"
 #define HW_LDIGIGREEN L"DigiGreen"
 #define HW_LSTREAMER L"Stream"
@@ -280,7 +278,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
             else
                 len = 0;
             #else
-                len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, USB_TIMEOUT);
+                len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
             #endif
         }
         else
@@ -292,7 +290,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
                 len = 0;
             #else
                 int actual = 0;
-                libusb_bulk_transfer(dev_handle, 0x01, wbuffer, len, &actual, USB_TIMEOUT);
+                libusb_bulk_transfer(dev_handle, 0x01, wbuffer, len, &actual, timeout_ms);
                 len = actual;
             #endif
         }
@@ -324,7 +322,7 @@ int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_
             else
                 len = 0;
             #else
-            len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, USB_TIMEOUT);
+            len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, timeout_ms);
             #endif
         }
         else
@@ -336,7 +334,7 @@ int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_
                 len = 0;
             #else
                 int actual = 0;
-                libusb_bulk_transfer(dev_handle, 0x81, buffer, len, &actual, USB_TIMEOUT);
+                libusb_bulk_transfer(dev_handle, 0x81, buffer, len, &actual, timeout_ms);
                 len = actual;
             #endif
         }

@@ -16,8 +16,6 @@ using namespace std;
 
 using namespace lime;
 
-#define USB_TIMEOUT 1000
-
 Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
 {
     mStreamWrEndPtAddr = 0x03;
@@ -68,17 +66,17 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
-    
+
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter>>8)&0xFF;
     wbuffer[2] = (mUsbCounter>>16)&0xFF;
     wbuffer[3] = (mUsbCounter>>24)&0xFF;
     wbuffer[4] = ep;
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
     if (actual != 20)
         return -1;
-    
+
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter>>8)&0xFF;
@@ -86,7 +84,7 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
     wbuffer[3] = (mUsbCounter>>24)&0xFF;
     wbuffer[4] = ep;
     wbuffer[5] = 0x03;
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
     if (actual != 20)
         return -1;
     return 0;
@@ -94,20 +92,20 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
 
 int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
-    
+
     int actual = 0;
     unsigned char wbuffer[20]={0};
-    
+
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter>>8)&0xFF;
     wbuffer[2] = (mUsbCounter>>16)&0xFF;
     wbuffer[3] = (mUsbCounter>>24)&0xFF;
     wbuffer[4] = ep;
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
     if (actual != 20)
         return -1;
-    
+
     mUsbCounter++;
     wbuffer[0] = (mUsbCounter)&0xFF;
     wbuffer[1] = (mUsbCounter>>8)&0xFF;
@@ -118,7 +116,7 @@ int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
     wbuffer[9] = (size>>8)&0xFF;
     wbuffer[10] = (size>>16)&0xFF;
     wbuffer[11] = (size>>24)&0xFF;
-    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x01, wbuffer, 20, &actual, 1000);
     if (actual != 20)
         return -1;
     return 0;
@@ -176,7 +174,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
         return ReportError("Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     printf("Claimed Interface\n");
-    
+
     FT_SetStreamPipe(0x82,64);
     FT_SetStreamPipe(0x02,64);
     isConnected = true;
@@ -223,7 +221,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     long len = 0;
     if(IsOpen() == false)
         return 0;
-    
+
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
 #ifndef __unix__
@@ -243,7 +241,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
 		return -1;
 	}
 
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, USB_TIMEOUT);
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 	{
 		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE)==FALSE)
@@ -259,7 +257,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
 	return ulBytesWrite;
 #else
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, timeout_ms);
     len = actual;
 #endif
     delete[] wbuffer;
@@ -295,7 +293,7 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
 		return -1;;
 	}
 
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, USB_TIMEOUT);
+	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 	{
 		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
@@ -311,7 +309,7 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
 	return ulBytesRead;
 #else
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, USB_TIMEOUT);
+    libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, timeout_ms);
     len = actual;
 #endif
     return len;
@@ -411,7 +409,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, long length)
     if (length != rxSize)
     {
         rxSize = length;
-        FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);    
+        FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);
     }
     unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
@@ -445,7 +443,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
         int status = 0;
 #ifndef __unix__
 		contexts[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, USB_TIMEOUT);
+        DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else
@@ -482,7 +480,7 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int conte
 		if (GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE) == FALSE)
 		{
 			return -1;
-		}		
+		}
 		length = ulActualBytesTransferred;
 		contexts[contextHandle].used = false;
 		return length;
@@ -493,7 +491,7 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int conte
         return length;
 #endif
     }
-    else    
+    else
         return 0;
 }
 
@@ -524,7 +522,7 @@ void Connection_uLimeSDR::AbortReading()
 	}
 	rxSize = 0;
 #else
-    
+
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
         if(contexts[i].used)
@@ -576,8 +574,8 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
     if (length != txSize)
     {
         txSize = length;
-        FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);    
-    }  
+        FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);
+    }
     unsigned int Timeout = 500;
     libusb_transfer *tr = contextsToSend[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
@@ -609,7 +607,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     {
 #ifndef __unix__
 		contextsToSend[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, USB_TIMEOUT);
+        DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else

@@ -647,6 +647,8 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
 #endif
+    //erasing FLASH can take up to 3 seconds before reply is received
+    const int progTimeout_ms = 5000;
     char progressMsg[128];
     sprintf(progressMsg, "in progress...");
     bool abortProgramming = false;
@@ -726,7 +728,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
                 callback(bytesSent, length, "Programming failed! Write operation failed");
             return ReportError(EIO, "Programming failed! Write operation failed");
         }
-        if(Read(inbuf, sizeof(inbuf)) != sizeof(ctrbuf))
+        if(Read(inbuf, sizeof(inbuf), progTimeout_ms) != sizeof(ctrbuf))
         {
             if(callback)
                 callback(bytesSent, length, "Programming failed! Read operation failed");
