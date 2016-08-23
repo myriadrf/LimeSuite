@@ -460,6 +460,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         sizerAdditionalControls->Add(additionalControls);
     }
 
+    Layout();
     Fit();
 }
 

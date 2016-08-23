@@ -64,13 +64,20 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
 
     Bind(READ_ALL_VALUES, &pnlLimeSDR::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnGPIOChange, this, this->GetId());
+    Hide();
 }
 
 void pnlLimeSDR::Initialize(IConnection* pControl)
 {
     mSerPort = pControl;
-    if(mSerPort && mSerPort->GetDeviceInfo().hardwareVersion != "3")
-        Hide();
+    if(mSerPort)
+        if(mSerPort->GetDeviceInfo().hardwareVersion != "3")
+        {
+            Hide();
+        }
+        else
+            Show();
+    Layout();
 }
 
 pnlLimeSDR::~pnlLimeSDR()
