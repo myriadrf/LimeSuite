@@ -920,7 +920,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     L = div > 8 ? 8 : div;
     div -= 1;
 
-    if (filt==LMS_GFIR3)
+    /*if (filt==LMS_GFIR3)
     {
        if (L*15 < count)
        {
@@ -939,7 +939,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
            L = 1+(count-1)/5;
            div = L-1;
        }
-    }
+    }*/
 
     float_type max=0;
     for (int i=0; i< (filt==LMS_GFIR3 ? 120 : 40); i++)
