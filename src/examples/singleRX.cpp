@@ -11,7 +11,9 @@
 #include <thread>
 #include <chrono>
 
+#ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
+#endif
 
 using namespace std;
 
@@ -166,12 +168,15 @@ int main(int argc, char** argv)
     lms_stream_meta_t metadata; //Use metadata for additional control over sample receive function behaviour
     metadata.flushPartialPacket = false; //Do not discard data remainder when read size differs from packet size
     metadata.waitForTimestamp = false; //Do not wait for specific timestamps
+
+#ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
+#endif
 
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(8)) //run for 8 seconds
+    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
     {
         int samplesRead;
         //Receive samples
@@ -179,6 +184,12 @@ int main(int argc, char** argv)
 
         //Plot samples
         //I and Q samples are interleaved in buffer: IQIQIQ...
+
+	/* 
+		INSERT CODE FOR PROCESSING RECEIVED SAMPLES 
+	*/
+
+#ifdef USE_GNU_PLOT
         gp.write("set title 'Channel Rx A'\n");
         gp.write("set size square\n set xrange[-1:1]\n set yrange[-1:1]\n");
         gp.write("plot '-' with points");
@@ -188,7 +199,7 @@ int main(int argc, char** argv)
             gp.writef("%f %f\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();
-
+#endif
         //Print stats (once per second)
         if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
         {

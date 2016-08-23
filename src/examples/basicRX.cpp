@@ -11,7 +11,9 @@
 #include <thread>
 #include <chrono>
 
+#ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
+#endif
 
 using namespace std;
 
@@ -88,16 +90,25 @@ int main(int argc, char** argv)
     LMS_StartStream(&streamId);
 
     //Streaming
+#ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
+#endif
     auto t1 = chrono::high_resolution_clock::now();
     while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(5)) //run for 5 seconds
     {
         int samplesRead;
         //Receive samples
         samplesRead = LMS_RecvStream(&streamId, buffer, bufersize, NULL, 1000);
+	//I and Q samples are interleaved in buffer: IQIQIQ...
 
+		printf("Received %d samples\n", samplesRead);
+
+	/* 
+		INSERT CODE FOR PROCESSING RECEIVED SAMPLES 
+	*/
+
+#ifdef USE_GNU_PLOT
         //Plot samples
-        //I and Q samples are interleaved in buffer: IQIQIQ...
         gp.write("set title 'Channels Rx AB'\n");
         gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
         gp.write("plot '-' with points");
@@ -106,6 +117,7 @@ int main(int argc, char** argv)
             gp.writef("%i %i\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();
+#endif
     }
 
     //Stop streaming

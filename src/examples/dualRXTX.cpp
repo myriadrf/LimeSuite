@@ -11,7 +11,9 @@
 #include <thread>
 #include <chrono>
 
+#ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
+#endif
 
 using namespace std;
 
@@ -154,8 +156,9 @@ int main(int argc, char** argv)
     tx_metadata.flushPartialPacket = false; //Do not discard data remainder when read size differs from packet size
     tx_metadata.waitForTimestamp = true; //Enable synchronization to HW timestamp
 
+#ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
-
+#endif
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
@@ -167,15 +170,15 @@ int main(int argc, char** argv)
             //Receive samples
             samplesRead = LMS_RecvStream(&rx_streams[i], buffers[i], bufersize, &rx_metadata, 1000);
             //Send samples with 1024*1024 sample delay from RX (waitForTimestamp is enabled)
-            tx_metadata.timestamp = rx_metadata.timestamp + 1024 * 1024;
+            tx_metadata.timestamp = rx_metadata.timestamp + 1024 * 512;
             LMS_SendStream(&tx_streams[i], buffers[i], samplesRead, &tx_metadata, 1000);
         }
 
-
-        //Plot samples and print stats every 1s
+        //Print stats every 1s
         if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
         {
-            //Plot samples
+#ifdef USE_GNU_PLOT
+            //Plot samples 
             t2 = chrono::high_resolution_clock::now();
             gp.write("set title 'Channels Rx AB'\n");
             gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
@@ -191,7 +194,7 @@ int main(int argc, char** argv)
                 gp.write("e\n");
                 gp.flush();
             }
-
+#endif
             //Print stats
             lms_stream_status_t status;
             LMS_GetStreamStatus(rx_streams, &status); //Obtain RX stream stats

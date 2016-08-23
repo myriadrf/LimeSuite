@@ -254,13 +254,6 @@ if(AUTO_UPDATE_VERSION)
 endif()
 
 ########################################################################
-# Lime Util -- command line utility, info and connections
-########################################################################
-add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil LimeSuite)
-install(TARGETS LimeUtil DESTINATION bin)
-
-########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
@@ -277,6 +270,13 @@ if(BUILD_UTILITIES)
     set(utility_src_files utilityTools/pllTest.cpp)
     add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
     target_link_libraries(utilityTools LimeSuite)
+	
+########################################################################
+# Lime Util -- command line utility, info and connections
+########################################################################
+	add_executable(Limef LimeUtil.cpp)
+	target_link_libraries(LimeUtil LimeSuite)
+	install(TARGETS LimeUtil DESTINATION bin)
 endif()
 
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
