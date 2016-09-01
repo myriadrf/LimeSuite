@@ -46,7 +46,15 @@ Depends:
 Description: Lime Suite - Library applications
  Lime Suite application software.
 
-Package: soapysdr-lms7
+Package: soapysdr-module-lms7
+Section: libs
+Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
+Depends: soapysdr0.5-2-module-lms7, ${misc:Depends}
+Description: Lime Suite - SoapySDR bindings metapackage
+ Lime Suite application software.
+
+Package: soapysdr0.5-2-module-lms7
 Section: comm
 Architecture: any
 Depends:
