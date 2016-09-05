@@ -17,6 +17,7 @@ public:
     }
     ~GNUPlotPipe()
     {
+    	write("exit\n");
         pclose(pipeHandle);
     }
 

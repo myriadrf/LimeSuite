@@ -1162,7 +1162,6 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     };
     CSWInteval cswSearch[2];
     stringstream ss; //tune progress report
-    int16_t csw = 0;
     const char* moduleName = (module == VCO_CGEN) ? "CGEN" : ((module == VCO_SXR) ? "SXR" : "SXT");
     checkConnection();
     uint8_t cmphl; //comparators
@@ -1198,6 +1197,24 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         return status;
     if (Get_SPI_Reg_bits(addrVCOpd, 2, 1) != 0)
         return ReportError(-1, "TuneVCO(%s) - VCO is powered down", moduleName);
+
+    //check if lock is within VCO range
+    {
+        Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        if(cmphl == 3) //VCO too high
+        {
+            this->SetActiveChannel(ch); //restore previously used channel
+            return ReportError(-1, "TuneVCO(%s) - VCO too high", moduleName);
+        }
+        Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 255);
+        cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+        if(cmphl == 0) //VCO too low
+        {
+            this->SetActiveChannel(ch); //restore previously used channel
+            return ReportError(-1, "TuneVCO(%s) - VCO too low", moduleName);
+        }
+    }
 
     //search intervals [0-127][128-255]
     for(int t=0; t<2; ++t)
@@ -1268,7 +1285,6 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
-
     if(cmphl == 2)
         return 0;
     return ReportError(EINVAL, "TuneVCO(%s) - failed to lock (cmphl != 2)\n%s", moduleName, ss.str().c_str());
@@ -1366,7 +1382,6 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     bool canDeliverFrequency = false;
     uint16_t integerPart;
     uint32_t fractionalPart;
-    int8_t i;
     int16_t csw_value;
     uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
 
@@ -1999,7 +2014,7 @@ bool LMS7002M::IsSynced()
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
     status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
-    for(int i=0; i<addrToRead.size(); ++i)
+    for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)
     {
@@ -2037,7 +2052,7 @@ bool LMS7002M::IsSynced()
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
     status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
-    for(int i=0; i<addrToRead.size(); ++i)
+    for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)
     {
@@ -2144,8 +2159,6 @@ int LMS7002M::DownloadAll()
 
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
-        uint16_t adr = addrToRead[i];
-        uint16_t val = dataReceived[i];
         mRegistersMap->SetValue(0, addrToRead[i], dataReceived[i]);
     }
 
@@ -2409,7 +2422,7 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
-    auto ch = GetActiveChannel();
+    auto ch = Get_SPI_Reg_bits(MAC);
     auto regMap = BackupRegisterMap();
     Modify_SPI_Reg_bits(MAC, 1);
 
@@ -2458,6 +2471,7 @@ float_type LMS7002M::GetTemperature()
     double temperature = (rssi / 16.0) * 0.443892 * sign + 40.5;
 
     RestoreRegisterMap(regMap);
+    Modify_SPI_Reg_bits(MAC, ch);
     return temperature;
 }
 

@@ -162,7 +162,7 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
     if(parameter == DCOFFI_RFE || parameter == DCOFFQ_RFE)
     {
         int16_t value = (event.GetInt() < 0) << 6;
-        value |= abs(event.GetInt()) & 0x2F;
+        value |= abs(event.GetInt()) & 0x3F;
         lmsControl->Modify_SPI_Reg_bits(parameter, value);
     }
     else
