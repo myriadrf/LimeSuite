@@ -124,10 +124,10 @@ LMS7002M::LMS7002M() :
     dataPort(nullptr),
     addrLMS7002M(-1),
     mdevIndex(0),
-    mSelfCalDepth(0),
-    mRegistersMap(new LMS7002M_RegistersMap()),
     useCache(0),
-    mValueCache(new CalibrationCache())
+    mSelfCalDepth(0),
+    mValueCache(new CalibrationCache()),
+    mRegistersMap(new LMS7002M_RegistersMap())
 {
     mCalibrationByMCU = true;
 
@@ -649,7 +649,6 @@ int LMS7002M::LoadConfig(const char* filename)
 */
 int LMS7002M::SaveConfig(const char* filename)
 {
-    int status;
     ofstream fout;
     fout.open(filename);
     fout << "[file_info]" << endl;

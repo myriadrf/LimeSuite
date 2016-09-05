@@ -277,7 +277,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
 {
    int decim = 0;
    float_type nco_f=0;
-   for (int i = 0; i < GetNumChannels(false);i++)
+   for (size_t i = 0; i < GetNumChannels(false);i++)
    {
         if (rx_channels[i].cF_offset_nco > nco_f)
             nco_f = rx_channels[i].cF_offset_nco;
@@ -334,7 +334,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
     float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
                             pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
 
-    for (int i = 0; i < GetNumChannels(false);i++)
+    for (size_t i = 0; i < GetNumChannels(false);i++)
     {
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
@@ -371,7 +371,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
    int min_dec = 1;
    bool retain_nco = false;
 
-   for (int i = 0; i < GetNumChannels(false);i++)
+   for (size_t i = 0; i < GetNumChannels(false);i++)
    {
         if (rx_channels[i].cF_offset_nco > nco_rx)
             nco_rx = rx_channels[i].cF_offset_nco;
@@ -389,7 +389,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
        retain_nco = true;
        min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
        min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
-       int nco_over = tx ? min_int : min_dec;
+       unsigned int nco_over = tx ? min_int : min_dec;
        oversample = oversample > nco_over ? oversample : nco_over;
        if (oversample > 32)
        {
@@ -402,10 +402,10 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     {
         for (tmp = 0; tmp < 4; tmp++)
         {
-             if ( (1<<tmp) >= (oversample+1)/2)
-             {
-              break;
-             }
+            if ( (1<<tmp) >= (oversample+1)/2)
+            {
+                break;
+            }
         }
     }
     else if (oversample == 0)
@@ -598,7 +598,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
    ||(SetInterfaceFrequency(GetFrequencyCGEN(),interpolation,decimation)!=0))
            return -1;
 
-    for (int i = 0; i < GetNumChannels(false);i++)
+    for (size_t i = 0; i < GetNumChannels(false);i++)
     {
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
@@ -949,21 +949,21 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     if (max < 1.0)
         max = 1.0;
 
-    int sample = 0;
+    size_t sample = 0;
     for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
     {
-	for(int j=0; j<8; j++)
+        for(int j=0; j<8; j++)
         {
             if( (j < L) && (sample < count) )
             {
                 gfir[i*8+j] = (coef[sample]*32767.0/max);
-		sample++;
+                sample++;
             }
             else
             {
-		gfir[i*8+j] = 0;
+                gfir[i*8+j] = 0;
             }
-	}
+        }
     }
 
     L-=1;
@@ -1248,7 +1248,7 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
     float_type rf_rate;
     GetRate(tx,ch,&rf_rate);
     rf_rate /=2;
-    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         if (freq[i] < 0 || freq[i] > rf_rate)
         {
@@ -1323,7 +1323,7 @@ int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         freq[i] = GetNCOFrequency(tx,i,true);
     }
@@ -1336,7 +1336,7 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
-    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
             return -1;
@@ -1374,7 +1374,7 @@ int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *f
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (int i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
     {
         phase[i] = GetNCOPhaseOffset_Deg(tx,i);
     }

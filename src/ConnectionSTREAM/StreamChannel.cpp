@@ -43,7 +43,7 @@ int ConnectionSTREAM::StreamChannel::Write(const void* samples, const uint32_t c
     {
         const float* samplesFloat = (const float*)samples;
         int16_t* samplesShort = new int16_t[2*count];
-        for(int i=0; i<2*count; ++i)
+        for(size_t i=0; i<2*count; ++i)
             samplesShort[i] = samplesFloat[i]*2047;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);

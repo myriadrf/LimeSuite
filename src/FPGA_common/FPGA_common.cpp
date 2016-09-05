@@ -185,9 +185,8 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         }
     }
 
-    unsigned int bestScore = 0; //score shows how many outputs have integer dividers
+    int bestScore = 0; //score shows how many outputs have integer dividers
     //calculate scores for all available frequencies
-    unsigned long bestVCO = 0;
     for (auto &it : availableVCOs)
     {
         for(int i=0; i<clockCount; ++i)
@@ -201,7 +200,6 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         if(it.second > bestScore)
         {
             bestScore = it.second;
-            bestVCO = it.first;
         }
     }
     int N, M;
@@ -370,7 +368,7 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
     drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
     addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
     const float oversampleClock_Hz = 100e6;
-    const int registerChainSize = 128;
+    //const int registerChainSize = 128;
     const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
     const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputFreq);
     uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;

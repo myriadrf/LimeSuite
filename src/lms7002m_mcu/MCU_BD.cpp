@@ -572,7 +572,6 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 	unsigned short tempi2=0x0000;
 	int CntEnd=0;
 	int i=0;
-    int countDown=m_iLoopTries;
     int m_iExt2=0;
 
 	if ((m_iMode1==0)&&(m_iMode0==0)) return 0;
@@ -638,7 +637,6 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
         }
 
         CntEnd+=32;
-        countDown=m_iLoopTries;
 	};
 
 #ifndef NDEBUG
@@ -743,7 +741,6 @@ int MCU_BD::RunProductionTest_MCU()
     unsigned short tempi = 0x0080;  // was 0x0000
     int m_iMode1_ = 0;
     int m_iMode0_ = 0;
-    int m_iExt2 = 0;
 
     if (m_bLoadedProd == 0)
     {
@@ -1103,7 +1100,7 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
             break;
     }
     mSPI_write(0x0006, 0); //return SPI control to PC
-    std::printf("MCU algorithm time: %lli ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
 }
 

@@ -176,13 +176,12 @@ void lms7002_pnlRBB_view::UpdateGUI()
 void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
 {
     double input1;
-    double input2;
     txtLowBW_MHz->GetValue().ToDouble(&input1);
 
     int status;
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    LMS_SetLPFBW(lmsControl,LMS_CH_RX,ch-1,input1*1e6);
+    status = LMS_SetLPFBW(lmsControl,LMS_CH_RX,ch-1,input1*1e6);
     if (status != 0)
         wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     LMS_Synchronize(lmsControl,false);

@@ -1190,7 +1190,6 @@ int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_
 int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
 {
     int status;
-    float_type txSampleRate;
 
     if(tx_lpf_freq_RF < TxLPF_RF_LimitLow || tx_lpf_freq_RF > TxLPF_RF_LimitHigh)
         return ReportError(ERANGE, "Tx lpf(%g MHz) out of range %g-%g MHz and %g-%g MHz", tx_lpf_freq_RF/1e6,

@@ -732,7 +732,6 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
     //configure FPGA PLLs
     const float vcoLimits_MHz[2] = { 600, 1300 };
     int M, C;
-    const short bufSize = 64;
 
     float fOut_MHz = interfaceClk_Hz / 1e6;
     float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;

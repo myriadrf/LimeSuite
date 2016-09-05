@@ -121,6 +121,8 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
                     char data[255];
                     memset(data, 0, 255);
                     int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                    if(st < 0)
+                        printf("Error getting usb descriptor\n");
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";

@@ -82,10 +82,8 @@ int ConnectionEVB7COM::Open(const char *comName, int baudrate)
 {
 
 	if (strlen(comName) == 0) return ReportError("empty comm name");
-
-	int errorCode = 0;
-
 #ifndef __unix__
+    int errorCode = 0;
 	// Initialize Overlap structures
 	m_osROverlap.Internal = 0;
 	m_osROverlap.InternalHigh = 0;

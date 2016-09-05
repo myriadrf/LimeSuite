@@ -403,7 +403,7 @@ void ConnectionNovenaRF7::ReceivePacketsLoop(const ThreadData args)
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
 
-    int samplesCollected = 0;
+    uint32_t samplesCollected = 0;
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 

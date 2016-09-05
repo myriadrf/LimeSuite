@@ -10,7 +10,6 @@ void GenerateWindowCoefficients(int func, int coefCount, std::vector<float> &win
     float a1 = 0.48829;
     float a2 = 0.14128;
     float a3 = 0.01168;
-    float a4 = 1;
     int N = coefCount;
 	float PI = 3.14159265359;
     switch(func)

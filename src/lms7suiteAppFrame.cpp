@@ -549,7 +549,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     if (repeatedZeros == 2)
         repeatedZeros = 0;
     repeatedZeros = repeatedZeros - (repeatedZeros & 0x1);
-    for (int i = 0; i<length - repeatedZeros; ++i)
+    for (size_t i = 0; i<length - repeatedZeros; ++i)
         //casting to short to print as numbers
         ss << " " << std::setw(2) << (unsigned short)data[i];
     if (repeatedZeros > 2)

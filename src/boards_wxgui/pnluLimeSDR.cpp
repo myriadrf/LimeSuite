@@ -20,14 +20,11 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
 {
     lmsControl = nullptr;
 
-    wxFlexGridSizer* FlexGridSizer1;
-
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
     wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
-    FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
 
     SetSizer(mainSizer);
     chkRFLB_A_EN = new wxCheckBox(this, wxNewId(), _("chkRFLB_A_EN"));

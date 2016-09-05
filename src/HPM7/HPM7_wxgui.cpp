@@ -161,8 +161,7 @@ HPM7_wxgui::~HPM7_wxgui()
 
 void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 {
-
-    int tunerIndex = 0;
+    size_t tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < cmbSSC1.size(); ++tunerIndex)
         if (event.GetId() == cmbSSC1[tunerIndex]->GetId())
             break;
@@ -180,23 +179,22 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
 {
-
-    int tunerIndex = 0;
+    size_t tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < tunerIds.size(); ++tunerIndex)
         if (event.GetId() == tunerIds[tunerIndex])
             break;
 
     if (tunerIndex >= tunerIds.size())
         return;
-    
+
     uint8_t data[64];
     data[0] = 0x21 + tunerIndex * 2;
-    
+
     unsigned char value = chkEB[tunerIndex]->GetValue() << 5;
     value |= chkTP[tunerIndex]->GetValue() << 4;
-    value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);   
+    value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);
     data[1] = value;
-    
+
     size_t len = 2;
 
     if (LMS_TransferLMS64C(lmsControl, lime::CMD_MYRIAD_WR, data, &len)!=0)
@@ -241,14 +239,14 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
         wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
         return;
     }
-    
+
     cmbActivePath->SetSelection(data[1] & 0x3);
     cmbBand->SetSelection((data[1] >> 2) & 0x1);
     cmbLNA->SetSelection((data[1] >> 3) & 0x1);
     cmbPAdriver->SetSelection((data[1] >> 4) & 0x1);
 
     int index = 3;
-    for (int i = 0; i < chkEB.size(); ++i)
+    for (size_t i = 0; i < chkEB.size(); ++i)
     {
         cmbSSC1[i]->SetSelection(data[index] & 0x1F);
         index+=2;
@@ -267,7 +265,7 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
 {
 
     uint8_t data[64];
-    
+
     if (event.GetEventObject() == cmbDAC_A)
     {
         data[0] = 0x30;

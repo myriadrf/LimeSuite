@@ -549,7 +549,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             bufLen = packet.pktLength;
         buffer = new unsigned char[bufLen];
         memset(buffer, 0, bufLen);
-        int srcPos = 0;
+        unsigned int srcPos = 0;
         for(int j=0; j*packet.pktLength<bufLen; ++j)
         {
             int pktPos = j*packet.pktLength;
@@ -590,7 +590,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
             if (pkt.cmd == CMD_LMS7002_WR)
             {
-                for(int i=0; i<pkt.outBuffer.size(); i+=4)
+                for(size_t i=0; i<pkt.outBuffer.size(); i+=4)
                     buffer[i] |= 0x80;
             }
             length = pkt.outBuffer.size();
@@ -773,12 +773,12 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
+int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
-    for (int i=0; i<count; ++i)
+    for (size_t i=0; i<count; ++i)
         pkt.outBuffer.push_back(ids[i]);
 
     int status = this->TransferPacket(pkt);
@@ -786,7 +786,7 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
 
     assert(pkt.inBuffer.size() >= 4 * count);
 
-    for (int i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
         if(units)
@@ -800,12 +800,12 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
+int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
 
-    for (int i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;

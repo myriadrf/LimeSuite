@@ -274,7 +274,7 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    int chCount = 2;
+    uint8_t chCount = 2;
     bool MIMO = chkMIMO->IsChecked();
     LMS_WriteFPGAReg(lmsControl, 0x000C, 0x3); //channels 0,1
 
@@ -282,14 +282,14 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0004); //WFM_LOAD
 
     lime::FPGA_DataPacket pkt;
-    int samplesUsed = 0;
+    size_t samplesUsed = 0;
 
     while(samplesUsed<isamples.size())
     {
         pkt.counter = 0;
         pkt.reserved[0] = 0;
         int bufPos = 0;
-        for(int i=0; i<1360/chCount && samplesUsed < isamples.size(); ++i)
+        for(size_t i=0; i<1360/chCount && samplesUsed < isamples.size(); ++i)
         {
             for(int ch = 0; ch < chCount; ++ch)
             {

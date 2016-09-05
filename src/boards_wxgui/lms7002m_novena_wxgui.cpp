@@ -61,7 +61,7 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint16_t dataRd = 0;
     int status;
-    LMS_ReadLMSReg(lmsControl,dataWr>>16,&dataRd);
+    status = LMS_ReadLMSReg(lmsControl,dataWr>>16,&dataRd);
 
     if (status != 0)
     {
@@ -119,7 +119,7 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
     value |= lms_gpio0->GetValue() << 0;
     uint32_t dataWr = (1 << 31) | (0x0806 << 16) | (value & 0xFFFF);
     int status;
-    LMS_WriteLMSReg(lmsControl,dataWr>>16,value);
+    status = LMS_WriteLMSReg(lmsControl,dataWr>>16,value);
     if (status != 0)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR | wxOK);

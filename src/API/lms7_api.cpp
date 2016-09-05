@@ -23,7 +23,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
 
     if (dev_list != nullptr)
     {
-        for (int i = 0; i < handles.size(); i++)
+        for (size_t i = 0; i < handles.size(); i++)
         {
             string str = handles[i].serialize();
             if (dev_list[i] == nullptr)
@@ -59,7 +59,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
         lms = (LMS7_Device*)*device;
     }
     LMS_Disconnect(lms);
-    for (int i = 0; i < handles.size(); i++)
+    for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
@@ -663,7 +663,7 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
     // ADF4002 needs to be writen 4 values of 24 bits
     int adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
     status = serPort->TransactSPI(adf4002SpiAddr, dataWr.data(), nullptr, 4);
-    return 0;
+    return status;
 }
 
 API_EXPORT  int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
@@ -736,7 +736,7 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
     }
 
     pkt.cmd = lime::eCMD_LMS(cmd);
-    for (int i = 0; i < *len; ++i)
+    for (size_t i = 0; i < *len; ++i)
         pkt.outBuffer.push_back(data[i]);
     lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(conn);
     if (port->TransferPacket(pkt) != 0)
@@ -744,7 +744,7 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
         return -1;
     }
 
-    for (int i = 0; i < pkt.inBuffer.size(); ++i)
+    for (size_t i = 0; i < pkt.inBuffer.size(); ++i)
         data[i] = pkt.inBuffer[i];
     *len = pkt.inBuffer.size();
 
@@ -872,7 +872,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx, s
 
     auto names = lms->GetPathNames(dir_tx, chan);
     if (list != nullptr)
-        for (int i = 0; i < names.size(); i++)
+        for (size_t i = 0; i < names.size(); i++)
         {
             strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
             list[i][sizeof(lms_name_t) - 1] = 0;

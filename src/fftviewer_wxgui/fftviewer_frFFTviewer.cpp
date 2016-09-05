@@ -20,7 +20,9 @@ void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
 
 fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
 :
-frFFTviewer(parent), lmsControl(nullptr), mStreamRunning(false)
+frFFTviewer(parent),
+mStreamRunning(false),
+lmsControl(nullptr)
 {
     captureSamples.store(false);
     averageCount.store(1);
@@ -131,10 +133,10 @@ void fftviewer_frFFTviewer::StartStreaming()
     double nyquistMHz;
     txtNyquistFreqMHz->GetValue().ToDouble(&nyquistMHz);
     const float step = 2*nyquistMHz / fftSize;
-    for (unsigned i = 0; i < fftSize; ++i)
+    for (int i = 0; i < fftSize; ++i)
         fftFreqAxis[i] = 1e6*(-nyquistMHz + (i+1)*step);
     timeXAxis.resize(fftSize);
-    for (unsigned i = 0; i < fftSize; ++i)
+    for (int i = 0; i < fftSize; ++i)
         timeXAxis[i] = i;
 
     if(chkCaptureToFile->GetValue() == true)

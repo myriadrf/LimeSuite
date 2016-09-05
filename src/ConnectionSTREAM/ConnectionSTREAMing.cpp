@@ -336,7 +336,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
             bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
             --activeTransfers;
             totalBytesReceived += bytesReceived;
-            if (bytesReceived != bufferSize) //data should come in full sized packets
+            if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
                 ++m_bufferFailures;
         }
         bool txLate=false;

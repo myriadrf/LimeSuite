@@ -28,7 +28,7 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
 
     if (ctrPort == nullptr)
         return;
-    
+
     int status;
     status = LMS_WriteLMSReg(ctrPort,addr,data);
 
@@ -47,7 +47,6 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
     if (ctrPort == nullptr)
         return;
 
-    const uint32_t dataWr = (addr & 0x7FFF) << 16;
     uint16_t dataRd = 0;
     int status;
     status = LMS_ReadLMSReg(ctrPort,addr,&dataRd);

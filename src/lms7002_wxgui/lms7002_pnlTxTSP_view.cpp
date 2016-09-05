@@ -207,7 +207,7 @@ void lms7002_pnlTxTSP_view::OnNCOSelectionChange(wxCommandEvent& event)
 {
     wxRadioButton* btn = reinterpret_cast<wxRadioButton*>(event.GetEventObject());
     int value = 0;
-    for (int i = 0; i < rgrNCOselections.size(); ++i)
+    for (size_t i = 0; i < rgrNCOselections.size(); ++i)
         if (btn == rgrNCOselections[i])
         {
             value = i;
@@ -359,7 +359,6 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
 
 void lms7002_pnlTxTSP_view::UpdateNCOinputs()
 {
-    bool fromChip = false;
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
@@ -368,7 +367,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
         float_type freq[16];
         float_type pho;
         LMS_GetNCOFrequency(lmsControl,LMS_CH_TX,ch-1,freq,&pho);
-        for (int i = 0; i < txtNCOinputs.size(); ++i)
+        for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
@@ -380,7 +379,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
         float_type phase[16];
         float_type fcw;
         LMS_GetNCOFrequency(lmsControl,LMS_CH_TX,ch-1,phase,&fcw);
-        for (int i = 0; i < txtNCOinputs.size(); ++i)
+        for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0/360.0)*  phase[i]));
         }
@@ -391,12 +390,10 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
 
 void lms7002_pnlTxTSP_view::UpdateGUI()
 {
-    bool fromChip = false;
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), freq/1e6));
-
 
     uint16_t hbi;
     LMS_ReadParam(lmsControl,LMS7param(HBI_OVR_TXTSP),&hbi);

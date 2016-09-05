@@ -308,7 +308,6 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     double FreqTxMHz, FreqRxMHz;
     txtPllFreqTxMHz->GetValue().ToDouble(&FreqTxMHz);
     txtPllFreqRxMHz->GetValue().ToDouble(&FreqRxMHz);
-    double phaseOffset = 180;
 
     lime::fpga::FPGA_PLL_clock clocks[2];
     //ADC
@@ -326,7 +325,7 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     if(lime::fpga::SetPllFrequency(m_serPort, 2, 30.72e6, clocks, 2) != 0)
         wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
     else
- */ 
+ */
     {
         OnNcoFrequencyChanged(event);
         lblRealFreqTx->SetLabel(wxString::Format("Real: %g MHz", clocks[1].rd_actualFrequency / 1e6));
@@ -347,13 +346,13 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
         wxMessageBox(_("Update GUI: device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    
-    for (int i = 0; i <values.size();i++)
+
+    for (size_t i = 0; i <values.size();i++)
     {
-       if (LMS_WriteFPGAReg(lmsControl,addrs[i],values[i]) !=0)
-       {
-          wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK); 
-          return;
-       }
-    }       
+        if (LMS_WriteFPGAReg(lmsControl,addrs[i],values[i]) !=0)
+        {
+            wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+            return;
+        }
+    }
 }

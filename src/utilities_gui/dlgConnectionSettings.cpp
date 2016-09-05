@@ -22,13 +22,13 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
     mListLMS7ports->Clear();
     mListStreamports->Clear();
     lms_info_str_t list[32];
-  
+
     //select the currently opened index
     lmsOpenedIndex = -1;
     int ret = LMS_GetDeviceList(list);
     if (ret <= 0)
         return;
-    for (unsigned i = 0; i<ret; ++i)
+    for (int i = 0; i<ret; ++i)
     {
         std::string str = list[i];
         mListLMS7ports->Append(str.substr(0,str.find(',')));
@@ -46,18 +46,18 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
     {
 
-        LMS_Open(lmsControl,list[mListLMS7ports->GetSelection()],nullptr); 
-        
+        LMS_Open(lmsControl,list[mListLMS7ports->GetSelection()],nullptr);
+
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
     }
-    
+
    /* if(mListStreamports->GetSelection() != wxNOT_FOUND)
     {
-        LMS_Open(lmsControl,list[mListStreamports->GetSelection()]); 
-        
+        LMS_Open(lmsControl,list[mListStreamports->GetSelection()]);
+
         wxCommandEvent evt;
         evt.SetEventType(DATA_PORT_CONNECTED);
         if(GetParent())

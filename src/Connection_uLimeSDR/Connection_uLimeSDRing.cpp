@@ -142,7 +142,6 @@ int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const doub
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     mExpectedSampleRate = rxRate_Hz;
-    int status = 0;
     if ((txInterfaceClk >= 5e6) && (rxInterfaceClk >= 5e6))
     {
         lime::fpga::FPGA_PLL_clock clocks[4];
