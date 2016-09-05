@@ -1,3 +1,12 @@
+limesuite (16.8.1.819) unstable; urgency=low
+
+  * updated debian packaging for latest version.h
+  * set standards version to 3.9.7
+  * update ABI version to 16.8-1
+  * disable CMAKE_INSTALL_RPATH
+
+ -- Lime Microsystems <info@limemicro.com>  Thu, 25 Aug 2016 11:41:35 -0700
+
 limesuite (16.6.6.818) unstable; urgency=low
 
   * updated debian packaging for latest version.h

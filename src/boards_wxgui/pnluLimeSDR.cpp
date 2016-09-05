@@ -6,6 +6,8 @@
 #include <wx/string.h>
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
+#include "lms7suiteEvents.h"
+
 #include <ciso646>
 
 
@@ -38,6 +40,9 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
     Layout();
+
+    Bind(READ_ALL_VALUES, &pnluLimeSDR::OnReadAll, this, this->GetId());
+    Bind(WRITE_ALL_VALUES, &pnluLimeSDR::OnLoopbackChange, this, this->GetId());
 }
 
 void pnluLimeSDR::Initialize(lms_device_t* pControl)
@@ -52,7 +57,7 @@ pnluLimeSDR::~pnluLimeSDR()
 }
 
 void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
-{   
+{
     uint16_t addr = 0x0017;
     uint16_t value = 0;
     value |= chkRFLB_A_EN->GetValue() << 0;
@@ -72,4 +77,14 @@ void pnluLimeSDR::UpdatePanel()
     }
     chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
     chkRFLB_B_EN->SetValue((value >> 1) & 0x1);
+}
+
+void pnluLimeSDR::OnReadAll(wxCommandEvent &event)
+{
+    UpdatePanel();
+}
+
+void pnluLimeSDR::OnWriteAll(wxCommandEvent &event)
+{
+    OnLoopbackChange(event);
 }

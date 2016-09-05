@@ -575,7 +575,9 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         }
         if (rfic->SetNCOFrequency(lmsDir, 0, abs(frequency)) != 0)
         {
-            throw std::runtime_error(lime::GetLastErrorMessage());
+            //rate was out of bounds, clip to the maximum frequency
+            const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
+            rfic->SetNCOFrequency(lmsDir, 0, dspRate/2);
         }
         return;
     }
@@ -906,8 +908,8 @@ void SoapyLMS7::setMasterClockRate(const double rate)
 double SoapyLMS7::getMasterClockRate(void) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = this->getRFIC(0); //same for all RFIC
-    return rfic->GetFrequencyCGEN();
+    //assume same rate for all RFIC in this wrapper
+    return _rfics.front()->GetFrequencyCGEN();
 }
 
 /*******************************************************************

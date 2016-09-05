@@ -474,10 +474,9 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-        int status = 0;
 #ifndef __unix__
 		contexts[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
+        DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else
@@ -631,7 +630,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     {
 #ifndef __unix__
 		contextsToSend[contextHandle].inOvLap.InternalHigh = 0;
-		DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
+        DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
 #else

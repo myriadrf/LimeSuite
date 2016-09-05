@@ -113,7 +113,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating transmitter...");
 #endif
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -121,7 +121,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
 #endif
-        LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -161,7 +161,7 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
     if(LMS7ParameterCompare(parameter,LMS7param(DCOFFI_RFE))==0 || LMS7ParameterCompare(parameter,LMS7param(DCOFFQ_RFE))==0)
     {
         int16_t value = (event.GetInt() < 0) << 6;
-        value |= abs(event.GetInt()) & 0x2F;
+        value |= abs(event.GetInt()) & 0x3F;
         LMS_WriteParam(lmsControl,parameter,value);
     }
     else

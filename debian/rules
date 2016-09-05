@@ -15,12 +15,12 @@ export DH_OPTIONS
 
 
 %:
-	dh $@ --buildsystem=cmake
+	dh $@ --buildsystem=cmake --parallel
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		-DBUILD_SHARED_LIBS=ON \
-		-DCMAKE_SKIP_RPATH=TRUE \
+		-DCMAKE_AUTOSET_INSTALL_RPATH=FALSE \
 		-DUDEV_RULES_PATH=/lib/udev/rules.d \
 		-DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)" \
 		-DLIME_SUITE_EXTVER="$(DEB_VERSION_EXTVER)"

@@ -10,11 +10,14 @@
 
 
 #include "pnluLimeSDR.h"
+#include "pnlLimeSDR.h"
+#include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
 #include <vector>
+#include "lms7suiteEvents.h"
 
 using namespace std;
 using namespace lime;
@@ -231,7 +234,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     }
 
 
-    for (int i = 0; i < mADCparameters.size(); ++i)
+    for (size_t i = 0; i < mADCparameters.size(); ++i)
     {
         float_type value;
         lms_name_t units;
@@ -245,9 +248,9 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         mADCparameters[i].units = units;
         mADCparameters[i].value = value;
     }
-    for (int i = 0; i < mDACparameters.size(); ++i)
+    for (size_t i = 0; i < mDACparameters.size(); ++i)
     {
-        for (int j = 0; j < mADCparameters.size(); ++j)
+        for (size_t j = 0; j < mADCparameters.size(); ++j)
         {
             if (mDACparameters[i].channel == mADCparameters[j].channel)
             {
@@ -273,7 +276,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
     vector<double> values;
     //vector<string> units; currently is not used
 
-    for (int i = 0; i < mDACparameters.size(); ++i)
+    for (size_t i = 0; i < mDACparameters.size(); ++i)
     {
         ids.push_back(mDACparameters[i].channel);
         values.push_back(mDACparameters[i].value);
@@ -283,6 +286,14 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
             wxMessageBox(_("Failes to write values"), _("Warning"));
             return;
         }
+    }
+
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(WRITE_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
     }
 }
 
@@ -303,12 +314,20 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
 void pnlBoardControls::UpdatePanel()
 {
     assert(mADCparameters.size() == mADC_GUI_widgets.size());
-    for (int i = 0; i < mADCparameters.size(); ++i)
+    for (size_t i = 0; i < mADCparameters.size(); ++i)
     {
         mADC_GUI_widgets[i]->channel->SetLabel(wxString::Format(_("%i"), mADCparameters[i].channel));
         mADC_GUI_widgets[i]->title->SetLabel(wxString(mADCparameters[i].name));
         mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%i"), mADCparameters[i].value));
         mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mADCparameters[i].units));
+    }
+
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(READ_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
     }
 }
 
@@ -393,7 +412,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
 
     if (boardID != GetDeviceName(LMS_DEV_UNKNOWN))
     {
-        for (int i = 0; i < mADCparameters.size(); ++i)
+        for (size_t i = 0; i < mADCparameters.size(); ++i)
         {
             ADC_GUI *gui = new ADC_GUI();
             gui->channel = new wxStaticText(this, wxID_ANY, wxString::Format(_("%i"), mADCparameters[i].channel));
@@ -407,7 +426,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
         }
 
-        for (int i = 0; i < mDACparameters.size(); ++i)
+        for (size_t i = 0; i < mDACparameters.size(); ++i)
         {
             DAC_GUI *gui = new DAC_GUI();
             gui->channel = new wxStaticText(this, wxID_ANY, wxString::Format(_("%i"), mDACparameters[i].channel));
@@ -433,7 +452,16 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
+    else if(boardID == GetDeviceName(LMS_DEV_LIMESDR))
+    {
+        pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
+        //TODO
+        //pnl->Initialize(serPort);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
 
+    Layout();
     Fit();
 }
 
@@ -446,7 +474,7 @@ void pnlBoardControls::OnSetDACvaluesENTER(wxCommandEvent &event)
 
 void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
 {
-    for (int i = 0; i < mDAC_GUI_widgets.size(); ++i)
+    for (size_t i = 0; i < mDAC_GUI_widgets.size(); ++i)
     {
         if (event.GetEventObject() == mDAC_GUI_widgets[i]->value)
         {

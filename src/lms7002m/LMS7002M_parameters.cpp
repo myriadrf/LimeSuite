@@ -5,7 +5,15 @@
 */
 
 #include "LMS7002M_parameters.h"
+
 #include <vector>
+
+int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b)
+{
+    if (a.address == b.address && a.msb == b.msb && a.lsb == b.lsb)
+        return 0;
+    return -1;
+}
 
 std::vector<const LMS7Parameter*> LMS7parameterList =
 {
@@ -580,4 +588,3 @@ std::vector<const LMS7Parameter*> LMS7parameterList =
 &LMS7_SEL_RX,
 &LMS7_MODE_RX
 };
-

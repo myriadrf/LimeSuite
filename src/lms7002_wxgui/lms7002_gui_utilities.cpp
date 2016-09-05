@@ -38,16 +38,10 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
     for (auto idParam : wndId2param)
     {
         wnd = idParam.first;
-        if (wnd == panel)
-        {
-            int a = 1;
-        }
         if (wnd == nullptr)
             continue;
         wndClass = wnd->GetClassInfo();
 
-        // read only from local copy to increase performance
-        bool fromChip = false;
         LMS_ReadParam(lmsControl,idParam.second,&value);
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
@@ -109,7 +103,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
 
 int LMS7002_WXGUI::index2value(int index, const indexValueMap &pairs)
 {
-    for (int i = 0; i < pairs.size(); ++i)
+    for (size_t i = 0; i < pairs.size(); ++i)
         if (index == pairs[i].first)
             return pairs[i].second;
     return 0;
@@ -117,7 +111,7 @@ int LMS7002_WXGUI::index2value(int index, const indexValueMap &pairs)
 
 int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
 {
-    for (int i = 0; i < pairs.size(); ++i)
+    for (size_t i = 0; i < pairs.size(); ++i)
         if (value == pairs[i].second)
             return pairs[i].first;
     return 0;

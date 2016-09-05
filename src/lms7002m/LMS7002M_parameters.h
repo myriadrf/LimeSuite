@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #define LMS7param(id) LMS7_ ## id
-    
+
 struct LMS7Parameter
 {
     uint16_t address;
@@ -24,13 +24,7 @@ struct LMS7Parameter
     const char* tooltip;
 };
 
-static int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b)
-{
-    if (a.address == b.address && a.msb == b.msb && a.lsb == b.lsb)
-        return 0;
-    return -1;
-}
-
+int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b);
 
 static const struct LMS7Parameter LMS7_LRST_TX_B = { 0x0020, 15, 15, 1, "LRST_TX_B", "Resets all the logic registers to the default state for Tx MIMO channel B" };
 static const struct LMS7Parameter LMS7_MRST_TX_B = { 0x0020, 14, 14, 1, "MRST_TX_B", "Resets all the configuration memory to the default state for Tx MIMO channel B" };
