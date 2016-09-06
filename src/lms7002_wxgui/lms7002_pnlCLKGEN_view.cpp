@@ -127,13 +127,13 @@ void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxCommandEvent& event)
 
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
 
-    if (LMS7ParameterCompare(parameter,LMS7param(EN_ADCCLKH_CLKGN))==0)
+    if(event.GetEventObject() == cmbEN_ADCCLKH_CLKGN)
         UpdateInterfaceFrequencies();
-    else if (LMS7ParameterCompare(parameter ,LMS7param(CSW_VCO_CGEN))==0)
+    else if(event.GetEventObject() == cmbCSW_VCO_CGEN)
     {
         OnbtnReadComparators(event);
     }
-    else if (LMS7ParameterCompare(parameter,LMS7param(CLKH_OV_CLKL_CGEN))==0)
+    else if(event.GetEventObject() == cmbCLKH_OV_CLKL_CGEN)
     {
         double cgenFreq;
         txtFrequency->GetValue().ToDouble(&cgenFreq);

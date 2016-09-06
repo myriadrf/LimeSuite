@@ -11,7 +11,6 @@
 
 #include <ciso646>
 
-#include <IConnection.h>
 #include <ErrorReporting.h>
 
 using namespace lime;
@@ -22,7 +21,7 @@ END_EVENT_TABLE()
 
 pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
 {
-    mSerPort = nullptr;
+    lmsControl = nullptr;
 
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
@@ -73,12 +72,13 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnGPIOChange, this, this->GetId());
 }
 
-void pnlLimeSDR::Initialize(IConnection* pControl)
+void pnlLimeSDR::Initialize(lms_device_t* pControl)
 {
-    mSerPort = pControl;
-    if(mSerPort)
+    lmsControl = pControl;
+    if(lmsControl)
     {
-        std::string hw = mSerPort->GetDeviceInfo().hardwareVersion;
+        auto info = LMS_GetDeviceInfo(lmsControl);
+        std::string hw = info->hardwareVersion;
         if(hw != "3")
         {
             auto controls = controlsSizer->GetChildren();
@@ -124,17 +124,17 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_AT->GetValue() << 5;
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
-    if(mSerPort && mSerPort->WriteRegister(addr, value))
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+    if(lmsControl && LMS_WriteFPGAReg(lmsControl, addr, value))
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
 }
 
 void pnlLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(mSerPort && mSerPort->ReadRegister(addr, value))
+    if(lmsControl && LMS_ReadFPGAReg(lmsControl, addr, &value))
     {
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     chkRFLB_A_EN->SetValue((value >> 0) & 0x1);

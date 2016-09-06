@@ -19,9 +19,22 @@ class IConnection;
 class LMS7002M_RegistersMap;
 class CalibrationCache;
 class MCU_BD;
-class RSSI_measurements;
 class BinSearchParam;
 class GridSearchParam;
+
+struct RSSI_measurements
+{
+    void clear()
+    {
+        amplitudeFFT.clear();
+        amplitudeGeortzelF.clear();
+        amplitudeGeortzelFPGA.clear();
+    }
+
+    std::vector<float> amplitudeFFT;
+    std::vector<float> amplitudeGeortzelF;
+    std::vector<float> amplitudeGeortzelFPGA;
+};
 
 typedef double float_type;
 

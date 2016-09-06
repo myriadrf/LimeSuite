@@ -262,7 +262,7 @@ void lms7002_pnlRxTSP_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
     long value = event.GetInt();
-    if (0==LMS7ParameterCompare(parameter,LMS7param(IQCORR_RXTSP)))
+    if(event.GetEventObject() == cmbIQCORR_RXTSP)
     {
         float angle = atan(value / 2048.0) * 180 / 3.141596;
         txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
@@ -277,7 +277,7 @@ void lms7002_pnlRxTSP_view::ParameterChangeHandler(wxCommandEvent& event)
     }
     LMS_WriteParam(lmsControl,parameter,value);
 
-    if (LMS7ParameterCompare(parameter,LMS7param(MODE_RX))==0)
+    if(event.GetEventObject() == rgrMODE_RX)
         UpdateNCOinputs();
 }
 

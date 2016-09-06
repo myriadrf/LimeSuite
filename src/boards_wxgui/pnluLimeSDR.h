@@ -8,8 +8,6 @@ class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;
 
-
-
 class pnluLimeSDR : public wxPanel
 {
 public:

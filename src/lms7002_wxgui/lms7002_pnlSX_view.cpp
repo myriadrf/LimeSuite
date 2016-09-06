@@ -410,7 +410,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
     }
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
 
-    if (0==LMS7ParameterCompare(parameter, LMS7param(CSW_VCO))) //for convenience refresh comparator values
+    if(event.GetEventObject() == ctrCSW_VCO) //for convenience refresh comparator values
     {
         wxCommandEvent evt;
         OnbtnReadComparators(evt);

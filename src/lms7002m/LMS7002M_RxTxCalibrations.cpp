@@ -131,19 +131,7 @@ static float_type offsetNCO = targetOffsetNCO; //gets changed when using FFT
 const static float_type calibrationSXOffset_Hz = 4e6;
 
 namespace lime{
-struct RSSI_measurements
-{
-    void clear()
-    {
-        amplitudeFFT.clear();
-        amplitudeGeortzelF.clear();
-        amplitudeGeortzelFPGA.clear();
-    }
 
-    std::vector<float> amplitudeFFT;
-    std::vector<float> amplitudeGeortzelF;
-    std::vector<float> amplitudeGeortzelFPGA;
-};
 }
 
 static const int16_t firCoefs[] =

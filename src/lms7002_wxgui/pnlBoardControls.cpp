@@ -455,8 +455,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     else if(boardID == GetDeviceName(LMS_DEV_LIMESDR))
     {
         pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
-        //TODO
-        //pnl->Initialize(serPort);
+        pnl->Initialize(lmsControl);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }

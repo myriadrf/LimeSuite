@@ -158,7 +158,7 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    if(LMS7ParameterCompare(parameter,LMS7param(DCOFFI_RFE))==0 || LMS7ParameterCompare(parameter,LMS7param(DCOFFQ_RFE))==0)
+    if(event.GetEventObject() == cmbDCOFFI_RFE || event.GetEventObject() == cmbDCOFFQ_RFE)
     {
         int16_t value = (event.GetInt() < 0) << 6;
         value |= abs(event.GetInt()) & 0x3F;

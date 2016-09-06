@@ -6,6 +6,7 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+#include "LMS7002M_parameters.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
@@ -236,7 +237,7 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         return;
     }
 
-    if(0==LMS7ParameterCompare(parameter, LMS7param(SEL_PATH_RFE)))
+    if(event.GetEventObject() == cmbSEL_PATH_RFE)
     {
         wxCommandEvent evt;
         evt.SetEventType(LMS7_RXPATH_CHANGED);

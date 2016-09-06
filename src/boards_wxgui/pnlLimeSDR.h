@@ -1,6 +1,7 @@
 #ifndef PNL_LIMESDR_H
 #define PNL_LIMESDR_H
 
+#include "lime/LimeSuite.h"
 #include <map>
 #include <wx/panel.h>
 class wxStaticText;
@@ -17,7 +18,7 @@ class pnlLimeSDR : public wxPanel
 {
 public:
     pnlLimeSDR(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = wxEmptyString);
-    void Initialize(lime::IConnection *pControl);
+    void Initialize(lms_device_t* pControl);
     virtual ~pnlLimeSDR();
     virtual void UpdatePanel();
     void OnGPIOChange(wxCommandEvent &event);
@@ -36,7 +37,7 @@ protected:
     wxFlexGridSizer* controlsSizer;
     wxStaticBoxSizer *groupSizer;
     wxFlexGridSizer* mainSizer;
-    lime::IConnection *mSerPort;
+    lms_device_t *lmsControl;
     DECLARE_EVENT_TABLE()
 };
 
