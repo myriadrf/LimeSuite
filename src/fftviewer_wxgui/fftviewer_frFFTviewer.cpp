@@ -25,7 +25,7 @@ mStreamRunning(false),
 lmsControl(nullptr)
 {
     captureSamples.store(false);
-    averageCount.store(1);
+    averageCount.store(10);
     spinAvgCount->SetValue(averageCount);
     updateGUI.store(true);
 #ifndef __unix__
@@ -164,7 +164,7 @@ void fftviewer_frFFTviewer::StartStreaming()
     }
 
     btnStartStop->SetLabel(_("STOP"));
-    mGUIupdater->Start(50);
+    mGUIupdater->Start(500);
 }
 
 void fftviewer_frFFTviewer::StopStreaming()
@@ -391,12 +391,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                     samplesToCapture[ch] -= samplesPopped[ch];
                 }
             }
-
-            lms_stream_status_t rxStats;
-            LMS_GetStreamStatus(&pthis->rxStreams[0],&rxStats);
-            float RxFilled = 100*(float)rxStats.fifoFilledCount/rxStats.fifoSize;
-            if(RxFilled > 25) //Skip FFT if calculations too slow
-                break;
 
             for (int ch = 0; ch < channelsCount; ++ch)
             {
