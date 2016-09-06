@@ -341,14 +341,14 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
         {
            freq[0] = rx_channels[i].cF_offset_nco;
            SetNCOFreq(false,i,freq,0);
-           SetNCO(false,i,0,false);
+           SetNCO(false,i,0,true);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
            freq[0] = tx_channels[i].cF_offset_nco;
            SetNCOFreq(true,i,freq,0);
-           SetNCO(true,i,0,false);
+           SetNCO(true,i,0,true);
         }
     }
 
@@ -605,14 +605,14 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         {
            freq[0] = rx_channels[i].cF_offset_nco;
            SetNCOFreq(false,i,freq,0);
-           SetNCO(false,i,0,false);
+           SetNCO(false,i,0,true);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
            freq[0] = tx_channels[i].cF_offset_nco;
            SetNCOFreq(true,i,freq,0);
-           SetNCO(true,i,0,false);
+           SetNCO(true,i,0,true);
         }
     }
 
