@@ -1490,7 +1490,7 @@ int LMS7_Device::Init()
     if (ResetChip()!=0)
         return -1;
     //load initial settings to get samples
-    if (DownloadAll()!=0)
+    if (UploadAll()!=0)
         return -1;
     SetActiveChannel(lime::LMS7002M::ChA);
     Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);

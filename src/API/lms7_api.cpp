@@ -77,7 +77,6 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
                     continue;
             }
             lms->SetConnection(conn,0);
-            lms->DownloadAll();
             lms->streamPort = conn;
             if (args == nullptr)
             {
