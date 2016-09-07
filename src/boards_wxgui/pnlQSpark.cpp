@@ -263,8 +263,8 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     regValue &= ~mask;
     regValue |= (event.GetInt() << reg.lsb) & mask;
 
-    if(LMS_ReadFPGAReg(lmsControl,reg.address,&regValue) != 0)
-        wxMessageBox(LMS_GetLastErrorMessage(), "Error");
+    if(LMS_WriteFPGAReg(lmsControl, reg.address, regValue) != 0)
+        wxMessageBox(LMS_GetLastErrorMessage(), wxString::Format("%s", LMS_GetLastErrorMessage()));
 }
 
 pnlQSpark::~pnlQSpark()
@@ -321,11 +321,13 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     clocks[1].index = 1;
     clocks[1].outFrequency = FreqTxMHz*1e6;
     clocks[1].phaseShift_deg = 0;
-/*
-    if(lime::fpga::SetPllFrequency(m_serPort, 2, 30.72e6, clocks, 2) != 0)
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
-    else
- */
+
+//  TODO
+    wxMessageBox(_("Not implemented"), _("Error"), wxICON_ERROR | wxOK);
+    return;
+//  if(lime::fpga::SetPllFrequency(m_serPort, 2, 30.72e6, clocks, 2) != 0)
+//      wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+//  else
     {
         OnNcoFrequencyChanged(event);
         lblRealFreqTx->SetLabel(wxString::Format("Real: %g MHz", clocks[1].rd_actualFrequency / 1e6));
