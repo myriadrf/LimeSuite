@@ -11,40 +11,48 @@ lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_dev
 dlgVCOfrequencies( parent )
 {
     lmsControl = plmsControl;
-    double multiplier = 0.001;
+    double multiplier = 0.000000001;
     lms_range_t range;
     LMS_GetVCORange(lmsControl,0,&range);
-    txtVCOL_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
-    txtVCOL_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    txtVCOL_low->SetValue(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOL_high->SetValue(wxString::Format(_("%.3f"), range.max * multiplier));
     LMS_GetVCORange(lmsControl,1,&range);
-    txtVCOM_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
-    txtVCOM_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    txtVCOM_low->SetValue(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOM_high->SetValue(wxString::Format(_("%.3f"), range.max * multiplier));
     LMS_GetVCORange(lmsControl,2,&range);
-    txtVCOH_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
-    txtVCOH_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    txtVCOH_low->SetValue(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOH_high->SetValue(wxString::Format(_("%.3f"), range.max * multiplier));
     LMS_GetVCORange(lmsControl,3,&range);
-    txtVCOCGEN_low->SetLabel(wxString::Format(_("%.3f"), range.min * multiplier));
-    txtVCOCGEN_high->SetLabel(wxString::Format(_("%.3f"), range.max * multiplier));
+    txtVCOCGEN_low->SetValue(wxString::Format(_("%.3f"), range.min * multiplier));
+    txtVCOCGEN_high->SetValue(wxString::Format(_("%.3f"), range.max * multiplier));
 }
 
 void lms7002_dlgVCOfrequencies::OnBtnOkClick( wxCommandEvent& event )
 {
-    double multiplier = 1000;
+    double multiplier = 1e9;
     lms_range_t range;
     txtVCOL_low->GetValue().ToDouble(&range.min);
     txtVCOL_high->GetValue().ToDouble(&range.max);
+    range.min *= multiplier;
+    range.max *= multiplier;
     LMS_SetVCORange(lmsControl,0,range);
-    
+
     txtVCOM_low->GetValue().ToDouble(&range.min);
     txtVCOM_high->GetValue().ToDouble(&range.max);
+    range.min *= multiplier;
+    range.max *= multiplier;
     LMS_SetVCORange(lmsControl,1,range);
-    
+
     txtVCOH_low->GetValue().ToDouble(&range.min);
     txtVCOH_high->GetValue().ToDouble(&range.max);
+    range.min *= multiplier;
+    range.max *= multiplier;
     LMS_SetVCORange(lmsControl,2,range);
 
     txtVCOCGEN_low->GetValue().ToDouble(&range.min);
     txtVCOCGEN_high->GetValue().ToDouble(&range.max);
+    range.min *= multiplier;
+    range.max *= multiplier;
     LMS_SetVCORange(lmsControl,3,range);
 
     EndModal(wxID_OK);
