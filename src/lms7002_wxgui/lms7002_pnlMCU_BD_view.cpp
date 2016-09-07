@@ -50,14 +50,13 @@ lms7002_pnlMCU_BD_view::lms7002_pnlMCU_BD_view(wxWindow* parent)
     chkReset->SetValue(true);
     mLoadedProgramFilename = "";
     m_iLoopTries=20;
-    obj_ptr=nullptr;
+    obj_ptr=this;
 }
 
 lms7002_pnlMCU_BD_view::~lms7002_pnlMCU_BD_view()
-{    
+{
     if(mThreadWorking)
         mWorkerThread.join();
-    Disconnect(wxID_ANY, wxEVT_TIMER, wxTimerEventHandler(lms7002_pnlMCU_BD_view::OnProgressPoll), NULL, this);
 }
 
 /** @brief Read program code from file into memory
@@ -116,9 +115,9 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
 }
 
 void lms7002_pnlMCU_BD_view::OnButton_LOADHexClick( wxCommandEvent& event )
-{   
+{
     wxFileDialog dlg(this, _("Open hex file"), _("hex"), _("*.hex"), _("HEX Files (*.hex)|*.hex|BIN Files (*.bin)|*.bin|All Files (*.*)|*.*||"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    if (dlg.ShowModal() == wxID_CANCEL) 
+    if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
     wxString m_sHexFileName = dlg.GetPath();
@@ -211,7 +210,7 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
                 target = LMS_TARGET_RAM;
             else if (mode0 == 1 && mode1 == 1)
                 target = LMS_TARGET_BOOT;
-            
+
             retval = LMS_ProgramLMSMCU(pthis->lmsControl,(const char*)pthis->byte_array,8192,target,OnProgrammingCallback);
         }
         wxThreadEvent *evt = new wxThreadEvent();
@@ -229,7 +228,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
     int i = 0;
     //int temp;
     wxFileDialog dlg(this, _("Open txt file"), _("txt"), _("*.txt"), _("TXT Files (*.txt)|*.txt|TXT Files (*.txt)|*.txt |All Files (*.*)|*.*||"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    if (dlg.ShowModal() == wxID_CANCEL) 
+    if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
     wxString m_sTxtFileName = dlg.GetPath();
@@ -237,7 +236,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
     temps = _("Test results file: ");
     temps = temps + m_sTxtFileName;
     lblTestResultsFile->SetLabel(temps);
-    
+
     FILE * inFile = NULL;
     inFile = fopen(m_sTxtFileName.mb_str(), "r");
 
@@ -287,10 +286,10 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
 void lms7002_pnlMCU_BD_view::Wait_CLK_Cycles(int delay)
 {
 	//// some delay
-	int i=0;
-        uint16_t val;
+    int i=0;
+    uint16_t val;
 	for (i=0;i<(delay/64);i++)
-           LMS_ReadLMSReg(lmsControl,0x0003,&val);
+       LMS_ReadLMSReg(lmsControl,0x0003,&val);
 }
 
 void lms7002_pnlMCU_BD_view::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug) {
@@ -329,7 +328,7 @@ void lms7002_pnlMCU_BD_view::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned sh
 
 	// tempi variable is driving the mspi_REG2
 
-        LMS_WriteLMSReg(lmsControl,0x8002,tempi);// REG2 write
+    LMS_WriteLMSReg(lmsControl,0x8002,tempi);// REG2 write
 
 	// generating waveform
 	for (i=0; i<=limit; i++)
@@ -375,7 +374,7 @@ void lms7002_pnlMCU_BD_view::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
 		if (m_iMode0==1) tempi=tempi|0x0001;
 
 		// Select debug mode
-                LMS_WriteLMSReg(lmsControl,0x8002,tempi);
+        LMS_WriteLMSReg(lmsControl,0x8002,tempi);
 		// REG2 write
 }
 
@@ -391,17 +390,17 @@ void lms7002_pnlMCU_BD_view::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
 		// To run mode
 		LMS_WriteLMSReg(lmsControl,0x8002,tempi);  // REG2 write
 }
- 
+
  int lms7002_pnlMCU_BD_view::WaitUntilWritten(){
 
 	 // waits if WRITE_REQ (REG3[2]) flag is equal to '1'
 	 // this means that  write operation is in progress
 	unsigned short tempi=0x0000;
 	int countDown=m_iLoopTries;  // Time out value
-        LMS_ReadLMSReg(lmsControl,0x0003,&tempi); // REG3 read
+    LMS_ReadLMSReg(lmsControl,0x0003,&tempi); // REG3 read
 
 	while (( (tempi&0x0004) == 0x0004) && (countDown>0))
-        {
+    {
 		LMS_ReadLMSReg(lmsControl,0x0003,&tempi); // REG3 read
 		countDown--;
 	}
@@ -411,7 +410,7 @@ void lms7002_pnlMCU_BD_view::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
         return 0; // Finished regularly
 	// pass if WRITE_REQ is '0'
 }
- 
+
  int lms7002_pnlMCU_BD_view::ReadOneByte(unsigned char * data)
 {
 	unsigned short tempi=0x0000;
@@ -430,9 +429,9 @@ void lms7002_pnlMCU_BD_view::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
 
 	if (countDown>0)
     { // Time out has not occured
-		 LMS_ReadLMSReg(lmsControl,0x0005,&tempi);; // REG5 read
-		  // return the read byte
-		 (* data) = (unsigned char) (tempi);
+        LMS_ReadLMSReg(lmsControl,0x0005,&tempi);; // REG5 read
+        // return the read byte
+        (*data) = (unsigned char) (tempi);
 	}
 	else
         (* data) =0;
@@ -443,7 +442,7 @@ void lms7002_pnlMCU_BD_view::DebugModeSet_MCU(int m_iMode1, int m_iMode0)
 	else
         return 0; // finished regularly
 }
- 
+
 int lms7002_pnlMCU_BD_view::One_byte_command(unsigned short data1, unsigned char * rdata1)
 {
 	unsigned char tempc=0x00;
@@ -467,10 +466,10 @@ int lms7002_pnlMCU_BD_view::One_byte_command(unsigned short data1, unsigned char
 
 int lms7002_pnlMCU_BD_view::ResetPC_MCU()
 {
-     unsigned char tempc1=0x00;
-     int retval=0;
-     retval=One_byte_command(0x70, &tempc1);
-     return retval;
+    unsigned char tempc1=0x00;
+    int retval=0;
+    retval=One_byte_command(0x70, &tempc1);
+    return retval;
 }
 
 int lms7002_pnlMCU_BD_view::Three_byte_command(
@@ -478,32 +477,32 @@ int lms7002_pnlMCU_BD_view::Three_byte_command(
 		unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3){
 
 
-		int retval=0;
-        *rdata1=0x00;
-		*rdata2=0x00;
-		*rdata3=0x00;
-                
-                LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data1);
-		retval=WaitUntilWritten();
-		if (retval==-1) return -1;
-                LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data2); //REG4 write
-		retval=WaitUntilWritten();
-		if (retval==-1) return -1;
+    int retval=0;
+    *rdata1=0x00;
+    *rdata2=0x00;
+    *rdata3=0x00;
 
-		LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data3); //REG4 write
-		retval=WaitUntilWritten();
-		if (retval==-1) return -1;
-                
-		retval= ReadOneByte(rdata1);
-		if (retval==-1) return -1;
+    LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data1);
+    retval=WaitUntilWritten();
+    if (retval==-1) return -1;
+    LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data2); //REG4 write
+    retval=WaitUntilWritten();
+    if (retval==-1) return -1;
 
-		retval= ReadOneByte(rdata2);
-		if (retval==-1) return -1;
+    LMS_WriteLMSReg(lmsControl,0x8004,(unsigned short)data3); //REG4 write
+    retval=WaitUntilWritten();
+    if (retval==-1) return -1;
 
-		retval= ReadOneByte(rdata3);
-		if (retval==-1) return -1;
+    retval= ReadOneByte(rdata1);
+    if (retval==-1) return -1;
 
-		return 0;
+    retval= ReadOneByte(rdata2);
+    if (retval==-1) return -1;
+
+    retval= ReadOneByte(rdata3);
+    if (retval==-1) return -1;
+
+    return 0;
 }
 
 int lms7002_pnlMCU_BD_view::RunInstr_MCU(unsigned short * pPCVAL)
@@ -524,10 +523,6 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
     FILE * inFile = NULL;
     inFile = fopen(m_sTxtFileName.mb_str(), "r");
 
-    // debugging
-    //FILE * outFile=NULL;
-    //outFile = fopen("Out.txt", "w");
-    // end debugging
     if (inFile != NULL)
     {
         m_iTestResultFileLine = 0;
@@ -545,7 +540,6 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
         fscanf(inFile, "%d", &test_code);
         while (!feof(inFile))
         {
-            //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
             fscanf(inFile, "%d ", &address);
             fscanf(inFile, "%d\n", &value);
             TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
@@ -609,7 +603,7 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
         temps = temps << _(", should be ") << temps2;
         temps = temps << _(", but is read ") << temps3;
     }
-    else 
+    else
         temps = _("OK");
     wxMessageBox(temps);
     return;
@@ -721,7 +715,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x85]=tempc3;
         OnProgrammingCallback(6, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0x86, 0x00, &tempc1, &tempc2, &tempc3); // DPS
 	if (retval==-1) return -1;
 	m_SFR[0x86]=tempc3;
@@ -746,7 +740,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x8B]=tempc3;
         OnProgrammingCallback(12, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0x8C, 0x00, &tempc1, &tempc2, &tempc3); // TH0
 	if (retval==-1) return -1;
 	m_SFR[0x8C]=tempc3;
@@ -771,7 +765,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0x98]=tempc3;
         OnProgrammingCallback(18, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0x99, 0x00, &tempc1, &tempc2, &tempc3); // SBUF
 	if (retval==-1) return -1;
 	m_SFR[0x99]=tempc3;
@@ -796,7 +790,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xA9]=tempc3;
         OnProgrammingCallback(24, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0xB0, 0x00, &tempc1, &tempc2, &tempc3); // EECTRL
 	if (retval==-1) return -1;
         m_SFR[0xB0]=tempc3;
@@ -821,7 +815,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
 	m_SFR[0xC0]=tempc3;
         OnProgrammingCallback(30, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0xC8, 0x00, &tempc1, &tempc2, &tempc3); // T2CON
 	if (retval==-1) return -1;
 	m_SFR[0xC8]=tempc3;
@@ -846,7 +840,7 @@ int lms7002_pnlMCU_BD_view::Read_SFR()
 	if (retval==-1) return -1;
         m_SFR[0xD0]=tempc3;
         OnProgrammingCallback(36, 48, "");
-        
+
 	retval=Three_byte_command(0x7A, 0xE0, 0x00, &tempc1, &tempc2, &tempc3); // ACC
 	if (retval==-1) return -1;
         m_SFR[0xE0]=tempc3;
@@ -931,9 +925,6 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
     for (i=0; i<=255; i++)
             m_IRAM[i]=0x00;
 
-    /*stepsTotal.store(256);
-    stepsDone.store(0);
-    aborted.store(false);*/
     unsigned stepsDone=0;
     OnProgrammingCallback(stepsDone, 256, "");
     for (i=0; i<=255; i++)
@@ -945,7 +936,6 @@ int lms7002_pnlMCU_BD_view::Read_IRAM()
 		else
         {
             i=256; // error, stop
-            //aborted.store(true);
         }
        OnProgrammingCallback(++stepsDone, 256, "");
 #ifndef NDEBUG
@@ -971,12 +961,12 @@ void lms7002_pnlMCU_BD_view::OnViewIRAMClick( wxCommandEvent& event )
 
     mThreadWorking = true;
     mWorkerThread = std::thread([](lms7002_pnlMCU_BD_view* pthis)
-        {   
+        {
             int retval = pthis->Read_IRAM();
             wxThreadEvent *evt = new wxThreadEvent();
             evt->SetInt(retval);
             evt->SetId(ID_PROGRAMING_FINISH_EVENT);
-            wxQueueEvent(pthis, evt);            
+            wxQueueEvent(pthis, evt);
         }, this);
 }
 
@@ -990,9 +980,6 @@ int lms7002_pnlMCU_BD_view::Erase_IRAM()
 	for (i=0; i<=255; i++)
 			m_IRAM[i]=0x00;
 
-    /*stepsTotal.store(256);
-    stepsDone.store(0);
-    aborted.store(false);*/
     unsigned stepsDone=0;
     OnProgrammingCallback(stepsDone, 256, "");
 	for (i=0; i<=255; i++)
@@ -1071,7 +1058,7 @@ void lms7002_pnlMCU_BD_view::Onm_cCtrlMCU_BDSelect( wxCommandEvent& event )
 }
 
 void lms7002_pnlMCU_BD_view::OnRegWriteRead( wxCommandEvent& event )
-{   
+{
     unsigned short addr = cmbRegAddr->GetSelection();
     long data;
     txtRegValueWr->GetValue().ToLong(&data);
@@ -1083,7 +1070,7 @@ void lms7002_pnlMCU_BD_view::OnRegWriteRead( wxCommandEvent& event )
     else
     {
         unsigned short retval = 0;
-        LMS_ReadLMSReg(lmsControl,addr, &retval); //REG read       
+        LMS_ReadLMSReg(lmsControl,addr, &retval); //REG read
         ReadResult->SetLabel(wxString::Format("Result is: 0x%02X", retval));
     }
 }
@@ -1092,15 +1079,6 @@ void lms7002_pnlMCU_BD_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
-}
-
-void lms7002_pnlMCU_BD_view::OnProgressPoll(wxTimerEvent& evt)
-{
-    /*assert(mcuControl != nullptr);
-    MCU_BD::ProgressInfo info = mcuControl->GetProgressInfo();
-    progressBar->SetRange(100);
-    float percent = 100.0*info.stepsDone / info.stepsTotal;
-    progressBar->SetValue(percent);*/
 }
 
 lms7002_pnlMCU_BD_view* lms7002_pnlMCU_BD_view::obj_ptr=nullptr;
@@ -1137,7 +1115,7 @@ void lms7002_pnlMCU_BD_view::OnReadIRAMfinished(wxThreadEvent &event)
     }
     dlgViewIRAM dlg(this);
     dlg.InitGridData(m_IRAM);
-    dlg.ShowModal();        
+    dlg.ShowModal();
 }
 
 void lms7002_pnlMCU_BD_view::OnEraseIRAMfinished(wxThreadEvent &event)
@@ -1193,11 +1171,13 @@ void lms7002_pnlMCU_BD_view::OnProgrammingfinished(wxThreadEvent &event)
     {
         rgrMode->Enable();
         btnStartProgramming->Enable();
-    }    
+    }
 }
 
 void lms7002_pnlMCU_BD_view::OnbtnRunProductionTestClicked(wxCommandEvent& event)
 {
+    //TODO MCU testing
+    wxMessageBox(_("Not implemented in API"));
     /*int status = mcuControl->RunProductionTest_MCU();
     lblProgCodeFile->SetLabel("Program code file: " + mLoadedProgramFilename);
     if (status == 0)

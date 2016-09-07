@@ -40,8 +40,7 @@ class lms7002_pnlMCU_BD_view : public pnlMCU_BD_view
 	//// end generated class members
         ~lms7002_pnlMCU_BD_view();
         void Initialize(lms_device_t *ptr);
-        void OnProgressPoll(wxTimerEvent& evt);
-protected:    
+protected:
     int GetProgramCode(const char* inFileName, bool bin);
     void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
     void Wait_CLK_Cycles(int delay);
