@@ -199,6 +199,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
 {
+    wxCloseEvent evt;
+    OnFFTviewerClose(evt);
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     LMS_Close(lmsControl);
 }
@@ -335,9 +337,12 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnFFTviewerClose(wxCloseEvent& event)
 {
-    fftviewer->StopStreaming();
-    fftviewer->Destroy();
-    fftviewer = nullptr;
+    if(fftviewer)
+    {
+        fftviewer->StopStreaming();
+        fftviewer->Destroy();
+        fftviewer = nullptr;
+    }
 }
 
 void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
