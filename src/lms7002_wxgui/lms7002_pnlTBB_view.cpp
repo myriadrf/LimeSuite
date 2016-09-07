@@ -129,6 +129,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     }
     else
     {
+        // TODO Tx filter with fixed bandwidth
+        wxMessageBox(_("Not implemented in API"));
+        return;
+
         switch(cmbTxFixedBW->GetSelection())
         {
         case 0: input1 = 5; break;
@@ -137,11 +141,11 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
         case 3: input1 = 20; break;
         }
         status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
-    }   
-    
+    }
+
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-    
+
     LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }

@@ -46,7 +46,7 @@ LMS7_Device::LMS7_Device() : LMS7002M(){
 int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
 {
 
-    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch-1,true)!=0)
+    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
     if (enabled)

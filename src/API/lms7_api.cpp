@@ -964,13 +964,6 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    if (chan >= lms->GetNumChannels(dir_tx))
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-
     return lms->SetLPF(dir_tx,chan,true,true,bandwidth);
 }
 
@@ -1008,13 +1001,6 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx, size_t ch
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    if (chan >= lms->GetNumChannels(dir_tx))
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-
     return lms->SetLPF(dir_tx,chan,true,enabled,1);
 }
 
