@@ -521,7 +521,7 @@ public:
 	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
 
     /** @brief Returns value of custom on board control
 	@param ids indexes of controls to read
@@ -530,7 +530,7 @@ public:
 	@param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
 
     /** @brief Sets callback function which gets called each time data is sent or received
     */
