@@ -947,15 +947,24 @@ API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * dev, size_t vco_id,
                                          lms_range_t range);
 
 /**
- *
+ * @brief Sets callback for logging data write/read operations
  *
  * @param   dev     Device handle previously obtained by LMS_Open().
  * @param   func    callback function
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int));
+API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool tx, const unsigned char* data, const unsigned int length));
 
+/**
+ * @brief Sets callback for logging info/warning/error messages
+ *
+ * @param   dev     Device handle previously obtained by LMS_Open().
+ * @param   func    callback function
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetLogCallback(lms_device_t *dev, void (*func)(const char* cstr, const unsigned int type));
 
 /**
  * @defgroup LMS_CLOCK_ID   Clock definitions

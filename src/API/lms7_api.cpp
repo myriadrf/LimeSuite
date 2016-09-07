@@ -438,6 +438,18 @@ API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(
     return 0;
 }
 
+API_EXPORT int CALL_CONV LMS_SetLogCallback(lms_device_t *dev, void (*func)(const char* cstr, const unsigned int type))
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev;
+    lms->SetLogCallback(func);
+    return 0;
+}
+
 API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, float_type *freq)
 {
     if (device == nullptr)

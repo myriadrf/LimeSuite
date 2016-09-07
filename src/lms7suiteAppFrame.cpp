@@ -127,28 +127,28 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
  */
 }
 
-void LMS7SuiteAppFrame::OnLogEvent(const char* text, int type)
+void LMS7SuiteAppFrame::OnLogEvent(const char* text, unsigned int type)
 {
+    if (obj_ptr == nullptr || obj_ptr->mMiniLog == nullptr)
+        return;
     wxCommandEvent evt;
     evt.SetEventType(LOG_MESSAGE);
     wxString msg;
 
     switch(type)
     {
-    /*
-    case lime::LMS7002M::LOG_INFO:
+    case 0:
         msg = wxString::Format("INFO: %s", text);
         break;
-    case lime::LMS7002M::LOG_WARNING:
+    case 1:
         msg = wxString::Format("Warning: %s", text);
         break;
-    case lime::LMS7002M::LOG_ERROR:
+    case 2:
         msg = wxString::Format("ERROR: %s", text);
         break;
-    */
     }
     evt.SetString(msg);
-    wxPostEvent(this, evt);
+    wxPostEvent(obj_ptr, evt);
 }
 
 LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
@@ -282,6 +282,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
+        LMS_SetLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogEvent);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);

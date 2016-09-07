@@ -71,7 +71,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
 	//// end generated class members
 		virtual ~LMS7SuiteAppFrame();
 	protected:
-	    void OnLogEvent(const char* text, int type);
+	    static void OnLogEvent(const char* text, unsigned int type);
         static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
         void OnLogMessage(wxCommandEvent &event);
 		static const wxString cWindowTitle;
