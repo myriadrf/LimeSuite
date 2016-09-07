@@ -178,6 +178,9 @@ public:
     virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
     virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
 
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
+
 private:
 
     int WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);

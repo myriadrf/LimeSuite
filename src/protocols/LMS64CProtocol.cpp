@@ -820,3 +820,26 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
     int status = this->TransferPacket(pkt);
     return convertStatus(status, pkt);
 }
+
+int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_WR;
+	for (int i=0; i<bufLength; ++i)
+        pkt.outBuffer.push_back(buffer[i]);
+    int status = TransferPacket(pkt);
+    return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_RD;
+    int status = TransferPacket(pkt);
+    if(status != 0)
+        return convertStatus(status, pkt);
+
+    for (int i=0; i<bufLength; ++i)
+        buffer[i] = pkt.inBuffer[i];
+    return convertStatus(status, pkt);
+}
