@@ -429,7 +429,7 @@ API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
     auto conn = lms->GetConnection();
-    if (conn != nullptr)
+    if (conn == nullptr)
     {
         lime::ReportError(EINVAL, "Device not connected");
         return -1;

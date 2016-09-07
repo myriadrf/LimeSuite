@@ -195,8 +195,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     mnuCacheValues->Check(false);
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
-    // TODO add logging callback to API
-    //lmsControl->SetLogCallback(bind(&LMS7SuiteAppFrame::OnLogEvent, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -274,7 +272,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     {
         //bind callback for spi data logging
         obj_ptr = this;
-        //LMS_SetDataLogCallback(lmsControl,OnLogDataTransfer);
         const lms_dev_info_t* info;
 		if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
 			return;
@@ -284,6 +281,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
+        LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
@@ -295,6 +293,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     }
     else
     {
+        LMS_SetDataLogCallback(lmsControl, nullptr);
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
