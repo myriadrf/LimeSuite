@@ -245,10 +245,10 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         adfGUI->Initialize(lmsControl);
     if(rfspark)
         rfspark->Initialize(lmsControl);
-    /*if(hpm7)
+    if(hpm7)
         hpm7->Initialize(lmsControl);
     if(fpgaControls)
-        fpgaControls->Initialize(lmsControl);*/
+        fpgaControls->Initialize(lmsControl);
     if(myriad7)
         myriad7->Initialize(lmsControl);
     if(deviceInfo)

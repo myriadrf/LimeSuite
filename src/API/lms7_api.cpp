@@ -759,6 +759,10 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
         data[i] = pkt.inBuffer[i];
     *len = pkt.inBuffer.size();
 
+    if(pkt.status != lime::STATUS_COMPLETED_CMD)
+    {
+        return lime::ReportError(EBADE, "%s", lime::status2string(pkt.status));
+    }
     return 0;
 }
 

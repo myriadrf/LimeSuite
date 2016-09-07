@@ -203,7 +203,7 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
 
 void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
 {
-    if (UploadGPIO() == false)
+    if (UploadGPIO() != 0)
         return;
 
     wxCommandEvent evt;
@@ -299,11 +299,10 @@ void HPM7_wxgui::SelectRxPath(unsigned int i)
 
 bool HPM7_wxgui::UploadGPIO()
 {
+    uint8_t data[2];
+    size_t len = 2;
 
-
-    /*LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
-    pkt.outBuffer.push_back(0x10);
+    data[0] = 0x10;
     unsigned char value = 0;
     int activePath = cmbActivePath->GetSelection();
     switch (activePath)
@@ -316,12 +315,11 @@ bool HPM7_wxgui::UploadGPIO()
     value |= (cmbBand->GetSelection() & 0x1) << 2;
     value |= (cmbLNA->GetSelection() & 0x1) << 3;
     value |= (cmbPAdriver->GetSelection() & 0x1) << 4;
-    pkt.outBuffer.push_back(value);
-    if (m_serPort->TransferPacket(pkt) != 0)
+    data[1] = value;
+    if (LMS_TransferLMS64C(lmsControl, lime::CMD_MYRIAD_WR, data, &len)!=0)
     {
-        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
-        return false;
-    }*/
-    return true;
-
+        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+        return -1;
+    }
+    return 0;
 }
