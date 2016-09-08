@@ -13,6 +13,7 @@
 #include <cmath>
 #include <chrono>
 #include <fstream>
+#include "dataTypes.h"
 #define LMS_VERBOSE_OUTPUT
 
 #include "LMS7002M_RegistersMap.h"
@@ -87,6 +88,8 @@ static const uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
 
 int fftBin = 0; //which bin to use when calibrating using FFT
 #ifdef ENABLE_CALIBRATION_USING_FFT
+    static size_t streamId; //stream for calibration samples
+
 #include "windowFunction.h"
     bool useFFT = true; //digital RSSI or FFT from GetRSSI()
     const int gFFTSize = 4096;
@@ -589,26 +592,19 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
         dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/2, interfaceRx_Hz/2);
 
-        fpga::StopStreaming(dataPort);
+        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
+        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+
         StreamConfig config;
-        config.channels.push_back(0);
+        config.channelID = ch==1 ? 0 : 1;
         config.format = StreamConfig::STREAM_12_BIT_IN_16;
         config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
         config.isTx = false;
-        config.bufferLength = 65536;
-        fpga::InitializeStreaming(dataPort, config);
+        config.bufferLength = 2*gFFTSize;
+        config.performanceLatency = 1.0;
 
-        // TODO : USB FIFO reset command for IConnection
-        LMS64CProtocol::GenericPacket ctrPkt;
-        ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x01);
-        dynamic_cast<LMS64CProtocol*>(dataPort)->TransferPacket(ctrPkt);
-        ctrPkt.outBuffer[0] = 0x00;
-        dynamic_cast<LMS64CProtocol*>(dataPort)->TransferPacket(ctrPkt);
-
-        fpga::StartStreaming(dataPort);
-        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
-        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+        dataPort->SetupStream(streamId, config);
+        dataPort->ControlStream(streamId, true);
     }
 #endif
     return 0;
@@ -652,15 +648,10 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
     auto *imagf = new float[SP];
 
     //number of packets to skip from the buffer start
-    const int packetsPadding = 16;
-    const int bufferSize = 4096*((fftSize/(1360)+1) + packetsPadding);
-    char *buffer = nullptr;
+    complex16_t *buffer = nullptr;
     if(calcFFT || calcGeortzelFloat)
-        buffer = new char[bufferSize];
-    const int maxTransferSize = 65536;
+        buffer = new complex16_t[fftSize];
 
-    std::vector<int> handles(ceil(float(bufferSize)/maxTransferSize), 0);
-    std::vector<int> transferSizes(handles.size(), 0);
     std::vector<float> fftBins_dbFS;
     if(calcFFT)
         fftBins_dbFS.resize(fftSize, 0);
@@ -673,12 +664,11 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 
     for(int a=0; a<avgCount; ++a)
     {
-        long bytesReceived = 0;
         if(calcGeortzelFPGA)
         {
             int64_t real_hw = 0;
             int64_t imag_hw = 0;
-            int status = CalculateGoertzelBin(dataPort, &real_hw, &imag_hw);
+            int status = CalculateGoertzelBin(port, &real_hw, &imag_hw);
             if(status != 0)
                 printf("Failed to get Geortzel from FPGA\n");
             goertzBins_dbFSI[fftBin] += (real_hw/float(SP) * real_hw/float(SP) + imag_hw/float(SP) * imag_hw/float(SP));
@@ -687,57 +677,22 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
         if(not calcFFT && not calcGeortzelFloat)
             continue;
 
-        for(uint8_t i=0; i<handles.size(); ++i)
-        {
-            if(bufferSize-i*maxTransferSize > maxTransferSize)
-                transferSizes[i] = maxTransferSize;
-            else
-                transferSizes[i] = bufferSize-i*maxTransferSize;
-            handles[i] = port->BeginDataReading(&buffer[maxTransferSize*i], transferSizes[i]);
-        }
-        for(uint8_t i=0; i<handles.size(); ++i)
-        {
-            if (port->WaitForReading(handles[i], 1000) == false)
-                printf("Failed to get FFT RSSI\n");
-            long bytesToRead = transferSizes[i];
-            long bTransferred = port->FinishDataReading(&buffer[maxTransferSize*i], bytesToRead, handles[i]);
-            if(bTransferred != bytesToRead)
-                printf("Not enough data received %li/%li\n", bTransferred, bytesToRead);
-            bytesReceived += bTransferred;
-        }
-        long samplesCollected = 0;
-        int16_t sample = 0;
-        if(bytesReceived < bufferSize)
-            printf("Data not received for FFT, %li/%i\n", bytesReceived, bufferSize);
+        StreamMetadata meta;
+        port->ControlStream(streamId, true); //clears FIFO to get newest samples
+        int samplesReceived = port->ReadStream(streamId, buffer, fftSize, 200, meta);
+        if(samplesReceived < fftSize)
+            printf("Samples not received for FFT, %i/%i\n", samplesReceived, fftSize);
 
-        for (int pktIndex = packetsPadding; pktIndex < bytesReceived / 4096 && samplesCollected < fftSize; ++pktIndex)
+        for(int i=0; i<samplesReceived; ++i)
         {
-            uint8_t* pktStart = (uint8_t*)buffer+(pktIndex*4096)+16;
-            const int stepSize = 3;
-            for (uint16_t b = 0; b < 4080; b += stepSize)
-            {
-                //I sample
-                sample = (pktStart[b + 1] & 0x0F) << 8;
-                sample |= (pktStart[b] & 0xFF);
-                sample = sample << 4;
-                sample = sample >> 4;
-                m_fftCalcIn[samplesCollected].r = sample;
-                if(samplesCollected < SP && calcGeortzelFloat)
-                    xi[samplesCollected][0] = sample;
+            m_fftCalcIn[i].r = buffer[i].i;
+            if(i < SP && calcGeortzelFloat)
+                xi[i][0] = buffer[i].i;
 
-                //Q sample
-                sample = pktStart[b + 2] << 4;
-                sample |= (pktStart[b + 1] >> 4) & 0x0F;
-                sample = sample << 4;
-                sample = sample >> 4;
-                m_fftCalcIn[samplesCollected].i = sample;
-                if (samplesCollected < SP && calcGeortzelFloat)
-                    xi[samplesCollected][1] = sample;
-
-                ++samplesCollected;
-                if(samplesCollected >= fftSize)
-                    break;
-            }
+            //Q sample
+            m_fftCalcIn[i].i = buffer[i].q;
+            if (i < SP && calcGeortzelFloat)
+                xi[i][1] = buffer[i].q;
         }
         if(calcFFT)
         {
@@ -1014,6 +969,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         CalibrateIQImbalance(LMS7002M::Tx, &gcorri, &gcorrq, &phaseOffset);
     }
 TxCalibrationEnd:
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    dataPort->ControlStream(streamId, false);
+    dataPort->CloseStream(streamId);
+#endif
     Log("Restoring registers state", LOG_INFO);
     RestoreRegisterMap(registersBackup);
 
@@ -1364,26 +1323,19 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 
         dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
 
-        fpga::StopStreaming(dataPort);
+        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
+        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+
         StreamConfig config;
-        config.channels.push_back(0);
+        config.channelID = ch==1 ? 0 : 1;
         config.format = StreamConfig::STREAM_12_BIT_IN_16;
         config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
         config.isTx = false;
-        config.bufferLength = 65536;
-        fpga::InitializeStreaming(dataPort, config);
+        config.bufferLength = 2*gFFTSize;
+        config.performanceLatency = 1.0;
 
-        // TODO : USB FIFO reset command for IConnection
-        LMS64CProtocol::GenericPacket ctrPkt;
-        ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x01);
-        dynamic_cast<LMS64CProtocol*>(dataPort)->TransferPacket(ctrPkt);
-        ctrPkt.outBuffer[0] = 0x00;
-        dynamic_cast<LMS64CProtocol*>(dataPort)->TransferPacket(ctrPkt);
-
-        fpga::StartStreaming(dataPort);
-        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
-        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+        dataPort->SetupStream(streamId, config);
+        dataPort->ControlStream(streamId, true);
     }
 #endif
     return 0;
@@ -1583,6 +1535,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
     dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
 RxCalibrationEndStage:
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    dataPort->ControlStream(streamId, false);
+    dataPort->CloseStream(streamId);
+#endif
     Log("Restoring registers state", LOG_INFO);
     //RestoreAllRegisters();
     RestoreRegisterMap(registersBackup);
@@ -1883,7 +1839,7 @@ void LMS7002M::BinarySearch(BinSearchParam* args)
 
         if(args->target == TX_DC_I || args->target == TX_DC_Q)
         {
-            int8_t staticValue = (args->target == TX_DC_I) ? Get_SPI_Reg_bits(DCCORRQ_TXTSP, true) : Get_SPI_Reg_bits(DCCORRI_TXTSP, true);
+            int8_t staticValue = (args->target == TX_DC_I) ? Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true) : Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
             for(uint32_t i=0; i<scanX.size(); ++i)
             {
                 if(args->target == TX_DC_I)
@@ -2178,7 +2134,7 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
         for(auto a : arrays)
         {
             --index;
-            for(int i=0; i<a->size(); ++i)
+            for(size_t i=0; i<a->size(); ++i)
                 saturationPlot.writef("%i %f\n", index++, (*a)[i]);
             saturationPlot.write("e\n");
         }
@@ -2190,7 +2146,7 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
                             g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
         if(rssi < dBFS_2_RSSI(-30))
         {
-            verbose_printf(" | TOO LOW!!!");
+            verbose_printf(" | TOO LOW!!!\n");
             return ReportError(-1,
                 "Tx calibration: Rx gains search, RF level too low %.2f",
                 RSSI_2_dBFS(rssi));
