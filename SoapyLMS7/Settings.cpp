@@ -1100,6 +1100,38 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
+    else if (key == "CALIBRATE_TX")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "CALIBRATE_TX", value);
+        }
+    }
+
+    else if (key == "CALIBRATE_RX")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "CALIBRATE_RX", value);
+        }
+    }
+
+    else if (key == "CALIBRATE_TX_EXTLOOPBACK")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "CALIBRATE_TX_EXTLOOPBACK", value);
+        }
+    }
+
+    else if (key == "CALIBRATE_RX_EXTLOOPBACK")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "CALIBRATE_RX_EXTLOOPBACK", value);
+        }
+    }
+
     else throw std::runtime_error("unknown setting key: "+key);
 }
 
@@ -1164,6 +1196,35 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         {
             throw std::runtime_error(lime::GetLastErrorMessage());
         }
+    }
+
+    else if (key == "CALIBRATE_TX")
+    {
+        float_type bw = std::stof(value);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, false)", bw);
+        rfic->CalibrateTx(bw, false);
+    }
+
+    else if (key == "CALIBRATE_RX")
+    {
+        float_type bw = std::stof(value);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, false)", bw);
+        rfic->CalibrateRx(bw, false);
+    }
+
+
+    else if (key == "CALIBRATE_TX_EXTLOOPBACK")
+    {
+        float_type bw = std::stof(value);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, true)", bw);
+        rfic->CalibrateTx(bw, true);
+    }
+
+    else if (key == "CALIBRATE_RX_EXTLOOPBACK")
+    {
+        float_type bw = std::stof(value);
+        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, true)", bw);
+        rfic->CalibrateRx(bw, true);
     }
 
     else throw std::runtime_error("unknown setting key: "+key);
