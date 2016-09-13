@@ -395,7 +395,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 {
                     IStreamChannel::Metadata meta;
                     meta.timestamp = chFrames[ch].timestamp;
-                    meta.flags = 0;
+                    meta.flags = RingFIFO::OVERWRITE_OLD;
                     uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, collected, &meta, 100);
                     if(samplesPushed != collected)
                         droppedSamples += collected-samplesPushed;

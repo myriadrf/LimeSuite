@@ -9,6 +9,7 @@
 #include <queue>
 #include <condition_variable>
 #include "dataTypes.h"
+#include <cmath>
 #include <assert.h>
 
 namespace lime{
@@ -16,6 +17,11 @@ namespace lime{
 class RingFIFO
 {
 public:
+    enum FLAGS
+    {
+        OVERWRITE_OLD = 1,
+    };
+
     struct BufferInfo
     {
         uint32_t size;
@@ -57,13 +63,23 @@ public:
         assert(buffer != nullptr);
         uint32_t samplesTaken = 0;
         std::unique_lock<std::mutex> lck(lock);
+        auto t1 = std::chrono::high_resolution_clock::now();
         while (samplesTaken < samplesCount)
         {
             if (mElementsFilled >= mBufferSize) //buffer might be full, wait for free slots
             {
-                const int dropElements = (samplesCount-samplesTaken)/mBuffer[mTail].maxSamplesInPacket + 0.5;
-                mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
-                mElementsFilled -= dropElements;
+                auto t2 = std::chrono::high_resolution_clock::now();
+                if(t2-t1 >= std::chrono::milliseconds(timeout_ms))
+                    return samplesTaken;
+
+                if(flags & OVERWRITE_OLD)
+                {
+                    int dropElements = ceil(((float)samplesCount-samplesTaken)/mBuffer[mTail].maxSamplesInPacket);
+                    if(dropElements == 0)
+                        dropElements = 1;
+                    mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
+                    mElementsFilled -= dropElements;
+                }
             }
 
             while (mElementsFilled < mBufferSize && samplesTaken < samplesCount)
