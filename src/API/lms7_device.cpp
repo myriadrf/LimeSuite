@@ -1419,18 +1419,6 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
         if (SetFrequencySX(false,f_Hz)!=0)
             return -1;
     }
-    if (f_Hz < GetRxPathBand(LMS_PATH_LOW,chan).max)
-    {
-        SetPath(false,0,LMS_PATH_LOW);
-        SetPath(false,1,LMS_PATH_LOW);
-        printf("RX LNA_L path selected\n");
-    }
-    else
-    {
-        SetPath(false,0,LMS_PATH_WIDE);
-        SetPath(false,1,LMS_PATH_WIDE);
-        printf("RX LNA_W path selected\n");
-    }
     return 0;
 }
 
@@ -1458,19 +1446,6 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
         tx_channels[chan].cF_offset_nco = 0;
         if (SetFrequencySX(true,f_Hz)!=0)
             return -1;
-    }
-
-    if (f_Hz < GetTxPathBand(LMS_PATH_LOW,chan).max)
-    {
-        SetPath(true,0,LMS_PATH_TX1);
-        SetPath(true,1,LMS_PATH_TX1);
-        printf("TX BAND 1 selected\n");
-    }
-    else
-    {
-        printf("Tx BAND 2 selected\n");
-        SetPath(true,0,LMS_PATH_TX2);
-        SetPath(true,1,LMS_PATH_TX2);
     }
     return 0;
 }
