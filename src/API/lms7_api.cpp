@@ -949,6 +949,17 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
     return LMS_SUCCESS;
 }
 
+API_EXPORT int CALL_CONV LMS_SetLPFBWFixed(lms_device_t *device, bool dir_tx,
+                                             size_t chan, LPF_FixedBW bandwidth)
+{
+    if (device == nullptr)
+        return lime::ReportError(EINVAL, "Device cannot be NULL.");
+    LMS7_Device* lms = (LMS7_Device*)device;
+    if (chan >= lms->GetNumChannels(dir_tx))
+        return lime::ReportError(EINVAL, "Invalid channel number.");
+    return lms->SetLPF_Fixed(dir_tx, chan, bandwidth);
+}
+
 API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
 {
     if (device == nullptr)

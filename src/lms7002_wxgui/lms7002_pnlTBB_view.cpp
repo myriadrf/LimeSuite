@@ -129,18 +129,16 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     }
     else
     {
-        // TODO Tx filter with fixed bandwidth
-        wxMessageBox(_("Not implemented in API"));
-        return;
-
+        LPF_FixedBW bw;
         switch(cmbTxFixedBW->GetSelection())
         {
-        case 0: input1 = 5; break;
-        case 1: input1 = 10; break;
-        case 2: input1 = 15; break;
-        case 3: input1 = 20; break;
+        case 0: bw = LPF_BW_5_MHz; break;
+        case 1: bw = LPF_BW_10_MHz; break;
+        case 2: bw = LPF_BW_15_MHz; break;
+        case 3: bw = LPF_BW_20_MHz; break;
+        default: bw = LPF_BW_5_MHz;
         }
-        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
+        status = LMS_SetLPFBWFixed(lmsControl,LMS_CH_TX,ch-1,bw);
     }
 
     if (status != 0)

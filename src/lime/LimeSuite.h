@@ -336,6 +336,29 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx,
                                                 size_t chan,float_type *gain);
 
+typedef enum
+{
+	LPF_BW_5_MHz,
+	LPF_BW_10_MHz,
+	LPF_BW_15_MHz,
+	LPF_BW_20_MHz,
+
+	LPF_BW_COUNT
+} LPF_FixedBW;
+/**
+ * Configure analog LPF and GFIR of the LMS chip for selected fixed bandwidth.
+ * This function automatically enables LPF.
+ *
+ * @param   device      Device handle previously obtained by LMS_Open().
+ * @param   dir_tx      Select RX or TX
+ * @param   chan        Channel index
+ * @param   bandwidth   Fixed bandwidth selection
+ *
+ * @return  0 on success
+ */
+API_EXPORT int CALL_CONV LMS_SetLPFBWFixed(lms_device_t *device, bool dir_tx,
+                                             size_t chan, LPF_FixedBW bandwidth);
+
 /**
  * Configure analog LPF of the LMS chip for the desired RF bandwidth.
  * This function automatically enables LPF.

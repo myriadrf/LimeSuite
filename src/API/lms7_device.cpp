@@ -18,7 +18,6 @@
 #include "FPGA_common.h"
 #include "LMS64CProtocol.h"
 
-
 static const size_t LMS_PATH_NONE = 0;
 static const size_t LMS_PATH_HIGH = 1;
 static const size_t LMS_PATH_LOW = 2;
@@ -800,6 +799,22 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   }
 
   return ret;
+}
+
+int LMS7_Device::SetLPF_Fixed(bool tx,size_t chan, LPF_FixedBW bandwidth)
+{
+    if(!tx)
+        return lime::ReportError(ENOTSUP, "LPF Fixed BW not supported for Rx");
+    float bw = 5;
+    switch(bandwidth)
+    {
+        case LPF_BW_5_MHz: bw = 5e6; break;
+        case LPF_BW_10_MHz: bw = 10e6; break;
+        case LPF_BW_15_MHz: bw = 15e6; break;
+        case LPF_BW_20_MHz: bw = 20e6; break;
+        default: bw = 5e6;
+    }
+    return TuneTxFilterFixed(bw);
 }
 
 int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type bandwidth)

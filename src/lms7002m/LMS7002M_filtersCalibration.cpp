@@ -87,6 +87,7 @@ void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
 
     //cleanup
     delete backup;
+    backup = nullptr;
     this->SetActiveChannel(chBck);
 }
 
@@ -1050,7 +1051,7 @@ int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
     else
     {
         RestoreRegisterMap(registersBackup);
-        ReportError(ERANGE, "Tx Filter fixed bandwidth out of range");
+        return ReportError(ERANGE, "Tx Filter fixed bandwidth out of range");
     }
 
     uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
