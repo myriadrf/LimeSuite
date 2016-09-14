@@ -137,7 +137,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     const uint16_t PHCFG_START = 0x2;
     const uint16_t PLLRST_START = 0x4;
     const uint16_t PHCFG_UPDN = 1 << 13;
-    reg23val &= 0x1F << 3; //clear PLL index
+    reg23val &= ~(0x1F << 3); //clear PLL index
     reg23val &= ~PLLCFG_START; //clear PLLCFG_START
     reg23val &= ~PHCFG_START; //clear PHCFG
     reg23val &= ~PLLRST_START; //clear PLL reset
