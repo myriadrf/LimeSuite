@@ -5,12 +5,14 @@
 
 #cmakedefine ENABLE_EVB7COM
 #cmakedefine ENABLE_STREAM
+#cmakedefine ENABLE_STREAM_UNITE
 #cmakedefine ENABLE_NOVENARF7
 #cmakedefine ENABLE_uLimeSDR
 #cmakedefine ENABLE_PCIE_XILLYBUS
 
 void __loadConnectionEVB7COMEntry(void);
 void __loadConnectionSTREAMEntry(void);
+void __loadConnectionSTREAM_UNITEEntry(void);
 void __loadConnectionNovenaRF7Entry(void);
 void __loadConnection_uLimeSDREntry(void);
 void __loadConnectionXillybusEntry(void);
@@ -23,6 +25,10 @@ void __loadAllConnections(void)
 
     #ifdef ENABLE_STREAM
     __loadConnectionSTREAMEntry();
+    #endif
+
+    #ifdef ENABLE_STREAM_UNITE
+    __loadConnectionSTREAM_UNITEEntry();
     #endif
 
     #ifdef ENABLE_uLimeSDR

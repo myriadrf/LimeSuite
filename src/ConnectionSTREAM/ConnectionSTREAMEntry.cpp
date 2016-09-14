@@ -44,6 +44,21 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
 #endif
 }
 
+ConnectionSTREAMEntry::ConnectionSTREAMEntry(const std::string entryName):
+    ConnectionRegistryEntry(entryName)
+{
+#ifndef __unix__
+    USBDevicePrimary = new CCyUSBDevice(NULL);
+#else
+    int r = libusb_init(&ctx); //initialize the library for the session we just declared
+    if(r < 0)
+        printf("Init Error %i\n", r); //there was an error
+    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+    mProcessUSBEvents.store(true);
+    mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
+#endif
+}
+
 ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 {
 #ifndef __unix__

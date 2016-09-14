@@ -125,8 +125,8 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    int Write(const unsigned char* buffer, int length, int timeout_ms = 0);
-    int Read(unsigned char* buffer, int length, int timeout_ms = 0);
+    virtual int Write(const unsigned char* buffer, int length, int timeout_ms = 0);
+    virtual int Read(unsigned char* buffer, int length, int timeout_ms = 0);
 
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
@@ -218,10 +218,11 @@ class ConnectionSTREAMEntry : public ConnectionRegistryEntry
 {
 public:
     ConnectionSTREAMEntry(void);
-    ~ConnectionSTREAMEntry(void);
-    std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
-    IConnection* make(const ConnectionHandle& handle);
-private:
+    ConnectionSTREAMEntry(const std::string entryName);
+    virtual ~ConnectionSTREAMEntry(void);
+    virtual std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
+    virtual IConnection* make(const ConnectionHandle& handle);
+protected:
 #ifndef __unix__
     std::string DeviceName(unsigned int index);
     CCyUSBDevice* USBDevicePrimary;

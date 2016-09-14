@@ -128,6 +128,7 @@ endif()
 ########################################################################
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionSTREAM/CMakeLists.txt)
+include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 include(ConnectionNovenaRF7/CMakeLists.txt)
 include(Connection_uLimeSDR/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
