@@ -20,7 +20,6 @@ void dlgConnectionSettings::SetConnectionManagers(lms_device_t** lms)
 void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 {
     mListLMS7ports->Clear();
-    mListStreamports->Clear();
     lms_info_str_t list[32];
 
     //select the currently opened index
@@ -32,9 +31,8 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
     {
         std::string str = list[i];
         mListLMS7ports->Append(str.substr(0,str.find(',')));
-        mListStreamports->Append(str.substr(0,str.find(',')));
     }
-    if (lmsOpenedIndex >= 0 && lmsOpenedIndex < mListLMS7ports->GetCount())
+    if (lmsOpenedIndex >= 0 && lmsOpenedIndex < int(mListLMS7ports->GetCount()))
         mListLMS7ports->SetSelection(lmsOpenedIndex);
 }
 
@@ -43,26 +41,15 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     LMS_Disconnect(*lmsControl);
     lms_info_str_t list[32];
     int ret = LMS_GetDeviceList(list);
-    if(mListLMS7ports->GetSelection() != wxNOT_FOUND)
+    const int selection = mListLMS7ports->GetSelection();
+    if(selection != wxNOT_FOUND && selection < ret)
     {
-
-        LMS_Open(lmsControl,list[mListLMS7ports->GetSelection()],nullptr);
-
+        LMS_Open(lmsControl,list[selection],nullptr);
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
     }
-
-   /* if(mListStreamports->GetSelection() != wxNOT_FOUND)
-    {
-        LMS_Open(lmsControl,list[mListStreamports->GetSelection()]);
-
-        wxCommandEvent evt;
-        evt.SetEventType(DATA_PORT_CONNECTED);
-        if(GetParent())
-            wxPostEvent(GetParent(), evt);
-    }*/
     EndModal(wxID_OK);
     Destroy();
 }
