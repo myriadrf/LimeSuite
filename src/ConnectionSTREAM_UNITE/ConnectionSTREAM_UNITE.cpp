@@ -63,4 +63,14 @@ int ConnectionSTREAM_UNITE::DeviceReset(void)
     return ConnectionSTREAM::DeviceReset();
 }
 
+int ConnectionSTREAM_UNITE::TransferPacket(GenericPacket &pkt)
+{
+    if(comPort && (pkt.cmd == CMD_PROG_MCU ||
+                   pkt.cmd == CMD_LMS7002_WR ||
+                   pkt.cmd == CMD_LMS7002_RD ))
+        return comPort->TransferPacket(pkt);
+    else
+        return ConnectionSTREAM::TransferPacket(pkt);
+}
+
 }

@@ -132,7 +132,7 @@ public:
      * Some implementations will cast to LMS64CProtocol
      * and directly use the TransferPacket() API call.
      */
-    int TransferPacket(GenericPacket &pkt);
+    virtual int TransferPacket(GenericPacket &pkt);
 
     struct LMSinfo
     {

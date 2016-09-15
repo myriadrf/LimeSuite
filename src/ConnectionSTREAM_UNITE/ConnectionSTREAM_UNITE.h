@@ -18,10 +18,10 @@ public:
     ConnectionSTREAM_UNITE(void* ctx, const unsigned index, const int vid=-1, const int pid=-1, const char* comPortName=nullptr);
     virtual ~ConnectionSTREAM_UNITE(void);
 
-    virtual DeviceInfo GetDeviceInfo(void);
-    virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
-    virtual int DeviceReset(void);
-
+    virtual DeviceInfo GetDeviceInfo(void) override;
+    virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
+    virtual int DeviceReset(void) override;
+    virtual int TransferPacket(GenericPacket &pkt) override;
 protected:
     ConnectionEVB7COM *comPort;
 };
