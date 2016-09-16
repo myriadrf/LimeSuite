@@ -1244,7 +1244,8 @@ typedef struct
     enum
     {
         LMS_FMT_F32=0,    /**<32-bit floating point*/
-        LMS_FMT_I16       /**<16-bit integers*/
+        LMS_FMT_I16,      /**<16-bit integers*/
+        LMS_FMT_I12       /**<12-bit integers stored in 16-bit variables*/
     }dataFmt;
 }lms_stream_t;
 

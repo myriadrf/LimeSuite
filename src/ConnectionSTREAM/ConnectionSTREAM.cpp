@@ -641,6 +641,29 @@ int ConnectionSTREAM::UpdateThreads()
         //enable MIMO mode, 12 bit compressed values
         StreamConfig config;
         config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        //by default use 12 bit compressed, adjust link format for stream
+
+        for(auto i : mRxStreams)
+        {
+            if(i->config.format == StreamConfig::STREAM_12_BIT_IN_16)
+            {
+                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                break;
+            }
+        }
+        for(auto i : mTxStreams)
+        {
+            if(i->config.format == StreamConfig::STREAM_12_BIT_IN_16)
+            {
+                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                break;
+            }
+        }
+        for(auto i : mRxStreams)
+            i->config.linkFormat = config.linkFormat;
+        for(auto i : mTxStreams)
+            i->config.linkFormat = config.linkFormat;
+
         uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
         if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
             smpl_width = 0x0;

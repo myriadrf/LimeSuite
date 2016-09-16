@@ -236,11 +236,13 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
 
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = args.channels.size();
+    const auto link = args.channels[0]->config.linkFormat;
+    const int samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-           latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += args.channels[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
@@ -357,50 +359,31 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
-            if(pkt[pktIndex].counter - prevTs != 1360/chCount && pkt[pktIndex].counter != prevTs)
+            if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
 #ifndef NDEBUG
-                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, (pkt[pktIndex].counter - prevTs)/(1360.0/chCount));
+                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, float(pkt[pktIndex].counter - prevTs)/samplesInPacket);
 #endif
-                packetLoss += (pkt[pktIndex].counter - prevTs)/(1360.0/chCount);
+                packetLoss += (pkt[pktIndex].counter - prevTs)/samplesInPacket;
             }
             prevTs = pkt[pktIndex].counter;
             if(args.lastTimestamp)
                 args.lastTimestamp->store(pkt[pktIndex].counter);
+            //parse samples
+            vector<complex16_t*> dest(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                dest[c] = (chFrames[c].samples);
+            size_t samplesCount = 0;
+            fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount, link, dest.data(), &samplesCount);
+
             for(int ch=0; ch<chCount; ++ch)
             {
-                chFrames[ch].timestamp = pkt[pktIndex].counter;
-                uint32_t &collected = samplesCollected[ch];
-                const uint8_t stepSize = chCount * 3;
-                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
-                {
-                    int16_t sample;
-                    //I sample
-                    sample = (pktStart[b + 1 + 3 * ch] & 0x0F) << 8;
-                    sample |= (pktStart[b + 3 * ch] & 0xFF);
-                    sample = sample << 4;
-                    sample = sample >> 4;
-                    chFrames[ch].samples[collected].i = sample;
-
-                    //Q sample
-                    sample = pktStart[b + 2 + 3 * ch] << 4;
-                    sample |= (pktStart[b + 1 + 3 * ch] >> 4) & 0x0F;
-                    sample = sample << 4;
-                    sample = sample >> 4;
-                    chFrames[ch].samples[collected].q = sample;
-                    ++collected;
-                    ++samplesReceived[ch];
-                }
-                if(collected == chFrames[ch].samplesCount)
-                {
-                    IStreamChannel::Metadata meta;
-                    meta.timestamp = chFrames[ch].timestamp;
-                    meta.flags = RingFIFO::OVERWRITE_OLD;
-                    uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, collected, &meta, 100);
-                    if(samplesPushed != collected)
-                        droppedSamples += collected-samplesPushed;
-                    collected = 0;
-                }
+                IStreamChannel::Metadata meta;
+                meta.timestamp = pkt[pktIndex].counter;
+                meta.flags = RingFIFO::OVERWRITE_OLD;
+                uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                if(samplesPushed != samplesCount)
+                    droppedSamples += samplesCount-samplesPushed;
             }
         }
         // Re-submit this request to keep the queue full
@@ -472,11 +455,12 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = args.channels.size();
+    const auto link = args.channels[0]->config.linkFormat;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-           latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += args.channels[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
@@ -486,7 +470,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 100;
 
-    const int maxSamplesBatch = 1360/chCount;
+    const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
     vector<uint32_t> bytesToSend(buffersCount, 0);
@@ -551,27 +535,15 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
             const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
+            vector<complex16_t*> src(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            const uint8_t stepSize = chCount * 3;
-            for (uint16_t b=0, s=0; b < sizeof(pkt->data) && s<maxSamplesBatch; b += stepSize)
-            {
-                for(int ch=0; ch<chCount; ++ch)
-                {
-                    //I sample
-                    dataStart[b + 3 * ch] = samples[ch][s].i & 0xFF;
-                    dataStart[b + 1 + 3 * ch] = (samples[ch][s].i >> 8) & 0x0F;
-
-                    //Q sample
-                    dataStart[b + 1 + 3 * ch] |= (samples[ch][s].q << 4) & 0xF0;
-                    dataStart[b + 2 + 3 * ch] = (samples[ch][s].q >> 4) & 0xFF;
-                }
-                ++s;
-                ++samplesSent;
-            }
+            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
+            samplesSent += maxSamplesBatch;
             ++i;
         }
 
-        //bytesToSend[bi] = sizeof(PacketLTE)*i;
         bytesToSend[bi] = bufferSize;
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;

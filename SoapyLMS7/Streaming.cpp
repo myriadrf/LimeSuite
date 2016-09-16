@@ -28,6 +28,7 @@ std::vector<std::string> SoapyLMS7::getStreamFormats(const int direction, const 
 {
     std::vector<std::string> formats;
     formats.push_back(SOAPY_SDR_CF32);
+    formats.push_back(SOAPY_SDR_CS12);
     formats.push_back(SOAPY_SDR_CS16);
     return formats;
 }
@@ -92,6 +93,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         config.channelID = channels[i];
         if (format == SOAPY_SDR_CF32) config.format = StreamConfig::STREAM_COMPLEX_FLOAT32;
         else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::STREAM_12_BIT_IN_16;
+        else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::STREAM_12_BIT_COMPRESSED;
         else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported format");
 
         //optional buffer length if specified

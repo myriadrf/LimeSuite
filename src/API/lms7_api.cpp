@@ -1530,10 +1530,20 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     config.bufferLength = 65536;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
-    if(stream->dataFmt == lms_stream_t::LMS_FMT_I16)
-        config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
-    else
-        config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+    switch(stream->dataFmt)
+    {
+        case lms_stream_t::LMS_FMT_F32:
+            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+            break;
+        case lms_stream_t::LMS_FMT_I16:
+            config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
+            break;
+        case lms_stream_t::LMS_FMT_I12:
+            config.format = lime::StreamConfig::STREAM_12_BIT_COMPRESSED;
+            break;
+        default:
+            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+    }
     config.isTx = stream->isTx;
     return lms->GetConnection()->SetupStream(stream->handle, config);
 }
@@ -1600,6 +1610,8 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_st
 {
     assert(stream != nullptr);
     lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    if(channel == nullptr)
+        return -1;
     lime::IStreamChannel::Info info = channel->GetInfo();
 
     status->active = false;

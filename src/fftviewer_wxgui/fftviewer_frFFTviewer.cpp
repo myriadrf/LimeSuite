@@ -324,19 +324,21 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             captureBuffer[ch].resize(samplesToCapture[ch]);
         }
 
+    auto fmt = lms_stream_t::LMS_FMT_I12;
     for(int i=0; i<channelsCount; ++i)
     {
         pthis->rxStreams[i].channel = i;
         pthis->rxStreams[i].fifoSize = test_count*40;
         pthis->rxStreams[i].isTx = false;
-        pthis->rxStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
+        pthis->rxStreams[i].dataFmt = fmt;
         pthis->rxStreams[i].throughputVsLatency = 1;
         LMS_SetupStream(pthis->lmsControl, &pthis->rxStreams[i]);
 
+        pthis->txStreams[i].handle = 0;
         pthis->txStreams[i].channel = i;
         pthis->txStreams[i].fifoSize = test_count*40;
         pthis->txStreams[i].isTx = true;
-        pthis->txStreams[i].dataFmt = lms_stream_t::LMS_FMT_I16;
+        pthis->txStreams[i].dataFmt = fmt;
         pthis->txStreams[i].throughputVsLatency = 1;
         if(runTx)
             LMS_SetupStream(pthis->lmsControl, &pthis->txStreams[i]);
