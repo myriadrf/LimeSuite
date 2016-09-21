@@ -129,7 +129,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
                     handles.push_back(handle);
                 }
-                else if(pid == 241)
+                else if(pid == 241 || pid == 243)
                 {
                     libusb_device_handle *tempDev_handle;
                     tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);

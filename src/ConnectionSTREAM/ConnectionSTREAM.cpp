@@ -9,6 +9,14 @@
 #include <cstring>
 #include <iostream>
 #include "Si5351C.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#ifdef __unix__
+#include <unistd.h>
+#endif
 
 #include <thread>
 #include <chrono>
@@ -40,7 +48,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     m_hardwareName = "";
     isConnected = false;
 #ifndef __unix__
-    USBDevicePrimary = (CCyUSBDevice *)arg;
+    USBDevicePrimary = (CCyFX3Device *)arg;
     OutCtrEndPt = NULL;
     InCtrEndPt = NULL;
 	InCtrlEndPt3 = NULL;
@@ -55,6 +63,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 
     DeviceInfo info = this->GetDeviceInfo();
 
+/*
     //expected version numbers based on HW number
     std::string expectedFirmware, expectedGateware = "1";
     if (info.hardwareVersion == "1") expectedFirmware = "5";
@@ -80,7 +89,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
         << "########################################################" << std::endl
         << std::endl;
-
+*/
     //must configure synthesizer before using LimeSDR
     if (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
     {
@@ -832,4 +841,159 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
         return 0;
     }
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
+}
+
+#ifdef __unix__
+
+#define MAX_FWIMG_SIZE  (512 * 1024)		// Maximum size of the firmware binary.
+#define GET_LSW(v)	((unsigned short)((v) & 0xFFFF))
+#define GET_MSW(v)	((unsigned short)((v) >> 16))
+
+#define VENDORCMD_TIMEOUT	(5000)		// Timeout for each vendor command is set to 5 seconds.
+
+int ConnectionSTREAM::read_firmware_image(const char *filename, unsigned char *buf)
+{
+    int filesize;
+    int fd;
+    int nbr;
+    struct stat filestat;
+
+    // Verify that the file size does not exceed our limits.
+    if ( stat (filename, &filestat) != 0 ) {
+            printf("Failed to stat file %s\n", filename);
+            return -1;
+    }
+
+    filesize = filestat.st_size;
+    if ( filesize > MAX_FWIMG_SIZE ) {
+            printf("File size exceeds maximum firmware image size\n");
+            return -2;
+    }
+
+    fd = open(filename, O_RDONLY);
+    if ( fd < 0 ) {
+            printf("File not found\n");
+            return -3;
+    }
+    nbr = read(fd, buf, 2);		/* Read first 2 bytes, must be equal to 'CY'	*/
+    if ( strncmp((char *)buf,"CY",2) ) {
+            printf("Image does not have 'CY' at start. aborting\n");
+            return -4;
+    }
+    nbr = read(fd, buf, 1);		/* Read 1 byte. bImageCTL	*/
+    if ( buf[0] & 0x01 ) {
+            printf("Image does not contain executable code\n");
+            return -5;
+    }
+
+    nbr = read(fd, buf, 1);		/* Read 1 byte. bImageType	*/
+    if ( !(buf[0] == 0xB0) ) {
+            printf("Not a normal FW binary with checksum\n");
+            return -6;
+    }
+
+    // Read the complete firmware binary into a local buffer.
+    lseek(fd, 0, SEEK_SET);
+    nbr = read(fd, buf, filesize);
+
+    close(fd);
+    return filesize;
+}
+
+int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
+{
+        const unsigned MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
+	int r;
+	int index = 0;
+	int size;
+
+	while ( len > 0 ) {
+		size = (len > MAX_WRITE_SIZE) ? MAX_WRITE_SIZE : len;
+		r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(ramAddress), GET_MSW(ramAddress),&buf[index], size, VENDORCMD_TIMEOUT);
+		if ( r != size ) {
+			printf("Vendor write to FX3 RAM failed\n");
+			return -1;
+		}
+
+		ramAddress += size;
+		index      += size;
+		len        -= size;
+	}
+
+	return 0;
+}
+
+int ConnectionSTREAM::fx3_usbboot_download(const char *filename)
+{
+	unsigned char *fwBuf;
+	unsigned int  *data_p;
+	unsigned int i, checksum;
+	unsigned int address, length;
+	int r, index;
+        int filesize;
+
+	fwBuf = (unsigned char *)calloc (1, MAX_FWIMG_SIZE);
+	if ( fwBuf == 0 ) {
+            printf("Failed to allocate buffer to store firmware binary\n");
+            return -1;
+	}
+
+	// Read the firmware image into the local RAM buffer.
+	filesize = read_firmware_image(filename, fwBuf);
+	if ( filesize < 0 ) {
+            printf("Failed to read firmware file %s\n", filename);
+            free(fwBuf);
+            return -2;
+	}
+
+	// Run through each section of code, and use vendor commands to download them to RAM.
+	index    = 4;
+	checksum = 0;
+	while ( index < filesize )
+    {
+		data_p  = (unsigned int *)(fwBuf + index);
+		length  = data_p[0];
+		address = data_p[1];
+		if (length != 0) {
+				for (i = 0; i < length; i++)
+						checksum += data_p[2 + i];
+				r = ram_write(fwBuf + index + 8, address, length * 4);
+				if (r != 0) {
+						printf("Failed to download data to FX3 RAM\n");
+						free(fwBuf);
+						return -3;
+				}
+		} else {
+				if (checksum != data_p[2]) {
+						printf ("Checksum error in firmware binary\n");
+						free(fwBuf);
+						return -4;
+				}
+
+				r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(address), GET_MSW(address), NULL,0, VENDORCMD_TIMEOUT);
+				if ( r != 0 )
+						printf("Ignored error in control transfer: %d\n", r);
+				break;
+		}
+
+		index += (8 + length * 4);
+	}
+
+	free(fwBuf);
+	return 0;
+}
+#endif
+
+int ConnectionSTREAM::ProgramFx3Ram(char *fileName)
+{
+#ifndef __unix__
+	return USBDevicePrimary->DownloadFw(fileName, FX3_FWDWNLOAD_MEDIA_TYPE::RAM);
+#else
+        return fx3_usbboot_download(fileName);
+#endif
+}
+
+bool ConnectionSTREAM::CheckUSB3()
+{
+	return USBDevicePrimary->bSuperSpeed;
 }
