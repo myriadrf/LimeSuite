@@ -141,7 +141,7 @@ public:
         int firmware;
         int hardware;
         int protocol;
-        uint32_t boardSerialNumber;
+        uint64_t boardSerialNumber;
     };
 
     LMSinfo GetInfo();

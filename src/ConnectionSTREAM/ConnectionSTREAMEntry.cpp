@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionSTREAM.h"
+#include <iostream>
 using namespace lime;
 
 #ifdef __unix__
@@ -92,10 +93,15 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     {
         for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
         {
+            if (USBDevicePrimary->IsOpen())
+                USBDevicePrimary->Close();
+            USBDevicePrimary->Open(i);
             ConnectionHandle handle;
             handle.media = "USB";
             handle.name = DeviceName(i);
             handle.index = i;
+            std::wstring ws(USBDevicePrimary->SerialNumber);
+            handle.serial = std::string(ws.begin(),ws.end());
             handles.push_back(handle);
         }
     }
