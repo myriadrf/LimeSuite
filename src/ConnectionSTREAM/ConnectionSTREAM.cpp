@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <fstream>
 
 #ifdef __unix__
 #include <unistd.h>
@@ -843,6 +844,56 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
 }
 
+int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
+{
+	if (device == LMS64CProtocol::FX3 && programmingMode != 0)
+    {
+		int ret;
+#ifdef __unix__
+        libusb_device_descriptor desc;
+        ret = libusb_get_device_descriptor(libusb_get_device(dev_handle), &desc);
+        if(ret<0)
+            printf("failed to get device description\n");
+		else if (desc.idProduct == 243)
+#else
+		if (USBDevicePrimary->ProductID == 243)
+#endif
+        {
+#ifdef __unix__
+            char* filename = "/tmp/fx3fw_image_tmp.img";
+#else
+            char* filename = "fx3fw_image_tmp.img";
+#endif
+            ret = 0;
+            std::ofstream myfile(filename, ios::out | ios::binary | ios::trunc);
+            if (!myfile.is_open())
+            {
+                ReportError("FX3 FW:Unable to create temporary file");
+                return -1;
+            }
+            myfile.write(buffer,length);
+            if (myfile.fail())
+            {
+                ReportError("FX3 FW:Unable to write to temporary file");
+                ret = -1;
+            }
+            myfile.close();
+
+            if (ret != -1)
+            {
+                if ((ret=ProgramFx3Ram(filename))!=0)
+                    ReportError("FX3: Failed to upload FW to RAM");
+            }
+
+            std::remove(filename);
+            if (ret == -1)
+                return ret;
+            return 0;
+        }
+    }
+    return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
+}
+
 #ifdef __unix__
 
 #define MAX_FWIMG_SIZE  (512 * 1024)		// Maximum size of the firmware binary.
@@ -993,9 +1044,3 @@ int ConnectionSTREAM::ProgramFx3Ram(char *fileName)
 #endif
 }
 
-bool ConnectionSTREAM::CheckUSB3()
-{
-#ifndef __unix__
-    return USBDevicePrimary->bSuperSpeed;
-#endif
-}

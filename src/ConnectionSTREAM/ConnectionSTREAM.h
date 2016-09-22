@@ -130,12 +130,13 @@ public:
 	void EnterSelfCalibration(const size_t channel);
 	void ExitSelfCalibration(const size_t channel);
 
-	int ProgramFx3Ram(char *fileName);
-	bool CheckUSB3();
+        virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback);
+
 protected:
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
 
+    int ProgramFx3Ram(char *fileName);
     eConnectionType GetType(void)
     {
         return USB_PORT;
