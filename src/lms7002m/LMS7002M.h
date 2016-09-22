@@ -136,7 +136,7 @@ public:
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
     int SPI_write(uint16_t address, uint16_t data);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int *status = 0);
-    int RegistersTest();
+    int RegistersTest(const char* fileName = "registersTest.txt");
     ///@}
 
     ///@name Calibration protection:

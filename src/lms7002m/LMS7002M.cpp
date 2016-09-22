@@ -1782,7 +1782,7 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
 /** @brief Performs registers test by writing known data and confirming readback data
     @return 0-registers test passed, other-failure
 */
-int LMS7002M::RegistersTest()
+int LMS7002M::RegistersTest(const char* fileName)
 {
     char chex[16];
     checkConnection();
@@ -1868,13 +1868,17 @@ int LMS7002M::RegistersTest()
     SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size());
     this->SetActiveChannel(ch);
 
-    fstream fout;
-    fout.open("registersTest.txt", ios::out);
-    fout << ss.str() << endl;
-    fout.close();
+    if (fileName)
+    {
+        fstream fout;
+        fout.open(fileName, ios::out);
+        fout << ss.str() << endl;
+        fout.close();
+    }
 
     if (allTestSuccess) return 0;
-    return ReportError(-1, "RegistersTest() failed - %s", GetLastErrorMessage());
+    ReportError(-1, "RegistersTest() failed - %s", GetLastErrorMessage());
+    return -1;
 }
 
 /** @brief Performs registers test for given address interval by writing given pattern data
