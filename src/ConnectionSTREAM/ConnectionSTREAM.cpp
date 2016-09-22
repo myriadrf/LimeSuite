@@ -995,5 +995,7 @@ int ConnectionSTREAM::ProgramFx3Ram(char *fileName)
 
 bool ConnectionSTREAM::CheckUSB3()
 {
-	return USBDevicePrimary->bSuperSpeed;
+#ifndef __unix__
+    return USBDevicePrimary->bSuperSpeed;
+#endif
 }

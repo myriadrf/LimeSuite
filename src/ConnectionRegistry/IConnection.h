@@ -53,7 +53,7 @@ struct DeviceInfo
     std::string protocolVersion;
 
     //! A unique board serial number
-    uint32_t boardSerialNumber;
+    uint64_t boardSerialNumber;
 
     /*!
      * The SPI address numbers used to access each LMS7002M.

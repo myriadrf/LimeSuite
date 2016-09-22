@@ -160,12 +160,22 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";
-                    libusb_close(tempDev_handle);
 
                     ConnectionHandle handle;
                     handle.media = "USB";
                     handle.name = fullName;
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+
+                    if (desc.iSerialNumber > 0)
+                    {
+                        r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, 255);
+                        if(r<0)
+                            printf("failed to get serial number\n");
+                        else if (strlen(data) > 0)
+                            handle.serial = std::string((const char*)data);
+                    }
+                    libusb_close(tempDev_handle);
+
                     handles.push_back(handle);
                 }
             }
