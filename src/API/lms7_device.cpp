@@ -1612,25 +1612,25 @@ int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode,lime::IConnectio
 int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,lime::IConnection::ProgrammingCallback callback)
 {
     lime::MCU_BD mcu;
-    lime::MCU_BD::MEMORY_MODE mode;
+    lime::IConnection::MCU_PROG_MODE mode;
     uint8_t bin[8192];
 
-    if ((data == nullptr)||(target==LMS_TARGET_BOOT)) //boot from FLAH
-    {
-        mode = lime::MCU_BD::SRAM_FROM_EEPROM;
-    }
-    else
+    if(data != nullptr)
     {
         memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
     }
 
     if (target == LMS_TARGET_RAM)
     {
-        mode = lime::MCU_BD::SRAM;
+        mode = lime::IConnection::MCU_PROG_MODE::SRAM;
     }
     else if (target == LMS_TARGET_FLASH)
     {
-        mode = lime::MCU_BD::EEPROM_AND_SRAM;
+        mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
+    }
+    else if (target == LMS_TARGET_BOOT)
+    {
+        mode = lime::IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM;
     }
     else
     {

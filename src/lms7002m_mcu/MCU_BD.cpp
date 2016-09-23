@@ -14,6 +14,7 @@ using namespace std;
 #include <assert.h>
 #include <thread>
 #include <list>
+#include "ErrorReporting.h"
 
 using namespace lime;
 
@@ -49,7 +50,7 @@ MCU_BD::~MCU_BD()
 
 void MCU_BD::Initialize(IConnection* pSerPort)
 {
-    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
+    m_serPort = pSerPort;
 }
 
 /** @brief Read program code from file into memory
@@ -111,32 +112,23 @@ void MCU_BD:: mSPI_write(
             unsigned short addr_reg,  // takes 16 bit address
             unsigned short data_reg)  // takes 16 bit value
 {
-    assert(m_serPort != nullptr);
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_LMS7002_WR;
-    pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
-    pkt.outBuffer.push_back(addr_reg & 0xFF);
-    pkt.outBuffer.push_back((data_reg >> 8) & 0xFF);
-    pkt.outBuffer.push_back(data_reg & 0xFF);
-    if (m_serPort->IsOpen() == true)
-        m_serPort->TransferPacket(pkt);
+    if(m_serPort == nullptr)
+        return;
+    uint32_t wrdata = addr_reg << 16 | data_reg;
+    m_serPort->TransactSPI(0x10, &wrdata, nullptr, 1);
 }
 
 
 unsigned short MCU_BD:: mSPI_read(
             unsigned short addr_reg)  // takes 16 bit address
 {// returns 16 bit value
-    assert(m_serPort != nullptr);
-    if (m_serPort->IsOpen()==true)
-    {
-        LMS64CProtocol::GenericPacket pkt;
-        pkt.cmd = CMD_LMS7002_RD;
-        pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
-        pkt.outBuffer.push_back(addr_reg & 0xFF);
-        if (m_serPort->TransferPacket(pkt) == 0)
-            return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
-    }
-    return 0x0000;
+    if(m_serPort == nullptr)
+        return 0;
+    uint32_t wrdata = addr_reg << 16;
+    uint32_t rddata = 0;
+    if(m_serPort->TransactSPI(0x10, &wrdata, &rddata, 1) != 0)
+        return 0;
+    return rddata & 0xFFFF;
 }
 
 int MCU_BD::WaitUntilWritten(){
@@ -567,164 +559,26 @@ void MCU_BD::Wait_CLK_Cycles(int delay)
 */
 int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 {
-    bool success = true;
-	unsigned short tempi=0x0000;
-	unsigned short tempi2=0x0000;
-	int CntEnd=0;
-	int i=0;
-    int m_iExt2=0;
-
-	if ((m_iMode1==0)&&(m_iMode0==0)) return 0;
-    // MCU is in reset state
-    // the programming mode should be selected first
-
-	tempi2=0x0000;  // was 0x0000
-	if (m_iExt2==1)  tempi2=tempi2|0x0004;
-	if (m_iMode1==1) tempi2=tempi2|0x0002;
-	if (m_iMode0==1) tempi2=tempi2|0x0001;
-
-
-	tempi=0x0000;  // was 0x0000
-	if (m_iExt2==1)  tempi=tempi|0x0004;
-	if (m_iMode1==1) tempi=tempi|0x0002;
-	if (m_iMode0==1) tempi=tempi|0x0001;
-
-	//mSPI_write(0x8002, tempi);
-	// REG2 write
-	// selects programming mode
-    CntEnd=0;
-    int packetNumber = 0;
-    int status = STATUS_UNDEFINED;
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_PROG_MCU;
-
-    stepsTotal.store(8192);
-    stepsDone.store(0);
-    aborted.store(false);
-
-	while  (CntEnd<8192)
+    IConnection::MCU_PROG_MODE mode;
+    switch(m_iMode1 << 1 | m_iMode0)
     {
-        pkt.outBuffer.clear();
-        pkt.outBuffer.push_back(tempi);
-        pkt.outBuffer.push_back(packetNumber++);
-        for (i=0; i<32; i++)
-        {
-            pkt.outBuffer.push_back(byte_array[CntEnd + i]);
-        }
-
-        m_serPort->TransferPacket(pkt);
-        status = pkt.status;
-        stepsDone.store(stepsDone.load() + 32);
-#ifndef NDEBUG
-        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
-#endif
-
-        if(status != STATUS_COMPLETED_CMD)
-        {
-            stringstream ss;
-            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
-            success = false;
-            aborted.store(true);
-            break;
-        }
-
-        if((m_iMode0 == 1) && (m_iMode1 == 1)) // if boot mode , send only first packet
-        {
-            stepsDone.store(1);
-            stepsTotal.store(1);
-            break;
-        }
-
-        CntEnd+=32;
-	};
-
-#ifndef NDEBUG
-    printf("\nMCU programming Finished\n");
-#endif
-    if (success)
-    {
-        Log("PROGRAMMING MCU SUCCESS\n");
-        return 0;
+    case 0: mode = IConnection::MCU_PROG_MODE::RESET; break;
+    case 1: mode = IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM; break;
+    case 2: mode = IConnection::MCU_PROG_MODE::SRAM; break;
+    case 3: mode = IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
     }
+    if(m_serPort)
+        return m_serPort->ProgramMCU(byte_array, 8192, mode, callback);
     else
-        return -1;
+        return ReportError(ENOLINK, "Device not connected");
 }
 
-int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
+int MCU_BD::Program_MCU(const uint8_t* binArray, const IConnection::MCU_PROG_MODE mode)
 {
-    bool success = true;
-    unsigned short tempi=0x0000;
-
-    if (mode == MEMORY_MODE::RESET)
-        return -1;
-    // MCU is in reset state
-    // the programming mode should be selected first
-
-    switch(mode)
-    {
-    case EEPROM_AND_SRAM: tempi=0x0001; break;
-    case SRAM: tempi=0x0002; break;
-    case SRAM_FROM_EEPROM: tempi=0x0003; break;
-    default: tempi = 0;
-    }
-
-    int packetNumber = 0;
-    int status = STATUS_UNDEFINED;
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_PROG_MCU;
-
-    stepsTotal.store(8192);
-    stepsDone.store(0);
-    aborted.store(false);
-    if (callback)
-        callback(stepsDone,stepsTotal,"");
-
-    for(int16_t CntEnd=0; CntEnd<8192; CntEnd+=32)
-    {
-        pkt.outBuffer.clear();
-        pkt.outBuffer.push_back(tempi);
-        pkt.outBuffer.push_back(packetNumber++);
-        for (uint8_t i=0; i<32; i++)
-            pkt.outBuffer.push_back(binArray[CntEnd + i]);
-
-        m_serPort->TransferPacket(pkt);
-        status = pkt.status;
-        stepsDone.store(stepsDone.load() + 32);
-        if (callback)
-            callback(stepsDone,stepsTotal,"");
-#ifndef NDEBUG
-        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
-#endif
-        if(status != STATUS_COMPLETED_CMD)
-        {
-            stringstream ss;
-            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
-            success = false;
-            aborted.store(true);
-            break;
-        }
-
-        if(mode == SRAM_FROM_EEPROM) // if boot mode , send only first packet
-        {
-            stepsDone.store(1);
-            stepsTotal.store(1);
-            if (callback)
-                callback(stepsDone,stepsTotal,"");
-            break;
-        }
-	};
-#ifndef NDEBUG
-    printf("\nMCU programming Finished\n");
-#endif
-    if (success)
-    {
-        Log("PROGRAMMING MCU SUCCESS\n");
-        return 0;
-    }
+    if(m_serPort)
+        return m_serPort->ProgramMCU(binArray, 8192, mode, callback);
     else
-        return -1;
+        return ReportError(ENOLINK, "Device not connected");
 }
 
 void MCU_BD::Reset_MCU()
@@ -1088,17 +942,13 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
     auto t2 = chrono::high_resolution_clock::now();
     unsigned short value = 0;
 
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
-    {
+    do {
+        value = mSPI_read(0x0001) & 0xFF;
+        if (value != 0xFF) //working
+            break;
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         t2 = chrono::high_resolution_clock::now();
-        value = mSPI_read(0x0001) & 0xFF;
-
-        if (value == 0xFF) //working
-            continue;
-        else //finished
-            break;
-    }
+    }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
     mSPI_write(0x0006, 0); //return SPI control to PC
     std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value;
@@ -1108,15 +958,19 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
     @param mode MCU memory initialization mode
     @return Operation status
 */
-MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MEMORY_MODE mode)
+MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, IConnection::MCU_PROG_MODE mode)
 {
     uint8_t regValue = 0;
     switch (mode)
     {
-    case RESET: break;
-    case EEPROM_AND_SRAM: regValue |= 0x01; break;
-    case SRAM: regValue |= 0x02; break;
-    case SRAM_FROM_EEPROM: regValue |= 0x03; break;
+    case IConnection::MCU_PROG_MODE::RESET:
+        break;
+    case IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM:
+        regValue |= 0x01; break;
+    case IConnection::MCU_PROG_MODE::SRAM:
+        regValue |= 0x02; break;
+    case IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM:
+        regValue |= 0x03; break;
     }
     if (enabled)
         regValue |= 0xC0;

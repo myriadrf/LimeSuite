@@ -173,7 +173,7 @@ public:
         PROGRAM_WRITE_TARGET_COUNT
     };
 
-    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
+    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr);
 
     virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
     virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
@@ -181,6 +181,7 @@ public:
     virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
 
+    int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
 private:
 
     int WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);

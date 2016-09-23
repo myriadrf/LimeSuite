@@ -461,6 +461,24 @@ public:
     */
     virtual int ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
 
+    enum MCU_PROG_MODE
+    {
+        RESET = 0,
+        EEPROM_AND_SRAM,
+        SRAM,
+        BOOT_SRAM_FROM_EEPROM
+    };
+    /** @brief Uploads program to MCU
+        @param buffer binary program data
+        @param length buffer length
+        @param mode MCU programing mode RESET, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM
+        @param callback callback for progress reporting or early termination
+        @return 0-success
+
+        This could be a quite long operation, use callback to get progress info or to terminate early
+    */
+    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
+
     /***********************************************************************
      * GPIO API
      **********************************************************************/

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 #include <ADCUnits.h>
+#include <sstream>
 using namespace lime;
 
 //! CMD_LMS7002_RST options
@@ -825,7 +826,7 @@ int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_GPIO_WR;
-	for (int i=0; i<bufLength; ++i)
+    for (size_t i=0; i<bufLength; ++i)
         pkt.outBuffer.push_back(buffer[i]);
     int status = TransferPacket(pkt);
     return convertStatus(status, pkt);
@@ -839,7 +840,65 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
     if(status != 0)
         return convertStatus(status, pkt);
 
-    for (int i=0; i<bufLength; ++i)
+    for (size_t i=0; i<bufLength; ++i)
         buffer[i] = pkt.inBuffer[i];
     return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
+{
+#ifndef NDEBUG
+    auto timeStart = std::chrono::high_resolution_clock::now();
+#endif
+    const uint8_t fifoLen = 32;
+    bool success = true;
+    bool terminate = false;
+
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
+
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
+
+    if (callback)
+        terminate = callback(0, length,"");
+
+    for(uint16_t CntEnd=0; CntEnd<length && !terminate; CntEnd+=32)
+    {
+        pkt.outBuffer.clear();
+        pkt.outBuffer.reserve(fifoLen+2);
+        pkt.outBuffer.push_back(mode);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (uint8_t i=0; i<fifoLen; i++)
+            pkt.outBuffer.push_back(buffer[CntEnd + i]);
+
+        TransferPacket(pkt);
+        status = pkt.status;
+        if (callback)
+            terminate = callback(CntEnd+fifoLen,length,"");
+#ifndef NDEBUG
+        printf("MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
+#endif
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            std::stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << std::endl;
+            success = false;
+            break;
+        }
+
+        if(mode == 3) // if boot mode , send only first packet
+        {
+            if (callback)
+                callback(1, 1, "");
+            break;
+        }
+	};
+#ifndef NDEBUG
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+    printf("\nMCU Programming finished, %li ms\n",
+            std::chrono::duration_cast<std::chrono::milliseconds>
+            (timeEnd-timeStart).count());
+#endif
+    return success ? 0 : -1;
 }
