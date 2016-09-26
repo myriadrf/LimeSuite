@@ -1606,6 +1606,41 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
     return channel->Write(samples, sample_count, &metadata, timeout_ms);
 }
 
+API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device,
+                                         const void **samples, uint8_t chCount,
+                                         size_t sample_count, int format)
+{
+    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::StreamConfig::StreamDataFormat fmt;
+    switch(format)
+    {
+        case 0:
+            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
+            break;
+        case 1:
+            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_IN_16;
+            break;
+        case 2:
+            fmt = lime::StreamConfig::StreamDataFormat::STREAM_COMPLEX_FLOAT32;
+            break;
+    }
+    return lms->GetConnection()->UploadWFM(samples, chCount, sample_count, fmt);
+}
+
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active)
+{
+    uint16_t regAddr = 0x000D;
+    uint16_t regValue = 0;
+    int status = 0;
+    status = LMS_ReadFPGAReg(device, regAddr, &regValue);
+    if(status != 0)
+        return status;
+    regValue = regValue & ~0x0006; //clear WFM_LOAD, WFM_PLAY
+    regValue |= (active << 1);
+    status = LMS_WriteFPGAReg(device, regAddr, regValue);
+    return status;
+}
+
 API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t* status)
 {
     assert(stream != nullptr);

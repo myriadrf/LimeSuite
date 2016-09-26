@@ -140,6 +140,7 @@ public:
     int ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata& metadata);
     int WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata& metadata);
     int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata& metadata);
+    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);

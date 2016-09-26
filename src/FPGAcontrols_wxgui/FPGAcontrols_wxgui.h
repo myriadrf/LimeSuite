@@ -39,9 +39,6 @@ class FPGAcontrols_wxgui: public wxFrame
         wxToggleButton* btnLoadCustom;
         wxToggleButton* btnLoadWCDMA;
         wxStaticText* txtDataRate;
-        wxButton* btnLoadSamples;
-        wxButton* btnStartStreaming;
-        wxButton* btnStopStreaming;
         wxCheckBox* chkDigitalLoopbackEnable;
         wxCheckBox* chkMIMO;
 
@@ -67,16 +64,8 @@ class FPGAcontrols_wxgui: public wxFrame
         void OnbtnLoadOnetoneClick(wxCommandEvent& event);
         void OnbtnLoadWCDMAClick(wxCommandEvent& event);
         void OnbtnLoadCustomClick(wxCommandEvent& event);
-
-        void OnbtnLoadFileClick(wxCommandEvent& event);
-        void OnbtnStartStreamingClick(wxCommandEvent& event);
-        void OnbtnStopStreamingClick(wxCommandEvent& event);
-
-        void OnUpdateStats(wxTimerEvent& event);
         void OnChkDigitalLoopbackEnableClick(wxCommandEvent& event);
-
 	protected:
-        wxString fileForCyclicTransmitting;
         lms_device_t* lmsControl;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()

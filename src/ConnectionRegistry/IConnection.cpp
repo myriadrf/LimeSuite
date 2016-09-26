@@ -209,6 +209,11 @@ int IConnection::ReadStreamStatus(const size_t streamID, const long timeout_ms, 
     return ReportError(EPERM, "ReadStreamStatus not implemented");
 }
 
+int IConnection::UploadWFM(const void * const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)
+{
+    return ReportError(EPERM, "UploadTxWFM not implemented");   
+}
+
 /** @brief Sets callback function which gets called each time data is sent or received
 */
 void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback)

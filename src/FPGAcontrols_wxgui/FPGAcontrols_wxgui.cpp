@@ -43,7 +43,6 @@ const long FPGAcontrols_wxgui::ID_BUTTON4 = wxNewId();
 const long FPGAcontrols_wxgui::ID_STREAMING_TIMER = wxNewId();
 
 BEGIN_EVENT_TABLE(FPGAcontrols_wxgui, wxFrame)
-    EVT_TIMER(ID_STREAMING_TIMER, FPGAcontrols_wxgui::OnUpdateStats)
 END_EVENT_TABLE()
 
 const wxString gWFMdirectory = "lms7suite_wfm";
@@ -51,7 +50,6 @@ const wxString gWFMdirectory = "lms7suite_wfm";
 FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles)
 {
     lmsControl = nullptr;
-    fileForCyclicTransmitting = _("");
     mStreamingTimer = new wxTimer(this, ID_STREAMING_TIMER);
 
 	wxFlexGridSizer* FlexGridSizer10;
@@ -114,22 +112,6 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
 	FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
 
-    wxStaticBoxSizer* streamingBox = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("Samples streaming"));
-    wxFlexGridSizer* streamingSizer = new wxFlexGridSizer(0, 4, 0, 0);
-    long idLoadButton = wxNewId();
-    btnLoadSamples = new wxButton(this, idLoadButton, _("Select File"));
-    streamingSizer->Add(btnLoadSamples, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    long idStartButton = wxNewId();
-    btnStartStreaming = new wxButton(this, idStartButton, _("Start streaming"));
-    streamingSizer->Add(btnStartStreaming, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    long idStopButton = wxNewId();
-    btnStopStreaming = new wxButton(this, idStopButton, _("Stop streaming"));
-    streamingSizer->Add(btnStopStreaming, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    txtDataRate = new wxStaticText(this, wxNewId(), _("Data rate: ???? kB/s"));
-    streamingSizer->Add(txtDataRate, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    streamingBox->Add(streamingSizer, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
-    FlexGridSizer6->Add(streamingBox, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
-
 	SetSizer(FlexGridSizer1);
 	FlexGridSizer1->Fit(this);
 	FlexGridSizer1->SetSizeHints(this);
@@ -140,10 +122,6 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	Connect(ID_BITMAPBUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnOpenFileClick);
 	Connect(ID_BUTTON3,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnPlayWFMClick);
 	Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopWFMClick);
-
-    Connect(idLoadButton, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadFileClick);
-    Connect(idStartButton, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStartStreamingClick);
-    Connect(idStopButton, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopStreamingClick);
 
     //create directory for wfm files
     wxDir dir(wxGetCwd() + _("/") + gWFMdirectory);
@@ -160,8 +138,6 @@ void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
 FPGAcontrols_wxgui::~FPGAcontrols_wxgui()
 {
     wxCommandEvent evt;
-    OnbtnStopStreamingClick(evt);
-
 }
 
 /** @brief Reads WFM file and outputs iq sample pairs
@@ -269,74 +245,45 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
     }
     progressBar->SetRange(isamples.size());
     progressBar->SetValue(0);
-    bool success = true;
 
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
-    uint8_t chCount = 2;
+    const uint8_t chCount = 2;
     bool MIMO = chkMIMO->IsChecked();
-    LMS_WriteFPGAReg(lmsControl, 0x000C, 0x3); //channels 0,1
 
-    LMS_WriteFPGAReg(lmsControl, 0x000E, 0x2); //12bit samples
-    LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0004); //WFM_LOAD
+    lime::complex16_t* src[chCount];
+    for(int i=0; i<chCount; ++i)
+        src[i] = new lime::complex16_t[isamples.size()];
 
-    lime::FPGA_DataPacket pkt;
-    size_t samplesUsed = 0;
-
-    while(samplesUsed<isamples.size())
+    for(size_t i=0; i<isamples.size(); ++i)
     {
-        pkt.counter = 0;
-        pkt.reserved[0] = 0;
-        int bufPos = 0;
-        for(size_t i=0; i<1360/chCount && samplesUsed < isamples.size(); ++i)
+        for(int c=0; c<chCount; ++c)
         {
-            for(int ch = 0; ch < chCount; ++ch)
+            if(c == 1 && !MIMO)
             {
-                if(MIMO == false && ch > 0)
-                {
-                    pkt.data[bufPos] = 0;
-                    pkt.data[bufPos + 1] = 0;
-                    pkt.data[bufPos + 2] = 0;
-                    bufPos += 3;
-                    continue;
-                }
-                pkt.data[bufPos] = isamples[samplesUsed] & 0xFF;
-                pkt.data[bufPos+1] = (isamples[samplesUsed] >> 8) & 0x0F;
-                pkt.data[bufPos+1] |= (qsamples[samplesUsed] << 4) & 0xF0;
-                pkt.data[bufPos+2] = (qsamples[samplesUsed] >> 4) & 0xFF;
-                bufPos += 3;
+                src[c][i].i = 0;
+                src[c][i].q = 0;
             }
-            ++samplesUsed;
+            else
+            {
+                src[c][i].i = isamples[i];
+                src[c][i].q = qsamples[i];
+            }
         }
-        int payloadSize = (bufPos / 4) * 4;
-        if(bufPos % 4 != 0)
-            printf("Packet samples count not multiple of 4\n");
-        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
-        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
-        pkt.reserved[0] = 0x1 << 5; //WFM loading
-
-        long bToSend = 16+payloadSize;
-        //int context = m_serPort->BeginDataSending((char*)&pkt, bToSend );
-        //if(m_serPort->WaitForSending(context, 250) == false)
-        {
-            success = false;
-            //m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
-            break;
-        }
-        //m_serPort->FinishDataSending((char*)&pkt, bToSend , context);
-        progressBar->SetValue(samplesUsed);
-        lblProgressPercent->SetLabel(wxString::Format(_("%3.0f%%"), 100.0*samplesUsed/isamples.size()));
-        wxYield();
     }
+
+    int status = LMS_UploadWFM(lmsControl, (const void**)src, chCount, isamples.size(), 0);
+
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
+
     LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0002); //WFM_PLAY
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
 
-    if (!success)
+    if (status != 0)
     {
         wxMessageBox(_("Failed to upload WFM file"), _("Error"));
         return -3;
@@ -381,49 +328,6 @@ void FPGAcontrols_wxgui::OnbtnLoadCustomClick(wxCommandEvent& event)
         btnLoadWCDMA->SetValue(0);
         btnLoadCustom->SetValue(1);
     }
-}
-
-void FPGAcontrols_wxgui::OnUpdateStats(wxTimerEvent& event)
-{
-  /*  if (mStreamer == nullptr)
-        return;
-    LMS_StreamBoard::ProgressStats stats = mStreamer->GetStats();
-    txtDataRate->SetLabelText(wxString::Format(_("Data rate: %.1f kB/s"), stats.TxRate_Bps/1000));
-
-   */
-}
-
-void FPGAcontrols_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
-{
-    wxFileDialog dlg(this, _("Open file"), _(""), _(""), _("wfm (*.wfm)|*.wfm"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    if (dlg.ShowModal() == wxID_CANCEL)
-        return;
-    fileForCyclicTransmitting = dlg.GetPath();
-}
-
-void FPGAcontrols_wxgui::OnbtnStartStreamingClick(wxCommandEvent& event)
-{
-    mStreamingTimer->Start(500);
-    vector<int16_t> isamples;
-    vector<int16_t> qsamples;
-    int framesCount = ReadWFM(fileForCyclicTransmitting, isamples, qsamples);
-    if( framesCount < 0)
-    {
-        wxMessageBox(_("File not found ") + fileForCyclicTransmitting, _("Error"));
-        return;
-    }
-    if (framesCount == 0)
-    {
-        wxMessageBox(_("No samples were loaded"));
-        return;
-    }
-   // mStreamer->StartCyclicTransmitting(&isamples[0], &qsamples[0], framesCount);
-}
-
-void FPGAcontrols_wxgui::OnbtnStopStreamingClick(wxCommandEvent& event)
-{
-    mStreamingTimer->Stop();
-    //mStreamer->StopCyclicTransmitting();
 }
 
 void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)

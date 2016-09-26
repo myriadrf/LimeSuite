@@ -474,7 +474,7 @@ void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
     else
     {
         fpgaControls = new FPGAcontrols_wxgui(this, wxNewId(), _("FPGA Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-    //    fpgaControls->Initialize(lmsControl);
+        fpgaControls->Initialize(lmsControl);
         fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
         fpgaControls->Show();
     }

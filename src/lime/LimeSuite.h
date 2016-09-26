@@ -1352,6 +1352,25 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
                             const void *samples,size_t sample_count,
                             const lms_stream_meta_t *meta, unsigned timeout_ms);
 
+/** @brief Uploads waveform to on board memory for later use
+ * @param device        Device handle previously obtained by LMS_Open().
+ * @param samples       multiple channel samples data
+ * @param chCount       number of waveform channels
+ * @param sample_count  number of samples in each channel
+ * @param format        waveform data format
+ * @return  0 on success
+ */
+API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **samples,
+							uint8_t chCount, size_t sample_count, int format);
+
+/** @brief Enables/Disables transmitting of uploaded waveform
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param active    Enable/Disable waveform playback
+ * @return  0 on success
+ */
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active);
+
+
 /** @} (End FN_STREAM) */
 
 

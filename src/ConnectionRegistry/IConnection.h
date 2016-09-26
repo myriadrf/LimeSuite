@@ -435,6 +435,14 @@ public:
      */
     virtual int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
 
+    /**	@brief Uploads waveform to on board memory for later use
+    @param samples multiple channel samples data
+    @param chCount number of waveform channels
+    @param sample_count number of samples in each channel
+    @param format waveform data format
+    */
+    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format);
+
     /***********************************************************************
      * Programming API
      **********************************************************************/

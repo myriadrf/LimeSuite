@@ -133,6 +133,55 @@ int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout
     return 0;
 }
 
+int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)
+{
+    WriteRegister(0x000C, 0x3); //channels 0,1
+    WriteRegister(0x000E, 0x2); //12bit samples
+    WriteRegister(0x000D, 0x0004); //WFM_LOAD
+
+    lime::FPGA_DataPacket pkt;
+    size_t samplesUsed = 0;
+
+    const complex16_t* const* src = (const complex16_t* const*)samples;
+    int cnt = sample_count;
+
+    while(cnt > 0)
+    {
+        pkt.counter = 0;
+        pkt.reserved[0] = 0;
+
+        const lime::complex16_t* batch[chCount];
+        int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
+        cnt -= samplesToSend;
+
+        for(uint8_t i=0; i<chCount; ++i)
+            batch[i] = &src[i][samplesUsed];
+        samplesUsed += samplesToSend;
+
+        size_t bufPos = 0;
+        lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount, format, pkt.data, &bufPos);
+        int payloadSize = (bufPos / 4) * 4;
+        if(bufPos % 4 != 0)
+            printf("Packet samples count not multiple of 4\n");
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = 16+payloadSize;
+        int context = BeginDataSending((char*)&pkt, bToSend );
+        if(WaitForSending(context, 250) == false)
+        {
+            FinishDataSending((char*)&pkt, bToSend , context);
+            break;
+        }
+        FinishDataSending((char*)&pkt, bToSend , context);
+    }
+    if(cnt == 0)
+        return 0;
+    else
+        return ReportError(-1, "Failed to upload waveform");
+}
+
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
