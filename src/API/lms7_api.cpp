@@ -761,7 +761,7 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
 
     if(pkt.status != lime::STATUS_COMPLETED_CMD)
     {
-        return lime::ReportError(EBADE, "%s", lime::status2string(pkt.status));
+        return lime::ReportError(-1, "%s", lime::status2string(pkt.status));
     }
     return 0;
 }

@@ -9,6 +9,7 @@
 #include <cstring> //memcpy
 #include <chrono>
 #include <thread>
+#include <iso646.h>
 
 using namespace lime;
 

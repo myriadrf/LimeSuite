@@ -145,12 +145,11 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
     const complex16_t* const* src = (const complex16_t* const*)samples;
     int cnt = sample_count;
 
+    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
     while(cnt > 0)
     {
         pkt.counter = 0;
-        pkt.reserved[0] = 0;
-
-        const lime::complex16_t* batch[chCount];
+        pkt.reserved[0] = 0;        
         int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
         cnt -= samplesToSend;
 
@@ -176,6 +175,7 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
         }
         FinishDataSending((char*)&pkt, bToSend , context);
     }
+    delete[] batch;
     if(cnt == 0)
         return 0;
     else
