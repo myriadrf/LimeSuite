@@ -105,6 +105,7 @@ int ConnectionSTREAM::ReadStream(const size_t streamID, void* buffs, const size_
     meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
     meta.timestamp = metadata.timestamp;
     int status = channel->Read(buffs, length, &meta, timeout_ms);
+    metadata.hasTimestamp = true;
     metadata.timestamp = meta.timestamp;
     return status;
 }
