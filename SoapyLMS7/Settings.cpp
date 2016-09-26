@@ -144,9 +144,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setIQBalance(SOAPY_SDR_TX, channel, 1.0);
     }
 
-    //also triggers internal stream threads ~ its hacky
-    _conn->SetHardwareTimestamp(0);
-
     //reset flags for user calls
     _fixedClockRate = false;
     _fixedRxSampRate.clear();
