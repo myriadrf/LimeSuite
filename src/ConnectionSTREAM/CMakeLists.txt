@@ -23,7 +23,6 @@ set(CONNECTION_STREAM_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionSTREAMEntry.cpp
     ${THIS_SOURCE_DIR}/ConnectionSTREAM.cpp
     ${THIS_SOURCE_DIR}/ConnectionSTREAMing.cpp
-    ${THIS_SOURCE_DIR}/StreamChannel.cpp
 )
 
 set(CONNECTION_STREAM_LIBRARIES

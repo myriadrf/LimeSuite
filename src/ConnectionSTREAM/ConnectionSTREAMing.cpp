@@ -5,7 +5,7 @@
 */
 
 #include "ConnectionSTREAM.h"
-#include "fifo.h" //from StreamerLTE
+#include "fifo.h"
 #include <LMS7002M.h>
 #include <iostream>
 #include <thread>
@@ -18,121 +18,6 @@
 
 using namespace lime;
 using namespace std;
-
-/***********************************************************************
- * Streaming API implementation
- **********************************************************************/
-
-int ConnectionSTREAM::SetupStream(size_t &streamID, const StreamConfig &config)
-{
-    if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before doing setups");
-    streamID = ~0;
-    StreamChannel* stream = new StreamChannel(this);
-    stream->config = config;
-    //TODO check for duplicate streams
-    if(config.isTx)
-        mTxStreams.push_back(stream);
-    else
-        mRxStreams.push_back(stream);
-    streamID = size_t(stream);
-    return 0; //success
-}
-
-int ConnectionSTREAM::CloseStream(const size_t streamID)
-{
-    if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before closing");
-    StreamChannel *stream = (StreamChannel*)streamID;
-    for(auto i=mRxStreams.begin(); i!=mRxStreams.end(); ++i)
-    {
-        if(*i==stream)
-        {
-            delete *i;
-            mRxStreams.erase(i);
-            break;
-        }
-    }
-    for(auto i=mTxStreams.begin(); i!=mTxStreams.end(); ++i)
-    {
-        if(*i==stream)
-        {
-            delete *i;
-            mTxStreams.erase(i);
-            break;
-        }
-    }
-    return 0;
-}
-
-size_t ConnectionSTREAM::GetStreamSize(const size_t streamID)
-{
-    uint16_t channelEnables = 0;
-    for(uint8_t i=0; i<mRxStreams.size(); ++i)
-        channelEnables |= (1 << mRxStreams[i]->config.channelID);
-    for(uint8_t i=0; i<mTxStreams.size(); ++i)
-        channelEnables |= (1 << mTxStreams[i]->config.channelID);
-    uint8_t uniqueChannelCount = 0;
-    for(uint8_t i=0; i<16; ++i)
-    {
-        uniqueChannelCount += (channelEnables & 0x1);
-        channelEnables >>= 1;
-    }
-    //if no channels are setup return smallest number of samples in packet
-    if(uniqueChannelCount == 0)
-        return 680;
-    else
-        return 1360/uniqueChannelCount;
-}
-
-int ConnectionSTREAM::ControlStream(const size_t streamID, const bool enable)
-{
-    auto *stream = (StreamChannel* )streamID;
-    assert(stream != nullptr);
-
-    if(enable)
-        return stream->Start();
-    else
-        return stream->Stop();
-}
-
-int ConnectionSTREAM::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    lime::IStreamChannel::Metadata meta;
-    meta.flags = 0;
-    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
-    meta.timestamp = metadata.timestamp;
-    int status = channel->Read(buffs, length, &meta, timeout_ms);
-    metadata.hasTimestamp = true;
-    metadata.timestamp = meta.timestamp;
-    return status;
-}
-
-int ConnectionSTREAM::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    lime::IStreamChannel::Metadata meta;
-    meta.flags = 0;
-    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
-    meta.timestamp = metadata.timestamp;
-    int status = channel->Write(buffs, length, &meta, timeout_ms);
-    return status;
-}
-
-int ConnectionSTREAM::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    StreamChannel::Info info = channel->GetInfo();
-    metadata.hasTimestamp = true;
-    metadata.timestamp = info.timestamp;
-    metadata.lateTimestamp = info.underrun > 0;
-    metadata.packetDropped = info.droppedPackets > 0;
-    return 0;
-}
 
 int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)
 {
@@ -150,7 +35,7 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
     while(cnt > 0)
     {
         pkt.counter = 0;
-        pkt.reserved[0] = 0;        
+        pkt.reserved[0] = 0;
         int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
         cnt -= samplesToSend;
 
@@ -228,57 +113,14 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
     return status;
 }
 
-void ConnectionSTREAM::EnterSelfCalibration(const size_t channel)
-{
-    if(rxRunning)
-    {
-        generateData.store(true);
-        std::unique_lock<std::mutex> lck(streamStateLock);
-        //wait untill all existing USB transfers complete
-        safeToConfigInterface.wait_for(lck, std::chrono::milliseconds(250));
-    }
-}
-
-void ConnectionSTREAM::ExitSelfCalibration(const size_t channel)
-{
-    generateData.store(false);
-}
-
-uint64_t ConnectionSTREAM::GetHardwareTimestamp(void)
-{
-    if(not rxRunning.load() and not txRunning.load())
-    {
-        //stop streaming just in case the board has not been configured
-        fpga::StopStreaming(this);
-        fpga::ResetTimestamp(this);
-        mTimestampOffset = 0;
-        return 0;
-    }
-    else
-    {
-        return rxLastTimestamp.load()+mTimestampOffset;
-    }
-}
-
-void ConnectionSTREAM::SetHardwareTimestamp(const uint64_t now)
-{
-    mTimestampOffset = now - rxLastTimestamp.load();
-}
-
-double ConnectionSTREAM::GetHardwareTimestampRate(void)
-{
-    return mExpectedSampleRate;
-}
-
 /** @brief Function dedicated for receiving data samples from board
     @param rxFIFO FIFO to store received data
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData args)
+void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
 {
-    ConnectionSTREAM* pthis = args.dataPort;
-    auto dataPort = args.dataPort;
+    //auto dataPort = args.dataPort;
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
     auto generateData = args.generateData;
@@ -301,7 +143,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
     const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
-    vector<ConnectionSTREAM::StreamChannel::Frame> chFrames;
+    vector<StreamChannel::Frame> chFrames;
     try
     {
         chFrames.resize(chCount);
@@ -315,7 +157,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
     uint8_t activeTransfers = 0;
     for (int i = 0; i<buffersCount; ++i)
     {
-        handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
+        handles[i] = this->BeginDataReading(&buffers[i*bufferSize], bufferSize);
         ++activeTransfers;
     }
 
@@ -334,7 +176,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
     std::mutex txFlagsLock;
     condition_variable resetTxFlags;
     //worker thread for reseting late Tx packet flags
-    std::thread txReset([](ConnectionSTREAM* port,
+    std::thread txReset([](ILimeSDRStreaming* port,
                         atomic<bool> *terminate,
                         mutex *spiLock,
                         condition_variable *doWork)
@@ -349,7 +191,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
             doWork->wait(lck);
             port->WriteRegisters(addr, data, 2);
         }
-    }, pthis, terminate, &txFlagsLock, &resetTxFlags);
+    }, this, terminate, &txFlagsLock, &resetTxFlags);
 
     int resetFlagsDelay = 128;
     uint64_t prevTs = 0;
@@ -358,9 +200,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
         if(generateData->load())
         {
             if(activeTransfers == 0) //stop FPGA when last transfer completes
-                fpga::StopStreaming(pthis);
+                fpga::StopStreaming(this);
             safeToConfigInterface->notify_all(); //notify that it's safe to change chip config
-            const int batchSize = (pthis->mExpectedSampleRate/chFrames[0].samplesCount)/10;
+            const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
             IStreamChannel::Metadata meta;
             for(int i=0; i<batchSize; ++i)
             {
@@ -383,9 +225,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
         int32_t bytesReceived = 0;
         if(handles[bi] >= 0)
         {
-            if (dataPort->WaitForReading(handles[bi], 1000) == false)
+            if (this->WaitForReading(handles[bi], 1000) == false)
                 ++m_bufferFailures;
-            bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            bytesReceived = this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
             --activeTransfers;
             totalBytesReceived += bytesReceived;
             if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
@@ -440,10 +282,10 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
         if(not generateData->load())
         {
             if(activeTransfers == 0) //reactivate FPGA and USB transfers
-                fpga::StartStreaming(pthis);
+                fpga::StartStreaming(this);
             for(int i=0; i<buffersCount-activeTransfers; ++i)
             {
-                handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
+                handles[bi] = this->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
                 bi = (bi + 1) & (buffersCount-1);
                 ++activeTransfers;
             }
@@ -475,13 +317,13 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
                 dataRate_Bps->store((uint32_t)dataRate);
         }
     }
-    dataPort->AbortReading();
+    this->AbortReading();
     for (int j = 0; j<buffersCount; j++)
     {
         if(handles[bi] >= 0)
         {
-            dataPort->WaitForReading(handles[bi], 1000);
-            dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            this->WaitForReading(handles[bi], 1000);
+            this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
         }
         bi = (bi + 1) & (buffersCount-1);
     }
@@ -496,9 +338,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ConnectionSTREAM::ThreadData arg
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData args)
+void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
 {
-    auto dataPort = args.dataPort;
+    //auto dataPort = args.dataPort;
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
 
@@ -552,9 +394,9 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
     {
         if (bufferUsed[bi])
         {
-            if (dataPort->WaitForSending(handles[bi], 1000) == false)
+            if (this->WaitForSending(handles[bi], 1000) == false)
                 ++m_bufferFailures;
-            uint32_t bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
+            uint32_t bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
             totalBytesSent += bytesSent;
             if (bytesSent != bytesToSend[bi])
                 ++m_bufferFailures;
@@ -595,7 +437,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
         }
 
         bytesToSend[bi] = bufferSize;
-        handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
@@ -620,13 +462,13 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ConnectionSTREAM::ThreadData ar
     }
 
     // Wait for all the queued requests to be cancelled
-    dataPort->AbortSending();
+    this->AbortSending();
     for (int j = 0; j<buffersCount; j++)
     {
         if (bufferUsed[bi])
         {
-            dataPort->WaitForSending(handles[bi], 1000);
-            dataPort->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            this->WaitForSending(handles[bi], 1000);
+            this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
         }
         bi = (bi + 1) & (buffersCount-1);
     }

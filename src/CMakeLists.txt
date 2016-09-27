@@ -19,6 +19,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
+    protocols/ILimeSDRStreaming.cpp
     protocols/LMSBoards.h
     protocols/dataTypes.h
     protocols/fifo.h
@@ -57,6 +58,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp
+    protocols/ILimeSDRStreaming.cpp
     Si5351C/Si5351C.cpp
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
