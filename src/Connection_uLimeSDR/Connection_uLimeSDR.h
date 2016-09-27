@@ -7,7 +7,7 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
-#include <LMS64CProtocol.h>
+#include <ILimeSDRStreaming.h>
 #include <vector>
 #include <string>
 #include <atomic>
@@ -29,7 +29,7 @@ namespace lime{
 
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
-class Connection_uLimeSDR : public LMS64CProtocol
+class Connection_uLimeSDR : public ILimeSDRStreaming
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -77,34 +77,6 @@ public:
 #endif
     };
 
-    class StreamChannel : public IStreamChannel
-    {
-    public:
-        struct Frame
-        {
-            uint64_t timestamp;
-            static const uint16_t samplesCount = 1360;
-            complex16_t samples[samplesCount];
-        };
-        StreamChannel(IConnection* port);
-        ~StreamChannel();
-
-        int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
-        int Write(const void* samples, const uint32_t count, const Metadata* meta, const int32_t timeout_ms = 100);
-        IStreamChannel::Info GetInfo();
-
-        bool IsActive() const;
-        int Start();
-        int Stop();
-        StreamConfig config;
-    protected:
-        RingFIFO* fifo;
-        Connection_uLimeSDR* port;
-        bool mActive;
-    private:
-        StreamChannel() = default;
-    };
-
     Connection_uLimeSDR(void *arg);
     Connection_uLimeSDR(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
 
@@ -115,41 +87,15 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
-    int Read(unsigned char *buffer, int length, int timeout_ms = 0);
-
-    uint64_t GetHardwareTimestamp(void);
-    void SetHardwareTimestamp(const uint64_t now);
-    double GetHardwareTimestampRate(void);
-
-    //IConnection stream API implementation
-    int SetupStream(size_t& streamID, const StreamConfig& config);
-    int CloseStream(const size_t streamID);
-    size_t GetStreamSize(const size_t streamID);
-    int ControlStream(const size_t streamID, const bool enable);
-    int ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata& metadata);
-    int WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata& metadata);
-    int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata& metadata);
+    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) override;
+    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
-    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
-    void EnterSelfCalibration(const size_t channel);
-    void ExitSelfCalibration(const size_t channel);
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
 
 protected:
-    struct ThreadData
-    {
-        Connection_uLimeSDR* dataPort; //! Connection interface
-        std::atomic<bool>* terminate; //! true exit loop
-        std::atomic<uint32_t>* dataRate_Bps; //! report rate
-        std::vector<StreamChannel*> channels; //! channels FIFOs
-        std::atomic<bool>* generateData; //! generate data
-        std::condition_variable* safeToConfigInterface;
-        std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
-    };
-    static void ReceivePacketsLoop(const ThreadData args);
-    static void TransmitPacketsLoop(const ThreadData args);
-    int UpdateThreads();
+    virtual void ReceivePacketsLoop(const ThreadData args) override;
+    virtual void TransmitPacketsLoop(const ThreadData args) override;
 
     virtual int BeginDataReading(char* buffer, uint32_t length);
     virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
@@ -160,23 +106,6 @@ protected:
     virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
     virtual void AbortSending();
-
-    std::thread rxThread;
-    std::thread txThread;
-    std::atomic<bool> rxRunning;
-    std::atomic<bool> txRunning;
-    std::atomic<bool> terminateRx;
-    std::atomic<bool> terminateTx;
-    std::mutex streamStateLock;
-    std::condition_variable safeToConfigInterface;
-    std::atomic<bool> generateData;
-    float mExpectedSampleRate; //rate used for generating data
-    std::atomic<uint32_t> rxDataRate_Bps;
-    std::atomic<uint32_t> txDataRate_Bps;
-    std::vector<StreamChannel*> mRxStreams;
-    std::vector<StreamChannel*> mTxStreams;
-    std::atomic<uint64_t> rxLastTimestamp;
-    uint64_t mTimestampOffset;
 
     eConnectionType GetType(void) {return USB_PORT;}
 
