@@ -136,7 +136,6 @@ protected:
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
 
-    int ProgramFx3Ram(char *fileName);
     eConnectionType GetType(void)
     {
         return USB_PORT;
@@ -168,8 +167,8 @@ private:
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
-    int read_firmware_image(const char *filename, unsigned char *buf);
-    int fx3_usbboot_download(const char *filename);
+    int read_firmware_image(unsigned char *buf, int len);
+    int fx3_usbboot_download(unsigned char *buf, int len);
     int ram_write(unsigned char *buf, unsigned int ramAddress, int len);
 #endif
 
