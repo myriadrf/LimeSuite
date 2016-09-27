@@ -49,7 +49,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     m_hardwareName = "";
     isConnected = false;
 #ifndef __unix__
-    USBDevicePrimary = (CCyFX3Device *)arg;
+
     OutCtrEndPt = NULL;
     InCtrEndPt = NULL;
 	InCtrlEndPt3 = NULL;
@@ -64,7 +64,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 
     DeviceInfo info = this->GetDeviceInfo();
 
-/*
+
     //expected version numbers based on HW number
     std::string expectedFirmware, expectedGateware = "1";
     if (info.hardwareVersion == "1") expectedFirmware = "5";
@@ -90,7 +90,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
         << "########################################################" << std::endl
         << std::endl;
-*/
+
     //must configure synthesizer before using LimeSDR
     if (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
     {
@@ -130,11 +130,11 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
 	wstring m_hardwareDesc = L"";
-	if( index < USBDevicePrimary->DeviceCount())
+	if( index < USBDevicePrimary.DeviceCount())
 	{
-		if(USBDevicePrimary->Open(index))
+		if(USBDevicePrimary.Open(index))
 		{
-            m_hardwareDesc = USBDevicePrimary->Product;
+            m_hardwareDesc = USBDevicePrimary.Product;
             unsigned int pos;
             //determine connected board type
             pos = m_hardwareDesc.find(HW_LDIGIRED, 0);
@@ -151,14 +151,14 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 				delete InCtrlEndPt3;
 				InCtrlEndPt3 = NULL;
 			}
-			InCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary->ControlEndPt);
+			InCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary.ControlEndPt);
 
 			if (OutCtrlEndPt3)
 			{
 				delete OutCtrlEndPt3;
 				OutCtrlEndPt3 = NULL;
 			}
-			OutCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary->ControlEndPt);
+			OutCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary.ControlEndPt);
 
 			InCtrlEndPt3->ReqCode = CTR_R_REQCODE;
 			InCtrlEndPt3->Value = CTR_R_VALUE;
@@ -168,18 +168,18 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 			OutCtrlEndPt3->Value = CTR_W_VALUE;
 			OutCtrlEndPt3->Index = CTR_W_INDEX;
 
-			for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-				if(USBDevicePrimary->EndPoints[i]->Address == 0x01)
+			for (int i=0; i<USBDevicePrimary.EndPointCount(); i++)
+				if(USBDevicePrimary.EndPoints[i]->Address == 0x01)
 				{
-					OutEndPt = USBDevicePrimary->EndPoints[i];
+					OutEndPt = USBDevicePrimary.EndPoints[i];
 					long len = OutEndPt->MaxPktSize * 64;
 					OutEndPt->SetXferSize(len);
 					break;
 				}
-			for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-				if(USBDevicePrimary->EndPoints[i]->Address == 0x81)
+			for (int i=0; i<USBDevicePrimary.EndPointCount(); i++)
+				if(USBDevicePrimary.EndPoints[i]->Address == 0x81)
 				{
-					InEndPt = USBDevicePrimary->EndPoints[i];
+					InEndPt = USBDevicePrimary.EndPoints[i];
 					long len = InEndPt->MaxPktSize * 64;
 					InEndPt->SetXferSize(len);
 					break;
@@ -230,7 +230,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 void ConnectionSTREAM::Close()
 {
     #ifndef __unix__
-	USBDevicePrimary->Close();
+	USBDevicePrimary.Close();
 	InEndPt = NULL;
 	OutEndPt = NULL;
 	if (InCtrlEndPt3)
@@ -260,7 +260,7 @@ void ConnectionSTREAM::Close()
 bool ConnectionSTREAM::IsOpen()
 {
     #ifndef __unix__
-    return USBDevicePrimary->IsOpen() && isConnected;
+    return USBDevicePrimary.IsOpen() && isConnected;
     #else
     return isConnected;
     #endif
@@ -846,7 +846,7 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
 
 int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
 {
-	if (device == LMS64CProtocol::FX3 && programmingMode != 0)
+	if (device == LMS64CProtocol::FX3 && programmingMode == 1)
     {
 		int ret;
 #ifdef __unix__
@@ -856,7 +856,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
             printf("failed to get device description\n");
 		else if (desc.idProduct == 243)
 #else
-		if (USBDevicePrimary->ProductID == 243)
+		if (USBDevicePrimary.ProductID == 243)
 #endif
         {
 #ifdef __unix__
@@ -886,10 +886,15 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
             }
 
             std::remove(filename);
-            if (ret == -1)
+            if (ret != 0)
                 return ret;
             return 0;
         }
+		else
+		{
+			ReportError("FX3 bootloader NOT detected");
+			return -1;
+		}
     }
     return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
 }
@@ -1038,7 +1043,7 @@ int ConnectionSTREAM::fx3_usbboot_download(const char *filename)
 int ConnectionSTREAM::ProgramFx3Ram(char *fileName)
 {
 #ifndef __unix__
-	return USBDevicePrimary->DownloadFw(fileName, FX3_FWDWNLOAD_MEDIA_TYPE::RAM);
+	return USBDevicePrimary.DownloadFw(fileName, FX3_FWDWNLOAD_MEDIA_TYPE::RAM);
 #else
         return fx3_usbboot_download(fileName);
 #endif

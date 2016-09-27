@@ -34,9 +34,7 @@ int USBTransferContext::idCounter = 0;
 ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
     ConnectionRegistryEntry("STREAM")
 {
-#ifndef __unix__
-    USBDevicePrimary = new CCyUSBDevice(NULL);
-#else
+#ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
         printf("Init Error %i\n", r); //there was an error
@@ -48,9 +46,7 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
 
 ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 {
-#ifndef __unix__
-    delete USBDevicePrimary;
-#else
+#ifdef __unix__
     mProcessUSBEvents.store(false);
     mUSBProcessingThread.join();
     libusb_exit(ctx);
@@ -89,20 +85,24 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     std::vector<ConnectionHandle> handles;
 
 #ifndef __unix__
-    if (USBDevicePrimary->DeviceCount())
+	CCyUSBDevice device;
+	if (device.DeviceCount())
     {
-        for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
+		for (int i = 0; i<device.DeviceCount(); ++i)
         {
-            if (USBDevicePrimary->IsOpen())
-                USBDevicePrimary->Close();
-            USBDevicePrimary->Open(i);
+			if (hint.index >= 0 && hint.index != i)
+				continue;
+			if (device.IsOpen())
+				device.Close();
+            device.Open(i);
             ConnectionHandle handle;
             handle.media = "USB";
             handle.name = DeviceName(i);
             handle.index = i;
-            std::wstring ws(USBDevicePrimary->SerialNumber);
+            std::wstring ws(device.SerialNumber);
             handle.serial = std::string(ws.begin(),ws.end());
             handles.push_back(handle);
+			device.Close();
         }
     }
 #else
@@ -192,7 +192,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
 IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
 {
 #ifndef __unix__
-    return new ConnectionSTREAM(USBDevicePrimary, handle.index);
+    return new ConnectionSTREAM(nullptr, handle.index);
 #else
     const auto pidvid = handle.addr;
     const auto splitPos = pidvid.find(":");

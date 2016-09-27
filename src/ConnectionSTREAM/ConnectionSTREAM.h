@@ -151,7 +151,7 @@ private:
 	bool isConnected;
 
 #ifndef __unix__
-	CCyFX3Device *USBDevicePrimary;
+	CCyFX3Device USBDevicePrimary;
 	//control endpoints for DigiRed
 	CCyControlEndPoint *InCtrlEndPt3;
 	CCyControlEndPoint *OutCtrlEndPt3;
@@ -195,7 +195,6 @@ public:
 private:
     #ifndef __unix__
     std::string DeviceName(unsigned int index);
-    CCyUSBDevice *USBDevicePrimary;
     #else
     libusb_context *ctx; //a libusb session
     std::thread mUSBProcessingThread;
