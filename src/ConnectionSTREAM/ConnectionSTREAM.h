@@ -129,6 +129,9 @@ public:
 	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 	void EnterSelfCalibration(const size_t channel);
 	void ExitSelfCalibration(const size_t channel);
+
+        virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback);
+
 protected:
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
@@ -146,8 +149,8 @@ private:
 
 	bool isConnected;
 
-	#ifndef __unix__
-	CCyUSBDevice *USBDevicePrimary;
+#ifndef __unix__
+	CCyFX3Device USBDevicePrimary;
 	//control endpoints for DigiRed
 	CCyControlEndPoint *InCtrlEndPt3;
 	CCyControlEndPoint *OutCtrlEndPt3;
@@ -160,11 +163,14 @@ private:
 	CCyUSBEndPoint *InEndPt;
 	CCyUSBEndPoint *OutEndPt;
 
-	#else
+#else
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
-	#endif
+    int read_firmware_image(unsigned char *buf, int len);
+    int fx3_usbboot_download(unsigned char *buf, int len);
+    int ram_write(unsigned char *buf, unsigned int ramAddress, int len);
+#endif
 
     //! Stream service used by the stream and time API
     std::shared_ptr<USBStreamService> mStreamService;
@@ -188,7 +194,6 @@ public:
 private:
     #ifndef __unix__
     std::string DeviceName(unsigned int index);
-    CCyUSBDevice *USBDevicePrimary;
     #else
     libusb_context *ctx; //a libusb session
     std::thread mUSBProcessingThread;

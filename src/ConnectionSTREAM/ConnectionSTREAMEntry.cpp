@@ -5,6 +5,7 @@
 */
 
 #include "ConnectionSTREAM.h"
+#include <iostream>
 using namespace lime;
 
 #ifdef __unix__
@@ -33,9 +34,7 @@ int USBTransferContext::idCounter = 0;
 ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
     ConnectionRegistryEntry("STREAM")
 {
-#ifndef __unix__
-    USBDevicePrimary = new CCyUSBDevice(NULL);
-#else
+#ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
         printf("Init Error %i\n", r); //there was an error
@@ -47,9 +46,7 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
 
 ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 {
-#ifndef __unix__
-    delete USBDevicePrimary;
-#else
+#ifdef __unix__
     mProcessUSBEvents.store(false);
     mUSBProcessingThread.join();
     libusb_exit(ctx);
@@ -88,15 +85,24 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     std::vector<ConnectionHandle> handles;
 
 #ifndef __unix__
-    if (USBDevicePrimary->DeviceCount())
+	CCyUSBDevice device;
+	if (device.DeviceCount())
     {
-        for (int i=0; i<USBDevicePrimary->DeviceCount(); ++i)
+		for (int i = 0; i<device.DeviceCount(); ++i)
         {
+			if (hint.index >= 0 && hint.index != i)
+				continue;
+			if (device.IsOpen())
+				device.Close();
+            device.Open(i);
             ConnectionHandle handle;
             handle.media = "USB";
             handle.name = DeviceName(i);
             handle.index = i;
+            std::wstring ws(device.SerialNumber);
+            handle.serial = std::string(ws.begin(),ws.end());
             handles.push_back(handle);
+			device.Close();
         }
     }
 #else
@@ -123,7 +129,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
                     handles.push_back(handle);
                 }
-                else if(pid == 241)
+                else if(pid == 241 || pid == 243)
                 {
                     libusb_device_handle *tempDev_handle;
                     tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
@@ -154,12 +160,22 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";
-                    libusb_close(tempDev_handle);
 
                     ConnectionHandle handle;
                     handle.media = "USB";
                     handle.name = fullName;
                     handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+
+                    if (desc.iSerialNumber > 0)
+                    {
+                        r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, 255);
+                        if(r<0)
+                            printf("failed to get serial number\n");
+                        else if (strlen(data) > 0)
+                            handle.serial = std::string((const char*)data);
+                    }
+                    libusb_close(tempDev_handle);
+
                     handles.push_back(handle);
                 }
             }
@@ -176,7 +192,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
 IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
 {
 #ifndef __unix__
-    return new ConnectionSTREAM(USBDevicePrimary, handle.index);
+    return new ConnectionSTREAM(nullptr, handle.index);
 #else
     const auto pidvid = handle.addr;
     const auto splitPos = pidvid.find(":");

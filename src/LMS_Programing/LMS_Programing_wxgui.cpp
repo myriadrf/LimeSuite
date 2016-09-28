@@ -176,6 +176,7 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
     }
     else if(deviceSelection == 1)
     {
+		cmbProgMode->Append(_("Firmware to RAM"));
         cmbProgMode->Append(_("Firmware to Flash"));
         cmbProgMode->SetSelection(0);
     }
@@ -227,7 +228,7 @@ void LMS_Programing_wxgui::DoProgramming()
     int device = cmbDevice->GetSelection();
     int progMode = cmbProgMode->GetSelection();
     if(device == 1) // for FX3 show only option to program firmware
-        progMode = 2;
+        progMode++;
     auto status = serPort->ProgramWrite(mProgramData.data(), mProgramData.size(), progMode, device, callback);
     wxCommandEvent evt;
     evt.SetEventObject(this);
@@ -245,9 +246,10 @@ void LMS_Programing_wxgui::DoProgramming()
     }
 
     //if programming FX3 firmware, inform user about device reset
-    if(device == 1 && progMode == 2)
+    if(device == 1)
     {
-        status = serPort->ProgramWrite(nullptr, 0, 0, device, nullptr);
+		if (progMode == 2)
+			status = serPort->ProgramWrite(nullptr, 0, 0, device, nullptr);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
     }

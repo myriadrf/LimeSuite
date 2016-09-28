@@ -25,6 +25,8 @@ MCU_BD::MCU_BD()
     stepsTotal = 0;
     stepsDone = 0;
     aborted = false;
+    stepsTotal.store(8192);
+    stepsDone.store(0);
     //ctor
     int i=0;
     m_serPort=NULL;

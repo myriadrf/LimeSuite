@@ -339,7 +339,12 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
         info.protocol = pkt.inBuffer[2];
         info.hardware = pkt.inBuffer[3];
         info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
-        info.boardSerialNumber = (pkt.inBuffer[5] << 24) | (pkt.inBuffer[6] << 16) | (pkt.inBuffer[7] << 8) | pkt.inBuffer[8];
+        info.boardSerialNumber = 0;
+        for (int i = 10; i < 18; i++)
+        {
+	        info.boardSerialNumber <<= 8;
+	        info.boardSerialNumber |= pkt.inBuffer[i];		
+        }
     }
     return info;
 }

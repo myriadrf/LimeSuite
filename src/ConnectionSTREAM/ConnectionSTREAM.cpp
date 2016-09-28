@@ -9,6 +9,15 @@
 #include <cstring>
 #include <iostream>
 #include "Si5351C.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <fstream>
+
+#ifdef __unix__
+#include <unistd.h>
+#endif
 
 #include <thread>
 #include <chrono>
@@ -40,7 +49,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     m_hardwareName = "";
     isConnected = false;
 #ifndef __unix__
-    USBDevicePrimary = (CCyUSBDevice *)arg;
+
     OutCtrEndPt = NULL;
     InCtrEndPt = NULL;
 	InCtrlEndPt3 = NULL;
@@ -54,6 +63,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         std::cerr << GetLastErrorMessage() << std::endl;
 
     DeviceInfo info = this->GetDeviceInfo();
+
 
     //expected version numbers based on HW number
     std::string expectedFirmware, expectedGateware = "1";
@@ -120,11 +130,11 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
 	wstring m_hardwareDesc = L"";
-	if( index < USBDevicePrimary->DeviceCount())
+	if( index < USBDevicePrimary.DeviceCount())
 	{
-		if(USBDevicePrimary->Open(index))
+		if(USBDevicePrimary.Open(index))
 		{
-            m_hardwareDesc = USBDevicePrimary->Product;
+            m_hardwareDesc = USBDevicePrimary.Product;
             unsigned int pos;
             //determine connected board type
             pos = m_hardwareDesc.find(HW_LDIGIRED, 0);
@@ -141,14 +151,14 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 				delete InCtrlEndPt3;
 				InCtrlEndPt3 = NULL;
 			}
-			InCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary->ControlEndPt);
+			InCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary.ControlEndPt);
 
 			if (OutCtrlEndPt3)
 			{
 				delete OutCtrlEndPt3;
 				OutCtrlEndPt3 = NULL;
 			}
-			OutCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary->ControlEndPt);
+			OutCtrlEndPt3 = new CCyControlEndPoint(*USBDevicePrimary.ControlEndPt);
 
 			InCtrlEndPt3->ReqCode = CTR_R_REQCODE;
 			InCtrlEndPt3->Value = CTR_R_VALUE;
@@ -158,18 +168,18 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 			OutCtrlEndPt3->Value = CTR_W_VALUE;
 			OutCtrlEndPt3->Index = CTR_W_INDEX;
 
-			for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-				if(USBDevicePrimary->EndPoints[i]->Address == 0x01)
+			for (int i=0; i<USBDevicePrimary.EndPointCount(); i++)
+				if(USBDevicePrimary.EndPoints[i]->Address == 0x01)
 				{
-					OutEndPt = USBDevicePrimary->EndPoints[i];
+					OutEndPt = USBDevicePrimary.EndPoints[i];
 					long len = OutEndPt->MaxPktSize * 64;
 					OutEndPt->SetXferSize(len);
 					break;
 				}
-			for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-				if(USBDevicePrimary->EndPoints[i]->Address == 0x81)
+			for (int i=0; i<USBDevicePrimary.EndPointCount(); i++)
+				if(USBDevicePrimary.EndPoints[i]->Address == 0x81)
 				{
-					InEndPt = USBDevicePrimary->EndPoints[i];
+					InEndPt = USBDevicePrimary.EndPoints[i];
 					long len = InEndPt->MaxPktSize * 64;
 					InEndPt->SetXferSize(len);
 					break;
@@ -220,7 +230,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 void ConnectionSTREAM::Close()
 {
     #ifndef __unix__
-	USBDevicePrimary->Close();
+	USBDevicePrimary.Close();
 	InEndPt = NULL;
 	OutEndPt = NULL;
 	if (InCtrlEndPt3)
@@ -250,7 +260,7 @@ void ConnectionSTREAM::Close()
 bool ConnectionSTREAM::IsOpen()
 {
     #ifndef __unix__
-    return USBDevicePrimary->IsOpen() && isConnected;
+    return USBDevicePrimary.IsOpen() && isConnected;
     #else
     return isConnected;
     #endif
@@ -833,3 +843,153 @@ int ConnectionSTREAM::ConfigureFPGA_PLL(unsigned int pllIndex, const double inte
     }
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
 }
+
+int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
+{
+    if (device == LMS64CProtocol::FX3 && programmingMode == 1)
+    {
+#ifdef __unix__
+        libusb_device_descriptor desc;
+        int ret = libusb_get_device_descriptor(libusb_get_device(dev_handle), &desc);
+        if(ret<0)
+            printf("failed to get device description\n");
+        else if (desc.idProduct == 243)
+#else
+		if (USBDevicePrimary.ProductID == 243)
+#endif
+        {
+#ifdef __unix__
+            return fx3_usbboot_download((unsigned char*)buffer,length);
+#else
+            char* filename = "fx3fw_image_tmp.img";
+            int ret = 0;
+            std::ofstream myfile(filename, ios::out | ios::binary | ios::trunc);
+            if (!myfile.is_open())
+            {
+                ReportError("FX3 FW:Unable to create temporary file");
+                return -1;
+            }
+            myfile.write(buffer,length);
+            if (myfile.fail())
+            {
+                ReportError("FX3 FW:Unable to write to temporary file");
+                ret = -1;
+            }
+            myfile.close();
+
+            if (ret != -1)
+            {
+                if ((ret=USBDevicePrimary.DownloadFw(filename, FX3_FWDWNLOAD_MEDIA_TYPE::RAM))!=0)
+                    ReportError("FX3: Failed to upload FW to RAM");
+            }
+
+            std::remove(filename);
+            return ret;
+#endif
+        }
+		else
+		{
+			ReportError("FX3 bootloader NOT detected");
+			return -1;
+		}
+    }
+    return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
+}
+
+#ifdef __unix__
+
+#define MAX_FWIMG_SIZE  (512 * 1024)		// Maximum size of the firmware binary.
+#define GET_LSW(v)	((unsigned short)((v) & 0xFFFF))
+#define GET_MSW(v)	((unsigned short)((v) >> 16))
+
+#define VENDORCMD_TIMEOUT	(5000)		// Timeout for each vendor command is set to 5 seconds.
+
+
+int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
+{
+    const unsigned MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
+	int r;
+	int index = 0;
+	int size;
+
+	while ( len > 0 )
+    {
+		size = (len > MAX_WRITE_SIZE) ? MAX_WRITE_SIZE : len;
+		r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(ramAddress), GET_MSW(ramAddress),&buf[index], size, VENDORCMD_TIMEOUT);
+		if ( r != size )
+		{
+			printf("Vendor write to FX3 RAM failed\n");
+			return -1;
+		}
+		ramAddress += size;
+		index      += size;
+		len        -= size;
+	}
+	return 0;
+}
+
+int ConnectionSTREAM::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
+{
+	unsigned int  *data_p;
+	unsigned int i, checksum;
+	unsigned int address, length;
+	int r, index;
+
+	if ( filesize > MAX_FWIMG_SIZE ) {
+		ReportError("File size exceeds maximum firmware image size\n");
+		return -2;
+	}
+
+	if ( strncmp((char *)fwBuf,"CY",2) ) {
+		ReportError("Image does not have 'CY' at start. aborting\n");
+		return -4;
+	}
+
+	if ( fwBuf[2] & 0x01 ) {
+		ReportError("Image does not contain executable code\n");
+		return -5;
+	}
+
+	if ( !(fwBuf[3] == 0xB0) ) {
+		ReportError("Not a normal FW binary with checksum\n");
+		return -6;
+	}
+
+	// Run through each section of code, and use vendor commands to download them to RAM.
+	index    = 4;
+	checksum = 0;
+	while ( index < filesize )
+	{
+		data_p  = (unsigned int *)(fwBuf + index);
+		length  = data_p[0];
+		address = data_p[1];
+		if (length != 0)
+		{
+			for (i = 0; i < length; i++)
+				checksum += data_p[2 + i];
+			r = ram_write(fwBuf + index + 8, address, length * 4);
+			if (r != 0)
+			{
+				ReportError("Failed to download data to FX3 RAM\n");
+				return -3;
+			}
+		}
+		else
+		{
+			if (checksum != data_p[2]) {
+				ReportError ("Checksum error in firmware binary\n");
+				return -4;
+			}
+
+			r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(address), GET_MSW(address), NULL,0, VENDORCMD_TIMEOUT);
+			if ( r != 0 )
+				printf("Ignored error in control transfer: %d\n", r);
+			break;
+		}
+		index += (8 + length * 4);
+	}
+
+	return 0;
+}
+#endif
+
