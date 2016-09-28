@@ -320,7 +320,7 @@ public:
 			else
 			{
 				// S-record
-				unsigned long	count;
+				unsigned long count;
 				char			type;
 				if (sscanf(&szLine[1], "%c%2lx", &type, &count) != 2)
 				{
@@ -353,8 +353,8 @@ public:
 					// Header record
 					{
 						char header[256];
-						unsigned char i = 0;
-						for (i = 0; i + 3 < count; ++i)
+						uint8_t i = 0;
+						for (i = 0; uint8_t(i + 3) < count; ++i)
 						{
 							sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
 							header[i] = tmp;
@@ -395,7 +395,7 @@ public:
 							m_chunks.back().m_startAddress = startAddress;
 						}
 						unsigned char i = 0;
-						for (i = (type - '1'); i + 3 < count; ++i)
+						for (i = uint8_t(type - '1'); uint8_t(i + 3) < count; ++i)
 						{
 							sscanf(&szLine[8 + i * 2], "%2lx", &tmp);
 							if (startAddress + i > limit)

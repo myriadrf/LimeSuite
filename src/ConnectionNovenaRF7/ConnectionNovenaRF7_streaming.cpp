@@ -399,7 +399,6 @@ void ConnectionNovenaRF7::ReceivePacketsLoop(const ThreadData args)
 {
     prep_eim_burst();
     ConnectionNovenaRF7 *pthis = args.dataPort;
-    auto dataPort = args.dataPort;
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
 
@@ -418,12 +417,12 @@ void ConnectionNovenaRF7::ReceivePacketsLoop(const ThreadData args)
     const int bytesToRead = 4096;
     const int FPGAbufferSize = 32768*2;
 
-    int dataSource = 0;
+    //int dataSource = 0;
     const uint16_t NOVENA_DATA_SRC_ADDR = 0x0702;
     uint16_t controlRegValue = 0;
     pthis->ReadRegister(NOVENA_DATA_SRC_ADDR, controlRegValue);
 
-    dataSource = (controlRegValue >> 12) & 0x3;
+    //dataSource = (controlRegValue >> 12) & 0x3;
     //reset FIFO
     pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF));
     pthis->WriteRegister(NOVENA_DATA_SRC_ADDR, (controlRegValue & 0x7FFF) | 0x8000);

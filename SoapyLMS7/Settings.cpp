@@ -199,7 +199,7 @@ SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
     info["protocolVersion"] = devinfo.protocolVersion;
     if (devinfo.boardSerialNumber != unsigned(-1))
     {
-        char buff[64]; sprintf(buff, "0x%x", devinfo.boardSerialNumber);
+        char buff[64]; sprintf(buff, "0x%lx", devinfo.boardSerialNumber);
         info["boardSerialNumber"] = buff;
     }
     return info;

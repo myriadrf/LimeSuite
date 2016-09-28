@@ -186,7 +186,7 @@ void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 
   int64_t mul;
   float phi, wn;    // algorithm variables for sine and cosine computation
-  int n, k;         // loop variables
+  int n;         // loop variables
 
   // Prepare for computation
   wn = PI/Sp;
@@ -263,12 +263,10 @@ for(int k = fftBin-span; k <= fftBin+span; k++)
 /* Goertzel Algorithm Implementation, float numbers*/
 void CalcGoertzelF(int x[][2], float real[], float imag[], int Sp)
 {
-  FILE *fp;
   double lr1, lr2, li1, li2, temp;
   double c, s, phi, wn;
   int n, k;
 
-  //fp = fopen("floatnum.txt", "w");
     for (int i = 0; i < Sp; i++){
         real[i] = 0.0;
         imag[i] = 0.0;

@@ -292,8 +292,8 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 #endif
             return -1;
 
-	unsigned long totalBytesReaded = 0;
-	unsigned long bytesToRead = length;
+	long totalBytesReaded = 0;
+	long bytesToRead = length;
 	auto t1 = chrono::high_resolution_clock::now();
 	auto t2 = chrono::high_resolution_clock::now();
 
@@ -657,7 +657,7 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
         const uint16_t phase_reg_sel_addr = 0x0004;
         float inputClock_Hz = interfaceClk_Hz;
         const float oversampleClock_Hz = 100e6;
-        const int registerChainSize = 128;
+        //const int registerChainSize = 128;
         const float phaseShift_deg = 90;
         const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
         const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);

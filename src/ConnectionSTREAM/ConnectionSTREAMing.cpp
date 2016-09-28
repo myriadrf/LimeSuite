@@ -129,7 +129,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = args.channels.size();
     const auto link = args.channels[0]->config.linkFormat;
-    const int samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
+    const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)

@@ -1455,7 +1455,7 @@ int LMS7002M::TuneRxFilterWithCaching(const float_type bandwidth)
         Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), 0);
         Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 1);
-        if (not lphlFound) found = false;
+        if (not lphhFound) found = false;
     }
     else // bandwidth > 108e6
     {

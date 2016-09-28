@@ -120,14 +120,14 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnecti
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
 LMS7002M::LMS7002M() :
+    useCache(0),
+    mValueCache(new CalibrationCache()),
+    mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),
     dataPort(nullptr),
     addrLMS7002M(-1),
     mdevIndex(0),
-    useCache(0),
-    mSelfCalDepth(0),
-    mValueCache(new CalibrationCache()),
-    mRegistersMap(new LMS7002M_RegistersMap())
+    mSelfCalDepth(0)
 {
     mCalibrationByMCU = true;
 

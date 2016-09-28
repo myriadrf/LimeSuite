@@ -15,9 +15,6 @@
 
 #include "RFSpark_wxgui.h"
 #include <vector>
-#include <ADCUnits.h>
-
-using namespace lime;
 
 const long RFSpark_wxgui::ID_BTNREADADC = wxNewId();
 const long RFSpark_wxgui::ID_BTNREADALLADC = wxNewId();

@@ -103,8 +103,8 @@ int main(int argc, char** argv)
 
 		printf("Received %d samples\n", samplesRead);
 
-	/* 
-		INSERT CODE FOR PROCESSING RECEIVED SAMPLES 
+	/*
+		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
 	*/
 
 #ifdef USE_GNU_PLOT
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
         gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
         gp.write("plot '-' with points");
         gp.write("\n");
-        for (uint32_t j = 0; j < samplesRead; ++j)
+        for (int j = 0; j < samplesRead; ++j)
             gp.writef("%i %i\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();

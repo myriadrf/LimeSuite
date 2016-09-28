@@ -63,8 +63,8 @@ OpenGLGraph::OpenGLGraph(wxWindow* parent,  wxWindowID id = -1,
                     long style=0, const wxString& name,
                     const int* args)
     : wxGLCanvas(parent, id, args, pos, size, wxNO_FULL_REPAINT_ON_RESIZE),
-initialDisplayArea(-100, 100, -100, 100),
 oglOk(true),
+initialDisplayArea(-100, 100, -100, 100),
 m_MouseCoord(0, 0, 0, 0)
 {
     m_font = NULL;

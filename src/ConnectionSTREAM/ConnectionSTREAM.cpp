@@ -647,7 +647,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
 
 int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
 {
-    const unsigned MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
+    const int MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
 	int r;
 	int index = 0;
 	int size;

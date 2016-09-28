@@ -362,7 +362,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
 
     int decimation;
     int interpolation;
-    int tmp;
+    size_t tmp;
 
    float_type nco_rx=0;
    float_type nco_tx=0;
@@ -401,7 +401,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
     {
         for (tmp = 0; tmp < 4; tmp++)
         {
-            if ( (1<<tmp) >= (oversample+1)/2)
+            if ( size_t(1<<tmp) >= (oversample+1)/2)
             {
                 break;
             }

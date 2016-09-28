@@ -185,8 +185,8 @@ int main(int argc, char** argv)
         //Plot samples
         //I and Q samples are interleaved in buffer: IQIQIQ...
 
-	/* 
-		INSERT CODE FOR PROCESSING RECEIVED SAMPLES 
+	/*
+		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
 	*/
 
 #ifdef USE_GNU_PLOT
@@ -195,7 +195,7 @@ int main(int argc, char** argv)
         gp.write("plot '-' with points");
         gp.write("\n");
 
-        for (uint32_t j = 0; j < bufersize; ++j)
+        for (int j = 0; j < samplesRead; ++j)
             gp.writef("%f %f\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();

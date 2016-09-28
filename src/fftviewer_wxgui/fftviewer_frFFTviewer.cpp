@@ -259,7 +259,6 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
     bw[0] *= 1000000;
     txtBW2->GetValue().ToDouble(&bw[1]);
     bw[1] *= 1000000;
-    char ctemp[512];
     /*
     // TODO
     for(int c=0; c<2; ++c)
