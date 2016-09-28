@@ -7,7 +7,6 @@ set(CONNECTION_XILLYBUS_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionXillybusEntry.cpp
     ${THIS_SOURCE_DIR}/ConnectionXillybus.cpp
     ${THIS_SOURCE_DIR}/ConnectionXillybusing.cpp
-    ${THIS_SOURCE_DIR}/StreamChannel.cpp
 )
 
 ########################################################################

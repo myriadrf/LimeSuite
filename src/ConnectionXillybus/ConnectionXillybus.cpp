@@ -32,18 +32,11 @@ using namespace lime;
 */
 ConnectionXillybus::ConnectionXillybus(const unsigned index)
 {
+    RxLoopFunction = bind(&ConnectionXillybus::ReceivePacketsLoop, this, std::placeholders::_1);
+    TxLoopFunction = bind(&ConnectionXillybus::TransmitPacketsLoop, this, std::placeholders::_1);
+
     m_hardwareName = "";
     isConnected = false;
-    mTimestampOffset = 0;
-    rxLastTimestamp.store(0);
-    mExpectedSampleRate = 0;
-    generateData.store(false);
-    rxRunning.store(false);
-    txRunning.store(false);
-    terminateRx.store(false);
-    terminateTx.store(false);
-    rxDataRate_Bps.store(0);
-    txDataRate_Bps.store(0);
 #ifndef __unix__
     hWrite = INVALID_HANDLE_VALUE;
     hRead = INVALID_HANDLE_VALUE;
@@ -84,7 +77,6 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
 */
 ConnectionXillybus::~ConnectionXillybus()
 {
-    mStreamService.reset();
     Close();
 }
 
@@ -813,138 +805,4 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
         return 0;
     }
     return ReportError(ERANGE, "ConnectionSTREAM: configure FPGA PLL, desired frequency out of range");
-}
-
-int ConnectionXillybus::UpdateThreads()
-{
-    bool needTx = false;
-    bool needRx = false;
-
-    //check which threads are needed
-    for(auto i : mRxStreams)
-        if(i->IsActive())
-        {
-            needRx = true;
-            break;
-        }
-    for(auto i : mTxStreams)
-        if(i->IsActive())
-        {
-            needTx = true;
-            break;
-        }
-
-    //stop threads if not needed
-    if(not needTx and txRunning.load())
-    {
-        terminateTx.store(true);
-        txThread.join();
-        txRunning.store(false);
-    }
-    if(not needRx and rxRunning.load())
-    {
-        terminateRx.store(true);
-        rxThread.join();
-        rxRunning.store(false);
-    }
-
-    //configure FPGA on first start, or disable FPGA when not streaming
-    if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
-    {
-        //enable FPGA streaming
-        fpga::StopStreaming(this);
-        fpga::ResetTimestamp(this);
-        //USB FIFO reset
-        LMS64CProtocol::GenericPacket ctrPkt;
-        ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x01);
-        TransferPacket(ctrPkt);
-        ctrPkt.outBuffer[0] = 0x00;
-        TransferPacket(ctrPkt);
-
-        //enable MIMO mode, 12 bit compressed values
-        StreamConfig config;
-        config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
-        uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
-        if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
-            smpl_width = 0x0;
-        else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
-            smpl_width = 0x2;
-        else
-            smpl_width = 0x2;
-        WriteRegister(0x0008, 0x0100 | smpl_width);
-
-        uint16_t channelEnables = 0;
-        for(uint8_t i=0; i<mRxStreams.size(); ++i)
-            channelEnables |= (1 << mRxStreams[i]->config.channelID);
-        for(uint8_t i=0; i<mTxStreams.size(); ++i)
-            channelEnables |= (1 << mTxStreams[i]->config.channelID);
-        WriteRegister(0x0007, channelEnables);
-
-        LMS7002M lmsControl;
-        lmsControl.SetConnection(this);
-        bool fromChip = true;
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0, fromChip);
-
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2, fromChip);
-
-        if(channelEnables & 0x2) //enable MIMO
-        {
-            uint16_t macBck = lmsControl.Get_SPI_Reg_bits(LMS7param(MAC), fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
-        }
-
-        fpga::StartStreaming(this);
-    }
-    else if(not needTx and not needRx)
-    {
-        //disable FPGA streaming
-        fpga::StopStreaming(this);
-    }
-
-    //FPGA should be configured and activated, start needed threads
-    if(needRx and not rxRunning.load())
-    {
-        ThreadData args;
-        args.terminate = &terminateRx;
-        args.dataPort = this;
-        args.dataRate_Bps = &rxDataRate_Bps;
-        args.channels = mRxStreams;
-        args.generateData = &generateData;
-        args.safeToConfigInterface = &safeToConfigInterface;
-        args.lastTimestamp = &rxLastTimestamp;;
-
-        rxRunning.store(true);
-        terminateRx.store(false);
-        rxThread = std::thread(ReceivePacketsLoop, args);
-    }
-    if(needTx and not txRunning.load())
-    {
-        ThreadData args;
-        args.terminate = &terminateTx;
-        args.dataPort = this;
-        args.dataRate_Bps = &txDataRate_Bps;
-        args.channels = mTxStreams;
-        args.generateData = &generateData;
-        args.safeToConfigInterface = &safeToConfigInterface;
-        args.lastTimestamp = nullptr;
-
-        txRunning.store(true);
-        terminateTx.store(false);
-        txThread = std::thread(TransmitPacketsLoop, args);
-    }
-    return 0;
 }

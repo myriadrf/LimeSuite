@@ -35,12 +35,12 @@ std::vector<ConnectionHandle> ConnectionXillybusEntry::enumerate(const Connectio
 	std::string fileName = "\\\\.\\xillybus_write_8";
 	std::ifstream fin(fileName.c_str());
 
-	HANDLE fh = CreateFileA(fileName.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);                 
+	HANDLE fh = CreateFileA(fileName.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (fh != INVALID_HANDLE_VALUE || ::GetLastError() == ERROR_BUSY)
 	{
 		handle.media = "PCI-E";
-		handle.name = "LmsSDR-PCIE";
+		handle.name = "LimeSDR-PCIE";
 		handle.index = 1;
 		handles.push_back(handle);
 		CloseHandle(fh);
@@ -51,10 +51,10 @@ std::vector<ConnectionHandle> ConnectionXillybusEntry::enumerate(const Connectio
     if( access( fname.c_str(), F_OK ) != -1 )
     {
         handle.media = "PCI-E";
-        handle.name = "LmsSDR-PCIE";
+        handle.name = "LimeSDR-PCIE";
         handle.index = 1;
         handles.push_back(handle);
-    } 
+    }
 #endif
     return handles;
 }

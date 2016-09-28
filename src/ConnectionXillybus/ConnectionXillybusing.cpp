@@ -19,120 +19,6 @@
 using namespace std;
 using namespace lime;
 
-/***********************************************************************
- * Streaming API implementation
- **********************************************************************/
-
-int ConnectionXillybus::SetupStream(size_t &streamID, const StreamConfig &config)
-{
-    if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before doing setups");
-    streamID = ~0;
-    StreamChannel* stream = new StreamChannel(this);
-    stream->config = config;
-    //TODO check for duplicate streams
-    if(config.isTx)
-        mTxStreams.push_back(stream);
-    else
-        mRxStreams.push_back(stream);
-    streamID = size_t(stream);
-    return 0; //success
-}
-
-int ConnectionXillybus::CloseStream(const size_t streamID)
-{
-    if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before closing");
-    StreamChannel *stream = (StreamChannel*)streamID;
-    for(auto i=mRxStreams.begin(); i!=mRxStreams.end(); ++i)
-    {
-        if(*i==stream)
-        {
-            delete *i;
-            mRxStreams.erase(i);
-            break;
-        }
-    }
-    for(auto i=mTxStreams.begin(); i!=mTxStreams.end(); ++i)
-    {
-        if(*i==stream)
-        {
-            delete *i;
-            mTxStreams.erase(i);
-            break;
-        }
-    }
-    return 0;
-}
-
-size_t ConnectionXillybus::GetStreamSize(const size_t streamID)
-{
-    uint16_t channelEnables = 0;
-    for(uint8_t i=0; i<mRxStreams.size(); ++i)
-        channelEnables |= (1 << mRxStreams[i]->config.channelID);
-    for(uint8_t i=0; i<mTxStreams.size(); ++i)
-        channelEnables |= (1 << mTxStreams[i]->config.channelID);
-    uint8_t uniqueChannelCount = 0;
-    for(uint8_t i=0; i<16; ++i)
-    {
-        uniqueChannelCount += (channelEnables & 0x1);
-        channelEnables >>= 1;
-    }
-    //if no channels are setup return smallest number of samples in packet
-    if(uniqueChannelCount == 0)
-        return 680;
-    else
-        return 1360/uniqueChannelCount;
-}
-
-int ConnectionXillybus::ControlStream(const size_t streamID, const bool enable)
-{
-    auto *stream = (StreamChannel* )streamID;
-    assert(stream != nullptr);
-
-    if(enable)
-        return stream->Start();
-    else
-        return stream->Stop();
-}
-
-int ConnectionXillybus::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    lime::IStreamChannel::Metadata meta;
-    meta.flags = 0;
-    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
-    meta.timestamp = metadata.timestamp;
-    int status = channel->Read(buffs, length, &meta, timeout_ms);
-    metadata.timestamp = meta.timestamp;
-    return status;
-}
-
-int ConnectionXillybus::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    lime::IStreamChannel::Metadata meta;
-    meta.flags = 0;
-    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
-    meta.timestamp = metadata.timestamp;
-    int status = channel->Write(buffs, length, &meta, timeout_ms);
-    return status;
-}
-
-int ConnectionXillybus::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
-{
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
-    StreamChannel::Info info = channel->GetInfo();
-    metadata.hasTimestamp = true;
-    metadata.timestamp = info.timestamp;
-    metadata.lateTimestamp = info.underrun > 0;
-    metadata.packetDropped = info.droppedPackets > 0;
-    return 0;
-}
-
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
@@ -178,57 +64,13 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
     return status;
 }
 
-void ConnectionXillybus::EnterSelfCalibration(const size_t channel)
-{
-    if(rxRunning)
-    {
-        generateData.store(true);
-        std::unique_lock<std::mutex> lck(streamStateLock);
-        //wait untill all existing USB transfers complete
-        safeToConfigInterface.wait_for(lck, std::chrono::milliseconds(250));
-    }
-}
-
-void ConnectionXillybus::ExitSelfCalibration(const size_t channel)
-{
-    generateData.store(false);
-}
-
-uint64_t ConnectionXillybus::GetHardwareTimestamp(void)
-{
-    if(not rxRunning.load() and not txRunning.load())
-    {
-        //stop streaming just in case the board has not been configured
-        fpga::StopStreaming(this);
-        fpga::ResetTimestamp(this);
-        mTimestampOffset = 0;
-        return 0;
-    }
-    else
-    {
-        return rxLastTimestamp.load()+mTimestampOffset;
-    }
-}
-
-void ConnectionXillybus::SetHardwareTimestamp(const uint64_t now)
-{
-    mTimestampOffset = now - rxLastTimestamp.load();
-}
-
-double ConnectionXillybus::GetHardwareTimestampRate(void)
-{
-    return mExpectedSampleRate;
-}
-
 /** @brief Function dedicated for receiving data samples from board
     @param rxFIFO FIFO to store received data
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData args)
+void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
 {
-    ConnectionXillybus* pthis = args.dataPort;
-    auto dataPort = args.dataPort;
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
     auto generateData = args.generateData;
@@ -236,11 +78,13 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
 
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = args.channels.size();
+    const auto link = args.channels[0]->config.linkFormat;
+    const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-           latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += args.channels[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
@@ -249,7 +93,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
     const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
-    vector<ConnectionXillybus::StreamChannel::Frame> chFrames;
+    vector<StreamChannel::Frame> chFrames;
     try
     {
         chFrames.resize(chCount);
@@ -263,7 +107,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
     uint8_t activeTransfers = 0;
     for (int i = 0; i<buffersCount; ++i)
     {
-        handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize);
+        handles[i] = this->BeginDataReading(&buffers[i*bufferSize], bufferSize);
         ++activeTransfers;
     }
 
@@ -282,7 +126,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
     std::mutex txFlagsLock;
     condition_variable resetTxFlags;
     //worker thread for reseting late Tx packet flags
-    std::thread txReset([](ConnectionXillybus* port,
+    std::thread txReset([](ILimeSDRStreaming* port,
                         atomic<bool> *terminate,
                         mutex *spiLock,
                         condition_variable *doWork)
@@ -297,7 +141,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
             doWork->wait(lck);
             port->WriteRegisters(addr, data, 2);
         }
-    }, pthis, terminate, &txFlagsLock, &resetTxFlags);
+    }, this, terminate, &txFlagsLock, &resetTxFlags);
 
     int resetFlagsDelay = 128;
     uint64_t prevTs = 0;
@@ -306,9 +150,9 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
         if(generateData->load())
         {
             if(activeTransfers == 0) //stop FPGA when last transfer completes
-                fpga::StopStreaming(pthis);
+                fpga::StopStreaming(this);
             safeToConfigInterface->notify_all(); //notify that it's safe to change chip config
-            const int batchSize = (pthis->mExpectedSampleRate/chFrames[0].samplesCount)/10;
+            const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
             IStreamChannel::Metadata meta;
             for(int i=0; i<batchSize; ++i)
             {
@@ -331,9 +175,9 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
         int32_t bytesReceived = 0;
         if(handles[bi] >= 0)
         {
-            if (dataPort->WaitForReading(handles[bi], 1000) == false)
+            if (this->WaitForReading(handles[bi], 1000) == false)
                 ++m_bufferFailures;
-            bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            bytesReceived = this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
             --activeTransfers;
             totalBytesReceived += bytesReceived;
             if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
@@ -357,60 +201,41 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
-            if(pkt[pktIndex].counter - prevTs != 1360/chCount && pkt[pktIndex].counter != prevTs)
+            if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
 #ifndef NDEBUG
-                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, (pkt[pktIndex].counter - prevTs)/(1360.0/chCount));
+                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, float(pkt[pktIndex].counter - prevTs)/samplesInPacket);
 #endif
-                packetLoss += (pkt[pktIndex].counter - prevTs)/(1360.0/chCount);
+                packetLoss += (pkt[pktIndex].counter - prevTs)/samplesInPacket;
             }
             prevTs = pkt[pktIndex].counter;
             if(args.lastTimestamp)
                 args.lastTimestamp->store(pkt[pktIndex].counter);
+            //parse samples
+            vector<complex16_t*> dest(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                dest[c] = (chFrames[c].samples);
+            size_t samplesCount = 0;
+            fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount, link, dest.data(), &samplesCount);
+
             for(int ch=0; ch<chCount; ++ch)
             {
-                chFrames[ch].timestamp = pkt[pktIndex].counter;
-                uint32_t &collected = samplesCollected[ch];
-                const uint8_t stepSize = chCount * 3;
-                for (uint16_t b = 0; b < sizeof(pkt->data); b += stepSize)
-                {
-                    int16_t sample;
-                    //I sample
-                    sample = (pktStart[b + 1 + 3 * ch] & 0x0F) << 8;
-                    sample |= (pktStart[b + 3 * ch] & 0xFF);
-                    sample = sample << 4;
-                    sample = sample >> 4;
-                    chFrames[ch].samples[collected].i = sample;
-
-                    //Q sample
-                    sample = pktStart[b + 2 + 3 * ch] << 4;
-                    sample |= (pktStart[b + 1 + 3 * ch] >> 4) & 0x0F;
-                    sample = sample << 4;
-                    sample = sample >> 4;
-                    chFrames[ch].samples[collected].q = sample;
-                    ++collected;
-                    ++samplesReceived[ch];
-                }
-                if(collected == chFrames[ch].samplesCount)
-                {
-                    IStreamChannel::Metadata meta;
-                    meta.timestamp = chFrames[ch].timestamp;
-                    meta.flags = 0;
-                    uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, collected, &meta, 100);
-                    if(samplesPushed != collected)
-                        droppedSamples += collected-samplesPushed;
-                    collected = 0;
-                }
+                IStreamChannel::Metadata meta;
+                meta.timestamp = pkt[pktIndex].counter;
+                meta.flags = RingFIFO::OVERWRITE_OLD;
+                uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                if(samplesPushed != samplesCount)
+                    droppedSamples += samplesCount-samplesPushed;
             }
         }
         // Re-submit this request to keep the queue full
         if(not generateData->load())
         {
             if(activeTransfers == 0) //reactivate FPGA and USB transfers
-                fpga::StartStreaming(pthis);
+                fpga::StartStreaming(this);
             for(int i=0; i<buffersCount-activeTransfers; ++i)
             {
-                handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
+                handles[bi] = this->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
                 bi = (bi + 1) & (buffersCount-1);
                 ++activeTransfers;
             }
@@ -442,13 +267,13 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
                 dataRate_Bps->store((uint32_t)dataRate);
         }
     }
-    dataPort->AbortReading();
+    this->AbortReading();
     for (int j = 0; j<buffersCount; j++)
     {
         if(handles[bi] >= 0)
         {
-            dataPort->WaitForReading(handles[bi], 1000);
-            dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            this->WaitForReading(handles[bi], 1000);
+            this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
         }
         bi = (bi + 1) & (buffersCount-1);
     }
@@ -463,20 +288,20 @@ void ConnectionXillybus::ReceivePacketsLoop(const ConnectionXillybus::ThreadData
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionXillybus::TransmitPacketsLoop(const ConnectionXillybus::ThreadData args)
+void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
 {
-    auto dataPort = args.dataPort;
     auto terminate = args.terminate;
     auto dataRate_Bps = args.dataRate_Bps;
 
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = args.channels.size();
+    const auto link = args.channels[0]->config.linkFormat;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-           latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += args.channels[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
@@ -486,7 +311,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ConnectionXillybus::ThreadDat
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 100;
 
-    const int maxSamplesBatch = 1360/chCount;
+    const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
     vector<uint32_t> bytesToSend(buffersCount, 0);
@@ -518,9 +343,9 @@ void ConnectionXillybus::TransmitPacketsLoop(const ConnectionXillybus::ThreadDat
     {
         if (bufferUsed[bi])
         {
-            if (dataPort->WaitForSending(handles[bi], 1000) == false)
+            if (this->WaitForSending(handles[bi], 1000) == false)
                 ++m_bufferFailures;
-            uint32_t bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
+            uint32_t bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
             totalBytesSent += bytesSent;
             if (bytesSent != bytesToSend[bi])
                 ++m_bufferFailures;
@@ -551,29 +376,17 @@ void ConnectionXillybus::TransmitPacketsLoop(const ConnectionXillybus::ThreadDat
             const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
+            vector<complex16_t*> src(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            const uint8_t stepSize = chCount * 3;
-            for (uint16_t b=0, s=0; b < sizeof(pkt->data) && s<maxSamplesBatch; b += stepSize)
-            {
-                for(int ch=0; ch<chCount; ++ch)
-                {
-                    //I sample
-                    dataStart[b + 3 * ch] = samples[ch][s].i & 0xFF;
-                    dataStart[b + 1 + 3 * ch] = (samples[ch][s].i >> 8) & 0x0F;
-
-                    //Q sample
-                    dataStart[b + 1 + 3 * ch] |= (samples[ch][s].q << 4) & 0xF0;
-                    dataStart[b + 2 + 3 * ch] = (samples[ch][s].q >> 4) & 0xFF;
-                }
-                ++s;
-                ++samplesSent;
-            }
+            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
+            samplesSent += maxSamplesBatch;
             ++i;
         }
 
-        //bytesToSend[bi] = sizeof(PacketLTE)*i;
         bytesToSend[bi] = bufferSize;
-        handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
@@ -598,13 +411,13 @@ void ConnectionXillybus::TransmitPacketsLoop(const ConnectionXillybus::ThreadDat
     }
 
     // Wait for all the queued requests to be cancelled
-    dataPort->AbortSending();
+    this->AbortSending();
     for (int j = 0; j<buffersCount; j++)
     {
         if (bufferUsed[bi])
         {
-            dataPort->WaitForSending(handles[bi], 1000);
-            dataPort->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+            this->WaitForSending(handles[bi], 1000);
+            this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
         }
         bi = (bi + 1) & (buffersCount-1);
     }
