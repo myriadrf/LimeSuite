@@ -16,17 +16,13 @@ class wxComboBox;
 class wxCheckBox;
 
 #include <vector>
-
-namespace lime{
-class LMS64CProtocol;
-class IConnection;
-}
+#include "lime/LimeSuite.h"
 
 class HPM7_wxgui : public wxFrame
 {
 public:
     HPM7_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-    virtual void Initialize(lime::IConnection* serPort);
+    virtual void Initialize(lms_device_t* serPort);
     virtual ~HPM7_wxgui();
     void SelectBand(unsigned int i);
     void SelectRxPath(unsigned int i);
@@ -58,7 +54,7 @@ private:
     std::vector<long> cmbSSC2ids;
 
 protected:
-    lime::LMS64CProtocol* m_serPort;
+    lms_device_t* lmsControl;
 
     DECLARE_EVENT_TABLE()
 };

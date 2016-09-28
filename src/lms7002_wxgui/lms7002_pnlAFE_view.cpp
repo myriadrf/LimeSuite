@@ -1,5 +1,4 @@
 #include "lms7002_pnlAFE_view.h"
-#include "LMS7002M.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
 using namespace lime;
@@ -14,16 +13,16 @@ pnlAFE_view( parent )
 lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlAFE_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[chkEN_G_AFE] = EN_G_AFE;
-    wndId2Enum[cmbISEL_DAC_AFE] = ISEL_DAC_AFE;
-    wndId2Enum[rgrMODE_INTERLEAVE_AFE] = MODE_INTERLEAVE_AFE;
-    wndId2Enum[cmbMUX_AFE_1] = MUX_AFE_1;
-    wndId2Enum[cmbMUX_AFE_2] = MUX_AFE_2;
-    wndId2Enum[chkPD_AFE] = PD_AFE;
-    wndId2Enum[chkPD_RX_AFE1] = PD_RX_AFE1;
-    wndId2Enum[chkPD_RX_AFE2] = PD_RX_AFE2;
-    wndId2Enum[chkPD_TX_AFE1] = PD_TX_AFE1;
-    wndId2Enum[chkPD_TX_AFE2] = PD_TX_AFE2;
+    wndId2Enum[chkEN_G_AFE] = LMS7param(EN_G_AFE);
+    wndId2Enum[cmbISEL_DAC_AFE] = LMS7param(ISEL_DAC_AFE);
+    wndId2Enum[rgrMODE_INTERLEAVE_AFE] = LMS7param(MODE_INTERLEAVE_AFE);
+    wndId2Enum[cmbMUX_AFE_1] = LMS7param(MUX_AFE_1);
+    wndId2Enum[cmbMUX_AFE_2] = LMS7param(MUX_AFE_2);
+    wndId2Enum[chkPD_AFE] = LMS7param(PD_AFE);
+    wndId2Enum[chkPD_RX_AFE1] = LMS7param(PD_RX_AFE1);
+    wndId2Enum[chkPD_RX_AFE2] = LMS7param(PD_RX_AFE2);
+    wndId2Enum[chkPD_TX_AFE1] = LMS7param(PD_TX_AFE1);
+    wndId2Enum[chkPD_TX_AFE2] = LMS7param(PD_TX_AFE2);
 
     wxArrayString temp;
     temp.clear();
@@ -50,7 +49,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlAFE_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlAFE_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -69,7 +68,7 @@ void lms7002_pnlAFE_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlAFE_view::UpdateGUI()

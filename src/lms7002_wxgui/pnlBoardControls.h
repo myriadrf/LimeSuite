@@ -19,13 +19,12 @@
 #include <wx/statbox.h>
 #include <wx/frame.h>
 #include <wx/spinctrl.h>
-
+#include "lime/LimeSuite.h"
 #include <vector>
 #include <string>
 #include <stdint.h>
 
 namespace lime{
-class IConnection;
 }
 
 class pnlBoardControls : public wxFrame
@@ -92,8 +91,8 @@ class pnlBoardControls : public wxFrame
         ~pnlBoardControls();
 
         void UpdatePanel();
-        void Initialize(lime::IConnection* controlPort);
-        lime::IConnection* serPort;
+        void Initialize(lms_device_t* controlPort);
+        lms_device_t* lmsControl;
 
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);

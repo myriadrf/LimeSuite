@@ -7,12 +7,13 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
-#include <LMS64CProtocol.h>
+#include <ILimeSDRStreaming.h>
 #include <vector>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
+#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -24,13 +25,11 @@
 #include <chrono>
 #endif
 
-struct USBStreamService;
-
 namespace lime{
-    
+
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
-class Connection_uLimeSDR : public LMS64CProtocol
+class Connection_uLimeSDR : public ILimeSDRStreaming
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -52,9 +51,7 @@ public:
         }
         ~USBTransferContext()
         {
-#ifndef __unix__
-
-#else
+#ifdef __unix__
             libusb_free_transfer(transfer);
 #endif
         }
@@ -85,61 +82,48 @@ public:
 
     virtual ~Connection_uLimeSDR(void);
 
-    virtual int Open(const unsigned index, const int vid, const int pid);
-    virtual void Close();
-    virtual bool IsOpen();
+    int Open(const unsigned index, const int vid, const int pid);
+    void Close();
+    bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0);
-
-    virtual int BeginDataReading(char *buffer, long length);
-    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-    virtual int FinishDataReading(char *buffer, long &length, int contextHandle);
-    virtual void AbortReading();
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms);
-
-    virtual int BeginDataSending(const char *buffer, long length);
-    virtual int WaitForSending(int contextHandle, unsigned int timeout_ms);
-    virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
-    virtual void AbortSending();
-
-    uint64_t GetHardwareTimestamp(void);
-    void SetHardwareTimestamp(const uint64_t now);
-    double GetHardwareTimestampRate(void);
-
-    //IConnection stream API implementation
-    std::string SetupStream(size_t &streamID, const StreamConfig &config);
-    void CloseStream(const size_t streamID);
-    size_t GetStreamSize(const size_t streamID);
-    bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
-    virtual int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
-    virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-    int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
+    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) override;
+    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
-    void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
-    void EnterSelfCalibration(const size_t channel);
-    void ExitSelfCalibration(const size_t channel);
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
+
 protected:
-    int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
+    virtual void ReceivePacketsLoop(const ThreadData args) override;
+    virtual void TransmitPacketsLoop(const ThreadData args) override;
+
+    virtual int BeginDataReading(char* buffer, uint32_t length);
+    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortReading();
+
+    virtual int BeginDataSending(const char* buffer, uint32_t length);
+    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortSending();
+
+    eConnectionType GetType(void) {return USB_PORT;}
+
+    USBTransferContext contexts[USB_MAX_CONTEXTS];
+    USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
+
+    bool isConnected;
+
     int mCtrlWrEndPtAddr;
     int mCtrlRdEndPtAddr;
     int mStreamWrEndPtAddr;
     int mStreamRdEndPtAddr;
 
-    eConnectionType GetType(void)
-    {
-        return USB_PORT;
-    }
-    USBTransferContext contexts[USB_MAX_CONTEXTS];
-    USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
-    bool isConnected;
     uint32_t txSize;
     uint32_t rxSize;
 #ifndef __unix__
-    FT_HANDLE mFTHandle;   
-#else  
+    FT_HANDLE mFTHandle;
+#else
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
@@ -147,8 +131,7 @@ protected:
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
 #endif
-    //! Stream service used by the stream and time API
-    std::shared_ptr<USBStreamService> mStreamService;
+
     std::mutex mExtraUsbMutex;
 };
 

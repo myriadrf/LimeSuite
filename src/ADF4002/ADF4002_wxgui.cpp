@@ -4,10 +4,9 @@
 @brief	panel for configuring ADF4002
 */
 
-#include "ADF4002.h"
 #include "ADF4002_wxgui.h"
-#include "IConnection.h"
 
+#include <vector>
 #include <wx/msgdlg.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -417,13 +416,12 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     //*)
 }
 
-void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
+void ADF4002_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    m_pModule = pModule;
-    serPort = pSerPort;
-    if (serPort != nullptr)
+    lmsControl = pSerPort;
+    if (lmsControl != nullptr)
     {
-        m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+        //m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
     }
 }
 
@@ -470,131 +468,94 @@ void ADF4002_wxgui::SetGuiDefaults()
 void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 {
     //reference counter latch
-    int ldp = cmbLDP->GetSelection();
-    int abw = cmbABW->GetSelection();
-    int rCount = spinRCnt->GetValue();
-    m_pModule->SetReferenceCounterLatch(ldp, abw, rCount);
-
+    lms_adf4002_conf_t config;
+    config.lockDetectPrec = cmbLDP->GetSelection();
+    config.antiBacklash = cmbABW->GetSelection();
+    config.referenceCounter = spinRCnt->GetValue();
     //n counter latch
-    int cpGain = cmbCPG->GetSelection();
-    int nCounter = spinNCnt->GetValue();
-    m_pModule->SetNCounterLatch(cpGain, nCounter);
-
+    config.cpGain = cmbCPG->GetSelection();
+    config.nCounter = spinNCnt->GetValue();
     //function latch
-    int currSetting1 = cmbCS1_f->GetSelection();
-    int currSetting2 = cmbCS2_f->GetSelection();
-    int tCounter = cmbTC_f->GetSelection();
-    int fastLock = cmbFL_f->GetSelection();
-    int muxControl = cmbMOC_f->GetSelection();
-
-    int pdPol = rgrPDP_f->GetSelection();
-    int pd1 = rgrPD1_f->GetSelection();
-    int pd2 = rgrPD2_f->GetSelection();
-    int counterReset = rgrCR_f->GetSelection();
-    int cpState = rgrCPS_f->GetSelection();
-    m_pModule->SetFunctionLatch(currSetting1, currSetting2, tCounter, fastLock, muxControl);
-    m_pModule->SetFunctionLatchRgr(pdPol, pd1,pd2, counterReset, cpState);
-
+    config.flCurrent1 = cmbCS1_f->GetSelection();
+    config.flCurrent2 = cmbCS2_f->GetSelection();
+    config.flTimerCounter = cmbTC_f->GetSelection();
+    config.flFastlock = cmbFL_f->GetSelection();
+    config.flMuxCtrl = cmbMOC_f->GetSelection();
+    config.flPDPolarity = rgrPDP_f->GetSelection();
+    config.flPD1 = rgrPD1_f->GetSelection();
+    config.flPD2 = rgrPD2_f->GetSelection();
+    config.flCounterReset = rgrCR_f->GetSelection();
+    config.flCPState = rgrCPS_f->GetSelection();
     //Initialization latch
-    currSetting1 = cmbCS1_i->GetSelection();
-    currSetting2 = cmbCS2_i->GetSelection();
-    tCounter = cmbTC_i->GetSelection();
-    fastLock = cmbFL_i->GetSelection();
-    muxControl = cmbMOC_i->GetSelection();
+    config.ilCurrent1 = cmbCS1_i->GetSelection();
+    config.ilCurrent2 = cmbCS2_i->GetSelection();
+    config.ilTimerCounter = cmbTC_i->GetSelection();
+    config.ilFastlock = cmbFL_i->GetSelection();
+    config.ilMuxCtrl = cmbMOC_i->GetSelection();
+    config.ilPDPolarity = rgrPDP_i->GetSelection();
+    config.ilPD1 = rgrPD1_i->GetSelection();
+    config.ilPD2 = rgrPD2_i->GetSelection();
+    config.ilCounterReset = rgrCR_i->GetSelection();
+    config.flCPState = rgrCPS_i->GetSelection();
 
-    pdPol = rgrPDP_i->GetSelection();
-    pd1 = rgrPD1_i->GetSelection();
-    pd2 = rgrPD2_i->GetSelection();
-    counterReset = rgrCR_i->GetSelection();
-    cpState = rgrCPS_i->GetSelection();
-    m_pModule->SetInitializationLatch(currSetting1, currSetting2, tCounter, fastLock, muxControl);
-    m_pModule->SetInitializationLatchRgr(pdPol, pd1,pd2, counterReset, cpState);
-
-    double fref = 0;
-    txtFref->GetValue().ToDouble(&fref);
-
-    double fvco = 0;
-    txtFvco->GetValue().ToDouble(&fvco);
-    m_pModule->SetFrefFvco(fref, fvco, rCount, nCounter);
-    spinNCnt->SetValue(nCounter);
-    spinRCnt->SetValue(rCount);
-
-    lblFcomp->SetLabel( wxString::Format("%f", m_pModule->lblFcomp));
-    lblFvco->SetLabel( wxString::Format("%f", m_pModule->lblFvco));
-
-    unsigned char data[12];
-    m_pModule->GetConfig(data);
-
-    vector<uint32_t> dataWr;
-    for(int i=0; i<12; i+=3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+    txtFref->GetValue().ToDouble(&config.fRef);
+    txtFvco->GetValue().ToDouble(&config.fVCO);
+    spinNCnt->SetValue(config.nCounter);
+    spinRCnt->SetValue(config.referenceCounter);
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = LMS_ConfigureADF4002(lmsControl,&config);
+    lblFcomp->SetLabel( wxString::Format("%f", config.fRef));
+    lblFvco->SetLabel( wxString::Format("%f", config.fVCO));
     if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
 
 void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 {
-    //reference counter latch
-    int ldp = cmbLDP->GetSelection();
-    int abw = cmbABW->GetSelection();
-    int rCount = spinRCnt->GetValue();
-    m_pModule->SetReferenceCounterLatch(ldp, abw, rCount);
-
+        //reference counter latch
+    lms_adf4002_conf_t config;
+    config.lockDetectPrec = cmbLDP->GetSelection();
+    config.antiBacklash = cmbABW->GetSelection();
+    config.referenceCounter = spinRCnt->GetValue();
     //n counter latch
-    int cpGain = cmbCPG->GetSelection();
-    int nCounter = spinNCnt->GetValue();
-    m_pModule->SetNCounterLatch(cpGain, nCounter);
-
+    config.cpGain = cmbCPG->GetSelection();
+    config.nCounter = spinNCnt->GetValue();
     //function latch
-    int currSetting1 = cmbCS1_f->GetSelection();
-    int currSetting2 = cmbCS2_f->GetSelection();
-    int tCounter = cmbTC_f->GetSelection();
-    int fastLock = cmbFL_f->GetSelection();
-    int muxControl = cmbMOC_f->GetSelection();
-
-    int pdPol = rgrPDP_f->GetSelection();
-    int pd1 = rgrPD1_f->GetSelection();
-    int pd2 = rgrPD2_f->GetSelection();
-    int counterReset = rgrCR_f->GetSelection();
-    int cpState = rgrCPS_f->GetSelection();
-    m_pModule->SetFunctionLatch(currSetting1, currSetting2, tCounter, fastLock, muxControl);
-    m_pModule->SetFunctionLatchRgr(pdPol, pd1,pd2, counterReset, cpState);
-
+    config.flCurrent1 = cmbCS1_f->GetSelection();
+    config.flCurrent2 = cmbCS2_f->GetSelection();
+    config.flTimerCounter = cmbTC_f->GetSelection();
+    config.flFastlock = cmbFL_f->GetSelection();
+    config.flMuxCtrl = cmbMOC_f->GetSelection();
+    config.flPDPolarity = rgrPDP_f->GetSelection();
+    config.flPD1 = rgrPD1_f->GetSelection();
+    config.flPD2 = rgrPD2_f->GetSelection();
+    config.flCounterReset = rgrCR_f->GetSelection();
+    config.flCPState = rgrCPS_f->GetSelection();
     //Initialization latch
-    currSetting1 = cmbCS1_i->GetSelection();
-    currSetting2 = cmbCS2_i->GetSelection();
-    tCounter = cmbTC_i->GetSelection();
-    fastLock = cmbFL_i->GetSelection();
-    muxControl = cmbMOC_i->GetSelection();
+    config.ilCurrent1 = cmbCS1_i->GetSelection();
+    config.ilCurrent2 = cmbCS2_i->GetSelection();
+    config.ilTimerCounter = cmbTC_i->GetSelection();
+    config.ilFastlock = cmbFL_i->GetSelection();
+    config.ilMuxCtrl = cmbMOC_i->GetSelection();
+    config.ilPDPolarity = rgrPDP_i->GetSelection();
+    config.ilPD1 = rgrPD1_i->GetSelection();
+    config.ilPD2 = rgrPD2_i->GetSelection();
+    config.ilCounterReset = rgrCR_i->GetSelection();
+    config.ilCPState = rgrCPS_i->GetSelection();
 
-    pdPol = rgrPDP_i->GetSelection();
-    pd1 = rgrPD1_i->GetSelection();
-    pd2 = rgrPD2_i->GetSelection();
-    counterReset = rgrCR_i->GetSelection();
-    cpState = rgrCPS_i->GetSelection();
-    m_pModule->SetInitializationLatch(currSetting1, currSetting2, tCounter, fastLock, muxControl);
-    m_pModule->SetInitializationLatchRgr(pdPol, pd1,pd2, counterReset, cpState);
-
-    double fref = 0;
-    txtFref->GetValue().ToDouble(&fref);
-    double fvco = 0;
-    txtFvco->GetValue().ToDouble(&fvco);
-    spinNCnt->SetValue(nCounter);
-    spinRCnt->SetValue(rCount);
-    unsigned char data[12];
-    m_pModule->GetConfig(data);
-
-    vector<uint32_t> dataWr;
-    for(int i=0; i<12; i+=3)
-        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+    config.fRef=-1;
+    config.fVCO=-1;
+    
+    spinNCnt->SetValue(config.nCounter);
+    spinRCnt->SetValue(config.referenceCounter);
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = LMS_ConfigureADF4002(lmsControl,&config);
+    lblFcomp->SetLabel( wxString::Format("%f", config.fRef));
+    lblFvco->SetLabel( wxString::Format("%f", config.fVCO));
     if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }

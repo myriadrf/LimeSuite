@@ -504,7 +504,7 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
         }
     }
 
-    unsigned int bestScore = 0; //score shows how many outputs have integer dividers
+    int bestScore = 0; //score shows how many outputs have integer dividers
     //calculate scores for all available frequencies
     unsigned long bestVCOA = 0;
     for (map<unsigned long, int>::iterator it=availableFrequenciesPLLA.begin(); it!=availableFrequenciesPLLA.end(); ++it)

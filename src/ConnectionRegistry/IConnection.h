@@ -127,7 +127,9 @@ struct StreamConfig
      *  - Example MIMO on RFIC0: [0, 1]
      *  - Example MIMO on RFIC1: [2, 3]
      */
-    std::vector<size_t> channels;
+    uint8_t channelID;
+
+    float performanceLatency;
 
     //! Possible stream data formats
     enum StreamDataFormat
@@ -270,7 +272,7 @@ public:
      * @param txRate the baseband transmit data rate in Hz (BBIC to RFIC)
      * @param rxRate the baseband receive data rate in Hz (RFIC to BBIC)
      */
-    virtual void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
 
     /*!
      * Called by the LMS7002M driver before the board begins self-calibration.
@@ -305,7 +307,7 @@ public:
      * Some implementations use the programmable Si5351C.
      * @param rate the clock rate in Hz
      */
-    virtual void SetReferenceClockRate(const double rate);
+    virtual int SetReferenceClockRate(const double rate);
 
     /*!
      * Query the TX frequency of the reference clock.
@@ -321,7 +323,7 @@ public:
      * this call simply forwards to SetReferenceClockRate()
      * @param rate the clock rate in Hz
      */
-    virtual void SetTxReferenceClockRate(const double rate);
+    virtual int SetTxReferenceClockRate(const double rate);
 
     /***********************************************************************
      * Timestamp API
@@ -359,16 +361,17 @@ public:
      *
      * @param [out] streamID the configured stream identifier
      * @param config the requested stream configuration
-     * @return an error message or empty string on success
+     * @return 0-success, other failure
      */
-    virtual std::string SetupStream(size_t &streamID, const StreamConfig &config);
+    virtual int SetupStream(size_t &streamID, const StreamConfig &config);
 
     /*!
      * Close an open stream give the stream ID.
      * This invalidates the stream ID
      * @param streamID the configured stream identifier
+     * @return 0-success, other failure
      */
-    virtual void CloseStream(const size_t streamID);
+    virtual int CloseStream(const size_t streamID);
 
     /*!
      * Get the transfer size per buffer in samples.
@@ -384,21 +387,15 @@ public:
     /*!
      * Control streaming activation, bursts, and timing.
      * While SetupStream() sets up and allocates resources,
-     * ControlStream() is resonsible for dis/enabling the
-     * stream and providing advanced burst and timing controls.
+     * ControlStream() is resonsible for dis/enabling the stream
      *
      * - Use enable to activate/deactivate the stream.
-     * - Use the metadata's optional timestamp to control stream time
-     * - Use the metadata's end of burst to request stream bursts
-     * - Without end of burst, the burstSize affects continuous streaming
      *
      * @param streamID the stream index number
      * @param enable true to enable streaming, false to halt streaming
-     * @param burstSize the burst size when metadata has end of burst
-     * @param metadata time and burst options
      * @return true for success, otherwise false
      */
-    virtual bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
+    virtual int ControlStream(const size_t streamID, const bool enable);
 
     /*!
      * Read blocking data from the stream into the specified buffer.
@@ -410,7 +407,7 @@ public:
      * @param [out] metadata optional stream metadata
      * @return the number of samples read or error code
      */
-    virtual int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
+    virtual int ReadStream(const size_t streamID, void* buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
 
     /*!
      * Write blocking data into the stream from the specified buffer.
@@ -425,7 +422,7 @@ public:
      * @param metadata optional stream metadata
      * @return the number of samples written or error code
      */
-    virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
+    virtual int WriteStream(const size_t streamID, const void *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
 
     /*!
      * Read reported stream status events such as
@@ -437,6 +434,14 @@ public:
      * @return 0 on success, -1 for timeout no data
      */
     virtual int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
+
+    /**	@brief Uploads waveform to on board memory for later use
+    @param samples multiple channel samples data
+    @param chCount number of waveform channels
+    @param sample_count number of samples in each channel
+    @param format waveform data format
+    */
+    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format);
 
     /***********************************************************************
      * Programming API
@@ -463,6 +468,24 @@ public:
         @return the operation success state
     */
     virtual int ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
+
+    enum MCU_PROG_MODE
+    {
+        RESET = 0,
+        EEPROM_AND_SRAM,
+        SRAM,
+        BOOT_SRAM_FROM_EEPROM
+    };
+    /** @brief Uploads program to MCU
+        @param buffer binary program data
+        @param length buffer length
+        @param mode MCU programing mode RESET, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM
+        @param callback callback for progress reporting or early termination
+        @return 0-success
+
+        This could be a quite long operation, use callback to get progress info or to terminate early
+    */
+    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
 
     /***********************************************************************
      * GPIO API
@@ -524,7 +547,7 @@ public:
 	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
 
     /** @brief Returns value of custom on board control
 	@param ids indexes of controls to read
@@ -533,23 +556,7 @@ public:
 	@param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
-
-    /***********************************************************************
-     * !!! Below is the old IConnection Streaming API
-     * It remains here to enable compiling until its replaced
-     **********************************************************************/
-
-	virtual int BeginDataReading(char *buffer, long length){ return -1; };
-	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataReading(char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortReading(){};
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms){ return 0; }
-
-	virtual int BeginDataSending(const char *buffer, long length){ return -1; };
-	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortSending(){};
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
 
     /** @brief Sets callback function which gets called each time data is sent or received
     */
@@ -572,6 +579,55 @@ int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     data = ReadType(data32);
     return st;
 }
+
+class IStreamChannel
+{
+public:
+    struct Info
+    {
+        float sampleRate;
+        int fifoSize;
+        int fifoItemsCount;
+        int overrun;
+        int underrun;
+        bool active;
+        float linkRate;
+        int droppedPackets;
+        uint64_t timestamp;
+    };
+    IStreamChannel(){};
+    IStreamChannel(IConnection* port){};
+    virtual int Start() = 0;
+    virtual int Stop() = 0;
+    virtual ~IStreamChannel(){};
+
+    struct Metadata
+    {
+        enum
+        {
+            SYNC_TIMESTAMP = 1,
+        };
+        uint64_t timestamp;
+        uint32_t flags;
+    };
+
+    /** @brief Returns samples from receiver FIFO
+        @param samples destination array of data type used in SetupStream()
+        @param count number of samples to read
+        @param
+        @return number of samples received
+    */
+    virtual int Read(void* samples, const uint32_t count, Metadata* metadata, const int32_t timeout_ms = 100) = 0;
+
+    /** @brief Writes samples to transmitter FIFO
+        @param samples source array of data type used in SetupStream()
+        @param count number of samples to write
+        @return number of samples transmitted
+    */
+    virtual int Write(const void* samples, const uint32_t count, const Metadata* metadata, const int32_t timeout_ms = 100) = 0;
+
+    virtual Info GetInfo() = 0;
+};
 
 }
 #endif

@@ -1,35 +1,42 @@
 #include "dlgDeviceInfo.h"
-#include "IConnection.h"
 
-using namespace lime;
 
 dlgDeviceInfo::dlgDeviceInfo(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
 dlgDeviceInfo_view( parent, id, title, pos, size, styles)
 {
-    ctrPort = nullptr;
-    dataPort = nullptr;
+    lmsControl = nullptr;
+
 }
 
-void dlgDeviceInfo::Initialize(IConnection* pCtrPort, IConnection* pDataPort)
+void dlgDeviceInfo::Initialize(lms_device_t* lms)
 {
-    ctrPort = pCtrPort;
-    dataPort = pDataPort;
+    lmsControl = lms;
 }
 
 void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
 {
-    if (ctrPort != nullptr && ctrPort->IsOpen() == true)
+    const lms_dev_info_t* info;
+
+    if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
-        auto info = ctrPort->GetDeviceInfo();
-        lblDeviceCtr->SetLabel(info.deviceName);
-        lblExpansionCtr->SetLabel(info.expansionName);
-        lblFirmwareCtr->SetLabel(info.firmwareVersion);
-        lblHardwareCtr->SetLabel(info.hardwareVersion);
-        lblProtocolCtr->SetLabel(info.protocolVersion);
-        lblGatewareCtr->SetLabel(info.gatewareVersion);
-        lblGatewareRevCtr->SetLabel(info.gatewareRevision);
-        lblGatewareTargetCtr->SetLabel(info.gatewareTargetBoard);
+        lblDeviceCtr->SetLabel(info->deviceName);
+        lblExpansionCtr->SetLabel(info->expansionName);
+        lblFirmwareCtr->SetLabel(info->firmwareVersion);
+        lblHardwareCtr->SetLabel(info->hardwareVersion);
+        lblProtocolCtr->SetLabel(info->protocolVersion);
+        lblGatewareCtr->SetLabel(info->gatewareVersion);
+        lblGatewareRevCtr->SetLabel(info->gatewareRevision);
+        lblGatewareTargetCtr->SetLabel(info->gatewareTargetBoard);
+
+        lblDeviceData->SetLabel(info->deviceName);
+        lblExpansionData->SetLabel(info->expansionName);
+        lblFirmwareData->SetLabel(info->firmwareVersion);
+        lblHardwareData->SetLabel(info->hardwareVersion);
+        lblProtocolData->SetLabel(info->protocolVersion);
+        lblGatewareData->SetLabel(info->gatewareVersion);
+        lblGatewareRevData->SetLabel(info->gatewareRevision);
+        lblGatewareTargetData->SetLabel(info->gatewareTargetBoard);
     }
     else
     {
@@ -41,22 +48,7 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblGatewareCtr->SetLabel(_("???"));
         lblGatewareRevCtr->SetLabel(_("???"));
         lblGatewareTargetCtr->SetLabel(_("???"));
-    }
 
-    if (dataPort != nullptr && dataPort->IsOpen() == true)
-    {
-        auto info = dataPort->GetDeviceInfo();
-        lblDeviceData->SetLabel(info.deviceName);
-        lblExpansionData->SetLabel(info.expansionName);
-        lblFirmwareData->SetLabel(info.firmwareVersion);
-        lblHardwareData->SetLabel(info.hardwareVersion);
-        lblProtocolData->SetLabel(info.protocolVersion);
-        lblGatewareData->SetLabel(info.gatewareVersion);
-        lblGatewareRevData->SetLabel(info.gatewareRevision);
-        lblGatewareTargetData->SetLabel(info.gatewareTargetBoard);
-    }
-    else
-    {
         lblDeviceData->SetLabel(_("???"));
         lblExpansionData->SetLabel(_("???"));
         lblFirmwareData->SetLabel(_("???"));
@@ -66,4 +58,6 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblGatewareRevData->SetLabel(_("???"));
         lblGatewareTargetData->SetLabel(_("???"));
     }
+
+
 }

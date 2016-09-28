@@ -61,7 +61,7 @@ string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 
 #gcc c++11 enable flags
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall")
 endif()
 
 #visual studio compiler flags

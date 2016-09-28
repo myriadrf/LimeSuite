@@ -1,6 +1,4 @@
 #include "lms7002_pnlTBB_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
@@ -17,28 +15,28 @@ pnlTBB_view( parent )
 lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlTBB_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    wndId2Enum[chkBYPLADDER_TBB] = BYPLADDER_TBB;
-    wndId2Enum[cmbCCAL_LPFLAD_TBB] = CCAL_LPFLAD_TBB;
-    wndId2Enum[cmbCG_IAMP_TBB] = CG_IAMP_TBB;
-    wndId2Enum[chkEN_G_TBB] = EN_G_TBB;
-    wndId2Enum[cmbICT_IAMP_FRP_TBB] = ICT_IAMP_FRP_TBB;
-    wndId2Enum[cmbICT_IAMP_GG_FRP_TBB] = ICT_IAMP_GG_FRP_TBB;
-    wndId2Enum[cmbICT_LPFH_F_TBB] = ICT_LPFH_F_TBB;
-    wndId2Enum[cmbICT_LPFLAD_F_TBB] = ICT_LPFLAD_F_TBB;
-    wndId2Enum[cmbICT_LPFLAD_PT_TBB] = ICT_LPFLAD_PT_TBB;
-    wndId2Enum[cmbICT_LPFS5_F_TBB] = ICT_LPFS5_F_TBB;
-    wndId2Enum[cmbICT_LPFS5_PT_TBB] = ICT_LPFS5_PT_TBB;
-    wndId2Enum[cmbICT_LPF_H_PT_TBB] = ICT_LPF_H_PT_TBB;
-    wndId2Enum[cmbLOOPB_TBB] = LOOPB_TBB;
-    wndId2Enum[chkPD_LPFH_TBB] = PD_LPFH_TBB;
-    wndId2Enum[chkPD_LPFIAMP_TBB] = PD_LPFIAMP_TBB;
-    wndId2Enum[chkPD_LPFLAD_TBB] = PD_LPFLAD_TBB;
-    wndId2Enum[chkPD_LPFS5_TBB] = PD_LPFS5_TBB;
-    wndId2Enum[cmbRCAL_LPFH_TBB] = RCAL_LPFH_TBB;
-    wndId2Enum[cmbRCAL_LPFLAD_TBB] = RCAL_LPFLAD_TBB;
-    wndId2Enum[cmbRCAL_LPFS5_TBB] = RCAL_LPFS5_TBB;
-    wndId2Enum[cmbTSTIN_TBB] = TSTIN_TBB;
-    wndId2Enum[chkEN_DIR_TBB] = EN_DIR_TBB;
+    wndId2Enum[chkBYPLADDER_TBB] = LMS7param(BYPLADDER_TBB);
+    wndId2Enum[cmbCCAL_LPFLAD_TBB] = LMS7param(CCAL_LPFLAD_TBB);
+    wndId2Enum[cmbCG_IAMP_TBB] = LMS7param(CG_IAMP_TBB);
+    wndId2Enum[chkEN_G_TBB] = LMS7param(EN_G_TBB);
+    wndId2Enum[cmbICT_IAMP_FRP_TBB] = LMS7param(ICT_IAMP_FRP_TBB);
+    wndId2Enum[cmbICT_IAMP_GG_FRP_TBB] = LMS7param(ICT_IAMP_GG_FRP_TBB);
+    wndId2Enum[cmbICT_LPFH_F_TBB] = LMS7param(ICT_LPFH_F_TBB);
+    wndId2Enum[cmbICT_LPFLAD_F_TBB] = LMS7param(ICT_LPFLAD_F_TBB);
+    wndId2Enum[cmbICT_LPFLAD_PT_TBB] = LMS7param(ICT_LPFLAD_PT_TBB);
+    wndId2Enum[cmbICT_LPFS5_F_TBB] = LMS7param(ICT_LPFS5_F_TBB);
+    wndId2Enum[cmbICT_LPFS5_PT_TBB] = LMS7param(ICT_LPFS5_PT_TBB);
+    wndId2Enum[cmbICT_LPF_H_PT_TBB] = LMS7param(ICT_LPF_H_PT_TBB);
+    wndId2Enum[cmbLOOPB_TBB] = LMS7param(LOOPB_TBB);
+    wndId2Enum[chkPD_LPFH_TBB] = LMS7param(PD_LPFH_TBB);
+    wndId2Enum[chkPD_LPFIAMP_TBB] = LMS7param(PD_LPFIAMP_TBB);
+    wndId2Enum[chkPD_LPFLAD_TBB] = LMS7param(PD_LPFLAD_TBB);
+    wndId2Enum[chkPD_LPFS5_TBB] = LMS7param(PD_LPFS5_TBB);
+    wndId2Enum[cmbRCAL_LPFH_TBB] = LMS7param(RCAL_LPFH_TBB);
+    wndId2Enum[cmbRCAL_LPFLAD_TBB] = LMS7param(RCAL_LPFLAD_TBB);
+    wndId2Enum[cmbRCAL_LPFS5_TBB] = LMS7param(RCAL_LPFS5_TBB);
+    wndId2Enum[cmbTSTIN_TBB] = LMS7param(TSTIN_TBB);
+    wndId2Enum[chkEN_DIR_TBB] = LMS7param(EN_DIR_TBB);
 
     wxArrayString temp;
     temp.clear();
@@ -73,7 +71,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlTBB_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlTBB_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -101,16 +99,19 @@ void lms7002_pnlTBB_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlTBB_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&value);
+    if (value >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
+        if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
 }
@@ -119,25 +120,31 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
 {
     double input1;
     txtFilterFrequency->GetValue().ToDouble(&input1);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
     if(rgrTxFilterType->GetSelection() == 0)
     {
-        status = lmsControl->TuneTxFilter(input1*1e6);
+        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
     }
     else
     {
+        LPF_FixedBW bw;
         switch(cmbTxFixedBW->GetSelection())
         {
-        case 0: input1 = 5; break;
-        case 1: input1 = 10; break;
-        case 2: input1 = 15; break;
-        case 3: input1 = 20; break;
+        case 0: bw = LPF_BW_5_MHz; break;
+        case 1: bw = LPF_BW_10_MHz; break;
+        case 2: bw = LPF_BW_15_MHz; break;
+        case 3: bw = LPF_BW_20_MHz; break;
+        default: bw = LPF_BW_5_MHz;
         }
-        status = lmsControl->TuneTxFilterFixed(input1*1e6);
-    }   
+        status = LMS_SetLPFBWFixed(lmsControl,LMS_CH_TX,ch-1,bw);
+    }
+
     if (status != 0)
-        wxMessageBox(wxString(_("Tx Filter tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
-    lmsControl->DownloadAll();
+        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+
+    LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }
 

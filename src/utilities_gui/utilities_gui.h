@@ -37,9 +37,7 @@ class dlgConnectionSettings_view : public wxDialog
 	
 	protected:
 		wxStaticText* m_staticText472;
-		wxStaticText* m_staticText473;
 		wxListBox* mListLMS7ports;
-		wxListBox* mListStreamports;
 		wxButton* btnConnect;
 		wxButton* btnCancel;
 		wxButton* btnDisconnect;

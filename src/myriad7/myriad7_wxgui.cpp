@@ -3,7 +3,6 @@
 @author Lime Microsystems
 @brief	panel for controlling Myriad7 board GPIO
 */
-#include "myriad7_wxgui.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -11,7 +10,7 @@
 #include <wx/combobox.h>
 #include <wx/msgdlg.h>
 
-#include "IConnection.h"
+#include "myriad7_wxgui.h"
 #include <LMSBoards.h>
 
 using namespace lime;
@@ -62,40 +61,45 @@ Myriad7_wxgui::~Myriad7_wxgui()
 {
 }
 
-void Myriad7_wxgui::Initialize(IConnection* pSerPort)
+void Myriad7_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    serPort = pSerPort;
+    lmsControl = pSerPort;
 }
 
 void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 {
-    if (serPort == nullptr)
+    if (lmsControl == nullptr)
         return;
     unsigned rxInput = cmbGPIO_1_0->GetSelection();
     unsigned txOutput = cmbGPIO2->GetSelection();
     uint8_t value = txOutput << 2 | rxInput;
 
     int status;
-    status = serPort->GPIOWrite(&value, 1);
+    status = LMS_GPIOWrite(lmsControl,&value,1);
 
     if (status != 0)
     {
-        wxMessageBox(wxString::Format(_("Failed to write Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(wxString::Format(_("Failed to write Myriad7 GPIOs: %s"), LMS_GetLastErrorMessage()), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
 }
 
 void Myriad7_wxgui::UpdatePanel()
 {
-    if (serPort == nullptr || serPort->GetDeviceInfo().expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
+    if (lmsControl == nullptr)
         return;
+    const lms_dev_info_t* info;
+	if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
+		return;
+    if (info->expansionName != GetExpansionBoardName(EXP_BOARD_MYRIAD7))
+            return;
 
     uint8_t dataRd[64];
-    int status = serPort->GPIORead(dataRd, 64);
+    int status = LMS_GPIORead(lmsControl,dataRd, 64);
 
     if (status != 0)
     {
-        wxMessageBox(wxString::Format(_("Failed to read Myriad7 GPIOs: reason %i"), status), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(wxString::Format(_("Failed to read Myriad7 GPIOs: %s"), LMS_GetLastErrorMessage()), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     cmbGPIO_1_0->SetSelection(dataRd[0] & 0x3);

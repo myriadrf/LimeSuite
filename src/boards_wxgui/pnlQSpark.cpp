@@ -1,5 +1,3 @@
-#include "pnlQSpark.h"
-
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/button.h>
@@ -10,11 +8,10 @@
 #include <wx/msgdlg.h>
 #include <wx/radiobox.h>
 
+#include "pnlQSpark.h"
 #include <ciso646>
 #include <map>
 
-#include <IConnection.h>
-#include <ErrorReporting.h>
 #include <FPGA_common.h>
 using namespace lime;
 using namespace std;
@@ -35,7 +32,7 @@ pnlQSpark::Register::Register(unsigned short address, unsigned char msb, unsigne
 
 pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, const wxPoint& pos,const wxSize& size, int style, wxString name)
 {
-    m_serPort = nullptr;
+    lmsControl = nullptr;
 
     wxFlexGridSizer* FlexGridSizer1;
 
@@ -235,9 +232,9 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     controlsPtr2Registers[cmbInsel] = Register(0x0060, 2, 2, 0);
 }
 
-void pnlQSpark::Initialize(IConnection* pControl)
+void pnlQSpark::Initialize(lms_device_t* pControl)
 {
-    m_serPort = pControl;
+    lmsControl = pControl;
 }
 
 void pnlQSpark::UpdatePanel()
@@ -251,7 +248,7 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     if (controlsPtr2Registers.find(event.GetEventObject()) == controlsPtr2Registers.end())
         return; //control not found in the table
 
-    if (not m_serPort || not m_serPort->IsOpen())
+    if (!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -260,14 +257,14 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     Register reg = controlsPtr2Registers[event.GetEventObject()];
     unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
-    unsigned short regValue;
-    m_serPort->ReadRegister(reg.address, regValue);
+    uint16_t regValue;
+    LMS_ReadFPGAReg(lmsControl,reg.address,&regValue);
 
     regValue &= ~mask;
     regValue |= (event.GetInt() << reg.lsb) & mask;
 
-    if(m_serPort->WriteRegister(reg.address, regValue) != 0)
-        wxMessageBox(GetLastErrorMessage(), "Error");
+    if(LMS_WriteFPGAReg(lmsControl, reg.address, regValue) != 0)
+        wxMessageBox(LMS_GetLastErrorMessage(), wxString::Format("%s", LMS_GetLastErrorMessage()));
 }
 
 pnlQSpark::~pnlQSpark()
@@ -277,7 +274,7 @@ pnlQSpark::~pnlQSpark()
 
 void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
 {
-    if(m_serPort == nullptr)
+    if (!LMS_IsOpen(lmsControl,1))
     {
         wxMessageBox(_("Update GUI: device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -291,9 +288,9 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
     {
         Register reg = iter->second;
         unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
-        unsigned short value;
+        uint16_t value;
 
-        m_serPort->ReadRegister(reg.address, value);
+        LMS_ReadFPGAReg(lmsControl,reg.address,&value);
 
         value = value & mask;
         value = value >> reg.lsb;
@@ -311,7 +308,6 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     double FreqTxMHz, FreqRxMHz;
     txtPllFreqTxMHz->GetValue().ToDouble(&FreqTxMHz);
     txtPllFreqRxMHz->GetValue().ToDouble(&FreqRxMHz);
-    double phaseOffset = 180;
 
     lime::fpga::FPGA_PLL_clock clocks[2];
     //ADC
@@ -326,9 +322,12 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     clocks[1].outFrequency = FreqTxMHz*1e6;
     clocks[1].phaseShift_deg = 0;
 
-    if(lime::fpga::SetPllFrequency(m_serPort, 2, 30.72e6, clocks, 2) != 0)
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
-    else
+//  TODO
+    wxMessageBox(_("Not implemented"), _("Error"), wxICON_ERROR | wxOK);
+    return;
+//  if(lime::fpga::SetPllFrequency(m_serPort, 2, 30.72e6, clocks, 2) != 0)
+//      wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+//  else
     {
         OnNcoFrequencyChanged(event);
         lblRealFreqTx->SetLabel(wxString::Format("Real: %g MHz", clocks[1].rd_actualFrequency / 1e6));
@@ -344,6 +343,18 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
     uint32_t fcw = (uint32_t)((ncoFreq_MHz / refClk_MHz) * 4294967296);
     vector<uint32_t> addrs = { 0x006E, 0x006F };
     vector<uint32_t> values = { (fcw >> 16) & 0xFFFF, fcw & 0xFFFF };
-    if(m_serPort && m_serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+    if (!LMS_IsOpen(lmsControl,1))
+    {
+        wxMessageBox(_("Update GUI: device not connected"), _("Error"), wxICON_ERROR | wxOK);
+        return;
+    }
+
+    for (size_t i = 0; i <values.size();i++)
+    {
+        if (LMS_WriteFPGAReg(lmsControl,addrs[i],values[i]) !=0)
+        {
+            wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+            return;
+        }
+    }
 }

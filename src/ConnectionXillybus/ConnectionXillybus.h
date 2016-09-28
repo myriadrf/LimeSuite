@@ -6,13 +6,13 @@
 
 #pragma once
 #include <ConnectionRegistry.h>
-#include <IConnection.h>
-#include <LMS64CProtocol.h>
+#include <ILimeSDRStreaming.h>
 #include <vector>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
+#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -22,15 +22,12 @@
 #include <chrono>
 #endif
 
-struct USBStreamService;
-
 namespace lime{
 
-class ConnectionXillybus : public LMS64CProtocol
+class ConnectionXillybus : public ILimeSDRStreaming
 {
 public:
     ConnectionXillybus(const unsigned index);
-
     ~ConnectionXillybus(void);
 
 	int Open(const unsigned index);
@@ -38,41 +35,27 @@ public:
 	bool IsOpen();
 	int GetOpenedIndex();
 
-	int Write(const unsigned char *buffer, int length, int timeout_ms = 0);
-	int Read(unsigned char *buffer, int length, int timeout_ms = 0);
-
-	virtual int BeginDataReading(char *buffer, long length);
-	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-	virtual int FinishDataReading(char *buffer, long &length, int contextHandle);
-	virtual void AbortReading();
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms);
-
-	virtual int BeginDataSending(const char *buffer, long length);
-	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms);
-	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle);
-	virtual void AbortSending();
-
-	uint64_t GetHardwareTimestamp(void);
-	void SetHardwareTimestamp(const uint64_t now);
-	double GetHardwareTimestampRate(void);
-
-	//IConnection stream API implementation
-	std::string SetupStream(size_t &streamID, const StreamConfig &config);
-	void CloseStream(const size_t streamID);
-	size_t GetStreamSize(const size_t streamID);
-	bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
-	int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
-	int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-	int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
+	int Write(const unsigned char *buffer, int length, int timeout_ms = 0) override;
+	int Read(unsigned char *buffer, int length, int timeout_ms = 0) override;
 
 	//hooks to update FPGA plls when baseband interface data rate is changed
-	void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
-	void EnterSelfCalibration(const size_t channel);
-	void ExitSelfCalibration(const size_t channel);
+	int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
 protected:
+    virtual void ReceivePacketsLoop(const ThreadData args) override;
+    virtual void TransmitPacketsLoop(const ThreadData args) override;
+
+    virtual int BeginDataReading(char* buffer, uint32_t length);
+    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortReading();
+
+    virtual int BeginDataSending(const char* buffer, uint32_t length);
+    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortSending();
+
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
-
     eConnectionType GetType(void)
     {
         return USB_PORT;
@@ -83,24 +66,19 @@ private:
 
     bool isConnected;
 
-    //! Stream service used by the stream and time API
-    std::shared_ptr<USBStreamService> mStreamService;
-
 #ifndef __unix__
     HANDLE hWrite;
-    HANDLE hRead;	
+    HANDLE hRead;
     HANDLE hWriteStream;
-    HANDLE hReadStream;	
-    std::string writeStreamPort;
-    std::string readStreamPort;
+    HANDLE hReadStream;
 #else
     int hWrite;
-    int hRead;	
+    int hRead;
     int hWriteStream;
     int hReadStream;
+#endif
     std::string writeStreamPort;
     std::string readStreamPort;
-#endif
 };
 
 

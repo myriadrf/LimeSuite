@@ -2,6 +2,7 @@
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    lime/LimeSuite.h
     VersionInfo.h
     ErrorReporting.h
     LimeSuiteConfig.h
@@ -12,21 +13,19 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/IConnection.h
     ConnectionRegistry/ConnectionHandle.h
     ConnectionRegistry/ConnectionRegistry.h
-    lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
+    protocols/ILimeSDRStreaming.cpp
     protocols/LMSBoards.h
-    LTEpackets/dataTypes.h
-    LTEpackets/fifo.h
-    LTEpackets/StreamerLTE.h
+    protocols/dataTypes.h
+    protocols/fifo.h
     Si5351C/Si5351C.h
-    LMS_StreamBoard/LMS_StreamBoard.h
-    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
     FPGA_common/FPGA_common.h
+    lime/LimeSuite.h
 )
 
 include(FeatureSummary)
@@ -50,7 +49,6 @@ set(LIME_SUITE_SOURCES
     ConnectionRegistry/IConnection.cpp
     ConnectionRegistry/ConnectionHandle.cpp
     ConnectionRegistry/ConnectionRegistry.cpp
-    lms7002m_novena/StreamerNovena.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
@@ -60,16 +58,19 @@ set(LIME_SUITE_SOURCES
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     protocols/LMS64CProtocol.cpp
-    LTEpackets/StreamerLTE.cpp
+    protocols/ILimeSDRStreaming.cpp
     Si5351C/Si5351C.cpp
-    LMS_StreamBoard/LMS_StreamBoard.cpp
     kissFFT/kiss_fft.c
+    API/lms7_api.cpp
+    API/lms7_device.cpp
     FPGA_common/FPGA_common.cpp
     windowFunction.cpp
 )
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
+    API
+    GFIR
     protocols
     ConnectionRegistry
     lms7002m_mcu
@@ -77,10 +78,8 @@ set(LIME_SUITE_INCLUDES
     Si5351C
     lms7002m
     LTEpackets
-    LMS_StreamBoard
     FPGA_common
     lms7002m_mcu
-    lms7002m_novena
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
     kissFFT
@@ -103,7 +102,8 @@ include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "SQLITE3_FOUND" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
-    add_library(LimeSuite ${LIME_SUITE_SOURCES})
+
+    add_library(LimeSuite SHARED ${LIME_SUITE_SOURCES})
     target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
@@ -116,6 +116,13 @@ if (ENABLE_LIBRARY)
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
+	
+	if (MSVC)
+		set_target_properties(LimeSuite PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+	endif(MSVC)
+
+    add_subdirectory(GFIR)
+    set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
 ########################################################################
@@ -123,6 +130,7 @@ endif()
 ########################################################################
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionSTREAM/CMakeLists.txt)
+include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 include(ConnectionNovenaRF7/CMakeLists.txt)
 include(Connection_uLimeSDR/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
@@ -132,7 +140,7 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
 )
 
-target_sources(LimeSuite PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
+target_sources(LimeSuite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
 
 ########################################################################
 ## wx widgets dependency
@@ -186,7 +194,7 @@ set(LMS7SUITE_GUI_SOURCES
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    lms7002m_novena/lms7002m_novena_wxgui.cpp
+    boards_wxgui/lms7002m_novena_wxgui.cpp
     RFSpark/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
@@ -201,6 +209,8 @@ set(LMS7SUITE_GUI_SOURCES
     lms7suiteEvents/lms7suiteEvents.cpp
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
+    kissFFT/kiss_fft.c
+    windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
 )
 
@@ -231,7 +241,7 @@ if (ENABLE_LMS7_GUI)
     target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
-        set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+		set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
     endif(MSVC)
 
     install(TARGETS lms7suite DESTINATION bin)
@@ -248,13 +258,6 @@ if(AUTO_UPDATE_VERSION)
 endif()
 
 ########################################################################
-# Lime Util -- command line utility, info and connections
-########################################################################
-add_executable(LimeUtil LimeUtil.cpp)
-target_link_libraries(LimeUtil LimeSuite)
-install(TARGETS LimeUtil DESTINATION bin)
-
-########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
@@ -265,10 +268,20 @@ endif()
 #########################################################################
 # tests
 #########################################################################
-include_directories(utilityTools)
-set(utility_src_files utilityTools/pllTest.cpp)
-add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
-target_link_libraries(utilityTools LimeSuite)
+set(BUILD_UTILITIES OFF CACHE BOOL "Additional utility programs for testing")
+if(BUILD_UTILITIES)
+    include_directories(utilityTools)
+    set(utility_src_files utilityTools/pllTest.cpp)
+    add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
+    target_link_libraries(utilityTools LimeSuite)
+	
+########################################################################
+# Lime Util -- command line utility, info and connections
+########################################################################
+	add_executable(Limef LimeUtil.cpp)
+	target_link_libraries(LimeUtil LimeSuite)
+	install(TARGETS LimeUtil DESTINATION bin)
+endif()
 
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
@@ -278,3 +291,9 @@ if(BUILD_TESTS)
     target_link_libraries(RxTest2 LimeSuite)
     add_subdirectory(tests)
 endif()
+
+set(BUILD_EXAMPLES ON CACHE BOOL "API Examples")
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+

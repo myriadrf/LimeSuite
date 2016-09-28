@@ -11,34 +11,99 @@
 #include <vector>
 #include <stdio.h>
 #include <cmath>
+#include <chrono>
+#include <fstream>
+#include "dataTypes.h"
 #define LMS_VERBOSE_OUTPUT
 
+#include "LMS7002M_RegistersMap.h"
+
+#ifdef LMS_VERBOSE_OUTPUT
+static const bool verboseEnabled = true;
+#else
+static const bool verboseEnabled = false;
+#endif
+
+using namespace std;
+
+namespace lime{
+
+enum SearchTarget
+    {
+        NONE,
+        RX_DC_I,
+        RX_DC_Q,
+        TX_DC_I,
+        TX_DC_Q,
+        RX_IQ_GAIN,
+        RX_IQ_PHASE,
+        TX_IQ_GAIN,
+        TX_IQ_PHASE
+    };
+
+struct BinSearchParam
+{
+    LMS7Parameter param;
+    int16_t result;
+    int16_t minValue;
+    int16_t maxValue;
+    SearchTarget target;
+};
+
+struct GridSearchParam
+{
+    BinSearchParam a;
+    BinSearchParam b;
+    uint32_t signalLevel;
+};
+
+}
+
+static const char cSquaresLine[] =
+    "############################################################\n";
+static const char cDashLine[] =
+    "------------------------------------------------------------\n";
+
+#define verbose_printf(...) \
+    do { if (verboseEnabled) {\
+        fprintf(stderr, __VA_ARGS__);\
+    }} while (0)
+
 ///define for parameter enumeration if prefix might be needed
-#define LMS7param(id) id
+#define LMS7param(id) LMS7_ ## id
 
 using namespace lime;
 
-float_type calibUserBwDivider = 5;
-const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
+static const float_type calibUserBwDivider = 5;
+static const uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
 #define MCU_FUNCTION_READ_RSSI 3
 #define MCU_FUNCTION_UPDATE_REF_CLK 4
 
-#define ENABLE_CALIBRATION_USING_FFT
+//#define ENABLE_CALIBRATION_USING_FFT
 
+#include "goertzel.h"
+
+int fftBin = 0; //which bin to use when calibrating using FFT
 #ifdef ENABLE_CALIBRATION_USING_FFT
+    static size_t streamId; //stream for calibration samples
+
 #include "windowFunction.h"
-    bool useFFT = false; //digital RSSI or FFT from GetRSSI()
-    const int gFFTSize = 16384;
-    int fftBin = 0; //which bin to use when calibrating using FFT
+    bool useFFT = true; //digital RSSI or FFT from GetRSSI()
+    const int gFFTSize = 4096;
     int srcBin = 569; //recalculated to be at 100 kHz bin;
 
-//    #define DRAW_GNU_PLOTS
+//  #define DRAW_GNU_PLOTS
     #ifdef DRAW_GNU_PLOTS
+        float gRSSI_TXDC_measurements[256][256];
+        float gRSSI_RXDC_measurements[128][128];
+        std::string calibrationStart = "";
         #include <gnuPlotPipe.h>
-        GNUPlotPipe gp;
+        GNUPlotPipe spectrumPlot;
+        GNUPlotPipe searchPlot;
+        GNUPlotPipe saturationPlot;
     #endif
     #include "kiss_fft.h"
     #include "FPGA_common.h"
@@ -46,12 +111,33 @@ const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass pa
     #include <chrono>
     bool useGoertzel = false;
     extern void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp);
+    extern void CalcGoertzelF(int x[][2], float real[], float imag[], int Sp);
+
+static void SelectFFTBin(IConnection* port, uint16_t binIndex)
+{
+    fftBin = binIndex;
+    SelectGoertzelBin(port, binIndex, gFFTSize/2);
+}
+
+std::vector<float> windowF;
+float amplitudeCorr = 1;
+
+std::vector<float> windowG;
+float amplitudeCorrG = 1;
+#else
+bool useFFT = false; //digital RSSI or FFT from GetRSSI()
+bool useGoertzel = false;
 #endif // ENABLE_CALIBRATION_USING_FFT
 
-float_type offsetNCO = 0.1e6; //NCO offset during calibration
-const float calibrationSXOffset_Hz = 4e6;
+static const float_type targetOffsetNCO = 0.1e6; //NCO offset during calibration
+static float_type offsetNCO = targetOffsetNCO; //gets changed when using FFT
+const static float_type calibrationSXOffset_Hz = 4e6;
 
-const int16_t firCoefs[] =
+namespace lime{
+
+}
+
+static const int16_t firCoefs[] =
 {
     8,
     4,
@@ -201,26 +287,60 @@ int16_t rxGFIR3_backup[sizeof(firCoefs) / sizeof(int16_t)];
 uint16_t backup0x010D;
 uint16_t backup0x0100;
 
-inline uint16_t pow2(const uint8_t power)
+int SetExtLoopback(IConnection* port, uint8_t ch, bool enable)
+{
+    //enable external loopback switches
+    const uint16_t LoopbackCtrAddr = 0x0017;
+    uint16_t value = 0;
+    const uint16_t mask = 0x7;
+    const uint8_t shiftCount = (ch==2 ? 4 : 0);
+    int status;
+    status = port->ReadRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return ReportError(-1, "Failed to read Ext. Loopback controls");
+    value &= ~(mask << shiftCount);
+    value |= enable << shiftCount;   //EN_Loopback
+    value |= enable << (shiftCount+1); //EN_Attenuator
+    value |= !enable << (shiftCount+2); //EN_Shunt
+    status = port->WriteRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return ReportError(-1, "Failed to write Ext. Loopback controls");
+    return status;
+}
+
+inline static uint16_t pow2(const uint8_t power)
 {
     assert(power >= 0 && power < 16);
     return 1 << power;
 }
 
-#ifdef ENABLE_CALIBRATION_USING_FFT
 ///convert FFT dBFS to relative unsigned integer RSSI
 uint32_t dBFS_2_RSSI(const float_type dbFS)
 {
     uint32_t rssi = pow(2.0, 18)-1+dbFS*1000;
     return rssi;
 }
-#endif
+
+///convert RSSI(not LMS7002 RSSI!) to dBFS
+float RSSI_2_dBFS(uint32_t rssi)
+{
+    float dbFS = (pow(2.0, 18)-1-rssi)/1000.0;
+    return dbFS*(-1);
+}
 
 /** @brief Parameters setup instructions for Tx calibration
     @return 0-success, other-failure
 */
 int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopback)
 {
+#ifdef DRAW_GNU_PLOTS
+    char timestamp[64];
+    std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    struct tm *parts = std::localtime(&now_c);
+    sprintf(timestamp, "%02i-%02i_%02i:%02i:%02i", 1+parts->tm_mon, parts->tm_mday, parts->tm_hour, parts->tm_min, parts->tm_sec);
+    calibrationStart = timestamp;
+#endif // DRAW_GNU_PLOTS
+
 #ifndef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback)
         return ReportError(EPERM, "External loopback calibration requires FFT module");
@@ -295,21 +415,24 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //RBB
     //reset RBB to defaults
     SetDefaults(RBB);
+    Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
     Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 0);
-    Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 2);
+    Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 1);
     Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 12);
     Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 12);
 
     //TRF
-    Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0);
     if(useExtLoopback)
     {
         Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 0);
         Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
     }
     else
+    {
+        Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0);
         Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1);
+    }
 
     //AFE
     Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
@@ -324,7 +447,6 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(0x0085, 2, 0, 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
 
     //CGEN
-    //reset CGEN to defaults
     const float_type cgenFreq = GetFrequencyCGEN();
     int cgenMultiplier = int((cgenFreq / 46.08e6) + 0.5);
     if(cgenMultiplier < 2)
@@ -334,8 +456,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     if(cgenMultiplier > 13)
         cgenMultiplier = 13;
     //power up VCO
-    Modify_SPI_Reg_bits(0x0086, 2, 2, 0);
-
+    //CGEN VCO is powered up in SetFrequencyCGEN/Tune
     int status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
     if(status != 0)
         return status;
@@ -343,23 +464,19 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     SetDefaults(SX);
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+    //SX VCO is powered up in SetFrequencySX/Tune
     Modify_SPI_Reg_bits(LMS7param(ICT_VCO), 200);
     {
-        float_type SXTfreq = GetFrequencySX(Tx);
+        float_type SXTfreq = GetFrequencySX(LMS7002M::Tx);
         float_type SXRfreq = SXTfreq - bandwidth_Hz / calibUserBwDivider - calibrationSXOffset_Hz;
-        status = SetFrequencySX(Rx, SXRfreq);
+        status = SetFrequencySX(LMS7002M::Rx, SXRfreq);
         if(status != 0)
             return status;
-        //tune is already performed during SetFrequencySX
-//        status = TuneVCO(VCO_SXR);
-//        if(status != 0)
-//            return status;
     }
 
     //SXT
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+    Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1);
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TXTSP
@@ -369,12 +486,12 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
     else
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0);
-    Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
-    Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
-    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
+    Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(GC_BYP_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(PH_BYP_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), 2047);
+    Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     SetNCOFrequency(Tx, 0, bandwidth_Hz / calibUserBwDivider);
 
@@ -385,32 +502,29 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
 
+    //CDS
+    Modify_SPI_Reg_bits(LMS7param(CDS_TXATSP), 3);
+    Modify_SPI_Reg_bits(LMS7param(CDS_TXBTSP), 3);
+
     if(useExtLoopback)
     {
         Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
-        Modify_SPI_Reg_bits(CFB_TIA_RFE, 3000); //to filter aliasing
+        Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), 700); //to filter aliasing
         Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(CGSIN_LNA_RFE), 0);
     }
     else
     {
+        uint8_t gfir3n = 4 * cgenMultiplier;
+        if(Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN)) == 1)
+            gfir3n /= pow2(Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN)));
+        gfir3n = pow2(int(log2(gfir3n)));
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 0x1);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-        if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
-        {
-            int clkh_ov = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
-            int gfir3n = 4 * cgenMultiplier/pow2(clkh_ov);
-            gfir3n = pow2(int(log2(gfir3n)));
-            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
-        }
-        else
-        {
-            int gfir3n = 4 * cgenMultiplier;
-            gfir3n = pow2(int(log2(gfir3n)));
-            Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
-        }
         SetGFIRCoefficients(Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
 #ifdef ENABLE_CALIBRATION_USING_FFT
         if(useFFT) //fft does not need GFIR
@@ -419,34 +533,34 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
     if(ch == 2)
     {
-        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1); // EN_NEXTTX_RFE 1
-        Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1); //EN_NEXTTX_TRF 1
-        Modify_SPI_Reg_bits(MAC, ch);
+        Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
+        Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     }
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback || useFFT)
     {
         //limelight
-        Modify_SPI_Reg_bits(LML1_FIDM, 0);
-        Modify_SPI_Reg_bits(LML2_FIDM, 0);
-        Modify_SPI_Reg_bits(LML1_MODE, 0);
-        Modify_SPI_Reg_bits(LML2_MODE, 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
         if(ch == 1)
         {
-            Modify_SPI_Reg_bits(LML2_S0S, 1); //pos0, AQ
-            Modify_SPI_Reg_bits(LML2_S1S, 0); //pos1, AI
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1); //pos0, AQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0); //pos1, AI
         }
         else if(ch == 2)
         {
-            Modify_SPI_Reg_bits(LML2_S0S, 3); //pos0, BQ
-            Modify_SPI_Reg_bits(LML2_S1S, 2); //pos1, BI
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 3); //pos0, BQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 2); //pos1, BI
         }
         //need to update interface frequency for samples acquisition
         //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
-        int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         //need to adjust decimation to fit into USB speed
         float rateLimit_Bps;
@@ -459,6 +573,9 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             rateLimit_Bps = 100e6;
         else
             rateLimit_Bps = 100e6;
+#ifndef N_DEBUG
+        rateLimit_Bps = 50e6; //debug mode is slower to receive data
+#endif
 
         decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
         if(decimation < 0)
@@ -468,13 +585,26 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         if (decimation != 7)
             interfaceRx_Hz /= pow(2.0, decimation);
 
-        int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         float interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
             interfaceTx_Hz /= pow(2.0, interpolation);
-        const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
-        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+        dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/2, interfaceRx_Hz/2);
+
+        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
+        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+
+        StreamConfig config;
+        config.channelID = ch==1 ? 0 : 1;
+        config.format = StreamConfig::STREAM_12_BIT_IN_16;
+        config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        config.isTx = false;
+        config.bufferLength = 2*gFFTSize;
+        config.performanceLatency = 1.0;
+
+        dataPort->SetupStream(streamId, config);
+        dataPort->ControlStream(streamId, true);
     }
 #endif
     return 0;
@@ -485,169 +615,192 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     If calibration using FFT is enabled, GetRSSI() can return value calculated
     from FFT result at bin selected by fftBIN
 */
-uint32_t LMS7002M::GetRSSI()
+int avgCount = 1;
+uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 {
 #ifdef ENABLE_CALIBRATION_USING_FFT
     if(useFFT)
     {
+
+    bool calcFFT = true;
+    bool calcGeortzelFloat = false;
+    bool calcGeortzelFPGA = false;
+
     int fftSize = gFFTSize;
-    std::vector<float> windowF;
-    float amplitudeCorr = 1;
-    GenerateWindowCoefficients(3, fftSize, windowF, amplitudeCorr);
-    IConnection* port = dataPort;
-
-    fpga::StopStreaming(port);
-    StreamConfig config;
-    config.channels.push_back(0);
-    config.format = StreamConfig::STREAM_12_BIT_IN_16;
-    config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
-    config.isTx = false;
-    config.bufferLength = 65536;
-    fpga::InitializeStreaming(port, config);
-
-    // TODO : USB FIFO reset command for IConnection
-    LMS64CProtocol::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_USB_FIFO_RST;
-    ctrPkt.outBuffer.push_back(0x01);
-    dynamic_cast<LMS64CProtocol*>(port)->TransferPacket(ctrPkt);
-    ctrPkt.outBuffer[0] = 0x00;
-    dynamic_cast<LMS64CProtocol*>(port)->TransferPacket(ctrPkt);
-
-    kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
-    kiss_fft_cpx* m_fftCalcIn = new kiss_fft_cpx[fftSize];
-    kiss_fft_cpx* m_fftCalcOut = new kiss_fft_cpx[fftSize];
-
     //goertzel
     // number of spectral points, i.e. number of bins all the interval is divided to
     const int SP  = fftSize/2;
+
+    IConnection* port = dataPort;
+    kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(fftSize, 0, 0, 0);
+    kiss_fft_cpx* m_fftCalcIn = nullptr;
+    kiss_fft_cpx* m_fftCalcOut = nullptr;
+
+    if(calcFFT)
+    {
+        m_fftCalcIn = new kiss_fft_cpx[fftSize];
+        m_fftCalcOut = new kiss_fft_cpx[fftSize];
+    }
+
     auto xi = new int[SP][2];    // Raw data (integer numbers)
     // Calculated Goertzel bins, integer numbers
-    int64_t *reali = new int64_t[SP];
-    int64_t *imagi = new int64_t[SP];
+    auto *realf = new float[SP];
+    auto *imagf = new float[SP];
 
     //number of packets to skip from the buffer start
-    const int packetsPadding = 32;
-    const int bufferSize = 4096*((fftSize/(1360)+1) + packetsPadding);
-    char *buffer = new char[bufferSize];
-    const int maxTransferSize = bufferSize;
+    complex16_t *buffer = nullptr;
+    if(calcFFT || calcGeortzelFloat)
+        buffer = new complex16_t[fftSize];
 
-    std::vector<int> handles(int(bufferSize/maxTransferSize), 0);
-    std::vector<int> transferSizes;
-    std::vector<float> fftBins_dbFS(fftSize, 0);
+    std::vector<float> fftBins_dbFS;
+    if(calcFFT)
+        fftBins_dbFS.resize(fftSize, 0);
+    std::vector<float> goertzBins_dbFSF;
+    if(calcGeortzelFloat)
+        goertzBins_dbFSF.resize(SP, 0);
+    std::vector<float> goertzBins_dbFSI;
+    if(calcGeortzelFPGA)
+        goertzBins_dbFSI.resize(SP, 0);
 
-    const int avgCount = 5;
     for(int a=0; a<avgCount; ++a)
     {
-        long bytesReceived = 0;
-        fpga::StopStreaming(port);
-        fpga::StartStreaming(port);
-        for(int i=0; i<handles.size(); ++i)
+        if(calcGeortzelFPGA)
         {
-            if(bufferSize-i*maxTransferSize > maxTransferSize)
-                transferSizes.push_back(maxTransferSize);
-            else
-                transferSizes.push_back(bufferSize-i*maxTransferSize);
-            handles[i] = port->BeginDataReading(&buffer[maxTransferSize*i], transferSizes[i]);
+            int64_t real_hw = 0;
+            int64_t imag_hw = 0;
+            int status = CalculateGoertzelBin(port, &real_hw, &imag_hw);
+            if(status != 0)
+                printf("Failed to get Geortzel from FPGA\n");
+            goertzBins_dbFSI[fftBin] += (real_hw/float(SP) * real_hw/float(SP) + imag_hw/float(SP) * imag_hw/float(SP));
         }
-        for(int i=0; i<handles.size(); ++i)
-        {
-            if (port->WaitForReading(handles[i], 1000) == false)
-                printf("Failed to get FFT RSSI\n");
-            long bytesToRead = transferSizes[i];
-            bytesReceived += port->FinishDataReading(&buffer[maxTransferSize*i], bytesToRead, handles[i]);
-        }
-        long samplesCollected = 0;
-        int16_t sample = 0;
-        if(bytesReceived < bufferSize)
-            printf("Data not received for FFT\n");
 
-        for (int pktIndex = packetsPadding; pktIndex < bytesReceived / 4096 && samplesCollected < fftSize; ++pktIndex)
+        if(not calcFFT && not calcGeortzelFloat)
+            continue;
+
+        StreamMetadata meta;
+        port->ControlStream(streamId, true); //clears FIFO to get newest samples
+        int samplesReceived = port->ReadStream(streamId, buffer, fftSize, 200, meta);
+        if(samplesReceived < fftSize)
+            printf("Samples not received for FFT, %i/%i\n", samplesReceived, fftSize);
+
+        for(int i=0; i<samplesReceived; ++i)
         {
-            uint8_t* pktStart = (uint8_t*)buffer+(pktIndex*4096)+16;
-            const int stepSize = 3;
-            for (uint16_t b = 0; b < 4080; b += stepSize)
+            m_fftCalcIn[i].r = buffer[i].i;
+            if(i < SP && calcGeortzelFloat)
+                xi[i][0] = buffer[i].i;
+
+            //Q sample
+            m_fftCalcIn[i].i = buffer[i].q;
+            if (i < SP && calcGeortzelFloat)
+                xi[i][1] = buffer[i].q;
+        }
+        if(calcFFT)
+        {
+            for(int i=0; i<fftSize; ++i)
             {
-                //I sample
-                sample = (pktStart[b + 1] & 0x0F) << 8;
-                sample |= (pktStart[b] & 0xFF);
-                sample = sample << 4;
-                sample = sample >> 4;
-                m_fftCalcIn[samplesCollected].r = sample;
-                if(samplesCollected < SP)
-                    xi[samplesCollected][0] = sample;
-
-                //Q sample
-                sample = pktStart[b + 2] << 4;
-                sample |= (pktStart[b + 1] >> 4) & 0x0F;
-                sample = sample << 4;
-                sample = sample >> 4;
-                m_fftCalcIn[samplesCollected].i = sample;
-                if (samplesCollected < SP)
-                    xi[samplesCollected][1] = sample;
-
-                ++samplesCollected;
-                if(samplesCollected >= fftSize)
-                    break;
+                m_fftCalcIn[i].i *= windowF[i] * amplitudeCorr;
+                m_fftCalcIn[i].r *= windowF[i] * amplitudeCorr;
+            }
+            kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+            for (int i = 0; i < fftSize; ++i)
+            {
+                m_fftCalcOut[i].r /= fftSize;
+                m_fftCalcOut[i].i /= fftSize;
+                fftBins_dbFS[i] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
             }
         }
-        for(int i=0; i<fftSize; ++i)
+        if(calcGeortzelFloat)
         {
-            m_fftCalcIn[i].i *= windowF[i] * amplitudeCorr;
-            m_fftCalcIn[i].r *= windowF[i] * amplitudeCorr;
+            for(int i=0; i<SP; ++i)
+            {
+                xi[i][0] *= windowG[i]*amplitudeCorrG;
+                xi[i][1] *= windowG[i]*amplitudeCorrG;
+            }
+            CalcGoertzelF(xi, realf, imagf, SP);
+            for (int i=0; i<SP; ++i)
+            {
+                realf[i] /= float(SP);
+                imagf[i] /= float(SP);
+                float magnitude = (realf[i] * realf[i] + imagf[i] * imagf[i]);
+                goertzBins_dbFSF[i] += magnitude;
+            }
         }
-        kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+    }
+
+    if(calcFFT)
         for (int i = 0; i < fftSize; ++i)
         {
-            m_fftCalcOut[i].r /= fftSize;
-            m_fftCalcOut[i].i /= fftSize;
-            fftBins_dbFS[i] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+            fftBins_dbFS[i] /= avgCount;
+            fftBins_dbFS[i] = (fftBins_dbFS[i] != 0) ? (20 * log10((fftBins_dbFS[i])) - 69.2369) : -150;
         }
-    }
+    if(calcGeortzelFloat)
+        for (int i = 0; i < SP; ++i)
+        {
+            goertzBins_dbFSF[i] /= avgCount;
+            goertzBins_dbFSF[i] = (goertzBins_dbFSF[i] != 0) ? (20 * log10(sqrt(goertzBins_dbFSF[i])) - 69.2369) : -150;
+        }
+    if(calcGeortzelFPGA)
+        for (int i = 0; i < SP; ++i)
+        {
+            goertzBins_dbFSI[i] /= avgCount;
+            goertzBins_dbFSI[i] = (goertzBins_dbFSI[i] != 0) ? (20 * log10(sqrt(goertzBins_dbFSI[i])) - 69.2369) : -150;
+        }
 
-    CalcGoertzelI(xi, reali, imagi, SP);
-    std::vector<float> goertzBins_dbFS;
-    goertzBins_dbFS.resize(SP, 0);
-    for (int i = 0; i < SP; ++i)
+    if(measurements)
     {
-        goertzBins_dbFS[i] = sqrt(reali[i] * reali[i] + imagi[i] * imagi[i])/float(SP)/4096.0;
-        goertzBins_dbFS[i] = (goertzBins_dbFS[i] != 0) ? (20 * log10(goertzBins_dbFS[i])) : -150;
-    }
-
-    for (int i = 0; i < fftSize; ++i)
-    {
-        fftBins_dbFS[i] /= avgCount;
-        fftBins_dbFS[i] = (fftBins_dbFS[i] != 0) ? (20 * log10((fftBins_dbFS[i])) - 69.2369) : -150;
+        measurements->clear();
+        measurements->amplitudeFFT.push_back(fftBins_dbFS[fftBin]);
+        measurements->amplitudeGeortzelF.push_back(goertzBins_dbFSF[fftBin]);
+        measurements->amplitudeGeortzelFPGA.push_back(goertzBins_dbFSI[fftBin]);
     }
 #ifdef DRAW_GNU_PLOTS
     const int binsToShow = srcBin*12;
-    gp.write("set yrange [-155:0]\n");
-    gp.writef("set xrange [%i:%i]\n", -srcBin/2, binsToShow);
-    gp.write("plot\
-'-' u 1:2 with lines title 'FFT',\
+    spectrumPlot.write("set yrange [-155:0]\n");
+    spectrumPlot.writef("set xrange [%i:%i]\n", -srcBin/2, binsToShow);
+    spectrumPlot.write("plot\
 '-' u 1:2 with points ps 4 pt 23 notitle,\
-'-' u 1:2:2 with labels offset 4,0.5 notitle,\
-'-' u 1:2 with lines title 'Goertz'\n");
-    for (int i = 0; i<binsToShow; ++i)
-        gp.writef("%i %f\n", i, fftBins_dbFS[i]);
-    gp.write("e\n");
-    gp.writef("%i, %f\ne\n", fftBin, fftBins_dbFS[fftBin]); //marker
-    gp.writef("%i, %f\ne\n", fftBin, fftBins_dbFS[fftBin]); //value label
-    for (int i = 0; i<binsToShow; ++i)
-        gp.writef("%i %f\n", i, goertzBins_dbFS[i]);
-    gp.write("e\n");
-    gp.flush();
+'-' u 1:2:2 with labels offset 4,0.5 notitle");
+    if(calcFFT)
+        spectrumPlot.write(", '-' u 1:2 with lines title 'FFT'");
+    if(calcGeortzelFloat)
+        spectrumPlot.write(", '-' u 1:2 with lines title 'Goertz Float'");
+    if(calcGeortzelFPGA)
+        spectrumPlot.write(", '-' u 1:2 with lines title 'Goertz FPGA' lt rgb 'green'");
+    spectrumPlot.write("\n");
+    spectrumPlot.writef("%i, %f\ne\n", fftBin, (useGoertzel ? goertzBins_dbFSI[fftBin] : fftBins_dbFS[fftBin])); //marker
+    spectrumPlot.writef("%i, %f\ne\n", fftBin, (useGoertzel ? goertzBins_dbFSI[fftBin] : fftBins_dbFS[fftBin])); //value label
+    if(calcFFT)
+    {
+        for (int i = 0; i<binsToShow; ++i)
+            spectrumPlot.writef("%i %f\n", i, fftBins_dbFS[i]);
+        spectrumPlot.write("e\n");
+    }
+    if(calcGeortzelFloat)
+    {
+        for (int i = 0; i<binsToShow; ++i)
+            spectrumPlot.writef("%i %f\n", i, goertzBins_dbFSF[i]);
+        spectrumPlot.write("e\n");
+    }
+    if(calcGeortzelFPGA)
+    {
+        for (int i = 0; i<binsToShow; ++i)
+            spectrumPlot.writef("%i %f\n", i, goertzBins_dbFSI[i]);
+        spectrumPlot.write("e\n");
+    }
+    spectrumPlot.flush();
 #endif
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("FFT = %3.3f dbFS | Goertz= %3.3f dbFS\n", fftBins_dbFS[fftBin], goertzBins_dbFS[fftBin]);
-#endif
-    kiss_fft_free(m_fftCalcPlan);
-    delete[]buffer;
-    delete[] m_fftCalcOut;
-    delete[] m_fftCalcIn;
+    if(calcFFT || calcGeortzelFloat)
+        delete[] buffer;
+    if(calcFFT)
+    {
+        kiss_fft_free(m_fftCalcPlan);
+        delete[] m_fftCalcOut;
+        delete[] m_fftCalcIn;
+    }
     delete[] xi;
-    delete[] reali;
-    delete[] imagi;
-    return dBFS_2_RSSI(useGoertzel ? goertzBins_dbFS[fftBin] : fftBins_dbFS[fftBin]);
+    delete[] realf;
+    delete[] imagf;
+    return dBFS_2_RSSI(useGoertzel ? goertzBins_dbFSI[fftBin] : fftBins_dbFS[fftBin]);
     }
 #endif
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
@@ -661,87 +814,118 @@ uint32_t LMS7002M::GetRSSI()
 */
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
+    if(controlPort == nullptr)
+        return ReportError(EINVAL, "Device not connected");
+#ifdef __cplusplus
+    auto beginTime = std::chrono::high_resolution_clock::now();
+#endif
 #ifndef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback)
-        return ReportError(EPERM, "External loopback calibration requires FFT module");
-#else
-    if(useExtLoopback)
-        useFFT = true;
-    if(mCalibrationByMCU)
-    {
-        useExtLoopback = false;
-        useFFT = false;
-    }
+        return ReportError(EPERM, "External loopback calibration requires ENABLE_CALIBRATION_USING_FFT");
 #endif // ENABLE_CALIBRATION_USING_FFT
     int status;
-    if(mCalibrationByMCU && not useExtLoopback)
-    {
-        uint8_t mcuID = mcuControl->ReadMCUProgramID();
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
-        {
-            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM);
-            if(status != 0)
-                return status;
-        }
-    }
-
-    Channel ch = this->GetActiveChannel();
+    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7param(MAC));
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-    uint8_t sel_band2_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
 
-    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-    double txFreq = GetFrequencySX(Tx);
+    //caching variables
+    DeviceInfo info = controlPort->GetDeviceInfo();
+    uint32_t boardId = info.boardSerialNumber;
+    double txFreq = GetFrequencySX(LMS7002M::Tx);
     uint8_t channel = ch == 1 ? 0 : 1;
-    bool foundInCache = false;
     int band = sel_band1_trf ? 0 : 1;
-
-    uint16_t gainAddr;
-    uint16_t gcorri;
-    uint16_t gcorrq;
-    uint16_t dccorri;
-    uint16_t dccorrq;
-    int16_t phaseOffset;
-    int16_t gain = 1983;
-    const uint16_t gainMSB = 10;
-    const uint16_t gainLSB = 0;
-
     if(useCache)
     {
         int dcI, dcQ, gainI, gainQ, phOffset;
-
-        foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
+        bool foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         if(foundInCache)
         {
-            printf("Tx calibration: using cached values\n");
-            dccorri = dcI;
-            dccorrq = dcQ;
-            gcorri = gainI;
-            gcorrq = gainQ;
-            phaseOffset = phOffset;
             Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dcI);
             Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dcQ);
             Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gainI);
             Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gainQ);
-            Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
+            Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phOffset);
             Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
             Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
+            const int8_t dcIsigned = dcI;
+            const int8_t dcQsigned = dcQ;
+            int16_t phaseSigned = phOffset << 4;
+            phaseSigned >>= 4;
+            verbose_printf(cSquaresLine);
+            verbose_printf("Tx calibration values found in cache:\n");
+            verbose_printf("   | DC  | GAIN | PHASE\n");
+            verbose_printf("---+-----+------+------\n");
+            verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gainI, phaseSigned);
+            verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gainQ);
+            verbose_printf(cSquaresLine);
             return 0;
         }
     }
 
-    LMS7002M_SelfCalState state(this);
+    uint16_t gcorri, gcorrq;
+    int16_t dccorri, dccorrq, phaseOffset;
 
+    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && info.hardwareVersion == "3");
+    const char* methodName;
+    if(useExtLoopback)
+    {
+        useFFT = true;
+        methodName = useGoertzel ? "Geortzel" : "FFT";
+    }
+    if(mCalibrationByMCU)
+    {
+        useExtLoopback = useFFT = false;
+        methodName = "RSSI";
+    }
+    verbose_printf(cSquaresLine);
+    verbose_printf("Tx calibration using %s %s %s loopback\n",
+                    methodName,
+                    useExtLoopback ? "EXTERNAL" : "INTERNAL",
+                    useOnBoardLoopback ? "ON BOARD" : (useExtLoopback ? "CABLE" : "CHIP"));
+    verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i\n",
+                    ch == 0x1 ? "A" : "B",
+                    txFreq/1e6,
+                    bandwidth_Hz/1e6,
+                    sel_band1_trf==1 ? "BAND1" : "BAND2",
+                    Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB)));
+    verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
+    verbose_printf(cDashLine);
+    if(mCalibrationByMCU && not useExtLoopback)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
+            mcuID == MCU_ID_DC_IQ_CALIBRATIONS ? "DC/IQ calibration":"unknown");
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+        {
+            verbose_printf("Uploading DC/IQ calibration firmware\n");
+            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+            if(status != 0)
+                return status;
+        }
+    }
+    LMS7002M_SelfCalState state(this);
     Log("Tx calibration started", LOG_INFO);
+    if(useExtLoopback && useOnBoardLoopback)
+    {
+        status = SetExtLoopback(dataPort, ch, true);
+        if(status != 0)
+            return status;
+    }
     auto registersBackup = BackupRegisterMap();
 
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_Hz, useExtLoopback);
+#ifdef __cplusplus
+    verbose_printf("Setup duration: %li ms\n",
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::high_resolution_clock::now()-beginTime).count());
+#endif
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     if(mCalibrationByMCU)
     {
         //set reference clock parameter inside MCU
         long refClk = GetReferenceClk_SX(false);
+        verbose_printf("MCU Ref. clock: %g MHz\n", refClk/1e6);
         uint16_t refClkToMCU = (int(refClk / 1000000) << 9) | ((refClk % 1000000) / 10000);
         SPI_write(MCU_PARAMETER_ADDRESS, refClkToMCU);
         mcuControl->CallMCU(MCU_FUNCTION_UPDATE_REF_CLK);
@@ -754,93 +938,48 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             printf("MCU working too long %i\n", statusMcu);
         }
+        //need to read back calibration results
+        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
+        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true);
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
     }
     else
     {
 #ifdef ENABLE_CALIBRATION_USING_FFT
         {
-            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
-            offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
+            //calculate NCO offset, that the signal would be in FFT bin
+            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB)/gFFTSize;
+            offsetNCO = int(targetOffsetNCO / binWidth+0.5)*binWidth+binWidth/2;
         }
-        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
-        fftBin = srcBin;
+        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB);
+        SelectFFTBin(dataPort, srcBin);
 #endif // ENABLE_CALIBRATION_USING_FFT
-        CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
+        status = CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
+        if(status != 0)
+            goto TxCalibrationEnd;
 
-        Modify_SPI_Reg_bits(EN_G_TRF, 0);
-        if(!useExtLoopback)
-            CalibrateRxDC_RSSI();
-        CalibrateTxDC_RSSI(bandwidth_Hz);
-
+        if(useExtLoopback == false)
+            CalibrateRxDC();
+        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + (bandwidth_Hz / calibUserBwDivider));
+        CalibrateTxDC(&dccorri, &dccorrq);
         //TXIQ
-        Modify_SPI_Reg_bits(EN_G_TRF, 1);
-        Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
-
         SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO);
-
-        //coarse gain
-        uint32_t rssiIgain;
-        uint32_t rssiQgain;
-        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047 - 64);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
-        rssiIgain = GetRSSI();
-        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047 - 64);
-        rssiQgain = GetRSSI();
-
-        Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
-
-        if(rssiIgain < rssiQgain)
-            gainAddr = GCORRI_TXTSP.address;
-        else
-            gainAddr = GCORRQ_TXTSP.address;
-
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Tx GAIN_%s: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain);
-#endif
-        //coarse phase offset
-        uint32_t rssiUp;
-        uint32_t rssiDown;
-        Modify_SPI_Reg_bits(IQCORR_TXTSP, 15);
-        rssiUp = GetRSSI();
-        Modify_SPI_Reg_bits(IQCORR_TXTSP, -15);
-        rssiDown = GetRSSI();
-        if(rssiUp > rssiDown)
-            phaseOffset = -64;
-        else if(rssiUp < rssiDown)
-            phaseOffset = 192;
-        else
-            phaseOffset = 64;
-
-        Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
-        CoarseSearch(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Tx IQCORR: %i\n", phaseOffset);
-#endif
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Tx GAIN_%s: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain);
-        printf("Fine search Tx GAIN_%s/IQCORR...\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q");
-#endif
-        FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Fine search Tx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_TXTSP.address ? "I" : "Q", gain, phaseOffset);
-#endif
-        Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
-        Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msb, IQCORR_TXTSP.lsb, phaseOffset);
+        CalibrateIQImbalance(LMS7002M::Tx, &gcorri, &gcorrq, &phaseOffset);
     }
-    dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
-    dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true);
-    gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
-    gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
-    phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
 TxCalibrationEnd:
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    dataPort->ControlStream(streamId, false);
+    dataPort->CloseStream(streamId);
+#endif
     Log("Restoring registers state", LOG_INFO);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     RestoreRegisterMap(registersBackup);
+
     //RestoreAllRegisters();
+
+    if(useExtLoopback && useOnBoardLoopback)
+        SetExtLoopback(dataPort, ch, false);
 
     if(status != 0)
     {
@@ -862,40 +1001,80 @@ TxCalibrationEnd:
     Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
     Log("Tx calibration finished", LOG_INFO);
+#ifdef LMS_VERBOSE_OUTPUT
+    verbose_printf("#####Tx calibration RESULTS:###########################\n");
+    verbose_printf("Method: %s %s %s loopback\n",
+                    methodName,
+                    useExtLoopback ? "EXTERNAL" : "INTERNAL",
+                    useOnBoardLoopback ? "ON BOARD" : (useExtLoopback ? "CABLE" : "CHIP"));
+    verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i\n",
+                    ch == Channel::ChA ? "A" : "B", txFreq/1e6,
+                    bandwidth_Hz/1e6, band==0 ? "BAND1" : "BAND2",
+                    Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB)));
+    {
+    int8_t dcIsigned = dccorri;
+    int8_t dcQsigned = dccorrq;
+    int16_t phaseSigned = phaseOffset << 4;
+    phaseSigned >>= 4;
+    verbose_printf("   | DC  | GAIN | PHASE\n");
+    verbose_printf("---+-----+------+------\n");
+    verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
+    verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);
+    }
+#ifdef __cplusplus
+    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::high_resolution_clock::now()-beginTime).count();
+    verbose_printf("Duration: %i ms\n", duration);
+#endif
+    verbose_printf(cSquaresLine);
+#endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
 
 /** @brief Performs Rx DC offsets calibration
 */
-void LMS7002M::CalibrateRxDC_RSSI()
+void LMS7002M::CalibrateRxDC()
 {
+#ifdef DRAW_GNU_PLOTS
+    searchPlot.write("set title 'Rx DC search\n");
+    spectrumPlot.write("set title 'Rx DC search\n");
+#endif // DRAW_GNU_PLOTS
+    BinSearchParam argsI;
+    BinSearchParam argsQ;
 #ifdef ENABLE_CALIBRATION_USING_FFT
-    fftBin = 0;
+    SelectFFTBin(dataPort, 0);
 #endif
-    int16_t offsetI = 32;
-    int16_t offsetQ = 32;
-    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(CAPSEL, 0);
-    SetRxDCOFF(offsetI, offsetQ);
+    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
+    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
+    SetRxDCOFF(32, 32);
+    verbose_printf(cDashLine);
+    verbose_printf("Calibrating Rx DC...\n");
+
     //find I
-    CoarseSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, 6);
+    argsI.param = LMS7param(DCOFFI_RFE);
+    argsQ.param = LMS7param(DCOFFQ_RFE);
+    argsI.maxValue = argsQ.maxValue = 63;
+    argsI.minValue = argsQ.minValue = -63;
 
-    //find Q
-    CoarseSearch(DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 6);
+    BinarySearch(&argsI);
+    BinarySearch(&argsQ);
 
-    CoarseSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, 3);
-    CoarseSearch(DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 3);
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("Fine search Rx DCOFFI/DCOFFQ\n");
-#endif
-    FineSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 5);
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("Fine search Rx DCOFFI: %i, DCOFFQ: %i\n", offsetI, offsetQ);
-#endif
-    SetRxDCOFF(offsetI, offsetQ);
-    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
+    argsI.maxValue = argsI.result+4;
+    argsI.minValue = argsI.result-4;
+    argsQ.maxValue = argsQ.result+4;
+    argsQ.minValue = argsQ.result-4;
+
+    BinarySearch(&argsI);
+    BinarySearch(&argsQ);
+
+    //FineSearch(DCOFFI_RFE.address, DCOFFI_RFE.msb, DCOFFI_RFE.lsb, offsetI, DCOFFQ_RFE.address, DCOFFQ_RFE.msb, DCOFFQ_RFE.lsb, offsetQ, 5);
+    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); // DC_BYP 0
+
+    verbose_printf("Rx DCOFFI: %i, DCOFFQ: %i\n", argsI.result, argsQ.result);
+    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 #ifdef ENABLE_CALIBRATION_USING_FFT
-    fftBin = srcBin; //fft bin 100 kHz
+    SelectFFTBin(dataPort, srcBin); //fft bin 100 kHz
 #endif
 }
 
@@ -928,29 +1107,37 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     SetDefaults(TRF);
     if(not useExtLoopback)
     {
-        Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
-        Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
+        Modify_SPI_Reg_bits(LMS7param(L_LOOPB_TXPAD_TRF), 0);
+        Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), 1);
     }
     else
-        Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, 10);
-    Modify_SPI_Reg_bits(EN_G_TRF, 0);
+        Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF), 10);
+    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
 
     {
         uint8_t selPath;
         if(useExtLoopback) //use PA1
             selPath = 3;
         else
-            selPath = Get_SPI_Reg_bits(SEL_PATH_RFE);
+            selPath = Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
 
         if (selPath == 2)
         {
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+            Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 1);
+            Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 0);
         }
         else if (selPath == 3)
         {
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+            if(controlPort->GetDeviceInfo().hardwareVersion == "3")
+            {
+                Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 1);
+                Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 0);
+            }
+            else
+            {
+                Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 0);
+                Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 1);
+            }
         }
         else
             return ReportError(EINVAL, "CalibrateRxSetup() - SEL_PATH_RFE must be LNAL or LNAW");
@@ -993,30 +1180,30 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     if(status != 0)
         return status;
 
-    Modify_SPI_Reg_bits(MAC, 2);
-    bool isTDD = Get_SPI_Reg_bits(PD_LOCH_T2RBUF, true) == 0;
+    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    bool isTDD = Get_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), true) == 0;
     if(isTDD)
     {
         //in TDD do nothing
-        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         SetDefaults(SX);
-        status = SetFrequencySX(false, GetFrequencySX(true) - bandwidth_Hz / calibUserBwDivider - 9e6);
+        status = SetFrequencySX(LMS7002M::Rx, GetFrequencySX(LMS7002M::Tx) - bandwidth_Hz / calibUserBwDivider - 9e6);
         if(status != 0)
             return status;
-        Modify_SPI_Reg_bits(PD_VCO, 0);
+        Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
     }
     else
     {
         //SXR
         Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-        float_type SXRfreqHz = GetFrequencySX(Rx);
+        float_type SXRfreqHz = GetFrequencySX(LMS7002M::Rx);
 
         //SXT
         Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         SetDefaults(SX);
         Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
 
-        status = SetFrequencySX(Tx, SXRfreqHz + bandwidth_Hz / calibUserBwDivider + 9e6);
+        status = SetFrequencySX(LMS7002M::Tx, SXRfreqHz + bandwidth_Hz / calibUserBwDivider + 9e6);
         if(status != 0) return status;
     }
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
@@ -1025,20 +1212,20 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     SetDefaults(TxTSP);
     SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGFCW_TXTSP), 1);
-    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1);
-    Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
+    Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 0x1);
+    Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
     Modify_SPI_Reg_bits(0x0208, 6, 4, 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), 1);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
-    SetNCOFrequency(Tx, 0, 9e6);
+    SetNCOFrequency(LMS7002M::Tx, 0, 9e6);
 
     //RXTSP
     SetDefaults(RxTSP);
     SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(0x040C, 4, 3, 0x3); //GFIR2_BYP, GFIR1_BYP
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
-    if(not useExtLoopback)
+    if(not useFFT)
     {
         Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
@@ -1046,9 +1233,9 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-        if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
+        if(Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN)) == 1)
         {
-            int clkh_ov = Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN);
+            int clkh_ov = Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN));
             int gfir3n = 4 * cgenMultiplier/pow2(clkh_ov);
             gfir3n = pow2(int(log2(gfir3n)));
             Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), gfir3n - 1);
@@ -1063,43 +1250,47 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
     else
     {
-        Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 1);
-        Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 1);
-        Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
+        Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0);
     }
 
-    SetNCOFrequency(Rx, 0, bandwidth_Hz/calibUserBwDivider - offsetNCO);
+    //CDS
+    Modify_SPI_Reg_bits(LMS7param(CDS_TXATSP), 3);
+    Modify_SPI_Reg_bits(LMS7param(CDS_TXBTSP), 3);
+
+    SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz/calibUserBwDivider - offsetNCO);
     //modifications when calibrating channel B
     if(ch == 2)
     {
-        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
         Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
-        Modify_SPI_Reg_bits(MAC, ch);
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     }
 
 #ifdef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback || useFFT)
     {
         //limelight
-        Modify_SPI_Reg_bits(LML1_FIDM, 0);
-        Modify_SPI_Reg_bits(LML2_FIDM, 0);
-        Modify_SPI_Reg_bits(LML1_MODE, 0);
-        Modify_SPI_Reg_bits(LML2_MODE, 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
         if(ch == 1)
         {
-            Modify_SPI_Reg_bits(LML2_S0S, 1); //pos0, AQ
-            Modify_SPI_Reg_bits(LML2_S1S, 0); //pos1, AI
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1); //pos0, AQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0); //pos1, AI
         }
         else if(ch == 2)
         {
-            Modify_SPI_Reg_bits(LML2_S0S, 3); //pos0, BQ
-            Modify_SPI_Reg_bits(LML2_S1S, 2); //pos1, BI
+            Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 3); //pos0, BQ
+            Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 2); //pos1, BI
         }
         //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
-        int decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+        int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
         float interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
         //need to adjust decimation to fit into USB speed
         float rateLimit_Bps;
@@ -1112,6 +1303,9 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             rateLimit_Bps = 100e6;
         else
             rateLimit_Bps = 100e6;
+#ifndef N_DEBUG
+        rateLimit_Bps = 50e6; //debug mode is slower to receive data
+#endif
 
         decimation = ceil(log2((interfaceRx_Hz*3/2)/rateLimit_Bps));
         if(decimation < 0)
@@ -1120,14 +1314,28 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
             decimation = 4;
         if (decimation != 7)
             interfaceRx_Hz /= pow(2.0, decimation);
-
-        int interpolation = Get_SPI_Reg_bits(HBI_OVR_TXTSP);
+        int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         float interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
         if (interpolation != 7)
             interfaceTx_Hz /= pow(2.0, interpolation);
         const int channelsCount = 2;
         SetInterfaceFrequency(GetFrequencyCGEN(), interpolation, decimation);
+
         dataPort->UpdateExternalDataRate(0, interfaceTx_Hz/channelsCount, interfaceRx_Hz/channelsCount);
+
+        GenerateWindowCoefficients(3, gFFTSize, windowF, amplitudeCorr);
+        GenerateWindowCoefficients(3, gFFTSize/2, windowG, amplitudeCorrG);
+
+        StreamConfig config;
+        config.channelID = ch==1 ? 0 : 1;
+        config.format = StreamConfig::STREAM_12_BIT_IN_16;
+        config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        config.isTx = false;
+        config.bufferLength = 2*gFFTSize;
+        config.performanceLatency = 1.0;
+
+        dataPort->SetupStream(streamId, config);
+        dataPort->ControlStream(streamId, true);
     }
 #endif
     return 0;
@@ -1138,6 +1346,9 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 */
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
+#ifdef __cplusplus
+    auto beginTime = std::chrono::high_resolution_clock::now();
+#endif
 #ifndef ENABLE_CALIBRATION_USING_FFT
     if(useExtLoopback)
         return ReportError(EPERM, "External loopback calibration requires FFT module");
@@ -1150,45 +1361,50 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         useFFT = false;
     }
 #endif // ENABLE_CALIBRATION_USING_FFT
+    DeviceInfo info = controlPort->GetDeviceInfo();
+    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && info.hardwareVersion == "3");
     int status;
-    if(mCalibrationByMCU && not useExtLoopback)
-    {
-        uint8_t mcuID = mcuControl->ReadMCUProgramID();
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
-        {
-            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, MCU_BD::SRAM);
-            if( status != 0)
-                return status;
-        }
-    }
-
+    verbose_printf(cSquaresLine);
+    verbose_printf("Rx calibration using %s %s %s loopback\n",
+        (useFFT ? "FFT" : "RSSI"),
+        (useExtLoopback ? "EXTERNAL" : "INTERNAL"),
+        useOnBoardLoopback ? "ON BOARD" : (useExtLoopback ? "CABLE" : "CHIP"));
     Channel ch = this->GetActiveChannel();
-    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+    uint32_t boardId = info.boardSerialNumber;
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
     int lna = sel_path_rfe;
+    double rxFreq = GetFrequencySX(LMS7002M::Rx);
 
-    int16_t iqcorr_rx = 0;
+    const char* lnaName;
+    switch(lna)
+    {
+        case 0: lnaName = "none";
+        case 1: lnaName = "LNAH";
+        case 2: lnaName = "LNAW";
+        case 3: lnaName = "LNAL";
+    }
+    verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
+                ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
+                bandwidth_Hz/1e6, lnaName,
+                Get_SPI_Reg_bits(LMS7param(G_PGA_RBB)),
+                Get_SPI_Reg_bits(LMS7param(G_LNA_RFE)),
+                Get_SPI_Reg_bits(LMS7param(G_TIA_RFE)));
+
     int16_t dcoffi;
     int16_t dcoffq;
-    int16_t gain;
-    uint16_t gainAddr = 0;
-    const uint8_t gainMSB = 10;
-    const uint8_t gainLSB = 0;
-    uint16_t mingcorri;
-    uint16_t mingcorrq;
+    uint16_t gcorri;
+    uint16_t gcorrq;
     int16_t phaseOffset;
 
-    double rxFreq = GetFrequencySX(Rx);
-    bool foundInCache = false;
     if(useCache)
     {
         int dcI, dcQ, gainI, gainQ, phOffset;
-        foundInCache = (mValueCache->GetDC_IQ(boardId, rxFreq, channel, false, lna, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
+        bool foundInCache = (mValueCache->GetDC_IQ(boardId, rxFreq, channel, false, lna, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         dcoffi = dcI;
         dcoffq = dcQ;
-        mingcorri = gainI;
-        mingcorrq = gainQ;
+        gcorri = gainI;
+        gcorrq = gainQ;
         phaseOffset = phOffset;
         if(foundInCache)
         {
@@ -1200,7 +1416,33 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
             Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
             Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
             Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
+            int8_t dcIsigned = (dcI & 0x3f) * (dcI&0x40 ? -1 : 1);
+            int8_t dcQsigned = (dcQ & 0x3f) * (dcQ&0x40 ? -1 : 1);
+            int16_t phaseSigned = phOffset << 4;
+            phaseSigned >>= 4;
+            verbose_printf("Rx calibration values found in cache:\n");
+            verbose_printf("   | DC  | GAIN | PHASE\n");
+            verbose_printf("---+-----+------+------\n");
+            verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gainI, phaseSigned);
+            verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gainQ);
+            verbose_printf(cSquaresLine);
             return 0;
+        }
+    }
+
+    verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
+    verbose_printf(cDashLine);
+    if(mCalibrationByMCU && not useExtLoopback)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
+            mcuID == MCU_ID_DC_IQ_CALIBRATIONS ? "DC/IQ calibration":"unknown");
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+        {
+            verbose_printf("Uploading DC/IQ calibration firmware\n");
+            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+            if(status != 0)
+                return status;
         }
     }
     LMS7002M_SelfCalState state(this);
@@ -1234,25 +1476,31 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             printf("MCU working too long %i\n", statusMcu);
         }
+        //need to read back calibration results
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
     }
     else
     {
 #ifdef ENABLE_CALIBRATION_USING_FFT
         {
+            //calculate NCO offset, that the signal would be in FFT bin
             float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
             offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
         }
         srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
-        fftBin = srcBin;
+        SelectFFTBin(dataPort, srcBin);
 #endif // ENABLE_CALIBRATION_USING_FFT
         Log("Rx DC calibration", LOG_INFO);
-
-        CalibrateRxDC_RSSI();
-
-        // RXIQ calibration
-        Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
-
-        if(not useExtLoopback)
+        CalibrateRxDC();
+        if(useExtLoopback && useOnBoardLoopback)
+        {
+            status = SetExtLoopback(dataPort, ch, true);
+            if(status != 0)
+                goto RxCalibrationEndStage;
+        }
+        else
         {
             if (sel_path_rfe == 2)
             {
@@ -1264,108 +1512,39 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
                 Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
                 Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
             }
-            Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); //DC_BYP 0
         }
 
-        Modify_SPI_Reg_bits(MAC, 2);
-        if (Get_SPI_Reg_bits(PD_LOCH_T2RBUF) == false)
+        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        if (Get_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF)) == false)
         {
-            Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+            Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1);
             //TDD MODE
-            Modify_SPI_Reg_bits(MAC, 1);
-            Modify_SPI_Reg_bits(PD_VCO, 0);
+            Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+            Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
         }
-        Modify_SPI_Reg_bits(MAC, ch);
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
         CheckSaturationRx(bandwidth_Hz, useExtLoopback);
 
-        Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
-        Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
         SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz/calibUserBwDivider + offsetNCO);
 
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, 0);
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-
-        //coarse gain
-        {
-            Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047 - 64);
-            Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-            uint32_t rssiIgain = GetRSSI();
-            Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-            Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047 - 64);
-            uint32_t rssiQgain = GetRSSI();
-
-            Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-            Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-
-            gain = 1983;
-            if(rssiIgain < rssiQgain)
-            {
-                gainAddr = 0x0402;
-                Modify_SPI_Reg_bits(GCORRI_RXTSP, gain);
-            }
-            else
-            {
-                gainAddr = 0x0401;
-                Modify_SPI_Reg_bits(GCORRQ_RXTSP, gain);
-            }
-        }
-
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
-#endif
-
-        //find phase offset
-
-        uint32_t rssiUp;
-        uint32_t rssiDown;
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, 15);
-        rssiUp = GetRSSI();
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, -15);
-        rssiDown = GetRSSI();
-
-        if(rssiUp > rssiDown)
-            phaseOffset = -64;
-        else if(rssiUp < rssiDown)
-            phaseOffset = 192;
-        else
-            phaseOffset = 64;
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
-        CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
-#endif
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Rx GAIN_%s: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain);
-#endif
-        CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Coarse search Rx IQCORR: %i\n", phaseOffset);
-#endif
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Fine search Rx GAIN_%s/IQCORR\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q");
-#endif
-        FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
-        Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
-        Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("Fine search Rx GAIN_%s: %i, IQCORR: %i\n", gainAddr == GCORRI_RXTSP.address ? "I" : "Q", gain, phaseOffset);
-#endif
-
+        CalibrateIQImbalance(LMS7002M::Rx, &gcorri, &gcorrq, &phaseOffset);
     }
-    mingcorri = Get_SPI_Reg_bits(GCORRI_RXTSP, true);
-    mingcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP, true);
-    dcoffi = Get_SPI_Reg_bits(DCOFFI_RFE, true);
-    dcoffq = Get_SPI_Reg_bits(DCOFFQ_RFE, true);
-    phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP, true);
-
+    dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
+    dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
 RxCalibrationEndStage:
+#ifdef ENABLE_CALIBRATION_USING_FFT
+    dataPort->ControlStream(streamId, false);
+    dataPort->CloseStream(streamId);
+#endif
     Log("Restoring registers state", LOG_INFO);
     //RestoreAllRegisters();
     RestoreRegisterMap(registersBackup);
+
+    if(useExtLoopback && useOnBoardLoopback)
+        SetExtLoopback(dataPort, ch, false);
 
     if (status != 0)
     {
@@ -1373,17 +1552,45 @@ RxCalibrationEndStage:
         return status;
     }
     if(useCache)
-        mValueCache->InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, mingcorri, mingcorrq, phaseOffset);
+        mValueCache->InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, gcorri, gcorrq, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
     Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), mingcorri);
-    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), mingcorrq);
+    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gcorri);
+    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gcorrq);
     Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
     Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
     Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
     Log("Rx calibration finished", LOG_INFO);
+#ifdef LMS_VERBOSE_OUTPUT
+    verbose_printf("#####Rx calibration RESULTS:###########################\n");
+    verbose_printf("Method: %s %s loopback\n",
+        (useFFT ? "FFT" : "RSSI"),
+        (useExtLoopback ? "EXTERNAL" : "INTERNAL"));
+    verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
+                ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
+                bandwidth_Hz/1e6, lnaName,
+                Get_SPI_Reg_bits(LMS7param(G_PGA_RBB)),
+                Get_SPI_Reg_bits(LMS7param(G_LNA_RFE)),
+                Get_SPI_Reg_bits(LMS7param(G_TIA_RFE)));
+    {
+    int8_t dcIsigned = (dcoffi & 0x3f) * (dcoffi&0x40 ? -1 : 1);
+    int8_t dcQsigned = (dcoffq & 0x3f) * (dcoffq&0x40 ? -1 : 1);
+    int16_t phaseSigned = phaseOffset << 4;
+    phaseSigned >>= 4;
+    verbose_printf("   | DC  | GAIN | PHASE\n");
+    verbose_printf("---+-----+------+------\n");
+    verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
+    verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);
+    }
+#ifdef __cplusplus
+    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::high_resolution_clock::now()-beginTime).count();
+    verbose_printf("Duration: %i ms\n", duration);
+#endif
+    verbose_printf(cSquaresLine);
+#endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
 
@@ -1429,17 +1636,17 @@ void LMS7002M::RestoreAllRegisters()
 
 int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback)
 {
-    Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
     SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz / calibUserBwDivider - offsetNCO);
 
     uint32_t rssi = GetRSSI();
 #ifdef ENABLE_CALIBRATION_USING_FFT
-    fftBin = srcBin;
+    SelectFFTBin(dataPort, srcBin);
     if(useExtLoopback)
     {
         const uint32_t target_rssi = dBFS_2_RSSI(-14.0);
-        int loss_main_txpad = Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF);
+        int loss_main_txpad = Get_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF));
         while (rssi < target_rssi && loss_main_txpad > 0)
         {
             rssi = GetRSSI();
@@ -1447,10 +1654,10 @@ int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExt
                 loss_main_txpad -= 1;
             if (rssi > target_rssi)
                 break;
-            Modify_SPI_Reg_bits(G_RXLOOPB_RFE, loss_main_txpad);
+            Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), loss_main_txpad);
         }
 
-        int cg_iamp = Get_SPI_Reg_bits(CG_IAMP_TBB);
+        int cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
         while (rssi < target_rssi && cg_iamp < 39)
         {
             rssi = GetRSSI();
@@ -1458,13 +1665,13 @@ int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExt
                 cg_iamp += 2;
             if (rssi > target_rssi)
                 break;
-            Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
+            Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
         }
         return 0;
     }
 #endif
     const uint32_t target_rssi = 0x0B000; //0x0B000 = -3 dBFS
-    int g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    int g_rxloopb_rfe = Get_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE));
     while (rssi < target_rssi && g_rxloopb_rfe  < 15)
     {
         rssi = GetRSSI();
@@ -1472,10 +1679,10 @@ int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExt
             g_rxloopb_rfe += 2;
         if (rssi > target_rssi)
             break;
-        Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
+        Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), g_rxloopb_rfe);
     }
 
-    int cg_iamp = Get_SPI_Reg_bits(CG_IAMP_TBB);
+    int cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
     while (rssi < 0x01000 && cg_iamp < 63-6)
     {
         rssi = GetRSSI();
@@ -1483,7 +1690,7 @@ int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExt
             cg_iamp += 4;
         if (rssi > 0x01000)
             break;
-        Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
     }
 
     while (rssi < target_rssi && cg_iamp < 62)
@@ -1491,7 +1698,7 @@ int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExt
         rssi = GetRSSI();
         if (rssi < target_rssi)
             cg_iamp += 2;
-        Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
     }
     return 0;
 }
@@ -1505,6 +1712,148 @@ static uint16_t toDCOffset(int16_t offset)
     return valToSend;
 }
 
+void LMS7002M::GridSearch(GridSearchParam* args)
+{
+    const uint16_t DCOFFaddr = 0x010E;
+    const bool rxDC = (args->a.param.address == DCOFFaddr || args->b.param.address == DCOFFaddr);
+    uint32_t rssi, minRSSI = ~0;
+    int16_t minI, minQ, i, q;
+
+    for(i=args->a.minValue; i<=args->a.maxValue; ++i)
+    {
+        Modify_SPI_Reg_bits(args->a.param, rxDC ? toDCOffset(i) : i);
+        for(q=args->b.minValue; q<=args->b.maxValue; ++q)
+        {
+            Modify_SPI_Reg_bits(args->b.param, rxDC ? toDCOffset(q) : q);
+            rssi = GetRSSI();
+            if (rssi < minRSSI)
+            {
+                minI = i;
+                minQ = q;
+                minRSSI = rssi;
+                args->signalLevel = minRSSI;
+            }
+#ifdef DRAW_GNU_PLOTS
+            if(args->a.target == TX_DC_I || args->b.target == TX_DC_Q)
+                gRSSI_TXDC_measurements[q+128][i+128] = RSSI_2_dBFS(rssi);
+#endif
+        }
+    }
+    args->a.result = minI;
+    args->b.result = minQ;
+}
+
+void LMS7002M::BinarySearch(BinSearchParam* args)
+{
+    const bool rxDC = args->param.address == LMS7param(DCOFFI_RFE).address;
+    uint32_t rssiLeft = ~0;
+    uint32_t rssiRight;
+    int16_t left = args->minValue;
+    int16_t right = args->maxValue;
+    int16_t step;
+#ifdef DRAW_GNU_PLOTS
+    bool scan = true;
+    RSSI_measurements measurements;
+    std::vector<float> scanX;
+    std::vector<float> scanY;
+    std::vector<float> searchPoints;
+#endif
+    Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(right) : right);
+    rssiRight = GetRSSI();
+#ifdef DRAW_GNU_PLOTS
+    searchPoints.push_back(right); searchPoints.push_back(rssiRight);
+#endif
+
+    while(right-left >= 1)
+    {
+        step = (right-left)/2;
+        if(rssiLeft < rssiRight)
+        {
+            Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(right) : right);
+            rssiRight = GetRSSI();
+#ifdef DRAW_GNU_PLOTS
+            searchPoints.push_back(right); searchPoints.push_back(rssiRight);
+#endif
+        }
+        else
+        {
+            Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(left) : left);
+            rssiLeft = GetRSSI();
+#ifdef DRAW_GNU_PLOTS
+            searchPoints.push_back(left); searchPoints.push_back(rssiLeft);
+#endif
+        }
+        if(step == 0)
+            break;
+        if(rssiLeft < rssiRight)
+            right -= step;
+        else
+            left += step;
+    }
+
+    args->result = rssiLeft < rssiRight ? left : right;
+    Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(args->result) : args->result);
+#ifdef DRAW_GNU_PLOTS
+    int value = args->result;
+    searchPlot.write("plot\
+'-' u 1:2 with points ps 4 pt 23 notitle,\
+'-' u 1:2:3 with labels offset 0.5,0.5 notitle,\
+'-' u 1:2 with points title 'search'");
+    if(scan)
+        searchPlot.write(",\
+'-' u 1:2 with line title 'scan',\
+'-' u 1:2 with points notitle");
+    searchPlot.write("\n");
+    searchPlot.writef("%i %f\ne\n", value, rssiLeft < rssiRight ? RSSI_2_dBFS(rssiLeft) : RSSI_2_dBFS(rssiRight));
+    for(uint32_t i=0; i<searchPoints.size()/2; ++i)
+        searchPlot.writef("%f %f %i\n", searchPoints[2*i], float(useFFT ? RSSI_2_dBFS(searchPoints[2*i+1]) : searchPoints[2*i+1]), i);
+    searchPlot.write("e\n");
+    for(uint32_t i=0; i<searchPoints.size()/2; ++i)
+        searchPlot.writef("%f %f\n", searchPoints[2*i], float(useFFT ? RSSI_2_dBFS(searchPoints[2*i+1]) : searchPoints[2*i+1]));
+    searchPlot.write("e\n");
+    if(scan)
+    {
+        std::vector<float> trendX;
+        std::vector<float> trendY;
+        for(int i=args->minValue; i<=args->maxValue; )
+        {
+            Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(i) : i);
+            scanX.push_back(i);
+            uint32_t rssi = GetRSSI();
+            scanY.push_back(RSSI_2_dBFS(rssi));
+            if( abs(value - i) <= 32)
+            {
+                trendX.push_back(i);
+                trendY.push_back(RSSI_2_dBFS(rssi));
+                i += 1;
+            }
+            else
+                i += 5;
+        }
+        for(int j=0; j<2; ++j)
+        {
+            for(uint32_t i=0; i<scanX.size(); ++i)
+                searchPlot.writef("%f %f\n", scanX[i], scanY[i]);
+            searchPlot.write("e\n");
+        }
+
+        if(args->target == TX_DC_I || args->target == TX_DC_Q)
+        {
+            int8_t staticValue = (args->target == TX_DC_I) ? Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true) : Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
+            for(uint32_t i=0; i<scanX.size(); ++i)
+            {
+                if(args->target == TX_DC_I)
+                    gRSSI_TXDC_measurements[staticValue+128][int(scanX[i])+128] = scanY[i];
+                else if(args->target == TX_DC_Q)
+                    gRSSI_TXDC_measurements[int(scanX[i])+128][staticValue+128] = scanY[i];
+            }
+        }
+    }
+    searchPlot.flush();
+    Modify_SPI_Reg_bits(args->param, rxDC ? toDCOffset(value) : value);
+#endif
+}
+
 void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations)
 {
     const uint16_t DCOFFaddr = 0x010E;
@@ -1513,30 +1862,27 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
     uint32_t rssiDown;
 
 #ifdef DRAW_GNU_PLOTS
-    bool scanFFT = useFFT;
-    bool scanRSSI = !useFFT;
-    std::vector<uint32_t> plotValues;
-    std::vector<uint32_t> fftSweepValues;
-    std::vector<uint32_t> sweepRSSIValues;
-    for(int i=0; i<pow2(maxIterations); ++i)
+    RSSI_measurements measurements;
+    std::vector<float> searchPoints;
+    std::vector<float> sweepPoints;
+    std::vector<float> fftSweepValues;
+    std::vector<float> geortzSweepFloat;
+    std::vector<float> geortzSweepFPGA;
+    std::vector<float> minM;
+    std::vector<float> maxM;
+    std::vector< std::vector<float> >avgs;
+    avgs.resize(avgCount);
+    bool scan = false;
+    for(int i=0; i<pow2(maxIterations) && scan; ++i)
     {
         Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value-i : toDCOffset(value-i));
-        if(scanFFT)
-        {
-            fftSweepValues.push_back(value-i);
-            bool flag = useFFT;
-            useFFT = true;
-            fftSweepValues.push_back(GetRSSI());
-            useFFT = flag;
-        }
-        if(scanRSSI)
-        {
-            sweepRSSIValues.push_back(value-i);
-            bool flag = useFFT;
-            useFFT = false;
-            sweepRSSIValues.push_back(GetRSSI());
-            useFFT = flag;
-        }
+        sweepPoints.push_back(value-i);
+        measurements.clear();
+        GetRSSI(&measurements);
+
+        fftSweepValues.push_back(measurements.amplitudeFFT[0]);
+        geortzSweepFloat.push_back(measurements.amplitudeGeortzelF[0]);
+        geortzSweepFPGA.push_back(measurements.amplitudeGeortzelFPGA[0]);
     }
 #endif
 
@@ -1545,13 +1891,13 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
     {
         rssiUp = GetRSSI();
     #ifdef DRAW_GNU_PLOTS
-        plotValues.push_back(value); plotValues.push_back(rssiUp);
+        searchPoints.push_back(value); searchPoints.push_back(rssiUp);
     #endif
         value -= pow2(maxIterations - rssi_counter);
         Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
         rssiDown = GetRSSI();
     #ifdef DRAW_GNU_PLOTS
-        plotValues.push_back(value); plotValues.push_back(rssiDown);
+        searchPoints.push_back(value); searchPoints.push_back(rssiDown);
     #endif
         if(rssiUp >= rssiDown)
             value += pow2(maxIterations - 2 - rssi_counter);
@@ -1564,178 +1910,258 @@ void LMS7002M::CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_
 
     rssiUp = GetRSSI();
 #ifdef DRAW_GNU_PLOTS
-    plotValues.push_back(value); plotValues.push_back(rssiUp);
+    searchPoints.push_back(value); searchPoints.push_back(rssiUp);
 #endif
     if(addr != DCOFFaddr)
         Modify_SPI_Reg_bits(addr, msb, lsb, value - pow2(maxIterations - rssi_counter));
     else
         Modify_SPI_Reg_bits(addr, msb, lsb, toDCOffset(value - pow2(maxIterations - rssi_counter)));
     rssiDown = GetRSSI();
+#ifdef DRAW_GNU_PLOTS
+    searchPoints.push_back(value); searchPoints.push_back(rssiDown);
+#endif
     if(rssiUp < rssiDown)
         value += 1;
     Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
     rssiDown = GetRSSI();
 #ifdef DRAW_GNU_PLOTS
-    plotValues.push_back(value); plotValues.push_back(rssiDown);
+    searchPoints.push_back(value); searchPoints.push_back(rssiDown);
 #endif
 
     if(rssiUp < rssiDown)
     {
         value += 1;
         Modify_SPI_Reg_bits(addr, msb, lsb, addr != DCOFFaddr ? value : toDCOffset(value));
+#ifdef DRAW_GNU_PLOTS
+        searchPoints.push_back(value); searchPoints.push_back(GetRSSI());
+#endif
     }
 #ifdef DRAW_GNU_PLOTS
-    GNUPlotPipe pl(false);
-    pl.write("plot\
+    searchPlot.write("plot\
 '-' u 1:2:3 with labels offset 0.5,0.5 notitle,\
-'-' u 1:2 with points title 'search',\
-'-' u 1:2 with lines title 'fft',\
-'-' u 1:2 with lines title 'rssi'\n");
-    int index = 0;
-    for(int i=0; i<plotValues.size()/2; ++i)
-        pl.writef("%i %i %i\n", plotValues[2*i], (plotValues[2*i+1]), i);
-    pl.write("e\n");
-    for(int i=0; i<plotValues.size()/2; ++i)
-        pl.writef("%i %i\n", plotValues[2*i], (plotValues[2*i+1]));
-    pl.write("e\n");
-    for(int i=0; i<fftSweepValues.size()/2; ++i)
-        pl.writef("%i %i\n", fftSweepValues[2*i], (fftSweepValues[2*i+1]));
-    pl.write("e\n");
-    for(int i=0; i<sweepRSSIValues.size()/2; ++i)
-        pl.writef("%i %i\n", sweepRSSIValues[2*i], (sweepRSSIValues[2*i+1]));
-    pl.write("e\n");
-    pl.flush();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+'-' u 1:2 with points title 'search'");
+    if(scan)
+        searchPlot.write(",\
+'-' u 1:2 with lines title 'geortzFPGA'");
+    searchPlot.write("\n");
+    for(uint32_t i=0; i<searchPoints.size()/2; ++i)
+    {
+        printf("%f %f\n", searchPoints[2*i], float(useFFT ? RSSI_2_dBFS(searchPoints[2*i+1]) : searchPoints[2*i+1]));
+        searchPlot.writef("%f %f %i\n", searchPoints[2*i], float(useFFT ? RSSI_2_dBFS(searchPoints[2*i+1]) : searchPoints[2*i+1]), i);
+    }
+    searchPlot.write("e\n");
+    for(uint32_t i=0; i<searchPoints.size()/2; ++i)
+        searchPlot.writef("%f %f\n", searchPoints[2*i], float(useFFT ? RSSI_2_dBFS(searchPoints[2*i+1]) : searchPoints[2*i+1]));
+    searchPlot.write("e\n");
+    if(scan)
+    {
+        for(uint32_t i=0; i<geortzSweepFPGA.size(); ++i)
+            searchPlot.writef("%f %f\n", sweepPoints[i], geortzSweepFPGA[i]);
+        searchPlot.write("e\n");
+    }
+    searchPlot.flush();
 #endif
 }
 
 int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback)
 {
+    verbose_printf(cDashLine);
 #ifdef ENABLE_CALIBRATION_USING_FFT
+#ifdef DRAW_GNU_PLOTS
+    std::vector<float> pgaFirstStage;
+    std::vector<float> lnaStage;
+    std::vector<float> tiaStage;
+    std::vector<float> pgaSecondStage;
+#endif
     if(useExtLoopback)
     {
         SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + bandwidth_Hz / calibUserBwDivider);
-
+        uint32_t rssi_prev;
         uint32_t rssi;
-        float target_rssi;
-        if(GetFrequencySX(Tx) < 1e6)
+        uint32_t target_rssi;
+        const float txFreq = GetFrequencySX(LMS7002M::Tx);
+        if(txFreq < 1e9)
             target_rssi = dBFS_2_RSSI(-15.0);
         else
             target_rssi = dBFS_2_RSSI(-10.0);
-        int g_tia = Get_SPI_Reg_bits(G_TIA_RFE);
-        int g_lna = Get_SPI_Reg_bits(G_LNA_RFE);
-        int g_pga = Get_SPI_Reg_bits(G_PGA_RBB);
-
-        while(GetRSSI() < target_rssi && g_pga < 9)
+        verbose_printf("Receiver gains search, target level: %3.2f dBFS\n",
+                        RSSI_2_dBFS(target_rssi));
+        int g_tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
+        int g_lna = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
+        int g_pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
+        rssi_prev = rssi = GetRSSI();
+        verbose_printf("Initial:  PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\n",
+                        g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
         {
-            g_pga += 1;
+            float_type pgaDiff_dBFS = RSSI_2_dBFS(target_rssi) - RSSI_2_dBFS(rssi);
+            g_pga = pgaDiff_dBFS > 9 ? 9 : int8_t(pgaDiff_dBFS);
             Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+            rssi = GetRSSI();
         }
-        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
-
-        do
+        while(rssi < target_rssi && g_pga < 9)
         {
+            ++g_pga;
+            Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+            rssi = GetRSSI();
+            verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+#ifdef DRAW_GNU_PLOTS
+            pgaFirstStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+            if(rssi < rssi_prev)
+            {
+                --g_pga;
+                Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+                rssi = rssi_prev;
+                break;
+            }
+            else
+                rssi_prev = rssi;
+        }
+
+#ifdef DRAW_GNU_PLOTS
+        lnaStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+        {
+            float_type lnaDiff_dBFS = RSSI_2_dBFS(target_rssi) - RSSI_2_dBFS(rssi);
+            while(lnaDiff_dBFS > 0 && g_lna < 15)
+            {
+                if(g_lna < 8)
+                    lnaDiff_dBFS -= 3.0;
+                else
+                    lnaDiff_dBFS -= 1.0;
+                ++g_lna;
+            }
             Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna);
             rssi = GetRSSI();
-            if(rssi < target_rssi)
-                ++g_lna;
-            else
-                break;
         }
-        while(rssi < target_rssi && g_lna <= 15);
+        while(rssi < target_rssi && g_lna < 15)
+        {
+            ++g_lna;
+            Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna);
+            rssi = GetRSSI();
+            verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+#ifdef DRAW_GNU_PLOTS
+            lnaStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+            if(rssi < rssi_prev)
+            {
+                --g_lna;
+                Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna);
+                rssi = rssi_prev;
+                break;
+            }
+            else
+                rssi_prev = rssi;
+        }
 
         if(g_lna > 15)
             g_lna = 15;
         Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), g_lna);
-        if(GetRSSI() >= target_rssi)
-            goto rxGainFound;
+        verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
 
-        while(GetRSSI() < target_rssi && g_tia <= 3)
+#ifdef DRAW_GNU_PLOTS
+        tiaStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+        while(rssi < target_rssi && g_tia < 3)
         {
-            g_tia += 1;
+            ++g_tia;
             Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia);
+            rssi = GetRSSI();
+            verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+#ifdef DRAW_GNU_PLOTS
+            tiaStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+            if(rssi < rssi_prev)
+            {
+                --g_tia;
+                Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia);
+                rssi = rssi_prev;
+                break;
+            }
+            else
+                rssi_prev = rssi;
         }
         if(g_tia > 3)
             g_tia = 3;
         Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), g_tia);
-        if(GetRSSI() >= target_rssi)
-            goto rxGainFound;
-
-        while(GetRSSI() < target_rssi && g_pga < 18)
+        verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+#ifdef DRAW_GNU_PLOTS
+        pgaSecondStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+        while(rssi < target_rssi && g_pga < 30)
         {
-            g_pga += 2;
+            const int8_t stepSize = 1;
+            g_pga += stepSize;
             Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+            rssi = GetRSSI();
+            verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS\r",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+#ifdef DRAW_GNU_PLOTS
+            pgaSecondStage.push_back(RSSI_2_dBFS(rssi));
+#endif
+            float delta_dBFS = RSSI_2_dBFS(rssi)-RSSI_2_dBFS(rssi_prev);
+            if(rssi < rssi_prev || delta_dBFS < 0.92)
+            {
+                g_pga -= stepSize;
+                Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+                break;
+            }
+            else
+                rssi_prev = rssi;
         }
         Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
+        rssi = GetRSSI();
+#ifdef DRAW_GNU_PLOTS
+        pgaSecondStage.push_back(RSSI_2_dBFS(rssi));
 
-    rxGainFound:
-        Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
+        saturationPlot.write("set yrange [:0]\n");
+        saturationPlot.write("set title 'Rx gains search'\n");
+        saturationPlot.write("set key right bottom\n");
+        saturationPlot.write("plot\
+'-' u 1:2 with lines title 'PGA',\
+'-' u 1:2 with lines title 'LNA',\
+'-' u 1:2 with lines title 'TIA',\
+'-' u 1:2 with lines title 'PGA',\
+'-' u 1:2 with lines title 'target Level'\n");
+        int index = 1;
+        const std::vector<std::vector<float> *> arrays =
+            {&pgaFirstStage, &lnaStage, &tiaStage, &pgaSecondStage};
+        for(auto a : arrays)
+        {
+            --index;
+            for(size_t i=0; i<a->size(); ++i)
+                saturationPlot.writef("%i %f\n", index++, (*a)[i]);
+            saturationPlot.write("e\n");
+        }
+        saturationPlot.writef("%i %f\n%i %f\ne\n", 0, RSSI_2_dBFS(target_rssi),
+                               index, RSSI_2_dBFS(target_rssi));
+        saturationPlot.flush();
+#endif
+        verbose_printf("Adjusted: PGA: %2i, LNA: %2i, TIA: %2i, %3.2f dbFS",
+                            g_pga, g_lna, g_tia, RSSI_2_dBFS(rssi));
+        if(rssi < dBFS_2_RSSI(-30))
+        {
+            verbose_printf(" | TOO LOW!!!\n");
+            return ReportError(-1,
+                "Tx calibration: Rx gains search, RF level too low %.2f",
+                RSSI_2_dBFS(rssi));
+        }
+        verbose_printf("\n");
+
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-        CalibrateRxDC_RSSI();
+        CalibrateRxDC();
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 
         SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz + offsetNCO + bandwidth_Hz / calibUserBwDivider);
         Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
-    //---------IQ calibration-----------------
-        int16_t iqcorr_rx = 0;
-        int16_t gain;
-        uint16_t gainAddr = 0;
-        const uint8_t gainMSB = 10;
-        const uint8_t gainLSB = 0;
-        int16_t phaseOffset;
-
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, 0);
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-
-        //coarse gain
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047 - 64);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-        uint32_t rssiIgain = GetRSSI();
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047 - 64);
-        uint32_t rssiQgain = GetRSSI();
-
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, 2047);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
-
-        gain = 1983;
-        if(rssiIgain < rssiQgain)
-        {
-            gainAddr = 0x0402;
-            Modify_SPI_Reg_bits(GCORRI_RXTSP, gain);
-        }
-        else
-        {
-            gainAddr = 0x0401;
-            Modify_SPI_Reg_bits(GCORRQ_RXTSP, gain);
-        }
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 7);
-        //find phase offset
-        {
-            uint32_t rssiUp;
-            uint32_t rssiDown;
-            Modify_SPI_Reg_bits(IQCORR_RXTSP, 15);
-            rssiUp = GetRSSI();
-            Modify_SPI_Reg_bits(IQCORR_RXTSP, -15);
-            rssiDown = GetRSSI();
-
-            if(rssiUp > rssiDown)
-                phaseOffset = -64;
-            else if(rssiUp < rssiDown)
-                phaseOffset = 192;
-            else
-                phaseOffset = 64;
-            Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
-        }
-        CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
-        CoarseSearch(gainAddr, gainMSB, gainLSB, gain, 4);
-        CoarseSearch(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 4);
-        FineSearch(gainAddr, gainMSB, gainLSB, gain, IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset, 7);
-        Modify_SPI_Reg_bits(gainAddr, gainMSB, gainLSB, gain);
-        Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msb, IQCORR_RXTSP.lsb, phaseOffset);
+        //---------IQ calibration-----------------
+        CalibrateIQImbalance(LMS7002M::Rx);
         Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
         return 0;
     }
@@ -1746,78 +2172,147 @@ int LMS7002M::CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useE
     SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + (bandwidth_Hz / calibUserBwDivider) * 2);
 
     uint32_t rssi = GetRSSI();
-    int g_pga = Get_SPI_Reg_bits(G_PGA_RBB);
-    int g_rxlooop = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
-    int saturationLevel = 0x0B000;
+
+    int8_t g_pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
+    int8_t g_rxloop = Get_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE));
+    uint32_t saturationLevel = 0x0B000;
+    verbose_printf("Receiver saturation search, target level: ");
 #ifdef ENABLE_CALIBRATION_USING_FFT
     if(useFFT)
+    {
         saturationLevel = dBFS_2_RSSI(-22.0);
+        verbose_printf("%3.2f dBFS\n", RSSI_2_dBFS(saturationLevel));
+    }
+    else
 #endif // ENABLE_CALIBRATION_USING_FFT
-    while(rssi < saturationLevel && g_rxlooop < 15)
+        verbose_printf("%i \n", saturationLevel);
+
+    verbose_printf("initial  PGA: %2i, RxLoopback: %2i, %3.2f dbFS\n", g_pga, g_rxloop, RSSI_2_dBFS(rssi));
+    while(rssi < saturationLevel && g_rxloop < 15)
     {
         rssi = GetRSSI();
+        verbose_printf("adjusted PGA: %2i, RxLoopback: %2i, %3.2f dbFS\r", g_pga, g_rxloop, RSSI_2_dBFS(rssi));
         if(rssi < saturationLevel)
         {
-            g_rxlooop += 1;
-            Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxlooop);
+            g_rxloop += 1;
+            Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), g_rxloop);
         }
         else
             break;
     }
     rssi = GetRSSI();
-    while(g_pga < 18 && g_rxlooop == 15 && rssi < saturationLevel)
+    while(g_pga < 18 && g_rxloop == 15 && rssi < saturationLevel)
     {
         g_pga += 1;
-        Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
+        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga);
         rssi = GetRSSI();
+        verbose_printf("adjusted PGA: %2i, RxLoopback: %2i, %3.2f dbFS\r", g_pga, g_rxloop, RSSI_2_dBFS(rssi));
     }
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+    verbose_printf("\n");
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
     return 0;
 }
 
-void LMS7002M::CalibrateTxDC_RSSI(const float_type bandwidth)
+void LMS7002M::CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq)
 {
-    Modify_SPI_Reg_bits(EN_G_TRF, 1);
-    Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
-    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + (bandwidth / calibUserBwDivider));
+    BinSearchParam argsI;
+    BinSearchParam argsQ;
+#ifdef DRAW_GNU_PLOTS
+    memset(gRSSI_TXDC_measurements, 0, sizeof(gRSSI_TXDC_measurements));
+    searchPlot.write("set title 'Tx DC search\n");
+    spectrumPlot.write("set title 'Tx DC search\n");
+#endif // DRAW_GNU_PLOTS
+    verbose_printf("Searching Tx DC...\n");
+    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
 
-    int16_t corrI = 64;
-    int16_t corrQ = 64;
-    Modify_SPI_Reg_bits(DCCORRI_TXTSP, 64);
-    Modify_SPI_Reg_bits(DCCORRQ_TXTSP, 0);
+    int8_t corrI = 0;
+    int8_t corrQ = 0;
+    //Modify_SPI_Reg_bits(DCCORRI_TXTSP, 0);
+    //Modify_SPI_Reg_bits(DCCORRQ_TXTSP, 0);
+    Modify_SPI_Reg_bits(0x0204, 15, 0, (corrI << 8 | corrQ));
 
-    CoarseSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, 7);
-    Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
-    Modify_SPI_Reg_bits(DCCORRQ_TXTSP, 64);
-    CoarseSearch(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
-    Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
-    CoarseSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, 4);
-    Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
-    CoarseSearch(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 4);
-    Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+    //find I
+    avgCount = 1;
+    argsI.param = LMS7param(DCCORRI_TXTSP);
+    argsI.maxValue = corrI+127;
+    argsI.minValue = corrI-128;
+    argsI.target = TX_DC_I;
+    BinarySearch(&argsI);
+    corrI = argsI.result;
+    //Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
 
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("Fine search Tx DCCORRI/DCCORRQ\n");
+    argsQ.param = LMS7param(DCCORRQ_TXTSP);
+    argsQ.maxValue = corrQ+127;
+    argsQ.minValue = corrQ-128;
+    argsQ.target = TX_DC_Q;
+    BinarySearch(&argsQ);
+    corrQ = argsQ.result;
+    //Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+
+    avgCount = 2;
+    argsI.maxValue = corrI+4;
+    argsI.minValue = corrI-4;
+    BinarySearch(&argsI);
+    corrI = argsI.result;
+    //Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
+
+    argsQ.maxValue = corrQ+4;
+    argsQ.minValue = corrQ-4;
+    BinarySearch(&argsQ);
+    corrQ = argsQ.result;
+    //Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+    verbose_printf("coarse: Tx DCCORRI: %i, DCCORRQ: %i\n", corrI, corrQ);
+
+    const int gridRadius = 2;
+    GridSearchParam gridArgs;
+    argsI.maxValue = corrI+gridRadius;
+    argsI.minValue = corrI-gridRadius;
+    gridArgs.a = argsI;
+    argsQ.maxValue = corrQ+gridRadius;
+    argsQ.minValue = corrQ-gridRadius;
+    gridArgs.b = argsQ;
+    avgCount = 3;
+    GridSearch(&gridArgs);
+    corrI = gridArgs.a.result;
+    corrQ = gridArgs.b.result;
+    verbose_printf("GRID 1: Tx DCCORRI: %i, DCCORRQ: %i  | %.3f dbFS\n", corrI, corrQ, RSSI_2_dBFS(gridArgs.signalLevel));
+
+    avgCount = 1;
+    //Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
+    //Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
+    Modify_SPI_Reg_bits(0x0204, 15, 0, (corrI << 8 | corrQ));
+    if(dccorri)
+        *dccorri = corrI;
+    if(dccorrq)
+        *dccorrq = corrQ;
+    verbose_printf("Tx DCCORRI: %i, DCCORRQ: %i | %.3f dbFS\n", corrI, corrQ, RSSI_2_dBFS(gridArgs.signalLevel));
+#ifdef DRAW_GNU_PLOT
+    char filename[128];
+    sprintf(filename, "TxDC_%s.txt", calibrationStart.c_str());
+    fstream fout;
+    fout.open(filename, ios::out);
+    for(int i=0; i<256; ++i)
+    {
+        for(int q=0; q<256; ++q)
+            fout << i-128 << " " << q-128 << " " << (gRSSI_TXDC_measurements[q][i]) << endl;
+        fout << endl;
+    }
+    fout.close();
 #endif
-    FineSearch(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msb, DCCORRI_TXTSP.lsb, corrI, DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msb, DCCORRQ_TXTSP.lsb, corrQ, 7);
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("Fine search Tx DCCORRI: %i, DCCORRQ: %i\n", corrI, corrQ);
-#endif
-    Modify_SPI_Reg_bits(DCCORRI_TXTSP, corrI);
-    Modify_SPI_Reg_bits(DCCORRQ_TXTSP, corrQ);
 }
 
 void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize)
 {
 #ifdef LMS_VERBOSE_OUTPUT
-    int32_t **rssiField = new int32_t*[fieldSize];
+    uint32_t **rssiField = new uint32_t*[fieldSize];
     for (int i = 0; i < fieldSize; ++i)
     {
-        rssiField[i] = new int32_t[fieldSize];
+        rssiField[i] = new uint32_t[fieldSize];
         for (int q = 0; q < fieldSize; ++q)
-            rssiField[i][q] = ~(1<<31);
+            rssiField[i][q] = ~0;
     }
 #endif
 
@@ -1829,11 +2324,11 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
 
     for (int i = 0; i < fieldSize; ++i)
     {
+        int16_t ival = valueI + (i - fieldSize / 2);
+        Modify_SPI_Reg_bits(addrI, msbI, lsbI, addrI != DCOFFaddr ? ival : toDCOffset(ival), true);
         for (int q = 0; q < fieldSize; ++q)
         {
-            int16_t ival = valueI + (i - fieldSize / 2);
             int16_t qval = valueQ + (q - fieldSize / 2);
-            Modify_SPI_Reg_bits(addrI, msbI, lsbI, addrI != DCOFFaddr ? ival : toDCOffset(ival), true);
             Modify_SPI_Reg_bits(addrQ, msbQ, lsbQ, addrQ != DCOFFaddr ? qval : toDCOffset(qval), true);
             rssi = GetRSSI();
             if (rssi < minRSSI)
@@ -1849,7 +2344,7 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
     }
 
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("      |");
+    printf("     |");
     for (int i = 0; i < fieldSize; ++i)
         printf("%6i|", valueQ - fieldSize / 2 + i);
     printf("\n");
@@ -1863,6 +2358,23 @@ void LMS7002M::FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_
             printf("%6i|", rssiField[i][q]);
         printf("\n");
     }
+#ifdef DRAW_GNU_PLOTS
+    GNUPlotPipe pl(false);
+    pl.write("set contour surface\n");
+    pl.write("plot '-' matrix with image\n");
+
+    for(int i=0; i<fieldSize; ++i)
+    {
+        for(int q=0; q<fieldSize; ++q)
+        {
+            pl.writef("%i ", rssiField[i][q]);
+        }
+        pl.write("\n");
+    }
+
+    pl.write("e\n");
+    pl.write("e\n");
+#endif
     for (int i = 0; i < fieldSize; ++i)
         delete rssiField[i];
     delete[] rssiField;
@@ -1895,7 +2407,7 @@ int LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDI_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDI_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDI_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(DC_REG_TXTSP), Q);
+        Modify_SPI_Reg_bits(LMS7param(DC_REG_RXTSP), Q);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
@@ -1944,24 +2456,102 @@ int LMS7002M::ApplyDigitalCorrections(const bool isTx)
 
     if (isTx)
     {
-        Modify_SPI_Reg_bits(DCCORRI_TXTSP, dccorri);
-        Modify_SPI_Reg_bits(DCCORRQ_TXTSP, dccorrq);
-        Modify_SPI_Reg_bits(GCORRI_TXTSP, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
+        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dccorrq);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
 
-        Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
-        Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
-        Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
+        Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(PH_BYP_TXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(GC_BYP_TXTSP), 0);
     }
     else
     {
-        Modify_SPI_Reg_bits(GCORRI_RXTSP, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
+        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gcorri);
+        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gcorrq);
+        Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
 
-        Modify_SPI_Reg_bits(PH_BYP_RXTSP, 0);
-        Modify_SPI_Reg_bits(GC_BYP_RXTSP, 0);
+        Modify_SPI_Reg_bits(LMS7param(PH_BYP_RXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(GC_BYP_RXTSP), 0);
     }
     return 0;
+}
+
+void LMS7002M::CalibrateIQImbalance(const bool tx, uint16_t *gainI, uint16_t *gainQ, int16_t *phase)
+{
+    const char *dirName = tx ? "Tx" : "Rx";
+#ifdef DRAW_GNU_PLOTS
+    searchPlot.writef("set title '%s IQ search\n", dirName);
+    spectrumPlot.writef("set title '%s IQ search\n", dirName);
+#endif // DRAW_GNU_PLOTS
+    verbose_printf("Searching %s IQ imbalance...\n", dirName);
+    const auto gcorri = tx ? LMS7param(GCORRI_TXTSP) : LMS7param(GCORRI_RXTSP);
+    const auto gcorrq = tx ? LMS7param(GCORRQ_TXTSP) : LMS7param(GCORRQ_RXTSP);
+    int16_t gain;
+    int16_t phaseOffset;
+    BinSearchParam argsPhase;
+    BinSearchParam argsGain;
+    GridSearchParam gridArgs;
+
+    argsPhase.param = tx ? LMS7param(IQCORR_TXTSP) : LMS7param(IQCORR_RXTSP);
+    argsPhase.maxValue = 128;
+    argsPhase.minValue = -128;
+    BinarySearch(&argsPhase);
+    phaseOffset = argsPhase.result;
+    verbose_printf("Coarse search %s IQCORR: %i\n", dirName, phaseOffset);
+
+    //coarse gain
+    uint32_t rssiIgain;
+    uint32_t rssiQgain;
+    Modify_SPI_Reg_bits(gcorri, 2047 - 64);
+    Modify_SPI_Reg_bits(gcorrq, 2047);
+    rssiIgain = GetRSSI();
+    Modify_SPI_Reg_bits(gcorri, 2047);
+    Modify_SPI_Reg_bits(gcorrq, 2047 - 64);
+    rssiQgain = GetRSSI();
+
+    Modify_SPI_Reg_bits(gcorri, 2047);
+    Modify_SPI_Reg_bits(gcorrq, 2047);
+
+    if(rssiIgain < rssiQgain)
+        argsGain.param = gcorri;
+    else
+        argsGain.param = gcorrq;
+    const char* chName = (argsGain.param.address == gcorri.address ? "I" : "Q");
+
+    argsGain.maxValue = 2047;
+    argsGain.minValue = 2047-512;
+    BinarySearch(&argsGain);
+    gain = argsGain.result;
+    verbose_printf("Coarse search %s GAIN_%s: %i\n", dirName, chName, gain);
+
+    argsPhase.maxValue = phaseOffset+8;
+    argsPhase.minValue = phaseOffset-8;
+    BinarySearch(&argsPhase);
+    phaseOffset = argsPhase.result;
+    verbose_printf("Coarse search %s IQCORR: %i\n", dirName, phaseOffset);
+
+    const uint8_t gridRadius = 2;
+    gridArgs.a = argsGain;
+    gridArgs.a.minValue = gain-gridRadius;
+    gridArgs.a.maxValue = gain+gridRadius;
+    gridArgs.b = argsPhase;
+    gridArgs.b.minValue = phaseOffset-gridRadius;
+    gridArgs.b.maxValue = phaseOffset+gridRadius;
+
+    GridSearch(&gridArgs);
+    gain = gridArgs.a.result;
+    phaseOffset = gridArgs.b.result;
+    verbose_printf("GRID search %s GAIN_%s: %i, IQCORR: %i | %.3f dBFS\n", dirName, chName, gain, phaseOffset, RSSI_2_dBFS(gridArgs.signalLevel));
+
+    Modify_SPI_Reg_bits(argsGain.param, gain);
+    Modify_SPI_Reg_bits(argsPhase.param, phaseOffset);
+
+    if(phase)
+        *phase = phaseOffset;
+    if(gainI)
+        *gainI = (argsGain.param.address == gcorri.address ? gain : 2047);
+    if(gainQ)
+        *gainQ = (argsGain.param.address == gcorrq.address ? gain : 2047);
 }

@@ -1,7 +1,7 @@
 /**
 @file Connection_uLimeSDR.cpp
 @author Lime Microsystems
-@brief Implementation of STREAM board connection.
+@brief Implementation of uLimeSDR board connection.
 */
 
 #include "Connection_uLimeSDR.h"
@@ -11,13 +11,20 @@
 
 #include <thread>
 #include <chrono>
+#include <FPGA_common.h>
+#include <LMS7002M.h>
+#include <ciso646>
 
 using namespace std;
-
 using namespace lime;
 
 Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
 {
+    RxLoopFunction = bind(&Connection_uLimeSDR::ReceivePacketsLoop, this, std::placeholders::_1);
+    TxLoopFunction = bind(&Connection_uLimeSDR::TransmitPacketsLoop, this, std::placeholders::_1);
+
+    isConnected = false;
+
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
     isConnected = false;
@@ -37,6 +44,18 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
 */
 Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const int vid, const int pid)
 {
+    mTimestampOffset = 0;
+    rxLastTimestamp.store(0);
+    mExpectedSampleRate = 0;
+    generateData.store(false);
+    rxRunning.store(false);
+    txRunning.store(false);
+    isConnected = false;
+    terminateRx.store(false);
+    terminateTx.store(false);
+    rxDataRate_Bps.store(0);
+    txDataRate_Bps.store(0);
+
     mStreamWrEndPtAddr = 0x03;
     mStreamRdEndPtAddr = 0x83;
     isConnected = false;
@@ -58,7 +77,15 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
 */
 Connection_uLimeSDR::~Connection_uLimeSDR()
 {
-    mStreamService.reset();
+    for(auto i : mTxStreams)
+        ControlStream((size_t)i, false);
+    for(auto i : mRxStreams)
+        ControlStream((size_t)i, false);
+    for(auto i : mTxStreams)
+        CloseStream((size_t)i);
+    for(auto i : mRxStreams)
+        CloseStream((size_t)i);
+    UpdateThreads();
     Close();
 }
 #ifdef __unix__
@@ -153,7 +180,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 
     if(dev_handle == nullptr)
-        return ReportError("libusb_open failed");
+        return ReportError(ENODEV, "libusb_open failed");
     libusb_reset_device(dev_handle);
     if(libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
     {
@@ -165,13 +192,13 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
     if(r < 0)
     {
         printf("Cannot Claim Interface\n");
-        return ReportError("Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
+        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
     if(r < 0)
     {
         printf("Cannot Claim Interface\n");
-        return ReportError("Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
+        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     printf("Claimed Interface\n");
 
@@ -373,7 +400,7 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 @param length number of bytes to read
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataReading(char *buffer, long length)
+int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
 {
     int i = 0;
     bool contextFound = false;
@@ -440,7 +467,6 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
-        int status = 0;
 #ifndef __unix__
 		contexts[contextHandle].inOvLap.InternalHigh = 0;
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
@@ -466,11 +492,11 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
 /**
 @brief Finishes asynchronous data reading from board
 @param buffer array where to store received data
-@param length number of bytes to read, function changes this value to number of bytes actually received
+@param length number of bytes to read
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes received
 */
-int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int contextHandle)
+int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -494,16 +520,6 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, long &length, int conte
     else
         return 0;
 }
-
-int Connection_uLimeSDR::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
-{
-#ifndef __unix__
-	return 0;
-#else
-    return 0;
-#endif
-}
-
 
 /**
 @brief Aborts reading operations
@@ -539,7 +555,7 @@ void Connection_uLimeSDR::AbortReading()
 @param length number of bytes to send
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataSending(const char *buffer, long length)
+int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
 {
     int i = 0;
     //find not used context
@@ -629,11 +645,11 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
 /**
 @brief Finishes asynchronous data sending to board
 @param buffer array where to store received data
-@param length number of bytes to read, function changes this value to number of bytes acctually received
+@param length number of bytes to read
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes sent
 */
-int Connection_uLimeSDR::FinishDataSending(const char *buffer, long &length, int contextHandle)
+int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     if(contextsToSend[contextHandle].used == true)
     {
@@ -684,185 +700,4 @@ void Connection_uLimeSDR::AbortSending()
     FT_FlushPipe(mStreamWrEndPtAddr);
     txSize = 0;
 #endif
-}
-
-/** @brief Configures Stream board FPGA clocks to Limelight interface
-@param tx Rx/Tx selection
-@param InterfaceClk_Hz Limelight interface frequency
-@param phaseShift_deg IQ phase shift in degrees
-@return 0-success, other-failure
-*/
-int Connection_uLimeSDR::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
-{
-    eLMS_DEV boardType = GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_QSPARK) ? LMS_DEV_QSPARK : LMS_DEV_UNKNOWN;
-    const uint16_t busyAddr = 0x0021;
-    if(IsOpen() == false)
-        return ReportError(ENODEV, "Connection_uLimeSDR: configure FPGA PLL, device not connected");
-
-    uint16_t drct_clk_ctrl_0005 = 0;
-    ReadRegister(0x0005, drct_clk_ctrl_0005);
-
-    if(interfaceClk_Hz < 5e6)
-    {
-        //enable direct clocking
-        WriteRegister(0x0005, drct_clk_ctrl_0005 | (1 << pllIndex));
-        uint16_t drct_clk_ctrl_0006;
-        ReadRegister(0x0006, drct_clk_ctrl_0006);
-        drct_clk_ctrl_0006 = drct_clk_ctrl_0006 & ~0x3FF;
-        const int cnt_ind = 1 << 5;
-        const int clk_ind = pllIndex;
-        drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
-        WriteRegister(0x0006, drct_clk_ctrl_0006);
-        const uint16_t phase_reg_sel_addr = 0x0004;
-        float inputClock_Hz = interfaceClk_Hz;
-        const float oversampleClock_Hz = 100e6;
-        const int registerChainSize = 128;
-        const float phaseShift_deg = 90;
-        const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
-        const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
-        uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg) + 0.5;
-        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
-#ifndef NDEBUG
-        printf("reg value : %i\n", phase_reg_select);
-        printf("input clock: %f\n", inputClock_Hz);
-        printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-#endif
-        if(WriteRegister(phase_reg_sel_addr, phase_reg_select) != 0)
-            return ReportError(EIO, "Connection_uLimeSDR: configure FPGA PLL, failed to write registers");
-        const uint16_t LOAD_PH_REG = 1 << 10;
-        WriteRegister(0x0006, drct_clk_ctrl_0006 | LOAD_PH_REG);
-        WriteRegister(0x0006, drct_clk_ctrl_0006);
-        return 0;
-    }
-
-    //if interface frequency >= 5MHz, configure PLLs
-    WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
-
-    //select FPGA index
-    pllIndex = pllIndex & 0x1F;
-    uint16_t reg23val = 0;
-    if(ReadRegister(0x0003, reg23val) != 0)
-        return ReportError(ENODEV, "Connection_uLimeSDR: configure FPGA PLL, failed to read register");
-
-    const uint16_t PLLCFG_START = 0x1;
-    const uint16_t PHCFG_START = 0x2;
-    const uint16_t PLLRST_START = 0x4;
-    const uint16_t PHCFG_UPDN = 1 << 13;
-    reg23val &= 0x1F << 3; //clear PLL index
-    reg23val &= ~PLLCFG_START; //clear PLLCFG_START
-    reg23val &= ~PHCFG_START; //clear PHCFG
-    reg23val &= ~PLLRST_START; //clear PLL reset
-    reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
-    reg23val |= pllIndex << 3;
-
-    uint16_t statusReg;
-    bool done = false;
-    uint8_t errorCode = 0;
-    vector<uint32_t> addrs;
-    vector<uint32_t> values;
-    addrs.push_back(0x0023);
-    values.push_back(reg23val); //PLL_IND
-    addrs.push_back(0x0023);
-    values.push_back(reg23val | PLLRST_START); //PLLRST_START
-    WriteRegisters(addrs.data(), values.data(), values.size());
-
-    if(boardType == LMS_DEV_QSPARK) do //wait for reset to activate
-    {
-        ReadRegister(busyAddr, statusReg);
-        done = statusReg & 0x1;
-        errorCode = (statusReg >> 7) & 0xFF;
-    } while(!done && errorCode == 0);
-    if(errorCode != 0)
-        return ReportError(EBUSY, "Connection_uLimeSDR: error resetting PLL");
-
-    addrs.clear();
-    values.clear();
-    addrs.push_back(0x0023);
-    values.push_back(reg23val & ~PLLRST_START);
-
-    //configure FPGA PLLs
-    const float vcoLimits_MHz[2] = { 600, 1300 };
-    int M, C;
-    const short bufSize = 64;
-
-    float fOut_MHz = interfaceClk_Hz / 1e6;
-    float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;
-    M = C = (int)coef;
-    int chigh = (((int)coef) / 2) + ((int)(coef) % 2);
-    int clow = ((int)coef) / 2;
-
-    addrs.clear();
-    values.clear();
-    if(interfaceClk_Hz*M / 1e6 > vcoLimits_MHz[0] && interfaceClk_Hz*M / 1e6 < vcoLimits_MHz[1])
-    {
-        //bypass N
-        addrs.push_back(0x0026);
-        values.push_back(0x0001 | (M % 2 ? 0x8 : 0));
-
-        addrs.push_back(0x0027);
-        values.push_back(0x5550 | (C % 2 ? 0xA : 0)); //bypass c7-c1
-        addrs.push_back(0x0028);
-        values.push_back(0x5555); //bypass c15-c8
-
-        addrs.push_back(0x002A);
-        values.push_back(0x0101); //N_high_cnt, N_low_cnt
-        addrs.push_back(0x002B);
-        values.push_back(chigh << 8 | clow); //M_high_cnt, M_low_cnt
-
-        for(int i = 0; i <= 1; ++i)
-        {
-            addrs.push_back(0x002E + i);
-            values.push_back(chigh << 8 | clow); // ci_high_cnt, ci_low_cnt
-        }
-
-        float Fstep_us = 1 / (8 * fOut_MHz*C);
-        float Fstep_deg = (360 * Fstep_us) / (1 / fOut_MHz);
-        short nSteps = phaseShift_deg / Fstep_deg;
-
-        addrs.push_back(0x0024);
-        values.push_back(nSteps);
-
-        addrs.push_back(0x0023);
-        int cnt_ind = 0x3 & 0x1F;
-        reg23val = reg23val | PHCFG_UPDN | (cnt_ind << 8);
-        values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
-
-        addrs.push_back(0x0023);
-        values.push_back(reg23val | PLLCFG_START); //PLLCFG_START
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            ReportError(EIO, "Connection_uLimeSDR: configure FPGA PLL, failed to write registers");
-        if(boardType == LMS_DEV_QSPARK) do //wait for config to activate
-        {
-            ReadRegister(busyAddr, statusReg);
-            done = statusReg & 0x1;
-            errorCode = (statusReg >> 7) & 0xFF;
-        } while(!done && errorCode == 0);
-        if(errorCode != 0)
-            return ReportError(EBUSY, "Connection_uLimeSDR: error configuring PLLCFG");
-
-        addrs.clear();
-        values.clear();
-        addrs.push_back(0x0023);
-        values.push_back(reg23val & ~PLLCFG_START); //PLLCFG_START
-        addrs.push_back(0x0023);
-        values.push_back(reg23val | PHCFG_START); //PHCFG_START
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            ReportError(EIO, "Connection_uLimeSDR: configure FPGA PLL, failed to write registers");
-        if(boardType == LMS_DEV_QSPARK) do
-        {
-            ReadRegister(busyAddr, statusReg);
-            done = statusReg & 0x1;
-            errorCode = (statusReg >> 7) & 0xFF;
-        } while(!done && errorCode == 0);
-        if(errorCode != 0)
-            return ReportError(EBUSY, "Connection_uLimeSDR: error configuring PHCFG");
-        addrs.clear();
-        values.clear();
-        addrs.push_back(0x0023);
-        values.push_back(reg23val & ~PHCFG_START); //PHCFG_START
-        if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            ReportError(EIO, "Connection_uLimeSDR: configure FPGA PLL, failed to write registers");
-        return 0;
-    }
-    return ReportError(ERANGE, "Connection_uLimeSDR: configure FPGA PLL, desired frequency out of range");
 }

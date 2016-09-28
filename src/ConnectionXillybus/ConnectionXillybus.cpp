@@ -17,6 +17,9 @@
 #include <cstring>
 #include <iostream>
 #include "Si5351C.h"
+#include <FPGA_common.h>
+#include <LMS7002M.h>
+#include <ciso646>
 
 #include <thread>
 #include <chrono>
@@ -29,6 +32,9 @@ using namespace lime;
 */
 ConnectionXillybus::ConnectionXillybus(const unsigned index)
 {
+    RxLoopFunction = bind(&ConnectionXillybus::ReceivePacketsLoop, this, std::placeholders::_1);
+    TxLoopFunction = bind(&ConnectionXillybus::TransmitPacketsLoop, this, std::placeholders::_1);
+
     m_hardwareName = "";
     isConnected = false;
 #ifndef __unix__
@@ -71,7 +77,6 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
 */
 ConnectionXillybus::~ConnectionXillybus()
 {
-    mStreamService.reset();
     Close();
 }
 
@@ -106,7 +111,7 @@ int ConnectionXillybus::Open(const unsigned index)
 
 	// Check the results
 	if (hWrite == INVALID_HANDLE_VALUE || hRead == INVALID_HANDLE_VALUE)
-	{	
+	{
 		CloseHandle(hWrite);
         CloseHandle(hRead);
 		hWrite = INVALID_HANDLE_VALUE;
@@ -117,7 +122,7 @@ int ConnectionXillybus::Open(const unsigned index)
     hWrite = open(writePort.c_str(), O_WRONLY | O_NOCTTY | O_NONBLOCK);
     hRead = open(readPort.c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK);
     if (hWrite == -1 || hRead == -1)
-	{	
+	{
             close(hWrite);
             close(hRead);
             hWrite = -1;
@@ -194,13 +199,13 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 	if (hWrite == -1)
 #endif
         return -1;
-    
+
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 500)
     {
-#ifndef __unix__    
+#ifndef __unix__
 		DWORD bytesSent = 0;
 		OVERLAPPED	vOverlapped;
 		memset(&vOverlapped, 0, sizeof(OVERLAPPED));
@@ -226,11 +231,11 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
-#else      
+#else
 		int bytesSent;
         if ((bytesSent  = write(hWrite, buffer+ totalBytesWritten, bytesToWrite))<0)
         {
-           
+
             if(errno == EINTR)
                  continue;
             else if (errno != EAGAIN)
@@ -238,11 +243,11 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
                 ReportError(errno);
                 return totalBytesWritten;
             }
-        }  
+        }
 		else
-#endif    
-        totalBytesWritten += bytesSent;             
-        if (totalBytesWritten < length) 
+#endif
+        totalBytesWritten += bytesSent;
+        if (totalBytesWritten < length)
         {
             bytesToWrite -= bytesSent;
             t2 = chrono::high_resolution_clock::now();
@@ -286,7 +291,7 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 	if (hRead == -1)
 #endif
             return -1;
- 
+
 	unsigned long totalBytesReaded = 0;
 	unsigned long bytesToRead = length;
 	auto t1 = chrono::high_resolution_clock::now();
@@ -352,11 +357,11 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 	@param length number of bytes to read
 	@return handle of transfer context
 */
-int ConnectionXillybus::BeginDataReading(char *buffer, long length)
+int ConnectionXillybus::BeginDataReading(char *buffer, uint32_t length)
 {
 #ifndef __unix__
 	if (hReadStream == INVALID_HANDLE_VALUE)
-	{	
+	{
 		hReadStream = CreateFileA("\\\\.\\xillybus_read_32", GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
 		//hWriteStream = CreateFileA("\\\\.\\xillybus_write_32", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	}
@@ -368,7 +373,7 @@ int ConnectionXillybus::BeginDataReading(char *buffer, long length)
                 ReportError(errno);
 		return -1;
            }
-        }   
+        }
 #endif
     return 0;
 }
@@ -391,23 +396,23 @@ int ConnectionXillybus::WaitForReading(int contextHandle, unsigned int timeout_m
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes received
 */
-int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contextHandle)
+int ConnectionXillybus::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     unsigned long totalBytesReaded = 0;
     unsigned long bytesToRead = length;
-    
+
 #ifndef __unix__
 	if (hReadStream == INVALID_HANDLE_VALUE)
 #else
 	if (hReadStream == -1)
 #endif
 		return -1;
-    
+
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
-    { 
+    {
  #ifndef __unix__
 		DWORD bytesReceived = 0;
 		OVERLAPPED	vOverlapped;
@@ -448,7 +453,7 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
         }
 #endif
         totalBytesReaded += bytesReceived;
-        if (totalBytesReaded < length) 
+        if (totalBytesReaded < length)
         {
             bytesToRead -= bytesReceived;
             t2 = chrono::high_resolution_clock::now();
@@ -459,16 +464,6 @@ int ConnectionXillybus::FinishDataReading(char *buffer, long &length, int contex
 
     return totalBytesReaded;
 }
-
-int ConnectionXillybus::ReadDataBlocking(char *buffer, long &length, int timeout_ms)
-{
-#ifndef __unix__
-    return 0;
-#else
-    return 0;
-#endif
-}
-
 
 /**
 	@brief Aborts reading operations
@@ -496,9 +491,9 @@ void ConnectionXillybus::AbortReading()
 	@param length number of bytes to send
 	@return handle of transfer context
 */
-int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
+int ConnectionXillybus::BeginDataSending(const char *buffer, uint32_t length)
 {
-#ifndef __unix__    
+#ifndef __unix__
 	if (hWriteStream == INVALID_HANDLE_VALUE)
 	{
 		hWriteStream = CreateFileA("\\\\.\\xillybus_write_32", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
@@ -512,7 +507,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
 		return -1;
            }
         }
-            
+
 #endif
     unsigned long totalBytesWritten = 0;
     unsigned long bytesToWrite = length;
@@ -521,7 +516,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
 
     while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 200)
     {
-#ifndef __unix__      
+#ifndef __unix__
 		DWORD bytesSent = 0;
 		OVERLAPPED	vOverlapped;
 		memset(&vOverlapped, 0, sizeof(OVERLAPPED));
@@ -546,7 +541,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
 			bytesSent = 0;
 		}
 		CloseHandle(vOverlapped.hEvent);
-#else      
+#else
 		int bytesSent = 0;
         if ((bytesSent  = write(hWriteStream, buffer+ totalBytesWritten, bytesToWrite))<0)
         {
@@ -558,10 +553,10 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
                 ReportError(errno);
                 return totalBytesWritten;
             }
-        }  
-#endif  
+        }
+#endif
         totalBytesWritten += bytesSent;
-        if (totalBytesWritten < length) 
+        if (totalBytesWritten < length)
         {
             bytesToWrite -= bytesSent;
             t2 = chrono::high_resolution_clock::now();
@@ -570,7 +565,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, long length)
             break;
     }
     //Flush data to FPGA
-#ifdef __unix__  
+#ifdef __unix__
     while (1)
     {
         int rc = write(hWriteStream, NULL, 0);
@@ -607,7 +602,7 @@ int ConnectionXillybus::WaitForSending(int contextHandle, unsigned int timeout_m
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes sent
 */
-int ConnectionXillybus::FinishDataSending(const char *buffer, long &length, int contextHandle)
+int ConnectionXillybus::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     return length;
 }
@@ -729,7 +724,6 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
     //configure FPGA PLLs
     const float vcoLimits_MHz[2] = { 600, 1300 };
     int M, C;
-    const short bufSize = 64;
 
     float fOut_MHz = interfaceClk_Hz / 1e6;
     float coef = 0.8*vcoLimits_MHz[1] / fOut_MHz;

@@ -18,7 +18,6 @@ void ConnectionSTREAMEntry::handle_libusb_events()
     {
         int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
         if(r != 0) printf("error libusb_handle_events %s\n", libusb_strerror(libusb_error(r)));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 #endif // __UNIX__
@@ -35,6 +34,21 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
     ConnectionRegistryEntry("STREAM")
 {
 #ifdef __unix__
+    int r = libusb_init(&ctx); //initialize the library for the session we just declared
+    if(r < 0)
+        printf("Init Error %i\n", r); //there was an error
+    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+    mProcessUSBEvents.store(true);
+    mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
+#endif
+}
+
+ConnectionSTREAMEntry::ConnectionSTREAMEntry(const std::string entryName):
+    ConnectionRegistryEntry(entryName)
+{
+#ifndef __unix__
+    USBDevicePrimary = new CCyUSBDevice(NULL);
+#else
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
         printf("Init Error %i\n", r); //there was an error
@@ -156,7 +170,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     //read device name
                     char data[255];
                     memset(data, 0, 255);
-                    int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                    libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";

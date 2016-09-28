@@ -63,7 +63,9 @@ OpenGLGraph::OpenGLGraph(wxWindow* parent,  wxWindowID id = -1,
                     long style=0, const wxString& name,
                     const int* args)
     : wxGLCanvas(parent, id, args, pos, size, wxNO_FULL_REPAINT_ON_RESIZE),
-initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
+initialDisplayArea(-100, 100, -100, 100),
+oglOk(true),
+m_MouseCoord(0, 0, 0, 0)
 {
     m_font = NULL;
     m_glContext = new wxGLContext(this);
@@ -87,7 +89,7 @@ initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
     wxMenuItem *chkbox = m_popmenu.FindItem(OGLG_LOCKASPECT);
     chkbox->Check(settings.lock_aspect);
     m_popmenu.Append( OGLG_HELP_MOUSE, _("Show mouse commands..."), _("Show help about the mouse commands."));
-    for(int i=0; i<m_maxMarkers; ++i)
+    for(size_t i=0; i<m_maxMarkers; ++i)
     {
         markers.push_back(OGLMarker());
         markers[i].color = mMarkerColors[i];
@@ -96,7 +98,7 @@ initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
 
     mMarkersDlg = new dlgMarkers(this);
     mMarkersDlg->parent_graph = this;
-    for(int i=0; i<m_maxMarkers; ++i)
+    for(size_t i=0; i<m_maxMarkers; ++i)
         mMarkersDlg->AddMarker(i);
     mMarkersDlg->AddDeltas();
 
@@ -754,7 +756,7 @@ void OpenGLGraph::Draw()
 	switchToWindowView();
 	int fontSz = 16;
 	unsigned int clrs[] {0xFF000000, 0x0000FF00, 0x00FF0000};
-	for(int i=0; i<info_msg_toDisplay.size(); ++i)
+	for(size_t i=0; i<info_msg_toDisplay.size(); ++i)
     {
         glRenderText(settings.marginLeft, settings.marginBottom+i*20+fontSz, 0, fontSz, clrs[i], "%s", info_msg_toDisplay[i].c_str());
     }
@@ -833,7 +835,7 @@ GLvoid OpenGLGraph::glRenderText(float posx, float posy, float angle, float scal
 	//if font has been loaded
 	glEnable(GL_TEXTURE_2D);
 	if(m_font != NULL)
-		m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
+            m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
 
 	glPopMatrix();
     glDisable(GL_TEXTURE_2D);
@@ -1122,7 +1124,7 @@ int OpenGLGraph::AddMarker(int posX)
     if(series[0]->size > 0)
     {
         OGLMarker *mark = NULL;
-        for(int i=0; i<markers.size(); ++i)
+        for(size_t i=0; i<markers.size(); ++i)
             if(markers[i].used == false)
             {
                 mark = &markers[i];
@@ -1178,7 +1180,7 @@ int OpenGLGraph::AddMarkerAtValue(float xValue)
     if(series[0]->size > 0)
     {
         OGLMarker *mark = NULL;
-        for(int i=0; i<markers.size(); ++i)
+        for(size_t i=0; i<markers.size(); ++i)
             if(markers[i].used == false)
             {
                 mark = &markers[i];
@@ -1236,7 +1238,7 @@ void OpenGLGraph::RemoveMarker()
 
 void OpenGLGraph::RemoveMarker(int id)
 {
-    for(int i=0; i<markers.size(); ++i)
+    for(size_t i=0; i<markers.size(); ++i)
     {
         if(markers[i].id == id)
         {
@@ -1445,7 +1447,7 @@ void OpenGLGraph::ChangeMarker(int markerID, float xValue)
 	if(series[0]->size > 0 && markerID >= 0)
 	{
 	    OGLMarker* mark = NULL;
-        for(int i=0; i<markers.size(); ++i)
+        for(size_t i=0; i<markers.size(); ++i)
             if(markers[i].id == markerID)
                 mark = &markers[i];
         if(mark == NULL)
@@ -1668,7 +1670,7 @@ bool OpenGLGraph::SearchPeak()
 
 void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 {
-    if(id >=0 && id < markers.size())
+    if(id >=0 && id < (int)markers.size())
     {
         ChangeMarker(id, xValue);
         markers[id].used = enabled;
@@ -1678,7 +1680,7 @@ void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 
 void OpenGLGraph::GetMarker(int id, float &xValue, float &yValue, bool &enabled, bool &show)
 {
-    if(id >=0 && id < markers.size())
+    if(id >=0 && id < (int)markers.size())
     {
         xValue = markers[id].posX;
         yValue = markers[id].posY;
@@ -1695,7 +1697,7 @@ void OpenGLGraph::OnTimer(wxTimerEvent& event)
 
 void OpenGLGraph::UpdateInfoDisplay()
 {
-    for(int i=0; i<info_msg.size(); ++i)
+    for(size_t i=0; i<info_msg.size(); ++i)
     {
         info_msg_toDisplay[i] = info_msg[i];
     }

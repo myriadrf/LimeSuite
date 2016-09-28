@@ -68,6 +68,8 @@ class frFFTviewer : public wxFrame
 		wxCheckBox* chkFreezeFFT;
 		wxStaticText* m_staticText11;
 		wxChoice* cmbChannelVisibility;
+		wxStaticText* m_staticText23;
+		wxSpinCtrl* spinAvgCount;
 		wxStaticText* m_staticText15;
 		wxGauge* gaugeRxBuffer;
 		wxStaticText* m_staticText16;
@@ -89,7 +91,10 @@ class frFFTviewer : public wxFrame
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnWindowFunctionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAvgChange( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnAvgChangeEnter( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

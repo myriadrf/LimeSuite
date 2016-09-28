@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <math.h>
+#include <assert.h>
 using namespace std;
 
 #ifndef NDEBUG
@@ -66,29 +67,6 @@ int ResetTimestamp(IConnection* serPort)
     serPort->WriteRegister(0x0009, interface_ctrl_0009 | (TXPCT_LOSS_CLR | SMPL_NR_CLR));
     serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(TXPCT_LOSS_CLR | SMPL_NR_CLR));
     return status;
-}
-
-int InitializeStreaming(IConnection* serPort, const StreamConfig &config)
-{
-    int channelsCount = 2;
-    StopStreaming(serPort);
-    ResetTimestamp(serPort);
-
-    //enable MIMO mode, 12 bit compressed values
-    uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
-    if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
-        smpl_width = 0x0;
-    else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
-        smpl_width = 0x2;
-    else
-        smpl_width = 0x2;
-    serPort->WriteRegister(0x0008, 0x0100 | smpl_width);
-
-    uint16_t channelEnables = 0;
-    for(int i=0; i<config.channels.size(); ++i)
-        channelEnables |= (1 << config.channels[i]);
-    serPort->WriteRegister(0x0007, channelEnables);
-    return 0;
 }
 
 /** @brief Configures board FPGA clocks
@@ -183,9 +161,8 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         }
     }
 
-    unsigned int bestScore = 0; //score shows how many outputs have integer dividers
+    int bestScore = 0; //score shows how many outputs have integer dividers
     //calculate scores for all available frequencies
-    unsigned long bestVCO = 0;
     for (auto &it : availableVCOs)
     {
         for(int i=0; i<clockCount; ++i)
@@ -199,7 +176,6 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         if(it.second > bestScore)
         {
             bestScore = it.second;
-            bestVCO = it.first;
         }
     }
     int N, M;
@@ -368,7 +344,7 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
     drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
     addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
     const float oversampleClock_Hz = 100e6;
-    const int registerChainSize = 128;
+    //const int registerChainSize = 128;
     const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
     const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputFreq);
     uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
@@ -390,6 +366,114 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
     return 0;
 }
 
+/** @brief Parses FPGA packet payload into samples
+*/
+int FPGAPacketPayload2Samples(const uint8_t* buffer, const size_t bufLen, const size_t chCount, const int format, complex16_t** samples, size_t* samplesCount)
+{
+    assert(samples != nullptr);
+    assert(buffer != nullptr);
+    int16_t sample;
+    size_t collected = 0;
+    if(format == StreamConfig::STREAM_12_BIT_COMPRESSED)
+    {
+        const uint8_t frameSize = 3;
+        const uint8_t stepSize = frameSize * chCount;
+        for(uint8_t ch=0; ch<chCount; ++ch)
+        {
+            collected = 0;
+            for(uint16_t b=0; b<bufLen; b+=stepSize)
+            {
+                //I sample
+                sample = (buffer[b + 1 + frameSize * ch] & 0x0F) << 8;
+                sample |= (buffer[b + frameSize * ch] & 0xFF);
+                sample = sample << 4;
+                sample = sample >> 4;
+                samples[ch][collected].i = sample;
+
+                //Q sample
+                sample = buffer[b + 2 + frameSize * ch] << 4;
+                sample |= (buffer[b + 1 + frameSize * ch] >> 4) & 0x0F;
+                sample = sample << 4;
+                sample = sample >> 4;
+                samples[ch][collected].q = sample;
+                ++collected;
+            }
+        }
+    }
+    else if(format == StreamConfig::STREAM_12_BIT_IN_16)
+    {
+        const uint8_t frameSize = 4;
+        const uint8_t stepSize = frameSize * chCount;
+        for(uint8_t ch=0; ch<chCount; ++ch)
+        {
+            collected = 0;
+            for(uint16_t b=0; b<bufLen; b+=stepSize)
+            {
+                //I sample
+                sample = buffer[b + 1 + frameSize * ch] << 8;
+                sample |= buffer[b + frameSize * ch];
+                samples[ch][collected].i = sample;
+
+                //Q sample
+                sample = buffer[b + 3 + frameSize * ch] << 8;
+                sample |= buffer[b + 2 + frameSize * ch];
+                samples[ch][collected].q = sample;
+                ++collected;
+            }
+        }
+    }
+    else
+        return ReportError(EINVAL, "Unsupported samples format");
+    if(samplesCount)
+        *samplesCount = collected;
+    return 0;
+}
+
+int Samples2FPGAPacketPayload(const complex16_t* const* samples, const size_t samplesCount, const size_t chCount, const int format, uint8_t* buffer, size_t* bufLen)
+{
+    assert(samples != nullptr);
+    assert(buffer != nullptr);
+    size_t b=0;
+    if(format == StreamConfig::STREAM_12_BIT_COMPRESSED)
+    {
+        const uint8_t frameSize = 3;
+        const uint8_t stepSize = frameSize * chCount;
+        for(uint8_t ch=0; ch<chCount; ++ch)
+        {
+            b = 0;
+            for(size_t src=0; src<samplesCount; ++src)
+            {
+                buffer[b+frameSize*ch] = samples[ch][src].i & 0xFF;
+                buffer[b+1+frameSize*ch] = ((samples[ch][src].i >> 8) & 0x0F) |
+                                           ((samples[ch][src].q << 4) & 0xF0);
+                buffer[b+2+frameSize*ch] = (samples[ch][src].q >> 4) & 0xFF;
+                b += stepSize;
+            }
+        }
+    }
+    else if(format == StreamConfig::STREAM_12_BIT_IN_16)
+    {
+        const uint8_t frameSize = 4;
+        const uint8_t stepSize = frameSize * chCount;
+        for(uint8_t ch=0; ch<chCount; ++ch)
+        {
+            b = 0;
+            for(size_t src=0; src<samplesCount; ++src)
+            {
+                buffer[b+frameSize * ch] = samples[ch][src].i & 0xFF;
+                buffer[b+1+frameSize * ch] = (samples[ch][src].i >> 8) & 0xFF;
+                buffer[b+2+frameSize*ch] = samples[ch][src].q & 0xFF;
+                buffer[b+3+frameSize*ch] = (samples[ch][src].q >> 8) & 0xFF;
+                b += stepSize;
+            }
+        }
+    }
+    else
+        return ReportError(EINVAL, "Unsupported samples format");
+    if(bufLen)
+        *bufLen = b;
+    return 0;
+}
 
 } //namespace fpga
 } //namespace lime

@@ -88,9 +88,9 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         _rfics.push_back(new LMS7002M_withLogging());
         _rfics.back()->SetConnection(_conn, i);
         SoapySDR::logf(SOAPY_SDR_INFO, "Ver=%d, Rev=%d, Mask=%d",
-            _rfics.back()->Get_SPI_Reg_bits(VER, true),
-            _rfics.back()->Get_SPI_Reg_bits(REV, true),
-            _rfics.back()->Get_SPI_Reg_bits(MASK, true));
+            _rfics.back()->Get_SPI_Reg_bits(LMS7param(VER), true),
+            _rfics.back()->Get_SPI_Reg_bits(LMS7param(REV), true),
+            _rfics.back()->Get_SPI_Reg_bits(LMS7param(MASK), true));
 
         int st;
 
@@ -143,9 +143,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setIQBalance(SOAPY_SDR_RX, channel, 1.0);
         this->setIQBalance(SOAPY_SDR_TX, channel, 1.0);
     }
-
-    //also triggers internal stream threads ~ its hacky
-    _conn->SetHardwareTimestamp(0);
 
     //reset flags for user calls
     _fixedClockRate = false;
@@ -565,12 +562,12 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         switch (direction)
         {
         case SOAPY_SDR_RX:
-            rfic->Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, (frequency == 0)?1:0);
-            rfic->Modify_SPI_Reg_bits(CMIX_SC_RXTSP, (frequency < 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), (frequency == 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), (frequency < 0)?1:0);
             break;
         case SOAPY_SDR_TX:
-            rfic->Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, (frequency == 0)?1:0);
-            rfic->Modify_SPI_Reg_bits(CMIX_SC_TXTSP, (frequency < 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), (frequency == 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), (frequency < 0)?1:0);
             break;
         }
         if (rfic->SetNCOFrequency(lmsDir, 0, abs(frequency)) != 0)
@@ -598,7 +595,7 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "BB")
     {
-        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?CMIX_SC_TXTSP:CMIX_SC_RXTSP) == 0 ? 1 : -1;
+        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?LMS7param(CMIX_SC_TXTSP):LMS7param(CMIX_SC_RXTSP)) == 0 ? 1 : -1;
         return rfic->GetNCOFrequency(lmsDir, 0) * sign;
     }
 
@@ -731,10 +728,13 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
 
-    _conn->UpdateExternalDataRate(
+    int status = 0;
+    status = _conn->UpdateExternalDataRate(
         rfic->GetActiveChannelIndex(),
         rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
         rfic->GetSampleRate(LMS7002M::Rx, rfic->GetActiveChannel()));
+    if(status != 0)
+        SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
@@ -895,8 +895,8 @@ void SoapyLMS7::setMasterClockRate(const double rate)
     for (auto rfic : _rfics)
     {
         //make tx rx rates equal
-        rfic->Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN, 0);
-        rfic->Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN, 2);
+        rfic->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
+        rfic->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
         rfic->SetFrequencyCGEN(rate);
     }
     _fixedClockRate = true;
@@ -1179,9 +1179,9 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     if (key == "TSP_CONST")
     {
         const auto ampl = std::stoi(value);
-        rfic->Modify_SPI_Reg_bits(isTx?TSGFC_TXTSP:TSGFC_RXTSP, 1); //Full-scale
-        rfic->Modify_SPI_Reg_bits(isTx?TSGMODE_TXTSP:TSGMODE_RXTSP, 1); //DC
-        rfic->Modify_SPI_Reg_bits(isTx?INSEL_TXTSP:INSEL_RXTSP, 1); //SIGGEN
+        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFC_TXTSP):LMS7param(TSGFC_RXTSP), 1); //Full-scale
+        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGMODE_TXTSP):LMS7param(TSGMODE_RXTSP), 1); //DC
+        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1); //SIGGEN
         rfic->LoadDC_REG_IQ(isTx, ampl, 0);
     }
 

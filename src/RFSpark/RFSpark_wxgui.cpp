@@ -3,8 +3,6 @@
 @author Lime Microsystems
 @brief 	wxWidgets panel for interacting with RFSpark board
 */
-#include "RFSpark_wxgui.h"
-#include "ErrorReporting.h"
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -15,8 +13,8 @@
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
 
+#include "RFSpark_wxgui.h"
 #include <vector>
-#include "LMS64CProtocol.h"
 #include <ADCUnits.h>
 
 using namespace lime;
@@ -28,7 +26,7 @@ const long RFSpark_wxgui::ID_BTNREADGPIO = wxNewId();
 const long RFSpark_wxgui::ID_CMBSELECTADC = wxNewId();
 
 BEGIN_EVENT_TABLE(RFSpark_wxgui,wxFrame)
-	
+
 END_EVENT_TABLE()
 
 wxString power2unitsString(char powerx3)
@@ -74,14 +72,14 @@ wxString power2unitsString(char powerx3)
 
 RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& title, const wxPoint& pos,const wxSize& size, long style)
 {
-    m_serPort = nullptr;
+    lmsControl = nullptr;
     Create(parent, id, title, wxDefaultPosition, wxDefaultSize, style, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
 
-    //ADC values	
+    //ADC values
     wxFlexGridSizer* sizerADCs = new wxFlexGridSizer(0, 3, 0, 10);
 
     ADCdataGUI adcElement;
@@ -105,8 +103,8 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
         mADCgui.push_back(adcElement);
         ADCdata data;
         data.channel = i;
-        data.powerOf10coefficient = 0;
-        data.units = 0;
+        //data.powerOf10coefficient = 0;
+        //data.units = 0;
         data.value = 0;
         mADCdata.push_back(data);
     }
@@ -114,6 +112,7 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     btnReadAllADC = new wxButton(this, ID_BTNREADALLADC, "Refresh All");
     btnReadADC = new wxButton(this, ID_BTNREADADC, "Refresh");
     cmbADCselect = new wxComboBox(this, wxNewId(), adcList[0], wxDefaultPosition, wxDefaultSize, adcList);
+    cmbADCselect->SetSelection(0);
     wxFlexGridSizer* sizerADCbuttons = new wxFlexGridSizer(0, 3, 5, 5);
     sizerADCbuttons->Add(btnReadAllADC, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     sizerADCbuttons->Add(btnReadADC, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
@@ -185,10 +184,9 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     Connect(ID_BTNREADGPIO, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnReadGPIO);
 }
 
-void RFSpark_wxgui::Initialize(IConnection* pSerPort)
+void RFSpark_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
-    assert(m_serPort != nullptr);
+    lmsControl = pSerPort;
     wxCommandEvent evt;
     OnbtnReadGPIO(evt);
     OnbtnRefreshAllADC(evt);
@@ -203,127 +201,77 @@ void RFSpark_wxgui::UpdateADClabels()
 {
 	for (unsigned i = 0; i < mADCdata.size(); ++i)
 	{
-		mADCgui[i].value->SetLabelText(wxString::Format("%i", mADCdata[i].value));
-		mADCgui[i].units->SetLabelText(wxString::Format("%s%s", power2unitsString(mADCdata[i].powerOf10coefficient), adcUnits2string(mADCdata[i].units)));
-	}
+        mADCgui[i].value->SetLabelText(wxString::Format("%f", mADCdata[i].value));
+        mADCgui[i].units->SetLabelText(wxString::Format("%s", mADCdata[i].units));
+    }
 }
 
 void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    for (size_t i = 0; i < mADCdata.size(); ++i)
     {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
+        float_type val;
+        lms_name_t units;
+        if (LMS_ReadCustomBoardParam(lmsControl,i,&val,units)!=0)
+        {
+            wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+            return;
+        }
+        mADCdata[i].channel = i;
+        mADCdata[i].units = units;
+        mADCdata[i].value = val;
     }
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
-    
-    for (int i = 0; i < mADCdata.size(); ++i)
-        pkt.outBuffer.push_back(i);
-    assert(m_serPort != nullptr);
-
-    if (m_serPort->TransferPacket(pkt) != 0)
-    {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
-        return;
-    }
-	
-    assert(pkt.inBuffer.size() >= 4 * mADCcount);
-
-	for (int i = 0; i < mADCdata.size(); ++i)
-	{
-		mADCdata[i].channel = pkt.inBuffer[i*4];
-        mADCdata[i].units = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
-        mADCdata[i].powerOf10coefficient = pkt.inBuffer[i * 4 + 1] << 4;
-		mADCdata[i].powerOf10coefficient = mADCdata[i].powerOf10coefficient >> 4;				
-        mADCdata[i].value = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
-	}
-	UpdateADClabels();
+    UpdateADClabels();
 }
 
 void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    unsigned int index = cmbADCselect->GetSelection();
+    if(index >= mADCdata.size())
+        return;
+
+    float_type val;
+    lms_name_t units;
+    if (LMS_ReadCustomBoardParam(lmsControl,index,&val,units)!=0)
     {
-        wxMessageBox(_("Board not connected"), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
         return;
     }
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_ANALOG_VAL_RD;
-
-	int index = cmbADCselect->GetSelection();
-	pkt.outBuffer.push_back(index);
-    assert(m_serPort != nullptr);
-	
-    if (m_serPort->TransferPacket(pkt) != 0)
-    {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
-        return;
-    }
-	
-    assert(pkt.inBuffer.size() >= 4);
-
-	if(index < mADCdata.size())
-	{
-		mADCdata[index].channel = pkt.inBuffer[0];
-        mADCdata[index].units = (pkt.inBuffer[1] & 0xF0) >> 4;
-        mADCdata[index].powerOf10coefficient = pkt.inBuffer[1] << 4;
-		mADCdata[index].powerOf10coefficient = mADCdata[index].powerOf10coefficient >> 4;
-        mADCdata[index].value = pkt.inBuffer[2] << 8 | pkt.inBuffer[3];
-	}
-	UpdateADClabels();
+    mADCdata[index].channel = index;
+    mADCdata[index].units = units;
+    mADCdata[index].value = val;
+    UpdateADClabels();
 }
 
 void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
-{   
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+{
+    std::vector<uint8_t> values(mGPIOboxes.size()/8, 0);
+    int gpioIndex = 0;
+    for (size_t i = 0; i < mGPIOboxes.size()/8; ++i)
     {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_WR;
-    
-	int gpioIndex = 0;
-	for (int i = 0; i < mGPIOboxes.size()/8; ++i)
-	{ 
         unsigned char value = 0;
-		for (int j = 7; j >= 0; --j)		
-			value |= mGPIOboxes[gpioIndex++]->IsChecked() << j;			
-        pkt.outBuffer.push_back(value);
-	}    
-    if (m_serPort->TransferPacket(pkt) != 0)		
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+        for (int j = 7; j >= 0; --j)
+            value |= mGPIOboxes[gpioIndex++]->IsChecked() << j;
+        values[i] = value;
+    }
+    if (LMS_GPIOWrite(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
 }
 
 void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
 {
-    if (m_serPort == nullptr || m_serPort->IsOpen() == false)
+    std::vector<uint8_t> values(mGPIOboxes.size()/8);
+    if (LMS_GPIORead(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
     {
-        wxMessageBox(_("Board not connected"), _("Warning"));
+        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
         return;
     }
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_RD;
-    assert(m_serPort != nullptr);
-
-    if (m_serPort->TransferPacket(pkt) != 0)
+    size_t gpioIndex = 0;
+    int gpioByte = 0;
+    for (size_t i = 0; i < mGPIOboxes.size() / 8; ++i)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
-        return;
+        for (int j = 7; j >= 0 && gpioIndex < mGPIOboxes.size(); --j)
+            mGPIOboxes[gpioIndex++]->SetValue( values[gpioByte] & (0x1 << j) );
+        ++gpioByte;
     }
-    assert(pkt.inBuffer.size() >= 3);
-		
-	int gpioIndex = 0;
-	int gpioByte = 0;
-	for (int i = 0; i < mGPIOboxes.size() / 8; ++i)
-	{		
-		for (int j = 7; j >= 0 && gpioIndex < mGPIOboxes.size(); --j)
-			mGPIOboxes[gpioIndex++]->SetValue( pkt.inBuffer[gpioByte] & (0x1 << j) );
-		++gpioByte;
-	}	
 }

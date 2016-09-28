@@ -10,10 +10,7 @@
 
 #include <ciso646>
 
-#include <IConnection.h>
-#include <ErrorReporting.h>
 
-using namespace lime;
 using namespace std;
 
 BEGIN_EVENT_TABLE(pnluLimeSDR, wxPanel)
@@ -21,16 +18,13 @@ END_EVENT_TABLE()
 
 pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const wxSize& size, int style, wxString name)
 {
-    mSerPort = nullptr;
-
-    wxFlexGridSizer* FlexGridSizer1;
+    lmsControl = nullptr;
 
     Create(parent, id, pos, size, style, name);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
     wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
-    FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
 
     SetSizer(mainSizer);
     chkRFLB_A_EN = new wxCheckBox(this, wxNewId(), _("chkRFLB_A_EN"));
@@ -48,9 +42,9 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
     Bind(WRITE_ALL_VALUES, &pnluLimeSDR::OnLoopbackChange, this, this->GetId());
 }
 
-void pnluLimeSDR::Initialize(IConnection* pControl)
+void pnluLimeSDR::Initialize(lms_device_t* pControl)
 {
-    mSerPort = pControl;
+    lmsControl = pControl;
 }
 
 pnluLimeSDR::~pnluLimeSDR()
@@ -65,17 +59,17 @@ void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
     uint16_t value = 0;
     value |= chkRFLB_A_EN->GetValue() << 0;
     value |= chkRFLB_B_EN->GetValue() << 1;
-    if(mSerPort && mSerPort->WriteRegister(addr, value))
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+    if(LMS_IsOpen(lmsControl, 0) && LMS_WriteFPGAReg(lmsControl,addr, value))
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
 }
 
 void pnluLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(mSerPort && mSerPort->ReadRegister(addr, value))
+    if(LMS_IsOpen(lmsControl, 0) && LMS_ReadFPGAReg(lmsControl,addr, &value))
     {
-        wxMessageBox(GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     chkRFLB_A_EN->SetValue((value >> 0) & 0x1);

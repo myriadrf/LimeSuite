@@ -16,34 +16,25 @@ dlgConnectionSettings_view::dlgConnectionSettings_view( wxWindow* parent, wxWind
 	wxFlexGridSizer* fgSizer211;
 	fgSizer211 = new wxFlexGridSizer( 0, 1, 0, 0 );
 	fgSizer211->AddGrowableCol( 0 );
+	fgSizer211->AddGrowableRow( 0 );
 	fgSizer211->SetFlexibleDirection( wxBOTH );
 	fgSizer211->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxFlexGridSizer* fgSizer212;
-	fgSizer212 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer212 = new wxFlexGridSizer( 0, 1, 0, 0 );
 	fgSizer212->AddGrowableCol( 0 );
-	fgSizer212->AddGrowableCol( 1 );
 	fgSizer212->AddGrowableRow( 1 );
 	fgSizer212->SetFlexibleDirection( wxBOTH );
 	fgSizer212->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText472 = new wxStaticText( this, wxID_ANY, wxT("LMS7 control:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText472 = new wxStaticText( this, wxID_ANY, wxT("Board connections:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText472->Wrap( -1 );
 	fgSizer212->Add( m_staticText472, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 	
-	m_staticText473 = new wxStaticText( this, wxID_ANY, wxT("Stream board:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText473->Wrap( -1 );
-	fgSizer212->Add( m_staticText473, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
-	
 	mListLMS7ports = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
-	mListLMS7ports->SetMinSize( wxSize( 300,150 ) );
+	mListLMS7ports->SetMinSize( wxSize( 400,150 ) );
 	
 	fgSizer212->Add( mListLMS7ports, 0, wxALL|wxEXPAND, 5 );
-	
-	mListStreamports = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	mListStreamports->SetMinSize( wxSize( 300,150 ) );
-	
-	fgSizer212->Add( mListStreamports, 0, wxALL|wxEXPAND, 5 );
 	
 	
 	fgSizer211->Add( fgSizer212, 1, wxEXPAND, 5 );

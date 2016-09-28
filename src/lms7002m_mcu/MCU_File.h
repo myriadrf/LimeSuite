@@ -8,6 +8,8 @@
 	#define max __max
 #endif
 
+using namespace std;
+
 class MemBlock
 {
 public:

@@ -1,7 +1,5 @@
 
-#include "ErrorReporting.h"
 #include "lms7002_pnlBuffers_view.h"
-#include "LMS64CProtocol.h"
 #include "wx/msgdlg.h"
 using namespace lime;
 
@@ -19,12 +17,12 @@ static bool getbit(const unsigned char src, const int pos)
 
 lms7002_pnlBuffers_view::lms7002_pnlBuffers_view( wxWindow* parent )
 :
-pnlBuffers_view(parent), serPort(nullptr)
+pnlBuffers_view(parent), lmsControl(nullptr)
 {
 }
 
 lms7002_pnlBuffers_view::lms7002_pnlBuffers_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
-    : pnlBuffers_view(parent, id, pos, size, style), serPort(nullptr)
+    : pnlBuffers_view(parent, id, pos, size, style), lmsControl(nullptr)
 {   
 }
 
@@ -37,35 +35,33 @@ void lms7002_pnlBuffers_view::OnGPIOchanged( wxCommandEvent& event )
     value = setbit(value, 3, chkIQ_SEL1_DIR->GetValue());
     value = setbit(value, 4, chkIQ_SEL2_DIR->GetValue());
     value = setbit(value, 5, chkG_PWR_DWN->GetValue());
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_WR;
-    pkt.outBuffer.push_back(value);
-    if (serPort->TransferPacket(pkt) != 0)
+
+    LMS_GPIOWrite(lmsControl,&value,1);
     {
-        wxMessageBox(wxString::Format(_("GPIO write: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("GPIO write: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     }
 }
 
 void lms7002_pnlBuffers_view::UpdateGUI()
 {
-    if (serPort == nullptr)
+    if (lmsControl == nullptr)
         return;
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_RD;
-    if (serPort->TransferPacket(pkt) == 0)
+
+    uint8_t value;
+    if (LMS_GPIORead(lmsControl,&value,1)==0)
     {   
-        chkDIO_BUFF_OE->SetValue(getbit(pkt.inBuffer[0], 2));
-        chkDIO_DIR_CTRL1->SetValue(getbit(pkt.inBuffer[0], 0));
-        chkDIO_DIR_CTRL2->SetValue(getbit(pkt.inBuffer[0], 1));
-        chkIQ_SEL1_DIR->SetValue(getbit(pkt.inBuffer[0], 3));
-        chkIQ_SEL2_DIR->SetValue(getbit(pkt.inBuffer[0], 4));
-        chkG_PWR_DWN->SetValue(getbit(pkt.inBuffer[0], 5));
+        chkDIO_BUFF_OE->SetValue(getbit(value, 2));
+        chkDIO_DIR_CTRL1->SetValue(getbit(value, 0));
+        chkDIO_DIR_CTRL2->SetValue(getbit(value, 1));
+        chkIQ_SEL1_DIR->SetValue(getbit(value, 3));
+        chkIQ_SEL2_DIR->SetValue(getbit(value, 4));
+        chkG_PWR_DWN->SetValue(getbit(value, 5));
     }
-    else wxMessageBox(wxString::Format(_("GPIO read: %s"), wxString::From8BitData(GetLastErrorMessage())));
+    else wxMessageBox(wxString::Format(_("GPIO read: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     Refresh();
 }
 
-void lms7002_pnlBuffers_view::Initialize(IConnection* pSerPort)
+void lms7002_pnlBuffers_view::Initialize(lms_device_t* pSerPort)
 {
-    serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
+    lmsControl = pSerPort;
 }

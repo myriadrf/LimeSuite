@@ -4,6 +4,7 @@
 #include <map>
 #include <wx/frame.h>
 #include <wx/panel.h>
+#include "lime/LimeSuite.h"
 class wxStaticText;
 class wxFlexGridSizer;
 class wxButton;
@@ -13,16 +14,13 @@ class wxCheckBox;
 class wxTextCtrl;
 class wxChoice;
 
-namespace lime
-{
-class IConnection;
-}
+
 
 class pnlQSpark : public wxFrame
 {
 public:
     pnlQSpark(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
-    void Initialize(lime::IConnection *pControl);
+    void Initialize(lms_device_t *pControl);
     virtual ~pnlQSpark();
     virtual void UpdatePanel();
 
@@ -78,7 +76,7 @@ protected:
     void RegisterParameterChangeHandler(wxCommandEvent& event);
 
 protected:
-    lime::IConnection *m_serPort;
+    lms_device_t *lmsControl;
     DECLARE_EVENT_TABLE()
 };
 

@@ -12,12 +12,29 @@
 #include <sstream>
 #include <stdarg.h>
 #include <functional>
+#include <vector>
 
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
 class CalibrationCache;
 class MCU_BD;
+class BinSearchParam;
+class GridSearchParam;
+
+struct RSSI_measurements
+{
+    void clear()
+    {
+        amplitudeFFT.clear();
+        amplitudeGeortzelF.clear();
+        amplitudeGeortzelFPGA.clear();
+    }
+
+    std::vector<float> amplitudeFFT;
+    std::vector<float> amplitudeGeortzelF;
+    std::vector<float> amplitudeGeortzelFPGA;
+};
 
 typedef double float_type;
 
@@ -284,7 +301,7 @@ public:
     ///@}
 
     ///@name CGEN and PLL
-	void SetReferenceClk_SX(bool tx, float_type freq_Hz);
+	int SetReferenceClk_SX(bool tx, float_type freq_Hz);
 	float_type GetReferenceClk_SX(bool tx);
 	float_type GetFrequencyCGEN();
     int SetFrequencyCGEN(float_type freq_Hz, const bool retainNCOfrequencies = false, CGEN_details* output = nullptr);
@@ -424,6 +441,7 @@ protected:
     bool useCache;
     CalibrationCache *mValueCache;
     LMS7002M_RegistersMap *mRegistersMap;
+
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
 
@@ -434,17 +452,20 @@ protected:
     ///@name Algorithms functions
     void BackupAllRegisters();
     void RestoreAllRegisters();
-    uint32_t GetRSSI();
+    uint32_t GetRSSI(RSSI_measurements *measurements = nullptr);
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
-    void CalibrateRxDC_RSSI();
-    void CalibrateTxDC_RSSI(const float_type bandwidth);
+    void CalibrateRxDC();
+    void CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq);
+    void CalibrateIQImbalance(const bool tx, uint16_t *gainI=nullptr, uint16_t *gainQ=nullptr, int16_t *phase=nullptr);
 
     int CalibrateTxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback);
 
+    void BinarySearch(BinSearchParam* args);
+    void GridSearch(GridSearchParam* args);
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
     int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);

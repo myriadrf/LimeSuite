@@ -50,7 +50,7 @@ CalibrationCache::CalibrationCache()
             GetTempPathA(MAX_PATH, path); //home not defined move to temp
         }
         homeDir = path;
-#endif        
+#endif
         limeSuiteDir = homeDir + "/" + limeSuiteDirName;
         //check if limesuite directory exists
         struct stat info;
@@ -316,7 +316,7 @@ int CalibrationCache::GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_
         std::vector<double> *data_freqs = (std::vector<double>*)data;
         if(data != nullptr)
         {
-            for (size_t i = 0; i < argc; i++)
+            for (size_t i = 0; i < (size_t)argc; i++)
             {
                 if (argv[i] == nullptr) continue;
                 data_freqs->push_back(double(std::stoll(argv[i])));

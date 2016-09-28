@@ -94,7 +94,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer248->Add( chkSyncAB, 0, 0, 5 );
 	
 	
-	fgSizer300->Add( fgSizer248, 1, wxEXPAND, 5 );
+	fgSizer300->Add( fgSizer248, 0, 0, 5 );
 	
 	btnDownloadAll = new wxButton( this, ID_BTN_CHIP_TO_GUI, wxT("Chip-->GUI"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer300->Add( btnDownloadAll, 0, 0, 5 );

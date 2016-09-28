@@ -42,16 +42,14 @@ dlgViewIRAM::~dlgViewIRAM()
 
 void dlgViewIRAM::InitGridData(const unsigned char *data)
 {
-	int row=0;
-	int col=0;   	
-	for (int i=0; i<=31; i++)    
+	for (int i=0; i<=31; i++)
         Grid1->SetRowLabelValue(i, wxString::Format(_("Row: 0x%02X"), 0xF8 - i * 8));
 
 	for (int j=0; j<8; j++)     //columns
         Grid1->SetColLabelValue(j, wxString::Format(_("Col.: 0x%02X"), j));
 
-	for (int i=0x0000; i<=0x00FF; i++) 
-    {   
+	for (int i=0x0000; i<=0x00FF; i++)
+    {
 		int row=(i/8);
 		int col=(i-row*8);
 		row=31-row;

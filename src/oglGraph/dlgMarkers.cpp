@@ -103,7 +103,7 @@ void dlgMarkers::AddMarker(int id)
 void dlgMarkers::AddDeltas()
 {
     wxArrayString selections;
-    for(int i=0; i<parent_graph->markers.size(); ++i)
+    for(size_t i=0; i<parent_graph->markers.size(); ++i)
     {
         selections.push_back(wxString::Format("M%i", i));
     }
@@ -154,7 +154,7 @@ void dlgMarkers::UpdateValues()
 {
     if(IsShownOnScreen())
     {
-        for(int i=0; i<labels.size(); ++i)
+        for(size_t i=0; i<labels.size(); ++i)
         {
             if(parent_graph == NULL)
                 return;

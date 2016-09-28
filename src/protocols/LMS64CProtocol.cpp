@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 #include <ADCUnits.h>
+#include <sstream>
 using namespace lime;
 
 //! CMD_LMS7002_RST options
@@ -129,7 +130,7 @@ double LMS64CProtocol::GetReferenceClockRate(void)
     return _cachedRefClockRate;
 }
 
-void LMS64CProtocol::SetReferenceClockRate(const double rate)
+int LMS64CProtocol::SetReferenceClockRate(const double rate)
 {
     Si5351C pll;
     pll.Initialize(this);
@@ -138,6 +139,7 @@ void LMS64CProtocol::SetReferenceClockRate(const double rate)
 
     //stash the actual reference
     _cachedRefClockRate = rate;
+    return 0;
 }
 
 /***********************************************************************
@@ -245,8 +247,7 @@ int LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const size_t size
 
 int LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    //TODO
-    ReportError(ENOTSUP);
+    ReportError(ENOTSUP, "ReadADF4002SPI not supported");
     return -1;
 }
 
@@ -554,7 +555,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             bufLen = packet.pktLength;
         buffer = new unsigned char[bufLen];
         memset(buffer, 0, bufLen);
-        int srcPos = 0;
+        unsigned int srcPos = 0;
         for(int j=0; j*packet.pktLength<bufLen; ++j)
         {
             int pktPos = j*packet.pktLength;
@@ -595,7 +596,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
             if (pkt.cmd == CMD_LMS7002_WR)
             {
-                for(int i=0; i<pkt.outBuffer.size(); i+=4)
+                for(size_t i=0; i<pkt.outBuffer.size(); i+=4)
                     buffer[i] |= 0x80;
             }
             length = pkt.outBuffer.size();
@@ -778,12 +779,12 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
+int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
-    for (int i=0; i<count; ++i)
+    for (size_t i=0; i<count; ++i)
         pkt.outBuffer.push_back(ids[i]);
 
     int status = this->TransferPacket(pkt);
@@ -791,7 +792,7 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
 
     assert(pkt.inBuffer.size() >= 4 * count);
 
-    for (int i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
         if(units)
@@ -805,12 +806,12 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
+int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
 
-    for (int i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;
@@ -824,4 +825,85 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
     }
     int status = this->TransferPacket(pkt);
     return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_WR;
+    for (size_t i=0; i<bufLength; ++i)
+        pkt.outBuffer.push_back(buffer[i]);
+    int status = TransferPacket(pkt);
+    return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_RD;
+    int status = TransferPacket(pkt);
+    if(status != 0)
+        return convertStatus(status, pkt);
+
+    for (size_t i=0; i<bufLength; ++i)
+        buffer[i] = pkt.inBuffer[i];
+    return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
+{
+#ifndef NDEBUG
+    auto timeStart = std::chrono::high_resolution_clock::now();
+#endif
+    const uint8_t fifoLen = 32;
+    bool success = true;
+    bool terminate = false;
+
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
+
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
+
+    if (callback)
+        terminate = callback(0, length,"");
+
+    for(uint16_t CntEnd=0; CntEnd<length && !terminate; CntEnd+=32)
+    {
+        pkt.outBuffer.clear();
+        pkt.outBuffer.reserve(fifoLen+2);
+        pkt.outBuffer.push_back(mode);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (uint8_t i=0; i<fifoLen; i++)
+            pkt.outBuffer.push_back(buffer[CntEnd + i]);
+
+        TransferPacket(pkt);
+        status = pkt.status;
+        if (callback)
+            terminate = callback(CntEnd+fifoLen,length,"");
+#ifndef NDEBUG
+        printf("MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
+#endif
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            std::stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << std::endl;
+            success = false;
+            break;
+        }
+
+        if(mode == 3) // if boot mode , send only first packet
+        {
+            if (callback)
+                callback(1, 1, "");
+            break;
+        }
+	};
+#ifndef NDEBUG
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+    printf("\nMCU Programming finished, %li ms\n",
+            std::chrono::duration_cast<std::chrono::milliseconds>
+            (timeEnd-timeStart).count());
+#endif
+    return success ? 0 : -1;
 }
