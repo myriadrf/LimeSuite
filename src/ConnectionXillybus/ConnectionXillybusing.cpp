@@ -90,9 +90,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
 
     const uint8_t packetsToBatch = (1<<tmp_cnt);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
-    const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
-    vector<int> handles(buffersCount, 0);
-    vector<char>buffers(buffersCount*bufferSize, 0);
+    vector<char>buffers(bufferSize, 0);
     vector<StreamChannel::Frame> chFrames;
     try
     {
@@ -104,20 +102,11 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
         return;
     }
 
-    uint8_t activeTransfers = 0;
-    for (int i = 0; i<buffersCount; ++i)
-    {
-        handles[i] = this->BeginDataReading(&buffers[i*bufferSize], bufferSize);
-        ++activeTransfers;
-    }
-
-    int bi = 0;
     unsigned long totalBytesReceived = 0; //for data rate calculation
     int m_bufferFailures = 0;
     int32_t droppedSamples = 0;
     int32_t packetLoss = 0;
 
-    vector<uint32_t> samplesCollected(chCount, 0);
     vector<uint32_t> samplesReceived(chCount, 0);
 
     auto t1 = chrono::high_resolution_clock::now();
@@ -149,8 +138,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
     {
         if(generateData->load())
         {
-            if(activeTransfers == 0) //stop FPGA when last transfer completes
-                fpga::StopStreaming(this);
+            fpga::StopStreaming(this);
             safeToConfigInterface->notify_all(); //notify that it's safe to change chip config
             const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
             IStreamChannel::Metadata meta;
@@ -173,20 +161,16 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
             this_thread::sleep_for(chrono::milliseconds(100));
         }
         int32_t bytesReceived = 0;
-        if(handles[bi] >= 0)
-        {
-            if (this->WaitForReading(handles[bi], 1000) == false)
-                ++m_bufferFailures;
-            bytesReceived = this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-            --activeTransfers;
-            totalBytesReceived += bytesReceived;
-            if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
-                ++m_bufferFailures;
-        }
+
+        bytesReceived = this->ReceiveData(&buffers[0], bufferSize,200);
+        totalBytesReceived += bytesReceived;
+        if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
+            ++m_bufferFailures;
+
         bool txLate=false;
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
-            const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
+            const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[0];
             const uint8_t byte0 = pkt[pktIndex].reserved[0];
             if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
             {
@@ -197,7 +181,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
                 {
                     printf("L");
                     resetTxFlags.notify_one();
-                    resetFlagsDelay = packetsToBatch*buffersCount;
+                    resetFlagsDelay = packetsToBatch*2;
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
@@ -231,19 +215,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
         // Re-submit this request to keep the queue full
         if(not generateData->load())
         {
-            if(activeTransfers == 0) //reactivate FPGA and USB transfers
-                fpga::StartStreaming(this);
-            for(int i=0; i<buffersCount-activeTransfers; ++i)
-            {
-                handles[bi] = this->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
-                bi = (bi + 1) & (buffersCount-1);
-                ++activeTransfers;
-            }
-        }
-        else
-        {
-            handles[bi] = -1;
-            bi = (bi + 1) & (buffersCount-1);
+            fpga::StartStreaming(this);
         }
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -268,15 +240,6 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
         }
     }
     this->AbortReading();
-    for (int j = 0; j<buffersCount; j++)
-    {
-        if(handles[bi] >= 0)
-        {
-            this->WaitForReading(handles[bi], 1000);
-            this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-        }
-        bi = (bi + 1) & (buffersCount-1);
-    }
     resetTxFlags.notify_one();
     txReset.join();
     if (dataRate_Bps)
@@ -304,24 +267,18 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
         latency += args.channels[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
-
-    const uint8_t buffersCount = 16; // must be power of 2
-    assert(buffersCount % 2 == 0);
     const uint8_t packetsToBatch = (1<<tmp_cnt); //packets in single USB transfer
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 100;
 
     const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
-    vector<int> handles(buffersCount, 0);
-    vector<bool> bufferUsed(buffersCount, 0);
-    vector<uint32_t> bytesToSend(buffersCount, 0);
     vector<complex16_t> samples[maxChannelCount];
     vector<char> buffers;
     try
     {
         for(int i=0; i<chCount; ++i)
             samples[i].resize(maxSamplesBatch);
-        buffers.resize(buffersCount*bufferSize, 0);
+        buffers.resize(bufferSize, 0);
     }
     catch (const std::bad_alloc& ex) //not enough memory for buffers
     {
@@ -338,25 +295,14 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
     auto t2 = chrono::high_resolution_clock::now();
 
     uint64_t timestamp = 0;
-    uint8_t bi = 0; //buffer index
     while (terminate->load() != true)
     {
-        if (bufferUsed[bi])
-        {
-            if (this->WaitForSending(handles[bi], 1000) == false)
-                ++m_bufferFailures;
-            uint32_t bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
-            totalBytesSent += bytesSent;
-            if (bytesSent != bytesToSend[bi])
-                ++m_bufferFailures;
-            bufferUsed[bi] = false;
-        }
         int i=0;
 
         while(i<packetsToBatch)
         {
             IStreamChannel::Metadata meta;
-            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
+            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[0]);
             for(int ch=0; ch<chCount; ++ch)
             {
                 int samplesPopped = args.channels[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
@@ -366,7 +312,6 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
                     printf("Warning popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
                 #endif
                 }
-
             }
             if(terminate->load() == true) //early termination
                 break;
@@ -385,9 +330,10 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
             ++i;
         }
 
-        bytesToSend[bi] = bufferSize;
-        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
-        bufferUsed[bi] = true;
+        uint32_t bytesSent = this->SendData(&buffers[0], bufferSize,200);
+                totalBytesSent += bytesSent;
+        if (bytesSent != bufferSize)
+            ++m_bufferFailures;
 
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -407,20 +353,10 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
             printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i, ts:%li\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures, timestamp);
 #endif
         }
-        bi = (bi + 1) & (buffersCount-1);
     }
 
     // Wait for all the queued requests to be cancelled
     this->AbortSending();
-    for (int j = 0; j<buffersCount; j++)
-    {
-        if (bufferUsed[bi])
-        {
-            this->WaitForSending(handles[bi], 1000);
-            this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-        }
-        bi = (bi + 1) & (buffersCount-1);
-    }
     if (dataRate_Bps)
         dataRate_Bps->store(0);
 }

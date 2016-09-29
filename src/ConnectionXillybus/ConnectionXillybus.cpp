@@ -352,66 +352,37 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 }
 
 /**
-	@brief Starts asynchronous data reading from board
-	@param *buffer buffer where to store received data
-	@param length number of bytes to read
-	@return handle of transfer context
-*/
-int ConnectionXillybus::BeginDataReading(char *buffer, uint32_t length)
-{
-#ifndef __unix__
-	if (hReadStream == INVALID_HANDLE_VALUE)
-	{
-		hReadStream = CreateFileA("\\\\.\\xillybus_read_32", GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
-		//hWriteStream = CreateFileA("\\\\.\\xillybus_write_32", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	}
-#else
-        if (hReadStream < 0)
-        {
-           if (( hReadStream = open(readStreamPort.c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK))<0)
-           {
-                ReportError(errno);
-		return -1;
-           }
-        }
-#endif
-    return 0;
-}
-
-/**
-	@brief Waits for asynchronous data reception
-	@param contextHandle handle of which context data to wait
-	@param timeout_ms number of miliseconds to wait
-	@return 1-data received, 0-data not received
-*/
-int ConnectionXillybus::WaitForReading(int contextHandle, unsigned int timeout_ms)
-{
-    return 1;
-}
-
-/**
-	@brief Finishes asynchronous data reading from board
+	@brief Reads data from board
 	@param buffer array where to store received data
-	@param length number of bytes to read, function changes this value to number of bytes actually received
-	@param contextHandle handle of which context to finish
-	@return false failure, true number of bytes received
+	@param length number of bytes to read
+        @param timeout read timeout in milliseconds
+	@return number of bytes received
 */
-int ConnectionXillybus::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
+int ConnectionXillybus::ReceiveData(char *buffer, uint32_t length, double timeout_ms)
 {
     unsigned long totalBytesReaded = 0;
     unsigned long bytesToRead = length;
 
 #ifndef __unix__
-	if (hReadStream == INVALID_HANDLE_VALUE)
+    if (hReadStream == INVALID_HANDLE_VALUE)
+    {
+            hReadStream = CreateFileA("\\\\.\\xillybus_read_32", GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+            //hWriteStream = CreateFileA("\\\\.\\xillybus_write_32", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    }
 #else
-	if (hReadStream == -1)
+    if (hReadStream < 0)
+    {
+       if (( hReadStream = open(readStreamPort.c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK))<0)
+       {
+            ReportError(errno);
+            return -1;
+       }
+    }
 #endif
-		return -1;
-
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 250)
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
  #ifndef __unix__
 		DWORD bytesReceived = 0;
@@ -424,7 +395,7 @@ int ConnectionXillybus::FinishDataReading(char *buffer, uint32_t length, int con
 			CloseHandle(vOverlapped.hEvent);
 			return totalBytesReaded;
 		}
-		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 250);
+		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0)
 		{
 			if (GetOverlappedResult(hReadStream, &vOverlapped, &bytesReceived, TRUE) == FALSE)
@@ -486,12 +457,13 @@ void ConnectionXillybus::AbortReading()
 }
 
 /**
-	@brief Starts asynchronous data Sending to board
+	@brief  sends data to board
 	@param *buffer buffer to send
 	@param length number of bytes to send
-	@return handle of transfer context
+        @param timeout data write timeout in milliseconds
+	@return number of bytes sent
 */
-int ConnectionXillybus::BeginDataSending(const char *buffer, uint32_t length)
+int ConnectionXillybus::SendData(const char *buffer, uint32_t length, double timeout_ms)
 {
 #ifndef __unix__
 	if (hWriteStream == INVALID_HANDLE_VALUE)
@@ -514,7 +486,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, uint32_t length)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < 200)
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
     {
 #ifndef __unix__
 		DWORD bytesSent = 0;
@@ -527,7 +499,7 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, uint32_t length)
 			CloseHandle(vOverlapped.hEvent);
 			return totalBytesWritten;
 		}
-		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, 200);
+		DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0)
 		{
 			if (GetOverlappedResult(hWriteStream, &vOverlapped, &bytesSent, TRUE) == FALSE)
@@ -582,29 +554,6 @@ int ConnectionXillybus::BeginDataSending(const char *buffer, uint32_t length)
     }
 #endif
     return totalBytesWritten;
-}
-
-/**
-	@brief Waits for asynchronous data sending
-	@param contextHandle handle of which context data to wait
-	@param timeout_ms number of miliseconds to wait
-	@return 1-data received, 0-data not received
-*/
-int ConnectionXillybus::WaitForSending(int contextHandle, unsigned int timeout_ms)
-{
-    return 1;
-}
-
-/**
-	@brief Finishes asynchronous data sending to board
-	@param buffer array where to store received data
-	@param length number of bytes to read, function changes this value to number of bytes acctually received
-	@param contextHandle handle of which context to finish
-	@return false failure, true number of bytes sent
-*/
-int ConnectionXillybus::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
-{
-    return length;
 }
 
 /**

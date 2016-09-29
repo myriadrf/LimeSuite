@@ -9,7 +9,8 @@ using namespace lime;
 
 ILimeSDRStreaming::ILimeSDRStreaming()
 {
-
+    rxRunning = false;
+    txRunning = false;
 }
 ILimeSDRStreaming::~ILimeSDRStreaming()
 {

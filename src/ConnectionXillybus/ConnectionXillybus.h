@@ -44,14 +44,10 @@ protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;
 
-    virtual int BeginDataReading(char* buffer, uint32_t length);
-    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual int ReceiveData(char* buffer, uint32_t length, double timeout);
     virtual void AbortReading();
 
-    virtual int BeginDataSending(const char* buffer, uint32_t length);
-    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
-    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual int SendData(const char* buffer, uint32_t length, double timeout);
     virtual void AbortSending();
 
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
