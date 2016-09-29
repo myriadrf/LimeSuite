@@ -119,7 +119,9 @@ ConnectionSTREAM::~ConnectionSTREAM()
         CloseStream((size_t)i);
     UpdateThreads();
     Close();
+#ifndef __unix__
     delete USBDevicePrimary;
+#endif
 }
 
 /**	@brief Tries to open connected USB device and find communication endpoints.
