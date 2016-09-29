@@ -127,7 +127,7 @@ protected:
     bool isConnected;
 
 #ifndef __unix__
-    CCyUSBDevice* USBDevicePrimary;
+    CCyFX3Device* USBDevicePrimary;
     //control endpoints
     CCyControlEndPoint* InCtrlEndPt3;
     CCyControlEndPoint* OutCtrlEndPt3;
@@ -159,7 +159,6 @@ public:
 protected:
 #ifndef __unix__
     std::string DeviceName(unsigned int index);
-    CCyUSBDevice* USBDevicePrimary;
 #else
     libusb_context* ctx; //a libusb session
     std::thread mUSBProcessingThread;

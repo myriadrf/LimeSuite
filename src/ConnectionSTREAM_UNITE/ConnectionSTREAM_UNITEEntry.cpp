@@ -167,12 +167,12 @@ IConnection *ConnectionSTREAM_UNITEEntry::make(const ConnectionHandle &handle)
     std::string comName;
     if(comAddrPos == std::string::npos)
     {
-        return new ConnectionSTREAM_UNITE(USBDevicePrimary, handle.index);
+        return new ConnectionSTREAM_UNITE(nullptr, handle.index);
     }
     else
     {
         comName = pidvid.substr(comAddrPos + 1);
-        return new ConnectionSTREAM_UNITE(USBDevicePrimary, handle.index, -1, -1, comName.c_str());
+        return new ConnectionSTREAM_UNITE(nullptr, handle.index, -1, -1, comName.c_str());
     }
 #else
     const auto pidvid = handle.addr;

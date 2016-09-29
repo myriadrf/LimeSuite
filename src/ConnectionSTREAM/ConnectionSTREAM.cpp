@@ -12,6 +12,7 @@
 #include "FPGA_common.h"
 #include "LMS7002M.h"
 #include <ciso646>
+#include <fstream>
 
 #include <thread>
 #include <chrono>
@@ -37,7 +38,10 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 
     isConnected = false;
 #ifndef __unix__
-    USBDevicePrimary = (CCyUSBDevice *)arg;
+    if(arg == nullptr)
+        USBDevicePrimary = new CCyFX3Device();
+    else
+        USBDevicePrimary = new CCyFX3Device(*(CCyFX3Device*)arg);
 	InCtrlEndPt3 = NULL;
 	OutCtrlEndPt3 = NULL;
 #else
@@ -115,6 +119,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
         CloseStream((size_t)i);
     UpdateThreads();
     Close();
+    delete USBDevicePrimary;
 }
 
 /**	@brief Tries to open connected USB device and find communication endpoints.
@@ -128,8 +133,6 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 
     if(USBDevicePrimary->Open(index) == false)
         return ReportError(-1, "ConnectionSTREAM: Failed to open device");
-
-    unsigned int pos;
 
     if (InCtrlEndPt3)
     {
@@ -224,7 +227,7 @@ void ConnectionSTREAM::Close()
 bool ConnectionSTREAM::IsOpen()
 {
     #ifndef __unix__
-    return USBDevicePrimary.IsOpen() && isConnected;
+    return USBDevicePrimary->IsOpen() && isConnected;
     #else
     return isConnected;
     #endif
@@ -595,7 +598,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
             printf("failed to get device description\n");
         else if (desc.idProduct == 243)
 #else
-		if (USBDevicePrimary.ProductID == 243)
+		if (USBDevicePrimary->ProductID == 243)
 #endif
         {
 #ifdef __unix__
@@ -619,7 +622,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
 
             if (ret != -1)
             {
-                if ((ret=USBDevicePrimary.DownloadFw(filename, FX3_FWDWNLOAD_MEDIA_TYPE::RAM))!=0)
+                if ((ret=USBDevicePrimary->DownloadFw(filename, FX3_FWDWNLOAD_MEDIA_TYPE::RAM))!=0)
                     ReportError("FX3: Failed to upload FW to RAM");
             }
 

@@ -46,9 +46,7 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
 ConnectionSTREAMEntry::ConnectionSTREAMEntry(const std::string entryName):
     ConnectionRegistryEntry(entryName)
 {
-#ifndef __unix__
-    USBDevicePrimary = new CCyUSBDevice(NULL);
-#else
+#ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
         printf("Init Error %i\n", r); //there was an error
