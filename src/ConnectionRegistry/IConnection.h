@@ -7,6 +7,7 @@
 #ifndef ICONNECTION_H
 #define ICONNECTION_H
 
+#include <LimeSuiteConfig.h>
 #include <ConnectionHandle.h>
 #include <string>
 #include <vector>
@@ -24,7 +25,7 @@ namespace lime{
  * and slave addresses or I2C addresses for commonly supported ICs.
  * A -1 for an address number indicates that it is not available.
  */
-struct DeviceInfo
+struct LIME_API DeviceInfo
 {
     DeviceInfo(void);
 
@@ -78,7 +79,7 @@ struct DeviceInfo
  * The Stream metadata structure is used with the streaming API to exchange
  * extra data associated with the stream such as timestamps and burst info.
  */
-struct StreamMetadata
+struct LIME_API StreamMetadata
 {
     StreamMetadata(void);
 
@@ -114,7 +115,7 @@ struct StreamMetadata
 /*!
  * The stream config structure is used with the SetupStream() API.
  */
-struct StreamConfig
+struct LIME_API StreamConfig
 {
     StreamConfig(void);
 
@@ -166,7 +167,7 @@ struct StreamConfig
  * Device developers will implement a custom IConnection for their hardware
  * as an abstraction for streaming and low-level SPI and configuration access.
  */
-class IConnection
+class LIME_API IConnection
 {
 public:
     /*!
@@ -580,7 +581,7 @@ int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     return st;
 }
 
-class IStreamChannel
+class LIME_API IStreamChannel
 {
 public:
     struct Info

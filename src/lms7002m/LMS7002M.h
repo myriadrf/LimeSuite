@@ -7,6 +7,7 @@
 #ifndef LMS7API_H
 #define LMS7API_H
 
+#include <LimeSuiteConfig.h>
 #include "LMS7002M_parameters.h"
 #include <cstdint>
 #include <sstream>
@@ -38,7 +39,7 @@ struct RSSI_measurements
 
 typedef double float_type;
 
-class LMS7002M
+class LIME_API LMS7002M
 {
 public:
     enum
@@ -511,7 +512,7 @@ protected:
  * Helper class to enter a calibration upon construction,
  * and to automatically exit calibration upon exit.
  */
-class LMS7002M_SelfCalState
+class LIME_API LMS7002M_SelfCalState
 {
 public:
     LMS7002M_SelfCalState(LMS7002M *rfic);

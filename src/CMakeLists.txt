@@ -108,7 +108,7 @@ if (ENABLE_LIBRARY)
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_LIBVER})
-    set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
+    set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
     target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
 
     install(TARGETS LimeSuite
