@@ -266,7 +266,7 @@ if(UNIX)
 endif()
 
 #########################################################################
-# tests
+# utilities
 #########################################################################
 set(BUILD_UTILITIES OFF CACHE BOOL "Additional utility programs for testing")
 if(BUILD_UTILITIES)
@@ -274,15 +274,20 @@ if(BUILD_UTILITIES)
     set(utility_src_files utilityTools/pllTest.cpp)
     add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
     target_link_libraries(utilityTools LimeSuite)
-	
+endif()
+
 ########################################################################
 # Lime Util -- command line utility, info and connections
 ########################################################################
-	add_executable(Limef LimeUtil.cpp)
+if(BUILD_UTILITIES)
+	add_executable(LimeUtil LimeUtil.cpp)
 	target_link_libraries(LimeUtil LimeSuite)
 	install(TARGETS LimeUtil DESTINATION bin)
 endif()
 
+#########################################################################
+# tests
+#########################################################################
 set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
 if(BUILD_TESTS)
     add_executable(RxTest utilityTools/RxTest.cpp)
