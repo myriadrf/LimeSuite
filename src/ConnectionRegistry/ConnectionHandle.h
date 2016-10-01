@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <LimeSuiteConfig.h>
 #include <string>
 
 namespace lime{
@@ -19,7 +20,7 @@ namespace lime{
  * Each default field (empty string, -1 index) will be ignored
  * by the connection registry entry discovery implementation.
  */
-class ConnectionHandle
+class LIME_API ConnectionHandle
 {
 public:
 

@@ -25,6 +25,8 @@
 // LIME_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
 // LIME_LOCAL is used for non-api symbols.
 
+#define LIME_DLL //always building shared library
+
 #ifdef LIME_DLL // defined if LIME is compiled as a DLL
   #ifdef LIME_DLL_EXPORTS // defined if we are building the LIME DLL (instead of using it)
     #define LIME_API LIME_HELPER_DLL_EXPORT

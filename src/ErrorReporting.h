@@ -22,12 +22,12 @@ namespace lime
 /*!
  * Get the error code reported.
  */
-int GetLastError(void);
+LIME_API int GetLastError(void);
 
 /*!
  * Get the error code to string + any optional message reported.
  */
-const char *GetLastErrorMessage(void);
+LIME_API const char *GetLastErrorMessage(void);
 
 /*!
  * Report a typical errno style error.
@@ -35,7 +35,7 @@ const char *GetLastErrorMessage(void);
  * \param errnum a recognized error code
  * \return a non-zero status code to return
  */
-int ReportError(const int errnum);
+LIME_API int ReportError(const int errnum);
 
 /*!
  * Report an error as an integer code and a formatted message string.
@@ -43,7 +43,7 @@ int ReportError(const int errnum);
  * \param format a format string followed by args
  * \return a non-zero status code to return
  */
-int ReportError(const int errnum, const char *format, ...);
+inline int ReportError(const int errnum, const char *format, ...);
 
 /*!
  * Report an error as a formatted message string.
@@ -51,7 +51,7 @@ int ReportError(const int errnum, const char *format, ...);
  * \param format a format string followed by args
  * \return a non-zero status code to return
  */
-int ReportError(const char *format, ...);
+inline int ReportError(const char *format, ...);
 
 /*!
  * Report an error as an integer code and message format arguments
@@ -60,7 +60,7 @@ int ReportError(const char *format, ...);
  * \param argList the format string args as a va_list
  * \return a non-zero status code to return
  */
-int ReportError(const int errnum, const char *format, va_list argList);
+LIME_API int ReportError(const int errnum, const char *format, va_list argList);
 
 }
 

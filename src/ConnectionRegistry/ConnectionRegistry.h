@@ -7,6 +7,7 @@
 #ifndef CONNECTION_REGISTRY_H
 #define CONNECTION_REGISTRY_H
 
+#include <LimeSuiteConfig.h>
 #include <ConnectionHandle.h>
 #include <string>
 #include <vector>
@@ -20,7 +21,7 @@ class IConnection;
  * discovery methods and factories for known connections,
  * and to query and instantiate available connections.
  */
-class ConnectionRegistry
+class LIME_API ConnectionRegistry
 {
 public:
 
@@ -61,7 +62,7 @@ public:
  * discovering and instantiating connections.
  * One recommended use is at static initialization time.
  */
-class ConnectionRegistryEntry
+class LIME_API ConnectionRegistryEntry
 {
 public:
 
