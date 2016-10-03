@@ -268,8 +268,9 @@ endif()
 #########################################################################
 # utilities
 #########################################################################
-set(BUILD_UTILITIES OFF CACHE BOOL "Additional utility programs for testing")
-if(BUILD_UTILITIES)
+cmake_dependent_option(ENABLE_UTILITIES "Enable utility programs" OFF "ENABLE_LIBRARY" OFF)
+add_feature_info(LimeSuiteUtilities ENABLE_UTILITIES "Additional utility programs for testing")
+if(ENABLE_UTILITIES)
     include_directories(utilityTools)
     set(utility_src_files utilityTools/pllTest.cpp)
     add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
@@ -279,17 +280,20 @@ endif()
 ########################################################################
 # Lime Util -- command line utility, info and connections
 ########################################################################
-if(BUILD_UTILITIES)
-	add_executable(LimeUtil LimeUtil.cpp)
-	target_link_libraries(LimeUtil LimeSuite)
-	install(TARGETS LimeUtil DESTINATION bin)
+cmake_dependent_option(ENABLE_LIME_UTIL "LimeSuite device utility" ON "ENABLE_LIBRARY" OFF)
+add_feature_info(LimeUtilCommand ENABLE_LIME_UTIL "Command line device discovery utility")
+if(ENABLE_LIME_UTIL)
+    add_executable(LimeUtil LimeUtil.cpp)
+    target_link_libraries(LimeUtil LimeSuite)
+    install(TARGETS LimeUtil DESTINATION bin)
 endif()
 
 #########################################################################
 # tests
 #########################################################################
-set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
-if(BUILD_TESTS)
+cmake_dependent_option(ENABLE_TESTS "Enable library test programs" OFF "ENABLE_LIBRARY" OFF)
+add_feature_info(LimeSuiteTests ENABLE_TESTS "Download gtest and build test application")
+if(ENABLE_TESTS)
     add_executable(RxTest utilityTools/RxTest.cpp)
     add_executable(RxTest2 utilityTools/RxTest2.cpp)
     target_link_libraries(RxTest LimeSuite)
@@ -297,8 +301,7 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-set(BUILD_EXAMPLES ON CACHE BOOL "API Examples")
-if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
+#########################################################################
+# examples
+#########################################################################
+add_subdirectory(examples)
