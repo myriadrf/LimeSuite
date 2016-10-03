@@ -17,12 +17,12 @@ namespace lime
      * Get the library version as a dotted string.
      * The format is major.minor.patch.build-extra.
      */
-    std::string GetLibraryVersion(void);
+    LIME_API std::string GetLibraryVersion(void);
 
     /*!
      * Get the date of the build in "%Y-%M-%d" format.
      */
-    std::string GetBuildTimestamp(void);
+    LIME_API std::string GetBuildTimestamp(void);
 
 }
 
