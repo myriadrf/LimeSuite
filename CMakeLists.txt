@@ -59,12 +59,24 @@ string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 ## compiler flags
 ########################################################################
 
-#gcc c++11 enable flags
+#C++11 is a required language feature for this project
+set(CMAKE_CXX_STANDARD 11)
+
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall")
+
+    #enable C++11 on older versions of cmake
+    if (CMAKE_VERSION VERSION_LESS "3.1")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    endif()
+
+    #common warnings enabled
+    add_compile_options(-Wall)
+
+    #symbols are only exported from libraries/modules explicitly
+    add_compile_options(-fvisibility=hidden)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
 endif()
 
-#visual studio compiler flags
 if (MSVC)
     include_directories(${PROJECT_SOURCE_DIR}/external/msvc)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -72,9 +84,7 @@ if (MSVC)
     set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
 endif(MSVC)
 
-#enable c++11 extensions for OSX
 if (APPLE)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
    add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
 endif(APPLE)
 
