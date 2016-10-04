@@ -291,15 +291,7 @@ endif()
 #########################################################################
 # tests
 #########################################################################
-cmake_dependent_option(ENABLE_TESTS "Enable library test programs" OFF "ENABLE_LIBRARY" OFF)
-add_feature_info(LimeSuiteTests ENABLE_TESTS "Download gtest and build test application")
-if(ENABLE_TESTS)
-    add_executable(RxTest utilityTools/RxTest.cpp)
-    add_executable(RxTest2 utilityTools/RxTest2.cpp)
-    target_link_libraries(RxTest LimeSuite)
-    target_link_libraries(RxTest2 LimeSuite)
-    add_subdirectory(tests)
-endif()
+add_subdirectory(tests)
 
 #########################################################################
 # examples

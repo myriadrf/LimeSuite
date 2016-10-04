@@ -1,18 +1,19 @@
-message(STATUS "")
-message(STATUS "##############################################################")
-message(STATUS "GTESTS Enabled")
-message(STATUS "##############################################################")
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_TESTS "Enable library test programs" OFF "ENABLE_LIBRARY" OFF)
+add_feature_info(LimeSuiteTests ENABLE_TESTS "Download gtest and build test application")
+
+if (NOT ENABLE_TESTS)
+    return()
+endif()
 
 find_package(Threads REQUIRED)
-
-# Enable ExternalProject CMake module
 include(ExternalProject)
-
 # Download and install GoogleTest
 ExternalProject_Add(
     gtest
-    URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
+    URL https://github.com/google/googletest/archive/release-1.8.0.zip
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}
     # Disable install step
     INSTALL_COMMAND ""
 )
@@ -23,14 +24,10 @@ add_dependencies(libgtest gtest)
 # Set gtest properties
 ExternalProject_Get_Property(gtest source_dir binary_dir)
 set_target_properties(libgtest PROPERTIES
-    "IMPORTED_LOCATION" "${binary_dir}/libgtest.a"
+    "IMPORTED_LOCATION" "${binary_dir}/googlemock/gtest/libgtest.a"
     "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
 )
-include_directories("${source_dir}/include")
-
-set(LIME_SUITE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
-include_directories(${LIME_SUITE_DIR}/ConnectionRegistry)
-include_directories(${LIME_SUITE_DIR}/lms7002m)
+include_directories("${source_dir}/googletest/include")
 
 add_executable(tests 
     main.cpp
