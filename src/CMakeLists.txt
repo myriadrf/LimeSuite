@@ -155,7 +155,7 @@ message(STATUS "wxWidgets_INCLUDE_DIRS: ${wxWidgets_INCLUDE_DIRS}")
 message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 
 ########################################################################
-## lms7suite gui app
+## LimeSuite GUI app
 ########################################################################
 set(LMS7SUITE_GUI_SOURCES
     ADF4002/ADF4002_wxgui.cpp
@@ -216,9 +216,9 @@ set(LMS7SUITE_GUI_SOURCES
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LMS7_GUI "Enable build lms7suite" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
-add_feature_info(LimeSuiteGUILMS7 ENABLE_LMS7_GUI "GUI Application for LMS7")
-if (ENABLE_LMS7_GUI)
+cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+add_feature_info(LimeSuiteGUI ENABLE_GUI "GUI Application for LimeSuite")
+if (ENABLE_GUI)
 
     include_directories(lms7002_wxgui)
     include_directories(LMS_Programing)
@@ -235,16 +235,16 @@ if (ENABLE_LMS7_GUI)
 
     set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
-    add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
-    set_target_properties(lms7suite PROPERTIES
+    add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
+    set_target_properties(LimeSuiteGUI PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_link_libraries(lms7suite LimeSuite oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
-		set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+        set_property(TARGET LimeSuiteGUI APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
     endif(MSVC)
 
-    install(TARGETS lms7suite DESTINATION bin)
+    install(TARGETS LimeSuiteGUI DESTINATION bin)
 
 endif()
 
