@@ -1,6 +1,6 @@
 /**
-@file	Settings.cpp
-@brief	Soapy SDR + IConnection config settings.
+@file   Settings.cpp
+@brief  Soapy SDR + IConnection config settings.
 @author Lime Microsystems (www.limemicro.com)
 */
 
@@ -1134,6 +1134,38 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
+    else if (key == "ENABLE_RX_GFIR_LPF")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "ENABLE_GFIR_LPF", value);
+        }
+    }
+
+    else if (key == "ENABLE_TX_GFIR_LPF")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "ENABLE_GFIR_LPF", value);
+        }
+    }
+
+    else if (key == "DISABLE_RX_GFIR_LPF")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "DISABLE_GFIR_LPF", value);
+        }
+    }
+
+    else if (key == "DISABLE_TX_GFIR_LPF")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "DISABLE_GFIR_LPF", value);
+        }
+    }    
+
     else throw std::runtime_error("unknown setting key: "+key);
 }
 
@@ -1231,6 +1263,144 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, true)", bw);
         if(rfic->CalibrateRx(bw, true) != 0)
             throw std::runtime_error(lime::GetLastErrorMessage());
+    }
+
+    else if (key == "ENABLE_GFIR_LPF")
+    {
+
+        //The value corresponding to this key is a CSV of the following format:
+        //<channel>, <#coeffs>, <GFIR Index>, <Coeff1, Coeff2, Coeff3, ..., Coeff120>
+        // Please note the following restrictions:
+        // - GFIR_Index will be clipped to 8-bit
+        // - Coefficients will be clipped to 16-bit
+        // - Coefficient Count wil be clipped to 8-bit (really only 120 max)
+
+        std::vector<int> vect;
+        std::stringstream ss(value);    
+
+        int i;
+
+        uint8_t GFIR_Index;
+        int16_t * Coeffs;
+        uint8_t Coeff_Count;
+
+        //CSV-to-int
+        while (ss >> i)
+        {
+            vect.push_back(i);
+
+            if (ss.peek() == ',')
+                ss.ignore();
+        }
+
+
+        if((size_t)vect.at(0) == channel) 
+        {
+            //The coeffs specified are for this channel
+
+            Coeff_Count = (uint8_t) vect.at(1);
+            GFIR_Index = (uint8_t) vect.at(2);
+
+            if(GFIR_Index > 2) 
+                throw std::runtime_error("Invalid GFIR Index Specified: " + key);
+
+            Coeffs = (int16_t*) malloc(Coeff_Count * sizeof(int16_t));
+            for(size_t k = 0; k < Coeff_Count; k++)
+            {
+                Coeffs[k] = (int16_t) vect.at(k+3);
+            }
+
+            SoapySDR::logf(SOAPY_SDR_INFO, "Issuing call to SetGFIRCoefficients; Channel = %d; isTx = %d; GFIR_Index = %d; #Coeffs = %d", channel, isTx, GFIR_Index, Coeff_Count);
+
+            rfic->SetGFIRCoefficients(isTx, GFIR_Index, (const int16_t*) Coeffs, Coeff_Count);
+
+            free(Coeffs);
+
+            //Now we also want to enable the GFIR
+            SoapySDR::logf(SOAPY_SDR_INFO, "Coefficients configured, now enabling appropriate GFIR");
+            switch (GFIR_Index)
+            {
+                case 0:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 0);
+                    break;
+                case 1:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 0);
+                    break;
+                case 2:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 0);
+                    break;
+            }
+
+        }
+        else if (vect.at(0) > 1) 
+        {
+            //An invalid channel configuration has been specified
+            throw std::runtime_error("Invalid channel specified: " + key);
+        }
+        else
+        {
+            //The coeffs specified are for a different channel
+            return;
+        }
+    }
+
+    else if  (key == "DISABLE_GFIR_LPF")
+    {
+
+        //The value corresponding to this key is a CSV of the following format:
+        //<channel>, <GFIR Index>
+        // Please note the following restrictions:
+        // - GFIR_Index will be clipped to 8-bit
+
+        std::vector<int> vect;
+        std::stringstream ss(value);    
+
+        int i;
+
+        uint8_t GFIR_Index;
+
+        //CSV-to-int
+        while (ss >> i)
+        {
+            vect.push_back(i);
+
+            if (ss.peek() == ',')
+                ss.ignore();
+        }
+
+        if((size_t)vect.at(0) == channel) 
+        {
+            GFIR_Index = (uint8_t) vect.at(1);
+            if(GFIR_Index > 2) 
+                throw std::runtime_error("Invalid GFIR Index Specified: " + key);
+
+            //Disable the GFIR
+            SoapySDR::logf(SOAPY_SDR_INFO, "Disabling GFIR; Channel %d, GFIR_Index %d", channel, GFIR_Index);
+            switch (GFIR_Index)
+            {
+                case 0:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 1);
+                    break;
+                case 1:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 1);
+                    break;
+                case 2:
+                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 1);
+                    break;
+            }
+
+        }
+        else if (vect.at(0) > 1) 
+        {
+            //An invalid channel configuration has been specified
+            throw std::runtime_error("Invalid channel specified: " + key);
+        }
+        else
+        {
+            //The input specified is for a different channel
+            return;
+        }
+
     }
 
     else throw std::runtime_error("unknown setting key: "+key);
