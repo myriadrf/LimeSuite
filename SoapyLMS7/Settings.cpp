@@ -1368,7 +1368,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             if(GFIR_Index > 2) 
                 throw std::runtime_error("Invalid GFIR Index Specified: " + key);
 
-            //Now we also want to enable the GFIR
+            //Disable the GFIR
             SoapySDR::logf(SOAPY_SDR_INFO, "Coefficients configured, now enabling appropriate GFIR");
             switch (GFIR_Index)
             {
@@ -1391,7 +1391,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         }
         else
         {
-            //The coeffs specified are for a different channel
+            //The input specified is for a different channel
             return;
         }
 
