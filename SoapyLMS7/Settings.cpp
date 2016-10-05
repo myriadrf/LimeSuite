@@ -16,7 +16,6 @@
 #include <SoapySDR/Time.hpp>
 #include <cstdlib>
 #include <algorithm>
-#include "lms7_device.h"
 
 using namespace lime;
 
