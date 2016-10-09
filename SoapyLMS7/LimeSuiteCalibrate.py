@@ -359,8 +359,8 @@ def LimeSuiteCalibrate(
 def main():
     parser = ArgumentParser()
     parser.add_argument("--args", type=str, help="Device construction arguments [%(default)s]", default='driver=lime')
-    parser.add_argument("--freqStart", type=float, help="Start frequency sweep in Hz")
-    parser.add_argument("--freqStop", type=float, help="Stop frequency sweep in Hz")
+    parser.add_argument("--freqStart", type=float, help="Start frequency sweep in Hz", required=True)
+    parser.add_argument("--freqStop", type=float, help="Stop frequency sweep in Hz", required=True)
     parser.add_argument("--freqStep", type=float, help="Frequency sweep step in Hz [%(default)s]", default=500e3)
     parser.add_argument("--dumpDir", type=str, help="Directory to dump debug data and plots")
     parser.add_argument("--validate", action="store_true", help="Validate cached corrections data", default=False)
