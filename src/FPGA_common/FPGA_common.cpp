@@ -337,30 +337,31 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
 
     //enable direct clocking
     addres.push_back(0x0005); values.push_back(drct_clk_ctrl_0005 | (1 << clockIndex));
-   //clear CNT_ID and CLK_IND
-    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 & ~0x3FF;
-    const int cnt_ind = clockIndex << 5; // was 1<<5
-    const int clk_ind = clockIndex;
-    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
-    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
-    const float oversampleClock_Hz = 100e6;
-    //const int registerChainSize = 128;
-    const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
-    const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputFreq);
-    uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
-    const float actualPhaseShift_deg = 360 * inputFreq / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("########################################\n");
-    printf("Direct clocking. clock index: %i\n", clockIndex);
-    printf("phase_reg_select : %i\n", phase_reg_select);
-    printf("input clock: %g MHz\n", inputFreq/1e6);
-    printf("phase shift(desired/actual) : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-    printf("########################################\n");
-#endif
-    addres.push_back(0x0004); values.push_back(phase_reg_select);
-    //LOAD_PH_REG = 1 << 10;
-    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006 | 1 << 10);
-    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
+    //not required anymore
+//    //clear CNT_ID and CLK_IND
+//    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 & ~0x3FF;
+//    const int cnt_ind = clockIndex << 5; // was 1<<5
+//    const int clk_ind = clockIndex;
+//    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
+//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
+//    const float oversampleClock_Hz = 100e6;
+//    //const int registerChainSize = 128;
+//    const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
+//    const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputFreq);
+//    uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
+//    const float actualPhaseShift_deg = 360 * inputFreq / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
+//#ifdef LMS_VERBOSE_OUTPUT
+//    printf("########################################\n");
+//    printf("Direct clocking. clock index: %i\n", clockIndex);
+//    printf("phase_reg_select : %i\n", phase_reg_select);
+//    printf("input clock: %g MHz\n", inputFreq/1e6);
+//    printf("phase shift(desired/actual) : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
+//    printf("########################################\n");
+//#endif
+//    addres.push_back(0x0004); values.push_back(phase_reg_select);
+//    //LOAD_PH_REG = 1 << 10;
+//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006 | 1 << 10);
+//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
     if(serPort->WriteRegisters(addres.data(), values.data(), values.size()) != 0)
         return ReportError(EIO, "SetDirectClocking: failed to write registers");
     return 0;
