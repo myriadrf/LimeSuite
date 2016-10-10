@@ -87,7 +87,7 @@ public:
     std::mutex streamStateLock;
     std::condition_variable safeToConfigInterface;
     std::atomic<bool> generateData;
-    float mExpectedSampleRate; //rate used for generating data
+    double mExpectedSampleRate; //rate used for generating data
     std::atomic<uint32_t> rxDataRate_Bps;
     std::atomic<uint32_t> txDataRate_Bps;
     std::vector<StreamChannel*> mRxStreams;
