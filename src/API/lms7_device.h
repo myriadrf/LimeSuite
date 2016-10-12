@@ -21,7 +21,7 @@ typedef struct
     float_type sample_rate;
 } lms_channel_info;
 
-class LMS7_Device : public lime::LMS7002M
+class LIME_API LMS7_Device : public lime::LMS7002M
 {
 public:
     LMS7_Device();
