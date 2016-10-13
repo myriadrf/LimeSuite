@@ -54,12 +54,18 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 
     DeviceInfo info = this->GetDeviceInfo();
 
-
     //expected version numbers based on HW number
-    std::string expectedFirmware, expectedGateware = "1";
-    if (info.hardwareVersion == "1") expectedFirmware = "5";
-    else if (info.hardwareVersion == "2") expectedFirmware = "0";
-    else std::cerr << "Unknown hardware version " << info.hardwareVersion << std::endl;
+    std::string expectedFirmware="1", expectedGateware="1", expectedGatewareRev="1";
+    if (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR))
+    {
+        expectedGateware="1";
+        expectedGatewareRev="19";
+        if (info.hardwareVersion == "1")
+            expectedFirmware = "5";
+        else if (info.hardwareVersion == "2")
+            expectedFirmware = "0";
+        else std::cerr << "Unknown hardware version " << info.hardwareVersion << std::endl;
+    }
 
     //check and warn about firmware mismatch problems
     if (info.firmwareVersion != expectedFirmware) std::cerr << std::endl
@@ -72,10 +78,11 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         << std::endl;
 
     //check and warn about gateware mismatch problems
-    if (info.gatewareVersion != expectedGateware) std::cerr << std::endl
+    if (info.gatewareVersion != expectedGateware || info.gatewareRevision != expectedGatewareRev) std::cerr << std::endl
         << "########################################################" << std::endl
         << "##   !!!  Warning: gateware version mismatch  !!!" << std::endl
-        << "## Expected gateware version " << expectedGateware << ", but found version " << info.gatewareVersion << std::endl
+        << "## Expected gateware version " << expectedGateware << ", revision " << expectedGatewareRev << std::endl
+        << "## But found version " << info.gatewareVersion << ", revision " << info.gatewareRevision << std::endl
         << "## Follow the FW and FPGA upgrade instructions:" << std::endl
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
         << "########################################################" << std::endl

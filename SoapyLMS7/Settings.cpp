@@ -1263,14 +1263,16 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, false)", bw);
-        rfic->CalibrateTx(bw, false);
+        if(rfic->CalibrateTx(bw, false) != 0)
+            throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
     else if (key == "CALIBRATE_RX")
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, false)", bw);
-        rfic->CalibrateRx(bw, false);
+        if(rfic->CalibrateRx(bw, false) != 0)
+            throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
 
@@ -1278,14 +1280,16 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, true)", bw);
-        rfic->CalibrateTx(bw, true);
+        if(rfic->CalibrateTx(bw, true) != 0)
+            throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
     else if (key == "CALIBRATE_RX_EXTLOOPBACK")
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, true)", bw);
-        rfic->CalibrateRx(bw, true);
+        if(rfic->CalibrateRx(bw, true) != 0)
+            throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
     else if (key == "ENABLE_GFIR_LPF")

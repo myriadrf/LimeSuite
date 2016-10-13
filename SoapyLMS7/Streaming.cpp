@@ -88,9 +88,13 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
 
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
-    for(size_t i=0; i<channels.size(); ++i)
+
+    //default to channel 0, if none were specified
+    const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
+
+    for(size_t i=0; i<channelIDs.size(); ++i)
     {
-        config.channelID = channels[i];
+        config.channelID = channelIDs[i];
         if (format == SOAPY_SDR_CF32) config.format = StreamConfig::STREAM_COMPLEX_FLOAT32;
         else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::STREAM_12_BIT_IN_16;
         else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::STREAM_12_BIT_COMPRESSED;

@@ -34,6 +34,7 @@
 #include <LMSBoards.h>
 #include <sstream>
 #include <pnlQSpark.h>
+#include "lms7_device.h"
 
 using namespace std;
 using namespace lime;
@@ -169,7 +170,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     novenaGui = nullptr;
     boardControlsGui = nullptr;
-    LMS_Open(&lmsControl,nullptr,nullptr);
+    lmsControl = new LMS7_Device();
     qSparkGui = nullptr;
 
     mContent->Initialize(lmsControl);
