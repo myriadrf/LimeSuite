@@ -724,11 +724,13 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
         break;
     }
 
-    rfic->SetInterfaceFrequency(clockRate,
+    int status = 0;
+    status = rfic->SetInterfaceFrequency(clockRate,
         int(std::log(double(_interps[channel]))/std::log(2.0))-1,
         int(std::log(double(_decims[channel]))/std::log(2.0))-1);
+    if(status != 0)
+        SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
 
-    int status = 0;
     status = _conn->UpdateExternalDataRate(
         rfic->GetActiveChannelIndex(),
         rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
@@ -1164,6 +1166,33 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }    
 
+     else if (key == "RXTSG_NCO")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, "TSG_NCO", value);
+        }
+    }
+
+    else if (key == "TXTSG_NCO")
+    {
+        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        {
+            this->writeSetting(SOAPY_SDR_TX, channel, "TSG_NCO", value);
+        }
+    }
+
+    else if (key == "SAVE_CONFIG")
+    {
+        auto rfic = getRFIC(0);
+        rfic->SaveConfig(value.c_str());
+    }
+    else if (key == "LOAD_CONFIG")
+    {
+        auto rfic = getRFIC(0);
+        rfic->LoadConfig(value.c_str());
+    }
+
     else throw std::runtime_error("unknown setting key: "+key);
 }
 
@@ -1395,6 +1424,38 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             return;
         }
 
+    }
+
+    else if (key == "TSG_NCO")
+    {
+        auto select = std::stoi(value);
+        if (select == -1)
+        {
+            //Requested to disable the TSG
+            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 0, true);
+        }
+        else
+        {
+            //Requested to enable the TSG
+            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFC_TXTSP):LMS7param(TSGFC_RXTSP), 1, true); //Full Scale Control
+            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGMODE_TXTSP):LMS7param(TSGMODE_RXTSP), 0, true);
+            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGSWAPIQ_TXTSP):LMS7param(TSGSWAPIQ_RXTSP), 0, true);
+
+            if(select == 4)
+            {
+                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFCW_TXTSP):LMS7param(TSGFCW_RXTSP), 2, true);
+                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1, true);
+            }
+            else if (select == 8)
+            {
+                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFCW_TXTSP):LMS7param(TSGFCW_RXTSP), 1, true);
+                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1, true);
+            }
+            else
+            {
+                throw std::runtime_error("Invalid TSG_NCO option: " + value);
+            }
+        }
     }
 
     else throw std::runtime_error("unknown setting key: "+key);
