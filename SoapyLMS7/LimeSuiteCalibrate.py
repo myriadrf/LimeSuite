@@ -4,7 +4,7 @@
 ########################################################################
 
 import os
-from optparse import OptionParser
+from argparse import ArgumentParser
 import SoapySDR
 from SoapySDR import * #*_SOAPY_SDR constants
 import numpy as np
@@ -357,22 +357,22 @@ def LimeSuiteCalibrate(
     print("Done")
 
 def main():
-    parser = OptionParser()
-    parser.add_option("--args", type="string", dest="args", help="Device construction arguments [%default]", default='driver=lime')
-    parser.add_option("--freqStart", type="float", dest="freqStart", help="Start frequency sweep in Hz")
-    parser.add_option("--freqStop", type="float", dest="freqStop", help="Stop frequency sweep in Hz")
-    parser.add_option("--freqStep", type="float", dest="freqStep", help="Frequency sweep step in Hz [%default]", default=500e3)
-    parser.add_option("--dumpDir", type="string", dest="dumpDir", help="Directory to dump debug data and plots")
-    parser.add_option("--validate", action="store_true", dest="validate", help="Validate cached corrections data", default=False)
-    (options, args) = parser.parse_args()
+    parser = ArgumentParser()
+    parser.add_argument("--args", type=str, help="Device construction arguments [%(default)s]", default='driver=lime')
+    parser.add_argument("--freqStart", type=float, help="Start frequency sweep in Hz", required=True)
+    parser.add_argument("--freqStop", type=float, help="Stop frequency sweep in Hz", required=True)
+    parser.add_argument("--freqStep", type=float, help="Frequency sweep step in Hz [%(default)s]", default=500e3)
+    parser.add_argument("--dumpDir", type=str, help="Directory to dump debug data and plots")
+    parser.add_argument("--validate", action="store_true", help="Validate cached corrections data", default=False)
+    args = parser.parse_args()
 
     LimeSuiteCalibrate(
-        args = options.args,
-        freqStart = options.freqStart,
-        freqStop = options.freqStop,
-        freqStep = options.freqStep,
-        dumpDir = options.dumpDir,
-        validate = options.validate,
+        args = args.args,
+        freqStart = args.freqStart,
+        freqStop = args.freqStop,
+        freqStep = args.freqStep,
+        dumpDir = args.dumpDir,
+        validate = args.validate,
     )
 
 if __name__ == '__main__': main()
