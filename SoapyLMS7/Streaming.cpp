@@ -260,7 +260,11 @@ int SoapyLMS7::readStreamStatus(
     {
         int ret = _conn->ReadStreamStatus(i, timeoutUs/1000, metadata);
         if (ret != 0)
+        {
+            //handle the default not implemented case and return not supported
+            if (GetLastError() == EPERM) return SOAPY_SDR_NOT_SUPPORTED;
             return SOAPY_SDR_TIMEOUT;
+        }
     }
 
     //output metadata
