@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=LMS7 Suite
-Comment=Graphical utility for LMS7 devices
+Name=LimeSuite GUI
+Comment=Graphical utility for Lime devices
 TryExec=LimeSuiteGUI
 Exec=LimeSuiteGUI %F
 Icon=lime-suite
