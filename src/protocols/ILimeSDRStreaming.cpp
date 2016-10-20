@@ -387,6 +387,7 @@ int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t 
 IStreamChannel::Info ILimeSDRStreaming::StreamChannel::GetInfo()
 {
     Info stats;
+    memset(&stats,0,sizeof(stats));
     RingFIFO::BufferInfo info = fifo->GetInfo();
     stats.fifoSize = info.size;
     stats.fifoItemsCount = info.itemsFilled;

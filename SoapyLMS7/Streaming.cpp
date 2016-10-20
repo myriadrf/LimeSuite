@@ -8,6 +8,7 @@
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
+#include <thread>
 #include "ErrorReporting.h"
 
 using namespace lime;
@@ -256,24 +257,41 @@ int SoapyLMS7::readStreamStatus(
     auto streamID = icstream->streamID;
 
     StreamMetadata metadata;
-    for(auto i : streamID)
+    flags = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+    while (1)
     {
-        int ret = _conn->ReadStreamStatus(i, timeoutUs/1000, metadata);
-        if (ret != 0)
+        for(auto i : streamID)
         {
-            //handle the default not implemented case and return not supported
-            if (GetLastError() == EPERM) return SOAPY_SDR_NOT_SUPPORTED;
-            return SOAPY_SDR_TIMEOUT;
+            int ret = _conn->ReadStreamStatus(i, timeoutUs/1000, metadata);
+            if (ret != 0)
+            {
+                //handle the default not implemented case and return not supported
+                if (GetLastError() == EPERM) return SOAPY_SDR_NOT_SUPPORTED;
+                return SOAPY_SDR_TIMEOUT;
+            }
         }
+        //stop when event is detected
+        if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
+            break;
+        //check timeout
+        std::chrono::duration<double> seconds = std::chrono::high_resolution_clock::now()-start;
+        if (seconds.count()> (double)timeoutUs/1e6)
+            return SOAPY_SDR_TIMEOUT;
+        //sleep to avoid high CPU load
+        if (timeoutUs >= 2000)
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        else
+            std::this_thread::sleep_for(std::chrono::microseconds(1+timeoutUs/2));
     }
 
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
     //output metadata
-    flags = 0;
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
     if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
 
     if (metadata.lateTimestamp) return SOAPY_SDR_TIME_ERROR;
     if (metadata.packetDropped) return SOAPY_SDR_OVERFLOW;
+
     return 0;
 }
