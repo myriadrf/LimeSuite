@@ -19,7 +19,8 @@ TEST(Comms, TransferSPI)
     std::vector<uint32_t> data (14, 0);
 
     int status = 0;
-    int tryCount = 1000;
+    const int tryCount = 1000;
+    printf("Try count = %i\n", tryCount);
     float AvgResult = 0;
     auto startT = std::chrono::high_resolution_clock::now();
     for(int i=0; i<tryCount ; ++i)
@@ -28,20 +29,27 @@ TEST(Comms, TransferSPI)
     AvgResult = chrono::duration_cast<chrono::milliseconds>(endT-startT).count()/float(tryCount);
     printf("Avg GetInfo: %.3f ms\n", AvgResult);
 
+    //generates packet without SPI write/read
+    startT = std::chrono::high_resolution_clock::now();
+    for(int i=0; i<tryCount && status == 0; ++i)
+        status = conn->TransactSPI(chipAddr, addr.data(), data.data(), 0);
+    endT = std::chrono::high_resolution_clock::now();
+    AvgResult = chrono::duration_cast<chrono::milliseconds>(endT-startT).count()/float(tryCount);
+    printf("Avg communication roundtrip: %.3f ms\n", AvgResult);
+
     startT = std::chrono::high_resolution_clock::now();
     for(int i=0; i<tryCount && status == 0; ++i)
         status = conn->TransactSPI(chipAddr, addr.data(), data.data(), 1);
     endT = std::chrono::high_resolution_clock::now();
     AvgResult = chrono::duration_cast<chrono::milliseconds>(endT-startT).count()/float(tryCount);
-    printf("Average single register read: %.3f ms\n", AvgResult);
+    printf("Avg Single register read: %.3f ms\n", AvgResult);
 
     startT = std::chrono::high_resolution_clock::now();
     for(int i=0; i<tryCount && status == 0; ++i)
         status = conn->TransactSPI(chipAddr, addr.data(), data.data(), addr.size());
     endT = std::chrono::high_resolution_clock::now();
     AvgResult = chrono::duration_cast<chrono::milliseconds>(endT-startT).count()/float(tryCount);
-    printf("Avg Single batch read: %.3f ms\n", AvgResult);
-    printf("Avg Single register in batch read: %.3f ms\n", AvgResult/addr.size());
+    printf("Avg Single batch read(%li registers): %.3f ms, \n", addr.size(), AvgResult);
 
     startT = std::chrono::high_resolution_clock::now();
     for(int i=0; i<tryCount && status == 0; ++i)
@@ -55,8 +63,7 @@ TEST(Comms, TransferSPI)
         status = conn->ReadRegisters(addr.data(), data.data(), addr.size());
     endT = std::chrono::high_resolution_clock::now();
     AvgResult = chrono::duration_cast<chrono::milliseconds>(endT-startT).count()/float(tryCount);
-    printf("FPGA Avg Single batch read: %.3f ms\n", AvgResult);
-    printf("FPGA Avg Single register in batch read: %.3f ms\n", AvgResult/addr.size());
+    printf("FPGA Avg Single batch read(%li registers): %.3f ms\n", addr.size(), AvgResult);
 
     ConnectionRegistry::freeConnection(conn);
 }
