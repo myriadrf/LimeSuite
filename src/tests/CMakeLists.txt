@@ -32,6 +32,7 @@ include_directories("${source_dir}/googletest/include")
 add_executable(tests 
     main.cpp
     streaming.cpp
+    comms.cpp
 )
 
 target_link_libraries(tests
