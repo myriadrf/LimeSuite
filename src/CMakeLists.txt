@@ -102,21 +102,23 @@ include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "SQLITE3_FOUND" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
-
-    add_library(LimeSuite SHARED ${LIME_SUITE_SOURCES})
+    add_library(LimeSuite ${LIME_SUITE_SOURCES})
     target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_LIBVER})
     set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
     target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
+    if(BUILD_SHARED_LIBS)
+        target_compile_definitions(LimeSuite PUBLIC "LIME_DLL")
+    endif()
 
     install(TARGETS LimeSuite
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
         RUNTIME DESTINATION bin              # .dll file
     )
-	
+
 	if (MSVC)
 		set_target_properties(LimeSuite PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 	endif(MSVC)
