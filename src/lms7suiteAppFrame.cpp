@@ -47,7 +47,7 @@ const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
 
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
-    float_type freq;
+    lime::float_type freq;
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
         LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
@@ -355,7 +355,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
-        float_type freq;
+        lime::float_type freq;
         LMS_GetSampleRate(lmsControl,LMS_CH_RX,0,&freq,NULL);
         fftviewer->SetNyquistFrequency(freq / 2);
     }
