@@ -29,10 +29,25 @@ using namespace std;
 
 using namespace lime;
 
+const uint8_t ConnectionSTREAM::streamBulkOutAddr = 0x01;
+const uint8_t ConnectionSTREAM::streamBulkInAddr = 0x81;
+const uint8_t ConnectionSTREAM::ctrlBulkOutAddr = 0x0F;
+const uint8_t ConnectionSTREAM::ctrlBulkInAddr = 0x8F;
+
+const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrl =
+{
+    CMD_BRDSPI_WR, CMD_BRDSPI_RD,
+    CMD_LMS7002_WR, CMD_LMS7002_RD,
+    CMD_ANALOG_VAL_WR, CMD_ANALOG_VAL_RD,
+    CMD_ADF4002_WR,
+};
+
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
 ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vid, const int pid)
 {
+    bulkCtrlAvailable = false;
+    bulkCtrlInProgress = false;
     RxLoopFunction = bind(&ConnectionSTREAM::ReceivePacketsLoop, this, std::placeholders::_1);
     TxLoopFunction = bind(&ConnectionSTREAM::TransmitPacketsLoop, this, std::placeholders::_1);
 
@@ -42,8 +57,10 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         USBDevicePrimary = new CCyFX3Device();
     else
         USBDevicePrimary = new CCyFX3Device(*(CCyFX3Device*)arg);
-	InCtrlEndPt3 = NULL;
-	OutCtrlEndPt3 = NULL;
+	InCtrlEndPt3 = nullptr;
+	OutCtrlEndPt3 = nullptr;
+	InCtrlBulkEndPt = nullptr;
+	OutCtrlBulkEndPt = nullptr;
 #else
     dev_handle = 0;
     devs = 0;
@@ -136,6 +153,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 */
 int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 {
+    bulkCtrlAvailable = false;
 #ifndef __unix__
     if(index > USBDevicePrimary->DeviceCount())
         return ReportError(ERANGE, "ConnectionSTREAM: Device index out of range");
@@ -166,7 +184,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     OutCtrlEndPt3->Index = CTR_W_INDEX;
 
     for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-        if(USBDevicePrimary->EndPoints[i]->Address == 0x01)
+        if(USBDevicePrimary->EndPoints[i]->Address == streamBulkOutAddr)
         {
             OutEndPt = USBDevicePrimary->EndPoints[i];
             long len = OutEndPt->MaxPktSize * 64;
@@ -174,11 +192,28 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
             break;
         }
     for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
-        if(USBDevicePrimary->EndPoints[i]->Address == 0x81)
+        if(USBDevicePrimary->EndPoints[i]->Address == streamBulkInAddr)
         {
             InEndPt = USBDevicePrimary->EndPoints[i];
             long len = InEndPt->MaxPktSize * 64;
             InEndPt->SetXferSize(len);
+            break;
+        }
+
+    InCtrlBulkEndPt = nullptr;
+    for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
+        if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkInAddr)
+        {
+            InCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            bulkCtrlAvailable = true;
+            break;
+        }
+    OutCtrlBulkEndPt = nullptr;
+    for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
+        if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkOutAddr)
+        {
+            OutCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            bulkCtrlAvailable = true;
             break;
         }
     isConnected = true;
@@ -196,6 +231,27 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
     if(r < 0)
         return ReportError(-1, "ConnectionSTREAM: Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
+
+    libusb_device* device = libusb_get_device(dev_handle);
+    libusb_config_descriptor* descriptor = nullptr;
+    if(libusb_get_active_config_descriptor(device, &descriptor) < 0)
+    {
+        printf("failed to get config descriptor\n");
+    }
+    //check for 0x0F and 0x8F endpoints
+    if(descriptor->bNumInterfaces > 0)
+    {
+        libusb_interface_descriptor iface = descriptor->interface[0].altsetting[0];
+        for(int i=0; i<iface.bNumEndpoints; ++i)
+            if(iface.endpoint[i].bEndpointAddress == ctrlBulkOutAddr ||
+               iface.endpoint[i].bEndpointAddress == ctrlBulkInAddr)
+            {
+                bulkCtrlAvailable = true;
+                break;
+            }
+    }
+    libusb_free_config_descriptor(descriptor);
+
     isConnected = true;
     return 0;
 #endif
@@ -209,6 +265,8 @@ void ConnectionSTREAM::Close()
 	USBDevicePrimary->Close();
 	InEndPt = nullptr;
 	OutEndPt = nullptr;
+	InCtrlBulkEndPt = nullptr;
+	OutCtrlBulkEndPt = nullptr;
 	if (InCtrlEndPt3)
 	{
 		delete InCtrlEndPt3;
@@ -257,13 +315,28 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
 
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
-
+    bulkCtrlInProgress = false;
     #ifndef __unix__
-    if(OutCtrlEndPt3)
+    if(bulkCtrlAvailable
+        && commandsToBulkCtrl.find(buffer[0]) != commandsToBulkCtrl.end())
+    {
+        bulkCtrlInProgress = true;
+        OutCtrlBulkEndPt->XferData(wbuffer, len);
+    }
+    else if(OutCtrlEndPt3)
         OutCtrlEndPt3->Write(wbuffer, len);
     else
         len = 0;
     #else
+    if(bulkCtrlAvailable
+        && commandsToBulkCtrl.find(buffer[0]) != commandsToBulkCtrl.end())
+    {
+        bulkCtrlInProgress = true;
+        int actual = 0;
+        libusb_bulk_transfer(dev_handle, ctrlBulkOutAddr, wbuffer, length, &actual, timeout_ms);
+        len = actual;
+    }
+    else
         len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
     #endif
     delete wbuffer;
@@ -285,12 +358,25 @@ int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_
         return 0;
 
 #ifndef __unix__
-    if(InCtrlEndPt3)
+    if(bulkCtrlAvailable && bulkCtrlInProgress)
+    {
+        InCtrlBulkEndPt->XferData(buffer, len);
+        bulkCtrlInProgress = false;
+    }
+    else if(InCtrlEndPt3)
         InCtrlEndPt3->Read(buffer, len);
     else
         len = 0;
 #else
-    len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, timeout_ms);
+    if(bulkCtrlAvailable && bulkCtrlInProgress)
+    {
+        int actual = 0;
+        libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        len = actual;
+        bulkCtrlInProgress = false;
+    }
+    else
+        len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, timeout_ms);
 #endif
     return len;
 }
@@ -380,7 +466,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length)
     #else
     unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
-	libusb_fill_bulk_transfer(tr, dev_handle, 0x81, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], Timeout);
+	libusb_fill_bulk_transfer(tr, dev_handle, streamBulkInAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], Timeout);
 	contexts[i].done = false;
 	contexts[i].bytesXfered = 0;
 	contexts[i].bytesExpected = length;
@@ -503,7 +589,7 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length)
     #else
     unsigned int Timeout = 500;
     libusb_transfer *tr = contextsToSend[i].transfer;
-	libusb_fill_bulk_transfer(tr, dev_handle, 0x1, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
+	libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
 	contextsToSend[i].done = false;
 	contextsToSend[i].bytesXfered = 0;
 	contextsToSend[i].bytesExpected = length;
