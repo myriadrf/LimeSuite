@@ -289,8 +289,15 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
             }
     }
     libusb_free_config_descriptor(descriptor);
-
     isConnected = true;
+    if(bulkCtrlAvailable)
+    {
+        LMS64CProtocol::GenericPacket ctrPkt;
+        ctrPkt.cmd = CMD_USB_FIFO_RST;
+        ctrPkt.outBuffer.push_back(0x01); //reset bulk endpoints
+        if(TransferPacket(ctrPkt) != 0)
+            printf("Failed to reset USB bulk endpoints\n");
+    }
     return 0;
 #endif
 }

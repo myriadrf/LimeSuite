@@ -211,9 +211,7 @@ int ILimeSDRStreaming::UpdateThreads()
         // TODO : USB FIFO reset command for IConnection
         LMS64CProtocol::GenericPacket ctrPkt;
         ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x01);
-        TransferPacket(ctrPkt);
-        ctrPkt.outBuffer[0] = 0x00;
+        ctrPkt.outBuffer.push_back(0x00);
         TransferPacket(ctrPkt);
 
         //enable MIMO mode, 12 bit compressed values
