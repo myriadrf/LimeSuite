@@ -145,6 +145,8 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                 {
                     libusb_device_handle *tempDev_handle;
                     tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+                    if(tempDev_handle == nullptr)
+                        continue;
                     if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
                     {
                         if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
@@ -168,7 +170,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     //read device name
                     char data[255];
                     memset(data, 0, 255);
-                    libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                    libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, 255);
                     if(strlen(data) > 0)
                         fullName += data;
                     fullName += ")";

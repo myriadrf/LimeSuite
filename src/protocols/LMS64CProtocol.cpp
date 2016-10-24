@@ -344,7 +344,7 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
         for (int i = 10; i < 18; i++)
         {
 	        info.boardSerialNumber <<= 8;
-	        info.boardSerialNumber |= pkt.inBuffer[i];		
+	        info.boardSerialNumber |= pkt.inBuffer[i];
         }
     }
     return info;
@@ -476,7 +476,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
                 int bread = Read(&inBuffer[inDataPos], readLen);
                 if(bread != readLen && protocol != LMS_PROTOCOL_NOVENA)
                 {
-                    status = ReportError("Read(%d bytes) failed", (int)readLen);
+                    status = ReportError(EIO, "Read(%d bytes) failed", (int)readLen);
                     break;
                 }
                 if (callback_logData)
@@ -485,7 +485,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
             }
             else
             {
-                status = ReportError("Write(%d bytes) failed", (int)bytesToSend);
+                status = ReportError(EIO, "Write(%d bytes) failed", (int)bytesToSend);
                 break;
             }
         }
@@ -852,6 +852,10 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
 
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
+    LMSinfo lmsInfo = this->GetInfo();
+    if(lmsInfo.device == LMS_DEV_LIMESDR && lmsInfo.hardware == 4)
+        return IConnection::ProgramMCU(buffer, length, mode, callback);
+
 #ifndef NDEBUG
     auto timeStart = std::chrono::high_resolution_clock::now();
 #endif

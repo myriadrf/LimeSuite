@@ -9,6 +9,7 @@
 #include <IConnection.h>
 #include <ILimeSDRStreaming.h>
 #include <vector>
+#include <set>
 #include <string>
 #include <atomic>
 #include <memory>
@@ -136,6 +137,8 @@ protected:
     CCyUSBEndPoint* InEndPt;
     CCyUSBEndPoint* OutEndPt;
 
+    CCyUSBEndPoint* InCtrlBulkEndPt;
+    CCyUSBEndPoint* OutCtrlBulkEndPt;
 #else
     libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle* dev_handle; //a device handle
@@ -144,7 +147,13 @@ protected:
     int fx3_usbboot_download(unsigned char *buf, int len);
     int ram_write(unsigned char *buf, unsigned int ramAddress, int len);
 #endif
-
+    static const uint8_t streamBulkOutAddr;
+    static const uint8_t streamBulkInAddr;
+    static const uint8_t ctrlBulkOutAddr;
+    static const uint8_t ctrlBulkInAddr;
+    static const std::set<uint8_t> commandsToBulkCtrl;
+    bool bulkCtrlInProgress;
+    bool bulkCtrlAvailable;
     std::mutex mExtraUsbMutex;
 };
 
