@@ -229,8 +229,7 @@ void LMS_Programing_wxgui::DoProgramming()
     int status = -1;
     if (device == 1)
     {
-        // for FX3 show only option to program firmware
-        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), LMS_TARGET_FLASH,OnProgrammingCallback);
+        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode,OnProgrammingCallback);
     }
     else if (device == 2)
     {
@@ -256,12 +255,20 @@ void LMS_Programing_wxgui::DoProgramming()
         return;
     }
 
-    //if programming FX3 firmware, inform user about device reset
-    if(device == 1 && progMode == 2)
+    //inform user about device reset
+    if(device == 1)
     {
-        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
+        if (progMode == 1) //reset FX3 only after programming flash
+            status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
+    }
+    else if(device == 2 && progMode == 1) //reset FPGA and FX3 after FPGA programming
+    {
+        status = LMS_ProgramFPGA(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
+        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
+        if(status == 0)
+            evt.SetString("FPGA gateware uploaded, device is going to be reset, please reconnect in connection settings");
     }
     wxPostEvent(this, evt);
     mProgrammingInProgress.store(false);

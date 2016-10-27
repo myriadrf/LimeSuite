@@ -1572,15 +1572,11 @@ int LMS7_Device::ProgramHPM7(std::string fname, int mode,lime::IConnection::Prog
 //TODO: fx3 needs restart
 int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
 {
-    if (mode != LMS_TARGET_FLASH && mode != LMS_TARGET_BOOT)
-    {
-        lime::ReportError(ENOTSUP, "Unsupported target storage type");
-        return -1;
-    }
-    //device fx3(1)
-    //mode program_flash(2))
+
     if (mode == LMS_TARGET_FLASH)
         return streamPort->ProgramWrite(data,len,2,1,callback);
+    else if (mode == LMS_TARGET_RAM)
+        return streamPort->ProgramWrite(data,len,1,1,callback);
     else
         return streamPort->ProgramWrite(nullptr,0,0,1,callback);
 }
