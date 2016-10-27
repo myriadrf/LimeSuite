@@ -25,7 +25,7 @@ using namespace lime;
 #define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
 
 // arbitrary upper limit for CGEN automatic tune
-#define MAX_CGEN_RATE 480e6
+#define MAX_CGEN_RATE 640e6
 
 //reasonable limits when advertising the rate
 #define MIN_SAMP_RATE 1e5
@@ -654,6 +654,7 @@ static double calculateClockRate(
     {
         const double rateClock = rateRx*decim*adcFactorRx;
         if (rateClock > MAX_CGEN_RATE) continue;
+        if (rateClock > 450e6 && rateClock < 491.5e6) continue; //avoid range where CGEN does not lock
         if (rateClock < bestClockRate) continue;
         for (int interp = 2; interp <= 32; interp *= 2)
         {
@@ -1164,7 +1165,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "DISABLE_GFIR_LPF", value);
         }
-    }    
+    }
 
      else if (key == "RXTSG_NCO")
     {
@@ -1303,7 +1304,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         // - Coefficient Count wil be clipped to 8-bit (really only 120 max)
 
         std::vector<int> vect;
-        std::stringstream ss(value);    
+        std::stringstream ss(value);
 
         int i;
 
@@ -1321,14 +1322,14 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         }
 
 
-        if((size_t)vect.at(0) == channel) 
+        if((size_t)vect.at(0) == channel)
         {
             //The coeffs specified are for this channel
 
             Coeff_Count = (uint8_t) vect.at(1);
             GFIR_Index = (uint8_t) vect.at(2);
 
-            if(GFIR_Index > 2) 
+            if(GFIR_Index > 2)
                 throw std::runtime_error("Invalid GFIR Index Specified: " + key);
 
             Coeffs = (int16_t*) malloc(Coeff_Count * sizeof(int16_t));
@@ -1359,7 +1360,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             }
 
         }
-        else if (vect.at(0) > 1) 
+        else if (vect.at(0) > 1)
         {
             //An invalid channel configuration has been specified
             throw std::runtime_error("Invalid channel specified: " + key);
@@ -1380,7 +1381,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         // - GFIR_Index will be clipped to 8-bit
 
         std::vector<int> vect;
-        std::stringstream ss(value);    
+        std::stringstream ss(value);
 
         int i;
 
@@ -1395,10 +1396,10 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
                 ss.ignore();
         }
 
-        if((size_t)vect.at(0) == channel) 
+        if((size_t)vect.at(0) == channel)
         {
             GFIR_Index = (uint8_t) vect.at(1);
-            if(GFIR_Index > 2) 
+            if(GFIR_Index > 2)
                 throw std::runtime_error("Invalid GFIR Index Specified: " + key);
 
             //Disable the GFIR
@@ -1417,7 +1418,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             }
 
         }
-        else if (vect.at(0) > 1) 
+        else if (vect.at(0) > 1)
         {
             //An invalid channel configuration has been specified
             throw std::runtime_error("Invalid channel specified: " + key);
