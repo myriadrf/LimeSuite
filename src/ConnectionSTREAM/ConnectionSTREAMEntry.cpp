@@ -131,67 +131,64 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
             int pid = desc.idProduct;
             int vid = desc.idVendor;
 
-            if( vid == 1204)
+            if(vid == 1204 && pid == 34323)
             {
-                if(pid == 34323)
+                ConnectionHandle handle;
+                handle.media = "USB";
+                handle.name = "DigiGreen";
+                handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+                handles.push_back(handle);
+            }
+            else if((vid == 1204 && pid == 241) || (vid == 1204 && pid == 243) || (vid == 7504 && pid == 24840))
+            {
+                libusb_device_handle *tempDev_handle;
+                tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+                if(tempDev_handle == nullptr)
+                    continue;
+                if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
                 {
-                    ConnectionHandle handle;
-                    handle.media = "USB";
-                    handle.name = "DigiGreen";
-                    handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
-                    handles.push_back(handle);
+                    if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
+                        printf("Kernel Driver Detached!\n");
                 }
-                else if(pid == 241 || pid == 243)
+                if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
                 {
-                    libusb_device_handle *tempDev_handle;
-                    tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-                    if(tempDev_handle == nullptr)
-                        continue;
-                    if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
-                    {
-                        if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                            printf("Kernel Driver Detached!\n");
-                    }
-                    if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
-                    {
-                        printf("Cannot Claim Interface\n");
-                    }
-
-                    std::string fullName;
-                    //check operating speed
-                    int speed = libusb_get_device_speed(devs[i]);
-                    if(speed == LIBUSB_SPEED_HIGH)
-                        fullName = "USB 2.0";
-                    else if(speed == LIBUSB_SPEED_SUPER)
-                        fullName = "USB 3.0";
-                    else
-                        fullName = "USB";
-                    fullName += " (";
-                    //read device name
-                    char data[255];
-                    memset(data, 0, 255);
-                    libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, 255);
-                    if(strlen(data) > 0)
-                        fullName += data;
-                    fullName += ")";
-
-                    ConnectionHandle handle;
-                    handle.media = "USB";
-                    handle.name = fullName;
-                    handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
-
-                    if (desc.iSerialNumber > 0)
-                    {
-                        r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, 255);
-                        if(r<0)
-                            printf("failed to get serial number\n");
-                        else if (strlen(data) > 0)
-                            handle.serial = std::string((const char*)data);
-                    }
-                    libusb_close(tempDev_handle);
-
-                    handles.push_back(handle);
+                    printf("Cannot Claim Interface\n");
                 }
+
+                std::string fullName;
+                //check operating speed
+                int speed = libusb_get_device_speed(devs[i]);
+                if(speed == LIBUSB_SPEED_HIGH)
+                    fullName = "USB 2.0";
+                else if(speed == LIBUSB_SPEED_SUPER)
+                    fullName = "USB 3.0";
+                else
+                    fullName = "USB";
+                fullName += " (";
+                //read device name
+                char data[255];
+                memset(data, 0, 255);
+                libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, 255);
+                if(strlen(data) > 0)
+                    fullName += data;
+                fullName += ")";
+
+                ConnectionHandle handle;
+                handle.media = "USB";
+                handle.name = fullName;
+                handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+
+                if (desc.iSerialNumber > 0)
+                {
+                    r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, 255);
+                    if(r<0)
+                        printf("failed to get serial number\n");
+                    else if (strlen(data) > 0)
+                        handle.serial = std::string((const char*)data);
+                }
+                libusb_close(tempDev_handle);
+
+                handles.push_back(handle);
             }
         }
     }
