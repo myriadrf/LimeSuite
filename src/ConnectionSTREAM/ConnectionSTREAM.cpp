@@ -232,10 +232,12 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     InCtrlEndPt3->ReqCode = CTR_R_REQCODE;
     InCtrlEndPt3->Value = CTR_R_VALUE;
     InCtrlEndPt3->Index = CTR_R_INDEX;
+    InCtrlEndPt3->TimeOut = 3000;
 
     OutCtrlEndPt3->ReqCode = CTR_W_REQCODE;
     OutCtrlEndPt3->Value = CTR_W_VALUE;
     OutCtrlEndPt3->Index = CTR_W_INDEX;
+    OutCtrlEndPt3->TimeOut = 3000;
 
     for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
         if(USBDevicePrimary->EndPoints[i]->Address == streamBulkOutAddr)
@@ -259,6 +261,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
         if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkInAddr)
         {
             InCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            InCtrlBulkEndPt->TimeOut = 1000;
             bulkCtrlAvailable = true;
             break;
         }
@@ -267,6 +270,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
         if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkOutAddr)
         {
             OutCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            OutCtrlBulkEndPt->TimeOut = 1000;
             bulkCtrlAvailable = true;
             break;
         }
