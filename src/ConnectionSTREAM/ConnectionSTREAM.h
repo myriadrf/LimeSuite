@@ -151,7 +151,9 @@ protected:
     static const uint8_t streamBulkInAddr;
     static const uint8_t ctrlBulkOutAddr;
     static const uint8_t ctrlBulkInAddr;
-    static const std::set<uint8_t> commandsToBulkCtrl;
+    static const std::set<uint8_t> commandsToBulkCtrlHw1;
+    static const std::set<uint8_t> commandsToBulkCtrlHw2;
+    std::set<uint8_t> commandsToBulkCtrl;
     bool bulkCtrlInProgress;
     bool bulkCtrlAvailable;
     std::mutex mExtraUsbMutex;

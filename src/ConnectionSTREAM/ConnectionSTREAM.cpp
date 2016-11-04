@@ -33,7 +33,15 @@ const uint8_t ConnectionSTREAM::streamBulkInAddr = 0x81;
 const uint8_t ConnectionSTREAM::ctrlBulkOutAddr = 0x0F;
 const uint8_t ConnectionSTREAM::ctrlBulkInAddr = 0x8F;
 
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrl =
+//control commands to be send via bulk port for boards v1.1 and earlier
+const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw1 =
+{
+    CMD_BRDSPI_WR, CMD_BRDSPI_RD,
+    CMD_LMS7002_WR, CMD_LMS7002_RD,
+    CMD_LMS7002_RST,
+};
+//control commands to be send via bulk port for boards v1.2 and later
+const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
@@ -50,7 +58,6 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     bulkCtrlInProgress = false;
     RxLoopFunction = bind(&ConnectionSTREAM::ReceivePacketsLoop, this, std::placeholders::_1);
     TxLoopFunction = bind(&ConnectionSTREAM::TransmitPacketsLoop, this, std::placeholders::_1);
-
     isConnected = false;
 #ifndef __unix__
     if(arg == nullptr)
@@ -74,7 +81,15 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         int hw, fw, gw, gw_rev;
     };
 
+    commandsToBulkCtrl = commandsToBulkCtrlHw2;
+
     LMSinfo info = this->GetInfo();
+
+    if (info.hardware <= 1)
+    {
+        commandsToBulkCtrl = commandsToBulkCtrlHw1;
+    }
+
     FPGAinfo fpgaInfo = this->GetFPGAInfo();
     //expected version numbers based on HW number
     vector<ExpectedVersion> versionList; //expected HW,FW,GW combinations
