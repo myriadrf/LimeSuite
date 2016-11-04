@@ -1360,9 +1360,9 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, 
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    *val = lms->SPI_read(address,true);
-    return LMS_SUCCESS;
+    int status;
+    *val = lms->SPI_read(address,true,&status);
+    return status;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)
@@ -1374,8 +1374,7 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address,
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    lms->SPI_write(address,val);
-    return LMS_SUCCESS;
+    return lms->SPI_write(address,val);
 }
 
 API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device)
@@ -1409,6 +1408,8 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
         return -1;
     }
     *val = conn->ReadRegisters(&addr,&data,1);
+    if (*val != LMS_SUCCESS)
+        return *val;
     *val = data;
     return LMS_SUCCESS;
 }
@@ -1428,8 +1429,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
         lime::ReportError(EINVAL, "Device not connected");
         return -1;
     }
-    val = conn->WriteRegister(address,val);
-    return LMS_SUCCESS;
+    return conn->WriteRegister(address,val);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Parameter param, uint16_t *val)
