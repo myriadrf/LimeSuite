@@ -112,7 +112,15 @@ LMS_Programing_wxgui::~LMS_Programing_wxgui()
 
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
-    wxFileDialog dlg(this, _("Select file"), _(""), _(""), _("rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    wxString wildcards;
+    switch(cmbDevice->GetSelection())
+    {
+    case 2: wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"; break;
+    case 1: wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*"; break;
+    default: wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"; break;
+    }
+
+    wxFileDialog dlg(this, _("Select file"), _(""), _(""), wildcards, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
