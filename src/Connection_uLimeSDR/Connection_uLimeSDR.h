@@ -87,8 +87,8 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) override;
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) override;
+    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
+    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;

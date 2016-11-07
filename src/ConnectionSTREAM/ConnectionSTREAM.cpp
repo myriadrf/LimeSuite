@@ -33,7 +33,15 @@ const uint8_t ConnectionSTREAM::streamBulkInAddr = 0x81;
 const uint8_t ConnectionSTREAM::ctrlBulkOutAddr = 0x0F;
 const uint8_t ConnectionSTREAM::ctrlBulkInAddr = 0x8F;
 
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrl =
+//control commands to be send via bulk port for boards v1.1 and earlier
+const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw1 =
+{
+    CMD_BRDSPI_WR, CMD_BRDSPI_RD,
+    CMD_LMS7002_WR, CMD_LMS7002_RD,
+    CMD_LMS7002_RST,
+};
+//control commands to be send via bulk port for boards v1.2 and later
+const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
@@ -50,7 +58,6 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     bulkCtrlInProgress = false;
     RxLoopFunction = bind(&ConnectionSTREAM::ReceivePacketsLoop, this, std::placeholders::_1);
     TxLoopFunction = bind(&ConnectionSTREAM::TransmitPacketsLoop, this, std::placeholders::_1);
-
     isConnected = false;
 #ifndef __unix__
     if(arg == nullptr)
@@ -74,7 +81,15 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         int hw, fw, gw, gw_rev;
     };
 
+    commandsToBulkCtrl = commandsToBulkCtrlHw2;
+
     LMSinfo info = this->GetInfo();
+
+    if (info.hardware <= 1)
+    {
+        commandsToBulkCtrl = commandsToBulkCtrlHw1;
+    }
+
     FPGAinfo fpgaInfo = this->GetFPGAInfo();
     //expected version numbers based on HW number
     vector<ExpectedVersion> versionList; //expected HW,FW,GW combinations
@@ -217,10 +232,12 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     InCtrlEndPt3->ReqCode = CTR_R_REQCODE;
     InCtrlEndPt3->Value = CTR_R_VALUE;
     InCtrlEndPt3->Index = CTR_R_INDEX;
+    InCtrlEndPt3->TimeOut = 3000;
 
     OutCtrlEndPt3->ReqCode = CTR_W_REQCODE;
     OutCtrlEndPt3->Value = CTR_W_VALUE;
     OutCtrlEndPt3->Index = CTR_W_INDEX;
+    OutCtrlEndPt3->TimeOut = 3000;
 
     for (int i=0; i<USBDevicePrimary->EndPointCount(); i++)
         if(USBDevicePrimary->EndPoints[i]->Address == streamBulkOutAddr)
@@ -244,6 +261,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
         if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkInAddr)
         {
             InCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            InCtrlBulkEndPt->TimeOut = 1000;
             bulkCtrlAvailable = true;
             break;
         }
@@ -252,6 +270,7 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
         if(USBDevicePrimary->EndPoints[i]->Address == ctrlBulkOutAddr)
         {
             OutCtrlBulkEndPt = USBDevicePrimary->EndPoints[i];
+            OutCtrlBulkEndPt->TimeOut = 1000;
             bulkCtrlAvailable = true;
             break;
         }

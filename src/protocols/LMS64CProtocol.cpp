@@ -853,7 +853,7 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
     LMSinfo lmsInfo = this->GetInfo();
-    if(lmsInfo.device == LMS_DEV_LIMESDR && lmsInfo.hardware == 4)
+    if(lmsInfo.device == LMS_DEV_LIMESDR)
         return IConnection::ProgramMCU(buffer, length, mode, callback);
 
 #ifndef NDEBUG

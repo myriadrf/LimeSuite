@@ -98,8 +98,8 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char* buffer, int length, int timeout_ms = 0) override;
-    virtual int Read(unsigned char* buffer, int length, int timeout_ms = 0) override;
+    virtual int Write(const unsigned char* buffer, int length, int timeout_ms = 100) override;
+    virtual int Read(unsigned char* buffer, int length, int timeout_ms = 100) override;
 
     virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format) override;
 
@@ -151,7 +151,9 @@ protected:
     static const uint8_t streamBulkInAddr;
     static const uint8_t ctrlBulkOutAddr;
     static const uint8_t ctrlBulkInAddr;
-    static const std::set<uint8_t> commandsToBulkCtrl;
+    static const std::set<uint8_t> commandsToBulkCtrlHw1;
+    static const std::set<uint8_t> commandsToBulkCtrlHw2;
+    std::set<uint8_t> commandsToBulkCtrl;
     bool bulkCtrlInProgress;
     bool bulkCtrlAvailable;
     std::mutex mExtraUsbMutex;

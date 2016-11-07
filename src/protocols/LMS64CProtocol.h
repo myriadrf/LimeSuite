@@ -159,10 +159,10 @@ public:
     virtual eConnectionType GetType(void) = 0;
 
     //! virtual write function to be implemented by the base class
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;
+    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) = 0;
 
     //! virtual read function to be implemented by the base class
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
+    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) = 0;
 
     enum ProgramWriteTarget
     {
