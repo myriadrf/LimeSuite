@@ -98,9 +98,9 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     {
         versionList = {
             {4, 0, 2, 0},
-            {3, 0, 1, 19},
-            {2, 0, 1, 19},
-            {1, 5, 1, 19},
+            {3, 2, 1, 20},
+            {2, 2, 1, 20},
+            {1, 6, 1, 20},
         };
     }
     else if(info.device == LMS_DEV_STREAM)
