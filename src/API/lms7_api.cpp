@@ -1440,8 +1440,18 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Paramete
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    *val = lms->Get_SPI_Reg_bits(param);
+    bool forceReadFromChip = false; //bypass returning values from cache
+    //registers containing read only registers, which values can change
+    const uint16_t readOnlyRegs[] = {0,1,2,3,4,5,6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F};
+    for(int i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
+    {
+        if(param.address == readOnlyRegs[i])
+        {
+            forceReadFromChip = true;
+            break;
+        }
+    }
+    *val = lms->Get_SPI_Reg_bits(param, forceReadFromChip);
     return LMS_SUCCESS;
 }
 
