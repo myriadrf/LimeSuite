@@ -154,6 +154,7 @@ int SoapyLMS7::activateStream(
     const long long timeNs,
     const size_t numElems)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 
@@ -178,6 +179,7 @@ int SoapyLMS7::deactivateStream(
     const int flags,
     const long long timeNs)
 {
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 
