@@ -44,7 +44,7 @@ DeviceInfo ConnectionSTREAM_UNITE::GetDeviceInfo(void)
 
 int ConnectionSTREAM_UNITE::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    if(comPort && addr == 0x10)
+    if(comPort && (addr == 0x10 || addr == 0x30)) //redirect LMS7002M SPI, ADF4002
     {
         return comPort->TransactSPI(addr, writeData, readData, size);
     }
