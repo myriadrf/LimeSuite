@@ -418,7 +418,7 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     LMS_ReadParam(lmsControl,LMS7param(DCCORRI_TXTSP),(uint16_t*)&value);
     int8_t dccorr = value;
     cmbDCCORRI_TXTSP->SetValue(dccorr);
-    LMS_ReadParam(lmsControl,LMS7param(DCCORRI_TXTSP),(uint16_t*)&value);
+    LMS_ReadParam(lmsControl,LMS7param(DCCORRQ_TXTSP),(uint16_t*)&value);
     dccorr = value;
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
 
