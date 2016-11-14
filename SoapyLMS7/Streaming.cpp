@@ -89,7 +89,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
 
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
-    config.performanceLatency = 1;
+    config.performanceLatency = 0.5;
 
     //default to channel 0, if none were specified
     const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
