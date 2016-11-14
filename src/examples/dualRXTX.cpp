@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     if ((n = LMS_GetNumChannels(device, LMS_CH_RX)) < 0)
         error();
     cout << "Number of RX channels: " << n << endl;
-    if ((n = LMS_GetNumChannels(device, LMS_CH_RX)) < 0)
+    if ((n = LMS_GetNumChannels(device, LMS_CH_TX)) < 0)
         error();
     cout << "Number of TX channels: " << n << endl;
 
