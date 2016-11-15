@@ -28,6 +28,9 @@ static int printHelp(void)
     std::cout << "    --info \t\t\t\t Print module information" << std::endl;
     std::cout << "    --find[=\"module=foo,serial=bar\"] \t Discover available devices" << std::endl;
     std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
+    std::cout << std::endl;
+    std::cout << "  Advanced options:" << std::endl;
+    std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << std::endl;
@@ -110,7 +113,7 @@ static int makeDevice(void)
 /***********************************************************************
  * Program gateware
  **********************************************************************/
-static int programGateware(void)
+static int programGateware(const std::string &argStr)
 {
     //load file
     std::ifstream file;
@@ -128,7 +131,7 @@ static int programGateware(void)
     std::vector<char> progData(fileSize, 0);
     file.read(progData.data(), fileSize);
 
-    auto handles = ConnectionRegistry::findConnections();
+    auto handles = ConnectionRegistry::findConnections(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
@@ -166,7 +169,7 @@ static int programGateware(void)
 /***********************************************************************
  * Program gateware
  **********************************************************************/
-static int programFirmware(void)
+static int programFirmware(const std::string &argStr)
 {
     //load file
     std::ifstream file;
@@ -184,7 +187,7 @@ static int programFirmware(void)
     std::vector<char> progData(fileSize, 0);
     file.read(progData.data(), fileSize);
 
-    auto handles = ConnectionRegistry::findConnections();
+    auto handles = ConnectionRegistry::findConnections(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
@@ -229,10 +232,14 @@ int main(int argc, char *argv[])
         {"info", optional_argument, 0, 'i'},
         {"find", optional_argument, 0, 'f'},
         {"make", optional_argument, 0, 'm'},
+        {"args", optional_argument, 0, 'a'},
         {"fpga", required_argument, 0, 'g'},
         {"fw",   required_argument, 0, 'w'},
         {0, 0, 0,  0}
     };
+
+    std::string argStr;
+
     int long_index = 0;
     int option = 0;
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
@@ -243,8 +250,11 @@ int main(int argc, char *argv[])
         case 'i': return printInfo();
         case 'f': return findDevices();
         case 'm': return makeDevice();
-        case 'g': return programGateware();
-        case 'w': return programFirmware();
+        case 'a':
+            if (optarg != NULL) argStr = optarg;
+            break;
+        case 'g': return programGateware(argStr);
+        case 'w': return programFirmware(argStr);
         }
     }
 
