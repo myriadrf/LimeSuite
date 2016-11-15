@@ -13,6 +13,15 @@
 
 using namespace lime;
 
+struct LMS7002M_quiet : LMS7002M
+{
+    void Log(const char* text, LogType type)
+    {
+        if (type == LOG_INFO) return;
+        LMS7002M::Log(text, type);
+    }
+};
+
 int deviceTestTiming(const std::string &argStr)
 {
     auto handles = ConnectionRegistry::findConnections(argStr);
@@ -25,8 +34,11 @@ int deviceTestTiming(const std::string &argStr)
     auto conn = ConnectionRegistry::makeConnection(handles[0]);
 
     std::cout << "Creating instance of LMS7002M:" << std::endl;
-    auto lms7 = new LMS7002M;
+    auto lms7 = new LMS7002M_quiet;
     lms7->SetConnection(conn);
+
+    std::cout << std::endl;
+    std::cout << "Timing basic operations:" << std::endl;
 
     //time spi write access
     {
@@ -38,7 +50,7 @@ int deviceTestTiming(const std::string &argStr)
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
-        std::cout << ">>> SPI write operation:\t" << (secsPerOp/1e-6) << " us" << std::endl;
+        std::cout << "  >>> SPI write register:\t" << (secsPerOp/1e-6) << " us" << std::endl;
     }
 
     //time spi read access
@@ -51,8 +63,50 @@ int deviceTestTiming(const std::string &argStr)
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
-        std::cout << ">>> SPI read operation: \t" << (secsPerOp/1e-6) << " us" << std::endl;
+        std::cout << "  >>> SPI read register:\t" << (secsPerOp/1e-6) << " us" << std::endl;
     }
+
+    //time NCO setting
+    {
+        const size_t numIters(1000);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->SetNCOFrequency(LMS7002M::Tx, 0, i*(1e6/numIters));
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> TSP NCO setting:\t\t" << (secsPerOp/1e-6) << " us" << std::endl;
+    }
+
+    //time LNA setting
+    {
+        const size_t numIters(1000);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->SetRFELNA_dB(0);
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> RFE gain setting:\t\t" << (secsPerOp/1e-6) << " us" << std::endl;
+    }
+
+    //time PAD setting
+    {
+        const size_t numIters(1000);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->SetTRFPAD_dB(0);
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> TRF gain setting:\t\t" << (secsPerOp/1e-6) << " us" << std::endl;
+    }
+
+    std::cout << std::endl;
+    std::cout << "Timing tuning operations:" << std::endl;
 
     //time CGEN tuning
     {
@@ -64,7 +118,7 @@ int deviceTestTiming(const std::string &argStr)
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
-        std::cout << ">>> CGEN re-tune operation:  \t" << (secsPerOp/1e-3) << " ms" << std::endl;
+        std::cout << "  >>> CGEN PLL tuning:\t\t" << (secsPerOp/1e-3) << " ms" << std::endl;
     }
 
     //time LO tuning
@@ -77,9 +131,37 @@ int deviceTestTiming(const std::string &argStr)
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
-        std::cout << ">>> RF LO re-tune operation:\t" << (secsPerOp/1e-3) << " ms" << std::endl;
+        std::cout << "  >>> RF PLL tuning:\t\t" << (secsPerOp/1e-3) << " ms" << std::endl;
     }
 
+    //time TX filter
+    {
+        const size_t numIters(20);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->TuneTxFilter(10e6 + i*(3e6/numIters));
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> TBB filter tuning:\t" << (secsPerOp/1e-3) << " ms" << std::endl;
+    }
+
+    //time RX filter
+    {
+        const size_t numIters(20);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->TuneRxFilter(10e6 + i*(3e6/numIters));
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> RBB filter tuning:\t" << (secsPerOp/1e-3) << " ms" << std::endl;
+    }
+
+    std::cout << std::endl;
+    std::cout << "Done timing!" << std::endl;
     delete lms7;
     ConnectionRegistry::freeConnection(conn);
     return EXIT_SUCCESS;
