@@ -17,6 +17,8 @@
 
 using namespace lime;
 
+int deviceTestTiming(const std::string &argStr);
+
 /***********************************************************************
  * print help
  **********************************************************************/
@@ -33,6 +35,7 @@ static int printHelp(void)
     std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
+    std::cout << "    --timing          \t\t\t Time interfaces and operations" << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }
@@ -235,6 +238,7 @@ int main(int argc, char *argv[])
         {"args", optional_argument, 0, 'a'},
         {"fpga", required_argument, 0, 'g'},
         {"fw",   required_argument, 0, 'w'},
+        {"timing",     no_argument, 0, 't'},
         {0, 0, 0,  0}
     };
 
@@ -255,6 +259,7 @@ int main(int argc, char *argv[])
             break;
         case 'g': return programGateware(argStr);
         case 'w': return programFirmware(argStr);
+        case 't': return deviceTestTiming(argStr);
         }
     }
 
