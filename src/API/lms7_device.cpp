@@ -17,6 +17,7 @@
 #include "MCU_BD.h"
 #include "FPGA_common.h"
 #include "LMS64CProtocol.h"
+#include <assert.h>
 
 static const size_t LMS_PATH_NONE = 0;
 static const size_t LMS_PATH_HIGH = 1;
@@ -1107,38 +1108,40 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
     }
     else
     {
-        const int w_lna = 2;
-        const int w_tia = 5;
-        const int w_pga = 1;
-        const int w_total = 14*w_lna + 2*w_tia + 31*w_pga;
-        int target = gain*w_total+0.49;
-        unsigned lna = 0, tia = 0, pga = 11;
-        int sum = w_lna*lna+w_tia*tia+w_pga*pga;
+        const int max_gain_lna = 30;
+        const int max_gain_tia = 12;
+        const int max_gain_pga = 31;
+        const int gain_total = max_gain_lna + max_gain_tia + max_gain_pga;
+        int target = gain*gain_total+0.49;
+        unsigned lna = 0, tia = 0, pga = 0;
 
-        while (target > sum)
+        //adjust tia gain
+        if (target >= max_gain_tia)
         {
-            if (tia < 2)
-            {
-                tia++;
-                sum += w_tia;
-            }
-            else if (lna < 14)
-            {
-                lna++;
-                sum += w_lna;
-            }
-            else
-            {
-                pga++;
-                sum += w_pga;
-            }
+            tia = 2;
+            target -= max_gain_tia;
         }
 
-        if (target < sum)
+        //adjust lna gain
+        if (target >= max_gain_lna)
         {
-            pga--;
-            sum -= w_pga;
+            lna = 14;
+            target -= max_gain_lna;
         }
+        else if (target < max_gain_lna-6)
+        {
+            lna = target/3;
+            target -= lna*3;
+        }
+        else
+        {
+            lna = (max_gain_lna-6)/3;
+            target -= lna*3;
+        }
+
+        //adjust pga gain
+        assert(target <= max_gain_pga);
+        pga = target;
 
         if ((Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1,true)!=0)
           ||(Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1,true)!=0)
@@ -1160,15 +1163,27 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
     }
     else
     {
-        const int w_lna = 2;
-        const int w_tia = 5;
-        const int w_pga = 1;
-        const int w_total = 14*w_lna + 2*w_tia + 31*w_pga;
-        int lna = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE),true)-1;
-        int tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true)-1;
+        const int max_gain_lna = 30;
+        const int max_gain_tia = 12;
+        const int max_gain_pga = 31;
+
         int pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB),true);
-        double ret = lna*w_lna+tia*w_tia+pga*w_pga;
-        ret /= w_total;
+        double ret = pga;
+
+        int tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true);
+        if (tia == 3)
+            ret +=max_gain_tia;
+        else if (tia == 2)
+            ret += max_gain_tia-3;
+
+        int lna = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE),true);
+
+        if (lna > 8)
+            ret += (max_gain_lna+lna-15);
+        else if (lna > 1)
+            ret += (lna-1)*3;
+
+        ret /= (max_gain_lna + max_gain_tia + max_gain_pga);
         return ret;
     }
     return 0;
