@@ -302,6 +302,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
         this->Modify_SPI_Reg_bits(LMS7param(PD_MXLOBUF_RFE), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(PD_QGEN_RFE), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), enable?0:1);
     }
 
     //--- synthesizers ---
@@ -313,7 +314,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
-            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), enable?1:0);
         }
     }
     else
@@ -324,7 +325,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
-            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), enable?1:0);
         }
     }
     this->SetActiveChannel(ch);
