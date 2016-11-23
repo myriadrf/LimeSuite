@@ -1167,6 +1167,7 @@ bool LMS7002M::GetSXLocked(bool tx)
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
+    constexpr auto settlingTime = chrono::microseconds(50); //can be lower
     struct CSWInteval
     {
         int16_t high;
@@ -1213,6 +1214,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     //check if lock is within VCO range
     {
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 0);
+        this_thread::sleep_for(settlingTime);
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
         if(cmphl == 3) //VCO too high
         {
@@ -1220,6 +1222,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             return ReportError(-1, "TuneVCO(%s) - VCO too high", moduleName);
         }
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 255);
+        this_thread::sleep_for(settlingTime);
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
         if(cmphl == 0) //VCO too low
         {
@@ -1238,8 +1241,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         {
             cswSearch[t].high |= 1 << i; //CSW_VCO<i>=1
             Modify_SPI_Reg_bits (addrCSW_VCO, msb, lsb, cswSearch[t].high);
-            //might need delay depending on communication speed
-            //std::this_thread::sleep_for(std::chrono::microseconds(5));
+            this_thread::sleep_for(settlingTime);
             cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
             ss << "csw=" << cswSearch[t].high << "\t" << "cmphl=" << (int16_t)cmphl << endl;
             if(cmphl & 0x01) // reduce CSW
@@ -1251,8 +1253,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         {
             --cswSearch[t].low;
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswSearch[t].low);
-            //might need delay depending on communication speed
-            //std::this_thread::sleep_for(std::chrono::microseconds(5));
+            this_thread::sleep_for(settlingTime);
             if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) != 2)
             {
                 ++cswSearch[t].low;
@@ -1288,12 +1289,14 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     {
         //check which of two values really locks
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow);
+        this_thread::sleep_for(settlingTime);
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
         if(cmphl != 2)
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswHigh);
     }
     else
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow+(cswHigh-cswLow)/2);
+    this_thread::sleep_for(settlingTime);
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
     ss << " cmphl=" << (uint16_t)cmphl;
     this->SetActiveChannel(ch); //restore previously used channel
