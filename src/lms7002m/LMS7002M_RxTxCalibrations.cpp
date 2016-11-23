@@ -14,6 +14,7 @@
 #include <chrono>
 #include <fstream>
 #include "dataTypes.h"
+#include <thread>
 #define LMS_VERBOSE_OUTPUT
 
 #include "LMS7002M_RegistersMap.h"
@@ -803,6 +804,8 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
     return dBFS_2_RSSI(useGoertzel ? goertzBins_dbFSI[fftBin] : fftBins_dbFS[fftBin]);
     }
 #endif
+    //delay to make sure RSSI gets enough samples to refresh before reading it
+    this_thread::sleep_for(chrono::microseconds(50));
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
     Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
     uint32_t rssi = (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
