@@ -38,7 +38,14 @@ class MCU_BD
         virtual ~MCU_BD();
         int m_iLoopTries;
         std::string GetProgramFilename() const;
-        void CallMCU(int data);
+
+        void RunProcedure(uint8_t id);
+        enum MCU_Parameter
+        {
+            MCU_REF_CLK,
+            MCU_BW,
+        };
+        void SetParameter(MCU_Parameter param, float value);
         int WaitForMCU(uint32_t timeout_ms);
 
     protected:

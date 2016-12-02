@@ -923,35 +923,62 @@ std::string MCU_BD::GetProgramFilename() const
 
 /** @brief Starts algorithm in MCU
 */
-void MCU_BD::CallMCU(int data)
+void MCU_BD::RunProcedure(uint8_t id)
 {
-    mSPI_write(0, 0);
-    if (data != 0)
-        mSPI_write(0x0006, 1);
-    else
-        mSPI_write(0x0006, 0);
-    mSPI_write(0, data);
+    mSPI_write(0x0006, id != 0);
+    mSPI_write(0x0000, id);
+    uint8_t x0002reg = mSPI_read(0x0002);
+    const uint8_t interupt6 = 0x08;
+    mSPI_write(0x0002, x0002reg | interupt6);
+    mSPI_write(0x0002, x0002reg & ~interupt6);
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
 }
+
 
 /** @brief Waits for MCU to finish executing program
 @return 0 success, 255 idle, 244 running, else algorithm status
 */
 int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 {
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1;
     unsigned short value = 0;
-
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
     do {
         value = mSPI_read(0x0001) & 0xFF;
         if (value != 0xFF) //working
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        t2 = chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        t2 = std::chrono::high_resolution_clock::now();
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
     mSPI_write(0x0006, 0); //return SPI control to PC
-    std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
-    return value;
+    //if((value & 0x7f) != 0)
+        std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    return value & 0x7F;
+}
+
+void MCU_BD::SetParameter(MCU_Parameter param, float value)
+{
+    uint8_t inputRegs[3];
+    value /= 1e6;
+    inputRegs[0] = (uint8_t)value; //frequency integer part
+
+    uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
+    inputRegs[1] = (fracPart >> 8) & 0xFF;
+    inputRegs[2] = fracPart & 0xFF;
+    const uint8_t x0002reg = mSPI_read(0x0002);
+    const uint8_t interupt7 = 0x04;
+    for(uint8_t i = 0; i < 3; ++i)
+    {
+        mSPI_write(0, inputRegs[2-i]);
+        mSPI_write(0x0002, x0002reg | interupt7);
+        mSPI_write(0x0002, x0002reg & ~interupt7);
+        this_thread::sleep_for(chrono::microseconds(5));
+    }
+    if(param==MCU_REF_CLK)
+        RunProcedure(4);
+    if(param == MCU_BW)
+        RunProcedure(3);
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted
@@ -1017,7 +1044,7 @@ MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* va
 
 uint8_t MCU_BD::ReadMCUProgramID()
 {
-    CallMCU(255);
+    RunProcedure(255);
     auto statusMcu = WaitForMCU(10);
     return statusMcu & 0x7F;
 }

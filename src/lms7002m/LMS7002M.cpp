@@ -1166,8 +1166,8 @@ bool LMS7002M::GetSXLocked(bool tx)
     @return 0-success, other-failure
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
-{
-    constexpr auto settlingTime = chrono::microseconds(50); //can be lower
+{   
+    auto settlingTime = chrono::microseconds(50); //can be lower
     struct CSWInteval
     {
         int16_t high;
