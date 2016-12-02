@@ -1,7 +1,6 @@
 #ifndef GNUPLOT_PIPE_H
 #define GNUPLOT_PIPE_H
 
-#include <iostream>
 #include <stdio.h>
 #include <cstdio>
 #include <stdarg.h>
@@ -11,15 +10,26 @@ class GNUPlotPipe
 public:
     GNUPlotPipe(bool persistent = true)
     {
+#ifdef __unix__
         if(persistent)
             pipeHandle = popen("gnuplot -persistent", "w");
         else
             pipeHandle = popen("gnuplot", "w");
+#else
+        if(persistent)
+            pipeHandle = _popen("gnuplot -persistent", "w");
+        else
+            pipeHandle = _popen("gnuplot", "w");
+#endif       
     }
     ~GNUPlotPipe()
     {
-    	write("exit\n");
+        write("exit\n");
+#ifdef __unix__
         pclose(pipeHandle);
+#else
+        _pclose(pipeHandle);
+#endif
     }
 
     void write(const char* str)

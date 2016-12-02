@@ -3,25 +3,58 @@
 @author Lime Microsystems (www.limemicro.com)
 @brief 	Definition of LMS7002M transceiver control parameters registers
 */
+#ifndef LMS7002M_PARAMETERS_COMPACT_H
+#define LMS7002M_PARAMETERS_COMPACT_H
 
-#ifndef LMS7002M_PARAMETERS_H
-#define LMS7002M_PARAMETERS_H
+#include "typedefs.h"
 
-#define LimeLight 0x0020, 0x002F
-#define AFE 0x0082, 0x0082
-#define BIAS 0x0084, 0x0084
-#define XBUF 0x0085, 0x0085
-#define CGEN 0x0086, 0x008C
-#define LDO 0x0092, 0x00A7
-#define BIST 0x00A8, 0x00A8
-#define CDS 0x00AD, 0x00AE
-#define TRF 0x0100, 0x0104
-#define TBB 0x0105, 0x010A
-#define RFE 0x010C, 0x0114
-#define RBB 0x0115, 0x011A
-#define SX 0x011C, 0x0124
-#define TxTSP 0x0200, 0x020C
-#define RxTSP 0x0400, 0x040F
+typedef struct
+{
+    uint16_t address;
+    uint8_t msblsb;
+} LMS7Parameter;
+
+//#define DCOFFI_RFE 0x010E, 13<<4 |  7
+//#define DCOFFQ_RFE 0x010E, 6<<4 |  0
+extern ROM const LMS7Parameter DCOFFI_RFE;
+extern ROM const LMS7Parameter DCOFFQ_RFE;
+
+//#define IQCORR_TXTSP 0x0203, 11<<4 |  0
+//#define DCCORRI_TXTSP 0x0204, 15<<4 |  8
+//#define DCCORRQ_TXTSP 0x0204, 7<<4 |  0
+
+extern ROM const LMS7Parameter DCCORRI_TXTSP;
+extern ROM const LMS7Parameter DCCORRQ_TXTSP;
+extern ROM const LMS7Parameter IQCORR_TXTSP;
+//#define IQCORR_RXTSP 0x0403, 11<<4 |  0
+extern ROM const LMS7Parameter IQCORR_RXTSP;
+
+//#define GCORRQ_TXTSP 0x0201, 10<<4 |  0
+//#define GCORRI_TXTSP 0x0202, 10<<4 |  0
+extern ROM const LMS7Parameter GCORRI_TXTSP;
+extern ROM const LMS7Parameter GCORRQ_TXTSP;
+//#define GCORRQ_RXTSP 0x0401, 10<<4 |  0
+//#define GCORRI_RXTSP 0x0402, 10<<4 |  0
+extern ROM const LMS7Parameter GCORRI_RXTSP;
+extern ROM const LMS7Parameter GCORRQ_RXTSP;
+
+#define SECTION_LimeLight 0x0020, 0x002F
+#define SECTION_AFE 0x0082, 0x0082
+#define SECTION_BIAS 0x0084, 0x0084
+#define SECTION_XBUF 0x0085, 0x0085
+#define SECTION_CGEN 0x0086, 0x008C
+#define SECTION_LDO 0x0092, 0x00A7
+#define SECTION_BIST 0x00A8, 0x00A8
+#define SECTION_CDS 0x00AD, 0x00AE
+#define SECTION_TRF 0x0100, 0x0104
+#define SECTION_TBB 0x0105, 0x010A
+#define SECTION_RFE 0x010C, 0x0114
+#define SECTION_RBB 0x0115, 0x011A
+#define SECTION_SX 0x011C, 0x0124
+#define SECTION_TxTSP 0x0200, 0x020C
+#define SECTION_TxNCO 0x0240, 0x0261
+#define SECTION_RxTSP 0x0400, 0x040F
+#define SECTION_RxNCO 0x0440, 0x0461
 
 //parameters are defines as uint16_t address, uint16_t msb_lsb bits
 #define MRST_TX_B 0x0020, 14<<4 |  14
@@ -422,8 +455,6 @@
 #define EN_INSHSW_L_RFE 0x010D, 2<<4 |  2
 #define EN_INSHSW_W_RFE 0x010D, 1<<4 |  1
 #define EN_NEXTRX_RFE 0x010D, 0<<4 |  0
-#define DCOFFI_RFE 0x010E, 13<<4 |  7
-#define DCOFFQ_RFE 0x010E, 6<<4 |  0
 #define ICT_LOOPB_RFE 0x010F, 14<<4 |  10
 #define ICT_TIAMAIN_RFE 0x010F, 9<<4 |  5
 #define ICT_TIAOUT_RFE 0x010F, 4<<4 |  0
@@ -514,12 +545,7 @@
 #define INSEL_TXTSP 0x0200, 2<<4 |  2
 #define BSTART_TXTSP 0x0200, 1<<4 |  1
 #define EN_TXTSP 0x0200, 0<<4 |  0
-#define GCORRQ_TXTSP 0x0201, 10<<4 |  0
-#define GCORRI_TXTSP 0x0202, 10<<4 |  0
 #define HBI_OVR_TXTSP 0x0203, 14<<4 |  12
-#define IQCORR_TXTSP 0x0203, 11<<4 |  0
-#define DCCORRI_TXTSP 0x0204, 15<<4 |  8
-#define DCCORRQ_TXTSP 0x0204, 7<<4 |  0
 #define GFIR1_L_TXTSP 0x0205, 10<<4 |  8
 #define GFIR1_N_TXTSP 0x0205, 7<<4 |  0
 #define GFIR2_L_TXTSP 0x0206, 10<<4 |  8
@@ -554,10 +580,7 @@
 #define INSEL_RXTSP 0x0400, 2<<4 |  2
 #define BSTART_RXTSP 0x0400, 1<<4 |  1
 #define EN_RXTSP 0x0400, 0<<4 |  0
-#define GCORRQ_RXTSP 0x0401, 10<<4 |  0
-#define GCORRI_RXTSP 0x0402, 10<<4 |  0
 #define HBD_OVR_RXTSP 0x0403, 14<<4 |  12
-#define IQCORR_RXTSP 0x0403, 11<<4 |  0
 #define DCCORR_AVG_RXTSP 0x0404, 2<<4 |  0
 #define GFIR1_L_RXTSP 0x0405, 10<<4 |  8
 #define GFIR1_N_RXTSP 0x0405, 7<<4 |  0

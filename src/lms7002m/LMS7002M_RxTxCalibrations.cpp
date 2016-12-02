@@ -78,6 +78,7 @@ using namespace lime;
 static const float_type calibUserBwDivider = 5;
 static const uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
 #define MCU_ID_DC_IQ_CALIBRATIONS 0x01
+#define MCU_ID_DC_IQ_CALIBRATIONS_FULL 0x02
 #define MCU_FUNCTION_CALIBRATE_TX 1
 #define MCU_FUNCTION_CALIBRATE_RX 2
 #define MCU_FUNCTION_READ_RSSI 3
@@ -892,20 +893,42 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
                     Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB)));
     verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
     verbose_printf(cDashLine);
+    //LMS7002M_SelfCalState state(this);
+    auto registersBackup = BackupRegisterMap();
     if(mCalibrationByMCU && not useExtLoopback)
     {
         uint8_t mcuID = mcuControl->ReadMCUProgramID();
         verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-            mcuID == MCU_ID_DC_IQ_CALIBRATIONS ? "DC/IQ calibration":"unknown");
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+            mcuID == MCU_ID_DC_IQ_CALIBRATIONS_FULL ? "DC/IQ calibration full":"unknown");
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS_FULL)
         {
             verbose_printf("Uploading DC/IQ calibration firmware\n");
             status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
             if(status != 0)
                 return status;
         }
+
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+        verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+        //set bandwidth for MCU to read from register, value is integer stored in MHz
+        mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
+        mcuControl->RunProcedure(MCU_FUNCTION_CALIBRATE_TX);
+        status = mcuControl->WaitForMCU(1000);
+        if(status == 0)
+        {
+            printf("MCU working too long %i\n", status);
+        }
+        //need to read back calibration results
+        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
+        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true);
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
+        goto TxCalibrationEnd;
     }
-    LMS7002M_SelfCalState state(this);
+
     Log("Tx calibration started", LOG_INFO);
     if(useExtLoopback && useOnBoardLoopback)
     {
@@ -913,7 +936,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         if(status != 0)
             return status;
     }
-    auto registersBackup = BackupRegisterMap();
 
     Log("Setup stage", LOG_INFO);
     status = CalibrateTxSetup(bandwidth_Hz, useExtLoopback);
@@ -924,53 +946,26 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 #endif
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
-    if(mCalibrationByMCU)
-    {
-        //set reference clock parameter inside MCU
-        long refClk = GetReferenceClk_SX(false);
-        verbose_printf("MCU Ref. clock: %g MHz\n", refClk/1e6);
-        uint16_t refClkToMCU = (int(refClk / 1000000) << 9) | ((refClk % 1000000) / 10000);
-        SPI_write(MCU_PARAMETER_ADDRESS, refClkToMCU);
-        mcuControl->CallMCU(MCU_FUNCTION_UPDATE_REF_CLK);
-        auto statusMcu = mcuControl->WaitForMCU(100);
-        //set bandwidth for MCU to read from register, value is integer stored in MHz
-        SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)(bandwidth_Hz / 1e6));
-        mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_TX);
-        statusMcu = mcuControl->WaitForMCU(30000);
-        if(statusMcu == 0)
-        {
-            printf("MCU working too long %i\n", statusMcu);
-        }
-        //need to read back calibration results
-        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
-        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true);
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
-    }
-    else
-    {
 #ifdef ENABLE_CALIBRATION_USING_FFT
-        {
-            //calculate NCO offset, that the signal would be in FFT bin
-            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB)/gFFTSize;
-            offsetNCO = int(targetOffsetNCO / binWidth+0.5)*binWidth+binWidth/2;
-        }
-        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB);
-        SelectFFTBin(dataPort, srcBin);
-#endif // ENABLE_CALIBRATION_USING_FFT
-        status = CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
-        if(status != 0)
-            goto TxCalibrationEnd;
-
-        if(useExtLoopback == false)
-            CalibrateRxDC();
-        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + (bandwidth_Hz / calibUserBwDivider));
-        CalibrateTxDC(&dccorri, &dccorrq);
-        //TXIQ
-        SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO);
-        CalibrateIQImbalance(LMS7002M::Tx, &gcorri, &gcorrq, &phaseOffset);
+    {
+        //calculate NCO offset, that the signal would be in FFT bin
+        float_type binWidth = GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB)/gFFTSize;
+        offsetNCO = int(targetOffsetNCO / binWidth+0.5)*binWidth+binWidth/2;
     }
+    srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB);
+    SelectFFTBin(dataPort, srcBin);
+#endif // ENABLE_CALIBRATION_USING_FFT
+    status = CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
+    if(status != 0)
+        goto TxCalibrationEnd;
+
+    if(useExtLoopback == false)
+        CalibrateRxDC();
+    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO + (bandwidth_Hz / calibUserBwDivider));
+    CalibrateTxDC(&dccorri, &dccorrq);
+    //TXIQ
+    SetNCOFrequency(LMS7002M::Rx, 0, calibrationSXOffset_Hz - offsetNCO);
+    CalibrateIQImbalance(LMS7002M::Tx, &gcorri, &gcorrq, &phaseOffset);
 TxCalibrationEnd:
 #ifdef ENABLE_CALIBRATION_USING_FFT
     dataPort->ControlStream(streamId, false);
@@ -978,6 +973,7 @@ TxCalibrationEnd:
 #endif
     Log("Restoring registers state", LOG_INFO);
     RestoreRegisterMap(registersBackup);
+    UploadAll();
 
     //RestoreAllRegisters();
 
@@ -1435,25 +1431,44 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
     verbose_printf(cDashLine);
+    LMS7002M_SelfCalState state(this);
+    auto registersBackup = BackupRegisterMap();
     if(mCalibrationByMCU && not useExtLoopback)
     {
         uint8_t mcuID = mcuControl->ReadMCUProgramID();
         verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-            mcuID == MCU_ID_DC_IQ_CALIBRATIONS ? "DC/IQ calibration":"unknown");
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS)
+            mcuID == MCU_ID_DC_IQ_CALIBRATIONS_FULL ? "DC/IQ calibration full" : "unknown");
+        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS_FULL)
         {
             verbose_printf("Uploading DC/IQ calibration firmware\n");
             status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
             if(status != 0)
                 return status;
         }
+
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+        verbose_printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+        //set bandwidth for MCU to read from register, value is integer stored in MHz
+        mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
+        mcuControl->RunProcedure(MCU_FUNCTION_CALIBRATE_RX);
+        status = mcuControl->WaitForMCU(1000);
+        if(status == 0)
+        {
+            printf("MCU working too long %i\n", status);
+        }
+        //need to read back calibration results
+        dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
+        dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
+        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
+        goto RxCalibrationEndStage;
     }
-    LMS7002M_SelfCalState state(this);
 
     Log("Rx calibration started", LOG_INFO);
     Log("Saving registers state", LOG_INFO);
-    //BackupAllRegisters();
-    auto registersBackup = BackupRegisterMap();
     if((sel_path_rfe == 1 || sel_path_rfe == 0) && not useExtLoopback)
         return ReportError(EINVAL, "Rx Calibration: bad SEL_PATH");
 
@@ -1462,79 +1477,55 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     if(status != 0)
         goto RxCalibrationEndStage;
 
-    if(mCalibrationByMCU)
+#ifdef ENABLE_CALIBRATION_USING_FFT
     {
-        //set reference clock parameter inside MCU
-        long refClk = GetReferenceClk_SX(false);
-        uint16_t refClkToMCU = (int(refClk / 1000000) << 9) | ((refClk % 1000000) / 10000);
-        SPI_write(MCU_PARAMETER_ADDRESS, refClkToMCU);
-        mcuControl->CallMCU(MCU_FUNCTION_UPDATE_REF_CLK);
-        auto statusMcu = mcuControl->WaitForMCU(100);
-
-        //set bandwidth for MCU to read from register, value is integer stored in MHz
-        SPI_write(MCU_PARAMETER_ADDRESS, (uint16_t)(bandwidth_Hz / 1e6));
-        mcuControl->CallMCU(MCU_FUNCTION_CALIBRATE_RX);
-        statusMcu = mcuControl->WaitForMCU(30000);
-        if(statusMcu == 0)
-        {
-            printf("MCU working too long %i\n", statusMcu);
-        }
-        //need to read back calibration results
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
+        //calculate NCO offset, that the signal would be in FFT bin
+        float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
+        offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
+    }
+    srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
+    SelectFFTBin(dataPort, srcBin);
+#endif // ENABLE_CALIBRATION_USING_FFT
+    Log("Rx DC calibration", LOG_INFO);
+    CalibrateRxDC();
+    if(useExtLoopback && useOnBoardLoopback)
+    {
+        status = SetExtLoopback(dataPort, ch, true);
+        if(status != 0)
+            goto RxCalibrationEndStage;
     }
     else
     {
-#ifdef ENABLE_CALIBRATION_USING_FFT
+        if (sel_path_rfe == 2)
         {
-            //calculate NCO offset, that the signal would be in FFT bin
-            float_type binWidth = GetSampleRate(LMS7002M::Rx, ch)/gFFTSize;
-            offsetNCO = int(0.1e6 / binWidth+0.5)*binWidth+binWidth/2;
+            Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
+            Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
         }
-        srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch);
-        SelectFFTBin(dataPort, srcBin);
-#endif // ENABLE_CALIBRATION_USING_FFT
-        Log("Rx DC calibration", LOG_INFO);
-        CalibrateRxDC();
-        if(useExtLoopback && useOnBoardLoopback)
+        if (sel_path_rfe == 3)
         {
-            status = SetExtLoopback(dataPort, ch, true);
-            if(status != 0)
-                goto RxCalibrationEndStage;
+            Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
+            Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
         }
-        else
-        {
-            if (sel_path_rfe == 2)
-            {
-                Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0);
-                Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0);
-            }
-            if (sel_path_rfe == 3)
-            {
-                Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0);
-                Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0);
-            }
-        }
-
-        Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-        if (Get_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF)) == false)
-        {
-            Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1);
-            //TDD MODE
-            Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-            Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
-        }
-        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-
-        CheckSaturationRx(bandwidth_Hz, useExtLoopback);
-
-        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
-        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
-        SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz/calibUserBwDivider + offsetNCO);
-
-        CalibrateIQImbalance(LMS7002M::Rx, &gcorri, &gcorrq, &phaseOffset);
     }
+
+    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    if (Get_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF)) == false)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), 1);
+        //TDD MODE
+        Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
+    }
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+
+    CheckSaturationRx(bandwidth_Hz, useExtLoopback);
+
+    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
+    SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz/calibUserBwDivider + offsetNCO);
+
+    CalibrateIQImbalance(LMS7002M::Rx, &gcorri, &gcorrq, &phaseOffset);
+
     dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
     dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
 RxCalibrationEndStage:
@@ -1543,8 +1534,8 @@ RxCalibrationEndStage:
     dataPort->CloseStream(streamId);
 #endif
     Log("Restoring registers state", LOG_INFO);
-    //RestoreAllRegisters();
     RestoreRegisterMap(registersBackup);
+    UploadAll();
 
     if(useExtLoopback && useOnBoardLoopback)
         SetExtLoopback(dataPort, ch, false);
