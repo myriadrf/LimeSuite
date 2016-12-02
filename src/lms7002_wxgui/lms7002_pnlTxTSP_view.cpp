@@ -232,9 +232,9 @@ void lms7002_pnlTxTSP_view::OnbtnLoadDCIClick( wxCommandEvent& event )
     long value = 0;
     txtDC_REG_TXTSP->GetValue().ToLong(&value, 16);
     LMS_WriteParam(lmsControl,LMS7param(DC_REG_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),value);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),0);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),1);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDI_TXTSP),0);
 }
 
 void lms7002_pnlTxTSP_view::OnbtnLoadDCQClick( wxCommandEvent& event )
@@ -242,9 +242,9 @@ void lms7002_pnlTxTSP_view::OnbtnLoadDCQClick( wxCommandEvent& event )
     long value = 0;
     txtDC_REG_TXTSP->GetValue().ToLong(&value, 16);
     LMS_WriteParam(lmsControl,LMS7param(DC_REG_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),value);
-    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),value);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),0);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),1);
+    LMS_WriteParam(lmsControl,LMS7param(TSGDCLDQ_TXTSP),0);
 }
 
 void lms7002_pnlTxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
