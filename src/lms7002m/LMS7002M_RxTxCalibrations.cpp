@@ -916,7 +916,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
         mcuControl->RunProcedure(MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
-        if(status == 0)
+        if(status != 0)
         {
             printf("MCU working too long %i\n", status);
         }
@@ -1454,7 +1454,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
         mcuControl->RunProcedure(MCU_FUNCTION_CALIBRATE_RX);
         status = mcuControl->WaitForMCU(1000);
-        if(status == 0)
+        if(status != 0)
         {
             printf("MCU working too long %i\n", status);
         }
