@@ -78,17 +78,10 @@ void pnlLimeSDR::Initialize(lms_device_t* pControl)
     if(lmsControl)
     {
         auto info = LMS_GetDeviceInfo(lmsControl);
-        int hw =  std::stoi(info->hardwareVersion);
-        if(hw < 3)
+        if(info != nullptr)
         {
-            auto controls = controlsSizer->GetChildren();
-            for(auto i : controls)
-                i->GetWindow()->Disable();
-            lblWarning->SetLabel(wxString::Format(_("Requires HW:>2, your HW:%s"), hw));
-            lblWarning->Show();
-        }
-        else
-        {
+            int hw = std::stoi(info->hardwareVersion);
+
             lblWarning->SetLabel(_(""));
             lblWarning->Hide();
             auto controls = controlsSizer->GetChildren();
