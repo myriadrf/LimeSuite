@@ -248,6 +248,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
                     printf("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*buffersCount;
+                    if (args.reportLateTx) args.reportLateTx(pkt[pktIndex].counter);
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;

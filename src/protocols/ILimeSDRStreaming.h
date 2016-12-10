@@ -72,6 +72,7 @@ public:
         std::atomic<bool>* generateData; //! generate data
         std::condition_variable* safeToConfigInterface;
         std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
+        std::function<void(const uint64_t)> reportLateTx; //! report late tx packet
     };
     virtual void ReceivePacketsLoop(const ThreadData args) = 0;
     virtual void TransmitPacketsLoop(const ThreadData args) = 0;
@@ -97,6 +98,15 @@ public:
 
     std::function<void(const ThreadData args)> RxLoopFunction;
     std::function<void(const ThreadData args)> TxLoopFunction;
+
+    std::mutex statusMutex;
+    std::condition_variable statusCV;
+    std::atomic<uint64_t> txLastLateTime;
+    void reportLateTxTimestamp(const uint64_t timestamp)
+    {
+        txLastLateTime.store(timestamp);
+        statusCV.notify_one();
+    }
 };
 
 } //lime
