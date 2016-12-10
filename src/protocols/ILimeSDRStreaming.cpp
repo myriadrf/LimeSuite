@@ -207,6 +207,7 @@ int ILimeSDRStreaming::UpdateThreads()
         //enable FPGA streaming
         fpga::StopStreaming(this);
         fpga::ResetTimestamp(this);
+        rxLastTimestamp.store(0);
         //USB FIFO reset
         // TODO : USB FIFO reset command for IConnection
         LMS64CProtocol::GenericPacket ctrPkt;
