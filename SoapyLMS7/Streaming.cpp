@@ -9,6 +9,7 @@
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
 #include <thread>
+#include <algorithm> //min/max
 #include "ErrorReporting.h"
 
 using namespace lime;
@@ -20,6 +21,13 @@ struct IConnectionStream
 {
     std::vector<size_t> streamID;
     int direction;
+    size_t elemSize;
+
+    //rx cmd requests
+    bool hasCmd;
+    int flags;
+    long long timeNs;
+    size_t numElems;
 };
 
 /*******************************************************************
@@ -86,6 +94,8 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     //store result into opaque stream object
     auto stream = new IConnectionStream;
     stream->direction = direction;
+    stream->elemSize = SoapySDR::formatToSize(format);
+    stream->hasCmd = false;
 
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
@@ -161,10 +171,12 @@ int SoapyLMS7::activateStream(
     if (_conn->GetHardwareTimestampRate() == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
 
-    StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
-    metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
-    metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
+    //stream requests used with rx
+    icstream->flags = flags;
+    icstream->timeNs = timeNs;
+    icstream->numElems = numElems;
+    icstream->hasCmd = true;
+
     for(auto i : streamID)
     {
         int status = _conn->ControlStream(i, true);
@@ -182,6 +194,7 @@ int SoapyLMS7::deactivateStream(
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
+    icstream->hasCmd = false;
 
     StreamMetadata metadata;
     metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
@@ -210,6 +223,19 @@ int SoapyLMS7::readStream(
     auto icstream = (IConnectionStream *)stream;
     auto streamID = icstream->streamID;
 
+    const auto exitTime = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs);
+
+    //wait for a command from activate stream up to the timeout specified
+    if (not icstream->hasCmd)
+    {
+        while (std::chrono::high_resolution_clock::now() < exitTime)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        return SOAPY_SDR_TIMEOUT;
+    }
+
+    ReadStreamAgain:
     StreamMetadata metadata;
     int status = 0;
     int bufIndex = 0;
@@ -219,11 +245,60 @@ int SoapyLMS7::readStream(
         if(status == 0) return SOAPY_SDR_TIMEOUT;
         if(status < 0) return SOAPY_SDR_STREAM_ERROR;
     }
+
+    //the command had a time, so we need to compare it to received time
+    if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and metadata.hasTimestamp)
+    {
+        const uint64_t cmdTicks = SoapySDR::timeNsToTicks(icstream->timeNs, _conn->GetHardwareTimestampRate());
+
+        //our request time is now late, clear command and return error code
+        if (cmdTicks < metadata.timestamp)
+        {
+            icstream->hasCmd = false;
+            return SOAPY_SDR_TIME_ERROR;
+        }
+
+        //our request time is not in this received buffer, try again
+        if (cmdTicks >= (metadata.timestamp + status))
+        {
+            goto ReadStreamAgain;
+        }
+
+        //otherwise our request is in this buffer, advance memory
+        const size_t numOff = (cmdTicks - metadata.timestamp);
+        metadata.timestamp += numOff;
+        status -= numOff;
+        const size_t elemSize = icstream->elemSize;
+        for (size_t i = 0; i < streamID.size(); i++)
+        {
+            const size_t memStart = size_t(buffs[i])+(numOff*elemSize);
+            std::memmove(buffs[i], (const void *)memStart, status*elemSize);
+        }
+        icstream->flags &= ~SOAPY_SDR_HAS_TIME; //clear for next read
+    }
+
+    //handle finite burst request commands
+    if (icstream->numElems != 0)
+    {
+        //Clip to within the request size when over,
+        //and reduce the number of elements requested.
+        status = std::min<size_t>(status, icstream->numElems);
+        icstream->numElems -= status;
+
+        //the burst completed, done with the command
+        if (icstream->numElems == 0)
+        {
+            icstream->hasCmd = false;
+            metadata.endOfBurst = true;
+        }
+    }
+
     //output metadata
     flags = 0;
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
     if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
     timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
+
     //return num read or error code
     return (status >= 0) ? status : SOAPY_SDR_STREAM_ERROR;
 }
