@@ -38,6 +38,28 @@ class TestBasicStreaming(unittest.TestCase):
         self.sdr.deactivateStream(self.txStream)
         self.sdr.deactivateStream(self.rxStream)
 
+    def testRxContinuous(self):
+        print('===== receive a continuous stream =====')
+        self.sdr.activateStream(self.rxStream)
+
+        buff0 = np.zeros(1024, np.complex64)
+        buff1 = np.zeros(1024, np.complex64)
+
+        print('readStream continuously...')
+        doneLoopTime = time.time() + 0.1
+        while time.time() < doneLoopTime:
+            sr = self.sdr.readStream(self.rxStream, [buff0, buff1], 1024)
+            self.assertGreater(sr.ret, 0)
+
+        #deactivate
+        self.sdr.deactivateStream(self.rxStream)
+
+        print('readStream for a timeout...')
+        sr = self.sdr.readStream(self.rxStream, [buff0, buff1], 1024)
+        print(sr)
+        self.assertEqual(sr.ret, SOAPY_SDR_TIMEOUT)
+
+
     def testRxBurstNow(self):
         print('===== receive a burst asap =====')
         numElemsRequest = 10000
