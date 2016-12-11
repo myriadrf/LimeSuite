@@ -20,7 +20,6 @@ class TestBasicStreaming(unittest.TestCase):
         self.sdr.closeStream(self.rxStream)
         self.sdr.closeStream(self.txStream)
         self.sdr = None
-
     def testTime(self):
         print('===== test the timestamps =====')
         self.sdr.activateStream(self.txStream)
@@ -34,6 +33,7 @@ class TestBasicStreaming(unittest.TestCase):
         print('delta=%f secs'%delta)
         self.assertGreater(delta, 0.9)
         self.assertLess(delta, 1.1)
+
         self.sdr.deactivateStream(self.txStream)
         self.sdr.deactivateStream(self.rxStream)
 
@@ -51,6 +51,17 @@ class TestBasicStreaming(unittest.TestCase):
             timeNs=tLate,
             timeoutUs=int(1e6))
         time.sleep(1.5)
+
+        print('readStreamStatus for a late indicator...')
+        r0 = self.sdr.readStreamStatus(self.txStream)
+        self.assertEqual(r0.ret, SOAPY_SDR_TIME_ERROR)
+        self.assertTrue(r0.flags & SOAPY_SDR_HAS_TIME)
+        print((r0.timeNs-tLate)/1e9)
+
+        print('readStreamStatus for a timeout...')
+        r1 = self.sdr.readStreamStatus(self.txStream)
+        self.assertEqual(r1.ret, SOAPY_SDR_TIMEOUT)
+
         self.sdr.deactivateStream(self.txStream)
         self.sdr.deactivateStream(self.rxStream)
 

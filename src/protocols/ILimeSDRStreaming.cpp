@@ -117,21 +117,20 @@ int ILimeSDRStreaming::WriteStream(const size_t streamID, const void* buffs, con
 
 int ILimeSDRStreaming::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata& metadata)
 {
-    //late reporting with timeout support
-    if (timeout_ms > 0 or txLastLateTime != 0)
+    assert(streamID != 0);
+    StreamChannel* channel = (StreamChannel*)streamID;
+
+    //support late timestamp reporting
+    auto txLastLateTime = channel->txLastLateTime.exchange(0);
+    if (txLastLateTime != 0)
     {
-        std::unique_lock<std::mutex> lock(statusMutex);
-        if (txLastLateTime == 0) statusCV.wait_for(lock, std::chrono::milliseconds(timeout_ms));
-        if (txLastLateTime == 0) return -1;
         metadata.hasTimestamp = true;
         metadata.timestamp = txLastLateTime;
         metadata.lateTimestamp = true;
-        txLastLateTime = 0;
+        metadata.packetDropped = true;
         return 0;
     }
 
-    assert(streamID != 0);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
     IStreamChannel::Info info = channel->GetInfo();
     metadata.hasTimestamp = true;
     metadata.timestamp = info.timestamp;

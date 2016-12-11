@@ -37,6 +37,7 @@ public:
         int Start();
         int Stop();
         StreamConfig config;
+        std::atomic<uint64_t> txLastLateTime;
     protected:
         RingFIFO* fifo;
         ILimeSDRStreaming* port;
@@ -99,13 +100,13 @@ public:
     std::function<void(const ThreadData args)> RxLoopFunction;
     std::function<void(const ThreadData args)> TxLoopFunction;
 
-    std::mutex statusMutex;
-    std::condition_variable statusCV;
     std::atomic<uint64_t> txLastLateTime;
     void reportLateTxTimestamp(const uint64_t timestamp)
     {
-        txLastLateTime.store(timestamp);
-        statusCV.notify_one();
+        for (auto stream : mTxStreams)
+        {
+            stream->txLastLateTime = timestamp;
+        }
     }
 };
 
