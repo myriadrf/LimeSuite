@@ -141,7 +141,7 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
 
     for(auto i : streamID)
         _conn->CloseStream(i);
@@ -150,7 +150,7 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
 size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream *stream) const
 {
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
     for(auto i : streamID)
     {
         return _conn->GetStreamSize(i);
@@ -166,7 +166,7 @@ int SoapyLMS7::activateStream(
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
 
     if (_conn->GetHardwareTimestampRate() == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
@@ -193,7 +193,7 @@ int SoapyLMS7::deactivateStream(
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
     icstream->hasCmd = false;
 
     StreamMetadata metadata;
@@ -221,7 +221,7 @@ int SoapyLMS7::readStream(
     const long timeoutUs)
 {
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
 
     const auto exitTime = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs);
 
@@ -312,7 +312,7 @@ int SoapyLMS7::writeStream(
     const long timeoutUs)
 {
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
 
     //input metadata
     StreamMetadata metadata;
@@ -341,7 +341,7 @@ int SoapyLMS7::readStreamStatus(
     const long timeoutUs)
 {
     auto icstream = (IConnectionStream *)stream;
-    auto streamID = icstream->streamID;
+    const auto &streamID = icstream->streamID;
 
     StreamMetadata metadata;
     flags = 0;
