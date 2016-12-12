@@ -126,6 +126,27 @@ class TestBasicStreaming(unittest.TestCase):
 
         self.sdr.deactivateStream(self.rxStream)
 
+    def testRxLateBurst(self):
+        print('===== receive a late burst =====')
+        numElemsRequest = 10000
+        tBurst = self.sdr.getHardwareTime() + int(1e8)
+        self.sdr.activateStream(self.rxStream, SOAPY_SDR_END_BURST | SOAPY_SDR_HAS_TIME, tBurst, numElemsRequest)
+
+        buff0 = np.zeros(1024, np.complex64)
+        buff1 = np.zeros(1024, np.complex64)
+
+        print('readStream for a late burst...')
+        time.sleep(1.0) #make sure the readStream is late
+        sr = self.sdr.readStream(self.rxStream, [buff0, buff1], 1024, timeoutUs=int(1e6))
+        self.assertEqual(sr.ret, SOAPY_SDR_TIME_ERROR)
+
+        print('readStream for a timeout...')
+        sr = self.sdr.readStream(self.rxStream, [buff0, buff1], 1024)
+        print(sr)
+        self.assertEqual(sr.ret, SOAPY_SDR_TIMEOUT)
+
+        self.sdr.deactivateStream(self.rxStream)
+
     """
     def testTxLate(self):
         print('===== test txing a late packet =====')
