@@ -97,7 +97,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     if (info.device == LMS_DEV_LIMESDR)
     {
         versionList = {
-            {4, 0, 2, 0},
+            {4, 2, 2, 1},
             {3, 2, 1, 20},
             {2, 2, 1, 20},
             {1, 6, 1, 20},
