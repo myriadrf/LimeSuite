@@ -81,12 +81,10 @@ public:
                     mElementsFilled -= dropElements;
                 }
 
-                //there is no space, sleep for a bit to give pop_samples the thread context
+                //there is no space, wait on CV to give pop_samples the thread context
                 else
                 {
-                    lck.unlock();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    lck.lock();
+                    hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms));
                 }
             }
 
@@ -108,6 +106,7 @@ public:
                 ++mElementsFilled;
             }
         }
+        lck.unlock();
         hasItems.notify_one();
         return samplesTaken;
     }
@@ -159,6 +158,8 @@ public:
                 }
             }
         }
+        lck.unlock();
+        hasItems.notify_one();
         return samplesFilled;
     }
 
