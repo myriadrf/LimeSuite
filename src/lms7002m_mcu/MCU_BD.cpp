@@ -15,6 +15,7 @@ using namespace std;
 #include <thread>
 #include <list>
 #include "ErrorReporting.h"
+#include "LMS7002M.h"
 
 using namespace lime;
 
@@ -33,12 +34,13 @@ MCU_BD::MCU_BD()
     //default value,
     //must be verified during program exploatation
     m_iLoopTries=20;
+    byte_array_size = cMaxFWSize;
     // array initiallization
     for (i=0; i<=255; i++){
 			m_SFR[i]=0x00;
 			m_IRAM[i]=0x00;
 	}
-	for (i=0; i<8192; i++){
+	for (i=0; i<byte_array_size; i++){
 	    byte_array[i]=0x00;
     };
 }
@@ -48,9 +50,11 @@ MCU_BD::~MCU_BD()
     //dtor
 }
 
-void MCU_BD::Initialize(IConnection* pSerPort)
+void MCU_BD::Initialize(IConnection* pSerPort, unsigned size)
 {
     m_serPort = pSerPort;
+    if (size > 0)
+        byte_array_size = size;
 }
 
 /** @brief Read program code from file into memory
@@ -73,14 +77,14 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         mLoadedProgramFilename = inFileName;
         try
         {
-            inFile.ReadHex(8191);
+            inFile.ReadHex(byte_array_size-1);
         }
         catch (...)
         {
             return -1;
         }
 
-        for (i=0; i<8192; i++)
+        for (i=0; i<byte_array_size; i++)
         {
             find_byte=inFile.GetByte(i, ch);
             if (find_byte==true)
@@ -97,8 +101,8 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         if (fin.good() == false)
             return -1;
         mLoadedProgramFilename = inFileName;
-        memset(byte_array, 0, 8192);
-        for(int i=0; i<8192 && !fin.eof(); ++i)
+        memset(byte_array, 0, byte_array_size);
+        for(int i=0; i<byte_array_size && !fin.eof(); ++i)
         {
             inByte = 0;
             fin.read(&inByte, 1);
@@ -568,7 +572,7 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
     case 3: mode = IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
     }
     if(m_serPort)
-        return m_serPort->ProgramMCU(byte_array, 8192, mode, callback);
+        return m_serPort->ProgramMCU(byte_array, byte_array_size, mode, callback);
     else
         return ReportError(ENOLINK, "Device not connected");
 }
@@ -576,7 +580,7 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 int MCU_BD::Program_MCU(const uint8_t* binArray, const IConnection::MCU_PROG_MODE mode)
 {
     if(m_serPort)
-        return m_serPort->ProgramMCU(binArray, 8192, mode, callback);
+        return m_serPort->ProgramMCU(binArray, byte_array_size, mode, callback);
     else
         return ReportError(ENOLINK, "Device not connected");
 }

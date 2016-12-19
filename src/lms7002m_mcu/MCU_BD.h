@@ -49,6 +49,7 @@ class MCU_BD
         int WaitForMCU(uint32_t timeout_ms);
 
     protected:
+        static const int cMaxFWSize = 1024*16;
         std::string mLoadedProgramFilename;
         std::atomic_ushort stepsDone;
         std::atomic_ushort stepsTotal;
@@ -61,6 +62,7 @@ class MCU_BD
         IConnection* m_serPort;
         int m_bLoadedDebug;
         int m_bLoadedProd;
+        int byte_array_size;
 
     public:
         uint8_t ReadMCUProgramID();
@@ -74,7 +76,7 @@ class MCU_BD
         // The SFR content
         unsigned char m_SFR[256];
         // The program memory code
-        unsigned char byte_array[8192];
+        unsigned char byte_array[cMaxFWSize];
 
         void mSPI_write(unsigned short addr_reg,unsigned short data_reg);
         unsigned short mSPI_read(unsigned short addr_reg);
@@ -96,7 +98,7 @@ class MCU_BD
         void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
-        void Initialize(IConnection* pSerPort);
+        void Initialize(IConnection* pSerPort, unsigned rom_size = 0);
         lime::IConnection::ProgrammingCallback callback;
 };
 }
