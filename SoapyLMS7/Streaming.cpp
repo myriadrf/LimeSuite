@@ -261,6 +261,7 @@ int SoapyLMS7::readStream(
         //our request time is not in this received buffer, try again
         if (cmdTicks >= (metadata.timestamp + status))
         {
+            if (std::chrono::high_resolution_clock::now() > exitTime) return SOAPY_SDR_TIMEOUT;
             goto ReadStreamAgain;
         }
 
