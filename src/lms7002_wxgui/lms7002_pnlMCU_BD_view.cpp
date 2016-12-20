@@ -79,14 +79,14 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
         mLoadedProgramFilename = inFileName;
         try
         {
-            inFile.ReadHex(8191);
+            inFile.ReadHex(max_array_size-1);
         }
         catch (...)
         {
             return -1;
         }
 
-        for (i=0; i<8192; i++)
+        for (i = 0; i<max_array_size; i++)
         {
             find_byte=inFile.GetByte(i, ch);
             if (find_byte==true)
@@ -103,8 +103,8 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
         if (fin.good() == false)
             return -1;
         mLoadedProgramFilename = inFileName;
-        memset(byte_array, 0, 8192);
-        for(int i=0; i<8192 && !fin.eof(); ++i)
+        memset(byte_array, 0, max_array_size);
+        for (int i = 0; i<max_array_size && !fin.eof(); ++i)
         {
             inByte = 0;
             fin.read(&inByte, 1);
@@ -211,7 +211,7 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
             else if (mode0 == 1 && mode1 == 1)
                 target = LMS_TARGET_BOOT;
 
-            retval = LMS_ProgramLMSMCU(pthis->lmsControl,(const char*)pthis->byte_array,8192,target,OnProgrammingCallback);
+            retval = LMS_ProgramLMSMCU(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, target, OnProgrammingCallback);
         }
         wxThreadEvent *evt = new wxThreadEvent();
         evt->SetInt(retval);

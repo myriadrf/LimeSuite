@@ -48,8 +48,9 @@ class MCU_BD
         void SetParameter(MCU_Parameter param, float value);
         int WaitForMCU(uint32_t timeout_ms);
 
+        static const int cMaxFWSize = 1024 * 16;
+
     protected:
-        static const int cMaxFWSize = 1024*16;
         std::string mLoadedProgramFilename;
         std::atomic_ushort stepsDone;
         std::atomic_ushort stepsTotal;

@@ -111,11 +111,11 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnecti
         addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
         if (controlPort->IsOpen())
         {
-            unsigned chipRev = this->Get_SPI_Reg_bits(LMS7_REV, true);
-            if (chipRev >= 3)
+            unsigned chipRev = this->Get_SPI_Reg_bits(LMS7_MASK, true);
+            if (chipRev >= 1)
                 byte_array_size = 1024 * 16;
             else
-                byte_array_size = 8 * 1024;
+                byte_array_size = 1024 * 8;
         }
         mcuControl->Initialize(port, byte_array_size);
     }

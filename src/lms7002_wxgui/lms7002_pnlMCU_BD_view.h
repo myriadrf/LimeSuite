@@ -41,6 +41,7 @@ class lms7002_pnlMCU_BD_view : public pnlMCU_BD_view
         ~lms7002_pnlMCU_BD_view();
         void Initialize(lms_device_t *ptr);
 protected:
+    static const size_t max_array_size = 16 * 1024;
     int GetProgramCode(const char* inFileName, bool bin);
     void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
     void Wait_CLK_Cycles(int delay);
@@ -87,7 +88,7 @@ protected:
     int m_bLoadedProd;
     int m_bLoadedDebug;
     std::string mLoadedProgramFilename;
-    unsigned char byte_array[8192];
+    unsigned char byte_array[max_array_size];
     int m_iLoopTries;
     unsigned char m_IRAM[256];
     unsigned char m_SFR[256];
