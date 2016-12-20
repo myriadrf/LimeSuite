@@ -282,10 +282,21 @@ int ILimeSDRStreaming::UpdateThreads()
         lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0, fromChip);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0, fromChip);
 
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2, fromChip);
+        if (lmsControl.Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
+        {
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2, fromChip);
+        }
+        else
+        {
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2, fromChip);
+            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3, fromChip);
+        }
+
 
         if(channelEnables & 0x2) //enable MIMO
         {
