@@ -11,6 +11,7 @@ ILimeSDRStreaming::ILimeSDRStreaming()
 {
     rxRunning = false;
     txRunning = false;
+    mTimestampOffset = 0;
 }
 ILimeSDRStreaming::~ILimeSDRStreaming()
 {
