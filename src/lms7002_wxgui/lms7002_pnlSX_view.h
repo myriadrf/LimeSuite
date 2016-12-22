@@ -26,6 +26,9 @@ class lms7002_pnlSX_view : public pnlSX_view
 		void OnbtnCalculateClick( wxCommandEvent& event );
 		void OnbtnTuneClick( wxCommandEvent& event );
         void OnShowVCOclicked(wxCommandEvent& event);
+
+        wxComboBox* cmbRZ_CTRL;
+        wxComboBox* cmbCMPLO_CTRL;
 	public:
 		/** Constructor */
 		lms7002_pnlSX_view( wxWindow* parent );

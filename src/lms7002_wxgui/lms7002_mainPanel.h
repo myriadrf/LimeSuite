@@ -13,6 +13,7 @@ namespace lime{
 class MCU_BD;
 }
 class lms7002_pnlMCU_BD_view;
+class lms7002_pnlR3_view;
 
 /** Implementing mainPanel */
 class lms7002_mainPanel : public mainPanel
@@ -43,6 +44,7 @@ class lms7002_mainPanel : public mainPanel
         void Initialize(lms_device_t* pControl);
 protected:
         lms7002_pnlMCU_BD_view *mTabMCU;
+        lms7002_pnlR3_view *mTabR3;
         lms_device_t* lmsControl;
 };
 

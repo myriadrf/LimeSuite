@@ -14,6 +14,24 @@ using namespace lime;
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("PLL LPF zero resistor:")), 1, wxEXPAND, 0);
+    cmbRZ_CTRL = new wxComboBox(this, wxID_ANY);
+    cmbRZ_CTRL->Append(_("Rzero = 20 kOhm"));
+    cmbRZ_CTRL->Append(_("Rzero = 8 kOhm"));
+    cmbRZ_CTRL->Append(_("Rzero = 4 kOhm"));
+    cmbRZ_CTRL->Append(_("LPF resistors are in bypass mode (<100 Ohm)"));
+    cmbRZ_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
+    wndId2Enum[cmbRZ_CTRL] = LMS7_RZ_CTRL;
+    sizerR3->Add(cmbRZ_CTRL);
+
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxEXPAND, 0);
+    cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
+    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.18V"));
+    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.1V"));
+    cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, 0, 5);
+    wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_SX;
+
     //ids for updating from chip
     wndId2Enum[chkBYPLDO_VCO] = LMS7param(BYPLDO_VCO);
     wndId2Enum[cmbCP2_PLL] = LMS7param(CP2_PLL);

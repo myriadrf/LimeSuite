@@ -55,7 +55,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_PGA_IN_RBB->Set(temp);
     cmbICT_PGA_OUT_RBB->Set(temp);
     cmbRCC_CTL_PGA_RBB->Append(temp);
-    cmbR_CTL_LPF_RBB->Append(temp);
+    cmbR_CTL_LPF_RBB->Append(temp);    
 
     temp.clear();
     temp.push_back("LPFL_RBB");

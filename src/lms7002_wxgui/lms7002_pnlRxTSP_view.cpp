@@ -325,6 +325,7 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
     uint16_t value2 = 0;
     long valrez = 0;
     //Read RSSI
+    LMS_WriteParam(lmsControl,LMS7param(CAPSEL_ADC),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPSEL),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPTURE),1);

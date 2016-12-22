@@ -23,6 +23,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
 #include "lms7002_pnlBuffers_view.h"
+#include "lms7002_pnlR3.h"
 #include "lime/LimeSuite.h"
 using namespace std;
 using namespace lime;
@@ -33,6 +34,9 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 {
     mTabMCU = new lms7002_pnlMCU_BD_view(tabsNotebook);
     tabsNotebook->AddPage(mTabMCU, _("MCU"));
+
+    mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
+    tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
 
     chkSyncAB->Hide();
 }
@@ -103,6 +107,8 @@ void lms7002_mainPanel::UpdateVisiblePanel()
         mTabBuffers->UpdateGUI();
         break;
     }
+    if(visibleTabId == mTabR3->GetId())
+        mTabR3->UpdateGUI();
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
     cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
@@ -132,6 +138,7 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl);
     mTabBuffers->Initialize(lmsControl);
+    mTabR3->Initialize(lmsControl);
     UpdateGUI();
 }
 

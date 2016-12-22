@@ -297,7 +297,6 @@ int ILimeSDRStreaming::UpdateThreads()
             lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3, fromChip);
         }
 
-
         if(channelEnables & 0x2) //enable MIMO
         {
             uint16_t macBck = lmsControl.Get_SPI_Reg_bits(LMS7param(MAC), fromChip);

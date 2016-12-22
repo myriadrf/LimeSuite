@@ -187,6 +187,7 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_pnlBIAS_view.cpp
     lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp
     lms7002_wxgui/lms7002_pnlTxTSP_view.cpp
+    lms7002_wxgui/lms7002_pnlR3.cpp
     LMS_Programing/LMS_Programing_wxgui.cpp
     utilities_gui/dlgConnectionSettings.cpp
     utilities_gui/pnlMiniLog.cpp

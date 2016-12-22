@@ -17,6 +17,14 @@ pnlCLKGEN_view( parent )
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlCLKGEN_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxEXPAND, 0);
+    cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
+    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.18V"));
+    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.1V"));
+    cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlCLKGEN_view::ParameterChangeHandler), NULL, this);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, 0, 5);
+    wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_CGEN;
+
     wndId2Enum[cmbCLKH_OV_CLKL_CGEN] = LMS7param(CLKH_OV_CLKL_CGEN);
     wndId2Enum[chkCOARSE_START_CGEN] = LMS7param(COARSE_START_CGEN);
     wndId2Enum[cmbCP2_CGEN] = LMS7param(CP2_CGEN);
@@ -211,7 +219,7 @@ void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)
 
     uint16_t param;
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPHO_CGEN),&param);
-    
+
     lblVCO_CMPHO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 1)
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxGREEN);
@@ -219,7 +227,7 @@ void lms7002_pnlCLKGEN_view::OnbtnReadComparators(wxCommandEvent& event)
         lblVCO_CMPHO_CGEN->SetBackgroundColour(*wxRED);
 
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPLO_CGEN),&param);
-    
+
     lblVCO_CMPLO_CGEN->SetLabel(wxString::Format(_("%i"), param));
     if (param == 0)
         lblVCO_CMPLO_CGEN->SetBackgroundColour(*wxGREEN);

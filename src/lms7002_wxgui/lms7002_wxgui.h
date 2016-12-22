@@ -1078,6 +1078,7 @@ class pnlCLKGEN_view : public wxPanel
 		NumericSlider* cmbIOFFSET_CP_CGEN;
 		wxStaticText* ID_STATICTEXT17;
 		NumericSlider* cmbIPULSE_CP_CGEN;
+		wxFlexGridSizer* sizerR3;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
@@ -1218,6 +1219,7 @@ class pnlSX_view : public wxPanel
 		wxComboBox* cmbRSEL_LDO_VCO;
 		wxStaticText* ID_STATICTEXT12;
 		wxComboBox* cmbIOFFSET_CP;
+		wxFlexGridSizer* sizerR3;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
@@ -2229,6 +2231,63 @@ class dlgVCOfrequencies : public wxDialog
 		
 		dlgVCOfrequencies( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("VCO frequencies"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
 		~dlgVCOfrequencies();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class pnlR3
+///////////////////////////////////////////////////////////////////////////////
+class pnlR3 : public wxPanel 
+{
+	private:
+	
+	protected:
+		wxStaticText* m_staticText345;
+		wxComboBox* cmbFCLK1_DLY;
+		wxStaticText* m_staticText3451;
+		wxComboBox* cmbFCLK2_DLY;
+		wxStaticText* m_staticText3452;
+		wxComboBox* cmbMCLK1_DLY;
+		wxStaticText* m_staticText34521;
+		wxComboBox* cmbMCLK1_DLY1;
+		wxCheckBox* chkMCLK1_INV;
+		wxCheckBox* chkMCLK2_INV;
+		wxCheckBox* chkLML1_TRXIQPULSE;
+		wxCheckBox* chkLML2_TRXIQPULSE;
+		wxCheckBox* chkLML1_SISODDR;
+		wxCheckBox* chkLML2_SISODDR;
+		wxStaticText* m_staticText352;
+		wxComboBox* m_comboBox143;
+		wxStaticText* m_staticText353;
+		wxComboBox* cmbHBD_DLY;
+		wxStaticText* m_staticText362;
+		wxComboBox* cmbISINK_SPIBUFF;
+		wxCheckBox* chkTRX_GAIN_SRC;
+		wxStaticText* m_staticText355;
+		wxSpinCtrl* spinCG_IAMP_TBB;
+		wxStaticText* m_staticText356;
+		wxSpinCtrl* spinLOSS_LIN_TXPAD_TRF;
+		wxStaticText* m_staticText357;
+		wxSpinCtrl* spinLOSS_MAIN_TXPAD_TRF;
+		wxCheckBox* chkR5_LPF_BYP_TBB;
+		wxStaticText* m_staticText358;
+		wxSpinCtrl* spinC_CTL_PGA_RBB;
+		wxStaticText* m_staticText359;
+		wxComboBox* cmbG_PGA_RBB;
+		wxStaticText* m_staticText360;
+		wxComboBox* cmbG_LNA_RFE;
+		wxStaticText* m_staticText361;
+		wxComboBox* cmbG_TIA_RFE;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void ParameterChangeHandler( wxCommandEvent& event ) = 0;
+		virtual void ParameterChangeHandler( wxSpinEvent& event ) = 0;
+		
+	
+	public:
+		
+		pnlR3( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
+		~pnlR3();
 	
 };
 
