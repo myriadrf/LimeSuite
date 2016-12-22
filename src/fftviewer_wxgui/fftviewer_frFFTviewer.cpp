@@ -363,7 +363,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     while (pthis->stopProcessing.load() == false)
     {
-        for(int a = fftCounter; a<avgCount && pthis->stopProcessing.load(); ++a)
+        for(int a = fftCounter; a<avgCount && pthis->stopProcessing.load() == false; ++a)
         {
             uint32_t samplesPopped[2] = {0, 0};
             uint64_t ts[2];
