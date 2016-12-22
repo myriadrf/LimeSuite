@@ -363,7 +363,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     while (pthis->stopProcessing.load() == false)
     {
-        for(int a=fftCounter; a<avgCount; ++a)
+        for(int a = fftCounter; a<avgCount && pthis->stopProcessing.load(); ++a)
         {
             uint32_t samplesPopped[2] = {0, 0};
             uint64_t ts[2];
@@ -438,12 +438,14 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                     localDataResults.fftBins_dbFS[ch][s] = (localDataResults.fftBins_dbFS[ch][s] != 0 ? (20 * log10(localDataResults.fftBins_dbFS[ch][s])) - 69.2369 : -300);
                 }
             }
-
-            pthis->streamData = localDataResults;
-            wxThreadEvent evt;
-            evt.SetEventObject(pthis);
-            pthis->updateGUI.store(false);
-            wxPostEvent(pthis, evt);
+            if(pthis->stopProcessing.load() == false)
+            {
+                pthis->streamData = localDataResults;
+                wxThreadEvent* evt = new wxThreadEvent;
+                evt->SetEventObject(pthis);
+                pthis->updateGUI.store(false);
+                pthis->QueueEvent(evt);
+            }
             fftCounter = 0;
         }
         avgCount = pthis->averageCount.load();

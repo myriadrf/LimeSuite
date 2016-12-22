@@ -405,7 +405,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
         }
         int i=0;
 
-        while(i<packetsToBatch)
+        while(i<packetsToBatch && terminate->load() != true)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
