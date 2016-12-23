@@ -189,7 +189,7 @@ static const struct LMS7Parameter LMS7_TST_CGEN = { 0x0089, 2, 0, 0, "TST_CGEN",
 7 - tstdo[0] = High impedance; tstdo[1] = High impedance; tstao = VCO tune through a 10kOhm resistor;\n\
 if TST_SX[2] = 1 --> VCO_TSTBUF active generating VCO_TST_DIV20 and VCO_TST_DIV40"};
 static const struct LMS7Parameter LMS7_REV_CLKDAC_CGEN = { 0x008A, 14, 14, 0, "REV_CLKDAC_CGEN", "Inverts the clock F_CLKL" };
-static const struct LMS7Parameter LMS7_CMPLO_CTRL_CGEN = { 0x008A, 27, 14, 0, "CMPLO_CTRL_CGEN", "" };
+static const struct LMS7Parameter LMS7_CMPLO_CTRL_CGEN = { 0x008B, 14, 14, 0, "CMPLO_CTRL_CGEN", "" };
 static const struct LMS7Parameter LMS7_REV_CLKADC_CGEN = { 0x008A, 13, 13, 0, "REV_CLKADC_CGEN", "Inverts the clock F_CLKL" };
 static const struct LMS7Parameter LMS7_REVPH_PFD_CGEN = { 0x008A, 12, 12, 0, "REVPH_PFD_CGEN", "Reverse the pulses of PFD. It can be used to reverse the polarity of the PLL loop (positive feedback to negative feedback)" };
 static const struct LMS7Parameter LMS7_IOFFSET_CP_CGEN = { 0x008A, 11, 6, 20, "IOFFSET_CP_CGEN", "Scales the offset current of the charge pump, 0-->63. This current is used in Fran-N mode to create an offset in the CP response and avoide the non-linear section" };

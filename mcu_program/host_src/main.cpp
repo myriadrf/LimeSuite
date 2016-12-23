@@ -19,8 +19,8 @@ lime::IConnection *serPort = nullptr;
 lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
-bool useMCU = 1;
-bool tx = 1;
+static bool useMCU = 1;
+static bool tx = 0;
 
 
 //potential list of registers that need to be backed up and restored after calibration
@@ -46,12 +46,12 @@ const uint16_t backupStateAddr[] = {
 0x0594, 0x0595, 0x0596, 0x0597, 0x0598, 0x0599, 0x059A, 0x059B, 0x059C, 0x059D,
 0x059E, 0x059F, 0x05A0, 0x05A1, 0x05A2, 0x05A3, 0x05A4, 0x05A5, 0x05A6, 0x05A7,
 };
-const uint16_t backupSXAddr[] = {0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123, 0x0124};
-uint16_t backupRegsSXR[sizeof(backupSXAddr) / sizeof(int16_t)];
-uint16_t backupRegsSXT[sizeof(backupSXAddr) / sizeof(int16_t)];
-uint16_t backupStateValues[sizeof(backupStateAddr)/sizeof(uint16_t)];
-uint16_t backup0x0100;
-uint16_t backup0x010D;
+static const uint16_t backupSXAddr[] = {0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123, 0x0124};
+static uint16_t backupRegsSXR[sizeof(backupSXAddr) / sizeof(int16_t)];
+static uint16_t backupRegsSXT[sizeof(backupSXAddr) / sizeof(int16_t)];
+static uint16_t backupStateValues[sizeof(backupStateAddr) / sizeof(uint16_t)];
+static uint16_t backup0x0100;
+static uint16_t backup0x010D;
 
 void BackupRegisterState()
 {
@@ -118,9 +118,9 @@ int main(int argc, char** argv)
     //load initial chip config for testing
     string filename;
     if(tx)
-        filename = "TxCalib.ini";
+        filename = "TxTest.ini";
     else
-        filename = "RxMIMO_calibration.ini";
+        filename = "RxTest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");
@@ -138,43 +138,23 @@ int main(int argc, char** argv)
     }
 
     int status;
-    /*
-    status = lmsControl.SetFrequencySX(true, 2140e6);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), 0);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 5);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), 0);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), 1);
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), 0);
-    */
     //backup chip state
     lime::LMS7002M_RegistersMap *backup;
-
-    float freq = 0.300e9;
     lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    //lmsControl.Modify_SPI_Reg_bits(LMS7param(CP2_PLL), 0);
-    //lmsControl.Modify_SPI_Reg_bits(LMS7param(CP3_PLL), 0);
-
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 10);
-    //lmsControl.DownloadAll();
-    //lmsControl.Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), 0);
-    //lmsControl.Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 25);
-    //if(status != 0)
-      //  printf("PC TUNE ERROR\n");
-
     status = 0;
+    if(useMCU)
     {
         uint8_t mcuImage[8192];
         uint16_t imgSize = 0;
-        status = MCU_HEX2BIN("../calibrationsLMS7_MCU.hex", sizeof(mcuImage), mcuImage, &imgSize);
+        status = MCU_HEX2BIN("calibrationsLMS7_MCU.hex", sizeof(mcuImage), mcuImage, &imgSize);
         if(status != 0)
             return status;
 
         fstream fout;
         fout.open("mcu_bin.txt", ios::out);
         fout << "static const uint8_t mcuImage[] = {";
-        for(int i = 0; i < sizeof(mcuImage); ++i)
+        for(size_t i = 0; i < sizeof(mcuImage); ++i)
         {
             if(i % 16 == 0)
                 fout << endl;
@@ -194,16 +174,16 @@ int main(int argc, char** argv)
         }
     }
 
-    tx = 1;
-    useMCU = 1;
-    float freqStart = 1575e6;
-    float freqEnd = 1600e6;
-    float freqStep = 100e6;
+    float freqStart = 400e6;
+    float freqEnd = 2400e6;
+    float freqStep = 10e6;
 
-    freq = freqStart;
+    float freq = freqStart;
 
     vector<float> vfreqs;
     vector<int> vdci, vdcq, vgi, vgq, vph;
+
+    bool isSetBW = false;
 
     while(freq <= freqEnd)
     {
@@ -232,17 +212,26 @@ int main(int argc, char** argv)
         lmsControl.DownloadAll();
         backup = lmsControl.BackupRegisterMap();
 
+        auto t1 = chrono::high_resolution_clock::now();
         if(useMCU) //using algorithm inside MCU
         {
+            if(!isSetBW)
+            {
             status = MCU_SetParameter(MCU_REF_CLK, 30.72e6);
+            if(status != 0)
+                printf("Failed to set Reference Clk\n");
             status = MCU_SetParameter(MCU_BW, 20e6);
+            if(status != 0)
+                printf("Failed to set Bandwidth\n");
+            isSetBW = true;
 
-            //TODO set desired bandwidth parameter
+            }
+
             if(tx)
                 MCU_RunProcedure(1); //initiate Tx calibration
             else
-                MCU_RunProcedure(2); //initiate Tx calibration
-            status = MCU_WaitForStatus(5000); //wait until MCU finishes
+                MCU_RunProcedure(2); //initiate Rx calibration
+            status = MCU_WaitForStatus(1000); //wait until MCU finishes
             if(status != 0)
             {
                 printf("MCU calibration FAILED : 0x%02X\n", status);
@@ -256,6 +245,8 @@ int main(int argc, char** argv)
             else
                 status = CalibrateRx();
         }
+        auto t2 = chrono::high_resolution_clock::now();
+        long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         lmsControl.DownloadAll();
         int16_t dci, dcq, ph, gi, gq;
@@ -280,12 +271,7 @@ int main(int argc, char** argv)
             vgq.push_back(gq);
             vph.push_back(ph);
 
-            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s\n", freq/1e6, dci, dcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"));
-
-            /*printf("   | DC  | GAIN | PHASE\n");
-            printf("---+-----+------+------\n");
-            printf("I: | %3i | %4i | %i\n", dci, gi, ph);
-            printf("Q: | %3i | %4i |\n", dcq, gq);*/
+            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s | %li ms\n", freq/1e6, dci, dcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"), duration);
         }
         else
         {
@@ -311,12 +297,7 @@ int main(int argc, char** argv)
             vgq.push_back(gq);
             vph.push_back(ph);
 
-            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s\n", freq/1e6, dci, dcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"));
-
-            /*printf("   | DC  | GAIN | PHASE\n");
-            printf("---+-----+------+------\n");
-            printf("I: | %3i | %4i | %i\n", rdci, gi, ph);
-            printf("Q: | %3i | %4i |\n", rdcq, gq);*/
+            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s | %li ms\n", freq/1e6, rdci, rdcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"), duration);
         }
         //restore chip state and apply calibration values
         //RestoreRegisterState();
@@ -351,35 +332,35 @@ int main(int argc, char** argv)
     }
     lime::ConnectionRegistry::freeConnection(serPort);
 
-    /*GNUPlotPipe plot(true);
-    plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase'\n");
-    //plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase', '-' u 1:2 w line title 'GainI', '-' u 1:2 w line title 'GainQ'\n");
+GNUPlotPipe plot(true);
+    //plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase'\n");
+    plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase', '-' u 1:2 w line title 'GainI', '-' u 1:2 w line title 'GainQ'\n");
 
-    for(int i = 0; i < vfreqs.size(); ++i)
+    for(size_t i = 0; i < vfreqs.size(); ++i)
     {
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vdci[i]);
     }
     plot.write("e\n");
-    for(int i = 0; i < vfreqs.size(); ++i)
+    for(size_t i = 0; i < vfreqs.size(); ++i)
     {
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vdcq[i]);
     }
     plot.write("e\n");
-    for(int i = 0; i < vfreqs.size(); ++i)
+    for(size_t i = 0; i < vfreqs.size(); ++i)
     {
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vph[i]);
     }
     plot.write("e\n");
-    /*for(int i = 0; i < vfreqs.size(); ++i)
+    for(size_t i = 0; i < vfreqs.size(); ++i)
     {
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vgi[i]);
     }
     plot.write("e\n");
-    for(int i = 0; i < vfreqs.size(); ++i)
+    for(size_t i = 0; i < vfreqs.size(); ++i)
     {
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vgq[i]);
     }
-    plot.write("e\n");*/
+    plot.write("e\n");
 
 
     return 0;

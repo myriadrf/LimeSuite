@@ -11,16 +11,11 @@ using namespace std;
 
 void MCU_RunProcedure(uint8_t id)
 {
-    const uint16_t addrs[2]  = {0x0006, 0x0};
-    const uint16_t values[2] = {id != 0, 0};
-    SPI_write_batch(addrs, values, 2);
-    uint8_t x0002reg = SPI_read(0x0002);
-    const uint8_t interupt6 = 0x08;
-    SPI_write(0x0002, x0002reg | interupt6);
-    SPI_write(0x0002, x0002reg & ~interupt6);
-    SPI_write(0x0000, id);
-    SPI_write(0x0002, x0002reg | interupt6);
-    SPI_write(0x0002, x0002reg & ~interupt6);
+    const uint16_t x0002reg = SPI_read(0x0002) & 0xFF;
+    const uint16_t interupt6 = 0x0008;
+    const uint16_t addrs[5] = {0x0006, 0x0, 0x0002, 0x0002, 0x0002};
+    const uint16_t values[5] = {id != 0, id, x0002reg & ~interupt6, x0002reg | interupt6, x0002reg & ~interupt6};
+    SPI_write_batch(addrs, values, 5);
 }
 
 uint8_t MCU_WaitForStatus(uint16_t timeout_ms)
@@ -28,7 +23,7 @@ uint8_t MCU_WaitForStatus(uint16_t timeout_ms)
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     unsigned short value = 0;
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     do {
         value = SPI_read(0x0001) & 0xFF;
         if (value != 0xFF) //working
@@ -37,8 +32,6 @@ uint8_t MCU_WaitForStatus(uint16_t timeout_ms)
         t2 = std::chrono::high_resolution_clock::now();
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
     SPI_write(0x0006, 0); //return SPI control to PC
-    if((value & 0x7f) != 0)
-        std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value & 0x7F;
 }
 
@@ -58,16 +51,17 @@ uint8_t MCU_SetParameter(MCU_Parameter param, float value)
         SPI_write(0, inputRegs[2-i]);
         SPI_write(0x0002, x0002reg | interupt7);
         SPI_write(0x0002, x0002reg & ~interupt7);
-        this_thread::sleep_for(chrono::microseconds(5));
-        uint8_t p1 = SPI_read(0x0001);
-        int a = 0;
+        int status = MCU_WaitForStatus(10);
+        if(status != 0)
+            printf("MCU error status 0x%02X\n", status);
     }
-    uint8_t p1 = SPI_read(0x0001);
     if(param==MCU_REF_CLK)
         MCU_RunProcedure(4);
     if(param == MCU_BW)
         MCU_RunProcedure(3);
     int status = MCU_WaitForStatus(100);
+    if(status != 0)
+            printf("MCU error status 0x%02X\n", status);
     return status;
 }
 

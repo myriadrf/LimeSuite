@@ -4,9 +4,8 @@
 #include "LMS7002M_parameters_compact.h"
 #include "lms7002m_controls.h"
 
-bit runProcedure = false;
+bool runProcedure = false;
 uint8_t currentInstruction;
-uint8_t lastInstruction;
 extern float_type RefClk;
 extern float_type bandwidthRF;
 #define MCU_PARAMETER_ADDRESS 0x002D //register used to pass parameter values to MCU
@@ -22,19 +21,13 @@ enum
 
 /**	@brief Reads reference clock from LMS register
 */
-void UpdateReferenceClock()
-{	
-	RefClk = inputRegs[0]; //integer part MHz
-	RefClk += (((uint16_t)inputRegs[1] << 8) | inputRegs[2]) / 1000.0; //fractional part MHz
-	RefClk *= 1e6;
-	P1 = MCU_IDLE;
-}
-
-void UpdateBW()
-{	
-	bandwidthRF = inputRegs[0]; //integer part MHz
-	bandwidthRF += (((uint16_t)inputRegs[1] << 8) | inputRegs[2]) / 1000.0; //fractional part MHz
-	bandwidthRF *= 1e6;
+void UpdateFreq(bool refClk)
+{
+	const float freq = 1e6*(inputRegs[0] + ((((uint16_t)inputRegs[1] << 8) | inputRegs[2]) / 1000.0)); //integer part MHz
+	if(refClk)
+		RefClk = freq;
+	else
+		bandwidthRF = freq;
 	P1 = MCU_IDLE;
 }
 
@@ -73,16 +66,15 @@ void main()  //main routine
 	ucSEN=1;//
 
 	//P1 returns MCU status
-	lastInstruction = P0;
 	while(1) 
 	{			
 		if(runProcedure)
 		{
 			switch(currentInstruction)
 			{
-			case 0:
-				P1 = MCU_IDLE;
-				break;
+			//case 0:
+			//	P1 = MCU_IDLE;
+			//	break;
 			case 1: //CalibrateTx
 				P1 = MCU_IDLE | CalibrateTx();
 				break;
@@ -90,18 +82,29 @@ void main()  //main routine
                 P1 = MCU_IDLE | CalibrateRx();
 				break;
 			case 3: 
-				UpdateBW();
+				UpdateFreq(0);
+				//UpdateBW();
 				break;
 			case 4: //update ref clk
-				UpdateReferenceClock();
+				//UpdateReferenceClock();
+				UpdateFreq(1);
 				break;
+			/*case 5:
+				P1 = SetFrequencySX(1, 900e6);
+				break;
+			case 6:
+			{
+			uint8_t ch = Get_SPI_Reg_bits(MAC); //activate VCO and comparator
+			 Modify_SPI_Reg_bits(MAC, 2); //activate VCO and comparator
+				P1 = TuneVCO(VCO_SXT);
+			Modify_SPI_Reg_bits(MAC, ch); //activate VCO and comparator
+				break;
+			}	*/
 			case 255: //return program ID
 				P1 = 0x02;
 				break;
-			default:
-				break;
+			
 			}
-			lastInstruction = currentInstruction; 
 			runProcedure = false;
 		}
 	}

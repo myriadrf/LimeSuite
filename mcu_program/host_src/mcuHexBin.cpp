@@ -241,7 +241,8 @@ int MCU_HEX2BIN(const char* filename, const uint16_t limit, uint8_t *binImage, u
         for(auto i : m_chunks)
         {
             for(size_t j=0; j<i.m_bytes.size(); ++j)
-                binImage[i.m_startAddress+j] = i.m_bytes[j];
+                if(i.m_startAddress+j < limit)
+                    binImage[i.m_startAddress+j] = i.m_bytes[j];
         }
     }
     if(imgSize)

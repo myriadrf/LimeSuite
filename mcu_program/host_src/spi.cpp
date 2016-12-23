@@ -39,6 +39,8 @@ void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits,
     const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     //spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
+    if(batchActive)
+    {
     bool found = false;
     for(int i=0; i<bAddr.size(); ++i)
     {
@@ -55,6 +57,7 @@ void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits,
         bAddr.push_back(SPI_reg_addr);
         bData.push_back((new_bits_data << (bits&0xF)) & spiMask);
         bMask.push_back(spiMask);
+    }
     }
     SPI_write(SPI_reg_addr, (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask)); //write modified data back to SPI reg
 }
@@ -65,6 +68,8 @@ void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const 
     const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
+    if(batchActive)
+    {
     bool found = false;
     for(int i=0; i<bAddr.size(); ++i)
     {
@@ -81,6 +86,7 @@ void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const 
         bAddr.push_back(SPI_reg_addr);
         bData.push_back((new_bits_data << (bits&0xF)) & spiMask);
         bMask.push_back(spiMask);
+    }
     }
     SPI_write(SPI_reg_addr, spiDataReg); //write modified data back to SPI reg
 }
@@ -109,6 +115,26 @@ void SPI_write_batch(const uint16_t *addr, const uint16_t *values, uint8_t cnt)
     for(int i=0; i<cnt; ++i)
     {
         data[i] = addr[i] << 16 | values[i];
+
+        if(batchActive)
+        {
+            bool found = false;
+            for(int i=0; i<bAddr.size(); ++i)
+            {
+                if(bAddr[i] == addr[i])
+                {
+                    found = true;
+                    bData[i] = values[i];
+                    bMask[i] = 0xFFFF;
+                }
+            }
+            if(!found)
+            {
+                bAddr.push_back(addr[i]);
+                bData.push_back(values[i]);
+                bMask.push_back(0xFFFF);
+            }
+        }
     }
     serPort->TransactSPI(0x10, data.data(), nullptr, data.size());
 }
