@@ -42,7 +42,7 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\</OutputDirectory>
+          <OutputDirectory>..\build\mcu_program\</OutputDirectory>
           <OutputName>calibrationsLMS7_MCU</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
@@ -284,11 +284,11 @@
             <uAregs>0</uAregs>
             <UseInterruptVector>1</UseInterruptVector>
             <Fuzzy>3</Fuzzy>
-            <Optimize>12</Optimize>
+            <Optimize>9</Optimize>
             <WarningLevel>2</WarningLevel>
             <SizeSpeed>0</SizeSpeed>
             <ObjectExtend>1</ObjectExtend>
-            <ACallAJmp>1</ACallAJmp>
+            <ACallAJmp>0</ACallAJmp>
             <InterruptVectorAddress>0</InterruptVectorAddress>
             <VariousControls>
               <MiscControls></MiscControls>
@@ -350,6 +350,46 @@
               <FileName>lms7002m_calibrations.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\common_src\lms7002m_calibrations.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <BankNo>65535</BankNo>
+                </CommonProperty>
+                <File51>
+                  <C51>
+                    <RegisterColoring>2</RegisterColoring>
+                    <VariablesInOrder>2</VariablesInOrder>
+                    <IntegerPromotion>2</IntegerPromotion>
+                    <uAregs>2</uAregs>
+                    <UseInterruptVector>2</UseInterruptVector>
+                    <Fuzzy>8</Fuzzy>
+                    <Optimize>10</Optimize>
+                    <WarningLevel>3</WarningLevel>
+                    <SizeSpeed>2</SizeSpeed>
+                    <ObjectExtend>2</ObjectExtend>
+                    <ACallAJmp>2</ACallAJmp>
+                    <InterruptVectorAddress>0</InterruptVectorAddress>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </C51>
+                </File51>
+              </FileOption>
             </File>
             <File>
               <FileName>lms7002m_calibrations.h</FileName>
@@ -360,6 +400,46 @@
               <FileName>lms7002m_controls.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\common_src\lms7002m_controls.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <BankNo>65535</BankNo>
+                </CommonProperty>
+                <File51>
+                  <C51>
+                    <RegisterColoring>2</RegisterColoring>
+                    <VariablesInOrder>2</VariablesInOrder>
+                    <IntegerPromotion>2</IntegerPromotion>
+                    <uAregs>2</uAregs>
+                    <UseInterruptVector>2</UseInterruptVector>
+                    <Fuzzy>8</Fuzzy>
+                    <Optimize>10</Optimize>
+                    <WarningLevel>3</WarningLevel>
+                    <SizeSpeed>2</SizeSpeed>
+                    <ObjectExtend>2</ObjectExtend>
+                    <ACallAJmp>2</ACallAJmp>
+                    <InterruptVectorAddress>0</InterruptVectorAddress>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </C51>
+                </File51>
+              </FileOption>
             </File>
             <File>
               <FileName>lms7002m_controls.h</FileName>
@@ -370,6 +450,46 @@
               <FileName>LMS7002M_parameters_compact.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\common_src\LMS7002M_parameters_compact.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <BankNo>65535</BankNo>
+                </CommonProperty>
+                <File51>
+                  <C51>
+                    <RegisterColoring>2</RegisterColoring>
+                    <VariablesInOrder>2</VariablesInOrder>
+                    <IntegerPromotion>2</IntegerPromotion>
+                    <uAregs>2</uAregs>
+                    <UseInterruptVector>2</UseInterruptVector>
+                    <Fuzzy>8</Fuzzy>
+                    <Optimize>10</Optimize>
+                    <WarningLevel>3</WarningLevel>
+                    <SizeSpeed>2</SizeSpeed>
+                    <ObjectExtend>2</ObjectExtend>
+                    <ACallAJmp>2</ACallAJmp>
+                    <InterruptVectorAddress>0</InterruptVectorAddress>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </C51>
+                </File51>
+              </FileOption>
             </File>
             <File>
               <FileName>LMS7002M_parameters_compact.h</FileName>
@@ -400,6 +520,46 @@
               <FileName>spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\mcu_src\spi.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <BankNo>65535</BankNo>
+                </CommonProperty>
+                <File51>
+                  <C51>
+                    <RegisterColoring>2</RegisterColoring>
+                    <VariablesInOrder>2</VariablesInOrder>
+                    <IntegerPromotion>2</IntegerPromotion>
+                    <uAregs>2</uAregs>
+                    <UseInterruptVector>2</UseInterruptVector>
+                    <Fuzzy>8</Fuzzy>
+                    <Optimize>10</Optimize>
+                    <WarningLevel>3</WarningLevel>
+                    <SizeSpeed>2</SizeSpeed>
+                    <ObjectExtend>2</ObjectExtend>
+                    <ACallAJmp>2</ACallAJmp>
+                    <InterruptVectorAddress>0</InterruptVectorAddress>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </C51>
+                </File51>
+              </FileOption>
             </File>
           </Files>
         </Group>

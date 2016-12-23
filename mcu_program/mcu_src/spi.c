@@ -48,13 +48,13 @@ unsigned short SPI_read (const unsigned short spiAddrReg)
 	ucSDIN=1;
 	return spiDataReg;
 }
-
+/*
 void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data, const uint16_t spiDataReg)
 {
     const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
    	SPI_write(SPI_reg_addr, (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask)); //write modified data back to SPI reg
 }
-
+*/
 void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data)
 {
 	uint16_t spiDataReg = SPI_read(SPI_reg_addr); //read current SPI reg data

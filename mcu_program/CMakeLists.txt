@@ -3,14 +3,6 @@ cmake_policy(SET CMP0003 NEW)
 #C++11 is a required language feature for this project
 set(CMAKE_CXX_STANDARD 11)
 
-#include modules for finding CyAPI
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
-if(WIN32)
-    find_package(CyAPI)
-    include_directories( ${CYAPI_INCLUDE_DIRS})
-    set(USB_LIBRARIES ${CYAPI_LIBRARIES} SetupAPI)
-endif()
-
 if(CMAKE_COMPILER_IS_GNUCXX)
 
     #enable C++11 on older versions of cmake
@@ -47,12 +39,12 @@ include_directories(../src/ConnectionSTREAM)
 include_directories(../src/protocols)
 include_directories(common_src)
 
-add_executable(mcu_calibration ${HOST_SOURCES})
+add_executable(MCU_TestBench ${HOST_SOURCES})
 if(WIN32)
-target_link_libraries(mcu_calibration LimeSuite sqlite3_static)
+target_link_libraries(MCU_TestBench LimeSuite sqlite3_static)
 else()
-target_link_libraries(mcu_calibration LimeSuite sqlite3)
+target_link_libraries(MCU_TestBench LimeSuite sqlite3)
 endif()
 if(WIN32)
-    target_link_libraries(mcu_calibration ${CYAPI_LIBRARIES} SetupAPI)
+    target_link_libraries(MCU_TestBench ${CYAPI_LIBRARIES} SetupAPI)
 endif()

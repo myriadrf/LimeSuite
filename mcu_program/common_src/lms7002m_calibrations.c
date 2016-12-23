@@ -5,27 +5,27 @@
 #include <math.h>
 
 #ifdef __cplusplus
-    #define VERBOSE 1
-    //#define DRAW_GNU_PLOTS
+#define VERBOSE 1
+//#define DRAW_GNU_PLOTS
 
-    #include <thread>
-    #include <vector>
-    #include <chrono>
-    #include <stdio.h>
+#include <thread>
+#include <vector>
+#include <chrono>
+#include <stdio.h>
 
-    typedef struct
-    {
-        int16_t value;
-        uint32_t signalLevel;
-        std::vector<float> measurements;
-    } BinSearchResults;
-    BinSearchResults results;
+typedef struct
+{
+    int16_t value;
+    uint32_t signalLevel;
+    std::vector<float> measurements;
+} BinSearchResults;
+BinSearchResults results;
 
-    #include <gnuPlotPipe.h>
-    GNUPlotPipe saturationPlot;
-    GNUPlotPipe rxDCPlot;
-    GNUPlotPipe IQImbalancePlot;
-    GNUPlotPipe txDCPlot;
+#include <gnuPlotPipe.h>
+GNUPlotPipe saturationPlot;
+GNUPlotPipe rxDCPlot;
+GNUPlotPipe IQImbalancePlot;
+GNUPlotPipe txDCPlot;
 
 ///APPROXIMATE conversion
 float ChipRSSI_2_dBFS(uint32_t rssi)
@@ -43,7 +43,7 @@ int16_t toSigned(int16_t val, uint8_t msblsb)
     return val;
 }
 #else
-    #define VERBOSE 0
+#define VERBOSE 0
 #endif // __cplusplus
 
 float bandwidthRF = 5e6; //Calibration bandwidth
@@ -51,46 +51,30 @@ float bandwidthRF = 5e6; //Calibration bandwidth
 #define offsetNCO 0.1e6
 #define calibUserBwDivider 5
 
-ROM uint16_t addr[1];
-xdata uint16_t regStore[200];
-void BackupRegisters()
+static void SetDefaultsSX()
 {
-	/*uint8_t i;
-	for(i=0; i<255; ++i)
-		regStore[i] = SPI_read(addr[i]); */
+    ROM const uint16_t SXAddr[]=    {0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123};
+    ROM const uint16_t SXdefVals[]= {0xAD43, 0x0400, 0x0780, 0x3640, 0xB9FF, 0x3404, 0x033F, 0x067B};
+
+    uint8_t i;
+    for(i=sizeof(SXAddr)/sizeof(uint16_t); i; --i)
+        SPI_write(SXAddr[i-1], SXdefVals[i-1]);
 }
 
-void RestoreRegisters()
+static uint8_t toDCOffset(const int8_t offset)
 {
-	/*uint8_t i;
-	for(i=0; i<255; ++i)
-		SPI_write(addr[i], regStore[i]); */
-
+    if(offset >= 0)
+        return offset;
+    return abs(offset) | 0x40;
 }
 
-void SetDefaultsSX()
+static void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
 {
-	ROM const uint16_t SXAddr[]=	{0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123};
-	ROM const uint16_t SXdefVals[]={0xAD43, 0x0400, 0x0780, 0x3640, 0xB9FF, 0x3404, 0x033F, 0x067B};
-
-	uint8_t i;
-    for(i=0; i<sizeof(SXAddr)/sizeof(uint16_t); ++i)
-        SPI_write(SXAddr[i], SXdefVals[i]);
+    Modify_SPI_Reg_bits(addr, bits, 0);
+    Modify_SPI_Reg_bits(addr, bits, 1);
 }
 
-uint8_t toDCOffset(const int8_t offset)
-{
-    return offset >= 0 ? offset : (abs(offset) | 0x40);
-}
-
-void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
-{
-    const uint16_t regVal = SPI_read(addr);
-    Modify_SPI_Reg_bits_WrOnly(addr, bits, 0, regVal);
-    Modify_SPI_Reg_bits_WrOnly(addr, bits, 1, regVal);
-}
-
-void LoadDC_REG_TX_IQ()
+static void LoadDC_REG_TX_IQ()
 {
     SPI_write(0x020C, 0x7FFF);
     FlipRisingEdge(TSGDCLDI_TXTSP);
@@ -101,76 +85,75 @@ void LoadDC_REG_TX_IQ()
 static void Delay()
 {
 #ifdef __cplusplus
-    //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #else
-	uint16_t i;
-	volatile uint8_t t=0;
-	for(i=0; i<200; ++i)
-		t <<= 1;
+    uint8_t i;
+    volatile uint8_t t;
+    for(i=200; i; --i)
+        t <<= 1;
 #endif
 }
 
 #ifdef __cplusplus
 uint32_t rssiCounter = 0;
 #endif
-uint16_t GetRSSI()
+static uint16_t GetRSSI()
 {
 #ifdef __cplusplus
     ++rssiCounter;
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #else
-    #warning TODO: might need to wait until RSSI values refreshes
+#warning TODO: might need to wait until RSSI values refreshes
     Delay();
 #endif // __cplusplus
-Delay();
-Delay();
+    Delay();
     FlipRisingEdge(CAPTURE);
     return ((SPI_read(0x040F) << 2) | (SPI_read(0x040E) & 0x3));
 }
 
-void SetRxGFIR3Coefficients()
+static void SetRxGFIR3Coefficients()
 {
     //FIR coefficients symmetrical, storing only one half
     ROM const int16_t firCoefs[] =
-{
-    8,4,0,-6,-11,-16,-20,-22,-22,-20,-14,-5,6,20,34,46,
-    56,61,58,48,29,3,-29,-63,-96,-123,-140,-142,-128,-94,-44,20,
-    93,167,232,280,302,291,244,159,41,-102,-258,-409,-539,-628,-658,-614,
-    -486,-269,34,413,852,1328,1814,2280,2697,3038,3277,3401,
-};
+    {
+        8,4,0,-6,-11,-16,-20,-22,-22,-20,-14,-5,6,20,34,46,
+        56,61,58,48,29,3,-29,-63,-96,-123,-140,-142,-128,-94,-44,20,
+        93,167,232,280,302,291,244,159,41,-102,-258,-409,-539,-628,-658,-614,
+        -486,-269,34,413,852,1328,1814,2280,2697,3038,3277,3401,
+    };
     uint8_t index = 0;
-    for (;index < sizeof(firCoefs)/sizeof(int16_t); ++index)
+    for (; index < sizeof(firCoefs)/sizeof(int16_t); ++index)
         SPI_write(0x0500 + index + 24 * (index / 40), firCoefs[index]);
-    for (;index < sizeof(firCoefs)/sizeof(int16_t)*2; ++index)
+    for (; index < sizeof(firCoefs)/sizeof(int16_t)*2; ++index)
         SPI_write(0x0500 + index + 24 * (index / 40), firCoefs[119-index]);
 }
 
 void CheckSaturationTxRx()
 {
-	const uint16_t saturationLevel = 0x0B000; //-3dBFS
-	int8_t g_pga;
-	int8_t g_rxloop;
-	uint16_t rssi_prev;
-	uint16_t rssi;
+    const uint16_t saturationLevel = 0x0B000; //-3dBFS
+    uint8_t g_pga;
+    uint8_t g_rxloop;
+    //uint16_t rssi_prev;
+    uint16_t rssi;
 #ifdef DRAW_GNU_PLOTS
-    #define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
+#define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
     std::vector<float> g_rxLoopbStage;
     std::vector<float> pgaFirstStage;
     std::vector<float> lnaStage;
     std::vector<float> tiaStage;
     std::vector<float> pgaSecondStage;
 #else
-    #define PUSH_PLOT_VALUE(vec, data)
+#define PUSH_PLOT_VALUE(vec, data)
 #endif
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF / calibUserBwDivider) * 2);
 
-    rssi_prev = rssi = GetRSSI();
+    rssi = GetRSSI();
     PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
 
-    g_pga = Get_SPI_Reg_bits(G_PGA_RBB);
-    g_rxloop = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    g_pga = (uint8_t)Get_SPI_Reg_bits(G_PGA_RBB);
+    g_rxloop = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
 
 #if VERBOSE
     printf("Receiver saturation search, target level: %i (%2.3f dBFS)\n", saturationLevel, ChipRSSI_2_dBFS(saturationLevel));
@@ -187,7 +170,7 @@ void CheckSaturationTxRx()
         PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
     }
     PUSH_PLOT_VALUE(pgaFirstStage, rssi);
-    while(g_rxloop == 15 && rssi < saturationLevel)
+    while(rssi < saturationLevel)
     {
         if(g_pga < 18)
             ++g_pga;
@@ -195,12 +178,7 @@ void CheckSaturationTxRx()
             break;
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
         rssi = GetRSSI();
-        if(rssi < rssi_prev)
-        {
-            --g_pga;
-            break;
-        }
-        rssi_prev = rssi;
+        //rssi_prev = rssi;
         PUSH_PLOT_VALUE(pgaFirstStage, rssi);
     }
 #if VERBOSE
@@ -210,28 +188,28 @@ void CheckSaturationTxRx()
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
 #ifdef DRAW_GNU_PLOTS
     {
-    saturationPlot.write("set yrange [:0]\n");
-    saturationPlot.write("set title 'Rx gains search'\n");
-    saturationPlot.write("set key right bottom\n");
-    saturationPlot.write("set xlabel 'measurement index'\n");
-    saturationPlot.write("set ylabel 'RSSI dbFS'\n");
-    saturationPlot.write("set grid xtics ytics\n");
-    saturationPlot.write("plot\
+        saturationPlot.write("set yrange [:0]\n");
+        saturationPlot.write("set title 'Rx gains search'\n");
+        saturationPlot.write("set key right bottom\n");
+        saturationPlot.write("set xlabel 'measurement index'\n");
+        saturationPlot.write("set ylabel 'RSSI dbFS'\n");
+        saturationPlot.write("set grid xtics ytics\n");
+        saturationPlot.write("plot\
 '-' u 1:2 with lines title 'G_RXLOOPB',\
 '-' u 1:2 with lines title 'PGA',\
 '-' u 1:2 with lines title 'target Level'\n");
-    int index = 1;
-    const auto arrays = {&g_rxLoopbStage, &pgaFirstStage};
-    for(auto a : arrays)
-    {
-        --index;
-        for(size_t i=0; i<a->size(); ++i)
-            saturationPlot.writef("%i %f\n", index++, ChipRSSI_2_dBFS((*a)[i]));
-        saturationPlot.write("e\n");
-    }
-    saturationPlot.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(saturationLevel),
-                           index, ChipRSSI_2_dBFS(saturationLevel));
-    saturationPlot.flush();
+        int index = 1;
+        const auto arrays = {&g_rxLoopbStage, &pgaFirstStage};
+        for(auto a : arrays)
+        {
+            --index;
+            for(size_t i=0; i<a->size(); ++i)
+                saturationPlot.writef("%i %f\n", index++, ChipRSSI_2_dBFS((*a)[i]));
+            saturationPlot.write("e\n");
+        }
+        saturationPlot.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(saturationLevel),
+                              index, ChipRSSI_2_dBFS(saturationLevel));
+        saturationPlot.flush();
     }
 #endif
 #undef PUSH_PLOT_VALUE
@@ -246,9 +224,11 @@ typedef struct
 } BinSearchParam;
 
 bool ConvertToRxDC = false;
-uint16_t Convert(const uint16_t val)
+uint16_t Convert(const int16_t val)
 {
-	return ConvertToRxDC ? toDCOffset(val) : val;
+    if( !ConvertToRxDC )
+        return val;
+    return toDCOffset(val);
 }
 
 void BinarySearch(BinSearchParam bdata* args)
@@ -260,15 +240,15 @@ void BinarySearch(BinSearchParam bdata* args)
     int16_t step;
     const uint16_t addr = args->param.address;
     const uint8_t msblsb = args->param.msblsb;
-    const uint16_t regValue = SPI_read(addr);
+    //const uint16_t regValue = SPI_read(addr);
     ConvertToRxDC = args->param.address == DCOFFI_RFE.address;
 #ifdef DRAW_GNU_PLOTS
     std::vector<float> searchPoints;
-    #define PUSH_PLOT_VALUE(vec, param, level) vec.push_back(param);vec.push_back(level)
+#define PUSH_PLOT_VALUE(vec, param, level) vec.push_back(param);vec.push_back(level)
 #else
-    #define PUSH_PLOT_VALUE(vec, param, level)
+#define PUSH_PLOT_VALUE(vec, param, level)
 #endif
-    Modify_SPI_Reg_bits_WrOnly(addr, msblsb, Convert(right), regValue);
+    Modify_SPI_Reg_bits(addr, msblsb, Convert(right));
     rssiRight = GetRSSI();
     PUSH_PLOT_VALUE(searchPoints, right, rssiRight);
     while(right-left >= 1)
@@ -276,17 +256,17 @@ void BinarySearch(BinSearchParam bdata* args)
         step = (right-left)/2;
         if(rssiLeft < rssiRight)
         {
-            Modify_SPI_Reg_bits_WrOnly(addr, msblsb, Convert(right), regValue);
+            Modify_SPI_Reg_bits(addr, msblsb, Convert(right));
             rssiRight = GetRSSI();
             PUSH_PLOT_VALUE(searchPoints, right, rssiRight);
         }
         else
         {
-            Modify_SPI_Reg_bits_WrOnly(addr, msblsb, Convert(left), regValue);
+            Modify_SPI_Reg_bits(addr, msblsb, Convert(left));
             rssiLeft = GetRSSI();
             PUSH_PLOT_VALUE(searchPoints, left, rssiLeft);
         }
-        if(step == 0)
+        if(step <= 0)
             break;
         if(rssiLeft < rssiRight)
             right -= step;
@@ -294,26 +274,26 @@ void BinarySearch(BinSearchParam bdata* args)
             left += step;
     }
     args->result = rssiLeft < rssiRight ? left : right;
-    Modify_SPI_Reg_bits_WrOnly(addr, msblsb, Convert(args->result), regValue);
+    Modify_SPI_Reg_bits(addr, msblsb, Convert(args->result));
 
 #ifdef DRAW_GNU_PLOTS
-	results.value = args->result;
+    results.value = args->result;
     results.signalLevel = rssiLeft < rssiRight ? rssiLeft : rssiRight;
     results.measurements.clear();
     results.measurements = searchPoints;
     for(size_t i=0; i<results.measurements.size(); i+=2)
         for(size_t j=i; j<results.measurements.size(); j+=2)
-    {
-        if(results.measurements[i] > results.measurements[j])
         {
-            float temp = results.measurements[i];
-            results.measurements[i] = results.measurements[j];
-            results.measurements[j] = temp;
-            temp = results.measurements[i+1];
-            results.measurements[i+1] = results.measurements[j+1];
-            results.measurements[j+1] = temp;
+            if(results.measurements[i] > results.measurements[j])
+            {
+                float temp = results.measurements[i];
+                results.measurements[i] = results.measurements[j];
+                results.measurements[j] = temp;
+                temp = results.measurements[i+1];
+                results.measurements[i+1] = results.measurements[j+1];
+                results.measurements[j+1] = temp;
+            }
         }
-    }
 #endif //DRAW_GNU_PLOTS
 #undef PUSH_PLOT_VALUE
 }
@@ -335,13 +315,12 @@ void CalibrateRxDC()
     BinSearchParam argsI;
     BinSearchParam argsQ;
 
-	ConvertToRxDC = true;
+    ConvertToRxDC = true;
     Modify_SPI_Reg_bits(EN_G_TRF, 0);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(CAPSEL, 0);
     //SetRxDCOFF(32, 32);
-    SPI_write(0x010E, toDCOffset(32) << 7 | toDCOffset((32)));
-	//return;
+    SPI_write(0x010E, 32 << 7 | 32);
     //find I
     argsI.param = DCOFFI_RFE;
     argsQ.param = DCOFFQ_RFE;
@@ -392,7 +371,7 @@ void CalibrateRxDC()
 #if VERBOSE
     printf("Rx DCOFFI: %i, DCOFFQ: %i\n", argsI.result, argsQ.result);
 #endif
-	ConvertToRxDC = false;
+    ConvertToRxDC = false;
 }
 
 void CalibrateTxDC()
@@ -462,7 +441,7 @@ void CalibrateTxDC()
 #if VERBOSE
     printf("coarse: Tx DCCORRI: %i, DCCORRQ: %i | %2.3f dBFS\n", argsI.result, argsQ.result, ChipRSSI_2_dBFS(results.signalLevel));
 #endif
-    Modify_SPI_Reg_bits(0x0204, 15 << 4 | 0, (argsI.result << 8 | (argsQ.result & 0xFF)));
+    SPI_write(0x0204, (argsI.result << 8 | (argsQ.result & 0xFF)));
 }
 
 void CalibrateIQImbalance(bool tx)
@@ -479,25 +458,24 @@ void CalibrateIQImbalance(bool tx)
 '-' w l t 'phase2'\
 \n");
 #endif // DRAW_GNU_PLOTS
-    LMS7Parameter gcorri;
-    LMS7Parameter gcorrq;
     BinSearchParam argsPhase;
     BinSearchParam argsGain;
+    LMS7Parameter gcorri;
+    LMS7Parameter gcorrq;
+    if(tx)
+    {
+        gcorri = GCORRI_TXTSP;
+        gcorrq = GCORRQ_TXTSP;
+        argsPhase.param = IQCORR_TXTSP;
+    }
+    else
+    {
+        gcorri = GCORRI_RXTSP;
+        gcorrq = GCORRQ_RXTSP;
+        argsPhase.param = IQCORR_RXTSP;
+    }
 
-	if(tx)
-	{
-		gcorri = GCORRI_TXTSP;
-		gcorrq = GCORRQ_TXTSP;
-		argsPhase.param = IQCORR_TXTSP;
-	}
-	else
-	{
-		gcorri = GCORRI_RXTSP;
-		gcorrq = GCORRQ_RXTSP;
-		argsPhase.param = IQCORR_RXTSP;
-	}
-
-   	argsPhase.maxValue = 128;
+    argsPhase.maxValue = 128;
     argsPhase.minValue = -128;
     BinarySearch(&argsPhase);
 #ifdef DRAW_GNU_PLOTS
@@ -559,7 +537,7 @@ uint8_t SetupCGEN()
     uint8_t status;
     uint8_t cgenMultiplier;
     uint8_t gfir3n;
-    cgenMultiplier = (int)((GetFrequencyCGEN() / 46.08e6) + 0.5);
+    cgenMultiplier = (uint8_t)((GetFrequencyCGEN() / 46.08e6) + 0.5);
     if(cgenMultiplier < 2)
         cgenMultiplier = 2;
     if(cgenMultiplier > 9 && cgenMultiplier < 12)
@@ -568,20 +546,18 @@ uint8_t SetupCGEN()
         cgenMultiplier = 13;
     //CGEN VCO is powered up in SetFrequencyCGEN/Tune
     status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
-    if(status != 0)
-        return status;
 
     gfir3n = 4 * cgenMultiplier;
     if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
         gfir3n /= pow2(Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN));
-    gfir3n = pow2((int)(log(gfir3n)/log(2)))-1; //could be log2(gfir3n)
+    gfir3n = pow2((uint8_t)(log(gfir3n)/log(2)))-1; //could be log2(gfir3n)
     Modify_SPI_Reg_bits(GFIR3_N_RXTSP, gfir3n);
-    return 0;
+    return status;
 }
 
 uint8_t CalibrateTxSetup()
 {
-	uint8_t status = 1;
+    uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020); //remember used channel
 
     /*BeginBatch("TxSetup");
@@ -655,47 +631,42 @@ uint8_t CalibrateTxSetup()
 
     EndBatch();*/
 
-	{
-		ROM const uint16_t TxSetupAddr[] = {0x0082,0x0085,0x00AE,0x0101,0x0200,0x0208, 0x0084};
-		ROM const uint16_t TxSetupData[] = {0x0000,0x0001,0xF000,0x0001,0x000C,0x0000, 0x0000};
-		ROM const uint16_t TxSetupMask[] = {0x0018,0x0007,0xF000,0x1801,0x000C,0x210B, 0xF83F};
-		uint8_t i;
- 	    for(i=0; i<sizeof(TxSetupAddr)/sizeof(uint16_t); ++i)
-        	SPI_write(TxSetupAddr[i], ( SPI_read(TxSetupAddr[i]) & ~TxSetupMask[i] ) | TxSetupData[i]);
-	}
-	{
-		ROM const uint16_t TxSetupAddrWrOnly[] = {0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0115,0x0116,0x0117,0x0118,0x0119, 0x0201, 0x0202, 0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040B,0x040C,0x040D,0x040E,0x0440,0x0441,0x0442,0x0443};
-		ROM const uint16_t TxSetupDataWrOnly[] = {0x88E5,0x00DE,0x2040,0x3042,0x0BFF,0x0083,0x4032,0x03DF,0x0005,0x8180,0x280C,0x218C,0x3180, 0x07FF, 0x07FF, 0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1000,0x0000,0x0098,0x0000,0x0002,0x0020,0x0000,0x0000,0x0000};
+    {
+        ROM const uint16_t TxSetupAddr[] = {0x0082,0x0085,0x00AE,0x0101,0x0200,0x0208, 0x0084};
+        ROM const uint16_t TxSetupData[] = {0x0000,0x0001,0xF000,0x0001,0x000C,0x0000, 0x0000};
+        ROM const uint16_t TxSetupMask[] = {0x0018,0x0007,0xF000,0x1801,0x000C,0x210B, 0xF83F};
+        uint8_t i;
+        for(i=sizeof(TxSetupAddr)/sizeof(uint16_t); i; --i)
+            SPI_write(TxSetupAddr[i-1], ( SPI_read(TxSetupAddr[i-1]) & ~TxSetupMask[i-1] ) | TxSetupData[i-1]);
+    }
+    {
+        ROM const uint16_t TxSetupAddrWrOnly[] = {0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0115,0x0116,0x0117,0x0118,0x0119,0x0201,0x0202,0x0400,0x0401,0x0402,0x0403,0x0407,0x040A,0x040C,0x0440,0x0441,0x0442,0x0443,0x0404,0x0405,0x0406, 0x0408,0x0409, 0x040D};
+        ROM const uint16_t TxSetupDataWrOnly[] = {0x88E5,0x00DE,0x2040,0x3042,0x0BFF,0x0083,0x4032,0x03DF,0x0005,0x8180,0x280C,0x218C,0x3180,0x07FF,0x07FF,0x0081,0x07FF,0x07FF,0x4000,0x0700,0x1000,0x0098,0x0020};//,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000, 0x0000,0x0000, 0x0000};
 
-		uint8_t i;
-	    for(i=0; i<sizeof(TxSetupAddrWrOnly)/sizeof(uint16_t); ++i)
-	        SPI_write(TxSetupAddrWrOnly[i], TxSetupDataWrOnly[i]);
-	}
+        uint8_t i;
+        for(i=sizeof(TxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
+            if(i<=sizeof(TxSetupDataWrOnly)/sizeof(uint16_t))
+                SPI_write(TxSetupAddrWrOnly[i-1], TxSetupDataWrOnly[i-1]);
+            else
+                SPI_write(TxSetupAddrWrOnly[i-1], 0);
+    }
     SetRxGFIR3Coefficients();
-	status = SetupCGEN();
+    status = SetupCGEN();
     if(status != 0)
         return status;
-   	
-    //SXR
-    Modify_SPI_Reg_bits_WrOnly(MAC, 1, x0020val); //switch to ch. A
-    //SetDefaults(SECTION_SX);
-	SetDefaultsSX();
-	/*{
-		ROM const uint16_t SXAddr[]=	{0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123};
-		ROM const uint16_t SXdefVals[]={0xAD43, 0x0400, 0x0780, 0x3640, 0xB9FF, 0x3404, 0x033F, 0x067B};
 
-		uint8_t i;
-	    for(i=0; i<sizeof(SXAddr)/sizeof(uint16_t); ++i)
-	        SPI_write(SXAddr[i], SXdefVals[i]);
-	}*/
-	{
+    //SXR
+    Modify_SPI_Reg_bits(MAC, 1); //switch to ch. A
+    //SetDefaults(SECTION_SX);
+    SetDefaultsSX();
+    {
         const float_type SXRfreq = GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - calibrationSXOffset_Hz;
         //SX VCO is powered up in SetFrequencySX/Tune
         status = SetFrequencySX(LMS7002M_Rx, SXRfreq);
         if(status != 0)
-            return status+0x50;
+            return status+0x60;
     }
-    
+
     //if calibrating ch. B enable buffers
     if(x0020val & 0x2)
     {
@@ -705,7 +676,7 @@ uint8_t CalibrateTxSetup()
     }
 
     //SXT{
-    Modify_SPI_Reg_bits_WrOnly(MAC, 2, x0020val); //switch to ch. B
+    Modify_SPI_Reg_bits(MAC, 2); //switch to ch. B
     Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
     SPI_write(0x0020, x0020val); //restore used channel
 
@@ -738,24 +709,17 @@ uint8_t CalibrateTx()
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(MAC);
     uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(SEL_BAND1_TRF);
     printf("Tx ch.%s , BW: %g MHz, RF output: %s, Gain: %i\n",
-                    ch == 0x1 ? "A" : "B",
-                    bandwidthRF/1e6,
-                    sel_band1_trf==1 ? "BAND1" : "BAND2",
-                    Get_SPI_Reg_bits(CG_IAMP_TBB));
+           ch == 0x1 ? "A" : "B",
+           bandwidthRF/1e6,
+           sel_band1_trf==1 ? "BAND1" : "BAND2",
+           Get_SPI_Reg_bits(CG_IAMP_TBB));
 #endif
     uint8_t status;
-	BackupRegisters();
+    //BackupRegisters();
     status = CalibrateTxSetup();
-#ifdef __cplusplus
-    printf("Setup duration: %li ms\n",
-        std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::high_resolution_clock::now()-beginTime).count());
-#endif
     if(status != 0)
-	{
-		goto TxCalibrationEnd; //go to ending stage to restore registers
-	}
-	CheckSaturationTxRx();
+        goto TxCalibrationEnd; //go to ending stage to restore registers
+    CheckSaturationTxRx();
     CalibrateRxDC();
 
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider));
@@ -763,15 +727,15 @@ uint8_t CalibrateTx()
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO);
     CalibrateIQImbalance(LMS7002M_Tx);
 TxCalibrationEnd:
-	if(status != 0)
+    if(status != 0)
     {
 #if VERBOSE
         printf("Tx calibration failed");
 #endif
-		RestoreRegisters();
+        //RestoreRegisters();
         return status;
-    }    
-	RestoreRegisters();
+    }
+    //RestoreRegisters();
     //Modify_SPI_Reg_bits(MAC, ch);
     //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
     //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);
@@ -794,20 +758,20 @@ TxCalibrationEnd:
                     );*/
     {
         //Get_SPI_Reg_bits(CG_IAMP_TBB);
-        int8_t dcI = Get_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb);
-        int8_t dcIsigned = toSigned(dcI, DCCORRI_TXTSP.msblsb);
-    int8_t dcQsigned = toSigned(Get_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb), DCCORRQ_TXTSP.msblsb);
-    int16_t phaseSigned = toSigned(Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb), IQCORR_TXTSP.msblsb);
-    uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
-    uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
-    printf("   | DC  | GAIN | PHASE\n");
-    printf("---+-----+------+------\n");
-    printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
-    printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);
+        int16_t dcI = Get_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb);
+        int16_t dcIsigned = toSigned(dcI, DCCORRI_TXTSP.msblsb);
+        int16_t dcQsigned = toSigned(Get_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb), DCCORRQ_TXTSP.msblsb);
+        int16_t phaseSigned = toSigned(Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb), IQCORR_TXTSP.msblsb);
+        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
+        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
+        printf("   | DC  | GAIN | PHASE\n");
+        printf("---+-----+------+------\n");
+        printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
+        printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);
     }
 #ifdef __cplusplus
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::high_resolution_clock::now()-beginTime).count();
+                       (std::chrono::high_resolution_clock::now()-beginTime).count();
     printf("Duration: %i ms\n", duration);
 #endif
 #endif //LMS_VERBOSE_OUTPUT
@@ -815,14 +779,14 @@ TxCalibrationEnd:
 }
 #define MSBLSB(x, y) x << 4 | y
 
- /*
+/*
 void SetDefaults(uint16_t start, uint16_t end)
 {
-    ROM const uint16_t defaultAddrs[] = { 0
-//0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,0x0028,0x0029,0x002A,0x002B,0x002C,0x002E,0x002F,0x0081,0x0082,0x0084,0x0085,0x0086,0x0087,0x0088,0x0089,0x008A,0x008B,0x008C,0x0092,0x0093,0x0094,0x0095,0x0096,0x0097,0x0098,0x0099,0x009A,0x009B,0x009C,0x009D,0x009E,0x009F,0x00A0,0x00A1,0x00A2,0x00A3,0x00A4,0x00A5,0x00A6,0x00A7,0x00A8,0x00AA,0x00AB,0x00AD,0x00AE,0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0114,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x011C,0x011D,0x011E,0x011F,0x0120,0x0121,0x0122,0x0123,0x0124,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0209,0x020A,0x020C,0x0240,0x0242,0x0243,0x0244,0x0245,0x0246,0x0247,0x0248,0x0249,0x024A,0x024B,0x024C,0x024D,0x024E,0x024F,0x0250,0x0251,0x0252,0x0253,0x0254,0x0255,0x0256,0x0257,0x0258,0x0259,0x025A,0x025B,0x025C,0x025D,0x025E,0x025F,0x0260,0x0261,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040B,0x040C,0x040E,0x0440,0x0442,0x0443,0x0444,0x0445,0x0446,0x0447,0x0448,0x0449,0x044A,0x044B,0x044C,0x044D,0x044E,0x044F,0x0450,0x0451,0x0452,0x0453,0x0454,0x0455,0x0456,0x0457,0x0458,0x0459,0x045A,0x045B,0x045C,0x045D,0x045E,0x045F,0x0460,0x0461
+    ROM const uint16_t defaultAddrs[] = {
+0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,0x0028,0x0029,0x002A,0x002B,0x002C,0x002E,0x002F,0x0081,0x0082,0x0084,0x0085,0x0086,0x0087,0x0088,0x0089,0x008A,0x008B,0x008C,0x0092,0x0093,0x0094,0x0095,0x0096,0x0097,0x0098,0x0099,0x009A,0x009B,0x009C,0x009D,0x009E,0x009F,0x00A0,0x00A1,0x00A2,0x00A3,0x00A4,0x00A5,0x00A6,0x00A7,0x00A8,0x00AA,0x00AB,0x00AD,0x00AE,0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0114,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x011C,0x011D,0x011E,0x011F,0x0120,0x0121,0x0122,0x0123,0x0124,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0209,0x020A,0x020C,0x0240,0x0242,0x0243,0x0244,0x0245,0x0246,0x0247,0x0248,0x0249,0x024A,0x024B,0x024C,0x024D,0x024E,0x024F,0x0250,0x0251,0x0252,0x0253,0x0254,0x0255,0x0256,0x0257,0x0258,0x0259,0x025A,0x025B,0x025C,0x025D,0x025E,0x025F,0x0260,0x0261,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040B,0x040C,0x040E,0x0440,0x0442,0x0443,0x0444,0x0445,0x0446,0x0447,0x0448,0x0449,0x044A,0x044B,0x044C,0x044D,0x044E,0x044F,0x0450,0x0451,0x0452,0x0453,0x0454,0x0455,0x0456,0x0457,0x0458,0x0459,0x045A,0x045B,0x045C,0x045D,0x045E,0x045F,0x0460,0x0461
 };
-	ROM const uint16_t defaultValues[] = { 0
-//0xFFFF,0x0E9F,0x07DF,0x5559,0xE4E4,0x0101,0x0101,0xE4E4,0x0101,0x0101,0x0086,0x0010,0xFFFF,0x0000,0x3840,0x0000,0x800B,0x0400,0x0001,0x4901,0x0400,0x0780,0x0020,0x0514,0x2100,0x067B,0x0001,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x6565,0x658C,0x6565,0x658C,0x6565,0x658C,0x658C,0x6565,0x6565,0x6565,0x6565,0x6565,0x6565,0x000F,0x6565,0x0000,0x0000,0x0000,0x03FF,0xF000,0x3409,0x7800,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x9426,0x61C1,0x104C,0x88FD,0x009E,0x2040,0x3042,0x0BF4,0x0083,0xC0E6,0x03C3,0x008D,0x0009,0x8180,0x280C,0x018C,0x18CB,0x2E02,0xAD43,0x0400,0x0780,0x3640,0xB9FF,0x3404,0x033F,0x067B,0x0000,0x0081,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0081,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+    ROM const uint16_t defaultValues[] = {
+0xFFFF,0x0E9F,0x07DF,0x5559,0xE4E4,0x0101,0x0101,0xE4E4,0x0101,0x0101,0x0086,0x0010,0xFFFF,0x0000,0x3840,0x0000,0x800B,0x0400,0x0001,0x4901,0x0400,0x0780,0x0020,0x0514,0x2100,0x067B,0x0001,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x6565,0x658C,0x6565,0x658C,0x6565,0x658C,0x658C,0x6565,0x6565,0x6565,0x6565,0x6565,0x6565,0x000F,0x6565,0x0000,0x0000,0x0000,0x03FF,0xF000,0x3409,0x7800,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x9426,0x61C1,0x104C,0x88FD,0x009E,0x2040,0x3042,0x0BF4,0x0083,0xC0E6,0x03C3,0x008D,0x0009,0x8180,0x280C,0x018C,0x18CB,0x2E02,0xAD43,0x0400,0x0780,0x3640,0xB9FF,0x3404,0x033F,0x067B,0x0000,0x0081,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0081,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
 };
 #ifdef __cplusplus
     int status = 0;
@@ -833,33 +797,44 @@ void SetDefaults(uint16_t start, uint16_t end)
         int i=0;
         for(i=0; i<sizeof(defaultAddrs)/sizeof(uint16_t); ++i)
         {
-            addrs.push_back(defaultAddrs[i]);
-            values.push_back(defaultValues[i]);
-            break;
+            if(defaultAddrs[i] == address)
+            {
+                addrs.push_back(defaultAddrs[i]);
+                values.push_back(defaultValues[i]);
+                break;
+            }
         }
     }
-    SPI_write_batch(&addrs[0], &values[0], addrs.size());
+    SPI_write_batch(addrs.data(), values.data(), addrs.size());
 #else
 
 #endif
-} */
+}*/
 
-int CalibrateRxSetup()
+uint8_t CalibrateRxSetup()
 {
     uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020);
-
     //rfe
     {
-        ROM const uint16_t RxSetupAddr[] = {0x0082, 0x0085, 0x00AE, 0x0100, 0x0101, 0x0108, 0x010C, 0x010D, 0x0110, 0x0113, 0x0115, 0x0119, 0x0200, 0x0208, 0x0400, 0x0403, 0x0407, 0x040A, 0x040C};
-        ROM const uint16_t RxSetupData[] = {0x0000, 0x0001, 0xF000, 0x0000, 0x0001, 0x0426, 0x0000, 0x0040, 0x001F, 0x000C, 0x0000, 0x0000, 0x008C, 0x2070, 0x0000, 0x4000, 0x0700, 0x1000, 0x0098};
-        ROM const uint16_t RxSetupMask[] = {0x0008, 0x0007, 0xF000, 0x0001, 0x1801, 0xFFFF, 0x001A, 0x0040, 0x001F, 0x003C, 0xC000, 0x8000, 0x018C, 0xE170, 0x6000, 0x7000, 0x0700, 0x3007, 0xC0D8};
-
-		uint8_t i;
- 	    for(i=0; i<sizeof(RxSetupAddr)/sizeof(uint16_t); ++i)
-        	SPI_write(RxSetupAddr[i], ( SPI_read(RxSetupAddr[i]) & ~RxSetupMask[i] ) | RxSetupData[i]);																  	
+        ROM const uint16_t RxSetupAddr[] = {0x0082,0x0085,0x00AE,0x010C,0x010D,0x0110,0x0113,0x0115,0x0119, 0x0840};
+        ROM const uint16_t RxSetupData[] = {0x0000,0x0001,0xF000,0x0000,0x0040,0x001F,0x000C,0x0000,0x0000, 0x0000};
+        ROM const uint16_t RxSetupMask[] = {0x0008,0x0007,0xF000,0x001A,0x0040,0x001F,0x003C,0xC000,0x8000, 0xF83F};
+        uint8_t i;
+        for(i=sizeof(RxSetupAddr)/sizeof(uint16_t); i; --i)
+            SPI_write(RxSetupAddr[i-1], ( SPI_read(RxSetupAddr[i-1]) & ~RxSetupMask[i-1] ) | RxSetupData[i-1]);
     }
-   /* BeginBatch("RxSetup.txt");
+    {
+        ROM const uint16_t RxSetupAddrWrOnly[] = {0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0200,0x0201,0x0202,0x0208,0x0240,0x0400,0x0401,0x0402,0x0403,0x0407,0x0440,0x040A,0x040C,0x0404,0x0405,0x0406,0x0408,0x0409,0x040B,0x0203,0x0204,0x0205,0x0206,0x0207};
+        ROM const uint16_t RxSetupDataWrOnly[] = {0x3408,0x6001,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x008D,0x07FF,0x07FF,0x2070,0x0020,0x0081,0x07FF,0x07FF,0x4000,0x0700,0x0020,0x1000,0x0098};//,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
+        uint8_t i;
+        for(i=sizeof(RxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
+            if(i<=sizeof(RxSetupDataWrOnly)/sizeof(uint16_t))
+                SPI_write(RxSetupAddrWrOnly[i-1], RxSetupDataWrOnly[i-1]);
+            else
+                SPI_write(RxSetupAddrWrOnly[i-1], 0);
+    }
+    /*BeginBatch("RxSetup.txt");
     Modify_SPI_Reg_bits(EN_DCOFF_RXFE_RFE, 1);
     Modify_SPI_Reg_bits(G_RXLOOPB_RFE, 3);
     Modify_SPI_Reg_bits(0x010C, 4 << 4 | 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
@@ -888,7 +863,7 @@ int CalibrateRxSetup()
     //AFE
     Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
 
-    
+
 
     //XBUF
     Modify_SPI_Reg_bits(0x0085, MSBLSB(2, 0), 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
@@ -921,73 +896,62 @@ int CalibrateRxSetup()
     //CDS
     Modify_SPI_Reg_bits(CDS_TXATSP, 3);
     Modify_SPI_Reg_bits(CDS_TXBTSP, 3);
-    EndBatch();	  */
+    EndBatch();*/
     //BIAS
     Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
-    {
+    /*{
         uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, MSBLSB(10, 6));
         //SetDefaults(SECTION_BIAS);
         Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
-    }
+    }*/
     {
-        uint8_t selPath;
-        selPath = Get_SPI_Reg_bits(SEL_PATH_RFE);
-
-        if (selPath == 2)
+        switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
         {
+        case 2:
             Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
-        }
-        else if (selPath == 3)
-        {
+            break;
+        case 3:
             Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+            break;
+        default:
+            return 1;
         }
-        else
-            return 1;//ReportError(EINVAL, "CalibrateRxSetup() - SEL_PATH_RFE must be LNAL or LNAW");
     }
 
-    Modify_SPI_Reg_bits(MAC, 2);
+    Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
+
     if(Get_SPI_Reg_bits(PD_LOCH_T2RBUF) == 0) //isTDD
     {
         //in TDD do nothing
         Modify_SPI_Reg_bits(MAC, 1);
-        //SetDefaults(SECTION_SX);
-		SetDefaultsSX();
+        SetDefaultsSX();
         status = SetFrequencySX(LMS7002M_Rx, GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - 9e6);
-        if(status != 0)
-            return status+0x40;
-        //done in set frequency/tune
-        //Modify_SPI_Reg_bits(PD_VCO, 0);
     }
     else
     {
-        float_type SXRfreqHz;
         //SXR
         //Modify_SPI_Reg_bits(MAC, 1); //Get freq already changes/restores ch
-        SXRfreqHz = GetFrequencySX(LMS7002M_Rx);
+        const float_type SXRfreqHz = GetFrequencySX(LMS7002M_Rx);
 
         //SXT
         Modify_SPI_Reg_bits(MAC, 2);
         SetDefaultsSX();
-
-        //done in set frequency/tune
-        //Modify_SPI_Reg_bits(PD_VCO, 0);
-
         status = SetFrequencySX(LMS7002M_Tx, SXRfreqHz + bandwidthRF/ calibUserBwDivider + 9e6);
-        if(status != 0)
-            return status +0x50;
     }
+    if(status != 0)
+        return status+0x70;
     SPI_write(0x0020, x0020val);
 
     LoadDC_REG_TX_IQ();
 
     //CGEN
-   // SetDefaults(SECTION_CGEN);
+    // SetDefaults(SECTION_CGEN);
     status = SetupCGEN();
     if(status != 0)
         return status +0x30;
-	SetRxGFIR3Coefficients();
+    SetRxGFIR3Coefficients();
     SetNCOFrequency(LMS7002M_Tx, 9e6);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider - offsetNCO);
     //modifications when calibrating channel B
@@ -1008,13 +972,13 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz)
     uint16_t rssi;
     const uint8_t rxloopbStep = 2;
     const uint8_t cg_iampStep = 2;
-    uint8_t g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
-    uint8_t cg_iamp = Get_SPI_Reg_bits(CG_IAMP_TBB);
+    uint8_t g_rxloopb_rfe = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    uint8_t cg_iamp = (uint8_t)Get_SPI_Reg_bits(CG_IAMP_TBB);
 #ifdef DRAW_GNU_PLOTS
     std::vector<uint32_t> firstStage, secondStage;
-    #define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
+#define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
 #else
-    #define PUSH_PLOT_VALUE(vec, data)
+#define PUSH_PLOT_VALUE(vec, data)
 #endif
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -1031,31 +995,24 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz)
     {
         g_rxloopb_rfe += rxloopbStep;
         if(g_rxloopb_rfe > 15)
-        {
-            g_rxloopb_rfe -= rxloopbStep;
             break;
-        }
         Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
         rssi = GetRSSI();
         PUSH_PLOT_VALUE(firstStage, rssi);
     }
 
     PUSH_PLOT_VALUE(secondStage, rssi);
-    while (rssi < target_rssi)
+    while(rssi < target_rssi)
     {
-        break;
-        cg_iamp += 2;
+        cg_iamp += cg_iampStep;
         if(cg_iamp > 20)
-        {
-            cg_iamp -= cg_iampStep;
             break;
-        }
         Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp);
         rssi = GetRSSI();
         PUSH_PLOT_VALUE(secondStage, rssi);
     }
 #if VERBOSE
-    printf("Adjusted gains: G_RXLOOPB: %2i, CG_IAMP: %2i | %2.3f dbFS\n", g_rxloopb_rfe, cg_iamp, ChipRSSI_2_dBFS(rssi));
+    printf("Adjusted gains: G_RXLOOPB: %2i, CG_IAMP: %2i | %2.3f dbFS\n", Get_SPI_Reg_bits(G_RXLOOPB_RFE), Get_SPI_Reg_bits(CG_IAMP_TBB), ChipRSSI_2_dBFS(rssi));
 #endif
 #ifdef DRAW_GNU_PLOTS
     saturationPlot.write("set yrange [:0]\n");
@@ -1068,7 +1025,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz)
 
     int index = 0;
     saturationPlot.writef(
-"'-' title '%s' with lines\
+        "'-' title '%s' with lines\
 , '-' title 'CG_IAMP' with lines\
 , '-' title 'target Level' with lines\n", "G_RXLOOPB_RFE");
     for(auto value: firstStage)
@@ -1081,7 +1038,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz)
     saturationPlot.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(target_rssi), index, ChipRSSI_2_dBFS(target_rssi));
     saturationPlot.flush();
 #endif
-    #undef PUSH_PLOT_VALUE
+#undef PUSH_PLOT_VALUE
     return 0;
 }
 
@@ -1102,26 +1059,32 @@ uint8_t CalibrateRx()
     const char* lnaName;
     switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
     {
-        case 0: lnaName = "none";
-        case 1: lnaName = "LNAH";
-        case 2: lnaName = "LNAW";
-        case 3: lnaName = "LNAL";
+    case 0:
+        lnaName = "none";
+        break;
+    case 1:
+        lnaName = "LNAH";
+        break;
+    case 2:
+        lnaName = "LNAW";
+        break;
+    case 3:
+        lnaName = "LNAL";
+        break;
     }
     printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-                (x0020val & 0x3) == 1 ? "A" : "B", rxFreq/1e6,
-                bandwidthRF/1e6, lnaName,
-                Get_SPI_Reg_bits(G_PGA_RBB),
-                Get_SPI_Reg_bits(G_LNA_RFE),
-                Get_SPI_Reg_bits(G_TIA_RFE));
+           (x0020val & 0x3) == 1 ? "A" : "B", rxFreq/1e6,
+           bandwidthRF/1e6, lnaName,
+           Get_SPI_Reg_bits(G_PGA_RBB),
+           Get_SPI_Reg_bits(G_LNA_RFE),
+           Get_SPI_Reg_bits(G_TIA_RFE));
     printf("Rx calibration started\n");
 #endif
-	BackupRegisters();
+    //BackupRegisters();
     status = CalibrateRxSetup();
     if(status != 0)
         goto RxCalibrationEndStage;
-	//return 1;
     CalibrateRxDC();
-	//return 1;
     {
         if ((uint8_t)Get_SPI_Reg_bits(SEL_PATH_RFE) == 2)
         {
@@ -1147,17 +1110,18 @@ uint8_t CalibrateRx()
     CheckSaturationRx(bandwidthRF);
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
+    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider + offsetNCO);
     CalibrateIQImbalance(LMS7002M_Rx);
 RxCalibrationEndStage:
     if (status != 0)
     {
-		RestoreRegisters();
+        //RestoreRegisters();
         //printf("Rx calibration failed", LOG_WARNING);
         return status;
     }
     //SPI_write(0x0020, x0020val);
-	RestoreRegisters();
+    //RestoreRegisters();
     //SPI_write(0x010E, toDCOffset(dcoffi) << 7 | toDCOffset((dcoffq)));
     //Modify_SPI_Reg_bits(EN_DCOFF_RXFE_RFE, 1);
     //Modify_SPI_Reg_bits(0x040C, MSBLSB(2, 0), 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
@@ -1166,14 +1130,14 @@ RxCalibrationEndStage:
 #if VERBOSE
     printf("#####Rx calibration RESULTS:###########################\n");
     printf("Method: %s %s loopback\n",
-        "RSSI",
-        "INTERNAL");
+           "RSSI",
+           "INTERNAL");
     printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-                (x0020val & 3) == 1 ? "A" : "B", rxFreq/1e6,
-                bandwidthRF/1e6, lnaName,
-                Get_SPI_Reg_bits(G_PGA_RBB),
-                Get_SPI_Reg_bits(G_LNA_RFE),
-                Get_SPI_Reg_bits(G_TIA_RFE));
+           (x0020val & 3) == 1 ? "A" : "B", rxFreq/1e6,
+           bandwidthRF/1e6, lnaName,
+           Get_SPI_Reg_bits(G_PGA_RBB),
+           Get_SPI_Reg_bits(G_LNA_RFE),
+           Get_SPI_Reg_bits(G_TIA_RFE));
     {
         /*int8_t dcIsigned = (dcoffi & 0x3f) * (dcoffi&0x40 ? -1 : 1);
         int8_t dcQsigned = (dcoffq & 0x3f) * (dcoffq&0x40 ? -1 : 1);
@@ -1185,7 +1149,7 @@ RxCalibrationEndStage:
         verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);*/
     }
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::high_resolution_clock::now()-beginTime).count();
+                       (std::chrono::high_resolution_clock::now()-beginTime).count();
     printf("Duration: %i ms\n", duration);
 #endif //LMS_VERBOSE_OUTPUT
     return 0;

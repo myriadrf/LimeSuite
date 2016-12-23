@@ -140,6 +140,7 @@ endif()
 ## lime suite build
 ########################################################################
 add_subdirectory(src)
+add_subdirectory(mcu_program)
 
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
