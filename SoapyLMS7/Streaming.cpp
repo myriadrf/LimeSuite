@@ -22,6 +22,7 @@ struct IConnectionStream
     std::vector<size_t> streamID;
     int direction;
     size_t elemSize;
+    size_t elemMTU;
 
     //rx cmd requests
     bool hasCmd;
@@ -133,6 +134,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         if (status != 0)
             throw std::runtime_error("SoapyLMS7::setupStream() failed: " + std::string(GetLastErrorMessage()));
         stream->streamID.push_back(streamID);
+        stream->elemMTU = _conn->GetStreamSize(streamID);
     }
     return (SoapySDR::Stream *)stream;
 }
@@ -150,12 +152,7 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
 size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream *stream) const
 {
     auto icstream = (IConnectionStream *)stream;
-    const auto &streamID = icstream->streamID;
-    for(auto i : streamID)
-    {
-        return _conn->GetStreamSize(i);
-    }
-    return 0;
+    return icstream->elemMTU;
 }
 
 int SoapyLMS7::activateStream(
@@ -215,7 +212,7 @@ int SoapyLMS7::deactivateStream(
 int SoapyLMS7::readStream(
     SoapySDR::Stream *stream,
     void * const *buffs,
-    const size_t numElems,
+    size_t numElems,
     int &flags,
     long long &timeNs,
     const long timeoutUs)
@@ -233,6 +230,12 @@ int SoapyLMS7::readStream(
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         return SOAPY_SDR_TIMEOUT;
+    }
+
+    //handle the one packet flag by clipping
+    if ((flags & SOAPY_SDR_ONE_PACKET) != 0)
+    {
+        numElems = std::min(numElems, icstream->elemMTU);
     }
 
     ReadStreamAgain:
