@@ -28,14 +28,6 @@
 
 namespace lime
 {
-
-    /*!
-     * Get the LimeSuite library API version as a string.
-     * The format of the version string is <b>major.minor.increment</b>,
-     * where the digits are taken directly from <b>LIME_SUITE_API_VERSION</b>.
-     */
-    LIME_API std::string GetInterfaceVersion(void);
-
     /*!
      * Get the library version as a dotted string.
      * The format is major.minor.patch.build-extra.
@@ -46,6 +38,18 @@ namespace lime
      * Get the date of the build in "%Y-%M-%d" format.
      */
     LIME_API std::string GetBuildTimestamp(void);
+
+    /*!
+     * Get the LimeSuite library API version as a string.
+     * The format of the version string is <b>major.minor.increment</b>,
+     * where the digits are taken directly from <b>LIME_SUITE_API_VERSION</b>.
+     */
+    LIME_API std::string GetAPIVersion(void);
+
+    /*!
+     * Get the ABI/so version of the library.
+     */
+    LIME_API std::string GetABIVersion(void);
 
 }
 

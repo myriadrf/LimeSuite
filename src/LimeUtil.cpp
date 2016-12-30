@@ -45,9 +45,10 @@ static int printHelp(void)
  **********************************************************************/
 static int printInfo(void)
 {
-    std::cout << "Interface Version: v" << lime::GetInterfaceVersion() << std::endl;
-    std::cout << "Library Version: v" << lime::GetLibraryVersion() << std::endl;
+    std::cout << "Library version: v" << lime::GetLibraryVersion() << std::endl;
     std::cout << "Build timestamp: " << lime::GetBuildTimestamp() << std::endl;
+    std::cout << "Interface version: v" << lime::GetAPIVersion() << std::endl;
+    std::cout << "Binary interface: " << lime::GetABIVersion() << std::endl;
     std::cout << "Connections: ";
     for (const auto &name : ConnectionRegistry::moduleNames()) std::cout << name << ", ";
     std::cout << std::endl;

@@ -10,7 +10,17 @@
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 
-std::string lime::GetInterfaceVersion(void)
+std::string lime::GetLibraryVersion(void)
+{
+    return "@LIME_SUITE_VERSION@";
+}
+
+std::string lime::GetBuildTimestamp(void)
+{
+    return "@BUILD_TIMESTAMP@";
+}
+
+std::string lime::GetAPIVersion(void)
 {
     const std::string verStr(QUOTE(LIME_SUITE_API_VERSION));
     std::stringstream ss;
@@ -20,12 +30,7 @@ std::string lime::GetInterfaceVersion(void)
     return ss.str();
 }
 
-std::string lime::GetLibraryVersion(void)
+std::string lime::GetABIVersion(void)
 {
-    return "@LIME_SUITE_VERSION@";
-}
-
-std::string lime::GetBuildTimestamp(void)
-{
-    return "@BUILD_TIMESTAMP@";
+    return "@LIME_SUITE_SOVER@";
 }

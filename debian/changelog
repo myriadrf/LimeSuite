@@ -1,3 +1,9 @@
+limesuite (16.12.0-1) unstable; urgency=low
+
+  * updated debian packaging for 16.12.0 release
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 30 Dec 2016 00:36:51 -0800
+
 limesuite (16.8.1.819) unstable; urgency=low
 
   * updated debian packaging for latest version.h
