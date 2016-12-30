@@ -233,7 +233,7 @@ int MCU_HEX2BIN(const char* filename, const uint16_t limit, uint8_t *binImage, u
     m_top = 0;
     for (vi = m_chunks.begin(); vi < m_chunks.end(); vi++)
     {
-        m_top = max(m_top, vi->m_startAddress + vi->m_bytes.size() - 1);
+        m_top = std::max<size_t>(m_top, vi->m_startAddress + vi->m_bytes.size() - 1);
     }
     if(binImage)
     {
