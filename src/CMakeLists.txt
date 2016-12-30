@@ -7,7 +7,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ErrorReporting.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
-    version.h
     lms7002m_mcu/MCU_BD.h
     lms7002m_mcu/MCU_File.h
     ConnectionRegistry/IConnection.h
@@ -248,15 +247,6 @@ if (ENABLE_GUI)
 
     install(TARGETS LimeSuiteGUI DESTINATION bin)
 
-endif()
-
-########################################################################
-## update version.h
-########################################################################
-set(AUTO_UPDATE_VERSION OFF CACHE BOOL "Uses python script to increment version")
-if(AUTO_UPDATE_VERSION)
-	add_custom_target(updateVersion ALL COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/auto_version.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-	add_dependencies(lms7suite updateVersion)
 endif()
 
 ########################################################################

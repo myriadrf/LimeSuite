@@ -45,6 +45,7 @@ static int printHelp(void)
  **********************************************************************/
 static int printInfo(void)
 {
+    std::cout << "Interface Version: v" << lime::GetInterfaceVersion() << std::endl;
     std::cout << "Library Version: v" << lime::GetLibraryVersion() << std::endl;
     std::cout << "Build timestamp: " << lime::GetBuildTimestamp() << std::endl;
     std::cout << "Connections: ";

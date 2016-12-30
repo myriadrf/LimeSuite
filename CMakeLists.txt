@@ -22,20 +22,13 @@ endif()
 ########################################################################
 # gather version information
 ########################################################################
-
-# extract library version number from generated version.h
-# in the future, this might be recoreded directly here
-# use the date stamp and build number to make a dotted version
-file(READ "${PROJECT_SOURCE_DIR}/src/version.h" version_h)
-string(REGEX MATCH "static const int year = 20([0-9]+)" VERSION_MATCHES "${version_h}")
-set(VERSION_MAJOR ${CMAKE_MATCH_1})
-string(REGEX MATCH "static const int month = ([0-9]+)" VERSION_MATCHES "${version_h}")
-set(VERSION_MINOR ${CMAKE_MATCH_1})
-string(REGEX MATCH "static const int day = ([0-9]+)" VERSION_MATCHES "${version_h}")
-set(VERSION_PATCH ${CMAKE_MATCH_1})
-string(REGEX MATCH "static const int buildsCounter = ([0-9]+)" VERSION_MATCHES "${version_h}")
-set(BUILD_NUMBER ${CMAKE_MATCH_1})
-set(LIME_SUITE_LIBVER "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${BUILD_NUMBER}")
+# The version of this library: major, minor, and patch
+# Manually increment these numbers when creating releases.
+# LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor,
+# and must be set manually when non-patch releases are created.
+set(VERSION_MAJOR 16)
+set(VERSION_MINOR 12)
+set(VERSION_PATCH 0)
 
 # the ABI compatibility number should be incremented when the ABI changes
 # the format is to use the same major and minor, but to have an incrementing
@@ -54,6 +47,7 @@ if (NOT LIME_SUITE_EXTVER)
     endif (GITHASH)
 endif()
 
+set(LIME_SUITE_LIBVER "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(LIME_SUITE_VERSION "${LIME_SUITE_LIBVER}-${LIME_SUITE_EXTVER}")
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 

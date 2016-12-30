@@ -10,8 +10,31 @@
 #include <LimeSuiteConfig.h>
 #include <string>
 
+/*!
+ * API version number which can be used as a preprocessor check.
+ * The format of the version number is encoded as follows:
+ * <b>(major << 16) | (minor << 8) | (8 bit increment)</b>.
+ * Where the increment can be used to indicate implementation
+ * changes, fixes, or API additions within a minor release series.
+ *
+ * The macro is typically used in an application as follows:
+ * \code
+ * #if defined(LIME_SUITE_API_VERSION) && (LIME_SUITE_API_VERSION >= 0x20161200)
+ * // Use a newer feature from the LimeSuite library API
+ * #endif
+ * \endcode
+ */
+#define LIME_SUITE_API_VERSION 0x20161200
+
 namespace lime
 {
+
+    /*!
+     * Get the LimeSuite library API version as a string.
+     * The format of the version string is <b>major.minor.increment</b>,
+     * where the digits are taken directly from <b>LIME_SUITE_API_VERSION</b>.
+     */
+    LIME_API std::string GetInterfaceVersion(void);
 
     /*!
      * Get the library version as a dotted string.
