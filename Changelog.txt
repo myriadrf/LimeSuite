@@ -1,0 +1,4 @@
+Release 16.12.0 (2016-12-31)
+==========================
+
+This is the first changelog entry for LimeSuite
