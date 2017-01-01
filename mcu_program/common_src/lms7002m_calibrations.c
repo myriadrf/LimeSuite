@@ -65,7 +65,7 @@ static uint8_t toDCOffset(const int8_t offset)
 {
     if(offset >= 0)
         return offset;
-    return abs(offset) | 0x40;
+    return (uint8_t)(abs((int)offset) | 0x40);
 }
 
 static void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
