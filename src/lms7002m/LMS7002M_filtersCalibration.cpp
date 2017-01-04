@@ -681,6 +681,8 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_IF)
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
     Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0);
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
     SetNCOFrequency(LMS7002M::Rx, 0, 0);
 
     if(ch == 2)
@@ -833,6 +835,8 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
     if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
     {
@@ -945,6 +949,8 @@ int LMS7002M::TuneTxFilterFixedSetup()
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
     const float_type rxNCO_freqs[] = {0, 4.4e6, 2.4e6, 4.9e6, 7.4e6, 9.9e6};
     for(int i=0; i<6; ++i)

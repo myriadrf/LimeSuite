@@ -503,6 +503,8 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
     //CDS
     Modify_SPI_Reg_bits(LMS7param(CDS_TXATSP), 3);
@@ -1254,6 +1256,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 0);
     }
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
 
     //CDS
     Modify_SPI_Reg_bits(LMS7param(CDS_TXATSP), 3);
@@ -1345,6 +1349,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 */
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
+    if(controlPort == nullptr)
+        return ReportError(ENODEV, "Device not connected");
 #ifdef __cplusplus
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
@@ -1520,7 +1526,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     CheckSaturationRx(bandwidth_Hz, useExtLoopback);
 
-    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
+    else
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
     SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz/calibUserBwDivider + offsetNCO);
 
@@ -1630,7 +1639,10 @@ void LMS7002M::RestoreAllRegisters()
 
 int LMS7002M::CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback)
 {
-    Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
+    else
+        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
     SetNCOFrequency(LMS7002M::Rx, 0, bandwidth_Hz / calibUserBwDivider - offsetNCO);
 
