@@ -72,9 +72,17 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
 */
 int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
+    //linear coefs for calculating phase offset
+    const double rxPhC1[]={91.08, 89.46};
+    const double rxPhC2[]={-1/6e6, 1.24e-6};
+    const double txPhC1[]={89.75, 89.61};
+    const double txPhC2[]={-3.0e-7, 2.71e-7};
     std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
+    int tblInd = 0;
+    if (this->chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+        tblInd = 1;
     mExpectedSampleRate = rxRate_Hz;
     int status = 0;
     if(txInterfaceClk >= 5e6)
@@ -87,7 +95,7 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
         clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = txInterfaceClk;
-        clocks[1].phaseShift_deg = 90;
+        clocks[1].phaseShift_deg = txPhC1[tblInd]+txPhC2[tblInd]*txInterfaceClk;
         status = lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
     }
     else
@@ -105,7 +113,7 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
         clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = rxInterfaceClk;
-        clocks[1].phaseShift_deg = 90;
+        clocks[1].phaseShift_deg = rxPhC1[tblInd]+rxPhC2[tblInd]*rxInterfaceClk;;
         status = lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
     }
     else

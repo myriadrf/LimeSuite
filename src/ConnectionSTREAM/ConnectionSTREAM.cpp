@@ -158,7 +158,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
             << "########################################################" << std::endl
             << std::endl;
     }
-
+    GetChipVersion();
     //must configure synthesizer before using LimeSDR
     if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
     {
@@ -322,6 +322,20 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
 #endif
 }
 
+/**	@brief Reads chip version information form LMS7 chip.
+*/
+int ConnectionSTREAM::GetChipVersion()
+{
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_LMS7002_RD;
+    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
+    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
+    if(TransferPacket(ctrPkt) != 0)
+        this->chipVersion = 0;
+    else
+        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
+    return this->chipVersion;
+}
 /**	@brief Closes communication to device.
 */
 void ConnectionSTREAM::Close()

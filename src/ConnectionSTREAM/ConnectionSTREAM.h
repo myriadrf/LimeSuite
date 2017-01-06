@@ -119,7 +119,7 @@ protected:
     virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
     virtual void AbortSending();
-
+    int GetChipVersion();
     eConnectionType GetType(void) {return USB_PORT;}
 
     USBTransferContext contexts[USB_MAX_CONTEXTS];
@@ -157,6 +157,7 @@ protected:
     bool bulkCtrlInProgress;
     bool bulkCtrlAvailable;
     std::mutex mExtraUsbMutex;
+    unsigned chipVersion;
 };
 
 class ConnectionSTREAMEntry : public ConnectionRegistryEntry
