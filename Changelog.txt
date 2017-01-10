@@ -1,6 +1,7 @@
 Release 16.12.1 (pending)
 ==========================
 
+- Improve cmake check for novena connection i2c support
 - Fix abs() overload for mcu lms7002m calibrations
 
 Release 16.12.0 (2016-12-31)
