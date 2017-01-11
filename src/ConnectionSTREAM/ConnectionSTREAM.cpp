@@ -109,6 +109,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
             {3, 8, 1, 2},
         };
     }
+    else correctFWHW = true;
 
     for(auto iter : versionList)
         if(info.hardware == iter.hw
@@ -159,7 +160,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
             << std::endl;
     }
 
-    if (info.device == LMS_DEV_LIMESDR)
+    if (info.device == LMS_DEV_LIMESDR || info.device == LMS_DEV_LIMESDR_USB_SP || info.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
         DetectRefClk();
 
     GetChipVersion();

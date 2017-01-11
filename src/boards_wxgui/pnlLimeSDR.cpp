@@ -35,7 +35,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     chkRFLB_A_EN->SetToolTip(_("[RFLB_A_EN] External RF loopback TxBAND2->RxLNAH channel A"));
     Connect(chkRFLB_A_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkRFLB_A_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkRFLB_B_EN = new wxCheckBox(this, wxNewId(), _("RF loopback ch.A"));
+    chkRFLB_B_EN = new wxCheckBox(this, wxNewId(), _("RF loopback ch.B"));
     chkRFLB_B_EN->SetToolTip(_("[RFLB_B_EN] External RF loopback TxBAND2->RxLNAH channel B"));
     Connect(chkRFLB_B_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkRFLB_B_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -89,7 +89,7 @@ void pnlLimeSDR::Initialize(lms_device_t* pControl)
                 i->GetWindow()->Enable();
         }
     }
-    
+
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
     Layout();

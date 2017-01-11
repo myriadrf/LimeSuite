@@ -87,7 +87,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
     if(not serPort->IsOpen())
         return ReportError(ENODEV, "ConfigureFPGA_PLL: configure FPGA PLL, device not connected");
-    eLMS_DEV boardType = serPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_QSPARK) ? LMS_DEV_QSPARK : LMS_DEV_UNKNOWN;
+    eLMS_DEV boardType = serPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
 
     if(pllIndex > 15)
         ReportError(ERANGE, "SetPllFrequency: PLL index(%i) out of range [0-15]", pllIndex);
@@ -131,7 +131,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
-    if(boardType == LMS_DEV_QSPARK) do //wait for reset to activate
+    if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for reset to activate
     {
         serPort->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
@@ -263,7 +263,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
-    if(boardType == LMS_DEV_QSPARK) do //wait for config to activate
+    if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for config to activate
     {
         serPort->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
@@ -302,7 +302,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         values.clear();
 
         t1 = chrono::high_resolution_clock::now();
-        if(boardType == LMS_DEV_QSPARK) do
+        if(boardType == LMS_DEV_LIMESDR_QPCIE) do
         {
             serPort->ReadRegister(busyAddr, statusReg);
             done = statusReg & 0x1;

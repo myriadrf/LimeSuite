@@ -336,7 +336,9 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
-        || boardID == GetDeviceName(LMS_DEV_QSPARK))
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
+        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
@@ -362,7 +364,9 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std:
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
-        || boardID == GetDeviceName(LMS_DEV_QSPARK))
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
+        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
         ADC_DAC dacVoltage;
         dacVoltage.name = "DAC";
@@ -452,7 +456,8 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
-    else if(boardID == GetDeviceName(LMS_DEV_LIMESDR) || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
+    else if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
+         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE))
     {
         pnlLimeSDR* pnl = new pnlLimeSDR(this, wxNewId());
         pnl->Initialize(lmsControl);

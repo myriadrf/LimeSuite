@@ -584,7 +584,7 @@ void ConnectionXillybus::AbortSending()
 */
 int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg)
 {
-    eLMS_DEV boardType = GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_QSPARK) ? LMS_DEV_QSPARK : LMS_DEV_UNKNOWN;
+    eLMS_DEV boardType = GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
     const uint16_t busyAddr = 0x0021;
     if(IsOpen() == false)
         return ReportError(ENODEV, "ConnectionSTREAM: configure FPGA PLL, device not connected");
@@ -656,7 +656,7 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
     values.push_back(reg23val | PLLRST_START); //PLLRST_START
     WriteRegisters(addrs.data(), values.data(), values.size());
 
-    if(boardType == LMS_DEV_QSPARK) do //wait for reset to activate
+    if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for reset to activate
     {
         ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
@@ -720,7 +720,7 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
         values.push_back(reg23val | PLLCFG_START); //PLLCFG_START
         if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
             ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
-        if(boardType == LMS_DEV_QSPARK) do //wait for config to activate
+        if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for config to activate
         {
             ReadRegister(busyAddr, statusReg);
             done = statusReg & 0x1;
@@ -737,7 +737,7 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
         values.push_back(reg23val | PHCFG_START); //PHCFG_START
         if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
             ReportError(EIO, "ConnectionSTREAM: configure FPGA PLL, failed to write registers");
-        if(boardType == LMS_DEV_QSPARK) do
+        if(boardType == LMS_DEV_LIMESDR_QPCIE) do
         {
             ReadRegister(busyAddr, statusReg);
             done = statusReg & 0x1;

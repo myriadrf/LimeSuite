@@ -870,7 +870,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     uint16_t gcorri, gcorrq;
     int16_t dccorri, dccorrq, phaseOffset;
 
-    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && info.hardwareVersion == "3");
+    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && std::stoi(info.hardwareVersion) >= 3);
     const char* methodName;
     if(useExtLoopback)
     {
@@ -1367,7 +1367,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     }
 #endif // ENABLE_CALIBRATION_USING_FFT
     DeviceInfo info = controlPort->GetDeviceInfo();
-    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && info.hardwareVersion == "3");
+    bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && std::stoi(info.hardwareVersion) >= 3);
     int status;
     verbose_printf(cSquaresLine);
     verbose_printf("Rx calibration using %s %s %s loopback\n",
