@@ -281,7 +281,9 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         wxString controlDev = _("Control port: ");
 
         controlDev.Append(info->deviceName);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision));
+        double refClk;
+        LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF, &refClk);
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);

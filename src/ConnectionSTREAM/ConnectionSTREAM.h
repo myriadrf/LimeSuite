@@ -122,6 +122,8 @@ protected:
     int GetChipVersion();
     eConnectionType GetType(void) {return USB_PORT;}
 
+    double DetectRefClk(void);
+
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
 
