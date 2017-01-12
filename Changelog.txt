@@ -1,6 +1,7 @@
 Release 16.12.1 (pending)
 ==========================
 
+- Minor compilation fixes for OSX/clang (narrowing)
 - Improve cmake check for novena connection i2c support
 - Fix abs() overload for mcu lms7002m calibrations
 
