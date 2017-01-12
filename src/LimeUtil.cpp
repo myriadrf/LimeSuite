@@ -5,6 +5,7 @@
 */
 
 #include <VersionInfo.h>
+#include <SystemResources.h>
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
 #include <iostream>
@@ -45,13 +46,28 @@ static int printHelp(void)
  **********************************************************************/
 static int printInfo(void)
 {
-    std::cout << "Library version: v" << lime::GetLibraryVersion() << std::endl;
-    std::cout << "Build timestamp: " << lime::GetBuildTimestamp() << std::endl;
-    std::cout << "Interface version: v" << lime::GetAPIVersion() << std::endl;
-    std::cout << "Binary interface: " << lime::GetABIVersion() << std::endl;
-    std::cout << "Connections: ";
-    for (const auto &name : ConnectionRegistry::moduleNames()) std::cout << name << ", ";
+    std::cout << "######################################################" << std::endl;
+    std::cout << "## LimeSuite information summary" << std::endl;
+    std::cout << "######################################################" << std::endl;
     std::cout << std::endl;
+
+    std::cout << "Version information:" << std::endl;
+    std::cout << "  Library version:\tv" << lime::GetLibraryVersion() << std::endl;
+    std::cout << "  Build timestamp:\t" << lime::GetBuildTimestamp() << std::endl;
+    std::cout << "  Interface version:\tv" << lime::GetAPIVersion() << std::endl;
+    std::cout << "  Binary interface:\t" << lime::GetABIVersion() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "System resources:" << std::endl;
+    std::cout << "  Installation root:\t" << lime::getLimeSuiteRoot() << std::endl;
+    std::cout << "  User home directory:\t" << lime::getHomeDirectory() << std::endl;
+    std::cout << "  App data directory:\t" << lime::getAppDataDirectory() << std::endl;
+    std::cout << "  Image search paths:" << std::endl;
+    for (const auto &name : lime::listImageSearchPaths()) std::cout << "     - " << name << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Supported connections:" << std::endl;
+    for (const auto &name : ConnectionRegistry::moduleNames()) std::cout << "   * " << name << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }

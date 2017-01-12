@@ -13,6 +13,13 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #include <shlobj.h>
+#include <io.h>
+
+//access mode constants
+#define F_OK 0
+#define R_OK 2
+#define W_OK 4
+
 #endif
 
 #ifdef __unix__
@@ -93,7 +100,7 @@ std::string lime::getAppDataDirectory(void)
     #endif
 
     //xdg freedesktop standard location for data in home directory
-    return getHomeDirectory() + ".local/share";
+    return getHomeDirectory() + "/.local/share";
 }
 
 std::vector<std::string> lime::listImageSearchPaths(void)
@@ -124,11 +131,17 @@ std::vector<std::string> lime::listImageSearchPaths(void)
     imageSearchPaths.push_back(lime::getAppDataDirectory() + "/LimeSuite/images");
 
     //search global installation directories
+    imageSearchPaths.push_back(lime::getLimeSuiteRoot() + "/share/LimeSuite/images");
 
     return imageSearchPaths;
 }
 
 std::string lime::locateImageResource(const std::string &name)
 {
-    //@VERSION_MAJOR@.@VERSION_MINOR@
+    for (const auto &searchPath : lime::listImageSearchPaths())
+    {
+        const std::string fullPath(searchPath + "/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
+        if (access(fullPath.c_str(), R_OK) == 0) return fullPath;
+    }
+    return "";
 }

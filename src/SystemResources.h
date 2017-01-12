@@ -36,14 +36,15 @@ LIME_API std::string getAppDataDirectory(void);
 
 /*!
  * Get a list of directories to search for image resources.
+ * Directories are returned in the order of search priority.
+ * Priority goes to the LIME_SUITE_IMAGE_PATH environment variable,
+ * and then images in the user's application data directory,
+ * and finally images in the installation root directory.
  */
 LIME_API std::vector<std::string> listImageSearchPaths(void);
 
 /*!
  * Get the full file path to an image resource given only the file name.
- * Search well known user and system directories for the specified resource,
- * as well as the paths specified by the LIME_IMAGE_PATH environment variable.
- *
  * @param name a unique name for the resource file including file extension
  * @return the full filesystem path to the resource if it exists or empty
  */

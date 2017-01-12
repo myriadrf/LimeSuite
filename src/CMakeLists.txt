@@ -5,7 +5,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
     VersionInfo.h
     ErrorReporting.h
-    ImageResources.h
+    SystemResources.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
     lms7002m_mcu/MCU_BD.h
