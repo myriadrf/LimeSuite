@@ -52,7 +52,7 @@ protected:
     {
         std::vector<float> samplesI[2];
         std::vector<float> samplesQ[2];
-        std::vector<float> fftBins_dbFS[2];
+        std::vector<float> fftBins[2];
         float nyquist_Hz;
         float rxDataRate_Bps;
         float txDataRate_Bps;
@@ -67,9 +67,9 @@ protected:
                 this->samplesQ[ch].clear();
                 this->samplesQ[ch].reserve(src.samplesQ[ch].size());
                 this->samplesQ[ch] = src.samplesQ[ch];
-                this->fftBins_dbFS[ch].clear();
-                this->fftBins_dbFS[ch].reserve(src.fftBins_dbFS[ch].size());
-                this->fftBins_dbFS[ch] = src.fftBins_dbFS[ch];
+                this->fftBins[ch].clear();
+                this->fftBins[ch].reserve(src.fftBins[ch].size());
+                this->fftBins[ch] = src.fftBins[ch];
                 this->nyquist_Hz = src.nyquist_Hz;
                 this->rxDataRate_Bps = src.rxDataRate_Bps;
                 this->txDataRate_Bps = src.txDataRate_Bps;
