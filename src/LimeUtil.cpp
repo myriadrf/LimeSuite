@@ -62,6 +62,7 @@ static int printInfo(void)
     std::cout << "  Installation root:\t" << lime::getLimeSuiteRoot() << std::endl;
     std::cout << "  User home directory:\t" << lime::getHomeDirectory() << std::endl;
     std::cout << "  App data directory:\t" << lime::getAppDataDirectory() << std::endl;
+    std::cout << "  Config directory:\t" << lime::getConfigDirectory() << std::endl;
     std::cout << "  Image search paths:" << std::endl;
     for (const auto &name : lime::listImageSearchPaths()) std::cout << "     - " << name << std::endl;
     std::cout << std::endl;

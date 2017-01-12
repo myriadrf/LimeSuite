@@ -103,6 +103,13 @@ std::string lime::getAppDataDirectory(void)
     return getHomeDirectory() + "/.local/share";
 }
 
+std::string lime::getConfigDirectory(void)
+{
+    //xdg standard is XDG_CONFIG_HOME or $HOME/.config
+    //but historically we have used $HOME/.limesuite
+    return lime::getHomeDirectory() + "/.limesuite";
+}
+
 std::vector<std::string> lime::listImageSearchPaths(void)
 {
     std::vector<std::string> imageSearchPaths;

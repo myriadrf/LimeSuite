@@ -35,6 +35,11 @@ LIME_API std::string getHomeDirectory(void);
 LIME_API std::string getAppDataDirectory(void);
 
 /*!
+ * Get the full path to the library's configuration data directory.
+ */
+LIME_API std::string getConfigDirectory(void);
+
+/*!
  * Get a list of directories to search for image resources.
  * Directories are returned in the order of search priority.
  * Priority goes to the LIME_SUITE_IMAGE_PATH environment variable,
