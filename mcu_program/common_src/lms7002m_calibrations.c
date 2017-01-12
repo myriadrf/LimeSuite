@@ -5,6 +5,7 @@
 #include <math.h>
 
 #ifdef __cplusplus
+#include <cstdlib>
 #define VERBOSE 1
 //#define DRAW_GNU_PLOTS
 
