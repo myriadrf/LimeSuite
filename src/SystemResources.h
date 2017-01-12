@@ -4,8 +4,8 @@
 @brief APIs for locating system resources.
 */
 
-#ifndef LIMESUITE_IMAGE_RESOURCES_H
-#define LIMESUITE_IMAGE_RESOURCES_H
+#ifndef LIMESUITE_SYSTEM_RESOURCES_H
+#define LIMESUITE_SYSTEM_RESOURCES_H
 
 #include <LimeSuiteConfig.h>
 #include <string>
@@ -57,4 +57,4 @@ LIME_API std::string locateImageResource(const std::string &name);
 
 }
 
-#endif //LIMESUITE_IMAGE_RESOURCES_H
+#endif //LIMESUITE_SYSTEM_RESOURCES_H
