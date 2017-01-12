@@ -6,6 +6,7 @@
 
 #ifdef __cplusplus
 #include <cmath>
+#include <cstdlib>
 using namespace std;
 #include <chrono>
 #include <thread>
