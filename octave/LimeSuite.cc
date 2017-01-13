@@ -10,6 +10,7 @@ using namespace std;
 void FreeResources();
 
 lms_device_t* lmsDev = NULL;
+lms_stream_t streamConfig;
 
 struct complex16_t
 {
@@ -20,15 +21,14 @@ struct complex16_t
 bool WFMrunning = false;
 const int chCount = 1;
 const int samplesMaxCount = 16*1360/chCount;
-complex16_t** rxbuffers = NULL;
-complex16_t** txbuffers = NULL;
+complex16_t* rxbuffers = NULL;
+complex16_t* txbuffers = NULL;
 
 void StopStream()
 {
     if(lmsDev == NULL)
         return;
-    LMS_StopStream(lmsDev, false);
-    LMS_StopStream(lmsDev, true);
+    LMS_StopStream(&streamConfig);
 }
 
 void PrintDeviceInfo(lms_device_t* port)
@@ -86,13 +86,8 @@ DEFUN_DLD (LimeInitialize, args, nargout,
                   << nargin << " input arguments and "
                   << nargout << " output arguments.\n";
 
-    rxbuffers = new complex16_t*[chCount];
-    for(int i=0; i<chCount; ++i)
-        rxbuffers[i] = new complex16_t[samplesMaxCount];
-
-    txbuffers = new complex16_t*[chCount];
-    for(int i=0; i<chCount; ++i)
-        txbuffers[i] = new complex16_t[samplesMaxCount];
+    rxbuffers = new complex16_t[samplesMaxCount];
+    txbuffers = new complex16_t[samplesMaxCount];
 
     return octave_value(0);
 }
@@ -149,23 +144,18 @@ DEFUN_DLD (LimeStartStreaming, args, nargout,
         return octave_value(-1);
     }
 
-    lms_stream_conf_t streamConfig;
     if(nargin > 0)
         streamConfig.fifoSize = args(0).int_value();
     else
         streamConfig.fifoSize = 1360*64;
-    streamConfig.transferSize = 65536;
-    streamConfig.numTransfers = 16;
-    streamConfig.channels = 1;
-    streamConfig.dataFmt = lms_stream_conf_t::LMS_FMT_I16;
-    streamConfig.linkFmt = lms_stream_conf_t::LMS_LINK_12BIT;
+    streamConfig.throughputVsLatency = 0.5;
+    streamConfig.channel = 0;
+    streamConfig.dataFmt = lms_stream_t::LMS_FMT_I12;
 
-    if(LMS_SetupStream(lmsDev, streamConfig) != 0)
+    if(LMS_SetupStream(lmsDev, &streamConfig) != 0)
         octave_stdout << LMS_GetLastErrorMessage() << endl;
 
-    if(LMS_StartStream(lmsDev, false) != 0)
-        octave_stdout << LMS_GetLastErrorMessage() << endl;
-    if(LMS_StartStream(lmsDev, true) != 0)
+    if(LMS_StartStream(&streamConfig) != 0)
         octave_stdout << LMS_GetLastErrorMessage() << endl;
     return octave_value_list();
 }
@@ -200,7 +190,7 @@ DEFUN_DLD (LimeReceiveSamples, args, , "wfm = LimeReceiveSamplesLarge( samplesCo
     const int timeout_ms = 1000;
     lms_stream_meta_t meta;
     int samplesCollected = 0;
-    
+
     while(samplesCollected < samplesToReceive)
     {
         int samplesToRead = 0;
@@ -208,10 +198,10 @@ DEFUN_DLD (LimeReceiveSamples, args, , "wfm = LimeReceiveSamplesLarge( samplesCo
             samplesToRead = samplesMaxCount;
         else
             samplesToRead = samplesToReceive-samplesCollected;
-        int samplesRead = LMS_RecvStream(lmsDev, (void**)rxbuffers, samplesToRead, &meta, timeout_ms);
+        int samplesRead = LMS_RecvStream(&streamConfig, (void*)rxbuffers, samplesToRead, &meta, timeout_ms);
         for(int i=0; i<samplesRead; ++i)
         {
-            iqdata(samplesCollected+i)=Complex(rxbuffers[0][i].i/2048.0,rxbuffers[0][i].q/2048.0);
+            iqdata(samplesCollected+i)=Complex(rxbuffers[i].i/2048.0,rxbuffers[i].q/2048.0);
         }
         samplesCollected += samplesRead;
     }
@@ -238,16 +228,16 @@ DEFUN_DLD (LimeTransmitSamples, args, , "LimeTransmitSamples( wfm, timestamp)")
         Complex iqdatum2 = iqdatum.complex_value();
         short i_sample = iqdatum2.real(); //
         short q_sample = iqdatum2.imag(); //
-        txbuffers[0][i].i = i_sample;
-        txbuffers[0][i].q = q_sample;
+        txbuffers[i].i = i_sample;
+        txbuffers[i].q = q_sample;
     }
 
     const int timeout_ms = 1000;
     lms_stream_meta_t meta;
-    meta.has_timestamp = false;
+    meta.waitForTimestamp = false;
     meta.timestamp = 0;
     int samplesWrite = samplesCount;
-    samplesWrite = LMS_SendStream(lmsDev, (const void**)txbuffers, samplesCount, &meta, timeout_ms);
+    samplesWrite = LMS_SendStream(&streamConfig, (const void*)txbuffers, samplesCount, &meta, timeout_ms);
 
     return octave_value ();
 }
@@ -288,8 +278,8 @@ DEFUN_DLD (LimeLoopWFMStart, args, , "LimeTxLoopWFMStart (wfm)")
         wfmBuffers[0][i].q = q_sample;
     }
 
-    LMS_StreamStartLoopWFM(lmsDev, (const void**)wfmBuffers, samplesCount);
-
+    LMS_UploadWFM(lmsDev, (const void**)wfmBuffers, 1, samplesCount, 0);
+    LMS_EnableTxWFM(lmsDev,true);
     for(int i=0; i<chCount; ++i)
         delete wfmBuffers[i];
     delete wfmBuffers;
@@ -305,7 +295,7 @@ DEFUN_DLD (LimeLoopWFMStop, args, , "LimeTxLoopWFMStop")
         return octave_value(-1);
     }
     if(WFMrunning)
-        LMS_StreamStopLoopWFM(lmsDev);
+        LMS_EnableTxWFM(lmsDev,false);
     WFMrunning = false;
     return octave_value ();
 }
@@ -315,23 +305,19 @@ void FreeResources()
     if(lmsDev)
     {
         if(WFMrunning)
-            LMS_StreamStopLoopWFM(lmsDev);
+            LMS_EnableTxWFM(lmsDev,false);
         StopStream();
-        LMS_DestroyStream(lmsDev);
+        LMS_DestroyStream(lmsDev,&streamConfig);
         LMS_Close(lmsDev);
         lmsDev = NULL;
     }
     if(rxbuffers)
     {
-        for(int i=0; i<chCount; ++i)
-            delete rxbuffers[i];
         delete rxbuffers;
         rxbuffers = NULL;
     }
     if(txbuffers)
     {
-        for(int i=0; i<chCount; ++i)
-            delete txbuffers[i];
         delete txbuffers;
         txbuffers = NULL;
     }

@@ -2,9 +2,9 @@ LoadLimeSuite
 
 LimeInitialize()
 LimeLoadConfig('rxTest.ini');
-samplesToBuffer = 1023*64*10; %octave has array limit around 20M
+samplesToBuffer = 1024*64; %octave has array limit around 20M
 
-batches = 60;
+batches = 32;
 FIFOsize = samplesToBuffer*batches % total number of samples to be buffered inside DLL, they will be contiguous
 LimeStartStreaming(FIFOsize);
 
@@ -25,6 +25,6 @@ end
 LimeStopStreaming();
 LimeDestroy();
 
-%plot(real(samplesBatch1));
+plot(real(samplesBatch1));
 %plot(real(samplesBatch2));
 %plot(real(samplesBatch3));
