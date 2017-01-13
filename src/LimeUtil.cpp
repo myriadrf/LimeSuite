@@ -34,6 +34,7 @@ static int printHelp(void)
     std::cout << std::endl;
     std::cout << "  Advanced options:" << std::endl;
     std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;
+    std::cout << "    --update          \t\t\t Automatic firmware sync + flash" << std::endl;
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << "    --timing          \t\t\t Time interfaces and operations" << std::endl;
@@ -133,6 +134,42 @@ static int makeDevice(void)
 }
 
 /***********************************************************************
+ * Program update (sync images and flash support)
+ **********************************************************************/
+static int programUpdate(const std::string &argStr)
+{
+    auto handles = ConnectionRegistry::findConnections(argStr);
+    if(handles.size() == 0)
+    {
+        std::cout << "No devices found" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+
+    auto progCallback = [](int bsent, int btotal, const char* progressMsg)
+    {
+        printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        return 0;
+    };
+
+    auto status = conn->ProgramUpdate(true/*yes download*/, progCallback);
+
+    std::cout << std::endl;
+    if(status == 0)
+    {
+        std::cout << "Programming update complete!" << std::endl;
+    }
+    else
+    {
+        std::cout << "Programming update failed! : " << GetLastErrorMessage() << std::endl;
+    }
+
+    ConnectionRegistry::freeConnection(conn);
+    return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
+}
+
+/***********************************************************************
  * Program gateware
  **********************************************************************/
 static int programGateware(const std::string &argStr)
@@ -185,7 +222,7 @@ static int programGateware(const std::string &argStr)
     else
         std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
     ConnectionRegistry::freeConnection(conn);
-    return EXIT_SUCCESS;
+    return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
 
 /***********************************************************************
@@ -241,7 +278,7 @@ static int programFirmware(const std::string &argStr)
     else
         std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
     ConnectionRegistry::freeConnection(conn);
-    return EXIT_SUCCESS;
+    return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
 
 /***********************************************************************
@@ -255,6 +292,7 @@ int main(int argc, char *argv[])
         {"find", optional_argument, 0, 'f'},
         {"make", optional_argument, 0, 'm'},
         {"args", optional_argument, 0, 'a'},
+        {"update",     no_argument, 0, 'u'},
         {"fpga", required_argument, 0, 'g'},
         {"fw",   required_argument, 0, 'w'},
         {"timing",     no_argument, 0, 't'},
@@ -276,6 +314,7 @@ int main(int argc, char *argv[])
         case 'a':
             if (optarg != NULL) argStr = optarg;
             break;
+        case 'u': return programUpdate(argStr);
         case 'g': return programGateware(argStr);
         case 'w': return programFirmware(argStr);
         case 't': return deviceTestTiming(argStr);

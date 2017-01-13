@@ -10,6 +10,7 @@
 #include <cstdlib> //getenv, system
 #include <vector>
 #include <sstream>
+#include <iostream>
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -39,7 +40,7 @@ std::string lime::getLimeSuiteRoot(void)
     // Get the path to the current dynamic linked library.
     // The path to this library can be used to determine
     // the installation root without prior knowledge.
-    #ifdef _MSC_VER
+    #if defined(_MSC_VER) && defined(LIME_DLL)
     char path[MAX_PATH];
     HMODULE hm = NULL;
     if (GetModuleHandleExA(
@@ -57,9 +58,9 @@ std::string lime::getLimeSuiteRoot(void)
                 return libPath.substr(0, slash1Pos);
         }
     }
-    #endif
+    #endif //_MSC_VER && LIME_DLL
 
-    return "@CMAKE_INSTALL_PREFIX@";
+    return "@LIME_SUITE_ROOT@";
 }
 
 std::string lime::getHomeDirectory(void)
@@ -78,9 +79,9 @@ std::string lime::getHomeDirectory(void)
 }
 
 /*!
- * The location for data in the user's home directory.
+ * The generic location for data storage with user permission level.
  */
-std::string lime::getAppDataDirectory(void)
+static std::string getBareAppDataDirectory(void)
 {
     //always check APPDATA (usually windows, but can be set for linux)
     const char *appDataDir = std::getenv("APPDATA");
@@ -102,7 +103,12 @@ std::string lime::getAppDataDirectory(void)
     #endif
 
     //xdg freedesktop standard location for data in home directory
-    return getHomeDirectory() + "/.local/share";
+    return lime::getHomeDirectory() + "/.local/share";
+}
+
+std::string lime::getAppDataDirectory(void)
+{
+    return getBareAppDataDirectory() + "/LimeSuite";
 }
 
 std::string lime::getConfigDirectory(void)
@@ -137,7 +143,7 @@ std::vector<std::string> lime::listImageSearchPaths(void)
     }
 
     //search directories in the user's home directory
-    imageSearchPaths.push_back(lime::getAppDataDirectory() + "/LimeSuite/images");
+    imageSearchPaths.push_back(lime::getAppDataDirectory() + "/images");
 
     //search global installation directories
     imageSearchPaths.push_back(lime::getLimeSuiteRoot() + "/share/LimeSuite/images");
@@ -157,7 +163,7 @@ std::string lime::locateImageResource(const std::string &name)
 
 int lime::downloadImageResource(const std::string &name)
 {
-    const std::string destDir(lime::getAppDataDirectory() + "LimeSuite/images/@VERSION_MAJOR@.@VERSION_MINOR@");
+    const std::string destDir(lime::getAppDataDirectory() + "/images/@VERSION_MAJOR@.@VERSION_MINOR@");
     const std::string destFile(destDir + "/" + name);
     const std::string sourceUrl("http://downloads.myriadrf.org/project/limesuite/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
 
@@ -165,18 +171,23 @@ int lime::downloadImageResource(const std::string &name)
     struct stat s;
     if (stat(destDir.c_str(), &s) == 0)
     {
-        if ((s.st_mode & S_IFDIR) != 0) return 0;
-        return lime::ReportError("Not a directory: %s", destDir.c_str());
+        if ((s.st_mode & S_IFDIR) == 0)
+        {
+            return lime::ReportError("Not a directory: %s", destDir.c_str());
+        }
     }
 
     //create images directory
-    #ifdef __unix__
-    const std::string mkdirCmd("mkdir -p \""+destDir+"\"");
-    #else
-    const std::string mkdirCmd("md.exe \""+destDir+"\"");
-    #endif
-    int result = std::system(mkdirCmd.c_str());
-    if (result != 0) return lime::ReportError(result, "Failed: %s", mkdirCmd.c_str());
+    else
+    {
+        #ifdef __unix__
+        const std::string mkdirCmd("mkdir -p \""+destDir+"\"");
+        #else
+        const std::string mkdirCmd("md.exe \""+destDir+"\"");
+        #endif
+        int result = std::system(mkdirCmd.c_str());
+        if (result != 0) return lime::ReportError(result, "Failed: %s", mkdirCmd.c_str());
+    }
 
     //check for write access
     if (access(destDir.c_str(), W_OK) != 0) lime::ReportError("Cannot write: %s", destDir.c_str());
@@ -187,7 +198,7 @@ int lime::downloadImageResource(const std::string &name)
     #else
     const std::string dnloadCmd("powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('"+sourceUrl+"', '"+destFile+"'))\"");
     #endif
-    result = std::system(dnloadCmd.c_str());
+    int result = std::system(dnloadCmd.c_str());
     if (result != 0) return lime::ReportError(result, "Failed: %s", dnloadCmd.c_str());
 
     return 0;

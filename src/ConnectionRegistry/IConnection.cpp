@@ -321,6 +321,11 @@ int IConnection::ProgramMCU(const uint8_t *buffer, const size_t length,
     return 0;
 }
 
+int IConnection::ProgramUpdate(const bool download, ProgrammingCallback callback)
+{
+    return 0;
+}
+
 /***********************************************************************
  * GPIO API
  **********************************************************************/

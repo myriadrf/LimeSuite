@@ -51,6 +51,13 @@ set(LIME_SUITE_LIBVER "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(LIME_SUITE_VERSION "${LIME_SUITE_LIBVER}-${LIME_SUITE_EXTVER}")
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 
+#LIME_SUITE_ROOT is compiled into the library to locate the install base.
+#By default, the LIME_SUITE_ROOT is set to the CMAKE_INSTALL_PREFIX.
+#However users may overload this by specifying -DLIME_SUITE_ROOT=<path>.
+set(LIME_SUITE_ROOT "${CMAKE_INSTALL_PREFIX}" CACHE PATH
+    "Installation root for lime::getLimeSuiteRoot()")
+file(TO_CMAKE_PATH "${LIME_SUITE_ROOT}" LIME_SUITE_ROOT)
+
 ########################################################################
 ## compiler flags
 ########################################################################
