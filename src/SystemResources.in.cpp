@@ -5,8 +5,9 @@
 */
 
 #include "SystemResources.h"
+#include "ErrorReporting.h"
 
-#include <cstdlib> //getenv
+#include <cstdlib> //getenv, system
 #include <vector>
 #include <sstream>
 
@@ -19,14 +20,15 @@
 #define F_OK 0
 #define R_OK 2
 #define W_OK 4
-
 #endif
 
 #ifdef __unix__
 #include <pwd.h>
 #include <unistd.h>
-#include <sys/types.h>
 #endif
+
+#include <sys/types.h>
+#include <sys/stat.h> //stat
 
 std::string lime::getLimeSuiteRoot(void)
 {
@@ -151,4 +153,42 @@ std::string lime::locateImageResource(const std::string &name)
         if (access(fullPath.c_str(), R_OK) == 0) return fullPath;
     }
     return "";
+}
+
+int lime::downloadImageResource(const std::string &name)
+{
+    const std::string destDir(lime::getAppDataDirectory() + "LimeSuite/images/@VERSION_MAJOR@.@VERSION_MINOR@");
+    const std::string destFile(destDir + "/" + name);
+    const std::string sourceUrl("http://downloads.myriadrf.org/project/limesuite/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
+
+    //check if the directory already exists
+    struct stat s;
+    if (stat(destDir.c_str(), &s) == 0)
+    {
+        if ((s.st_mode & S_IFDIR) != 0) return 0;
+        return lime::ReportError("Not a directory: %s", destDir.c_str());
+    }
+
+    //create images directory
+    #ifdef __unix__
+    const std::string mkdirCmd("mkdir -p \""+destDir+"\"");
+    #else
+    const std::string mkdirCmd("md.exe \""+destDir+"\"");
+    #endif
+    int result = std::system(mkdirCmd.c_str());
+    if (result != 0) return lime::ReportError(result, "Failed: %s", mkdirCmd.c_str());
+
+    //check for write access
+    if (access(destDir.c_str(), W_OK) != 0) lime::ReportError("Cannot write: %s", destDir.c_str());
+
+    //download the file
+    #ifdef __unix__
+    const std::string dnloadCmd("wget --output-document=\""+destFile+"\" \""+sourceUrl+"\"");
+    #else
+    const std::string dnloadCmd("powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('"+sourceUrl+"', '"+destFile+"'))\"");
+    #endif
+    result = std::system(dnloadCmd.c_str());
+    if (result != 0) return lime::ReportError(result, "Failed: %s", dnloadCmd.c_str());
+
+    return 0;
 }
