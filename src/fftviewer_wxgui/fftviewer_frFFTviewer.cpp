@@ -219,7 +219,6 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
     txtBW1->GetValue().ToDouble(&bw[0]);
     txtBW2->GetValue().ToDouble(&bw[1]);
 
-    // TODO
     for (int c = 0; c<2; ++c)
     {
         float f0 = (cFreq[c] - bw[c]/2) * 1e6;
@@ -229,7 +228,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         for (int i = 0; i<fftSize; ++i)
             if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
             {
-                double val = streamData.fftBins[c][i];
+                double val = streamData.fftBins[0][i];
                 sum += val;
                 ++bins;
             }
