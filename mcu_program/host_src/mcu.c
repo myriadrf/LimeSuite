@@ -72,10 +72,10 @@ uint8_t MCU_SetParameter(MCU_Parameter param, float value)
 
 uint8_t MCU_UploadProgram(const uint8_t* binImage, const uint16_t len)
 {
-#ifdef __cplusplus
+#ifndef NDEBUG
     auto timeStart = std::chrono::high_resolution_clock::now();
-    const auto timeout = std::chrono::milliseconds(100);
 #endif // NDEBUG
+    const auto timeout = std::chrono::milliseconds(100);
     uint16_t i;
     const uint32_t controlAddr = 0x0002;
     const uint32_t statusReg = 0x0003;

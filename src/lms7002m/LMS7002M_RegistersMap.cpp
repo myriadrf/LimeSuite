@@ -56,11 +56,13 @@ void LMS7002M_RegistersMap::SetValue(uint8_t channel, const uint16_t address, co
 
 uint16_t LMS7002M_RegistersMap::GetValue(uint8_t channel, uint16_t address) const
 {
-    const std::map<const uint16_t, Register> *regMap;
+    const std::map<const uint16_t, Register> *regMap(nullptr);
     if(channel == 0)
         regMap = &mChannelA;
     else if(channel == 1)
         regMap = &mChannelB;
+    else
+        return 0;
     std::map<const uint16_t, Register>::const_iterator iter;
     iter = regMap->find(address);
     if (iter != regMap->end())

@@ -259,7 +259,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         {
             for (int ch = 0; ch<2; ++ch)
             {
-                for (unsigned s = 0; s < fftSize; ++s)
+                for (int s = 0; s < fftSize; ++s)
                 {
                     streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (20 * log10(streamData.fftBins[ch][s])) - 69.2369 : -300);
                 }
@@ -534,6 +534,10 @@ void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
     case 2:
         visibilities[0] = true;
         visibilities[1] = true;
+        break;
+    default:
+        visibilities[0] = false;
+        visibilities[1] = false;
         break;
     }
     mTimeDomainPanel->series[0]->visible = visibilities[0];

@@ -42,7 +42,7 @@ void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits,
     if(batchActive)
     {
     bool found = false;
-    for(int i=0; i<bAddr.size(); ++i)
+    for(size_t i=0; i<bAddr.size(); ++i)
     {
         if(bAddr[i] == SPI_reg_addr)
         {
@@ -71,7 +71,7 @@ void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const 
     if(batchActive)
     {
     bool found = false;
-    for(int i=0; i<bAddr.size(); ++i)
+    for(size_t i=0; i<bAddr.size(); ++i)
     {
         if(bAddr[i] == SPI_reg_addr)
         {
@@ -119,7 +119,7 @@ void SPI_write_batch(const uint16_t *addr, const uint16_t *values, uint8_t cnt)
         if(batchActive)
         {
             bool found = false;
-            for(int i=0; i<bAddr.size(); ++i)
+            for(size_t i=0; i<bAddr.size(); ++i)
             {
                 if(bAddr[i] == addr[i])
                 {
@@ -154,9 +154,9 @@ int BeginBatch(const char* name)
 void EndBatch()
 {
     //sort batch
-    for(int i=0; i<bAddr.size(); ++i)
+    for(size_t i=0; i<bAddr.size(); ++i)
     {
-        for(int j=i; j<bAddr.size(); ++j)
+        for(size_t j=i; j<bAddr.size(); ++j)
         {
             if(bAddr[i] > bAddr[j])
             {

@@ -1628,8 +1628,8 @@ void OpenGLGraph::onReset(wxCommandEvent& event)
 bool OpenGLGraph::SearchPeak()
 {
     bool found = false;
-    double maxValue;
-    unsigned maxPos;
+    double maxValue(0.0);
+    unsigned maxPos(0);
     //Init max value
     for(unsigned int i=0; i<series.size(); i++)
     {

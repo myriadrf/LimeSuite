@@ -142,7 +142,7 @@ int fpga_read(unsigned const int addr, unsigned short *buf, const int len)
 int readKernelMemory(long offset, int virtualized, int size)
 {
 #ifdef __linux__
-    int result;
+    int result(0);
 
     int *mem_range = (int *)(offset & ~0xFFFF);
     if (mem_range != prev_mem_range)

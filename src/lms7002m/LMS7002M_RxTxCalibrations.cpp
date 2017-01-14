@@ -1396,11 +1396,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
                 Get_SPI_Reg_bits(LMS7param(G_LNA_RFE)),
                 Get_SPI_Reg_bits(LMS7param(G_TIA_RFE)));
 
-    int16_t dcoffi;
-    int16_t dcoffq;
-    uint16_t gcorri;
-    uint16_t gcorrq;
-    int16_t phaseOffset;
+    int16_t dcoffi(0);
+    int16_t dcoffq(0);
+    uint16_t gcorri(0);
+    uint16_t gcorrq(0);
+    int16_t phaseOffset(0);
 
     if(useCache)
     {
@@ -1723,7 +1723,7 @@ void LMS7002M::GridSearch(GridSearchParam* args)
     const uint16_t DCOFFaddr = 0x010E;
     const bool rxDC = (args->a.param.address == DCOFFaddr || args->b.param.address == DCOFFaddr);
     uint32_t rssi, minRSSI = ~0;
-    int16_t minI, minQ, i, q;
+    int16_t minI(0), minQ(0), i, q;
 
     for(i=args->a.minValue; i<=args->a.maxValue; ++i)
     {

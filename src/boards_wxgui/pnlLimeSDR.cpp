@@ -80,8 +80,6 @@ void pnlLimeSDR::Initialize(lms_device_t* pControl)
         auto info = LMS_GetDeviceInfo(lmsControl);
         if(info != nullptr)
         {
-            int hw = std::stoi(info->hardwareVersion);
-
             lblWarning->SetLabel(_(""));
             lblWarning->Hide();
             auto controls = controlsSizer->GetChildren();

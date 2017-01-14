@@ -570,6 +570,7 @@ int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
     case 1: mode = IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM; break;
     case 2: mode = IConnection::MCU_PROG_MODE::SRAM; break;
     case 3: mode = IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
+    default: mode = IConnection::MCU_PROG_MODE::RESET; break;
     }
     if(m_serPort)
         return m_serPort->ProgramMCU(byte_array, byte_array_size, mode, callback);

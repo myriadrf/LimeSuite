@@ -178,7 +178,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
             bestScore = it.second;
         }
     }
-    int N, M;
+    int N(0), M(0);
     double bestDeviation = 1e9;
     double Fvco;
     for(auto it : availableVCOs)

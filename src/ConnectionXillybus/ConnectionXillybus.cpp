@@ -611,8 +611,8 @@ int ConnectionXillybus::ConfigureFPGA_PLL(unsigned int pllIndex, const double in
         const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
         const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputClock_Hz);
         uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
-        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
 #ifndef NDEBUG
+        const float actualPhaseShift_deg = 360 * inputClock_Hz / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
         printf("reg value : %i\n", phase_reg_select);
         printf("input clock: %f\n", inputClock_Hz);
         printf("phase : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);

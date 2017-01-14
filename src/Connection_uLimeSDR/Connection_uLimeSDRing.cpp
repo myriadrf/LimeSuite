@@ -244,9 +244,9 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
             t1 = t2;
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
+#ifndef NDEBUG
             //each channel sample rate
             float samplingRate = 1000.0*samplesReceived[0] / timePeriod;
-#ifndef NDEBUG
             printf("Rx: %.3f MB/s, Fs: %.3f MHz, overrun: %i, loss: %i \n", dataRate / 1000000.0, samplingRate / 1000000.0, droppedSamples, packetLoss);
 #endif
             samplesReceived[0] = 0;
@@ -388,8 +388,6 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
         {
             //total number of bytes sent per second
             float dataRate = 1000.0*totalBytesSent / timePeriod;
-            //total number of samples from all channels per second
-            float sampleRate = 1000.0*samplesSent / timePeriod;
             if(dataRate_Bps)
                 dataRate_Bps->store(dataRate);
             m_bufferFailures = 0;
@@ -397,6 +395,8 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
             totalBytesSent = 0;
             t1 = t2;
 #ifndef NDEBUG
+            //total number of samples from all channels per second
+            float sampleRate = 1000.0*samplesSent / timePeriod;
             printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i, ts:%li\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures, timestamp);
 #endif
         }

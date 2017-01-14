@@ -89,7 +89,7 @@ public:
 	{
 		char szLine[1024];
 		bool formatDetected = false;
-		bool intel;
+		bool intel = false;
 		bool endSeen = false;
 		bool linear = true;				// Only used for intel hex
 		unsigned long addressBase = 0;	// Only used for intel hex

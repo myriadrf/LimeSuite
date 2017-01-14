@@ -68,7 +68,7 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
 {
     unsigned char ch=0x00;
     bool find_byte=false;
-    int i=0;
+    size_t i=0;
 
     if(!bin)
     {
@@ -104,7 +104,7 @@ int lms7002_pnlMCU_BD_view::GetProgramCode(const char* inFileName, bool bin)
             return -1;
         mLoadedProgramFilename = inFileName;
         memset(byte_array, 0, max_array_size);
-        for (int i = 0; i<max_array_size && !fin.eof(); ++i)
+        for (size_t i = 0; i<max_array_size && !fin.eof(); ++i)
         {
             inByte = 0;
             fin.read(&inByte, 1);
@@ -210,6 +210,8 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
                 target = LMS_TARGET_RAM;
             else if (mode0 == 1 && mode1 == 1)
                 target = LMS_TARGET_BOOT;
+            else
+                target = LMS_TARGET_FLASH;
 
             retval = LMS_ProgramLMSMCU(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, target, OnProgrammingCallback);
         }
