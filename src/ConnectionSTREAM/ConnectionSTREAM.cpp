@@ -76,11 +76,6 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
     if (this->Open(index, vid, pid) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
 
-    struct ExpectedVersion
-    {
-        int hw, fw, gw, gw_rev;
-    };
-
     commandsToBulkCtrl = commandsToBulkCtrlHw2;
 
     LMSinfo info = this->GetInfo();
@@ -90,75 +85,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
         commandsToBulkCtrl = commandsToBulkCtrlHw1;
     }
 
-    FPGAinfo fpgaInfo = this->GetFPGAInfo();
-    //expected version numbers based on HW number
-    vector<ExpectedVersion> versionList; //expected HW,FW,GW combinations
-    bool correctFWHW = false;
-    if (info.device == LMS_DEV_LIMESDR)
-    {
-        versionList = {
-            {4, 2, 2, 2},
-            {3, 2, 1, 20},
-            {2, 2, 1, 20},
-            {1, 6, 1, 20},
-        };
-    }
-    else if(info.device == LMS_DEV_STREAM)
-    {
-        versionList = {
-            {3, 8, 1, 2},
-        };
-    }
-    else correctFWHW = true;
-
-    for(auto iter : versionList)
-        if(info.hardware == iter.hw
-           && info.firmware == iter.fw
-           && fpgaInfo.gatewareVersion == iter.gw
-           && fpgaInfo.gatewareRevision == iter.gw_rev)
-        {
-            correctFWHW = true;
-            break;
-        }
-
-    if(not correctFWHW)
-    {
-        ExpectedVersion expected = {-1, -1, -1, -1};
-        bool knownHardware = false;
-        for(auto iter : versionList)
-            if(info.hardware == iter.hw)
-        {
-            knownHardware = true;
-            expected = iter;
-            break;
-        }
-        if(not knownHardware)
-            std::cerr << "Unsupported hardware connected" << std::endl;
-
-        //check and warn about firmware mismatch problems
-        if (knownHardware && info.firmware != expected.fw)
-            std::cerr << std::endl
-            << "########################################################" << std::endl
-            << "##   !!!  Warning: firmware version mismatch  !!!" << std::endl
-            << "## Expected firmware version " << expected.fw << ", but found version " << info.firmware << std::endl
-            << "## Follow the FW and FPGA upgrade instructions:" << std::endl
-            << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
-            << "########################################################" << std::endl
-            << std::endl;
-
-        //check and warn about gateware mismatch problems
-        if (knownHardware && (fpgaInfo.gatewareVersion != expected.gw
-            || fpgaInfo.gatewareRevision != expected.gw_rev))
-            std::cerr << std::endl
-            << "########################################################" << std::endl
-            << "##   !!!  Warning: gateware version mismatch  !!!" << std::endl
-            << "## Expected gateware version " << expected.gw << ", revision " << expected.gw_rev << std::endl
-            << "## But found version " << fpgaInfo.gatewareVersion << ", revision " << fpgaInfo.gatewareRevision<< std::endl
-            << "## Follow the FW and FPGA upgrade instructions:" << std::endl
-            << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
-            << "########################################################" << std::endl
-            << std::endl;
-    }
+    this->VersionCheck();
 
     if (info.device == LMS_DEV_LIMESDR || info.device == LMS_DEV_LIMESDR_USB_SP || info.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
         DetectRefClk();

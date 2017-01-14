@@ -170,14 +170,6 @@ struct LIME_API StreamConfig
 class LIME_API IConnection
 {
 public:
-    /*!
-     * Callback from programming processes
-     * @param bsent number of bytes transferred
-     * @param btotal total number of bytes to send
-     * @param progressMsg string describing current progress state
-     * @return 0-continue programming, 1-abort operation
-     */
-    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
 
     //! IConnection constructor
     IConnection(void);
@@ -448,6 +440,15 @@ public:
      * Programming API
      **********************************************************************/
 
+    /*!
+     * Callback from programming processes
+     * @param bsent number of bytes transferred
+     * @param btotal total number of bytes to send
+     * @param progressMsg string describing current progress state
+     * @return 0-continue programming, 1-abort operation
+     */
+    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
+
     /** @brief Uploads program to selected device
         @param buffer binary program data
         @param length buffer length
@@ -487,6 +488,24 @@ public:
         This could be a quite long operation, use callback to get progress info or to terminate early
     */
     virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
+
+    /*!
+     * Download up-to-date images files and flash the board when applicable.
+     *
+     * Program update is an implementation specific function that may handle
+     * several different use cases depending upon what options are applicable:
+     *
+     * - If a board relies on certain firmware and gateware images,
+     *   these images will be downloaded if not present on the system.
+     *
+     * - If the board has a programmable flash for firmware and gateware,
+     *   then up-to-date images will be written to the flash on the board.
+     *
+     * @param download true to enable downloading missing images
+     * @param callback callback for progress reporting or early termination
+     * @return 0-success
+     */
+    virtual int ProgramUpdate(const bool download = true, ProgrammingCallback callback = 0);
 
     /***********************************************************************
      * GPIO API

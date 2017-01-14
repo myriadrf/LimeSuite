@@ -92,6 +92,7 @@ class ConnectionSTREAM : public ILimeSDRStreaming
 public:
     ConnectionSTREAM(void* ctx, const unsigned index, const int vid=-1, const int pid=-1);
     ~ConnectionSTREAM(void);
+    void VersionCheck(void);
 
     int Open(const unsigned index, const int vid, const int pid);
     void Close();
@@ -106,6 +107,7 @@ public:
     //hooks to update FPGA plls when baseband interface data rate is changed
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
+    int ProgramUpdate(const bool download, ProgrammingCallback callback);
 protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;

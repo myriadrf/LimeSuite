@@ -5,6 +5,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
     VersionInfo.h
     ErrorReporting.h
+    SystemResources.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
     lms7002m_mcu/MCU_BD.h
@@ -87,6 +88,10 @@ set(LIME_SUITE_INCLUDES
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
 list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/SystemResources.in.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/SystemResources.cpp @ONLY)
+list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/SystemResources.cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)

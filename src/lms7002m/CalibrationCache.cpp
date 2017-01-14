@@ -1,5 +1,6 @@
 #include "CalibrationCache.h"
 #include "ErrorReporting.h"
+#include "SystemResources.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -10,13 +11,11 @@
 #include <cmath>
 #ifndef __unix__
     #include <Windows.h>
-    #include <Shlobj.h>
 #endif
 using namespace std;
 using namespace lime;
 
 std::string CalibrationCache::cachePath = "";
-static const char* limeSuiteDirName = ".limesuite";
 static const char* cacheFilename = "LMS7002M_cache_values.db";
 
 int CalibrationCache::instanceCount = 0;
@@ -32,26 +31,8 @@ CalibrationCache::CalibrationCache()
 {
     if(instanceCount == 0)
     {
-        std::string limeSuiteDir;
-        std::string homeDir;
-#ifdef __unix__
-        homeDir = getenv("HOME");
-        //check if HOME variable is set
-        if (homeDir.size() == 0)
-        {
-            printf("HOME variable is not set\n");
-            homeDir = "/tmp"; //home not defined move to temp
-        }
-#else
-        CHAR path[MAX_PATH];
-        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path)) != S_OK)
-        {
-            printf("HOME variable is not set\n");
-            GetTempPathA(MAX_PATH, path); //home not defined move to temp
-        }
-        homeDir = path;
-#endif
-        limeSuiteDir = homeDir + "/" + limeSuiteDirName;
+        std::string limeSuiteDir = lime::getConfigDirectory();
+
         //check if limesuite directory exists
         struct stat info;
         if( stat( limeSuiteDir.c_str(), &info ) != 0 )
