@@ -2,6 +2,9 @@ Release 17.01.0 (pending)
 ==========================
 
 - Added resource location API and image update API
+- configure LML clock phases based on interface freq
+- LimeSDR: detect reference clock presence on connect
+- Set CMIX setting in calib/tune based on chip version
 
 Release 16.12.1 (pending)
 ==========================
