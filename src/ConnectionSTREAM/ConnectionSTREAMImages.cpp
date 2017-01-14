@@ -11,6 +11,7 @@
 #include "LMSBoards.h"
 #include <iostream>
 #include <fstream>
+#include <ciso646>
 
 using namespace lime;
 
@@ -46,7 +47,7 @@ static const ConnectionSTREAMImageEntry &lookupImageEntry(const LMS64CProtocol::
 
     for(const auto &iter : imageEntries)
     {
-        if (info.device == iter.dev && info.hardware == iter.hw_rev)
+        if (info.device == iter.dev and info.hardware == iter.hw_rev)
         {
             return iter;
         }
@@ -110,7 +111,7 @@ int ConnectionSTREAM::ProgramUpdate(const bool download, IConnection::Programmin
         const std::vector<std::string> images = {entry.fw_img, entry.gw_rbf};
         for (const auto &image : images)
         {
-            if (!lime::locateImageResource(image).empty()) continue;
+            if (not lime::locateImageResource(image).empty()) continue;
             const std::string msg("Downloading: " + image);
             if (callback) callback(0, 1, msg.c_str());
             int ret = lime::downloadImageResource(image);
