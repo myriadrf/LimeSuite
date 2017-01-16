@@ -30,31 +30,31 @@ public:
     ConnectionXillybus(const unsigned index);
     ~ConnectionXillybus(void);
 
-	int Open(const unsigned index);
-	void Close();
-	bool IsOpen();
-	int GetOpenedIndex();
+    int Open(const unsigned index);
+    void Close();
+    bool IsOpen();
+    int GetOpenedIndex();
 
-	int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
-	int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
+    int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
+    int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
 
-	//hooks to update FPGA plls when baseband interface data rate is changed
-	int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
+    //hooks to update FPGA plls when baseband interface data rate is changed
+    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
 protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;
 
-    virtual int ReceiveData(char* buffer, uint32_t length, double timeout);
+    virtual int ReceiveData(char* buffer, const int length, const int timeout = 100);
     virtual void AbortReading();
 
-    virtual int SendData(const char* buffer, uint32_t length, double timeout);
+    virtual int SendData(const char* buffer, const int length, const int timeout = 100);
     virtual void AbortSending();
 
     int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
     eConnectionType GetType(void)
     {
-        return USB_PORT;
+        return PCIE_PORT;
     }
 
     std::string m_hardwareName;
