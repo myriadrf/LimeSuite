@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+RELEASE_NUM="17.01"
+DEST_DIR="/usr/share/LimeSuite/images/${RELEASE_NUM}"
+
+if [ "$1" = "remove" ]; then
+	rm --force --recursive "${DEST_DIR}"
+fi
+
+#DEBHELPER#
