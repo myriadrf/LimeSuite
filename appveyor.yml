@@ -1,0 +1,62 @@
+version: '{build}'
+branches:
+  only:
+  - stable
+  - master
+image: Visual Studio 2015
+clone_folder: c:\projects\limesuite
+environment:
+  WXWIDGETS_ROOT_DIR: C:\projects\deps\wxWidgets
+  FX3_SDK_PATH: C:\projects\deps\FX3SDK
+  CONFIGURATION: RelWithDebInfo
+  matrix:
+  - CMAKE_GENERATOR: Visual Studio 14 2015
+    WXWIDGETS_LIBS_DIR: C:\projects\deps\wxWidgets\lib\vc140_dll
+    WXWIDGETS_LIBS_DOWNLOAD_LINK: https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxMSW-3.1.0_vc140_Dev.7z
+  - CMAKE_GENERATOR: Visual Studio 14 2015 Win64
+    WXWIDGETS_LIBS_DIR: C:\projects\deps\wxWidgets\lib\vc140_x64_dll
+    WXWIDGETS_LIBS_DOWNLOAD_LINK: https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxMSW-3.1.0_vc140_x64_Dev.7z
+install:
+- cmd: >-
+    mkdir C:\projects\deps
+
+    cd C:\projects\deps
+
+    appveyor DownloadFile "%WXWIDGETS_LIBS_DOWNLOAD_LINK%" -FileName wxMSW-3.1.0_Dev.7z
+
+    7z x wxMSW-3.1.0_Dev.7z -oC:\projects\deps\wxWidgets > nul
+
+    appveyor DownloadFile https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxWidgets-3.1.0-headers.7z wxWidgets-3.1.0-headers.7z
+
+    7z x wxWidgets-3.1.0-headers.7z -oC:\\projects\\deps\\wxWidgets > nul
+
+    appveyor DownloadFile https://github.com/jocover/LimeSuite/releases/download/fx3sdk/FX3SDK.zip FX3SDK.zip
+
+    7z x FX3SDK.zip -oC:\projects\deps\FX3SDK > nul
+
+    git clone https://github.com/pothosware/SoapySDR.git
+
+    cd SoapySDR
+
+    mkdir build && cd build
+
+    cmake ../ -G "%CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+
+    cmake --build . --config %CONFIGURATION%
+
+    cmake --build . --config %CONFIGURATION%  --target install
+
+
+build_script:
+- cmd: >-
+    cmake --version
+
+    cd c:\projects\limesuite
+
+    mkdir temp
+
+    cd temp
+
+    cmake .. -G "%CMAKE_GENERATOR%" -DCMAKE_PREFIX_PATH="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_LIB_DIR="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_ROOT_DIR="%WXWIDGETS_ROOT_DIR%" -DFX3_SDK_PATH="%FX3_SDK_PATH%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% 
+
+    cmake --build . --config %CONFIGURATION%
