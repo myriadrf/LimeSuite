@@ -179,6 +179,7 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build timestamp: ${BUILD_TIMESTAMP}")
 message(STATUS "Lime Suite version: ${LIME_SUITE_VERSION}")
 message(STATUS "ABI/so version: ${LIME_SUITE_SOVER}")
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadImages.cmake)
 
 ########################################################################
 # uninstall target
