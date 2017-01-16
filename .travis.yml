@@ -1,0 +1,66 @@
+########################################################################
+## Travis CI config for LimeSuite
+##
+## * not all components will be configured
+## * the matrix builds Release and Debug
+## * run the self tests after install
+########################################################################
+
+sudo: required
+dist: trusty
+
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+os:
+  - linux
+  - osx
+
+env:
+  global:
+    - INSTALL_PREFIX=/usr/local
+    - SOAPY_SDR_BRANCH=master
+  matrix:
+    - BUILD_TYPE=Debug
+    - BUILD_TYPE=Release
+
+# whitelist
+branches:
+  only:
+    - master
+    - stable
+
+before_install:
+  
+  
+  # update after package changes
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+
+    # install development dependencies
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libusb-1.0-0-dev cmake libwxbase3.0-dev libwxgtk3.0-dev;fi;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libusb wxmac ; fi
+
+
+  
+
+install:
+
+
+  # install SoapySDR from source
+  - git clone https://github.com/pothosware/SoapySDR.git
+  - pushd SoapySDR
+  - git checkout ${SOAPY_SDR_BRANCH}
+  - mkdir build && cd build
+  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  - make && sudo make install
+  - popd
+
+script:
+  - mkdir temp && cd temp
+  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  - make -j2
+  - sudo make install
