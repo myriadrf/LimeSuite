@@ -15,6 +15,7 @@
 #include <memory>
 #include <thread>
 #include "fifo.h"
+#include <ciso646>
 
 #ifndef __unix__
 #include "windows.h"
@@ -90,11 +91,11 @@ public:
 class ConnectionSTREAM : public ILimeSDRStreaming
 {
 public:
-    ConnectionSTREAM(void* ctx, const unsigned index, const int vid=-1, const int pid=-1);
+    ConnectionSTREAM(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
     ~ConnectionSTREAM(void);
     void VersionCheck(void);
 
-    int Open(const unsigned index, const int vid, const int pid);
+    int Open(const std::string &vidpid, const std::string &serial, const unsigned index);
     void Close();
     bool IsOpen();
     int GetOpenedIndex();
@@ -144,7 +145,6 @@ protected:
     CCyUSBEndPoint* InCtrlBulkEndPt;
     CCyUSBEndPoint* OutCtrlBulkEndPt;
 #else
-    libusb_device** devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle* dev_handle; //a device handle
     libusb_context* ctx; //a libusb session
     int read_firmware_image(unsigned char *buf, int len);
@@ -175,6 +175,7 @@ public:
 protected:
 #ifndef __unix__
     std::string DeviceName(unsigned int index);
+    void *ctx; //not used, just for mirroring unix
 #else
     libusb_context* ctx; //a libusb session
     std::thread mUSBProcessingThread;

@@ -15,7 +15,7 @@ namespace lime
 class ConnectionSTREAM_UNITE : public virtual ConnectionSTREAM
 {
 public:
-    ConnectionSTREAM_UNITE(void* ctx, const unsigned index, const int vid=-1, const int pid=-1, const char* comPortName=nullptr);
+    ConnectionSTREAM_UNITE(void* ctx, const std::string &vidpid, const std::string &serial, const unsigned index, const char* comPortName=nullptr);
     virtual ~ConnectionSTREAM_UNITE(void);
 
     virtual DeviceInfo GetDeviceInfo(void) override;

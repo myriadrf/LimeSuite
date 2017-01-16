@@ -52,7 +52,7 @@ const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vid, const int pid)
+ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
     bulkCtrlInProgress = false;
@@ -69,11 +69,10 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const unsigned index, const int vi
 	InCtrlBulkEndPt = nullptr;
 	OutCtrlBulkEndPt = nullptr;
 #else
-    dev_handle = 0;
-    devs = 0;
+    dev_handle = nullptr;
     ctx = (libusb_context *)arg;
 #endif
-    if (this->Open(index, vid, pid) != 0)
+    if (this->Open(vidpid, serial, index) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
 
     commandsToBulkCtrl = commandsToBulkCtrlHw2;
@@ -195,7 +194,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 /**	@brief Tries to open connected USB device and find communication endpoints.
 	@return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
+int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
 #ifndef __unix__
@@ -267,7 +266,45 @@ int ConnectionSTREAM::Open(const unsigned index, const int vid, const int pid)
     isConnected = true;
     return 0;
 #else
-    dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+    const auto splitPos = vidpid.find(":");
+    const auto vid = std::stoi(vidpid.substr(0, splitPos), nullptr, 16);
+    const auto pid = std::stoi(vidpid.substr(splitPos+1), nullptr, 16);
+
+    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
+    if(usbDeviceCount > 0)
+    {
+        for(int i=0; i<usbDeviceCount; ++i)
+        {
+            libusb_device_descriptor desc;
+            int r = libusb_get_device_descriptor(devs[i], &desc);
+            if(r<0)
+                printf("failed to get device description\n");
+            if (desc.idProduct != pid) continue;
+            if (desc.idVendor != vid) continue;
+            if(libusb_open(devs[i], &dev_handle) != 0) continue;
+
+            std::string foundSerial;
+            if (desc.iSerialNumber > 0)
+            {
+                char data[255];
+                r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
+                if(r<0)
+                    printf("failed to get serial number\n");
+                else
+                    foundSerial = std::string(data, size_t(r));
+            }
+
+            if (serial == foundSerial) break; //found it
+            libusb_close(dev_handle);
+            dev_handle = nullptr;
+        }
+    }
+    else
+    {
+        libusb_free_device_list(devs, 1);
+    }
+
     if(dev_handle == nullptr)
         return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
     if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached

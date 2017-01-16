@@ -113,8 +113,11 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
             handle.index = i;
             std::wstring ws(device.SerialNumber);
             handle.serial = std::string(ws.begin(),ws.end());
-            handles.push_back(handle);
-			device.Close();
+            if (hint.serial.empty() or hint.serial == handle.serial)
+            {
+                handles.push_back(handle); //filter on serial
+            }
+            device.Close();
         }
     }
 #else
@@ -122,9 +125,9 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
     if(usbDeviceCount > 0)
     {
-        libusb_device_descriptor desc;
         for(int i=0; i<usbDeviceCount; ++i)
         {
+            libusb_device_descriptor desc;
             int r = libusb_get_device_descriptor(devs[i], &desc);
             if(r<0)
                 printf("failed to get device description\n");
@@ -141,9 +144,8 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
             }
             else if((vid == 1204 && pid == 241) || (vid == 1204 && pid == 243) || (vid == 7504 && pid == 24840))
             {
-                libusb_device_handle *tempDev_handle;
-                tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-                if(tempDev_handle == nullptr)
+                libusb_device_handle *tempDev_handle(nullptr);
+                if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
                     continue;
                 if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
                 {
@@ -167,28 +169,31 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                 fullName += " (";
                 //read device name
                 char data[255];
-                memset(data, 0, 255);
-                libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, 255);
-                if(strlen(data) > 0)
-                    fullName += data;
+                r = libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, sizeof(data));
+                if(r > 0) fullName += std::string(data, size_t(r));
                 fullName += ")";
 
                 ConnectionHandle handle;
                 handle.media = "USB";
                 handle.name = fullName;
-                handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+                r = std::sprintf(data, "%.4x:%.4x", int(vid), int(pid));
+                if (r > 0) handle.addr = std::string(data, size_t(r));
 
                 if (desc.iSerialNumber > 0)
                 {
-                    r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, 255);
+                    r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
                     if(r<0)
                         printf("failed to get serial number\n");
-                    else if (strlen(data) > 0)
-                        handle.serial = std::string((const char*)data);
+                    else
+                        handle.serial = std::string(data, size_t(r));
                 }
                 libusb_close(tempDev_handle);
 
-                handles.push_back(handle);
+                //add handle conditionally, filter by serial number
+                if (hint.serial.empty() or hint.serial == handle.serial)
+                {
+                    handles.push_back(handle);
+                }
             }
         }
     }
@@ -202,13 +207,5 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
 
 IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
 {
-#ifndef __unix__
-    return new ConnectionSTREAM(nullptr, handle.index);
-#else
-    const auto pidvid = handle.addr;
-    const auto splitPos = pidvid.find(":");
-    const auto pid = std::stoi(pidvid.substr(0, splitPos));
-    const auto vid = std::stoi(pidvid.substr(splitPos+1));
-    return new ConnectionSTREAM(ctx, handle.index, vid, pid);
-#endif
+    return new ConnectionSTREAM(ctx, handle.addr, handle.serial, handle.index);
 }

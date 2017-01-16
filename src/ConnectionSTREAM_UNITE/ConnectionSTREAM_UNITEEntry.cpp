@@ -141,18 +141,15 @@ std::vector<ConnectionHandle> ConnectionSTREAM_UNITEEntry::enumerate(const Conne
         comHandles.push_back(hnd);
     }
 
-    int index = 0;
     for(auto usb : usbHandles)
     {
         for(auto com : comHandles)
         {
-            ConnectionHandle hnd;
+            ConnectionHandle hnd(usb); //copy the usb index and serial
             hnd.module = "STREAM+UNITE";
             hnd.media = "USB+COM";
             hnd.name = usb.name+"+"+com.name;
             hnd.addr = usb.addr+"+"+com.addr;
-            hnd.serial = "";
-            hnd.index = index++;
             handles.push_back(hnd);
         }
     }
@@ -161,35 +158,12 @@ std::vector<ConnectionHandle> ConnectionSTREAM_UNITEEntry::enumerate(const Conne
 
 IConnection *ConnectionSTREAM_UNITEEntry::make(const ConnectionHandle &handle)
 {
-#ifndef __unix__
-    const auto pidvid = handle.addr;
-    const auto comAddrPos = pidvid.find("+");
-    std::string comName;
-    if(comAddrPos == std::string::npos)
-    {
-        return new ConnectionSTREAM_UNITE(nullptr, handle.index);
-    }
-    else
-    {
-        comName = pidvid.substr(comAddrPos + 1);
-        return new ConnectionSTREAM_UNITE(nullptr, handle.index, -1, -1, comName.c_str());
-    }
-#else
-    const auto pidvid = handle.addr;
-    const auto splitPos = pidvid.find(":");
-    const auto pid = std::stoi(pidvid.substr(0, splitPos));
-    const auto comAddrPos = pidvid.find("+");
-    if(comAddrPos == std::string::npos)
-    {
-        const auto vid = std::stoi(pidvid.substr(splitPos+1));
-        return new ConnectionSTREAM_UNITE(ctx, handle.index, vid, pid, nullptr);
-    }
-    else
-    {
-        const auto vid = std::stoi(pidvid.substr(splitPos+1, comAddrPos));
-        const auto comName = pidvid.substr(comAddrPos+1);
-        return new ConnectionSTREAM_UNITE(ctx, handle.index, vid, pid, comName.c_str());
-    }
+    //separate the addr field into usb IDs and com device
+    const auto idsPlusCom = handle.addr;
+    const auto comAddrPos = idsPlusCom.find("+");
+    const auto vidPid = idsPlusCom.substr(0, comAddrPos);
+    const auto comName = idsPlusCom.substr(comAddrPos+1);
 
-#endif
+    //now make the hybrid connection with com device
+    return new ConnectionSTREAM_UNITE(ctx, vidPid, handle.serial, handle.index, comName.c_str());
 }

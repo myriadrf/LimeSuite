@@ -10,8 +10,8 @@ using namespace std;
 namespace lime
 {
 
-ConnectionSTREAM_UNITE::ConnectionSTREAM_UNITE(void* ctx, const unsigned index, const int vid, const int pid, const char* comPortName)
-    : ConnectionSTREAM(ctx, index, vid, pid), comPort(nullptr)
+ConnectionSTREAM_UNITE::ConnectionSTREAM_UNITE(void* ctx, const std::string &vidpid, const std::string &serial, const unsigned index, const char* comPortName)
+    : ConnectionSTREAM(ctx, vidpid, serial, index), comPort(nullptr)
 {
     if(comPortName && strlen(comPortName))
     {
