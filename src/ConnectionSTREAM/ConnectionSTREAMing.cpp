@@ -62,6 +62,8 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
         FinishDataSending((char*)&pkt, bToSend , context);
     }
     delete[] batch;
+    /*Give FX3 some time to load samples to FPGA*/
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     if(cnt == 0)
         return 0;
     else
