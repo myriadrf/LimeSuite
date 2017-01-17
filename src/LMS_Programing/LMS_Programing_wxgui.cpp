@@ -74,15 +74,9 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     cmbDevice->SetSelection(cmbDevice->Append(_T("Altera FPGA")));
     FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     cmbProgMode = new wxChoice(this, ID_CHOICE1, wxDefaultPosition, wxSize(176, -1), 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE1"));
-    cmbProgMode->SetSelection(cmbProgMode->Append(_T("Flash")));
-    cmbProgMode->Append(_T("1"));
-    cmbProgMode->Append(_T("2"));
-    cmbProgMode->Append(_T("3"));
-    cmbProgMode->Append(_T("4"));
-    cmbProgMode->Append(_T("5"));
-    cmbProgMode->Append(_T("6"));
-    cmbProgMode->Append(_T("7"));
-    cmbProgMode->Append(_T("8"));
+    cmbProgMode->Append("Bitstream to FPGA");
+    cmbProgMode->SetSelection(cmbProgMode->Append(_T("Bitstream to Flash")));
+    cmbProgMode->Append("Bitstream from Flash");
     FlexGridSizer7->Add(cmbProgMode, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer3->Add(FlexGridSizer7, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer1->Add(FlexGridSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -171,26 +165,27 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
 {
     int deviceSelection = cmbDevice->GetSelection();
+    int progMode = cmbProgMode->GetSelection();
     cmbProgMode->Clear();
     if(deviceSelection == 2)
     {
         cmbProgMode->Append("Bitstream to FPGA");
         cmbProgMode->Append("Bitstream to Flash");
         cmbProgMode->Append("Bitstream from Flash");
-        cmbProgMode->SetSelection(0);
+        cmbProgMode->SetSelection(progMode < 3 ? progMode : 2);
     }
     else if(deviceSelection == 1)
     {
 		cmbProgMode->Append(_("Firmware to RAM"));
         cmbProgMode->Append(_("Firmware to Flash"));
-        cmbProgMode->SetSelection(0);
+        cmbProgMode->SetSelection(progMode < 2 ? progMode : 1);
     }
     else if(deviceSelection == 0)
     {
         cmbProgMode->Append(_("Flash"));
         for(int i=1; i<=8; ++i)
             cmbProgMode->Append(wxString::Format("%i", i));
-        cmbProgMode->SetSelection(0);
+        cmbProgMode->SetSelection(progMode);
     }
 }
 
