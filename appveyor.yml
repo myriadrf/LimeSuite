@@ -30,7 +30,7 @@ install:
 
     7z x wxWidgets-3.1.0-headers.7z -oC:\\projects\\deps\\wxWidgets > nul
 
-    appveyor DownloadFile https://github.com/jocover/LimeSuite/releases/download/fx3sdk/FX3SDK.zip FX3SDK.zip
+    appveyor DownloadFile http://downloads.myriadrf.org/project/limesuite/appveyor/FX3SDK.zip FX3SDK.zip
 
     7z x FX3SDK.zip -oC:\projects\deps\FX3SDK > nul
 
@@ -57,6 +57,6 @@ build_script:
 
     cd temp
 
-    cmake .. -G "%CMAKE_GENERATOR%" -DCMAKE_PREFIX_PATH="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_LIB_DIR="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_ROOT_DIR="%WXWIDGETS_ROOT_DIR%" -DFX3_SDK_PATH="%FX3_SDK_PATH%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% 
+    cmake .. -G "%CMAKE_GENERATOR%" -DCMAKE_PREFIX_PATH="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_LIB_DIR="%WXWIDGETS_LIBS_DIR%" -DwxWidgets_ROOT_DIR="%WXWIDGETS_ROOT_DIR%" -DFX3_SDK_PATH="%FX3_SDK_PATH%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DENABLE_STREAM_UNITE=ON
 
     cmake --build . --config %CONFIGURATION%
