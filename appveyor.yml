@@ -30,7 +30,7 @@ install:
 
     7z x wxWidgets-3.1.0-headers.7z -oC:\\projects\\deps\\wxWidgets > nul
 
-    appveyor DownloadFile https://github.com/jocover/LimeSuite/releases/download/fx3sdk/FX3SDK.zip FX3SDK.zip
+    appveyor DownloadFile http://downloads.myriadrf.org/project/limesuite/appveyor/FX3SDK.zip FX3SDK.zip
 
     7z x FX3SDK.zip -oC:\projects\deps\FX3SDK > nul
 
