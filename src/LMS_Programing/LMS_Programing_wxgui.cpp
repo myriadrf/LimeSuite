@@ -71,12 +71,10 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     cmbDevice = new wxChoice(this, ID_CHOICE2, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE2"));
     cmbDevice->Append(_T("HPM1000/HMP7"));
     cmbDevice->Append(_T("FX3"));
-    cmbDevice->SetSelection(cmbDevice->Append(_T("Altera FPGA")));
+    cmbDevice->Append(_T("Altera FPGA"));
+    cmbDevice->SetSelection(cmbDevice->Append(_T("Automatic")));
     FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     cmbProgMode = new wxChoice(this, ID_CHOICE1, wxDefaultPosition, wxSize(176, -1), 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE1"));
-    cmbProgMode->Append("Bitstream to FPGA");
-    cmbProgMode->SetSelection(cmbProgMode->Append(_T("Bitstream to Flash")));
-    cmbProgMode->Append("Bitstream from Flash");
     FlexGridSizer7->Add(cmbProgMode, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer3->Add(FlexGridSizer7, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer1->Add(FlexGridSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -125,7 +123,9 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 {
     //if needed load program data from file
-    if( (cmbDevice->GetSelection() == 2 && cmbProgMode->GetSelection() == 2) == false)
+    if((
+        (cmbDevice->GetSelection() == 3) ||
+        (cmbDevice->GetSelection() == 2 && cmbProgMode->GetSelection() == 2)) == false)
     {
         if (lblFilename->GetLabel().length() <= 1)
         {
@@ -167,7 +167,11 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
     int deviceSelection = cmbDevice->GetSelection();
     int progMode = cmbProgMode->GetSelection();
     cmbProgMode->Clear();
-    if(deviceSelection == 2)
+    if(deviceSelection == 3)
+    {
+        cmbProgMode->SetSelection(cmbProgMode->Append("Automatic update"));
+    }
+    else if(deviceSelection == 2)
     {
         cmbProgMode->Append("Bitstream to FPGA");
         cmbProgMode->Append("Bitstream to Flash");
@@ -176,7 +180,7 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
     }
     else if(deviceSelection == 1)
     {
-		cmbProgMode->Append(_("Firmware to RAM"));
+        cmbProgMode->Append(_("Firmware to RAM"));
         cmbProgMode->Append(_("Firmware to Flash"));
         cmbProgMode->SetSelection(progMode < 2 ? progMode : 1);
     }
@@ -187,13 +191,18 @@ void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
             cmbProgMode->Append(wxString::Format("%i", i));
         cmbProgMode->SetSelection(progMode);
     }
+
+    btnOpenEnb = (deviceSelection != 3);
+    btnOpen->Enable(btnOpenEnb);
+    StaticText1->Enable(btnOpenEnb);
+    lblFilename->Enable(btnOpenEnb);
 }
 
 void LMS_Programing_wxgui::OnProgramingFinished(wxCommandEvent& event)
 {
     mWorkerThread.join();
     wxMessageBox(event.GetString(), _("INFO"), wxICON_INFORMATION | wxOK);
-    btnOpen->Enable();
+    btnOpen->Enable(btnOpenEnb);
     Disconnect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnAbortProgramming);
     Connect(btnStartStop->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS_Programing_wxgui::OnbtnStartProgrammingClick);
     btnStartStop->SetLabel(_("Program"));
@@ -242,6 +251,10 @@ void LMS_Programing_wxgui::DoProgramming()
     else if (device == 0)
     {
        status = LMS_ProgramHPM7(lmsControl, mProgramData.data(), mProgramData.size(), progMode,OnProgrammingCallback);
+    }
+    else if (device == 3)
+    {
+        status = LMS_ProgramUpdate(lmsControl, true/*download*/, OnProgrammingCallback);
     }
     wxCommandEvent evt;
     evt.SetEventObject(this);

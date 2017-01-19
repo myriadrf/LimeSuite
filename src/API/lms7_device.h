@@ -66,6 +66,7 @@ public:
     virtual int ProgramFW(std::string name, lms_target_t mode,lime::IConnection::ProgrammingCallback callback);
     virtual int ProgramHPM7(const char* data, size_t len, int mode,lime::IConnection::ProgrammingCallback callback);
     virtual int ProgramHPM7(std::string fname, int mode,lime::IConnection::ProgrammingCallback callback);
+    virtual int ProgramUpdate(const bool download, lime::IConnection::ProgrammingCallback callback);
     virtual int ProgramMCU(const char* data=nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM,lime::IConnection::ProgrammingCallback callback=nullptr);
     virtual int DACWrite(uint16_t val);
     virtual int DACRead();

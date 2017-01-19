@@ -1782,6 +1782,18 @@ API_EXPORT int CALL_CONV LMS_ProgramHPM7File(lms_device_t *device, const char *f
     return lms->ProgramHPM7(file,mode,callback);
 }
 
+API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device, const bool download, lms_prog_callback_t callback)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+    return lms->ProgramUpdate(download,callback);
+}
+
 API_EXPORT int CALL_CONV LMS_ProgramLMSMCU(lms_device_t *device, const char *data,
                                               size_t size, lms_target_t target, lms_prog_callback_t callback)
 {

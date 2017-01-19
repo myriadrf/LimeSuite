@@ -1521,6 +1521,15 @@ API_EXPORT int CALL_CONV LMS_ProgramHPM7File(lms_device_t *device,
                 const char *file, unsigned mode, lms_prog_callback_t callback);
 
 /**
+ *
+ * @param device    Device handle previously obtained by LMS_Open().
+ * @param download  True to download missing images from the web.
+ * @return          0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device,
+                const bool download, lms_prog_callback_t callback);
+
+/**
  * Program LMS7 internal MCU.
  *
  * @param device    Device handle previously obtained by LMS_Open().

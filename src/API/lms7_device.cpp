@@ -1560,6 +1560,11 @@ int LMS7_Device::ProgramHPM7(const char* data, size_t len, int mode,lime::IConne
     return streamPort->ProgramWrite(data,len,mode,0,callback);
 }
 
+int LMS7_Device::ProgramUpdate(const bool download,lime::IConnection::ProgrammingCallback callback)
+{
+    return streamPort->ProgramUpdate(download,callback);
+}
+
 int LMS7_Device::ProgramHPM7(std::string fname, int mode,lime::IConnection::ProgrammingCallback callback)
 {
     std::ifstream file(fname);

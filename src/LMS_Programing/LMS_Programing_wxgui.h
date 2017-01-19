@@ -36,6 +36,7 @@ protected:
     wxChoice* cmbProgMode;
     wxButton* btnStartStop;
     wxButton* btnOpen;
+    bool btnOpenEnb;
 
     void DoProgramming();
     static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
