@@ -76,6 +76,7 @@ void ConnectionSTREAM::VersionCheck(void)
         << "## Expected firmware version " << entry.fw_ver << ", but found version " << info.firmware << std::endl
         << "## Follow the FW and FPGA upgrade instructions:" << std::endl
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
+        << "## Or run update on the command line: LimeUtil --update" << std::endl
         << "########################################################" << std::endl
         << std::endl;
 
@@ -90,6 +91,7 @@ void ConnectionSTREAM::VersionCheck(void)
         << "## But found version " << fpgaInfo.gatewareVersion << ", revision " << fpgaInfo.gatewareRevision<< std::endl
         << "## Follow the FW and FPGA upgrade instructions:" << std::endl
         << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
+        << "## Or run update on the command line: LimeUtil --update" << std::endl
         << "########################################################" << std::endl
         << std::endl;
 }
