@@ -2,12 +2,17 @@
 #include "LMS7002M_RegistersMap.h"
 #include <thread>
 #include <chrono>
+#include "ErrorReporting.h"
+
 using namespace std;
 
 using namespace lime;
 
 int LMS7002M::CalibrateInternalADC()
 {
+    if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
+        return ReportError(ENOTSUP, "Operation not supported");
+
     const uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 1);
 
@@ -35,6 +40,8 @@ int LMS7002M::CalibrateInternalADC()
 
 int LMS7002M::CalibrateRP_BIAS()
 {
+    if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
+        return ReportError(ENOTSUP, "Operation not supported");
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
     Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
