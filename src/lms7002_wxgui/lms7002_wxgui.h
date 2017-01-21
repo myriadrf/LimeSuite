@@ -103,6 +103,7 @@ class mainPanel : public wxPanel
 		wxStaticText* txtTemperature;
 		wxCheckBox* chkEnableMIMO;
 		wxButton* btnReadTemperature;
+		wxButton* btnCalibrateInternalADC;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -117,6 +118,7 @@ class mainPanel : public wxPanel
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCalibrateInternalADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	

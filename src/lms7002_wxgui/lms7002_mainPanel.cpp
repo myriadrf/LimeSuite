@@ -346,3 +346,9 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     LMS_WriteParam(lmsControl, LMS7param(MAC), chBck);
     UpdateVisiblePanel();
 }
+
+
+void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
+{
+    LMS_CalibrateInternalADC(lmsControl);
+}

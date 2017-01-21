@@ -198,6 +198,10 @@ public:
 	int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
     ///@}
 
+    ///@name Internal calibrations
+    int CalibrateInternalADC();
+    int CalibrateRP_BIAS();
+
     ///@name High level gain configuration
 
     /*!
@@ -449,7 +453,7 @@ protected:
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
 
-    
+
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
     ///@name Algorithms functions
     void BackupAllRegisters();

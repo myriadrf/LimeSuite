@@ -1128,6 +1128,32 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
 
 }
 
+API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateInternalADC();
+}
+
+API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateRP_BIAS();
+}
+
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)
 {
     if (device == nullptr)

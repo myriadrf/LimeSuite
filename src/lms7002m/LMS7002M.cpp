@@ -1175,7 +1175,7 @@ bool LMS7002M::GetSXLocked(bool tx)
     @return 0-success, other-failure
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
-{   
+{
     auto settlingTime = chrono::microseconds(50); //can be lower
     struct CSWInteval
     {
@@ -2450,55 +2450,23 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
-    auto ch = Get_SPI_Reg_bits(LMS7param(MAC));
-    auto regMap = BackupRegisterMap();
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
+    Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
+    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
+    uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
+    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 2);
 
-    //RFE
-    Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
-    //RBB
-    Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), 0);
-    //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-    Modify_SPI_Reg_bits(LMS7param(MUX_AFE_1), 2);
-    Modify_SPI_Reg_bits(LMS7param(EN_G_AFE), 1);
-    //BIAS
-    Modify_SPI_Reg_bits(LMS7param(MUX_BIAS_OUT), 2);
-    //RxTSP
-    SetDefaults(RxTSP);
-    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 0);
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 7);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-
-    //READ ADCQ value
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 1);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-    int negativeCount = 0;
-    int signMeasureCount = 19;
-    int sign = -1;
-    for(int i = 0; i < signMeasureCount; ++i)
-    {
-        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-        int16_t adcq = SPI_read(0x040F, true);
-        if(adcq & 0x200)
-            ++negativeCount;
-    }
-    if(negativeCount > signMeasureCount / 2)
-        sign = 1;
-
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-    uint32_t rssi = (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
-    double temperature = (rssi / 16.0) * 0.443892 * sign + 40.5;
-    RestoreRegisterMap(regMap);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this_thread::sleep_for(chrono::microseconds(250));
+    const uint16_t reg606 = SPI_read(0x0606, true);
+    float Vtemp = (reg606 >> 8) & 0xFF;
+    Vtemp *= 3.515625;
+    float Vptat = reg606 & 0xFF;
+    Vptat *= 3.515625;
+    float Vdiff = Vptat-Vtemp;
+    Vdiff /= 3.9;
+    float temperature = 40.5+Vdiff;
+    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
+    printf("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f\n", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
     return temperature;
 }
 

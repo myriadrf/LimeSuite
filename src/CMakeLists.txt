@@ -53,6 +53,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
+	lms7002m/LMS7002M_BaseCalibrations.cpp
     lms7002m/goert.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/CalibrationCache.cpp

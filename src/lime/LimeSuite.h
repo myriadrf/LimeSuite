@@ -448,6 +448,9 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx,
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx,
                                         size_t chan, double bw, unsigned flags);
 
+API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device);
+
 /**
  * Load LMS chip configuration from a file
  *
