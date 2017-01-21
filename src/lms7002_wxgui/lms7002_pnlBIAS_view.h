@@ -20,6 +20,7 @@ class lms7002_pnlBIAS_view : public pnlBIAS_view
 	protected:
 		// Handlers for pnlBIAS_view events.
 		void ParameterChangeHandler( wxCommandEvent& event );
+		void OnCalibrateRP_BIAS( wxCommandEvent& event );
 	public:
 		/** Constructor */
 		lms7002_pnlBIAS_view( wxWindow* parent );

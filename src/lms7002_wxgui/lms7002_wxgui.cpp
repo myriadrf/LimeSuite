@@ -158,7 +158,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	mTabAFE = new lms7002_pnlAFE_view( tabsNotebook, ID_TAB_AFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabAFE, wxT("AFE"), false );
 	mTabBIAS = new lms7002_pnlBIAS_view( tabsNotebook, ID_TAB_BIAS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabBIAS, wxT("BIAS"), false );
+	tabsNotebook->AddPage( mTabBIAS, wxT("BIAS"), true );
 	mTabLDO = new lms7002_pnlLDO_view( tabsNotebook, ID_TAB_LDO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabLDO, wxT("LDO"), false );
 	mTabXBUF = new lms7002_pnlXBUF_view( tabsNotebook, ID_TAB_XBUF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -2006,6 +2006,9 @@ pnlBIAS_view::pnlBIAS_view( wxWindow* parent, wxWindowID id, const wxPoint& pos,
 	
 	fgSizer67->Add( cmbRP_CALIB_BIAS, 0, wxEXPAND|wxALIGN_LEFT, 5 );
 	
+	btnCalibrateRP_BIAS = new wxButton( this, wxID_ANY, wxT("Calibrate RP_BIAS"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer67->Add( btnCalibrateRP_BIAS, 0, 0, 5 );
+	
 	
 	fgSizer65->Add( fgSizer67, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
@@ -2022,6 +2025,7 @@ pnlBIAS_view::pnlBIAS_view( wxWindow* parent, wxWindowID id, const wxPoint& pos,
 	chkPD_BIAS_MASTER->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
 	cmbMUX_BIAS_OUT->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
 	cmbRP_CALIB_BIAS->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
+	btnCalibrateRP_BIAS->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBIAS_view::OnCalibrateRP_BIAS ), NULL, this );
 }
 
 pnlBIAS_view::~pnlBIAS_view()
@@ -2034,6 +2038,7 @@ pnlBIAS_view::~pnlBIAS_view()
 	chkPD_BIAS_MASTER->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
 	cmbMUX_BIAS_OUT->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
 	cmbRP_CALIB_BIAS->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlBIAS_view::ParameterChangeHandler ), NULL, this );
+	btnCalibrateRP_BIAS->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBIAS_view::OnCalibrateRP_BIAS ), NULL, this );
 	
 }
 

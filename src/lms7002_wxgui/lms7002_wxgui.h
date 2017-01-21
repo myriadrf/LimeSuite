@@ -627,9 +627,11 @@ class pnlBIAS_view : public wxPanel
 		wxComboBox* cmbMUX_BIAS_OUT;
 		wxStaticText* ID_STATICTEXT2;
 		wxComboBox* cmbRP_CALIB_BIAS;
+		wxButton* btnCalibrateRP_BIAS;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCalibrateRP_BIAS( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

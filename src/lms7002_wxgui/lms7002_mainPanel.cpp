@@ -302,7 +302,7 @@ void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 
     double t;
     LMS_GetChipTemperature(lmsControl,0,&t);
-    txtTemperature->SetLabel(wxString::Format("Temperature: %.1f C", t));
+    txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
 }
 
 void lms7002_mainPanel::OnSyncABchecked(wxCommandEvent& event)
