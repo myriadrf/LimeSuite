@@ -26,7 +26,12 @@ if [ "$1" = "configure" ]; then
 	fi
 
 	#successful download, move tmp to destination
+	echo "Moving images to ${DEST_DIR}"
 	mv "${DOWNLOAD_TMP}" "${DEST_DIR}"
+
+	#fix permissions since this was a temp dir
+	chmod ug+rwx "${DEST_DIR}"
+	chmod o+rx "${DEST_DIR}"
 fi
 
 #DEBHELPER#
