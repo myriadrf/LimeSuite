@@ -7,7 +7,7 @@ Release 17.01.0 (pending)
 - LimeSDR: detect reference clock presence on connect
 - Set CMIX setting in calib/tune based on chip version
 
-Release 16.12.1 (pending)
+Release 16.12.1 (2017-01-22)
 ==========================
 
 - Minor compilation fixes for OSX/clang (narrowing)
