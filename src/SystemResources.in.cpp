@@ -196,7 +196,7 @@ int lime::downloadImageResource(const std::string &name)
     #ifdef __unix__
     const std::string dnloadCmd("wget --output-document=\""+destFile+"\" \""+sourceUrl+"\"");
     #else
-    const std::string dnloadCmd("powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('"+sourceUrl+"', '"+destFile+"'))\"");
+    const std::string dnloadCmd("powershell.exe -Command \"(new-object System.Net.WebClient).DownloadFile('"+sourceUrl+"', '"+destFile+"')\"");
     #endif
     int result = std::system(dnloadCmd.c_str());
     if (result != 0) return lime::ReportError(result, "Failed: %s", dnloadCmd.c_str());
