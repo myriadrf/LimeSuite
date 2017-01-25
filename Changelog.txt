@@ -1,6 +1,7 @@
 Release 17.01.1 (pending)
 ==========================
 
+- Fix NCO tuning sign in SoapyLMS7 for LMS7 silicon rev
 - Fixed bug in downloadImageResource() call for windows
 - Updated LimeSDR images for USB enumeration problem fix
 
