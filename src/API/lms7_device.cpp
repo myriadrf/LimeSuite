@@ -1313,6 +1313,8 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
 
 int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
 {
+    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        down = !down;
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     if (ind >= LMS_NCO_VAL_COUNT)
