@@ -103,9 +103,9 @@ void dlgMarkers::AddMarker(int id)
 void dlgMarkers::AddDeltas()
 {
     wxArrayString selections;
-    for(size_t i=0; i<parent_graph->markers.size(); ++i)
+    for(unsigned i=0; i<parent_graph->markers.size(); ++i)
     {
-        selections.push_back(wxString::Format("M%i", i));
+        selections.push_back(wxString::Format("M%u", i));
     }
     for(int i=0; i<5; ++i)
     {
