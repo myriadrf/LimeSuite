@@ -1,6 +1,7 @@
 Release 17.01.1 (pending)
 ==========================
 
+- LMS7 API: Fix CGEN clock config in LMS_SetClockFreq()
 - Fix debug assertion in FFT viewer wx format string
 - LMS7 API: Fix NCO down/upconvert for new chip rev
 - Fix NCO tuning sign in SoapyLMS7 for LMS7 silicon rev
