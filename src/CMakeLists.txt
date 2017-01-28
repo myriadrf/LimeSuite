@@ -58,6 +58,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
+    lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
     protocols/ILimeSDRStreaming.cpp
     Si5351C/Si5351C.cpp

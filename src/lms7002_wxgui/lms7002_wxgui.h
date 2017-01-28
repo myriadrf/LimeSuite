@@ -535,11 +535,13 @@ class pnlTBB_view : public wxPanel
 		wxStaticText* lblFilterInputName;
 		wxTextCtrl* txtFilterFrequency;
 		wxButton* btnTuneFilter;
+		wxButton* btnTuneTxGain;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneFilter( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnTuneTxGain( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

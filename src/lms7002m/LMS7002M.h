@@ -200,6 +200,7 @@ public:
     ///@name Internal calibrations
     int CalibrateInternalADC();
     int CalibrateRP_BIAS();
+    int CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS);
 
     ///@name High level gain configuration
 
@@ -468,6 +469,9 @@ protected:
     int CalibrateRxSetup(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback);
+
+    int CalibrateTxGainSetup();
+
 
     void BinarySearch(BinSearchParam* args);
     void GridSearch(GridSearchParam* args);

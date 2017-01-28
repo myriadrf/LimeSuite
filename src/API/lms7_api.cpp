@@ -1153,6 +1153,19 @@ API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device)
     return lms->CalibrateRP_BIAS();
 }
 
+API_EXPORT int CALL_CONV LMS_CalibrateTxGain(lms_device_t *device, float maxGainOffset_dBFS, float *actualGain_dBFS)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateTxGain(maxGainOffset_dBFS, actualGain_dBFS);
+}
+
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)
 {
     if (device == nullptr)

@@ -132,3 +132,20 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }
+
+void lms7002_pnlTBB_view::OnbtnTuneTxGain( wxCommandEvent& event )
+{
+    double input1;
+    txtFilterFrequency->GetValue().ToDouble(&input1);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    int status;
+
+    status = LMS_CalibrateTxGain(lmsControl, 0, nullptr);
+
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Tx gain calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+
+    LMS_Synchronize(lmsControl,false);
+    UpdateGUI();
+}

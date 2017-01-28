@@ -1690,7 +1690,7 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	sbSizerRxFilters = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Tx Filters") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer245;
-	fgSizer245 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer245 = new wxFlexGridSizer( 0, 4, 0, 0 );
 	fgSizer245->SetFlexibleDirection( wxBOTH );
 	fgSizer245->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -1703,6 +1703,9 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer245->Add( btnTuneFilter, 0, wxEXPAND, 5 );
+	
+	btnTuneTxGain = new wxButton( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("Tune Gain"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer245->Add( btnTuneTxGain, 0, 0, 5 );
 	
 	
 	sbSizerRxFilters->Add( fgSizer245, 1, wxEXPAND, 5 );
@@ -1739,6 +1742,7 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbRCAL_LPFS5_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	btnTuneFilter->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
+	btnTuneTxGain->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneTxGain ), NULL, this );
 }
 
 pnlTBB_view::~pnlTBB_view()
@@ -1767,6 +1771,7 @@ pnlTBB_view::~pnlTBB_view()
 	cmbRCAL_LPFS5_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCCAL_LPFLAD_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	btnTuneFilter->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneFilter ), NULL, this );
+	btnTuneTxGain->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTBB_view::OnbtnTuneTxGain ), NULL, this );
 	
 }
 

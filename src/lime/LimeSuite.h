@@ -450,6 +450,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx,
 
 API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateTxGain(lms_device_t *device, float maxGainOffset_dBFS, float *actualGain_dBFS);
 
 /**
  * Load LMS chip configuration from a file
