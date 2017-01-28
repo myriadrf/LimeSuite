@@ -1118,9 +1118,8 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    lms->EnableCalibrationByMCU(true);
+    lms->EnableCalibrationByMCU(false);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
-    lms->EnableCalibrationByMCU(flags==0);
     if (dir_tx)
        return lms->CalibrateTx(bw,flags!=0);
     else

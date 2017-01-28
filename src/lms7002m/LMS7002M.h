@@ -191,7 +191,6 @@ public:
     ///@}
 
     ///@name Filters tuning
-	int TuneTxFilterFixed(const float_type fixedBandwidth);
 	int TuneTxFilter(const float_type bandwidth);
 	int TuneRxFilter(const float_type rx_lpf_freq_RF);
 	int TuneTxFilterWithCaching(const float_type bandwidth);
@@ -476,11 +475,9 @@ protected:
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
     int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
     int TxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
     int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
     int TuneRxFilterSetup(const float_type rx_lpf_IF);
-    int TuneTxFilterFixedSetup();
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);

@@ -532,16 +532,13 @@ class pnlTBB_view : public wxPanel
 		NumericSlider* cmbRCAL_LPFS5_TBB;
 		wxStaticText* ID_STATICTEXT14;
 		NumericSlider* cmbCCAL_LPFLAD_TBB;
-		wxRadioBox* rgrTxFilterType;
 		wxStaticText* lblFilterInputName;
 		wxTextCtrl* txtFilterFrequency;
-		wxChoice* cmbTxFixedBW;
 		wxButton* btnTuneFilter;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnTxFilterTypeChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneFilter( wxCommandEvent& event ) { event.Skip(); }
 		
 	

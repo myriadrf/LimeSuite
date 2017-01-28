@@ -123,41 +123,12 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
-    if(rgrTxFilterType->GetSelection() == 0)
-    {
-        status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
-    }
-    else
-    {
-        LPF_FixedBW bw;
-        switch(cmbTxFixedBW->GetSelection())
-        {
-        case 0: bw = LPF_BW_5_MHz; break;
-        case 1: bw = LPF_BW_10_MHz; break;
-        case 2: bw = LPF_BW_15_MHz; break;
-        case 3: bw = LPF_BW_20_MHz; break;
-        default: bw = LPF_BW_5_MHz;
-        }
-        status = LMS_SetLPFBWFixed(lmsControl,LMS_CH_TX,ch-1,bw);
-    }
+
+    status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
 
     LMS_Synchronize(lmsControl,false);
     UpdateGUI();
-}
-
-void lms7002_pnlTBB_view::OnTxFilterTypeChange(wxCommandEvent& event)
-{
-    if(rgrTxFilterType->GetSelection() == 0)
-    {
-        txtFilterFrequency->Enable(true);
-        cmbTxFixedBW->Enable(false);
-    }
-    else
-    {
-        txtFilterFrequency->Enable(false);
-        cmbTxFixedBW->Enable(true);
-    }
 }

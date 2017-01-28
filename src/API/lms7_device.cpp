@@ -234,17 +234,8 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     }
     if (enabled)
     {
-
-            if (Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB),0,true)!=0)
-                return -1;
-            Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB),0,true);
-            Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB),0,true);
-
-            if (bandwidth > 0)
-            {
-                if (TuneTxFilter(bandwidth)!=0)
-                        return -1;
-            }
+        if (TuneTxFilter(bandwidth)!=0)
+            return -1;
     }
     else
     {
@@ -804,18 +795,7 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
 
 int LMS7_Device::SetLPF_Fixed(bool tx,size_t chan, LPF_FixedBW bandwidth)
 {
-    if(!tx)
-        return lime::ReportError(ENOTSUP, "LPF Fixed BW not supported for Rx");
-    float bw = 5;
-    switch(bandwidth)
-    {
-        case LPF_BW_5_MHz: bw = 5e6; break;
-        case LPF_BW_10_MHz: bw = 10e6; break;
-        case LPF_BW_15_MHz: bw = 15e6; break;
-        case LPF_BW_20_MHz: bw = 20e6; break;
-        default: bw = 5e6;
-    }
-    return TuneTxFilterFixed(bw);
+    return lime::ReportError(ENOTSUP, "LPF Fixed BW not available");
 }
 
 int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type bandwidth)

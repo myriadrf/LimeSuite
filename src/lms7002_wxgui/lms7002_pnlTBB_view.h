@@ -21,7 +21,6 @@ class lms7002_pnlTBB_view : public pnlTBB_view
 		void ParameterChangeHandler( wxCommandEvent& event );
         void ParameterChangeHandler(wxSpinEvent& event);
 		virtual void OnbtnTuneFilter( wxCommandEvent& event );
-        void OnTxFilterTypeChange(wxCommandEvent& event);
 	public:
 		/** Constructor */
 		lms7002_pnlTBB_view( wxWindow* parent );

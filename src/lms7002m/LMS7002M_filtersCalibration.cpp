@@ -23,7 +23,7 @@ static const float_type RxLPF_RF_LimitHigh = 130e6;
 
 //tx lpf range limits
 const float_type TxLPF_RF_LimitLow = 5e6;
-const float_type TxLPF_RF_LimitLowMid = 32e6;
+const float_type TxLPF_RF_LimitLowMid = 40e6;
 const float_type TxLPF_RF_LimitMidHigh = 50e6;
 const float_type TxLPF_RF_LimitHigh = 130e6;
 
@@ -701,6 +701,9 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     int status;
     int ch = Get_SPI_Reg_bits(LMS7param(MAC));
 
+    if(Get_SPI_Reg_bits(LMS7param(MASK), true) == 0)
+        return ReportError(ENOTSUP, "Chip mask revision 0 not supported, contact support");
+
     //RFE
     Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
     Modify_SPI_Reg_bits(0x010D, 4, 1, 0xF);
@@ -709,11 +712,8 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetDefaults(RBB);
     Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
     Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 3);
-    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 20);
-    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 20);
-    Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), 3);
     Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 12);
-    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), 0);
+    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), 23);
 
     //TRF
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
@@ -721,19 +721,17 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     //TBB
     SetDefaults(TBB);
     Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
     Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
 
-    //if FIXED_BW = no
-    if(tx_lpf_IF <= 16e6)
+    if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
     {
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
         Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
-        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
+        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
         Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 16);
+        Modify_SPI_Reg_bits(LMS7param(R5_LPF_BYP_TBB), 1);
 
-        const float_type freq = tx_lpf_IF/1e6;
+        const float_type freq = (16.0/20.0)*tx_lpf_IF/1e6;
         const float_type p1= 1.29858903647958e-16;
         const float_type p2= -0.000110746929967704;
         const float_type p3= 0.00277593485991029;
@@ -743,7 +741,7 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
         rcal_lpflad_tbb = clamp(rcal_lpflad_tbb, 0, 255);
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad_tbb);
     }
-    else if(tx_lpf_IF > 16e6)
+    else
     {
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 1);
@@ -765,9 +763,11 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     const int isel_dac_afe = Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
     SetDefaults(AFE);
     Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
     if(ch == 2)
+    {
+        Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
+    }
 
     //BIAS
     const int rp_calib_bias = Get_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS));
@@ -785,8 +785,6 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     //CGEN
     SetDefaults(CGEN);
     int cgenMultiplier = tx_lpf_IF*20/46.08e6 + 0.5;
-    if(cgenMultiplier > 9 && cgenMultiplier < 12)
-        cgenMultiplier = 12;
     cgenMultiplier = clamp(cgenMultiplier, 2, 13);
 
     status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
@@ -808,389 +806,22 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetDefaults(TxNCO);
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), 1);
     LoadDC_REG_IQ(LMS7002M::Tx, (int16_t)0x7FFF, (int16_t)0x8000);
-    if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
-    {
-        const float_type txNCO_freqs[] = {0.1e6, 2.5e6, tx_lpf_IF};
-        for(int i=0; i<3; ++i)
-            SetNCOFrequency(LMS7002M::Tx, i, txNCO_freqs[i]);
-    }
-    else
-    {
-        const float_type txNCO_freqs[] = {1e6, tx_lpf_IF};
-        for(int i=0; i<2; ++i)
-            SetNCOFrequency(LMS7002M::Tx, i, txNCO_freqs[i]);
-    }
-
-
-    //RxTSP
-    SetDefaults(RxTSP);
-    SetDefaults(RxNCO);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
-    if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
-        Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
-
-    if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
-    {
-        const float_type rxNCO_freqs[] = {0, 2.4e6, tx_lpf_IF-0.1e6};
-        for(int i=0; i<3; ++i)
-            SetNCOFrequency(LMS7002M::Rx, i, rxNCO_freqs[i]);
-    }
-    else
-    {
-        const float_type rxNCO_freqs[] = {0.9e6, tx_lpf_IF-0.1e6};
-        for(int i=0; i<2; ++i)
-            SetNCOFrequency(LMS7002M::Rx, i, rxNCO_freqs[i]);
-    }
-    return 0;
-}
-
-int LMS7002M::TuneTxFilterFixedSetup()
-{
-    int status;
-    int ch = Get_SPI_Reg_bits(LMS7param(MAC));
-
-    //RFE
-    Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
-    Modify_SPI_Reg_bits(0x010D, 4, 1, 0xF);
-
-    //RBB
-    SetDefaults(RBB);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), 3);
-    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 20);
-    Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 20);
-    Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), 3);
-    Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 12);
-    Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), 0);
-
-    //TRF
-    Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
-
-    //TBB
-    SetDefaults(TBB);
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_FRP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
-    Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
-
-    //if FIXED_BW = true
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
-    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 5);
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), 255);
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 255);
-
-    //AFE
-    const int isel_dac_afe = Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
-    SetDefaults(AFE);
-    Modify_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE), isel_dac_afe);
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
-    if(ch == 2)
-        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
-
-    //BIAS
-    const int rp_calib_bias = Get_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS));
-    SetDefaults(BIAS);
-    Modify_SPI_Reg_bits(LMS7param(RP_CALIB_BIAS), rp_calib_bias);
-
-    //LDO
-    //do nothing
-
-    //XBUF
-    Modify_SPI_Reg_bits(LMS7param(PD_XBUF_RX), 0);
-    Modify_SPI_Reg_bits(LMS7param(PD_XBUF_TX), 0);
-    Modify_SPI_Reg_bits(LMS7param(EN_G_XBUF), 1);
-
-    //CGEN
-    SetDefaults(CGEN);
-    status = SetFrequencyCGEN(184.32e6);
-    if(status != 0)
-        return status;
-
-    //SXR
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 1);
-
-    //SXT
-    Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 1);
-
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-
-    //TxTSP
-    SetDefaults(TxTSP);
-    SetDefaults(TxNCO);
-    Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), 1);
-    LoadDC_REG_IQ(LMS7002M::Tx, (int16_t)0x7FFF, (int16_t)0x8000);
-    const float_type txNCO_freqs[] = {0.1e6, 4.5e6, 2.5e6, 5e6, 7.5e6, 10e6};
-    for(int i=0; i<6; ++i)
+    const float_type txNCO_freqs[] = {1e6, tx_lpf_IF};
+    for(int i=0; i<2; ++i)
         SetNCOFrequency(LMS7002M::Tx, i, txNCO_freqs[i]);
 
     //RxTSP
     SetDefaults(RxTSP);
     SetDefaults(RxNCO);
     Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
     if (Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
         Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 1);
-
-    const float_type rxNCO_freqs[] = {0, 4.4e6, 2.4e6, 4.9e6, 7.4e6, 9.9e6};
-    for(int i=0; i<6; ++i)
+    const float_type rxNCO_freqs[] = {0.9e6, tx_lpf_IF-0.1e6};
+    for(int i=0; i<2; ++i)
         SetNCOFrequency(LMS7002M::Rx, i, rxNCO_freqs[i]);
-    return 0;
-}
-
-int LMS7002M::TuneTxFilterFixed(const float_type fixedBandwidth)
-{
-    int status;
-    float_type txSampleRate;
-    auto registersBackup = BackupRegisterMap();
-    const int tx_lpf_fixed = fixedBandwidth;
-    float_type cgenFreq = GetFrequencyCGEN();
-    int en_adcclkh_clkgn = Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN));
-    int clkh_ov_clkl_cgen = Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN));
-    int hbi_ovr = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-
-    if(hbi_ovr == 7)
-        hbi_ovr = -1;
-    if(en_adcclkh_clkgn == 0)
-        txSampleRate = cgenFreq / pow2(clkh_ov_clkl_cgen) / pow2(hbi_ovr+1);
-    else
-        txSampleRate = cgenFreq / pow2(hbi_ovr+1);
-
-    status = TuneTxFilterFixedSetup();
-    if(status != 0)
-    {
-        RestoreRegisterMap(registersBackup);
-        return status;
-    }
-
-    Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-    Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-    uint32_t rssi = GetRSSI();
-    int cg_iamp_tbb = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
-    while(rssi < 0x2700 && cg_iamp_tbb < 43)
-    {
-        cg_iamp_tbb += 1;
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp_tbb);
-        rssi = GetRSSI();
-    }
-
-    const int rssiAvgCount = 5;
-    uint32_t rssi_dc_s5 = GetAvgRSSI(rssiAvgCount);
-    const uint32_t rssi_3dB_s5 = rssi_dc_s5 * 0.7071;
-
-    Modify_SPI_Reg_bits(LMS7param(SEL_RX), 1);
-    Modify_SPI_Reg_bits(LMS7param(SEL_TX), 1);
-
-    rssi = GetAvgRSSI(rssiAvgCount);
-    int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
-    if(rssi < rssi_3dB_s5)
-        while(rssi < rssi_3dB_s5 && ccal_lpflad_tbb > 0)
-        {
-            ccal_lpflad_tbb -= 1;
-            Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-            rssi = GetAvgRSSI(rssiAvgCount);
-        }
-    else if(rssi > rssi_3dB_s5)
-    {
-        status = TxFilterSearch(LMS7param(RCAL_LPFS5_TBB), rssi_3dB_s5, rssiAvgCount, 256);
-        if(status != 0)
-            return status;
-    }
-
-    Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-    Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 2);
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 0);
-
-    rssi = GetAvgRSSI(rssiAvgCount);
-    while(rssi < 0x2700 && cg_iamp_tbb < 43)
-    {
-        cg_iamp_tbb += 1;
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp_tbb);
-        rssi = GetAvgRSSI(rssiAvgCount);
-    }
-
-    int nco_fixed;
-    if(tx_lpf_fixed == 5e6)
-    {
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 0);
-        nco_fixed = 2;
-    }
-    else if(tx_lpf_fixed == 10e6)
-    {
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 35);
-        nco_fixed = 3;
-    }
-    else if(tx_lpf_fixed == 15e6)
-    {
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 80);
-        nco_fixed = 4;
-    }
-    else if(tx_lpf_fixed == 20e6)
-    {
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), 122);
-        nco_fixed = 5;
-    }
-    else
-    {
-        RestoreRegisterMap(registersBackup);
-        return ReportError(ERANGE, "Tx Filter fixed bandwidth out of range");
-    }
-
-    uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
-    uint32_t rssi_3dB_LAD = rssi_dc_lad * 0.7071;
-
-    Modify_SPI_Reg_bits(LMS7param(SEL_TX), nco_fixed);
-    Modify_SPI_Reg_bits(LMS7param(SEL_RX), nco_fixed);
-
-    rssi = GetAvgRSSI(rssiAvgCount);
-
-    status = TxFilterSearch_LAD(LMS7param(RCAL_LPFLAD_TBB), &rssi_3dB_LAD, rssiAvgCount, 256, nco_fixed);
-    if(status != 0)
-    {
-        RestoreRegisterMap(registersBackup);
-        return status;
-    }
-
-    //ENDING
-    ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
-    int rcal_lpfs5_tbb = Get_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB));
-    int rcal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
-    RestoreRegisterMap(registersBackup);
-
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
-    Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
-    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal_lpfs5_tbb);
-    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad_tbb);
-    SPI_write(0x0106, 0x318C);
-    SPI_write(0x0107, 0x318C);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), 0);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_L_TXTSP), 0);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_N_TXTSP), pow2(hbi_ovr+1)-1);
-
-    float_type filterCoef = 0;
-
-    if(txSampleRate <= 245.76e6)
-    {
-        const float_type fs = txSampleRate/1e6;
-        const float_type p1 = 8.24603662172681E-22;
-        const float_type p2 = -6.48290995818812E-18;
-        const float_type p3 = 1.69838694770354E-14;
-        const float_type p4 = -1.90568792519939E-11;
-        const float_type p5 = 9.96598303870807E-09;
-        const float_type p6 = -2.51533592592281E-06;
-        const float_type p7 = 3.10736686547122E-04;
-        const float_type p8 = -1.88288098239891E-02;
-        const float_type p9 = 5.51766213029623E-01;
-        filterCoef = p1*pow(fs, 8) + p2*pow(fs, 7) + p3*pow(fs, 6) + p4*pow(fs, 5) +
-            p5*pow(fs, 4) + p6*pow(fs, 3) + p7*pow(fs, 2) + p8*fs + p9;
-    }
-    else
-    {
-        filterCoef = 0.0284*(245.76e6/txSampleRate);
-    }
-    float_type coef1 = pow(2, 15) * (-0.5+filterCoef);
-    float_type coef2 = pow(2, 15) * (0.5+filterCoef);
-    int16_t coefs[9];
-    for(int i=0; i<9; ++i)
-        coefs[i] = 0;
-    coefs[0] = coef1;
-    coefs[8] = coef2;
-    SetGFIRCoefficients(true, 0, coefs, 9);
-
-    if(filterCoef < 0)
-        filterCoef *= -1;
-    Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
-        "Signal back-off due to preemphasis filter is %g dB", tx_lpf_fixed/1e6, 20*log10(filterCoef*2));
-    return 0;
-}
-
-int LMS7002M::TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB_LAD, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index)
-{
-    int value = Get_SPI_Reg_bits(param);
-    const int maxValue = pow2(param.msb-param.lsb+1)-1;
-    int stepIncrease = 0;
-    int stepSize = 1;
-    uint32_t rssi = GetAvgRSSI(rssiAvgCnt);
-    if(rssi < *rssi_3dB_LAD)
-        while(rssi < *rssi_3dB_LAD)
-        {
-            stepSize = pow2(stepIncrease);
-            value += stepSize;
-            if(value > maxValue)
-                value = maxValue;
-            Modify_SPI_Reg_bits(param, value);
-            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-            *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
-            Modify_SPI_Reg_bits(LMS7param(SEL_TX), NCO_index);
-            Modify_SPI_Reg_bits(LMS7param(SEL_RX), NCO_index);
-            rssi = GetAvgRSSI(rssiAvgCnt);
-            stepIncrease += 1;
-            if(stepSize == stepLimit)
-                return ReportError(ERANGE, "%s step size out of range", param.name);
-        }
-    else if(rssi > *rssi_3dB_LAD)
-        while(rssi > *rssi_3dB_LAD)
-        {
-            stepSize = pow2(stepIncrease);
-            value -= stepSize;
-            if(value < 0)
-                value = 0;
-            Modify_SPI_Reg_bits(param, value);
-            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-            *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
-            Modify_SPI_Reg_bits(LMS7param(SEL_TX), NCO_index);
-            Modify_SPI_Reg_bits(LMS7param(SEL_RX), NCO_index);
-            rssi = GetAvgRSSI(rssiAvgCnt);
-            stepIncrease += 1;
-            if(stepSize == stepLimit)
-                return ReportError(ERANGE, "%s step size out of range", param.name);
-        }
-
-    if(stepSize == 1)
-        return 0;
-    while(stepSize != 1)
-    {
-        rssi = GetAvgRSSI(rssiAvgCnt);
-        stepSize /= 2;
-        if(rssi <= *rssi_3dB_LAD)
-            value += stepSize;
-        else
-            value -= stepSize;
-        Modify_SPI_Reg_bits(param, value);
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-        *rssi_3dB_LAD = GetAvgRSSI(rssiAvgCnt);
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), NCO_index);
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), NCO_index);
-    }
     return 0;
 }
 
@@ -1234,91 +865,131 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     const int rssiAvgCount = 5;
     if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
     {
-        uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
-        const uint32_t rssi_3dB_lad = rssi_dc_lad * 0.7071;
-
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), 2);
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), 2);
-
-        rssi = GetAvgRSSI(rssiAvgCount);
-        int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
-        if(rssi < rssi_3dB_lad)
+        bool targetLevelNotReached = false;
+        int iterationsLeft = 5;
+        do
         {
-            while(rssi < rssi_3dB_lad && ccal_lpflad_tbb > 0)
+            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
+            uint32_t rssi_dc_lad = GetAvgRSSI(rssiAvgCount);
+            uint32_t rssi_3dB_lad = rssi_dc_lad * 0.7071;
+            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 1);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 1);
+            rssi = GetAvgRSSI(rssiAvgCount);
+
+            int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
+            if(rssi < rssi_3dB_lad)
             {
-                ccal_lpflad_tbb -= 1;
-                Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-                rssi = GetAvgRSSI(rssiAvgCount);
+                while(rssi < rssi_3dB_lad && ccal_lpflad_tbb > 0)
+                {
+                    ccal_lpflad_tbb -= 1;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+                    rssi = GetAvgRSSI(rssiAvgCount);
+                }
+                if(rssi < rssi_3dB_lad && ccal_lpflad_tbb == 0)
+                {
+                    targetLevelNotReached = true;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 16);
+                    int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB))+25;
+                    R = clamp(R, 0, 255);
+                    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), R);
+                }
+                else
+                    targetLevelNotReached = false;
             }
-        }
-        else if(rssi > rssi_3dB_lad)
-        {
-            while(rssi > rssi_3dB_lad && ccal_lpflad_tbb < 31)
+            else if(rssi > rssi_3dB_lad)
             {
-                ccal_lpflad_tbb += 1;
+                while(rssi > rssi_3dB_lad && ccal_lpflad_tbb < 31)
+                {
+                    ccal_lpflad_tbb += 1;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+                    rssi = GetAvgRSSI(rssiAvgCount);
+                }
+                if(rssi > rssi_3dB_lad && ccal_lpflad_tbb == 31)
+                {
+                    targetLevelNotReached = true;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 16);
+                    int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB))-10;
+                    R = clamp(R, 0, 255);
+                    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), R);
+                }
+                else
+                    targetLevelNotReached = false;
+                ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
                 Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-                rssi = GetAvgRSSI(rssiAvgCount);
             }
-            Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ++ccal_lpflad_tbb);
-        }
-        Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
-        Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
-        int rcal_lpfs5_tbb = 110+3.44*Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal_lpfs5_tbb);
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
-
-        cg_iamp_tbb = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
-        while(rssi < 0x2700 && cg_iamp_tbb < 43)
-        {
-            cg_iamp_tbb += 1;
-            Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp_tbb);
-            rssi = GetRSSI();
-        }
-        uint32_t rssi_dc_S5 = GetAvgRSSI(rssiAvgCount);
-        uint32_t rssi_3dB_S5 = rssi_dc_S5*0.7071;
-
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), 1);
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), 1);
-        rssi = GetRSSI();
-        if(rssi > rssi_3dB_S5)
-        {
-            status = TxFilterSearch_S5(LMS7param(RCAL_LPFS5_TBB), rssi_3dB_S5, rssiAvgCount, 256);
-        }
+            --iterationsLeft;
+            int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
+            if (R==0 || R==255)
+                break;
+        } while(targetLevelNotReached && iterationsLeft>=0);
     }
-
-    if(tx_lpf_IF > TxLPF_RF_LimitLowMid/2)
+    else // LPFH
     {
-        uint32_t rssi_dc_h = GetAvgRSSI(rssiAvgCount);
-        uint32_t rssi_3dB_h = rssi_dc_h * 0.7071;
-        Modify_SPI_Reg_bits(LMS7param(SEL_TX), 1);
-        Modify_SPI_Reg_bits(LMS7param(SEL_RX), 1);
-        rssi = GetAvgRSSI(rssiAvgCount);
-        int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
-        if(rssi < rssi_3dB_h)
+        Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), 2);
+
+        bool targetLevelNotReached = false;
+        int iterationsLeft = 5;
+        do
         {
-            while(rssi < rssi_3dB_h && ccal_lpflad_tbb > 0)
+            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0);
+            uint32_t rssi_dc_h = GetAvgRSSI(rssiAvgCount);
+            uint32_t rssi_3dB_h = rssi_dc_h * 0.7071;
+            Modify_SPI_Reg_bits(LMS7param(SEL_TX), 1);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 1);
+            rssi = GetAvgRSSI(rssiAvgCount);
+
+            int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
+            if(rssi < rssi_3dB_h)
             {
-                ccal_lpflad_tbb -= 1;
-                Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-                rssi = GetAvgRSSI(rssiAvgCount);
+                while(rssi < rssi_3dB_h && ccal_lpflad_tbb > 0)
+                {
+                    ccal_lpflad_tbb -= 1;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+                    rssi = GetAvgRSSI(rssiAvgCount);
+                }
+                if(rssi < rssi_3dB_h && ccal_lpflad_tbb == 0)
+                {
+                    targetLevelNotReached = true;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 16);
+                    int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB))+25;
+                    R = clamp(R, 0, 255);
+                    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), R);
+                }
+                else
+                    targetLevelNotReached = false;
             }
-        }
-        else if(rssi > rssi_3dB_h)
-        {
-            while(rssi > rssi_3dB_h && ccal_lpflad_tbb < 31)
+            else if(rssi > rssi_3dB_h)
             {
-                ccal_lpflad_tbb += 1;
+                while(rssi > rssi_3dB_h && ccal_lpflad_tbb < 31)
+                {
+                    ccal_lpflad_tbb += 1;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
+                    rssi = GetAvgRSSI(rssiAvgCount);
+                }
+                if(rssi > rssi_3dB_h && ccal_lpflad_tbb == 31)
+                {
+                    targetLevelNotReached = true;
+                    Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), 16);
+                    int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB))-10;
+                    R = clamp(R, 0, 255);
+                    Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), R);
+                }
+                else
+                    targetLevelNotReached = false;
+                ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
                 Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-                rssi = GetAvgRSSI(rssiAvgCount);
             }
-            Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ++ccal_lpflad_tbb);
+            --iterationsLeft;
+            int R = Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB));
+            if (R==0 || R==255)
+                break;
         }
+        while(targetLevelNotReached && iterationsLeft>=0);
     }
 
     //ENDING
-    int rcal_lpfs5_tbb = Get_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB));
     int rcal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
     int ccal_lpflad_tbb = Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
     int rcal_lpfh_tbb = Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB));
@@ -1331,8 +1002,8 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
         Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
+        Modify_SPI_Reg_bits(LMS7param(R5_LPF_BYP_TBB), 1);
         Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad_tbb);
-        Modify_SPI_Reg_bits(LMS7param(RCAL_LPFS5_TBB), rcal_lpfs5_tbb);
         Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad_tbb);
         Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
             "Real pole 1st order filter set to 2.5 MHz. Preemphasis filter not active", tx_lpf_IF/1e6 * 2);
