@@ -52,7 +52,8 @@ class lms7002_pnlR3_view : public wxPanel
 		wxStaticText* tref_val;
 		wxStaticText* tvptat_val;
 		wxStaticText* rssidc_cmpstatus;
-		std::vector<NumericSlider*> cmbDCControls;
+		std::vector<NumericSlider*> cmbDCControlsRx;
+		std::vector<NumericSlider*> cmbDCControlsTx;
 
         wxStaticText* rssiCMPSTATUS[6];
         wxCheckBox* rssiCMPCFG[6];
@@ -66,7 +67,9 @@ class lms7002_pnlR3_view : public wxPanel
         void OnReadDCCMP(wxCommandEvent& event);
         void OnReadADC( wxCommandEvent& event );
 
-        void OnWriteDC( wxCommandEvent& event );
+        void OnWriteRxDC( wxCommandEvent& event );
+        void OnWriteTxDC( wxCommandEvent& event );
+        void OnDCCMPCFGRead();
         void OnReadDC( wxCommandEvent& event );
         void ParameterChangeHandlerCMPRead( wxCommandEvent& event );
     public:

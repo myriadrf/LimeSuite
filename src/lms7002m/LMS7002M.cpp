@@ -197,6 +197,8 @@ LMS7002M::LMS7002M() :
     MemorySectionAddresses[RxGFIR3b][1] = 0x0567;
     MemorySectionAddresses[RxGFIR3c][0] = 0x0580;
     MemorySectionAddresses[RxGFIR3c][1] = 0x05A7;
+    MemorySectionAddresses[RSSI_DC_CALIBRATION][0] = 0x05C0;
+    MemorySectionAddresses[RSSI_DC_CALIBRATION][1] = 0x05CC;
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     mcuControl = new MCU_BD();

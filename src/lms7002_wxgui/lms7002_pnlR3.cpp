@@ -215,36 +215,59 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
         }
         {
             wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 3, 0, 0);
-            std::vector<const LMS7Parameter*> params = {
+            std::vector<const LMS7Parameter*> paramsRx = {
                 &LMS7_DCWR_RXBQ, &LMS7_DCRD_RXBQ, &LMS7_DC_RXBQ,
                 &LMS7_DCWR_RXBI, &LMS7_DCRD_RXBI, &LMS7_DC_RXBI,
                 &LMS7_DCWR_RXAQ, &LMS7_DCRD_RXAQ, &LMS7_DC_RXAQ,
-                &LMS7_DCWR_RXAI, &LMS7_DCRD_RXAI, &LMS7_DC_RXAI,
+                &LMS7_DCWR_RXAI, &LMS7_DCRD_RXAI, &LMS7_DC_RXAI
+            };
+            for(size_t i = 0; i<paramsRx.size(); i += 3)
+            {
+                wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsRx[i]->name);
+                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
+                sizer->Add(chkbox, 1, wxEXPAND, 5);
+                wndId2Enum[chkbox] = *paramsRx[i];
+                chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsRx[i + 1]->name);
+                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
+                sizer->Add(chkbox, 1, wxEXPAND, 5);
+                wndId2Enum[chkbox] = *paramsRx[i + 1];
+                NumericSlider* slider = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0);
+                cmbDCControlsRx.push_back(slider);
+                slider->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::OnWriteRxDC), NULL, this);
+                sizer->Add(slider, 1, wxEXPAND, 5);
+                wndId2Enum[slider] = *paramsRx[i + 2];
+            }
+            std::vector<const LMS7Parameter*> paramsTx = {
                 &LMS7_DCWR_TXBQ, &LMS7_DCRD_TXBQ, &LMS7_DC_TXBQ,
                 &LMS7_DCWR_TXBI, &LMS7_DCRD_TXBI, &LMS7_DC_TXBI,
                 &LMS7_DCWR_TXAQ, &LMS7_DCRD_TXAQ, &LMS7_DC_TXAQ,
                 &LMS7_DCWR_TXAI, &LMS7_DCRD_TXAI, &LMS7_DC_TXAI
             };
-            for(size_t i = 0; i<params.size(); i += 3)
+            for(size_t i = 0; i<paramsTx.size(); i += 3)
             {
-                wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), params[i]->name);
+                wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsTx[i]->name);
                 chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
                 sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *params[i];
-                chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), params[i + 1]->name);
+                wndId2Enum[chkbox] = *paramsTx[i];
+                chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsTx[i + 1]->name);
                 chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
                 sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *params[i + 1];
+                wndId2Enum[chkbox] = *paramsTx[i + 1];
                 NumericSlider* slider = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -1023, 1023, 0);
-                cmbDCControls.push_back(slider);
-                slider->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::OnWriteDC), NULL, this);
+                cmbDCControlsTx.push_back(slider);
+                slider->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::OnWriteTxDC), NULL, this);
                 sizer->Add(slider, 1, wxEXPAND, 5);
-                wndId2Enum[slider] = *params[i + 2];
+                wndId2Enum[slider] = *paramsTx[i + 2];
             }
             dcCalibGroup->Add(sizer, 0, 0, 5);
         }
         {
             const std::vector<wxString> names = {_("RXBQ"), _("RXBI"), _("RXAQ"), _("RXAI"), _("TXBQ"), _("TXBI"), _("TXAQ"), _("TXAI")};
+            const std::vector<LMS7Parameter> cmpcfg = {(LMS7_DCCAL_CMPCFG_RXBQ), (LMS7_DCCAL_CMPCFG_RXBI), (LMS7_DCCAL_CMPCFG_RXAQ), (LMS7_DCCAL_CMPCFG_RXAI), (LMS7_DCCAL_CMPCFG_TXBQ), (LMS7_DCCAL_CMPCFG_TXBI), (LMS7_DCCAL_CMPCFG_TXAQ), (LMS7_DCCAL_CMPCFG_TXAI)};
+            const std::vector<LMS7Parameter> cmpstatus ={(LMS7_DCCAL_CMPSTATUS_RXBQ), (LMS7_DCCAL_CMPSTATUS_RXBI), (LMS7_DCCAL_CMPSTATUS_RXAQ), (LMS7_DCCAL_CMPSTATUS_RXAI), (LMS7_DCCAL_CMPSTATUS_TXBQ), (LMS7_DCCAL_CMPSTATUS_TXBI), (LMS7_DCCAL_CMPSTATUS_TXAQ), (LMS7_DCCAL_CMPSTATUS_TXAI)};
+            const std::vector<LMS7Parameter> calstatus = {(LMS7_DCCAL_CALSTATUS_RXBQ), (LMS7_DCCAL_CALSTATUS_RXBI), (LMS7_DCCAL_CALSTATUS_RXAQ), (LMS7_DCCAL_CALSTATUS_RXAI), (LMS7_DCCAL_CALSTATUS_TXBQ), (LMS7_DCCAL_CALSTATUS_TXBI), (LMS7_DCCAL_CALSTATUS_TXAQ), (LMS7_DCCAL_CMPSTATUS_TXAI)};
+            const std::vector<LMS7Parameter> start = {(LMS7_DCCAL_START_RXBQ), (LMS7_DCCAL_START_RXBI), (LMS7_DCCAL_START_RXAQ), (LMS7_DCCAL_START_RXAI), (LMS7_DCCAL_START_TXBQ), (LMS7_DCCAL_START_TXBI), (LMS7_DCCAL_START_TXAQ), (LMS7_DCCAL_START_TXAI)};
+
             wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 5, 0, 5);
             sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("Name:")), 1, wxEXPAND, 0);
             sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("START:")), 1, wxEXPAND, 0);
@@ -258,21 +281,21 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
                 sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, names[i]), 1, wxEXPAND, 0);
 
                 chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnDCCMPCFGChanged), NULL, this);
-                wndId2Enum[chkbox] = LMS7_DCCAL_START;
+                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
+                wndId2Enum[chkbox] = start[i];
                 sizer->Add(chkbox, 0, wxALIGN_CENTER_HORIZONTAL, 0);
-                dccal_start[i] = chkbox;
 
                 chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnDCCMPCFGChanged), NULL, this);
-                wndId2Enum[chkbox] = LMS7_DCCAL_CMPCFG;
+                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
+                wndId2Enum[chkbox] = cmpcfg[i];
                 sizer->Add(chkbox, 0, wxALIGN_CENTER_HORIZONTAL, 0);
-                dccal_cmpcfg[i] = chkbox;
 
                 dccal_cmpstatuses[i] = new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("0"));
+                wndId2Enum[dccal_cmpstatuses[i]] = cmpstatus[i];
                 sizer->Add(dccal_cmpstatuses[i], 1, wxEXPAND, 0);
                 dccal_statuses[i] = new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("Not running"));
                 sizer->Add(dccal_statuses[i], 1, wxEXPAND, 0);
+                wndId2Enum[dccal_statuses[i]] = calstatus[i];
             }
             for(int i = 0; i < 4; ++i)
                 sizer->Add(new wxFlexGridSizer(0, 0, 0, 0));
@@ -462,34 +485,50 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI2_VAL")), 1, wxEXPAND, 0);
             rssi_vals[1] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[1]);
+            wndId2Enum[rssi_vals[1]] = LMS7_INTADC_CMPSTATUS_RSSI2;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI1_VAL")), 1, wxEXPAND, 0);
             rssi_vals[0] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[0]);
+            wndId2Enum[rssi_vals[0]] = LMS7_INTADC_CMPSTATUS_RSSI1;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("TREF_VAL")), 1, wxEXPAND, 0);
             tref_val = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(tref_val);
+            wndId2Enum[tref_val] = LMS7_INTADC_CMPSTATUS_TEMPREF;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("TVPTAT_VAL")), 1, wxEXPAND, 0);
             tvptat_val = new wxStaticText(panel, wxID_ANY, _("????"));
+            wndId2Enum[tvptat_val] = LMS7_INTADC_CMPSTATUS_TEMPVPTAT;
             sizer->Add(tvptat_val);
 
             RSSIPDETGroup->Add(sizer);
 
             wxFlexGridSizer* sizerCMP = new wxFlexGridSizer(0, 2, 0, 5);
-            const wxString cmpNames[] = {"Power Detector 1", "Power Detector 2", "RSSI 1", "RSSI 2", "Temperature VPTAT", "Temperature Reference"};
+            std::vector<LMS7Parameter> paramStatus= {LMS7_INTADC_CMPSTATUS_TEMPREF,
+LMS7_INTADC_CMPSTATUS_TEMPVPTAT,
+LMS7_INTADC_CMPSTATUS_RSSI2,
+LMS7_INTADC_CMPSTATUS_RSSI1,
+LMS7_INTADC_CMPSTATUS_PDET2,
+LMS7_INTADC_CMPSTATUS_PDET1};
+std::vector<LMS7Parameter> params= {LMS7_INTADC_CMPCFG_TEMPREF,
+LMS7_INTADC_CMPCFG_TEMPVPTAT,
+LMS7_INTADC_CMPCFG_RSSI2,
+LMS7_INTADC_CMPCFG_RSSI1,
+LMS7_INTADC_CMPCFG_PDET2,
+LMS7_INTADC_CMPCFG_PDET1};
             sizerCMP->Add( new wxStaticText(panel, wxID_ANY, _("Invert:")));
             sizerCMP->Add(new wxStaticText(panel, wxID_ANY, _("CMP:")));
 
             for(int i = 0; i < 6; ++i)
             {
-                rssiCMPCFG[i] = new wxCheckBox(panel, wxNewId(), wxString::Format("%s", cmpNames[i]));
+                rssiCMPCFG[i] = new wxCheckBox(panel, wxNewId(), wxString::Format("%s", params[i].name));
                 sizerCMP->Add(rssiCMPCFG[i]);
-                wndId2Enum[rssiCMPCFG[i]] = LMS7_RSSI_CMPCFG;
-                rssiCMPCFG[i]->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnRSSICMPCFGChanged), NULL, this);
+                wndId2Enum[rssiCMPCFG[i]] = params[i];
+                rssiCMPCFG[i]->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
                 rssiCMPSTATUS[i] = new wxStaticText(panel, wxNewId(), _("?"));
                 sizerCMP->Add(rssiCMPSTATUS[i]);
+                wndId2Enum[rssiCMPSTATUS[i]] = paramStatus[i];
             }
             sizerCMP->Add(new wxFlexGridSizer(0, 0, 0, 0));
             wxButton* btnUpdateRSSICMP = new wxButton(panel, wxNewId(), _("Read"));
@@ -650,20 +689,27 @@ void lms7002_pnlR3_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     wxCommandEvent evt;
-    OnRSSICMPCFGChanged(evt);
-    OnReadRSSICMP(evt);
-    OnReadDCCMP(evt);
     OnReadADC(evt);
 
-    for(size_t i = 0; i<cmbDCControls.size(); ++i)
+    for(size_t i = 0; i<cmbDCControlsRx.size(); ++i)
     {
         uint16_t value = 0;
-        int16_t signedValue = 0;
-        LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControls[i]], &value);
-        signedValue = value;
-        signedValue <<= 5;
-        signedValue >>= 5;
-        cmbDCControls[i]->SetValue(signedValue );
+        LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsRx[i]], &value);
+        bool negative = value & 0x400;
+        value &= 0x3F;
+        if(negative)
+            value *= -1;
+        cmbDCControlsRx[i]->SetValue(value);
+    }
+    for(size_t i = 0; i<cmbDCControlsTx.size(); ++i)
+    {
+        uint16_t value = 0;
+        LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsTx[i]], &value);
+        bool negative = value & 0x400;
+        value &= 0x3FF;
+        if(negative)
+            value *= -1;
+        cmbDCControlsTx[i]->SetValue(value);
     }
 
     uint16_t value;
@@ -738,88 +784,61 @@ void lms7002_pnlR3_view::OnReadADC( wxCommandEvent& event )
     //LMS_WriteParam(lmsControl, LMS7param(CAPSEL_ADC), 0);
 }
 
-void lms7002_pnlR3_view::OnDCCMPCFGChanged(wxCommandEvent& event)
-{
-    uint16_t value = 0;
-    for(int i = 0; i < 8; ++i)
-    {
-        value |= (dccal_cmpcfg[i]->GetValue() & 0x1) << i;
-    }
-    LMS_WriteParam(lmsControl, LMS7_DCCAL_CMPCFG, value);
 
-    value = 0;
-    for(int i = 0; i < 8; ++i)
-    {
-        value |= (dccal_start[i]->GetValue() & 0x1) << i;
-    }
-    LMS_WriteParam(lmsControl, LMS7_DCCAL_START, value);
-}
-
-void lms7002_pnlR3_view::OnRSSICMPCFGChanged(wxCommandEvent& event)
+void lms7002_pnlR3_view::OnDCCMPCFGRead()
 {
-    uint16_t value = 0;
-    for(int i = 0; i < 5; ++i)
-    {
-        value |= (rssiCMPCFG[i]->GetValue() & 0x1) << i;
-    }
-    LMS_WriteParam(lmsControl, LMS7_RSSI_CMPCFG, value);
+    UpdateGUI();
 }
 
 void lms7002_pnlR3_view::OnReadRSSICMP(wxCommandEvent& event)
 {
-    uint16_t value;
-    LMS_ReadParam(lmsControl, LMS7_RSSI_CMPSTATUS, &value);
-    for(int i = 0; i < 6; ++i)
-    {
-        rssiCMPSTATUS[i]->SetLabel(wxString::Format("%i", value & 0x1));
-        value >>= 1;
-    }
-    LMS_ReadParam(lmsControl,    LMS7_RSSI_RSSI1_VAL, &value);
-    rssi_vals[0]->SetLabel(wxString::Format("0x%04X", value));
-    LMS_ReadParam(lmsControl, LMS7_RSSI_RSSI2_VAL, &value);
-    rssi_vals[1]->SetLabel(wxString::Format("0x%04X", value));
-    LMS_ReadParam(lmsControl, LMS7_RSSI_TREF_VAL, &value);
-    tref_val->SetLabel(wxString::Format("0x%04X", value));
-    LMS_ReadParam(lmsControl, LMS7_RSSI_TVPTAT_VAL, &value);
-    tvptat_val->SetLabel(wxString::Format("0x%04X", value));
-
-    LMS_ReadParam(lmsControl, LMS7_RSSI_PDET1_VAL, &value);
-    pdet_vals[0]->SetLabel(wxString::Format("0x%04X", value));
-    LMS_ReadParam(lmsControl, LMS7_RSSI_PDET2_VAL, &value);
-    pdet_vals[1]->SetLabel(wxString::Format("0x%04X", value));
-
-    LMS_ReadParam(lmsControl, LMS7_RSSIDC_CMPSTATUS, &value);
-    rssidc_cmpstatus->SetLabel(wxString::Format("%i", value & 1));
+    UpdateGUI();
 }
 
 void lms7002_pnlR3_view::OnReadDCCMP(wxCommandEvent& event)
 {
-    uint16_t value;
-    LMS_ReadParam(lmsControl, LMS7_DCCAL_CMPSTATUS, &value);
-    for(int i = 7; i >= 0; --i)
-    {
-        dccal_cmpstatuses[i]->SetLabel(wxString::Format("%i", value & 0x1));
-        value >>= 1;
-    }
-    LMS_ReadParam(lmsControl, LMS7_DCCAL_CALSTATUS, &value);
-    for(int i = 7; i >= 0; --i)
-    {
-        dccal_statuses[i]->SetLabel(wxString::Format("%s", (value & 0x1) ? "Running" : "Not running"));
-        value >>= 1;
-    }
+    UpdateGUI();
 }
 
-void lms7002_pnlR3_view::OnWriteDC(wxCommandEvent& event)
+void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
 {
-    ParameterChangeHandler(event);
-    //toggle load flag
     LMS7Parameter parameter;
     try
     {
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
-        uint16_t regVal;
+        uint16_t regVal = 0;
         LMS_ReadLMSReg(lmsControl, parameter.address, &regVal);
-        regVal &= ~0xC000;
+        regVal &= 0xF800;
+        int dcVal = event.GetInt();
+        if(dcVal < 0)
+            regVal |= 0x0400;
+        regVal |= (abs(dcVal+0x400) & 0x3FF);
+        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
+        LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
+        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
+        return;
+    }
+    catch (std::exception & e)
+    {
+        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
+        return;
+    }
+}
+
+void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
+{
+    LMS7Parameter parameter;
+    try
+    {
+        parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
+        uint16_t regVal = 0;
+        LMS_ReadLMSReg(lmsControl, parameter.address, &regVal);
+        regVal &= 0xFF80;
+        int dcVal = event.GetInt();
+        if(dcVal < 0)
+            regVal |= 0x0040;
+        regVal |= (abs(dcVal+0x40) & 0x3F);
+        printf("DC= %i, reg= 0x%02X\n", dcVal, regVal & 0x07F);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal);

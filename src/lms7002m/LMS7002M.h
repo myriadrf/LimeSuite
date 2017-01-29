@@ -419,6 +419,7 @@ public:
         TRF, TBB, RFE, RBB, SX, TxTSP,
         TxNCO, TxGFIR1, TxGFIR2, TxGFIR3a, TxGFIR3b, TxGFIR3c,
         RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c,
+        RSSI_DC_CALIBRATION,
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
@@ -462,6 +463,7 @@ protected:
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC();
+    void CalibrateRxDCAuto();
     void CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq);
     void CalibrateIQImbalance(const bool tx, uint16_t *gainI=nullptr, uint16_t *gainQ=nullptr, int16_t *phase=nullptr);
 
