@@ -96,6 +96,15 @@ void ConnectionSTREAM::VersionCheck(void)
         << std::endl;
 }
 
+static bool programmingCallbackStream(
+    int bsent, int btotal, const char* progressMsg,
+    const std::string &image,
+    IConnection::ProgrammingCallback callback)
+{
+    const auto msg = std::string(progressMsg) + " (" + image + ")";
+    return callback(bsent, btotal, msg.c_str());
+}
+
 int ConnectionSTREAM::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
 {
     const auto info = this->GetInfo();
@@ -140,7 +149,9 @@ int ConnectionSTREAM::ProgramUpdate(const bool download, IConnection::Programmin
 
         int device = LMS64CProtocol::FX3; //FX3
         int progMode = 2; //Firmware to FLASH
-        auto status = this->ProgramWrite(progData.data(), progData.size(), progMode, device, callback);
+        using namespace std::placeholders;
+        const auto cb = std::bind(&programmingCallbackStream, _1, _2, _3, path, callback);
+        auto status = this->ProgramWrite(progData.data(), progData.size(), progMode, device, cb);
         if (status != 0) return status;
     }
 
@@ -162,7 +173,9 @@ int ConnectionSTREAM::ProgramUpdate(const bool download, IConnection::Programmin
 
         int device = LMS64CProtocol::FPGA; //Altera FPGA
         int progMode = 1; //Bitstream to FLASH
-        auto status = this->ProgramWrite(progData.data(), progData.size(), progMode, device, callback);
+        using namespace std::placeholders;
+        const auto cb = std::bind(&programmingCallbackStream, _1, _2, _3, path, callback);
+        auto status = this->ProgramWrite(progData.data(), progData.size(), progMode, device, cb);
         if (status != 0) return status;
     }
 
