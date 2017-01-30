@@ -1,6 +1,7 @@
 Release 17.01.1 (pending)
 ==========================
 
+- Updated LimeSDR rev1.4 gateware images to version 2.6
 - LMS7 API: Fix CGEN clock config in LMS_SetClockFreq()
 - Fix debug assertion in FFT viewer wx format string
 - LMS7 API: Fix NCO down/upconvert for new chip rev
