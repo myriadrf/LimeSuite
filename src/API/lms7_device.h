@@ -50,6 +50,8 @@ public:
     virtual int SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count);
     virtual int GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef);
     virtual int SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled);
+    virtual int SetGain(bool dir_tx, size_t chan,unsigned gain);
+    virtual int GetGain(bool dir_tx, size_t chan);
     virtual int SetNormalizedGain(bool dir_tx, size_t chan,float_type gain);
     virtual float_type GetNormalizedGain(bool dir_tx, size_t chan);
     virtual int SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig,int16_t dc_i =0, int16_t dc_q = 0);

@@ -1081,6 +1081,26 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
    return lms->SetNormalizedGain(dir_tx,chan,gain);
 }
 
+API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
+                                                size_t chan,unsigned gain)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    if (chan >= lms->GetNumChannels(dir_tx))
+    {
+        lime::ReportError(EINVAL, "Invalid channel number.");
+        return -1;
+    }
+
+   return lms->SetGain(dir_tx,chan,gain);
+}
+
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
 {
     if (device == nullptr)
@@ -1098,6 +1118,28 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
     }
 
     *gain = lms->GetNormalizedGain(dir_tx,chan);
+    if (gain < 0)
+        return -1;
+    return LMS_SUCCESS;
+}
+
+API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t chan, unsigned *gain)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    if (chan >= lms->GetNumChannels(dir_tx))
+    {
+        lime::ReportError(EINVAL, "Invalid channel number.");
+        return -1;
+    }
+
+    *gain = lms->GetGain(dir_tx,chan);
     if (gain < 0)
         return -1;
     return LMS_SUCCESS;
