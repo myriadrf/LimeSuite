@@ -1099,9 +1099,9 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
     const int gain_total = 27 + 12 + 31;
     if (dir_tx)
-        SetGain(dir_tx,chan,63*gain+0.49);
+        return SetGain(dir_tx,chan,63*gain+0.49);
     else
-        SetGain(dir_tx,chan,gain*gain_total+0.49);
+        return SetGain(dir_tx,chan,gain*gain_total+0.49);
 }
 
 int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
