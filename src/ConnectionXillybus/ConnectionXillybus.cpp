@@ -137,8 +137,10 @@ void ConnectionXillybus::Close()
 
     if (hWriteStream != INVALID_HANDLE_VALUE)
         CloseHandle(hWriteStream);
+    hWriteStream = INVALID_HANDLE_VALUE;
     if (hReadStream != INVALID_HANDLE_VALUE)
         CloseHandle(hReadStream);
+    hReadStream = INVALID_HANDLE_VALUE;
 #else
     if( hWrite >= 0)
         close(hWrite);
