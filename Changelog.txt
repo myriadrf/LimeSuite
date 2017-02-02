@@ -1,3 +1,9 @@
+Release 17.02.0 (pending)
+==========================
+
+- General fixes for LimeSDR-PCIE support
+- Add gain control with dB value (for RX only)
+
 Release 17.01.1 (pending)
 ==========================
 
