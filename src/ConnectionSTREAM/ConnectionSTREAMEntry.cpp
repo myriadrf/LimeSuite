@@ -157,25 +157,22 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
                     printf("Cannot Claim Interface\n");
                 }
 
-                std::string fullName;
+                ConnectionHandle handle;
+
                 //check operating speed
                 int speed = libusb_get_device_speed(devs[i]);
                 if(speed == LIBUSB_SPEED_HIGH)
-                    fullName = "USB 2.0";
+                    handle.media = "USB 2.0";
                 else if(speed == LIBUSB_SPEED_SUPER)
-                    fullName = "USB 3.0";
+                    handle.media = "USB 3.0";
                 else
-                    fullName = "USB";
-                fullName += " (";
+                    handle.media = "USB";
+
                 //read device name
                 char data[255];
                 r = libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, sizeof(data));
-                if(r > 0) fullName += std::string(data, size_t(r));
-                fullName += ")";
+                if(r > 0) handle.name = std::string(data, size_t(r));
 
-                ConnectionHandle handle;
-                handle.media = "USB";
-                handle.name = fullName;
                 r = std::sprintf(data, "%.4x:%.4x", int(vid), int(pid));
                 if (r > 0) handle.addr = std::string(data, size_t(r));
 
