@@ -1,4 +1,4 @@
-Release 17.01.1 (pending)
+Release 17.01.1 (2017-02-03)
 ==========================
 
 - Updated LimeSDR rev1.4 gateware images to version 2.6
