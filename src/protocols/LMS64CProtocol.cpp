@@ -854,6 +854,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 {
     LMSinfo lmsInfo = this->GetInfo();
     if(lmsInfo.device == LMS_DEV_LIMESDR 
+    || lmsInfo.device == LMS_DEV_LIMESDR_PCIE
     || lmsInfo.device == LMS_DEV_LIMESDR_USB_SP
     || lmsInfo.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
         return IConnection::ProgramMCU(buffer, length, mode, callback);

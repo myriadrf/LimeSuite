@@ -559,15 +559,17 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 
     if (name == "BB")
     {
+        int pos = 0, neg = 1;
         switch (direction)
         {
         case SOAPY_SDR_RX:
+            if (rfic->Get_SPI_Reg_bits(LMS7_MASK, true) != 0) std::swap(pos, neg);
             rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), (frequency == 0)?1:0);
-            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), (frequency < 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), (frequency < 0)?neg:pos);
             break;
         case SOAPY_SDR_TX:
             rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), (frequency == 0)?1:0);
-            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), (frequency < 0)?1:0);
+            rfic->Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), (frequency < 0)?neg:pos);
             break;
         }
         if (rfic->SetNCOFrequency(lmsDir, 0, abs(frequency)) != 0)
@@ -595,7 +597,18 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "BB")
     {
-        int sign = rfic->Get_SPI_Reg_bits(lmsDir==LMS7002M::Tx?LMS7param(CMIX_SC_TXTSP):LMS7param(CMIX_SC_RXTSP)) == 0 ? 1 : -1;
+        int sign = 0;
+        int pos = 0, neg = 1;
+        switch (direction)
+        {
+        case SOAPY_SDR_RX:
+            if (rfic->Get_SPI_Reg_bits(LMS7_MASK, true) != 0) std::swap(pos, neg);
+            sign = (rfic->Get_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP)) == pos) ? 1 : -1;
+            break;
+        case SOAPY_SDR_TX:
+            sign = (rfic->Get_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP)) == pos) ? 1 : -1;
+            break;
+        }
         return rfic->GetNCOFrequency(lmsDir, 0) * sign;
     }
 

@@ -516,8 +516,6 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
         case LMS_CLOCK_CGEN:
         {
             int ret;
-            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
-            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
             if (freq <= 0)
             {
                 ret = lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
@@ -534,6 +532,8 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
                 lime::ReportError(EINVAL, "Device not connected");
                 return -1;
             }
+            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
+            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
             return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
         }
         case LMS_CLOCK_RXTSP:
@@ -1081,6 +1081,26 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
    return lms->SetNormalizedGain(dir_tx,chan,gain);
 }
 
+API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
+                                                size_t chan,unsigned gain)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    if (chan >= lms->GetNumChannels(dir_tx))
+    {
+        lime::ReportError(EINVAL, "Invalid channel number.");
+        return -1;
+    }
+
+   return lms->SetGain(dir_tx,chan,gain);
+}
+
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
 {
     if (device == nullptr)
@@ -1098,6 +1118,28 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
     }
 
     *gain = lms->GetNormalizedGain(dir_tx,chan);
+    if (gain < 0)
+        return -1;
+    return LMS_SUCCESS;
+}
+
+API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t chan, unsigned *gain)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    if (chan >= lms->GetNumChannels(dir_tx))
+    {
+        lime::ReportError(EINVAL, "Invalid channel number.");
+        return -1;
+    }
+
+    *gain = lms->GetGain(dir_tx,chan);
     if (gain < 0)
         return -1;
     return LMS_SUCCESS;

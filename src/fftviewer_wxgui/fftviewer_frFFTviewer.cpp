@@ -229,10 +229,10 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
             if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
             {
                 double val = streamData.fftBins[0][i];
-                sum += val;
+                sum += val*val;
                 ++bins;
             }
-        chPwr[c] = sum;
+        chPwr[c] = sqrt(sum);
     }
 
     float pwr1 = (chPwr[0] != 0 ? (20 * log10(chPwr[0])) - 69.2369 : -300);

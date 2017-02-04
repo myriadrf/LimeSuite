@@ -322,6 +322,23 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
                                                 size_t chan,float_type gain);
 
 /**
+ * Set the combined gain value
+ *
+ * This function computes and sets the optimal gain values of various amplifiers
+ * that are present in the device based on desired  gain value in dB.
+ *
+ * @note currently works only with RX
+ *
+ * @param   device      Device handle previously obtained by LMS_Open().
+ * @param   dir_tx      Select RX or TX
+ * @param   chan        Channel index
+ * @param   gain        Desired gain, range [0, 70] for RX
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
+                                                size_t chan,unsigned gain);
+
+/**
  * Obtain the current combined gain value
  *
  * @param       device      Device handle previously obtained by LMS_Open().
@@ -333,6 +350,20 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
  */
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx,
                                                 size_t chan,float_type *gain);
+
+/**
+ * Obtain the current combined gain value in dB
+ *
+ * @note currently works only with RX
+ *
+ * @param       device      Device handle previously obtained by LMS_Open().
+ * @param       dir_tx      Select RX or TX
+ * @param       chan        Channel index
+ * @param[out]  gain        Current gain, range [0, 700]
+ * @return  0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx,
+                                                size_t chan, unsigned *gain);
 
 typedef enum
 {

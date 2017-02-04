@@ -36,6 +36,9 @@ static SoapySDR::Kwargs handleToArgs(const ConnectionHandle &handle)
     if (not handle.serial.empty()) args["serial"] = handle.serial;
     if (handle.index != -1) args["index"] = std::to_string(handle.index);
 
+    //label connection for drop-downs and lists
+    args["label"] = handle.ToString();
+
     return args;
 }
 

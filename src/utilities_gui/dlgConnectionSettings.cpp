@@ -2,6 +2,7 @@
 #include <wx/msgdlg.h>
 #include <vector>
 #include "lms7suiteEvents.h"
+#include "ConnectionHandle.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 
@@ -29,8 +30,8 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
         return;
     for (int i = 0; i<ret; ++i)
     {
-        std::string str = list[i];
-        mListLMS7ports->Append(str.substr(0,str.find(',')));
+        const auto handle = lime::ConnectionHandle(list[i]);
+        mListLMS7ports->Append(handle.ToString());
     }
     if (lmsOpenedIndex >= 0 && lmsOpenedIndex < int(mListLMS7ports->GetCount()))
         mListLMS7ports->SetSelection(lmsOpenedIndex);

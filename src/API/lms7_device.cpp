@@ -375,7 +375,7 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
    }
 
 
-   if (nco_rx != 0 || nco_rx != 0)
+   if (nco_rx != 0 || nco_tx != 0)
    {
        retain_nco = true;
        min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
@@ -1077,55 +1077,62 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
 
 int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
+    const int gain_total = 27 + 12 + 31;
+    if (dir_tx)
+        return SetGain(dir_tx,chan,63*gain+0.49);
+    else
+        return SetGain(dir_tx,chan,gain*gain_total+0.49);
+}
+
+int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
+{
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
 
     if (dir_tx)
     {
-        int g = (63*gain+0.49);
-        if (Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g,true)!=0)
+        if (gain > 63)
+            gain = 63;
+        if (Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),gain,true)!=0)
             return -1;
     }
     else
     {
-        const int max_gain_lna = 30;
-        const int max_gain_tia = 12;
-        const int max_gain_pga = 31;
-        const int gain_total = max_gain_lna + max_gain_tia + max_gain_pga;
-        int target = gain*gain_total+0.49;
+        if (gain > 70)
+            gain = 70;
         unsigned lna = 0, tia = 0, pga = 0;
+        //LNA table
+        const unsigned lnaTbl[71] = {
+            1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,  5,  5,  6,
+            6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11, 11, 11, 11,
+            11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+            14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+            14, 14, 14, 14, 14, 14, 14
+        };
+        //PGA table
+        const unsigned pgaTbl[71] = {
+            0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+            1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,
+            8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,  9,  10, 11,
+            12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31
+        };
 
-        //adjust tia gain
-        if (target >= max_gain_tia)
-        {
+        //TIA table
+        if (gain > 48)
             tia = 2;
-            target -= max_gain_tia;
-        }
+        else if (gain > 39)
+            tia = 1;
 
-        //adjust lna gain
-        if (target >= max_gain_lna)
-        {
-            lna = 14;
-            target -= max_gain_lna;
-        }
-        else if (target < max_gain_lna-6)
-        {
-            lna = target/3;
-            target -= lna*3;
-        }
-        else
-        {
-            lna = (max_gain_lna-6)/3;
-            target -= lna*3;
-        }
+        lna = lnaTbl[gain];
+        pga = pgaTbl[gain];
 
-        //adjust pga gain
-        assert(target <= max_gain_pga);
-        pga = target;
+        int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16;
 
         if ((Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1,true)!=0)
           ||(Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1,true)!=0)
-          ||(Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga,true)!=0))
+          ||(Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga,true)!=0)
+          ||(Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB),rcc_ctl_pga_rbb,true)!=0))
             return -1;
     }
     return 0;
@@ -1133,22 +1140,30 @@ int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 
 double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
 {
+    const double gain_total = 27 + 12 + 31;
+    double ret = GetGain(dir_tx, chan);
+    if (dir_tx)
+        return ret / 63.0;
+    else
+        return ret / gain_total;
+}
+
+int LMS7_Device::GetGain(bool dir_tx, size_t chan)
+{
     if (Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
         return -1;
     if (dir_tx)
     {
-        double ret = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-        ret /= 63.0;
+        int ret = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
         return ret;
     }
     else
     {
-        const int max_gain_lna = 30;
+        const int max_gain_lna = 27;
         const int max_gain_tia = 12;
-        const int max_gain_pga = 31;
 
         int pga = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB),true);
-        double ret = pga;
+        int ret = pga;
 
         int tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true);
         if (tia == 3)
@@ -1161,9 +1176,8 @@ double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
         if (lna > 8)
             ret += (max_gain_lna+lna-15);
         else if (lna > 1)
-            ret += (lna-1)*3;
+            ret += (lna-2)*3;
 
-        ret /= (max_gain_lna + max_gain_tia + max_gain_pga);
         return ret;
     }
     return 0;
@@ -1293,6 +1307,8 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
 
 int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
 {
+    if ((!tx) && (Get_SPI_Reg_bits(LMS7_MASK, true) != 0))
+        down = !down;
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
     if (ind >= LMS_NCO_VAL_COUNT)

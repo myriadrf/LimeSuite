@@ -3,7 +3,7 @@
 ##
 ## * not all components will be configured
 ## * the matrix builds Release and Debug
-## * run the self tests after install
+## * for linux + gcc, and osx + clang
 ########################################################################
 
 sudo: required
@@ -11,20 +11,17 @@ dist: trusty
 
 language: cpp
 
-compiler:
-  - clang
-  - gcc
-
-os:
-  - linux
-  - osx
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+    - os: osx
+      compiler: clang
 
 env:
   global:
     - INSTALL_PREFIX=/usr/local
     - SOAPY_SDR_BRANCH=master
-  matrix:
-    - BUILD_TYPE=Debug
     - BUILD_TYPE=Release
 
 # whitelist
@@ -34,21 +31,16 @@ branches:
     - stable
 
 before_install:
-  
-  
+
   # update after package changes
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi;
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 
-    # install development dependencies
+  # install development dependencies
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libusb-1.0-0-dev cmake libwxbase3.0-dev libwxgtk3.0-dev;fi;
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libusb wxmac ; fi
 
-
-  
-
 install:
-
 
   # install SoapySDR from source
   - git clone https://github.com/pothosware/SoapySDR.git

@@ -144,7 +144,7 @@ static int programUpdate(const std::string &argStr)
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
     auto conn = ConnectionRegistry::makeConnection(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
@@ -196,7 +196,7 @@ static int programGateware(const std::string &argStr)
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
     auto conn = ConnectionRegistry::makeConnection(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
@@ -252,7 +252,7 @@ static int programFirmware(const std::string &argStr)
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
+    std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
     auto conn = ConnectionRegistry::makeConnection(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)

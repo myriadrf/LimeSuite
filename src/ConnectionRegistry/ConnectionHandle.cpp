@@ -67,7 +67,7 @@ ConnectionHandle::ConnectionHandle(void):
 ConnectionHandle::ConnectionHandle(const std::string &args):
     index(-1)
 {
-    auto kwmap = argsToMap(args);
+    auto kwmap = argsToMap("name="+args); //append name= since it was stripped in serialize
     if (kwmap.count("module") != 0) module = kwmap.at("module");
     if (kwmap.count("media") != 0) media = kwmap.at("media");
     if (kwmap.count("name") != 0) name = kwmap.at("name");
@@ -80,8 +80,8 @@ std::string ConnectionHandle::serialize(void) const
 {
     std::string out;
     if (not name.empty()) out += name;
-    if (not media.empty()) out += ", media="+media; 
-    if (not module.empty()) out += ", module="+module;  
+    if (not media.empty()) out += ", media="+media;
+    if (not module.empty()) out += ", module="+module;
     if (not addr.empty()) out += ", addr="+addr;
     if (not serial.empty()) out += ", serial="+serial;
     if (index != -1) out += ", index="+std::to_string(index);
@@ -91,10 +91,19 @@ std::string ConnectionHandle::serialize(void) const
 
 std::string ConnectionHandle::ToString(void) const
 {
-    std::string out;
+    //name and media format
+    std::string out(name);
+    if (not media.empty()) out += " [" + media + "]";
 
-    if (not name.empty()) out = name;
+    //remove leading zeros for a displayable serial
+    std::string trimmedSerial(serial);
+    while (not trimmedSerial.empty() and trimmedSerial.at(0) == '0')
+    {
+        trimmedSerial = trimmedSerial.substr(1);
+    }
+    if (not trimmedSerial.empty()) out += " " + trimmedSerial;
 
+    //backup condition if we are empty somehow
     if (out.empty()) out = this->serialize();
 
     return out;
