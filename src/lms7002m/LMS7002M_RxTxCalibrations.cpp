@@ -1079,6 +1079,86 @@ void LMS7002M::CalibrateRxDC()
 #endif
 }
 
+void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
+{
+    const uint16_t mask = tx ? 0x03FF : 0x003F;
+    SPI_write(address, 0);
+    SPI_write(address, 0x4000);
+    int16_t initVal = SPI_read(address, true);
+    SPI_write(address, 0);
+    if(initVal & (mask+1))
+    {
+        initVal &= mask;
+        initVal *= -1;
+    }
+    else
+        initVal &= mask;
+
+
+    uint16_t rssi = GetRSSI();
+    {
+        int tempValue = initVal+1;
+        int regValue = 0;
+        if(tempValue < 0)
+        {
+            regValue |= (mask+1);
+            regValue |= (abs(tempValue+mask) & mask);
+        }
+        else
+            regValue |= (abs(tempValue+mask+1) & mask);
+        SPI_write(address, regValue);
+        SPI_write(address, regValue | 0x8000);
+    }
+
+    bool increment = GetRSSI() < rssi;
+    uint16_t rssiNext = rssi;
+    int8_t iterations = 8;
+    while (iterations > 0)
+    {
+        SPI_write(address, 0);
+        if(increment)
+            ++initVal;
+        else
+            --initVal;
+        {
+            int regValue = 0;
+            if(initVal < 0)
+            {
+                regValue |= (mask+1);
+                regValue |= (abs(initVal+mask) & mask);
+            }
+            else
+                regValue |= (abs(initVal+mask+1) & mask);
+            SPI_write(address, regValue);
+            SPI_write(address, regValue | 0x8000);
+        }
+        rssi = rssiNext;
+        rssiNext = GetRSSI();
+        if((rssiNext < rssi) != increment)
+        {
+            if(increment)
+                --initVal;
+            else
+                ++initVal;
+            int regValue = 0;
+            if(initVal < 0)
+            {
+                regValue |= (mask+1);
+                regValue |= (abs(initVal+mask) & mask);
+            }
+            else
+                regValue |= (abs(initVal+mask+1) & mask);
+            SPI_write(address, regValue);
+            SPI_write(address, regValue | 0x8000);
+            SPI_write(address, 0);
+
+            printf("Found: %i\n", initVal);
+            break;
+        }
+        --iterations;
+    }
+}
+
 void LMS7002M::CalibrateRxDCAuto()
 {
 #ifdef DRAW_GNU_PLOTS
@@ -1094,8 +1174,10 @@ void LMS7002M::CalibrateRxDCAuto()
     verbose_printf(cDashLine);
     verbose_printf("Calibrating Rx DC...\n");
 
+    //auto calibration
     uint16_t statusMask;
     const uint8_t ch = Get_SPI_Reg_bits(LMS7param(MAC));
+    uint16_t dcRegAddr = 0x5C7;
     Modify_SPI_Reg_bits(LMS7param(DCMODE), 1);
     if(ch == 1)
     {
@@ -1110,6 +1192,7 @@ void LMS7002M::CalibrateRxDCAuto()
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_RXB), 0);
         SPI_write(0x05C2, 0xFFC0);
         statusMask = 0xF000;
+        dcRegAddr += 2;
     }
 
     bool  busy = SPI_read(0x05C1) & statusMask;
@@ -1118,12 +1201,22 @@ void LMS7002M::CalibrateRxDCAuto()
         busy = SPI_read(0x05C1) & statusMask;
     }
 
+    //manual adjustments
+    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 0);
+    AdjustAutoDC(dcRegAddr, false);
+    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 2047);
+    AdjustAutoDC(dcRegAddr+1, false);
+    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 2047);
+
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); // DC_BYP 0
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 #ifdef ENABLE_CALIBRATION_USING_FFT
     SelectFFTBin(dataPort, srcBin); //fft bin 100 kHz
 #endif
 }
+
+
 
 /** @brief Parameters setup instructions for Rx calibration
 @param bandwidth_Hz filter bandwidth in Hz
@@ -1143,7 +1236,6 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
         Modify_SPI_Reg_bits(LMS7param(G_RXLOOPB_RFE), 3);
     Modify_SPI_Reg_bits(0x010C, 4, 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
     Modify_SPI_Reg_bits(0x010C, 1, 1, 0); //PD_TIA 0
-    Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
 
     //RBB
     Modify_SPI_Reg_bits(0x0115, 15, 14, 0); //Loopback switches disable
@@ -1555,7 +1647,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     SelectFFTBin(dataPort, srcBin);
 #endif // ENABLE_CALIBRATION_USING_FFT
     Log("Rx DC calibration", LOG_INFO);
-    CalibrateRxDC();
+    CalibrateRxDCAuto();
     if(useExtLoopback && useOnBoardLoopback)
     {
         status = SetExtLoopback(dataPort, ch, true);
@@ -1621,19 +1713,16 @@ RxCalibrationEndStage:
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
-    //SetRxDCOFF((int8_t)dcoffi, (int8_t)dcoffq);
     Modify_SPI_Reg_bits(LMS7param(DCMODE), 1);
     if(ch == 1)
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_RXA), 0);
     else
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_RXB), 0);
 
-    //Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
     Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gcorri);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gcorrq);
     Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
     Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
-    Modify_SPI_Reg_bits(0x0110, 4, 0, 31); //ICT_LO_RFE 31
     Log("Rx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("#####Rx calibration RESULTS:###########################\n");

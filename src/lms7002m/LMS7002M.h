@@ -463,6 +463,7 @@ protected:
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC();
+    void AdjustAutoDC(const uint16_t address, bool tx);
     void CalibrateRxDCAuto();
     void CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq);
     void CalibrateIQImbalance(const bool tx, uint16_t *gainI=nullptr, uint16_t *gainQ=nullptr, int16_t *phase=nullptr);

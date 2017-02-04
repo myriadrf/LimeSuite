@@ -539,7 +539,11 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_IF)
     SetDefaults(RBB);
     Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 20);
     Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 20);
-    Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga_rbb);
+    if(g_pga_rbb == 31)
+        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 22);
+    else
+        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), g_pga_rbb);
+
     int c_ctl_pga_rbb;
     if(g_pga_rbb < 8)
         c_ctl_pga_rbb = 3;
