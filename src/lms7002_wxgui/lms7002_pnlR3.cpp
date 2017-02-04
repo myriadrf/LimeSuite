@@ -214,7 +214,7 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             dcCalibGroup->Add(sizer, 0, wxEXPAND, 5);
         }
         {
-            wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 3, 0, 0);
+            wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 2, 0, 0);
             std::vector<const LMS7Parameter*> paramsRx = {
                 &LMS7_DCWR_RXBQ, &LMS7_DCRD_RXBQ, &LMS7_DC_RXBQ,
                 &LMS7_DCWR_RXBI, &LMS7_DCRD_RXBI, &LMS7_DC_RXBI,
@@ -223,14 +223,9 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             };
             for(size_t i = 0; i<paramsRx.size(); i += 3)
             {
-                wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsRx[i]->name);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *paramsRx[i];
-                chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsRx[i + 1]->name);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
-                sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *paramsRx[i + 1];
+                wxButton* btnReadDC = new wxButton(dcCalibGroup->GetStaticBox(), wxNewId(), _("Read"));
+                btnReadDC ->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
+                sizer->Add(btnReadDC , 1, wxEXPAND, 5);
                 NumericSlider* slider = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0);
                 cmbDCControlsRx.push_back(slider);
                 slider->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::OnWriteRxDC), NULL, this);
@@ -245,14 +240,9 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             };
             for(size_t i = 0; i<paramsTx.size(); i += 3)
             {
-                wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsTx[i]->name);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *paramsTx[i];
-                chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), paramsTx[i + 1]->name);
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
-                sizer->Add(chkbox, 1, wxEXPAND, 5);
-                wndId2Enum[chkbox] = *paramsTx[i + 1];
+                wxButton* btnReadDC = new wxButton(dcCalibGroup->GetStaticBox(), wxNewId(), _("Read"));
+                btnReadDC ->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDC), NULL, this);
+                sizer->Add(btnReadDC , 1, wxEXPAND, 5);
                 NumericSlider* slider = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -1023, 1023, 0);
                 cmbDCControlsTx.push_back(slider);
                 slider->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::OnWriteTxDC), NULL, this);
@@ -694,22 +684,28 @@ void lms7002_pnlR3_view::UpdateGUI()
     for(size_t i = 0; i<cmbDCControlsRx.size(); ++i)
     {
         uint16_t value = 0;
+        auto parameter = wndId2Enum[cmbDCControlsRx[i]];
+        LMS_WriteLMSReg(lmsControl, parameter.address, 0);
+        LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
         LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsRx[i]], &value);
-        bool negative = value & 0x400;
-        value &= 0x3F;
-        if(negative)
-            value *= -1;
-        cmbDCControlsRx[i]->SetValue(value);
+        LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
+        int absval = (value & 0x3F);
+        if(value&0x40)
+            absval *= -1;
+        cmbDCControlsRx[i]->SetValue(absval);
     }
     for(size_t i = 0; i<cmbDCControlsTx.size(); ++i)
     {
         uint16_t value = 0;
+        auto parameter = wndId2Enum[cmbDCControlsTx[i]];
+        LMS_WriteLMSReg(lmsControl, parameter.address, 0);
+        LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
         LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsTx[i]], &value);
-        bool negative = value & 0x400;
-        value &= 0x3FF;
-        if(negative)
-            value *= -1;
-        cmbDCControlsTx[i]->SetValue(value);
+        LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
+        int absval = (value & 0x3FF);
+        if(value&0x400)
+            absval *= -1;
+        cmbDCControlsTx[i]->SetValue(absval);
     }
 
     uint16_t value;
@@ -811,7 +807,10 @@ void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
         regVal &= 0xF800;
         int dcVal = event.GetInt();
         if(dcVal < 0)
+        {
+            --dcVal;
             regVal |= 0x0400;
+        }
         regVal |= (abs(dcVal+0x400) & 0x3FF);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
@@ -836,10 +835,12 @@ void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
         regVal &= 0xFF80;
         int dcVal = event.GetInt();
         if(dcVal < 0)
+        {
+            --dcVal;
             regVal |= 0x0040;
+        }
         regVal |= (abs(dcVal+0x40) & 0x3F);
-        printf("DC= %i, reg= 0x%02X\n", dcVal, regVal & 0x07F);
-        LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
+        LMS_WriteLMSReg(lmsControl, parameter.address, regVal & ~0x8000);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal | 0x8000);
         LMS_WriteLMSReg(lmsControl, parameter.address, regVal);
         return;
@@ -853,23 +854,7 @@ void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
 
 void lms7002_pnlR3_view::OnReadDC( wxCommandEvent& event )
 {
-    ParameterChangeHandler(event);
-    if(event.GetInt() != 0)
-    {
-         LMS7Parameter parameter;
-        try
-        {
-            parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
-            uint16_t regVal;
-            LMS_ReadLMSReg(lmsControl, parameter.address, &regVal);
-        }
-        catch (std::exception & e)
-        {
-            std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
-            return;
-        }
-        UpdateGUI();
-    }
+    UpdateGUI();
 }
 
 void lms7002_pnlR3_view::ParameterChangeHandlerCMPRead( wxCommandEvent& event )
