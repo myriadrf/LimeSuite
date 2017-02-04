@@ -37,7 +37,7 @@ using namespace lime;
 #include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1950e6, 2700e6};
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1950e6, 2900e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
