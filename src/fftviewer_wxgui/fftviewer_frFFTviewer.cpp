@@ -412,7 +412,6 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 }
 
                 kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
-                ++fftCounter;
                 for(unsigned int i=0; i<fftSize; ++i)
                 {
                     m_fftCalcOut[i].r /= fftSize;
@@ -424,6 +423,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
                     localDataResults.fftBins[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
             }
+            ++fftCounter;
         }
 
         t2 = chrono::high_resolution_clock::now();
