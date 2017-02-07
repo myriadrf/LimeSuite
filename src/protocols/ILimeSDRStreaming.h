@@ -77,7 +77,7 @@ public:
     };
     virtual void ReceivePacketsLoop(const ThreadData args) = 0;
     virtual void TransmitPacketsLoop(const ThreadData args) = 0;
-    virtual int UpdateThreads();
+    virtual int UpdateThreads(bool stopAll = false);
 
     StreamConfig config;
     std::thread rxThread;

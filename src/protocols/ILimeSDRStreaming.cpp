@@ -181,24 +181,27 @@ double ILimeSDRStreaming::GetHardwareTimestampRate(void)
     return mExpectedSampleRate;
 }
 
-int ILimeSDRStreaming::UpdateThreads()
+int ILimeSDRStreaming::UpdateThreads(bool stopAll)
 {
     bool needTx = false;
     bool needRx = false;
 
     //check which threads are needed
-    for(auto i : mRxStreams)
-        if(i->IsActive())
-        {
-            needRx = true;
-            break;
-        }
-    for(auto i : mTxStreams)
-        if(i->IsActive())
-        {
-            needTx = true;
-            break;
-        }
+    if (!stopAll)
+    {
+        for(auto i : mRxStreams)
+            if(i->IsActive())
+            {
+                needRx = true;
+                break;
+            }
+        for(auto i : mTxStreams)
+            if(i->IsActive())
+            {
+                needTx = true;
+                break;
+            }
+    }
 
     //stop threads if not needed
     if(not needTx and txRunning.load())

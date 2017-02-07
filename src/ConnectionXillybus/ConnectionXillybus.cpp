@@ -51,6 +51,7 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     if (this->Open(index) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
 
+    GetChipVersion();
     std::shared_ptr<Si5351C> si5351module(new Si5351C());
     si5351module->Initialize(this);
     si5351module->SetPLL(0, 25000000, 0);
@@ -234,7 +235,7 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
             bytesToWrite -= bytesSent;
         else
             break;
-        
+
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 #ifdef __unix__
     //Flush data to FPGA
@@ -242,7 +243,7 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
     {
         if (errno == EINTR)
             continue;
-        ReportError(errno);     
+        ReportError(errno);
         break;
     }
 #endif
@@ -310,12 +311,12 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 #endif
         totalBytesReaded += bytesReceived;
         if (totalBytesReaded < length)
-           bytesToRead -= bytesReceived;      
+           bytesToRead -= bytesReceived;
         else
            break;
-         
+
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
-    
+
     return totalBytesReaded;
 }
 
@@ -336,7 +337,7 @@ int ConnectionXillybus::ReceiveData(char *buffer, const int length, const int ti
         {
             ReportError("Failed to open Xillybus");
             return -1;
-        }     
+        }
     }
 #else
     if (hReadStream == -1)
@@ -348,7 +349,7 @@ int ConnectionXillybus::ReceiveData(char *buffer, const int length, const int ti
        }
     }
 #endif
-  
+
     int totalBytesReaded = 0;
     int bytesToRead = length;
     auto t1 = chrono::high_resolution_clock::now();
@@ -395,7 +396,7 @@ int ConnectionXillybus::ReceiveData(char *buffer, const int length, const int ti
             bytesToRead -= bytesReceived;
         else
             break;
-        
+
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 
     return totalBytesReaded;
@@ -438,7 +439,7 @@ int ConnectionXillybus::SendData(const char *buffer, const int length, const int
         {
             ReportError("Failed to open Xillybus");
             return -1;
-        } 
+        }
     }
 #else
     if (hWriteStream == -1)
@@ -496,7 +497,7 @@ int ConnectionXillybus::SendData(const char *buffer, const int length, const int
             bytesToWrite -= bytesSent;
         else
             break;
-        
+
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
     //Flush data to FPGA
 #ifdef __unix__

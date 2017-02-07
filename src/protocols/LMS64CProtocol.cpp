@@ -853,7 +853,7 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
     LMSinfo lmsInfo = this->GetInfo();
-    if(lmsInfo.device == LMS_DEV_LIMESDR 
+    if(lmsInfo.device == LMS_DEV_LIMESDR
     || lmsInfo.device == LMS_DEV_LIMESDR_PCIE
     || lmsInfo.device == LMS_DEV_LIMESDR_USB_SP
     || lmsInfo.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
@@ -913,4 +913,19 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
             (timeEnd-timeStart).count());
 #endif
     return success ? 0 : -1;
+}
+
+/**	@brief Reads chip version information form LMS7 chip.
+*/
+int LMS64CProtocol::GetChipVersion()
+{
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_LMS7002_RD;
+    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
+    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
+    if(TransferPacket(ctrPkt) != 0)
+        this->chipVersion = 0;
+    else
+        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
+    return this->chipVersion;
 }
