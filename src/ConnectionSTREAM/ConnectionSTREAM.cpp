@@ -348,21 +348,6 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
     return 0;
 #endif
 }
-
-/**	@brief Reads chip version information form LMS7 chip.
-*/
-int ConnectionSTREAM::GetChipVersion()
-{
-    LMS64CProtocol::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
-    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
-    if(TransferPacket(ctrPkt) != 0)
-        this->chipVersion = 0;
-    else
-        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
-    return this->chipVersion;
-}
 /**	@brief Closes communication to device.
 */
 void ConnectionSTREAM::Close()

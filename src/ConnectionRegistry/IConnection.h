@@ -436,6 +436,13 @@ public:
     */
     virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format);
 
+    /**	@brief Read raw stream data from device streaming port
+    @param buffer       read buffer pointer
+    @param length       number of bytes to read
+    @param timeout_ms   timeout in milliseconds
+    */
+    virtual int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100);
+
     /***********************************************************************
      * Programming API
      **********************************************************************/
@@ -581,7 +588,6 @@ public:
     /** @brief Sets callback function which gets called each time data is sent or received
     */
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
-
 protected:
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
     bool mSystemBigEndian;

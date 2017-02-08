@@ -182,6 +182,9 @@ public:
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
 
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
+protected:
+    int GetChipVersion();
+    unsigned chipVersion;
 private:
 
     int WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
