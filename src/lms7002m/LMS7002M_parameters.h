@@ -24,7 +24,7 @@ struct LMS7Parameter
     const char* tooltip;
 };
 
-int LMS7ParameterCompare(LMS7Parameter a, LMS7Parameter b);
+int LMS7ParameterCompare(struct LMS7Parameter a, struct LMS7Parameter b);
 
 static const struct LMS7Parameter LMS7_LRST_TX_B = { 0x0020, 15, 15, 1, "LRST_TX_B", "Resets all the logic registers to the default state for Tx MIMO channel B" };
 static const struct LMS7Parameter LMS7_MRST_TX_B = { 0x0020, 14, 14, 1, "MRST_TX_B", "Resets all the configuration memory to the default state for Tx MIMO channel B" };
