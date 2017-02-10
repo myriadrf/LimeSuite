@@ -38,7 +38,7 @@ inline uint16_t pow2(const uint8_t power)
     return 1 << power;
 }
 
-int clamp(int value, int minBound, int maxBound)
+static int clamp(int value, int minBound, int maxBound)
 {
     if(value < minBound)
         return minBound;

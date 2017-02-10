@@ -1524,6 +1524,15 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     return 0;
 }
 
+static int clamp(int value, int minBound, int maxBound)
+{
+    if(value < minBound)
+        return minBound;
+    if(value > maxBound)
+        return maxBound;
+    return value;
+}
+
 /** @brief Sets SX frequency with Reference clock spur cancelation
     @param Tx Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
@@ -1531,6 +1540,13 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 */
 int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW)
 {
+    bool needCancelation = false;
+    float_type refClk = GetReferenceClk_SX(false);
+    int low = (freq_Hz-BW/2)/refClk;
+    int high = (freq_Hz+BW/2)/refClk;
+    if(low != high)
+        needCancelation = true;
+
     stringstream ss; //VCO tuning report
     const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
     checkConnection();
@@ -1584,17 +1600,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
     bool foundInCache = false;
     int vco_query;
     int csw_query;
-    if(useCache)
-    {
-        foundInCache = (mValueCache->GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
-    }
-    if(foundInCache)
-    {
-        printf("SetFrequency using cache values vco:%i, csw:%i\n", vco_query, csw_query);
-        sel_vco = vco_query;
-        csw_value = csw_query;
-    }
-    else
+
     {
         canDeliverFrequency = false;
         int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
@@ -1627,13 +1633,75 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
         csw_value = tuneScore[sel_vco] + 128;
         ss << "\tSelected : " << vcoNames[sel_vco] << endl;
     }
-    if(useCache && !foundInCache)
-    {
-        mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
-    }
 
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
+
+    if(needCancelation)
+    {
+        auto backup = BackupRegisterMap();
+
+        //uint16_t lnaGain = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
+        //uint16_t pgaGain = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
+        //uint16_t tiaGain = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
+
+        uint16_t cpOffsetSX = Get_SPI_Reg_bits(LMS7param(IOFFSET_CP));
+        uint16_t cpOffsetCGEN = Get_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN));
+
+        Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), 15);
+        Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), 3);
+        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 31);
+
+        SetDefaults(RxTSP);
+        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+        Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 0);
+        Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
+
+        uint16_t rssi = GetRSSI();
+        const int scanSpan = 12;
+        uint16_t rssiValues[scanSpan ][scanSpan ];
+        for(int i=0; i<scanSpan; ++i)
+            for(int j=0; j<scanSpan; ++j)
+                rssiValues[i][j] = ~0;
+
+        int minCPcgen = 0;
+        int minCPsx = 0;
+        uint16_t minRSSI = rssi;
+        for(int i=-scanSpan/2; i<scanSpan/2; ++i)
+        {
+            int cgenvalue = clamp(cpOffsetCGEN + i, 0, 63);
+            Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN), cgenvalue);
+            bool cgenLocked = Get_SPI_Reg_bits(0x008C, 13, 12, true) == 2;
+            if(!cgenLocked)
+                continue;
+
+            for(int j=-scanSpan/2; j<scanSpan/2; ++j)
+            {
+                int value = clamp(cpOffsetSX + j, 0, 63);
+                Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP), value);
+                //bool sxLocked = Get_SPI_Reg_bits(LMS7param(CMPLO_CTRL_SX), true);
+                bool sxLocked = Get_SPI_Reg_bits(0x0123, 13, 12, true) == 2;
+                if(sxLocked)
+                {
+                    this_thread::sleep_for(chrono::milliseconds(5));
+                    uint16_t temp_rssi = GetRSSI();
+                    //rssiValues[i][j] = temp_rssi ;
+                    if(temp_rssi < minRSSI)
+                    {
+                        minRSSI = temp_rssi;
+                        minCPcgen = cgenvalue;
+                        minCPsx = value;
+                    }
+                }
+            }
+        }
+//bool cgenLocked = Get_SPI_Reg_bits(LMS7param(CMPLO_CTRL_CGEN), true);
+        RestoreRegisterMap(backup);
+        Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP), minCPsx);
+        Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN), minCPcgen);
+    }
+
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
