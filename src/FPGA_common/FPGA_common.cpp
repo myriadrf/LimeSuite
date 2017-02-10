@@ -395,7 +395,6 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             else
             {
                 clocks[i].findPhase = false;
-                clocks[i].phaseShift_deg = 125;
                 SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
                 ReportError("Unable to configure phase shift for LML interface");
                 return -1;

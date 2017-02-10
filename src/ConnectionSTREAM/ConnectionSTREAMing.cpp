@@ -79,14 +79,19 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
     const float rxInterfaceClk = 2 * rxRate_Hz;
     int status = 0;
     uint32_t reg20;
+    const double rxPhC1[] = { 91.08, 89.46 };
+    const double rxPhC2[] = { -1 / 6e6, 1.24e-6 };
+    const double txPhC1[] = { 89.75, 89.61 };
+    const double txPhC2[] = { -3.0e-7, 2.71e-7 };
 
     const std::vector<uint32_t> spiAddr = {0x0021, 0x0022, 0x0023, 0x0024,
                                            0x0027, 0x002A, 0x0400, 0x040C,
                                            0x040B, 0x0400, 0x040B, 0x0400};
     const int bakRegCnt = spiAddr.size() - 4;
-    const int addrLMS7002M = GetDeviceInfo().addrsLMS7002M.at(0);
+    auto info = GetDeviceInfo();
+    const int addrLMS7002M = info.addrsLMS7002M.at(0);
     bool phaseSearch = false;
-    if (this->chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+    if (this->chipVersion == 0x3841 && stoi(info.gatewareRevision) >= 7 && stoi(info.gatewareVersion) >= 2) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
         if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
             phaseSearch = true;
     mExpectedSampleRate = rxRate_Hz;
@@ -133,7 +138,11 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
         clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = rxInterfaceClk;
-        clocks[1].phaseShift_deg = 90;
+        if (this->chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxInterfaceClk;
+        else
+            clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxInterfaceClk;
+
         if (phaseSearch)
         {
             clocks[1].findPhase = true;
@@ -170,7 +179,11 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
         clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = txInterfaceClk;
-        clocks[1].phaseShift_deg = 90;
+        if (this->chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = txPhC1[1] + txPhC2[1] * txInterfaceClk;
+        else
+            clocks[1].phaseShift_deg = txPhC1[0] + txPhC2[0] * txInterfaceClk;
+
         if (phaseSearch)
         {
             clocks[1].findPhase = true;
