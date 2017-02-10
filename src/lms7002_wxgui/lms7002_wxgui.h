@@ -1190,6 +1190,11 @@ class pnlSX_view : public wxPanel
 		wxButton* btnCalculate;
 		wxButton* btnTune;
 		wxButton* ID_BUTTON5;
+		wxPanel* pnlRefClkSpur;
+		wxStaticBoxSizer* RefClkSpurSizer;
+		wxCheckBox* chkEnableRefSpurCancelation;
+		wxStaticText* m_staticText359;
+		wxTextCtrl* txtRefSpurBW;
 		wxStaticText* ID_STATICTEXT2;
 		wxStaticText* lblINT_SDM;
 		wxStaticText* ID_STATICTEXT21;
@@ -1230,6 +1235,7 @@ class pnlSX_view : public wxPanel
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalculateClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnableRefSpurCancelation( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnChangeRefClkClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowVCOclicked( wxCommandEvent& event ) { event.Skip(); }

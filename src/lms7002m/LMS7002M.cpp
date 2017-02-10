@@ -1524,6 +1524,123 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     return 0;
 }
 
+/** @brief Sets SX frequency with Reference clock spur cancelation
+    @param Tx Rx/Tx module selection
+    @param freq_Hz desired frequency in Hz
+    @return 0-success, other-cannot deliver requested frequency
+*/
+int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW)
+{
+    stringstream ss; //VCO tuning report
+    const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
+    checkConnection();
+    const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
+    const float_type m_dThrF = 5500e6; //threshold to enable additional divider
+    float_type VCOfreq;
+    int8_t div_loch;
+    int8_t sel_vco;
+    bool canDeliverFrequency = false;
+    uint16_t integerPart;
+    uint32_t fractionalPart;
+    int16_t csw_value;
+    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
+
+    //find required VCO frequency
+    for (div_loch = 6; div_loch >= 0; --div_loch)
+    {
+        VCOfreq = (1 << (div_loch + 1)) * freq_Hz;
+        if ((VCOfreq >= gVCO_frequency_table[0][0]) && (VCOfreq <= gVCO_frequency_table[2][sxVCO_N - 1]))
+        {
+            canDeliverFrequency = true;
+            break;
+        }
+    }
+    if (canDeliverFrequency == false)
+        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - required VCO frequency is out of range [%g-%g] MHz",
+                            tx?"T":"R", freq_Hz / 1e6,
+                            gVCO_frequency_table[0][0]/1e6,
+                            gVCO_frequency_table[2][sxVCO_N - 1]/1e6);
+
+    const float_type refClk_Hz = GetReferenceClk_SX(tx);
+    integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
+    fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
+
+    Channel ch = this->GetActiveChannel();
+    this->SetActiveChannel(tx?ChSXT:ChSXR);
+    Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
+    Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
+    Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
+    Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
+    Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
+
+    ss << "INT: " << integerPart << "\tFRAC: " << fractionalPart << endl;
+    ss << "DIV_LOCH: " << (int16_t)div_loch << "\t EN_DIV2_DIVPROG: " << (VCOfreq > m_dThrF) << endl;
+    ss << "VCO: " << VCOfreq/1e6 << "MHz\tRefClk: " << refClk_Hz/1e6 << " MHz" << endl;
+
+    //find which VCO supports required frequency
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
+
+    bool foundInCache = false;
+    int vco_query;
+    int csw_query;
+    if(useCache)
+    {
+        foundInCache = (mValueCache->GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
+    }
+    if(foundInCache)
+    {
+        printf("SetFrequency using cache values vco:%i, csw:%i\n", vco_query, csw_query);
+        sel_vco = vco_query;
+        csw_value = csw_query;
+    }
+    else
+    {
+        canDeliverFrequency = false;
+        int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
+        for (sel_vco = 0; sel_vco < 3; ++sel_vco)
+        {
+            Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+            int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
+            if(status == 0)
+            {
+                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
+                canDeliverFrequency = true;
+            }
+            ss << vcoNames[sel_vco] << " : csw=" << tuneScore[sel_vco]+128 << " ";
+            ss << (status == 0 ? "tune ok" : "tune fail") << endl;
+        }
+        if (abs(tuneScore[0]) < abs(tuneScore[1]))
+        {
+            if (abs(tuneScore[0]) < abs(tuneScore[2]))
+                sel_vco = 0;
+            else
+                sel_vco = 2;
+        }
+        else
+        {
+            if (abs(tuneScore[1]) < abs(tuneScore[2]))
+                sel_vco = 1;
+            else
+                sel_vco = 2;
+        }
+        csw_value = tuneScore[sel_vco] + 128;
+        ss << "\tSelected : " << vcoNames[sel_vco] << endl;
+    }
+    if(useCache && !foundInCache)
+    {
+        mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
+    }
+
+    Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
+    this->SetActiveChannel(ch); //restore used channel
+
+    if (canDeliverFrequency == false)
+        return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
+    return 0;
+}
+
 /**	@brief Returns currently set SXR/SXT frequency
 	@return SX frequency Hz
 */

@@ -9,7 +9,11 @@
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
+#include <string>
+using namespace std;
 using namespace lime;
+
+static bool showRefClkSpurCancelation = true;
 
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
@@ -395,7 +399,14 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     sprintf(ctemp, "%.4f V", 0.3436); temp.push_back(ctemp);
     cmbVDIV_VCO->Set(temp);
 
+    txtRefSpurBW->SetValue(_("5"));
+
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
+    if(showRefClkSpurCancelation)
+    {
+        pnlRefClkSpur->Show();
+        showRefClkSpurCancelation = false;
+    }
 }
 
 void lms7002_pnlSX_view::Initialize(lms_device_t* pControl)
@@ -494,7 +505,15 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
     LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,RefClkMHz * 1e6);
-    int status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,freqMHz * 1e6);
+
+    double BWMHz;
+    txtRefSpurBW->GetValue().ToDouble(&BWMHz);
+    int status;
+    if(chkEnableRefSpurCancelation->IsChecked())
+        status = LMS_SetClockFreqWithSpurCancelation(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,freqMHz * 1e6, BWMHz*1e6);
+    else
+        status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,freqMHz * 1e6);
+
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     else
@@ -570,4 +589,9 @@ void lms7002_pnlSX_view::OnShowVCOclicked(wxCommandEvent& event)
     lms7002_dlgVCOfrequencies* dlg = new lms7002_dlgVCOfrequencies(this, lmsControl);
     dlg->ShowModal();
     dlg->Destroy();
+}
+
+void lms7002_pnlSX_view::OnEnableRefSpurCancelation(wxCommandEvent& event)
+{
+    txtRefSpurBW->Enable(chkEnableRefSpurCancelation->IsChecked());
 }

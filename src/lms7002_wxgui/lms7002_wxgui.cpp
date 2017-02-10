@@ -3958,7 +3958,7 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	fgSizer103->Add( fgSizer203, 0, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer198;
-	fgSizer198 = new wxFlexGridSizer( 0, 4, 5, 5 );
+	fgSizer198 = new wxFlexGridSizer( 0, 5, 5, 5 );
 	fgSizer198->SetFlexibleDirection( wxBOTH );
 	fgSizer198->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -4076,6 +4076,29 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	
 	
 	fgSizer198->Add( sbSizer79, 0, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
+	
+	pnlRefClkSpur = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	pnlRefClkSpur->Hide();
+	
+	RefClkSpurSizer = new wxStaticBoxSizer( new wxStaticBox( pnlRefClkSpur, wxID_ANY, wxT("Receiver Ref Clk    \nSpur Cancelation") ), wxVERTICAL );
+	
+	chkEnableRefSpurCancelation = new wxCheckBox( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxT("Enable"), wxDefaultPosition, wxDefaultSize, 0 );
+	RefClkSpurSizer->Add( chkEnableRefSpurCancelation, 0, 0, 5 );
+	
+	m_staticText359 = new wxStaticText( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxT("RF Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText359->Wrap( -1 );
+	RefClkSpurSizer->Add( m_staticText359, 0, 0, 5 );
+	
+	txtRefSpurBW = new wxTextCtrl( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	txtRefSpurBW->Enable( false );
+	
+	RefClkSpurSizer->Add( txtRefSpurBW, 0, 0, 5 );
+	
+	
+	pnlRefClkSpur->SetSizer( RefClkSpurSizer );
+	pnlRefClkSpur->Layout();
+	RefClkSpurSizer->Fit( pnlRefClkSpur );
+	fgSizer198->Add( pnlRefClkSpur, 1, wxEXPAND | wxALL, 5 );
 	
 	
 	fgSizer103->Add( fgSizer198, 1, wxEXPAND, 5 );
@@ -4342,6 +4365,7 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	rgrSEL_VCO->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlSX_view::ParameterChangeHandler ), NULL, this );
 	btnCalculate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnCalculateClick ), NULL, this );
 	btnTune->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnTuneClick ), NULL, this );
+	chkEnableRefSpurCancelation->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlSX_view::OnEnableRefSpurCancelation ), NULL, this );
 	btnChangeRefClk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnChangeRefClkClick ), NULL, this );
 	btnUpdateValues->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnReadComparators ), NULL, this );
 	ctrCSW_VCO->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlSX_view::ParameterChangeHandler ), NULL, this );
@@ -4387,6 +4411,7 @@ pnlSX_view::~pnlSX_view()
 	rgrSEL_VCO->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlSX_view::ParameterChangeHandler ), NULL, this );
 	btnCalculate->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnCalculateClick ), NULL, this );
 	btnTune->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnTuneClick ), NULL, this );
+	chkEnableRefSpurCancelation->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlSX_view::OnEnableRefSpurCancelation ), NULL, this );
 	btnChangeRefClk->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnChangeRefClkClick ), NULL, this );
 	btnUpdateValues->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlSX_view::OnbtnReadComparators ), NULL, this );
 	ctrCSW_VCO->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlSX_view::ParameterChangeHandler ), NULL, this );
