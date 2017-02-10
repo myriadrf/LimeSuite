@@ -1335,12 +1335,14 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
     {
         if (tx)
         {
-            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
-                return -1;
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0, true)!=0))
+                return -1;    
         }
         else
         {
-            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),1,true)!=0)
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),1,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0, true)!=0))
                 return -1;
         }
     }
@@ -1350,14 +1352,17 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
         {
             if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
             || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),ind,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),down,true)!=0))
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),down,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 1, true)!=0))
                 return -1;
+            ;
         }
         else
         {
             if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
             || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),ind,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),down,true)!=0))
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),down,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1, true)!=0))
                 return -1;
         }
     }
