@@ -272,38 +272,32 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
 
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-    if(usbDeviceCount > 0)
+    for(int i=0; i<usbDeviceCount; ++i)
     {
-        for(int i=0; i<usbDeviceCount; ++i)
+        libusb_device_descriptor desc;
+        int r = libusb_get_device_descriptor(devs[i], &desc);
+        if(r<0)
+            printf("failed to get device description\n");
+        if (desc.idProduct != pid) continue;
+        if (desc.idVendor != vid) continue;
+        if(libusb_open(devs[i], &dev_handle) != 0) continue;
+
+        std::string foundSerial;
+        if (desc.iSerialNumber > 0)
         {
-            libusb_device_descriptor desc;
-            int r = libusb_get_device_descriptor(devs[i], &desc);
+            char data[255];
+            r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
             if(r<0)
-                printf("failed to get device description\n");
-            if (desc.idProduct != pid) continue;
-            if (desc.idVendor != vid) continue;
-            if(libusb_open(devs[i], &dev_handle) != 0) continue;
-
-            std::string foundSerial;
-            if (desc.iSerialNumber > 0)
-            {
-                char data[255];
-                r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
-                if(r<0)
-                    printf("failed to get serial number\n");
-                else
-                    foundSerial = std::string(data, size_t(r));
-            }
-
-            if (serial == foundSerial) break; //found it
-            libusb_close(dev_handle);
-            dev_handle = nullptr;
+                printf("failed to get serial number\n");
+            else
+                foundSerial = std::string(data, size_t(r));
         }
+
+        if (serial == foundSerial) break; //found it
+        libusb_close(dev_handle);
+        dev_handle = nullptr;
     }
-    else
-    {
-        libusb_free_device_list(devs, 1);
-    }
+    libusb_free_device_list(devs, 1);
 
     if(dev_handle == nullptr)
         return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
