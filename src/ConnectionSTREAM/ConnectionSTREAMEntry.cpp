@@ -124,6 +124,11 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
+    if (usbDeviceCount < 0) {
+        printf("failed to get libusb device list: %s\n", libusb_strerror(libusb_error(usbDeviceCount)));
+        return handles;
+    }
+
     for(int i=0; i<usbDeviceCount; ++i)
     {
         libusb_device_descriptor desc;

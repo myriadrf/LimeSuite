@@ -272,12 +272,19 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
 
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
+
+    if (usbDeviceCount < 0) {
+        return ReportError(-1, "ConnectionSTREAM: libusb_get_device_list failed: %s", libusb_strerror(libusb_error(usbDeviceCount)));
+    }
+
     for(int i=0; i<usbDeviceCount; ++i)
     {
         libusb_device_descriptor desc;
         int r = libusb_get_device_descriptor(devs[i], &desc);
-        if(r<0)
+        if(r<0) {
             printf("failed to get device description\n");
+            continue;
+        }
         if (desc.idProduct != pid) continue;
         if (desc.idVendor != vid) continue;
         if(libusb_open(devs[i], &dev_handle) != 0) continue;
