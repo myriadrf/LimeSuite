@@ -556,6 +556,19 @@ void lms7002_pnlSX_view::UpdateGUI()
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     LMS_GetClockFreq(lmsControl,isTx ? LMS_CLOCK_SXT: LMS_CLOCK_SXR,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
+    if(chkEnableRefSpurCancelation->IsChecked())
+    {
+        uint16_t downconvert = 0;
+        LMS_ReadParam(lmsControl, LMS7param(CMIX_SC_RXTSP), &downconvert);
+        float_type* freqNCO = new float_type[16];
+        float_type PHO;
+        LMS_GetNCOFrequency(lmsControl, false, 0, freqNCO, &PHO);
+        if(downconvert)
+            freq += freqNCO[15];
+        else
+            freq -= freqNCO[15];
+        delete[] freqNCO;
+    }
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
     uint16_t div;
     LMS_ReadParam(lmsControl,LMS7param(DIV_LOCH),&div);
@@ -594,4 +607,22 @@ void lms7002_pnlSX_view::OnShowVCOclicked(wxCommandEvent& event)
 void lms7002_pnlSX_view::OnEnableRefSpurCancelation(wxCommandEvent& event)
 {
     txtRefSpurBW->Enable(chkEnableRefSpurCancelation->IsChecked());
+    uint16_t ch = 0;
+    LMS_ReadParam(lmsControl, LMS7param(MAC), &ch);
+    for(int i=0; i<2; ++i)
+    {
+        LMS_WriteParam(lmsControl, LMS7param(MAC), i+1);
+        LMS_WriteParam(lmsControl, LMS7param(CMIX_GAIN_RXTSP), 1);
+        LMS_WriteParam(lmsControl, LMS7param(CMIX_BYP_RXTSP), 0);
+        if(chkEnableRefSpurCancelation->IsChecked())
+        {
+            LMS_WriteParam(lmsControl, LMS7param(SEL_RX), 15);
+        }
+        else
+        {
+            LMS_WriteParam(lmsControl, LMS7param(SEL_RX), 14);
+        }
+    }
+    LMS_WriteParam(lmsControl, LMS7param(MAC), ch);
+    UpdateGUI();
 }

@@ -1433,6 +1433,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 
     Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(tx?ChSXT:ChSXR);
+    Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 0);
     Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
     Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
     Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
@@ -1524,15 +1525,6 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     return 0;
 }
 
-static int clamp(int value, int minBound, int maxBound)
-{
-    if(value < minBound)
-        return minBound;
-    if(value > maxBound)
-        return maxBound;
-    return value;
-}
-
 /** @brief Sets SX frequency with Reference clock spur cancelation
     @param Tx Rx/Tx module selection
     @param freq_Hz desired frequency in Hz
@@ -1540,6 +1532,7 @@ static int clamp(int value, int minBound, int maxBound)
 */
 int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW)
 {
+    BW += 2e6; //offset to avoid ref clock on BW edge
     bool needCancelation = false;
     float_type refClk = GetReferenceClk_SX(false);
     int low = (freq_Hz-BW/2)/refClk;
@@ -1547,165 +1540,58 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
     if(low != high)
         needCancelation = true;
 
-    stringstream ss; //VCO tuning report
-    const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
-    checkConnection();
-    const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
-    const float_type m_dThrF = 5500e6; //threshold to enable additional divider
-    float_type VCOfreq;
-    int8_t div_loch;
-    int8_t sel_vco;
-    bool canDeliverFrequency = false;
-    uint16_t integerPart;
-    uint32_t fractionalPart;
-    int16_t csw_value;
-    uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-
-    //find required VCO frequency
-    for (div_loch = 6; div_loch >= 0; --div_loch)
-    {
-        VCOfreq = (1 << (div_loch + 1)) * freq_Hz;
-        if ((VCOfreq >= gVCO_frequency_table[0][0]) && (VCOfreq <= gVCO_frequency_table[2][sxVCO_N - 1]))
-        {
-            canDeliverFrequency = true;
-            break;
-        }
-    }
-    if (canDeliverFrequency == false)
-        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - required VCO frequency is out of range [%g-%g] MHz",
-                            tx?"T":"R", freq_Hz / 1e6,
-                            gVCO_frequency_table[0][0]/1e6,
-                            gVCO_frequency_table[2][sxVCO_N - 1]/1e6);
-
-    const float_type refClk_Hz = GetReferenceClk_SX(tx);
-    integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
-    fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
-
-    Channel ch = this->GetActiveChannel();
-    this->SetActiveChannel(tx?ChSXT:ChSXR);
-    Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
-    Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
-    Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
-    Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
-    Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
-
-    ss << "INT: " << integerPart << "\tFRAC: " << fractionalPart << endl;
-    ss << "DIV_LOCH: " << (int16_t)div_loch << "\t EN_DIV2_DIVPROG: " << (VCOfreq > m_dThrF) << endl;
-    ss << "VCO: " << VCOfreq/1e6 << "MHz\tRefClk: " << refClk_Hz/1e6 << " MHz" << endl;
-
-    //find which VCO supports required frequency
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
-
-    bool foundInCache = false;
-    int vco_query;
-    int csw_query;
-
-    {
-        canDeliverFrequency = false;
-        int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
-        for (sel_vco = 0; sel_vco < 3; ++sel_vco)
-        {
-            Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-            int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
-            if(status == 0)
-            {
-                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
-                canDeliverFrequency = true;
-            }
-            ss << vcoNames[sel_vco] << " : csw=" << tuneScore[sel_vco]+128 << " ";
-            ss << (status == 0 ? "tune ok" : "tune fail") << endl;
-        }
-        if (abs(tuneScore[0]) < abs(tuneScore[1]))
-        {
-            if (abs(tuneScore[0]) < abs(tuneScore[2]))
-                sel_vco = 0;
-            else
-                sel_vco = 2;
-        }
-        else
-        {
-            if (abs(tuneScore[1]) < abs(tuneScore[2]))
-                sel_vco = 1;
-            else
-                sel_vco = 2;
-        }
-        csw_value = tuneScore[sel_vco] + 128;
-        ss << "\tSelected : " << vcoNames[sel_vco] << endl;
-    }
-
-    Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-    Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
-
+    int status;
+    float newFreq;
     if(needCancelation)
     {
-        auto backup = BackupRegisterMap();
+        newFreq = (int)(freq_Hz/refClk+0.5)*refClk;
+        status = SetFrequencySX(tx, newFreq);
+    }
+    else
+        status = SetFrequencySX(tx, freq_Hz);
+    if(status != 0)
+        return status;
+    const int ch = Get_SPI_Reg_bits(LMS7param(MAC));
+    for(int i=0; i<2; ++i)
+    {
+        Modify_SPI_Reg_bits(LMS7param(MAC), i+1);
+        SetNCOFrequency(LMS7002M::Rx, 15, 0);
+    }
+    if(needCancelation)
+    {
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+        Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 1);
 
-        //uint16_t lnaGain = Get_SPI_Reg_bits(LMS7param(G_LNA_RFE));
-        //uint16_t pgaGain = Get_SPI_Reg_bits(LMS7param(G_PGA_RBB));
-        //uint16_t tiaGain = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
-
-        uint16_t cpOffsetSX = Get_SPI_Reg_bits(LMS7param(IOFFSET_CP));
-        uint16_t cpOffsetCGEN = Get_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN));
-
-        Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE), 15);
-        Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE), 3);
-        Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB), 31);
-
-        SetDefaults(RxTSP);
-        Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-        Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-
-        uint16_t rssi = GetRSSI();
-        const int scanSpan = 12;
-        uint16_t rssiValues[scanSpan ][scanSpan ];
-        for(int i=0; i<scanSpan; ++i)
-            for(int j=0; j<scanSpan; ++j)
-                rssiValues[i][j] = ~0;
-
-        int minCPcgen = 0;
-        int minCPsx = 0;
-        uint16_t minRSSI = rssi;
-        for(int i=-scanSpan/2; i<scanSpan/2; ++i)
+        /*uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0);	// read whole register to reduce SPI transfers
+        uint32_t gFRAC = ((gINT&0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
+        bool upconvert = gFRAC > (1 << 19);
+        gINT = gINT >> 4;
+        if(upconvert)
         {
-            int cgenvalue = clamp(cpOffsetCGEN + i, 0, 63);
-            Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN), cgenvalue);
-            bool cgenLocked = Get_SPI_Reg_bits(0x008C, 13, 12, true) == 2;
-            if(!cgenLocked)
-                continue;
-
-            for(int j=-scanSpan/2; j<scanSpan/2; ++j)
-            {
-                int value = clamp(cpOffsetSX + j, 0, 63);
-                Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP), value);
-                //bool sxLocked = Get_SPI_Reg_bits(LMS7param(CMPLO_CTRL_SX), true);
-                bool sxLocked = Get_SPI_Reg_bits(0x0123, 13, 12, true) == 2;
-                if(sxLocked)
-                {
-                    this_thread::sleep_for(chrono::milliseconds(5));
-                    uint16_t temp_rssi = GetRSSI();
-                    //rssiValues[i][j] = temp_rssi ;
-                    if(temp_rssi < minRSSI)
-                    {
-                        minRSSI = temp_rssi;
-                        minCPcgen = cgenvalue;
-                        minCPsx = value;
-                    }
-                }
-            }
+            gINT+=;
+            Modify_SPI_Reg_bits(LMS7param(INT_SDM), gINT);
         }
-//bool cgenLocked = Get_SPI_Reg_bits(LMS7param(CMPLO_CTRL_CGEN), true);
-        RestoreRegisterMap(backup);
-        Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP), minCPsx);
-        Modify_SPI_Reg_bits(LMS7param(IOFFSET_CP_CGEN), minCPcgen);
+        Modify_SPI_Reg_bits(0x011D, 15, 0, 0);
+        Modify_SPI_Reg_bits(0x011E, 3, 0, 0);*/
+        //const float_type refClk_Hz = GetReferenceClk_SX(tx);
+        //float actualFreq = (float_type)refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
+        //actualFreq *= (gINT + 4) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
+        float actualFreq = newFreq;
+        float userFreq = freq_Hz;
+        bool upconvert = actualFreq > userFreq;
+        for(int i=0; i<2; ++i)
+        {
+            Modify_SPI_Reg_bits(LMS7param(MAC), i+1);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), !upconvert);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 15);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+            SetNCOFrequency(LMS7002M::Rx, 14, 0);
+            SetNCOFrequency(LMS7002M::Rx, 15, abs(actualFreq-userFreq));
+        }
     }
 
-    this->SetActiveChannel(ch); //restore used channel
-
-    if (canDeliverFrequency == false)
-        return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     return 0;
 }
 
