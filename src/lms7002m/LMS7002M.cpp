@@ -1532,7 +1532,8 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 */
 int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW)
 {
-    BW += 2e6; //offset to avoid ref clock on BW edge
+    const float BWOffset = 2e6;
+    BW += BWOffset; //offset to avoid ref clock on BW edge
     bool needCancelation = false;
     float_type refClk = GetReferenceClk_SX(false);
     int low = (freq_Hz-BW/2)/refClk;
@@ -1545,6 +1546,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
     if(needCancelation)
     {
         newFreq = (int)(freq_Hz/refClk+0.5)*refClk;
+        TuneRxFilter(BW-BWOffset+abs(freq_Hz-newFreq));
         status = SetFrequencySX(tx, newFreq);
     }
     else
