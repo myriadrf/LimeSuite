@@ -794,13 +794,19 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
 
     for (size_t i = 0; i < count; ++i)
     {
-        int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
+        int unitsIndex = pkt.inBuffer[i * 4 + 1];
         if(units)
-            units[i] = adcUnits2string(unitsIndex);
-        values[i] = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
-        int powerOf10 = pkt.inBuffer[i * 4 + 1] & 0x0F;
-        values[i] *= pow(10, powerOf10);
-        if(unitsIndex == TEMPERATURE)
+        {
+
+            const char adc_units_prefix[] = {
+                ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+            units[i] = adc_units_prefix[unitsIndex&0x0F];
+            units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+        }
+        values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
+
+        if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
             values[i] /= 10;
     }
     return 0;
