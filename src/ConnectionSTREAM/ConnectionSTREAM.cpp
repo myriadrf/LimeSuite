@@ -431,7 +431,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
     else
         len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
     #endif
-    delete wbuffer;
+    delete[] wbuffer;
     return len;
 }
 

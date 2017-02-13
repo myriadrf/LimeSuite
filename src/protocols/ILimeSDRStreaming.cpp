@@ -399,7 +399,7 @@ int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t 
             samplesShort[i] = samplesFloat[i]*2047;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
-        delete samplesShort;
+        delete[] samplesShort;
     }
     //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else

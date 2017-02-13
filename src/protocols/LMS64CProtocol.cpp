@@ -491,7 +491,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
         }
         ParsePacket(pkt, inBuffer, inDataPos, protocol);
     }
-    delete outBuffer;
+    delete[] outBuffer;
     delete[] inBuffer;
     return status;
 }
