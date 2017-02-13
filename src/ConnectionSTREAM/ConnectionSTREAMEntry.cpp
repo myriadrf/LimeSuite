@@ -123,81 +123,82 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
 #else
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-    if(usbDeviceCount > 0)
+
+    if (usbDeviceCount < 0) {
+        printf("failed to get libusb device list: %s\n", libusb_strerror(libusb_error(usbDeviceCount)));
+        return handles;
+    }
+
+    for(int i=0; i<usbDeviceCount; ++i)
     {
-        for(int i=0; i<usbDeviceCount; ++i)
+        libusb_device_descriptor desc;
+        int r = libusb_get_device_descriptor(devs[i], &desc);
+        if(r<0)
+            printf("failed to get device description\n");
+        int pid = desc.idProduct;
+        int vid = desc.idVendor;
+
+        if(vid == 1204 && pid == 34323)
         {
-            libusb_device_descriptor desc;
-            int r = libusb_get_device_descriptor(devs[i], &desc);
-            if(r<0)
-                printf("failed to get device description\n");
-            int pid = desc.idProduct;
-            int vid = desc.idVendor;
-
-            if(vid == 1204 && pid == 34323)
+            ConnectionHandle handle;
+            handle.media = "USB";
+            handle.name = "DigiGreen";
+            handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
+            handles.push_back(handle);
+        }
+        else if((vid == 1204 && pid == 241) || (vid == 1204 && pid == 243) || (vid == 7504 && pid == 24840))
+        {
+            libusb_device_handle *tempDev_handle(nullptr);
+            if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
+                continue;
+            if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
             {
-                ConnectionHandle handle;
-                handle.media = "USB";
-                handle.name = "DigiGreen";
-                handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
-                handles.push_back(handle);
+                if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
+                    printf("Kernel Driver Detached!\n");
             }
-            else if((vid == 1204 && pid == 241) || (vid == 1204 && pid == 243) || (vid == 7504 && pid == 24840))
+            if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
             {
-                libusb_device_handle *tempDev_handle(nullptr);
-                if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
-                    continue;
-                if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
-                {
-                    if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                        printf("Kernel Driver Detached!\n");
-                }
-                if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
-                {
-                    printf("Cannot Claim Interface\n");
-                }
+                printf("Cannot Claim Interface\n");
+            }
 
-                ConnectionHandle handle;
+            ConnectionHandle handle;
 
-                //check operating speed
-                int speed = libusb_get_device_speed(devs[i]);
-                if(speed == LIBUSB_SPEED_HIGH)
-                    handle.media = "USB 2.0";
-                else if(speed == LIBUSB_SPEED_SUPER)
-                    handle.media = "USB 3.0";
+            //check operating speed
+            int speed = libusb_get_device_speed(devs[i]);
+            if(speed == LIBUSB_SPEED_HIGH)
+                handle.media = "USB 2.0";
+            else if(speed == LIBUSB_SPEED_SUPER)
+                handle.media = "USB 3.0";
+            else
+                handle.media = "USB";
+
+            //read device name
+            char data[255];
+            r = libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, sizeof(data));
+            if(r > 0) handle.name = std::string(data, size_t(r));
+
+            r = std::sprintf(data, "%.4x:%.4x", int(vid), int(pid));
+            if (r > 0) handle.addr = std::string(data, size_t(r));
+
+            if (desc.iSerialNumber > 0)
+            {
+                r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
+                if(r<0)
+                    printf("failed to get serial number\n");
                 else
-                    handle.media = "USB";
+                    handle.serial = std::string(data, size_t(r));
+            }
+            libusb_close(tempDev_handle);
 
-                //read device name
-                char data[255];
-                r = libusb_get_string_descriptor_ascii(tempDev_handle,  LIBUSB_CLASS_COMM, (unsigned char*)data, sizeof(data));
-                if(r > 0) handle.name = std::string(data, size_t(r));
-
-                r = std::sprintf(data, "%.4x:%.4x", int(vid), int(pid));
-                if (r > 0) handle.addr = std::string(data, size_t(r));
-
-                if (desc.iSerialNumber > 0)
-                {
-                    r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
-                    if(r<0)
-                        printf("failed to get serial number\n");
-                    else
-                        handle.serial = std::string(data, size_t(r));
-                }
-                libusb_close(tempDev_handle);
-
-                //add handle conditionally, filter by serial number
-                if (hint.serial.empty() or hint.serial == handle.serial)
-                {
-                    handles.push_back(handle);
-                }
+            //add handle conditionally, filter by serial number
+            if (hint.serial.empty() or hint.serial == handle.serial)
+            {
+                handles.push_back(handle);
             }
         }
     }
-    else
-    {
-        libusb_free_device_list(devs, 1);
-    }
+
+    libusb_free_device_list(devs, 1);
 #endif
     return handles;
 }
