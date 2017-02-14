@@ -389,15 +389,12 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
 #ifdef LMS_VERBOSE_OUTPUT
                 printf("phase: min %1.1f; max %1.1f)\n",min,max);
 #endif
-                SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
-                return 0;
+                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
             }
             else
             {
                 clocks[i].findPhase = false;
-                SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
-                ReportError("Unable to configure phase shift for LML interface");
-                return -1;
+                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
             }
         }
 
