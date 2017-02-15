@@ -23,6 +23,7 @@ protected:
     std::atomic<bool> captureSamples;
     std::atomic<int> averageCount;
     std::atomic<bool> updateGUI;
+    std::atomic<bool> enableFFT;
     std::string captureFilename;
 	// Handlers for frFFTviewer events.
 	void OnWindowFunctionChanged( wxCommandEvent& event );

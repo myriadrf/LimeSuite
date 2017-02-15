@@ -285,7 +285,9 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
     {
         mFFTpanel->Refresh();
         mFFTpanel->Draw();
+        enableFFT.store(true);
     }
+    else enableFFT.store(false);
 
     updateGUI.store(true);
 }
@@ -297,6 +299,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     const int test_count = fftSize;// / 680*26;//4096*16;
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
+    bool fftEnabled = true;
 
     vector<float> wndCoef;
     float amplitudeCorrection = 1;
@@ -358,7 +361,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     pthis->mStreamRunning.store(true);
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
     lms_stream_meta_t meta;
     meta.waitForTimestamp = true;
     int fftCounter = 0;
@@ -401,27 +404,31 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 //reset fftBins for accumulation
                 for (unsigned i = 0; a==0 && i < fftSize; ++i)
                 {
-                    localDataResults.fftBins[ch][i] = 0;
+                    if (fftEnabled)
+                        localDataResults.fftBins[ch][i] = 0;
                     localDataResults.samplesI[ch][i] = buffers[ch][i].i;
                     localDataResults.samplesQ[ch][i] = buffers[ch][i].q;
                 }
-                for (unsigned i = 0; i < fftSize; ++i)
+                if (fftEnabled)
                 {
-                    m_fftCalcIn[i].r = buffers[ch][i].i * amplitudeCorrection * wndCoef[i];
-                    m_fftCalcIn[i].i = buffers[ch][i].q * amplitudeCorrection * wndCoef[i];
-                }
+                    for (unsigned i = 0; i < fftSize; ++i)
+                    {
+                        m_fftCalcIn[i].r = buffers[ch][i].i * amplitudeCorrection * wndCoef[i];
+                        m_fftCalcIn[i].i = buffers[ch][i].q * amplitudeCorrection * wndCoef[i];
+                    }
 
-                kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
-                for(unsigned int i=0; i<fftSize; ++i)
-                {
-                    m_fftCalcOut[i].r /= fftSize;
-                    m_fftCalcOut[i].i /= fftSize;
+                    kiss_fft(m_fftCalcPlan, m_fftCalcIn, m_fftCalcOut);
+                    for(unsigned int i=0; i<fftSize; ++i)
+                    {
+                        m_fftCalcOut[i].r /= fftSize;
+                        m_fftCalcOut[i].i /= fftSize;
+                    }
+                    int output_index = 0;
+                    for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
+                        localDataResults.fftBins[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
+                    for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
+                        localDataResults.fftBins[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
                 }
-                int output_index = 0;
-                for (unsigned i = fftSize / 2 + 1; i < fftSize; ++i)
-                    localDataResults.fftBins[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
-                for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
-                    localDataResults.fftBins[ch][output_index++] += sqrt(m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i);
             }
             ++fftCounter;
         }
@@ -431,8 +438,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         if (timePeriod >= 33 && fftCounter >= avgCount && pthis->updateGUI.load() == true)
         {
             t1 = t2;
-            //shift fft, convert to dBfs
-            for(int ch=0; ch<channelsCount; ++ch)
+            //shift fft
+            for(int ch=0; ch<channelsCount && fftEnabled; ++ch)
             {
                 for (unsigned s = 0; s < fftSize; ++s)
                 {
@@ -448,13 +455,14 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 pthis->QueueEvent(evt);
             }
             fftCounter = 0;
-        }
-        avgCount = pthis->averageCount.load();
-        int wndFunctionSelection = pthis->windowFunctionID.load();
-        if(wndFunctionSelection != wndFunction)
-        {
-            wndFunction = wndFunctionSelection;
-            GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, amplitudeCorrection);
+            fftEnabled = pthis->enableFFT.load();
+            avgCount = pthis->averageCount.load();
+            int wndFunctionSelection = pthis->windowFunctionID.load();
+            if(wndFunctionSelection != wndFunction)
+            {
+                wndFunction = wndFunctionSelection;
+                GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, amplitudeCorrection);
+            }
         }
     }
 
