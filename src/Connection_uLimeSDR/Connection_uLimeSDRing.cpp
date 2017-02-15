@@ -190,6 +190,7 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
                     printf("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*buffersCount;
+                    if (args.reportLateTx) args.reportLateTx(pkt[pktIndex].counter);
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
@@ -346,7 +347,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
         }
         int i=0;
 
-        while(i<packetsToBatch)
+        while(i<packetsToBatch && terminate->load() != true)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);

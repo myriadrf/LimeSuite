@@ -379,7 +379,6 @@ int ILimeSDRStreaming::StreamChannel::Read(void* samples, const uint32_t count, 
         for(int i=2*popped-1; i>=0; --i)
             samplesFloat[i] = (float)samplesShort[i]/2048.0;
     }
-    //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else
     {
         complex16_t* ptr = (complex16_t*)samples;
