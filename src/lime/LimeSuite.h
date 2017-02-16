@@ -480,6 +480,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx,
                                         size_t chan, double bw, unsigned flags);
 
 API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateAnalogRSSIDC(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_CalibrateTxGain(lms_device_t *device, float maxGainOffset_dBFS, float *actualGain_dBFS);
 

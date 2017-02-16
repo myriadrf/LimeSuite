@@ -1203,6 +1203,19 @@ API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
     return lms->CalibrateInternalADC();
 }
 
+API_EXPORT int CALL_CONV LMS_CalibrateAnalogRSSIDC(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateAnalogRSSI_DC_Offset();
+}
+
 API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device)
 {
     if (device == nullptr)

@@ -596,6 +596,10 @@ LMS7_INTADC_CMPCFG_PDET1};
         rssidc_cmpstatus = new wxStaticText(panel, wxID_ANY, _("?"));
         sizer->Add(rssidc_cmpstatus);
 
+        wxButton* calibrateAnalogRSSIDC = new wxButton(panel, wxNewId(), _("Calibrate Analog RSSI"));
+        calibrateAnalogRSSIDC->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnCalibrateAnalogRSSI), NULL, this);
+        sizer->Add(calibrateAnalogRSSIDC);
+
         RSSIGroup->Add(sizer);
         rowGroup->Add(RSSIGroup);
     }
@@ -969,4 +973,10 @@ void lms7002_pnlR3_view::UpdateGUISlow()
     spinDCO2->SetValue((rez[1] >> 7) & 0x7F);
     spinDCO1->SetValue((rez[1] >> 0) & 0x7F);
 
+}
+
+void lms7002_pnlR3_view::OnCalibrateAnalogRSSI( wxCommandEvent& event )
+{
+    LMS_CalibrateAnalogRSSIDC(lmsControl);
+    UpdateGUI();
 }

@@ -1794,7 +1794,17 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
 */
 int LMS7002M::SPI_write(uint16_t address, uint16_t data)
 {
-    return this->SPI_write_batch(&address, &data, 1);
+    if(address == 0x0640 || address == 0x0641)
+    {
+        MCU_BD* mcu = GetMCUControls();
+        SPI_write(0x002D, address);
+        SPI_write(0x020C, data);
+        mcu->RunProcedure(7);
+        mcu->WaitForMCU(50);
+        return SPI_read(0x040B);
+    }
+    else
+        return this->SPI_write_batch(&address, &data, 1);
 }
 
 /** @brief Reads whole register value from given address
@@ -1817,7 +1827,18 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
     if(controlPort)
     {
         uint16_t data = 0;
-        int st = this->SPI_read_batch(&address, &data, 1);
+        int st;
+        if(address == 0x0640 || address == 0x0641)
+        {
+            MCU_BD* mcu = GetMCUControls();
+            SPI_write(0x002D, address);
+            mcu->RunProcedure(8);
+            mcu->WaitForMCU(50);
+            uint16_t rdVal = SPI_read(0x040B, true);
+            return rdVal;
+        }
+        else
+            st = this->SPI_read_batch(&address, &data, 1);
         if (status != nullptr) *status = st;
         return data;
     }
@@ -2571,5 +2592,48 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
     this->SetActiveChannel(ch);
     //update external band-selection to match
     this->UpdateExternalBandSelect();
+    return 0;
+}
+
+int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
+{
+    Modify_SPI_Reg_bits(LMS7param(PD_RSSI_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 26);
+    int value = -63;
+    uint8_t wrValue = abs(value);
+    if(value < 0)
+        wrValue |= 0x40;
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+    uint8_t cmp = Get_SPI_Reg_bits(LMS7param(RSSIDC_CMPSTATUS), true);
+    uint8_t cmpPrev = cmp;
+    vector<int8_t> edges;
+    for(value = -63; value < 64; ++value)
+    {
+        wrValue = abs(value);
+        if(value < 0)
+            wrValue |= 0x40;
+        Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+        this_thread::sleep_for(chrono::microseconds(5));
+        cmp = Get_SPI_Reg_bits(LMS7param(RSSIDC_CMPSTATUS), true);
+        if(cmp != cmpPrev)
+        {
+            edges.push_back(value);
+            cmpPrev = cmp;
+        }
+        if(edges.size() > 1)
+            break;
+    }
+    if(edges.size() != 2)
+    {
+        printf("Not found\n");
+        return ReportError(EINVAL, "Failed to find value");
+    }
+    int8_t found = (edges[0]+edges[1])/2;
+    wrValue = abs(found);
+    if(found < 0)
+        wrValue |= 0x40;
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+    printf("Found %i\n", found);
     return 0;
 }

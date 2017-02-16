@@ -71,6 +71,7 @@ class lms7002_pnlR3_view : public wxPanel
         void OnReadRSSICMP(wxCommandEvent& event);
         void OnReadDCCMP(wxCommandEvent& event);
         void OnReadADC( wxCommandEvent& event );
+        void OnCalibrateAnalogRSSI( wxCommandEvent& event );
 
         void OnWriteRxDC( wxCommandEvent& event );
         void OnWriteTxDC( wxCommandEvent& event );
