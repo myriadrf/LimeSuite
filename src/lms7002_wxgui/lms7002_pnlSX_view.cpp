@@ -592,6 +592,10 @@ void lms7002_pnlSX_view::UpdateGUI()
             return;
         }
     }
+    if(ch == 1)
+        chkPD_LOCH_T2RBUF->Hide();
+    else
+        chkPD_LOCH_T2RBUF->Show();
 
     wxCommandEvent evt;
     OnbtnReadComparators(evt);
