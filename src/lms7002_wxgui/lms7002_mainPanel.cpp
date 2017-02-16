@@ -299,7 +299,22 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
+    uint16_t readVal = 0;
+    for(int i=0; i<0x3FF; ++i)
+    {
+        uint16_t wrValue = i;
+        LMS_WriteLMSReg(lmsControl, 0x0640, wrValue);
+        readVal = 0;
+        LMS_ReadLMSReg(lmsControl, 0x0640, &readVal);
+        readVal &= 0x03FF;
+        wrValue >>= 1;
+        if(readVal != wrValue )
+        {
+            printf("Mismatch wr/rd: 0x%04X, 0x%04X\n", i, readVal);
+        }
+    }
 
+    return ;
     double t;
     LMS_GetChipTemperature(lmsControl,0,&t);
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));

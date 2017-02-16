@@ -4,6 +4,8 @@
 #include "LMS7002M_parameters_compact.h"
 #include "lms7002m_controls.h"
 
+#include "typedefs.h"
+
 bool runProcedure = false;
 uint8_t currentInstruction;
 extern float_type RefClk;
@@ -48,6 +50,32 @@ void ext3_int() interrupt 8
 	runProcedure = true;
 }
 
+uint16_t proxyRegAddr = 0x002D;
+uint16_t proxyWrValue = 0x020C;
+uint16_t proxyRdValue = 0x040B;
+
+uint8_t ProxyWrite()
+{
+    uint16_t addr;
+    uint16_t wrValue;
+    P1 = MCU_WORKING;
+    addr = SPI_read(proxyRegAddr);
+    wrValue = SPI_read(proxyWrValue);
+    SPI_writeSlow(addr, wrValue);
+    return MCU_IDLE;
+}
+
+uint8_t ProxyRead()
+{
+    uint16_t addr;
+    uint16_t rdValue;
+    P1 = MCU_WORKING;
+    addr = SPI_read(proxyRegAddr);
+    rdValue = SPI_readSlow(addr);
+    SPI_write(proxyRdValue, rdValue);
+    return MCU_IDLE;
+}
+
 /*
 	P1[7] : 0-MCU idle, 1-MCU_working
 	P1[6:0] : return status (while working = 0x3F)
@@ -75,7 +103,7 @@ void main()  //main routine
 			//case 0:
 			//	P1 = MCU_IDLE;
 			//	break;
-			case 1: //CalibrateTx
+			/*case 1: //CalibrateTx
 				P1 = MCU_IDLE | CalibrateTx();
 				break;
 			case 2: //CalibrateRx
@@ -100,6 +128,12 @@ void main()  //main routine
 			Modify_SPI_Reg_bits(MAC, ch); //activate VCO and comparator
 				break;
 			}	*/
+            case 7:
+                P1 = ProxyWrite();
+				break;
+            case 8:
+                P1 = ProxyRead();
+				break;
 			case 255: //return program ID
 				P1 = 0x02;
 				break;

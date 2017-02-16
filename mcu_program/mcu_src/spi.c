@@ -67,3 +67,67 @@ uint16_t Get_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits)
 {
 	return (SPI_read(SPI_reg_addr) & (~(~0<<((bits>>4)+1)))) >> (bits&0xF); //shift bits to LSB
 }
+
+void Delay()
+{
+    volatile uint16_t i = 0xFF;
+    while(i>0)
+        --i;
+}
+
+void SPI_transferVariableSlow(unsigned short value)
+{								  
+	uint8_t spiIter;
+	for(spiIter = 16; spiIter>0; spiIter--) //MSB First
+	{
+		ucSCLK=0;	//set Clock low
+        Delay();
+		ucSDIN = value & 0x8000; //if current bit is 1 set Output High
+		value <<= 1; //shift mask to right
+        Delay();
+		ucSCLK=1; 	//set Clock high
+        Delay(); 
+	}
+    Delay();
+	ucSCLK=0;	//set Clock low
+}
+
+void SPI_writeSlow(const unsigned short spiAddrReg, const unsigned short spiDataReg)
+{
+	ucSCLK=0;
+	ucSEN=0;
+    Delay();
+	//write addr
+	SPI_transferVariableSlow(spiAddrReg | 0x8000); //set write bit
+	//write data
+	SPI_transferVariableSlow(spiDataReg);
+	ucSEN=1;
+	ucSDIN=1;
+}
+
+unsigned short SPI_readSlow (const unsigned short spiAddrReg)
+{
+	uint8_t spiIter;	
+	uint16_t spiDataReg = 0;
+	ucSCLK=0;
+	ucSEN=0;
+    Delay();
+	//write addr
+	SPI_transferVariableSlow(spiAddrReg & ~0x8000);	//clear write bit
+	ucSDIN=1;
+	//read data
+	for(spiIter = 16; spiIter>0; spiIter--) //MSB First
+	{
+		ucSCLK=1; 	//set Clock high
+        Delay();
+		spiDataReg <<= 1;
+		if (ucSDOUT)
+			spiDataReg |= 1;
+        Delay();
+		ucSCLK=0;	//set Clock low
+	}
+    Delay();
+	ucSEN=1;
+	ucSDIN=1;
+	return spiDataReg;
+}

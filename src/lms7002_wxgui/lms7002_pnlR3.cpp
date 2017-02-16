@@ -4,8 +4,12 @@
 #include <wx/stattext.h>
 #include "LMS7002M_parameters.h"
 #include "lms7002_gui_utilities.h"
+#include <chrono>
+#include <thread>
 
 #include <vector>
+
+using namespace std;
 
 lms7002_pnlR3_view::lms7002_pnlR3_view( wxWindow* parent ) :
     wxPanel( parent)
@@ -540,21 +544,25 @@ LMS7_INTADC_CMPCFG_PDET1};
         chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
         sizer->Add(chkbox);
         wndId2Enum[chkbox] = LMS7_RSSIDC_PD;
+        chkRSSI_PD = chkbox;
 
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("HYSCMP")), 1, wxEXPAND, 0);
         NumericSlider* spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
+        cmbRSSIDC_HYSCMP = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
         sizer->Add(spnCtrl);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_HYSCMP;
 
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO2")), 1, wxEXPAND, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
+        spinDCO2 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
         sizer->Add(spnCtrl);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_DCO2;
 
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO1")), 1, wxEXPAND, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
+        spinDCO1 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
         sizer->Add(spnCtrl);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_DCO1;
@@ -578,7 +586,7 @@ LMS7_INTADC_CMPCFG_PDET1};
             value_mV -= 10;
         }
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSEL:")), 1, wxEXPAND, 0);
-        wxComboBox* cmbRSEL = new wxComboBox(panel, wxID_ANY);
+        cmbRSEL = new wxComboBox(panel, wxID_ANY);
         cmbRSEL->Append(rselArray);
         cmbRSEL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
         sizer->Add(cmbRSEL);
@@ -676,6 +684,7 @@ void lms7002_pnlR3_view::Initialize(lms_device_t* pControl)
 
 void lms7002_pnlR3_view::UpdateGUI()
 {
+    LMS_Synchronize(lmsControl, false);
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     wxCommandEvent evt;
@@ -722,6 +731,46 @@ void lms7002_pnlR3_view::UpdateGUI()
     LMS_ReadParam(lmsControl, LMS7_CMIX_GAIN_TXTSP_R3, &value);
     txtsp_cmix_gain |= value << 2;
     cmbCMIX_GAIN_TXTSP->SetSelection(txtsp_cmix_gain);
+
+    UpdateGUISlow();
+}
+
+void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
+{
+    uint16_t temp;
+    LMS_ReadLMSReg(lmsControl, 0x0002, &temp);
+
+    const uint16_t x0002reg = temp & 0xFF;
+    const uint16_t interupt6 = 0x0008;
+    const uint16_t addrs[5] = {0x0006, 0x0, 0x0002, 0x0002, 0x0002};
+    const uint16_t values[5] = {
+        (uint16_t)(id != 0),
+        (uint16_t)(id),
+        (uint16_t)(x0002reg & ~interupt6),
+        (uint16_t)(x0002reg | interupt6),
+        (uint16_t)(x0002reg & ~interupt6)};
+    for(int i=0; i<5; ++i)
+        LMS_WriteLMSReg(lmsControl, addrs[i], values[i]);
+}
+
+uint8_t lms7002_pnlR3_view::MCU_WaitForStatus(uint16_t timeout_ms)
+{
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1;
+    uint16_t value = 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    do {
+        //value = SPI_read(0x0001) & 0xFF;
+        LMS_ReadLMSReg(lmsControl, 0x0001, &value);
+        value &= 0xFF;
+        if (value != 0xFF) //working
+            break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        t2 = std::chrono::high_resolution_clock::now();
+    }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
+    LMS_WriteLMSReg(lmsControl, 0x0006, 0);
+    //SPI_write(0x0006, 0); //return SPI control to PC
+    return value & 0x7F;
 }
 
 void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
@@ -751,7 +800,41 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    LMS_WriteParam(lmsControl,parameter,event.GetInt());
+
+    if(parameter.address == 0x0640 || parameter.address == 0x0641)
+    {
+        //run mcu write
+        LMS_WriteLMSReg(lmsControl, 0x002D, parameter.address);
+        uint16_t wrVal = 0;
+
+        //read reg
+        MCU_RunProcedure(8);
+        uint16_t rdVal = 0;
+        MCU_WaitForStatus(100);
+        LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
+
+        uint16_t mask = (~0) << (parameter.msb-parameter.lsb+1);
+        mask = ~mask;
+        mask <<= parameter.lsb;
+        rdVal &= ~mask;
+        wrVal = rdVal | (event.GetInt() << parameter.lsb);
+
+        LMS_WriteLMSReg(lmsControl, 0x020C, wrVal);
+        MCU_RunProcedure(7);
+        MCU_WaitForStatus(100);
+
+        //check if correct
+        MCU_RunProcedure(8);
+
+        MCU_WaitForStatus(100);
+        LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
+        if(rdVal != wrVal)
+        {
+            printf("Mismatch\n");
+        }
+    }
+    else
+        LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
 
 void lms7002_pnlR3_view::ParameterChangeHandler(wxSpinEvent& event)
@@ -861,6 +944,29 @@ void lms7002_pnlR3_view::ParameterChangeHandlerCMPRead( wxCommandEvent& event )
 {
     ParameterChangeHandler(event);
     uint16_t value = 0;
-    LMS_ReadParam(lmsControl, LMS7_RSSIDC_CMPSTATUS, &value);
-    rssidc_cmpstatus->SetLabel(wxString::Format("%i", value & 1));
+    //LMS_ReadParam(lmsControl, LMS7_RSSIDC_CMPSTATUS, &value);
+    UpdateGUISlow();
+    //rssidc_cmpstatus->SetLabel(wxString::Format("%i", value & 1));
+}
+
+void lms7002_pnlR3_view::UpdateGUISlow()
+{
+    vector<uint16_t> addrs = {0x0640, 0x0641};
+    vector<uint16_t> rez;
+    for(auto i : addrs)
+    {
+        LMS_WriteLMSReg(lmsControl, 0x002D, i);
+        uint16_t value = 0;
+        MCU_RunProcedure(8);
+        MCU_WaitForStatus(100);
+        LMS_ReadLMSReg(lmsControl, 0x040B, &value);
+        rez.push_back(value);
+    }
+    rssidc_cmpstatus->SetLabel(wxString::Format("%i", (rez[0]>>15) ));
+    cmbRSEL->SetSelection((rez[0] >> 4) & 0x1F);
+    cmbRSSIDC_HYSCMP->SetValue((rez[0] >> 1) & 0x7);
+    chkRSSI_PD->SetValue(rez[0] & 0x1);
+    spinDCO2->SetValue((rez[1] >> 7) & 0x7F);
+    spinDCO1->SetValue((rez[1] >> 0) & 0x7F);
+
 }
