@@ -932,30 +932,10 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     else
         div = (2<<(ratio));
 
-
-    L = div > 8 ? 8 : div;
-    div -= 1;
-
-    /*if (filt==LMS_GFIR3)
-    {
-       if (L*15 < count)
-       {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           ret = -1;;
-           L = 1+(count-1)/15;
-           div = L-1;
-       }
-    }
+    if ((div > 8) || (count == 120) || (count == 40 && filt != LMS_GFIR3))
+        L = 8;
     else
-    {
-       if (L*5 < count)
-       {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           ret = -1;
-           L = 1+(count-1)/5;
-           div = L-1;
-       }
-    }*/
+        L = div;
 
     float_type max=0;
     for (int i=0; i< (filt==LMS_GFIR3 ? 120 : 40); i++)
@@ -963,7 +943,9 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
             max=fabs(coef[i]);
 
     if (max < 1.0)
-        max = 1.0;
+        max = 1.0f;
+    else if (max > 100)
+        max = 32767.0f;
 
     size_t sample = 0;
     for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
@@ -982,7 +964,8 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
         }
     }
 
-    L-=1;
+    div -= 1;
+    L = div > 7 ? 7 : div;
 
     if (tx)
     {
@@ -1337,7 +1320,7 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
         {
             if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
             || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0, true)!=0))
-                return -1;    
+                return -1;
         }
         else
         {

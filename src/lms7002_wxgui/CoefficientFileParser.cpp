@@ -16,7 +16,7 @@ using namespace std;
 // ***************************************************************
 bool Parser::IsBlank(char c)
 {
-	char blankchar[] = ", \t\n";
+	char blankchar[] = ", \t\n\r";
 	for(unsigned i=0; i<strlen(blankchar); i++)
 			if(c == blankchar[i] ) return(true);
 
@@ -28,7 +28,7 @@ bool Parser::IsBlank(char c)
 // ***************************************************************
 bool Parser::IsDigit(char c)
 {
-	char digit[] = "0123456789+-";
+	char digit[] = ".0123456789+-";
 	for(unsigned i=0; i<strlen(digit); i++)
 			if(c == digit[i] ) return(true);
 	return(false);
@@ -41,7 +41,7 @@ bool Parser::IsDigit(char c)
 //		-1 if EOF or
 //		-2 if syntax error
 // ***************************************************************
-int Parser::getint(FILE *fp, int *v)
+int Parser::getValue(FILE *fp, float *v)
 {
 	char c, c1, str[256];
 	int i, opencomments;
@@ -57,7 +57,7 @@ int Parser::getint(FILE *fp, int *v)
 		if( c1 == '/') {	/* C++ one line comment */
 			while( (c = fgetc(fp)) != '\n' && c != EOF) ;
 			if(c == EOF) return(EOF);
-			else return(getint(fp, v)); 
+			else return(getValue(fp, v));
 		} else if( c1 == '*') {		/* C like comment */
 			opencomments = 1;
 			c = fgetc(fp);
@@ -69,7 +69,7 @@ int Parser::getint(FILE *fp, int *v)
 				if(opencomments == 0) break;
 			}
 			if(c1 == EOF) return(EOF);
-			else return(getint(fp, v));
+			else return(getValue(fp, v));
 		} else {
 			ungetc(c1, fp);
 		}
@@ -82,7 +82,7 @@ int Parser::getint(FILE *fp, int *v)
 		}
 		ungetc(c, fp);
 		str[i]='\0';
-		*v = atoi(str);
+		*v = atof(str);
 		return(0);
 	} else return(-2);
 }
@@ -95,7 +95,7 @@ int Parser::getint(FILE *fp, int *v)
 //	-5	too many coefficients in the file
 //	>=0 	number of the coefficients read
 // ***************************************************************
-int Parser::getcoeffs(const char *filename, int *v, int max)
+int Parser::getcoeffs(const char *filename, float *v, int max)
 {
 	int i, n;
 	FILE *fp;
@@ -104,7 +104,7 @@ int Parser::getcoeffs(const char *filename, int *v, int max)
 	if( (fp = fopen(filename, "r")) == NULL) return(-4);
 
 	for(n=0; n < max; ) {
-		i = getint(fp, v);
+		i = getValue(fp, v);
 		if( i == EOF ) {
 			fclose(fp);
 			return(n);
@@ -128,7 +128,7 @@ int Parser::getcoeffs(const char *filename, int *v, int max)
 //	-5	too many coefficients in the file
 //	>=0 	number of the coefficients read
 // ***************************************************************
-int Parser::getcoeffs2(const char *filename, int *v1, int *v2, int max)
+int Parser::getcoeffs2(const char *filename, float *v1, float *v2, int max)
 {
 	int i, n;
 	FILE *fp;
@@ -137,7 +137,7 @@ int Parser::getcoeffs2(const char *filename, int *v1, int *v2, int max)
 	if( (fp = fopen(filename, "r")) == NULL) return(-4);
 
 	for(n=0; n < max+1; ) {
-		i = getint(fp, v1);
+		i = getValue(fp, v1);
 		if( i == EOF ) {
 			fclose(fp);
 			return(n);
@@ -148,7 +148,7 @@ int Parser::getcoeffs2(const char *filename, int *v1, int *v2, int max)
 			v1++;
 		}
 
-		i = getint(fp, v2);
+		i = getValue(fp, v2);
 		if( i == EOF ) {
 			fclose(fp);
 			return(-2);
@@ -167,7 +167,7 @@ int Parser::getcoeffs2(const char *filename, int *v1, int *v2, int max)
 // ***************************************************************
 // Saves given coefficients to fir file
 // ***************************************************************
-void Parser::saveToFile(const char * filename, const int *coefficients, int cCount)
+void Parser::saveToFile(const char * filename, const float *coefficients, int cCount)
 {
     fstream fout;
     fout.open(filename, ios::out);
@@ -195,7 +195,7 @@ void Parser::saveToFile(const char * filename, const int *coefficients, int cCou
 
     for(int i=0; i<cCount; ++i)
     {
-        fout << "\t" << coefficients[i];
+        fout << "\t" << std::fixed << coefficients[i];
         if(i<cCount-1)
             fout << ',' << endl;
     }
