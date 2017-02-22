@@ -421,7 +421,9 @@ void ADF4002_wxgui::Initialize(lms_device_t* pSerPort)
     lmsControl = pSerPort;
     if (lmsControl != nullptr)
     {
-        //m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+        double refclk;
+        LMS_GetReferenceClock(lmsControl, &refclk);
+        txtFvco->SetValue(wxString::Format("%f", refclk/1e6));
     }
 }
 
@@ -547,7 +549,7 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 
     config.fRef=-1;
     config.fVCO=-1;
-    
+
     spinNCnt->SetValue(config.nCounter);
     spinRCnt->SetValue(config.referenceCounter);
 
