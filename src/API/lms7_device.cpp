@@ -616,7 +616,12 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         }
     }
 
-   return 0;
+    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx) /
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
+    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+
+    return this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
 }
 
 
@@ -1028,7 +1033,7 @@ int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* 
        for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
        {
            coef[i] = coef16[i];
-           coef[i] /= (1<<15);
+           coef[i] /= (1<<15)-1;
        }
    }
    return (filt==LMS_GFIR3) ? 120 : 40;
