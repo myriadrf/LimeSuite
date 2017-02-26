@@ -416,7 +416,7 @@ void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
         programmer->Show();
     else
     {
-        programmer = new LMS_Programing_wxgui(this, wxNewId(), _("Programing"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+        programmer = new LMS_Programing_wxgui(this, wxNewId(), _("Programming"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
         programmer->SetConnection(lmsControl);
         programmer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnProgramingClose), NULL, this);
         programmer->Show();
