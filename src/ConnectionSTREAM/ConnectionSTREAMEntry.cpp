@@ -151,15 +151,6 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
             libusb_device_handle *tempDev_handle(nullptr);
             if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
                 continue;
-            if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
-            {
-                if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                    printf("Kernel Driver Detached!\n");
-            }
-            if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
-            {
-                printf("Cannot Claim Interface\n");
-            }
 
             ConnectionHandle handle;
 
