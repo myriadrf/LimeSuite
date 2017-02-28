@@ -112,6 +112,7 @@ static int makeDevice(void)
     if (not conn->IsOpen())
     {
         std::cout << "Connection not open!" << std::endl;
+        ConnectionRegistry::freeConnection(conn);
         return EXIT_FAILURE;
     }
 
