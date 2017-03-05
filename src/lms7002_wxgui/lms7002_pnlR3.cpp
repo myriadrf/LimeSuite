@@ -6,6 +6,7 @@
 #include "lms7002_gui_utilities.h"
 #include <chrono>
 #include <thread>
+#include "mcu_programs.h"
 
 #include <vector>
 
@@ -807,6 +808,10 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
 
     if(parameter.address == 0x0640 || parameter.address == 0x0641)
     {
+        MCU_RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+        if(MCU_WaitForStatus(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+            LMS_ProgramLMSMCU(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), LMS_TARGET_RAM, nullptr);
+
         //run mcu write
         LMS_WriteLMSReg(lmsControl, 0x002D, parameter.address);
         uint16_t wrVal = 0;
@@ -834,7 +839,8 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
         if(rdVal != wrVal)
         {
-            printf("Mismatch\n");
+            printf("Reg 0x%04X value mismatch, written 0x%04X, got 0x%04X\n",
+                   parameter.address, wrVal, rdVal);
         }
     }
     else

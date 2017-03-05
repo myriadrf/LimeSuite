@@ -14,6 +14,7 @@
 #define MCU_FUNCTION_UPDATE_REF_CLK 4
 #define MCU_FUNCTION_TUNE_TX_FILTER 5
 #define MCU_FUNCTION_TUNE_RX_FILTER 6
+#define MCU_FUNCTION_GET_PROGRAM_ID 255
 
 extern const uint8_t mcu_program_lms7_dc_iq_calibration_bin[16384];
 
