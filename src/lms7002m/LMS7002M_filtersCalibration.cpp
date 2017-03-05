@@ -12,6 +12,10 @@
 #include <cmath>
 #include <iostream>
 #include <assert.h>
+#include "MCU_BD.h"
+#include "mcu_programs.h"
+static const uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
+
 #ifdef _MSC_VER
 #include <ciso646>
 #endif
@@ -101,15 +105,40 @@ uint32_t LMS7002M::GetAvgRSSI(const int avgCount)
 
 int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
 {
+    int status;
     if(RxLPF_RF_LimitLow > rx_lpf_freq_RF || rx_lpf_freq_RF > RxLPF_RF_LimitHigh)
         return ReportError(ERANGE, "RxLPF frequency out of range, available range from %g to %g MHz", RxLPF_RF_LimitLow, RxLPF_RF_LimitHigh);
+
+    if(mCalibrationByMCU)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+        {
+            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+            if(status != 0)
+                return status;
+        }
+
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+        printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+        //set bandwidth for MCU to read from register, value is integer stored in MHz
+        mcuControl->SetParameter(MCU_BD::MCU_BW, rx_lpf_freq_RF);
+        mcuControl->RunProcedure(5);
+        status = mcuControl->WaitForMCU(1000);
+        if(status != 0)
+        {
+            printf("MCU working too long %i\n", status);
+        }
+        return status;
+    }
 
     //calculate intermediate frequency
     const float rx_lpf_IF = rx_lpf_freq_RF/2;
     auto registersBackup = BackupRegisterMap();
     int g_tia_rfe = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
 
-    int status;
     status = TuneRxFilterSetup(rx_lpf_IF);
     if(status != 0)
     {
@@ -313,7 +342,6 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     int input_ctl_pga_rbb = Get_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB));
 
     RestoreRegisterMap(registersBackup);
-
     Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
     Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
     Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
@@ -847,6 +875,32 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
                         TxLPF_RF_LimitMidHigh/1e6);
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     }
+
+    if(mCalibrationByMCU)
+    {
+        uint8_t mcuID = mcuControl->ReadMCUProgramID();
+        if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+        {
+            status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+            if(status != 0)
+                return status;
+        }
+
+        //set reference clock parameter inside MCU
+        long refClk = GetReferenceClk_SX(false);
+        mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+        printf("MCU Ref. clock: %g MHz\n", refClk / 1e6);
+        //set bandwidth for MCU to read from register, value is integer stored in MHz
+        mcuControl->SetParameter(MCU_BD::MCU_BW, tx_lpf_freq_RF);
+        mcuControl->RunProcedure(6);
+        status = mcuControl->WaitForMCU(1000);
+        if(status != 0)
+        {
+            printf("MCU working too long %i\n", status);
+        }
+        return status;
+    }
+
     auto registersBackup = BackupRegisterMap();
     status = TuneTxFilterSetup(tx_lpf_IF);
     if(status != 0)

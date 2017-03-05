@@ -77,12 +77,6 @@ using namespace lime;
 
 static const float_type calibUserBwDivider = 5;
 static const uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
-#define MCU_ID_DC_IQ_CALIBRATIONS 0x01
-#define MCU_ID_DC_IQ_CALIBRATIONS_FULL 0x02
-#define MCU_FUNCTION_CALIBRATE_TX 1
-#define MCU_FUNCTION_CALIBRATE_RX 2
-#define MCU_FUNCTION_READ_RSSI 3
-#define MCU_FUNCTION_UPDATE_REF_CLK 4
 
 //#define ENABLE_CALIBRATION_USING_FFT
 
@@ -901,8 +895,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     {
         uint8_t mcuID = mcuControl->ReadMCUProgramID();
         verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-            mcuID == MCU_ID_DC_IQ_CALIBRATIONS_FULL ? "DC/IQ calibration full":"unknown");
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS_FULL)
+            mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full":"unknown");
+        if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
         {
             verbose_printf("Uploading DC/IQ calibration firmware\n");
             status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
@@ -928,7 +922,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
         gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
         phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
-        goto TxCalibrationEnd;
+        return status;
     }
 
     Log("Tx calibration started", LOG_INFO);
@@ -1200,7 +1194,7 @@ void LMS7002M::CalibrateRxDCAuto()
     searchPlot.write("set title 'Rx DC search\n");
     spectrumPlot.write("set title 'Rx DC search\n");
 #endif // DRAW_GNU_PLOTS
-#ifdef ENABLETxDcBinarySearch_CALIBRATION_USING_FFT
+#ifdef ENABLE_CALIBRATION_USING_FFT
     SelectFFTBin(dataPort, 0);
 #endif
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
@@ -1734,8 +1728,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     {
         uint8_t mcuID = mcuControl->ReadMCUProgramID();
         verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
-            mcuID == MCU_ID_DC_IQ_CALIBRATIONS_FULL ? "DC/IQ calibration full" : "unknown");
-        if(mcuID != MCU_ID_DC_IQ_CALIBRATIONS_FULL)
+            mcuID == MCU_ID_CALIBRATIONS_SINGLE_IMAGE ? "DC/IQ calibration full" : "unknown");
+        if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
         {
             verbose_printf("Uploading DC/IQ calibration firmware\n");
             status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
@@ -1756,12 +1750,12 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
             printf("MCU working too long %i\n", status);
         }
         //need to read back calibration results
-        dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
-        dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
+        //dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
+        //dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
         gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
         gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
         phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
-        goto RxCalibrationEndStage;
+        return status;
     }
 
     Log("Rx calibration started", LOG_INFO);
