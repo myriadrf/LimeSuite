@@ -1546,7 +1546,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
     if(needCancelation)
     {
         newFreq = (int)(freq_Hz/refClk+0.5)*refClk;
-        TuneRxFilter(BW-BWOffset+abs(freq_Hz-newFreq));
+        TuneRxFilter(BW-BWOffset+2*abs(freq_Hz-newFreq));
         status = SetFrequencySX(tx, newFreq);
     }
     else
