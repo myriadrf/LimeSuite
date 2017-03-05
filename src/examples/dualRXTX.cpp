@@ -116,17 +116,17 @@ int main(int argc, char** argv)
     for (int i = 0; i < chCount; ++i)
     {
         rx_streams[i].channel = i; //channel number
-        rx_streams[i].fifoSize = 1024 * 128; //fifo size in samples
+        rx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
         rx_streams[i].throughputVsLatency = 0.0; //optimize for minimum latency
         rx_streams[i].isTx = false; //RX channel
-        rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I16; //16-bit integers
+        rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
         if (LMS_SetupStream(device, &rx_streams[i]) != 0)
             error();
         tx_streams[i].channel = i; //channel number
-        tx_streams[i].fifoSize = 1024 * 128; //fifo size in samples
+        tx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
         tx_streams[i].throughputVsLatency = 0.0; //optimize for minimum latency
         tx_streams[i].isTx = true; //TX channel
-        tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I16; //16-bit integers
+        tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
         if (LMS_SetupStream(device, &tx_streams[i]) != 0)
             error();
     }
@@ -169,8 +169,8 @@ int main(int argc, char** argv)
             int samplesRead;
             //Receive samples
             samplesRead = LMS_RecvStream(&rx_streams[i], buffers[i], bufersize, &rx_metadata, 1000);
-            //Send samples with 1024*1024 sample delay from RX (waitForTimestamp is enabled)
-            tx_metadata.timestamp = rx_metadata.timestamp + 1024 * 512;
+            //Send samples with 1024*256 sample delay from RX (waitForTimestamp is enabled)
+            tx_metadata.timestamp = rx_metadata.timestamp + 1024 * 256;
             LMS_SendStream(&tx_streams[i], buffers[i], samplesRead, &tx_metadata, 1000);
         }
 

@@ -622,7 +622,7 @@ public:
         uint64_t timestamp;
     };
     IStreamChannel(){};
-    IStreamChannel(IConnection* port){};
+    IStreamChannel(IConnection* port, StreamConfig conf){};
     virtual int Start() = 0;
     virtual int Stop() = 0;
     virtual ~IStreamChannel(){};

@@ -295,6 +295,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 {
     bool runTx = true;
     const int cMaxChCount = 2;
+    const int fifoSize = fftSize*512;
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
@@ -329,7 +330,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     for(int i=0; i<channelsCount; ++i)
     {
         pthis->rxStreams[i].channel = i;
-        pthis->rxStreams[i].fifoSize = fftSize*40;
+        pthis->rxStreams[i].fifoSize = fifoSize;
         pthis->rxStreams[i].isTx = false;
         pthis->rxStreams[i].dataFmt = fmt;
         pthis->rxStreams[i].throughputVsLatency = 1;
@@ -337,7 +338,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
         pthis->txStreams[i].handle = 0;
         pthis->txStreams[i].channel = i;
-        pthis->txStreams[i].fifoSize = fftSize*40;
+        pthis->txStreams[i].fifoSize = fifoSize;
         pthis->txStreams[i].isTx = true;
         pthis->txStreams[i].dataFmt = fmt;
         pthis->txStreams[i].throughputVsLatency = 1;
@@ -370,7 +371,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             for(int i=0; i<channelsCount; ++i)
             {
                 samplesPopped[i] = LMS_RecvStream(&pthis->rxStreams[i], &buffers[i][0], fftSize, &meta, 1000);
-                ts[i] = meta.timestamp + 1024 * 1024*2;
+                ts[i] = meta.timestamp + fifoSize/8;
             }
 
             for(int i=0; runTx && i<channelsCount; ++i)

@@ -23,8 +23,7 @@ int ILimeSDRStreaming::SetupStream(size_t& streamID, const StreamConfig& config)
     if(rxRunning.load() == true || txRunning.load() == true)
         return ReportError(EPERM, "All streams must be stopped before doing setups");
     streamID = ~0;
-    StreamChannel* stream = new StreamChannel(this);
-    stream->config = config;
+    StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
     if(config.isTx)
         mTxStreams.push_back(stream);
@@ -354,11 +353,16 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
 
 
 //-----------------------------------------------------------------------------
-ILimeSDRStreaming::StreamChannel::StreamChannel(lime::IConnection* port) :
+ILimeSDRStreaming::StreamChannel::StreamChannel(lime::IConnection* port, StreamConfig conf) :
     mActive(false)
 {
     this->port = dynamic_cast<ILimeSDRStreaming*>(port);
-    fifo = new RingFIFO(1024*8);
+    this->config = conf;
+    if (this->config.bufferLength == 0) //default size
+        this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket; 
+    else if (this->config.bufferLength < 64*SamplesPacket::maxSamplesInPacket) //minimum size
+        this->config.bufferLength = 64*SamplesPacket::maxSamplesInPacket;
+    fifo = new RingFIFO(this->config.bufferLength);
 }
 
 ILimeSDRStreaming::StreamChannel::~StreamChannel()

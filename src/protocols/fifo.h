@@ -33,15 +33,15 @@ public:
     {
         std::unique_lock<std::mutex> lck(lock);
         BufferInfo stats;
-        stats.size = mBufferSize;
-        stats.itemsFilled = mElementsFilled;
+        stats.size = mBufferSize*mBuffer->maxSamplesInPacket;
+        stats.itemsFilled = mElementsFilled*mBuffer->maxSamplesInPacket;
         return stats;
     }
 
     //!    @brief Initializes FIFO memory
-    RingFIFO(const uint32_t bufLength) : mBufferSize(bufLength)
+    RingFIFO(const uint32_t bufLength) : mBufferSize(1+(bufLength-1)/mBuffer->maxSamplesInPacket)
     {
-        mBuffer = new SamplesPacket[bufLength];
+        mBuffer = new SamplesPacket[mBufferSize];
         Clear();
     }
 

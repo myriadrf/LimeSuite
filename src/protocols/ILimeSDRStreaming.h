@@ -26,7 +26,7 @@ public:
             static const uint16_t samplesCount = 1360;
             complex16_t samples[samplesCount];
         };
-        StreamChannel(IConnection* port);
+        StreamChannel(IConnection* port, StreamConfig config);
         ~StreamChannel();
 
         int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
