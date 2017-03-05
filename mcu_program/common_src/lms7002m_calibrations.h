@@ -8,6 +8,9 @@ extern "C"
 {
 #endif
 
+extern int16_t ReadAnalogDC(const uint16_t addr);
+extern uint16_t GetRSSI();
+extern void LoadDC_REG_TX_IQ();
 extern uint8_t CalibrateTx();
 extern uint8_t CalibrateRx();
 

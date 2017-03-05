@@ -11,7 +11,12 @@ extern "C"
 {
 #endif
 
-extern void SetNCOFrequency(const bool tx, const float freq_Hz);
+extern void SaveChipState();
+extern void RestoreChipState();
+extern void SetDefaults(uint16_t start, uint16_t end);
+extern void SetDefaultsSX();
+
+extern void SetNCOFrequency(const bool tx, const float freq_Hz, uint8_t index);
 
 extern float_type GetFrequencyCGEN();
 extern uint8_t SetFrequencyCGEN(const float_type freq);

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "lms7002m_calibrations.h"
 #include "lms7002m_controls.h"
+#include "lms7002m_filters.h"
 #include "spi.h"
 #include "mcu.h"
 #include "mcuHexBin.h"
@@ -19,163 +20,35 @@ lime::IConnection *serPort = nullptr;
 lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
-static bool useMCU = 1;
-static bool tx = 0;
+static bool useMCU =1;
+static bool tx = 1;
+static bool filters = 1;
+static float FBW = 70e6;
 
-
-//potential list of registers that need to be backed up and restored after calibration
-const uint16_t backupStateAddr[] = {
-0x0020, 0x0082, 0x0084, 0x0085, 0x0086, 0x0087, 0x0088, 0x0089, 0x008B, 0x00AE,
-0x0100, 0x0101, 0x010C, 0x010D, 0x010E, 0x010F, 0x0110, 0x0111, 0x0112, 0x0113,
-0x0115, 0x0116, 0x0117, 0x0118, 0x0119, 0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0208, 0x020C,
-0x0242, 0x0243, 0x0400, 0x0401, 0x0402, 0x0403, 0x0404, 0x0405, 0x0406, 0x0407,
-0x0408, 0x0409, 0x040A, 0x040B, 0x040C, 0x040D, 0x040E, 0x0440, 0x0441, 0x0442,
-0x0443, 0x0444, 0x0445, 0x0446, 0x0447, 0x0448, 0x0449, 0x044A, 0x044B, 0x044C,
-0x044D, 0x044E, 0x044F, 0x0450, 0x0451, 0x0452, 0x0453, 0x0454, 0x0455, 0x0456,
-0x0457, 0x0458, 0x0459, 0x045A, 0x045B, 0x045C, 0x045D, 0x045E, 0x045F, 0x0460,
-0x0500, 0x0501, 0x0502, 0x0503, 0x0504, 0x0505, 0x0506, 0x0507, 0x0508, 0x0509,
-0x050A, 0x050B, 0x050C, 0x050D, 0x050E, 0x050F, 0x0510, 0x0511, 0x0512, 0x0513,
-0x0514, 0x0515, 0x0516, 0x0517, 0x0518, 0x0519, 0x051A, 0x051B, 0x051C, 0x051D,
-0x051E, 0x051F, 0x0520, 0x0521, 0x0522, 0x0523, 0x0524, 0x0525, 0x0526, 0x0527,
-0x0540, 0x0541, 0x0542, 0x0543, 0x0544, 0x0545, 0x0546, 0x0547, 0x0548, 0x0549,
-0x054A, 0x054B, 0x054C, 0x054D, 0x054E, 0x054F, 0x0550, 0x0551, 0x0552, 0x0553,
-0x0554, 0x0555, 0x0556, 0x0557, 0x0558, 0x0559, 0x055A, 0x055B, 0x055C, 0x055D,
-0x055E, 0x055F, 0x0560, 0x0561, 0x0562, 0x0563, 0x0564, 0x0565, 0x0566, 0x0567,
-0x0580, 0x0581, 0x0582, 0x0583, 0x0584, 0x0585, 0x0586, 0x0587, 0x0588, 0x0589,
-0x058A, 0x058B, 0x058C, 0x058D, 0x058E, 0x058F, 0x0590, 0x0591, 0x0592, 0x0593,
-0x0594, 0x0595, 0x0596, 0x0597, 0x0598, 0x0599, 0x059A, 0x059B, 0x059C, 0x059D,
-0x059E, 0x059F, 0x05A0, 0x05A1, 0x05A2, 0x05A3, 0x05A4, 0x05A5, 0x05A6, 0x05A7,
-};
-static const uint16_t backupSXAddr[] = {0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123, 0x0124};
-static uint16_t backupRegsSXR[sizeof(backupSXAddr) / sizeof(int16_t)];
-static uint16_t backupRegsSXT[sizeof(backupSXAddr) / sizeof(int16_t)];
-static uint16_t backupStateValues[sizeof(backupStateAddr) / sizeof(uint16_t)];
-static uint16_t backup0x0100;
-static uint16_t backup0x010D;
-
-void BackupRegisterState()
+int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
-    uint8_t macBck = Get_SPI_Reg_bits(0x0020, 1 << 4 | 0);
-    SPI_read_batch(backupStateAddr, backupStateValues, sizeof(backupStateAddr) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, 1);
-    SPI_read_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    //EN_NEXTRX_RFE could be modified in channel A
-    backup0x010D = SPI_read(0x010D);
-    //EN_NEXTTX_TRF could be modified in channel A
-    backup0x0100 = SPI_read(0x0100);
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, 2);
-    SPI_read_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, macBck);
+    uint16_t addr = tx ? 0x05C3 : 0x05C7;
+    addr += channel;
+    uint16_t mask = tx ? 0x03FF : 0x003F;
+    uint16_t value = 0;
+
+    SPI_write(addr, 0);
+    SPI_write(addr, 0x4000);
+    value = SPI_read(addr);
+    SPI_write(addr, value & ~0xC000);
+
+    if(value & (mask+1))
+        return (value & mask) * -1;
+    else
+        return (value & mask);
 }
 
-void RestoreRegisterState()
+void DCIQ()
 {
-    {
-    uint8_t macBck = Get_SPI_Reg_bits(0x0020, 1 << 4 | 0);
-    SPI_write_batch(backupStateAddr, backupStateValues, sizeof(backupStateAddr) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, 1);
-    SPI_write(0x010D, backup0x010D); //restore EN_NEXTRX_RFE
-    SPI_write(0x0100, backup0x0100); //restore EN_NEXTTX_TRF
-    SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, 2);
-    SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
-    Modify_SPI_Reg_bits(0x0020, 1 << 4 | 0, macBck);
-    }
-    //reset Tx logic registers, fixes interpolator
-    {
-    uint16_t x0020val = SPI_read(0x0020);
-    SPI_write(0x0020, x0020val & ~0xA000);
-    SPI_write(0x0020, x0020val);
-    }
-}
-
-extern uint32_t rssiCounter;
-extern uint32_t readCnt;
-extern uint32_t writeCnt;
-int main(int argc, char** argv)
-{
-    //connect to first available device
-    auto cachedHandles = lime::ConnectionRegistry::findConnections();
-    if(cachedHandles.size() > 0)
-        serPort = lime::ConnectionRegistry::makeConnection(cachedHandles.at(0));
-    if(serPort == nullptr)
-        return 0;
-    if (serPort != nullptr && !serPort->IsOpen())
-    {
-        lime::ConnectionRegistry::freeConnection(serPort);
-        printf("failed to open LMS7 control device");
-    }
-    else
-    {
-        auto info = serPort->GetDeviceInfo();
-        printf("Running tests with %s FW:%s HW:%s\n", info.deviceName.c_str(), info.firmwareVersion.c_str(), info.hardwareVersion.c_str());
-    }
-
-    lmsControl.SetConnection(serPort);
-    //change SPI switch to BB, just in case it was left for MCU
-    lmsControl.SPI_write(0x0006, 0);
-
-    //load initial chip config for testing
-    string filename;
-    if(tx)
-        filename = "TxTest.ini";
-    else
-        filename = "RxTest.ini";
-    if(lmsControl.LoadConfig(filename.c_str()) != 0)
-    {
-        printf("Failed to load .ini file\n");
-        lime::ConnectionRegistry::freeConnection(serPort);
-        return -1;
-    }
-    lmsControl.UploadAll();
-    //calibrating A channel
-    lmsControl.SetActiveChannel(lime::LMS7002M::Channel::ChA);
-
-    if(tx)
-    {
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 0);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
-    }
-
-    int status;
-    //backup chip state
     lime::LMS7002M_RegistersMap *backup;
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-
-    status = 0;
-    if(useMCU)
-    {
-        uint8_t mcuImage[8192];
-        uint16_t imgSize = 0;
-        status = MCU_HEX2BIN("calibrationsLMS7_MCU.hex", sizeof(mcuImage), mcuImage, &imgSize);
-        if(status != 0)
-            return status;
-
-        fstream fout;
-        fout.open("mcu_bin.txt", ios::out);
-        fout << "static const uint8_t mcuImage[] = {";
-        for(size_t i = 0; i < sizeof(mcuImage); ++i)
-        {
-            if(i % 16 == 0)
-                fout << endl;
-            char ctemp[40];
-            sprintf(ctemp, "0x%02X,", mcuImage[i]);
-            fout << ctemp;
-
-        }
-        fout << "}\n";
-        fout.close();
-
-        status = MCU_UploadProgram(mcuImage, sizeof(mcuImage));
-        if(status != 0)
-        {
-            printf("MCU programming failed\n");
-            return -1;
-        }
-    }
-
-    float freqStart = 400e6;
-    float freqEnd = 2400e6;
+    int status;
+    float freqStart = 1000e6;
+    float freqEnd = freqStart;//1000e6;
     float freqStep = 10e6;
 
     float freq = freqStart;
@@ -217,7 +90,7 @@ int main(int argc, char** argv)
         {
             if(!isSetBW)
             {
-            status = MCU_SetParameter(MCU_REF_CLK, 30.72e6);
+            status = MCU_SetParameter(MCU_REF_CLK, 40e6);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
             status = MCU_SetParameter(MCU_BW, 20e6);
@@ -231,7 +104,7 @@ int main(int argc, char** argv)
                 MCU_RunProcedure(1); //initiate Tx calibration
             else
                 MCU_RunProcedure(2); //initiate Rx calibration
-            status = MCU_WaitForStatus(1000); //wait until MCU finishes
+            status = MCU_WaitForStatus(10000); //wait until MCU finishes
             if(status != 0)
             {
                 printf("MCU calibration FAILED : 0x%02X\n", status);
@@ -252,16 +125,14 @@ int main(int argc, char** argv)
         int16_t dci, dcq, ph, gi, gq;
         if(tx)
         {
-            dci = lmsControl.Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
-            dcq = lmsControl.Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+            //dci = lmsControl.Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP));
+            //dcq = lmsControl.Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP));
+            dci = ReadDCCorrector(true, 0);
+            dcq = ReadDCCorrector(true, 1);
             gi = lmsControl.Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
             gq = lmsControl.Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
             ph = lmsControl.Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP));
 
-            dci <<= 8;
-            dci >>= 8;
-            dcq <<= 8;
-            dcq >>= 8;
             ph <<= 4;
             ph >>= 4;
 
@@ -275,19 +146,21 @@ int main(int argc, char** argv)
         }
         else
         {
-            dci = lmsControl.Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
-            dcq = lmsControl.Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+            //dci = lmsControl.Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+            //dcq = lmsControl.Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+            dci = ReadDCCorrector(false, 0);
+            dcq = ReadDCCorrector(false, 1);
             gi = lmsControl.Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP));
             gq = lmsControl.Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP));
             ph = lmsControl.Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP));
 
-            int16_t rdci = dci;
-            int16_t rdcq = dcq;
+            //int16_t rdci = dci;
+            //int16_t rdcq = dcq;
             //dci <<= 8;
-            if(dci & 0x40)
+            /*if(dci & 0x40)
                 rdci = -1 * abs(dci & 0x3F);
             if(dcq & 0x40)
-                rdcq = -1 * abs(dcq & 0x3F);
+                rdcq = -1 * abs(dcq & 0x3F);*/
             ph <<= 4;
             ph >>= 4;
 
@@ -297,12 +170,15 @@ int main(int argc, char** argv)
             vgq.push_back(gq);
             vph.push_back(ph);
 
-            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s | %li ms\n", freq/1e6, rdci, rdcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"), duration);
+            printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s | %li ms\n", freq/1e6, dci, dcq, gi, gq, ph, (status == 0 ? "OK" : "FAIL"), duration);
         }
         //restore chip state and apply calibration values
         //RestoreRegisterState();
+        /*if(!useMCU)
+        {
         lmsControl.RestoreRegisterMap(backup);
         lmsControl.UploadAll();
+        }*/
 
         if(tx)
         {
@@ -330,9 +206,234 @@ int main(int argc, char** argv)
         lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
         lmsControl.LoadDC_REG_IQ(true, 0x7FFF, 0x7FFF);
     }
-    lime::ConnectionRegistry::freeConnection(serPort);
+}
 
-GNUPlotPipe plot(true);
+void Filters()
+{
+    lime::LMS7002M_RegistersMap *backup;
+    int status;
+    bool isSetBW = false;
+
+    lmsControl.DownloadAll();
+    backup = lmsControl.BackupRegisterMap();
+
+    auto t1 = chrono::high_resolution_clock::now();
+    if(useMCU) //using algorithm inside MCU
+    {
+        if(!isSetBW)
+        {
+        status = MCU_SetParameter(MCU_REF_CLK, 40e6);
+        if(status != 0)
+            printf("Failed to set Reference Clk\n");
+        status = MCU_SetParameter(MCU_BW, FBW);
+        if(status != 0)
+            printf("Failed to set Bandwidth\n");
+        isSetBW = true;
+
+        }
+
+        if(tx)
+            MCU_RunProcedure(6); //initiate Tx calibration
+        else
+            MCU_RunProcedure(5); //initiate Rx calibration
+        status = MCU_WaitForStatus(10000); //wait until MCU finishes
+        if(status != 0)
+        {
+            printf("MCU calibration FAILED : 0x%02X\n", status);
+        }
+
+    }
+    else //calibrating with PC
+    {
+        if(tx)
+            status = TuneTxFilter(FBW);
+        else
+            status = TuneRxFilter(FBW);
+    }
+    auto t2 = chrono::high_resolution_clock::now();
+    long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+
+    lmsControl.DownloadAll();
+    int16_t rcal_lpflad,ccal_lpflad, lpfh;
+
+    //Restore settings
+    int cfb_tia_rfe;
+    int ccomp_tia_rfe;
+    int rcomp_tia_rfe;
+    int rcc_ctl_lpfl_rbb;
+    int c_ctl_lpfl_rbb;
+    int c_ctl_pga_rbb;
+    int rcc_ctl_pga_rbb;
+    int rcc_ctl_lpfh_rbb;
+    int c_ctl_lpfh_rbb;
+    int pd_lpfl_rbb;
+    int pd_lpfh_rbb;
+    int input_ctl_pga_rbb;
+
+    if(tx)
+    {
+        rcal_lpflad = lmsControl.Get_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB));
+        ccal_lpflad = lmsControl.Get_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB));
+        lpfh = lmsControl.Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB));
+
+        printf("Tx filter BW: %.0f MHz, RCAL_LPFLAD: %i, CCAL_LPFLAD: %i, RCAL_LPFH: %i  | %li ms\n",
+                FBW/1e6, rcal_lpflad, ccal_lpflad, lpfh, duration);
+    }
+    else
+    {
+        //Restore settings
+        cfb_tia_rfe = lmsControl.Get_SPI_Reg_bits(LMS7param(CFB_TIA_RFE));
+        ccomp_tia_rfe = lmsControl.Get_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE));
+        rcomp_tia_rfe = lmsControl.Get_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE));
+        rcc_ctl_lpfl_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB));
+        c_ctl_lpfl_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB));
+        c_ctl_pga_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB));
+        rcc_ctl_pga_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB));
+        rcc_ctl_lpfh_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB));
+        c_ctl_lpfh_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(C_CTL_LPFH_RBB));
+        pd_lpfl_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(PD_LPFL_RBB));
+        pd_lpfh_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(PD_LPFH_RBB));
+        input_ctl_pga_rbb = lmsControl.Get_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB));
+
+    }
+    //restore chip state and apply calibration values
+    //RestoreRegisterState();
+   /* if(!useMCU)
+    {
+    lmsControl.RestoreRegisterMap(backup);
+    lmsControl.UploadAll();
+    }*/
+
+    if(tx)
+    {
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCAL_LPFLAD_TBB), rcal_lpflad);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(CCAL_LPFLAD_TBB), ccal_lpflad);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB), lpfh);
+    }
+    else
+    {
+        printf("CFB_TIA: %i\n", cfb_tia_rfe);
+        printf("CCOMP: %i\n", ccomp_tia_rfe);
+        printf("RCOMP: %i\n", rcomp_tia_rfe);
+        printf("RCTL_LPFL: %i\n", rcc_ctl_lpfl_rbb);
+        printf("RCTL_LPFH: %i\n", rcc_ctl_lpfh_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFL_RBB), rcc_ctl_lpfl_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFL_RBB), c_ctl_lpfl_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(C_CTL_PGA_RBB), c_ctl_pga_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB), rcc_ctl_pga_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RCC_CTL_LPFH_RBB), rcc_ctl_lpfh_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(C_CTL_LPFH_RBB), c_ctl_lpfh_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), pd_lpfl_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB), pd_lpfh_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB), input_ctl_pga_rbb);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(ICT_LPF_IN_RBB), 12);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(ICT_LPF_OUT_RBB), 12);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(ICT_PGA_OUT_RBB), 20);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(ICT_PGA_IN_RBB), 20);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(R_CTL_LPF_RBB), 16);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(RFB_TIA_RFE), 16);
+    }
+
+    if(tx)
+    {
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 0);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
+        lmsControl.LoadDC_REG_IQ(true, 0x7FFF, 0x7FFF);
+    }
+}
+
+int main(int argc, char** argv)
+{
+    //connect to first available device
+    auto cachedHandles = lime::ConnectionRegistry::findConnections();
+    if(cachedHandles.size() > 0)
+        serPort = lime::ConnectionRegistry::makeConnection(cachedHandles.at(0));
+    if(serPort == nullptr)
+        return 0;
+    if (serPort != nullptr && !serPort->IsOpen())
+    {
+        lime::ConnectionRegistry::freeConnection(serPort);
+        printf("failed to open LMS7 control device");
+    }
+    else
+    {
+        auto info = serPort->GetDeviceInfo();
+        printf("Running tests with %s FW:%s HW:%s\n", info.deviceName.c_str(), info.firmwareVersion.c_str(), info.hardwareVersion.c_str());
+    }
+
+    lmsControl.SetConnection(serPort);
+    //change SPI switch to BB, just in case it was left for MCU
+    lmsControl.SPI_write(0x0006, 0);
+
+    //load initial chip config for testing
+    string filename;
+    /*if(tx)
+        filename = "TxTest.ini";
+    else
+        filename = "RxTest.ini";*/
+    filename = "CalibSetup.ini";
+    if(lmsControl.LoadConfig(filename.c_str()) != 0)
+    {
+        printf("Failed to load .ini file\n");
+        lime::ConnectionRegistry::freeConnection(serPort);
+        return -1;
+    }
+    lmsControl.UploadAll();
+    //calibrating A channel
+    //lmsControl.SetActiveChannel(lime::LMS7002M::Channel::ChB);
+
+    if(tx)
+    {
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 0);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
+    }
+
+    int status;
+    //backup chip state
+
+    lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+
+    status = 0;
+    if(useMCU)
+    {
+        uint8_t mcuImage[8192*2];
+        uint16_t imgSize = 0;
+        status = MCU_HEX2BIN("calibrationsLMS7_MCU.hex", sizeof(mcuImage), mcuImage, &imgSize);
+        if(status != 0)
+            return status;
+
+        fstream fout;
+        fout.open("mcu_bin.txt", ios::out);
+        fout << "static const uint8_t mcuImage[] = {";
+        for(size_t i = 0; i < sizeof(mcuImage); ++i)
+        {
+            if(i % 16 == 0)
+                fout << endl;
+            char ctemp[40];
+            sprintf(ctemp, "0x%02X,", mcuImage[i]);
+            fout << ctemp;
+        }
+        fout << "}\n";
+        fout.close();
+
+        status = MCU_UploadProgram(mcuImage, sizeof(mcuImage));
+        if(status != 0)
+        {
+            printf("MCU programming failed\n");
+            return -1;
+        }
+    }
+
+    if(filters)
+        Filters();
+    else
+        DCIQ();
+    lime::ConnectionRegistry::freeConnection(serPort);
+/*
+    GNUPlotPipe plot(true);
     //plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase'\n");
     plot.write("plot '-' u 1:2 w line title 'DC I', '-' u 1:2 w line title 'DC Q', '-' u 1:2 w line title 'Phase', '-' u 1:2 w line title 'GainI', '-' u 1:2 w line title 'GainQ'\n");
 
@@ -361,7 +462,7 @@ GNUPlotPipe plot(true);
         plot.writef("%f %i\n", vfreqs[i] / 1e6, vgq[i]);
     }
     plot.write("e\n");
-
+*/
 
     return 0;
 }
