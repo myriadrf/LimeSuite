@@ -1,7 +1,7 @@
 #ifndef LMS7_MCU_PROGRAMS_H
 #define LMS7_MCU_PROGRAMS_H
 
-#include "lime/LimeSuite.h"
+#include "LimeSuiteConfig.h"
 #include <stdint.h>
 
 #define MCU_PROGRAM_SIZE 16384
@@ -17,7 +17,7 @@
 #define MCU_FUNCTION_TUNE_RX_FILTER 6
 #define MCU_FUNCTION_GET_PROGRAM_ID 255
 
-API_EXPORT extern const uint8_t mcu_program_lms7_dc_iq_calibration_bin[16384];
+LIME_API extern const uint8_t mcu_program_lms7_dc_iq_calibration_bin[16384];
 
 #endif
 
