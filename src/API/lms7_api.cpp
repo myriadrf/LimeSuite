@@ -1651,7 +1651,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     LMS7_Device* lms = (LMS7_Device*)device;
 
     lime::StreamConfig config;
-    config.bufferLength = 65536;
+    config.bufferLength = stream->fifoSize;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
     switch(stream->dataFmt)

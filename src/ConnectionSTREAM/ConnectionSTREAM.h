@@ -109,6 +109,7 @@ public:
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
     int ProgramUpdate(const bool download, ProgrammingCallback callback);
+    int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100)override;
 protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;
@@ -122,7 +123,6 @@ protected:
     virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
     virtual void AbortSending();
-    int GetChipVersion();
     eConnectionType GetType(void) {return USB_PORT;}
 
     double DetectRefClk(void);
@@ -161,7 +161,6 @@ protected:
     bool bulkCtrlInProgress;
     bool bulkCtrlAvailable;
     std::mutex mExtraUsbMutex;
-    unsigned chipVersion;
 };
 
 class ConnectionSTREAMEntry : public ConnectionRegistryEntry

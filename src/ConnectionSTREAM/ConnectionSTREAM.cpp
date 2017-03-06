@@ -272,38 +272,39 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
 
     libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
-    if(usbDeviceCount > 0)
+
+    if (usbDeviceCount < 0) {
+        return ReportError(-1, "ConnectionSTREAM: libusb_get_device_list failed: %s", libusb_strerror(libusb_error(usbDeviceCount)));
+    }
+
+    for(int i=0; i<usbDeviceCount; ++i)
     {
-        for(int i=0; i<usbDeviceCount; ++i)
-        {
-            libusb_device_descriptor desc;
-            int r = libusb_get_device_descriptor(devs[i], &desc);
-            if(r<0)
-                printf("failed to get device description\n");
-            if (desc.idProduct != pid) continue;
-            if (desc.idVendor != vid) continue;
-            if(libusb_open(devs[i], &dev_handle) != 0) continue;
-
-            std::string foundSerial;
-            if (desc.iSerialNumber > 0)
-            {
-                char data[255];
-                r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
-                if(r<0)
-                    printf("failed to get serial number\n");
-                else
-                    foundSerial = std::string(data, size_t(r));
-            }
-
-            if (serial == foundSerial) break; //found it
-            libusb_close(dev_handle);
-            dev_handle = nullptr;
+        libusb_device_descriptor desc;
+        int r = libusb_get_device_descriptor(devs[i], &desc);
+        if(r<0) {
+            printf("failed to get device description\n");
+            continue;
         }
+        if (desc.idProduct != pid) continue;
+        if (desc.idVendor != vid) continue;
+        if(libusb_open(devs[i], &dev_handle) != 0) continue;
+
+        std::string foundSerial;
+        if (desc.iSerialNumber > 0)
+        {
+            char data[255];
+            r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
+            if(r<0)
+                printf("failed to get serial number\n");
+            else
+                foundSerial = std::string(data, size_t(r));
+        }
+
+        if (serial == foundSerial) break; //found it
+        libusb_close(dev_handle);
+        dev_handle = nullptr;
     }
-    else
-    {
-        libusb_free_device_list(devs, 1);
-    }
+    libusb_free_device_list(devs, 1);
 
     if(dev_handle == nullptr)
         return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
@@ -347,21 +348,6 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
     }
     return 0;
 #endif
-}
-
-/**	@brief Reads chip version information form LMS7 chip.
-*/
-int ConnectionSTREAM::GetChipVersion()
-{
-    LMS64CProtocol::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
-    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
-    if(TransferPacket(ctrPkt) != 0)
-        this->chipVersion = 0;
-    else
-        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
-    return this->chipVersion;
 }
 /**	@brief Closes communication to device.
 */
@@ -445,7 +431,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
     else
         len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
     #endif
-    delete wbuffer;
+    delete[] wbuffer;
     return len;
 }
 

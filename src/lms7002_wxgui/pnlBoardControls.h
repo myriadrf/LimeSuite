@@ -33,7 +33,7 @@ class pnlBoardControls : public wxFrame
         struct ADC_DAC
         {
             std::string name;
-            int16_t value;
+            double value;
             uint8_t channel;
             std::string units;
             int8_t powerOf10;

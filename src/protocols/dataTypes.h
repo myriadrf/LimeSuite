@@ -26,7 +26,7 @@ public:
     uint64_t timestamp; //timestamp of the packet
     uint16_t first; //index of first unused sample in samples
     uint16_t last; //end index of samples
-    complex16_t samples[1360];
+    complex16_t samples[maxSamplesInPacket];
     uint32_t flags;
 
     SamplesPacket()

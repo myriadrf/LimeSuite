@@ -1030,9 +1030,9 @@ float_type LMS7002M::GetReferenceClk_SX(bool tx)
 */
 float_type LMS7002M::GetFrequencyCGEN()
 {
-    float_type dMul = (GetReferenceClk_SX(Rx)/2.0)/(Get_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN))+1); //DIV_OUTCH_CGEN
-    uint16_t gINT = Get_SPI_Reg_bits(0x0088, 13, 0); //read whole register to reduce SPI transfers
-    uint32_t gFRAC = ((gINT & 0xF) * 65536) | Get_SPI_Reg_bits(0x0087, 15, 0);
+    float_type dMul = (GetReferenceClk_SX(Rx)/2.0)/(Get_SPI_Reg_bits(LMS7param(DIV_OUTCH_CGEN), true)+1); //DIV_OUTCH_CGEN
+    uint16_t gINT = Get_SPI_Reg_bits(0x0088, 13, 0, true); //read whole register to reduce SPI transfers
+    uint32_t gFRAC = ((gINT & 0xF) * 65536) | Get_SPI_Reg_bits(0x0087, 15, 0, true);
     return dMul * (((gINT>>4) + 1 + gFRAC/1048576.0));
 }
 

@@ -218,6 +218,7 @@ set(LMS7SUITE_GUI_SOURCES
     lms7suiteEvents/lms7suiteEvents.cpp
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
+    boards_wxgui/pnlUltimateEVB.cpp
     kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp

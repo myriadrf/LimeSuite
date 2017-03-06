@@ -1357,7 +1357,7 @@ API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *conf);
  * @param samples       sample buffer.
  * @param sample_count  Number of samples to read
  * @param meta          Metadata. See the ::lms_stream_meta_t description.
- * @param timeout_ms    how long to wait for data before timing out(0=infinite).
+ * @param timeout_ms    how long to wait for data before timing out.
  *
  * @return number of samples received on success, (-1) on failure
  */
@@ -1381,7 +1381,7 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_st
  * @param samples       sample buffer.
  * @param sample_count  Number of samples to write
  * @param meta          Metadata. See the ::lms_stream_meta_t description.
- * @param timeout_ms    how long to wait for data before timing out(0=infinite).
+ * @param timeout_ms    how long to wait for data before timing out.
  *
  * @return number of samples send on success, (-1) on failure
  */

@@ -59,9 +59,13 @@ else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 	  libusb-1.0
   )
 
+  set(LIBUSB_1_LIBRARY_NAME usb-1.0)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    set(LIBUSB_1_LIBRARY_NAME usb)
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+
   find_library(LIBUSB_1_LIBRARY
-    NAMES
-      usb-1.0 usb
+    NAMES ${LIBUSB_1_LIBRARY_NAME}
     PATHS
       /usr/lib
       /usr/local/lib

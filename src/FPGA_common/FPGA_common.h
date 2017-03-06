@@ -21,14 +21,19 @@ int ResetTimestamp(IConnection* serPort);
 
 struct FPGA_PLL_clock
 {
+    FPGA_PLL_clock()
+    {
+       findPhase = false;
+    }
     double outFrequency;
     double phaseShift_deg;
     uint8_t index;
     bool bypass;
+    bool findPhase;
     double rd_actualFrequency;
 };
 
-int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* outputs, const uint8_t clockCount);
+int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* outputs, const uint8_t clockCount);
 int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inputFreq, const double phaseShift_deg);
 
 int FPGAPacketPayload2Samples(const uint8_t* buffer, const size_t bufLen, const size_t chCount, const int format, complex16_t** samples, size_t* samplesCount);

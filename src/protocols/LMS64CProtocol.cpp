@@ -491,7 +491,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
         }
         ParsePacket(pkt, inBuffer, inDataPos, protocol);
     }
-    delete outBuffer;
+    delete[] outBuffer;
     delete[] inBuffer;
     return status;
 }
@@ -794,13 +794,19 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
 
     for (size_t i = 0; i < count; ++i)
     {
-        int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
+        int unitsIndex = pkt.inBuffer[i * 4 + 1];
         if(units)
-            units[i] = adcUnits2string(unitsIndex);
-        values[i] = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
-        int powerOf10 = pkt.inBuffer[i * 4 + 1] & 0x0F;
-        values[i] *= pow(10, powerOf10);
-        if(unitsIndex == TEMPERATURE)
+        {
+
+            const char adc_units_prefix[] = {
+                ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+            units[i] = adc_units_prefix[unitsIndex&0x0F];
+            units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+        }
+        values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
+
+        if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
             values[i] /= 10;
     }
     return 0;
@@ -853,7 +859,7 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
     LMSinfo lmsInfo = this->GetInfo();
-    if(lmsInfo.device == LMS_DEV_LIMESDR 
+    if(lmsInfo.device == LMS_DEV_LIMESDR
     || lmsInfo.device == LMS_DEV_LIMESDR_PCIE
     || lmsInfo.device == LMS_DEV_LIMESDR_USB_SP
     || lmsInfo.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
@@ -913,4 +919,19 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
             (timeEnd-timeStart).count());
 #endif
     return success ? 0 : -1;
+}
+
+/**	@brief Reads chip version information form LMS7 chip.
+*/
+int LMS64CProtocol::GetChipVersion()
+{
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_LMS7002_RD;
+    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
+    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
+    if(TransferPacket(ctrPkt) != 0)
+        this->chipVersion = 0;
+    else
+        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
+    return this->chipVersion;
 }

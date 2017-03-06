@@ -232,13 +232,13 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	cmbChannelVisibility->SetSelection( 0 );
 	fgSizer101->Add( cmbChannelVisibility, 0, 0, 5 );
 	
-	m_staticText23 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Average:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText23 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("FFT averaging:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText23->Wrap( -1 );
 	m_staticText23->SetToolTip( wxT("Number of FFTs to average") );
 	
 	fgSizer101->Add( m_staticText23, 0, wxALL, 5 );
 	
-	spinAvgCount = new wxSpinCtrl( sbSizer3->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 128, 1 );
+	spinAvgCount = new wxSpinCtrl( sbSizer3->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 512, 1 );
 	spinAvgCount->SetToolTip( wxT("Number of FFTs to average") );
 	spinAvgCount->SetMinSize( wxSize( 64,-1 ) );
 	

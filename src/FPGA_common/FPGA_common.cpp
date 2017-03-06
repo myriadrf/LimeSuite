@@ -7,6 +7,7 @@
 #include <map>
 #include <math.h>
 #include <assert.h>
+#include <thread>
 using namespace std;
 
 #ifndef NDEBUG
@@ -26,6 +27,13 @@ const int STREAM_LOAD = 1 << 2;
 // 0x0009
 const int SMPL_NR_CLR = 1; // rising edge clears
 const int TXPCT_LOSS_CLR = 1 << 1; // 0 - normal operation, 1-clear
+
+const uint16_t PLLCFG_START = 0x1;
+const uint16_t PHCFG_START = 0x2;
+const uint16_t PLLRST_START = 0x4;
+const uint16_t PHCFG_UPDN = 1 << 13;
+
+const uint16_t busyAddr = 0x0021;
 
 int StartStreaming(IConnection* serPort)
 {
@@ -69,6 +77,51 @@ int ResetTimestamp(IConnection* serPort)
     return status;
 }
 
+static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DEV boardType, uint16_t &reg23val)
+{
+    const auto timeout = chrono::seconds(3);
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
+    vector<uint32_t> addrs;
+    vector<uint32_t> values;
+    addrs.push_back(0x0023); values.push_back(reg23val & ~PLLCFG_START);
+    addrs.push_back(0x0024); values.push_back(abs(nSteps)); //CNT_PHASE
+    int cnt_ind = (clockIndex + 2) & 0x1F; //C0 index 2, C1 index 3...
+    reg23val &= ~(0xF<<8);
+    reg23val = reg23val | (cnt_ind << 8);
+    if(nSteps >= 0)
+        reg23val |= PHCFG_UPDN;
+    else
+        reg23val &= ~PHCFG_UPDN;
+    addrs.push_back(0x0023); values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
+    addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
+
+    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+        ReportError(EIO, "SetPllFrequency: PHCFG, failed to write registers");
+    addrs.clear(); values.clear();
+
+    bool done = false;
+    uint8_t errorCode = 0;
+    t1 = chrono::high_resolution_clock::now();
+    if(boardType == LMS_DEV_LIMESDR_QPCIE) do
+    {
+        uint16_t statusReg;
+        serPort->ReadRegister(busyAddr, statusReg);
+        done = statusReg & 0x1;
+        errorCode = (statusReg >> 7) & 0xFF;
+        t2 = chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(chrono::milliseconds(10));
+    } while(!done && errorCode == 0 && (t2-t1) < timeout);
+    if(t2 - t1 > timeout)
+        return ReportError(ENODEV, "SetPllFrequency: PHCFG timeout, busy bit is still 1");
+    if(errorCode != 0)
+        return ReportError(EBUSY, "SetPllFrequency: error configuring PHCFG");
+    addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
+    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+        ReportError(EIO, "SetPllFrequency: configure FPGA PLL, failed to write registers");
+    return 0;
+}
+
 /** @brief Configures board FPGA clocks
 @param serPort communications port
 @param pllIndex index of FPGA pll
@@ -76,12 +129,11 @@ int ResetTimestamp(IConnection* serPort)
 @param clocksCount number of clocks to configure
 @return 0-success, other-failure
 */
-int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
+int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
     const auto timeout = chrono::seconds(3);
-    const uint16_t busyAddr = 0x0021;
 
     if(not serPort)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
@@ -109,10 +161,6 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     if(serPort->ReadRegister(0x0003, reg23val) != 0)
         return ReportError(ENODEV, "SetPllFrequency: failed to read register");
 
-    const uint16_t PLLCFG_START = 0x1;
-    const uint16_t PHCFG_START = 0x2;
-    const uint16_t PLLRST_START = 0x4;
-    const uint16_t PHCFG_UPDN = 1 << 13;
     reg23val &= ~(0x1F << 3); //clear PLL index
     reg23val &= ~PLLCFG_START; //clear PLLCFG_START
     reg23val &= ~PHCFG_START; //clear PHCFG
@@ -136,6 +184,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         serPort->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
+        std::this_thread::sleep_for(chrono::milliseconds(10));
         t2 = chrono::high_resolution_clock::now();
     } while(not done && errorCode == 0 && (t2-t1) < timeout);
     if(t2 - t1 > timeout)
@@ -146,7 +195,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
     addrs.push_back(0x0023); values.push_back(reg23val & ~PLLRST_START);
 
     //configure FPGA PLLs
-    const double vcoLimits_Hz[2] = { 600e6, 1300e6 };
+    const double vcoLimits_Hz[2] = { 600e6, 1050e6 };
 
     map< unsigned long, int> availableVCOs; //all available frequencies for VCO
     for(int i=0; i<clockCount; ++i)
@@ -200,7 +249,7 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
                 }
             }
             double deviation = fabs(it.first - inputFreq*Mtemp / Ntemp);
-            if(deviation < bestDeviation)
+            if(deviation <= bestDeviation)
             {
                 bestDeviation = deviation;
                 Fvco = it.first;
@@ -269,54 +318,87 @@ int SetPllFrequency(IConnection* serPort, uint8_t pllIndex, const double inputFr
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         t2 = chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(chrono::milliseconds(10));
     } while(not done && errorCode == 0 && (t2-t1) < timeout);
     if(t2 - t1 > timeout)
         return ReportError(ENODEV, "SetPllFrequency: PLLCFG timeout, busy bit is still 1");
     if(errorCode != 0)
         return ReportError(EBUSY, "SetPllFrequency: error configuring PLLCFG");
 
-    addrs.push_back(0x0023); values.push_back(reg23val & ~PLLCFG_START);
     for(int i=0; i<clockCount; ++i)
     {
         int C = int(Fvco / clocks[i].outFrequency + 0.5);
         float fOut_MHz = inputFreq/1e6;
         float Fstep_us = 1 / (8 * fOut_MHz*C);
         float Fstep_deg = (360 * Fstep_us) / (1 / fOut_MHz);
-        short nSteps = clocks[i].phaseShift_deg / Fstep_deg;
-        addrs.push_back(0x0024); values.push_back(nSteps); //CNT_PHASE
-        int cnt_ind = (clocks[i].index + 2) & 0x1F; //C0 index 2, C1 index 3...
-	reg23val &= ~(0xF<<8);
-        reg23val = reg23val | (cnt_ind << 8);
-        if(clocks[i].phaseShift_deg >= 0)
-            reg23val |= PHCFG_UPDN;
-        else
-            reg23val &= ~PHCFG_UPDN;
-        addrs.push_back(0x0023); values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
-        addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
-#ifdef LMS_VERBOSE_OUTPUT
-        printf("C%i=%i, Fout=%3.3f MHz, CNT_IND=%i, nSteps=%i, phaseShift=%.1f\n", i, C, clocks[i].rd_actualFrequency / 1e6, cnt_ind, nSteps, nSteps*Fstep_deg);
-#endif
-        if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-            ReportError(EIO, "SetPllFrequency: PHCFG, failed to write registers");
-        addrs.clear();
-        values.clear();
-
-        t1 = chrono::high_resolution_clock::now();
-        if(boardType == LMS_DEV_LIMESDR_QPCIE) do
+        if (clocks[i].findPhase == false)
         {
-            serPort->ReadRegister(busyAddr, statusReg);
-            done = statusReg & 0x1;
-            errorCode = (statusReg >> 7) & 0xFF;
-            t2 = chrono::high_resolution_clock::now();
-        } while(!done && errorCode == 0 && (t2-t1) < timeout);
-        if(t2 - t1 > timeout)
-            return ReportError(ENODEV, "SetPllFrequency: PHCFG timeout, busy bit is still 1");
-        if(errorCode != 0)
-            return ReportError(EBUSY, "SetPllFrequency: error configuring PHCFG");
-        addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
+           const int nSteps = 0.49 + clocks[i].phaseShift_deg  / Fstep_deg;
+           SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
+#ifdef LMS_VERBOSE_OUTPUT
+           printf("Configured phase: %1.1f (steps %d)\n",nSteps*Fstep_deg,nSteps);
+#endif
+        }
+        else
+        {
+            double min = -1;
+            const double maxPhase = 360;
+            double max = maxPhase;
+            const int testSize = 16*1024;
+            int nSteps = 6.0/Fstep_deg;
+            if (nSteps == 0) nSteps = 1;
+            unsigned char* buf = new unsigned char[testSize];
+            for (double phase = 0; phase <= maxPhase; phase += nSteps*Fstep_deg)
+            {
+
+                SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
+                bool result = true;
+
+                if (serPort->ReadRawStreamData((char*)buf,testSize,20)==testSize)
+                {
+                    for (size_t j = 16; j < testSize;j+=3)
+                    {
+                        if (j%4096 == 0)
+                            j += 16;
+                        if ((buf[j]!=0xAA) || (buf[j+1]!=0x5A) || (buf[j+2]!=0x55))
+                        {
+                            result = false;
+                            break;
+                        }
+                    }
+                }
+                else result = false;
+
+                if (result == true && min < 0)
+                {
+                    min = phase;
+                }
+                else if (result == false && min >= 0)
+                {
+                    max = phase;
+                    break;
+                }
+            }
+
+            delete [] buf;
+
+            if (min > -1.0)
+            {
+                clocks[i].findPhase = false;
+                clocks[i].phaseShift_deg = (min+max)/2;
+#ifdef LMS_VERBOSE_OUTPUT
+                printf("phase: min %1.1f; max %1.1f)\n",min,max);
+#endif
+                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
+            }
+            else
+            {
+                clocks[i].findPhase = false;
+                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
+            }
+        }
+
     }
-    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-        ReportError(EIO, "SetPllFrequency: configure FPGA PLL, failed to write registers");
     return 0;
 }
 

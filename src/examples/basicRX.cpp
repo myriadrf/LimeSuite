@@ -75,10 +75,10 @@ int main(int argc, char** argv)
     //Initialize stream
     lms_stream_t streamId; //stream structure
     streamId.channel = 0; //channel number
-    streamId.fifoSize = 1024 * 128; //fifo size in samples
+    streamId.fifoSize = 1024 * 1024; //fifo size in samples
     streamId.throughputVsLatency = 1.0; //optimize for max throughput
     streamId.isTx = false; //RX channel
-    streamId.dataFmt = lms_stream_t::LMS_FMT_I16; //16-bit integers
+    streamId.dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
     if (LMS_SetupStream(device, &streamId) != 0)
         error();
 

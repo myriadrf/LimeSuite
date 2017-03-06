@@ -27,8 +27,8 @@ endif()
 # LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor,
 # and must be set manually when non-patch releases are created.
 set(VERSION_MAJOR 17)
-set(VERSION_MINOR 01)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 02)
+set(VERSION_PATCH 0)
 
 # the ABI compatibility number should be incremented when the ABI changes
 # the format is to use the same major and minor, but to have an incrementing

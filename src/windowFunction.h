@@ -3,6 +3,6 @@
 
 #include <vector>
 
-void GenerateWindowCoefficients(int func, int fftsize, std::vector<float> &windowFcoefs, float &amplitudeCorrection);
+void GenerateWindowCoefficients(int func, int fftsize, std::vector<float> &windowFcoefs, float amplitudeCorrection);
 
 #endif

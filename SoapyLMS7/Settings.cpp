@@ -405,6 +405,27 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const size_t 
     return gains;
 }
 
+void SoapyLMS7::setGain(const int direction, const size_t channel, const double value)
+{
+    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+
+    //Distribute Rx gain from elements in the direction of RFE to RBB
+    //This differs from the default gain distribution in that it
+    //does not scale the gain to the negative range of the PGA.
+    //This keep the PGA in mid-range unless extreme values are used.
+    if (direction == SOAPY_SDR_RX)
+    {
+        double remaining(value);
+        for (const auto &name : this->listGains(direction, channel))
+        {
+            this->setGain(direction, channel, name, remaining);
+            remaining -= this->getGain(direction, channel, name);
+        }
+    }
+
+    else SoapySDR::Device::setGain(direction, channel, value);
+}
+
 void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
@@ -492,6 +513,16 @@ double SoapyLMS7::getGain(const int direction, const size_t channel, const std::
     }
 
     else throw std::runtime_error("SoapyLMS7::getGain("+name+") - unknown gain name");
+}
+
+SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel) const
+{
+    if (direction == SOAPY_SDR_RX)
+    {
+        //make it so gain of 0.0 sets PGA at its mid-range
+        return SoapySDR::Range(-12.0, 19.0+12.0+30.0);
+    }
+    return SoapySDR::Device::getGainRange(direction, channel);
 }
 
 SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel, const std::string &name) const

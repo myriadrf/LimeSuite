@@ -8,7 +8,7 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
-
+#include "pnlUltimateEVB.h"
 #include "pnluLimeSDR.h"
 #include "pnlLimeSDR.h"
 #include <IConnection.h>
@@ -153,61 +153,57 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 
     fgSizer247->Add(pnlCustomControls, 1, wxEXPAND, 5);
 
-	wxFlexGridSizer* fgSizer249;
-	fgSizer249 = new wxFlexGridSizer( 0, 2, 5, 5 );
-	fgSizer249->AddGrowableCol( 0 );
-	fgSizer249->AddGrowableCol( 1 );
-	fgSizer249->SetFlexibleDirection( wxBOTH );
-	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer* fgSizer249;
+    fgSizer249 = new wxFlexGridSizer( 0, 2, 5, 5 );
+    fgSizer249->AddGrowableCol( 0 );
+    fgSizer249->AddGrowableCol( 1 );
+    fgSizer249->SetFlexibleDirection( wxBOTH );
+    fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	wxStaticBoxSizer* sbSizer133;
-	sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Read") ), wxVERTICAL );
+    wxStaticBoxSizer* sbSizer133;
+    sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Read") ), wxVERTICAL );
 
-	sizerAnalogRd = new wxFlexGridSizer( 0, 4, 2, 2 );
-	sizerAnalogRd->SetFlexibleDirection( wxBOTH );
-	sizerAnalogRd->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    sizerAnalogRd = new wxFlexGridSizer( 0, 4, 2, 2 );
+    sizerAnalogRd->SetFlexibleDirection( wxBOTH );
+    sizerAnalogRd->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Ch.")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Name")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Value")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(this, wxID_ANY, _("Units")), 1, wxALL, 5);
 
-
-	sbSizer133->Add( sizerAnalogRd, 1, wxEXPAND, 5 );
-
-
-	fgSizer249->Add( sbSizer133, 1, wxEXPAND, 5 );
-
-	wxStaticBoxSizer* sbSizer134;
-	sbSizer134 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Write") ), wxVERTICAL );
-
-	sizerAnalogWr = new wxFlexGridSizer( 0, 4, 2, 2 );
-	sizerAnalogWr->SetFlexibleDirection( wxBOTH );
-	sizerAnalogWr->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    sbSizer133->Add( sizerAnalogRd, 1, wxEXPAND, 5 );
 
 
-	sbSizer134->Add( sizerAnalogWr, 1, wxEXPAND, 5 );
+    fgSizer249->Add( sbSizer133, 1, wxEXPAND, 5 );
+
+    wxStaticBoxSizer* sbSizer134;
+    sbSizer134 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Write") ), wxVERTICAL );
+
+    sizerAnalogWr = new wxFlexGridSizer( 0, 4, 2, 2 );
+    sizerAnalogWr->SetFlexibleDirection( wxBOTH );
+    sizerAnalogWr->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+
+    sbSizer134->Add( sizerAnalogWr, 1, wxEXPAND, 5 );
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Ch.")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Name")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Value")), 1, wxALL, 5);
     sizerAnalogWr->Add(new wxStaticText(this, wxID_ANY, _("Units")), 1, wxALL, 5);
 
+    fgSizer249->Add( sbSizer134, 1, wxEXPAND, 5 );
 
-	fgSizer249->Add( sbSizer134, 1, wxEXPAND, 5 );
-
-
-	fgSizer247->Add( fgSizer249, 1, wxEXPAND, 5 );
+    fgSizer247->Add( fgSizer249, 1, wxEXPAND, 5 );
 
     sizerAdditionalControls = new wxFlexGridSizer(0, 1, 0, 0);
     fgSizer247->Add(sizerAdditionalControls, 1, wxEXPAND, 5);
-
-	this->SetSizer( fgSizer247 );
-	this->Layout();
-	fgSizer247->Fit( this );
+    this->SetSizer( fgSizer247 );
+    this->Layout();
+    fgSizer247->Fit( this );
 
 	// Connect Events
     cmbBoardSelection->Connect(wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(pnlBoardControls::OnUserChangedBoardType), NULL, this);
-	btnReadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnReadAll ), NULL, this );
-	btnWriteAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnWriteAll ), NULL, this );
+    btnReadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnReadAll ), NULL, this );
+    btnWriteAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlBoardControls::OnWriteAll ), NULL, this );
 
     SetupControls(GetDeviceName(LMS_DEV_UNKNOWN));
 }
@@ -318,7 +314,7 @@ void pnlBoardControls::UpdatePanel()
     {
         mADC_GUI_widgets[i]->channel->SetLabel(wxString::Format(_("%i"), mADCparameters[i].channel));
         mADC_GUI_widgets[i]->title->SetLabel(wxString(mADCparameters[i].name));
-        mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%i"), mADCparameters[i].value));
+        mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%1.0f"), mADCparameters[i].value));
         mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mADCparameters[i].units));
     }
 
@@ -340,21 +336,9 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
         || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
-        ADC_DAC dacVoltage;
-        dacVoltage.name = "DAC";
-        dacVoltage.channel = 0;
-        dacVoltage.powerOf10 = 0;
-        dacVoltage.units = adcUnits2string(RAW);
-        dacVoltage.value = 0;
-        paramList.push_back(dacVoltage);
 
-        ADC_DAC temperature;
-        temperature.name = "Temperature";
-        temperature.channel = 1;
-        temperature.powerOf10 = 0;
-        temperature.units = adcUnits2string(TEMPERATURE);
-        temperature.value = 0;
-        paramList.push_back(temperature);
+        paramList.push_back(ADC_DAC{"DAC", 0, 0, adcUnits2string(RAW)});
+        paramList.push_back(ADC_DAC{"Board Temperature", 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
 }
@@ -464,6 +448,13 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
+    else if(boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
+    {
+        pnlUltimateEVB* pnl = new pnlUltimateEVB(this, wxNewId());
+        pnl->Initialize(lmsControl);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
 
     Layout();
     Fit();
@@ -523,7 +514,8 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
     }
 
     txtCustomUnitsRd->SetLabel(units);
-    txtCustomValueRd->SetLabel(wxString::Format(_("%f"), value));
+    txtCustomValueRd->SetLabel(wxString::Format(_("%1.1f"), value));
+
 }
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)

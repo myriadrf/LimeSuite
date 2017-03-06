@@ -44,6 +44,8 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
 */
 Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const int vid, const int pid)
 {
+    RxLoopFunction = bind(&Connection_uLimeSDR::ReceivePacketsLoop, this, std::placeholders::_1);
+    TxLoopFunction = bind(&Connection_uLimeSDR::TransmitPacketsLoop, this, std::placeholders::_1);
     mTimestampOffset = 0;
     rxLastTimestamp.store(0);
     mExpectedSampleRate = 0;
@@ -71,6 +73,7 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
 #endif
     if(this->Open(index, vid, pid) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
+    this->SetReferenceClockRate(52e6);
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
@@ -348,48 +351,49 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
 static void callback_libusbtransfer(libusb_transfer *trans)
 {
     Connection_uLimeSDR::USBTransferContext *context = reinterpret_cast<Connection_uLimeSDR::USBTransferContext*>(trans->user_data);
+    std::unique_lock<std::mutex> lck(context->transferLock);
     switch(trans->status)
     {
-    case LIBUSB_TRANSFER_CANCELLED:
-        //printf("Transfer %i canceled\n", context->id);
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        //context->used = false;
-        //context->reset();
+        case LIBUSB_TRANSFER_CANCELLED:
+            //printf("Transfer %i canceled\n", context->id);
+            context->bytesXfered = trans->actual_length;
+            context->done.store(true);
+            //context->used = false;
+            //context->reset();
+            break;
+        case LIBUSB_TRANSFER_COMPLETED:
+            //if(trans->actual_length == context->bytesExpected)
+            {
+                context->bytesXfered = trans->actual_length;
+                context->done.store(true);
+            }
         break;
-    case LIBUSB_TRANSFER_COMPLETED:
-        //if(trans->actual_length == context->bytesExpected)
-    {
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
+        case LIBUSB_TRANSFER_ERROR:
+            printf("TRANSFER ERRRO\n");
+            context->bytesXfered = trans->actual_length;
+            context->done.store(true);
+            //context->used = false;
+            break;
+        case LIBUSB_TRANSFER_TIMED_OUT:
+            //printf("transfer timed out %i\n", context->id);
+            context->bytesXfered = trans->actual_length;
+            context->done.store(true);
+            //context->used = false;
+
+            break;
+        case LIBUSB_TRANSFER_OVERFLOW:
+            printf("transfer overflow\n");
+
+            break;
+        case LIBUSB_TRANSFER_STALL:
+            printf("transfer stalled\n");
+            break;
+        case LIBUSB_TRANSFER_NO_DEVICE:
+            printf("transfer no device\n");
+
+            break;
     }
-    break;
-    case LIBUSB_TRANSFER_ERROR:
-        printf("TRANSFER ERRRO\n");
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        //context->used = false;
-        break;
-    case LIBUSB_TRANSFER_TIMED_OUT:
-        //printf("transfer timed out %i\n", context->id);
-        context->bytesXfered = trans->actual_length;
-        context->done.store(true);
-        //context->used = false;
-
-        break;
-    case LIBUSB_TRANSFER_OVERFLOW:
-        printf("transfer overflow\n");
-
-        break;
-    case LIBUSB_TRANSFER_STALL:
-        printf("transfer stalled\n");
-        break;
-    case LIBUSB_TRANSFER_NO_DEVICE:
-        printf("transfer no device\n");
-
-        break;
-    }
-    context->transferLock.unlock();
+    lck.unlock();
     context->cv.notify_one();
 }
 #endif
@@ -451,8 +455,6 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
         contexts[i].used = false;
         return -1;
     }
-    else
-        contexts[i].transferLock.lock();
 #endif
     return i;
 }
@@ -480,7 +482,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
         while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
         {
             //blocking not to waste CPU
-            contexts[contextHandle].cv.wait(lck);
+            contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
             t2 = chrono::high_resolution_clock::now();
         }
         return contexts[contextHandle].done.load() == true;
@@ -605,8 +607,6 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
         contextsToSend[i].used = false;
         return -1;
     }
-    else
-        contextsToSend[i].transferLock.lock();
 #endif
     return i;
 }
@@ -633,7 +633,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
         while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
         {
             //blocking not to waste CPU
-            contextsToSend[contextHandle].cv.wait(lck);
+            contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
             t2 = chrono::high_resolution_clock::now();
         }
         return contextsToSend[contextHandle].done == true;

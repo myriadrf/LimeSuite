@@ -23,8 +23,7 @@ int ILimeSDRStreaming::SetupStream(size_t& streamID, const StreamConfig& config)
     if(rxRunning.load() == true || txRunning.load() == true)
         return ReportError(EPERM, "All streams must be stopped before doing setups");
     streamID = ~0;
-    StreamChannel* stream = new StreamChannel(this);
-    stream->config = config;
+    StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
     if(config.isTx)
         mTxStreams.push_back(stream);
@@ -181,24 +180,27 @@ double ILimeSDRStreaming::GetHardwareTimestampRate(void)
     return mExpectedSampleRate;
 }
 
-int ILimeSDRStreaming::UpdateThreads()
+int ILimeSDRStreaming::UpdateThreads(bool stopAll)
 {
     bool needTx = false;
     bool needRx = false;
 
     //check which threads are needed
-    for(auto i : mRxStreams)
-        if(i->IsActive())
-        {
-            needRx = true;
-            break;
-        }
-    for(auto i : mTxStreams)
-        if(i->IsActive())
-        {
-            needTx = true;
-            break;
-        }
+    if (!stopAll)
+    {
+        for(auto i : mRxStreams)
+            if(i->IsActive())
+            {
+                needRx = true;
+                break;
+            }
+        for(auto i : mTxStreams)
+            if(i->IsActive())
+            {
+                needTx = true;
+                break;
+            }
+    }
 
     //stop threads if not needed
     if(not needTx and txRunning.load())
@@ -351,11 +353,16 @@ int ILimeSDRStreaming::UpdateThreads()
 
 
 //-----------------------------------------------------------------------------
-ILimeSDRStreaming::StreamChannel::StreamChannel(lime::IConnection* port) :
+ILimeSDRStreaming::StreamChannel::StreamChannel(lime::IConnection* port, StreamConfig conf) :
     mActive(false)
 {
     this->port = dynamic_cast<ILimeSDRStreaming*>(port);
-    fifo = new RingFIFO(1024*8);
+    this->config = conf;
+    if (this->config.bufferLength == 0) //default size
+        this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket; 
+    else if (this->config.bufferLength < 64*SamplesPacket::maxSamplesInPacket) //minimum size
+        this->config.bufferLength = 64*SamplesPacket::maxSamplesInPacket;
+    fifo = new RingFIFO(this->config.bufferLength);
 }
 
 ILimeSDRStreaming::StreamChannel::~StreamChannel()
@@ -376,7 +383,6 @@ int ILimeSDRStreaming::StreamChannel::Read(void* samples, const uint32_t count, 
         for(int i=2*popped-1; i>=0; --i)
             samplesFloat[i] = (float)samplesShort[i]/2048.0;
     }
-    //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else
     {
         complex16_t* ptr = (complex16_t*)samples;
@@ -396,7 +402,7 @@ int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t 
             samplesShort[i] = samplesFloat[i]*2047;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
-        delete samplesShort;
+        delete[] samplesShort;
     }
     //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else

@@ -607,7 +607,12 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         }
     }
 
-   return 0;
+    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx) /
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
+    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
+                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+
+    return this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
 }
 
 
@@ -912,30 +917,10 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
     else
         div = (2<<(ratio));
 
-
-    L = div > 8 ? 8 : div;
-    div -= 1;
-
-    /*if (filt==LMS_GFIR3)
-    {
-       if (L*15 < count)
-       {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           ret = -1;;
-           L = 1+(count-1)/15;
-           div = L-1;
-       }
-    }
+    if ((div > 8) || (count == 120) || (count == 40 && filt != LMS_GFIR3))
+        L = 8;
     else
-    {
-       if (L*5 < count)
-       {
-           lime::ReportError(ERANGE, "Too many filter coefficients for current oversampling settings");
-           ret = -1;
-           L = 1+(count-1)/5;
-           div = L-1;
-       }
-    }*/
+        L = div;
 
     float_type max=0;
     for (int i=0; i< (filt==LMS_GFIR3 ? 120 : 40); i++)
@@ -943,7 +928,9 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
             max=fabs(coef[i]);
 
     if (max < 1.0)
-        max = 1.0;
+        max = 1.0f;
+    else if (max > 100)
+        max = 32767.0f;
 
     size_t sample = 0;
     for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
@@ -962,7 +949,8 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
         }
     }
 
-    L-=1;
+    div -= 1;
+    L = div > 7 ? 7 : div;
 
     if (tx)
     {
@@ -1025,7 +1013,7 @@ int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* 
        for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
        {
            coef[i] = coef16[i];
-           coef[i] /= (1<<15);
+           coef[i] /= (1<<15)-1;
        }
    }
    return (filt==LMS_GFIR3) ? 120 : 40;
@@ -1315,12 +1303,14 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
     {
         if (tx)
         {
-            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),1,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0, true)!=0))
                 return -1;
         }
         else
         {
-            if (Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),1,true)!=0)
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),1,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 0, true)!=0))
                 return -1;
         }
     }
@@ -1330,14 +1320,17 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
         {
             if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
             || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),ind,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),down,true)!=0))
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),down,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 1, true)!=0))
                 return -1;
+            ;
         }
         else
         {
             if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
             || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),ind,true)!=0)
-            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),down,true)!=0))
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),down,true)!=0)
+            || (Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1, true)!=0))
                 return -1;
         }
     }
