@@ -1,4 +1,4 @@
-Release 17.02.0 (pending)
+Release 17.02.0 (2017-03-07)
 ==========================
 
 - Automatic phase configuration for DIQ clocks
