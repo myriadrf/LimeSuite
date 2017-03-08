@@ -21,7 +21,7 @@ static ROM const float_type RxLPF_RF_LimitHigh = 130e6;
 
 //tx lpf range limits
 static ROM const float_type TxLPF_RF_LimitLow = 5e6;
-static ROM const float_type TxLPF_RF_LimitLowMid = 32e6;
+static ROM const float_type TxLPF_RF_LimitLowMid = 40e6;
 static ROM const float_type TxLPF_RF_LimitMidHigh = 50e6;
 static ROM const float_type TxLPF_RF_LimitHigh = 130e6;
 
