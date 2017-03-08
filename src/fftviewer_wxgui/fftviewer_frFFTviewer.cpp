@@ -371,7 +371,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             for(int i=0; i<channelsCount; ++i)
             {
                 samplesPopped[i] = LMS_RecvStream(&pthis->rxStreams[i], &buffers[i][0], fftSize, &meta, 1000);
-                ts[i] = meta.timestamp + fifoSize/8;
+                ts[i] = meta.timestamp + fifoSize/4;
             }
 
             for(int i=0; runTx && i<channelsCount; ++i)
