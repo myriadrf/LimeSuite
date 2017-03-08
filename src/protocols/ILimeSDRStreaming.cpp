@@ -358,10 +358,16 @@ ILimeSDRStreaming::StreamChannel::StreamChannel(lime::IConnection* port, StreamC
 {
     this->port = dynamic_cast<ILimeSDRStreaming*>(port);
     this->config = conf;
+
     if (this->config.bufferLength == 0) //default size
-        this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket; 
-    else if (this->config.bufferLength < 64*SamplesPacket::maxSamplesInPacket) //minimum size
-        this->config.bufferLength = 64*SamplesPacket::maxSamplesInPacket;
+        this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
+    else
+    {
+        size_t fifoSize = 64;
+        while(fifoSize < conf.bufferLength/SamplesPacket::maxSamplesInPacket)
+            fifoSize <<= 1;
+        this->config.bufferLength = fifoSize*SamplesPacket::maxSamplesInPacket;
+    }
     fifo = new RingFIFO(this->config.bufferLength);
 }
 
