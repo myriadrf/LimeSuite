@@ -197,6 +197,8 @@ LMS7002M::LMS7002M() :
     MemorySectionAddresses[RxGFIR3b][1] = 0x0567;
     MemorySectionAddresses[RxGFIR3c][0] = 0x0580;
     MemorySectionAddresses[RxGFIR3c][1] = 0x05A7;
+    MemorySectionAddresses[RSSI_DC_CALIBRATION][0] = 0x05C0;
+    MemorySectionAddresses[RSSI_DC_CALIBRATION][1] = 0x05CC;
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     mcuControl = new MCU_BD();
@@ -1431,6 +1433,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 
     Channel ch = this->GetActiveChannel();
     this->SetActiveChannel(tx?ChSXT:ChSXR);
+    Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 0);
     Modify_SPI_Reg_bits(LMS7param(INT_SDM), integerPart); //INT_SDM
     Modify_SPI_Reg_bits(0x011D, 15, 0, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
     Modify_SPI_Reg_bits(0x011E, 3, 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
@@ -1519,6 +1522,78 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 
     if (canDeliverFrequency == false)
         return ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
+    return 0;
+}
+
+/** @brief Sets SX frequency with Reference clock spur cancelation
+    @param Tx Rx/Tx module selection
+    @param freq_Hz desired frequency in Hz
+    @return 0-success, other-cannot deliver requested frequency
+*/
+int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW)
+{
+    const float BWOffset = 2e6;
+    BW += BWOffset; //offset to avoid ref clock on BW edge
+    bool needCancelation = false;
+    float_type refClk = GetReferenceClk_SX(false);
+    int low = (freq_Hz-BW/2)/refClk;
+    int high = (freq_Hz+BW/2)/refClk;
+    if(low != high)
+        needCancelation = true;
+
+    int status;
+    float newFreq;
+    if(needCancelation)
+    {
+        newFreq = (int)(freq_Hz/refClk+0.5)*refClk;
+        TuneRxFilter(BW-BWOffset+2*abs(freq_Hz-newFreq));
+        status = SetFrequencySX(tx, newFreq);
+    }
+    else
+        status = SetFrequencySX(tx, freq_Hz);
+    if(status != 0)
+        return status;
+    const int ch = Get_SPI_Reg_bits(LMS7param(MAC));
+    for(int i=0; i<2; ++i)
+    {
+        Modify_SPI_Reg_bits(LMS7param(MAC), i+1);
+        SetNCOFrequency(LMS7002M::Rx, 15, 0);
+    }
+    if(needCancelation)
+    {
+        Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+        Modify_SPI_Reg_bits(LMS7param(EN_INTONLY_SDM), 1);
+
+        /*uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0);	// read whole register to reduce SPI transfers
+        uint32_t gFRAC = ((gINT&0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
+        bool upconvert = gFRAC > (1 << 19);
+        gINT = gINT >> 4;
+        if(upconvert)
+        {
+            gINT+=;
+            Modify_SPI_Reg_bits(LMS7param(INT_SDM), gINT);
+        }
+        Modify_SPI_Reg_bits(0x011D, 15, 0, 0);
+        Modify_SPI_Reg_bits(0x011E, 3, 0, 0);*/
+        //const float_type refClk_Hz = GetReferenceClk_SX(tx);
+        //float actualFreq = (float_type)refClk_Hz / (1 << (Get_SPI_Reg_bits(LMS7param(DIV_LOCH)) + 1));
+        //actualFreq *= (gINT + 4) * (Get_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG)) + 1);
+        float actualFreq = newFreq;
+        float userFreq = freq_Hz;
+        bool upconvert = actualFreq > userFreq;
+        for(int i=0; i<2; ++i)
+        {
+            Modify_SPI_Reg_bits(LMS7param(MAC), i+1);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), !upconvert);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0);
+            Modify_SPI_Reg_bits(LMS7param(SEL_RX), 15);
+            Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_RXTSP), 1);
+            SetNCOFrequency(LMS7002M::Rx, 14, 0);
+            SetNCOFrequency(LMS7002M::Rx, 15, abs(actualFreq-userFreq));
+        }
+    }
+
+    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     return 0;
 }
 
@@ -1719,7 +1794,17 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
 */
 int LMS7002M::SPI_write(uint16_t address, uint16_t data)
 {
-    return this->SPI_write_batch(&address, &data, 1);
+    if(address == 0x0640 || address == 0x0641)
+    {
+        MCU_BD* mcu = GetMCUControls();
+        SPI_write(0x002D, address);
+        SPI_write(0x020C, data);
+        mcu->RunProcedure(7);
+        mcu->WaitForMCU(50);
+        return SPI_read(0x040B);
+    }
+    else
+        return this->SPI_write_batch(&address, &data, 1);
 }
 
 /** @brief Reads whole register value from given address
@@ -1742,7 +1827,18 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
     if(controlPort)
     {
         uint16_t data = 0;
-        int st = this->SPI_read_batch(&address, &data, 1);
+        int st;
+        if(address == 0x0640 || address == 0x0641)
+        {
+            MCU_BD* mcu = GetMCUControls();
+            SPI_write(0x002D, address);
+            mcu->RunProcedure(8);
+            mcu->WaitForMCU(50);
+            uint16_t rdVal = SPI_read(0x040B, true);
+            return rdVal;
+        }
+        else
+            st = this->SPI_read_batch(&address, &data, 1);
         if (status != nullptr) *status = st;
         return data;
     }
@@ -2450,55 +2546,23 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
-    auto ch = Get_SPI_Reg_bits(LMS7param(MAC));
-    auto regMap = BackupRegisterMap();
-    Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
+    Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
+    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
+    uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
+    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 2);
 
-    //RFE
-    Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
-    //RBB
-    Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), 0);
-    //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-    Modify_SPI_Reg_bits(LMS7param(MUX_AFE_1), 2);
-    Modify_SPI_Reg_bits(LMS7param(EN_G_AFE), 1);
-    //BIAS
-    Modify_SPI_Reg_bits(LMS7param(MUX_BIAS_OUT), 2);
-    //RxTSP
-    SetDefaults(RxTSP);
-    Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 0);
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 7);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-
-    //READ ADCQ value
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 1);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-    int negativeCount = 0;
-    int signMeasureCount = 19;
-    int sign = -1;
-    for(int i = 0; i < signMeasureCount; ++i)
-    {
-        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-        Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-        int16_t adcq = SPI_read(0x040F, true);
-        if(adcq & 0x200)
-            ++negativeCount;
-    }
-    if(negativeCount > signMeasureCount / 2)
-        sign = 1;
-
-    Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 0);
-    Modify_SPI_Reg_bits(LMS7param(CAPTURE), 1);
-    uint32_t rssi = (Get_SPI_Reg_bits(0x040F, 15, 0, true) << 2) | Get_SPI_Reg_bits(0x040E, 1, 0, true);
-    double temperature = (rssi / 16.0) * 0.443892 * sign + 40.5;
-    RestoreRegisterMap(regMap);
-    Modify_SPI_Reg_bits(LMS7param(MAC), ch);
+    this_thread::sleep_for(chrono::microseconds(250));
+    const uint16_t reg606 = SPI_read(0x0606, true);
+    float Vtemp = (reg606 >> 8) & 0xFF;
+    Vtemp *= 3.515625;
+    float Vptat = reg606 & 0xFF;
+    Vptat *= 3.515625;
+    float Vdiff = Vptat-Vtemp;
+    Vdiff /= 3.9;
+    float temperature = 40.5+Vdiff;
+    Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
+    printf("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f\n", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
     return temperature;
 }
 
@@ -2528,5 +2592,48 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
     this->SetActiveChannel(ch);
     //update external band-selection to match
     this->UpdateExternalBandSelect();
+    return 0;
+}
+
+int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
+{
+    Modify_SPI_Reg_bits(LMS7param(PD_RSSI_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 26);
+    int value = -63;
+    uint8_t wrValue = abs(value);
+    if(value < 0)
+        wrValue |= 0x40;
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+    uint8_t cmp = Get_SPI_Reg_bits(LMS7param(RSSIDC_CMPSTATUS), true);
+    uint8_t cmpPrev = cmp;
+    vector<int8_t> edges;
+    for(value = -63; value < 64; ++value)
+    {
+        wrValue = abs(value);
+        if(value < 0)
+            wrValue |= 0x40;
+        Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+        this_thread::sleep_for(chrono::microseconds(5));
+        cmp = Get_SPI_Reg_bits(LMS7param(RSSIDC_CMPSTATUS), true);
+        if(cmp != cmpPrev)
+        {
+            edges.push_back(value);
+            cmpPrev = cmp;
+        }
+        if(edges.size() > 1)
+            break;
+    }
+    if(edges.size() != 2)
+    {
+        printf("Not found\n");
+        return ReportError(EINVAL, "Failed to find value");
+    }
+    int8_t found = (edges[0]+edges[1])/2;
+    wrValue = abs(found);
+    if(found < 0)
+        wrValue |= 0x40;
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
+    printf("Found %i\n", found);
     return 0;
 }

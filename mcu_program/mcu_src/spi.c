@@ -1,15 +1,29 @@
 #include "spi.h"
 #include "LMS7002_REGx51.h"
 
+bool slowSPI = 0;
+
+void Delay()
+{
+    volatile uint16_t i = 0xFF;
+    if(!slowSPI)
+        return;
+    while(i>0)
+        --i;
+}
+
 void SPI_transferVariable(unsigned short value)
 {								  
 	uint8_t spiIter;
 	for(spiIter = 16; spiIter>0; spiIter--) //MSB First
 	{
 		ucSCLK=0;	//set Clock low
+        Delay();
 		ucSDIN = value & 0x8000; //if current bit is 1 set Output High
+        Delay();
 		value <<= 1; //shift mask to right
 		ucSCLK=1; 	//set Clock high
+        Delay();
 	}
 	ucSCLK=0;	//set Clock low
 }
@@ -39,22 +53,18 @@ unsigned short SPI_read (const unsigned short spiAddrReg)
 	for(spiIter = 16; spiIter>0; spiIter--) //MSB First
 	{
 		ucSCLK=1; 	//set Clock high
+        Delay();
 		spiDataReg <<= 1;
 		if (ucSDOUT)
 			spiDataReg |= 1;
 		ucSCLK=0;	//set Clock low
+        Delay();
 	}
 	ucSEN=1;
 	ucSDIN=1;
 	return spiDataReg;
 }
-/*
-void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data, const uint16_t spiDataReg)
-{
-    const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
-   	SPI_write(SPI_reg_addr, (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask)); //write modified data back to SPI reg
-}
-*/
+
 void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data)
 {
 	uint16_t spiDataReg = SPI_read(SPI_reg_addr); //read current SPI reg data

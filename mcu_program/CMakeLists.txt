@@ -21,6 +21,7 @@ set(HOST_SOURCES
     host_src/mcuHexBin.cpp
     common_src/lms7002m_calibrations.c
     common_src/lms7002m_controls.c
+    common_src/lms7002m_filters.c
     common_src/LMS7002M_parameters_compact.c
 )
 

@@ -355,6 +355,7 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
         LMS_SetNCOPhase(lmsControl, LMS_CH_TX, ch-1, nco_phase, freq_MHz);
     }
+    UpdateGUI();// API changes nco selection
 }
 
 void lms7002_pnlTxTSP_view::UpdateNCOinputs()

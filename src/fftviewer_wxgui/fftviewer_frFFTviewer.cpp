@@ -486,6 +486,25 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             }
             fout << endl;
         }
+        fout.close();
+
+        string filename = pthis->captureFilename+".absdbfs";
+        fout.open(filename.c_str());
+        fout << "AI\tAQ";
+        if(channelsCount > 1)
+            fout << "\tBI\tBQ";
+        fout << endl;
+
+        for(int i=0; i<samplesCnt; ++i)
+        {
+            for(int ch=0; ch<channelsCount; ++ch)
+            {
+                fout
+                << (captureBuffer[ch][i].i == 0 ? -67 : 20*log10(abs(captureBuffer[ch][i].i)/2048))<< "\t"
+                << (captureBuffer[ch][i].q == 0 ? -67 : 20*log10(abs(captureBuffer[ch][i].q)/2048))<< "\t";
+            }
+            fout << endl;
+        }
     }
 
     kiss_fft_free(m_fftCalcPlan);

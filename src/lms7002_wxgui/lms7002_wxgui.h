@@ -103,6 +103,7 @@ class mainPanel : public wxPanel
 		wxStaticText* txtTemperature;
 		wxCheckBox* chkEnableMIMO;
 		wxButton* btnReadTemperature;
+		wxButton* btnCalibrateInternalADC;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -117,6 +118,7 @@ class mainPanel : public wxPanel
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCalibrateInternalADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	
@@ -530,17 +532,16 @@ class pnlTBB_view : public wxPanel
 		NumericSlider* cmbRCAL_LPFS5_TBB;
 		wxStaticText* ID_STATICTEXT14;
 		NumericSlider* cmbCCAL_LPFLAD_TBB;
-		wxRadioBox* rgrTxFilterType;
 		wxStaticText* lblFilterInputName;
 		wxTextCtrl* txtFilterFrequency;
-		wxChoice* cmbTxFixedBW;
 		wxButton* btnTuneFilter;
+		wxButton* btnTuneTxGain;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnTxFilterTypeChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneFilter( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnTuneTxGain( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -625,9 +626,11 @@ class pnlBIAS_view : public wxPanel
 		wxComboBox* cmbMUX_BIAS_OUT;
 		wxStaticText* ID_STATICTEXT2;
 		wxComboBox* cmbRP_CALIB_BIAS;
+		wxButton* btnCalibrateRP_BIAS;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCalibrateRP_BIAS( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -1187,6 +1190,11 @@ class pnlSX_view : public wxPanel
 		wxButton* btnCalculate;
 		wxButton* btnTune;
 		wxButton* ID_BUTTON5;
+		wxPanel* pnlRefClkSpur;
+		wxStaticBoxSizer* RefClkSpurSizer;
+		wxCheckBox* chkEnableRefSpurCancelation;
+		wxStaticText* m_staticText359;
+		wxTextCtrl* txtRefSpurBW;
 		wxStaticText* ID_STATICTEXT2;
 		wxStaticText* lblINT_SDM;
 		wxStaticText* ID_STATICTEXT21;
@@ -1227,6 +1235,7 @@ class pnlSX_view : public wxPanel
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalculateClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnableRefSpurCancelation( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnChangeRefClkClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowVCOclicked( wxCommandEvent& event ) { event.Skip(); }

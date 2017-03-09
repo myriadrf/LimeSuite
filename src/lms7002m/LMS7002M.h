@@ -191,12 +191,17 @@ public:
     ///@}
 
     ///@name Filters tuning
-	int TuneTxFilterFixed(const float_type fixedBandwidth);
 	int TuneTxFilter(const float_type bandwidth);
 	int TuneRxFilter(const float_type rx_lpf_freq_RF);
 	int TuneTxFilterWithCaching(const float_type bandwidth);
 	int TuneRxFilterWithCaching(const float_type rx_lpf_freq_RF);
     ///@}
+
+    ///@name Internal calibrations
+    int CalibrateInternalADC();
+    int CalibrateRP_BIAS();
+    int CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS);
+    int CalibrateAnalogRSSI_DC_Offset();
 
     ///@name High level gain configuration
 
@@ -309,6 +314,7 @@ public:
 	bool GetCGENLocked(void);
 	float_type GetFrequencySX(bool tx);
     int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
+    int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
 	bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
@@ -415,6 +421,7 @@ public:
         TRF, TBB, RFE, RBB, SX, TxTSP,
         TxNCO, TxGFIR1, TxGFIR2, TxGFIR3a, TxGFIR3b, TxGFIR3c,
         RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c,
+        RSSI_DC_CALIBRATION,
         MEMORY_SECTIONS_COUNT
     };
     virtual int SetDefaults(MemorySection module);
@@ -449,7 +456,7 @@ protected:
     static const uint16_t readOnlyRegisters[];
     static const uint16_t readOnlyRegistersMasks[];
 
-    
+
     uint16_t MemorySectionAddresses[MEMORY_SECTIONS_COUNT][2];
     ///@name Algorithms functions
     void BackupAllRegisters();
@@ -458,6 +465,9 @@ protected:
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
     void CalibrateRxDC();
+    void AdjustAutoDC(const uint16_t address, bool tx);
+    void CalibrateRxDCAuto();
+    void CalibrateTxDCAuto();
     void CalibrateTxDC(int16_t *dccorri, int16_t *dccorrq);
     void CalibrateIQImbalance(const bool tx, uint16_t *gainI=nullptr, uint16_t *gainQ=nullptr, int16_t *phase=nullptr);
 
@@ -466,17 +476,19 @@ protected:
     int CheckSaturationRx(const float_type bandwidth_Hz, const bool useExtLoopback);
     int CheckSaturationTxRx(const float_type bandwidth_Hz, const bool useExtLoopback);
 
+    int CalibrateTxGainSetup();
+
+
     void BinarySearch(BinSearchParam* args);
+    void TxDcBinarySearch(BinSearchParam* args);
     void GridSearch(GridSearchParam* args);
     void CoarseSearch(const uint16_t addr, const uint8_t msb, const uint8_t lsb, int16_t &value, const uint8_t maxIterations);
     void FineSearch(const uint16_t addrI, const uint8_t msbI, const uint8_t lsbI, int16_t &valueI, const uint16_t addrQ, const uint8_t msbQ, const uint8_t lsbQ, int16_t &valueQ, const uint8_t fieldSize);
     int RxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
     int TxFilterSearch(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
-    int TxFilterSearch_LAD(const LMS7Parameter &param, uint32_t *rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit, const int NCO_index);
     int TxFilterSearch_S5(const LMS7Parameter &param, const uint32_t rssi_3dB, uint8_t rssiAvgCnt, const int stepLimit);
 
     int TuneRxFilterSetup(const float_type rx_lpf_IF);
-    int TuneTxFilterFixedSetup();
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);

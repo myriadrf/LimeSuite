@@ -1,8 +1,11 @@
 #include "LMS7002_REGx51.h"
 #include "spi.h"	  
 #include "lms7002m_calibrations.h"
+#include "lms7002m_filters.h"
 #include "LMS7002M_parameters_compact.h"
 #include "lms7002m_controls.h"
+
+#include "typedefs.h"
 
 bool runProcedure = false;
 uint8_t currentInstruction;
@@ -48,6 +51,36 @@ void ext3_int() interrupt 8
 	runProcedure = true;
 }
 
+const uint16_t proxyRegAddr = 0x002D;
+const uint16_t proxyWrValue = 0x020C;
+const uint16_t proxyRdValue = 0x040B;
+            
+uint8_t ProxyWrite()
+{
+    uint16_t addr;
+    uint16_t wrValue;
+    P1 = MCU_WORKING;
+    slowSPI = 1;
+    addr = SPI_read(proxyRegAddr);
+    wrValue = SPI_read(proxyWrValue);
+    SPI_write(addr, wrValue);
+    slowSPI = 0;
+    return MCU_IDLE;
+}
+
+uint8_t ProxyRead()
+{
+    uint16_t addr;
+    uint16_t rdValue;
+    P1 = MCU_WORKING;
+    slowSPI = 1;
+    addr = SPI_read(proxyRegAddr);
+    rdValue = SPI_read(addr);
+    SPI_write(proxyRdValue, rdValue);
+    slowSPI = 0;
+    return MCU_IDLE;
+}
+
 /*
 	P1[7] : 0-MCU idle, 1-MCU_working
 	P1[6:0] : return status (while working = 0x3F)
@@ -89,19 +122,20 @@ void main()  //main routine
 				//UpdateReferenceClock();
 				UpdateFreq(1);
 				break;
-			/*case 5:
-				P1 = SetFrequencySX(1, 900e6);
+			case 5:
+				P1 = TuneRxFilter(bandwidthRF);
+				break;	
+            case 6:
+				P1 = TuneTxFilter(bandwidthRF);
+				break;	
+            case 7:
+                P1 = ProxyWrite();
 				break;
-			case 6:
-			{
-			uint8_t ch = Get_SPI_Reg_bits(MAC); //activate VCO and comparator
-			 Modify_SPI_Reg_bits(MAC, 2); //activate VCO and comparator
-				P1 = TuneVCO(VCO_SXT);
-			Modify_SPI_Reg_bits(MAC, ch); //activate VCO and comparator
+            case 8:
+                P1 = ProxyRead();
 				break;
-			}	*/
 			case 255: //return program ID
-				P1 = 0x02;
+				P1 = 0x03;
 				break;
 			
 			}

@@ -55,6 +55,7 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define SECTION_TxNCO 0x0240, 0x0261
 #define SECTION_RxTSP 0x0400, 0x040F
 #define SECTION_RxNCO 0x0440, 0x0461
+#define SECTION_RSSI_DC_CALIBRATION 0x05C0,0x05CC
 
 //parameters are defines as uint16_t address, uint16_t msb_lsb bits
 #define MRST_TX_B 0x0020, 14<<4 |  14
@@ -607,5 +608,41 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define DTHBIT_RX 0x0440, 8<<4 |  5
 #define SEL_RX 0x0440, 4<<4 |  1
 #define MODE_RX 0x0440, 0<<4 |  0
+
+#define DCMODE 0x05C0, 15<<4 | 15
+#define PD_DCDAC_RXB 0x05C0, 7<<4 | 7
+#define PD_DCDAC_RXA 0x05C0, 6<<4 | 6
+#define PD_DCDAC_TXB 0x05C0, 5<<4 | 5
+#define PD_DCDAC_TXA 0x05C0, 4<<4 | 4
+#define PD_DCCMP_RXB 0x05C0, 3<<4 | 3
+#define PD_DCCMP_RXA 0x05C0, 2<<4 | 2
+#define PD_DCCMP_TXB 0x05C0, 1<<4 | 1
+#define PD_DCCMP_TXA 0x05C0, 0<<4 | 0
+
+#define DCWR_TXAI 0x05C3, 15<<4 | 15
+#define DCRD_TXAI 0x05C3, 14<<4 | 14
+#define DC_TXAI 0x05C3, 10<<4 | 0
+#define DCWR_TXAQ 0x05C4, 15<<4 | 15
+#define DCRD_TXAQ 0x05C4, 14<<4 | 14
+#define DC_TXAQ 0x05C4, 10<<4 | 0
+#define DCWR_TXBI 0x05C5, 15<<4 | 15
+#define DCRD_TXBI 0x05C5, 14<<4 | 14
+#define DC_TXBI 0x05C5, 10<<4 | 0
+#define DCWR_TXBQ 0x05C6, 15<<4 | 15
+#define DCRD_TXBQ 0x05C6, 14<<4 | 14
+#define DC_TXBQ 0x05C6, 10<<4 | 0
+#define DCWR_RXAI 0x05C7, 15<<4 | 15
+#define DCRD_RXAI 0x05C7, 14<<4 | 14
+#define DC_RXAI 0x05C7, 6<<4 | 0
+#define DCWR_RXAQ 0x05C8, 15<<4 | 15
+#define DCRD_RXAQ 0x05C8, 14<<4 | 14
+#define DC_RXAQ 0x05C8, 6<<4 | 0
+#define DCWR_RXBI 0x05C9, 15<<4 | 15
+#define DCRD_RXBI 0x05C9, 14<<4 | 14
+#define DC_RXBI 0x05C9, 6<<4 | 0
+#define DCWR_RXBQ 0x05CA, 15<<4 | 15
+#define DCRD_RXBQ 0x05CA, 14<<4 | 14
+
+#define R5_LPF_BYP_TBB 0x010B, 0<<4 | 0
 
 #endif

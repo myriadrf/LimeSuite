@@ -64,3 +64,9 @@ void lms7002_pnlBIAS_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 }
+
+void lms7002_pnlBIAS_view::OnCalibrateRP_BIAS( wxCommandEvent& event )
+{
+    LMS_CalibrateRP_BIAS(lmsControl);
+    UpdateGUI();
+}

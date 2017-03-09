@@ -479,6 +479,11 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx,
 API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx,
                                         size_t chan, double bw, unsigned flags);
 
+API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateAnalogRSSIDC(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device);
+API_EXPORT int CALL_CONV LMS_CalibrateTxGain(lms_device_t *device, float maxGainOffset_dBFS, float *actualGain_dBFS);
+
 /**
  * Load LMS chip configuration from a file
  *
@@ -1058,6 +1063,9 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *dev, size_t clk_id,
  */
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *dev, size_t clk_id,
                                          float_type freq);
+
+API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *dev, size_t clk_id,
+                                         float_type freq, float_type BW);
 
 /**
  * Load Si5351C configuration from file

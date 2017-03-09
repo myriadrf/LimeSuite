@@ -548,6 +548,27 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
     }
 }
 
+API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *device, size_t clk_id, float_type freq, float_type BW)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    switch (clk_id)
+    {
+        case LMS_CLOCK_SXR:
+            if (freq <= 0)
+                return lms->TuneVCO(lime::LMS7002M::VCO_SXR);
+            return lms->SetFrequencySXWithSpurCancelation(false,freq, BW);
+        default:
+            lime::ReportError(ENOTSUP, "Not supported");
+            return -1;
+    }
+}
+
 API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev, const char* filename)
 {
     if (dev == nullptr)
@@ -1160,14 +1181,65 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    lms->EnableCalibrationByMCU(true);
+    //lms->EnableCalibrationByMCU(false);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
-    lms->EnableCalibrationByMCU(flags==0);
     if (dir_tx)
        return lms->CalibrateTx(bw,flags!=0);
     else
        return lms->CalibrateRx(bw,flags!=0);
 
+}
+
+API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateInternalADC();
+}
+
+API_EXPORT int CALL_CONV LMS_CalibrateAnalogRSSIDC(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateAnalogRSSI_DC_Offset();
+}
+
+API_EXPORT int CALL_CONV LMS_CalibrateRP_BIAS(lms_device_t *device)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateRP_BIAS();
+}
+
+API_EXPORT int CALL_CONV LMS_CalibrateTxGain(lms_device_t *device, float maxGainOffset_dBFS, float *actualGain_dBFS)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+
+    LMS7_Device* lms = (LMS7_Device*)device;
+
+    return lms->CalibrateTxGain(maxGainOffset_dBFS, actualGain_dBFS);
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)
