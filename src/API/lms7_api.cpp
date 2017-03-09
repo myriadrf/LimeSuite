@@ -803,12 +803,23 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
 
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, float_type *temp)
 {
+    *temp = 0;
     if (dev == nullptr)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
+    int status =0;
+    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        return -1;
+    }
+    if (status != 0)
+    {
+        return -1;
+    }
     *temp = lms->GetTemperature();
     return 0;
 }
@@ -996,6 +1007,18 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+
+    int status = 0;
+    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    {
+        lime::ReportError(EINVAL, "Filter calibration is not implemented for this chip revision");
+        return -1;
+    }
+    if (status != 0)
+    {
+        return -1;
+    }
+
     return lms->SetLPF(dir_tx,chan,true,true,bandwidth);
 }
 
@@ -1176,6 +1199,17 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
+    int status = 0;
+    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    {
+        lime::ReportError(EINVAL, "Calibrations are not implemented for this chip revision");
+        return -1;
+    }
+    if (status != 0)
+    {
+        return -1;
+    }
+
     if (chan >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
@@ -1199,6 +1233,17 @@ API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
+
+    int status = 0;
+    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        return -1;
+    }
+    if (status != 0)
+    {
+        return -1;
+    }
 
     return lms->CalibrateInternalADC();
 }

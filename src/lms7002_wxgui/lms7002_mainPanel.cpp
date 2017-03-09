@@ -300,7 +300,9 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
     double t;
-    LMS_GetChipTemperature(lmsControl,0,&t);
+    int status = LMS_GetChipTemperature(lmsControl,0,&t);
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Read chip temperature: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
 }
 
@@ -349,5 +351,7 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
 {
-    LMS_CalibrateInternalADC(lmsControl);
+    int status = LMS_CalibrateInternalADC(lmsControl);
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
 }
