@@ -21,9 +21,6 @@ using namespace lime;
 
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
-//lazy fix for the const call issue -- FIXME
-#define _accessMutex const_cast<std::recursive_mutex &>(_accessMutex)
-
 // arbitrary upper limit for CGEN automatic tune
 #define MAX_CGEN_RATE 640e6
 
