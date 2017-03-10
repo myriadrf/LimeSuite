@@ -57,8 +57,7 @@ class frFFTviewer : public wxFrame
 		wxStaticText* lblRxDataRate;
 		wxStaticText* m_staticText18;
 		wxStaticText* lblTxDataRate;
-		wxStaticText* m_staticText10;
-		wxStaticText* lblFFTrate;
+		wxCheckBox* chkEnTx;
 		wxChoice* cmbWindowFunc;
 		wxCheckBox* chkCaptureToFile;
 		wxStaticText* m_staticText12;

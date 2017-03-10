@@ -138,19 +138,16 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	lblTxDataRate->Wrap( -1 );
 	fgSizer13->Add( lblTxDataRate, 0, 0, 5 );
 	
-	m_staticText10 = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("FFT/s"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText10->Wrap( -1 );
-	fgSizer13->Add( m_staticText10, 0, 0, 5 );
-	
-	lblFFTrate = new wxStaticText( sbSizer2->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblFFTrate->Wrap( -1 );
-	fgSizer13->Add( lblFFTrate, 0, 0, 5 );
-	
 	
 	fgSizer12->Add( fgSizer13, 1, wxEXPAND, 5 );
 	
 	
 	sbSizer2->Add( fgSizer12, 1, wxEXPAND, 5 );
+	
+	chkEnTx = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Loopback RX to TX"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnTx->SetToolTip( wxT("Freezes FFT plot") );
+	
+	sbSizer2->Add( chkEnTx, 0, wxALL, 5 );
 	
 	wxStaticBoxSizer* sbSizer6;
 	sbSizer6 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Window function:") ), wxVERTICAL );

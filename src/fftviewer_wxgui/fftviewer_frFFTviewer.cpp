@@ -152,6 +152,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         captureSamples.store(false);
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
+    chkEnTx->Disable();
 
     switch (cmbStreamType->GetSelection())
     {
@@ -175,11 +176,12 @@ void fftviewer_frFFTviewer::StopStreaming()
         return;
     stopProcessing.store(true);
     threadProcessing.join();
-	btnStartStop->SetLabel(_("START"));
-	cmbStreamType->Enable();
-	spinFFTsize->Enable();
-	chkCaptureToFile->Enable();
-	spinCaptureCount->Enable();
+    btnStartStop->SetLabel(_("START"));
+    cmbStreamType->Enable();
+    spinFFTsize->Enable();
+    chkCaptureToFile->Enable();
+    spinCaptureCount->Enable();
+    chkEnTx->Enable();
 }
 
 void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
@@ -194,6 +196,11 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
         gaugeRxBuffer->SetValue((int)RxFilled);
         lblRxDataRate->SetLabel(printDataRate(rxStats.linkRate));
     }
+    else
+    {
+        gaugeRxBuffer->SetValue(0);
+        lblRxDataRate->SetLabel(printDataRate(0));
+    }
     if(txStreams[0].handle != 0)
     {
         lms_stream_status_t txStats;
@@ -201,6 +208,11 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
         float TxFilled = 100*(float)txStats.fifoFilledCount/txStats.fifoSize;
         gaugeTxBuffer->SetValue((int)TxFilled);
         lblTxDataRate->SetLabel(printDataRate(txStats.linkRate));
+    }
+    else
+    {
+        gaugeTxBuffer->SetValue(0);
+        lblTxDataRate->SetLabel(printDataRate(0));
     }
 }
 
@@ -293,7 +305,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 
 void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
-    bool runTx = true;
+    const bool runTx = pthis->chkEnTx->GetValue();
     const int cMaxChCount = 2;
     const int fifoSize = fftSize*512;
     int avgCount = pthis->spinAvgCount->GetValue();
