@@ -265,5 +265,5 @@ private:
 
     lime::LMS7002M *getRFIC(const size_t channel) const;
     std::vector<lime::LMS7002M *> _rfics;
-    std::recursive_mutex _accessMutex;
+    mutable std::recursive_mutex _accessMutex;
 };
