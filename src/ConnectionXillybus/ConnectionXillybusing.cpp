@@ -453,7 +453,6 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    uint64_t timestamp = 0;
     while (terminate->load() != true)
     {
         int i=0;
@@ -509,7 +508,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
 #ifndef NDEBUG
             //total number of samples from all channels per second
             float sampleRate = 1000.0*samplesSent / timePeriod;
-            printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i, ts:%li\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures, timestamp);
+            printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures);
 #endif
         }
     }
