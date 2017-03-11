@@ -6,8 +6,22 @@
 
 #include "SoapyLMS7.h"
 #include <SoapySDR/Registry.hpp>
+#include <SoapySDR/Logger.hpp>
+#include "Logger.h"
 
 using namespace lime;
+
+static void limeSuiteLogHandler(const lime::LogLevel level, const char *message)
+{
+    switch(level)
+    {
+    case lime::CRITICAL: SoapySDR::log(SOAPY_SDR_CRITICAL, message); return;
+    case lime::ERROR: SoapySDR::log(SOAPY_SDR_ERROR, message); return;
+    case lime::WARNING: SoapySDR::log(SOAPY_SDR_WARNING, message); return;
+    case lime::INFO: SoapySDR::log(SOAPY_SDR_INFO, message); return;
+    case lime::DEBUG: SoapySDR::log(SOAPY_SDR_DEBUG, message); return;
+    }
+}
 
 static ConnectionHandle argsToHandle(const SoapySDR::Kwargs &args)
 {
@@ -44,6 +58,7 @@ static SoapySDR::Kwargs handleToArgs(const ConnectionHandle &handle)
 
 static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs &matchArgs)
 {
+    lime::registerLogHandler(&limeSuiteLogHandler);
     SoapySDR::KwargsList results;
     for (const auto &handle : ConnectionRegistry::findConnections(argsToHandle(matchArgs)))
     {
@@ -54,6 +69,7 @@ static SoapySDR::KwargsList findIConnection(const SoapySDR::Kwargs &matchArgs)
 
 static SoapySDR::Device *makeIConnection(const SoapySDR::Kwargs &args)
 {
+    lime::registerLogHandler(&limeSuiteLogHandler);
     return new SoapyLMS7(argsToHandle(args), args);
 }
 

@@ -29,32 +29,6 @@ using namespace lime;
 #define MAX_SAMP_RATE 60e6
 
 /*******************************************************************
- * Special LMS7002M with log forwarding
- ******************************************************************/
-class LMS7002M_withLogging : public LMS7002M
-{
-public:
-    LMS7002M_withLogging(void):
-        LMS7002M()
-    {
-        //SoapySDR::setLogLevel(SOAPY_SDR_DEBUG);
-        return;
-    }
-
-protected:
-    void Log(const char* text, LogType type)
-    {
-        switch(type)
-        {
-        case LOG_INFO: SoapySDR::log(SOAPY_SDR_INFO, text); break;
-        case LOG_WARNING: SoapySDR::log(SOAPY_SDR_WARNING, text); break;
-        case LOG_ERROR: SoapySDR::log(SOAPY_SDR_ERROR, text); break;
-        case LOG_DATA: SoapySDR::log(SOAPY_SDR_DEBUG, text); break;
-        }
-    }
-};
-
-/*******************************************************************
  * Constructor/destructor
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
@@ -82,7 +56,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     for (size_t i = 0; i < numRFICs; i++)
     {
         SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", int(i));
-        _rfics.push_back(new LMS7002M_withLogging());
+        _rfics.push_back(new LMS7002M());
         _rfics.back()->SetConnection(_conn, i);
         SoapySDR::logf(SOAPY_SDR_INFO, "Ver=%d, Rev=%d, Mask=%d",
             _rfics.back()->Get_SPI_Reg_bits(LMS7param(VER), true),
