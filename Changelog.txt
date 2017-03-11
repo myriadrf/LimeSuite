@@ -1,3 +1,18 @@
+Release 17.03.0 (pending)
+==========================
+
+API additions:
+- LMS_CalibrateInternalADC
+- LMS_CalibrateAnalogRSSIDC
+- LMS_CalibrateRP_BIAS
+- LMS_CalibrateTxGain
+- LMS_SetClockFreqWithSpurCancelation
+
+General changes:
+- Speed up x640,x641 spi
+- FFTviewer: add checkbox for RX->TX loopback control
+- Merged major MCU based calibrations update
+
 Release 17.02.0 (2017-03-07)
 ==========================
 
