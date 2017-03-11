@@ -5,7 +5,7 @@ bool slowSPI = 0;
 
 void Delay()
 {
-    volatile uint16_t i = 0xFF;
+    volatile uint16_t i = 0x1F;
     if(!slowSPI)
         return;
     while(i>0)

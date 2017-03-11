@@ -1834,7 +1834,7 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
             SPI_write(0x002D, address);
             mcu->RunProcedure(8);
             mcu->WaitForMCU(50);
-            uint16_t rdVal = SPI_read(0x040B, true);
+            uint16_t rdVal = SPI_read(0x040B, true, status);
             return rdVal;
         }
         else
