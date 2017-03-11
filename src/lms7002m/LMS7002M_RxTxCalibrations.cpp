@@ -1306,8 +1306,8 @@ void LMS7002M::CalibrateTxDCAuto()
         qparams.param = LMS7_DC_TXAQ;
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXA), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_TXA), 0);
-        SPI_write(0x05C2, 0xF003);
-        statusMask = 0x000F;
+        SPI_write(0x05C2, 0x0F03);
+        statusMask = 0x0F00;
     }
     else
     {
@@ -1315,8 +1315,8 @@ void LMS7002M::CalibrateTxDCAuto()
         qparams.param = LMS7_DC_TXBQ;
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXB), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_TXB), 0);
-        SPI_write(0x05C2, 0xF00C);
-        statusMask = 0x00F0;
+        SPI_write(0x05C2, 0x0F0C);
+        statusMask = 0xF000;
         dcRegAddr += 2;
     }
 

@@ -22,8 +22,8 @@ lime::LMS7002M lmsControl;
 //use the LMS7002M or calibrate directly from Host
 static bool useMCU =1;
 static bool tx = 1;
-static bool filters = 1;
-static float FBW = 70e6;
+static bool filters = 0;
+static float FBW = 5e6;
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
@@ -93,7 +93,7 @@ void DCIQ()
             status = MCU_SetParameter(MCU_REF_CLK, 40e6);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
-            status = MCU_SetParameter(MCU_BW, 20e6);
+            status = MCU_SetParameter(MCU_BW, FBW);
             if(status != 0)
                 printf("Failed to set Bandwidth\n");
             isSetBW = true;
@@ -344,7 +344,7 @@ void Filters()
         lmsControl.LoadDC_REG_IQ(true, 0x7FFF, 0x7FFF);
     }
 }
-
+extern float RefClk;
 int main(int argc, char** argv)
 {
     //connect to first available device
@@ -367,6 +367,8 @@ int main(int argc, char** argv)
     lmsControl.SetConnection(serPort);
     //change SPI switch to BB, just in case it was left for MCU
     lmsControl.SPI_write(0x0006, 0);
+
+    RefClk = lmsControl.GetReferenceClk_SX(false);
 
     //load initial chip config for testing
     string filename;
@@ -394,7 +396,7 @@ int main(int argc, char** argv)
     int status;
     //backup chip state
 
-    lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    //lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 2);
 
     status = 0;
     if(useMCU)

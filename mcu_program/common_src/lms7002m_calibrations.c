@@ -434,7 +434,6 @@ void AdjustAutoDC(const uint16_t address, bool tx)
 
 void CalibrateRxDCAuto()
 {
-    uint16_t statusMask;
     uint16_t dcRegAddr = 0x5C7;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
     Modify_SPI_Reg_bits(EN_G_TRF, 0);
@@ -450,23 +449,17 @@ void CalibrateRxDCAuto()
         Modify_SPI_Reg_bits(PD_DCDAC_RXA, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_RXA, 0);
         SPI_write(0x05C2, 0xFF30);
-        statusMask = 0x0F00;
     }
     else
     {
         Modify_SPI_Reg_bits(PD_DCDAC_RXB, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_RXB, 0);
         SPI_write(0x05C2, 0xFFC0);
-        statusMask = 0xF000;
         dcRegAddr += 2;
     }
 
     {
-    bool busy = SPI_read(0x05C1) & statusMask;
-    while(busy)
-    {
-        busy = SPI_read(0x05C1) & statusMask;
-    }
+        while(SPI_read(0x05C1) & 0xF000);
     }
 
     //manual adjustments
@@ -488,7 +481,6 @@ void CalibrateTxDCAuto()
 #endif // VERBOSE
     BinSearchParam iparams;
     BinSearchParam qparams;
-    uint16_t statusMask;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
     uint16_t dcRegAddr = 0x5C3;
     Modify_SPI_Reg_bits(EN_G_TRF, 1);
@@ -508,9 +500,7 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C4;// DC_TXAQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXA, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXA, 0);
-        //SPI_write(0x05C2, 0xF000);
-        //SPI_write(0x05C2, 0xF003);
-        statusMask = 0x000F;
+        SPI_write(0x05C2, 0x0F03);
     }
     else
     {
@@ -518,23 +508,17 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C6;// DC_TXBQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXB, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXB, 0);
-        //SPI_write(0x05C2, 0xF000);
-        //SPI_write(0x05C2, 0xF00C);
-        statusMask = 0x00F0;
+        SPI_write(0x05C2, 0x0F0C);
         dcRegAddr += 2;
     }
-    /*{
-        bool  busy = SPI_read(0x05C1) & statusMask;
-        while(busy)
-        {
-            busy = SPI_read(0x05C1) & statusMask;
-        }
-    }*/
+
+    //wait until finished
+    while(SPI_read(0x05C1) & 0x0F00);
 
     {
     int16_t ivalue = 0;//ReadAnalogDC(iparams.param.address);
     int16_t qvalue = 0;//ReadAnalogDC(qparams.param.address);
-    int offset = 512;
+    int offset = 128;
     iparams.minValue = ivalue-offset;
     iparams.maxValue = ivalue+offset;
     qparams.minValue = qvalue-offset;
