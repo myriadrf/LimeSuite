@@ -1,3 +1,8 @@
+Release 17.02.1 (pending)
+==========================
+
+- Fix ILimeSDRStreaming fifo size power of two issue
+
 Release 17.02.0 (2017-03-07)
 ==========================
 
