@@ -1,3 +1,10 @@
+limesuite (17.02.1-1) unstable; urgency=low
+
+  * Release 17.02.1 (2017-03-11)
+  * Fix debian packaging for 17.02 ABI
+
+ -- Lime Microsystems <info@limemicro.com>  Sat, 11 Mar 2017 15:36:30 -0800
+
 limesuite (17.02.0-1) unstable; urgency=low
 
   * Release 17.02.0 (2017-03-07)
