@@ -13,7 +13,7 @@ General changes:
 - FFTviewer: add checkbox for RX->TX loopback control
 - Merged major MCU based calibrations update
 
-Release 17.02.1 (pending)
+Release 17.02.1 (2017-03-11)
 ==========================
 
 - Fix ILimeSDRStreaming fifo size power of two issue
