@@ -5904,28 +5904,21 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	sizerNCOgrid->SetFlexibleDirection( wxBOTH );
 	sizerNCOgrid->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxFlexGridSizer* fgSizer225;
-	fgSizer225 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer225->AddGrowableCol( 0 );
-	fgSizer225->AddGrowableCol( 1 );
-	fgSizer225->SetFlexibleDirection( wxBOTH );
-	fgSizer225->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	ID_STATICTEXT18 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("FCW(MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT18->Wrap( -1 );
-	fgSizer225->Add( ID_STATICTEXT18, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
-	
-	ID_STATICTEXT20 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Angle"), wxDefaultPosition, wxSize( 48,13 ), 0 );
-	ID_STATICTEXT20->Wrap( -1 );
-	fgSizer225->Add( ID_STATICTEXT20, 1, wxLEFT|wxALIGN_RIGHT, 5 );
-	
-	
-	sizerNCOgrid->Add( fgSizer225, 1, wxEXPAND, 5 );
-	
 	wxFlexGridSizer* fgSizer221;
-	fgSizer221 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer221 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer221->SetFlexibleDirection( wxBOTH );
 	fgSizer221->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	
+	fgSizer221->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	tableTitleCol1 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("FCW(MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
+	tableTitleCol1->Wrap( -1 );
+	fgSizer221->Add( tableTitleCol1, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	tableTitleCol2 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Angle (Deg)"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	tableTitleCol2->Wrap( -1 );
+	fgSizer221->Add( tableTitleCol2, 1, wxLEFT|wxALIGN_RIGHT, 5 );
 	
 	rgrSEL0 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer221->Add( rgrSEL0, 0, wxALIGN_CENTER_VERTICAL, 5 );
@@ -6744,6 +6737,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	txtFCWPHO15->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlTxTSP_view::PHOinputChanged ), NULL, this );
 	btnUploadNCO->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::OnbtnUploadNCOClick ), NULL, this );
 	rgrMODE_TX->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
+	txtFCWPHOmodeAdditional->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlTxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
 	txtFCWPHOmodeAdditional->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlTxTSP_view::PHOinputChanged ), NULL, this );
 	cmbDTHBIT_TX->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkTSGSWAPIQ_TXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -6820,6 +6814,7 @@ pnlTxTSP_view::~pnlTxTSP_view()
 	txtFCWPHO15->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlTxTSP_view::PHOinputChanged ), NULL, this );
 	btnUploadNCO->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::OnbtnUploadNCOClick ), NULL, this );
 	rgrMODE_TX->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
+	txtFCWPHOmodeAdditional->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlTxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
 	txtFCWPHOmodeAdditional->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlTxTSP_view::PHOinputChanged ), NULL, this );
 	cmbDTHBIT_TX->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkTSGSWAPIQ_TXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -7055,21 +7050,24 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer225->SetFlexibleDirection( wxBOTH );
 	fgSizer225->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	ID_STATICTEXT18 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("FCW(MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT18->Wrap( -1 );
-	fgSizer225->Add( ID_STATICTEXT18, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
-	
-	ID_STATICTEXT20 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Angle"), wxDefaultPosition, wxSize( 48,13 ), 0 );
-	ID_STATICTEXT20->Wrap( -1 );
-	fgSizer225->Add( ID_STATICTEXT20, 1, wxLEFT|wxALIGN_RIGHT, 5 );
-	
 	
 	sizerNCOgrid->Add( fgSizer225, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer221;
-	fgSizer221 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer221 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer221->SetFlexibleDirection( wxBOTH );
 	fgSizer221->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	
+	fgSizer221->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	tableTitleCol1 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("FCW(MHz)"), wxDefaultPosition, wxDefaultSize, 0 );
+	tableTitleCol1->Wrap( -1 );
+	fgSizer221->Add( tableTitleCol1, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	tableTitleCol2 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Angle (Deg)"), wxPoint( -1,-1 ), wxSize( -1,-1 ), 0 );
+	tableTitleCol2->Wrap( -1 );
+	fgSizer221->Add( tableTitleCol2, 1, wxLEFT|wxALIGN_RIGHT, 5 );
 	
 	rgrSEL0 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer221->Add( rgrSEL0, 0, wxALIGN_CENTER_VERTICAL, 5 );
@@ -7077,7 +7075,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	txtFCWPHO0 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer221->Add( txtFCWPHO0, 0, 0, 5 );
 	
-	txtAnglePHO0 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.00000"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtAnglePHO0 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtAnglePHO0->Wrap( -1 );
 	fgSizer221->Add( txtAnglePHO0, 0, wxALL, 5 );
 	
@@ -7914,6 +7912,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	txtFCWPHO15->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
 	btnUploadNCO->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnUploadNCOClick ), NULL, this );
 	rgrMODE_RX->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	txtFCWPHOmodeAdditional->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlRxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
 	txtFCWPHOmodeAdditional->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
 	cmbDTHBIT_RX->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkTSGSWAPIQ_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -7993,6 +7992,7 @@ pnlRxTSP_view::~pnlRxTSP_view()
 	txtFCWPHO15->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
 	btnUploadNCO->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnUploadNCOClick ), NULL, this );
 	rgrMODE_RX->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	txtFCWPHOmodeAdditional->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlRxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
 	txtFCWPHOmodeAdditional->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
 	cmbDTHBIT_RX->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkTSGSWAPIQ_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );

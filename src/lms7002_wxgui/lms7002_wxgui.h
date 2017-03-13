@@ -1574,8 +1574,8 @@ class pnlTxTSP_view : public wxPanel
 		wxStaticText* lblBSIGQ_TXTSP;
 		wxButton* btnReadBIST;
 		wxFlexGridSizer* sizerNCOgrid;
-		wxStaticText* ID_STATICTEXT18;
-		wxStaticText* ID_STATICTEXT20;
+		wxStaticText* tableTitleCol1;
+		wxStaticText* tableTitleCol2;
 		wxRadioButton* rgrSEL0;
 		wxTextCtrl* txtFCWPHO0;
 		wxStaticText* txtAnglePHO0;
@@ -1680,6 +1680,7 @@ class pnlTxTSP_view : public wxPanel
 		virtual void OnNCOSelectionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void PHOinputChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnUploadNCOClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void txtFCWPHOmodeAdditional_OnMouseWheel( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCIClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCQClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
@@ -1768,8 +1769,8 @@ class pnlRxTSP_view : public wxPanel
 		wxStaticText* lblRSSI;
 		wxButton* ID_BUTTON1;
 		wxFlexGridSizer* sizerNCOgrid;
-		wxStaticText* ID_STATICTEXT18;
-		wxStaticText* ID_STATICTEXT20;
+		wxStaticText* tableTitleCol1;
+		wxStaticText* tableTitleCol2;
 		wxRadioButton* rgrSEL0;
 		wxTextCtrl* txtFCWPHO0;
 		wxStaticText* txtAnglePHO0;
@@ -1879,6 +1880,7 @@ class pnlRxTSP_view : public wxPanel
 		virtual void OnNCOSelectionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void PHOinputChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnUploadNCOClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void txtFCWPHOmodeAdditional_OnMouseWheel( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCIClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCQClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }

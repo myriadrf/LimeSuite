@@ -373,19 +373,23 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%f"), pho));
-        lblFCWPHOmodeName->SetLabel(_("PHO"));
+        lblFCWPHOmodeName->SetLabel(_("PHO (deg)"));
+        tableTitleCol1->SetLabel(_("FCW(MHz)"));
+        tableTitleCol2->SetLabel(_("PHO(deg)"));
     }
     else //PHO mode
     {
         float_type phase[16];
         float_type fcw;
-        LMS_GetNCOFrequency(lmsControl,LMS_CH_TX,ch-1,phase,&fcw);
+        LMS_GetNCOPhase(lmsControl,LMS_CH_TX,ch-1,phase,&fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0/360.0)*  phase[i]));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), fcw/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));
+        tableTitleCol2->SetLabel(_("FCW(MHz)"));
+        tableTitleCol1->SetLabel(_("PHO(deg)"));
     }
 }
 
@@ -435,19 +439,45 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
 
 void lms7002_pnlTxTSP_view::PHOinputChanged(wxCommandEvent& event)
 {
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    // Write values for NCO phase or frequency each time they change - to ease the tuning of these values in measurements
+    if (rgrMODE_TX->GetSelection() == 0)
+    {
+        double angle;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
+        LMS_SetNCOFrequency(lmsControl,LMS_CH_TX,ch-1,nullptr,angle);
+    }
+    else //PHO mode
+    {
+        double freq;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
+        LMS_SetNCOPhase(lmsControl, LMS_CH_TX, ch-1, nullptr, freq*1e6);
+    }
+
     assert(lblNCOangles.size() == 16);
     if (rgrMODE_TX->GetSelection() == 1)
-        for (int i = 0; i < 16; ++i)
-        {
-            long phoVal = 0;
-            txtNCOinputs[i]->GetValue().ToLong(&phoVal);
-            lblNCOangles[i]->SetLabel(wxString::Format("%3.3f", 2.0 * 180 * phoVal / (65536.0)));
+    {
+        double freq;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
+        for (int i = 0; i < 16; ++i){
+            lblNCOangles[i]->SetLabel(wxString::Format("%3.3f", freq));
         }
+    }
     else
     {
-        long phoVal = 0;
-        txtFCWPHOmodeAdditional->GetValue().ToLong(&phoVal);
-        for (int i = 0; i < 16; ++i)
-            lblNCOangles[i]->SetLabel(wxString::Format("%3.3f", 2.0 * 180 * phoVal / (65536.0)));
+        double angle;
+        txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
+        for (int i = 0; i < 16; ++i){
+            lblNCOangles[i]->SetLabel(wxString::Format("%3.3f", angle));
+        }
     }
+}
+
+void lms7002_pnlTxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel(wxMouseEvent& event){
+    double angle = 0;
+    txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
+    int change = event.GetWheelRotation()/120;
+    angle += change*0.1;
+    txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.1f"), angle > 0 ? angle : 0));
 }
