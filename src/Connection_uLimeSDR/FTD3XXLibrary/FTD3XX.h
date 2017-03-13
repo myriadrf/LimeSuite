@@ -339,8 +339,6 @@ typedef enum
 {
     CONFIGURATION_FIFO_CLK_100,
     CONFIGURATION_FIFO_CLK_66,
-    CONFIGURATION_FIFO_CLK_50,
-    CONFIGURATION_FIFO_CLK_40,
     CONFIGURATION_FIFO_CLK_COUNT,
 
 } CONFIGURATION_FIFO_CLK;
@@ -388,6 +386,8 @@ typedef enum
 	CONFIGURATION_OPTIONAL_FEATURE_DISABLEUNDERRUN_INCH3                = (0x1 << 8),
 	CONFIGURATION_OPTIONAL_FEATURE_DISABLEUNDERRUN_INCH4                = (0x1 << 9),
 	CONFIGURATION_OPTIONAL_FEATURE_DISABLEUNDERRUN_INCHALL              = (0xF << 6),
+	CONFIGURATION_OPTIONAL_FEATURE_SUPPORT_ENABLE_FIFO_IN_SUSPEND		= (1 << 10),
+	CONFIGURATION_OPTIONAL_FEATURE_SUPPORT_DISABLE_CHIP_POWERDOWN		= (1 << 11),
 	CONFIGURATION_OPTIONAL_FEATURE_ENABLEALL                            = 0xFFFF,
 
 } CONFIGURATION_OPTIONAL_FEATURE_SUPPORT;
@@ -427,7 +427,7 @@ typedef struct
     UCHAR        StringDescriptors[128];
 
     // Configuration Descriptor
-    UCHAR        Reserved;
+	UCHAR		 bInterval;	//   Interrupt interval (Valid range: 1-16)
     UCHAR        PowerAttributes;
     USHORT       PowerConsumption;
 
@@ -651,22 +651,6 @@ extern "C" {
         );
 
     FTD3XX_API
-        FT_STATUS WINAPI FT_SetGPIO(
-        FT_HANDLE ftHandle,
-        UCHAR ucDirection,
-        UCHAR ucValue
-        );
-
-    FTD3XX_API
-        FT_STATUS WINAPI FT_GetGPIO(
-        FT_HANDLE ftHandle,
-        UCHAR ucDirection,
-        FT_NOTIFICATION_CALLBACK pCallback,
-        PVOID pvCallbackContext,
-        USHORT uwCallbackLatency
-        );
-
-    FTD3XX_API
         FT_STATUS WINAPI FT_SetNotificationCallback(
         FT_HANDLE ftHandle,
         FT_NOTIFICATION_CALLBACK pCallback,
@@ -757,6 +741,60 @@ extern "C" {
 		FT_STATUS WINAPI FT_GetLibraryVersion(
 		LPDWORD lpdwVersion
 		);
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_SetPipeTimeout(
+    FT_HANDLE ftHandle,
+    UCHAR ucPipeID,
+    ULONG TimeoutInMs
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_GetPipeTimeout(
+    FT_HANDLE ftHandle,
+    UCHAR ucPipeID,
+    PULONG pTimeoutInMs
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_SetSuspendTimeout(
+    FT_HANDLE ftHandle,
+    ULONG Timeout
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_GetSuspendTimeout(
+    FT_HANDLE ftHandle,
+    PULONG pTimeout
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_EnableGPIO(
+    FT_HANDLE ftHandle,
+    UINT32 u32Mask,
+    UINT32 u32Dir
+    );
+
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_WriteGPIO(
+    FT_HANDLE ftHandle,
+    UINT32 u32Mask,
+    UINT32 u32Data
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_ReadGPIO(
+    FT_HANDLE ftHandle,
+    UINT32 *pu32Data
+    );
+
+    FTD3XX_API
+    FT_STATUS WINAPI FT_SetGPIOPull(
+    FT_HANDLE ftHandle,
+    UINT32 u32Mask,
+    UINT32 u32Pull
+    );
 
 #ifdef __cplusplus
 }
