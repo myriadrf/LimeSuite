@@ -78,11 +78,11 @@ void Connection_uLimeSDR::ReceivePacketsLoop(const Connection_uLimeSDR::ThreadDa
     {
         latency += args.channels[i]->config.performanceLatency/chCount;
     }
-    const unsigned tmp_cnt = (latency * 6)+0.5;
+    const unsigned tmp_cnt = (latency * 4)+0.5;
 
     const uint8_t packetsToBatch = (1<<tmp_cnt);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
-    const uint8_t buffersCount = (tmp_cnt < 3) ? 32 : 16; // must be power of 2
+    const uint8_t buffersCount = 16; // must be power of 2
     vector<int> handles(buffersCount, 0);
     vector<char>buffers(buffersCount*bufferSize, 0);
     vector<StreamChannel::Frame> chFrames;
@@ -297,7 +297,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(const Connection_uLimeSDR::ThreadD
     {
         latency += args.channels[i]->config.performanceLatency/chCount;
     }
-    const unsigned tmp_cnt = (latency * 6)+0.5;
+    const unsigned tmp_cnt = (latency * 4)+0.5;
 
     const uint8_t buffersCount = 16; // must be power of 2
     assert(buffersCount % 2 == 0);

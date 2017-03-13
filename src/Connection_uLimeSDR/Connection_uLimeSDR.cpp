@@ -162,9 +162,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 	DWORD devCount;
 	FT_STATUS ftStatus = FT_OK;
 	DWORD dwNumDevices = 0;
-	//
 	// Open a device
-	//
 	ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
 	if (FT_FAILED(ftStatus))
 	{
@@ -177,6 +175,8 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
 	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x82, 64);
 	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
+    FT_SetPipeTimeout(mFTHandle, 0x02, 500);
+    FT_SetPipeTimeout(mFTHandle, 0x82, 500);
 	isConnected = true;
 	return 0;
 #else
@@ -252,46 +252,24 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     if(IsOpen() == false)
         return 0;
 
-    unsigned char* wbuffer = new unsigned char[length];
-    memcpy(wbuffer, buffer, length);
 #ifndef __unix__
-
-	//
 	// Write to channel 1 ep 0x02
-	//
 	ULONG ulBytesWrite = 0;
 	FT_STATUS ftStatus = FT_OK;
-	OVERLAPPED	vOverlapped = { 0 };
-	memset(&vOverlapped, 0, sizeof(OVERLAPPED));
-	vOverlapped.hEvent = CreateEvent(NULL, false, false, NULL);
-	ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
-	if (ftStatus != FT_IO_PENDING)
-	{
-		CloseHandle(vOverlapped.hEvent);
+    FT_SetPipeTimeout(mFTHandle, 0x02, timeout_ms);
+    ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, nullptr);
+    if (ftStatus != FT_OK)
 		return -1;
-	}
-
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
-	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
-	{
-		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE)==FALSE)
-		{
-			ulBytesWrite = -1;
-		}
-	}
-	else
-	{
-		ulBytesWrite = -1;
-	}
-	CloseHandle(vOverlapped.hEvent);
 	return ulBytesWrite;
 #else
+    unsigned char* wbuffer = new unsigned char[length];
+    memcpy(wbuffer, buffer, length);
     int actual = 0;
     libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, timeout_ms);
-    len = actual;
-#endif
+    len = actual
     delete[] wbuffer;
     return len;
+#endif
 }
 
 /**	@brief Reads data coming from the chip through USB port.
@@ -308,34 +286,13 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
     if(IsOpen() == false)
         return 0;
 #ifndef __unix__
-	//
 	// Read from channel 1 ep 0x82
-	//
 	ULONG ulBytesRead = 0;
 	FT_STATUS ftStatus = FT_OK;
-	OVERLAPPED	vOverlapped = { 0 };
-	memset(&vOverlapped, 0, sizeof(OVERLAPPED));
-	vOverlapped.hEvent = CreateEvent(NULL, false, false, NULL);
-	ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, &vOverlapped);
-	if (ftStatus != FT_IO_PENDING)
-	{
-		CloseHandle(vOverlapped.hEvent);
+    FT_SetPipeTimeout(mFTHandle, 0x82, timeout_ms);
+	ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, nullptr);
+    if (ftStatus != FT_OK)
 		return -1;;
-	}
-
-	DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
-	if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
-	{
-		if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
-		{
-			ulBytesRead = -1;
-		}
-	}
-	else
-	{
-		ulBytesRead = -1;
-	}
-	CloseHandle(vOverlapped.hEvent);
 	return ulBytesRead;
 #else
     int actual = 0;
@@ -423,19 +380,19 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
         return -1;
     }
     contexts[i].used = true;
+
 #ifndef __unix__
 	if (length != rxSize)
 	{
 		rxSize = length;
 		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, rxSize);
 	}
-	memset(&contexts[i].inOvLap, 0, sizeof(OVERLAPPED));
-	contexts[i].inOvLap.hEvent = CreateEvent(NULL, false, false, NULL);
+    FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
 	ULONG ulActual;
-	if (FT_ReadPipe(mFTHandle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap)!= FT_IO_PENDING)
-	{
-		return -1;
-	}
+    FT_STATUS ftStatus = FT_OK;
+    ftStatus = FT_ReadPipe(mFTHandle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
+    if (ftStatus != FT_IO_PENDING)
+        return -1;
 #else
     if (length != rxSize)
     {
@@ -470,7 +427,6 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
-		contexts[contextHandle].inOvLap.InternalHigh = 0;
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
@@ -504,12 +460,14 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int co
     {
 #ifndef __unix__
 		ULONG ulActualBytesTransferred;
+        FT_STATUS ftStatus = FT_OK;
 
-		if (GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE) == FALSE)
-		{
-			return -1;
-		}
-		length = ulActualBytesTransferred;
+        ftStatus = FT_GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+        if (ftStatus != FT_OK)
+            length = -1;
+        else
+            length = ulActualBytesTransferred;
+        FT_ReleaseOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
 		contexts[contextHandle].used = false;
 		return length;
 #else
@@ -534,10 +492,11 @@ void Connection_uLimeSDR::AbortReading()
 	{
 		if (contexts[i].used == true)
 		{
-			CloseHandle(contexts[i].inOvLap.hEvent);
+            FT_ReleaseOverlapped(mFTHandle, &contexts[i].inOvLap);
 			contexts[i].used = false;
 		}
 	}
+    FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
 	rxSize = 0;
 #else
 
@@ -572,7 +531,8 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
     }
     if(!contextFound)
         return -1;
-        contextsToSend[i].used = true;
+    contextsToSend[i].used = true;
+
 #ifndef __unix__
 	FT_STATUS ftStatus = FT_OK;
 	ULONG ulActualBytesSend;
@@ -581,13 +541,10 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
 		txSize = length;
 		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, txSize);
 	}
-	memset(&contextsToSend[i].inOvLap, 0, sizeof(OVERLAPPED));
-	contextsToSend[i].inOvLap.hEvent = CreateEvent(NULL, false, false, NULL);
+    FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
 	ftStatus = FT_WritePipe(mFTHandle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
 	if (ftStatus != FT_IO_PENDING)
-	{
 		return -1;
-	}
 #else
     if (length != txSize)
     {
@@ -622,7 +579,6 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     if(contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-		contextsToSend[contextHandle].inOvLap.InternalHigh = 0;
         DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
 		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
 			return 1;
@@ -655,13 +611,13 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, 
     {
 #ifndef __unix__
 		ULONG ulActualBytesTransferred ;
-
-		if (GetOverlappedResult(mFTHandle, &contextsToSend[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE)==FALSE)
-		{
-			return -1;
-		}
-		length = ulActualBytesTransferred;
-		CloseHandle(contextsToSend[contextHandle].inOvLap.hEvent);
+        FT_STATUS ftStatus = FT_OK;
+        ftStatus = FT_GetOverlappedResult(mFTHandle, &contextsToSend[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
+        if (ftStatus != FT_OK)
+            length = -1;
+        else
+		    length = ulActualBytesTransferred;
+        FT_ReleaseOverlapped(mFTHandle, &contextsToSend[contextHandle].inOvLap);
 		contextsToSend[contextHandle].used = false;
 		return length;
 #else
@@ -686,7 +642,7 @@ void Connection_uLimeSDR::AbortSending()
 	{
 		if (contextsToSend[i].used == true)
 		{
-			CloseHandle(contextsToSend[i].inOvLap.hEvent);
+            FT_ReleaseOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
 			contextsToSend[i].used = false;
 		}
 	}
