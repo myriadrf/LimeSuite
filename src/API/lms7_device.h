@@ -16,7 +16,6 @@
 typedef struct
 {
     float_type lpf_bw;
-    float_type nco_pho;
     float_type cF_offset_nco;
     float_type sample_rate;
 } lms_channel_info;

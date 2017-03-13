@@ -1260,15 +1260,18 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
     float_type rf_rate;
     GetRate(tx,ch,&rf_rate);
     rf_rate /=2;
-    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    if (freq != nullptr)
     {
-        if (freq[i] < 0 || freq[i] > rf_rate)
+        for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
         {
-            lime::ReportError(ERANGE, "NCO frequency is negative or outside of RF bandwidth range");
-            return -1;
+            if (freq[i] < 0 || freq[i] > rf_rate)
+            {
+                lime::ReportError(ERANGE, "NCO frequency is negative or outside of RF bandwidth range");
+                return -1;
+            }
+            if (SetNCOFrequency(tx,i,freq[i])!=0)
+                return -1;
         }
-        if (SetNCOFrequency(tx,i,freq[i])!=0)
-            return -1;
     }
     if (tx)
     {
@@ -1278,7 +1281,6 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
             return -1;
         if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),0,true)!=0)
             return -1;
-        tx_channels[ch].nco_pho = pho;
     }
     else
     {
@@ -1288,7 +1290,6 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
             return -1;
         if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),0,true)!=0)
             return -1;
-        rx_channels[ch].nco_pho = pho;
     }
     return SetNCOPhaseOffsetForMode0(tx,pho);
 }
@@ -1342,11 +1343,20 @@ int LMS7_Device::GetNCOFreq(bool tx, size_t ch, float_type *freq,float_type *pho
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    if (freq != nullptr)
     {
-        freq[i] = GetNCOFrequency(tx,i,true);
+        for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+        {
+            freq[i] = GetNCOFrequency(tx,i,true);
+        }
     }
-    *pho = tx ? tx_channels[ch].nco_pho : rx_channels[ch].nco_pho;
+
+    if (pho != nullptr)
+    {
+        uint16_t value = SPI_read(tx ? 0x0241 : 0x0441,true);
+        *pho = 360.0 * value / 65536.0;
+    }
+
     return 0;
 }
 
@@ -1355,10 +1365,13 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
 
-    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    if (phase != nullptr)
     {
-        if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
-            return -1;
+        for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+        {
+            if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
+                return -1;
+        }
     }
 
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
@@ -1372,7 +1385,6 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
             return -1;
         if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),1,true)!=0)
             return -1;
-        tx_channels[ch].nco_pho = fcw;
     }
     else
     {
@@ -1382,7 +1394,6 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
             return -1;
         if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),1,true)!=0)
             return -1;
-        rx_channels[ch].nco_pho = fcw;
     }
 
     return SetNCOFrequency(tx,0,fcw);
@@ -1393,11 +1404,15 @@ int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *f
 {
     if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+    if (phase != nullptr)
     {
-        phase[i] = GetNCOPhaseOffset_Deg(tx,i);
+        for (size_t i = 0; i < LMS_NCO_VAL_COUNT; i++)
+        {
+            phase[i] = GetNCOPhaseOffset_Deg(tx,i);
+        }
     }
-    *fcw = tx ? tx_channels[ch].nco_pho : rx_channels[ch].nco_pho;
+    if (fcw != nullptr)
+        *fcw = GetNCOFrequency(tx,0,true);
     return 0;
 }
 
