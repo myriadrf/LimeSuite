@@ -266,7 +266,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     memcpy(wbuffer, buffer, length);
     int actual = 0;
     libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, timeout_ms);
-    len = actual
+    len = actual;
     delete[] wbuffer;
     return len;
 #endif
