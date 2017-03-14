@@ -223,12 +223,8 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
         fpga::StopStreaming(this);
         fpga::ResetTimestamp(this);
         rxLastTimestamp.store(0);
-        //USB FIFO reset
-        // TODO : USB FIFO reset command for IConnection
-        LMS64CProtocol::GenericPacket ctrPkt;
-        ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x00);
-        TransferPacket(ctrPkt);
+        //Clear device stream buffers
+        ResetStreamBuffers();
 
         //enable MIMO mode, 12 bit compressed values
         StreamConfig config;

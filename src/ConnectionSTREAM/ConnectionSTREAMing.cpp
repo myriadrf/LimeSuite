@@ -74,7 +74,9 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
 */
 int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
+#ifndef NDEBUG
     std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
+#endif
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     int status = 0;
@@ -213,15 +215,20 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
     return status;
 }
 
+int ConnectionSTREAM::ResetStreamBuffers()
+{
+    //USB FIFO reset
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x00);
+    return TransferPacket(ctrPkt);
+}
+
 int ConnectionSTREAM::ReadRawStreamData(char* buffer, unsigned length, int timeout_ms)
 {
         fpga::StopStreaming(this);
-        //USB FIFO reset
-        LMS64CProtocol::GenericPacket ctrPkt;
-        ctrPkt.cmd = CMD_USB_FIFO_RST;
-        ctrPkt.outBuffer.push_back(0x00);
-        TransferPacket(ctrPkt);
 
+        ResetStreamBuffers();
         WriteRegister(0x0008, 0x0100 | 0x2);
         WriteRegister(0x0007, 1);
 
@@ -602,3 +609,4 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
     if (dataRate_Bps)
         dataRate_Bps->store(0);
 }
+

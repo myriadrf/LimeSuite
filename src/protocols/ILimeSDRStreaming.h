@@ -75,6 +75,7 @@ public:
         std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
         std::function<void(const uint64_t)> reportLateTx; //! report late tx packet
     };
+protected:
     virtual void ReceivePacketsLoop(const ThreadData args) = 0;
     virtual void TransmitPacketsLoop(const ThreadData args) = 0;
     virtual int UpdateThreads(bool stopAll = false);
@@ -108,6 +109,7 @@ public:
             stream->txLastLateTime = timestamp;
         }
     }
+    virtual int ResetStreamBuffers(){return 0;};
 };
 
 } //lime

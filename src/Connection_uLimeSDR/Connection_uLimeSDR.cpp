@@ -459,17 +459,17 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int co
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
-		ULONG ulActualBytesTransferred;
+	ULONG ulActualBytesTransferred;
         FT_STATUS ftStatus = FT_OK;
 
         ftStatus = FT_GetOverlappedResult(mFTHandle, &contexts[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
         if (ftStatus != FT_OK)
-            length = -1;
+            length = 0;
         else
             length = ulActualBytesTransferred;
         FT_ReleaseOverlapped(mFTHandle, &contexts[contextHandle].inOvLap);
-		contexts[contextHandle].used = false;
-		return length;
+        contexts[contextHandle].used = false;
+        return length;
 #else
         length = contexts[contextHandle].bytesXfered;
         contexts[contextHandle].used = false;
@@ -610,16 +610,16 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, 
     if(contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-		ULONG ulActualBytesTransferred ;
+        ULONG ulActualBytesTransferred ;
         FT_STATUS ftStatus = FT_OK;
         ftStatus = FT_GetOverlappedResult(mFTHandle, &contextsToSend[contextHandle].inOvLap, &ulActualBytesTransferred, FALSE);
         if (ftStatus != FT_OK)
-            length = -1;
+            length = 0;
         else
-		    length = ulActualBytesTransferred;
+        length = ulActualBytesTransferred;
         FT_ReleaseOverlapped(mFTHandle, &contextsToSend[contextHandle].inOvLap);
-		contextsToSend[contextHandle].used = false;
-		return length;
+	    contextsToSend[contextHandle].used = false;
+	    return length;
 #else
         length = contextsToSend[contextHandle].bytesXfered;
         contextsToSend[contextHandle].used = false;

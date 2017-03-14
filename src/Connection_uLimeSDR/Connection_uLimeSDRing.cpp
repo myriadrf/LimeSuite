@@ -24,7 +24,9 @@ using namespace std;
 */
 int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
+#ifndef NDEBUG
     std::cout << "Connection_uLimeSDR::UpdateExternalDataRate(tx=" << txRate_Hz / 1e6 << "MHz, rx=" << rxRate_Hz / 1e6 << "MHz)" << std::endl;
+#endif
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     mExpectedSampleRate = rxRate_Hz;
@@ -53,6 +55,22 @@ int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const doub
     {
         return ReportError(-1, "uLimeSDR FPGA sampling rate must be >=2.5 MHz");
     }
+}
+
+int Connection_uLimeSDR::ResetStreamBuffers()
+{
+    rxSize = 0;
+#ifndef __unix__
+    if (FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr)!=FT_OK)
+        return -1;
+    if (FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr)!=FT_OK)
+        return -1;
+    if (FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr)!=FT_OK)
+        return -1;
+#else
+    return FT_FlushPipe(mStreamRdEndPtAddr);
+#endif
+    return 0;
 }
 
 /** @brief Function dedicated for receiving data samples from board

@@ -107,6 +107,8 @@ protected:
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
     virtual void AbortSending();
 
+    int ResetStreamBuffers() override;
+
     eConnectionType GetType(void) {return USB_PORT;}
 
     USBTransferContext contexts[USB_MAX_CONTEXTS];

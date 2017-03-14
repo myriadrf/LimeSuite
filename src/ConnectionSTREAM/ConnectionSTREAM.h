@@ -123,6 +123,8 @@ protected:
     virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
     virtual void AbortSending();
+
+    int ResetStreamBuffers() override;
     eConnectionType GetType(void) {return USB_PORT;}
 
     double DetectRefClk(void);
