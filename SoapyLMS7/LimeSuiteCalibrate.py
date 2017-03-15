@@ -76,7 +76,7 @@ def sampsToPowerFFT(rxSamples, fftSize=NUM_BINS_PER_FFT):
     @param rxSamples an array of samples (not list of arrays)
     """
 
-    numFFTs = rxSamples.size/fftSize
+    numFFTs = len(rxSamples)/fftSize
 
     if numFFTs == 1:
         x = rxSamples[:fftSize]
