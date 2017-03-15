@@ -20,7 +20,7 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     strftime(buffer, 80, "%H:%M:%S", timeinfo);
 
     auto level = lime::LogLevel(event.GetInt());
-    if (level == 0) level = lime::INFO;
+    if (level == 0) level = lime::LOG_LEVEL_INFO;
     wxString line(wxString::Format("[%s] %s: %s", buffer, lime::logLevelToName(level), event.GetString()));
 
     mAllMessages.push_back(line);
@@ -45,11 +45,11 @@ void pnlMiniLog::OnUpdateGUI(wxUpdateUIEvent& event)
 		wxTextAttr style = mDefaultStyle;
 		switch(msg.first)
 		{
-		case lime::CRITICAL:
-		case lime::ERROR:
+		case lime::LOG_LEVEL_CRITICAL:
+		case lime::LOG_LEVEL_ERROR:
 			style.SetTextColour(*wxRED);
 			break;
-		case lime::WARNING:
+		case lime::LOG_LEVEL_WARNING:
 			style.SetBackgroundColour(*wxYELLOW);
 			style.SetTextColour(*wxBLACK);
 			break;

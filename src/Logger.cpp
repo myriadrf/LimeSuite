@@ -30,11 +30,11 @@ const char *lime::logLevelToName(const LogLevel level)
 {
     switch(level)
     {
-    case lime::CRITICAL: return "CRITICAL";
-    case lime::ERROR: return "ERROR";
-    case lime::WARNING: return "WARNING";
-    case lime::INFO: return "INFO";
-    case lime::DEBUG: return "DEBUG";
+    case lime::LOG_LEVEL_CRITICAL: return "CRITICAL";
+    case lime::LOG_LEVEL_ERROR: return "ERROR";
+    case lime::LOG_LEVEL_WARNING: return "WARNING";
+    case lime::LOG_LEVEL_INFO: return "INFO";
+    case lime::LOG_LEVEL_DEBUG: return "DEBUG";
     }
     return "";
 }

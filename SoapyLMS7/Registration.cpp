@@ -15,11 +15,11 @@ static void limeSuiteLogHandler(const lime::LogLevel level, const char *message)
 {
     switch(level)
     {
-    case lime::CRITICAL: SoapySDR::log(SOAPY_SDR_CRITICAL, message); return;
-    case lime::ERROR: SoapySDR::log(SOAPY_SDR_ERROR, message); return;
-    case lime::WARNING: SoapySDR::log(SOAPY_SDR_WARNING, message); return;
-    case lime::INFO: SoapySDR::log(SOAPY_SDR_INFO, message); return;
-    case lime::DEBUG: SoapySDR::log(SOAPY_SDR_DEBUG, message); return;
+    case lime::LOG_LEVEL_CRITICAL: SoapySDR::log(SOAPY_SDR_CRITICAL, message); return;
+    case lime::LOG_LEVEL_ERROR: SoapySDR::log(SOAPY_SDR_ERROR, message); return;
+    case lime::LOG_LEVEL_WARNING: SoapySDR::log(SOAPY_SDR_WARNING, message); return;
+    case lime::LOG_LEVEL_INFO: SoapySDR::log(SOAPY_SDR_INFO, message); return;
+    case lime::LOG_LEVEL_DEBUG: SoapySDR::log(SOAPY_SDR_DEBUG, message); return;
     }
 }
 
