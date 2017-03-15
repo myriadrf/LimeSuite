@@ -52,13 +52,16 @@ LIME_API void log(const LogLevel level, const char *format, va_list argList);
 /*!
  * Typedef for the registered log handler function.
  */
-typedef void (*LogHandler)(const LogLevel logLevel, const char *message);
+typedef void (*LogHandler)(const LogLevel level, const char *message);
 
 /*!
  * Register a new system log handler.
  * Platforms should call this to replace the default stdio handler.
  */
 LIME_API void registerLogHandler(const LogHandler handler);
+
+//! Convert log level to a string name for printing
+LIME_API const char *logLevelToName(const LogLevel level);
 
 }
 

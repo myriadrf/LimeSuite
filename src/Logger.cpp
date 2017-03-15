@@ -9,14 +9,7 @@
 
 static void defaultLogHandler(const lime::LogLevel level, const char *message)
 {
-    switch(level)
-    {
-    case lime::CRITICAL: fprintf(stderr, "[CRITICAL] %s\n", message); return;
-    case lime::ERROR: fprintf(stderr, "[ERROR] %s\n", message); return;
-    case lime::WARNING: fprintf(stderr, "[WARNING] %s\n", message); return;
-    case lime::INFO: fprintf(stderr, "[INFO] %s\n", message); return;
-    case lime::DEBUG: fprintf(stderr, "[DEBUG] %s\n", message); return;
-    }
+    fprintf(stderr, "[%s] %s\n", lime::logLevelToName(level), message);
 }
 
 static lime::LogHandler logHandler(&defaultLogHandler);
@@ -31,4 +24,17 @@ void lime::log(const LogLevel level, const char *format, va_list argList)
 void lime::registerLogHandler(const LogHandler handler)
 {
     logHandler = handler;
+}
+
+const char *lime::logLevelToName(const LogLevel level)
+{
+    switch(level)
+    {
+    case lime::CRITICAL: return "CRITICAL";
+    case lime::ERROR: return "ERROR";
+    case lime::WARNING: return "WARNING";
+    case lime::INFO: return "INFO";
+    case lime::DEBUG: return "DEBUG";
+    }
+    return "";
 }
