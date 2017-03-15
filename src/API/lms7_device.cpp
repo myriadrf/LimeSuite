@@ -798,11 +798,6 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   return ret;
 }
 
-int LMS7_Device::SetLPF_Fixed(bool tx,size_t chan, LPF_FixedBW bandwidth)
-{
-    return lime::ReportError(ENOTSUP, "LPF Fixed BW not available");
-}
-
 int LMS7_Device::SetLPF(bool tx,size_t chan, bool filt, bool en, float_type bandwidth)
 {
 

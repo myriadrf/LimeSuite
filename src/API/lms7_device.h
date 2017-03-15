@@ -42,7 +42,6 @@ public:
     virtual lms_range_t GetFrequencyRange(bool tx) const;
     virtual lms_range_t GetRxPathBand(size_t path, size_t chan) const;
     virtual lms_range_t GetTxPathBand(size_t path, size_t chan) const;
-    virtual int SetLPF_Fixed(bool tx,size_t chan, LPF_FixedBW bandwidth);
     virtual int SetLPF(bool tx, size_t chan, bool f, bool en, float_type bandwidth=-1);
     virtual float_type GetLPFBW(bool tx,size_t chan, bool filt);
     virtual lms_range_t GetLPFRange(bool tx,size_t chan,bool f);

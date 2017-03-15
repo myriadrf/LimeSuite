@@ -162,11 +162,6 @@ typedef struct
     float_type step;    /**<Minimum value step*/
 }lms_range_t;
 
-/**Enumeration of loopback modes*/
-typedef enum {
-    LMS_LOOPBACK_NONE   /**<Return to normal operation (disable loopback)*/
-} lms_loopback_t;
-
 
 /**Enumeration of LMS7 TEST signal types*/
 typedef enum
@@ -365,29 +360,6 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx,
                                                 size_t chan, unsigned *gain);
 
-typedef enum
-{
-	LPF_BW_5_MHz,
-	LPF_BW_10_MHz,
-	LPF_BW_15_MHz,
-	LPF_BW_20_MHz,
-
-	LPF_BW_COUNT
-} LPF_FixedBW;
-/**
- * Configure analog LPF and GFIR of the LMS chip for selected fixed bandwidth.
- * This function automatically enables LPF.
- *
- * @param   device      Device handle previously obtained by LMS_Open().
- * @param   dir_tx      Select RX or TX
- * @param   chan        Channel index
- * @param   bandwidth   Fixed bandwidth selection
- *
- * @return  0 on success
- */
-API_EXPORT int CALL_CONV LMS_SetLPFBWFixed(lms_device_t *device, bool dir_tx,
-                                             size_t chan, LPF_FixedBW bandwidth);
-
 /**
  * Configure analog LPF of the LMS chip for the desired RF bandwidth.
  * This function automatically enables LPF.
@@ -503,29 +475,6 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filena
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filename);
-
-/**
- * Apply the specified loopback mode
- *
- * @param   device      Device handle previously obtained by LMS_Open().
- * @param   mode        Loopback mode. LMS_LOOPBACK_NONE returns to normal
- *                      operation
- *
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_SetLoopback(lms_device_t *device,
-                                         lms_loopback_t mode);
-/**
- * Get the current loopback mode
- *
- * @param       device      Device handle previously obtained by LMS_Open().
- * @param[out]  mode        Current loopback mode
- *
- * @return  0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetLoopback(lms_device_t *device,
-                                         lms_loopback_t* mode);
-
 
 /**
  * Apply the specified test signal
