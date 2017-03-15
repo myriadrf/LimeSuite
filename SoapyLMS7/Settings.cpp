@@ -218,7 +218,7 @@ std::vector<std::string> SoapyLMS7::listAntennas(const int direction, const size
 void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std::string &name)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setAntenna(%s, %d, %s)", dirName, int(channel), name.c_str());
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setAntenna(%s, %d, %s)", dirName, int(channel), name.c_str());
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX)
@@ -400,7 +400,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const double 
 void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setGain(%s, %d, %s, %g dB)", dirName, int(channel), name.c_str(), value);
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %d, %s, %g dB)", dirName, int(channel), name.c_str(), value);
     auto rfic = getRFIC(channel);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
@@ -530,7 +530,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
 
     if (name == "RF")
     {
@@ -718,7 +718,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     const double dspRate = clockRate/dspFactor;
     const double factor = dspRate/rate;
     int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), CGEN=%g MHz, %s=%g MHz, %s=%g",
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), CGEN=%g MHz, %s=%g MHz, %s=%g",
         dirName, int(channel), rate/1e6, clockRate/1e6,
         (direction == SOAPY_SDR_RX)?"ADC":"DAC", dspRate/1e6,
         (direction == SOAPY_SDR_RX)?"decim":"interp", factor);
@@ -841,7 +841,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     if (bw == 0.0) return; //special ignore value
 
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    SoapySDR::logf(SOAPY_SDR_INFO, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
     //save dc offset mode
     auto saveDcMode = this->getDCOffsetMode(direction, channel);
