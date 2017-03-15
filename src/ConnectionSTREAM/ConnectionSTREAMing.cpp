@@ -512,7 +512,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
     }
     catch (const std::bad_alloc& ex) //not enough memory for buffers
     {
-        lime:error("Error allocating Tx buffers, not enough memory");
+        lime::error("Error allocating Tx buffers, not enough memory");
         return;
     }
 
