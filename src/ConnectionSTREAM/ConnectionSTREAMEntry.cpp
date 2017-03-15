@@ -5,7 +5,8 @@
 */
 
 #include "ConnectionSTREAM.h"
-#include <iostream>
+#include "Logger.h"
+
 using namespace lime;
 
 #ifdef __unix__
@@ -17,7 +18,7 @@ void ConnectionSTREAMEntry::handle_libusb_events()
     while(mProcessUSBEvents.load() == true)
     {
         int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
-        if(r != 0) printf("error libusb_handle_events %s\n", libusb_strerror(libusb_error(r)));
+        if(r != 0) lime::error("error libusb_handle_events %s", libusb_strerror(libusb_error(r)));
     }
 }
 #endif // __UNIX__
@@ -36,7 +37,7 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
 #ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
-        printf("Init Error %i\n", r); //there was an error
+        lime::error("Init Error %i", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
@@ -49,7 +50,7 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(const std::string entryName):
 #ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
-        printf("Init Error %i\n", r); //there was an error
+        lime::error("Init Error %i", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
@@ -125,7 +126,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0) {
-        printf("failed to get libusb device list: %s\n", libusb_strerror(libusb_error(usbDeviceCount)));
+        lime::error("failed to get libusb device list: %s", libusb_strerror(libusb_error(usbDeviceCount)));
         return handles;
     }
 
@@ -134,7 +135,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
         libusb_device_descriptor desc;
         int r = libusb_get_device_descriptor(devs[i], &desc);
         if(r<0)
-            printf("failed to get device description\n");
+            lime::error("failed to get device description");
         int pid = desc.idProduct;
         int vid = desc.idVendor;
 
@@ -175,7 +176,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
             {
                 r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
                 if(r<0)
-                    printf("failed to get serial number\n");
+                    lime::error("failed to get serial number");
                 else
                     handle.serial = std::string(data, size_t(r));
             }

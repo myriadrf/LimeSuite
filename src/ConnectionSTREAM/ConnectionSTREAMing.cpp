@@ -15,6 +15,7 @@
 #include <ciso646>
 #include <FPGA_common.h>
 #include "ErrorReporting.h"
+#include "Logger.h"
 
 using namespace lime;
 using namespace std;
@@ -47,7 +48,7 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
         lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount, format, pkt.data, &bufPos);
         int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
-            printf("Packet samples count not multiple of 4\n");
+            lime::error("Packet samples count not multiple of 4");
         pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
         pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
         pkt.reserved[0] = 0x1 << 5; //WFM loading
@@ -75,7 +76,7 @@ int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, siz
 int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
 #ifndef NDEBUG
-    std::cout << "ConnectionSTREAM::ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
+    lime::debug("ConnectionSTREAM::ConfigureFPGA_PLL(tx=%gMHz, rx=%gMHz)", txRate_Hz/1e6, rxRate_Hz/1e6);
 #endif
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
@@ -351,7 +352,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
                     uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
                     samplesReceived[ch] += chFrames[ch].samplesCount;
                     if(samplesPushed != chFrames[ch].samplesCount)
-                        printf("Rx samples pushed %i/%i\n", samplesPushed, chFrames[ch].samplesCount);
+                        lime::warning("Rx samples pushed %i/%i", samplesPushed, chFrames[ch].samplesCount);
                 }
             }
             this_thread::sleep_for(chrono::milliseconds(100));
@@ -379,7 +380,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
                     --resetFlagsDelay;
                 else
                 {
-                    printf("L %llu\n", (unsigned long long)pkt[pktIndex].counter);
+                    lime::info("L %llu", (unsigned long long)pkt[pktIndex].counter);
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*buffersCount;
                     if (args.reportLateTx) args.reportLateTx(pkt[pktIndex].counter);
@@ -389,7 +390,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
 #ifndef NDEBUG
-                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, float(pkt[pktIndex].counter - prevTs)/samplesInPacket);
+                lime::debug("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f", pktIndex, pkt[pktIndex].counter - prevTs, float(pkt[pktIndex].counter - prevTs)/samplesInPacket);
 #endif
                 packetLoss += (pkt[pktIndex].counter - prevTs)/samplesInPacket;
             }
@@ -440,7 +441,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(const ThreadData args)
 #ifndef NDEBUG
             //each channel sample rate
             float samplingRate = 1000.0*samplesReceived[0] / timePeriod;
-            printf("Rx: %.3f MB/s, Fs: %.3f MHz, overrun: %i, loss: %i \n", dataRate / 1000000.0, samplingRate / 1000000.0, droppedSamples, packetLoss);
+            lime::debug("Rx: %.3f MB/s, Fs: %.3f MHz, overrun: %i, loss: %i", dataRate / 1000000.0, samplingRate / 1000000.0, droppedSamples, packetLoss);
 #endif
             samplesReceived[0] = 0;
             totalBytesReceived = 0;
@@ -511,7 +512,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
     }
     catch (const std::bad_alloc& ex) //not enough memory for buffers
     {
-        printf("Error allocating Tx buffers, not enough memory\n");
+        lime:error("Error allocating Tx buffers, not enough memory");
         return;
     }
 
@@ -548,7 +549,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
                 if (samplesPopped != maxSamplesBatch)
                 {
                 #ifndef NDEBUG
-                    printf("Warning popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
+                    lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                 #endif
                 }
 
@@ -589,7 +590,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
 #ifndef NDEBUG
             //total number of samples from all channels per second
             float sampleRate = 1000.0*samplesSent / timePeriod;
-            printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures);
+            lime::debug("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures);
 #endif
         }
         bi = (bi + 1) & (buffersCount-1);
