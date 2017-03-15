@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <chrono>
 #include <thread>
+#include "Logger.h"
 
 #include "MCU_BD.h"
 const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
@@ -55,22 +56,22 @@ void LMS7002M::Log(const char* text, LogType type)
     switch(type)
     {
     case LOG_INFO:
-        printf("%s\n", text);
+        lime::info(text);
         if(log_callback)
             log_callback(text, type);
         break;
     case LOG_WARNING:
-        printf("Warning: %s\n", text);
+        lime::warning(text);
         if(log_callback)
             log_callback(text, type);
         break;
     case LOG_ERROR:
-        printf("ERROR: %s\n", text);
+        lime::error(text);
         if(log_callback)
             log_callback(text, type);
         break;
     case LOG_DATA:
-        printf("DATA: %s\n", text);
+        lime::debug(text);
         if(log_callback)
             log_callback(text, type);
         break;
