@@ -142,9 +142,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	fgSizer298->Add( fgSizer299, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND|wxBOTTOM, 10 );
 	
-	tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
-	tabsNotebook->SetMinSize( wxSize( 1050,-1 ) );
-	
+	tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	mTabCalibrations = new lms7002_pnlCalibrations_view( tabsNotebook, ID_TAB_CALIBRATIONS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabCalibrations, wxT("Calibrations"), false );
 	mTabRFE = new lms7002_pnlRFE_view( tabsNotebook, ID_TAB_RFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -152,13 +150,13 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	mTabRBB = new lms7002_pnlRBB_view( tabsNotebook, ID_TAB_RBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabRBB, wxT("RBB"), false );
 	mTabTRF = new lms7002_pnlTRF_view( tabsNotebook, ID_TAB_TRF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabTRF, wxT("TRF"), false );
+	tabsNotebook->AddPage( mTabTRF, wxT("TRF"), true );
 	mTabTBB = new lms7002_pnlTBB_view( tabsNotebook, ID_TAB_TBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabTBB, wxT("TBB"), false );
 	mTabAFE = new lms7002_pnlAFE_view( tabsNotebook, ID_TAB_AFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabAFE, wxT("AFE"), false );
 	mTabBIAS = new lms7002_pnlBIAS_view( tabsNotebook, ID_TAB_BIAS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabBIAS, wxT("BIAS"), true );
+	tabsNotebook->AddPage( mTabBIAS, wxT("BIAS"), false );
 	mTabLDO = new lms7002_pnlLDO_view( tabsNotebook, ID_TAB_LDO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabLDO, wxT("LDO"), false );
 	mTabXBUF = new lms7002_pnlXBUF_view( tabsNotebook, ID_TAB_XBUF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -2025,7 +2023,7 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	ID_NOTEBOOK1 = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	ID_PANEL3 = new wxPanel( ID_NOTEBOOK1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer69;
-	fgSizer69 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer69 = new wxFlexGridSizer( 3, 1, 0, 0 );
 	fgSizer69->SetFlexibleDirection( wxBOTH );
 	fgSizer69->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -2033,7 +2031,7 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	sbSizer46 = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL3, wxID_ANY, wxT("Power controls") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer70;
-	fgSizer70 = new wxFlexGridSizer( 0, 2, 2, 5 );
+	fgSizer70 = new wxFlexGridSizer( 0, 7, 2, 5 );
 	fgSizer70->SetFlexibleDirection( wxBOTH );
 	fgSizer70->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -2046,6 +2044,21 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	chkEN_G_LDO->SetToolTip( wxT("Enable control for all the LDO power downs") );
 	
 	fgSizer70->Add( chkEN_G_LDO, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	
+	fgSizer70->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer70->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer70->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer70->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer70->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	wxStaticBoxSizer* sbSizer47;
 	sbSizer47 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("CLKGEN") ), wxVERTICAL );
@@ -2183,6 +2196,22 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer70->Add( sbSizer52, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
+	wxStaticBoxSizer* sbSizer58;
+	sbSizer58 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Tx RF") ), wxVERTICAL );
+	
+	chkEN_LDO_TPAD = new wxCheckBox( sbSizer58->GetStaticBox(), ID_EN_LDO_TPAD, wxT("EN_LDO_TPAD"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEN_LDO_TPAD->SetToolTip( wxT("Enables the LDO") );
+	
+	sbSizer58->Add( chkEN_LDO_TPAD, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	chkEN_LDO_TLOB = new wxCheckBox( sbSizer58->GetStaticBox(), ID_EN_LDO_TLOB, wxT("EN_LDO_TLOB"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEN_LDO_TLOB->SetToolTip( wxT("Enables the LDO") );
+	
+	sbSizer58->Add( chkEN_LDO_TLOB, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	
+	fgSizer70->Add( sbSizer58, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
 	wxStaticBoxSizer* sbSizer53;
 	sbSizer53 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("AFE") ), wxHORIZONTAL );
 	
@@ -2238,22 +2267,6 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer70->Add( sbSizer57, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	wxStaticBoxSizer* sbSizer58;
-	sbSizer58 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Tx RF") ), wxVERTICAL );
-	
-	chkEN_LDO_TPAD = new wxCheckBox( sbSizer58->GetStaticBox(), ID_EN_LDO_TPAD, wxT("EN_LDO_TPAD"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEN_LDO_TPAD->SetToolTip( wxT("Enables the LDO") );
-	
-	sbSizer58->Add( chkEN_LDO_TPAD, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-	
-	chkEN_LDO_TLOB = new wxCheckBox( sbSizer58->GetStaticBox(), ID_EN_LDO_TLOB, wxT("EN_LDO_TLOB"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEN_LDO_TLOB->SetToolTip( wxT("Enables the LDO") );
-	
-	sbSizer58->Add( chkEN_LDO_TLOB, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-	
-	
-	fgSizer70->Add( sbSizer58, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
 	wxStaticBoxSizer* sbSizer59;
 	sbSizer59 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Misc") ), wxHORIZONTAL );
 	
@@ -2271,11 +2284,16 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer69->Add( sbSizer46, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
+	wxFlexGridSizer* fgSizer255;
+	fgSizer255 = new wxFlexGridSizer( 1, 3, 0, 0 );
+	fgSizer255->SetFlexibleDirection( wxBOTH );
+	fgSizer255->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	wxStaticBoxSizer* sbSizer61;
 	sbSizer61 = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL3, wxID_ANY, wxT("Short noise filter resistor") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer72;
-	fgSizer72 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer72 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer72->SetFlexibleDirection( wxBOTH );
 	fgSizer72->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -2423,13 +2441,13 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	sbSizer61->Add( fgSizer72, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	
-	fgSizer69->Add( sbSizer61, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	fgSizer255->Add( sbSizer61, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	wxStaticBoxSizer* sbSizer62;
 	sbSizer62 = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL3, wxID_ANY, wxT("Bias") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer73;
-	fgSizer73 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer73 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer73->SetFlexibleDirection( wxBOTH );
 	fgSizer73->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -2577,7 +2595,10 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	sbSizer62->Add( fgSizer73, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	
-	fgSizer69->Add( sbSizer62, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	fgSizer255->Add( sbSizer62, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+	
+	
+	fgSizer69->Add( fgSizer255, 1, wxEXPAND, 5 );
 	
 	
 	ID_PANEL3->SetSizer( fgSizer69 );
@@ -2851,7 +2872,6 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	this->SetSizer( fgSizer68 );
 	this->Layout();
-	fgSizer68->Fit( this );
 	
 	// Connect Events
 	chkEN_G_LDOP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
@@ -2876,13 +2896,13 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	chkPD_LDO_DIGIp2->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TXBUF->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RXBUF->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_TPAD->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_TLOB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_AFE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkPD_LDO_SPIBUF->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TIA12->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_TPAD->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_TLOB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_DIG->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkSPDUP_LDO_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkSPDUP_LDO_TIA12->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
@@ -2995,13 +3015,13 @@ pnlLDO_view::~pnlLDO_view()
 	chkPD_LDO_DIGIp2->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TXBUF->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RXBUF->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_TPAD->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_TLOB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_AFE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkPD_LDO_SPIBUF->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TIA12->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_TPAD->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_TLOB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_DIG->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkSPDUP_LDO_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkSPDUP_LDO_TIA12->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );

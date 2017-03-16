@@ -672,13 +672,13 @@ class pnlLDO_view : public wxPanel
 			ID_PD_LDO_DIGIp2,
 			ID_EN_LDO_TXBUF,
 			ID_EN_LDO_RXBUF,
+			ID_EN_LDO_TPAD,
+			ID_EN_LDO_TLOB,
 			ID_EN_LDO_AFE,
 			ID_PD_LDO_SPIBUF,
 			ID_EN_LDO_TBB,
 			ID_EN_LDO_RBB,
 			ID_EN_LDO_TIA12,
-			ID_EN_LDO_TPAD,
-			ID_EN_LDO_TLOB,
 			ID_EN_LDO_DIG,
 			ID_SPDUP_LDO_TBB,
 			ID_SPDUP_LDO_TIA12,
@@ -790,13 +790,13 @@ class pnlLDO_view : public wxPanel
 		wxCheckBox* chkPD_LDO_DIGIp2;
 		wxCheckBox* chkEN_LDO_TXBUF;
 		wxCheckBox* chkEN_LDO_RXBUF;
+		wxCheckBox* chkEN_LDO_TPAD;
+		wxCheckBox* chkEN_LDO_TLOB;
 		wxCheckBox* chkEN_LDO_AFE;
 		wxCheckBox* chkPD_LDO_SPIBUF;
 		wxCheckBox* chkEN_LDO_TBB;
 		wxCheckBox* chkEN_LDO_RBB;
 		wxCheckBox* chkEN_LDO_TIA12;
-		wxCheckBox* chkEN_LDO_TPAD;
-		wxCheckBox* chkEN_LDO_TLOB;
 		wxCheckBox* chkEN_LDO_DIG;
 		wxCheckBox* chkSPDUP_LDO_TBB;
 		wxCheckBox* chkSPDUP_LDO_TIA12;
@@ -918,7 +918,7 @@ class pnlLDO_view : public wxPanel
 	
 	public:
 		
-		pnlLDO_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
+		pnlLDO_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1180,550 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlLDO_view();
 	
 };
