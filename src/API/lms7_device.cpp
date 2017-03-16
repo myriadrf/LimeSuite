@@ -1267,24 +1267,25 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
             if (SetNCOFrequency(tx,i,freq[i])!=0)
                 return -1;
         }
-    }
-    if (tx)
-    {
-        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),0,true)!=0)
-            )
-            return -1;
-        if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),0,true)!=0)
-            return -1;
-    }
-    else
-    {
-        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),0,true)!=0)
-            )
-            return -1;
-        if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),0,true)!=0)
-            return -1;
+
+        if (tx)
+        {
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0, true) != 0)
+                )
+                return -1;
+            if (Modify_SPI_Reg_bits(LMS7param(MODE_TX), 0, true) != 0)
+                return -1;
+        }
+        else
+        {
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0, true) != 0)
+                )
+                return -1;
+            if (Modify_SPI_Reg_bits(LMS7param(MODE_RX), 0, true) != 0)
+                return -1;
+        }
     }
     return SetNCOPhaseOffsetForMode0(tx,pho);
 }
@@ -1367,29 +1368,28 @@ int LMS7_Device::SetNCOPhase(bool tx, size_t ch, const float_type *phase, float_
             if (SetNCOPhaseOffset(tx,i,phase[i])!=0)
                 return -1;
         }
+
+        if (tx)
+        {
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(SEL_TX), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), 0, true) != 0))
+                return -1;
+            if (Modify_SPI_Reg_bits(LMS7param(MODE_TX), 1, true) != 0)
+                return -1;
+        }
+        else
+        {
+            if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(SEL_RX), 0, true) != 0)
+                || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP), 0, true) != 0))
+                return -1;
+            if (Modify_SPI_Reg_bits(LMS7param(MODE_RX), 1, true) != 0)
+                return -1;
+        }
     }
 
-    if (Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
-        return -1;
 
-    if (tx)
-    {
-        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(SEL_TX),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP),0,true)!=0))
-            return -1;
-        if (Modify_SPI_Reg_bits(LMS7param(MODE_TX),1,true)!=0)
-            return -1;
-    }
-    else
-    {
-        if ((Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(SEL_RX),0,true)!=0)
-        || (Modify_SPI_Reg_bits(LMS7param(CMIX_SC_RXTSP),0,true)!=0))
-            return -1;
-        if (Modify_SPI_Reg_bits(LMS7param(MODE_RX),1,true)!=0)
-            return -1;
-    }
 
     return SetNCOFrequency(tx,0,fcw);
 }

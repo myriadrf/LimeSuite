@@ -272,6 +272,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
             wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlTxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
@@ -298,6 +299,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
             wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlTxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
@@ -324,6 +326,7 @@ void lms7002_pnlTxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
             wxMessageBox(wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
@@ -365,26 +368,27 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
     LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
     if (rgrMODE_TX->GetSelection() == 0) //FCW mode
     {
-        float_type freq[16];
-        float_type pho;
-        LMS_GetNCOFrequency(lmsControl,LMS_CH_TX,ch-1,freq,&pho);
+        float_type freq[16] = { 0 };
+        float_type pho=0;
+        LMS_GetNCOFrequency(lmsControl, LMS_CH_TX, ch - 1, freq, &pho);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
-        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%f"), pho));
+        txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%3.3f"), pho));
         lblFCWPHOmodeName->SetLabel(_("PHO (deg)"));
         tableTitleCol1->SetLabel(_("FCW(MHz)"));
         tableTitleCol2->SetLabel(_("PHO(deg)"));
     }
     else //PHO mode
     {
-        float_type phase[16];
-        float_type fcw;
-        LMS_GetNCOPhase(lmsControl,LMS_CH_TX,ch-1,phase,&fcw);
+        float_type phase[16] = { 0 };
+        float_type fcw = 0;
+        if (LMS_GetNCOPhase(lmsControl, LMS_CH_TX, ch - 1, phase, &fcw) != 0)
+            return;
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), (65536.0/360.0)*  phase[i]));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0/360.0)*  phase[i]));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), fcw/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));

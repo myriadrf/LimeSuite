@@ -181,6 +181,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
         LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR1,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
@@ -206,6 +207,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
         LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR2,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
@@ -231,6 +233,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
         LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR3,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
+    UpdateGUI();
 }
 
 void lms7002_pnlRxTSP_view::Initialize(lms_device_t* pControl)
@@ -405,12 +408,12 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
     if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
-        float_type freq[16];
-        float_type pho;
-        LMS_GetNCOFrequency(lmsControl,LMS_CH_RX,ch-1,freq,&pho);
+        float_type freq[16] = {0};
+        float_type pho=0;
+        LMS_GetNCOFrequency(lmsControl, LMS_CH_RX, ch - 1, freq, &pho);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), freq[i]/1e6));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.3f"), pho));
         lblFCWPHOmodeName->SetLabel(_("PHO(deg)"));
@@ -419,9 +422,9 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     }
     else //PHO mode
     {
-        float_type phase[16];
-        float_type fcw;
-        LMS_GetNCOPhase(lmsControl,LMS_CH_RX,ch-1,phase,&fcw);
+        float_type phase[16] = {0};
+        float_type fcw = 0;
+        LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch - 1, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0 / 360.0)*phase[i]));

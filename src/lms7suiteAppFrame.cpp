@@ -291,6 +291,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
+        LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
         wxPostEvent(this, evt);
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info->deviceName);
