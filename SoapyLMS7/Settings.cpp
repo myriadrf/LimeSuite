@@ -1000,6 +1000,7 @@ std::vector<std::string> SoapyLMS7::listSensors(void) const
 {
     std::vector<std::string> sensors;
     sensors.push_back("clock_locked");
+    sensors.push_back("lms7_temp");
     return sensors;
 }
 
@@ -1014,6 +1015,15 @@ SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const std::string &name) const
         info.value = "false";
         info.description = "CGEN clock is locked, good VCO selection.";
     }
+    else if (name == "lms7_temp")
+    {
+        info.key = "lms7_temp";
+        info.name = "LMS7 Temperature";
+        info.type = SoapySDR::ArgInfo::FLOAT;
+        info.value = "0.0";
+        info.units = "C";
+        info.description = "The temperature of the LMS7002M in degrees C.";
+    }
     return info;
 }
 
@@ -1024,6 +1034,10 @@ std::string SoapyLMS7::readSensor(const std::string &name) const
     if (name == "clock_locked")
     {
         return _rfics.front()->GetCGENLocked()?"true":"false";
+    }
+    if (name == "lms7_temp")
+    {
+        return std::to_string(_rfics.front()->GetTemperature());
     }
 
     throw std::runtime_error("SoapyLMS7::readSensor("+name+") - unknown sensor name");
