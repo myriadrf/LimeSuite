@@ -71,9 +71,10 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
 	mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
-    if(this->Open(index, vid, pid) != 0)
+    if (this->Open(index, vid, pid) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
     this->SetReferenceClockRate(52e6);
+    GetChipVersion();
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
@@ -239,6 +240,14 @@ bool Connection_uLimeSDR::IsOpen()
     return isConnected;
 }
 
+int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
+{
+    FT_AbortPipe(mFTHandle, ep);
+    FT_FlushPipe(mFTHandle, ep);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ep, 64);
+    return 0;
+}
+
 /**	@brief Sends given data buffer to chip through USB port.
 @param buffer data buffer, must not be longer than 64 bytes.
 @param length given buffer size.
@@ -249,18 +258,39 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = 0;
-    if(IsOpen() == false)
+    if (IsOpen() == false)
         return 0;
 
 #ifndef __unix__
-	// Write to channel 1 ep 0x02
-	ULONG ulBytesWrite = 0;
-	FT_STATUS ftStatus = FT_OK;
-    FT_SetPipeTimeout(mFTHandle, 0x02, timeout_ms);
-    ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, nullptr);
-    if (ftStatus != FT_OK)
-		return -1;
-	return ulBytesWrite;
+    // Write to channel 1 ep 0x02
+    ULONG ulBytesWrite = 0;
+    FT_STATUS ftStatus = FT_OK;
+    OVERLAPPED	vOverlapped = { 0 };
+    FT_InitializeOverlapped(mFTHandle, &vOverlapped);
+    ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
+    if (ftStatus != FT_IO_PENDING)
+    {
+        FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+        ReinitPipe(0x02);
+        return -1;
+    }
+
+    DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
+    if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+    {
+        if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE) == FALSE)
+        {
+            ReinitPipe(0x02);
+            ulBytesWrite = -1;
+        }
+    }
+    else
+    {
+        ReinitPipe(0x02);
+        ulBytesWrite = -1;
+    }
+    FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+    return ulBytesWrite;
 #else
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
@@ -279,6 +309,7 @@ big enough to fit received data.
 @param timeout_ms timeout limit for operation in milliseconds
 @return number of bytes received.
 */
+
 int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
@@ -286,14 +317,37 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
     if(IsOpen() == false)
         return 0;
 #ifndef __unix__
-	// Read from channel 1 ep 0x82
-	ULONG ulBytesRead = 0;
-	FT_STATUS ftStatus = FT_OK;
-    FT_SetPipeTimeout(mFTHandle, 0x82, timeout_ms);
-	ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, nullptr);
-    if (ftStatus != FT_OK)
-		return -1;;
-	return ulBytesRead;
+    //
+    // Read from channel 1 ep 0x82
+    //
+    ULONG ulBytesRead = 0;
+    FT_STATUS ftStatus = FT_OK;
+    OVERLAPPED	vOverlapped = { 0 };
+    FT_InitializeOverlapped(mFTHandle, &vOverlapped);
+    ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, &vOverlapped);
+    if (ftStatus != FT_IO_PENDING)
+    {
+        FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+        ReinitPipe(0x82);
+        return -1;;
+    }
+
+    DWORD dwRet = WaitForSingleObject(vOverlapped.hEvent, timeout_ms);
+    if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+    {
+        if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
+        {
+            ReinitPipe(0x82);
+            ulBytesRead = -1;
+        }
+    }
+    else
+    {
+        ReinitPipe(0x82);
+        ulBytesRead = -1;
+    }
+    FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
+    return ulBytesRead;
 #else
     int actual = 0;
     libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, timeout_ms);
