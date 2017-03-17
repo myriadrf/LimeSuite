@@ -8,6 +8,7 @@ using namespace LMS7002_WXGUI;
 
 indexValueMap hbi_ovr_txtsp_IndexValuePairs;
 indexValueMap tsgfcw_txtsp_IndexValuePairs;
+indexValueMap cmix_gain_txtsp_IndexValuePairs;
 
 lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent )
 :
@@ -152,6 +153,12 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     tsgfcw_txtsp_IndexValuePairs.push_back(indexValuePair(0, 1));
     tsgfcw_txtsp_IndexValuePairs.push_back(indexValuePair(1, 2));
 
+    cmix_gain_txtsp_IndexValuePairs.push_back(indexValuePair(0, 2));
+    cmix_gain_txtsp_IndexValuePairs.push_back(indexValuePair(1, 2));
+    cmix_gain_txtsp_IndexValuePairs.push_back(indexValuePair(2, 0));
+    cmix_gain_txtsp_IndexValuePairs.push_back(indexValuePair(3, 0));
+    cmix_gain_txtsp_IndexValuePairs.push_back(indexValuePair(4, 1));
+
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
@@ -197,6 +204,12 @@ void lms7002_pnlTxTSP_view::ParameterChangeHandler( wxCommandEvent& event )
     {
         value = index2value(value, hbi_ovr_txtsp_IndexValuePairs);
     }
+    else if(event.GetEventObject() == cmbCMIX_GAIN_TXTSP)
+    {
+        LMS_WriteParam(lmsControl, LMS7_CMIX_GAIN_TXTSP_R3, value % 0x2);
+        value = index2value(value, cmix_gain_txtsp_IndexValuePairs);
+    }
+
     LMS_WriteParam(lmsControl,parameter,value);
 
     if(event.GetEventObject() == rgrMODE_TX)
@@ -430,6 +443,16 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     LMS_ReadParam(lmsControl,LMS7param(DCCORRQ_TXTSP),(uint16_t*)&value);
     dccorr = value;
     cmbDCCORRQ_TXTSP->SetValue(dccorr);
+
+    uint16_t g_cmix;
+    LMS_ReadParam(lmsControl,LMS7param(CMIX_GAIN_TXTSP),&g_cmix);
+    value = value2index(g_cmix, cmix_gain_txtsp_IndexValuePairs);
+    LMS_ReadParam(lmsControl,LMS7param(CMIX_GAIN_TXTSP_R3),&g_cmix);
+    if (g_cmix)
+        value |= 1;
+    else
+        value &= ~1;
+    cmbCMIX_GAIN_TXTSP->SetSelection(value);
 
     //check if B channel is enabled
     LMS_ReadParam(lmsControl,LMS7param(MAC),(uint16_t*)&value);

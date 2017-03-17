@@ -150,9 +150,9 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	mTabRBB = new lms7002_pnlRBB_view( tabsNotebook, ID_TAB_RBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabRBB, wxT("RBB"), false );
 	mTabTRF = new lms7002_pnlTRF_view( tabsNotebook, ID_TAB_TRF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabTRF, wxT("TRF"), true );
+	tabsNotebook->AddPage( mTabTRF, wxT("TRF"), false );
 	mTabTBB = new lms7002_pnlTBB_view( tabsNotebook, ID_TAB_TBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabTBB, wxT("TBB"), false );
+	tabsNotebook->AddPage( mTabTBB, wxT("TBB"), true );
 	mTabAFE = new lms7002_pnlAFE_view( tabsNotebook, ID_TAB_AFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabAFE, wxT("AFE"), false );
 	mTabBIAS = new lms7002_pnlBIAS_view( tabsNotebook, ID_TAB_BIAS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -6433,9 +6433,11 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer133->Add( ID_STATICTEXT24, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	cmbCMIX_GAIN_TXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_GAIN_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbCMIX_GAIN_TXTSP->Append( wxT("0 dB") );
-	cmbCMIX_GAIN_TXTSP->Append( wxT("+6 dB") );
 	cmbCMIX_GAIN_TXTSP->Append( wxT("-6 dB") );
+	cmbCMIX_GAIN_TXTSP->Append( wxT("-3 dB") );
+	cmbCMIX_GAIN_TXTSP->Append( wxT("0 dB") );
+	cmbCMIX_GAIN_TXTSP->Append( wxT("+3 dB") );
+	cmbCMIX_GAIN_TXTSP->Append( wxT("+6 dB") );
 	cmbCMIX_GAIN_TXTSP->SetToolTip( wxT("Gain of CMIX output") );
 	
 	fgSizer133->Add( cmbCMIX_GAIN_TXTSP, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
@@ -7582,9 +7584,11 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer133->Add( ID_STATICTEXT24, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	cmbCMIX_GAIN_RXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_GAIN_RXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbCMIX_GAIN_RXTSP->Append( wxT("0 dB") );
-	cmbCMIX_GAIN_RXTSP->Append( wxT("+6 dB") );
 	cmbCMIX_GAIN_RXTSP->Append( wxT("-6 dB") );
+	cmbCMIX_GAIN_RXTSP->Append( wxT("-3 dB") );
+	cmbCMIX_GAIN_RXTSP->Append( wxT("0 dB") );
+	cmbCMIX_GAIN_RXTSP->Append( wxT("+3 dB") );
+	cmbCMIX_GAIN_RXTSP->Append( wxT("+6 dB") );
 	cmbCMIX_GAIN_RXTSP->SetToolTip( wxT("Gain of CMIX output") );
 	
 	fgSizer133->Add( cmbCMIX_GAIN_RXTSP, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
@@ -9377,327 +9381,5 @@ dlgVCOfrequencies::~dlgVCOfrequencies()
 	btnCancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnBtnCancelClick ), NULL, this );
 	btnLoadFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnLoadFile ), NULL, this );
 	btnSaveFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( dlgVCOfrequencies::OnSaveFile ), NULL, this );
-	
-}
-
-pnlR3::pnlR3( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style ) : wxPanel( parent, id, pos, size, style )
-{
-	wxFlexGridSizer* fgSizer251;
-	fgSizer251 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer251->SetFlexibleDirection( wxBOTH );
-	fgSizer251->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxStaticBoxSizer* sbSizer132;
-	sbSizer132 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LimeLight") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer252;
-	fgSizer252 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer252->SetFlexibleDirection( wxBOTH );
-	fgSizer252->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxBoxSizer* bSizer3;
-	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText345 = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("FCLK1_DLY:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText345->Wrap( -1 );
-	bSizer3->Add( m_staticText345, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbFCLK1_DLY = new wxComboBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbFCLK1_DLY->Append( wxT("No Delay") );
-	cmbFCLK1_DLY->Append( wxT("No delay") );
-	cmbFCLK1_DLY->Append( wxT("2x delay") );
-	cmbFCLK1_DLY->Append( wxT("3x delay") );
-	cmbFCLK1_DLY->Append( wxT("1x delay") );
-	cmbFCLK1_DLY->SetSelection( 0 );
-	bSizer3->Add( cmbFCLK1_DLY, 1, wxLEFT, 5 );
-	
-	
-	fgSizer252->Add( bSizer3, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer31;
-	bSizer31 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText3451 = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("FCLK2_DLY:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText3451->Wrap( -1 );
-	bSizer31->Add( m_staticText3451, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbFCLK2_DLY = new wxComboBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbFCLK2_DLY->Append( wxT("No Delay") );
-	cmbFCLK2_DLY->Append( wxT("No delay") );
-	cmbFCLK2_DLY->Append( wxT("2x delay") );
-	cmbFCLK2_DLY->Append( wxT("3x delay") );
-	cmbFCLK2_DLY->Append( wxT("1x delay") );
-	cmbFCLK2_DLY->SetSelection( 0 );
-	bSizer31->Add( cmbFCLK2_DLY, 1, wxLEFT, 5 );
-	
-	
-	fgSizer252->Add( bSizer31, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer32;
-	bSizer32 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText3452 = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("MCLK1_DLY:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText3452->Wrap( -1 );
-	bSizer32->Add( m_staticText3452, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbMCLK1_DLY = new wxComboBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbMCLK1_DLY->Append( wxT("No Delay") );
-	cmbMCLK1_DLY->Append( wxT("No delay") );
-	cmbMCLK1_DLY->Append( wxT("2x delay") );
-	cmbMCLK1_DLY->Append( wxT("3x delay") );
-	cmbMCLK1_DLY->Append( wxT("1x delay") );
-	cmbMCLK1_DLY->SetSelection( 0 );
-	bSizer32->Add( cmbMCLK1_DLY, 0, wxLEFT, 5 );
-	
-	
-	fgSizer252->Add( bSizer32, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer321;
-	bSizer321 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText34521 = new wxStaticText( sbSizer132->GetStaticBox(), wxID_ANY, wxT("MCLK2_DLY:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText34521->Wrap( -1 );
-	bSizer321->Add( m_staticText34521, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbMCLK1_DLY1 = new wxComboBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbMCLK1_DLY1->Append( wxT("No Delay") );
-	cmbMCLK1_DLY1->Append( wxT("No delay") );
-	cmbMCLK1_DLY1->Append( wxT("2x delay") );
-	cmbMCLK1_DLY1->Append( wxT("3x delay") );
-	cmbMCLK1_DLY1->Append( wxT("1x delay") );
-	cmbMCLK1_DLY1->SetSelection( 0 );
-	bSizer321->Add( cmbMCLK1_DLY1, 0, wxLEFT, 5 );
-	
-	
-	fgSizer252->Add( bSizer321, 1, wxEXPAND, 5 );
-	
-	chkMCLK1_INV = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("MCLK1 Invert"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkMCLK1_INV, 0, 0, 5 );
-	
-	chkMCLK2_INV = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("MCLK2 invert"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkMCLK2_INV, 0, 0, 5 );
-	
-	chkLML1_TRXIQPULSE = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("LML1_TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkLML1_TRXIQPULSE, 0, 0, 5 );
-	
-	chkLML2_TRXIQPULSE = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("LML2_TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkLML2_TRXIQPULSE, 0, 0, 5 );
-	
-	chkLML1_SISODDR = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("LML1_SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkLML1_SISODDR, 0, 0, 5 );
-	
-	chkLML2_SISODDR = new wxCheckBox( sbSizer132->GetStaticBox(), wxID_ANY, wxT("LML2_SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer252->Add( chkLML2_SISODDR, 0, 0, 5 );
-	
-	
-	sbSizer132->Add( fgSizer252, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer251->Add( sbSizer132, 1, wxEXPAND, 5 );
-	
-	wxStaticBoxSizer* sbSizer133;
-	sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("TxTSP") ), wxHORIZONTAL );
-	
-	m_staticText352 = new wxStaticText( sbSizer133->GetStaticBox(), wxID_ANY, wxT("CMIX_GAIN:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText352->Wrap( -1 );
-	sbSizer133->Add( m_staticText352, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	m_comboBox143 = new wxComboBox( sbSizer133->GetStaticBox(), wxID_ANY, wxT("Combo!"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	sbSizer133->Add( m_comboBox143, 0, 0, 5 );
-	
-	
-	fgSizer251->Add( sbSizer133, 0, 0, 5 );
-	
-	wxStaticBoxSizer* sbSizer134;
-	sbSizer134 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("RxTSP") ), wxVERTICAL );
-	
-	wxBoxSizer* bSizer13;
-	bSizer13 = new wxBoxSizer( wxHORIZONTAL );
-	
-	m_staticText353 = new wxStaticText( sbSizer134->GetStaticBox(), wxID_ANY, wxT("HBD delay"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText353->Wrap( -1 );
-	bSizer13->Add( m_staticText353, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbHBD_DLY = new wxComboBox( sbSizer134->GetStaticBox(), wxID_ANY, wxT("No delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	cmbHBD_DLY->Append( wxT("No delay") );
-	cmbHBD_DLY->Append( wxT("Delay 1 clock cycle") );
-	cmbHBD_DLY->Append( wxT("Delay 2 clock cycles") );
-	cmbHBD_DLY->Append( wxT("Delay 3 clock cycles") );
-	cmbHBD_DLY->Append( wxT("Delay 4 clock cycles") );
-	cmbHBD_DLY->Append( wxT("Delay 2 clock cycle") );
-	cmbHBD_DLY->Append( wxT("Delay 2 clock cycle") );
-	cmbHBD_DLY->Append( wxT("delay 1 clock cycle") );
-	bSizer13->Add( cmbHBD_DLY, 0, 0, 5 );
-	
-	
-	sbSizer134->Add( bSizer13, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer251->Add( sbSizer134, 1, wxEXPAND, 5 );
-	
-	wxStaticBoxSizer* sbSizer139;
-	sbSizer139 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LDO") ), wxHORIZONTAL );
-	
-	m_staticText362 = new wxStaticText( sbSizer139->GetStaticBox(), wxID_ANY, wxT("ISINK_SPI_BUFF"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText362->Wrap( -1 );
-	sbSizer139->Add( m_staticText362, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbISINK_SPIBUFF = new wxComboBox( sbSizer139->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	sbSizer139->Add( cmbISINK_SPIBUFF, 0, wxLEFT, 5 );
-	
-	
-	fgSizer251->Add( sbSizer139, 1, 0, 5 );
-	
-	wxStaticBoxSizer* sbSizer140;
-	sbSizer140 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("TRX_GAIN") ), wxVERTICAL );
-	
-	chkTRX_GAIN_SRC = new wxCheckBox( sbSizer140->GetStaticBox(), wxID_ANY, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer140->Add( chkTRX_GAIN_SRC, 0, wxLEFT, 5 );
-	
-	wxFlexGridSizer* fgSizer256;
-	fgSizer256 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer256->SetFlexibleDirection( wxBOTH );
-	fgSizer256->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxStaticBoxSizer* sbSizer137;
-	sbSizer137 = new wxStaticBoxSizer( new wxStaticBox( sbSizer140->GetStaticBox(), wxID_ANY, wxT("TBB") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer254;
-	fgSizer254 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer254->AddGrowableCol( 1 );
-	fgSizer254->SetFlexibleDirection( wxBOTH );
-	fgSizer254->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText355 = new wxStaticText( sbSizer137->GetStaticBox(), wxID_ANY, wxT("CG_IAMP:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText355->Wrap( -1 );
-	fgSizer254->Add( m_staticText355, 0, 0, 5 );
-	
-	spinCG_IAMP_TBB = new wxSpinCtrl( sbSizer137->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 10, 0 );
-	fgSizer254->Add( spinCG_IAMP_TBB, 0, wxEXPAND, 5 );
-	
-	m_staticText356 = new wxStaticText( sbSizer137->GetStaticBox(), wxID_ANY, wxT("LOSS_LIN_TXPAD"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText356->Wrap( -1 );
-	fgSizer254->Add( m_staticText356, 0, 0, 5 );
-	
-	spinLOSS_LIN_TXPAD_TRF = new wxSpinCtrl( sbSizer137->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
-	fgSizer254->Add( spinLOSS_LIN_TXPAD_TRF, 0, wxEXPAND, 5 );
-	
-	m_staticText357 = new wxStaticText( sbSizer137->GetStaticBox(), wxID_ANY, wxT("LOSS_MAIN_TXPAD"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText357->Wrap( -1 );
-	fgSizer254->Add( m_staticText357, 0, 0, 5 );
-	
-	spinLOSS_MAIN_TXPAD_TRF = new wxSpinCtrl( sbSizer137->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
-	fgSizer254->Add( spinLOSS_MAIN_TXPAD_TRF, 0, wxEXPAND, 5 );
-	
-	
-	sbSizer137->Add( fgSizer254, 1, wxEXPAND, 5 );
-	
-	chkR5_LPF_BYP_TBB = new wxCheckBox( sbSizer137->GetStaticBox(), wxID_ANY, wxT("Bypass LPFS5 low pass real-pole filter capacitor banks"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer137->Add( chkR5_LPF_BYP_TBB, 0, 0, 5 );
-	
-	
-	fgSizer256->Add( sbSizer137, 1, 0, 5 );
-	
-	wxStaticBoxSizer* sbSizer138;
-	sbSizer138 = new wxStaticBoxSizer( new wxStaticBox( sbSizer140->GetStaticBox(), wxID_ANY, wxT("RX") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer255;
-	fgSizer255 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer255->SetFlexibleDirection( wxBOTH );
-	fgSizer255->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText358 = new wxStaticText( sbSizer138->GetStaticBox(), wxID_ANY, wxT("C_CTL_PGA_RBB"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText358->Wrap( -1 );
-	fgSizer255->Add( m_staticText358, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	spinC_CTL_PGA_RBB = new wxSpinCtrl( sbSizer138->GetStaticBox(), wxID_ANY, wxT("2"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 2 );
-	fgSizer255->Add( spinC_CTL_PGA_RBB, 0, 0, 5 );
-	
-	m_staticText359 = new wxStaticText( sbSizer138->GetStaticBox(), wxID_ANY, wxT("G_PGA_RBB"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText359->Wrap( -1 );
-	fgSizer255->Add( m_staticText359, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbG_PGA_RBB = new wxComboBox( sbSizer138->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	fgSizer255->Add( cmbG_PGA_RBB, 0, wxEXPAND, 5 );
-	
-	m_staticText360 = new wxStaticText( sbSizer138->GetStaticBox(), wxID_ANY, wxT("G_LNA"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText360->Wrap( -1 );
-	fgSizer255->Add( m_staticText360, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbG_LNA_RFE = new wxComboBox( sbSizer138->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	fgSizer255->Add( cmbG_LNA_RFE, 0, wxEXPAND, 5 );
-	
-	m_staticText361 = new wxStaticText( sbSizer138->GetStaticBox(), wxID_ANY, wxT("G_TIA"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText361->Wrap( -1 );
-	fgSizer255->Add( m_staticText361, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	cmbG_TIA_RFE = new wxComboBox( sbSizer138->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	fgSizer255->Add( cmbG_TIA_RFE, 0, wxEXPAND, 5 );
-	
-	
-	sbSizer138->Add( fgSizer255, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer256->Add( sbSizer138, 1, wxEXPAND, 5 );
-	
-	
-	sbSizer140->Add( fgSizer256, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer251->Add( sbSizer140, 1, wxEXPAND, 5 );
-	
-	
-	this->SetSizer( fgSizer251 );
-	this->Layout();
-	fgSizer251->Fit( this );
-	
-	// Connect Events
-	cmbFCLK1_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbFCLK2_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY1->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML1_TRXIQPULSE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML2_TRXIQPULSE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML1_SISODDR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML2_SISODDR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	m_comboBox143->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkTRX_GAIN_SRC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinCG_IAMP_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinCG_IAMP_TBB->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_LIN_TXPAD_TRF->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_LIN_TXPAD_TRF->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_MAIN_TXPAD_TRF->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_MAIN_TXPAD_TRF->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinC_CTL_PGA_RBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinC_CTL_PGA_RBB->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_PGA_RBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_LNA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_TIA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-}
-
-pnlR3::~pnlR3()
-{
-	// Disconnect Events
-	cmbFCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbFCLK2_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY1->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML1_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML2_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML1_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkLML2_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	m_comboBox143->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_LIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_LIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_MAIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinLOSS_MAIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinC_CTL_PGA_RBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	spinC_CTL_PGA_RBB->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_PGA_RBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_LNA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
-	cmbG_TIA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlR3::ParameterChangeHandler ), NULL, this );
 	
 }
