@@ -918,7 +918,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
         L = div;
 
     float_type max=0;
-    for (int i=0; i< (filt==LMS_GFIR3 ? 120 : 40); i++)
+    for (int i=0; i< count; i++)
         if (fabs(coef[i])>max)
             max=fabs(coef[i]);
 
