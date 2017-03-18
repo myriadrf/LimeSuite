@@ -13,6 +13,11 @@ General changes:
 - FFTviewer: add checkbox for RX->TX loopback control
 - Merged major MCU based calibrations update
 
+Release 17.02.2 (pending)
+==========================
+
+- Fixed LMS7002M::GetPathRFE() currently selected path
+
 Release 17.02.1 (2017-03-11)
 ==========================
 
