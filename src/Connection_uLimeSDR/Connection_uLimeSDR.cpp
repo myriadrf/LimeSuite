@@ -240,6 +240,7 @@ bool Connection_uLimeSDR::IsOpen()
     return isConnected;
 }
 
+#ifndef __unix__
 int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
 {
     FT_AbortPipe(mFTHandle, ep);
@@ -247,6 +248,7 @@ int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ep, 64);
     return 0;
 }
+#endif
 
 /**	@brief Sends given data buffer to chip through USB port.
 @param buffer data buffer, must not be longer than 64 bytes.
