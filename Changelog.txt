@@ -9,6 +9,7 @@ API additions:
 - LMS_SetClockFreqWithSpurCancelation
 
 General changes:
+- Library level logging support
 - Speed up x640,x641 spi
 - FFTviewer: add checkbox for RX->TX loopback control
 - Merged major MCU based calibrations update
