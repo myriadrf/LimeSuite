@@ -7,10 +7,10 @@
 #include "ConnectionSTREAM.h"
 #include "ErrorReporting.h"
 #include <cstring>
-#include <iostream>
 #include "Si5351C.h"
 #include "FPGA_common.h"
 #include "LMS7002M.h"
+#include "Logger.h"
 #include <ciso646>
 #include <fstream>
 #include <thread>
@@ -73,7 +73,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(vidpid, serial, index) != 0)
-        std::cerr << GetLastErrorMessage() << std::endl;
+        lime::error(GetLastErrorMessage());
 
     commandsToBulkCtrl = commandsToBulkCtrlHw2;
 
@@ -104,12 +104,12 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
         Si5351C::Status status = si5351module->ConfigureClocks();
         if (status != Si5351C::SUCCESS)
         {
-            std::cerr << "Warning: Failed to configure Si5351C" << std::endl;
+            lime::warning("Failed to configure Si5351C");
             return;
         }
         status = si5351module->UploadConfiguration();
         if (status != Si5351C::SUCCESS)
-            std::cerr << "Warning: Failed to upload Si5351C configuration" << std::endl;
+            lime::warning("Failed to upload Si5351C configuration");
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
     }
 }
@@ -157,7 +157,7 @@ double ConnectionSTREAM::DetectRefClk(void)
     }
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter
     count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
-    printf("Estimated reference clock %1.4f MHz\n", count/1e6);
+    lime::info("Estimated reference clock %1.4f MHz", count/1e6);
     unsigned i = 0;
     double delta = 100e6;
 
@@ -168,7 +168,7 @@ double ConnectionSTREAM::DetectRefClk(void)
             delta = fabs(count - clkTbl[i++]);
 
     this->SetReferenceClockRate(clkTbl[i-1]);
-    printf("Selected reference clock %1.3f MHz\n", clkTbl[i - 1] / 1e6);
+    lime::info("Selected reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
     return clkTbl[i - 1];
 }
 
@@ -282,7 +282,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
         libusb_device_descriptor desc;
         int r = libusb_get_device_descriptor(devs[i], &desc);
         if(r<0) {
-            printf("failed to get device description\n");
+            lime::error("failed to get device description");
             continue;
         }
         if (desc.idProduct != pid) continue;
@@ -295,7 +295,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
             char data[255];
             r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
             if(r<0)
-                printf("failed to get serial number\n");
+                lime::error("failed to get serial number");
             else
                 foundSerial = std::string(data, size_t(r));
         }
@@ -310,9 +310,9 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
         return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
     if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
     {
-        printf("Kernel Driver Active\n");
+        lime::info("Kernel Driver Active");
         if(libusb_detach_kernel_driver(dev_handle, 0) == 0) //detach it
-            printf("Kernel Driver Detached!\n");
+            lime::info("Kernel Driver Detached!");
     }
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
     if(r < 0)
@@ -322,7 +322,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
     libusb_config_descriptor* descriptor = nullptr;
     if(libusb_get_active_config_descriptor(device, &descriptor) < 0)
     {
-        printf("failed to get config descriptor\n");
+        lime::error("failed to get config descriptor");
     }
     //check for 0x0F and 0x8F endpoints
     if(descriptor->bNumInterfaces > 0)
@@ -344,7 +344,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
         ctrPkt.cmd = CMD_USB_FIFO_RST;
         ctrPkt.outBuffer.push_back(0x01); //reset bulk endpoints
         if(TransferPacket(ctrPkt) != 0)
-            printf("Failed to reset USB bulk endpoints\n");
+            lime::error("Failed to reset USB bulk endpoints");
     }
     return 0;
 #endif
@@ -483,7 +483,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
-        //printf("Transfer %i canceled\n", context->id);
+        //lime::error("Transfer %i canceled", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;
@@ -497,27 +497,27 @@ void callback_libusbtransfer(libusb_transfer *trans)
 		}
         break;
     case LIBUSB_TRANSFER_ERROR:
-        printf("TRANSFER ERRRO\n");
+        lime::error("TRANSFER ERRROR");
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;
         break;
     case LIBUSB_TRANSFER_TIMED_OUT:
-        //printf("transfer timed out %i\n", context->id);
+        //lime::error("transfer timed out %i", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;
 
         break;
     case LIBUSB_TRANSFER_OVERFLOW:
-        printf("transfer overflow\n");
+        lime::error("transfer overflow");
 
         break;
     case LIBUSB_TRANSFER_STALL:
-        printf("transfer stalled\n");
+        lime::error("transfer stalled");
         break;
     case LIBUSB_TRANSFER_NO_DEVICE:
-        printf("transfer no device\n");
+        lime::error("transfer no device");
 
         break;
 	}
@@ -547,7 +547,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length)
     }
     if(!contextFound)
     {
-        printf("No contexts left for reading data\n");
+        lime::error("No contexts left for reading data");
         return -1;
     }
     contexts[i].used = true;
@@ -565,7 +565,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length)
 	int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA READING %s\n", libusb_error_name(status));
+        lime::error("BEGIN DATA READING %s", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -688,7 +688,7 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length)
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA SENDING %s\n", libusb_error_name(status));
+        lime::error("BEGIN DATA SENDING %s", libusb_error_name(status));
         contextsToSend[i].used = false;
         return -1;
     }
@@ -782,7 +782,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
         libusb_device_descriptor desc;
         int ret = libusb_get_device_descriptor(libusb_get_device(dev_handle), &desc);
         if(ret<0)
-            printf("failed to get device description\n");
+            lime::error("failed to get device description");
         else if (desc.idProduct == 243)
 #else
 		if (USBDevicePrimary->ProductID == 243)
@@ -848,7 +848,7 @@ int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int
 		r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(ramAddress), GET_MSW(ramAddress),&buf[index], size, VENDORCMD_TIMEOUT);
 		if ( r != size )
 		{
-			printf("Vendor write to FX3 RAM failed\n");
+			lime::error("Vendor write to FX3 RAM failed");
 			return -1;
 		}
 		ramAddress += size;
@@ -913,7 +913,7 @@ int ConnectionSTREAM::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
 
 			r = libusb_control_transfer(dev_handle, 0x40, 0xA0, GET_LSW(address), GET_MSW(address), NULL,0, VENDORCMD_TIMEOUT);
 			if ( r != 0 )
-				printf("Ignored error in control transfer: %d\n", r);
+				lime::error("Ignored error in control transfer: %d", r);
 			break;
 		}
 		index += (8 + length * 4);

@@ -1,9 +1,9 @@
 #include "CalibrationCache.h"
 #include "ErrorReporting.h"
 #include "SystemResources.h"
-#include <fstream>
+#include "Logger.h"
 #include <sstream>
-#include <iostream>
+#include <fstream>
 #include <sys/stat.h>
 #include <vector>
 #include <sstream>
@@ -37,12 +37,12 @@ CalibrationCache::CalibrationCache()
         struct stat info;
         if( stat( limeSuiteDir.c_str(), &info ) != 0 )
         {
-            printf("creating directory %s\n", limeSuiteDir.c_str());
+            lime::info("creating directory %s", limeSuiteDir.c_str());
             //create directory
 #ifdef __unix__
             const int dir_err = mkdir(limeSuiteDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             if (-1 == dir_err)
-                printf("Error creating directory %s\n", limeSuiteDir.c_str());
+                lime::error("creating directory %s", limeSuiteDir.c_str());
 #else
             CreateDirectoryA(limeSuiteDir.c_str(), NULL);
 #endif
@@ -53,12 +53,12 @@ CalibrationCache::CalibrationCache()
         {
             initializeDatabase();
         }
-        printf("LMS7002M values cache at %s\n", cachePath.c_str());
+        lime::info("LMS7002M cache %s", cachePath.c_str());
     }
     int rc = sqlite3_open(cachePath.c_str(), &db);
     if( rc )
     {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        lime::error("Can't open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
     }
     ++instanceCount;
@@ -78,7 +78,7 @@ int CalibrationCache::initializeDatabase()
     int rc = sqlite3_open(cachePath.c_str(), &db);
     if( rc )
     {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        lime::error("Can't open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         return 1;
     }
@@ -130,7 +130,7 @@ cmd.push_back(
         rc = sqlite3_exec(db, command.c_str(), nullptr, 0, &zErrMsg);
         if( rc != SQLITE_OK )
         {
-            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            lime::error("SQL error: %s", zErrMsg);
             sqlite3_free(zErrMsg);
             break;
         }
@@ -150,7 +150,7 @@ int CalibrationCache::InsertVCO_CSW(uint32_t boardId, double frequency, uint8_t 
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }
@@ -193,7 +193,7 @@ auto lambda_callback = [](void *vco_csw_pair, int argc, char **argv, char **azCo
     int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &vco_csw_pair, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }
@@ -218,7 +218,7 @@ dcI<<","<<dcQ<<","<<gainI<<","<<gainQ<<","<<phaseOffset<<");";
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }
@@ -269,7 +269,7 @@ int CalibrationCache::GetDC_IQ(uint32_t boardId, double frequency, uint8_t chann
     int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &queryResults, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }
@@ -328,7 +328,7 @@ int CalibrationCache::GetDC_IQ_Interp(uint32_t boardId, double frequency, uint8_
     int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &closeFreqs, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         ReportError("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
@@ -378,7 +378,7 @@ rcal<<","<<ccal<<","<<cfb<<");";
     int rc = sqlite3_exec(db, query.str().c_str(), nullptr, 0, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }
@@ -425,7 +425,7 @@ int CalibrationCache::GetFilter_RC(uint32_t boardId, double bandwidth, uint8_t c
     int rc = sqlite3_exec(db, query.str().c_str(), lambda_callback, &queryResults, &zErrMsg);
     if( rc != SQLITE_OK )
     {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        lime::error("SQL error: %s", zErrMsg);
         sqlite3_free(zErrMsg);
         return -1;
     }

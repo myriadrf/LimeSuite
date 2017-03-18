@@ -4,6 +4,7 @@
 set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
     VersionInfo.h
+    Logger.h
     ErrorReporting.h
     SystemResources.h
     LimeSuiteConfig.h
@@ -43,6 +44,7 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
+    Logger.cpp
     ErrorReporting.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp

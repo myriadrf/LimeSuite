@@ -9,7 +9,7 @@
 #include "SystemResources.h"
 #include "LMS64CProtocol.h"
 #include "LMSBoards.h"
-#include <iostream>
+#include "Logger.h"
 #include <fstream>
 #include <ciso646>
 
@@ -64,36 +64,30 @@ void ConnectionSTREAM::VersionCheck(void)
     //an entry match was not found
     if (entry.dev == LMS_DEV_UNKNOWN)
     {
-        std::cerr << "Unsupported hardware connected: " << GetDeviceName(info.device) << "[HW=" << info.hardware << "]" << std::endl;
+        lime::error("Unsupported hardware connected: %s[HW=%d]", GetDeviceName(info.device), info.hardware);
         return;
     }
 
     //check and warn about firmware mismatch problems
-    if (info.firmware != entry.fw_ver)
-        std::cerr << std::endl
-        << "########################################################" << std::endl
-        << "##   !!!  Warning: firmware version mismatch  !!!" << std::endl
-        << "## Expected firmware version " << entry.fw_ver << ", but found version " << info.firmware << std::endl
-        << "## Follow the FW and FPGA upgrade instructions:" << std::endl
-        << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
-        << "## Or run update on the command line: LimeUtil --update" << std::endl
-        << "########################################################" << std::endl
-        << std::endl;
+    if (info.firmware != entry.fw_ver) lime::warning(
+        "Firmware version mismatch!\n"
+        "  Expected firmware version %d, but found version %d\n"
+        "  Follow the FW and FPGA upgrade instructions:\n"
+        "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
+        "  Or run update on the command line: LimeUtil --update\n",
+        entry.fw_ver, info.firmware);
 
     //check and warn about gateware mismatch problems
     const auto fpgaInfo = this->GetFPGAInfo();
     if (fpgaInfo.gatewareVersion != entry.gw_ver
-        || fpgaInfo.gatewareRevision != entry.gw_rev)
-        std::cerr << std::endl
-        << "########################################################" << std::endl
-        << "##   !!!  Warning: gateware version mismatch  !!!" << std::endl
-        << "## Expected gateware version " << entry.gw_ver << ", revision " << entry.gw_rev << std::endl
-        << "## But found version " << fpgaInfo.gatewareVersion << ", revision " << fpgaInfo.gatewareRevision<< std::endl
-        << "## Follow the FW and FPGA upgrade instructions:" << std::endl
-        << "## http://wiki.myriadrf.org/Lime_Suite#Flashing_images" << std::endl
-        << "## Or run update on the command line: LimeUtil --update" << std::endl
-        << "########################################################" << std::endl
-        << std::endl;
+        || fpgaInfo.gatewareRevision != entry.gw_rev) lime::warning(
+        "Gateware version mismatch!\n"
+        "  Expected gateware version %d, revision %d\n"
+        "  But found version %d, revision %d\n"
+        "  Follow the FW and FPGA upgrade instructions:\n"
+        "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
+        "  Or run update on the command line: LimeUtil --update\n",
+        entry.gw_ver, entry.gw_rev, fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision);
 }
 
 static bool programmingCallbackStream(

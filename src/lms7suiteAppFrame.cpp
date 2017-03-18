@@ -128,6 +128,17 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
  */
 }
 
+void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char *message)
+{
+    if (obj_ptr == nullptr || obj_ptr->mMiniLog == nullptr)
+        return;
+    wxCommandEvent evt;
+    evt.SetString(wxString::FromAscii(message));
+    evt.SetEventType(LOG_MESSAGE);
+    evt.SetInt(int(level));
+    wxPostEvent(obj_ptr, evt);
+}
+
 void LMS7SuiteAppFrame::OnLogEvent(const char* text, unsigned int type)
 {
     if (obj_ptr == nullptr || obj_ptr->mMiniLog == nullptr)
@@ -172,6 +183,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     boardControlsGui = nullptr;
     lmsControl = new LMS7_Device();
     qSparkGui = nullptr;
+
+    lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -287,7 +300,8 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
-        LMS_SetLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogEvent);
+        //LMS7002M messages go through global logger registered in LMS7SuiteAppFrame()
+        //LMS_SetLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogEvent);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
