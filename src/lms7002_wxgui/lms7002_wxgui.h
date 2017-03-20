@@ -1744,6 +1744,7 @@ class pnlRxTSP_view : public wxPanel
 		
 		wxCheckBox* chkEN_RXTSP;
 		wxCheckBox* chkDC_BYP_RXTSP;
+		wxCheckBox* chkDC_LOOP_RXTSP;
 		wxCheckBox* chkGC_BYP_RXTSP;
 		wxCheckBox* chkPH_BYP_RXTSP;
 		wxCheckBox* chkCMIX_BYP_RXTSP;
@@ -1767,6 +1768,7 @@ class pnlRxTSP_view : public wxPanel
 		wxStaticText* lblADCQ;
 		wxStaticText* ID_STATICTEXT51;
 		wxStaticText* lblRSSI;
+		wxCheckBox* chkCAPSEL_ADC_RXTSP;
 		wxButton* ID_BUTTON1;
 		wxFlexGridSizer* sizerNCOgrid;
 		wxStaticText* tableTitleCol1;
@@ -1841,6 +1843,8 @@ class pnlRxTSP_view : public wxPanel
 		wxComboBox* cmbCMIX_GAIN_RXTSP;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbHBD_OVR_RXTSP;
+		wxStaticText* ID_STATICTEXT72;
+		wxComboBox* cmbHBD_DLY;
 		wxStaticText* ID_STATICTEXT10;
 		wxComboBox* cmbGFIR1_L_RXTSP;
 		wxStaticText* ID_STATICTEXT11;

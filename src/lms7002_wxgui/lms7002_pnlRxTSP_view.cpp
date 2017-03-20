@@ -42,6 +42,8 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     wndId2Enum[chkAGC_BYP_RXTSP] = LMS7param(AGC_BYP_RXTSP);
     wndId2Enum[chkPH_BYP_RXTSP] = LMS7param(PH_BYP_RXTSP);
     wndId2Enum[cmbCMIX_SC_RXTSP] = LMS7param(CMIX_SC_RXTSP);
+    wndId2Enum[chkDC_LOOP_RXTSP] = LMS7_DCLOOP_STOP;
+    wndId2Enum[chkCAPSEL_ADC_RXTSP] = LMS7_CAPSEL_ADC;
 
     wndId2Enum[cmbAGC_MODE_RXTSP] = LMS7param(AGC_MODE_RXTSP);
     wndId2Enum[cmbAGC_AVG_RXTSP] = LMS7param(AGC_AVG_RXTSP);
@@ -54,6 +56,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     wndId2Enum[rgrINSEL_RXTSP] = LMS7param(INSEL_RXTSP);
     wndId2Enum[rgrTSGFC_RXTSP] = LMS7param(TSGFC_RXTSP);
     wndId2Enum[cmbDTHBIT_RX] = LMS7param(DTHBIT_RX);
+    wndId2Enum[cmbHBD_DLY] = LMS7param(HBD_DLY);
 
     wndId2Enum[rgrSEL0] = LMS7param(SEL_RX);
     wndId2Enum[rgrSEL01] = LMS7param(SEL_RX);
@@ -340,7 +343,7 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
     uint16_t value2 = 0;
     long valrez = 0;
     //Read RSSI
-    LMS_WriteParam(lmsControl,LMS7param(CAPSEL_ADC),0);
+    //LMS_WriteParam(lmsControl,LMS7param(CAPSEL_ADC),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPSEL),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
     LMS_WriteParam(lmsControl,LMS7param(CAPTURE),1);

@@ -27,9 +27,6 @@ class lms7002_pnlR3_view : public wxPanel
 		wxCheckBox* chkLML2_TRXIQPULSE;
 		wxCheckBox* chkLML1_SISODDR;
 		wxCheckBox* chkLML2_SISODDR;
-		wxComboBox* cmbCMIX_GAIN_TXTSP;
-		wxComboBox* cmbCMIX_GAIN_RXTSP;
-		wxComboBox* cmbHBD_DLY;
 		wxComboBox* cmbISINK_SPIBUFF;
 		wxCheckBox* chkTRX_GAIN_SRC;
 		NumericSlider* spinCG_IAMP_TBB;
@@ -40,8 +37,6 @@ class lms7002_pnlR3_view : public wxPanel
 		wxComboBox* cmbG_PGA_RBB;
 		wxComboBox* cmbG_LNA_RFE;
 		wxComboBox* cmbG_TIA_RFE;
-		wxStaticText* lblADCI_o;
-		wxStaticText* lblADCQ_o;
 		wxButton* btnReadADC;
 		wxStaticText* dccal_statuses[8];
 		wxStaticText* dccal_cmpstatuses[8];
@@ -52,11 +47,11 @@ class lms7002_pnlR3_view : public wxPanel
 		wxStaticText* tref_val;
 		wxStaticText* tvptat_val;
 		wxStaticText* rssidc_cmpstatus;
-        NumericSlider* cmbRSSIDC_HYSCMP;
-        wxCheckBox* chkRSSI_PD;
-        NumericSlider* spinDCO1;
-        NumericSlider* spinDCO2;
-        wxComboBox* cmbRSEL;
+                NumericSlider* cmbRSSIDC_HYSCMP;
+                wxCheckBox* chkRSSI_PD;
+                NumericSlider* spinDCO1;
+                NumericSlider* spinDCO2;
+                wxComboBox* cmbRSEL;
 		std::vector<NumericSlider*> cmbDCControlsRx;
 		std::vector<NumericSlider*> cmbDCControlsTx;
 
@@ -70,7 +65,6 @@ class lms7002_pnlR3_view : public wxPanel
         void OnDCCMPCFGChanged(wxCommandEvent& event);
         void OnReadRSSICMP(wxCommandEvent& event);
         void OnReadDCCMP(wxCommandEvent& event);
-        void OnReadADC( wxCommandEvent& event );
         void OnCalibrateAnalogRSSI( wxCommandEvent& event );
 
         void OnWriteRxDC( wxCommandEvent& event );

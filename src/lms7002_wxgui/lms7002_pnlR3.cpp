@@ -359,71 +359,7 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
                 cmbISINK_SPIBUFF->Append(wxArrayString(sizeof(items) / sizeof(wxString), items));
                 rowGroupTSP->Add(sbSizer139, 1, 0, 5);
             }
-            {
-                wxStaticBoxSizer* txtspSizer = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT("TxTSP"));
-                txtspSizer->Add(new wxStaticText(txtspSizer->GetStaticBox(), wxID_ANY, wxT("CMIX_GAIN:")), 0, wxALIGN_CENTER_VERTICAL);
-                cmbCMIX_GAIN_TXTSP = new wxComboBox(txtspSizer->GetStaticBox(), wxID_ANY);
-                cmbCMIX_GAIN_TXTSP->Append(_("0 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("+6 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("-6 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("-6 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("+3 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("-3 dB"));
-                cmbCMIX_GAIN_TXTSP->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                txtspSizer->Add(cmbCMIX_GAIN_TXTSP, 0, 0, 5);
-                rowGroupTSP->Add(txtspSizer, 0, 0, 5);
-            }
 
-            {
-                wxStaticBoxSizer* rxtspGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT("RxTSP"));
-                wxFlexGridSizer* rxtspSizer = new wxFlexGridSizer(0, 2, 0, 0);
-
-                wxCheckBox* chkbox = new wxCheckBox(rxtspGroup->GetStaticBox(), wxNewId(), _("DCLOOP_STOP"));
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                rxtspSizer->Add(chkbox);
-                wndId2Enum[chkbox] = LMS7_DCLOOP_STOP;
-
-                rxtspSizer->Add(new wxFlexGridSizer(0,1,0,0));
-
-                rxtspSizer->Add(new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("CMIX_GAIN:")), 0, wxALIGN_CENTER_VERTICAL);
-                cmbCMIX_GAIN_RXTSP = new wxComboBox(rxtspGroup->GetStaticBox(), wxID_ANY);
-                cmbCMIX_GAIN_RXTSP->Append(_("0 dB"));
-                cmbCMIX_GAIN_RXTSP->Append(_("+6 dB"));
-                cmbCMIX_GAIN_RXTSP->Append(_("-6 dB"));
-                cmbCMIX_GAIN_TXTSP->Append(_("-6 dB"));
-                cmbCMIX_GAIN_RXTSP->Append(_("+3 dB"));
-                cmbCMIX_GAIN_RXTSP->Append(_("-3 dB"));
-                cmbCMIX_GAIN_RXTSP->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                rxtspSizer->Add(cmbCMIX_GAIN_RXTSP, 0, 0, 5);
-
-                rxtspSizer->Add(new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("HBD delay:")), 0, wxALIGN_CENTER_VERTICAL);
-                cmbHBD_DLY = new wxComboBox(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("No delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-                cmbHBD_DLY->Append(wxT("No delay"));
-                cmbHBD_DLY->Append(wxT("Delay 1 clock cycle"));
-                cmbHBD_DLY->Append(wxT("Delay 2 clock cycles"));
-                cmbHBD_DLY->Append(wxT("Delay 3 clock cycles"));
-                cmbHBD_DLY->Append(wxT("Delay 4 clock cycles"));
-                cmbHBD_DLY->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                rxtspSizer->Add(cmbHBD_DLY, 1, wxEXPAND, 5);
-                rxtspGroup->Add(rxtspSizer, 1, wxEXPAND, 5);
-
-                rxtspSizer->Add(new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("ADCI_o:")), 0, wxALIGN_CENTER_VERTICAL);
-                lblADCI_o = new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("???"));
-                rxtspSizer->Add(lblADCI_o, 0, wxALIGN_CENTER_VERTICAL);
-                rxtspSizer->Add(new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("ADCQ_o:")), 0, wxALIGN_CENTER_VERTICAL);
-                lblADCQ_o = new wxStaticText(rxtspGroup->GetStaticBox(), wxID_ANY, wxT("???"));
-                rxtspSizer->Add(lblADCQ_o, 0, wxALIGN_CENTER_VERTICAL);
-                btnReadADC = new wxButton(rxtspGroup->GetStaticBox(), wxNewId(), _("Read"));
-                rxtspSizer->Add(btnReadADC, 0, wxALIGN_CENTER_VERTICAL);
-                btnReadADC->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadADC), NULL, this);
-
-                chkbox = new wxCheckBox(rxtspGroup->GetStaticBox(), wxNewId(), _("CAPSEL_ADC"));
-                chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                rxtspSizer->Add(chkbox);
-                wndId2Enum[chkbox] = LMS7_CAPSEL_ADC;
-
-                rowGroupTSP->Add(rxtspGroup, 1, wxEXPAND, 5);
-            }
         rowGroup->Add(rowGroupTSP, 1, wxEXPAND, 5);
         }
 
@@ -637,7 +573,6 @@ LMS7_INTADC_CMPCFG_PDET1};
 	wndId2Enum[chkLML2_TRXIQPULSE] = LMS7param(LML2_TRXIQPULSE);
 	wndId2Enum[chkLML1_SISODDR] = LMS7param(LML1_SISODDR);
 	wndId2Enum[chkLML2_SISODDR] = LMS7param(LML2_SISODDR);
-	wndId2Enum[cmbHBD_DLY] = LMS7param(HBD_DLY);
 	wndId2Enum[cmbISINK_SPIBUFF] = LMS7param(ISINK_SPIBUFF);
 	wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 	wndId2Enum[spinCG_IAMP_TBB] = LMS7param(CG_IAMP_TBB_R3);
@@ -648,9 +583,6 @@ LMS7_INTADC_CMPCFG_PDET1};
 	wndId2Enum[cmbG_PGA_RBB] = LMS7param(G_PGA_RBB_R3);
 	wndId2Enum[cmbG_LNA_RFE] = LMS7param(G_LNA_RFE_R3);
 	wndId2Enum[cmbG_TIA_RFE] = LMS7param(G_TIA_RFE_R3);
-	wndId2Enum[cmbCMIX_GAIN_TXTSP] = LMS7param(CMIX_GAIN_TXTSP_R3);
-    wndId2Enum[cmbCMIX_GAIN_RXTSP] = LMS7param(CMIX_GAIN_RXTSP_R3);
-
 
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
@@ -667,7 +599,6 @@ lms7002_pnlR3_view::~lms7002_pnlR3_view()
 	chkLML2_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	chkLML1_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	chkLML2_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	cmbCMIX_GAIN_TXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
@@ -693,7 +624,6 @@ void lms7002_pnlR3_view::UpdateGUI()
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     wxCommandEvent evt;
-    OnReadADC(evt);
 
     for(size_t i = 0; i<cmbDCControlsRx.size(); ++i)
     {
@@ -721,21 +651,6 @@ void lms7002_pnlR3_view::UpdateGUI()
             absval *= -1;
         cmbDCControlsTx[i]->SetValue(absval);
     }
-
-    uint16_t value;
-    uint16_t rxtsp_cmix_gain = 0;
-    LMS_ReadParam(lmsControl, LMS7_CMIX_GAIN_RXTSP, &value);
-    rxtsp_cmix_gain |= value;
-    LMS_ReadParam(lmsControl, LMS7_CMIX_GAIN_RXTSP_R3, &value);
-    rxtsp_cmix_gain |= value << 2;
-    cmbCMIX_GAIN_RXTSP->SetSelection(rxtsp_cmix_gain);
-
-    uint16_t txtsp_cmix_gain = 0;
-    LMS_ReadParam(lmsControl, LMS7_CMIX_GAIN_TXTSP, &value);
-    txtsp_cmix_gain |= value;
-    LMS_ReadParam(lmsControl, LMS7_CMIX_GAIN_TXTSP_R3, &value);
-    txtsp_cmix_gain |= value << 2;
-    cmbCMIX_GAIN_TXTSP->SetSelection(txtsp_cmix_gain);
 
     UpdateGUISlow();
 }
@@ -785,20 +700,6 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
     try
     {
         parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
-        if(parameter.address == LMS7_CMIX_GAIN_RXTSP_R3.address || parameter.name == LMS7_CMIX_GAIN_RXTSP_R3.name)
-        {
-            uint16_t value = event.GetInt();
-            LMS_WriteParam(lmsControl, LMS7_CMIX_GAIN_RXTSP, value & 0x3);
-            LMS_WriteParam(lmsControl, LMS7_CMIX_GAIN_RXTSP_R3, value > 0x2);
-            return;
-        }
-        if(parameter.address == LMS7_CMIX_GAIN_TXTSP_R3.address || parameter.name == LMS7_CMIX_GAIN_TXTSP_R3.name)
-        {
-            uint16_t value = event.GetInt();
-            LMS_WriteParam(lmsControl, LMS7_CMIX_GAIN_TXTSP, value & 0x3);
-            LMS_WriteParam(lmsControl, LMS7_CMIX_GAIN_TXTSP_R3, value > 0x2);
-            return;
-        }
     }
     catch (std::exception & e)
     {
@@ -855,24 +756,6 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxSpinEvent& event)
     evt.SetEventObject(event.GetEventObject());
     ParameterChangeHandler(evt);
 }
-
-void lms7002_pnlR3_view::OnReadADC( wxCommandEvent& event )
-{
-    //LMS_WriteParam(lmsControl, LMS7param(CAPSEL_ADC), 1);
-    LMS_WriteParam(lmsControl, LMS7param(CAPTURE), 0);
-    LMS_WriteParam(lmsControl, LMS7param(CAPTURE), 1);
-
-    uint16_t adci = 0;
-    LMS_ReadLMSReg(lmsControl, 0x040E, &adci);
-    uint16_t adcq = 0;
-    LMS_ReadLMSReg(lmsControl, 0x040F, &adcq);
-
-    lblADCI_o->SetLabel(wxString::Format("0x%04X", adci));
-    lblADCQ_o->SetLabel(wxString::Format("0x%04X", adcq));
-
-    //LMS_WriteParam(lmsControl, LMS7param(CAPSEL_ADC), 0);
-}
-
 
 void lms7002_pnlR3_view::OnDCCMPCFGRead()
 {

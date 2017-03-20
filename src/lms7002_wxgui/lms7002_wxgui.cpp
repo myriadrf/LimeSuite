@@ -6899,6 +6899,11 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	fgSizer177->Add( chkDC_BYP_RXTSP, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
+	chkDC_LOOP_RXTSP = new wxCheckBox( sbSizer117->GetStaticBox(), ID_DC_BYP_RXTSP, wxT("DC loop stop"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkDC_LOOP_RXTSP->SetToolTip( wxT("DC corrector bypass") );
+	
+	fgSizer177->Add( chkDC_LOOP_RXTSP, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
 	chkGC_BYP_RXTSP = new wxCheckBox( sbSizer117->GetStaticBox(), ID_GC_BYP_RXTSP, wxT("Gain corrector"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkGC_BYP_RXTSP->SetValue(true); 
 	chkGC_BYP_RXTSP->SetToolTip( wxT("Gain corrector bypass") );
@@ -7035,12 +7040,17 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	lblRSSI->Wrap( -1 );
 	fgSizer172->Add( lblRSSI, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
+	chkCAPSEL_ADC_RXTSP = new wxCheckBox( sbSizer115->GetStaticBox(), ID_BSTART_RXTSP, wxT("CAPSEL_ADC"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer172->Add( chkCAPSEL_ADC_RXTSP, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	ID_BUTTON1 = new wxButton( sbSizer115->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	ID_BUTTON1->SetDefault(); 
+	ID_BUTTON1->SetMinSize( wxSize( 48,-1 ) );
+	
+	fgSizer172->Add( ID_BUTTON1, 0, wxEXPAND, 5 );
+	
 	
 	sbSizer115->Add( fgSizer172, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
-	
-	ID_BUTTON1 = new wxButton( sbSizer115->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxSize( 53,23 ), 0 );
-	ID_BUTTON1->SetDefault(); 
-	sbSizer115->Add( ID_BUTTON1, 0, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	fgSizer176->Add( sbSizer115, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -7606,7 +7616,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	sbSizer99 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Decimation") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer134;
-	fgSizer134 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer134 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer134->AddGrowableCol( 0 );
 	fgSizer134->SetFlexibleDirection( wxBOTH );
 	fgSizer134->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -7615,10 +7625,22 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	ID_STATICTEXT7->Wrap( -1 );
 	fgSizer134->Add( ID_STATICTEXT7, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	cmbHBD_OVR_RXTSP = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBD_OVR_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( 64,-1 ), 0, NULL, 0 ); 
+	cmbHBD_OVR_RXTSP = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBD_OVR_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
 	cmbHBD_OVR_RXTSP->SetToolTip( wxT("HBI interpolation ratio") );
 	
 	fgSizer134->Add( cmbHBD_OVR_RXTSP, 0, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	ID_STATICTEXT72 = new wxStaticText( sbSizer99->GetStaticBox(), wxID_ANY, wxT("HBD delay:"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT72->Wrap( -1 );
+	fgSizer134->Add( ID_STATICTEXT72, 0, wxALL, 5 );
+	
+	cmbHBD_DLY = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBD_OVR_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 );
+	cmbHBD_DLY->Append( wxT("No delay") );
+	cmbHBD_DLY->Append( wxT("1 clock") );
+	cmbHBD_DLY->Append( wxT("2 clocks") );
+	cmbHBD_DLY->Append( wxT("3 clocks") );
+	cmbHBD_DLY->Append( wxT("4 clocks") );
+	fgSizer134->Add( cmbHBD_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxEXPAND, 5 );
 	
 	
 	sbSizer99->Add( fgSizer134, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
@@ -7892,6 +7914,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	// Connect Events
 	chkEN_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkDC_BYP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	chkDC_LOOP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkGC_BYP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkPH_BYP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkCMIX_BYP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -7901,6 +7924,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	chkGFIR3_BYP_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkBSTART_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnReadBIST->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnReadBISTSignature ), NULL, this );
+	chkCAPSEL_ADC_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	ID_BUTTON1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnReadRSSI ), NULL, this );
 	rgrSEL0->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlRxTSP_view::OnNCOSelectionChange ), NULL, this );
 	txtFCWPHO0->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
@@ -7949,6 +7973,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbCMIX_SC_RXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbCMIX_GAIN_RXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbHBD_OVR_RXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	cmbHBD_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR1_L_RXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR1_N_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR1Coef->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::onbtnGFIR1Coef ), NULL, this );
@@ -7972,6 +7997,7 @@ pnlRxTSP_view::~pnlRxTSP_view()
 	// Disconnect Events
 	chkEN_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkDC_BYP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	chkDC_LOOP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkGC_BYP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkPH_BYP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkCMIX_BYP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -7981,6 +8007,7 @@ pnlRxTSP_view::~pnlRxTSP_view()
 	chkGFIR3_BYP_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	chkBSTART_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnReadBIST->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnReadBISTSignature ), NULL, this );
+	chkCAPSEL_ADC_RXTSP->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	ID_BUTTON1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnReadRSSI ), NULL, this );
 	rgrSEL0->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( pnlRxTSP_view::OnNCOSelectionChange ), NULL, this );
 	txtFCWPHO0->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( pnlRxTSP_view::PHOinputChanged ), NULL, this );
@@ -8029,6 +8056,7 @@ pnlRxTSP_view::~pnlRxTSP_view()
 	cmbCMIX_SC_RXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbCMIX_GAIN_RXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbHBD_OVR_RXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
+	cmbHBD_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR1_L_RXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR1_N_RXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR1Coef->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::onbtnGFIR1Coef ), NULL, this );
