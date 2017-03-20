@@ -30,6 +30,7 @@
 #include <functional>
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlRFE_view.h"
+#include "lms7002_pnlLimeLightPAD_view.h"
 #include "pnlBoardControls.h"
 #include <LMSBoards.h>
 #include <sstream>
@@ -87,6 +88,8 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             fftviewer->SetNyquistFrequency(freq / 2);
         }
     }
+    else if (event.GetEventType() == SAMPLE_POS_CHANGED)
+        this->mContent->mTabLimeLight->UpdateGUI();
 /*
     //in case of Novena board, need to update GPIO
     if (lms7controlPort && lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
@@ -189,6 +192,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
 
     mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
+    Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
@@ -217,6 +221,7 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
     wxCloseEvent evt;
     OnFFTviewerClose(evt);
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
+    Disconnect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     LMS_Close(lmsControl);
 }
 

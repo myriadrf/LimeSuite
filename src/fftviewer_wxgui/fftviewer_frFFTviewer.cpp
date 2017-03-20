@@ -9,6 +9,7 @@
 #include "LMS7002M.h"
 #include "windowFunction.h"
 #include <fstream>
+#include "lms7suiteEvents.h"
 
 using namespace std;
 using namespace lime;
@@ -157,6 +158,9 @@ void fftviewer_frFFTviewer::StartStreaming()
     switch (cmbStreamType->GetSelection())
     {
     case 0: //SISO
+        if (cmbChannelVisibility->GetSelection() > 1)
+            cmbChannelVisibility->SetSelection(0);
+        cmbChannelVisibility->Disable();
         threadProcessing = std::thread(StreamingLoop, this, fftSize, 1, 0);
         break;
     case 1: //MIMO
@@ -181,6 +185,7 @@ void fftviewer_frFFTviewer::StopStreaming()
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
+    cmbChannelVisibility->Enable();
     chkEnTx->Enable();
 }
 
@@ -311,7 +316,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
-
+    int ch_offset = 0;
+    if (channelsCount == 1)
+    {
+        if (pthis->cmbChannelVisibility->GetSelection() == 1)
+            ch_offset = 1;
+    }
     vector<float> wndCoef;
     GenerateWindowCoefficients(wndFunction, fftSize, wndCoef, 1);
 
@@ -341,7 +351,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     auto fmt = lms_stream_t::LMS_FMT_I12;
     for(int i=0; i<channelsCount; ++i)
     {
-        pthis->rxStreams[i].channel = i;
+        pthis->rxStreams[i].channel = i + ch_offset;
         pthis->rxStreams[i].fifoSize = fifoSize;
         pthis->rxStreams[i].isTx = false;
         pthis->rxStreams[i].dataFmt = fmt;
@@ -349,7 +359,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         LMS_SetupStream(pthis->lmsControl, &pthis->rxStreams[i]);
 
         pthis->txStreams[i].handle = 0;
-        pthis->txStreams[i].channel = i;
+        pthis->txStreams[i].channel = i + ch_offset;
         pthis->txStreams[i].fifoSize = fifoSize;
         pthis->txStreams[i].isTx = true;
         pthis->txStreams[i].dataFmt = fmt;
@@ -368,6 +378,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         if(runTx)
             LMS_StartStream(&pthis->txStreams[i]);
     }
+    wxCommandEvent evt;
+    evt.SetEventType(SAMPLE_POS_CHANGED);
+    wxPostEvent(pthis->GetParent(), evt);
 
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
@@ -562,24 +575,32 @@ void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
     const int channelCount = 2;
     bool visibilities[channelCount];
 
-    switch(event.GetInt())
+    if (cmbStreamType->GetSelection() == 1)
     {
-    case 0:
+        switch (event.GetInt())
+        {
+        case 0:
+            visibilities[0] = true;
+            visibilities[1] = false;
+            break;
+        case 1:
+            visibilities[0] = false;
+            visibilities[1] = true;
+            break;
+        case 2:
+            visibilities[0] = true;
+            visibilities[1] = true;
+            break;
+        default:
+            visibilities[0] = false;
+            visibilities[1] = false;
+            break;
+        }
+    }
+    else
+    {
         visibilities[0] = true;
         visibilities[1] = false;
-        break;
-    case 1:
-        visibilities[0] = false;
-        visibilities[1] = true;
-        break;
-    case 2:
-        visibilities[0] = true;
-        visibilities[1] = true;
-        break;
-    default:
-        visibilities[0] = false;
-        visibilities[1] = false;
-        break;
     }
     mTimeDomainPanel->series[0]->visible = visibilities[0];
     mTimeDomainPanel->series[1]->visible = visibilities[0];
