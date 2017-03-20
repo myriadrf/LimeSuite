@@ -484,7 +484,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+		if (dwRet == WAIT_OBJECT_0)
 			return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
@@ -636,7 +636,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0 || dwRet == WAIT_TIMEOUT)
+		if (dwRet == WAIT_OBJECT_0)
 			return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();

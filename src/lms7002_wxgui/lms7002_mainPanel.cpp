@@ -200,6 +200,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
     UpdateGUI();
     wxCommandEvent evt;
+    evt.SetInt(1);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
 }
@@ -292,6 +293,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
     if (status != 0)
         wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxCommandEvent evt;
+    evt.SetInt(1);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
     UpdateVisiblePanel();

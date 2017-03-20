@@ -51,7 +51,9 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
         LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
-        int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,freq);
+        int status = 0;
+        if (event.GetInt() == 1)
+            status = LMS_SetClockFreq(lmsControl, LMS_CLOCK_CGEN, freq);
         if (status == 0)
         {
             wxCommandEvent evt;
@@ -78,7 +80,6 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
             evt.SetString(msg);
             wxPostEvent(this, evt);
         }
-
 
         if (fftviewer)
         {

@@ -163,6 +163,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
     wxCommandEvent evt;
+    evt.SetInt(0);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
     wxCommandEvent cmd;

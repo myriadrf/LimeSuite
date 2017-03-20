@@ -132,7 +132,7 @@ static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DE
 int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
     const auto timeout = chrono::seconds(3);
 
     if(not serPort)
@@ -263,7 +263,6 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     int mhigh = mlow + M % 2;
     Fvco = inputFreq*M/N; //actual VCO freq
 #ifdef LMS_VERBOSE_OUTPUT
-    printf("----- FPGA PLL #%i CONFIG -----\n", pllIndex);
     printf("M=%i, N=%i, Fvco=%.3f MHz\n", M, N, Fvco / 1e6);
 #endif
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
@@ -335,9 +334,6 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
         {
            const int nSteps = 0.49 + clocks[i].phaseShift_deg  / Fstep_deg;
            SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
-#ifdef LMS_VERBOSE_OUTPUT
-           printf("Configured phase: %1.1f (steps %d)\n",nSteps*Fstep_deg,nSteps);
-#endif
         }
         else
         {
@@ -348,20 +344,22 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             int nSteps = 6.0/Fstep_deg;
             if (nSteps == 0) nSteps = 1;
             unsigned char* buf = new unsigned char[testSize];
-            for (double phase = 0; phase <= maxPhase; phase += nSteps*Fstep_deg)
+            SetPllClock(serPort, clocks[i].index, nSteps, boardType, reg23val);
+            for (double phase = nSteps*Fstep_deg; phase <= maxPhase; phase += nSteps*Fstep_deg)
             {
-
                 SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
                 bool result = true;
-
                 if (serPort->ReadRawStreamData((char*)buf,testSize,20)==testSize)
                 {
                     for (size_t j = 16; j < testSize;j+=3)
                     {
                         if (j%4096 == 0)
                             j += 16;
-                        if ((buf[j]!=0xAA) || (buf[j+1]!=0x5A) || (buf[j+2]!=0x55))
+                        if ((buf[j]!=0xAA || buf[j+1]!=0x5A || buf[j+2]!=0x55))
                         {
+#ifdef LMS_VERBOSE_OUTPUT
+                            printf("%d: %02X %02X %02X\n", j, buf[j], buf[j + 1], buf[j + 2]);
+#endif
                             result = false;
                             break;
                         }
@@ -387,7 +385,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
                 clocks[i].findPhase = false;
                 clocks[i].phaseShift_deg = (min+max)/2;
 #ifdef LMS_VERBOSE_OUTPUT
-                printf("phase: min %1.1f; max %1.1f)\n",min,max);
+                printf("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
 #endif
                 return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
             }
