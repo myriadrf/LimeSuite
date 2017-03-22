@@ -108,6 +108,16 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     wndId2Enum[rgrENABLEDIR2] = LMS7param(ENABLEDIR2);
     wndId2Enum[rgrENABLEDIRCTR1] = LMS7param(ENABLEDIRCTR1);
     wndId2Enum[rgrENABLEDIR1] = LMS7param(ENABLEDIR1);
+    wndId2Enum[chkMCLK1_INV] = LMS7param(MCLK1_INV);
+    wndId2Enum[chkMCLK2_INV] = LMS7param(MCLK2_INV);
+    wndId2Enum[cmbFCLK1_DLY] = LMS7param(FCLK1_DLY);
+    wndId2Enum[cmbFCLK2_DLY] = LMS7param(FCLK2_DLY);
+    wndId2Enum[cmbMCLK1_DLY] = LMS7param(MCLK1_DLY);
+    wndId2Enum[cmbMCLK2_DLY] = LMS7param(MCLK2_DLY);
+    wndId2Enum[chkLML1_TRXIQPULSE] = LMS7param(LML1_TRXIQPULSE);
+    wndId2Enum[chkLML2_TRXIQPULSE] = LMS7param(LML2_TRXIQPULSE);
+    wndId2Enum[chkLML1_SISODDR] = LMS7param(LML1_SISODDR);
+    wndId2Enum[chkLML2_SISODDR] = LMS7param(LML2_SISODDR);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }

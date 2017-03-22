@@ -26,55 +26,6 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
 	mainSizer = new wxFlexGridSizer( 0, 1, 5, 5 );
     {
         wxFlexGridSizer* rowGroup = new wxFlexGridSizer(0, 4, 5, 5);
-        { //LimeLight controls
-            wxStaticBoxSizer* limeLight = new wxStaticBoxSizer(wxVERTICAL, this, wxT("LimeLight"));
-            const wxString delays[] = {_("No delay"), _("1x delay"), _("2x delay"), _("3x delay")};
-            const wxArrayString delaysArray(sizeof(delays) / sizeof(wxString), delays);
-
-            wxFlexGridSizer* lmlDelaysSizer = new wxFlexGridSizer(0, 4, 0, 0);
-            lmlDelaysSizer->Add(new wxStaticText(limeLight->GetStaticBox(), wxID_ANY, wxT("FCLK1_DLY:")), 0, wxALIGN_CENTER_VERTICAL, 5);
-            cmbFCLK1_DLY = new wxComboBox(limeLight->GetStaticBox(), wxID_ANY, wxT("No Delay"));
-            cmbFCLK1_DLY->Append(delaysArray);
-            lmlDelaysSizer->Add(cmbFCLK1_DLY, 1, wxLEFT, 5);
-
-            lmlDelaysSizer->Add(new wxStaticText(limeLight->GetStaticBox(), wxID_ANY, wxT("FCLK2_DLY:")), 0, wxALIGN_CENTER_VERTICAL, 5);
-            cmbFCLK2_DLY = new wxComboBox(limeLight->GetStaticBox(), wxID_ANY, wxT("No Delay"));
-            cmbFCLK2_DLY->Append(delaysArray);
-            lmlDelaysSizer->Add(cmbFCLK2_DLY, 1, wxLEFT, 5);
-
-            lmlDelaysSizer->Add(new wxStaticText(limeLight->GetStaticBox(), wxID_ANY, wxT("MCLK1_DLY:")), 0, wxALIGN_CENTER_VERTICAL, 5);
-            cmbMCLK1_DLY = new wxComboBox(limeLight->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-            cmbMCLK1_DLY->Append(delaysArray);
-            lmlDelaysSizer->Add(cmbMCLK1_DLY, 1, wxLEFT, 5);
-
-            lmlDelaysSizer->Add(new wxStaticText(limeLight->GetStaticBox(), wxID_ANY, wxT("MCLK2_DLY:")), 0, wxALIGN_CENTER_VERTICAL, 5);
-            cmbMCLK2_DLY = new wxComboBox(limeLight->GetStaticBox(), wxID_ANY, wxT("No Delay"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-            cmbMCLK2_DLY->Append(delaysArray);
-            lmlDelaysSizer->Add(cmbMCLK2_DLY, 1, wxLEFT, 5);
-
-            limeLight->Add(lmlDelaysSizer, 1, 0, 5);
-
-            cmbFCLK1_DLY->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-            cmbFCLK2_DLY->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-            cmbMCLK1_DLY->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-            cmbMCLK2_DLY->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-
-            wxFlexGridSizer* lmlCheckboxes = new wxFlexGridSizer(0, 2, 0, 0);
-            chkMCLK1_INV = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("MCLK1 Invert"));
-            chkMCLK2_INV = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("MCLK2 invert"));
-            chkLML1_TRXIQPULSE = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("LML1_TRXIQPULSE mode"));
-            chkLML2_TRXIQPULSE = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("LML2_TRXIQPULSE mode"));
-            chkLML1_SISODDR = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("LML1_SISODDR mode"));
-            chkLML2_SISODDR = new wxCheckBox(limeLight->GetStaticBox(), wxID_ANY, wxT("LML2_SISODDR mode"));
-            wxWindow* items[] = {chkMCLK1_INV, chkMCLK2_INV, chkLML1_TRXIQPULSE, chkLML2_TRXIQPULSE, chkLML1_SISODDR, chkLML2_SISODDR};
-            for(auto i : items)
-            {
-                i->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-                lmlCheckboxes->Add(i, 0, wxEXPAND, 5);
-            }
-            limeLight->Add(lmlCheckboxes, 0, 0, 5);
-            rowGroup->Add(limeLight, 1, 0, 5);
-        }
         {
             wxStaticBoxSizer* sbSizer140;
             sbSizer140 = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, wxT("TRX_GAIN")), wxVERTICAL);
@@ -347,23 +298,6 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
     {
         wxFlexGridSizer* rowGroup = new wxFlexGridSizer(0, 4, 0, 5);
         {
-            wxFlexGridSizer* rowGroupTSP = new wxFlexGridSizer(0, 1, 0, 0);
-            {
-                wxStaticBoxSizer* sbSizer139 = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT("LDO"));
-                sbSizer139->Add(new wxStaticText(sbSizer139->GetStaticBox(), wxID_ANY, wxT("ISINK_SPI_BUFF")), 0, wxALIGN_CENTER_VERTICAL, 5);
-                cmbISINK_SPIBUFF = new wxComboBox(sbSizer139->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0);
-                cmbISINK_SPIBUFF->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-
-                sbSizer139->Add(cmbISINK_SPIBUFF, 0, wxLEFT, 5);
-                const wxString items[] = {_("Off"), _("10 kOhm"), _("2.5 kOhm"), _("2 kOhm"), _("625 Ohm"), _("588 Ohm"), _("500 Ohm"), _("476 Ohm")};
-                cmbISINK_SPIBUFF->Append(wxArrayString(sizeof(items) / sizeof(wxString), items));
-                rowGroupTSP->Add(sbSizer139, 1, 0, 5);
-            }
-
-        rowGroup->Add(rowGroupTSP, 1, wxEXPAND, 5);
-        }
-
-        {
             wxStaticBoxSizer* RSSIPDETGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, wxT("RSSI, PDET, TEMP"));
             wxWindow* panel = RSSIPDETGroup->GetStaticBox();
 
@@ -563,17 +497,6 @@ LMS7_INTADC_CMPCFG_PDET1};
 	cmbG_LNA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	cmbG_TIA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 
-	wndId2Enum[cmbFCLK1_DLY] = LMS7param(FCLK1_DLY);
-	wndId2Enum[cmbFCLK2_DLY] = LMS7param(FCLK2_DLY);
-	wndId2Enum[cmbMCLK1_DLY] = LMS7param(MCLK1_DLY);
-	wndId2Enum[cmbMCLK2_DLY] = LMS7param(MCLK2_DLY);
-	wndId2Enum[chkMCLK1_INV] = LMS7param(MCLK1_INV);
-	wndId2Enum[chkMCLK2_INV] = LMS7param(MCLK2_INV);
-	wndId2Enum[chkLML1_TRXIQPULSE] = LMS7param(LML1_TRXIQPULSE);
-	wndId2Enum[chkLML2_TRXIQPULSE] = LMS7param(LML2_TRXIQPULSE);
-	wndId2Enum[chkLML1_SISODDR] = LMS7param(LML1_SISODDR);
-	wndId2Enum[chkLML2_SISODDR] = LMS7param(LML2_SISODDR);
-	wndId2Enum[cmbISINK_SPIBUFF] = LMS7param(ISINK_SPIBUFF);
 	wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 	wndId2Enum[spinCG_IAMP_TBB] = LMS7param(CG_IAMP_TBB_R3);
 	wndId2Enum[spinLOSS_LIN_TXPAD_TRF] = LMS7param(LOSS_LIN_TXPAD_R3);
@@ -591,14 +514,6 @@ LMS7_INTADC_CMPCFG_PDET1};
 lms7002_pnlR3_view::~lms7002_pnlR3_view()
 {
     // Disconnect Events
-	cmbFCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	cmbFCLK2_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	cmbMCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	chkLML1_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	chkLML2_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	chkLML1_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
-	chkLML2_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
 	spinCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( lms7002_pnlR3_view::ParameterChangeHandler ), NULL, this );
@@ -836,10 +751,7 @@ void lms7002_pnlR3_view::OnReadDC( wxCommandEvent& event )
 void lms7002_pnlR3_view::ParameterChangeHandlerCMPRead( wxCommandEvent& event )
 {
     ParameterChangeHandler(event);
-    uint16_t value = 0;
-    //LMS_ReadParam(lmsControl, LMS7_RSSIDC_CMPSTATUS, &value);
     UpdateGUISlow();
-    //rssidc_cmpstatus->SetLabel(wxString::Format("%i", value & 1));
 }
 
 void lms7002_pnlR3_view::UpdateGUISlow()

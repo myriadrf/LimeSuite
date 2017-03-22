@@ -17,16 +17,6 @@ namespace lime{
 class lms7002_pnlR3_view : public wxPanel
 {
     protected:
-		wxComboBox* cmbFCLK1_DLY;
-		wxComboBox* cmbFCLK2_DLY;
-		wxComboBox* cmbMCLK1_DLY;
-		wxComboBox* cmbMCLK2_DLY;
-		wxCheckBox* chkMCLK1_INV;
-		wxCheckBox* chkMCLK2_INV;
-		wxCheckBox* chkLML1_TRXIQPULSE;
-		wxCheckBox* chkLML2_TRXIQPULSE;
-		wxCheckBox* chkLML1_SISODDR;
-		wxCheckBox* chkLML2_SISODDR;
 		wxComboBox* cmbISINK_SPIBUFF;
 		wxCheckBox* chkTRX_GAIN_SRC;
 		NumericSlider* spinCG_IAMP_TBB;

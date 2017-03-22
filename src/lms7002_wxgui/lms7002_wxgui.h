@@ -674,8 +674,9 @@ class pnlLDO_view : public wxPanel
 			ID_EN_LDO_RXBUF,
 			ID_EN_LDO_TPAD,
 			ID_EN_LDO_TLOB,
-			ID_EN_LDO_AFE,
 			ID_PD_LDO_SPIBUF,
+			ID_RDIV_TXBUF,
+			ID_EN_LDO_AFE,
 			ID_EN_LDO_TBB,
 			ID_EN_LDO_RBB,
 			ID_EN_LDO_TIA12,
@@ -738,7 +739,6 @@ class pnlLDO_view : public wxPanel
 			ID_EN_LOADIMP_LDO_DIGIp1,
 			ID_RDIV_VCOSXR,
 			ID_RDIV_VCOSXT,
-			ID_RDIV_TXBUF,
 			ID_RDIV_VCOGN,
 			ID_RDIV_TLOB,
 			ID_RDIV_TPAD,
@@ -792,8 +792,9 @@ class pnlLDO_view : public wxPanel
 		wxCheckBox* chkEN_LDO_RXBUF;
 		wxCheckBox* chkEN_LDO_TPAD;
 		wxCheckBox* chkEN_LDO_TLOB;
-		wxCheckBox* chkEN_LDO_AFE;
 		wxCheckBox* chkPD_LDO_SPIBUF;
+		wxComboBox* cmbISINK_SPIBUFF;
+		wxCheckBox* chkEN_LDO_AFE;
 		wxCheckBox* chkEN_LDO_TBB;
 		wxCheckBox* chkEN_LDO_RBB;
 		wxCheckBox* chkEN_LDO_TIA12;
@@ -1331,14 +1332,16 @@ class pnlLimeLightPAD_view : public wxPanel
 			ID_RXWRCLK_MUX,
 			ID_MCLK2SRC,
 			ID_MCLK1SRC,
-			ID_TXTSPCLKA_DIV,
-			ID_RXTSPCLKA_DIV,
 			ID_TXDIVEN,
+			ID_TXTSPCLKA_DIV,
 			ID_RXDIVEN,
-			ID_FCLK1_INV,
-			ID_FCLK2_INV,
+			ID_RXTSPCLKA_DIV,
 			ID_MCLK1DLY,
 			ID_MCLK2DLY,
+			ID_FCLK1_INV,
+			ID_FCLK2_INV,
+			ID_FCLK1DLY,
+			ID_FCLK2DLY,
 			ID_LML1_TX_PST,
 			ID_LML1_TX_PRE,
 			ID_LML1_RX_PST,
@@ -1399,6 +1402,10 @@ class pnlLimeLightPAD_view : public wxPanel
 		wxRadioBox* rgrLML_MODE2;
 		wxRadioBox* rgrLML_TXNRXIQ1;
 		wxRadioBox* rgrLML_TXNRXIQ2;
+		wxCheckBox* chkLML1_TRXIQPULSE;
+		wxCheckBox* chkLML2_TRXIQPULSE;
+		wxCheckBox* chkLML1_SISODDR;
+		wxCheckBox* chkLML2_SISODDR;
 		wxRadioBox* rgrSDA_DS;
 		wxRadioBox* rgrSCL_DS;
 		wxRadioBox* rgrSDIO_DS;
@@ -1459,18 +1466,26 @@ class pnlLimeLightPAD_view : public wxPanel
 		wxComboBox* cmbMCLK2SRC;
 		wxStaticText* ID_STATICTEXT30;
 		wxComboBox* cmbMCLK1SRC;
-		wxStaticText* ID_STATICTEXT31;
-		wxSpinCtrl* cmbTXTSPCLKA_DIV;
-		wxStaticText* ID_STATICTEXT32;
-		wxSpinCtrl* cmbRXTSPCLKA_DIV;
 		wxCheckBox* chkTXDIVEN;
+		wxSpinCtrl* cmbTXTSPCLKA_DIV;
 		wxCheckBox* chkRXDIVEN;
-		wxCheckBox* chkFCLK1_INV;
-		wxCheckBox* chkFCLK2_INV;
+		wxSpinCtrl* cmbRXTSPCLKA_DIV;
 		wxStaticText* ID_STATICTEXT37;
 		wxSpinCtrl* cmbMCLK1DLY;
 		wxStaticText* ID_STATICTEXT39;
 		wxSpinCtrl* cmbMCLK2DLY;
+		wxCheckBox* chkFCLK1_INV;
+		wxCheckBox* chkFCLK2_INV;
+		wxCheckBox* chkMCLK1_INV;
+		wxCheckBox* chkMCLK2_INV;
+		wxStaticText* ID_STATICTEXT301;
+		wxComboBox* cmbFCLK1_DLY;
+		wxStaticText* ID_STATICTEXT302;
+		wxComboBox* cmbFCLK2_DLY;
+		wxStaticText* ID_STATICTEXT303;
+		wxComboBox* cmbMCLK1_DLY;
+		wxStaticText* ID_STATICTEXT304;
+		wxComboBox* cmbMCLK2_DLY;
 		wxStaticText* ID_STATICTEXT17;
 		wxSpinCtrl* cmbLML1_TX_PST;
 		wxStaticText* ID_STATICTEXT18;

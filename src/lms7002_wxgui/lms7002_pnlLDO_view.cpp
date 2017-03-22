@@ -155,7 +155,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     wndId2Enum[chkSPDUP_LDO_VCOGN] = LMS7param(SPDUP_LDO_VCOGN);
     wndId2Enum[chkSPDUP_LDO_VCOSXR] = LMS7param(SPDUP_LDO_VCOSXR);
     wndId2Enum[chkSPDUP_LDO_VCOSXT] = LMS7param(SPDUP_LDO_VCOSXT);
-
+    wndId2Enum[cmbISINK_SPIBUFF] = LMS7param(ISINK_SPIBUFF);
     wxArrayString temp;
     temp.clear();
     for (int i = 0; i<256; ++i)

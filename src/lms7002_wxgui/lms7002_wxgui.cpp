@@ -2212,17 +2212,6 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer70->Add( sbSizer58, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	wxStaticBoxSizer* sbSizer53;
-	sbSizer53 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("AFE") ), wxHORIZONTAL );
-	
-	chkEN_LDO_AFE = new wxCheckBox( sbSizer53->GetStaticBox(), ID_EN_LDO_AFE, wxT("EN_LDO_AFE"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEN_LDO_AFE->SetToolTip( wxT("Enables the LDO") );
-	
-	sbSizer53->Add( chkEN_LDO_AFE, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-	
-	
-	fgSizer70->Add( sbSizer53, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
 	wxStaticBoxSizer* sbSizer54;
 	sbSizer54 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("SPI Buffer to analog blocks") ), wxVERTICAL );
 	
@@ -2231,8 +2220,31 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	sbSizer54->Add( chkPD_LDO_SPIBUF, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
+	cmbISINK_SPIBUFF = new wxComboBox( sbSizer54->GetStaticBox(), ID_RDIV_TXBUF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbISINK_SPIBUFF->Append( wxT("Off") );
+	cmbISINK_SPIBUFF->Append( wxT("10 kOhm") );
+	cmbISINK_SPIBUFF->Append( wxT("2.5 kOhm") );
+	cmbISINK_SPIBUFF->Append( wxT("2 kOhm") );
+	cmbISINK_SPIBUFF->Append( wxT("625 Ohm") );
+	cmbISINK_SPIBUFF->Append( wxT("588 Ohm") );
+	cmbISINK_SPIBUFF->Append( wxT("500 Ohm") );
+	cmbISINK_SPIBUFF->Append( wxT("476 Ohm") );
+	cmbISINK_SPIBUFF->Append( wxT("10 kOhm") );
+	sbSizer54->Add( cmbISINK_SPIBUFF, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxEXPAND, 0 );
+	
 	
 	fgSizer70->Add( sbSizer54, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	wxStaticBoxSizer* sbSizer53;
+	sbSizer53 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("AFE") ), wxVERTICAL );
+	
+	chkEN_LDO_AFE = new wxCheckBox( sbSizer53->GetStaticBox(), ID_EN_LDO_AFE, wxT("EN_LDO_AFE"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEN_LDO_AFE->SetToolTip( wxT("Enables the LDO") );
+	
+	sbSizer53->Add( chkEN_LDO_AFE, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	
+	fgSizer70->Add( sbSizer53, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 0 );
 	
 	wxStaticBoxSizer* sbSizer55;
 	sbSizer55 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Tx BB") ), wxVERTICAL );
@@ -2268,7 +2280,7 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	fgSizer70->Add( sbSizer57, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxStaticBoxSizer* sbSizer59;
-	sbSizer59 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Misc") ), wxHORIZONTAL );
+	sbSizer59 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Misc") ), wxVERTICAL );
 	
 	chkEN_LDO_DIG = new wxCheckBox( sbSizer59->GetStaticBox(), ID_EN_LDO_DIG, wxT("EN_LDO_DIG"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkEN_LDO_DIG->SetToolTip( wxT("Enables the LDO") );
@@ -2604,7 +2616,7 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	ID_PANEL3->SetSizer( fgSizer69 );
 	ID_PANEL3->Layout();
 	fgSizer69->Fit( ID_PANEL3 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL3, wxT("Bias && Noise filter"), true );
+	ID_NOTEBOOK1->AddPage( ID_PANEL3, wxT("Bias && Noise filter"), false );
 	ID_PANEL2 = new wxPanel( ID_NOTEBOOK1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer75;
 	fgSizer75 = new wxFlexGridSizer( 0, 4, 0, 5 );
@@ -2865,7 +2877,7 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	ID_PANEL2->SetSizer( fgSizer75 );
 	ID_PANEL2->Layout();
 	fgSizer75->Fit( ID_PANEL2 );
-	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Output Voltage"), false );
+	ID_NOTEBOOK1->AddPage( ID_PANEL2, wxT("Output Voltage"), true );
 	
 	fgSizer68->Add( ID_NOTEBOOK1, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
@@ -2898,8 +2910,9 @@ pnlLDO_view::pnlLDO_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	chkEN_LDO_RXBUF->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TPAD->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TLOB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_AFE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkPD_LDO_SPIBUF->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	cmbISINK_SPIBUFF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_AFE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TIA12->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
@@ -3017,8 +3030,9 @@ pnlLDO_view::~pnlLDO_view()
 	chkEN_LDO_RXBUF->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TPAD->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TLOB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
-	chkEN_LDO_AFE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkPD_LDO_SPIBUF->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	cmbISINK_SPIBUFF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
+	chkEN_LDO_AFE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_RBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
 	chkEN_LDO_TIA12->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLDO_view::ParameterChangeHandler ), NULL, this );
@@ -4779,6 +4793,26 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	
 	fgSizer108->Add( rgrLML_TXNRXIQ2, 0, wxEXPAND|wxALIGN_LEFT, 0 );
 	
+	chkLML1_TRXIQPULSE = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML1_TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkLML1_TRXIQPULSE->SetToolTip( wxT("Power control for Tx MIMO channel B") );
+	
+	fgSizer108->Add( chkLML1_TRXIQPULSE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	chkLML2_TRXIQPULSE = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML2_TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkLML2_TRXIQPULSE->SetToolTip( wxT("Power control for Tx MIMO channel B") );
+	
+	fgSizer108->Add( chkLML2_TRXIQPULSE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	chkLML1_SISODDR = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML1_SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkLML1_SISODDR->SetToolTip( wxT("Power control for Tx MIMO channel B") );
+	
+	fgSizer108->Add( chkLML1_SISODDR, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	chkLML2_SISODDR = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML2_SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkLML2_SISODDR->SetToolTip( wxT("Power control for Tx MIMO channel B") );
+	
+	fgSizer108->Add( chkLML2_SISODDR, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
 	
 	sbSizerLimeLightModes->Add( fgSizer108, 0, wxEXPAND|wxALIGN_LEFT, 0 );
 	
@@ -5307,39 +5341,21 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	
 	fgSizer122->Add( cmbMCLK1SRC, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
-	ID_STATICTEXT31 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("TxTSPCLKA clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT31->Wrap( -1 );
-	fgSizer122->Add( ID_STATICTEXT31, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-	
-	cmbTXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_TXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-	fgSizer122->Add( cmbTXTSPCLKA_DIV, 0, wxEXPAND, 5 );
-	
-	ID_STATICTEXT32 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("RxTSPCLKA clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
-	ID_STATICTEXT32->Wrap( -1 );
-	fgSizer122->Add( ID_STATICTEXT32, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-	
-	cmbRXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_RXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-	fgSizer122->Add( cmbRXTSPCLKA_DIV, 0, wxEXPAND, 5 );
-	
 	chkTXDIVEN = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_TXDIVEN, wxT("Enable Tx clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkTXDIVEN->SetToolTip( wxT("TX clock divider enable") );
 	
 	fgSizer122->Add( chkTXDIVEN, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+	
+	cmbTXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_TXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
+	fgSizer122->Add( cmbTXTSPCLKA_DIV, 0, wxEXPAND, 5 );
 	
 	chkRXDIVEN = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_RXDIVEN, wxT("Enable Rx clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkRXDIVEN->SetToolTip( wxT("RX clock divider enable") );
 	
 	fgSizer122->Add( chkRXDIVEN, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
-	chkFCLK1_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK1_INV, wxT("FCLK1 invert"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkFCLK1_INV->SetToolTip( wxT("FCLK1 clock inversion") );
-	
-	fgSizer122->Add( chkFCLK1_INV, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	chkFCLK2_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK2_INV, wxT("FCLK2 invert"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkFCLK2_INV->SetToolTip( wxT("FCLK2 clock inversion") );
-	
-	fgSizer122->Add( chkFCLK2_INV, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	cmbRXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_RXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
+	fgSizer122->Add( cmbRXTSPCLKA_DIV, 0, wxEXPAND, 5 );
 	
 	ID_STATICTEXT37 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK1DLY"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT37->Wrap( -1 );
@@ -5363,11 +5379,91 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	
 	fgSizer122->Add( cmbMCLK2DLY, 0, wxEXPAND, 5 );
 	
+	chkFCLK1_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK1_INV, wxT("FCLK1 invert"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkFCLK1_INV->SetToolTip( wxT("FCLK1 clock inversion") );
+	
+	fgSizer122->Add( chkFCLK1_INV, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	chkFCLK2_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK2_INV, wxT("FCLK2 invert"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkFCLK2_INV->SetToolTip( wxT("FCLK2 clock inversion") );
+	
+	fgSizer122->Add( chkFCLK2_INV, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	chkMCLK1_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK2_INV, wxT("MCLK1 invert"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkMCLK1_INV->SetToolTip( wxT("FCLK2 clock inversion") );
+	
+	fgSizer122->Add( chkMCLK1_INV, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
+	chkMCLK2_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK2_INV, wxT("MCLK2 invert"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkMCLK2_INV->SetToolTip( wxT("FCLK2 clock inversion") );
+	
+	fgSizer122->Add( chkMCLK2_INV, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
 	
 	sbSizerClockControls->Add( fgSizer122, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
+	wxFlexGridSizer* fgSizer251;
+	fgSizer251 = new wxFlexGridSizer( 0, 4, 0, 5 );
+	fgSizer251->SetFlexibleDirection( wxBOTH );
+	fgSizer251->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	fgSizer224->Add( sbSizerClockControls, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
+	ID_STATICTEXT301 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("FCLK1 delay"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT301->Wrap( -1 );
+	fgSizer251->Add( ID_STATICTEXT301, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
+	cmbFCLK1_DLY = new wxComboBox( sbSizerClockControls->GetStaticBox(), ID_FCLK1DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbFCLK1_DLY->Append( wxT("No delay") );
+	cmbFCLK1_DLY->Append( wxT("1x delay") );
+	cmbFCLK1_DLY->Append( wxT("2x delay") );
+	cmbFCLK1_DLY->Append( wxT("3x delay") );
+	cmbFCLK1_DLY->SetToolTip( wxT("MCLK1 clock source") );
+	
+	fgSizer251->Add( cmbFCLK1_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	ID_STATICTEXT302 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("FCLK2 delay"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT302->Wrap( -1 );
+	fgSizer251->Add( ID_STATICTEXT302, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
+	cmbFCLK2_DLY = new wxComboBox( sbSizerClockControls->GetStaticBox(), ID_FCLK2DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbFCLK2_DLY->Append( wxT("No delay") );
+	cmbFCLK2_DLY->Append( wxT("1x delay") );
+	cmbFCLK2_DLY->Append( wxT("2x delay") );
+	cmbFCLK2_DLY->Append( wxT("3x delay") );
+	cmbFCLK2_DLY->SetToolTip( wxT("MCLK1 clock source") );
+	
+	fgSizer251->Add( cmbFCLK2_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	ID_STATICTEXT303 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK1 delay"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT303->Wrap( -1 );
+	fgSizer251->Add( ID_STATICTEXT303, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
+	cmbMCLK1_DLY = new wxComboBox( sbSizerClockControls->GetStaticBox(), ID_MCLK1DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbMCLK1_DLY->Append( wxT("No delay") );
+	cmbMCLK1_DLY->Append( wxT("1x delay") );
+	cmbMCLK1_DLY->Append( wxT("2x delay") );
+	cmbMCLK1_DLY->Append( wxT("3x delay") );
+	cmbMCLK1_DLY->SetToolTip( wxT("MCLK1 clock source") );
+	
+	fgSizer251->Add( cmbMCLK1_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	ID_STATICTEXT304 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK2 delay"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT304->Wrap( -1 );
+	fgSizer251->Add( ID_STATICTEXT304, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
+	
+	cmbMCLK2_DLY = new wxComboBox( sbSizerClockControls->GetStaticBox(), ID_MCLK2DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbMCLK2_DLY->Append( wxT("No delay") );
+	cmbMCLK2_DLY->Append( wxT("1x delay") );
+	cmbMCLK2_DLY->Append( wxT("2x delay") );
+	cmbMCLK2_DLY->Append( wxT("3x delay") );
+	cmbMCLK2_DLY->SetToolTip( wxT("MCLK1 clock source") );
+	
+	fgSizer251->Add( cmbMCLK2_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	
+	sbSizerClockControls->Add( fgSizer251, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND, 0 );
+	
+	
+	fgSizer224->Add( sbSizerClockControls, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 0 );
 	
 	wxFlexGridSizer* fgSizer124;
 	fgSizer124 = new wxFlexGridSizer( 0, 1, 5, 5 );
@@ -5622,6 +5718,10 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	rgrLML_MODE2->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrLML_TXNRXIQ1->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrLML_TXNRXIQ2->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML1_TRXIQPULSE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML2_TRXIQPULSE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML1_SISODDR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML2_SISODDR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSDA_DS->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSCL_DS->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSDIO_DS->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
@@ -5653,14 +5753,20 @@ pnlLimeLightPAD_view::pnlLimeLightPAD_view( wxWindow* parent, wxWindowID id, con
 	cmbRXWRCLK_MUX->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK2SRC->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK1SRC->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	cmbTXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	cmbRXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	chkTXDIVEN->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbTXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	chkRXDIVEN->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	chkFCLK1_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	chkFCLK2_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbRXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK1DLY->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK2DLY->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkFCLK1_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkFCLK2_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkMCLK1_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkMCLK2_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbFCLK1_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbFCLK2_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbMCLK1_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbMCLK2_DLY->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_TX_PST->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_TX_PRE->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_RX_PST->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
@@ -5722,6 +5828,10 @@ pnlLimeLightPAD_view::~pnlLimeLightPAD_view()
 	rgrLML_MODE2->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrLML_TXNRXIQ1->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrLML_TXNRXIQ2->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML1_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML2_TRXIQPULSE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML1_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkLML2_SISODDR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSDA_DS->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSCL_DS->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	rgrSDIO_DS->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
@@ -5753,14 +5863,20 @@ pnlLimeLightPAD_view::~pnlLimeLightPAD_view()
 	cmbRXWRCLK_MUX->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK2SRC->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK1SRC->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	cmbTXTSPCLKA_DIV->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	cmbRXTSPCLKA_DIV->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	chkTXDIVEN->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbTXTSPCLKA_DIV->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	chkRXDIVEN->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	chkFCLK1_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-	chkFCLK2_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbRXTSPCLKA_DIV->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK1DLY->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbMCLK2DLY->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkFCLK1_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkFCLK2_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkMCLK1_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	chkMCLK2_INV->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbFCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbFCLK2_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbMCLK1_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
+	cmbMCLK2_DLY->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_TX_PST->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_TX_PRE->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
 	cmbLML1_RX_PST->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
