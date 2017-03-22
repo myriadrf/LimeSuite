@@ -29,6 +29,7 @@ class FPGAcontrols_wxgui: public wxFrame
         virtual ~FPGAcontrols_wxgui();
 
         int UploadFile(const wxString &filename);
+        int UploadFile(std::vector<int16_t> isamples, std::vector<int16_t> qsamples);
         wxButton* btnPlayWFM;
         wxButton* btnStopWFM;
         wxStaticText* lblProgressPercent;

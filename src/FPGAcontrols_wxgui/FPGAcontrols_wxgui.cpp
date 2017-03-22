@@ -27,6 +27,7 @@
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <iostream>
+#include "WFM_wcdma.h"
 
 using namespace std;
 
@@ -44,8 +45,6 @@ const long FPGAcontrols_wxgui::ID_STREAMING_TIMER = wxNewId();
 
 BEGIN_EVENT_TABLE(FPGAcontrols_wxgui, wxFrame)
 END_EVENT_TABLE()
-
-const wxString gWFMdirectory = "lms7suite_wfm";
 
 FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles)
 {
@@ -78,10 +77,10 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 	FlexGridSizer6->AddGrowableCol(0);
 	FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 5);
 	btnLoadOnetone = new wxToggleButton(this, ID_BUTTON6, _T("Onetone"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
-    btnLoadOnetone->SetToolTip(_T("Loads file named onetone.wfm from ") + gWFMdirectory +_("directory"));
+    btnLoadOnetone->SetToolTip(_T("Loads single tone waveform"));
 	FlexGridSizer8->Add(btnLoadOnetone, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     btnLoadWCDMA = new wxToggleButton(this, ID_BUTTON7, _T("W-CDMA"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
-    btnLoadWCDMA->SetToolTip(_T("Loads file named wcdma.wfm from ") + gWFMdirectory + _("directory"));
+    btnLoadWCDMA->SetToolTip(_T("Loads WCDMA waveform"));
 	FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
     FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
@@ -119,14 +118,9 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     Connect(ID_BUTTON6, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadOnetoneClick);
     Connect(ID_BUTTON7, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadWCDMAClick);
     Connect(ID_BUTTON8, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadCustomClick);
-	Connect(ID_BITMAPBUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnOpenFileClick);
-	Connect(ID_BUTTON3,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnPlayWFMClick);
-	Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopWFMClick);
-
-    //create directory for wfm files
-    wxDir dir(wxGetCwd() + _("/") + gWFMdirectory);
-    if (!dir.IsOpened())
-        dir.Make(gWFMdirectory);
+    Connect(ID_BITMAPBUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnOpenFileClick);
+    Connect(ID_BUTTON3,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnPlayWFMClick);
+    Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopWFMClick);
 }
 
 void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
@@ -243,6 +237,17 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
         wxMessageBox(_("File not found ") + filename, _("Error"));
         return -1;
     }
+    return UploadFile(isamples, qsamples);
+}
+
+int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<int16_t> qsamples)
+{
+    if (!lmsControl)
+    {
+        wxMessageBox(_("Device not connected"), _("Error"));
+        return -2;
+    }
+    
     progressBar->SetRange(isamples.size());
     progressBar->SetValue(0);
 
@@ -294,7 +299,19 @@ int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 
 void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
 {
-    if (UploadFile(gWFMdirectory + _("/onetone.wfm")) < 0)
+    const int samplesPerPeriod = 64;
+    vector<int16_t> isamples;
+    vector<int16_t> qsamples;
+    isamples.resize(samplesPerPeriod);
+    qsamples.resize(samplesPerPeriod);
+    for (int i = 0; i < samplesPerPeriod; i++)
+    {
+        const double PI  = 3.141592653589793238463;
+        isamples[i] = 2047.0*cos(2.0*PI*i/samplesPerPeriod)+0.5;
+        qsamples[i] = 2047.0*sin(2.0*PI*i/samplesPerPeriod)+0.5;;
+    }
+    
+    if (UploadFile(isamples, qsamples) < 0)
         btnLoadOnetone->SetValue(0);
     else
     {
@@ -306,7 +323,19 @@ void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnLoadWCDMAClick(wxCommandEvent& event)
 {
-    if (UploadFile(gWFMdirectory + _("/wcdma.wfm")) < 0)
+    const int samplesCnt = wcdma_wfm_len/4;
+    vector<int16_t> isamples;
+    vector<int16_t> qsamples;
+    isamples.resize(samplesCnt);
+    qsamples.resize(samplesCnt);
+    for (int i = 0; i < samplesCnt; i++)
+    {
+        //TODO: generate WCDMA waveform instead of storing wfm data in header
+        isamples[i] = ((int16_t)wcdma_wfm[4*i]<<4)| (wcdma_wfm[4*i+1]>>4);
+        qsamples[i] = ((int16_t)wcdma_wfm[4*i+2]<<4)|(wcdma_wfm[4*i+3]>>4);
+    }
+    
+    if (UploadFile(isamples, qsamples) < 0)
         btnLoadWCDMA->SetValue(0);
     else
     {
