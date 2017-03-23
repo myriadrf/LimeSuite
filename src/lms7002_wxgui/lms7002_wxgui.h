@@ -259,13 +259,13 @@ class pnlRFE_view : public wxPanel
 		wxComboBox* cmbCCOMP_TIA_RFE;
 		wxStaticText* ID_STATICTEXT15;
 		NumericSlider* cmbCFB_TIA_RFE;
-		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT16;
 		wxComboBox* cmbG_LNA_RFE;
 		wxStaticText* ID_STATICTEXT17;
 		wxComboBox* cmbG_RXLOOPB_RFE;
 		wxStaticText* ID_STATICTEXT18;
 		wxComboBox* cmbG_TIA_RFE;
+		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT9;
 		wxComboBox* cmbICT_LOOPB_RFE;
 		wxStaticText* ID_STATICTEXT10;
@@ -801,6 +801,7 @@ class pnlLDO_view : public wxPanel
 		wxCheckBox* chkEN_LDO_TPAD;
 		wxCheckBox* chkEN_LDO_TLOB;
 		wxCheckBox* chkPD_LDO_SPIBUF;
+		wxStaticText* m_staticText349;
 		wxComboBox* cmbISINK_SPIBUFF;
 		wxCheckBox* chkEN_LDO_AFE;
 		wxCheckBox* chkEN_LDO_TBB;
