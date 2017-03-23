@@ -35,6 +35,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     wndId2Enum[cmbRCC_CTL_PGA_RBB] = LMS7param(RCC_CTL_PGA_RBB);
     wndId2Enum[cmbR_CTL_LPF_RBB] = LMS7param(R_CTL_LPF_RBB);
     wndId2Enum[chkEN_DIR_RBB] = LMS7param(EN_DIR_RBB);
+    wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 
 
     wxArrayString temp;
@@ -55,7 +56,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_PGA_IN_RBB->Set(temp);
     cmbICT_PGA_OUT_RBB->Set(temp);
     cmbRCC_CTL_PGA_RBB->Append(temp);
-    cmbR_CTL_LPF_RBB->Append(temp);    
+    cmbR_CTL_LPF_RBB->Append(temp);
 
     temp.clear();
     temp.push_back("LPFL_RBB");
@@ -113,6 +114,8 @@ void lms7002_pnlRBB_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
+    if (event.GetEventObject() == chkTRX_GAIN_SRC)
+        UpdateGUI();
 }
 
 void lms7002_pnlRBB_view::OncmbBBLoopbackSelected( wxCommandEvent& event )
@@ -140,6 +143,16 @@ void lms7002_pnlRBB_view::OncmbBBLoopbackSelected( wxCommandEvent& event )
 void lms7002_pnlRBB_view::UpdateGUI()
 {
     assert(lmsControl != nullptr);
+
+    uint16_t altGain = 0;
+    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&altGain);
+    wndId2Enum[cmbC_CTL_PGA_RBB] = altGain == 0 ? LMS7param(C_CTL_PGA_RBB): LMS7param(C_CTL_PGA_RBB_R3);
+    wndId2Enum[cmbG_PGA_RBB] = altGain == 0 ? LMS7param(G_PGA_RBB) : LMS7param(G_PGA_RBB_R3);
+    std::map<wxWindow*, LMS7Parameter> tmpMap;
+    tmpMap[cmbC_CTL_PGA_RBB] = altGain == 0 ? LMS7param(C_CTL_PGA_RBB): LMS7param(C_CTL_PGA_RBB_R3);
+    tmpMap[cmbG_PGA_RBB] = altGain == 0 ? LMS7param(G_PGA_RBB) : LMS7param(G_PGA_RBB_R3);
+    LMS7002_WXGUI::UpdateTooltips(tmpMap, true);
+
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     long BBloopbackValue = 0;

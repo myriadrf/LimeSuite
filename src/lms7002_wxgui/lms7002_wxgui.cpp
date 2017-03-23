@@ -77,7 +77,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxFlexGridSizer* fgSizer249;
-	fgSizer249 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer249 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer249->SetFlexibleDirection( wxBOTH );
 	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
@@ -86,6 +86,11 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	rbChannelB = new wxRadioButton( this, ID_BTN_CH_B, wxT("B CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer249->Add( rbChannelB, 0, wxEXPAND, 5 );
+	
+	chkEnableMIMO = new wxCheckBox( this, wxID_ANY, wxT("Enable MIMO"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnableMIMO->SetToolTip( wxT("Enables required registers for MIMO mode") );
+	
+	fgSizer249->Add( chkEnableMIMO, 0, 0, 5 );
 	
 	
 	fgSizer248->Add( fgSizer249, 0, 0, 5 );
@@ -116,22 +121,9 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	fgSizer299->Add( fgSizer300, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT, 10 );
 	
-	wxFlexGridSizer* fgSizer251;
-	fgSizer251 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer251->SetFlexibleDirection( wxBOTH );
-	fgSizer251->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
 	txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtTemperature->Wrap( -1 );
-	fgSizer251->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
-	
-	chkEnableMIMO = new wxCheckBox( this, wxID_ANY, wxT("Enable MIMO"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEnableMIMO->SetToolTip( wxT("Enables required registers for MIMO mode") );
-	
-	fgSizer251->Add( chkEnableMIMO, 0, 0, 5 );
-	
-	
-	fgSizer299->Add( fgSizer251, 1, wxEXPAND, 5 );
+	fgSizer299->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 	
 	btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
@@ -193,11 +185,11 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	ID_BUTTON3->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	rbChannelA->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
+	chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	chkSyncAB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
-	chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	btnCalibrateInternalADC->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnCalibrateInternalADC ), NULL, this );
 	tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
@@ -211,11 +203,11 @@ mainPanel::~mainPanel()
 	ID_BUTTON3->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	rbChannelA->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
+	chkEnableMIMO->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	chkSyncAB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
-	chkEnableMIMO->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
 	btnReadTemperature->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	btnCalibrateInternalADC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnCalibrateInternalADC ), NULL, this );
 	tabsNotebook->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
@@ -581,7 +573,12 @@ pnlRFE_view::pnlRFE_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	fgSizer191->Add( sbSizerCapacitorControls, 0, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	wxStaticBoxSizer* sbSizerGainControls;
-	sbSizerGainControls = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Gain controls") ), wxHORIZONTAL );
+	sbSizerGainControls = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Gain controls") ), wxVERTICAL );
+	
+	chkTRX_GAIN_SRC = new wxCheckBox( sbSizerGainControls->GetStaticBox(), ID_EN_NEXTRX_RFE, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkTRX_GAIN_SRC->SetToolTip( wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2") );
+	
+	sbSizerGainControls->Add( chkTRX_GAIN_SRC, 0, wxALIGN_LEFT|wxALIGN_TOP, 0 );
 	
 	wxFlexGridSizer* fgSizer50;
 	fgSizer50 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -726,6 +723,7 @@ pnlRFE_view::pnlRFE_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	chkEN_DCOFF_RXFE_RFE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbCCOMP_TIA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbCFB_TIA_RFE->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_LNA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_RXLOOPB_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_TIA_RFE->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
@@ -766,6 +764,7 @@ pnlRFE_view::~pnlRFE_view()
 	chkEN_DCOFF_RXFE_RFE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbCCOMP_TIA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbCFB_TIA_RFE->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_LNA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_RXLOOPB_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
 	cmbG_TIA_RFE->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRFE_view::ParameterChangeHandler ), NULL, this );
@@ -878,6 +877,15 @@ pnlRBB_view::pnlRBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	cmbC_CTL_PGA_RBB = new NumericSlider( this, ID_C_CTL_PGA_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
 	fgSizer53->Add( cmbC_CTL_PGA_RBB, 0, wxEXPAND, 5 );
+	
+	
+	fgSizer53->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	chkTRX_GAIN_SRC = new wxCheckBox( this, ID_EN_NEXTRX_RFE, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkTRX_GAIN_SRC->SetValue(true); 
+	chkTRX_GAIN_SRC->SetToolTip( wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2") );
+	
+	fgSizer53->Add( chkTRX_GAIN_SRC, 0, wxALIGN_LEFT|wxALIGN_TOP, 0 );
 	
 	
 	fgSizer259->Add( fgSizer53, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 0 );
@@ -1049,6 +1057,7 @@ pnlRBB_view::pnlRBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbINPUT_CTL_PGA_RBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbG_PGA_RBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbC_CTL_PGA_RBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	rgrOSW_PGA_RBB->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbR_CTL_LPF_RBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbC_CTL_LPFH_RBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
@@ -1075,6 +1084,7 @@ pnlRBB_view::~pnlRBB_view()
 	cmbINPUT_CTL_PGA_RBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbG_PGA_RBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbC_CTL_PGA_RBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	rgrOSW_PGA_RBB->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbR_CTL_LPF_RBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
 	cmbC_CTL_LPFH_RBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRBB_view::ParameterChangeHandler ), NULL, this );
@@ -1336,6 +1346,14 @@ pnlTRF_view::pnlTRF_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer34->Add( cmbLOSS_MAIN_TXPAD_TRF, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
+	
+	fgSizer34->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	chkTRX_GAIN_SRC = new wxCheckBox( this, ID_EN_NEXTRX_RFE, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkTRX_GAIN_SRC->SetToolTip( wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2") );
+	
+	fgSizer34->Add( chkTRX_GAIN_SRC, 0, wxALIGN_LEFT|wxALIGN_TOP, 0 );
+	
 	ID_STATICTEXT8 = new wxStaticText( this, wxID_ANY, wxT("Bias voltage at gate of TXPAD cascade"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT8->Wrap( -1 );
 	fgSizer34->Add( ID_STATICTEXT8, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
@@ -1392,6 +1410,7 @@ pnlTRF_view::pnlTRF_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	cmbL_LOOPB_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_LIN_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_MAIN_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbVGCAS_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOBIASN_TXM_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOBIASP_TXX_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
@@ -1420,6 +1439,7 @@ pnlTRF_view::~pnlTRF_view()
 	cmbL_LOOPB_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_LIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_MAIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbVGCAS_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOBIASN_TXM_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
 	cmbLOBIASP_TXX_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTRF_view::ParameterChangeHandler ), NULL, this );
@@ -1503,6 +1523,14 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	fgSizer58->Add( 0, 0, 1, wxEXPAND, 5 );
 	
+	chkR5_LPF_BYP_TBB = new wxCheckBox( this, ID_BYPLADDER_TBB, wxT("Bypass LPFS5 filter capacitor banks"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkR5_LPF_BYP_TBB->SetToolTip( wxT("This signal bypasses the LPF ladder of TBB and directly connects the output of current amplifier to the null port of the real pole stage of TBB low pass filter") );
+	
+	fgSizer58->Add( chkR5_LPF_BYP_TBB, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxEXPAND, 0 );
+	
+	
+	fgSizer58->Add( 0, 0, 1, wxEXPAND, 5 );
+	
 	ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("Tx BB loopback"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT1->Wrap( -1 );
 	fgSizer58->Add( ID_STATICTEXT1, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
@@ -1536,6 +1564,14 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	
 	cmbCG_IAMP_TBB = new NumericSlider( this, ID_CG_IAMP_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 63, 0 );
 	fgSizer192->Add( cmbCG_IAMP_TBB, 0, wxEXPAND, 5 );
+	
+	
+	fgSizer192->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	chkTRX_GAIN_SRC = new wxCheckBox( this, ID_EN_NEXTRX_RFE, wxT("Alternative TRX gain source"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkTRX_GAIN_SRC->SetToolTip( wxT("Enables the daisy chain LO buffer going from RXFE1  to RXFE2") );
+	
+	fgSizer192->Add( chkTRX_GAIN_SRC, 0, wxALIGN_RIGHT|wxALIGN_TOP, 0 );
 	
 	
 	fgSizer214->Add( fgSizer192, 1, wxEXPAND, 5 );
@@ -1724,9 +1760,11 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	chkEN_G_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	chkEN_DIR_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	chkBYPLADDER_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	chkR5_LPF_BYP_TBB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbLOOPB_TBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbTSTIN_TBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCG_IAMP_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_IAMP_FRP_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_IAMP_GG_FRP_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_LPFS5_F_TBB->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
@@ -1753,9 +1791,11 @@ pnlTBB_view::~pnlTBB_view()
 	chkEN_G_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	chkEN_DIR_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	chkBYPLADDER_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	chkR5_LPF_BYP_TBB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbLOOPB_TBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbTSTIN_TBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
+	chkTRX_GAIN_SRC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_IAMP_FRP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_IAMP_GG_FRP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );
 	cmbICT_LPFS5_F_TBB->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTBB_view::ParameterChangeHandler ), NULL, this );

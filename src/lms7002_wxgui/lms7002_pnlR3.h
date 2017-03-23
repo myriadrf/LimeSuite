@@ -18,15 +18,6 @@ class lms7002_pnlR3_view : public wxPanel
 {
     protected:
 		wxComboBox* cmbISINK_SPIBUFF;
-		wxCheckBox* chkTRX_GAIN_SRC;
-		NumericSlider* spinCG_IAMP_TBB;
-		NumericSlider* spinLOSS_LIN_TXPAD_TRF;
-		NumericSlider* spinLOSS_MAIN_TXPAD_TRF;
-		wxCheckBox* chkR5_LPF_BYP_TBB;
-		NumericSlider* spinC_CTL_PGA_RBB;
-		wxComboBox* cmbG_PGA_RBB;
-		wxComboBox* cmbG_LNA_RFE;
-		wxComboBox* cmbG_TIA_RFE;
 		wxButton* btnReadADC;
 		wxStaticText* dccal_statuses[8];
 		wxStaticText* dccal_cmpstatuses[8];

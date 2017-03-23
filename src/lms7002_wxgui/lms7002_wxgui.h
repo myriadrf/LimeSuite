@@ -36,8 +36,8 @@ class lms7002_pnlXBUF_view;
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/radiobut.h>
-#include <wx/sizer.h>
 #include <wx/checkbox.h>
+#include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
@@ -96,12 +96,12 @@ class mainPanel : public wxPanel
 		wxButton* ID_BUTTON3;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
+		wxCheckBox* chkEnableMIMO;
 		wxCheckBox* chkSyncAB;
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
 		wxStaticText* txtTemperature;
-		wxCheckBox* chkEnableMIMO;
 		wxButton* btnReadTemperature;
 		wxButton* btnCalibrateInternalADC;
 		wxNotebook* tabsNotebook;
@@ -112,11 +112,11 @@ class mainPanel : public wxPanel
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSyncABchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCalibrateInternalADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
@@ -259,6 +259,7 @@ class pnlRFE_view : public wxPanel
 		wxComboBox* cmbCCOMP_TIA_RFE;
 		wxStaticText* ID_STATICTEXT15;
 		NumericSlider* cmbCFB_TIA_RFE;
+		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT16;
 		wxComboBox* cmbG_LNA_RFE;
 		wxStaticText* ID_STATICTEXT17;
@@ -307,6 +308,7 @@ class pnlRBB_view : public wxPanel
 			ID_INPUT_CTL_PGA_RBB,
 			ID_G_PGA_RBB,
 			ID_C_CTL_PGA_RBB,
+			ID_EN_NEXTRX_RFE,
 			ID_OSW_PGA_RBB,
 			ID_R_CTL_LPF_RBB,
 			ID_C_CTL_LPFH_RBB,
@@ -335,6 +337,7 @@ class pnlRBB_view : public wxPanel
 		wxComboBox* cmbG_PGA_RBB;
 		wxStaticText* ID_STATICTEXT3;
 		NumericSlider* cmbC_CTL_PGA_RBB;
+		wxCheckBox* chkTRX_GAIN_SRC;
 		wxRadioBox* rgrOSW_PGA_RBB;
 		wxStaticText* ID_STATICTEXT4;
 		wxComboBox* cmbR_CTL_LPF_RBB;
@@ -404,6 +407,7 @@ class pnlTRF_view : public wxPanel
 			ID_L_LOOPB_TXPAD_TRF,
 			ID_LOSS_LIN_TXPAD_TRF,
 			ID_LOSS_MAIN_TXPAD_TRF,
+			ID_EN_NEXTRX_RFE,
 			ID_VGCAS_TXPAD_TRF,
 			ID_LOBIASN_TXM_TRF,
 			ID_LOBIASP_TXX_TRF
@@ -441,6 +445,7 @@ class pnlTRF_view : public wxPanel
 		wxComboBox* cmbLOSS_LIN_TXPAD_TRF;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
+		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT8;
 		wxComboBox* cmbVGCAS_TXPAD_TRF;
 		wxStaticText* ID_STATICTEXT9;
@@ -480,6 +485,7 @@ class pnlTBB_view : public wxPanel
 			ID_LOOPB_TBB,
 			ID_TSTIN_TBB,
 			ID_CG_IAMP_TBB,
+			ID_EN_NEXTRX_RFE,
 			ID_ICT_IAMP_FRP_TBB,
 			ID_ICT_IAMP_GG_FRP_TBB,
 			ID_ICT_LPFS5_F_TBB,
@@ -502,12 +508,14 @@ class pnlTBB_view : public wxPanel
 		wxCheckBox* chkEN_G_TBB;
 		wxCheckBox* chkEN_DIR_TBB;
 		wxCheckBox* chkBYPLADDER_TBB;
+		wxCheckBox* chkR5_LPF_BYP_TBB;
 		wxStaticText* ID_STATICTEXT1;
 		wxComboBox* cmbLOOPB_TBB;
 		wxStaticText* ID_STATICTEXT5;
 		wxComboBox* cmbTSTIN_TBB;
 		wxStaticText* ID_STATICTEXT2;
 		NumericSlider* cmbCG_IAMP_TBB;
+		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT3;
 		NumericSlider* cmbICT_IAMP_FRP_TBB;
 		wxStaticText* ID_STATICTEXT4;

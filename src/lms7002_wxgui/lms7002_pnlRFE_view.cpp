@@ -59,6 +59,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     wndId2Enum[cmbCDC_I_RFE] = LMS7param(CDC_I_RFE);
     wndId2Enum[cmbCDC_Q_RFE] = LMS7param(CDC_Q_RFE);
     wndId2Enum[chkEN_DIR_RFE] = LMS7param(EN_DIR_RFE);
+    wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 
     wxArrayString temp;
     temp.clear();
@@ -159,11 +160,21 @@ void lms7002_pnlRFE_view::Initialize(lms_device_t* pControl)
 void lms7002_pnlRFE_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
+
+    uint16_t altGain = 0;
+    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&altGain);
+    wndId2Enum[cmbG_LNA_RFE] = altGain == 0 ? LMS7param(G_LNA_RFE): LMS7param(G_LNA_RFE_R3);
+    wndId2Enum[cmbG_TIA_RFE] = altGain == 0 ? LMS7param(G_TIA_RFE): LMS7param(G_TIA_RFE_R3);
+    std::map<wxWindow*, LMS7Parameter> tmpMap;
+    tmpMap[cmbG_LNA_RFE] = altGain == 0 ? LMS7param(G_LNA_RFE): LMS7param(G_LNA_RFE_R3);
+    tmpMap[cmbG_TIA_RFE] = altGain == 0 ? LMS7param(G_TIA_RFE): LMS7param(G_TIA_RFE_R3);
+    LMS7002_WXGUI::UpdateTooltips(tmpMap, true);
+
     uint16_t value;
-    LMS_ReadParam(lmsControl,LMS7param(G_LNA_RFE),&value);
+    LMS_ReadParam(lmsControl,altGain == 0 ? LMS7param(G_LNA_RFE): LMS7param(G_LNA_RFE_R3),&value);
     cmbG_LNA_RFE->SetSelection( value2index(value, g_lna_rfe_IndexValuePairs));
 
-    LMS_ReadParam(lmsControl,LMS7param(G_TIA_RFE),&value);
+    LMS_ReadParam(lmsControl,altGain == 0 ? LMS7param(G_TIA_RFE): LMS7param(G_TIA_RFE_R3),&value);
     cmbG_TIA_RFE->SetSelection( value2index(value, g_tia_rfe_IndexValuePairs));
 
     LMS_ReadParam(lmsControl,LMS7param(DCOFFI_RFE),&value);
@@ -236,8 +247,7 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         LMS_WriteParam(lmsControl,parameter,valToSend);
         return;
     }
-
-    if(event.GetEventObject() == cmbSEL_PATH_RFE)
+    else if(event.GetEventObject() == cmbSEL_PATH_RFE)
     {
         wxCommandEvent evt;
         evt.SetEventType(LMS7_RXPATH_CHANGED);
@@ -246,4 +256,6 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         wxPostEvent(this, evt);
     }
     LMS_WriteParam(lmsControl,parameter,value);
+    if (event.GetEventObject() == chkTRX_GAIN_SRC)
+        UpdateGUI();
 }
