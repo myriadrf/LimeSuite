@@ -320,10 +320,13 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
    ||(SetInterfaceFrequency(GetFrequencyCGEN(),decim,decim)!=0))
            return -1;
 
-    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx) /
-                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
-    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
-                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (decim != 7)
+    {
+        fpgaTxPLL /= pow(2.0, decim);
+        fpgaTxPLL /= pow(2.0, decim);
+    }
 
     for (size_t i = 0; i < GetNumChannels(false);i++)
     {
@@ -607,10 +610,12 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
         }
     }
 
-    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx) /
-                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
-    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx) /
-                            pow(2.0, Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+    float_type fpgaTxPLL = GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    float_type fpgaRxPLL = GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (interpolation != 7)
+        fpgaTxPLL /= pow(2.0, interpolation);
+    if (decimation != 7)
+        fpgaRxPLL /= pow(2.0, decimation);
 
     return this->streamPort->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
 }

@@ -532,8 +532,14 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
                 lime::ReportError(EINVAL, "Device not connected");
                 return -1;
             }
-            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)));
-            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / pow(2.0, lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
+            int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+            int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+            if (interp != 7)
+                fpgaTxPLL /= pow(2.0, interp);
+            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+            if (decim != 7)
+                fpgaRxPLL /= pow(2.0, decim);
             return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
         }
         case LMS_CLOCK_RXTSP:
