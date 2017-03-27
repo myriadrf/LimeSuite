@@ -45,7 +45,10 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     const int selection = mListLMS7ports->GetSelection();
     if(selection != wxNOT_FOUND && selection < ret)
     {
-        LMS_Open(lmsControl,list[selection],nullptr);
+        if (LMS_Open(lmsControl,list[selection],nullptr)!=0)
+        {
+            wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        }
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())

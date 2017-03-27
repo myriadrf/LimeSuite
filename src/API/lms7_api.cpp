@@ -50,14 +50,10 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
     handles = lime::ConnectionRegistry::findConnections();
     LMS7_Device* lms;
     if (*device == nullptr)
-    {
         lms = new LMS7_Device();
-        *device = lms;
-    }
     else
-    {
         lms = (LMS7_Device*)*device;
-    }
+
     LMS_Disconnect(lms);
     for (size_t i = 0; i < handles.size(); i++)
     {
@@ -68,9 +64,12 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
             {
                 if (info != NULL)
                 {
-                    lime::ReportError(EBUSY, "Failed to open. Device is busy.");
-                    delete lms;
-                    *device = nullptr;
+                    lime::ReportError(EBUSY, "Failed to open device");
+                    if (*device == nullptr)
+                    {
+                        delete lms;
+                        *device = nullptr;
+                    }
                     return -1;
                 }
                 else
@@ -78,20 +77,17 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
             }
             lms->SetConnection(conn,0);
             lms->streamPort = conn;
-            if (args == nullptr)
-            {
-
-                return LMS_SUCCESS;
-            }
+            *device = lms;
+            return LMS_SUCCESS;
         }
     }
 
-    if (info == NULL)
-       return LMS_SUCCESS;
-
     lime::ReportError(ENODEV, "Specified device could not be found");
-    delete lms;
-    *device = nullptr;
+    if (*device == nullptr)
+    {
+        delete lms;
+        *device = nullptr;
+    }
     return -1;
 }
 
