@@ -325,7 +325,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
     if (decim != 7)
     {
         fpgaTxPLL /= pow(2.0, decim);
-        fpgaTxPLL /= pow(2.0, decim);
+        fpgaRxPLL /= pow(2.0, decim);
     }
 
     for (size_t i = 0; i < GetNumChannels(false);i++)
