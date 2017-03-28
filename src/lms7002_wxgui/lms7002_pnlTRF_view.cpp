@@ -40,7 +40,6 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     wndId2Enum[cmbCDC_I_TRF] = LMS7param(CDC_I_TRF);
     wndId2Enum[cmbCDC_Q_TRF] = LMS7param(CDC_Q_TRF);
     wndId2Enum[chkEN_DIR_TRF] = LMS7param(EN_DIR_TRF);
-    wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 
     wxArrayString temp;
     temp.clear();
@@ -106,8 +105,6 @@ void lms7002_pnlTRF_view::ParameterChangeHandler(wxCommandEvent& event)
         value = index2value(value, en_amphf_pdet_trfIndexValuePairs);
 
     LMS_WriteParam(lmsControl,parameter,value);
-    if (event.GetEventObject() == chkTRX_GAIN_SRC)
-        UpdateGUI();
 }
 
 void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
@@ -139,15 +136,6 @@ void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
 
 void lms7002_pnlTRF_view::UpdateGUI()
 {
-    uint16_t altGain = 0;
-    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&altGain);
-    wndId2Enum[cmbLOSS_LIN_TXPAD_TRF] = altGain == 0 ? LMS7param(LOSS_LIN_TXPAD_TRF): LMS7param(LOSS_LIN_TXPAD_R3);
-    wndId2Enum[cmbICT_MAIN_TXPAD_TRF] = altGain == 0 ? LMS7param(LOSS_MAIN_TXPAD_TRF) : LMS7param(LOSS_MAIN_TXPAD_R3);
-    std::map<wxWindow*, LMS7Parameter> tmpMap;
-    tmpMap[cmbLOSS_LIN_TXPAD_TRF] = altGain == 0 ? LMS7param(LOSS_LIN_TXPAD_TRF): LMS7param(LOSS_LIN_TXPAD_R3);
-    tmpMap[cmbLOSS_MAIN_TXPAD_TRF] = altGain == 0 ? LMS7param(LOSS_MAIN_TXPAD_TRF) : LMS7param(LOSS_MAIN_TXPAD_R3);
-    LMS7002_WXGUI::UpdateTooltips(tmpMap, true);
-
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 
     uint16_t value;
@@ -190,4 +178,8 @@ void lms7002_pnlTRF_view::UpdateGUI()
     }
     else
         chkEN_NEXTTX_TRF->Show();
+
+    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&value);
+    cmbLOSS_LIN_TXPAD_TRF->Enable(!value);
+    cmbLOSS_MAIN_TXPAD_TRF->Enable(!value);
 }

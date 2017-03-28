@@ -15,6 +15,7 @@
 #include "lms7002_pnlTBB_view.h"
 #include "lms7002_pnlTRF_view.h"
 #include "lms7002_pnlXBUF_view.h"
+#include "lms7002_pnlGains_view.h"
 #include "lms7002_pnlCalibrations_view.h"
 #include <wx/time.h>
 #include <wx/msgdlg.h>
@@ -106,6 +107,9 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     case ID_TAB_BUFFERS:
         mTabBuffers->UpdateGUI();
         break;
+    case ID_TAB_GAINS:
+        mTabTrxGain->UpdateGUI();
+        break;
     }
     if(visibleTabId == mTabR3->GetId())
         mTabR3->UpdateGUI();
@@ -130,6 +134,7 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
     mTabCGEN->Initialize(lmsControl);
     mTabSXR->Initialize(lmsControl);
     mTabSXT->Initialize(lmsControl);
+    mTabTrxGain->Initialize(lmsControl);
     mTabLimeLight->Initialize(lmsControl);
     mTabTxTSP->Initialize(lmsControl);
     mTabRxTSP->Initialize(lmsControl);

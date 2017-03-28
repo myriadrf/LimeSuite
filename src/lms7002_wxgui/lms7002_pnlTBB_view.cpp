@@ -38,7 +38,6 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     wndId2Enum[cmbTSTIN_TBB] = LMS7param(TSTIN_TBB);
     wndId2Enum[chkEN_DIR_TBB] = LMS7param(EN_DIR_TBB);
     wndId2Enum[chkR5_LPF_BYP_TBB] = LMS7param(R5_LPF_BYP_TBB);
-    wndId2Enum[chkTRX_GAIN_SRC] = LMS7param(TRX_GAIN_SRC);
 
     wxArrayString temp;
     temp.clear();
@@ -102,20 +101,10 @@ void lms7002_pnlTBB_view::ParameterChangeHandler(wxCommandEvent& event)
         return;
     }
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
-    if (event.GetEventObject() == chkTRX_GAIN_SRC)
-        UpdateGUI();
 }
 
 void lms7002_pnlTBB_view::UpdateGUI()
 {
-
-    uint16_t altGain = 0;
-    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&altGain);
-    wndId2Enum[cmbCG_IAMP_TBB] = altGain == 0 ? LMS7param(CG_IAMP_TBB): LMS7param(CG_IAMP_TBB_R3);
-    std::map<wxWindow*, LMS7Parameter> tmpMap;
-    tmpMap[cmbCG_IAMP_TBB] = altGain == 0 ? LMS7param(CG_IAMP_TBB): LMS7param(CG_IAMP_TBB_R3);
-    LMS7002_WXGUI::UpdateTooltips(tmpMap, true);
-
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
     //check if B channel is enabled
     uint16_t value;
@@ -126,6 +115,8 @@ void lms7002_pnlTBB_view::UpdateGUI()
         if (value != 0)
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
     }
+    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&value);
+    cmbCG_IAMP_TBB->Enable(!value);
 }
 
 void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )

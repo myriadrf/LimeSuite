@@ -750,7 +750,7 @@ static const struct LMS7Parameter LMS7_RSSIDC_HYSCMP = { 0x0640, 3, 1, 0, "RSSID
 static const struct LMS7Parameter LMS7_RSSIDC_PD = { 0x0640, 0, 0, 0, "RSSIDC_PD", "Power down modules"};
 static const struct LMS7Parameter LMS7_RSSIDC_DCO2 = { 0x0641, 13, 7, 32, "RSSIDC_DCO2", "Value of RSSI offset DAC2"};
 static const struct LMS7Parameter LMS7_RSSIDC_DCO1 = { 0x0641, 6, 0, 32, "RSSIDC_DCO1", "Value of RSSI offset DAC1"};
-static const struct LMS7Parameter LMS7_DCLOOP_STOP = { 0x040C, 8, 8, 0, "DCLOOP_STOP", "RxDC tracking loop stop" };
+static const struct LMS7Parameter LMS7_DCLOOP_STOP = { 0x040C, 8, 8, 0, "DCLOOP_STOP", "Stops RxDC tracking loop" };
 
 //}
 

@@ -18,6 +18,7 @@ class lms7002_pnlBuffers_view;
 class lms7002_pnlCDS_view;
 class lms7002_pnlCLKGEN_view;
 class lms7002_pnlCalibrations_view;
+class lms7002_pnlGains_view;
 class lms7002_pnlLDO_view;
 class lms7002_pnlLimeLightPAD_view;
 class lms7002_pnlRBB_view;
@@ -88,7 +89,8 @@ class mainPanel : public wxPanel
 			ID_TAB_RXTSP,
 			ID_TAB_CDS,
 			ID_TAB_BIST,
-			ID_TAB_BUFFERS
+			ID_TAB_BUFFERS,
+			ID_TAB_GAINS
 		};
 		
 		wxButton* ID_BUTTON1;
@@ -141,6 +143,7 @@ class mainPanel : public wxPanel
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
 		lms7002_pnlBuffers_view* mTabBuffers;
+		lms7002_pnlGains_view* mTabTrxGain;
 		
 		mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~mainPanel();
@@ -265,7 +268,6 @@ class pnlRFE_view : public wxPanel
 		wxComboBox* cmbG_RXLOOPB_RFE;
 		wxStaticText* ID_STATICTEXT18;
 		wxComboBox* cmbG_TIA_RFE;
-		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT9;
 		wxComboBox* cmbICT_LOOPB_RFE;
 		wxStaticText* ID_STATICTEXT10;
@@ -308,7 +310,6 @@ class pnlRBB_view : public wxPanel
 			ID_INPUT_CTL_PGA_RBB,
 			ID_G_PGA_RBB,
 			ID_C_CTL_PGA_RBB,
-			ID_EN_NEXTRX_RFE,
 			ID_OSW_PGA_RBB,
 			ID_R_CTL_LPF_RBB,
 			ID_C_CTL_LPFH_RBB,
@@ -337,7 +338,6 @@ class pnlRBB_view : public wxPanel
 		wxComboBox* cmbG_PGA_RBB;
 		wxStaticText* ID_STATICTEXT3;
 		NumericSlider* cmbC_CTL_PGA_RBB;
-		wxCheckBox* chkTRX_GAIN_SRC;
 		wxRadioBox* rgrOSW_PGA_RBB;
 		wxStaticText* ID_STATICTEXT4;
 		wxComboBox* cmbR_CTL_LPF_RBB;
@@ -407,7 +407,6 @@ class pnlTRF_view : public wxPanel
 			ID_L_LOOPB_TXPAD_TRF,
 			ID_LOSS_LIN_TXPAD_TRF,
 			ID_LOSS_MAIN_TXPAD_TRF,
-			ID_EN_NEXTRX_RFE,
 			ID_VGCAS_TXPAD_TRF,
 			ID_LOBIASN_TXM_TRF,
 			ID_LOBIASP_TXX_TRF
@@ -445,7 +444,6 @@ class pnlTRF_view : public wxPanel
 		wxComboBox* cmbLOSS_LIN_TXPAD_TRF;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
-		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT8;
 		wxComboBox* cmbVGCAS_TXPAD_TRF;
 		wxStaticText* ID_STATICTEXT9;
@@ -485,7 +483,6 @@ class pnlTBB_view : public wxPanel
 			ID_LOOPB_TBB,
 			ID_TSTIN_TBB,
 			ID_CG_IAMP_TBB,
-			ID_EN_NEXTRX_RFE,
 			ID_ICT_IAMP_FRP_TBB,
 			ID_ICT_IAMP_GG_FRP_TBB,
 			ID_ICT_LPFS5_F_TBB,
@@ -515,7 +512,6 @@ class pnlTBB_view : public wxPanel
 		wxComboBox* cmbTSTIN_TBB;
 		wxStaticText* ID_STATICTEXT2;
 		NumericSlider* cmbCG_IAMP_TBB;
-		wxCheckBox* chkTRX_GAIN_SRC;
 		wxStaticText* ID_STATICTEXT3;
 		NumericSlider* cmbICT_IAMP_FRP_TBB;
 		wxStaticText* ID_STATICTEXT4;
@@ -2194,6 +2190,47 @@ class pnlCalibrations_view : public wxPanel
 		
 		pnlCalibrations_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlCalibrations_view();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class pnlGains_view
+///////////////////////////////////////////////////////////////////////////////
+class pnlGains_view : public wxPanel 
+{
+	private:
+	
+	protected:
+		enum
+		{
+			ID_EN_NEXTRX_RFE = 2048,
+			ID_G_LNA_RFE,
+			ID_G_TIA_RFE,
+			ID_G_PGA_RBB,
+			ID_C_CTL_PGA_RBB,
+			ID_LOSS_LIN_TXPAD_TRF,
+			ID_LOSS_MAIN_TXPAD_TRF,
+			ID_CG_IAMP_TBB
+		};
+		
+		wxCheckBox* chkTRX_GAIN_SRC;
+		wxComboBox* cmbG_LNA_RFE;
+		wxComboBox* cmbG_TIA_RFE;
+		wxComboBox* cmbG_PGA_RBB;
+		NumericSlider* cmbC_CTL_PGA_RBB;
+		wxComboBox* cmbLOSS_LIN_TXPAD_TRF;
+		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
+		NumericSlider* cmbCG_IAMP_TBB;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
+		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		pnlGains_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
+		~pnlGains_view();
 	
 };
 

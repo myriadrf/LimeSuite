@@ -341,17 +341,7 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
 {
     uint16_t value = 0;
     uint16_t value2 = 0;
-    long valrez = 0;
-    //Read RSSI
-    //LMS_WriteParam(lmsControl,LMS7param(CAPSEL_ADC),0);
-    LMS_WriteParam(lmsControl,LMS7param(CAPSEL),0);
-    LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
-    LMS_WriteParam(lmsControl,LMS7param(CAPTURE),1);
-    LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
-    LMS_ReadLMSReg(lmsControl,0x040E,&value);
-    LMS_ReadLMSReg(lmsControl,0x040F,&value2);
-    valrez = ((value & 0x3) | (value2 << 2)) & 0x3FFFF;
-    lblRSSI->SetLabel(wxString::Format("0x%0.5X", valrez));
+    unsigned valrez = 0;
 
     //Read ADCI, ADCQ
     LMS_WriteParam(lmsControl,LMS7param(CAPSEL),1);
@@ -360,8 +350,29 @@ void lms7002_pnlRxTSP_view::OnbtnReadRSSI(wxCommandEvent& event)
 
     LMS_ReadLMSReg(lmsControl,0x040E,&value);
     LMS_ReadLMSReg(lmsControl,0x040F,&value2);
-    lblADCI->SetLabel(wxString::Format("0x%0.3X", value & 0x3ff));
-    lblADCQ->SetLabel(wxString::Format("0x%0.3X", value2 & 0x3ff));
+
+    if (chkCAPSEL_ADC_RXTSP->GetValue())
+    {
+        lblADCI->SetLabel(wxString::Format("0x%0.4X", value));
+        lblADCQ->SetLabel(wxString::Format("0x%0.4X", value2));
+        lblRSSI->SetLabel(wxString::Format(" ----- "));
+    }
+    else
+    {
+        lblADCI->SetLabel(wxString::Format("0x%0.3X", value & 0x3ff));
+        lblADCQ->SetLabel(wxString::Format("0x%0.3X", value2 & 0x3ff));
+        //Read RSSI
+        //LMS_WriteParam(lmsControl,LMS7param(CAPSEL_ADC),0);
+        LMS_WriteParam(lmsControl,LMS7param(CAPSEL),0);
+        LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
+        LMS_WriteParam(lmsControl,LMS7param(CAPTURE),1);
+        LMS_WriteParam(lmsControl,LMS7param(CAPTURE),0);
+        LMS_ReadLMSReg(lmsControl,0x040E,&value);
+        LMS_ReadLMSReg(lmsControl,0x040F,&value2);
+        valrez = ((value & 0x3) | (value2 << 2)) & 0x3FFFF;
+        lblRSSI->SetLabel(wxString::Format("0x%0.5X", valrez));
+    }
+
 }
 
 void lms7002_pnlRxTSP_view::OnbtnLoadDCIClick(wxCommandEvent& event)
