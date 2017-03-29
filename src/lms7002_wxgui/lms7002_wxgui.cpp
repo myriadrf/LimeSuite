@@ -18,7 +18,6 @@
 #include "lms7002_pnlAFE_view.h"
 #include "lms7002_pnlBIAS_view.h"
 #include "lms7002_pnlBIST_view.h"
-#include "lms7002_pnlBuffers_view.h"
 #include "lms7002_pnlCDS_view.h"
 #include "lms7002_pnlCLKGEN_view.h"
 #include "lms7002_pnlCalibrations_view.h"
@@ -170,8 +169,6 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	tabsNotebook->AddPage( mTabCDS, wxT("CDS"), false );
 	mTabBIST = new lms7002_pnlBIST_view( tabsNotebook, ID_TAB_BIST, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabBIST, wxT("BIST"), false );
-	mTabBuffers = new lms7002_pnlBuffers_view( tabsNotebook, ID_TAB_BUFFERS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	tabsNotebook->AddPage( mTabBuffers, wxT("Board"), false );
 	mTabTrxGain = new lms7002_pnlGains_view( tabsNotebook, ID_TAB_GAINS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	tabsNotebook->AddPage( mTabTrxGain, wxT("TRX Gain"), false );
 	
@@ -214,65 +211,6 @@ mainPanel::~mainPanel()
 	btnReadTemperature->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
 	btnCalibrateInternalADC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnCalibrateInternalADC ), NULL, this );
 	tabsNotebook->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
-	
-}
-
-pnlBuffers_view::pnlBuffers_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style ) : wxPanel( parent, id, pos, size, style )
-{
-	wxFlexGridSizer* fgSizer239;
-	fgSizer239 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer239->SetFlexibleDirection( wxBOTH );
-	fgSizer239->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxStaticBoxSizer* sbSizer128;
-	sbSizer128 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Buffers") ), wxVERTICAL );
-	
-	chkDIO_DIR_CTRL1 = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("DIO_DIR_CTRL1"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer128->Add( chkDIO_DIR_CTRL1, 0, 0, 5 );
-	
-	chkDIO_DIR_CTRL2 = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("DIO_DIR_CTRL2"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkDIO_DIR_CTRL2->SetValue(true); 
-	sbSizer128->Add( chkDIO_DIR_CTRL2, 0, 0, 5 );
-	
-	chkDIO_BUFF_OE = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("DIO_BUFF_OE"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer128->Add( chkDIO_BUFF_OE, 0, wxRIGHT, 5 );
-	
-	chkIQ_SEL1_DIR = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("IQ_SEL1_DIR"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkIQ_SEL1_DIR->SetValue(true); 
-	sbSizer128->Add( chkIQ_SEL1_DIR, 0, 0, 5 );
-	
-	chkIQ_SEL2_DIR = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("IQ_SEL2_DIR"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer128->Add( chkIQ_SEL2_DIR, 0, 0, 5 );
-	
-	chkG_PWR_DWN = new wxCheckBox( sbSizer128->GetStaticBox(), wxID_ANY, wxT("G_PWR_DWN"), wxDefaultPosition, wxDefaultSize, 0 );
-	sbSizer128->Add( chkG_PWR_DWN, 0, 0, 5 );
-	
-	
-	fgSizer239->Add( sbSizer128, 1, wxEXPAND, 5 );
-	
-	
-	this->SetSizer( fgSizer239 );
-	this->Layout();
-	fgSizer239->Fit( this );
-	
-	// Connect Events
-	chkDIO_DIR_CTRL1->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkDIO_DIR_CTRL2->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkDIO_BUFF_OE->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkIQ_SEL1_DIR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkIQ_SEL2_DIR->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkG_PWR_DWN->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-}
-
-pnlBuffers_view::~pnlBuffers_view()
-{
-	// Disconnect Events
-	chkDIO_DIR_CTRL1->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkDIO_DIR_CTRL2->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkDIO_BUFF_OE->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkIQ_SEL1_DIR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkIQ_SEL2_DIR->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
-	chkG_PWR_DWN->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlBuffers_view::OnGPIOchanged ), NULL, this );
 	
 }
 

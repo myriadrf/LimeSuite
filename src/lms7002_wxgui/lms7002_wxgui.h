@@ -14,7 +14,6 @@ class NumericSlider;
 class lms7002_pnlAFE_view;
 class lms7002_pnlBIAS_view;
 class lms7002_pnlBIST_view;
-class lms7002_pnlBuffers_view;
 class lms7002_pnlCDS_view;
 class lms7002_pnlCLKGEN_view;
 class lms7002_pnlCalibrations_view;
@@ -89,7 +88,6 @@ class mainPanel : public wxPanel
 			ID_TAB_RXTSP,
 			ID_TAB_CDS,
 			ID_TAB_BIST,
-			ID_TAB_BUFFERS,
 			ID_TAB_GAINS
 		};
 		
@@ -142,37 +140,10 @@ class mainPanel : public wxPanel
 		lms7002_pnlRxTSP_view* mTabRxTSP;
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
-		lms7002_pnlBuffers_view* mTabBuffers;
 		lms7002_pnlGains_view* mTabTrxGain;
 		
 		mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~mainPanel();
-	
-};
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class pnlBuffers_view
-///////////////////////////////////////////////////////////////////////////////
-class pnlBuffers_view : public wxPanel 
-{
-	private:
-	
-	protected:
-		wxCheckBox* chkDIO_DIR_CTRL1;
-		wxCheckBox* chkDIO_DIR_CTRL2;
-		wxCheckBox* chkDIO_BUFF_OE;
-		wxCheckBox* chkIQ_SEL1_DIR;
-		wxCheckBox* chkIQ_SEL2_DIR;
-		wxCheckBox* chkG_PWR_DWN;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void OnGPIOchanged( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		
-		pnlBuffers_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
-		~pnlBuffers_view();
 	
 };
 

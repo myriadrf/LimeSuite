@@ -11,6 +11,7 @@
 #include "pnlUltimateEVB.h"
 #include "pnluLimeSDR.h"
 #include "pnlLimeSDR.h"
+#include "pnlBuffers.h"
 #include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
@@ -457,7 +458,15 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
-
+    else if(boardID == GetDeviceName(LMS_DEV_RFESPARK)
+         || boardID == GetDeviceName(LMS_DEV_EVB7)
+         || boardID == GetDeviceName(LMS_DEV_RFSPARK))
+    {
+        pnlBuffers* pnl = new pnlBuffers(this, wxNewId());
+        pnl->Initialize(lmsControl);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
     Layout();
     Fit();
 }

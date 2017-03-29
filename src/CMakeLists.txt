@@ -169,7 +169,6 @@ message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 ########################################################################
 set(LMS7SUITE_GUI_SOURCES
     ADF4002/ADF4002_wxgui.cpp
-    lms7002_wxgui/lms7002_pnlBuffers_view.cpp
     lms7002_wxgui/lms7002_pnlXBUF_view.cpp
     lms7002_wxgui/lms7002_wxgui.cpp
     lms7002_wxgui/lms7002_pnlRFE_view.cpp
@@ -222,6 +221,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
     boards_wxgui/pnlUltimateEVB.cpp
+    boards_wxgui/pnlBuffers.cpp
     kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp

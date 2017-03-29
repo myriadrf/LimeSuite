@@ -14,7 +14,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     : pnlLimeLightPAD_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
     //ids for updating from chip
-	wndId2Enum[rgrDIQ1_DS] = LMS7param(DIQ1_DS);
+    wndId2Enum[rgrDIQ1_DS] = LMS7param(DIQ1_DS);
     wndId2Enum[chkDIQ1_PE] = LMS7param(DIQ1_PE);
     wndId2Enum[rgrDIQ2_DS] = LMS7param(DIQ2_DS);
     wndId2Enum[chkDIQ2_PE] = LMS7param(DIQ2_PE);

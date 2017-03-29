@@ -23,7 +23,6 @@
 #include <wx/filedlg.h>
 #include "lms7suiteEvents.h"
 #include "lms7002_pnlMCU_BD_view.h"
-#include "lms7002_pnlBuffers_view.h"
 #include "lms7002_pnlR3.h"
 #include "lime/LimeSuite.h"
 using namespace std;
@@ -104,9 +103,6 @@ void lms7002_mainPanel::UpdateVisiblePanel()
     case ID_TAB_CALIBRATIONS:
         mTabCalibrations->UpdateGUI();
         break;
-    case ID_TAB_BUFFERS:
-        mTabBuffers->UpdateGUI();
-        break;
     case ID_TAB_GAINS:
         mTabTrxGain->UpdateGUI();
         break;
@@ -142,7 +138,6 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
     mTabBIST->Initialize(lmsControl);
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl);
-    mTabBuffers->Initialize(lmsControl);
     mTabR3->Initialize(lmsControl);
     UpdateGUI();
 }
