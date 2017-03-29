@@ -23,7 +23,6 @@ class FPGAcontrols_wxgui;
 class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
-class LMS7002M_Novena_wxgui;
 class pnlBoardControls;
 class pnlQSpark;
 
@@ -59,8 +58,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowDeviceInfo(wxCommandEvent& event);
         void OnSPIClose(wxCloseEvent& event);
         void OnShowSPI(wxCommandEvent& event);
-        void OnNovenaClose(wxCloseEvent& event);
-        void OnShowNovena(wxCommandEvent& event);
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
         void OnChangeCacheSettings(wxCommandEvent& event);
@@ -96,7 +93,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         Myriad7_wxgui* myriad7;
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
-        LMS7002M_Novena_wxgui* novenaGui;
         pnlBoardControls* boardControlsGui;
         pnlQSpark* qSparkGui;
 };

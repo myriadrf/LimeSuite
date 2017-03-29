@@ -183,7 +183,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     myriad7 = nullptr;
     deviceInfo = nullptr;
     spi = nullptr;
-    novenaGui = nullptr;
     boardControlsGui = nullptr;
     lmsControl = new LMS7_Device();
     qSparkGui = nullptr;
@@ -277,8 +276,6 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         deviceInfo->Initialize(lmsControl);
     if(spi)
         spi->Initialize(lmsControl);
-    if(novenaGui)
-        novenaGui->Initialize(lmsControl);
     if(boardControlsGui)
         boardControlsGui->Initialize(lmsControl);
     if(programmer)
@@ -589,26 +586,6 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
     wxQueueEvent(obj_ptr, evt);
-}
-
-void LMS7SuiteAppFrame::OnShowNovena(wxCommandEvent& event)
-{
-    if (novenaGui) //it's already opened
-        novenaGui->Show();
-    else
-    {
-        novenaGui = new LMS7002M_Novena_wxgui(this, wxNewId(), _("Novena"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
-        novenaGui->Initialize(lmsControl);
-        novenaGui->UpdatePanel();
-        novenaGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnNovenaClose), NULL, this);
-        novenaGui->Show();
-    }
-}
-
-void LMS7SuiteAppFrame::OnNovenaClose(wxCloseEvent& event)
-{
-    novenaGui->Destroy();
-    novenaGui = nullptr;
 }
 
 void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)

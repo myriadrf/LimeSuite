@@ -57,7 +57,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuModules->Append( mnuSi5351C );
 	
 	wxMenuItem* mnuPrograming;
-	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programming") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programing") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuPrograming );
 	
 	wxMenuItem* mnuRFSpark;
@@ -83,10 +83,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	wxMenuItem* mnuSPI;
 	mnuSPI = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("SPI") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuSPI );
-	
-	wxMenuItem* mnuNovena;
-	mnuNovena = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Novena") ) , wxEmptyString, wxITEM_NORMAL );
-	mnuModules->Append( mnuNovena );
 	
 	wxMenuItem* mnuBoardControls;
 	mnuBoardControls = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Board controls") ) , wxEmptyString, wxITEM_NORMAL );
@@ -137,7 +133,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuMyriad7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Connect( mnuSPI->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
-	this->Connect( mnuNovena->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 	this->Connect( mnuBoardControls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
 	this->Connect( mnuQSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
 	this->Connect( menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
@@ -160,7 +155,6 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
 	this->Disconnect( idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );

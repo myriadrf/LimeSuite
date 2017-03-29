@@ -72,7 +72,6 @@ class AppFrame_view : public wxFrame
 		virtual void OnShowMyriad7( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowDeviceInfo( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSPI( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowNovena( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowBoardControls( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowQSpark( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }

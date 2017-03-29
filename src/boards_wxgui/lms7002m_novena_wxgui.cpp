@@ -1,11 +1,13 @@
 #include "lms7002m_novena_wxgui.h"
+#include "lms7suiteEvents.h"
 
-
+BEGIN_EVENT_TABLE(LMS7002M_Novena_wxgui, wxPanel)
+END_EVENT_TABLE()
 
 LMS7002M_Novena_wxgui::LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
     :lmsControl(nullptr)
 {
-    Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
+    Create(parent, id, wxDefaultPosition, wxDefaultSize, styles, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
@@ -38,13 +40,12 @@ LMS7002M_Novena_wxgui::LMS7002M_Novena_wxgui(wxWindow* parent, wxWindowID id, co
     mainSizer->Add(lms_gpio0, 1, wxALL | wxALIGN_LEFT | wxALIGN_TOP, 0);
     Connect(lms_gpio0->GetId(), wxEVT_CHECKBOX, (wxObjectEventFunction)&LMS7002M_Novena_wxgui::ParameterChangeHandler);
 
-    btnReadAll = new wxButton(this, wxNewId(), _("Read All"));
-    mainSizer->Add(btnReadAll, 1, wxALL | wxALIGN_LEFT | wxALIGN_TOP, 0);
-    Connect(btnReadAll->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&LMS7002M_Novena_wxgui::OnReadAll);
-
     SetSizer(mainSizer);
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
+
+    Bind(READ_ALL_VALUES, &LMS7002M_Novena_wxgui::OnReadAll, this, this->GetId());
+    Bind(WRITE_ALL_VALUES, &LMS7002M_Novena_wxgui::OnWriteAll, this, this->GetId());
 }
 
 LMS7002M_Novena_wxgui::~LMS7002M_Novena_wxgui()
@@ -56,7 +57,6 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
 {
     if (lmsControl == nullptr)
         return;
-
 
     uint32_t dataWr = (1<<31) | (0x0806 << 16);
     uint16_t dataRd = 0;
@@ -130,4 +130,9 @@ void LMS7002M_Novena_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 void LMS7002M_Novena_wxgui::OnReadAll(wxCommandEvent& event)
 {
     UpdatePanel();
+}
+
+void LMS7002M_Novena_wxgui::OnWriteAll(wxCommandEvent &event)
+{
+    ParameterChangeHandler(event);
 }
