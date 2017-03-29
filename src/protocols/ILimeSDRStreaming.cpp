@@ -219,6 +219,8 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
     {
+        LMS7002M lmsControl;
+        lmsControl.SetConnection(this);
         //enable FPGA streaming
         fpga::StopStreaming(this);
         fpga::ResetTimestamp(this);
@@ -253,13 +255,22 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
             i->config.linkFormat = config.linkFormat;
 
         uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
+        uint16_t mode;
         if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
             smpl_width = 0x0;
         else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
             smpl_width = 0x2;
         else
             smpl_width = 0x2;
-        WriteRegister(0x0008, 0x0100 | smpl_width);
+
+        if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
+            mode = 0x0040;
+        else if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE),true))
+            mode = 0x0180;
+        else
+            mode = 0x0100;
+
+        WriteRegister(0x0008, mode | smpl_width);
 
         uint16_t channelEnables = 0;
         for(uint8_t i=0; i<mRxStreams.size(); ++i)
@@ -268,8 +279,6 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
             channelEnables |= (1 << mTxStreams[i]->config.channelID);
         WriteRegister(0x0007, channelEnables);
 
-        LMS7002M lmsControl;
-        lmsControl.SetConnection(this);
         bool fromChip = true;
         lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0, fromChip);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, fromChip);
