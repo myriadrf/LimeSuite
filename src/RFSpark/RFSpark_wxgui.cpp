@@ -12,6 +12,7 @@
 #include <wx/combobox.h>
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
+#include "lms7suiteEvents.h"
 
 #include "RFSpark_wxgui.h"
 #include <vector>
@@ -22,8 +23,7 @@ const long RFSpark_wxgui::ID_BTNWRITEGPIO = wxNewId();
 const long RFSpark_wxgui::ID_BTNREADGPIO = wxNewId();
 const long RFSpark_wxgui::ID_CMBSELECTADC = wxNewId();
 
-BEGIN_EVENT_TABLE(RFSpark_wxgui,wxFrame)
-
+BEGIN_EVENT_TABLE(RFSpark_wxgui, wxPanel)
 END_EVENT_TABLE()
 
 wxString power2unitsString(char powerx3)
@@ -70,16 +70,19 @@ wxString power2unitsString(char powerx3)
 RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& title, const wxPoint& pos,const wxSize& size, long style)
 {
     lmsControl = nullptr;
-    Create(parent, id, title, wxDefaultPosition, wxDefaultSize, style, title);
+    Create(parent, id, wxDefaultPosition, wxDefaultSize, style, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
 
     //ADC values
-    wxFlexGridSizer* sizerADCs = new wxFlexGridSizer(0, 3, 0, 10);
+    wxFlexGridSizer* sizerADCs = new wxFlexGridSizer(0, 6, 5, 10);
 
     ADCdataGUI adcElement;
+    sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Channel")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
+    sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Value")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
+    sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Units")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Channel")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Value")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
     sizerADCs->Add(new wxStaticText(this, wxNewId(), _("Units")), 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
@@ -106,30 +109,17 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
         mADCdata.push_back(data);
     }
 
-    btnReadAllADC = new wxButton(this, ID_BTNREADALLADC, "Refresh All");
-    btnReadADC = new wxButton(this, ID_BTNREADADC, "Refresh");
-    cmbADCselect = new wxComboBox(this, wxNewId(), adcList[0], wxDefaultPosition, wxDefaultSize, adcList);
-    cmbADCselect->SetSelection(0);
-    wxFlexGridSizer* sizerADCbuttons = new wxFlexGridSizer(0, 3, 5, 5);
-    sizerADCbuttons->Add(btnReadAllADC, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    sizerADCbuttons->Add(btnReadADC, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    sizerADCbuttons->Add(cmbADCselect, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-
-    wxFlexGridSizer* sizerBoxADC = new wxFlexGridSizer(0, 1, 0, 0);
-    sizerBoxADC->Add(sizerADCs, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    sizerBoxADC->Add(sizerADCbuttons, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 0);
-
     wxStaticBoxSizer* boxADC = new wxStaticBoxSizer(wxVERTICAL, this, _T("ADC values"));
-    boxADC->Add(sizerBoxADC, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
+    boxADC->Add(sizerADCs, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
 
-    wxFlexGridSizer* sizerGPIOs = new wxFlexGridSizer(0, 8, 10, 5);
+    wxFlexGridSizer* sizerGPIOs = new wxFlexGridSizer(0, 2, 2, 4);
 
     wxString gpios7_0[] = { "ADCinQ2_N 15", "ADCinQ2_P", "ADCinI2_N", "ADCinI2_P", "ADCinQ1_N", "ADCinQ1_P", "ADCinI1_N", "ADCinI1_P" };
     for (int j = 0; j < 8; ++j)
     {
         long id = wxNewId();
         wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios7_0[j]));
-        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnWriteGPIO);
+        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
     }
@@ -139,7 +129,7 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     {
         long id = wxNewId();
         wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios15_8[j]));
-        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnWriteGPIO);
+        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
     }
@@ -148,20 +138,13 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     {
         long id = wxNewId();
         wxCheckBox* chkgpio = new wxCheckBox(this, id, wxString::Format("%s", gpios23_16[j]));
-        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnWriteGPIO);
+        this->Connect(id, wxEVT_CHECKBOX, (wxObjectEventFunction)&RFSpark_wxgui::OnWriteGPIO);
         sizerGPIOs->Add(chkgpio, wxALIGN_LEFT | wxALIGN_TOP, 0);
         mGPIOboxes.push_back(chkgpio);
     }
 
-    wxButton* btnReadGPIO = new wxButton(this, ID_BTNREADGPIO, "Read");
-    wxButton* btnWriteGPIO = new wxButton(this, ID_BTNWRITEGPIO, "Write");
-    wxFlexGridSizer* sizerGPIObuttons = new wxFlexGridSizer(0, 2, 0, 5);
-    sizerGPIObuttons->Add(btnReadGPIO, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    sizerGPIObuttons->Add(btnWriteGPIO, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-
     wxFlexGridSizer* sizerBoxGPIO = new wxFlexGridSizer(0, 1, 5, 5);
     sizerBoxGPIO->Add(sizerGPIOs, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
-    sizerBoxGPIO->Add(sizerGPIObuttons, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
 
     wxStaticBoxSizer* boxGPIO = new wxStaticBoxSizer(wxVERTICAL, this, _T("GPIO states"));
     boxGPIO->Add(sizerBoxGPIO, 1, wxALIGN_LEFT | wxALIGN_TOP, 0);
@@ -175,18 +158,14 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     mainGrid->SetSizeHints(this);
     Layout();
 
-    Connect(ID_BTNREADALLADC, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnRefreshAllADC);
-    Connect(ID_BTNREADADC, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnRefreshADC);
-    Connect(ID_BTNWRITEGPIO, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnWriteGPIO);
-    Connect(ID_BTNREADGPIO, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&RFSpark_wxgui::OnbtnReadGPIO);
+    Bind(READ_ALL_VALUES, &RFSpark_wxgui::OnReadAll, this, this->GetId());
+    Bind(WRITE_ALL_VALUES, &RFSpark_wxgui::OnWriteAll, this, this->GetId());
 }
 
 void RFSpark_wxgui::Initialize(lms_device_t* pSerPort)
 {
     lmsControl = pSerPort;
     wxCommandEvent evt;
-    OnbtnReadGPIO(evt);
-    OnbtnRefreshAllADC(evt);
 }
 
 RFSpark_wxgui::~RFSpark_wxgui()
@@ -198,12 +177,12 @@ void RFSpark_wxgui::UpdateADClabels()
 {
 	for (unsigned i = 0; i < mADCdata.size(); ++i)
 	{
-        mADCgui[i].value->SetLabelText(wxString::Format("%f", mADCdata[i].value));
+        mADCgui[i].value->SetLabelText(wxString::Format("%1.3f", mADCdata[i].value));
         mADCgui[i].units->SetLabelText(wxString::Format("%s", mADCdata[i].units));
     }
 }
 
-void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
+void RFSpark_wxgui::OnRefreshAllADC(wxCommandEvent& event)
 {
     for (size_t i = 0; i < mADCdata.size(); ++i)
     {
@@ -221,26 +200,7 @@ void RFSpark_wxgui::OnbtnRefreshAllADC(wxCommandEvent& event)
     UpdateADClabels();
 }
 
-void RFSpark_wxgui::OnbtnRefreshADC(wxCommandEvent& event)
-{
-    unsigned int index = cmbADCselect->GetSelection();
-    if(index >= mADCdata.size())
-        return;
-
-    float_type val;
-    lms_name_t units;
-    if (LMS_ReadCustomBoardParam(lmsControl,index,&val,units)!=0)
-    {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
-        return;
-    }
-    mADCdata[index].channel = index;
-    mADCdata[index].units = units;
-    mADCdata[index].value = val;
-    UpdateADClabels();
-}
-
-void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
+void RFSpark_wxgui::OnWriteGPIO(wxCommandEvent& event)
 {
     std::vector<uint8_t> values(mGPIOboxes.size()/8, 0);
     int gpioIndex = 0;
@@ -255,7 +215,7 @@ void RFSpark_wxgui::OnbtnWriteGPIO(wxCommandEvent& event)
         wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
 }
 
-void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
+void RFSpark_wxgui::OnReadGPIO(wxCommandEvent& event)
 {
     std::vector<uint8_t> values(mGPIOboxes.size()/8);
     if (LMS_GPIORead(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
@@ -271,4 +231,15 @@ void RFSpark_wxgui::OnbtnReadGPIO(wxCommandEvent& event)
             mGPIOboxes[gpioIndex++]->SetValue( values[gpioByte] & (0x1 << j) );
         ++gpioByte;
     }
+}
+
+void RFSpark_wxgui::OnReadAll(wxCommandEvent &event)
+{
+    OnReadGPIO(event);
+    OnRefreshAllADC(event);
+}
+
+void RFSpark_wxgui::OnWriteAll(wxCommandEvent &event)
+{
+    OnWriteGPIO(event);
 }

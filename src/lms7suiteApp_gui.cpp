@@ -60,10 +60,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programing") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuPrograming );
 	
-	wxMenuItem* mnuRFSpark;
-	mnuRFSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("RF-ESpark") ) , wxEmptyString, wxITEM_NORMAL );
-	mnuModules->Append( mnuRFSpark );
-	
 	wxMenuItem* mnuHPM7;
 	mnuHPM7 = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("HPM7") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuHPM7 );
@@ -127,7 +123,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuADF4002->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Connect( mnuSi5351C->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Connect( mnuPrograming->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
-	this->Connect( mnuRFSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
 	this->Connect( mnuHPM7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Connect( mnuFPGAcontrols->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Connect( mnuMyriad7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
@@ -149,7 +144,6 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );

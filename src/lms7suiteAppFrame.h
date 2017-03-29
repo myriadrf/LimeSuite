@@ -17,7 +17,6 @@ class fftviewer_frFFTviewer;
 class ADF4002_wxgui;
 class Si5351C_wxgui;
 class LMS_Programing_wxgui;
-class RFSpark_wxgui;
 class HPM7_wxgui;
 class FPGAcontrols_wxgui;
 class Myriad7_wxgui;
@@ -29,7 +28,7 @@ class pnlQSpark;
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
 {
-	protected:
+    protected:
         // Handlers for AppFrame events.
         void OnClose( wxCloseEvent& event );
         void OnQuit( wxCommandEvent& event );
@@ -46,8 +45,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowSi5351C(wxCommandEvent& event);
         void OnProgramingClose(wxCloseEvent& event);
         void OnShowPrograming(wxCommandEvent& event);
-        void OnRFSparkClose(wxCloseEvent& event);
-        void OnShowRFSpark(wxCommandEvent& event);
         void OnHPM7Close(wxCloseEvent& event);
         void OnShowHPM7(wxCommandEvent& event);
         void OnFPGAcontrolsClose(wxCloseEvent& event);
@@ -65,17 +62,17 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowQSpark(wxCommandEvent& event);
     public:
 		/** Constructor */
-		LMS7SuiteAppFrame( wxWindow* parent );
+        LMS7SuiteAppFrame( wxWindow* parent );
 	//// end generated class members
-		virtual ~LMS7SuiteAppFrame();
+        virtual ~LMS7SuiteAppFrame();
 	protected:
         static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
         static void OnLogEvent(const char* text, unsigned int type);
         static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
         void OnLogMessage(wxCommandEvent &event);
-		static const wxString cWindowTitle;
-		static const int cDeviceInfoCollumn = 1;
-		static const int cDeviceVerRevMaskCollumn = 2;
+        static const wxString cWindowTitle;
+        static const int cDeviceInfoCollumn = 1;
+        static const int cDeviceVerRevMaskCollumn = 2;
         void UpdateConnections(lms_device_t* port);
 
         lms_device_t* lmsControl;
@@ -87,7 +84,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         Si5351C_wxgui* si5351gui;
 
         LMS_Programing_wxgui* programmer;
-        RFSpark_wxgui* rfspark;
         HPM7_wxgui* hpm7;
         FPGAcontrols_wxgui* fpgaControls;
         Myriad7_wxgui* myriad7;

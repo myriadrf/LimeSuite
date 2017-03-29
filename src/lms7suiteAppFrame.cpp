@@ -177,7 +177,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     fftviewer = nullptr;
     adfGUI = nullptr;
     si5351gui = nullptr;
-    rfspark = nullptr;
     hpm7 = nullptr;
     fpgaControls = nullptr;
     myriad7 = nullptr;
@@ -264,8 +263,6 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         fftviewer->Initialize(lmsControl);
     if(adfGUI)
         adfGUI->Initialize(lmsControl);
-    if(rfspark)
-        rfspark->Initialize(lmsControl);
     if(hpm7)
         hpm7->Initialize(lmsControl);
     if(fpgaControls)
@@ -447,23 +444,6 @@ void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
         mMiniLog->HandleMessage(event);
 }
 
-void LMS7SuiteAppFrame::OnRFSparkClose(wxCloseEvent& event)
-{
-    rfspark->Destroy();
-    rfspark = nullptr;
-}
-void LMS7SuiteAppFrame::OnShowRFSpark(wxCommandEvent& event)
-{
-    if (rfspark) //it's already opened
-        rfspark->Show();
-    else
-    {
-        rfspark = new RFSpark_wxgui(this, wxNewId(), _("RF-ESpark"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        rfspark->Initialize(lmsControl);
-        rfspark->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnRFSparkClose), NULL, this);
-        rfspark->Show();
-    }
-}
 
 void LMS7SuiteAppFrame::OnHPM7Close(wxCloseEvent& event)
 {
