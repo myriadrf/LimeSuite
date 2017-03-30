@@ -73,7 +73,6 @@ RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& tit
     Create(parent, id, wxDefaultPosition, wxDefaultSize, style, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
-    SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
 
     //ADC values
