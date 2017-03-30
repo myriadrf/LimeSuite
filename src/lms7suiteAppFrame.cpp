@@ -184,7 +184,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     boardControlsGui = nullptr;
     lmsControl = new LMS7_Device();
-    qSparkGui = nullptr;
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
@@ -593,25 +592,3 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
     int checked = event.GetInt();
     LMS_EnableCalibCache(lmsControl,checked);
 }
-
-
-void LMS7SuiteAppFrame::OnShowQSpark(wxCommandEvent& event)
-{
-    if(qSparkGui) //it's already opened
-        qSparkGui->Show();
-    else
-    {
-        qSparkGui = new pnlQSpark(this, wxNewId(), _("QSpark controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-        qSparkGui->Initialize(lmsControl);
-        qSparkGui->UpdatePanel();
-        qSparkGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnQSparkClose), NULL, this);
-        qSparkGui->Show();
-    }
-}
-
-void LMS7SuiteAppFrame::OnQSparkClose(wxCloseEvent& event)
-{
-    qSparkGui->Destroy();
-    qSparkGui = nullptr;
-}
-

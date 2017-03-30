@@ -16,7 +16,7 @@
 using namespace lime;
 using namespace std;
 
-BEGIN_EVENT_TABLE(pnlQSpark,wxFrame)
+BEGIN_EVENT_TABLE(pnlQSpark,wxPanel)
 END_EVENT_TABLE()
 
 pnlQSpark::Register::Register()
@@ -36,7 +36,7 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
 
     wxFlexGridSizer* FlexGridSizer1;
 
-    Create(parent, id, title, wxDefaultPosition, wxDefaultSize, style, _T("id"));
+    Create(parent, id, wxDefaultPosition, wxDefaultSize, style, _T("id"));
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
@@ -197,11 +197,6 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     loopbackGroup->Add(loopbackSizer, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
     FlexGridSizer1->Add(loopbackGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
 
-
-    btnUpdateAll = new wxButton(this, wxNewId(), _T("Refresh All"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
-    Connect(btnUpdateAll->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&pnlQSpark::OnbtnUpdateAll);
-    FlexGridSizer1->Add(btnUpdateAll, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-
     mainSizer->Add(FlexGridSizer1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
     mainSizer->Fit(this);
@@ -235,12 +230,6 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
 void pnlQSpark::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
-}
-
-void pnlQSpark::UpdatePanel()
-{
-    wxCommandEvent evt;
-    OnbtnUpdateAll(evt);
 }
 
 void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
@@ -357,4 +346,15 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
             return;
         }
     }
+}
+
+void pnlQSpark::OnReadAll(wxCommandEvent &event)
+{
+     OnbtnUpdateAll(event);
+}
+
+void pnlQSpark::OnWriteAll(wxCommandEvent &event)
+{
+    OnNcoFrequencyChanged(event);
+    OnConfigurePLL(event);
 }

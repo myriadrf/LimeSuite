@@ -14,6 +14,7 @@
 #include "pnlBuffers.h"
 #include "lms7002m_novena_wxgui.h"
 #include "RFSpark_wxgui.h"
+ #include "pnlQSpark.h"
 #include <IConnection.h>
 #include <LMSBoards.h>
 #include <ADCUnits.h>
@@ -267,7 +268,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
     if (!LMS_IsOpen(lmsControl,1))
     {
-        wxMessageBox(_("Board not connected"), _("Warning"));
+        wxMessageBox(_("Device not connected"), _("Warning"));
         return;
     }
 
@@ -479,6 +480,13 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     else if (boardID == GetDeviceName(LMS_DEV_RFESPARK))
     {
         RFSpark_wxgui* pnl = new RFSpark_wxgui(this, wxNewId());
+        pnl->Initialize(lmsControl);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
+    {
+        pnlQSpark* pnl = new pnlQSpark(this, wxNewId());
         pnl->Initialize(lmsControl);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);

@@ -28,7 +28,7 @@ static const size_t LMS_PATH_TX2 = 2;
 
 const double LMS7_Device::LMS_CGEN_MAX = 640000000;
 
-LMS7_Device::LMS7_Device() : LMS7002M(){
+LMS7_Device::LMS7_Device() : LMS7002M(), streamPort(nullptr){
 
     tx_channels = new lms_channel_info[2];
     rx_channels = new lms_channel_info[2];

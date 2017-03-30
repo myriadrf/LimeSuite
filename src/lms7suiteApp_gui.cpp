@@ -84,10 +84,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuBoardControls = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Board controls") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuBoardControls );
 	
-	wxMenuItem* mnuQSpark;
-	mnuQSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("QSpark") ) , wxEmptyString, wxITEM_NORMAL );
-	mnuModules->Append( mnuQSpark );
-	
 	mbar->Append( mnuModules, wxT("Modules") ); 
 	
 	helpMenu = new wxMenu();
@@ -129,7 +125,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Connect( mnuSPI->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
 	this->Connect( mnuBoardControls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
-	this->Connect( mnuQSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
 	this->Connect( menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
 }
 
@@ -150,7 +145,6 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
 	this->Disconnect( idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
 	
 }

@@ -23,7 +23,6 @@ class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
-class pnlQSpark;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -58,8 +57,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
         void OnChangeCacheSettings(wxCommandEvent& event);
-        void OnQSparkClose(wxCloseEvent& event);
-        void OnShowQSpark(wxCommandEvent& event);
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
@@ -90,7 +87,6 @@ class LMS7SuiteAppFrame : public AppFrame_view
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
-        pnlQSpark* qSparkGui;
 };
 
 

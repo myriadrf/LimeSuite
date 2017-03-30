@@ -16,15 +16,13 @@ class wxChoice;
 
 
 
-class pnlQSpark : public wxFrame
+class pnlQSpark : public wxPanel
 {
 public:
     pnlQSpark(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
     void Initialize(lms_device_t *pControl);
     virtual ~pnlQSpark();
-    virtual void UpdatePanel();
 
-    wxButton* btnUpdateAll;
     wxComboBox* cmbVCXOcontrolVoltage;
 
     wxPanel* mPanelStreamPLL;
@@ -62,6 +60,8 @@ public:
     void OnNcoFrequencyChanged(wxCommandEvent& event);
 protected:
     void OnConfigurePLL(wxCommandEvent &event);
+    void OnReadAll(wxCommandEvent &event);
+    void OnWriteAll(wxCommandEvent &event);
 
     struct Register
     {
