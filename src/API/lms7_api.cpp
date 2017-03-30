@@ -751,6 +751,41 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
      return conn->GPIOWrite(buffer,len);
 }
 
+API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t *dev,  uint8_t* buffer, size_t len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev;
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+    return conn->GPIODirRead(buffer,len);
+}
+
+
+API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buffer, size_t len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+     LMS7_Device* lms = (LMS7_Device*)dev;
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+       lime::ReportError(EINVAL, "Device not connected");
+       return -1;
+    }
+     return conn->GPIODirWrite(buffer,len);
+}
+
 API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
 {
     if (dev == nullptr)

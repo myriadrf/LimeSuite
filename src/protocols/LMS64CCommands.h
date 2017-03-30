@@ -45,6 +45,8 @@ enum eCMD_LMS
     CMD_PE636040_WR = 0x41,
     CMD_PE636040_RD = 0x42,
 
+    CMD_GPIO_DIR_WR = 0x4F,
+    CMD_GPIO_DIR_RD = 0x50,
     CMD_GPIO_WR = 0x51,
     CMD_GPIO_RD = 0x52,
 

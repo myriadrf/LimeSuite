@@ -856,6 +856,29 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
     return convertStatus(status, pkt);
 }
 
+int LMS64CProtocol::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_DIR_WR;
+    for (size_t i=0; i<bufLength; ++i)
+        pkt.outBuffer.push_back(buffer[i]);
+    int status = TransferPacket(pkt);
+    return convertStatus(status, pkt);
+}
+
+int LMS64CProtocol::GPIODirRead(uint8_t *buffer, const size_t bufLength)
+{
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_GPIO_DIR_RD;
+    int status = TransferPacket(pkt);
+    if(status != 0)
+        return convertStatus(status, pkt);
+
+    for (size_t i=0; i<bufLength; ++i)
+        buffer[i] = pkt.inBuffer[i];
+    return convertStatus(status, pkt);
+}
+
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
     LMSinfo lmsInfo = this->GetInfo();

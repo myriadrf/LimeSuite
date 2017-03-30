@@ -2,7 +2,7 @@
 #define PNL_LIMESDR_H
 
 #include "lime/LimeSuite.h"
-#include <map>
+#include <vector>
 #include <wx/panel.h>
 class wxStaticText;
 class wxFlexGridSizer;
@@ -22,6 +22,8 @@ public:
     virtual ~pnlLimeSDR();
     virtual void UpdatePanel();
     void OnGPIOChange(wxCommandEvent &event);
+    void OnUsrGPIODirChange(wxCommandEvent &event);
+    void OnUsrGPIOChange(wxCommandEvent &event);
 
     void OnReadAll(wxCommandEvent &event);
     void OnWriteAll(wxCommandEvent &event);
@@ -33,9 +35,10 @@ protected:
     wxCheckBox* chkTX1_2_LB_AT;
     wxCheckBox* chkTX2_2_LB_SH;
     wxCheckBox* chkTX2_2_LB_AT;
-    wxStaticText* lblWarning;
+    wxStaticText* gpioIn[8];
+    wxCheckBox* gpioDir[8];
+    wxCheckBox* gpioOut[8];
     wxFlexGridSizer* controlsSizer;
-    wxStaticBoxSizer *groupSizer;
     wxFlexGridSizer* mainSizer;
     lms_device_t *lmsControl;
     DECLARE_EVENT_TABLE()

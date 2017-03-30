@@ -48,6 +48,8 @@ const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
     CMD_ANALOG_VAL_WR, CMD_ANALOG_VAL_RD,
     CMD_ADF4002_WR,
     CMD_LMS7002_RST,
+    CMD_GPIO_DIR_WR, CMD_GPIO_DIR_RD,
+    CMD_GPIO_WR, CMD_GPIO_RD,
 };
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.

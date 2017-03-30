@@ -532,6 +532,20 @@ public:
     */
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
 
+    /**	@brief Write GPIO direction control values to device.
+    @param buffer with GPIO direction configuration (0 input, 1 output)
+    @param bufLength buffer length
+    @return the operation success state
+    */
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
+
+    /**	@brief Read GPIO direction configuration from device
+    @param buffer to put GPIO direction configuration (0 input, 1 output)
+    @param bufLength buffer length to read
+    @return the operation success state
+    */
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength);
+
     /***********************************************************************
      * Register API
      **********************************************************************/

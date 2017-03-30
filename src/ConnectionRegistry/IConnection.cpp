@@ -346,6 +346,18 @@ int IConnection::GPIORead(uint8_t *buffer, const size_t bufLength)
     return -1;
 }
 
+int IConnection::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
+{
+    ReportError(ENOTSUP, "GPIOWrite not supported");
+    return -1;
+}
+
+int IConnection::GPIODirRead(uint8_t *buffer, const size_t bufLength)
+{
+    ReportError(ENOTSUP, "GPIORead not supported");
+    return -1;
+}
+
 /***********************************************************************
  * Register API
  **********************************************************************/

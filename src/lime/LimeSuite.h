@@ -1114,9 +1114,9 @@ API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip);
 
 /**
  *
- * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   buffer      read values
- * @param   len         number of bytes to read
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param[in]   buffer  read values (8 GPIO values per byte, LSB first)
+ * @param       len     number of bytes to read
  *
  * @return 0 on success, (-1) on failure
  */
@@ -1124,13 +1124,33 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev, uint8_t* buffer, size_t
 
 /**
  *
- * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   buffer      values to write
- * @param   len         number bytes to write
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param[out]  buffer  values to write (8 GPIO values per byte, LSB first)
+ * @param       len     number of bytes to write
  *
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
+
+/**
+ *
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param[out]  buffer  GPIO direction configuration(8 GPIO per byte, LSB first; 0 input, 1 output)
+ * @param       len     number of bytes to read
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t *dev, uint8_t* buffer, size_t len);
+
+/**
+ *
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param[in]   buffer  GPIO direction configuration(8 GPIO per byte, LSB first; 0 input, 1 output)
+ * @param       len     number of bytes to write
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
 
 /**
  * Low-level data transfer using LMS64C protocol

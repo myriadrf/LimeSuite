@@ -178,8 +178,10 @@ public:
     virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
     virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
 
-    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
-    virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
 
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
 protected:

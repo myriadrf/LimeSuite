@@ -57,11 +57,51 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Connect(chkTX2_2_LB_AT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), NULL, this);
     controlsSizer->Add(chkTX2_2_LB_AT, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("External loopback controls") ), wxVERTICAL );
-    lblWarning = new wxStaticText(this, wxID_ANY, _(""));
-    lblWarning->Hide();
-    groupSizer->Add(lblWarning, 0, wxALIGN_LEFT | wxALIGN_TOP, 5);
+    auto groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("External loopback controls") ), wxVERTICAL );
     groupSizer->Add(controlsSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+
+    auto gpioSizer = new wxFlexGridSizer(0, 9, 0, 0);
+    gpioSizer->Add(new wxStaticText(this, wxID_ANY, _("GPIO")), 1, wxALL, 5);
+
+    for (int i = 8; i--;)
+        gpioSizer->Add(new wxStaticText(this, wxID_ANY, wxString::Format("%d", i)), 1, wxALL, 5);
+
+    auto text = new wxStaticText(this, wxID_ANY, _("DIR"));
+    text->SetToolTip(_("Check to set GPIO to output"));
+    gpioSizer->Add(text, 1, wxALL, 5);
+
+    for (int i = 8; i--;)
+    {
+        gpioDir[i] = new wxCheckBox(this, wxNewId(), _(""));
+        gpioDir[i]->SetToolTip(_("Check to set GPIO to output"));
+        Connect(gpioDir[i]->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnUsrGPIODirChange), NULL, this);
+        gpioSizer->Add(gpioDir[i]);
+    }
+    text = new wxStaticText(this, wxID_ANY, _("OUT"));
+    text->SetToolTip(_("GPIO output value (checked - High)"));
+    gpioSizer->Add(text, 1, wxALL, 5);
+    for (int i = 8; i--;)
+    {
+        gpioOut[i] = new wxCheckBox(this, wxNewId(), _(""));
+        gpioOut[i]->SetToolTip(_("GPIO output value (checked - High)"));
+        gpioOut[i]->Disable();
+        Connect(gpioOut[i]->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlLimeSDR::OnUsrGPIOChange), NULL, this);
+        gpioSizer->Add(gpioOut[i]);
+    }
+    text = new wxStaticText(this, wxID_ANY, _("IN"));
+    text->SetToolTip(_("GPIO input value"));
+    gpioSizer->Add(text, 1, wxALL, 5);
+    for (int i = 8; i--;)
+    {
+        gpioIn[i] = new wxStaticText(this, wxNewId(), _("0"));
+        gpioIn[i]->SetToolTip(_("GPIO input value"));
+        gpioSizer->Add(gpioIn[i],1, wxALL, 5);
+    }
+
+
+    groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GPIO Control") ), wxVERTICAL );
+    groupSizer->Add(gpioSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
     mainSizer->Fit(this);
@@ -80,8 +120,6 @@ void pnlLimeSDR::Initialize(lms_device_t* pControl)
         auto info = LMS_GetDeviceInfo(lmsControl);
         if(info != nullptr)
         {
-            lblWarning->SetLabel(_(""));
-            lblWarning->Hide();
             auto controls = controlsSizer->GetChildren();
             for(auto i : controls)
                 i->GetWindow()->Enable();
@@ -101,6 +139,11 @@ pnlLimeSDR::~pnlLimeSDR()
     chkTX1_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX1_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
     chkTX2_2_LB_SH->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_SH->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
     chkTX2_2_LB_AT->Disconnect(wxEVT_CHECKBOX, chkTX2_2_LB_AT->GetId(), wxCommandEventHandler(pnlLimeSDR::OnGPIOChange), 0, this);;
+    for (int i = 0; i < 8; i++)
+    {
+        gpioOut[i]->Disconnect(wxEVT_CHECKBOX, gpioOut[i]->GetId(), wxCommandEventHandler(pnlLimeSDR::OnUsrGPIOChange), 0, this);
+        gpioDir[i]->Disconnect(wxEVT_CHECKBOX, gpioDir[i]->GetId(), wxCommandEventHandler(pnlLimeSDR::OnUsrGPIODirChange), 0, this);
+    }
 }
 
 void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
@@ -119,15 +162,72 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
 }
 
+void pnlLimeSDR::OnUsrGPIODirChange(wxCommandEvent& event)
+{
+    uint8_t value = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        value >>=1;
+        bool check = gpioDir[i]->GetValue();
+        if (check)
+            value |= 0x80;
+        gpioOut[i]->Enable(check);
+    }
+    if(lmsControl && LMS_GPIODirWrite(lmsControl, &value, 1))
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+}
+
+void pnlLimeSDR::OnUsrGPIOChange(wxCommandEvent& event)
+{
+    uint8_t value = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        value >>=1;
+        if (gpioOut[i]->GetValue())
+            value |= 0x80;
+    }
+
+    if(lmsControl && LMS_GPIOWrite(lmsControl, &value, 1))
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+}
+
 void pnlLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
+    uint8_t gpio = 0;
+    uint8_t dir = 0;
     if(lmsControl && LMS_ReadFPGAReg(lmsControl, addr, &value))
     {
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
+
+    if(lmsControl && LMS_GPIODirRead(lmsControl, &dir, 1))
+    {
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        return;
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        gpioDir[i]->SetValue(dir & 1);
+        gpioOut[i]->Enable(dir & 1);
+        dir >>= 1;
+    }
+
+    if(lmsControl && LMS_GPIORead(lmsControl, &gpio, 1))
+    {
+        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        return;
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        gpioIn[i]->SetLabel(gpio & 1 ? _("1") : _("0"));
+        gpio >>= 1;
+    }
+
     chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
     chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
     chkTX1_2_LB_SH->SetValue((value >> 2) & 0x1);
@@ -145,4 +245,6 @@ void pnlLimeSDR::OnReadAll(wxCommandEvent &event)
 void pnlLimeSDR::OnWriteAll(wxCommandEvent &event)
 {
     OnGPIOChange(event);
+    OnUsrGPIODirChange(event);
+    OnUsrGPIOChange(event);
 }
