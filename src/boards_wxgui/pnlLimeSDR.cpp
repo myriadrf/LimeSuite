@@ -8,6 +8,7 @@
 #include <wx/msgdlg.h>
 #include <wx/statbox.h>
 #include "lms7suiteEvents.h"
+#include "Logger.h"
 
 #include <ciso646>
 
@@ -67,7 +68,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     for (int i = 8; i--;)
         gpioSizer->Add(new wxStaticText(this, wxID_ANY, wxString::Format("%d", i)), 1, wxALL, 5);
 
-    auto text = new wxStaticText(this, wxID_ANY, _("DIR"));
+    wxStaticText* text = new wxStaticText(this, wxID_ANY, _("DIR"));
     text->SetToolTip(_("Check to set GPIO to output"));
     gpioSizer->Add(text, 1, wxALL, 5);
 
@@ -99,7 +100,6 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
         gpioSizer->Add(gpioIn[i],1, wxALL, 5);
     }
 
-
     groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GPIO Control") ), wxVERTICAL );
     groupSizer->Add(gpioSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -109,7 +109,7 @@ pnlLimeSDR::pnlLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,const 
     Layout();
 
     Bind(READ_ALL_VALUES, &pnlLimeSDR::OnReadAll, this, this->GetId());
-    Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnGPIOChange, this, this->GetId());
+    Bind(WRITE_ALL_VALUES, &pnlLimeSDR::OnWriteAll, this, this->GetId());
 }
 
 void pnlLimeSDR::Initialize(lms_device_t* pControl)
@@ -159,7 +159,7 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
     if(lmsControl && LMS_WriteFPGAReg(lmsControl, addr, value))
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        lime::error("Board loopback: %s", LMS_GetLastErrorMessage());
 }
 
 void pnlLimeSDR::OnUsrGPIODirChange(wxCommandEvent& event)
@@ -174,7 +174,7 @@ void pnlLimeSDR::OnUsrGPIODirChange(wxCommandEvent& event)
         gpioOut[i]->Enable(check);
     }
     if(lmsControl && LMS_GPIODirWrite(lmsControl, &value, 1))
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
 }
 
 void pnlLimeSDR::OnUsrGPIOChange(wxCommandEvent& event)
@@ -188,7 +188,7 @@ void pnlLimeSDR::OnUsrGPIOChange(wxCommandEvent& event)
     }
 
     if(lmsControl && LMS_GPIOWrite(lmsControl, &value, 1))
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
 }
 
 void pnlLimeSDR::UpdatePanel()
@@ -197,44 +197,44 @@ void pnlLimeSDR::UpdatePanel()
     uint16_t value = 0;
     uint8_t gpio = 0;
     uint8_t dir = 0;
-    if(lmsControl && LMS_ReadFPGAReg(lmsControl, addr, &value))
+    if(lmsControl && LMS_ReadFPGAReg(lmsControl, addr, &value)==0)
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
+        chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
+        chkTX1_2_LB_SH->SetValue((value >> 2) & 0x1);
+
+        chkRFLB_B_EN->SetValue((value >> 4) & 0x1);
+        chkTX2_2_LB_AT->SetValue((value >> 5) & 0x1);
+        chkTX2_2_LB_SH->SetValue((value >> 6) & 0x1);
+    }
+    else
+        lime::error("Board loopback: %s", LMS_GetLastErrorMessage());
+
+    if(lmsControl && LMS_GPIODirRead(lmsControl, &dir, 1)==0)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            gpioDir[i]->SetValue(dir & 1);
+            gpioOut[i]->Enable(dir & 1);
+            dir >>= 1;
+        }
+    }
+    else
+    {
+        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
         return;
     }
 
-    if(lmsControl && LMS_GPIODirRead(lmsControl, &dir, 1))
+    if(lmsControl && LMS_GPIORead(lmsControl, &gpio, 1) == 0)
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
-        return;
+        for (int i = 0; i < 8; i++)
+        {
+            gpioIn[i]->SetLabel(gpio & 1 ? _("1") : _("0"));
+            gpio >>= 1;
+        }
     }
-
-    for (int i = 0; i < 8; i++)
-    {
-        gpioDir[i]->SetValue(dir & 1);
-        gpioOut[i]->Enable(dir & 1);
-        dir >>= 1;
-    }
-
-    if(lmsControl && LMS_GPIORead(lmsControl, &gpio, 1))
-    {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
-        return;
-    }
-
-    for (int i = 0; i < 8; i++)
-    {
-        gpioIn[i]->SetLabel(gpio & 1 ? _("1") : _("0"));
-        gpio >>= 1;
-    }
-
-    chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
-    chkTX1_2_LB_AT->SetValue((value >> 1) & 0x1);
-    chkTX1_2_LB_SH->SetValue((value >> 2) & 0x1);
-
-    chkRFLB_B_EN->SetValue((value >> 4) & 0x1);
-    chkTX2_2_LB_AT->SetValue((value >> 5) & 0x1);
-    chkTX2_2_LB_SH->SetValue((value >> 6) & 0x1);
+    else
+        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
 }
 
 void pnlLimeSDR::OnReadAll(wxCommandEvent &event)
