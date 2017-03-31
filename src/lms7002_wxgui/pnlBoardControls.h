@@ -99,6 +99,8 @@ class pnlBoardControls : public wxFrame
         void OnSetDACvaluesENTER(wxCommandEvent &event);
 	protected:
         wxPanel* pnlCustomControls;
+        wxPanel* pnlReadControls;
+        wxPanel* pnlWriteControls;
         wxSpinCtrl *spinCustomChannelRd;
         wxStaticText *txtCustomValueRd;
         wxStaticText *txtCustomUnitsRd;
