@@ -1,6 +1,7 @@
 Release 17.02.2 (pending)
 ==========================
 
+- Added option defaults for stream args in SoapyLMS7
 - Fixed LMS7002M::GetPathRFE() currently selected path
 
 Release 17.02.1 (2017-03-11)
