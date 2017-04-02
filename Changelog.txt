@@ -11,6 +11,7 @@ API additions:
 - LMS_SetClockFreqWithSpurCancelation
 
 General changes:
+- LimeSDR v1.4 updated to r2.8 gateware
 - GPIO support in SoapyLM7 module
 - Library level logging support
 - Speed up x640,x641 spi
