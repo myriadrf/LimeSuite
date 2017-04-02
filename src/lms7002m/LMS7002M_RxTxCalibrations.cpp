@@ -1673,10 +1673,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     const char* lnaName;
     switch(lna)
     {
-        case 0: lnaName = "none";
-        case 1: lnaName = "LNAH";
-        case 2: lnaName = "LNAW";
-        case 3: lnaName = "LNAL";
+        case 0: lnaName = "none"; break;
+        case 1: lnaName = "LNAH"; break;
+        case 2: lnaName = "LNAL"; break;
+        case 3: lnaName = "LNAW"; break;
     }
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
                 ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
@@ -2761,7 +2761,17 @@ int LMS7002M::ApplyDigitalCorrections(const bool isTx)
     const int idx = this->GetActiveChannelIndex();
     const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
     const double freq = this->GetFrequencySX(isTx);
-    int band = 0; //TODO
+    int band = 0;
+    if (isTx)
+    {
+        uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
+        band = sel_band1_trf ? 0 : 1;
+    }
+    else
+    {
+        uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
+        band = int(sel_path_rfe);
+    }
 
     int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
     int rc = mValueCache->GetDC_IQ_Interp(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset);

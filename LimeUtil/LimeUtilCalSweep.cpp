@@ -44,10 +44,15 @@ int deviceCalSweep(
 
     //open the device
     lms_device_t *device(nullptr);
-    int r = LMS_Open(&device, argStr.empty()?nullptr:argStr.c_str(), nullptr);
-    if (r != 0)
+    if (LMS_Open(&device, argStr.empty()?nullptr:argStr.c_str(), nullptr) != 0)
     {
         std::cerr << "Failed to open: " << LMS_GetLastErrorMessage() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (LMS_EnableCalibCache(device, true) != 0)
+    {
+        std::cerr << "Failed to enable cal cache: " << LMS_GetLastErrorMessage() << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -68,6 +73,12 @@ int deviceCalSweep(
         }
     }
 
+    //enable all channels in the matrix and set to the first antenna
+    for (const auto chanConfig : channelMatrix)
+    {
+        LMS_EnableChannel(device, chanConfig.first, chanConfig.second, true);
+    }
+
     //summary
     std::cout << "Cal sweep over [" << start/1e6 << ", " << stop/1e6 << ", " << step/1e6 << "] MHz, channels=" << chansStr << ", dir=" << dirStr << std::endl;
 
@@ -78,17 +89,28 @@ int deviceCalSweep(
         std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
         std::cout << std::endl;
 
-        for (const auto chanConfig : channelMatrix)
+        for (int path = 1; path < 3; path++)
         {
-            if (LMS_SetLOFrequency(device, chanConfig.first, chanConfig.second, freq) != 0)
+            //apply identical paths across channels
+            //(BAND1/BAND2 for Tx) (LNAL, LNAW for Rx)
+            for (int i = 0; i < LMS_GetNumChannels(device, LMS_CH_RX); i++)
+                LMS_SetAntenna(device, LMS_CH_RX, i, path+1);
+            for (int i = 0; i < LMS_GetNumChannels(device, LMS_CH_TX); i++)
+                LMS_SetAntenna(device, LMS_CH_TX, i, path);
+
+            //iterate through the matrix of channel options
+            for (const auto chanConfig : channelMatrix)
             {
-                std::cerr << "Error tuning (skipping): " << LMS_GetLastErrorMessage() << std::endl;
-                continue;
-            }
-            if (LMS_Calibrate(device, chanConfig.first, chanConfig.second, bw, 0) != 0)
-            {
-                std::cerr << "Error calibrating (skipping): " << LMS_GetLastErrorMessage() << std::endl;
-                continue;
+                if (LMS_SetLOFrequency(device, chanConfig.first, chanConfig.second, freq) != 0)
+                {
+                    std::cerr << "Error tuning (skipping): " << LMS_GetLastErrorMessage() << std::endl;
+                    continue;
+                }
+                if (LMS_Calibrate(device, chanConfig.first, chanConfig.second, bw, 0) != 0)
+                {
+                    std::cerr << "Error calibrating (skipping): " << LMS_GetLastErrorMessage() << std::endl;
+                    continue;
+                }
             }
         }
         std::cout << std::endl;
