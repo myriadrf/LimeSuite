@@ -836,7 +836,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     if(useCache)
     {
         int dcI, dcQ, gainI, gainQ, phOffset;
-        bool foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq*1e6, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
+        bool foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         if(foundInCache)
         {
             Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dcI);
@@ -914,7 +914,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         status = mcuControl->WaitForMCU(1000);
         if(status != 0)
         {
-            printf("MCU working too long %i\n", status);
+            ReportError("MCU working too long %i", status);
         }
         //need to read back calibration results
         dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
@@ -922,6 +922,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
         gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
         phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
+
+        if(useCache)
+            mValueCache->InsertDC_IQ(boardId, txFreq, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
+
         return status;
     }
 
@@ -984,7 +988,7 @@ TxCalibrationEnd:
     }
 
     if(useCache)
-        mValueCache->InsertDC_IQ(boardId, txFreq*1e6, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
+        mValueCache->InsertDC_IQ(boardId, txFreq, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
     //Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
@@ -1747,7 +1751,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         status = mcuControl->WaitForMCU(1000);
         if(status != 0)
         {
-            printf("MCU working too long %i\n", status);
+            ReportError("MCU working too long %i", status);
         }
         //need to read back calibration results
         //dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
@@ -1755,6 +1759,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
         gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
         phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
+
+        if(useCache)
+            mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, /*dcoffi*/0, /*dcoffq*/0, gcorri, gcorrq, phaseOffset);
+
         return status;
     }
 
@@ -1848,7 +1856,7 @@ RxCalibrationEndStage:
         return status;
     }
     if(useCache)
-        mValueCache->InsertDC_IQ(boardId, rxFreq*1e6, channel, false, lna, dcoffi, dcoffq, gcorri, gcorrq, phaseOffset);
+        mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, dcoffi, dcoffq, gcorri, gcorrq, phaseOffset);
 
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
