@@ -2,6 +2,8 @@ Release 17.03.0 (pending)
 ==========================
 
 API additions:
+- LMS_GPIODirRead
+- LMS_GPIODirWrite
 - LMS_CalibrateInternalADC
 - LMS_CalibrateAnalogRSSIDC
 - LMS_CalibrateRP_BIAS
@@ -9,6 +11,7 @@ API additions:
 - LMS_SetClockFreqWithSpurCancelation
 
 General changes:
+- GPIO support in SoapyLM7 module
 - Library level logging support
 - Speed up x640,x641 spi
 - FFTviewer: add checkbox for RX->TX loopback control

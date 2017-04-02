@@ -246,6 +246,20 @@ public:
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
 
     /*******************************************************************
+     * GPIO API
+     ******************************************************************/
+
+    std::vector<std::string> listGPIOBanks(void) const;
+
+    void writeGPIO(const std::string &bank, const unsigned value);
+
+    unsigned readGPIO(const std::string &bank) const;
+
+    void writeGPIODir(const std::string &bank, const unsigned dir);
+
+    unsigned readGPIODir(const std::string &bank) const;
+
+    /*******************************************************************
      * I2C API
      ******************************************************************/
 

@@ -1494,6 +1494,46 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
 
     else throw std::runtime_error("unknown setting key: "+key);
 }
+/*******************************************************************
+ * GPIO API
+ ******************************************************************/
+
+std::vector<std::string> SoapyLMS7::listGPIOBanks(void) const
+{
+    std::vector<std::string> banks;
+    banks.push_back("MAIN"); //just one associated with the connection
+    return banks;
+}
+
+void SoapyLMS7::writeGPIO(const std::string &, const unsigned value)
+{
+    uint8_t buffer = uint8_t(value);
+    int r = _conn->GPIOWrite(&buffer, 1);
+    if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIO() " + std::string(lime::GetLastErrorMessage()));
+}
+
+unsigned SoapyLMS7::readGPIO(const std::string &) const
+{
+    uint8_t buffer(0);
+    int r = _conn->GPIORead(&buffer, 1);
+    if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIO() " + std::string(lime::GetLastErrorMessage()));
+    return unsigned(buffer);
+}
+
+void SoapyLMS7::writeGPIODir(const std::string &, const unsigned dir)
+{
+    uint8_t buffer = uint8_t(dir);
+    int r = _conn->GPIODirWrite(&buffer, 1);
+    if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIODir() " + std::string(lime::GetLastErrorMessage()));
+}
+
+unsigned SoapyLMS7::readGPIODir(const std::string &) const
+{
+    uint8_t buffer(0);
+    int r = _conn->GPIODirRead(&buffer, 1);
+    if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIODir() " + std::string(lime::GetLastErrorMessage()));
+    return unsigned(buffer);
+}
 
 /*******************************************************************
  * I2C API
