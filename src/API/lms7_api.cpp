@@ -38,7 +38,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
 
 
 
-API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, void* args)
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t info, void* args)
 {
     if (device == nullptr)
     {

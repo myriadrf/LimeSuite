@@ -19,6 +19,14 @@
 using namespace lime;
 
 int deviceTestTiming(const std::string &argStr);
+int deviceCalSweep(
+    const std::string &argStr,
+    const double start,
+    const double stop,
+    const double step,
+    const double bw,
+    const std::string &dir,
+    const std::string &chans);
 
 /***********************************************************************
  * print help
@@ -38,6 +46,15 @@ static int printHelp(void)
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << "    --timing          \t\t\t Time interfaces and operations" << std::endl;
+    std::cout << std::endl;
+    std::cout << "  Calibrations sweep:" << std::endl;
+    std::cout << "    --cal[=\"module=foo,serial=bar\"]  \t Calibrate device, optional device args..." << std::endl;
+    std::cout << "    --start[=freqStart]                \t Frequency start for the sweep(Hz)" << std::endl;
+    std::cout << "    --stop[=freqStop]                  \t Frequency stop for the sweep(Hz)" << std::endl;
+    std::cout << "    --step[=freqStep, default=1MHz]    \t Frequency step for the sweep(Hz)" << std::endl;
+    std::cout << "    --bw[=bandwidth, default=30MHz]    \t Desired calibration bandwidth(Hz)" << std::endl;
+    std::cout << "    --dir[=direction, default=BOTH]    \t Calibration direction, RX, TX, BOTH" << std::endl;
+    std::cout << "    --chans[=channels, default=ALL]    \t Calibration channels, 0, 1, ALL" << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }
@@ -297,11 +314,19 @@ int main(int argc, char *argv[])
         {"fpga", required_argument, 0, 'g'},
         {"fw",   required_argument, 0, 'w'},
         {"timing",     no_argument, 0, 't'},
+        {"cal",     optional_argument, 0, 'l'},
+        {"start",   required_argument, 0, 's'},
+        {"stop",    required_argument, 0, 'p'},
+        {"step",    required_argument, 0, 'e'},
+        {"bw",      required_argument, 0, 'b'},
+        {"dir",     required_argument, 0, 'd'},
+        {"chans",   required_argument, 0, 'c'},
         {0, 0, 0,  0}
     };
 
-    std::string argStr;
-
+    std::string argStr, dir("BOTH"), chans("ALL");
+    double start(0.0), stop(0.0), step(1e6), bw(30e6);
+    bool testTiming(false), calSweep(false);
     int long_index = 0;
     int option = 0;
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
@@ -318,9 +343,22 @@ int main(int argc, char *argv[])
         case 'u': return programUpdate(argStr);
         case 'g': return programGateware(argStr);
         case 'w': return programFirmware(argStr);
-        case 't': return deviceTestTiming(argStr);
+        case 't': testTiming = true; break;
+        case 'l':
+            calSweep = true;
+            if (optarg != NULL) argStr = optarg;
+            break;
+        case 's': if (optarg != NULL) start = std::stod(optarg); break;
+        case 'p': if (optarg != NULL) stop = std::stod(optarg); break;
+        case 'e': if (optarg != NULL) step = std::stod(optarg); break;
+        case 'b': if (optarg != NULL) bw = std::stod(optarg); break;
+        case 'd': if (optarg != NULL) dir = optarg; break;
+        case 'c': if (optarg != NULL) chans = optarg; break;
         }
     }
+
+    if (testTiming) return deviceTestTiming(argStr);
+    if (calSweep) return deviceCalSweep(argStr, start, stop, step, bw, dir, chans);
 
     //unknown or unspecified options, do help...
     return printHelp();

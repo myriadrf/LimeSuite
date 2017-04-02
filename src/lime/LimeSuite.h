@@ -102,7 +102,7 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, lms_info_str_t info,
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t info,
                                    void* args);
 
 /**
