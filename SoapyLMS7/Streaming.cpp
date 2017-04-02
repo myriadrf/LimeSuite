@@ -56,6 +56,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
     //buffer length
     {
         SoapySDR::ArgInfo info;
+        info.value = "0";
         info.key = "bufferLength";
         info.name = "Buffer Length";
         info.description = "The buffer transfer size over the link.";
@@ -67,6 +68,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
     //link format
     {
         SoapySDR::ArgInfo info;
+        info.value = SOAPY_SDR_CS16;
         info.key = "linkFormat";
         info.name = "Link Format";
         info.description = "The format of the samples over the link.";
