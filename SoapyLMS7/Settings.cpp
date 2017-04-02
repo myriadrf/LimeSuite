@@ -49,9 +49,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
     SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", _conn->GetReferenceClockRate()/1e6);
 
-    //disable cal hooks during setup
-    std::map<size_t, std::shared_ptr<LMS7002M_SelfCalState>> calStates;
-
     //LMS7002M driver for each RFIC
     for (size_t i = 0; i < numRFICs; i++)
     {
@@ -73,8 +70,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
         st = _rfics.back()->UploadAll();
         if (st != 0) throw std::runtime_error("UploadAll() failed");
-
-        calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }
 
     //enable all channels
@@ -696,7 +691,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
-    LMS7002M_SelfCalState state(rfic);
+
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     double clockRate = this->getMasterClockRate();
@@ -847,7 +842,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
     auto rfic = getRFIC(channel);
-    LMS7002M_SelfCalState state(rfic);
 
     _actualBw[direction][channel] = bw;
 
