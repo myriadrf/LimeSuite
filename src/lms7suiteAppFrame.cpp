@@ -196,6 +196,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
+    contentSizer->AddGrowableRow(1);
     Layout();
     Fit();
     SetMinSize(GetSize());
