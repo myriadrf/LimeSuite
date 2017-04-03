@@ -132,7 +132,14 @@ std::vector<ConnectionHandle> ConnectionSTREAM_UNITEEntry::enumerate(const Conne
         if(port.IsOpen() == false)
             continue;
 
-        DeviceInfo info = port.GetDeviceInfo();
+        if (hint.index >= 0 && hint.name.find(comName) == std::string::npos)
+            continue;
+
+        DeviceInfo info;
+        if (hint.index >= 0)
+            info = port.GetDeviceInfo();
+        else
+            info.deviceName = "";
 
         ConnectionHandle hnd;
         hnd.media = "COM";

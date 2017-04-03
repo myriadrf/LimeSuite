@@ -73,6 +73,8 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
         evt.SetEventType(CONTROL_PORT_DISCONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
+        wxInitDialogEvent tmp_evt;
+        GetDeviceList(tmp_evt);
     }
     mListLMS7ports->SetSelection(-1);
 }
