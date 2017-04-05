@@ -1669,10 +1669,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     const char* lnaName;
     switch(lna)
     {
-        case 0: lnaName = "none";
-        case 1: lnaName = "LNAH";
-        case 2: lnaName = "LNAW";
-        case 3: lnaName = "LNAL";
+        case 0: lnaName = "none"; break;
+        case 1: lnaName = "LNAH"; break;
+        case 2: lnaName = "LNAL"; break;
+        case 3: lnaName = "LNAW"; break;
     }
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
                 ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
