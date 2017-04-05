@@ -103,7 +103,10 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
         status = lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
     }
     else
-        status = lime::fpga::SetDirectClocking(this, 1, rxInterfaceClk, 90);
+    {
+        ReportError("Interface clock lower than 5 MHz is not supported");
+        return -1;
+    }
 
     if(txInterfaceClk >= 5e6)
     {
@@ -145,7 +148,10 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
         status = lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
     }
     else
-        status = lime::fpga::SetDirectClocking(this, 0, txInterfaceClk, 90);
+    {
+        ReportError("Interface clock lower than 5 MHz is not supported");
+        return -1;
+    }
 
     if (phaseSearch)
     {

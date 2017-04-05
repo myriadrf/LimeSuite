@@ -20,6 +20,7 @@
 #include <FPGA_common.h>
 #include <LMS7002M.h>
 #include <ciso646>
+#include "Logger.h"
 
 #include <thread>
 #include <chrono>
@@ -63,12 +64,12 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     Si5351C::Status status = si5351module->ConfigureClocks();
     if (status != Si5351C::SUCCESS)
     {
-        std::cerr << "Warning: Failed to configure Si5351C" << std::endl;
+        lime::warning("Failed to configure Si5351C");
         return;
     }
     status = si5351module->UploadConfiguration();
     if (status != Si5351C::SUCCESS)
-        std::cerr << "Warning: Failed to upload Si5351C configuration" << std::endl;
+        lime::warning("Failed to configure Si5351C");
     std::this_thread::sleep_for(std::chrono::milliseconds(10)); //some settle time
 }
 
