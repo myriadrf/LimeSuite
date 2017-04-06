@@ -413,7 +413,7 @@ void LMS7SuiteAppFrame::OnShowSi5351C(wxCommandEvent& event)
         si5351gui = new Si5351C_wxgui(this, wxNewId(), _("Si5351C"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
         si5351gui->Initialize(lmsControl);
         const lms_dev_info_t *info = LMS_GetDeviceInfo(lmsControl);
-        si5351gui->ModifyClocksGUI(info->deviceName);
+        si5351gui->ModifyClocksGUI(info ? info->deviceName : "UNKNOWN");
         si5351gui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSi5351Close), NULL, this);
         si5351gui->Show();
     }

@@ -296,7 +296,7 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-	if (!device && device->IsOpen() == false)
+    if (!device || device->IsOpen() == false)
         return FAILED;
 
     std::string outBuffer;
