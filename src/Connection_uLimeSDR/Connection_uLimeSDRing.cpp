@@ -22,6 +22,44 @@ using namespace std;
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
+int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)
+{
+    const float txInterfaceClk = 2 * txRate;
+    const float rxInterfaceClk = 2 * rxRate;
+    int status = 0;
+
+    mExpectedSampleRate = rxRate;
+
+    lime::fpga::FPGA_PLL_clock clocks[4];
+
+    clocks[0].bypass = false;
+    clocks[0].index = 0;
+    clocks[0].outFrequency = txInterfaceClk;
+    clocks[0].phaseShift_deg = 0;
+    clocks[0].findPhase = false;
+    clocks[1].bypass = false;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = txInterfaceClk;
+    clocks[1].findPhase = false;
+    clocks[1].phaseShift_deg = txPhase;
+    clocks[2].bypass = false;
+    clocks[2].index = 2;
+    clocks[2].outFrequency = rxInterfaceClk;
+    clocks[2].phaseShift_deg = 0;
+    clocks[2].findPhase = false;
+    clocks[3].bypass = false;
+    clocks[3].index = 3;
+    clocks[3].outFrequency = rxInterfaceClk;
+    clocks[3].findPhase = false;
+    clocks[3].phaseShift_deg = rxPhase;
+
+    status = lime::fpga::SetPllFrequency(this, 0, rxInterfaceClk, clocks, 4);
+
+    return status;
+}
+
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
+*/
 int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
     const float txInterfaceClk = 2 * txRate_Hz;
@@ -169,7 +207,7 @@ int Connection_uLimeSDR::ReadRawStreamData(char* buffer, unsigned length, int ti
 
     AbortReading();
     fpga::StopStreaming(this);
-     
+
     return totalBytesReceived;
 }
 

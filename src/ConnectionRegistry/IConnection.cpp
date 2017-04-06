@@ -114,6 +114,11 @@ int IConnection::UpdateExternalDataRate(const size_t channel, const double txRat
     return ReportError(EPERM, "UpdateExternalDataRate not implemented");
 }
 
+int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)
+{
+    return ReportError(EPERM, "Manual phase configuration not implemented");
+}
+
 void IConnection::EnterSelfCalibration(const size_t channel)
 {
     return;

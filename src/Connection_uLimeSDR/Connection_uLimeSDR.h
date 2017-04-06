@@ -91,6 +91,7 @@ public:
     virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100)override;
 protected:

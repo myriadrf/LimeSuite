@@ -3461,6 +3461,40 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	
 	sbSizer70->Add( fgSizer89, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
+	wxBoxSizer* bSizer11;
+	bSizer11 = new wxBoxSizer( wxHORIZONTAL );
+	
+	ID_STATICTEXT101 = new wxStaticText( sbSizer70->GetStaticBox(), wxID_ANY, wxT("Rx phase"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT101->Wrap( -1 );
+	bSizer11->Add( ID_STATICTEXT101, 0, wxALL, 5 );
+	
+	rxPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 360, 120 );
+	rxPhase->Enable( false );
+	rxPhase->SetToolTip( wxT("LML interface phase offset for Rx") );
+	rxPhase->SetMinSize( wxSize( 56,-1 ) );
+	
+	bSizer11->Add( rxPhase, 0, wxALL, 5 );
+	
+	ID_STATICTEXT102 = new wxStaticText( sbSizer70->GetStaticBox(), wxID_ANY, wxT("Tx phase"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_STATICTEXT102->Wrap( -1 );
+	bSizer11->Add( ID_STATICTEXT102, 0, wxALL, 5 );
+	
+	txPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 360, 120 );
+	txPhase->Enable( false );
+	txPhase->SetToolTip( wxT("LML interface phase offset for Tx") );
+	txPhase->SetMinSize( wxSize( 56,-1 ) );
+	
+	bSizer11->Add( txPhase, 0, wxALL, 5 );
+	
+	chkAutoPhase = new wxCheckBox( sbSizer70->GetStaticBox(), ID_AUTO_PHASE, wxT("Auto phase"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkAutoPhase->SetValue(true); 
+	chkAutoPhase->SetToolTip( wxT("Configure FPGA PLL phase for LML interface automatically") );
+	
+	bSizer11->Add( chkAutoPhase, 0, wxALL, 5 );
+	
+	
+	sbSizer70->Add( bSizer11, 1, wxEXPAND, 5 );
+	
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxHORIZONTAL );
 	
@@ -3471,7 +3505,7 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	bSizer1->Add( btnTune, 1, wxLEFT|wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
-	sbSizer70->Add( bSizer1, 0, wxALIGN_TOP|wxALIGN_CENTER_HORIZONTAL, 5 );
+	sbSizer70->Add( bSizer1, 0, wxALIGN_RIGHT|wxALIGN_TOP, 5 );
 	
 	
 	fgSizer248->Add( sbSizer70, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND, 5 );
@@ -3723,6 +3757,9 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	cmbCZ_CGEN->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbEN_ADCCLKH_CLKGN->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbCLKH_OV_CLKL_CGEN->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
+	rxPhase->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
+	txPhase->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
+	chkAutoPhase->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnAutoPhase ), NULL, this );
 	btnCalculate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
 	btnTune->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::onbtnTuneClick ), NULL, this );
 	btnUpdateValues1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnbtnReadComparators ), NULL, this );
@@ -3762,6 +3799,9 @@ pnlCLKGEN_view::~pnlCLKGEN_view()
 	cmbCZ_CGEN->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbEN_ADCCLKH_CLKGN->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
 	cmbCLKH_OV_CLKL_CGEN->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlCLKGEN_view::ParameterChangeHandler ), NULL, this );
+	rxPhase->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
+	txPhase->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
+	chkAutoPhase->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnAutoPhase ), NULL, this );
 	btnCalculate->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::onbtnCalculateClick ), NULL, this );
 	btnTune->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::onbtnTuneClick ), NULL, this );
 	btnUpdateValues1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCLKGEN_view::OnbtnReadComparators ), NULL, this );

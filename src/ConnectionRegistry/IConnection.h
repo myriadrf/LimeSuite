@@ -266,6 +266,7 @@ public:
      * @param rxRate the baseband receive data rate in Hz (RFIC to BBIC)
      */
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase);
 
     /*!
      * Called by the LMS7002M driver before the board begins self-calibration.

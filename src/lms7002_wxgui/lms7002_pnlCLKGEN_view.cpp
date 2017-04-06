@@ -5,6 +5,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
+#include "lms7_device.h"
 using namespace lime;
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent )
@@ -103,7 +104,7 @@ void lms7002_pnlCLKGEN_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
-    float_type freq;
+    double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq));
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
@@ -151,15 +152,85 @@ void lms7002_pnlCLKGEN_view::ParameterChangeHandler(wxCommandEvent& event)
     }
 }
 
+ void lms7002_pnlCLKGEN_view::OnAutoPhase(wxCommandEvent& event)
+ {
+     bool disabled = this->chkAutoPhase->GetValue();
+     this->txPhase->Enable(!disabled);
+     this->rxPhase->Enable(!disabled);
+ }
+
+void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
+{
+    double freqMHz;
+    txtFrequency->GetValue().ToDouble(&freqMHz);
+    LMS7_Device* lms = (LMS7_Device*)lmsControl;
+    if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
+    {
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        return ;
+    }
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        wxMessageBox(_("Device not connected"));
+        return;
+    }
+    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    if (interp != 7)
+        fpgaTxPLL /= pow(2.0, interp);
+    auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (decim != 7)
+        fpgaRxPLL /= pow(2.0, decim);
+    if (conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2, txPhase->GetValue(), rxPhase->GetValue())!=0)
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+    auto freq = lms->GetFrequencyCGEN();
+    lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
+    UpdateGUI();
+    wxCommandEvent evt;
+    evt.SetInt(0);
+    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
+    wxPostEvent(this, evt);
+    wxCommandEvent cmd;
+    cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
+    cmd.SetEventType(LOG_MESSAGE);
+    wxPostEvent(this, cmd);
+}
+
+
 void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,freqMHz * 1e6);
+    LMS7_Device* lms = (LMS7_Device*)lmsControl;
+    if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
+    {
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        return ;
+    }
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        wxMessageBox(_("Device not connected"));
+        return;
+    }
+    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    if (interp != 7)
+        fpgaTxPLL /= pow(2.0, interp);
+    auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (decim != 7)
+        fpgaRxPLL /= pow(2.0, decim);
+    int status;
+    if (this->chkAutoPhase->GetValue())
+        status = conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+    else
+        status = conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2, txPhase->GetValue(), rxPhase->GetValue());
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-    float_type freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
+    auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
     wxCommandEvent evt;
@@ -174,7 +245,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
-    int status = LMS_SetClockFreq(lmsControl,LMS_CLOCK_CGEN,-1); //tune CGEN
+    int status = LMS_SetClockFreq(lmsControl, LMS_CLOCK_CGEN, -1); //tune CGEN
     if (status != 0)
         wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     uint16_t value;
@@ -190,7 +261,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     OnbtnReadComparators(evt);
     UpdateInterfaceFrequencies();
     UpdateCLKL();
-    float_type freq;
+    double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
@@ -208,7 +279,7 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
 
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
 {
-    float_type freq;
+    double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
     lblRxTSPfreq->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_TXTSP,&freq);

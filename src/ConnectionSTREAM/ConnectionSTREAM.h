@@ -107,6 +107,7 @@ public:
 
     //hooks to update FPGA plls when baseband interface data rate is changed
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
+    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase) override;
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
     int ProgramUpdate(const bool download, ProgrammingCallback callback);
     int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100)override;

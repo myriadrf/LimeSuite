@@ -19,11 +19,52 @@
 using namespace std;
 using namespace lime;
 
+int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz, const double txPhase, const double rxPhase)
+{
+#ifndef NDEBUG
+    std::cout << "ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
+#endif
+    const float txInterfaceClk = 2 * txRate_Hz;
+    const float rxInterfaceClk = 2 * rxRate_Hz;
+    mExpectedSampleRate = rxRate_Hz;
+
+    lime::fpga::FPGA_PLL_clock clocks[2];
+    clocks[0].bypass = false;
+    clocks[0].index = 0;
+    clocks[0].outFrequency = rxInterfaceClk;
+    clocks[0].phaseShift_deg = 0;
+    clocks[0].findPhase = false;
+    clocks[1].bypass = false;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = rxInterfaceClk;
+    clocks[1].phaseShift_deg = rxPhase;
+    clocks[1].findPhase = false;
+    if (lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2)!=0)
+        return -1;
+
+    clocks[0].bypass = false;
+    clocks[0].index = 0;
+    clocks[0].outFrequency = txInterfaceClk;
+    clocks[0].phaseShift_deg = 0;
+    clocks[0].findPhase = false;
+    clocks[1].bypass = false;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = txInterfaceClk;
+    clocks[1].phaseShift_deg = txPhase;
+    clocks[1].findPhase = false;
+    if (lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2)!=0)
+        return -1;
+
+    return 0;
+}
+
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
+#ifndef NDEBUG
     std::cout << "ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
+#endif
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     int status = 0;
