@@ -76,6 +76,10 @@ void lms7002_pnlTBB_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+        value = 1;
+    chkR5_LPF_BYP_TBB->Enable(value);
 }
 
 void lms7002_pnlTBB_view::ParameterChangeHandler(wxSpinEvent& event)

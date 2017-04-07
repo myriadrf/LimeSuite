@@ -166,6 +166,17 @@ void lms7002_pnlTxTSP_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+         value = 1;
+    wxArrayString temp;
+    temp.clear();
+    temp.push_back("-6 dB");
+    temp.push_back(value ? "-3 dB":"-6 dB");
+    temp.push_back("0 dB");
+    temp.push_back(value ? "+3 dB":"+6 dB");
+    temp.push_back("+6 dB");
+    cmbCMIX_GAIN_TXTSP->Set(temp);
 }
 
 void lms7002_pnlTxTSP_view::ParameterChangeHandler(wxSpinEvent& event)
