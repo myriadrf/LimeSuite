@@ -37,7 +37,6 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     TxLoopFunction = bind(&ConnectionXillybus::TransmitPacketsLoop, this, std::placeholders::_1);
 
     m_hardwareName = "";
-    isConnected = false;
 #ifndef __unix__
     hWrite = INVALID_HANDLE_VALUE;
     hRead = INVALID_HANDLE_VALUE;
@@ -49,8 +48,7 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     hWriteStream = -1;
     hReadStream = -1;
 #endif
-    if (this->Open(index) != 0)
-        std::cerr << GetLastErrorMessage() << std::endl;
+    isConnected = true;
 
     GetChipVersion();
     std::shared_ptr<Si5351C> si5351module(new Si5351C());
@@ -86,41 +84,7 @@ ConnectionXillybus::~ConnectionXillybus()
 int ConnectionXillybus::Open(const unsigned index)
 {
     Close();
- #ifndef __unix__
-    const char writePort[] = "\\\\.\\xillybus_write_8";
-    const char readPort[] = "\\\\.\\xillybus_read_8";
-#else
-    const char writePort[] = "/dev/xillybus_write_8";
-    const char readPort[] = "/dev/xillybus_read_8";
-#endif
-
-#ifndef __unix__
-    hWrite = CreateFileA(writePort, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
-    hRead = CreateFileA(readPort, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
-
-    // Check the results
-    if (hWrite == INVALID_HANDLE_VALUE || hRead == INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(hWrite);
-        CloseHandle(hRead);
-        hWrite = INVALID_HANDLE_VALUE;
-        hRead = INVALID_HANDLE_VALUE;
-        ReportError("Failed to open Xillybus");
-        return -1;
-    }
-#else
-    hWrite = open(writePort, O_WRONLY | O_NOCTTY | O_NONBLOCK);
-    hRead = open(readPort, O_RDONLY | O_NOCTTY | O_NONBLOCK);
-    if (hWrite == -1 || hRead == -1)
-    {
-        close(hWrite);
-        close(hRead);
-        hWrite = -1;
-        hRead = -1;
-        ReportError(errno);
-        return -1;
-    }
-#endif
+    isConnected = true;
     return 0;
 }
 
@@ -164,14 +128,61 @@ void ConnectionXillybus::Close()
 */
 bool ConnectionXillybus::IsOpen()
 {
+    return isConnected;
+}
+
+int ConnectionXillybus::TransferPacket(GenericPacket &pkt)
+{
+    int timeout_cnt = 100;
+    int status = -1;
+    std::lock_guard<std::mutex> lock(mTransferLock);
 #ifndef __unix__
-    if (hWrite != INVALID_HANDLE_VALUE && hRead != INVALID_HANDLE_VALUE )
-        return true;
+    while (--timeout_cnt)
+    {
+        if ((hWrite = CreateFileA("\\\\.\\xillybus_write_8", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0))!=INVALID_HANDLE_VALUE)
+            break;
+        Sleep(1);
+    }
+    while (timeout_cnt--)
+    {
+        if ((hRead = CreateFileA("\\\\.\\xillybus_read_8", GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0))!=INVALID_HANDLE_VALUE)
+            break;
+        Sleep(1);
+    }
+
+    if (hWrite != INVALID_HANDLE_VALUE && hRead != INVALID_HANDLE_VALUE)
+        status = LMS64CProtocol::TransferPacket(pkt);
+    else
+        ReportError("Unable to access control port");
+
+    CloseHandle(hWrite);
+    CloseHandle(hRead);
+    hWrite = INVALID_HANDLE_VALUE;
+    hRead = INVALID_HANDLE_VALUE;
 #else
-    if( hWrite != -1 && hRead != -1 )
-        return true;
+    while (--timeout_cnt)
+    {
+       if ((hWrite = open("/dev/xillybus_write_8", O_WRONLY | O_NOCTTY | O_NONBLOCK))!=-1)
+           break;
+       usleep(1000);
+    }
+    while (timeout_cnt--)
+    {
+       if ((hRead = open("/dev/xillybus_read_8", O_RDONLY | O_NOCTTY | O_NONBLOCK))!=-1)
+           break;
+       usleep(1000);
+    }
+
+    if (hWrite == -1 || hRead ==-1)
+        ReportError(errno);
+    else
+        status = LMS64CProtocol::TransferPacket(pkt);
+    close(hRead);
+    close(hWrite);
+    hWrite = -1;
+    hRead = -1;
 #endif
-    return false;
+    return status;
 }
 
 /** @brief Sends given data buffer to chip through USB port.
@@ -260,7 +271,6 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 */
 int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
-    memset(buffer, 0, length);
 #ifndef __unix__
     if (hRead == INVALID_HANDLE_VALUE)
 #else

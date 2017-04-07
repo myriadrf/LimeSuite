@@ -43,6 +43,7 @@ public:
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
     int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)override;
     int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100)override;
+    int TransferPacket(GenericPacket &pkt) override;
 protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;
@@ -64,7 +65,7 @@ private:
     int m_hardwareVer;
 
     bool isConnected;
-
+    std::mutex mTransferLock;
 #ifndef __unix__
     HANDLE hWrite;
     HANDLE hRead;
