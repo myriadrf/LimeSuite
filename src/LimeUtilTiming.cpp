@@ -160,6 +160,32 @@ int deviceTestTiming(const std::string &argStr)
         std::cout << "  >>> RBB filter tuning:\t" << (secsPerOp/1e-3) << " ms" << std::endl;
     }
 
+    //time TX corrections
+    {
+        const size_t numIters(20);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->CalibrateTx(10e6 + i*(3e6/numIters));
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> TX corrections:\t\t" << (secsPerOp/1e-3) << " ms" << std::endl;
+    }
+
+    //time RX corrections
+    {
+        const size_t numIters(20);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < numIters; i++)
+        {
+            lms7->CalibrateRx(10e6 + i*(3e6/numIters));
+        }
+        auto t1 = std::chrono::high_resolution_clock::now();
+        const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
+        std::cout << "  >>> RX corrections:\t\t" << (secsPerOp/1e-3) << " ms" << std::endl;
+    }
+
     std::cout << std::endl;
     std::cout << "Done timing!" << std::endl;
     delete lms7;
