@@ -33,12 +33,12 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
-    bool useExtLoopback = false;
+    int flags = 0;
     if(rgrCalibrationMethod->GetSelection() == 0)
-        useExtLoopback = false;
+        flags = 0;
     else
     {
-        useExtLoopback = true;
+        flags = 1;
     }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
@@ -49,7 +49,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 #endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch - 1, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -106,6 +106,11 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
         useExtLoopback = true;
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
+    if (2.5 > bandwidth_MHz || bandwidth_MHz > 120.0)
+    {
+        wxMessageBox(wxString("Frequency out of range, available range: 2.5-120 MHz"));
+        return;
+    }
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;

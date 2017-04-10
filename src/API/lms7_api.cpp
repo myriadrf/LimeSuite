@@ -850,7 +850,8 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, f
     int status =0;
     if (lms->SPI_read(0x2F,true,&status)== 0x3840)
     {
-        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        if (status == 0)
+            lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
     if (status != 0)
@@ -1037,7 +1038,8 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
     int status = 0;
     if (lms->SPI_read(0x2F,true,&status)== 0x3840)
     {
-        lime::ReportError(EINVAL, "Filter calibration is not implemented for this chip revision");
+        if (status == 0)
+            lime::ReportError(EINVAL, "Filter calibration is not implemented for this chip revision");
         return -1;
     }
     if (status != 0)
@@ -1228,7 +1230,8 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
     int status = 0;
     if (lms->SPI_read(0x2F,true,&status)== 0x3840)
     {
-        lime::ReportError(EINVAL, "Calibrations are not implemented for this chip revision");
+        if (status == 0)
+            lime::ReportError(EINVAL, "Calibrations are not implemented for this chip revision");
         return -1;
     }
     if (status != 0)
@@ -1241,12 +1244,12 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    //lms->EnableCalibrationByMCU(false);
+    lms->EnableCalibrationByMCU((flags&1) == 0);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
     if (dir_tx)
-       return lms->CalibrateTx(bw,flags!=0);
+       return lms->CalibrateTx(bw,false);
     else
-       return lms->CalibrateRx(bw,flags!=0);
+       return lms->CalibrateRx(bw,false);
 
 }
 
@@ -1263,7 +1266,8 @@ API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
     int status = 0;
     if (lms->SPI_read(0x2F,true,&status)== 0x3840)
     {
-        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        if (status == 0)
+            lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
     if (status != 0)

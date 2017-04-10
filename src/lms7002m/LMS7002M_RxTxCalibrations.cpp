@@ -59,6 +59,8 @@ struct GridSearchParam
 };
 
 }
+const double TrxCalib_RF_LimitLow = 2.5e6;
+const double TrxCalib_RF_LimitHigh = 120e6;
 
 static const char cSquaresLine[] =
     "############################################################\n";
@@ -814,6 +816,8 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 */
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
+    if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
+        return ReportError(ERANGE, "Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(EINVAL, "Device not connected");
 #ifdef __cplusplus
@@ -865,7 +869,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     int16_t dccorri, dccorrq, phaseOffset;
 
     bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && std::stoi(info.hardwareVersion) >= 3);
-    const char* methodName;
+    const char* methodName = "RSSI PC";
     if(useExtLoopback)
     {
         useFFT = true;
@@ -874,7 +878,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     if(mCalibrationByMCU)
     {
         useExtLoopback = useFFT = false;
-        methodName = "RSSI";
+        methodName = "RSSI MCU";
     }
     verbose_printf(cSquaresLine);
     verbose_printf("Tx calibration using %s %s %s loopback\n",
@@ -1634,6 +1638,8 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 */
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
+    if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
+        return ReportError(ERANGE, "Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(ENODEV, "Device not connected");
 #ifdef __cplusplus

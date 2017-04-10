@@ -107,7 +107,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
 {
     int status;
     if(RxLPF_RF_LimitLow > rx_lpf_freq_RF || rx_lpf_freq_RF > RxLPF_RF_LimitHigh)
-        return ReportError(ERANGE, "RxLPF frequency out of range, available range from %g to %g MHz", RxLPF_RF_LimitLow, RxLPF_RF_LimitHigh);
+        return ReportError(ERANGE, "RxLPF frequency out of range, available range from %g to %g MHz", RxLPF_RF_LimitLow/1e6, RxLPF_RF_LimitHigh/1e6);
 
     if(mCalibrationByMCU)
     {

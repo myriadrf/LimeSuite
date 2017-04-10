@@ -9185,7 +9185,7 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	fgSizer246->SetFlexibleDirection( wxVERTICAL );
 	fgSizer246->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("External Loopback") };
+	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("PC") };
 	int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
 	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration method"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
 	rgrCalibrationMethod->SetSelection( 0 );
