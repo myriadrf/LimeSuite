@@ -116,7 +116,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     }
 
     //reset flags for user calls
-    _fixedClockRate = false;
+    _fixedClockRate = args.count("clock") != 0;
     _fixedRxSampRate.clear();
     _fixedTxSampRate.clear();
 }
@@ -764,7 +764,7 @@ double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
     return rfic->GetSampleRate(lmsDir, rfic->GetActiveChannel());
 }
 
-std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
+std::vector<double> SoapyLMS7::_getEnumeratedRates(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
@@ -820,16 +820,43 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
         }
     }
 
+    std::sort(rates.begin(), rates.end());
+    return rates;
+}
+
+std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
+{
+    auto rates = this->_getEnumeratedRates(direction, channel);
+
     //otherwise, the clock is the only limiting factor
     //just give a reasonable high and low
-    else
+    if (rates.empty())
     {
         rates.push_back(MIN_SAMP_RATE);
         rates.push_back(MAX_SAMP_RATE);
     }
 
-    std::sort(rates.begin(), rates.end());
     return rates;
+}
+
+SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const size_t channel) const
+{
+    SoapySDR::RangeList ranges;
+    auto rates = this->_getEnumeratedRates(direction, channel);
+
+    //no enumerated rates? full continuous range is available
+    if (rates.empty())
+    {
+        ranges.push_back(SoapySDR::Range(MIN_SAMP_RATE, MAX_SAMP_RATE));
+    }
+
+    //normal list of enumerated rates becomes ranges with start == stop
+    for (const auto &rate : rates)
+    {
+        ranges.push_back(SoapySDR::Range(rate, rate));
+    }
+
+    return ranges;
 }
 
 /*******************************************************************
