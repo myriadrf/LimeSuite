@@ -21,6 +21,7 @@ General changes:
 Release 17.02.2 (pending)
 ==========================
 
+- Fixed register typo in LMS7002M::SetTxDCOffset()
 - Added option defaults for stream args in SoapyLMS7
 - Fixed LMS7002M::GetPathRFE() currently selected path
 

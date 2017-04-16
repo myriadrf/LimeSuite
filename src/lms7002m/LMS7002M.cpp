@@ -2459,7 +2459,7 @@ bool LMS7002M::GetRxDCRemoval(void)
 int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
 {
     const bool bypass = I == 0.0 and Q == 0.0;
-    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), bypass?1:0);
+    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), bypass?1:0);
     this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*128));
     this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*128));
 	return 0;
