@@ -200,7 +200,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
     UpdateGUI();
     wxCommandEvent evt;
-    evt.SetInt(1);
+    evt.SetInt(0);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
 }

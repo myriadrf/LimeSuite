@@ -512,6 +512,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
         case LMS_CLOCK_CGEN:
         {
             int ret;
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
             if (freq <= 0)
             {
                 ret = lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
@@ -1327,7 +1328,27 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filena
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    return lms->LoadConfig(filename);
+    if (lms->LoadConfig(filename)==0)
+    {
+        auto conn = lms->GetConnection();
+        if (conn == nullptr)
+        {
+            lime::ReportError(EINVAL, "Device not connected");
+            return -1;
+        }
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+        if (interp != 7)
+            fpgaTxPLL /= pow(2.0, interp);
+        float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+        if (decim != 7)
+            fpgaRxPLL /= pow(2.0, decim);
+        lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
+        return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+    }
+    return -1;
 }
 
 API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filename)
