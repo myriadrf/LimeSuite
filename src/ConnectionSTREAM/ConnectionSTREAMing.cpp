@@ -584,17 +584,21 @@ void ConnectionSTREAM::TransmitPacketsLoop(const ThreadData args)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
+            bool badSamples = false;
             for(int ch=0; ch<chCount; ++ch)
             {
                 int samplesPopped = args.channels[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
+                    badSamples = true;
                 #ifndef NDEBUG
                     lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                 #endif
                 }
 
             }
+            if (badSamples)
+                continue;
             if(terminate->load() == true) //early termination
                 break;
             pkt[i].counter = meta.timestamp;
