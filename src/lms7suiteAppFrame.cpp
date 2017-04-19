@@ -183,7 +183,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     deviceInfo = nullptr;
     spi = nullptr;
     boardControlsGui = nullptr;
-    lmsControl = new LMS7_Device();
+    lmsControl = LMS7_Device::CreateDevice(nullptr);
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 

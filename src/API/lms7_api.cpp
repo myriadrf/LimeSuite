@@ -12,6 +12,7 @@
 #include "VersionInfo.h"
 #include <assert.h>
 #include "LMS64CProtocol.h"
+#include "FPGA_common.h"
 
 using namespace std;
 
@@ -48,13 +49,10 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
 
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
-    LMS7_Device* lms;
-    if (*device == nullptr)
-        lms = new LMS7_Device();
-    else
-        lms = (LMS7_Device*)*device;
+    LMS7_Device* lms = (LMS7_Device*)*device;
+    if (lms != nullptr)
+        lms->SetConnection(nullptr);
 
-    LMS_Disconnect(lms);
     for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
@@ -64,30 +62,26 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, vo
             {
                 if (info != NULL)
                 {
-                    lime::ReportError(EBUSY, "Failed to open device");
-                    if (*device == nullptr)
-                    {
-                        delete lms;
+                    lime::ReportError(EBUSY, "Failed to open. Device is busy.");
                         *device = nullptr;
-                    }
                     return -1;
                 }
                 else
                     continue;
             }
-            lms->SetConnection(conn,0);
-            lms->streamPort = conn;
-            *device = lms;
+            *device = LMS7_Device::CreateDevice(conn,lms);
             return LMS_SUCCESS;
         }
     }
 
-    lime::ReportError(ENODEV, "Specified device could not be found");
-    if (*device == nullptr)
+    if (info == NULL)
     {
-        delete lms;
-        *device = nullptr;
+        *device = LMS7_Device::CreateDevice(nullptr);
+        return LMS_SUCCESS;
     }
+
+    lime::ReportError(ENODEV, "Specified device could not be found");
+    *device = nullptr;
     return -1;
 }
 
@@ -113,21 +107,8 @@ API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    auto conn = lms->GetConnection();
-    if (conn != lms->streamPort && lms->streamPort!=nullptr)
-    {
-       lime::ConnectionRegistry::freeConnection(lms->streamPort);
-       lms->streamPort = nullptr;
+    return lms->SetConnection(nullptr);
     }
-    if (conn != nullptr)
-    {
-		lime::ConnectionRegistry::freeConnection(conn);
-                lms->SetConnection(nullptr);
-                if (conn == lms->streamPort)
-                    lms->streamPort = nullptr;
-    }
-    return LMS_SUCCESS;
-}
 
 API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
 {
@@ -135,19 +116,12 @@ API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
         return false;
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    if (port == 0)
-    {
+
         auto conn = lms->GetConnection();
         if (conn != nullptr)
         {
             return conn->IsOpen();
         }
-    }
-    if (port == 1)
-    {
-        if (lms->streamPort != nullptr)
-            return lms->streamPort->IsOpen();
-    }
     return false;
 }
 
@@ -160,10 +134,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    if (lms->ResetChip()!=0)
-        return -1;
-    lms->DownloadAll();
-    return LMS_SUCCESS;
+    return lms->Reset();
 }
 
 API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, size_t chan, bool enabled)
@@ -176,21 +147,8 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, s
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    if (chan >= lms->GetNumChannels(dir_tx))
-    {
-        lime::ReportError(EINVAL, "Invalid channel number.");
-        return -1;
-    }
-
-    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true)!=0)
-        return -1;
-
-    lms->EnableChannel(dir_tx,enabled);
-
-    return LMS_SUCCESS;
+    return lms->EnableChannel(dir_tx, chan,enabled);
 }
-
-
 
 API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t * device, float_type rate, size_t oversample)
 {
@@ -296,8 +254,7 @@ API_EXPORT int CALL_CONV LMS_GetReferenceClock(lms_device_t * device, float_type
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    *clock_Hz = lms->GetReferenceClk_SX(false);
-    return LMS_SUCCESS;
+    return lms->GetClockFreq(LMS_CLOCK_REF,clock_Hz);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
@@ -372,23 +329,8 @@ API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * device, size_t vco_id, l
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-    if (vco_id < 3)
-    {
-        range->min=lms->gVCO_frequency_table[vco_id][0];
-        range->max=lms->gVCO_frequency_table[vco_id][1];
+    return lms->GetVCORange(vco_id, range);
     }
-    else if (vco_id == 3)
-    {
-        range->min=lms->gCGEN_VCO_frequencies[0];
-        range->max=lms->gCGEN_VCO_frequencies[1];
-    }
-    else
-    {
-        lime::ReportError(EINVAL, "VCO ID out of range.");
-        return -1;
-    }
-    return 0;
-}
 
 API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id, lms_range_t range)
 {
@@ -398,23 +340,8 @@ API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id, l
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-    if (vco_id < 3)
-    {
-        lms->gVCO_frequency_table[vco_id][0]=range.min;
-        lms->gVCO_frequency_table[vco_id][1]=range.max;
+    return lms->SetVCORange(vco_id, range);
     }
-    else if (vco_id == 3)
-    {
-        lms->gCGEN_VCO_frequencies[0]=range.min;
-        lms->gCGEN_VCO_frequencies[1]=range.max;
-    }
-    else
-    {
-        lime::ReportError(EINVAL, "VCO ID out of range.");
-        return -1;
-    }
-    return 0;
-}
 
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int))
 {
@@ -455,30 +382,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, f
     }
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    switch(clk_id)
-    {
-        case LMS_CLOCK_REF:
-            *freq = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
-            return 0;
-        case LMS_CLOCK_SXR:
-            *freq = lms->GetFrequencySX(false);
-            return 0;
-        case LMS_CLOCK_SXT:
-            *freq = lms->GetFrequencySX(true);
-            return 0;
-        case LMS_CLOCK_CGEN:
-            *freq = lms->GetFrequencyCGEN();
-            return 0;
-        case LMS_CLOCK_RXTSP:
-            *freq = lms->GetReferenceClk_TSP(false);
-            return 0;
-        case LMS_CLOCK_TXTSP:
-            *freq = lms->GetReferenceClk_TSP(true);
-            return 0;
-        default:
-            lime::ReportError(EINVAL, "Invalid clock ID.");
-            return -1;
-    }
+    return lms->GetClockFreq(clk_id, freq);
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
@@ -489,66 +393,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    switch (clk_id)
-    {
-        case LMS_CLOCK_REF:
-            if (freq <= 0)
-            {
-                lime::ReportError(EINVAL, "Invalid frequency value.");
-                return -1;
-            }
-            lms->SetReferenceClk_SX(lime::LMS7002M::Tx,freq);
-            lms->SetReferenceClk_SX(lime::LMS7002M::Rx,freq);
-            return 0;
-        case LMS_CLOCK_SXR:
-            if (freq <= 0)
-                return lms->TuneVCO(lime::LMS7002M::VCO_SXR);
-            return lms->SetFrequencySX(false,freq);
-        case LMS_CLOCK_SXT:
-            if (freq <= 0)
-                return lms->TuneVCO(lime::LMS7002M::VCO_SXT);
-            return lms->SetFrequencySX(true,freq);
-        case LMS_CLOCK_CGEN:
-        {
-            int ret;
-            lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-            if (freq <= 0)
-            {
-                ret = lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
-            }
-            else
-            {
-                ret = lms->SetInterfaceFrequency(freq, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP)));
-            }
-            if (ret != 0)
-                return -1;
-            auto conn = lms->GetConnection();
-            if (conn == nullptr)
-            {
-                lime::ReportError(EINVAL, "Device not connected");
-                return -1;
-            }
-            int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-            int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-            float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-            if (interp != 7)
-                fpgaTxPLL /= pow(2.0, interp);
-            float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-            if (decim != 7)
-                fpgaRxPLL /= pow(2.0, decim);
-            return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
-        }
-        case LMS_CLOCK_RXTSP:
-                lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
-                return -1;
-        case LMS_CLOCK_TXTSP:
-                lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
-                return -1;
-        default:
-            lime::ReportError(EINVAL, "Invalid clock ID.");
-            return -1;
-    }
+    return lms->SetClockFreq(clk_id, freq);
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *device, size_t clk_id, float_type freq, float_type BW)
@@ -559,17 +404,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *devic
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    switch (clk_id)
-    {
-        case LMS_CLOCK_SXR:
-            if (freq <= 0)
-                return lms->TuneVCO(lime::LMS7002M::VCO_SXR);
-            return lms->SetFrequencySXWithSpurCancelation(false,freq, BW);
-        default:
-            lime::ReportError(ENOTSUP, "Not supported");
-            return -1;
-    }
+    return lms->SetClockFreqWithSpurCancelation(LMS_CLOCK_SXR,freq, BW);
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev, const char* filename)
@@ -710,10 +545,7 @@ API_EXPORT  int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
     }
      LMS7_Device* lms = (LMS7_Device*)dev;
 
-    if (toChip)
-        return lms->UploadAll();
-    else
-        return lms->DownloadAll();
+     return lms->Synchronize(toChip);
 }
 
 
@@ -835,8 +667,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
     }
 
     LMS7_Device* lms = (LMS7_Device*)dev;
-    lms->EnableValuesCache(enable);
-    return 0;
+    return lms->EnableCalibCache(enable);
 }
 
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, float_type *temp)
@@ -848,19 +679,17 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, f
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
-    int status =0;
-    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
-    {
-        if (status == 0)
-            lime::ReportError(EINVAL, "Feature is not available on this chip revision");
-        return -1;
-    }
-    if (status != 0)
+    uint16_t val;
+    if (lms->ReadLMSReg(0x2F, &val))
     {
         return -1;
     }
-    *temp = lms->GetTemperature();
-    return 0;
+    if (val == 0x3840)
+    {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        return -1;
+    }
+    return lms->GetChipTemperature(ind,temp);
 }
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
@@ -1036,15 +865,14 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         return -1;
     }
 
-    int status = 0;
-    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    uint16_t val;
+    if (lms->ReadLMSReg(0x2F, &val))
     {
-        if (status == 0)
-            lime::ReportError(EINVAL, "Filter calibration is not implemented for this chip revision");
         return -1;
     }
-    if (status != 0)
+    if (val == 0x3840)
     {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
 
@@ -1228,15 +1056,14 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    int status = 0;
-    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    uint16_t val;
+    if (lms->ReadLMSReg(0x2F, &val))
     {
-        if (status == 0)
-            lime::ReportError(EINVAL, "Calibrations are not implemented for this chip revision");
         return -1;
     }
-    if (status != 0)
+    if (val == 0x3840)
     {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
 
@@ -1245,13 +1072,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    lms->EnableCalibrationByMCU((flags&1) == 0);
-    lms->Modify_SPI_Reg_bits(LMS7param(MAC),chan+1,true);
-    if (dir_tx)
-       return lms->CalibrateTx(bw,false);
-    else
-       return lms->CalibrateRx(bw,false);
-
+    return lms->Calibrate(dir_tx, chan, bw, flags);
 }
 
 API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
@@ -1264,15 +1085,14 @@ API_EXPORT int CALL_CONV LMS_CalibrateInternalADC(lms_device_t *device)
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    int status = 0;
-    if (lms->SPI_read(0x2F,true,&status)== 0x3840)
+    uint16_t val;
+    if (lms->ReadLMSReg(0x2F, &val))
     {
-        if (status == 0)
-            lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
-    if (status != 0)
+    if (val == 0x3840)
     {
+        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
 
@@ -1328,27 +1148,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filena
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    if (lms->LoadConfig(filename)==0)
-    {
-        auto conn = lms->GetConnection();
-        if (conn == nullptr)
-        {
-            lime::ReportError(EINVAL, "Device not connected");
-            return -1;
-        }
-        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        if (interp != 7)
-            fpgaTxPLL /= pow(2.0, interp);
-        float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        if (decim != 7)
-            fpgaRxPLL /= pow(2.0, decim);
-        lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-        return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
-    }
-    return -1;
+    return lms->LoadConfig(filename);
 }
 
 API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filename)
@@ -1570,9 +1370,7 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, 
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    int status;
-    *val = lms->SPI_read(address,true,&status);
-    return status;
+    return lms->ReadLMSReg(address, val);
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)
@@ -1584,7 +1382,7 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address,
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->SPI_write(address,val);
+    return lms->WriteLMSReg(address, val);
 }
 
 API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device)
@@ -1596,7 +1394,7 @@ API_EXPORT int CALL_CONV LMS_RegisterTest(lms_device_t *device)
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->RegistersTest();
+    return lms->RegisterTest();
 }
 
 
@@ -1650,22 +1448,8 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Paramete
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-    bool forceReadFromChip = true; //bypass returning values from cache
-    //registers containing read only registers, which values can change
-    const uint16_t readOnlyRegs[] = {0,1,2,3,4,5,6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F};
-    for(size_t i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
-    {
-        if(param.address == readOnlyRegs[i])
-        {
-            forceReadFromChip = true;
-            break;
-        }
-    }
-    *val = lms->Get_SPI_Reg_bits(param, forceReadFromChip);
-    return LMS_SUCCESS;
+    return lms->ReadParam(param,val);
 }
-
-
 
 API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Parameter param, uint16_t val)
 {
@@ -1676,7 +1460,7 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Paramet
     }
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    return lms->Modify_SPI_Reg_bits(param,val);
+    return lms->WriteParam(param, val);
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device_t * device, bool dir_tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count)
@@ -1765,7 +1549,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
             config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
     }
     config.isTx = stream->isTx;
-    return lms->GetConnection()->SetupStream(stream->handle, config);
+    return lms->GetConnection(stream->channel)->SetupStream(stream->handle, config);
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream)
@@ -1774,7 +1558,7 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
         return lime::ReportError(EINVAL, "stream is NULL.");
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->GetConnection()->CloseStream(stream->handle);
+    return lms->GetConnection(stream->channel)->CloseStream(stream->handle);
 }
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
