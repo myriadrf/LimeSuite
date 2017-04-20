@@ -4,6 +4,7 @@
 #include "FPGA_common.h"
 #include "LMS7002M.h"
 #include <ciso646>
+#include "Logger.h"
 
 using namespace lime;
 
@@ -180,6 +181,16 @@ double ILimeSDRStreaming::GetHardwareTimestampRate(void)
     return mExpectedSampleRate;
 }
 
+int ILimeSDRStreaming::ReceiveData(char* buffer, const int length, const int timeout)
+{
+    return ReportError("Function not supported");
+}
+
+int ILimeSDRStreaming::SendData(const char* buffer, const int length, const int timeout)
+{
+    return ReportError("Function not supported");
+}
+
 int ILimeSDRStreaming::UpdateThreads(bool stopAll)
 {
     bool needTx = false;
@@ -354,6 +365,74 @@ int ILimeSDRStreaming::UpdateThreads(bool stopAll)
         txThread = std::thread(TxLoopFunction, args);
     }
     return 0;
+}
+
+int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)
+{
+    WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
+    WriteRegister(0x000E, 0x2); //12bit samples
+    WriteRegister(0x000D, 0x0004); //WFM_LOAD
+
+    lime::FPGA_DataPacket pkt;
+    size_t samplesUsed = 0;
+    lime::complex16_t** samplesShort = new lime::complex16_t*[chCount];
+    for(unsigned i=0; i<chCount; ++i)
+        samplesShort[i] = nullptr;
+
+    const complex16_t* const* src = format == StreamConfig::STREAM_COMPLEX_FLOAT32 ? samplesShort :(const complex16_t* const*)samples;
+    int cnt = sample_count;
+    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
+
+    if(format == StreamConfig::STREAM_COMPLEX_FLOAT32)
+    {
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+
+        const float* const* samplesFloat = (const float* const*)samples;
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = samplesFloat[ch][2*i]*2047.0f;
+                samplesShort[ch][i].q = samplesFloat[ch][2*i+1]*2047.0f;
+            }
+    }
+
+    while(cnt > 0)
+    {
+        pkt.counter = 0;
+        pkt.reserved[0] = 0;
+        int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
+        cnt -= samplesToSend;
+
+        for(unsigned i=0; i<chCount; ++i)
+            batch[i] = &src[i][samplesUsed];
+        samplesUsed += samplesToSend;
+
+        size_t bufPos = 0;
+        lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount, StreamConfig::STREAM_12_BIT_COMPRESSED, pkt.data, &bufPos);
+        int payloadSize = (bufPos / 4) * 4;
+        if(bufPos % 4 != 0)
+            lime::error("Packet samples count not multiple of 4");
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = 16+payloadSize;
+        if (SendData((const char*)&pkt,bToSend,500)!=bToSend)
+            break;
+    }
+    delete[] batch;
+    for(unsigned i=0; i<chCount; ++i)
+        if (samplesShort[i])
+            delete [] samplesShort[i];
+    delete[] samplesShort;
+
+    /*Give FX3 some time to load samples to FPGA*/
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    if(cnt == 0)
+        return 0;
+    else
+        return ReportError(-1, "Failed to upload waveform");
 }
 
 

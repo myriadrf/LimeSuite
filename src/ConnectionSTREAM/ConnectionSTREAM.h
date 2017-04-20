@@ -103,8 +103,6 @@ public:
     virtual int Write(const unsigned char* buffer, int length, int timeout_ms = 100) override;
     virtual int Read(unsigned char* buffer, int length, int timeout_ms = 100) override;
 
-    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format) override;
-
     //hooks to update FPGA plls when baseband interface data rate is changed
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase) override;
@@ -114,6 +112,8 @@ public:
 protected:
     virtual void ReceivePacketsLoop(const ThreadData args) override;
     virtual void TransmitPacketsLoop(const ThreadData args) override;
+    int SendData(const char* buffer, const int length, const int timeout)override;
+    int ReceiveData(char* buffer, const int length, const int timeout = 100)override;
 
     virtual int BeginDataReading(char* buffer, uint32_t length);
     virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);

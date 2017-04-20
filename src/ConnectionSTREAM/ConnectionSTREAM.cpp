@@ -776,6 +776,22 @@ void ConnectionSTREAM::AbortSending()
 #endif
 }
 
+int ConnectionSTREAM::SendData(const char* buffer, const int length, const int timeout)
+{
+    int context = BeginDataSending((char*)buffer, length );
+    if (WaitForSending(context, timeout)==false);
+        AbortSending();
+    return FinishDataSending((char*)buffer, length , context);
+}
+
+int ConnectionSTREAM::ReceiveData(char* buffer, const int length, const int timeout)
+{
+    int context = BeginDataReading(buffer, length);
+    if (WaitForReading(context, timeout) == false)
+        AbortReading();
+    return FinishDataReading(buffer, length, context);
+}
+
 int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
 {
     if (device == LMS64CProtocol::FX3 && programmingMode == 1)

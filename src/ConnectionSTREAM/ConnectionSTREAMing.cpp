@@ -20,57 +20,6 @@
 using namespace lime;
 using namespace std;
 
-int ConnectionSTREAM::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format)
-{
-    WriteRegister(0x000C, 0x3); //channels 0,1
-    WriteRegister(0x000E, 0x2); //12bit samples
-    WriteRegister(0x000D, 0x0004); //WFM_LOAD
-
-    lime::FPGA_DataPacket pkt;
-    size_t samplesUsed = 0;
-
-    const complex16_t* const* src = (const complex16_t* const*)samples;
-    int cnt = sample_count;
-
-    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
-    while(cnt > 0)
-    {
-        pkt.counter = 0;
-        pkt.reserved[0] = 0;
-        int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
-        cnt -= samplesToSend;
-
-        for(uint8_t i=0; i<chCount; ++i)
-            batch[i] = &src[i][samplesUsed];
-        samplesUsed += samplesToSend;
-
-        size_t bufPos = 0;
-        lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount, format, pkt.data, &bufPos);
-        int payloadSize = (bufPos / 4) * 4;
-        if(bufPos % 4 != 0)
-            lime::error("Packet samples count not multiple of 4");
-        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
-        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
-        pkt.reserved[0] = 0x1 << 5; //WFM loading
-
-        long bToSend = 16+payloadSize;
-        int context = BeginDataSending((char*)&pkt, bToSend );
-        if(WaitForSending(context, 250) == false)
-        {
-            FinishDataSending((char*)&pkt, bToSend , context);
-            break;
-        }
-        FinishDataSending((char*)&pkt, bToSend , context);
-    }
-    delete[] batch;
-    /*Give FX3 some time to load samples to FPGA*/
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    if(cnt == 0)
-        return 0;
-    else
-        return ReportError(-1, "Failed to upload waveform");
-}
-
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz, const double txPhase, const double rxPhase)
@@ -273,18 +222,11 @@ int ConnectionSTREAM::ReadRawStreamData(char* buffer, unsigned length, int timeo
         ResetStreamBuffers();
         WriteRegister(0x0008, 0x0100 | 0x2);
         WriteRegister(0x0007, 1);
-
         fpga::StartStreaming(this);
 
-        int handle = BeginDataReading(buffer, length);
-        if (WaitForReading(handle, timeout_ms) == false)
-        {
-            AbortReading();
-        }
-
+        int totalBytesReceived = ReceiveData(buffer,length,timeout_ms);
         fpga::StopStreaming(this);
-
-        int totalBytesReceived = FinishDataReading(buffer, length, handle);
+        AbortReading();
 
 	return totalBytesReceived;
 }

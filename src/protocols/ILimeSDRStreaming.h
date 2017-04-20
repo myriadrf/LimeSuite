@@ -64,6 +64,8 @@ public:
     virtual void SetHardwareTimestamp(const uint64_t now);
     virtual double GetHardwareTimestampRate(void);
 
+    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format) override;
+
     struct ThreadData
     {
         ILimeSDRStreaming* dataPort; //! Connection interface
@@ -76,6 +78,8 @@ public:
         std::function<void(const uint64_t)> reportLateTx; //! report late tx packet
     };
 protected:
+    virtual int ReceiveData(char* buffer, const int length, const int timeout = 100);
+    virtual int SendData(const char* buffer, const int length, const int timeout = 100);
     virtual void ReceivePacketsLoop(const ThreadData args) = 0;
     virtual void TransmitPacketsLoop(const ThreadData args) = 0;
     virtual int UpdateThreads(bool stopAll = false);
