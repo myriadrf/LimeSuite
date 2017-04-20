@@ -16,7 +16,6 @@
 
 using namespace std;
 
-
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
 {
     std::vector<lime::ConnectionHandle> handles;
@@ -35,9 +34,6 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t * dev_list)
     }
     return handles.size();
 }
-
-
-
 
 API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, lms_info_str_t info, void* args)
 {
@@ -175,7 +171,6 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx,
 
     return lms->SetRate(dir_tx,rate,oversample);
 }
-
 
 API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t *device, bool dir_tx, size_t chan, float_type *host_Hz, float_type *rf_Hz)
 {
@@ -321,28 +316,6 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
     return ret < 0 ? -1 : 0;
 }
 
-API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * device, size_t vco_id, lms_range_t* range)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->GetVCORange(vco_id, range);
-    }
-
-API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * device, size_t vco_id, lms_range_t range)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->SetVCORange(vco_id, range);
-    }
-
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool, const unsigned char*, const unsigned int))
 {
     if (dev == nullptr)
@@ -394,17 +367,6 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
     }
     LMS7_Device* lms = (LMS7_Device*)device;
     return lms->SetClockFreq(clk_id, freq);
-}
-
-API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *device, size_t clk_id, float_type freq, float_type BW)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->SetClockFreqWithSpurCancelation(LMS_CLOCK_SXR,freq, BW);
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfigSi5351C(lms_device_t *dev, const char* filename)

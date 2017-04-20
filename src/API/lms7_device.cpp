@@ -1817,48 +1817,6 @@ int LMS7_Device::DACRead()
     return ret >=0 ? dval : -1;
 }
 
-int LMS7_Device::GetVCORange(size_t vco_id, lms_range_t* range)
-{
-     lime::LMS7002M* lms = lms_list[0];
-    if (vco_id < 3)
-    {
-        range->min = lms->gVCO_frequency_table[vco_id][0];
-        range->max = lms->gVCO_frequency_table[vco_id][1];
-    }
-    else if (vco_id == 3)
-    {
-        range->min = lms->gCGEN_VCO_frequencies[0];
-        range->max = lms->gCGEN_VCO_frequencies[1];
-    }
-    else
-    {
-        lime::ReportError(EINVAL, "VCO ID out of range.");
-        return -1;
-    }
-    return 0;
-}
-
-int LMS7_Device::SetVCORange(size_t vco_id, lms_range_t range)
-{
-    lime::LMS7002M* lms = lms_list[0];
-    if (vco_id < 3)
-    {
-        lms->gVCO_frequency_table[vco_id][0] = range.min;
-        lms->gVCO_frequency_table[vco_id][1] = range.max;
-    }
-    else if (vco_id == 3)
-    {
-        lms->gCGEN_VCO_frequencies[0] = range.min;
-        lms->gCGEN_VCO_frequencies[1] = range.max;
-    }
-    else
-    {
-        lime::ReportError(EINVAL, "VCO ID out of range.");
-        return -1;
-    }
-    return 0;
-}
-
 int LMS7_Device::GetClockFreq(size_t clk_id, float_type *freq)
 {
     switch (clk_id)
@@ -1948,19 +1906,6 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
     default:
         lime::ReportError(EINVAL, "Invalid clock ID.");
         return -1;
-    }
-}
-
-int LMS7_Device::SetClockFreqWithSpurCancelation(size_t clk_id, float_type freq, float_type BW)
-{
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
-    switch (clk_id)
-    {
-        case LMS_CLOCK_SXR:
-            return lms->SetFrequencySXWithSpurCancelation(false,freq, BW);
-        default:
-            lime::ReportError(ENOTSUP, "Not supported");
-            return -1;
     }
 }
 

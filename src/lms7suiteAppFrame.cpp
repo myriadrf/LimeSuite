@@ -299,8 +299,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
-        //LMS7002M messages go through global logger registered in LMS7SuiteAppFrame()
-        //LMS_SetLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogEvent);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);

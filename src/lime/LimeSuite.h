@@ -936,30 +936,6 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * dev, uint16_t val);
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * dev, uint16_t *val);
 
 /**
- * Get VCO value range.
- *
- * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   vco_id  VCO identifier
- * @param   range   VCO range
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetVCORange(lms_device_t * dev, size_t vco_id,
-                                         lms_range_t* range);
-
-/**
- * Set VCO value range.
- *
- * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   vco_id  VCO identifier
- * @param   range   VCO range
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * dev, size_t vco_id,
-                                         lms_range_t range);
-
-/**
  * @brief Sets callback for logging data write/read operations
  *
  * @param   dev     Device handle previously obtained by LMS_Open().
@@ -968,16 +944,6 @@ API_EXPORT int CALL_CONV LMS_SetVCORange(lms_device_t * dev, size_t vco_id,
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetDataLogCallback(lms_device_t *dev, void (*func)(bool tx, const unsigned char* data, const unsigned int length));
-
-/**
- * @brief Sets callback for logging info/warning/error messages
- *
- * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   func    callback function
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_SetLogCallback(lms_device_t *dev, void (*func)(const char* cstr, const unsigned int type));
 
 /**
  * @defgroup LMS_CLOCK_ID   Clock definitions
@@ -1019,9 +985,6 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *dev, size_t clk_id,
  */
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *dev, size_t clk_id,
                                          float_type freq);
-
-API_EXPORT int CALL_CONV LMS_SetClockFreqWithSpurCancelation(lms_device_t *dev, size_t clk_id,
-                                         float_type freq, float_type BW);
 
 /**
  * Load Si5351C configuration from file
@@ -1117,7 +1080,6 @@ API_EXPORT int CALL_CONV LMS_ConfigureADF4002(lms_device_t *dev, lms_adf4002_con
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip);
-
 
 /**
  *
@@ -1314,7 +1276,6 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream);
-
 
 /**
  * Stop stream
@@ -1575,12 +1536,6 @@ API_EXPORT int CALL_CONV LMS_ResetLMSMCU(lms_device_t *device);
  * error descriptions.
  * @{
  */
-
-/**
- * Get the last error code. Error codes are as defined in errno.h
- * @return last error code
- */
-API_EXPORT int CALL_CONV LMS_GetLastError(void);
 
 /**
  * Get the error message detailing why the last error occurred.

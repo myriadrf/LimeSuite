@@ -87,11 +87,8 @@ public:
     int ProgramMCU(const char* data=nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM,lime::IConnection::ProgrammingCallback callback=nullptr);
     int DACWrite(uint16_t val);
     int DACRead();
-    int GetVCORange(size_t vco_id, lms_range_t* range);
-    int SetVCORange(size_t vco_id, lms_range_t range);
     int GetClockFreq(size_t clk_id, float_type *freq);
     int SetClockFreq(size_t clk_id, float_type freq);
-    int SetClockFreqWithSpurCancelation(size_t clk_id, float_type freq, float_type BW);
     lms_dev_info_t* GetInfo();
     int Synchronize(bool toChip);
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
