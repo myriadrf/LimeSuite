@@ -532,8 +532,7 @@ typedef enum
 
 
 /**Number of NCO frequency/phase offset values*/
-static const size_t LMS_NCO_VAL_COUNT = 16;
-
+static const int LMS_NCO_VAL_COUNT = 16;
 
 /** Convenience type for fixed length name string*/
 typedef char lms_name_t[16];
@@ -689,13 +688,13 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
  * @param dev       Device handle previously obtained by LMS_Open().
  * @param dir_tx    Select RX or TX
  * @param chan      channel index
- * @param index     NCO frequency/phase index to activate
+ * @param index     NCO frequency/phase index to activate or (-1) to disable NCO
  * @param downconv  true(1) CMIX downconvert, false(0) CMIX upconvert
  *
  * @return 0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx,
-                                    size_t chan, size_t index, bool downconv);
+                                    size_t chan, int index, bool downconv);
 
 /**
  * Get the currently active NCO frequency/phase offset index

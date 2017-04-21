@@ -1254,7 +1254,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size
     return lms->GetNCOPhase(dir_tx,ch,phase,fcw);
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, size_t index,bool down)
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, int index,bool down)
 {
     if (device == nullptr)
     {

@@ -1360,14 +1360,14 @@ int LMS7_Device::SetNCOFreq(bool tx, size_t ch, const float_type *freq, float_ty
     return lms->SetNCOPhaseOffsetForMode0(tx, pho);
 }
 
-int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
+int LMS7_Device::SetNCO(bool tx,size_t ch,int ind,bool down)
 {
     lime::LMS7002M* lms = lms_list[ch / 2];
     if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_MASK, true) != 0))
         down = !down;
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC),ch+1,true)!=0)
         return -1;
-    if (ind >= LMS_NCO_VAL_COUNT)
+    if (ind < 0)
     {
         if (tx)
         {
@@ -1382,7 +1382,7 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
                 return -1;
         }
     }
-    else
+    else if (ind < LMS_NCO_VAL_COUNT)
     {
         if (tx)
         {
@@ -1401,6 +1401,8 @@ int LMS7_Device::SetNCO(bool tx,size_t ch,size_t ind,bool down)
                 return -1;
         }
     }
+    else
+        return lime::ReportError("Invalid NCO index value");
     return 0;
 }
 
@@ -1481,7 +1483,7 @@ int LMS7_Device::GetNCOPhase(bool tx, size_t ch, float_type *phase,float_type *f
     return 0;
 }
 
-size_t LMS7_Device::GetNCO(bool tx, size_t ch)
+int LMS7_Device::GetNCO(bool tx, size_t ch)
 {
     lime::LMS7002M* lms = lms_list[ch / 2];
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), ch + 1, true) != 0)
@@ -1497,7 +1499,10 @@ size_t LMS7_Device::GetNCO(bool tx, size_t ch)
     }
 
     if (lms->Get_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), true) != 0)
+    {
+        lime::ReportError(ENODEV, "NCO is disabled");
         return -1;
+    }
     return lms->Get_SPI_Reg_bits(LMS7param(SEL_RX), true);
 }
 
@@ -1555,7 +1560,7 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
     else
     {
         if (rx_channels[chan].cF_offset_nco != 0)
-            SetNCO(false,chan,~0,true);
+            SetNCO(false,chan,-1,true);
         rx_channels[chan].cF_offset_nco = 0;
         if (lms->SetFrequencySX(false, f_Hz) != 0)
             return -1;
@@ -1584,7 +1589,7 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
     else
     {
         if (tx_channels[chan].cF_offset_nco != 0)
-            SetNCO(true,chan,~0,false);
+            SetNCO(true,chan,-1,false);
         tx_channels[chan].cF_offset_nco = 0;
         if (lms->SetFrequencySX(true, f_Hz) != 0)
             return -1;

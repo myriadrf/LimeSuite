@@ -67,11 +67,11 @@ public:
     int SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig,int16_t dc_i =0, int16_t dc_q = 0);
     int GetTestSignal(bool dir_tx, size_t chan);
     int SetNCOFreq(bool tx,size_t ch, const float_type *freq, float_type pho);
-    int SetNCO(bool tx,size_t ch,size_t ind,bool down);
+    int SetNCO(bool tx,size_t ch,int ind,bool down);
     int GetNCOFreq(bool tx,size_t ch, float_type * freq,float_type *pho);
     int SetNCOPhase(bool tx,size_t ch, const float_type *phase, float_type fcw);
     int GetNCOPhase(bool tx,size_t ch, float_type * phase,float_type *fcw);
-    size_t GetNCO(bool tx,size_t ch);
+    int GetNCO(bool tx,size_t ch);
     int Calibrate(bool dir_tx, size_t chan, double bw, unsigned flags);
     int CalibrateInternalADC();
     int CalibrateAnalogRSSI_DC_Offset();
