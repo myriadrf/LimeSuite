@@ -459,7 +459,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     uint8_t ccomp_tia_rfe = Get_SPI_Reg_bits(CCOMP_TIA_RFE);
     uint8_t rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
     uint16_t rcc_ctl_lpfl_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFL_RBB);
-    uint8_t c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
+    uint16_t c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
     uint8_t c_ctl_pga_rbb = Get_SPI_Reg_bits(C_CTL_PGA_RBB);
     uint8_t rcc_ctl_pga_rbb = Get_SPI_Reg_bits(RCC_CTL_PGA_RBB);
     uint8_t rcc_ctl_lpfh_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFH_RBB);
