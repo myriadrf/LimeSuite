@@ -496,6 +496,7 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //RXTSP
     SetDefaults(RxTSP);
     SetDefaults(RxNCO);
+    Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4); //Decimation HBD ratio
@@ -1208,7 +1209,7 @@ void LMS7002M::CalibrateRxDCAuto()
     verbose_printf("Calibrating Rx DC...\n");
 
     //auto calibration
-    uint16_t statusMask;
+    uint16_t statusMask = 0xF000;
     const uint8_t ch = Get_SPI_Reg_bits(LMS7param(MAC));
     uint16_t dcRegAddr = 0x5C7;
     Modify_SPI_Reg_bits(LMS7param(DCMODE), 1);
@@ -1217,14 +1218,12 @@ void LMS7002M::CalibrateRxDCAuto()
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_RXA), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_RXA), 0);
         SPI_write(0x05C2, 0xFF30);
-        statusMask = 0x0F00;
     }
     else
     {
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_RXB), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_RXB), 0);
         SPI_write(0x05C2, 0xFFC0);
-        statusMask = 0xF000;
         dcRegAddr += 2;
     }
 
@@ -1298,7 +1297,7 @@ void LMS7002M::CalibrateTxDCAuto()
     BinSearchParam qparams;
 
     //auto calibration
-    uint16_t statusMask;
+    uint16_t statusMask = 0x0F00;
     const uint8_t ch = Get_SPI_Reg_bits(LMS7param(MAC));
     uint16_t dcRegAddr = 0x5C3;
     Modify_SPI_Reg_bits(LMS7param(DCMODE), 1);
@@ -1310,8 +1309,7 @@ void LMS7002M::CalibrateTxDCAuto()
         qparams.param = LMS7_DC_TXAQ;
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXA), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_TXA), 0);
-        SPI_write(0x05C2, 0x0F03);
-        statusMask = 0x0F00;
+        //SPI_write(0x05C2, 0x0F03);
     }
     else
     {
@@ -1319,20 +1317,30 @@ void LMS7002M::CalibrateTxDCAuto()
         qparams.param = LMS7_DC_TXBQ;
         Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXB), 0);
         Modify_SPI_Reg_bits(LMS7param(PD_DCCMP_TXB), 0);
-        SPI_write(0x05C2, 0x0F0C);
-        statusMask = 0xF000;
+        //SPI_write(0x05C2, 0x0F0C);
         dcRegAddr += 2;
     }
 
-    bool  busy = SPI_read(0x05C1) & statusMask;
+    /*bool  busy = SPI_read(0x05C1) & statusMask;
     while(busy)
     {
         busy = SPI_read(0x05C1) & statusMask;
-    }
+    }*/
 
-    int16_t ivalue = ReadAnalogDC(this, iparams.param);
-    int16_t qvalue = ReadAnalogDC(this, qparams.param);
-    int offset = 64;
+    int16_t ivalue = 0;//ReadAnalogDC(this, iparams.param);
+    int16_t qvalue = 0;//ReadAnalogDC(this, qparams.param);
+    int offset = 1023;
+    iparams.minValue = ivalue-offset;
+    iparams.maxValue = ivalue+offset;
+    qparams.minValue = qvalue-offset;
+    qparams.maxValue = qvalue+offset;
+
+    TxDcBinarySearch(&iparams);
+    ivalue = iparams.result;
+    TxDcBinarySearch(&qparams);
+    qvalue = qparams.result;
+
+    offset = 128;
     iparams.minValue = ivalue-offset;
     iparams.maxValue = ivalue+offset;
     qparams.minValue = qvalue-offset;
@@ -1510,7 +1518,7 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     //RXTSP
     SetDefaults(RxTSP);
     SetDefaults(RxNCO);
-    Modify_SPI_Reg_bits(0x040C, 4, 3, 0x3); //GFIR2_BYP, GFIR1_BYP
+    Modify_SPI_Reg_bits(0x040C, 5, 3, 0x3); //GFIR2_BYP, GFIR1_BYP
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 4);
     if(not useFFT)
     {

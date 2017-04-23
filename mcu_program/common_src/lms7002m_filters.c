@@ -644,7 +644,6 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
 
 uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
 {
-    const uint8_t rssiAvgCount = 5;
     uint16_t rssi;
     float_type tx_lpf_IF;
     int status;
