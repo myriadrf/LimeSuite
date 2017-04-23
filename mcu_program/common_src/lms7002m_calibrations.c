@@ -482,7 +482,6 @@ void CalibrateTxDCAuto()
     BinSearchParam iparams;
     BinSearchParam qparams;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
-    uint16_t dcRegAddr = 0x5C3;
     Modify_SPI_Reg_bits(EN_G_TRF, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -500,7 +499,7 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C4;// DC_TXAQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXA, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXA, 0);
-        SPI_write(0x05C2, 0x0F03);
+        //SPI_write(0x05C2, 0x0F03);
     }
     else
     {
@@ -508,37 +507,27 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C6;// DC_TXBQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXB, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXB, 0);
-        SPI_write(0x05C2, 0x0F0C);
-        dcRegAddr += 2;
+        //SPI_write(0x05C2, 0x0F0C);
     }
 
     //wait until finished
-    while(SPI_read(0x05C1) & 0x0F00);
+    //while(SPI_read(0x05C1) & 0x0F00);
 
     {
-    int16_t ivalue = 0;//ReadAnalogDC(iparams.param.address);
-    int16_t qvalue = 0;//ReadAnalogDC(qparams.param.address);
-    int offset = 128;
-    iparams.minValue = ivalue-offset;
-    iparams.maxValue = ivalue+offset;
-    qparams.minValue = qvalue-offset;
-    qparams.maxValue = qvalue+offset;
+    ROM const int16_t offset[3] = {1023, 128, 8};
+    uint8_t i;
+    iparams.result = 0; //ReadAnalogDC(iparams.param.address);
+    qparams.result = 0; //ReadAnalogDC(qparams.param.address);
+    for(i=0; i<3; ++i)
+    {
+        iparams.minValue = iparams.result-offset[i];
+        iparams.maxValue = iparams.result+offset[i];
+        qparams.minValue = qparams.result-offset[i];
+        qparams.maxValue = qparams.result+offset[i];
 
-    TxDcBinarySearch(&iparams);
-    ivalue = iparams.result;
-    TxDcBinarySearch(&qparams);
-    qvalue = qparams.result;
-
-    offset = 8;
-    iparams.minValue = ivalue-offset;
-    iparams.maxValue = ivalue+offset;
-    qparams.minValue = qvalue-offset;
-    qparams.maxValue = qvalue+offset;
-
-    TxDcBinarySearch(&iparams);
-    ivalue = iparams.result;
-    TxDcBinarySearch(&qparams);
-    qvalue = qparams.result;
+        TxDcBinarySearch(&iparams);
+        TxDcBinarySearch(&qparams);
+    }
     }
 
     Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
