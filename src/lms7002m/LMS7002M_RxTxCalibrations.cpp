@@ -1116,6 +1116,8 @@ int16_t ReadAnalogDC(LMS7002M* lmsControl, const LMS7Parameter& param)
 void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
 {
     const uint16_t mask = tx ? 0x03FF : 0x003F;
+    uint16_t minValue;
+    uint16_t minRSSI;
     SPI_write(address, 0);
     SPI_write(address, 0x4000);
     int16_t initVal = SPI_read(address, true);
@@ -1127,9 +1129,10 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
     }
     else
         initVal &= mask;
-
+    minValue = initVal;
 
     uint16_t rssi = GetRSSI();
+    minRSSI = rssi;
     {
         int tempValue = initVal+1;
         int regValue = 0;
@@ -1145,7 +1148,6 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
     }
 
     bool increment = GetRSSI() < rssi;
-    uint16_t rssiNext = rssi;
     int8_t iterations = 8;
     while (iterations > 0)
     {
@@ -1166,30 +1168,29 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
             SPI_write(address, regValue);
             SPI_write(address, regValue | 0x8000);
         }
-        rssi = rssiNext;
-        rssiNext = GetRSSI();
-        if((rssiNext < rssi) != increment)
+        rssi = GetRSSI();
+        if(rssi < minRSSI)
         {
-            if(increment)
-                --initVal;
-            else
-                ++initVal;
-            int regValue = 0;
-            if(initVal < 0)
-            {
-                regValue |= (mask+1);
-                regValue |= (abs(initVal+mask) & mask);
-            }
-            else
-                regValue |= (abs(initVal+mask+1) & mask);
-            SPI_write(address, regValue);
-            SPI_write(address, regValue | 0x8000);
-            SPI_write(address, 0);
-
-            printf("Found: %i\n", initVal);
-            break;
+            minRSSI = rssi;
+            minValue = initVal;
         }
         --iterations;
+    }
+    {
+        initVal = minValue;
+        uint16_t regValue = 0;
+        if(initVal < 0)
+        {
+            regValue |= (mask+1);
+            regValue |= (abs(initVal+mask) & mask);
+        }
+        else
+            regValue |= (abs(initVal+mask+1) & mask);
+        SPI_write(address, regValue);
+        SPI_write(address, regValue | 0x8000);
+        SPI_write(address, 0);
+
+        printf("Found: %i\n", initVal);
     }
 }
 
@@ -1236,11 +1237,8 @@ void LMS7002M::CalibrateRxDCAuto()
     //manual adjustments
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 0);
     AdjustAutoDC(dcRegAddr, false);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 0);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), 2047);
     AdjustAutoDC(dcRegAddr+1, false);
-    Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), 2047);
-
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 0); // DC_BYP 0
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 1);
 #ifdef ENABLE_CALIBRATION_USING_FFT

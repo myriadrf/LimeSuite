@@ -351,7 +351,10 @@ static void TxDcBinarySearch(BinSearchParam* args)
 
 void AdjustAutoDC(const uint16_t address, bool tx)
 {
+    bool increment;
     uint16_t rssi;
+    uint16_t minRSSI;
+    int16_t minValue;
     int16_t initVal;
     const uint16_t mask = tx ? 0x03FF : 0x003F;
     SPI_write(address, 0);
@@ -367,6 +370,7 @@ void AdjustAutoDC(const uint16_t address, bool tx)
         initVal &= mask;
 
     rssi = GetRSSI();
+    minRSSI = rssi;
     {
         int16_t tempValue = initVal+1;
         uint16_t regValue = 0;
@@ -380,10 +384,8 @@ void AdjustAutoDC(const uint16_t address, bool tx)
         SPI_write(address, regValue);
         SPI_write(address, regValue | 0x8000);
     }
-
+    increment = GetRSSI() < rssi;
     {
-    bool increment = GetRSSI() < rssi;
-    uint16_t rssiNext = rssi;
     int8_t iterations = 8;
     while (iterations > 0)
     {
@@ -404,31 +406,28 @@ void AdjustAutoDC(const uint16_t address, bool tx)
             SPI_write(address, regValue);
             SPI_write(address, regValue | 0x8000);
         }
-        rssi = rssiNext;
-        rssiNext = GetRSSI();
-        if((rssiNext < rssi) != increment)
+        rssi = GetRSSI();
+        if(rssi < minRSSI)
         {
-            uint16_t regValue = 0;
-            if(increment)
-                --initVal;
-            else
-                ++initVal;
-            if(initVal < 0)
-            {
-                regValue |= (mask+1);
-                regValue |= (abs(initVal+mask) & mask);
-            }
-            else
-                regValue |= (abs(initVal+mask+1) & mask);
-            SPI_write(address, regValue);
-            SPI_write(address, regValue | 0x8000);
-            SPI_write(address, 0);
-
-            //printf("Found: %i\n", initVal);
-            break;
+            minRSSI = rssi;
+            minValue = initVal;
         }
         --iterations;
     }
+    }
+    {
+        uint16_t regValue = 0;
+        initVal = minValue;
+        if(initVal < 0)
+        {
+            regValue |= (mask+1);
+            regValue |= (abs(initVal+mask) & mask);
+        }
+        else
+            regValue |= (abs(initVal+mask+1) & mask);
+        SPI_write(address, regValue);
+        SPI_write(address, regValue | 0x8000);
+        SPI_write(address, 0);
     }
 }
 
@@ -465,10 +464,8 @@ void CalibrateRxDCAuto()
     //manual adjustments
     Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 0);
     AdjustAutoDC(dcRegAddr, false);
-    Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, 0);
     Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 2047);
     AdjustAutoDC(dcRegAddr+1, false);
-    Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, 2047);
 
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
     Modify_SPI_Reg_bits(EN_G_TRF, 1);

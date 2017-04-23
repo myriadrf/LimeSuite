@@ -21,7 +21,7 @@ lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
 static bool useMCU =1;
-static bool tx = 1;
+static bool tx = 0;
 static bool filters = 0;
 static float FBW = 5e6;
 
@@ -61,8 +61,8 @@ void DCIQ()
     while(freq <= freqEnd)
     {
         vfreqs.push_back(freq);
-        status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
-        status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
+        //status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
+        //status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
         if(tx)
         {
             //lmsControl.Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 15);
@@ -376,7 +376,8 @@ int main(int argc, char** argv)
         filename = "TxTest.ini";
     else
         filename = "RxTest.ini";*/
-    filename = "CalibSetup.ini";
+    //filename = "CalibSetup.ini";
+    filename = "rxtest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");
