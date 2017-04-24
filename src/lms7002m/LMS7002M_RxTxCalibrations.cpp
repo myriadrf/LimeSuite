@@ -1767,6 +1767,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
         gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
         phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
+        Get_SPI_Reg_bits(LMS7param(DCMODE), true);
         return status;
     }
 

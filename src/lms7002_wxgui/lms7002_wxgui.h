@@ -2117,6 +2117,7 @@ class pnlCalibrations_view : public wxPanel
 			ID_DCOFFI_RFE,
 			ID_DCOFFQ_RFE,
 			ID_EN_DCOFF_RXFE_RFE,
+			ID_DCMODE,
 			ID_GCORRI_TXTSP,
 			ID_GCORRQ_TXTSP,
 			ID_IQCORR_TXTSP,
@@ -2137,6 +2138,7 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* ID_STATICTEXT7;
 		NumericSlider* cmbDCOFFQ_RFE;
 		wxCheckBox* chkEN_DCOFF_RXFE_RFE;
+		wxCheckBox* chkDCMODE;
 		wxButton* btnCalibrateRx;
 		wxStaticText* ID_STATICTEXT5;
 		NumericSlider* cmbGCORRI_TXTSP;

@@ -27,6 +27,7 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[chkEN_DCOFF_RXFE_RFE] = LMS7param(EN_DCOFF_RXFE_RFE);
     wndId2Enum[cmbDCOFFI_RFE] = LMS7param(DCOFFI_RFE);
     wndId2Enum[cmbDCOFFQ_RFE] = LMS7param(DCOFFQ_RFE);
+    wndId2Enum[chkDCMODE] = LMS7param(DCMODE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
@@ -139,6 +140,10 @@ void lms7002_pnlCalibrations_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+        value = 1;
+    chkDCMODE->Enable(value);
 }
 
 void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxSpinEvent& event)

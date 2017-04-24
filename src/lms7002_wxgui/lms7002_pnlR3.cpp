@@ -168,11 +168,6 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_TXA;
             dcCalibGroup->Add(sizer, 0, wxLEFT, 5);
-
-            wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), "Automatic DC calibration mode");
-            chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-            wndId2Enum[chkbox] = LMS7_DCMODE;
-            sizer->Add(chkbox, 0, wxALIGN_CENTER_HORIZONTAL, 0);
         }
         mainSizer->Add(dcCalibGroup, 1, wxEXPAND, 5);
     }

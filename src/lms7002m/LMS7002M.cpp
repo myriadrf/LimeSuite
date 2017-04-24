@@ -693,9 +693,10 @@ int LMS7002M::SaveConfig(const char* filename)
     fout << "[lms7002_registers_b]" << endl;
     addrToRead.clear(); //add only B channel addresses
     for (uint8_t i = 0; i < MEMORY_SECTIONS_COUNT; ++i)
-        for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
-            if (addr >= 0x0100)
-                addrToRead.push_back(addr);
+        if (i != RSSI_DC_CALIBRATION)
+            for (uint16_t addr = MemorySectionAddresses[i][0]; addr <= MemorySectionAddresses[i][1]; ++addr)
+                if (addr >= 0x0100)
+                    addrToRead.push_back(addr);
 
     this->SetActiveChannel(ChB);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
