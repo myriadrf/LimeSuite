@@ -2,6 +2,7 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
+#include "lms7_device.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
@@ -416,7 +417,7 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     if (rgrMODE_RX->GetSelection() == 0)
     {
-        float_type nco_freq[16];
+        double nco_freq[16];
         for (int i = 0; i < 16; ++i)
         {
             txtNCOinputs[i]->GetValue().ToDouble(&nco_freq[i]);
@@ -428,7 +429,7 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
     }
     else
     {
-        float_type nco_phase[16];
+        double nco_phase[16];
         for (int i = 0; i < 16; ++i)
         {
             txtNCOinputs[i]->GetValue().ToDouble(&nco_phase[i]);
@@ -447,8 +448,8 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
     if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
-        float_type freq[16] = {0};
-        float_type pho=0;
+        double freq[16] = {0};
+        double pho=0;
         LMS_GetNCOFrequency(lmsControl, LMS_CH_RX, ch - 1, freq, &pho);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
@@ -461,8 +462,8 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     }
     else //PHO mode
     {
-        float_type phase[16] = {0};
-        float_type fcw = 0;
+        double phase[16] = {0};
+        double fcw = 0;
         LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch - 1, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
@@ -478,8 +479,8 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
 void lms7002_pnlRxTSP_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    float_type freq;
-    LMS_GetClockFreq(lmsControl,LMS_CLOCK_RXTSP,&freq);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    double freq = lms->GetReferenceClk_TSP(false);
     lblRefClk->SetLabel(wxString::Format(_("%3.3f"), freq/1e6));
 
     int16_t iqcorr_value;

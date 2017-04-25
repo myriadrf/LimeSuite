@@ -3,6 +3,8 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+#include "lms7_device.h"
+
 using namespace lime;
 
 lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent )
@@ -146,9 +148,8 @@ void lms7002_pnlTBB_view::OnbtnTuneTxGain( wxCommandEvent& event )
     txtFilterFrequency->GetValue().ToDouble(&input1);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status;
-
-    status = LMS_CalibrateTxGain(lmsControl, 0, nullptr);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    int status = lms->CalibrateTxGain(0, nullptr);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx gain calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));

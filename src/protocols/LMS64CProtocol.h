@@ -18,7 +18,7 @@ namespace lime{
  * configuration and spi access over the LMS64C Protocol.
  * Connections using LMS64C may inherit from LMS64C.
  */
-class LMS64CProtocol : public virtual IConnection
+class LIME_API LMS64CProtocol : public virtual IConnection
 {
 public:
     LMS64CProtocol(void);

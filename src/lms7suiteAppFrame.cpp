@@ -48,39 +48,11 @@ const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
 
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
-    lime::float_type freq;
+    double freq;
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
-        int status = 0;
-        if (event.GetInt() == 1)
-            status = LMS_SetClockFreq(lmsControl, LMS_CLOCK_CGEN, freq);
-        if (status == 0)
-        {
-            wxCommandEvent evt;
-            evt.SetEventType(LOG_MESSAGE);
-            wxString msg;
-            msg += _("Parameters modified: ");
-            uint16_t value;
-            LMS_ReadParam(lmsControl,LMS7param(HBI_OVR_TXTSP),&value);
-            msg += wxString::Format(_("HBI_OVR: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(TXTSPCLKA_DIV),&value);
-            msg += wxString::Format(_("TXTSPCLKA_DIV: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(TXDIVEN),&value);
-            msg += wxString::Format(_("TXDIVEN: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(MCLK1SRC),&value);
-            msg += wxString::Format(_("MCLK1SRC: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(HBD_OVR_RXTSP),&value);
-            msg += wxString::Format(_("HBD_OVR: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(RXTSPCLKA_DIV),&value);
-            msg += wxString::Format(_("RXTSPCLKA_DIV: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(RXDIVEN),&value);
-            msg += wxString::Format(_("RXDIVEN: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(MCLK2SRC),&value);
-            msg += wxString::Format(_("MCLK2SRC: %i "), value);
-            evt.SetString(msg);
-            wxPostEvent(this, evt);
-        }
+        LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+        freq = lms->GetFrequencyCGEN();
 
         if (fftviewer)
         {
@@ -293,12 +265,13 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         wxString controlDev = _("Control port: ");
 
         controlDev.Append(info->deviceName);
-        double refClk;
-        LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF, &refClk);
+        LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+        double refClk = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
-        LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
+        auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
+        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
@@ -311,7 +284,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     }
     else
     {
-        LMS_SetDataLogCallback(lmsControl, nullptr);
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
@@ -369,7 +341,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
-        lime::float_type freq;
+        double freq;
         LMS_GetSampleRate(lmsControl,LMS_CH_RX,0,&freq,NULL);
         fftviewer->SetNyquistFrequency(freq / 2);
     }

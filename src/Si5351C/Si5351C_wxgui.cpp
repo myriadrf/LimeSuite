@@ -5,7 +5,8 @@
 */
 
 #include "Si5351C_wxgui.h"
-
+#include "Si5351C.h"
+#include "lms7_device.h"
 #include <LMSBoards.h>
 
 //(*InternalHeaders(Si5351C_wxgui)
@@ -232,15 +233,10 @@ void Si5351C_wxgui::Initialize(lms_device_t* pModule)
 
 void Si5351C_wxgui::BuildContent(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size)
 {
-    //(*Initialize(Si5351C_wxgui)
-
-    //*)
 }
 
 Si5351C_wxgui::~Si5351C_wxgui()
 {
-    //(*Destroy(Si5351C_wxgui)
-    //*)
 }
 
 void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
@@ -249,7 +245,10 @@ void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
     if (openFileDialog.ShowModal() == wxID_CANCEL)
         return;
 
-    if(LMS_LoadConfigSi5351C(lmsControl,openFileDialog.GetPath().ToStdString().c_str())!=0)
+    lime::Si5351C obj;
+    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.LoadRegValuesFromFile(std::string(openFileDialog.GetPath().ToStdString()));
+    if (obj.UploadConfiguration()!=0)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
@@ -260,8 +259,8 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
         refFreq = (rgrXTALfreq->GetSelection() == 0 ? 25 : 27);
     else
         txtCLKIN_MHz->GetValue().ToDouble(&refFreq);
-    float_type freq[8];
-    float_type clkin = refFreq * 1000000;
+    double freq[8];
+    double clkin = refFreq * 1000000;
     txtFreq_CLK0->GetValue().ToDouble(&freq[0]);
     txtFreq_CLK1->GetValue().ToDouble(&freq[1]);
     txtFreq_CLK2->GetValue().ToDouble(&freq[2]);
@@ -292,15 +291,29 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     if (chkInvert_CLK6->GetValue()) freq[6] *= -1;
     if (chkInvert_CLK7->GetValue()) freq[7] *= -1;
 
-   if (LMS_ConfigureSi5351C(lmsControl,clkin, freq,rgrClkSrc->GetSelection())!=0)
+    lime::Si5351C obj;
+    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+
+    obj.SetPLL(0,clkin,rgrClkSrc->GetSelection());
+    obj.SetPLL(1,clkin,rgrClkSrc->GetSelection());
+
+    for (int i = 0; i < 8;i++)
+    {
+        unsigned clock = abs(freq[i]);
+        obj.SetClock(i,clock,clock!=0,freq[i]<0);
+    }
+
+    if (obj.ConfigureClocks()!=0 || obj.UploadConfiguration()!=0)
        wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
 }
 
 void Si5351C_wxgui::OnbtnResetToDefaultsClick(wxCommandEvent& event)
 {
-    LMS_ConfigureSi5351C(lmsControl,0, nullptr,0);
+    lime::Si5351C obj;
+    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Reset();
+    obj.UploadConfiguration();
 }
-
 
 void Si5351C_wxgui::ModifyClocksGUI(const std::string &board)
 {
@@ -395,19 +408,22 @@ void Si5351C_wxgui::ClockEnable(unsigned int i, bool enabled)
 
 void Si5351C_wxgui::OnbtnReadStatusClick(wxCommandEvent& event)
 {
-    uint32_t stat;
-    LMS_StatusSi5351C(lmsControl,&stat);
+    lime::Si5351C obj;
+    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    lime::Si5351C::StatusBits stat = obj.GetStatusBits();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\
 LOL_A:	%i  	LOL_A_STKY:	%i\n\
-LOS:	%i  	LOS_STKY:	%i", stat&64 ? 1:0, stat&128 ? 1:0, stat&4 ? 1:0, stat&8 ? 1:0, stat&1 ? 1:0, stat&2 ? 1: 0, stat&16 ? 1:0, stat&32 ? 1:0);
-    lblStatus->SetLabel(text);
+LOS:	%i  	LOS_STKY:	%i", stat.sys_init, stat.sys_init_stky, stat.lol_b, stat.lol_b_stky, stat.lol_a, stat.lol_a_stky, stat.los, stat.los_stky);
+lblStatus->SetLabel(text);
 }
 
 void Si5351C_wxgui::OnbtnClearStatusClick(wxCommandEvent& event)
 {
-    LMS_StatusSi5351C(lmsControl,nullptr);
+    lime::Si5351C obj;
+    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.ClearStatus();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
 LOL_B:	%i  	LOL_B_STKY:	%i\n\

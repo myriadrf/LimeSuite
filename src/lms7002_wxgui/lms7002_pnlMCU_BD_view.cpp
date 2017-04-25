@@ -148,7 +148,7 @@ void lms7002_pnlMCU_BD_view::OnchkResetClick( wxCommandEvent& event )
         // RESET
         m_iMode0 = 0;
         m_iMode1 = 0;
-        LMS_ResetLMSMCU(lmsControl);
+        LMS_Program(lmsControl,nullptr,0,LMS_PROG_TRG_MCU,LMS_PROG_MD_RST,nullptr);
         rgrMode->Enable(false);
         btnStartProgramming->Enable(false);
         DebugMode->SetValue(false);
@@ -198,23 +198,18 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
     mThreadWorking = true;
     mWorkerThread = std::thread([](lms7002_pnlMCU_BD_view* pthis, char mode1, char mode0)
     {
-        lms_target_t target;
+        lms_prog_md_t prog_mode;
         int retval=0;
-        if (mode1 == 0 && mode0 == 0)
-            retval = LMS_ResetLMSMCU(pthis->lmsControl);
-        else
-        {
-            if (mode0 == 1 && mode1 == 0)
-                target = LMS_TARGET_FLASH;
-            else if (mode0 == 0 && mode1 == 1)
-                target = LMS_TARGET_RAM;
-            else if (mode0 == 1 && mode1 == 1)
-                target = LMS_TARGET_BOOT;
-            else
-                target = LMS_TARGET_FLASH;
 
-            retval = LMS_ProgramLMSMCU(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, target, OnProgrammingCallback);
-        }
+        if (mode0 == 1 && mode1 == 0)
+            prog_mode = LMS_PROG_MD_FLASH;
+        else if (mode0 == 0 && mode1 == 1)
+            prog_mode = LMS_PROG_MD_RAM;
+        else
+            prog_mode = LMS_PROG_MD_RST;
+
+        retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, LMS_PROG_TRG_MCU, prog_mode, OnProgrammingCallback);
+
         wxThreadEvent *evt = new wxThreadEvent();
         evt->SetInt(retval);
         evt->SetId(ID_PROGRAMING_FINISH_EVENT);

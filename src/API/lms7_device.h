@@ -38,7 +38,6 @@ public:
     int Init();
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
     int Reset();
-    int SetReferenceClock(const float_type refCLK_MHz);
     virtual size_t GetNumChannels(const bool tx=false) const;
     int SetRate(float_type f_MHz, int oversample);
     int SetRate(bool tx, float_type f_MHz, size_t oversample = 0);
@@ -73,18 +72,8 @@ public:
     int GetNCOPhase(bool tx,size_t ch, float_type * phase,float_type *fcw);
     int GetNCO(bool tx,size_t ch);
     int Calibrate(bool dir_tx, size_t chan, double bw, unsigned flags);
-    int CalibrateInternalADC();
-    int CalibrateAnalogRSSI_DC_Offset();
-    int CalibrateRP_BIAS();
-    int CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS);
-    int ProgramFPGA(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback);
-    int ProgramFPGA(std::string name, lms_target_t mode,lime::IConnection::ProgrammingCallback callback);
-    int ProgramFW(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback);
-    int ProgramFW(std::string name, lms_target_t mode,lime::IConnection::ProgrammingCallback callback);
-    int ProgramHPM7(const char* data, size_t len, int mode,lime::IConnection::ProgrammingCallback callback);
-    int ProgramHPM7(std::string fname, int mode,lime::IConnection::ProgrammingCallback callback);
+    int Program(const char* data, size_t len, lms_prog_trg_t target, lms_prog_md_t mode, lime::IConnection::ProgrammingCallback callback);
     int ProgramUpdate(const bool download, lime::IConnection::ProgrammingCallback callback);
-    int ProgramMCU(const char* data=nullptr, size_t len=0, lms_target_t mode=LMS_TARGET_RAM,lime::IConnection::ProgrammingCallback callback=nullptr);
     int DACWrite(uint16_t val);
     int DACRead();
     int GetClockFreq(size_t clk_id, float_type *freq);
@@ -98,7 +87,6 @@ public:
     int SaveConfig(const char *filename);
     int ReadLMSReg(uint16_t address, uint16_t *val);
     int WriteLMSReg(uint16_t address, uint16_t val);
-    int RegisterTest();
     int ReadParam(struct LMS7Parameter param, uint16_t *val);
     int WriteParam(struct LMS7Parameter param, uint16_t val);
     int SetActiveChip(unsigned ind);

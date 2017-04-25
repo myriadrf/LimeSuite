@@ -1,5 +1,5 @@
 #include "dlgAbout.h"
-#include "lime/LimeSuite.h"
+#include "VersionInfo.h"
 #include "resources/splash.h"
 dlgAbout::dlgAbout( wxWindow* parent )
 :
@@ -13,8 +13,8 @@ void dlgAbout::OnInit( wxInitDialogEvent& event )
     wxBitmap splashBitmap = wxBITMAP_PNG_FROM_DATA(splash);
     imgLogo->SetBitmap(splashBitmap);
 	wxString msg;
-    msg << "Version: " << LMS_GetLibraryVersion() << "\n";
-    msg << "Build date: " << LMS_GetBuildTimestamp();
+    msg << "Version: " << lime::GetLibraryVersion() << "\n";
+    msg << "Build date: " << lime::GetBuildTimestamp();
 	txtVersion->SetLabel(msg);
 	txtDescription->SetLabel("");
 }

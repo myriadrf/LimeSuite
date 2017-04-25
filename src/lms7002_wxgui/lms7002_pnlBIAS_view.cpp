@@ -1,6 +1,7 @@
 #include "lms7002_pnlBIAS_view.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
+#include "lms7_device.h"
 using namespace lime;
 
 lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent )
@@ -67,6 +68,7 @@ void lms7002_pnlBIAS_view::UpdateGUI()
 
 void lms7002_pnlBIAS_view::OnCalibrateRP_BIAS( wxCommandEvent& event )
 {
-    LMS_CalibrateRP_BIAS(lmsControl);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lms->CalibrateRP_BIAS();
     UpdateGUI();
 }

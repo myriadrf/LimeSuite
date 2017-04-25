@@ -64,6 +64,15 @@ LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
     }
 }
 
+LMS7_Device::~LMS7_Device()
+{
+    for (unsigned i = 0; i < this->lms_list.size();i++)
+        delete this->lms_list[i];
+
+    if (this->connection != nullptr)
+	lime::ConnectionRegistry::freeConnection(this->connection);
+}
+
 void LMS7_Device::_Initialize(lime::IConnection* conn)
 {
     this->tx_channels.resize(this->GetNumChannels());
@@ -116,6 +125,10 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
 
         if (bandwidth > 0)
         {
+            if (lms->SPI_read(0x2F, false)== 0x3840)
+                lms->EnableCalibrationByMCU(false);
+            else
+                lms->EnableCalibrationByMCU(true);
             if (lms->TuneRxFilter(bandwidth)!=0)
                 return -1;
         }
@@ -297,6 +310,10 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
 
             if (bandwidth > 0)
             {
+                if (lms->SPI_read(0x2F, false)== 0x3840)
+                    lms->EnableCalibrationByMCU(false);
+                else
+                    lms->EnableCalibrationByMCU(true);
                 if (lms->TuneTxFilter(bandwidth) != 0)
                     return -1;
             }
@@ -306,26 +323,6 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
         lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 1, true);
         lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1, true);
         return lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1, true);
-    }
-    return 0;
-}
-
-LMS7_Device::~LMS7_Device()
-{
-    for (unsigned i = 0; i < this->lms_list.size();i++)
-        delete this->lms_list[i];
-
-    if (this->connection != nullptr)
-	lime::ConnectionRegistry::freeConnection(this->connection);
-}
-
-int LMS7_Device::SetReferenceClock(const double refCLK_Hz)
-{
-    for (unsigned i = 0; i < lms_list.size(); i++)
-    {
-        lime::LMS7002M* lms = lms_list[i];
-        lms->SetReferenceClk_SX(false, refCLK_Hz);
-        lms->SetReferenceClk_SX(true, refCLK_Hz);
     }
     return 0;
 }
@@ -1522,30 +1519,6 @@ int LMS7_Device::Calibrate(bool dir_tx, size_t chan, double bw, unsigned flags)
         return lms->CalibrateRx(bw, false);
 }
 
-int LMS7_Device::CalibrateInternalADC()
-{
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
-    return lms->CalibrateInternalADC();
-}
-
-int LMS7_Device::CalibrateAnalogRSSI_DC_Offset()
-{
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
-    return lms->CalibrateAnalogRSSI_DC_Offset();
-}
-
-int LMS7_Device::CalibrateRP_BIAS()
-{
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
-    return lms->CalibrateRP_BIAS();
-}
-
-int LMS7_Device::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
-{
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
-    return lms->CalibrateTxGain(maxGainOffset_dBFS, actualGain_dBFS);
-}
-
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
@@ -1661,150 +1634,58 @@ int LMS7_Device::EnableChannel(bool dir_tx, size_t chan, bool enabled)
     return LMS_SUCCESS;
 }
 
-int LMS7_Device::ProgramFPGA(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
+int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lms_prog_md_t mode, lime::IConnection::ProgrammingCallback callback)
 {
-    if (mode > LMS_TARGET_BOOT)
+    switch (target)
     {
-        lime::ReportError(ENOTSUP, "Unsupported target storage type");
-        return -1;
-    }
-    //device FPGA(2)
-    //mode to RAM(0), to FLASH (1)
-    return this->connection->ProgramWrite(data, len, mode, 2, callback);
-}
+        case LMS_PROG_TRG_FX3:
+            if (mode == LMS_PROG_MD_FLASH)
+                return this->connection->ProgramWrite(data, len, 2, 1, callback);
+            else if (mode == LMS_PROG_MD_RAM)
+                return this->connection->ProgramWrite(data, len, 1, 1, callback);
+            else
+                return this->connection->ProgramWrite(nullptr, 0, 0, 1, callback);
 
-int LMS7_Device::ProgramFPGA(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
-{
-    std::ifstream file(fname);
-    int len;
-    char* data;
-    if (file.is_open())
-    {
-        file.seekg (0, file.end);
-        len = file.tellg();
-        file.seekg (0, file.beg);
-        data = new char[len];
-        file.read(data,len);
-        file.close();
-    }
-    else
-    {
-        lime::ReportError(ENOENT, "Unable to open the specified file");
-        return -1;
-    }
-    int ret = ProgramFPGA(data,len,mode,callback);
-    delete [] data;
-    return ret;
-}
+        case LMS_PROG_TRG_FPGA:
+            return this->connection->ProgramWrite(data, len, mode, 2, callback);
 
-int LMS7_Device::ProgramHPM7(const char* data, size_t len, int mode,lime::IConnection::ProgrammingCallback callback)
-{
-    if (mode > LMS_TARGET_BOOT)
-    {
-        lime::ReportError(ENOTSUP, "Unsupported target storage type");
-        return -1;
+        case LMS_PROG_TRG_MCU:
+        {
+            lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
+            lime::IConnection::MCU_PROG_MODE prog_mode;
+            uint8_t bin[lime::MCU_BD::cMaxFWSize];
+
+            if(data != nullptr)
+                memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
+
+            if (mode == LMS_PROG_MD_RAM)
+                prog_mode = lime::IConnection::MCU_PROG_MODE::SRAM;
+            else if (mode == LMS_PROG_MD_FLASH)
+                prog_mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
+            else
+            {
+                mcu->Reset_MCU();
+                return 0;
+            }
+
+            mcu->callback = callback;
+            mcu->Program_MCU(bin,prog_mode);
+            mcu->callback = nullptr;
+            return 0;
+        }
+
+        case LMS_PROG_TRG_HPM7:
+            return this->connection->ProgramWrite(data, len, mode, 0, callback);
+
+        default:
+            lime::ReportError(ENOTSUP, "Unsupported programming target");
+            return -1;
     }
-    //device FPGA(2)
-    //mode to RAM(0), to FLASH (1)
-    return this->connection->ProgramWrite(data, len, mode, 0, callback);
 }
 
 int LMS7_Device::ProgramUpdate(const bool download,lime::IConnection::ProgrammingCallback callback)
 {
     return this->connection->ProgramUpdate(download,callback);
-}
-
-int LMS7_Device::ProgramHPM7(std::string fname, int mode,lime::IConnection::ProgrammingCallback callback)
-{
-    std::ifstream file(fname);
-    int len;
-    char* data;
-    if (file.is_open())
-    {
-        file.seekg (0, file.end);
-        len = file.tellg();
-        file.seekg (0, file.beg);
-        data = new char[len];
-        file.read(data,len);
-        file.close();
-    }
-    else
-    {
-        lime::ReportError(ENOENT, "Unable to open the specified file");
-        return -1;
-    }
-    int ret = ProgramHPM7(data,len,mode,callback);
-    delete [] data;
-    return ret;
-}
-
-int LMS7_Device::ProgramFW(const char* data, size_t len, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
-{
-    if (mode == LMS_TARGET_FLASH)
-        return this->connection->ProgramWrite(data, len, 2, 1, callback);
-    else if (mode == LMS_TARGET_RAM)
-        return this->connection->ProgramWrite(data, len, 1, 1, callback);
-    else
-        return this->connection->ProgramWrite(nullptr, 0, 0, 1, callback);
-}
-
-int LMS7_Device::ProgramFW(std::string fname, lms_target_t mode,lime::IConnection::ProgrammingCallback callback)
-{
-    std::ifstream file(fname);
-    int len;
-    char* data;
-    if (file.is_open())
-    {
-        file.seekg (0, file.end);
-        len = file.tellg();
-        file.seekg (0, file.beg);
-        data = new char[len];
-        file.read(data,len);
-        file.close();
-    }
-    else
-    {
-        lime::ReportError(ENOENT, "Unable to open the specified file");
-        return -1;
-    }
-    int ret = ProgramFW(data,len,mode,callback);
-    delete [] data;
-    return ret;
-}
-
-int LMS7_Device::ProgramMCU(const char* data, size_t len, lms_target_t target,lime::IConnection::ProgrammingCallback callback)
-{
-    lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
-    lime::IConnection::MCU_PROG_MODE mode;
-    uint8_t bin[lime::MCU_BD::cMaxFWSize];
-
-    if(data != nullptr)
-    {
-        memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
-    }
-
-    if (target == LMS_TARGET_RAM)
-    {
-        mode = lime::IConnection::MCU_PROG_MODE::SRAM;
-    }
-    else if (target == LMS_TARGET_FLASH)
-    {
-        mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
-    }
-    else if (target == LMS_TARGET_BOOT)
-    {
-        mode = lime::IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM;
-    }
-    else
-    {
-        lime::ReportError(ENOTSUP, "Unsupported target storage type");
-        return -1;
-    }
-
-    mcu->callback = callback;
-    mcu->Program_MCU(bin,mode);
-    mcu->callback = nullptr;
-    return 0;
 }
 
 int LMS7_Device::DACWrite(uint16_t val)
@@ -1935,11 +1816,27 @@ int LMS7_Device::Synchronize(bool toChip)
 {
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
-        int ret;
+        lime::LMS7002M* lms = lms_list[i];
+        int ret=0;
         if (toChip)
-            ret = lms_list[i]->UploadAll();
+        {
+            if (lms->UploadAll()==0)
+            {
+                lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+                int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+                int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+                float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+                if (interp != 7)
+                    fpgaTxPLL /= pow(2.0, interp);
+                float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+                if (decim != 7)
+                    fpgaRxPLL /= pow(2.0, decim);
+                lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
+                ret = connection->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+            }
+        }
         else
-            ret = lms_list[i]->DownloadAll();
+            ret = lms->DownloadAll();
         if (ret != 0)
             return ret;
     }
@@ -1971,12 +1868,6 @@ int LMS7_Device::LoadConfig(const char *filename)
     lime::LMS7002M* lms = lms_list[lms_chip_id];
     if (lms->LoadConfig(filename)==0)
     {
-        auto conn = lms->GetConnection();
-        if (conn == nullptr)
-        {
-            lime::ReportError(EINVAL, "Device not connected");
-            return -1;
-        }
         lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
         int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
         int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
@@ -1987,7 +1878,7 @@ int LMS7_Device::LoadConfig(const char *filename)
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
         lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-        return conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+        return connection->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
     }
     return -1;
 }
@@ -2007,16 +1898,6 @@ int LMS7_Device::ReadLMSReg(uint16_t address, uint16_t *val)
 int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val)
 {
     return lms_list.at(lms_chip_id)->SPI_write(address & 0xFFFF, val);
-}
-
-int LMS7_Device::RegisterTest()
-{
-    for (unsigned i = 0; i < lms_list.size(); i++)
-    {
-        if (lms_list[i]->RegistersTest() != 0)
-            return -1;
-    }
-    return 0;
 }
 
 int LMS7_Device::ReadParam(struct LMS7Parameter param, uint16_t *val)
