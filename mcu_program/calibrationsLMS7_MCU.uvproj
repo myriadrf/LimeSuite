@@ -12,14 +12,14 @@
       <ToolsetName>MCS-51</ToolsetName>
       <TargetOption>
         <TargetCommonOption>
-          <Device>LMS7002</Device>
-          <Vendor>Lime Microsystems Limited</Vendor>
-          <Cpu>IRAM(0-0xFF) XRAM(0-0x7FF) IROM(0-0x1FFF) CLOCK(40000000)</Cpu>
+          <Device>8051 (all Variants)</Device>
+          <Vendor>Generic</Vendor>
+          <Cpu>IRAM(0-0x7F) IROM(0-0xFFF) CLOCK(12000000)</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
-          <StartupFile>"LIB\STARTUP_LMS7002.A51" ("LMS7002 Startup Code")</StartupFile>
+          <StartupFile>"LIB\STARTUP.A51" ("Standard 8051 Startup Code")</StartupFile>
           <FlashDriverDll></FlashDriverDll>
-          <DeviceId>0</DeviceId>
-          <RegisterFile>LMS7002_REGx51.h</RegisterFile>
+          <DeviceId>2994</DeviceId>
+          <RegisterFile>REG51.H</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -33,8 +33,8 @@
           <BinPath></BinPath>
           <IncludePath></IncludePath>
           <LibPath></LibPath>
-          <RegisterFilePath>LMS7002\</RegisterFilePath>
-          <DBRegisterFilePath>LMS7002\</DBRegisterFilePath>
+          <RegisterFilePath></RegisterFilePath>
+          <DBRegisterFilePath></DBRegisterFilePath>
           <TargetStatus>
             <Error>0</Error>
             <ExitCodeStop>0</ExitCodeStop>
@@ -100,11 +100,11 @@
           <SimDllName>S8051.DLL</SimDllName>
           <SimDllArguments></SimDllArguments>
           <SimDlgDll>DP51.DLL</SimDlgDll>
-          <SimDlgDllArguments>-p52</SimDlgDllArguments>
+          <SimDlgDllArguments>-p51</SimDlgDllArguments>
           <TargetDllName>S8051.DLL</TargetDllName>
           <TargetDllArguments></TargetDllArguments>
           <TargetDlgDll>TP51.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-p52</TargetDlgDllArguments>
+          <TargetDlgDllArguments>-p51</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -163,7 +163,7 @@
             <DriverSelection>-1</DriverSelection>
           </Flash1>
           <Flash2></Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash3></Flash3>
           <Flash4></Flash4>
         </Utilities>
         <Target51>
@@ -178,7 +178,7 @@
             <UseMultipleDPTR>0</UseMultipleDPTR>
             <UseOnchipXram>0</UseOnchipXram>
             <HadIRAM>1</HadIRAM>
-            <HadXRAM>1</HadXRAM>
+            <HadXRAM>0</HadXRAM>
             <HadIROM>1</HadIROM>
             <Moda2>0</Moda2>
             <Moddp2>0</Moddp2>
@@ -253,17 +253,17 @@
               <IRO>
                 <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x2000</Size>
+                <Size>0x1000</Size>
               </IRO>
               <IRA>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x100</Size>
+                <Size>0x80</Size>
               </IRA>
               <XRA>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x800</Size>
+                <Size>0x0</Size>
               </XRA>
               <XRA512>
                 <Type>0</Type>
@@ -317,7 +317,7 @@
             <WarningLevel>2</WarningLevel>
             <DataOverlaying>1</DataOverlaying>
             <OverlayString></OverlayString>
-            <MiscControls></MiscControls>
+            <MiscControls>REMOVEUNUSED</MiscControls>
             <DisableWarningNumbers></DisableWarningNumbers>
             <LinkerCmdFile></LinkerCmdFile>
             <Assign></Assign>
@@ -560,6 +560,11 @@
                   </C51>
                 </File51>
               </FileOption>
+            </File>
+            <File>
+              <FileName>lms7002m_filters.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\common_src\lms7002m_filters.c</FilePath>
             </File>
           </Files>
         </Group>
