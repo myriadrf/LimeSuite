@@ -18,7 +18,7 @@ General changes:
 - FFTviewer: add checkbox for RX->TX loopback control
 - Merged major MCU based calibrations update
 
-Release 17.02.2 (pending)
+Release 17.02.2 (2017-04-30)
 ==========================
 
 - Fixed register typo in LMS7002M::SetTxDCOffset()
