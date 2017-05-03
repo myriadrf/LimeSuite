@@ -15,6 +15,7 @@
 #include <wx/spinctrl.h>
 #include <wx/object.h>
 #include <wx/tooltip.h>
+#include <lms7_device.h>
 
 using namespace lime;
 
@@ -42,7 +43,8 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
             continue;
         wndClass = wnd->GetClassInfo();
 
-        LMS_ReadParam(lmsControl,idParam.second,&value);
+        LMS7_Device* lms = (LMS7_Device*)lmsControl;
+        lms->ReadParam(idParam.second, &value, true);
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
         {

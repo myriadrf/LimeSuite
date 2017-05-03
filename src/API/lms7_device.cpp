@@ -1900,9 +1900,8 @@ int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val)
     return lms_list.at(lms_chip_id)->SPI_write(address & 0xFFFF, val);
 }
 
-int LMS7_Device::ReadParam(struct LMS7Parameter param, uint16_t *val)
+int LMS7_Device::ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip)
 {
-    bool forceReadFromChip = false; //bypass returning values from cache
     //registers containing read only registers, which values can change
     const uint16_t readOnlyRegs[] = { 0, 1, 2, 3, 4, 5, 6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F, 0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
     for (unsigned i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)

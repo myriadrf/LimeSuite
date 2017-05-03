@@ -87,7 +87,7 @@ public:
     int SaveConfig(const char *filename);
     int ReadLMSReg(uint16_t address, uint16_t *val);
     int WriteLMSReg(uint16_t address, uint16_t val);
-    int ReadParam(struct LMS7Parameter param, uint16_t *val);
+    int ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip = false);
     int WriteParam(struct LMS7Parameter param, uint16_t val);
     int SetActiveChip(unsigned ind);
     lime::LMS7002M* GetLMS(int index = -1);
