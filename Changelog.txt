@@ -11,6 +11,8 @@ API additions:
 - LMS_SetClockFreqWithSpurCancelation
 
 General changes:
+- SoapyLMS7 - added getMasterClockRates()
+- SoapyLMS7 - added getSampleRateRange()
 - LimeSDR v1.4 updated to r2.8 gateware
 - GPIO support in SoapyLM7 module
 - Library level logging support

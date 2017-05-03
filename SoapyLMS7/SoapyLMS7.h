@@ -202,6 +202,8 @@ public:
 
     double getMasterClockRate(void) const;
 
+    SoapySDR::RangeList getMasterClockRates(void) const;
+
     /*******************************************************************
      * Time API
      ******************************************************************/
