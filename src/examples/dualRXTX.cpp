@@ -47,6 +47,7 @@ int main(int argc, char** argv)
 
     //Initialize device with default configuration
     //Do not use if you want to keep existing configuration
+    //Use LMS_LoadConfig(device, "/path/to/file.ini") to load config from INI
     if (LMS_Init(device) != 0)
         error();
 
@@ -71,7 +72,6 @@ int main(int argc, char** argv)
         error();
 
     //Set RX center frequency to 1 GHz
-    //Automatically selects antenna port
     if (LMS_SetLOFrequency(device, LMS_CH_RX, 0, 1e9) != 0)
         error();
     if (LMS_SetLOFrequency(device, LMS_CH_RX, 1, 1e9) != 0)
@@ -211,11 +211,16 @@ int main(int argc, char** argv)
     for (int i = 0; i < chCount; ++i)
     {
         LMS_StopStream(&rx_streams[i]); //stream is stopped but can be started again with LMS_StartStream()
-        LMS_DestroyStream(device, &rx_streams[i]); //stream is deallocated and can no longer be used
-        LMS_StopStream(&tx_streams[i]);
-        LMS_DestroyStream(device, &tx_streams[i]);
-        delete [] buffers[i];
+        LMS_StopStream(&tx_streams[i]);      
     }
+
+    for (int i = 0; i < chCount; ++i)
+    {
+        LMS_DestroyStream(device, &rx_streams[i]); //stream is deallocated and can no longer be used
+        LMS_DestroyStream(device, &tx_streams[i]);
+        delete[] buffers[i];
+    }
+
     //Close device
     LMS_Close(device);
 
