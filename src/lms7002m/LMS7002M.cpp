@@ -251,8 +251,6 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
 
     //--- ADC/DAC ---
     this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_AFE), 1);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_G_AFE), enable?1:0);
-    this->Modify_SPI_Reg_bits(LMS7param(PD_AFE), enable?0:1);
     if (ch == ChA)
     {
         if (isTx) this->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), enable?0:1);
@@ -264,26 +262,43 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
         else      this->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), enable?0:1);
     }
 
+    int disabledChannels = (Get_SPI_Reg_bits(LMS7_PD_AFE.address,4,1)&0xF);//check if all channels are disabled
+    Modify_SPI_Reg_bits(LMS7param(EN_G_AFE),disabledChannels==0xF ? 0 : 1);
+    Modify_SPI_Reg_bits(LMS7param(PD_AFE), disabledChannels==0xF ? 1 : 0);
+
     //--- digital ---
     if (isTx)
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_TXTSP), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(ISINC_BYP_TXTSP), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP), 1);
+
+        if (!enable)
+        {
+            this->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_TXTSP), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(GC_BYP_TXTSP), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(PH_BYP_TXTSP), 1);
+        }
     }
     else
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_RXTSP), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(DCLOOP_STOP), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 2); //bypass
-        this->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
         this->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-        this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), 1);
-        this->Modify_SPI_Reg_bits(LMS7param(GC_BYP_RXTSP), 1);
-        this->Modify_SPI_Reg_bits(LMS7param(PH_BYP_RXTSP), 1);
+        if (!enable)
+        {
+            this->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(GC_BYP_RXTSP), 1);
+            this->Modify_SPI_Reg_bits(LMS7param(PH_BYP_RXTSP), 1);
+        }
     }
 
     //--- baseband ---
@@ -322,7 +337,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     {
         this->SetActiveChannel(ChSXT);
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
-        this->Modify_SPI_Reg_bits(LMS7param(EN_G), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&3) == 3?0:1);
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
@@ -333,7 +348,7 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     {
         this->SetActiveChannel(ChSXR);
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_SXRSXT), 1);
-        this->Modify_SPI_Reg_bits(LMS7param(EN_G), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(EN_G), (disabledChannels&0xC)==0xC?0:1);
         if (ch == ChB) //enable LO to channel B
         {
             this->SetActiveChannel(ChA);
