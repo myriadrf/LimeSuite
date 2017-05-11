@@ -35,6 +35,7 @@ class lms7002_pnlXBUF_view;
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/combobox.h>
 #include <wx/radiobut.h>
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
@@ -45,7 +46,6 @@ class lms7002_pnlXBUF_view;
 #include <wx/icon.h>
 #include <wx/notebook.h>
 #include <wx/statbox.h>
-#include <wx/combobox.h>
 #include <wx/spinctrl.h>
 #include <wx/radiobox.h>
 #include <wx/textctrl.h>
@@ -66,7 +66,8 @@ class mainPanel : public wxPanel
 	protected:
 		enum
 		{
-			ID_BTN_CH_A = 2048,
+			ID_G_LNA_RFE = 2048,
+			ID_BTN_CH_A,
 			ID_BTN_CH_B,
 			ID_BTN_CHIP_TO_GUI,
 			ID_BTN_RESET_CHIP,
@@ -94,6 +95,7 @@ class mainPanel : public wxPanel
 		wxButton* ID_BUTTON1;
 		wxButton* ID_BUTTON2;
 		wxButton* ID_BUTTON3;
+		wxComboBox* cmbLmsDevice;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
 		wxCheckBox* chkEnableMIMO;
@@ -110,6 +112,7 @@ class mainPanel : public wxPanel
 		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnLmsDeviceSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }

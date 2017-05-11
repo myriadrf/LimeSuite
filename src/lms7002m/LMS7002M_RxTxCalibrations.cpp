@@ -933,7 +933,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     Log("Tx calibration started", LOG_INFO);
     if(useExtLoopback && useOnBoardLoopback)
     {
-        status = SetExtLoopback(dataPort, ch, true);
+        status = SetExtLoopback(controlPort, ch, true);
         if(status != 0)
             return status;
     }
@@ -980,7 +980,7 @@ TxCalibrationEnd:
     //RestoreAllRegisters();
 
     if(useExtLoopback && useOnBoardLoopback)
-        SetExtLoopback(dataPort, ch, false);
+        SetExtLoopback(controlPort, ch, false);
 
     if(status != 0)
     {
@@ -1802,7 +1802,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     CalibrateRxDCAuto();
     if(useExtLoopback && useOnBoardLoopback)
     {
-        status = SetExtLoopback(dataPort, ch, true);
+        status = SetExtLoopback(controlPort, ch, true);
         if(status != 0)
             goto RxCalibrationEndStage;
     }
@@ -1853,7 +1853,7 @@ RxCalibrationEndStage:
     UploadAll();
 
     if(useExtLoopback && useOnBoardLoopback)
-        SetExtLoopback(dataPort, ch, false);
+        SetExtLoopback(controlPort, ch, false);
 
     if (status != 0)
     {

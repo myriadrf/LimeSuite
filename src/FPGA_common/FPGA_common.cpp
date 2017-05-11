@@ -35,45 +35,51 @@ const uint16_t PHCFG_UPDN = 1 << 13;
 
 const uint16_t busyAddr = 0x0021;
 
-int StartStreaming(IConnection* serPort)
+
+int StartStreaming(IConnection* serPort, unsigned endpointIndex)
 {
     uint16_t interface_ctrl_000A;
     int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
-    if(status != 0)
+    if (status != 0)
         return status;
-    status = serPort->WriteRegister(0x000A, interface_ctrl_000A | RX_EN);
+    uint32_t value = RX_EN << (2 * endpointIndex);
+    status = serPort->WriteRegister(0x000A, interface_ctrl_000A | value);
     return status;
 }
 
-int StopStreaming(IConnection* serPort)
+int StopStreaming(IConnection* serPort, unsigned endpointIndex)
 {
     uint16_t interface_ctrl_000A;
     int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
-    if(status != 0)
+    if (status != 0)
         return status;
-    serPort->WriteRegister(0x000A, interface_ctrl_000A & ~(TX_EN | RX_EN));
+    uint32_t value = ~((RX_EN | TX_EN) << (2 * endpointIndex));
+    serPort->WriteRegister(0x000A, interface_ctrl_000A & value);
     return status;
 }
 
-int ResetTimestamp(IConnection* serPort)
+int ResetTimestamp(IConnection* serPort, unsigned endpointIndex)
 {
     int status;
 #ifndef NDEBUG
     uint16_t interface_ctrl_000A;
     status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
-    if(status != 0)
+    if (status != 0)
         return 0;
-    if(interface_ctrl_000A & RX_EN)
+
+    if ((interface_ctrl_000A & (RX_EN << (2 * endpointIndex))))
         return ReportError(EPERM, "Streaming must be stopped to reset timestamp");
+
 #endif // NDEBUG
     //reset hardware timestamp to 0
     uint16_t interface_ctrl_0009;
     status = serPort->ReadRegister(0x0009, interface_ctrl_0009);
-    if(status != 0)
+    if (status != 0)
         return 0;
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(TXPCT_LOSS_CLR | SMPL_NR_CLR));
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 | (TXPCT_LOSS_CLR | SMPL_NR_CLR));
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(TXPCT_LOSS_CLR | SMPL_NR_CLR));
+    uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR) << (2 * endpointIndex);
+    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
+    serPort->WriteRegister(0x0009, interface_ctrl_0009 | value);
+    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~value);
     return status;
 }
 
@@ -349,7 +355,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             {
                 SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
                 bool result = true;
-                if (serPort->ReadRawStreamData((char*)buf,testSize,20)==testSize)
+                if (serPort->ReadRawStreamData((char*)buf, testSize, 0, 20)==testSize)
                 {
                     for (size_t j = 16; j < testSize;j+=3)
                     {

@@ -35,6 +35,10 @@ void StopStream()
     {
         LMS_StopStream(&streamRx[i]);
         LMS_StopStream(&streamTx[i]);
+        if (streamRx[i].handle)
+            LMS_DestroyStream(lmsDev,&streamRx[i]);
+        if (streamTx[i].handle)
+            LMS_DestroyStream(lmsDev,&streamTx[i]);
         streamRx[i].handle = 0;
         streamTx[i].handle = 0;
     }
@@ -426,7 +430,7 @@ DEFUN_DLD (LimeLoopWFMStart, args, ,
         }
 
     LMS_UploadWFM(lmsDev, (const void**)wfmBuffers, chCount, samplesCount, 0);
-    LMS_EnableTxWFM(lmsDev,true);
+    LMS_EnableTxWFM(lmsDev, 0, true);
     for(int i=0; i<chCount; ++i)
         delete wfmBuffers[i];
     delete wfmBuffers;
@@ -443,7 +447,7 @@ DEFUN_DLD (LimeLoopWFMStop, args, ,
         return octave_value(-1);
     }
     if(WFMrunning)
-        LMS_EnableTxWFM(lmsDev,false);
+        LMS_EnableTxWFM(lmsDev, 0, false);
     WFMrunning = false;
     return octave_value ();
 }
@@ -453,13 +457,8 @@ void FreeResources()
     if(lmsDev)
     {
         if(WFMrunning)
-            LMS_EnableTxWFM(lmsDev,false);
+            LMS_EnableTxWFM(lmsDev, 0, false);
         StopStream();
-        for (int i = 0; i < maxChCnt; i++)
-        {
-            LMS_DestroyStream(lmsDev,&streamRx[i]);
-            LMS_DestroyStream(lmsDev,&streamTx[i]);
-        }
         LMS_Close(lmsDev);
         lmsDev = NULL;
     }

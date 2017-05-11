@@ -41,19 +41,28 @@ public:
     //hooks to update FPGA plls when baseband interface data rate is changed
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
-    int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100)override;
+    int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
     int TransferPacket(GenericPacket &pkt) override;
 protected:
-    virtual void ReceivePacketsLoop(const ThreadData args) override;
-    virtual void TransmitPacketsLoop(const ThreadData args) override;
+    void ReceivePacketsLoop(Streamer* args) override;
+    void TransmitPacketsLoop(Streamer* args) override;
 
-    virtual int ReceiveData(char* buffer, const int length, const int timeout = 100) override;
-    virtual int SendData(const char* buffer, const int length, const int timeout = 100) override;
-    virtual void AbortReading();
-    virtual void AbortSending();
+    int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100) override;
+    int SendData(const char* buffer, int length, int epIndex, int timeout = 100) override;
+    void AbortReading(int epIndex);
+    void AbortSending(int epIndex);
 
-    int ConfigureFPGA_PLL(unsigned int pllIndex, const double interfaceClk_Hz, const double phaseShift_deg);
 private:
+    static const int MAX_EP_CNT = 2;
+    struct EPConfig
+    {
+        std::string ctrlRead;
+        std::string ctrlWrite;
+        std::string streamRead[MAX_EP_CNT];
+        std::string streamWrite[MAX_EP_CNT];
+    };
+
+    static const EPConfig deviceConfigs[];
     eConnectionType GetType(void)
     {
         return PCIE_PORT;
@@ -67,16 +76,18 @@ private:
 #ifndef __unix__
     HANDLE hWrite;
     HANDLE hRead;
-    HANDLE hWriteStream;
-    HANDLE hReadStream;
+    HANDLE hWriteStream[MAX_EP_CNT];
+    HANDLE hReadStream[MAX_EP_CNT];
 #else
     int hWrite;
     int hRead;
-    int hWriteStream;
-    int hReadStream;
+    int hWriteStream[MAX_EP_CNT];
+    int hReadStream[MAX_EP_CNT];
 #endif
-    std::string writeStreamPort;
-    std::string readStreamPort;
+    std::string writeCtrlPort;
+    std::string readCtrlPort;
+    std::string writeStreamPort[MAX_EP_CNT];
+    std::string readStreamPort[MAX_EP_CNT];
 };
 
 

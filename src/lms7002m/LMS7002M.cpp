@@ -101,7 +101,7 @@ void LMS7002M::Log(LogType type, const char *format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnection* samplesPort)
+void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
 {
     controlPort = port;
     mdevIndex = devIndex;
@@ -109,7 +109,6 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnecti
     if (controlPort != nullptr)
     {
         unsigned byte_array_size = 0;
-        addrLMS7002M = controlPort->GetDeviceInfo().addrsLMS7002M.at(devIndex);
         if (controlPort->IsOpen())
         {
             unsigned chipRev = this->Get_SPI_Reg_bits(LMS7_MASK, true);
@@ -118,12 +117,8 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex, IConnecti
             else
                 byte_array_size = 1024 * 8;
         }
-        mcuControl->Initialize(port, byte_array_size);
+        mcuControl->Initialize(port, mdevIndex, byte_array_size);
     }
-    if(samplesPort == nullptr)
-        dataPort = controlPort;
-    else
-        dataPort = samplesPort;
 }
 
 /** @brief Creates LMS7002M main control object.
@@ -134,8 +129,6 @@ LMS7002M::LMS7002M() :
     mValueCache(new CalibrationCache()),
     mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),
-    dataPort(nullptr),
-    addrLMS7002M(-1),
     mdevIndex(0),
     mSelfCalDepth(0)
 {
@@ -203,7 +196,7 @@ LMS7002M::LMS7002M() :
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     mcuControl = new MCU_BD();
-    mcuControl->Initialize(controlPort);
+    mcuControl->Initialize(nullptr);
 }
 
 LMS7002M::~LMS7002M()
@@ -1890,8 +1883,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
     }
 
     checkConnection();
-
-    return controlPort->TransactSPI(addrLMS7002M, data.data(), nullptr, cnt);
+    return controlPort->WriteLMS7002MSPI(data.data(), cnt,mdevIndex);
 }
 
 /** @brief Batches multiple register reads into least amount of transactions
@@ -1911,7 +1903,8 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
         dataWr[i] = (uint32_t(spiAddr[i]) << 16);
     }
 
-    int status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), cnt);
+
+    int status = controlPort->ReadLMS7002MSPI(dataWr.data(), dataRd.data(), cnt,mdevIndex);
     if (status != 0) return status;
 
     int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
@@ -2154,7 +2147,8 @@ bool LMS7002M::IsSynced()
     std::vector<uint32_t> dataRd(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
+    status = controlPort->ReadLMS7002MSPI(dataWr.data(),  dataRd.data(), dataWr.size(),mdevIndex);
+
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)
@@ -2192,7 +2186,7 @@ bool LMS7002M::IsSynced()
     dataRd.resize(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    status = controlPort->TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), dataWr.size());
+    status = controlPort->ReadLMS7002MSPI(dataWr.data(),  dataRd.data(), dataWr.size(),mdevIndex);
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
     if (status != 0)

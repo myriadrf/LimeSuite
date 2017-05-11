@@ -1234,10 +1234,10 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device,
             fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
             break;
     }
-    return lms->GetConnection()->UploadWFM(samples, chCount, sample_count, fmt);
+    return lms->UploadWFM(samples, chCount, sample_count, fmt);
 }
 
-API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active)
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned ch, bool active)
 {
     uint16_t regAddr = 0x000D;
     uint16_t regValue = 0;
@@ -1245,8 +1245,9 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active
     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
     if(status != 0)
         return status;
-    regValue = regValue & ~0x0006; //clear WFM_LOAD, WFM_PLAY
-    regValue |= (active << 1);
+    unsigned offset = (ch/2)*2;
+    regValue = regValue & ~(0x6<<offset); //clear WFM_LOAD, WFM_PLAY
+    regValue |= (active << (1+offset));
     status = LMS_WriteFPGAReg(device, regAddr, regValue);
     return status;
 }

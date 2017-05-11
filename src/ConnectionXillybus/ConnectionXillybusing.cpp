@@ -21,38 +21,36 @@ using namespace lime;
 
 int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz, const double txPhase, const double rxPhase)
 {
-#ifndef NDEBUG
-    std::cout << "ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
-#endif
+    lime::fpga::FPGA_PLL_clock clocks[2];
+
+    if (channel == 2)
+    {
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txRate_Hz;
+        return lime::fpga::SetPllFrequency(this, 4, 30.72e6, clocks, 2);
+    }
+
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
     mExpectedSampleRate = rxRate_Hz;
+    const int pll_ind = (channel == 1) ? 2 : 0;
 
-    lime::fpga::FPGA_PLL_clock clocks[2];
-    clocks[0].bypass = false;
     clocks[0].index = 0;
     clocks[0].outFrequency = rxInterfaceClk;
-    clocks[0].phaseShift_deg = 0;
-    clocks[0].findPhase = false;
-    clocks[1].bypass = false;
     clocks[1].index = 1;
     clocks[1].outFrequency = rxInterfaceClk;
     clocks[1].phaseShift_deg = rxPhase;
-    clocks[1].findPhase = false;
-    if (lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2)!=0)
+    if (lime::fpga::SetPllFrequency(this, pll_ind+1, rxInterfaceClk, clocks, 2)!=0)
         return -1;
 
-    clocks[0].bypass = false;
     clocks[0].index = 0;
     clocks[0].outFrequency = txInterfaceClk;
-    clocks[0].phaseShift_deg = 0;
-    clocks[0].findPhase = false;
-    clocks[1].bypass = false;
     clocks[1].index = 1;
     clocks[1].outFrequency = txInterfaceClk;
     clocks[1].phaseShift_deg = txPhase;
-    clocks[1].findPhase = false;
-    if (lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2)!=0)
+    if (lime::fpga::SetPllFrequency(this, pll_ind, txInterfaceClk, clocks, 2)!=0)
         return -1;
 
     return 0;
@@ -62,11 +60,9 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
 */
 int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
 {
-#ifndef NDEBUG
-    std::cout << "ConfigureFPGA_PLL(tx=" << txRate_Hz/1e6 << "MHz, rx=" << rxRate_Hz/1e6 << "MHz)" << std::endl;
-#endif
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
+    const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;
     uint32_t reg20;
     const double rxPhC1[] = { 91.08, 89.46 };
@@ -74,16 +70,15 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
     const double txPhC1[] = { 89.75, 89.61 };
     const double txPhC2[] = { -3.0e-7, 2.71e-7 };
 
-    const std::vector<uint32_t> spiAddr = {0x0021, 0x0022, 0x0023, 0x0024,
-                                           0x0027, 0x002A, 0x0400, 0x040C,
-                                           0x040B, 0x0400, 0x040B, 0x0400};
+    const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
+                                            0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
     const int bakRegCnt = spiAddr.size() - 4;
     auto info = GetDeviceInfo();
-    const int addrLMS7002M = info.addrsLMS7002M.at(0);
     bool phaseSearch = false;
-    if (this->chipVersion == 0x3841 && stoi(info.gatewareRevision) >= 12) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
-        if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
-            phaseSearch = true;
+    if (!(mStreamers[channel] && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
+        if (this->chipVersion == 0x3841 && stoi(info.gatewareRevision) >= 7 && stoi(info.gatewareVersion) >= 2) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+            if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
+                phaseSearch = true;
     mExpectedSampleRate = rxRate_Hz;
 
     std::vector<uint32_t> dataWr;
@@ -95,37 +90,31 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
         dataRd.resize(spiAddr.size());
         //backup registers
         dataWr[0] = (uint32_t(0x0020) << 16);
-        TransactSPI(addrLMS7002M, dataWr.data(), &reg20, 1);
+        ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
 
         dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-        TransactSPI(addrLMS7002M, dataWr.data(), nullptr, 1);
+        WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
         for (int i = 0; i < bakRegCnt; ++i)
             dataWr[i] = (spiAddr[i] << 16);
-        TransactSPI(addrLMS7002M, dataWr.data(), dataRd.data(), bakRegCnt);
-        UpdateThreads(true);
+        ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, channel);
     }
 
     if(rxInterfaceClk >= 5e6)
     {
         if (phaseSearch)
         {
-            const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
-                                                    0xE4E4, 0x0086, 0x028D, 0x00FF,
-                                                    0x5555, 0x02CD, 0xAAAA, 0x02ED};
+            const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
+                                                    0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
             //Load test config
             const int setRegCnt = spiData.size();
             for (int i = 0; i < setRegCnt; ++i)
                 dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-            TransactSPI(addrLMS7002M, dataWr.data(), nullptr, setRegCnt);
+            WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
         }
         lime::fpga::FPGA_PLL_clock clocks[2];
-        clocks[0].bypass = false;
         clocks[0].index = 0;
         clocks[0].outFrequency = rxInterfaceClk;
-        clocks[0].phaseShift_deg = 0;
-        clocks[0].findPhase = false;
-        clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = rxInterfaceClk;
         if (this->chipVersion == 0x3841)
@@ -134,42 +123,28 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
             clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxInterfaceClk;
 
         if (phaseSearch)
-        {
             clocks[1].findPhase = true;
-        }
-        else
-        {
-            clocks[1].findPhase = false;
-        }
-        status = lime::fpga::SetPllFrequency(this, 1, rxInterfaceClk, clocks, 2);
+        status = lime::fpga::SetPllFrequency(this, pll_ind+1, rxInterfaceClk, clocks, 2);
     }
     else
-    {
-        ReportError("Interface clock lower than 5 MHz is not supported");
-        return -1;
-    }
+        status = lime::fpga::SetDirectClocking(this, pll_ind+1, rxInterfaceClk, 90);
 
     if(txInterfaceClk >= 5e6)
     {
         if (phaseSearch)
         {
-            const std::vector<uint32_t> spiData = {0x0E9F, 0x07FF, 0x5550, 0xE4E4,
-                                                   0xE4E4, 0x0484};
+            const std::vector<uint32_t> spiData = {0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
             WriteRegister(0x000A, 0x0000);
             //Load test config
             const int setRegCnt = spiData.size();
             for (int i = 0; i < setRegCnt; ++i)
                 dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-            TransactSPI(addrLMS7002M, dataWr.data(), nullptr, setRegCnt);
+            WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
         }
 
         lime::fpga::FPGA_PLL_clock clocks[2];
-        clocks[0].bypass = false;
         clocks[0].index = 0;
         clocks[0].outFrequency = txInterfaceClk;
-        clocks[0].phaseShift_deg = 0;
-        clocks[0].findPhase = false;
-        clocks[1].bypass = false;
         clocks[1].index = 1;
         clocks[1].outFrequency = txInterfaceClk;
         if (this->chipVersion == 0x3841)
@@ -182,44 +157,36 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
             clocks[1].findPhase = true;
             WriteRegister(0x000A, 0x0200);
         }
-        else
-        {
-            clocks[1].findPhase = false;
-        }
-        status = lime::fpga::SetPllFrequency(this, 0, txInterfaceClk, clocks, 2);
+        status = lime::fpga::SetPllFrequency(this, pll_ind, txInterfaceClk, clocks, 2);
     }
     else
-    {
-        ReportError("Interface clock lower than 5 MHz is not supported");
-        return -1;
-    }
+        status = lime::fpga::SetDirectClocking(this, pll_ind, txInterfaceClk, 90);
 
     if (phaseSearch)
     {
         //Restore registers
         for (int i = 0; i < bakRegCnt; ++i)
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
-        TransactSPI(addrLMS7002M, dataWr.data(), nullptr, bakRegCnt);
+        WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
         dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
-        TransactSPI(addrLMS7002M, dataWr.data(), nullptr, 1);
+        WriteLMS7002MSPI(dataWr.data(), 1, channel);
         WriteRegister(0x000A, 0);
-        UpdateThreads();
     }
 
     return status;
 }
 
-int ConnectionXillybus::ReadRawStreamData(char* buffer, unsigned length, int timeout_ms)
+int ConnectionXillybus::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
 {
-    fpga::StopStreaming(this);
+    fpga::StopStreaming(this, epIndex);
 
     ResetStreamBuffers();
     WriteRegister(0x0008, 0x0100 | 0x2);
     WriteRegister(0x0007, 1);
-    fpga::StartStreaming(this);
-    int totalBytesReceived = ReceiveData(buffer, length,timeout_ms);
-    fpga::StopStreaming(this);
-    AbortReading();
+    fpga::StartStreaming(this, epIndex);
+    int totalBytesReceived = ReceiveData(buffer, length, epIndex, timeout_ms);
+    fpga::StopStreaming(this, epIndex);
+    AbortReading(epIndex);
     return totalBytesReceived;
 }
 
@@ -228,22 +195,18 @@ int ConnectionXillybus::ReadRawStreamData(char* buffer, unsigned length, int tim
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
+void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
 {
-    auto terminate = args.terminate;
-    auto dataRate_Bps = args.dataRate_Bps;
-    auto generateData = args.generateData;
-    auto safeToConfigInterface = args.safeToConfigInterface;
-
     //at this point FPGA has to be already configured to output samples
-    const uint8_t chCount = args.channels.size();
-    const auto link = args.channels[0]->config.linkFormat;
+    const uint8_t chCount = stream->mRxStreams.size();
+    const auto link = stream->mRxStreams[0]->config.linkFormat;
     const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
+    const int epIndex = stream->mChipID;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-        latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += stream->mRxStreams[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
 
@@ -289,16 +252,16 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
             doWork->wait(lck);
             port->WriteRegisters(addr, data, 2);
         }
-    }, this, terminate, &txFlagsLock, &resetTxFlags);
+    }, this, &stream->terminateRx, &txFlagsLock, &resetTxFlags);
 
     int resetFlagsDelay = 128;
     uint64_t prevTs = 0;
-    while (terminate->load() == false)
+    while (stream->terminateRx.load() == false)
     {
-        if(generateData->load())
+        if(stream->generateData.load())
         {
-            fpga::StopStreaming(this);
-            safeToConfigInterface->notify_all(); //notify that it's safe to change chip config
+            fpga::StopStreaming(this, epIndex);
+            stream->safeToConfigInterface.notify_all(); //notify that it's safe to change chip config
             const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
             IStreamChannel::Metadata meta;
             for(int i=0; i<batchSize; ++i)
@@ -311,7 +274,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
                         chFrames[ch].samples[j].i = 0;
                         chFrames[ch].samples[j].q = 0;
                     }
-                    uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
+                    uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
                     samplesReceived[ch] += chFrames[ch].samplesCount;
                     if(samplesPushed != chFrames[ch].samplesCount)
                         printf("Rx samples pushed %i/%i\n", samplesPushed, chFrames[ch].samplesCount);
@@ -321,7 +284,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
         }
         int32_t bytesReceived = 0;
 
-        bytesReceived = this->ReceiveData(&buffers[0], bufferSize,200);
+        bytesReceived = this->ReceiveData(&buffers[0], bufferSize, epIndex, 200);
         totalBytesReceived += bytesReceived;
         if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
             ++m_bufferFailures;
@@ -352,8 +315,7 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
                 packetLoss += (pkt[pktIndex].counter - prevTs)/samplesInPacket;
             }
             prevTs = pkt[pktIndex].counter;
-            if(args.lastTimestamp)
-                args.lastTimestamp->store(pkt[pktIndex].counter);
+            stream->rxLastTimestamp.store(pkt[pktIndex].counter);
             //parse samples
             vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)
@@ -366,15 +328,15 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD;
-                uint32_t samplesPushed = args.channels[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     droppedSamples += samplesCount-samplesPushed;
             }
         }
         // Re-submit this request to keep the queue full
-        if(not generateData->load())
+        if(!stream->generateData.load())
         {
-            fpga::StartStreaming(this);
+            fpga::StartStreaming(this, epIndex);
         }
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -394,15 +356,13 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
             droppedSamples = 0;
             packetLoss = 0;
 
-            if (dataRate_Bps)
-                dataRate_Bps->store((uint32_t)dataRate);
+            stream->rxDataRate_Bps.store((uint32_t)dataRate);
         }
     }
-    this->AbortReading();
+    AbortReading(epIndex);
     resetTxFlags.notify_one();
     txReset.join();
-    if (dataRate_Bps)
-        dataRate_Bps->store(0);
+    stream->rxDataRate_Bps.store(0);
 }
 
 /** @brief Functions dedicated for transmitting packets to board
@@ -410,20 +370,18 @@ void ConnectionXillybus::ReceivePacketsLoop(const ThreadData args)
     @param terminate periodically pooled flag to terminate thread
     @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
 */
-void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
+void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
 {
-    auto terminate = args.terminate;
-    auto dataRate_Bps = args.dataRate_Bps;
-
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
-    const uint8_t chCount = args.channels.size();
-    const auto link = args.channels[0]->config.linkFormat;
+    const uint8_t chCount = stream->mTxStreams.size();
+    const auto link = stream->mTxStreams[0]->config.linkFormat;
+    const int epIndex = stream->mChipID;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
     {
-        latency += args.channels[i]->config.performanceLatency/chCount;
+        latency += stream->mTxStreams[i]->config.performanceLatency/chCount;
     }
     const unsigned tmp_cnt = (latency * 6)+0.5;
     const uint8_t packetsToBatch = (1<<tmp_cnt); //packets in single USB transfer
@@ -453,7 +411,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
-    while (terminate->load() != true)
+    while (stream->terminateTx.load() != true)
     {
         int i=0;
 
@@ -463,7 +421,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[0]);
             for(int ch=0; ch<chCount; ++ch)
             {
-                int samplesPopped = args.channels[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
+                int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
                 #ifndef NDEBUG
@@ -471,7 +429,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
                 #endif
                 }
             }
-            if(terminate->load() == true) //early termination
+            if(stream->terminateTx.load() == true) //early termination
                 break;
             pkt[i].counter = meta.timestamp;
             pkt[i].reserved[0] = 0;
@@ -488,7 +446,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
             ++i;
         }
 
-        uint32_t bytesSent = this->SendData(&buffers[0], bufferSize,200);
+        uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 200);
                 totalBytesSent += bytesSent;
         if (bytesSent != bufferSize)
             ++m_bufferFailures;
@@ -499,8 +457,7 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
         {
             //total number of bytes sent per second
             float dataRate = 1000.0*totalBytesSent / timePeriod;
-            if(dataRate_Bps)
-                dataRate_Bps->store(dataRate);
+            stream->txDataRate_Bps.store(dataRate);
             m_bufferFailures = 0;
             samplesSent = 0;
             totalBytesSent = 0;
@@ -514,7 +471,6 @@ void ConnectionXillybus::TransmitPacketsLoop(const ThreadData args)
     }
 
     // Wait for all the queued requests to be cancelled
-    this->AbortSending();
-    if (dataRate_Bps)
-        dataRate_Bps->store(0);
+    AbortSending(epIndex);
+    stream->txDataRate_Bps.store(0);
 }

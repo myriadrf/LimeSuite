@@ -57,12 +57,14 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnBoardControlsClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
         void OnChangeCacheSettings(wxCommandEvent& event);
+        void OnLmsChanged(wxCommandEvent& event);
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
 	//// end generated class members
         virtual ~LMS7SuiteAppFrame();
-	protected:
+        static int m_lmsSelection;
+protected:
         static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
         static void OnLogEvent(const char* text, unsigned int type);
         static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length);
@@ -87,6 +89,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
+
 };
 
 

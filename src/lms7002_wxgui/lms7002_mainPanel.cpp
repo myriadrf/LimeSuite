@@ -140,7 +140,15 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl);
     mTabR3->Initialize(lmsControl);
+    ((LMS7_Device*)lmsControl)->SetActiveChip(0);
+    cmbLmsDevice->SetSelection(0);
+
+    if (((LMS7_Device*)lmsControl)->GetNumChannels() > 2)
+        cmbLmsDevice->Show();
+    else
+        cmbLmsDevice->Hide();
     UpdateGUI();
+    Layout();
 }
 
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
@@ -340,11 +348,26 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     UpdateVisiblePanel();
 }
 
-
 void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
 {
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     int status = lms->CalibrateInternalADC();
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+}
+
+int lms7002_mainPanel::GetLmsSelection()
+{
+    return cmbLmsDevice->GetSelection();
+}
+
+void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
+{
+    int deviceSelection = cmbLmsDevice->GetSelection();
+    ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
+    UpdateVisiblePanel();
+    wxCommandEvent evt;
+    evt.SetEventType(LMS_CHANGED);
+    evt.SetInt(deviceSelection);
+    wxPostEvent(this->GetParent(), evt);
 }
