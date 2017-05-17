@@ -25,9 +25,9 @@ protected:
     std::atomic<bool> updateGUI;
     std::atomic<bool> enableFFT;
     std::string captureFilename;
-	// Handlers for frFFTviewer events.
-	void OnWindowFunctionChanged( wxCommandEvent& event );
-	void OnbtnStartStop( wxCommandEvent& event );
+    // Handlers for frFFTviewer events.
+    void OnWindowFunctionChanged( wxCommandEvent& event );
+    void OnbtnStartStop( wxCommandEvent& event );
     void OnChannelVisibilityChange(wxCommandEvent& event);
     void OnAvgChange(wxSpinEvent& event);
     void OnAvgChangeEnter(wxCommandEvent& event);
@@ -41,7 +41,7 @@ public:
     fftviewer_frFFTviewer( wxWindow* parent );
     ~fftviewer_frFFTviewer();
 //// end generated class members
-    void Initialize(lms_device_t* pDataPort);
+    void Initialize(lms_device_t* pDataPort, unsigned index);
     void SetNyquistFrequency(float freqMHz);
 
     void StartStreaming();
@@ -49,18 +49,19 @@ public:
     void OnbtnCaptureClick(wxCommandEvent& event);
 
 protected:
+    static const int cMaxChCount = 2;
     struct DataToGUI
     {
-        std::vector<float> samplesI[2];
-        std::vector<float> samplesQ[2];
-        std::vector<float> fftBins[2];
+        std::vector<float> samplesI[cMaxChCount];
+        std::vector<float> samplesQ[cMaxChCount];
+        std::vector<float> fftBins[cMaxChCount];
         float nyquist_Hz;
         float rxDataRate_Bps;
         float txDataRate_Bps;
 
         DataToGUI& operator=(const DataToGUI& src)
         {
-            for (int ch = 0; ch < 2; ++ch)
+            for (int ch = 0; ch < cMaxChCount; ++ch)
             {
                 this->samplesI[ch].clear();
                 this->samplesI[ch].reserve(src.samplesI[ch].size());
@@ -86,12 +87,12 @@ protected:
     std::thread threadProcessing;
     wxString printDataRate(float dataRate);
 
-    static const int cMaxChCount = 2;
     lms_stream_t rxStreams[cMaxChCount];
     lms_stream_t txStreams[cMaxChCount];
 
     lms_device_t* lmsControl;
     wxTimer* mGUIupdater;
+    unsigned lmsIndex;
 };
 
 #endif // __fftviewer_frFFTviewer__

@@ -77,9 +77,17 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxFlexGridSizer* fgSizer249;
-	fgSizer249 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer249 = new wxFlexGridSizer( 0, 4, 0, 0 );
 	fgSizer249->SetFlexibleDirection( wxBOTH );
 	fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	cmbLmsDevice = new wxComboBox( this, ID_G_LNA_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	cmbLmsDevice->Append( wxT("LMS 1") );
+	cmbLmsDevice->Append( wxT("LMS 2") );
+	cmbLmsDevice->SetSelection( 0 );
+	cmbLmsDevice->SetToolTip( wxT("Controls the gain of the LNA") );
+	
+	fgSizer249->Add( cmbLmsDevice, 0, wxALL, 0 );
 	
 	rbChannelA = new wxRadioButton( this, ID_BTN_CH_A, wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer249->Add( rbChannelA, 0, wxEXPAND, 5 );
@@ -183,6 +191,7 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	ID_BUTTON1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnNewProject ), NULL, this );
 	ID_BUTTON2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnOpenProject ), NULL, this );
 	ID_BUTTON3->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
+	cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( mainPanel::OnLmsDeviceSelect ), NULL, this );
 	rbChannelA->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
 	chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
@@ -201,6 +210,7 @@ mainPanel::~mainPanel()
 	ID_BUTTON1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnNewProject ), NULL, this );
 	ID_BUTTON2->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnOpenProject ), NULL, this );
 	ID_BUTTON3->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
+	cmbLmsDevice->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( mainPanel::OnLmsDeviceSelect ), NULL, this );
 	rbChannelA->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
 	chkEnableMIMO->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
@@ -8611,7 +8621,7 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	
 	fgSizer198->Add( btnStartProgramming, 1, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	ID_S_PROGFINISHED = new wxStaticText( sbSizer125->GetStaticBox(), wxID_ANY, wxT("Proggramming finished"), wxDefaultPosition, wxDefaultSize, 0 );
+	ID_S_PROGFINISHED = new wxStaticText( sbSizer125->GetStaticBox(), wxID_ANY, wxT("Programming finished"), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_S_PROGFINISHED->Wrap( -1 );
 	fgSizer198->Add( ID_S_PROGFINISHED, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	

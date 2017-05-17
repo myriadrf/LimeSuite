@@ -17,6 +17,9 @@ namespace lime
 class ILimeSDRStreaming : public LMS64CProtocol
 {
 public:
+
+    class Streamer;
+
     class StreamChannel : public IStreamChannel
     {
     public:
@@ -26,7 +29,7 @@ public:
             static const uint16_t samplesCount = 1360;
             complex16_t samples[samplesCount];
         };
-        StreamChannel(IConnection* port, StreamConfig config);
+        StreamChannel(Streamer* streamer, StreamConfig config);
         ~StreamChannel();
 
         int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
@@ -37,13 +40,52 @@ public:
         int Start();
         int Stop();
         StreamConfig config;
-        std::atomic<uint64_t> txLastLateTime;
+        Streamer* mStreamer;
+        unsigned overflow;
+        unsigned underflow;
+        unsigned pktLost;
     protected:
         RingFIFO* fifo;
-        ILimeSDRStreaming* port;
         bool mActive;
     private:
         StreamChannel() = default;
+    };
+
+    class Streamer
+    {
+    public:
+        Streamer(ILimeSDRStreaming* port);
+        ~Streamer();
+
+        int SetupStream(size_t& streamID, const StreamConfig& config);
+        int CloseStream(const size_t streamID);
+        size_t GetStreamSize();
+
+        void EnterSelfCalibration();
+        void ExitSelfCalibration();
+        uint64_t GetHardwareTimestamp(void);
+        void SetHardwareTimestamp(const uint64_t now);
+        int UpdateThreads(bool stopAll = false);
+
+        std::atomic<uint32_t> rxDataRate_Bps;
+        std::atomic<uint32_t> txDataRate_Bps;
+        ILimeSDRStreaming* dataPort;
+        std::thread rxThread;
+        std::thread txThread;
+        std::atomic<bool> rxRunning;
+        std::atomic<bool> txRunning;
+        std::atomic<bool> terminateRx;
+        std::atomic<bool> terminateTx;
+        std::mutex streamStateLock;
+        std::condition_variable safeToConfigInterface;
+        std::atomic<bool> generateData;
+
+        std::vector<StreamChannel*> mRxStreams;
+        std::vector<StreamChannel*> mTxStreams;
+        std::atomic<uint64_t> rxLastTimestamp;
+        std::atomic<uint64_t> txLastLateTime;
+        uint64_t mTimestampOffset;
+        int mChipID;
     };
 
     ILimeSDRStreaming();
@@ -64,55 +106,20 @@ public:
     virtual void SetHardwareTimestamp(const uint64_t now);
     virtual double GetHardwareTimestampRate(void);
 
-    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format) override;
+    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex) override;
 
-    struct ThreadData
-    {
-        ILimeSDRStreaming* dataPort; //! Connection interface
-        std::atomic<bool>* terminate; //! true exit loop
-        std::atomic<uint32_t>* dataRate_Bps; //! report rate
-        std::vector<StreamChannel*> channels; //! channels FIFOs
-        std::atomic<bool>* generateData; //! generate data
-        std::condition_variable* safeToConfigInterface;
-        std::atomic<uint64_t>* lastTimestamp; //! report latest timestamp
-        std::function<void(const uint64_t)> reportLateTx; //! report late tx packet
-    };
 protected:
-    virtual int ReceiveData(char* buffer, const int length, const int timeout = 100);
-    virtual int SendData(const char* buffer, const int length, const int timeout = 100);
-    virtual void ReceivePacketsLoop(const ThreadData args) = 0;
-    virtual void TransmitPacketsLoop(const ThreadData args) = 0;
-    virtual int UpdateThreads(bool stopAll = false);
-
-    StreamConfig config;
-    std::thread rxThread;
-    std::thread txThread;
-    std::atomic<bool> rxRunning;
-    std::atomic<bool> txRunning;
-    std::atomic<bool> terminateRx;
-    std::atomic<bool> terminateTx;
-    std::mutex streamStateLock;
+    virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
+    virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
+    virtual void ReceivePacketsLoop(Streamer* args) = 0;
+    virtual void TransmitPacketsLoop(Streamer* args) = 0;
+    std::vector<Streamer*> mStreamers;
     std::condition_variable safeToConfigInterface;
-    std::atomic<bool> generateData;
     double mExpectedSampleRate; //rate used for generating data
-    std::atomic<uint32_t> rxDataRate_Bps;
-    std::atomic<uint32_t> txDataRate_Bps;
-    std::vector<StreamChannel*> mRxStreams;
-    std::vector<StreamChannel*> mTxStreams;
-    std::atomic<uint64_t> rxLastTimestamp;
-    uint64_t mTimestampOffset;
 
-    std::function<void(const ThreadData args)> RxLoopFunction;
-    std::function<void(const ThreadData args)> TxLoopFunction;
+    std::function<void(Streamer* args)> RxLoopFunction;
+    std::function<void(Streamer* args)> TxLoopFunction;
 
-    std::atomic<uint64_t> txLastLateTime;
-    void reportLateTxTimestamp(const uint64_t timestamp)
-    {
-        for (auto stream : mTxStreams)
-        {
-            stream->txLastLateTime = timestamp;
-        }
-    }
     virtual int ResetStreamBuffers(){return 0;};
 };
 

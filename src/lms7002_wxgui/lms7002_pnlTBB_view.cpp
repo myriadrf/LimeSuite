@@ -4,6 +4,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 #include "lms7_device.h"
+#include "lms7suiteAppFrame.h"
 
 using namespace lime;
 
@@ -131,9 +132,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     txtFilterFrequency->GetValue().ToDouble(&input1);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
     int status;
-
-    status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
+    status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch,input1*1e6);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));

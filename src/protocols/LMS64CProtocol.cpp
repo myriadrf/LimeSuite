@@ -145,10 +145,11 @@ int LMS64CProtocol::SetReferenceClockRate(const double rate)
 /***********************************************************************
  * LMS7002M SPI access
  **********************************************************************/
-int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, const size_t size)
+int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, size_t size, unsigned periphID)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_WR;
+    pkt.periphID = periphID;
     for (size_t i = 0; i < size; ++i)
     {
         uint16_t addr = (writeData[i] >> 16) & 0x7fff;
@@ -164,10 +165,11 @@ int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, const size_t siz
     return convertStatus(status, pkt);
 }
 
-int LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
+int LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RD;
+    pkt.periphID = periphID;
     for (size_t i = 0; i < size; ++i)
     {
         uint16_t addr = (writeData[i] >> 16) & 0x7fff;
@@ -493,7 +495,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     }
     delete[] outBuffer;
     delete[] inBuffer;
-    return status;
+    return convertStatus(status, pkt);
 }
 
 /** @brief Takes generic packet and converts to specific protocol buffer
@@ -514,6 +516,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
         int maxDataLength = packet.maxDataLength;
         packet.cmd = pkt.cmd;
         packet.status = pkt.status;
+        packet.periphID = pkt.periphID;
         int byteBlockRatio = 1; //block ratio - how many bytes in one block
         switch( packet.cmd )
         {
@@ -561,6 +564,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             int pktPos = j*packet.pktLength;
             buffer[pktPos] = packet.cmd;
             buffer[pktPos+1] = packet.status;
+            buffer[pktPos + 3] = packet.periphID;
             if(blockCount > (maxDataLength/byteBlockRatio))
             {
                 buffer[pktPos+2] = maxDataLength/byteBlockRatio;
@@ -568,7 +572,7 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
             }
             else
                 buffer[pktPos+2] = blockCount;
-            memcpy(&buffer[pktPos+3], packet.reserved, sizeof(packet.reserved));
+            memcpy(&buffer[pktPos+4], packet.reserved, sizeof(packet.reserved));
             int bytesToPack = (maxDataLength/byteBlockRatio)*byteBlockRatio;
             for (int k = 0; k<bytesToPack && srcPos < pkt.outBuffer.size(); ++srcPos, ++k)
                 buffer[pktPos + 8 + k] = pkt.outBuffer[srcPos];
@@ -788,7 +792,7 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
         pkt.outBuffer.push_back(ids[i]);
 
     int status = this->TransferPacket(pkt);
-    if (status != 0) return convertStatus(status, pkt);
+    if (status != 0) return status;
 
     assert(pkt.inBuffer.size() >= 4 * count);
 
@@ -829,8 +833,7 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
         pkt.outBuffer.push_back(value >> 8);
         pkt.outBuffer.push_back(value & 0xFF);
     }
-    int status = this->TransferPacket(pkt);
-    return convertStatus(status, pkt);
+    return TransferPacket(pkt);
 }
 
 int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
@@ -839,8 +842,7 @@ int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
     pkt.cmd = CMD_GPIO_WR;
     for (size_t i=0; i<bufLength; ++i)
         pkt.outBuffer.push_back(buffer[i]);
-    int status = TransferPacket(pkt);
-    return convertStatus(status, pkt);
+    return TransferPacket(pkt);
 }
 
 int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
@@ -849,11 +851,11 @@ int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
     pkt.cmd = CMD_GPIO_RD;
     int status = TransferPacket(pkt);
     if(status != 0)
-        return convertStatus(status, pkt);
+        return status;
 
     for (size_t i=0; i<bufLength; ++i)
         buffer[i] = pkt.inBuffer[i];
-    return convertStatus(status, pkt);
+    return status;
 }
 
 int LMS64CProtocol::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
@@ -862,8 +864,7 @@ int LMS64CProtocol::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
     pkt.cmd = CMD_GPIO_DIR_WR;
     for (size_t i=0; i<bufLength; ++i)
         pkt.outBuffer.push_back(buffer[i]);
-    int status = TransferPacket(pkt);
-    return convertStatus(status, pkt);
+    return TransferPacket(pkt);
 }
 
 int LMS64CProtocol::GPIODirRead(uint8_t *buffer, const size_t bufLength)
@@ -876,18 +877,11 @@ int LMS64CProtocol::GPIODirRead(uint8_t *buffer, const size_t bufLength)
 
     for (size_t i=0; i<bufLength; ++i)
         buffer[i] = pkt.inBuffer[i];
-    return convertStatus(status, pkt);
+    return status;
 }
 
 int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
 {
-    LMSinfo lmsInfo = this->GetInfo();
-    if(lmsInfo.device == LMS_DEV_LIMESDR
-    || lmsInfo.device == LMS_DEV_LIMESDR_PCIE
-    || lmsInfo.device == LMS_DEV_LIMESDR_USB_SP
-    || lmsInfo.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
-        return IConnection::ProgramMCU(buffer, length, mode, callback);
-
 #ifndef NDEBUG
     auto timeStart = std::chrono::high_resolution_clock::now();
 #endif

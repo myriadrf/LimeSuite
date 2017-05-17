@@ -64,6 +64,7 @@ class MCU_BD
         int m_bLoadedDebug;
         int m_bLoadedProd;
         int byte_array_size;
+        unsigned mChipID;
 
     public:
         uint8_t ReadMCUProgramID();
@@ -82,7 +83,7 @@ class MCU_BD
         void mSPI_write(unsigned short addr_reg,unsigned short data_reg);
         unsigned short mSPI_read(unsigned short addr_reg);
         int Three_byte_command(unsigned char data1,unsigned char data2,unsigned char data3,
-                   unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3);
+        unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3);
         int GetProgramCode(const char *inFileName, bool bin = false);
         int Change_MCUFrequency(unsigned char data);
         int Read_IRAM();
@@ -99,7 +100,7 @@ class MCU_BD
         void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
-        void Initialize(IConnection* pSerPort, unsigned rom_size = 0);
+        void Initialize(IConnection* pSerPort, unsigned chipID = 0, unsigned rom_size = 0);
         lime::IConnection::ProgrammingCallback callback;
 };
 }

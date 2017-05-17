@@ -1164,21 +1164,23 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
 {
-    assert(stream != nullptr);
+    if (stream==nullptr || stream->handle==0)
+        return 0;
     return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Start();
 }
 
 API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *stream)
 {
-    assert(stream != nullptr);
+    if (stream==nullptr || stream->handle==0)
+        return 0;
     return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Stop();
 }
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    assert(stream != nullptr);
+    if (stream==nullptr || stream->handle==0)
+        return -1;
     lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
@@ -1196,9 +1198,9 @@ API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, siz
 
 API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *samples, size_t sample_count, const lms_stream_meta_t *meta, unsigned timeout_ms)
 {
-    assert(stream != nullptr);
+    if (stream==nullptr || stream->handle==0)
+        return -1;
     lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    assert(channel != nullptr);
     lime::IStreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
@@ -1232,10 +1234,10 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device,
             fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
             break;
     }
-    return lms->GetConnection()->UploadWFM(samples, chCount, sample_count, fmt);
+    return lms->UploadWFM(samples, chCount, sample_count, fmt);
 }
 
-API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active)
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned ch, bool active)
 {
     uint16_t regAddr = 0x000D;
     uint16_t regValue = 0;
@@ -1243,8 +1245,9 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active
     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
     if(status != 0)
         return status;
-    regValue = regValue & ~0x0006; //clear WFM_LOAD, WFM_PLAY
-    regValue |= (active << 1);
+    unsigned offset = (ch/2)*2;
+    regValue = regValue & ~(0x6<<offset); //clear WFM_LOAD, WFM_PLAY
+    regValue |= (active << (1+offset));
     status = LMS_WriteFPGAReg(device, regAddr, regValue);
     return status;
 }

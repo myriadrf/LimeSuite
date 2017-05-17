@@ -91,6 +91,7 @@ public:
     int WriteParam(struct LMS7Parameter param, uint16_t val);
     int SetActiveChip(unsigned ind);
     lime::LMS7002M* GetLMS(int index = -1);
+    int UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt);
     static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::map<std::string, double> extra_parameters;
 protected:

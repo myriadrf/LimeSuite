@@ -67,6 +67,7 @@ set(LIME_SUITE_SOURCES
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
+    API/qLimeSDR.cpp
     FPGA_common/FPGA_common.cpp
     windowFunction.cpp
 )

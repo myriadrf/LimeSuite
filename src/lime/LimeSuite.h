@@ -1162,10 +1162,11 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **sample
 
 /** @brief Enables/Disables transmitting of uploaded waveform
  * @param device    Device handle previously obtained by LMS_Open().
+ * @param chan      Channel index
  * @param active    Enable/Disable waveform playback
  * @return  0 on success
  */
-API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, const bool active);
+API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned chan, bool active);
 
 /** @} (End FN_STREAM) */
 

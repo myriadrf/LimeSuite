@@ -31,28 +31,38 @@ std::vector<ConnectionHandle> ConnectionXillybusEntry::enumerate(const Connectio
 {
     std::vector<ConnectionHandle> handles;
     ConnectionHandle handle;
+    handle.media = "PCI-E";
+
 #ifndef __unix__
-	std::string fileName = "\\\\.\\xillybus_write_8";
-	std::ifstream fin(fileName.c_str());
-
-	HANDLE fh = CreateFileA(fileName.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (fh != INVALID_HANDLE_VALUE || ::GetLastError() == ERROR_BUSY)
-	{
-		handle.media = "PCI-E";
-		handle.name = "LimeSDR-PCIE";
-		handle.index = 1;
-		handles.push_back(handle);
-		CloseHandle(fh);
-	}
-
-#else
-    std::string fname = "/dev/xillybus_write_8";
-    if( access( fname.c_str(), F_OK ) != -1 )
+    HANDLE fh = CreateFileA("\\\\.\\xillybus_control0_write_32", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fh != INVALID_HANDLE_VALUE || ::GetLastError() == ERROR_BUSY)
     {
-        handle.media = "PCI-E";
-        handle.name = "LimeSDR-PCIE";
+        handle.name = "LimeSDR-QPCIe";
         handle.index = 1;
+        handles.push_back(handle);
+        CloseHandle(fh);
+    }
+
+    fh = CreateFileA("\\\\.\\xillybus_write_8", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fh != INVALID_HANDLE_VALUE || ::GetLastError() == ERROR_BUSY)
+    {
+        handle.name = "LimeSDR-PCIe";
+        handle.index = 0;
+        handles.push_back(handle);
+        CloseHandle(fh);
+    }
+#else
+    if( access("/dev/xillybus_control0_write_32", F_OK ) != -1 )
+    {
+        handle.name = "LimeSDR-QPCIe";
+        handle.index = 1;
+        handles.push_back(handle);
+    }
+
+    if( access("/dev/xillybus_write_8", F_OK ) != -1 )
+    {
+        handle.name = "LimeSDR-PCIe";
+        handle.index = 0;
         handles.push_back(handle);
     }
 #endif

@@ -123,10 +123,10 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopWFMClick);
 }
 
-void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
+void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort, int index)
 {
     lmsControl = dataPort;
-
+    lmsIndex = index;
 }
 
 FPGAcontrols_wxgui::~FPGAcontrols_wxgui()
@@ -203,17 +203,13 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
-    uint16_t regData = 0;
-    LMS_ReadFPGAReg(lmsControl, 0x000D, &regData);
-    LMS_WriteFPGAReg(lmsControl, 0x000D, regData | 0x2);
+    LMS_EnableTxWFM(lmsControl, lmsIndex*2, true);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
-    uint16_t regData = 0;
-    LMS_ReadFPGAReg(lmsControl, 0x000D, &regData);
-    LMS_WriteFPGAReg(lmsControl, 0x000D, (regData & ~0x2));
-}
+    LMS_EnableTxWFM(lmsControl, lmsIndex*2, false);
+};
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
@@ -247,7 +243,7 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
     }
-    
+
     progressBar->SetRange(isamples.size());
     progressBar->SetValue(0);
 
@@ -278,12 +274,12 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         }
     }
 
-    int status = LMS_UploadWFM(lmsControl, (const void**)src, chCount, isamples.size(), 0);
+    int status = LMS_UploadWFM(lmsControl, (const void**)src, lmsIndex ? 4 : 2, isamples.size(), 0);
 
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
 
-    LMS_WriteFPGAReg(lmsControl, 0x000D, 0x0002); //WFM_PLAY
+    LMS_EnableTxWFM(lmsControl, lmsIndex*2, true);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
@@ -310,7 +306,7 @@ void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
         isamples[i] = 2047.0*cos(2.0*PI*i/samplesPerPeriod)+0.5;
         qsamples[i] = 2047.0*sin(2.0*PI*i/samplesPerPeriod)+0.5;;
     }
-    
+
     if (UploadFile(isamples, qsamples) < 0)
         btnLoadOnetone->SetValue(0);
     else
@@ -334,7 +330,7 @@ void FPGAcontrols_wxgui::OnbtnLoadWCDMAClick(wxCommandEvent& event)
         isamples[i] = ((int16_t)wcdma_wfm[4*i]<<4)| (wcdma_wfm[4*i+1]>>4);
         qsamples[i] = ((int16_t)wcdma_wfm[4*i+2]<<4)|(wcdma_wfm[4*i+3]>>4);
     }
-    
+
     if (UploadFile(isamples, qsamples) < 0)
         btnLoadWCDMA->SetValue(0);
     else
@@ -375,8 +371,8 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 
     if (status == 0)
         regValue = dataRd & 0xFFFF;
-
-    regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
+    const int bitInd = 10+lmsIndex;
+    regValue = (regValue & ~(1<<bitInd)) | chkDigitalLoopbackEnable->IsChecked() << bitInd;
 
     status = LMS_WriteFPGAReg(lmsControl, address, regValue);
 

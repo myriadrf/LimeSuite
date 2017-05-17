@@ -35,6 +35,8 @@ class lms7002_mainPanel : public mainPanel
         void OnSyncABchecked(wxCommandEvent& event);
         void OnEnableMIMOchecked(wxCommandEvent& event);
         void OnCalibrateInternalADC(wxCommandEvent& event);
+        int GetLmsSelection();
+        void OnLmsDeviceSelect( wxCommandEvent& event );
 	public:
 		/** Constructor */
 		lms7002_mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL );

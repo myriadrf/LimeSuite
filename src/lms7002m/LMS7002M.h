@@ -80,7 +80,7 @@ public:
      * \param devIndex which RFIC index (default 0 for most devices)
      * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(IConnection* port, const size_t devIndex = 0, IConnection* dataPort = nullptr);
+    void SetConnection(IConnection* port, const size_t devIndex = 0);
 
     IConnection *GetConnection(void) const
     {
@@ -478,7 +478,6 @@ protected:
 
     int CalibrateTxGainSetup();
 
-
     void BinarySearch(BinSearchParam* args);
     void TxDcBinarySearch(BinSearchParam* args);
     void GridSearch(GridSearchParam* args);
@@ -512,9 +511,7 @@ protected:
 
     ///port used for communicating with LMS7002M
     IConnection* controlPort;
-    IConnection* dataPort; //device for samples data
-    int addrLMS7002M;
-    size_t mdevIndex;
+    unsigned mdevIndex;
     size_t mSelfCalDepth;
 
     int LoadConfigLegacyFile(const char* filename);

@@ -3,6 +3,7 @@
 #include "numericSlider.h"
 #include "lms7002_dlgGFIR_Coefficients.h"
 #include "lms7_device.h"
+#include "lms7suiteAppFrame.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
@@ -177,7 +178,9 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
 
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch-1, LMS_GFIR1, &coefficients[0]);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR1, &coefficients[0]);
     if (status < 0)
     {
         wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
@@ -189,7 +192,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
     if (dlg->ShowModal() == wxID_OK)
     {
         coefficients = dlg->GetCoefficients();
-        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR1,&coefficients[0],coefficients.size());
+        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch,LMS_GFIR1,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
     UpdateGUI();
@@ -203,7 +206,9 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
     coefficients.resize(maxCoefCount, 0);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch-1, LMS_GFIR2, &coefficients[0]);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR2, &coefficients[0]);
     if (status < 0)
     {
         wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
@@ -215,7 +220,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
     if (dlg->ShowModal() == wxID_OK)
     {
         coefficients = dlg->GetCoefficients();
-        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR2,&coefficients[0],coefficients.size());
+        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch,LMS_GFIR2,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
     UpdateGUI();
@@ -229,7 +234,9 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     coefficients.resize(maxCoefCount, 0);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch-1, LMS_GFIR3, &coefficients[0]);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR3, &coefficients[0]);
     if (status < 0)
     {
         wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
@@ -241,7 +248,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     if (dlg->ShowModal() == wxID_OK)
     {
         coefficients = dlg->GetCoefficients();
-        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch-1,LMS_GFIR3,&coefficients[0],coefficients.size());
+        LMS_SetGFIRCoeff(lmsControl,LMS_CH_RX,ch,LMS_GFIR3,&coefficients[0],coefficients.size());
     }
     dlg->Destroy();
     UpdateGUI();
@@ -415,6 +422,8 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
     if (rgrMODE_RX->GetSelection() == 0)
     {
         double nco_freq[16];
@@ -425,7 +434,7 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         }
         double value;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&value);
-        LMS_SetNCOFrequency(lmsControl,LMS_CH_RX,ch-1,nco_freq,value);
+        LMS_SetNCOFrequency(lmsControl,LMS_CH_RX,ch,nco_freq,value);
     }
     else
     {
@@ -436,7 +445,7 @@ void lms7002_pnlRxTSP_view::OnbtnUploadNCOClick(wxCommandEvent& event)
         }
         double freq_MHz;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq_MHz);
-        LMS_SetNCOPhase(lmsControl, LMS_CH_RX, ch-1, nco_phase, freq_MHz);
+        LMS_SetNCOPhase(lmsControl, LMS_CH_RX, ch, nco_phase, freq_MHz);
     }
     UpdateGUI();// API changes nco selection
 }
@@ -445,12 +454,14 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
 {
     assert(txtNCOinputs.size() == 16);
     uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC), &ch);
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
     if (rgrMODE_RX->GetSelection() == 0) //FCW mode
     {
         double freq[16] = {0};
         double pho=0;
-        LMS_GetNCOFrequency(lmsControl, LMS_CH_RX, ch - 1, freq, &pho);
+        LMS_GetNCOFrequency(lmsControl, LMS_CH_RX, ch, freq, &pho);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
@@ -464,7 +475,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
     {
         double phase[16] = {0};
         double fcw = 0;
-        LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch - 1, phase, &fcw);
+        LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0 / 360.0)*phase[i]));
@@ -526,18 +537,20 @@ void lms7002_pnlRxTSP_view::PHOinputChanged(wxCommandEvent& event)
 {
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
     // Write values for NCO phase or frequency each time they change - to ease the tuning of these values in measurements
     if (rgrMODE_RX->GetSelection() == 0)
     {
         double angle;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&angle);
-        LMS_SetNCOFrequency(lmsControl,LMS_CH_RX,ch-1,nullptr,angle);
+        LMS_SetNCOFrequency(lmsControl,LMS_CH_RX,ch,nullptr,angle);
     }
     else //PHO mode
     {
         double freq;
         txtFCWPHOmodeAdditional->GetValue().ToDouble(&freq);
-        LMS_SetNCOPhase(lmsControl, LMS_CH_RX, ch-1, nullptr, freq*1e6);
+        LMS_SetNCOPhase(lmsControl, LMS_CH_RX, ch, nullptr, freq*1e6);
     }
 
     assert(lblNCOangles.size() == 16);

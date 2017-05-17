@@ -216,6 +216,9 @@ public:
      */
     virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
 
+    virtual int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0)=0;
+    virtual int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0)=0;
+
     /*!
      * Write to an available I2C slave.
      * @param addr the address of the slave
@@ -435,14 +438,14 @@ public:
     @param sample_count number of samples in each channel
     @param format waveform data format
     */
-    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format);
+    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
 
     /**	@brief Read raw stream data from device streaming port
     @param buffer       read buffer pointer
     @param length       number of bytes to read
     @param timeout_ms   timeout in milliseconds
     */
-    virtual int ReadRawStreamData(char* buffer, unsigned length, int timeout_ms = 100);
+    virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100);
 
     /***********************************************************************
      * Programming API
@@ -495,7 +498,7 @@ public:
 
         This could be a quite long operation, use callback to get progress info or to terminate early
     */
-    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
+    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0)=0;
 
     /*!
      * Download up-to-date images files and flash the board when applicable.
