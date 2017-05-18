@@ -48,8 +48,11 @@ REVISIONS:	February 01, 1994: File created.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "recipes.h"
 
 #define TINY 1.0e-20
+
+void nrerror(char * error_text); 
 
 /*****************************************************/
 /*** Allocates a double vector with range [nl..nh]. ***/
@@ -139,7 +142,7 @@ int   nrl,nrh,ncl,nch;
 /*************************************************/
 /*** Numerical Recipes standard error handler. ***/
 /*************************************************/
-nrerror(error_text)
+void nrerror(error_text)
 char error_text[];
 {
 	void exit();
@@ -165,6 +168,8 @@ double **a,*d;
 	double big,dum,sum,temp;
 	double *vv,*vector();
 	void free_vector();
+
+	imax = 0; 
 
 	vv=vector(1,n);
 	(*d)=1.0;

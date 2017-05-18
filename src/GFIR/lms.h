@@ -6,6 +6,9 @@
    DATE:	Feb 24, 2000
    REVISION:
    ************************************************************************ */
+#ifndef LMS_GFIR_HDR
+#define LMS_GFIR_HDR
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -31,3 +34,10 @@ double One();
 /* Cosine filter type selection */
 #define RAISEDCOSINE		1
 #define ROOTRAISEDCOSINE	2
+
+int lms(double * hr, double * hi, double * hcsd, int n, 
+	double * w, double * des, double * weight, int p, 
+	int cprec, int csdprec, int symmetry,
+	int ** bincode, int ** csdcode, int **csdcoder); 
+
+#endif

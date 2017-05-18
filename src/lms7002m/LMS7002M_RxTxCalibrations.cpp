@@ -868,6 +868,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 
     uint16_t gcorri, gcorrq;
     int16_t dccorri, dccorrq, phaseOffset;
+    dccorri = dccorrq = 0; 
 
     bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && std::stoi(info.hardwareVersion) >= 3);
     const char* methodName = "RSSI PC";
@@ -1295,7 +1296,7 @@ void LMS7002M::CalibrateTxDCAuto()
     BinSearchParam qparams;
 
     //auto calibration
-    uint16_t statusMask = 0x0F00;
+    /* uint16_t statusMask = 0x0F00; */
     const uint8_t ch = Get_SPI_Reg_bits(LMS7param(MAC));
     uint16_t dcRegAddr = 0x5C3;
     Modify_SPI_Reg_bits(LMS7param(DCMODE), 1);
@@ -1685,6 +1686,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         case 1: lnaName = "LNAH"; break;
         case 2: lnaName = "LNAL"; break;
         case 3: lnaName = "LNAW"; break;
+        default: lnaName = "none"; break; 
     }
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
                 ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
