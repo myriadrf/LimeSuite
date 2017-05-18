@@ -456,7 +456,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     {
         if (bufferUsed[bi])
         {
-            unsigned bytesSent;
+            unsigned bytesSent = 0;
             if (this->WaitForSending(handles[bi], 1000) == true)
                 bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
             if (bytesSent != bufferSize)
