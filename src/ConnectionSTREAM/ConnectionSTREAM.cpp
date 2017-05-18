@@ -707,11 +707,11 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
-    #ifndef __unix__
+#   ifndef __unix__
 	int status = 0;
-    status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
+	status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
 	return status;
-    #else
+#   else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
@@ -723,7 +723,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
         t2 = chrono::high_resolution_clock::now();
     }
 	return contextsToSend[contextHandle].done == true;
-    #endif
+#   endif
     }
     else
         return 0;
@@ -779,8 +779,9 @@ int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int 
 {
     const unsigned char ep = 0x01;
     int context = BeginDataSending((char*)buffer, length, ep);
-    if (WaitForSending(context, timeout)==false);
+    if (WaitForSending(context, timeout)==false) {
         AbortSending(ep);
+    }
     return FinishDataSending((char*)buffer, length , context);
 }
 
