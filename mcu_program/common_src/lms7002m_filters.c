@@ -170,12 +170,14 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
 */
 #endif
     Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
-    if(g_pga_rbb == 31)
+    if(g_pga_rbb == 31) {
         Modify_SPI_Reg_bits(G_PGA_RBB, 22);
-    else
+    }
+    else {
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
+    }
 
-	{
+    {
         uint8_t cgenMultiplier = rx_lpf_IF*20 / 46.08e6 + 0.5;
         cgenMultiplier = clamp(cgenMultiplier, 2, 13);
         status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);

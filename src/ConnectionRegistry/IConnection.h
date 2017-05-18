@@ -398,10 +398,10 @@ public:
      * Read blocking data from the stream into the specified buffer.
      *
      * @param streamID the RX stream index number
-     * @param buffs an array of buffers pointers
+     * @param buffer an array of buffers pointers
      * @param length the number of samples per buffer
      * @param timeout_ms the timeout in milliseconds
-     * @param [out] metadata optional stream metadata
+     * @param metadata [out] optional stream metadata
      * @return the number of samples read or error code
      */
     virtual int ReadStream(const size_t streamID, void* buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
@@ -437,12 +437,14 @@ public:
     @param chCount number of waveform channels
     @param sample_count number of samples in each channel
     @param format waveform data format
+    @param epIndex endpoint identifier
     */
     virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
 
     /**	@brief Read raw stream data from device streaming port
     @param buffer       read buffer pointer
     @param length       number of bytes to read
+    @param epIndex      endpoint identifier?
     @param timeout_ms   timeout in milliseconds
     */
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100);
@@ -474,7 +476,7 @@ public:
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
 
     /**	@brief Reads current program from selected device
-        @param destination buffer for binary program data
+        @param buffer destination for binary program data
         @param length buffer length to read
         @param index target device number
         @param callback callback for progress reporting or early termination
@@ -523,14 +525,14 @@ public:
      **********************************************************************/
 
     /**	@brief Writes GPIO values to device
-    @param source buffer for GPIO values LSB first, each bit sets GPIO state
+    @param buffer for source of GPIO values LSB first, each bit sets GPIO state
     @param bufLength buffer length
     @return the operation success state
     */
     virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
 
     /**	@brief Reads GPIO values from device
-    @param destination buffer for GPIO values LSB first, each bit represent GPIO state
+    @param buffer destination for GPIO values LSB first, each bit represent GPIO state
     @param bufLength buffer length to read
     @return the operation success state
     */
@@ -658,7 +660,8 @@ public:
     /** @brief Returns samples from receiver FIFO
         @param samples destination array of data type used in SetupStream()
         @param count number of samples to read
-        @param
+        @param metadata [in,out?] information about the transfer
+	@param timeout_ms return error if operation does not complete in timeout_ms (milliseconds)
         @return number of samples received
     */
     virtual int Read(void* samples, const uint32_t count, Metadata* metadata, const int32_t timeout_ms = 100) = 0;
@@ -666,6 +669,8 @@ public:
     /** @brief Writes samples to transmitter FIFO
         @param samples source array of data type used in SetupStream()
         @param count number of samples to write
+	@param metadata [in,out?] information about the transfer
+	@param timeout_ms return error if operation does not complete in timeout_ms (milliseconds)
         @return number of samples transmitted
     */
     virtual int Write(const void* samples, const uint32_t count, const Metadata* metadata, const int32_t timeout_ms = 100) = 0;

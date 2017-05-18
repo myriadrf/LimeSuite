@@ -115,10 +115,12 @@ m_MouseCoord(0, 0, 0, 0)
 
 OpenGLGraph::~OpenGLGraph()
 {
-    if(m_timer->IsRunning())
-        m_timer->Stop();
-	if(m_font)
-        delete m_font;
+  if(m_timer->IsRunning()) {
+      m_timer->Stop();
+  }
+  if(m_font) {
+    delete m_font;
+  }
 }
 
 bool OpenGLGraph::Initialize(int width, int height)
@@ -172,17 +174,17 @@ bool OpenGLGraph::Initialize(int width, int height)
 */
 void OpenGLGraph::Resize(int w, int h)
 {
-    if(w <= 0 || h <=0 )
-        return;
-	settings.windowWidth = w;
-	settings.windowHeight = h;
-	settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
-	if(settings.dataViewHeight <= 0)
-        settings.dataViewHeight = 1;
-	settings.dataViewWidth = settings.windowWidth-settings.marginLeft-settings.marginRight;
-	if(settings.dataViewWidth <= 0)
-        settings.dataViewWidth = 1;
-	SettingsChanged();
+  if(w <= 0 || h <=0 )
+    return;
+  settings.windowWidth = w;
+  settings.windowHeight = h;
+  settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
+  if(settings.dataViewHeight <= 0)
+    settings.dataViewHeight = 1;
+  settings.dataViewWidth = settings.windowWidth-settings.marginLeft-settings.marginRight;
+  if(settings.dataViewWidth <= 0)
+    settings.dataViewWidth = 1;
+  SettingsChanged();
 }
 
 /**
@@ -226,12 +228,12 @@ void OpenGLGraph::SetInitialDisplayArea(float minx, float maxx, float miny, floa
 */
 void OpenGLGraph::SetDisplayArea(float minx, float maxx, float miny, float maxy)
 {
-    if((minx == maxx) || (miny == maxy))
-        return;
-	settings.visibleArea.set(minx, maxx, miny, maxy);
-	SettingsChanged();
+  if((minx == maxx) || (miny == maxy))
+    return;
+  settings.visibleArea.set(minx, maxx, miny, maxy);
+  SettingsChanged();
 #ifdef OGL_REDRAW_ENABLED
-    Refresh();
+  Refresh();
 #endif
 }
 
@@ -410,9 +412,9 @@ void OpenGLGraph::DrawStaticElements()
 
 	char format[10];
 	if(settings.staticGrid)
-        sprintf(format, "%%.3f %%s");
-    else
-        sprintf(format, "%%.%if %%s", settings.gridXprec);
+          sprintf(format, "%%.3f %%s");
+	else
+          sprintf(format, "%%.%if %%s", settings.gridXprec);
 
 	float numbersH = 16;
 	// X axis grid lines
@@ -1254,8 +1256,8 @@ void OpenGLGraph::RemoveMarker(int id)
 */
 void OpenGLGraph::DrawMarkers()
 {
-    if(series.size() <= 0)
-        return;
+        if(series.size() <= 0)
+            return;
 
 	if(settings.markersEnabled && series[0]->size > 0 && series[0] != NULL)
 	{

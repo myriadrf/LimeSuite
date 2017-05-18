@@ -525,6 +525,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@brief Starts asynchronous data reading from board
 	@param *buffer buffer where to store received data
 	@param length number of bytes to read
+	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, const uint8_t streamBulkInAddr)
@@ -654,6 +655,7 @@ void ConnectionSTREAM::AbortReading(int ep)
 	@brief Starts asynchronous data Sending to board
 	@param *buffer buffer to send
 	@param length number of bytes to send
+	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, const uint8_t streamBulkOutAddr)
