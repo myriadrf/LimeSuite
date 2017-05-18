@@ -294,6 +294,9 @@ IStreamChannel::Info ILimeSDRStreaming::StreamChannel::GetInfo()
     stats.droppedPackets = pktLost;
     stats.overrun = overflow;
     stats.overrun = underflow;
+    pktLost = 0;
+    overflow = 0;
+    underflow = 0;
     if(config.isTx)
         stats.linkRate = mStreamer->txDataRate_Bps.load();
     else
