@@ -292,7 +292,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                         chFrames[ch].samples[j].i = 0;
                         chFrames[ch].samples[j].q = 0;
                     }
+		    std::cerr << "*";
                     uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
+		    std::cerr << "*";		    
                     if(samplesPushed != chFrames[ch].samplesCount)
                         lime::warning("Rx samples pushed %i/%i", samplesPushed, chFrames[ch].samplesCount);
                 }
@@ -354,7 +356,9 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD;
+		std::cerr << "%";		
                 uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+		std::cerr << "%";				
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
             }
@@ -424,7 +428,8 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 
     const uint8_t buffersCount = 16; // must be power of 2
     const uint8_t packetsToBatch = (1<<tmp_cnt); //packets in single USB transfer
-    const uint32_t bufferSize = packetsToBatch*4096;
+    const uint32_t bytesToPacket = 4096; 
+    const uint32_t bufferSize = packetsToBatch*bytesToPacket;
     const uint32_t popTimeout_ms = 100;
 
     const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
@@ -469,7 +474,8 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         }
         int i=0;
 
-        while(i<packetsToBatch && stream->terminateTx.load() != true)
+	bool saw_end_of_burst = false; 
+        while((i < packetsToBatch) && !stream->terminateTx.load() && !saw_end_of_burst)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
@@ -488,25 +494,41 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
                     break;
                 }
             }
-            if (badSamples)
+	    // Note we can get stuck here with good samples ready to go, but 
+	    // not enough samples to batch up.  
+            if (badSamples) {
                 continue;
+	    }
             if(stream->terminateTx.load() == true) //early termination
                 break;
             pkt[i].counter = meta.timestamp;
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
             const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
+	    // was this the last data in a burst? 
+	    saw_end_of_burst = (meta.flags & IStreamChannel::Metadata::END_OF_BURST) != 0;
+
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
             vector<complex16_t*> src(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
+	    // move the data from the samples we just got from the call to Read, into a buffer
+	    // formatted and arranged to fit the FPGA data stream (12bit compressed, or 12 in 16)
             fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
-            ++i;
-        }
 
-        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bufferSize, ep);
+	    ++i;
+	}
+
+	uint32_t send_size = saw_end_of_burst ? (i * bytesToPacket) : bufferSize; 
+	if(saw_end_of_burst) {
+	  std::cerr << "transmitPacketsLoop saw end of burst\n"; 
+	  stream->sawEndOfBurst.store(true);
+	}
+
+	// now send the buffer we just accumulated. 
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], send_size, ep);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();

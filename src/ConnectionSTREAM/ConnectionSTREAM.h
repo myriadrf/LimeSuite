@@ -40,6 +40,7 @@ public:
     USBTransferContext() : used(false)
     {
         id = idCounter++;
+	flags = 0; 
 #ifndef __unix__
         inOvLap = new OVERLAPPED;
         memset(inOvLap, 0, sizeof(OVERLAPPED));
@@ -75,6 +76,7 @@ public:
     }
     bool used;
     int id;
+    uint32_t flags; ///< taken from IStreamChannel::Metadata flags defs
     static int idCounter;
 #ifndef __unix__
     PUCHAR context;

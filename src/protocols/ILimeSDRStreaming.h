@@ -84,6 +84,9 @@ public:
         std::vector<StreamChannel*> mTxStreams;
         std::atomic<uint64_t> rxLastTimestamp;
         std::atomic<uint64_t> txLastLateTime;
+
+	std::atomic<bool> sawEndOfBurst; 
+
         uint64_t mTimestampOffset;
         int mChipID;
     };
