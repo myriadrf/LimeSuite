@@ -306,6 +306,15 @@ int SetExtLoopback(IConnection* port, uint8_t ch, bool enable)
     return status;
 }
 
+static int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
+{
+    if(value < minBound)
+        return minBound;
+    if(value > maxBound)
+        return maxBound;
+    return value;
+}
+
 inline static uint16_t pow2(const uint8_t power)
 {
     assert(power >= 0 && power < 16);
@@ -957,6 +966,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     srcBin = gFFTSize*offsetNCO/GetSampleRate(LMS7002M::Rx, ch==1 ? ChA:ChB);
     SelectFFTBin(dataPort, srcBin);
 #endif // ENABLE_CALIBRATION_USING_FFT
+    if(useExtLoopback == false)
+        CalibrateRxDCAuto();
     status = CheckSaturationTxRx(bandwidth_Hz, useExtLoopback);
     if(status != 0)
         goto TxCalibrationEnd;
@@ -1116,12 +1127,16 @@ int16_t ReadAnalogDC(LMS7002M* lmsControl, const LMS7Parameter& param)
 
 void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
 {
-    const uint16_t mask = tx ? 0x03FF : 0x003F;
-    uint16_t minValue;
+    bool increment;
+    uint16_t rssi;
     uint16_t minRSSI;
+    int16_t minValue;
+    int16_t initVal;
+    const uint16_t mask = tx ? 0x03FF : 0x003F;
+    const int16_t range = tx ? 1023 : 63;
     SPI_write(address, 0);
     SPI_write(address, 0x4000);
-    int16_t initVal = SPI_read(address, true);
+    initVal = SPI_read(address);
     SPI_write(address, 0);
     if(initVal & (mask+1))
     {
@@ -1132,11 +1147,11 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
         initVal &= mask;
     minValue = initVal;
 
-    uint16_t rssi = GetRSSI();
+    rssi = GetRSSI();
     minRSSI = rssi;
     {
-        int tempValue = initVal+1;
-        int regValue = 0;
+        int16_t tempValue = clamp(initVal+1, -range, range);
+        uint16_t regValue = 0;
         if(tempValue < 0)
         {
             regValue |= (mask+1);
@@ -1147,8 +1162,8 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
         SPI_write(address, regValue);
         SPI_write(address, regValue | 0x8000);
     }
-
-    bool increment = GetRSSI() < rssi;
+    increment = GetRSSI() < rssi;
+    {
     int8_t iterations = 8;
     while (iterations > 0)
     {
@@ -1157,8 +1172,9 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
             ++initVal;
         else
             --initVal;
+        initVal = clamp(initVal, -range, range);
         {
-            int regValue = 0;
+            uint16_t regValue = 0;
             if(initVal < 0)
             {
                 regValue |= (mask+1);
@@ -1177,9 +1193,10 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
         }
         --iterations;
     }
+    }
     {
-        initVal = minValue;
         uint16_t regValue = 0;
+        initVal = minValue;
         if(initVal < 0)
         {
             regValue |= (mask+1);
@@ -1190,8 +1207,6 @@ void LMS7002M::AdjustAutoDC(const uint16_t address, bool tx)
         SPI_write(address, regValue);
         SPI_write(address, regValue | 0x8000);
         SPI_write(address, 0);
-
-        printf("Found: %i\n", initVal);
     }
 }
 
@@ -1877,6 +1892,7 @@ RxCalibrationEndStage:
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gcorrq);
     Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
     Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
+    Modify_SPI_Reg_bits(0x040C, 8, 8, 0); //DCLOOP_STOP
     Log("Rx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("#####Rx calibration RESULTS:###########################\n");
