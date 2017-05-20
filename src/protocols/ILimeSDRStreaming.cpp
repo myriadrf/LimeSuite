@@ -73,13 +73,12 @@ int ILimeSDRStreaming::WriteStream(const size_t streamID, const void* buffs, con
     assert(streamID != 0);
     lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
     lime::IStreamChannel::Metadata meta;
-    meta.flags = 0;
+    meta.flags = lime::IStreamChannel::Metadata::CLEAR_END_OF_BURST;
     meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
     meta.flags |= metadata.endOfBurst ? lime::IStreamChannel::Metadata::END_OF_BURST : 0;
     meta.timestamp = metadata.timestamp;
-    std::cerr << "^";
+
     int status = channel->Write(buffs, length, &meta, timeout_ms);
-    std::cerr << "^";    
     return status;
 }
 
@@ -90,12 +89,6 @@ int ILimeSDRStreaming::ReadStreamStatus(const size_t streamID, const long timeou
 
     // look for the endofburst
     metadata.endOfBurst = channel->mStreamer->sawEndOfBurst.load();    
-    if(metadata.endOfBurst) {
-      std::cerr << "ILimeSDRStreaming::ReadStreamStatus saw endofburst\n";
-    }
-    else {
-      std::cerr << "ILimeSDRStreaming::ReadStreamStatus DID NOT SEE endofburst\n";      
-    }
 
     //support late timestamp reporting
     auto txLastLateTime = channel->mStreamer->txLastLateTime.exchange(0);
@@ -276,9 +269,10 @@ int ILimeSDRStreaming::StreamChannel::Read(void* samples, const uint32_t count, 
 
 int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
 {
-    // first write to a stream after an END_OF_BURST clears end of burst
-    std::cerr << "ILimeSDRStreaming::StreamChannel::Write clears sawEndOfBurst\n"; 
-    mStreamer->sawEndOfBurst.store(false); 
+    // any write to a transmit stream after an END_OF_BURST clears end of burst
+    if((meta->flags & lime::IStreamChannel::Metadata::CLEAR_END_OF_BURST) != 0) {
+      mStreamer->sawEndOfBurst.store(false);
+    }
   
     int pushed = 0;
     if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && config.isTx)
@@ -354,7 +348,6 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     rxRunning = false;
     txRunning = false;
     generateData = false;
-    std::cerr << "Init clears sawEndOfBurst\n";
     sawEndOfBurst = false; 
     rxDataRate_Bps = 0;
     txDataRate_Bps = 0;

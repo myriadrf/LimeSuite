@@ -653,6 +653,7 @@ public:
         {
             SYNC_TIMESTAMP = 1,
 	    END_OF_BURST = 2, 
+	    CLEAR_END_OF_BURST = 4, 
         };
         uint64_t timestamp;
         uint32_t flags;

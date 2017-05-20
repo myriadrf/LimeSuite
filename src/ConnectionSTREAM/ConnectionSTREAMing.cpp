@@ -292,9 +292,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                         chFrames[ch].samples[j].i = 0;
                         chFrames[ch].samples[j].q = 0;
                     }
-		    std::cerr << "*";
                     uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
-		    std::cerr << "*";		    
                     if(samplesPushed != chFrames[ch].samplesCount)
                         lime::warning("Rx samples pushed %i/%i", samplesPushed, chFrames[ch].samplesCount);
                 }
@@ -356,9 +354,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD;
-		std::cerr << "%";		
                 uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
-		std::cerr << "%";				
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
             }
@@ -523,8 +519,11 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 
 	uint32_t send_size = saw_end_of_burst ? (i * bytesToPacket) : bufferSize; 
 	if(saw_end_of_burst) {
-	  std::cerr << "transmitPacketsLoop saw end of burst\n"; 
+	  std::cerr << "*"; 
 	  stream->sawEndOfBurst.store(true);
+	}
+	else {
+	  std::cerr << "_"; 
 	}
 
 	// now send the buffer we just accumulated. 
