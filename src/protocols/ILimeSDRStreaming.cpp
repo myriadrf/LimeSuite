@@ -73,7 +73,7 @@ int ILimeSDRStreaming::WriteStream(const size_t streamID, const void* buffs, con
     assert(streamID != 0);
     lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
     lime::IStreamChannel::Metadata meta;
-    meta.flags = lime::IStreamChannel::Metadata::CLEAR_END_OF_BURST;
+    meta.flags = 0;
     meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
     meta.flags |= metadata.endOfBurst ? lime::IStreamChannel::Metadata::END_OF_BURST : 0;
     meta.timestamp = metadata.timestamp;
@@ -87,8 +87,8 @@ int ILimeSDRStreaming::ReadStreamStatus(const size_t streamID, const long timeou
     assert(streamID != 0);
     StreamChannel* channel = (StreamChannel*)streamID;
 
-    // look for the endofburst
-    metadata.endOfBurst = channel->mStreamer->sawEndOfBurst.load();    
+    // look for the endofburst and clear it if it was true. 
+    metadata.endOfBurst = channel->mStreamer->sawEndOfBurst.exchange(false);    
 
     //support late timestamp reporting
     auto txLastLateTime = channel->mStreamer->txLastLateTime.exchange(0);
@@ -269,11 +269,6 @@ int ILimeSDRStreaming::StreamChannel::Read(void* samples, const uint32_t count, 
 
 int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
 {
-    // any write to a transmit stream after an END_OF_BURST clears end of burst
-    if((meta->flags & lime::IStreamChannel::Metadata::CLEAR_END_OF_BURST) != 0) {
-      mStreamer->sawEndOfBurst.store(false);
-    }
-  
     int pushed = 0;
     if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && config.isTx)
     {

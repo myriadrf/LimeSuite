@@ -449,6 +449,8 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     auto t2 = t1;
 
     uint8_t bi = 0; //buffer index
+    bool lookForEndOfBurst = true; 
+
     while (stream->terminateTx.load() != true)
     {
         if (bufferUsed[bi])
@@ -470,8 +472,8 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         }
         int i=0;
 
-	bool saw_end_of_burst = false; 
-        while((i < packetsToBatch) && !stream->terminateTx.load() && !saw_end_of_burst)
+	bool sawEndOfBurst = false; 
+        while((i < packetsToBatch) && !stream->terminateTx.load() && !sawEndOfBurst)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
@@ -502,7 +504,14 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
             //by default ignore timestamps
             const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
 	    // was this the last data in a burst? 
-	    saw_end_of_burst = (meta.flags & IStreamChannel::Metadata::END_OF_BURST) != 0;
+	    bool gotEOB = ((meta.flags & IStreamChannel::Metadata::END_OF_BURST) != 0);
+	    if(lookForEndOfBurst && gotEOB) {
+	      sawEndOfBurst = true; 
+	      lookForEndOfBurst = false; 
+	    }
+	    if(!gotEOB) {
+	      lookForEndOfBurst = true; 
+	    }
 
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
@@ -517,13 +526,14 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 	    ++i;
 	}
 
-	uint32_t send_size = saw_end_of_burst ? (i * bytesToPacket) : bufferSize; 
-	if(saw_end_of_burst) {
-	  std::cerr << "*"; 
+	uint32_t send_size;
+	if(sawEndOfBurst) {
 	  stream->sawEndOfBurst.store(true);
+	  send_size = i * bytesToPacket; 
+	  sawEndOfBurst = false; 
 	}
 	else {
-	  std::cerr << "_"; 
+	  send_size = bufferSize; 
 	}
 
 	// now send the buffer we just accumulated. 
