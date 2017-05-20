@@ -314,8 +314,8 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
             const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
-            const uint8_t byte0 = pkt[pktIndex].reserved[0];
-            if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
+            const uint8_t pktflags = pkt[pktIndex].reserved[0];
+            if ((pktflags & (1 << 3)) != 0 && !txLate) //report only once per batch
             {
                 txLate = true;
                 if(resetFlagsDelay > 0)
@@ -473,7 +473,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         int i=0;
 
 	bool sawEndOfBurst = false; 
-        while((i < packetsToBatch) && !stream->terminateTx.load() && !sawEndOfBurst)
+        while((i < packetsToBatch) && !stream->terminateTx.load())
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
@@ -526,18 +526,13 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 	    ++i;
 	}
 
-	uint32_t send_size;
 	if(sawEndOfBurst) {
 	  stream->sawEndOfBurst.store(true);
-	  send_size = i * bytesToPacket; 
 	  sawEndOfBurst = false; 
-	}
-	else {
-	  send_size = bufferSize; 
 	}
 
 	// now send the buffer we just accumulated. 
-        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], send_size, ep);
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bufferSize, ep);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
