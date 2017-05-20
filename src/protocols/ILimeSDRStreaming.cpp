@@ -338,6 +338,7 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     txRunning = false;
     mTimestampOffset = 0;
     rxLastTimestamp = 0;
+    txLastLateTime = 0; 
     terminateRx = false;
     terminateTx = false;
     rxRunning = false;
