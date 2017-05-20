@@ -449,7 +449,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     auto t2 = t1;
 
     uint8_t bi = 0; //buffer index
-    bool lookForEndOfBurst = true; 
+    bool lookForEndOfBurstTail = true; 
 
     while (stream->terminateTx.load() != true)
     {
@@ -505,12 +505,12 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
             const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
 	    // was this the last data in a burst? 
 	    bool gotEOB = ((meta.flags & IStreamChannel::Metadata::END_OF_BURST) != 0);
-	    if(lookForEndOfBurst && gotEOB) {
+	    if(lookForEndOfBurstTail && !gotEOB) {
 	      sawEndOfBurst = true; 
-	      lookForEndOfBurst = false; 
+	      lookForEndOfBurstTail = false; 
 	    }
-	    if(!gotEOB) {
-	      lookForEndOfBurst = true; 
+	    if(gotEOB) {
+	      lookForEndOfBurstTail = true; 
 	    }
 
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
