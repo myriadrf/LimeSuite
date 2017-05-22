@@ -21,7 +21,7 @@ int deviceCalSweep(
     const std::string &chansStr)
 {
     //check the frequency range
-    if (start == 0.0 or stop == 0.0 or step == 0.0)
+    if (start == 0.0 || stop == 0.0 || step == 0.0)
     {
         std::cerr << "Unspecified range --start, stop, step!" << std::endl;
         return EXIT_FAILURE;
