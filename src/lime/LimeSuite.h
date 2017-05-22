@@ -250,9 +250,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
                                                 lms_range_t *range);
 
 /**
- * Set RF center frequency in Hz. This automatically selects the appropriate
- * antenna (band path) for the desired frequency. In oder to override antenna
- * selection use LMS_SetAntenna().
+ * Set RF center frequency in Hz.
  *
  * @note setting different frequencies for A and B channels is not supported by
  * LMS7 chip. Changing frequency for one (A or B) channel will result in
@@ -311,7 +309,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
                                                size_t chan,float_type gain);
 
 /**
- * Set the combined gain value
+ * Set the combined gain value in dB
  *
  * This function computes and sets the optimal gain values of various amplifiers
  * that are present in the device based on desired  gain value in dB.
@@ -431,9 +429,6 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx,
  * calibration must be run after device configuration is finished because
  * calibration values are dependant on various configuration settings.
  *
- * @note automatic RX calibration is not available when RX_LNA_H path is
- * selected
- *
  * @pre Device should be configured
  *
  * @param   device      Device handle previously obtained by LMS_Open().
@@ -540,10 +535,6 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx,
 
 /**
  * Select the antenna for the specified RX or TX channel.
- *
- * LMS_SetFrequency() automatically selects antenna based on frequency. This
- * function is meant to override path selected by LMS_SetFrequency() and should
- * be called after LMS_SetFrequency().
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
@@ -961,7 +952,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t *dev, uint8_t* buffer, siz
 API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buffer, size_t len);
 
 /**
- *  Enables or disable caching of calibration values
+ *  Enables or disable caching of calibration values.
  *
  * @param   dev         Device handle previously obtained by LMS_Open().
  * @param   enable      true to enable cache
@@ -1155,7 +1146,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
  * @param chCount       number of waveform channels
  * @param sample_count  number of samples in each channel
  * @param format        waveform data format
- * @return  0 on success
+ * @return              0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **samples,
                                 uint8_t chCount, size_t sample_count, int format);
@@ -1164,7 +1155,7 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **sample
  * @param device    Device handle previously obtained by LMS_Open().
  * @param chan      Channel index
  * @param active    Enable/Disable waveform playback
- * @return  0 on success
+ * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned chan, bool active);
 
@@ -1208,13 +1199,14 @@ typedef bool (*lms_prog_callback_t)(int bsent, int btotal, const char* progressM
  * Write binary firmware/bitsteam image to specified device component.
  *
  * @param device    Device handle previously obtained by LMS_Open().
- * @param data      Pointer to memory containing FPGA image
- * @param size      Size of FPGA image in bytes.
- * @param target    load to volatile or non-volatile storage
+ * @param data      Pointer to memory containing firmware/bitsteam image
+ * @param size      Size of firmware/bitsteam image in bytes.
+ * @params target   device component to program ::lms_prog_trg_t
+ * @param mode      programming mode ::lms_prog_md_t
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, size_t size,
-           lms_prog_trg_t component, lms_prog_md_t mode, lms_prog_callback_t callback);
+           lms_prog_trg_t target, lms_prog_md_t mode, lms_prog_callback_t callback);
 
 /**
  * @param device    Device handle previously obtained by LMS_Open().
@@ -1247,7 +1239,7 @@ typedef struct
  * function after closing the device, make a copy before closing the device.
  *
  * @param device    Device handle previously obtained by LMS_Open().
- * @return          pointer to device info structure
+ * @return          pointer to device info structure ::lms_dev_info_t
  */
 API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *device);
 
