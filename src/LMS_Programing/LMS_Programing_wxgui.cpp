@@ -241,16 +241,16 @@ void LMS_Programing_wxgui::DoProgramming()
     int status = -1;
     if (device == 1)
     {
-        status = LMS_ProgramFirmware(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode,OnProgrammingCallback);
+        status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_FX3,(lms_prog_md_t)progMode,OnProgrammingCallback);
     }
     else if (device == 2)
     {
 
-       status = LMS_ProgramFPGA(lmsControl, mProgramData.data(), mProgramData.size(), (lms_target_t)progMode,OnProgrammingCallback);
+       status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_FPGA, (lms_prog_md_t)progMode,OnProgrammingCallback);
     }
     else if (device == 0)
     {
-       status = LMS_ProgramHPM7(lmsControl, mProgramData.data(), mProgramData.size(), progMode,OnProgrammingCallback);
+       status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_HPM7,(lms_prog_md_t)progMode,OnProgrammingCallback);
     }
     else if (device == 3)
     {
@@ -275,14 +275,14 @@ void LMS_Programing_wxgui::DoProgramming()
     if(device == 1)
     {
         if (progMode == 1) //reset FX3 only after programming flash
-            status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
+            status = LMS_Program(lmsControl, nullptr, 0,LMS_PROG_TRG_FX3, LMS_PROG_MD_RST,nullptr);
         if(status == 0)
             evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
     }
     else if(device == 2 && progMode == 1) //reset FPGA and FX3 after FPGA programming
     {
-        status = LMS_ProgramFPGA(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
-        status = LMS_ProgramFirmware(lmsControl, nullptr, 0, LMS_TARGET_BOOT,OnProgrammingCallback);
+        status = LMS_Program(lmsControl, nullptr, 0, LMS_PROG_TRG_FPGA, LMS_PROG_MD_RST,nullptr);
+        status = LMS_Program(lmsControl, nullptr, 0, LMS_PROG_TRG_FX3, LMS_PROG_MD_RST,nullptr);
         if(status == 0)
             evt.SetString("FPGA gateware uploaded, device is going to be reset, please reconnect in connection settings");
     }

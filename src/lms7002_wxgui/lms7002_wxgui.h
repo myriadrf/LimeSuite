@@ -35,6 +35,7 @@ class lms7002_pnlXBUF_view;
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/combobox.h>
 #include <wx/radiobut.h>
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
@@ -45,7 +46,6 @@ class lms7002_pnlXBUF_view;
 #include <wx/icon.h>
 #include <wx/notebook.h>
 #include <wx/statbox.h>
-#include <wx/combobox.h>
 #include <wx/spinctrl.h>
 #include <wx/radiobox.h>
 #include <wx/textctrl.h>
@@ -66,7 +66,8 @@ class mainPanel : public wxPanel
 	protected:
 		enum
 		{
-			ID_BTN_CH_A = 2048,
+			ID_G_LNA_RFE = 2048,
+			ID_BTN_CH_A,
 			ID_BTN_CH_B,
 			ID_BTN_CHIP_TO_GUI,
 			ID_BTN_RESET_CHIP,
@@ -94,6 +95,7 @@ class mainPanel : public wxPanel
 		wxButton* ID_BUTTON1;
 		wxButton* ID_BUTTON2;
 		wxButton* ID_BUTTON3;
+		wxComboBox* cmbLmsDevice;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
 		wxCheckBox* chkEnableMIMO;
@@ -110,6 +112,7 @@ class mainPanel : public wxPanel
 		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnLmsDeviceSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
@@ -977,6 +980,8 @@ class pnlCLKGEN_view : public wxPanel
 			ID_CZ_CGEN,
 			ID_EN_ADCCLKH_CLKGN,
 			ID_CLKH_OV_CLKL_CGEN,
+			ID_GFIR1_N_TXTSP,
+			ID_AUTO_PHASE,
 			ID_INT_SDM_CGEN,
 			ID_FRAC_SDM_CGEN,
 			ID_VCO_CMPHO_CGEN,
@@ -1027,6 +1032,9 @@ class pnlCLKGEN_view : public wxPanel
 		wxTextCtrl* txtFrequency;
 		wxComboBox* cmbCLKH_OV_CLKL_CGEN;
 		wxTextCtrl* txtFrequencyCLKL;
+		wxStaticText* ID_STATICTEXT101;
+		wxStaticText* ID_STATICTEXT102;
+		wxCheckBox* chkAutoPhase;
 		wxButton* btnCalculate;
 		wxButton* btnTune;
 		wxStaticText* ID_STATICTEXT7;
@@ -1062,6 +1070,8 @@ class pnlCLKGEN_view : public wxPanel
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onbtnCalculateClick( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnAutoPhase( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnCalculateClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnTuneClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
@@ -1071,6 +1081,8 @@ class pnlCLKGEN_view : public wxPanel
 		
 	
 	public:
+		wxSpinCtrl* rxPhase;
+		wxSpinCtrl* txPhase;
 		
 		pnlCLKGEN_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~pnlCLKGEN_view();
@@ -2108,6 +2120,7 @@ class pnlCalibrations_view : public wxPanel
 			ID_DCOFFI_RFE,
 			ID_DCOFFQ_RFE,
 			ID_EN_DCOFF_RXFE_RFE,
+			ID_DCMODE,
 			ID_GCORRI_TXTSP,
 			ID_GCORRQ_TXTSP,
 			ID_IQCORR_TXTSP,
@@ -2128,6 +2141,7 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* ID_STATICTEXT7;
 		NumericSlider* cmbDCOFFQ_RFE;
 		wxCheckBox* chkEN_DCOFF_RXFE_RFE;
+		wxCheckBox* chkDCMODE;
 		wxButton* btnCalibrateRx;
 		wxStaticText* ID_STATICTEXT5;
 		NumericSlider* cmbGCORRI_TXTSP;

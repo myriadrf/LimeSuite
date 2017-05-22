@@ -21,9 +21,10 @@ lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
 static bool useMCU =1;
-static bool tx = 1;
+static bool tx = 0;
 static bool filters = 0;
 static float FBW = 5e6;
+extern float RefClk;
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
@@ -61,8 +62,8 @@ void DCIQ()
     while(freq <= freqEnd)
     {
         vfreqs.push_back(freq);
-        status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
-        status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
+        //status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
+        //status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
         if(tx)
         {
             //lmsControl.Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 15);
@@ -90,7 +91,7 @@ void DCIQ()
         {
             if(!isSetBW)
             {
-            status = MCU_SetParameter(MCU_REF_CLK, 40e6);
+            status = MCU_SetParameter(MCU_REF_CLK, RefClk);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
             status = MCU_SetParameter(MCU_BW, FBW);
@@ -222,7 +223,7 @@ void Filters()
     {
         if(!isSetBW)
         {
-        status = MCU_SetParameter(MCU_REF_CLK, 40e6);
+        status = MCU_SetParameter(MCU_REF_CLK, RefClk);
         if(status != 0)
             printf("Failed to set Reference Clk\n");
         status = MCU_SetParameter(MCU_BW, FBW);
@@ -344,7 +345,7 @@ void Filters()
         lmsControl.LoadDC_REG_IQ(true, 0x7FFF, 0x7FFF);
     }
 }
-extern float RefClk;
+
 int main(int argc, char** argv)
 {
     //connect to first available device
@@ -376,7 +377,8 @@ int main(int argc, char** argv)
         filename = "TxTest.ini";
     else
         filename = "RxTest.ini";*/
-    filename = "CalibSetup.ini";
+    //filename = "CalibSetup.ini";
+    filename = "rxtest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");

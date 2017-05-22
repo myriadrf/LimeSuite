@@ -3,6 +3,9 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+#include "lms7_device.h"
+#include "lms7suiteAppFrame.h"
+
 using namespace lime;
 
 lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent )
@@ -76,6 +79,10 @@ void lms7002_pnlTBB_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+        value = 1;
+    chkR5_LPF_BYP_TBB->Enable(value);
 }
 
 void lms7002_pnlTBB_view::ParameterChangeHandler(wxSpinEvent& event)
@@ -125,9 +132,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     txtFilterFrequency->GetValue().ToDouble(&input1);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
     int status;
-
-    status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch-1,input1*1e6);
+    status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch,input1*1e6);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -142,9 +150,8 @@ void lms7002_pnlTBB_view::OnbtnTuneTxGain( wxCommandEvent& event )
     txtFilterFrequency->GetValue().ToDouble(&input1);
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status;
-
-    status = LMS_CalibrateTxGain(lmsControl, 0, nullptr);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    int status = lms->CalibrateTxGain(0, nullptr);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("Tx gain calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));

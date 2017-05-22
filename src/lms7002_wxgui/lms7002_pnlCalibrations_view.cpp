@@ -4,6 +4,7 @@
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
 #include <wx/busyinfo.h>
+#include "lms7suiteAppFrame.h"
 using namespace lime;
 
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view( wxWindow* parent )
@@ -27,18 +28,19 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[chkEN_DCOFF_RXFE_RFE] = LMS7param(EN_DCOFF_RXFE_RFE);
     wndId2Enum[cmbDCOFFI_RFE] = LMS7param(DCOFFI_RFE);
     wndId2Enum[cmbDCOFFQ_RFE] = LMS7param(DCOFFQ_RFE);
+    wndId2Enum[chkDCMODE] = LMS7param(DCMODE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 {
-    bool useExtLoopback = false;
+    int flags = 0;
     if(rgrCalibrationMethod->GetSelection() == 0)
-        useExtLoopback = false;
+        flags = 0;
     else
     {
-        useExtLoopback = true;
+        flags = 1;
     }
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
@@ -49,7 +51,9 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
 #endif
         uint16_t ch;
         LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        ch = (ch == 2) ? 1 : 0;
+        ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+        status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -106,6 +110,11 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
         useExtLoopback = true;
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
+    if (2.5 > bandwidth_MHz || bandwidth_MHz > 120.0)
+    {
+        wxMessageBox(wxString("Frequency out of range, available range: 2.5-120 MHz"));
+        return;
+    }
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status;
@@ -121,7 +130,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
 #ifdef NDEBUG
         wxBusyInfo wait("Please wait, calibrating receiver...");
 #endif
-        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
         wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -134,6 +143,10 @@ void lms7002_pnlCalibrations_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+        value = 1;
+    chkDCMODE->Enable(value);
 }
 
 void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxSpinEvent& event)

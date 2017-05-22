@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include "mcu_programs.h"
+#include "lms7_device.h"
 
 #include <vector>
 
@@ -168,11 +169,6 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_TXA;
             dcCalibGroup->Add(sizer, 0, wxLEFT, 5);
-
-            wxCheckBox* chkbox = new wxCheckBox(dcCalibGroup->GetStaticBox(), wxNewId(), "Automatic DC calibration mode");
-            chkbox->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-            wndId2Enum[chkbox] = LMS7_DCMODE;
-            sizer->Add(chkbox, 0, wxALIGN_CENTER_HORIZONTAL, 0);
         }
         mainSizer->Add(dcCalibGroup, 1, wxEXPAND, 5);
     }
@@ -371,6 +367,10 @@ lms7002_pnlR3_view::~lms7002_pnlR3_view()
 void lms7002_pnlR3_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
+    uint16_t value;
+    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+        value = 1;
+    this->Enable(value);
 }
 
 void lms7002_pnlR3_view::UpdateGUI()
@@ -466,7 +466,7 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
     {
         MCU_RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
         if(MCU_WaitForStatus(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            LMS_ProgramLMSMCU(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), LMS_TARGET_RAM, nullptr);
+            LMS_Program(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), LMS_PROG_TRG_MCU, LMS_PROG_MD_RAM, nullptr);
 
         //run mcu write
         LMS_WriteLMSReg(lmsControl, 0x002D, parameter.address);
@@ -618,6 +618,7 @@ void lms7002_pnlR3_view::UpdateGUISlow()
 
 void lms7002_pnlR3_view::OnCalibrateAnalogRSSI( wxCommandEvent& event )
 {
-    LMS_CalibrateAnalogRSSIDC(lmsControl);
+    lime::LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lms->CalibrateAnalogRSSI_DC_Offset();
     UpdateGUI();
 }

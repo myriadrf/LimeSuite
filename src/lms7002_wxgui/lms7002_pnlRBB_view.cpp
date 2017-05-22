@@ -4,6 +4,7 @@
 #include "numericSlider.h"
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
+#include "lms7suiteAppFrame.h"
 using namespace lime;
 
 lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent )
@@ -184,8 +185,11 @@ void lms7002_pnlRBB_view::OnbtnTuneFilter(wxCommandEvent& event)
 
     int status;
     uint16_t ch;
+
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    status = LMS_SetLPFBW(lmsControl,LMS_CH_RX,ch-1,input1*1e6);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    status = LMS_SetLPFBW(lmsControl,LMS_CH_RX,ch,input1*1e6);
     if (status != 0)
         wxMessageBox(wxString(_("Rx Filter tune: ")) + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Error"));
     LMS_Synchronize(lmsControl,false);

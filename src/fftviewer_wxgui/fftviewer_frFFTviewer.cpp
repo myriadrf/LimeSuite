@@ -14,9 +14,15 @@
 using namespace std;
 using namespace lime;
 
-void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
+void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort, unsigned index)
 {
     lmsControl = pDataPort;
+    lmsIndex = index;
+    for (unsigned i =0; i < this->cMaxChCount ; i++)
+    {
+        this->rxStreams[i].handle = 0;
+        this->txStreams[i].handle = 0;
+    }
 }
 
 fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
@@ -311,7 +317,6 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const unsigned int fftSize, const int channelsCount, const uint32_t format)
 {
     const bool runTx = pthis->chkEnTx->GetValue();
-    const int cMaxChCount = 2;
     const int fifoSize = fftSize*512;
     int avgCount = pthis->spinAvgCount->GetValue();
     int wndFunction = pthis->windowFunctionID.load();
@@ -329,12 +334,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     DataToGUI localDataResults;
     localDataResults.nyquist_Hz = 7.68e6;
-    localDataResults.samplesI[0].resize(fftSize, 0);
-    localDataResults.samplesI[1].resize(fftSize, 0);
-    localDataResults.samplesQ[0].resize(fftSize, 0);
-    localDataResults.samplesQ[1].resize(fftSize, 0);
-    localDataResults.fftBins[0].resize(fftSize, 0);
-    localDataResults.fftBins[1].resize(fftSize, 0);
+    for (unsigned i = 0; i < cMaxChCount; i++)
+    {
+        localDataResults.samplesI[i].resize(fftSize, 0);
+        localDataResults.samplesQ[i].resize(fftSize, 0);
+        localDataResults.fftBins[i].resize(fftSize, 0);
+    }
     buffers = new lime::complex16_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
         buffers[i] = new complex16_t[fftSize];
@@ -347,6 +352,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             samplesToCapture[ch] = pthis->spinCaptureCount->GetValue();
             captureBuffer[ch].resize(samplesToCapture[ch]);
         }
+
+    if ((pthis->lmsIndex == 1) && (LMS_GetNumChannels(pthis->lmsControl, false)>2))
+        ch_offset = 2;
 
     auto fmt = lms_stream_t::LMS_FMT_I12;
     for(int i=0; i<channelsCount; ++i)
@@ -572,8 +580,7 @@ void fftviewer_frFFTviewer::SetNyquistFrequency(float freqHz)
 
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
 {
-    const int channelCount = 2;
-    bool visibilities[channelCount];
+    bool visibilities[cMaxChCount];
 
     if (cmbStreamType->GetSelection() == 1)
     {

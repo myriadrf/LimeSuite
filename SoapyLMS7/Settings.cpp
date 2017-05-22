@@ -22,11 +22,14 @@ using namespace lime;
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
 // arbitrary upper limit for CGEN automatic tune
+#define MIN_CGEN_RATE 6.4e6
 #define MAX_CGEN_RATE 640e6
+#define CGEN_DEADZONE_LO 450e6
+#define CGEN_DEADZONE_HI 491.5e6
 
 //reasonable limits when advertising the rate
 #define MIN_SAMP_RATE 1e5
-#define MAX_SAMP_RATE 60e6
+#define MAX_SAMP_RATE 65e6
 
 /*******************************************************************
  * Constructor/destructor
@@ -111,7 +114,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     }
 
     //reset flags for user calls
-    _fixedClockRate = false;
+    _fixedClockRate = args.count("clock") != 0;
     _fixedRxSampRate.clear();
     _fixedTxSampRate.clear();
 }
@@ -650,6 +653,13 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
  * Sample Rate API
  ******************************************************************/
 
+static bool cgenRatePossible(const double rate)
+{
+    if (rate > MAX_CGEN_RATE) return false;
+    if (rate > CGEN_DEADZONE_LO and rate < CGEN_DEADZONE_HI) return false; //avoid range where CGEN does not lock
+    return true;
+}
+
 static double calculateClockRate(
     const int adcFactorRx,
     const int dacFactorTx,
@@ -663,8 +673,7 @@ static double calculateClockRate(
     for (int decim = 2; decim <= 32; decim *= 2)
     {
         const double rateClock = rateRx*decim*adcFactorRx;
-        if (rateClock > MAX_CGEN_RATE) continue;
-        if (rateClock > 450e6 && rateClock < 491.5e6) continue; //avoid range where CGEN does not lock
+        if (not cgenRatePossible(rateClock)) continue;
         if (rateClock < bestClockRate) continue;
         for (int interp = 2; interp <= 32; interp *= 2)
         {
@@ -759,7 +768,7 @@ double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
     return rfic->GetSampleRate(lmsDir, rfic->GetActiveChannel());
 }
 
-std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
+std::vector<double> SoapyLMS7::_getEnumeratedRates(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
@@ -787,6 +796,7 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
         for (int iTx = 32; iTx >= 2; iTx /= 2)
         {
             const double clockRate = txRate*dacFactor*iTx;
+            if (not cgenRatePossible(clockRate)) continue;
             for (int iRx = 32; iRx >= 2; iRx /= 2)
             {
                 const double rxRate = clockRate/(adcFactor*iRx);
@@ -815,16 +825,44 @@ std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t
         }
     }
 
+    std::sort(rates.begin(), rates.end());
+    return rates;
+}
+
+std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
+{
+    auto rates = this->_getEnumeratedRates(direction, channel);
+
     //otherwise, the clock is the only limiting factor
     //just give a reasonable high and low
-    else
+    if (rates.empty())
     {
         rates.push_back(MIN_SAMP_RATE);
         rates.push_back(MAX_SAMP_RATE);
     }
 
-    std::sort(rates.begin(), rates.end());
     return rates;
+}
+
+SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const size_t channel) const
+{
+    SoapySDR::RangeList ranges;
+    auto rates = this->_getEnumeratedRates(direction, channel);
+
+    //no enumerated rates? full continuous range is available
+    if (rates.empty())
+    {
+        ranges.push_back(SoapySDR::Range(MIN_SAMP_RATE, CGEN_DEADZONE_LO/8));
+        ranges.push_back(SoapySDR::Range(CGEN_DEADZONE_HI/8, MAX_SAMP_RATE));
+    }
+
+    //normal list of enumerated rates becomes ranges with start == stop
+    for (const auto &rate : rates)
+    {
+        ranges.push_back(SoapySDR::Range(rate, rate));
+    }
+
+    return ranges;
 }
 
 /*******************************************************************
@@ -919,6 +957,14 @@ double SoapyLMS7::getMasterClockRate(void) const
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     //assume same rate for all RFIC in this wrapper
     return _rfics.front()->GetFrequencyCGEN();
+}
+
+SoapySDR::RangeList SoapyLMS7::getMasterClockRates(void) const
+{
+    SoapySDR::RangeList r;
+    r.push_back(SoapySDR::Range(MIN_CGEN_RATE, CGEN_DEADZONE_LO));
+    r.push_back(SoapySDR::Range(CGEN_DEADZONE_HI, MAX_CGEN_RATE));
+    return r;
 }
 
 /*******************************************************************

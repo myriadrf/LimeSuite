@@ -57,6 +57,7 @@ int main(int argc, char** argv)
 
     //Initialize device with default configuration
     //Do not use if you want to keep existing configuration
+    //Use LMS_LoadConfig(device, "/path/to/file.ini") to load config from INI
     if (LMS_Init(device) != 0)
         error();
 
@@ -66,7 +67,6 @@ int main(int argc, char** argv)
         error();
 
     //Set center frequency to 800 MHz
-    //Automatically selects antenna port
     if (LMS_SetLOFrequency(device, LMS_CH_RX, 0, 800e6) != 0)
         error();
 

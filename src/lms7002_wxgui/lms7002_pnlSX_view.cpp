@@ -10,6 +10,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
 #include <string>
+#include "lms7_device.h"
 using namespace std;
 using namespace lime;
 
@@ -475,7 +476,7 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     const auto isTx = (ch == 2)? true : false;
-    float_type freq;
+    double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     dlg->SetValue(wxString::Format(_("%f"), freq/1e6));
     if (dlg->ShowModal() == wxID_OK)
@@ -509,10 +510,11 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     double BWMHz;
     txtRefSpurBW->GetValue().ToDouble(&BWMHz);
     int status;
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     if(chkEnableRefSpurCancelation->IsChecked())
-        status = LMS_SetClockFreqWithSpurCancelation(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,freqMHz * 1e6, BWMHz*1e6);
+        status = lms->SetFrequencySXWithSpurCancelation(isTx,freqMHz * 1e6, BWMHz*1e6);
     else
-        status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,freqMHz * 1e6);
+        status = lms->SetFrequencySX(isTx,freqMHz * 1e6);
 
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -551,7 +553,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     const auto isTx = (ch == 2)? true : false;
-    float_type freq;
+    double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
     LMS_GetClockFreq(lmsControl,isTx ? LMS_CLOCK_SXT: LMS_CLOCK_SXR,&freq);
@@ -560,8 +562,8 @@ void lms7002_pnlSX_view::UpdateGUI()
     {
         uint16_t downconvert = 0;
         LMS_ReadParam(lmsControl, LMS7param(CMIX_SC_RXTSP), &downconvert);
-        float_type* freqNCO = new float_type[16];
-        float_type PHO;
+        double* freqNCO = new double[16];
+        double PHO;
         LMS_GetNCOFrequency(lmsControl, false, 0, freqNCO, &PHO);
         if(downconvert)
             freq += freqNCO[15];

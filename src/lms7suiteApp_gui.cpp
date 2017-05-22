@@ -57,7 +57,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuModules->Append( mnuSi5351C );
 	
 	wxMenuItem* mnuPrograming;
-	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programing") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programming") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuPrograming );
 	
 	wxMenuItem* mnuHPM7;
@@ -98,7 +98,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	statusBar = this->CreateStatusBar( 3, wxST_SIZEGRIP, wxID_ANY );
 	contentSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
 	contentSizer->AddGrowableCol( 0 );
-	contentSizer->AddGrowableRow( 0 );
 	contentSizer->SetFlexibleDirection( wxBOTH );
 	contentSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	

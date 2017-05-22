@@ -28,6 +28,8 @@ class lms7002_pnlCLKGEN_view : public pnlCLKGEN_view
         wxComboBox *cmbCMPLO_CTRL;
 	public:
         void onbtnCalculateClick(wxCommandEvent& event);
+        void onbtnCalculateClick(wxSpinEvent& event);
+        void OnAutoPhase(wxCommandEvent& event);
 		/** Constructor */
 		lms7002_pnlCLKGEN_view( wxWindow* parent );
 	//// end generated class members

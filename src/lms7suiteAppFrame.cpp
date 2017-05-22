@@ -46,45 +46,19 @@ LMS7SuiteAppFrame* LMS7SuiteAppFrame::obj_ptr=nullptr;
 
 const wxString LMS7SuiteAppFrame::cWindowTitle = _("LMS7Suite");
 
+int LMS7SuiteAppFrame::m_lmsSelection = 0;
+
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
-    lime::float_type freq;
+    double freq;
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        LMS_GetClockFreq(lmsControl,LMS_CLOCK_CGEN,&freq);
-        int status = 0;
-        if (event.GetInt() == 1)
-            status = LMS_SetClockFreq(lmsControl, LMS_CLOCK_CGEN, freq);
-        if (status == 0)
-        {
-            wxCommandEvent evt;
-            evt.SetEventType(LOG_MESSAGE);
-            wxString msg;
-            msg += _("Parameters modified: ");
-            uint16_t value;
-            LMS_ReadParam(lmsControl,LMS7param(HBI_OVR_TXTSP),&value);
-            msg += wxString::Format(_("HBI_OVR: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(TXTSPCLKA_DIV),&value);
-            msg += wxString::Format(_("TXTSPCLKA_DIV: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(TXDIVEN),&value);
-            msg += wxString::Format(_("TXDIVEN: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(MCLK1SRC),&value);
-            msg += wxString::Format(_("MCLK1SRC: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(HBD_OVR_RXTSP),&value);
-            msg += wxString::Format(_("HBD_OVR: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(RXTSPCLKA_DIV),&value);
-            msg += wxString::Format(_("RXTSPCLKA_DIV: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(RXDIVEN),&value);
-            msg += wxString::Format(_("RXDIVEN: %i "), value);
-            LMS_ReadParam(lmsControl,LMS7param(MCLK2SRC),&value);
-            msg += wxString::Format(_("MCLK2SRC: %i "), value);
-            evt.SetString(msg);
-            wxPostEvent(this, evt);
-        }
+        LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+        freq = lms->GetFrequencyCGEN();
 
         if (fftviewer)
         {
-            LMS_GetSampleRate(lmsControl,LMS_CH_RX,0,&freq,NULL);
+            LMS_GetSampleRate(lmsControl, LMS_CH_RX, m_lmsSelection*2, &freq, NULL);
             fftviewer->SetNyquistFrequency(freq / 2);
         }
     }
@@ -183,11 +157,10 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     deviceInfo = nullptr;
     spi = nullptr;
     boardControlsGui = nullptr;
-    lmsControl = new LMS7_Device();
+    lmsControl = LMS7_Device::CreateDevice(nullptr);
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
-    mContent->Initialize(lmsControl);
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -196,6 +169,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
+    contentSizer->AddGrowableRow(1);
     Layout();
     Fit();
     SetMinSize(GetSize());
@@ -211,6 +185,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     mnuCacheValues->Check(false);
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
+    Bind(LMS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::OnLmsChanged), this);
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -255,17 +230,17 @@ void LMS7SuiteAppFrame::OnAbout( wxCommandEvent& event )
 
 void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
 {
-
+    mContent->Initialize(lmsControl);
     if(si5351gui)
         si5351gui->Initialize(lmsControl);
     if(fftviewer)
-        fftviewer->Initialize(lmsControl);
+        fftviewer->Initialize(lmsControl, 0);
     if(adfGUI)
         adfGUI->Initialize(lmsControl);
     if(hpm7)
         hpm7->Initialize(lmsControl);
     if(fpgaControls)
-        fpgaControls->Initialize(lmsControl);
+        fpgaControls->Initialize(lmsControl, m_lmsSelection);
     if(myriad7)
         myriad7->Initialize(lmsControl);
     if(deviceInfo)
@@ -288,19 +263,18 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         //bind callback for spi data logging
         obj_ptr = this;
         const lms_dev_info_t* info;
-		if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
-			return;
+        if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
+                return;
         wxString controlDev = _("Control port: ");
 
         controlDev.Append(info->deviceName);
-        double refClk;
-        LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF, &refClk);
+        LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+        double refClk = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
-        LMS_SetDataLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogDataTransfer);
-        //LMS7002M messages go through global logger registered in LMS7SuiteAppFrame()
-        //LMS_SetLogCallback(lmsControl, &LMS7SuiteAppFrame::OnLogEvent);
+        auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
+        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetString(_("Connected ") + controlDev);
@@ -313,7 +287,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
     }
     else
     {
-        LMS_SetDataLogCallback(lmsControl, nullptr);
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
@@ -371,11 +344,26 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
-        lime::float_type freq;
+        double freq;
         LMS_GetSampleRate(lmsControl,LMS_CH_RX,0,&freq,NULL);
         fftviewer->SetNyquistFrequency(freq / 2);
     }
-    fftviewer->Initialize(lmsControl);
+    fftviewer->Initialize(lmsControl, m_lmsSelection);
+}
+
+void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
+{
+    m_lmsSelection = event.GetInt();
+    if (fftviewer)
+    {
+        double freq;
+        LMS_GetSampleRate(lmsControl, LMS_CH_RX, m_lmsSelection*2, &freq, NULL);
+        fftviewer->SetNyquistFrequency(freq / 2);
+        fftviewer->Initialize(lmsControl, m_lmsSelection);
+    }
+
+    if (fpgaControls)
+        fpgaControls->Initialize(lmsControl, m_lmsSelection);
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
@@ -412,7 +400,7 @@ void LMS7SuiteAppFrame::OnShowSi5351C(wxCommandEvent& event)
         si5351gui = new Si5351C_wxgui(this, wxNewId(), _("Si5351C"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
         si5351gui->Initialize(lmsControl);
         const lms_dev_info_t *info = LMS_GetDeviceInfo(lmsControl);
-        si5351gui->ModifyClocksGUI(info->deviceName);
+        si5351gui->ModifyClocksGUI(info ? info->deviceName : "UNKNOWN");
         si5351gui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnSi5351Close), NULL, this);
         si5351gui->Show();
     }
@@ -474,7 +462,7 @@ void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
     else
     {
         fpgaControls = new FPGAcontrols_wxgui(this, wxNewId(), _("FPGA Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        fpgaControls->Initialize(lmsControl);
+        fpgaControls->Initialize(lmsControl, m_lmsSelection);
         fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
         fpgaControls->Show();
     }

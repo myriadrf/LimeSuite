@@ -25,6 +25,7 @@
 #include "lms7002_pnlMCU_BD_view.h"
 #include "lms7002_pnlR3.h"
 #include "lime/LimeSuite.h"
+#include "lms7_device.h"
 using namespace std;
 using namespace lime;
 
@@ -139,7 +140,15 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
     mTabCalibrations->Initialize(lmsControl);
     mTabMCU->Initialize(lmsControl);
     mTabR3->Initialize(lmsControl);
+    ((LMS7_Device*)lmsControl)->SetActiveChip(0);
+    cmbLmsDevice->SetSelection(0);
+
+    if (((LMS7_Device*)lmsControl)->GetNumChannels() > 2)
+        cmbLmsDevice->Show();
+    else
+        cmbLmsDevice->Hide();
     UpdateGUI();
+    Layout();
 }
 
 void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
@@ -200,7 +209,6 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
     UpdateGUI();
     wxCommandEvent evt;
-    evt.SetInt(1);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
 }
@@ -213,15 +221,6 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
     int status = LMS_SaveConfig(lmsControl,dlg.GetPath().To8BitData());
     if (status != 0)
         wxMessageBox(_("Failed to save file"), _("Warning"));
-}
-
-void lms7002_mainPanel::OnRegistersTest( wxCommandEvent& event )
-{
-    int status = LMS_RegisterTest(lmsControl);
-    if (status != 0)
-        wxMessageBox(_("Registers test failed!"), _("WARNING"));
-    else
-        wxMessageBox(_("Registers test passed!"), _("INFO"));
 }
 
 void lms7002_mainPanel::OnSwitchToChannelA(wxCommandEvent& event)
@@ -293,7 +292,6 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
     if (status != 0)
         wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxCommandEvent evt;
-    evt.SetInt(1);
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
     UpdateVisiblePanel();
@@ -350,10 +348,26 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     UpdateVisiblePanel();
 }
 
-
 void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
 {
-    int status = LMS_CalibrateInternalADC(lmsControl);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    int status = lms->CalibrateInternalADC();
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+}
+
+int lms7002_mainPanel::GetLmsSelection()
+{
+    return cmbLmsDevice->GetSelection();
+}
+
+void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
+{
+    int deviceSelection = cmbLmsDevice->GetSelection();
+    ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
+    UpdateVisiblePanel();
+    wxCommandEvent evt;
+    evt.SetEventType(LMS_CHANGED);
+    evt.SetInt(deviceSelection);
+    wxPostEvent(this->GetParent(), evt);
 }

@@ -11,6 +11,8 @@ API additions:
 - LMS_SetClockFreqWithSpurCancelation
 
 General changes:
+- SoapyLMS7 - added getMasterClockRates()
+- SoapyLMS7 - added getSampleRateRange()
 - LimeSDR v1.4 updated to r2.8 gateware
 - GPIO support in SoapyLM7 module
 - Library level logging support
@@ -18,9 +20,10 @@ General changes:
 - FFTviewer: add checkbox for RX->TX loopback control
 - Merged major MCU based calibrations update
 
-Release 17.02.2 (pending)
+Release 17.02.2 (2017-04-30)
 ==========================
 
+- Fixed register typo in LMS7002M::SetTxDCOffset()
 - Added option defaults for stream args in SoapyLMS7
 - Fixed LMS7002M::GetPathRFE() currently selected path
 

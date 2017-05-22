@@ -41,7 +41,6 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
     lms_info_str_t list[32];
     int ret = LMS_GetDeviceList(list);
-    LMS_Disconnect(*lmsControl);	//avoid changing list size - disconnect after getting the list
     const int selection = mListLMS7ports->GetSelection();
     if(selection != wxNOT_FOUND && selection < ret)
     {
@@ -73,6 +72,8 @@ void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
         evt.SetEventType(CONTROL_PORT_DISCONNECTED);
         if(GetParent())
             wxPostEvent(GetParent(), evt);
+        wxInitDialogEvent tmp_evt;
+        GetDeviceList(tmp_evt);
     }
     mListLMS7ports->SetSelection(-1);
 }

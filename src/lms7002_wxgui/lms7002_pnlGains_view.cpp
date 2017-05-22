@@ -75,6 +75,15 @@ void lms7002_pnlGains_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
+    uint16_t value;
+    if (LMS_IsOpen(lmsControl,0) && LMS_ReadParam(lmsControl,LMS7param(MASK),&value)==0 && value == 0)
+    {
+        chkTRX_GAIN_SRC->Enable(false);
+        chkTRX_GAIN_SRC->SetValue(false);
+    }
+    else
+        chkTRX_GAIN_SRC->Enable(true);
+
 }
 
 void lms7002_pnlGains_view::ParameterChangeHandler(wxCommandEvent& event)

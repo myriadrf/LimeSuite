@@ -61,6 +61,15 @@ static uint8_t toDCOffset(const int8_t offset)
 }
 */
 
+static int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
+{
+    if(value < minBound)
+        return minBound;
+    if(value > maxBound)
+        return maxBound;
+    return value;
+}
+
 static void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
 {
     Modify_SPI_Reg_bits(addr, bits, 0);
@@ -90,7 +99,7 @@ static void Delay()
 #else
     uint8_t i;
     volatile uint16_t t=0;
-    for(i=5; i; --i)
+    for(i=10; i; --i)
         Dummy();
 #endif
 }
@@ -351,9 +360,13 @@ static void TxDcBinarySearch(BinSearchParam* args)
 
 void AdjustAutoDC(const uint16_t address, bool tx)
 {
+    bool increment;
     uint16_t rssi;
+    uint16_t minRSSI;
+    int16_t minValue;
     int16_t initVal;
     const uint16_t mask = tx ? 0x03FF : 0x003F;
+    const int16_t range = tx ? 1023 : 63;
     SPI_write(address, 0);
     SPI_write(address, 0x4000);
     initVal = SPI_read(address);
@@ -365,10 +378,12 @@ void AdjustAutoDC(const uint16_t address, bool tx)
     }
     else
         initVal &= mask;
+    minValue = initVal;
 
     rssi = GetRSSI();
+    minRSSI = rssi;
     {
-        int16_t tempValue = initVal+1;
+        int16_t tempValue = clamp(initVal+1, -range, range);
         uint16_t regValue = 0;
         if(tempValue < 0)
         {
@@ -380,10 +395,8 @@ void AdjustAutoDC(const uint16_t address, bool tx)
         SPI_write(address, regValue);
         SPI_write(address, regValue | 0x8000);
     }
-
+    increment = GetRSSI() < rssi;
     {
-    bool increment = GetRSSI() < rssi;
-    uint16_t rssiNext = rssi;
     int8_t iterations = 8;
     while (iterations > 0)
     {
@@ -392,6 +405,7 @@ void AdjustAutoDC(const uint16_t address, bool tx)
             ++initVal;
         else
             --initVal;
+        initVal = clamp(initVal, -range, range);
         {
             uint16_t regValue = 0;
             if(initVal < 0)
@@ -404,31 +418,28 @@ void AdjustAutoDC(const uint16_t address, bool tx)
             SPI_write(address, regValue);
             SPI_write(address, regValue | 0x8000);
         }
-        rssi = rssiNext;
-        rssiNext = GetRSSI();
-        if((rssiNext < rssi) != increment)
+        rssi = GetRSSI();
+        if(rssi < minRSSI)
         {
-            uint16_t regValue = 0;
-            if(increment)
-                --initVal;
-            else
-                ++initVal;
-            if(initVal < 0)
-            {
-                regValue |= (mask+1);
-                regValue |= (abs(initVal+mask) & mask);
-            }
-            else
-                regValue |= (abs(initVal+mask+1) & mask);
-            SPI_write(address, regValue);
-            SPI_write(address, regValue | 0x8000);
-            SPI_write(address, 0);
-
-            //printf("Found: %i\n", initVal);
-            break;
+            minRSSI = rssi;
+            minValue = initVal;
         }
         --iterations;
     }
+    }
+    {
+        uint16_t regValue = 0;
+        initVal = minValue;
+        if(initVal < 0)
+        {
+            regValue |= (mask+1);
+            regValue |= (abs(initVal+mask) & mask);
+        }
+        else
+            regValue |= (abs(initVal+mask+1) & mask);
+        SPI_write(address, regValue);
+        SPI_write(address, regValue | 0x8000);
+        SPI_write(address, 0);
     }
 }
 
@@ -465,10 +476,8 @@ void CalibrateRxDCAuto()
     //manual adjustments
     Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 0);
     AdjustAutoDC(dcRegAddr, false);
-    Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, 0);
     Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 2047);
     AdjustAutoDC(dcRegAddr+1, false);
-    Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, 2047);
 
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0); // DC_BYP 0
     Modify_SPI_Reg_bits(EN_G_TRF, 1);
@@ -482,7 +491,6 @@ void CalibrateTxDCAuto()
     BinSearchParam iparams;
     BinSearchParam qparams;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
-    uint16_t dcRegAddr = 0x5C3;
     Modify_SPI_Reg_bits(EN_G_TRF, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -500,7 +508,7 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C4;// DC_TXAQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXA, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXA, 0);
-        SPI_write(0x05C2, 0x0F03);
+        //SPI_write(0x05C2, 0x0F03);
     }
     else
     {
@@ -508,37 +516,27 @@ void CalibrateTxDCAuto()
         qparams.param.address = 0x5C6;// DC_TXBQ;
         Modify_SPI_Reg_bits(PD_DCDAC_TXB, 0);
         Modify_SPI_Reg_bits(PD_DCCMP_TXB, 0);
-        SPI_write(0x05C2, 0x0F0C);
-        dcRegAddr += 2;
+        //SPI_write(0x05C2, 0x0F0C);
     }
 
     //wait until finished
-    while(SPI_read(0x05C1) & 0x0F00);
+    //while(SPI_read(0x05C1) & 0x0F00);
 
     {
-    int16_t ivalue = 0;//ReadAnalogDC(iparams.param.address);
-    int16_t qvalue = 0;//ReadAnalogDC(qparams.param.address);
-    int offset = 128;
-    iparams.minValue = ivalue-offset;
-    iparams.maxValue = ivalue+offset;
-    qparams.minValue = qvalue-offset;
-    qparams.maxValue = qvalue+offset;
+    ROM const int16_t offset[3] = {1023, 128, 8};
+    uint8_t i;
+    iparams.result = 0; //ReadAnalogDC(iparams.param.address);
+    qparams.result = 0; //ReadAnalogDC(qparams.param.address);
+    for(i=0; i<3; ++i)
+    {
+        iparams.minValue = iparams.result-offset[i];
+        iparams.maxValue = iparams.result+offset[i];
+        qparams.minValue = qparams.result-offset[i];
+        qparams.maxValue = qparams.result+offset[i];
 
-    TxDcBinarySearch(&iparams);
-    ivalue = iparams.result;
-    TxDcBinarySearch(&qparams);
-    qvalue = qparams.result;
-
-    offset = 8;
-    iparams.minValue = ivalue-offset;
-    iparams.maxValue = ivalue+offset;
-    qparams.minValue = qvalue-offset;
-    qparams.maxValue = qvalue+offset;
-
-    TxDcBinarySearch(&iparams);
-    ivalue = iparams.result;
-    TxDcBinarySearch(&qparams);
-    qvalue = qparams.result;
+        TxDcBinarySearch(&iparams);
+        TxDcBinarySearch(&qparams);
+    }
     }
 
     Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
@@ -695,6 +693,7 @@ uint8_t CalibrateTxSetup()
     //RXTSP
     SetDefaults(SECTION_RxTSP);
     SetDefaults(SECTION_RxNCO);
+    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
     Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4); //Decimation HBD ratio
@@ -742,7 +741,7 @@ uint8_t CalibrateTxSetup()
     }
     {
         ROM const uint16_t TxSetupAddrWrOnly[] = {0x0084,0x010C,0x0112,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0442,0x0443};
-        ROM const uint16_t TxSetupDataWrOnly[] = {0x0400,0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x20B8,0x0020,0x0000,0x0000};
+        ROM const uint16_t TxSetupDataWrOnly[] = {0x0400,0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x2098,0x0020,0x0000,0x0000};
 
         uint8_t i;
         for(i=sizeof(TxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
@@ -822,6 +821,7 @@ uint8_t CalibrateTx()
     status = CalibrateTxSetup();
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
+    CalibrateRxDCAuto();
     CheckSaturationTxRx();
     CalibrateRxDCAuto();
 
@@ -905,14 +905,14 @@ uint8_t CalibrateRxSetup()
             SPI_write(RxSetupAddr[i-1], ( SPI_read(RxSetupAddr[i-1]) & ~RxSetupMask[i-1] ) | RxSetupData[i-1]);
     }
     {
-        ROM const uint16_t RxSetupAddrWrOnly[] = {0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0240,0x0241,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0441,0x05C0,0x05C1,0x05C2,0x05C3,0x05C4,0x05C5,0x05C6,0x05C7,0x05C8,0x05C9,0x05CA,0x05CB,0x05CC};
-        ROM const uint16_t RxSetupDataWrOnly[] = {0x3408,0x6001,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x008D,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x2070,0x0020,0x0000,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1000,0x20B8,0x0020,0x0000,0x00FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x2020,0x0000};
+        ROM const uint16_t RxSetupAddrWrOnly[] = {0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0200,0x0201,0x0202,0x0208,0x0240,0x0400,0x0401,0x0402,0x0403,0x0407,0x040A,0x040C,0x0440,0x05C0,0x05CB,0x0203,0x0204,0x0205,0x0206,0x0207,0x0241,0x0404,0x0405,0x0406,0x0408,0x0409,0x0441,0x05C1,0x05C2,0x05C3,0x05C4,0x05C5,0x05C6,0x05C7,0x05C8,0x05C9,0x05CA,0x05CC};
+        ROM const uint16_t RxSetupDataWrOnly[] = {0x3408,0x6001,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x008D,0x07FF,0x07FF,0x2070,0x0020,0x0081,0x07FF,0x07FF,0x4000,0x0700,0x1000,0x2098,0x0020,0x00FF,0x2020};
         uint8_t i;
         for(i=sizeof(RxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
             if(i<=sizeof(RxSetupDataWrOnly)/sizeof(uint16_t))
                 SPI_write(RxSetupAddrWrOnly[i-1], RxSetupDataWrOnly[i-1]);
-            //else
-                //SPI_write(RxSetupAddrWrOnly[i-1], 0);
+            else
+                SPI_write(RxSetupAddrWrOnly[i-1], 0);
     }/*
     BeginBatch("RxSetup.txt");
     Modify_SPI_Reg_bits(EN_DCOFF_RXFE_RFE, 1);
@@ -961,7 +961,7 @@ uint8_t CalibrateRxSetup()
     //RXTSP
     SetDefaults(SECTION_RxTSP);
     SetDefaults(SECTION_RxNCO);
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(4, 3), 0x3); //GFIR2_BYP, GFIR1_BYP
+    Modify_SPI_Reg_bits(0x040C, MSBLSB(5, 3), 0x3); //GFIR2_BYP, GFIR1_BYP
     Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4);
 
     Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
@@ -1230,6 +1230,7 @@ RxCalibrationEndStage:
     else
         Modify_SPI_Reg_bits(PD_DCDAC_RXB, 0);
     Modify_SPI_Reg_bits(0x040C, MSBLSB(2, 0), 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
+    Modify_SPI_Reg_bits(0x040C, MSBLSB(8, 8), 0); //DCLOOP_STOP
     //Log("Rx calibration finished", LOG_INFO);
 #if VERBOSE
     printf("#####Rx calibration RESULTS:###########################\n");

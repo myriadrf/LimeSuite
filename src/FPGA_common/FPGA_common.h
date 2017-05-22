@@ -14,16 +14,18 @@ namespace lime
 {
 namespace fpga
 {
-
-int StartStreaming(IConnection* serPort);
-int StopStreaming(IConnection* serPort);
-int ResetTimestamp(IConnection* serPort);
+    int StartStreaming(IConnection* serPort, unsigned endpointIndex);
+    int StopStreaming(IConnection* serPort, unsigned endpointIndex);
+    int ResetTimestamp(IConnection* serPort, unsigned endpointIndex);
 
 struct FPGA_PLL_clock
 {
     FPGA_PLL_clock()
     {
        findPhase = false;
+       bypass = false;
+       phaseShift_deg = 0;
+       index = 0;
     }
     double outFrequency;
     double phaseShift_deg;

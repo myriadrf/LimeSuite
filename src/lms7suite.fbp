@@ -244,7 +244,7 @@
                         <property name="help"></property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">Programing</property>
+                        <property name="label">Programming</property>
                         <property name="name">mnuPrograming</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
@@ -414,7 +414,7 @@
                 <property name="cols">1</property>
                 <property name="flexible_direction">wxBOTH</property>
                 <property name="growablecols">0</property>
-                <property name="growablerows">0</property>
+                <property name="growablerows"></property>
                 <property name="hgap">0</property>
                 <property name="minimum_size"></property>
                 <property name="name">contentSizer</property>

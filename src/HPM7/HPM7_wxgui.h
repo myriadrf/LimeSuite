@@ -17,6 +17,7 @@ class wxCheckBox;
 
 #include <vector>
 #include "lime/LimeSuite.h"
+#include "LMS64CProtocol.h"
 
 class HPM7_wxgui : public wxFrame
 {
@@ -37,16 +38,16 @@ protected:
     std::vector<wxCheckBox*> chkEB;
     std::vector<wxCheckBox*> chkTP;
     std::vector<wxComboBox*> cmbSSC1;
-    std::vector<wxComboBox*> cmbSSC2;    
+    std::vector<wxComboBox*> cmbSSC2;
     wxButton* btnUpdateAll;
     wxComboBox* cmbDAC_A;
     wxComboBox* cmbDAC_B;
 
-private:    
+private:
     void DownloadAll(wxCommandEvent& event);
     void OnGPIOchange(wxCommandEvent& event);
-    void OnTunerSSC1change(wxCommandEvent& event);    
-    void OnTunerSSC2change(wxCommandEvent& event);    
+    void OnTunerSSC1change(wxCommandEvent& event);
+    void OnTunerSSC2change(wxCommandEvent& event);
     void OnDACchange(wxCommandEvent& event);
     std::vector<long> chEBids;
     std::vector<long> chTPids;
@@ -54,7 +55,7 @@ private:
     std::vector<long> cmbSSC2ids;
 
 protected:
-    lms_device_t* lmsControl;
+    lime::LMS64CProtocol* m_serPort;
 
     DECLARE_EVENT_TABLE()
 };
