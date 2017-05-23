@@ -134,6 +134,12 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         //sync registers to cache
         for (int a = 0x010c; a <= 0x0114; a++) this->SPI_read(a, true);
         for (int a = 0x0115; a <= 0x011b; a++) this->SPI_read(a, true);
+        //logic reset
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 0);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 0);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 1);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 1);
+
         return status;
     }
 

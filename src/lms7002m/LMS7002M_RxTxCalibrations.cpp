@@ -1790,6 +1790,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
         if(useCache)
             mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, /*dcoffi*/0, /*dcoffq*/0, gcorri, gcorrq, phaseOffset);
+        //logic reset
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 0);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 0);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 1);
+        Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 1);
 
         return status;
     }
