@@ -5,6 +5,7 @@
 */
 
 #include "SoapyLMS7.h"
+#include "LMS7002M.h"
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
@@ -138,6 +139,17 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         stream->streamID.push_back(streamID);
         stream->elemMTU = _conn->GetStreamSize(streamID);
     }
+
+    //perform self calibration with current bandwidth settings
+    //this is for the set-it-and-forget-it style of use case
+    //where boards are configured, the stream is setup,
+    //and the configuration is maintained throughout the run
+    for (const auto &chId : channelIDs)
+    {
+        if (direction == SOAPY_SDR_RX) getRFIC(chId)->CalibrateRx(_actualBw.at(direction).at(chId));
+        if (direction == SOAPY_SDR_TX) getRFIC(chId)->CalibrateTx(_actualBw.at(direction).at(chId));
+    }
+
     return (SoapySDR::Stream *)stream;
 }
 
