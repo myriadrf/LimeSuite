@@ -27,6 +27,34 @@ static const bool verboseEnabled = false;
 
 using namespace std;
 
+/*!
+ * Convert a sign magnitude TX DC register into an integer
+ */
+static inline int16_t txdcreg2int(const uint16_t regVal)
+{
+    int16_t num = int16_t(regVal & 0x3ff); //keep lower 10 bits
+    if (((regVal >> 11) & 0x1) != 0) return -num; //sign
+    return num;
+}
+
+/*!
+ * Convert an integer into a TX DC sign magnitude register
+ */
+static inline uint16_t int2txdcreg(const int16_t num)
+{
+    if (num < 0) return uint16_t(-num) | (1 << 11); //negate and apply sign
+    return uint16_t(num); //positive number
+}
+
+/*!
+ * Convert the 12-bit twos compliment register into a signed integer
+ */
+static inline int16_t signextIqCorr(const uint16_t regVal)
+{
+    int16_t signedPhase = int16_t(regVal << 4);
+    return int16_t(signedPhase) >> 4;
+}
+
 namespace lime{
 
 enum SearchTarget
@@ -853,30 +881,43 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         bool foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq, channel, true, band, &dcI, &dcQ, &gainI, &gainQ, &phOffset) == 0);
         if(foundInCache)
         {
-            Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dcI);
-            Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dcQ);
+            if (channel == 0)
+            {
+                Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXA), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXAI), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXAI), 1);
+                Modify_SPI_Reg_bits(LMS7param(DC_TXAI), int2txdcreg(dcI));
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXAQ), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXAQ), 1);
+                Modify_SPI_Reg_bits(LMS7param(DC_TXAQ), int2txdcreg(dcQ));
+            }
+            else
+            {
+                Modify_SPI_Reg_bits(LMS7param(PD_DCDAC_TXB), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXBI), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXBI), 1);
+                Modify_SPI_Reg_bits(LMS7param(DC_TXBI), int2txdcreg(dcI));
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXBQ), 0);
+                Modify_SPI_Reg_bits(LMS7param(DCWR_TXBQ), 1);
+                Modify_SPI_Reg_bits(LMS7param(DC_TXBQ), int2txdcreg(dcQ));
+            }
             Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gainI);
             Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gainQ);
             Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phOffset);
-            Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
             Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-            const int8_t dcIsigned = dcI;
-            const int8_t dcQsigned = dcQ;
-            int16_t phaseSigned = phOffset << 4;
-            phaseSigned >>= 4;
             verbose_printf(cSquaresLine);
             verbose_printf("Tx calibration values found in cache:\n");
             verbose_printf("   | DC  | GAIN | PHASE\n");
             verbose_printf("---+-----+------+------\n");
-            verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gainI, phaseSigned);
-            verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gainQ);
+            verbose_printf("I: | %3i | %4i | %i\n", dcI, gainI, phOffset);
+            verbose_printf("Q: | %3i | %4i |\n", dcQ, gainQ);
             verbose_printf(cSquaresLine);
             return 0;
         }
     }
 
-    uint16_t gcorri, gcorrq;
-    int16_t dccorri, dccorrq, phaseOffset;
+    uint16_t gcorri(0), gcorrq(0);
+    int16_t dccorri(0), dccorrq(0), phaseOffset(0);
 
     bool useOnBoardLoopback = (info.deviceName == GetDeviceName(LMS_DEV_LIMESDR) && std::stoi(info.hardwareVersion) >= 3);
     const char* methodName = "RSSI PC";
@@ -930,12 +971,32 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             ReportError("MCU working too long %i", status);
         }
+        //sync registers to cache
+        for (int a = 0x0200; a <= 0x020C; a++) this->SPI_read(a, true);
+        for (int a = 0x05C0; a <= 0x05CC; a++) this->SPI_read(a, true);
+
         //need to read back calibration results
-        dccorri = Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), true);
-        dccorrq = Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), true);
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), true);
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), true);
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), true);
+        if (channel == 0)
+        {
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXAI), 0);
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXAI), 1);
+            dccorri = txdcreg2int(Get_SPI_Reg_bits(LMS7param(DC_TXAI)));
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXAQ), 0);
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXAQ), 1);
+            dccorrq = txdcreg2int(Get_SPI_Reg_bits(LMS7param(DC_TXAQ)));
+        }
+        else
+        {
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXBI), 0);
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXBI), 1);
+            dccorri = txdcreg2int(Get_SPI_Reg_bits(LMS7param(DC_TXBI)));
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXBQ), 0);
+            Modify_SPI_Reg_bits(LMS7param(DCRD_TXBQ), 1);
+            dccorrq = txdcreg2int(Get_SPI_Reg_bits(LMS7param(DC_TXBQ)));
+        }
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP));
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP));
+        phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP)));
 
         if(useCache)
             mValueCache->InsertDC_IQ(boardId, txFreq, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
@@ -1780,13 +1841,16 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             ReportError("MCU working too long %i", status);
         }
+        //sync registers to cache
+        for (int a = 0x0500; a <= 0x040C; a++) this->SPI_read(a, true);
+        for (int a = 0x05C0; a <= 0x05CC; a++) this->SPI_read(a, true);
+
         //need to read back calibration results
-        //dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE), true);
-        //dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), true);
-        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), true);
-        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), true);
-        phaseOffset = Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), true);
-        Get_SPI_Reg_bits(LMS7param(DCMODE), true);
+        //dcoffi = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+        //dcoffq = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+        gcorri = Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP));
+        gcorrq = Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP));
+        phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP)));
 
         if(useCache)
             mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, /*dcoffi*/0, /*dcoffq*/0, gcorri, gcorrq, phaseOffset);
@@ -2758,79 +2822,6 @@ int LMS7002M::LoadDC_REG_IQ(bool tx, int16_t I, int16_t Q)
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 1);
         Modify_SPI_Reg_bits(LMS7param(TSGDCLDQ_RXTSP), 0);
-    }
-    return 0;
-}
-
-int LMS7002M::StoreDigitalCorrections(const bool isTx)
-{
-    const int idx = this->GetActiveChannelIndex();
-    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-    const double freq = this->GetFrequencySX(isTx);
-    int band = 0; //TODO
-    int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
-
-    if (isTx)
-    {
-        dccorri = int8_t(Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP))); //signed 8-bit
-        dccorrq = int8_t(Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP))); //signed 8-bit
-        gcorri = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRI_TXTSP))); //unsigned 11-bit
-        gcorrq = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP))); //unsigned 11-bit
-        phaseOffset = int16_t(Get_SPI_Reg_bits(LMS7param(IQCORR_TXTSP)) << 4) >> 4; //sign extend 12-bit
-    }
-    else
-    {
-        dccorri = 0;
-        dccorrq = 0;
-        gcorri = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRI_RXTSP)) << 4) >> 4;
-        gcorrq = int16_t(Get_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP)) << 4) >> 4;
-        phaseOffset = int16_t(Get_SPI_Reg_bits(LMS7param(IQCORR_RXTSP)) << 4) >> 4;
-    }
-
-    return mValueCache->InsertDC_IQ(boardId, freq, idx, isTx, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
-}
-
-int LMS7002M::ApplyDigitalCorrections(const bool isTx)
-{
-    const int idx = this->GetActiveChannelIndex();
-    const uint32_t boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-    const double freq = this->GetFrequencySX(isTx);
-    int band = 0;
-    if (isTx)
-    {
-        uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-        band = sel_band1_trf ? 0 : 1;
-    }
-    else
-    {
-        uint8_t sel_path_rfe = (uint8_t)Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
-        band = int(sel_path_rfe);
-    }
-
-    int dccorri, dccorrq, gcorri, gcorrq, phaseOffset;
-    int rc = mValueCache->GetDC_IQ_Interp(boardId, freq, idx, isTx, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset);
-    if (rc != 0) return rc;
-
-    if (isTx)
-    {
-        Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
-        Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dccorrq);
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
-        Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), phaseOffset);
-
-        Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(PH_BYP_TXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(GC_BYP_TXTSP), 0);
-    }
-    else
-    {
-        Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gcorri);
-        Modify_SPI_Reg_bits(LMS7param(GCORRQ_RXTSP), gcorrq);
-        Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), phaseOffset);
-
-        Modify_SPI_Reg_bits(LMS7param(PH_BYP_RXTSP), 0);
-        Modify_SPI_Reg_bits(LMS7param(GC_BYP_RXTSP), 0);
     }
     return 0;
 }
