@@ -167,25 +167,6 @@ public:
     ///@}
 
     ///@name Transmitter, Receiver calibrations
-    /*!
-     * Store the digital corrections for the current channel.
-     * The corrections are written to the calibration database.
-     * This call is typically called by the self-cal utilities.
-     * @param isTx true for transmit, false for receive
-     * @return 0 for success otherwise an error code
-     */
-    int StoreDigitalCorrections(const bool isTx);
-
-    /*!
-     * Apply digital corrections for the current channel.
-     * Lookup corrections in the calibration database
-     * using the current synthesizer frequency. The call
-     * will fail if a calibration point cannot be found.
-     * @param isTx true for transmit, false for receive
-     * @return 0 for success otherwise an error code
-     */
-    int ApplyDigitalCorrections(const bool isTx);
-
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
     int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
     ///@}

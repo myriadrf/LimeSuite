@@ -24,6 +24,7 @@ static bool useMCU =1;
 static bool tx = 0;
 static bool filters = 0;
 static float FBW = 5e6;
+extern float RefClk;
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
@@ -91,7 +92,7 @@ void DCIQ()
         {
             if(!isSetBW)
             {
-            status = MCU_SetParameter(MCU_REF_CLK, 40e6);
+            status = MCU_SetParameter(MCU_REF_CLK, RefClk);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
             status = MCU_SetParameter(MCU_BW, FBW);
@@ -224,7 +225,7 @@ void Filters()
     {
         if(!isSetBW)
         {
-        status = MCU_SetParameter(MCU_REF_CLK, 40e6);
+        status = MCU_SetParameter(MCU_REF_CLK, RefClk);
         if(status != 0)
             printf("Failed to set Reference Clk\n");
         status = MCU_SetParameter(MCU_BW, FBW);
@@ -346,7 +347,7 @@ void Filters()
         lmsControl.LoadDC_REG_IQ(true, 0x7FFF, 0x7FFF);
     }
 }
-extern float RefClk;
+
 int main(int argc, char** argv)
 {
     //connect to first available device

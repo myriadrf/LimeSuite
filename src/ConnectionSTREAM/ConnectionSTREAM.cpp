@@ -781,9 +781,8 @@ int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int 
 {
     const unsigned char ep = 0x01;
     int context = BeginDataSending((char*)buffer, length, ep);
-    if (WaitForSending(context, timeout)==false) {
+    if (WaitForSending(context, timeout)==false)
         AbortSending(ep);
-    }
     return FinishDataSending((char*)buffer, length , context);
 }
 

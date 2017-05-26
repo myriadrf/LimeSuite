@@ -5,6 +5,7 @@
 */
 
 #include "SoapyLMS7.h"
+#include "LMS7002M.h"
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
@@ -138,6 +139,13 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         stream->streamID.push_back(streamID);
         stream->elemMTU = _conn->GetStreamSize(streamID);
     }
+
+    //calibrate these channels when activated
+    for (const auto &ch : channelIDs)
+    {
+        _channelsToCal.emplace(direction, ch);
+    }
+
     return (SoapySDR::Stream *)stream;
 }
 
@@ -169,6 +177,19 @@ int SoapyLMS7::activateStream(
 
     if (_conn->GetHardwareTimestampRate() == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
+
+    //perform self calibration with current bandwidth settings
+    //this is for the set-it-and-forget-it style of use case
+    //where boards are configured, the stream is setup,
+    //and the configuration is maintained throughout the run
+    while (not _channelsToCal.empty())
+    {
+        auto dir  = _channelsToCal.begin()->first;
+        auto ch  = _channelsToCal.begin()->second;
+        if (dir == SOAPY_SDR_RX) getRFIC(ch)->CalibrateRx(_actualBw.at(dir).at(ch));
+        if (dir == SOAPY_SDR_TX) getRFIC(ch)->CalibrateTx(_actualBw.at(dir).at(ch));
+        _channelsToCal.erase(_channelsToCal.begin());
+    }
 
     //stream requests used with rx
     icstream->flags = flags;
