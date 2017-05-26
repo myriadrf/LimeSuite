@@ -168,7 +168,13 @@ int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, size_t ch
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false, true);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false, true);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false, true);
-
+        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        {
+            if (ch%2)
+                lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBTSP), enabled == false, true);
+            else
+                lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXATSP), enabled == false, true);
+        }
     }
 
     if (bandwidth < 0)
