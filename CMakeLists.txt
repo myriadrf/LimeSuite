@@ -142,6 +142,7 @@ endif()
 ########################################################################
 add_subdirectory(src)
 add_subdirectory(mcu_program)
+add_subdirectory(LimeUtil)
 
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver

@@ -80,22 +80,30 @@ int LMS7002M::CalibrateTxGainSetup()
 int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
 {
     int status;
+    int cg_iamp;
     auto registersBackup = BackupRegisterMap();
     status = CalibrateTxGainSetup();
-    if(status != 0)
-        return status;
-
-    uint32_t rssi = GetRSSI();
-    int cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
-    while(rssi < 0x7FFF && cg_iamp <= 63)
+    if(status == 0)
     {
-        ++cg_iamp;
-        if(cg_iamp > 63)
-            break;
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
-        rssi = GetRSSI();
+        uint32_t rssi = GetRSSI();
+        cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
+        while(rssi < 0x7FFF && cg_iamp <= 63)
+        {
+            ++cg_iamp;
+            if(cg_iamp > 63)
+                break;
+            Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
+            rssi = GetRSSI();
+        }
     }
     RestoreRegisterMap(registersBackup);
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp-1);
-    return 0;
+    if (status == 0)
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp-1);
+    //logic reset
+    Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 0);
+    Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 0);
+    Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 1);
+    Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 1);
+
+    return status;
 }

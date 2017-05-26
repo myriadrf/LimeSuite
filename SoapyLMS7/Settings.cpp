@@ -52,9 +52,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
     SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", _conn->GetReferenceClockRate()/1e6);
 
-    //disable cal hooks during setup
-    std::map<size_t, std::shared_ptr<LMS7002M_SelfCalState>> calStates;
-
     //LMS7002M driver for each RFIC
     for (size_t i = 0; i < numRFICs; i++)
     {
@@ -76,8 +73,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
         st = _rfics.back()->UploadAll();
         if (st != 0) throw std::runtime_error("UploadAll() failed");
-
-        calStates[i].reset(new LMS7002M_SelfCalState(_rfics.back()));
     }
 
     //enable all channels
@@ -515,17 +510,7 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channe
  ******************************************************************/
 SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const size_t channel) const
 {
-    auto infos = SoapySDR::Device::getFrequencyArgsInfo(direction, channel);
-    {
-        SoapySDR::ArgInfo info;
-        info.key = "CORRECTIONS";
-        info.name = "Corrections";
-        info.value = "true";
-        info.description = "Automatically apply DC/IQ corrections";
-        info.type = SoapySDR::ArgInfo::BOOL;
-        infos.push_back(info);
-    }
-    return infos;
+    return SoapySDR::Device::getFrequencyArgsInfo(direction, channel);
 }
 
 void SoapyLMS7::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
@@ -542,23 +527,6 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         if (targetRfFreq < 30e6) targetRfFreq = 30e6;
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
         rfic->SetFrequencySX(lmsDir, targetRfFreq);
-
-        //optional way to skip corrections (used by cal utility)
-        if (args.count("CORRECTIONS") != 0 and args.at("CORRECTIONS") == "false") return;
-
-        //apply corrections to channel A
-        rfic->SetActiveChannel(LMS7002M::ChA);
-        if (rfic->ApplyDigitalCorrections(lmsDir) != 0)
-        {
-            SoapySDR::log(SOAPY_SDR_WARNING, lime::GetLastErrorMessage());
-        }
-        //success, now channel B (ignore errors)
-        else
-        {
-            rfic->SetActiveChannel(LMS7002M::ChB);
-            rfic->ApplyDigitalCorrections(lmsDir);
-        }
-
         return;
     }
 
@@ -705,7 +673,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = getRFIC(channel);
-    LMS7002M_SelfCalState state(rfic);
+
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     double clockRate = this->getMasterClockRate();
@@ -885,7 +853,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
     auto rfic = getRFIC(channel);
-    LMS7002M_SelfCalState state(rfic);
 
     _actualBw[direction][channel] = bw;
 
@@ -1146,38 +1113,6 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-    else if (key == "STORE_RX_CORRECTIONS")
-    {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
-        {
-            this->writeSetting(SOAPY_SDR_RX, channel, "STORE_CORRECTIONS", value);
-        }
-    }
-
-    else if (key == "STORE_TX_CORRECTIONS")
-    {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
-        {
-            this->writeSetting(SOAPY_SDR_TX, channel, "STORE_CORRECTIONS", value);
-        }
-    }
-
-    else if (key == "APPLY_RX_CORRECTIONS")
-    {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
-        {
-            this->writeSetting(SOAPY_SDR_RX, channel, "APPLY_CORRECTIONS", value);
-        }
-    }
-
-    else if (key == "APPLY_TX_CORRECTIONS")
-    {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
-        {
-            this->writeSetting(SOAPY_SDR_TX, channel, "APPLY_CORRECTIONS", value);
-        }
-    }
-
     else if (key == "CALIBRATE_TX")
     {
         for (size_t channel = 0; channel < _rfics.size()*2; channel++)
@@ -1286,24 +1221,6 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_
         infos.push_back(info);
     }
 
-    {
-        SoapySDR::ArgInfo info;
-        info.key = "STORE_CORRECTIONS";
-        info.name = "Store corrections";
-        info.type = SoapySDR::ArgInfo::INT;
-        info.description = "Store digital corrections with the current LO frequency.";
-        infos.push_back(info);
-    }
-
-    {
-        SoapySDR::ArgInfo info;
-        info.key = "APPLY_CORRECTIONS";
-        info.name = "Apply corrections";
-        info.type = SoapySDR::ArgInfo::INT;
-        info.description = "Apply digital corrections for the current LO frequency.";
-        infos.push_back(info);
-    }
-
     return infos;
 }
 
@@ -1320,19 +1237,6 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGMODE_TXTSP):LMS7param(TSGMODE_RXTSP), 1); //DC
         rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1); //SIGGEN
         rfic->LoadDC_REG_IQ(isTx, ampl, 0);
-    }
-
-    else if (key == "STORE_CORRECTIONS")
-    {
-        rfic->StoreDigitalCorrections(isTx);
-    }
-
-    else if (key == "APPLY_CORRECTIONS")
-    {
-        if (rfic->ApplyDigitalCorrections(isTx) != 0)
-        {
-            throw std::runtime_error(lime::GetLastErrorMessage());
-        }
     }
 
     else if (key == "CALIBRATE_TX")
