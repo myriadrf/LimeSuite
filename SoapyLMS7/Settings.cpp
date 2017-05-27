@@ -117,6 +117,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     _fixedClockRate = args.count("clock") != 0;
     _fixedRxSampRate.clear();
     _fixedTxSampRate.clear();
+    _channelsToCal.clear();
 }
 
 SoapyLMS7::~SoapyLMS7(void)
@@ -243,6 +244,8 @@ void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std:
 
         rfic->SetBandTRF(band);
     }
+
+    _channelsToCal.emplace(direction, channel);
 }
 
 std::string SoapyLMS7::getAntenna(const int direction, const size_t channel) const
@@ -527,6 +530,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         if (targetRfFreq < 30e6) targetRfFreq = 30e6;
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
         rfic->SetFrequencySX(lmsDir, targetRfFreq);
+        _channelsToCal.emplace(direction, channel);
         return;
     }
 
@@ -876,6 +880,8 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     //restore dc offset mode
     this->setDCOffsetMode(direction, channel, saveDcMode);
+
+    _channelsToCal.emplace(direction, channel);
 }
 
 double SoapyLMS7::getBandwidth(const int direction, const size_t channel) const
