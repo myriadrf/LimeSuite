@@ -525,6 +525,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@brief Starts asynchronous data reading from board
 	@param *buffer buffer where to store received data
 	@param length number of bytes to read
+	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, const uint8_t streamBulkInAddr)
@@ -652,8 +653,9 @@ void ConnectionSTREAM::AbortReading(int ep)
 
 /**
 	@brief Starts asynchronous data Sending to board
-	@param *buffer buffer to send
+	@param *buffer buffer to send, formatted for the FPGA data stream
 	@param length number of bytes to send
+	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, const uint8_t streamBulkOutAddr)
@@ -707,23 +709,24 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
-    #ifndef __unix__
+#   ifndef __unix__
 	int status = 0;
-    status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
+	status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
 	return status;
-    #else
+#   else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
     std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
-    while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    while((contextsToSend[contextHandle].done.load() == false) && 
+	  (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms))
     {
         //blocking not to waste CPU
         contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
-	return contextsToSend[contextHandle].done == true;
-    #endif
+    return contextsToSend[contextHandle].done == true;
+#   endif
     }
     else
         return 0;
@@ -738,23 +741,24 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 */
 int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
-    if( contextsToSend[contextHandle].used == true)
+  if( contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-    long len = length;
-    contextsToSend[contextHandle].EndPt->FinishDataXfer((unsigned char*)buffer, len, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
-    contextsToSend[contextHandle].used = false;
-    contextsToSend[contextHandle].reset();
-    return len;
+      long len = length;
+      contextsToSend[contextHandle].EndPt->FinishDataXfer((unsigned char*)buffer, len, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
+      contextsToSend[contextHandle].used = false;
+      contextsToSend[contextHandle].reset();
+      return len;
 #else
-	length = contextsToSend[contextHandle].bytesXfered;
-	contextsToSend[contextHandle].used = false;
-    contextsToSend[contextHandle].reset();
-	return length;
+      length = contextsToSend[contextHandle].bytesXfered;
+      contextsToSend[contextHandle].used = false;
+      contextsToSend[contextHandle].reset();
+      return length;
 #endif
     }
-    else
-        return 0;
+  else {
+    return 0;
+  }
 }
 
 /**

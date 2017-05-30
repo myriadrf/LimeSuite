@@ -10,9 +10,14 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "rounding.h"
+
+void int2csd(int a, int cprec, int csdprec, int * bincode, int * csdcode, int * csdcoder); 
+int csd2int(int cprec, int *code);
+
 /* ************************************************************************ 
    ************************************************************************ */
-round2int(a, b, n, cprec)
+void round2int(a, b, n, cprec)
 double *a, *b;
 int n, cprec;
 {
@@ -27,7 +32,7 @@ int n, cprec;
 
 /* ************************************************************************ 
    ************************************************************************ */
-round2csd(a, b, n, cprec, csdprec, bincode, csdcode, csdcoder)
+void round2csd(a, b, n, cprec, csdprec, bincode, csdcode, csdcoder)
 double *a, *b;
 int n, cprec, csdprec;
 int **bincode, **csdcode, **csdcoder;
@@ -45,8 +50,7 @@ int **bincode, **csdcode, **csdcoder;
 
 /* ************************************************************************ 
    ************************************************************************ */
-printcode(code, n, cprec)
-int **code, cprec;
+void printcode(int ** code, int n, int cprec)
 {
 	int i, j;
 	double sumh, sume, sumo;
@@ -114,7 +118,7 @@ int **code, cprec;
 /* ************************************************************************ 
    Print CSD code in the form of two common sub-expressions sharing 
    ************************************************************************ */
-print_cses_code(xpx, xmx, x, n, cprec)
+void print_cses_code(xpx, xmx, x, n, cprec)
 int **xpx, **xmx, **x, n, cprec;
 {
 	int i, j;
@@ -190,7 +194,7 @@ int **xpx, **xmx, **x, n, cprec;
 
 /* ************************************************************************ 
    ************************************************************************ */
-int2csd(a, cprec, csdprec, bincode, csdcode, csdcoder)
+void int2csd(a, cprec, csdprec, bincode, csdcode, csdcoder)
 int a;		/* Input integer to be converted into CSD code */
 int cprec;	/* Integer precision */
 int csdprec;	/* CSD precistion */
@@ -253,7 +257,7 @@ int cprec, *code;
 /* ************************************************************************ 
 	Extract x+x>>2 and x-x>>2 subexpressions from the CSD code
    ************************************************************************ */
-csesh(code, n, cprec, xpx, xmx, x )
+void csesh(code, n, cprec, xpx, xmx, x )
 int n, cprec;
 int **code, **xpx, **xmx, **x;
 {

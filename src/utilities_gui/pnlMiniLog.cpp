@@ -30,9 +30,10 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
 
     mMessageList.emplace_back(level, line);
     const int miniLogMessageLimit = 1000;
-    if (mMessageList.size() > miniLogMessageLimit)
+    if (mMessageList.size() > miniLogMessageLimit) {
         mMessageList.pop_front();
-	++mNewMessages;
+    }
+    ++mNewMessages;
 }
 
 void pnlMiniLog::OnUpdateGUI(wxUpdateUIEvent& event)

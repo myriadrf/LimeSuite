@@ -5,6 +5,7 @@
 #include "LMS7002M.h"
 #include <ciso646>
 #include "Logger.h"
+#include <iostream>
 
 using namespace lime;
 
@@ -74,7 +75,9 @@ int ILimeSDRStreaming::WriteStream(const size_t streamID, const void* buffs, con
     lime::IStreamChannel::Metadata meta;
     meta.flags = 0;
     meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
+    meta.flags |= metadata.endOfBurst ? lime::IStreamChannel::Metadata::END_OF_BURST : 0;
     meta.timestamp = metadata.timestamp;
+
     int status = channel->Write(buffs, length, &meta, timeout_ms);
     return status;
 }
@@ -83,6 +86,9 @@ int ILimeSDRStreaming::ReadStreamStatus(const size_t streamID, const long timeou
 {
     assert(streamID != 0);
     StreamChannel* channel = (StreamChannel*)streamID;
+
+    // look for the endofburst and clear it if it was true. 
+    metadata.endOfBurst = channel->mStreamer->sawEndOfBurst.exchange(false);    
 
     //support late timestamp reporting
     auto txLastLateTime = channel->mStreamer->txLastLateTime.exchange(0);
@@ -332,11 +338,13 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     txRunning = false;
     mTimestampOffset = 0;
     rxLastTimestamp = 0;
+    txLastLateTime = 0; 
     terminateRx = false;
     terminateTx = false;
     rxRunning = false;
     txRunning = false;
     generateData = false;
+    sawEndOfBurst = false; 
     rxDataRate_Bps = 0;
     txDataRate_Bps = 0;
     mChipID = dataPort->mStreamers.size();

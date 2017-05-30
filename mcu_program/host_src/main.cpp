@@ -46,7 +46,7 @@ int16_t ReadDCCorrector(bool tx, uint8_t channel)
 
 void DCIQ()
 {
-    lime::LMS7002M_RegistersMap *backup;
+    lime::LMS7002M_RegistersMap *backup; 
     int status;
     float freqStart = 1000e6;
     float freqEnd = freqStart;//1000e6;
@@ -85,6 +85,7 @@ void DCIQ()
         }
         lmsControl.DownloadAll();
         backup = lmsControl.BackupRegisterMap();
+	(void) backup; // backup is created and then unused... perhaps for side-effect? 
 
         auto t1 = chrono::high_resolution_clock::now();
         if(useMCU) //using algorithm inside MCU
@@ -217,6 +218,7 @@ void Filters()
 
     lmsControl.DownloadAll();
     backup = lmsControl.BackupRegisterMap();
+    (void) backup; // backup set but not used, perhaps for side effects ???
 
     auto t1 = chrono::high_resolution_clock::now();
     if(useMCU) //using algorithm inside MCU

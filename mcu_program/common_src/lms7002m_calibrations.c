@@ -84,13 +84,15 @@ void LoadDC_REG_TX_IQ()
     FlipRisingEdge(TSGDCLDQ_TXTSP);
 }
 
-static void Dummy()
+#if 0 // nobody needs this right now.
+static void Dummy() 
 {
     uint8_t i;
     volatile uint16_t t=0;
     for(i=200; i; --i)
         ++t;
 }
+#endif
 
 static void Delay()
 {
@@ -363,7 +365,7 @@ void AdjustAutoDC(const uint16_t address, bool tx)
     bool increment;
     uint16_t rssi;
     uint16_t minRSSI;
-    int16_t minValue;
+    int16_t minValue = 0xffff;
     int16_t initVal;
     const uint16_t mask = tx ? 0x03FF : 0x003F;
     const int16_t range = tx ? 1023 : 63;
@@ -1162,6 +1164,9 @@ uint8_t CalibrateRx()
         break;
     case 3:
         lnaName = "LNAL";
+        break;
+    default:
+        lnaName = "none";
         break;
     }
     printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
