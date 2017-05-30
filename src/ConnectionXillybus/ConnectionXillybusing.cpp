@@ -228,6 +228,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     int m_bufferFailures = 0;
     int32_t droppedSamples = 0;
     int32_t packetLoss = 0;
+    bool generate_started = false;
 
     vector<uint32_t> samplesReceived(chCount, 0);
 
@@ -260,6 +261,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     {
         if(stream->generateData.load())
         {
+            generate_started = true;
             fpga::StopStreaming(this, epIndex);
             stream->safeToConfigInterface.notify_all(); //notify that it's safe to change chip config
             const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
@@ -284,7 +286,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
         }
         int32_t bytesReceived = 0;
 
-        bytesReceived = this->ReceiveData(&buffers[0], bufferSize, epIndex, 200);
+        bytesReceived = this->ReceiveData(&buffers[0], bufferSize, epIndex, 1000);
         totalBytesReceived += bytesReceived;
         if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
             ++m_bufferFailures;
@@ -334,7 +336,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
             }
         }
         // Re-submit this request to keep the queue full
-        if(!stream->generateData.load())
+        if ((generate_started) && (!stream->generateData.load()))
         {
             fpga::StartStreaming(this, epIndex);
         }
@@ -446,7 +448,7 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
             ++i;
         }
 
-        uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 200);
+        uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 1000);
                 totalBytesSent += bytesSent;
         if (bytesSent != bufferSize)
             ++m_bufferFailures;
