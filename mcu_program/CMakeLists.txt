@@ -3,6 +3,10 @@ cmake_policy(SET CMP0003 NEW)
 #C++11 is a required language feature for this project
 set(CMAKE_CXX_STANDARD 11)
 
+if (APPLE)
+	  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=c++11-narrowing") 
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 
     #enable C++11 on older versions of cmake
