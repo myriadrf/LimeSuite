@@ -245,9 +245,34 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 
 void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
 {
-    int status = LMS_SetClockFreq(lmsControl, LMS_CLOCK_CGEN, -1); //tune CGEN
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+    if (lms->TuneVCO(lime::LMS7002M::VCO_CGEN)!=0)
+    {
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        return ;
+    }
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        wxMessageBox(_("Device not connected"));
+        return;
+    }
+    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    if (interp != 7)
+        fpgaTxPLL /= pow(2.0, interp);
+    auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (decim != 7)
+        fpgaRxPLL /= pow(2.0, decim);
+    int status;
+    if (this->chkAutoPhase->GetValue())
+        status = conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2);
+    else
+        status = conn->UpdateExternalDataRate(0,fpgaTxPLL/2,fpgaRxPLL/2, txPhase->GetValue(), rxPhase->GetValue());
     if (status != 0)
-        wxMessageBox(wxString::Format(_("CLKGEN Tune: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(CSW_VCO_CGEN),&value);
     cmbCSW_VCO_CGEN->SetValue(value);
