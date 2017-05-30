@@ -164,6 +164,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
     {
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
@@ -203,6 +204,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
     {
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
