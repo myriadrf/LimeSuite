@@ -12,6 +12,7 @@
 #include <thread>
 #include <algorithm> //min/max
 #include "ErrorReporting.h"
+#include <iostream>
 
 using namespace lime;
 
@@ -81,6 +82,17 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
         argInfos.push_back(info);
     }
 
+    // auto calibration enable
+    {
+        SoapySDR::ArgInfo info;
+        info.value = "0";
+        info.key = "noAutoCal";
+        info.name = "Inhibit Auto Calibration";
+        info.description = "If present, inhibits automatic calibration at activate time.";
+        info.type = SoapySDR::ArgInfo::INT;
+        argInfos.push_back(info);
+    }
+
     return argInfos;
 }
 
@@ -141,10 +153,14 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     }
 
     //calibrate these channels when activated
+    bool enableAutoCal = ((args.count("noAutoCal") == 0) || (std::stoi(args.at("noAutoCal")) == 0));
     for (const auto &ch : channelIDs)
-    {
-        _channelsToCal.emplace(direction, ch);
-    }
+      {
+	if(enableAutoCal)
+	  _channelsToCal.emplace(direction, ch);
+	else
+	  _channelsToCal.erase(std::pair<int, size_t>(direction, ch));
+      }
 
     return (SoapySDR::Stream *)stream;
 }
