@@ -1999,8 +1999,8 @@ int LMS7002M::RegistersTest(const char* fileName)
             ss << chex << "]";
             if (startAddr >= 0x0100) {
                 ss << " Ch." << (cc == 1 ? "A" : "B");
-                ss << endl;
 	    }
+            ss << endl;
             for (uint8_t p = 0; p < patternsCount; ++p)
                 moduleTestsSuccess &= RegistersTestInterval(startAddr, endAddr, patterns[p], ss) == 0;
         }
