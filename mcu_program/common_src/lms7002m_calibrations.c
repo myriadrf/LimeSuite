@@ -84,7 +84,7 @@ void LoadDC_REG_TX_IQ()
     FlipRisingEdge(TSGDCLDQ_TXTSP);
 }
 
-#if 0 // nobody needs this right now.
+#ifndef __cplusplus
 static void Dummy() 
 {
     uint8_t i;
