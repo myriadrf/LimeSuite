@@ -165,7 +165,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     txtFrequency->GetValue().ToDouble(&freqMHz);
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-    if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
+    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    if (lms->SetInterfaceFrequency(freqMHz*1e6, interp, decim))
     {
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
         return ;
@@ -176,8 +178,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
         wxMessageBox(_("Device not connected"));
         return;
     }
-    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     if (interp != 7)
         fpgaTxPLL /= pow(2.0, interp);
@@ -205,7 +205,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     txtFrequency->GetValue().ToDouble(&freqMHz);
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-    if (lms->SetInterfaceFrequency(freqMHz*1e6, lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP)), lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP))))
+    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+    if (lms->SetInterfaceFrequency(freqMHz*1e6, interp, decim))
     {
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
         return ;
@@ -216,8 +218,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         wxMessageBox(_("Device not connected"));
         return;
     }
-    int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-    int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     if (interp != 7)
         fpgaTxPLL /= pow(2.0, interp);

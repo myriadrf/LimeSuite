@@ -73,10 +73,10 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
     const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
                                             0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
     const int bakRegCnt = spiAddr.size() - 4;
-    auto info = GetDeviceInfo();
+    auto info = GetInfo();
     bool phaseSearch = false;
     if (!(mStreamers[channel] && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
-        if (this->chipVersion == 0x3841 && stoi(info.gatewareRevision) >= 7 && stoi(info.gatewareVersion) >= 2) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+        if (this->chipVersion == 0x3841 && info.device == LMS_DEV_LIMESDR_PCIE) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
             if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
                 phaseSearch = true;
     mExpectedSampleRate = rxRate_Hz;
@@ -100,7 +100,7 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
         ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, channel);
     }
 
-    if(rxInterfaceClk >= 5e6)
+    if(rxInterfaceClk >= 5e6 || info.hardware < 3)
     {
         if (phaseSearch)
         {
@@ -129,7 +129,7 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
     else
         status = lime::fpga::SetDirectClocking(this, pll_ind+1, rxInterfaceClk, 90);
 
-    if(txInterfaceClk >= 5e6)
+    if(txInterfaceClk >= 5e6 || info.hardware < 3)
     {
         if (phaseSearch)
         {

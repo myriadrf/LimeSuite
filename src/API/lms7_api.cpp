@@ -52,10 +52,10 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
             auto conn = lime::ConnectionRegistry::makeConnection(handles[i]);
             if (conn->IsOpen() == false)
             {
+                lime::ConnectionRegistry::freeConnection(conn);
                 if (info != NULL)
                 {
                     lime::ReportError(EBUSY, "Failed to open. Device is busy.");
-                        *device = nullptr;
                     return -1;
                 }
                 else
@@ -73,7 +73,6 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
     }
 
     lime::ReportError(ENODEV, "Specified device could not be found");
-    *device = nullptr;
     return -1;
 }
 

@@ -357,7 +357,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
                 bool result = true;
                 if (serPort->ReadRawStreamData((char*)buf, testSize, 0, 20)==testSize)
                 {
-                    for (size_t j = 16; j < testSize;j+=3)
+                    for (int j = 16; j < testSize;j+=3)
                     {
                         if (j%4096 == 0)
                             j += 16;

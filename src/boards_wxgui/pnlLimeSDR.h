@@ -35,12 +35,13 @@ protected:
     wxCheckBox* chkTX1_2_LB_AT;
     wxCheckBox* chkTX2_2_LB_SH;
     wxCheckBox* chkTX2_2_LB_AT;
-    wxStaticText* gpioIn[8];
-    wxCheckBox* gpioDir[8];
-    wxCheckBox* gpioOut[8];
+    wxStaticText* gpioIn[16];
+    wxCheckBox* gpioDir[16];
+    wxCheckBox* gpioOut[16];
     wxFlexGridSizer* controlsSizer;
     wxFlexGridSizer* mainSizer;
     lms_device_t *lmsControl;
+    int gpioCnt;
     DECLARE_EVENT_TABLE()
 };
 

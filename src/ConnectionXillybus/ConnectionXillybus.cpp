@@ -115,14 +115,27 @@ ConnectionXillybus::~ConnectionXillybus()
 int ConnectionXillybus::Open(const unsigned index)
 {
     Close();
+    writeCtrlPort = deviceConfigs[index].ctrlWrite;
+    readCtrlPort = deviceConfigs[index].ctrlRead;
+#ifndef __unix__
+    hWrite = CreateFileA(writeCtrlPort.c_str(), GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+    hRead = CreateFileA(readCtrlPort.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+    if (hWrite == INVALID_HANDLE_VALUE || hRead == INVALID_HANDLE_VALUE)
+    {
+        ReportError("Unable to access control port");
+        CloseHandle(hWrite);
+        CloseHandle(hRead);
+        hWrite = INVALID_HANDLE_VALUE;
+        hRead = INVALID_HANDLE_VALUE;
+        return -1;
+    }
+#endif
     isConnected = true;
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
         readStreamPort[i] = deviceConfigs[index].streamRead[i];
         writeStreamPort[i] = deviceConfigs[index].streamWrite[i];
     }
-    writeCtrlPort = deviceConfigs[index].ctrlWrite;
-    readCtrlPort = deviceConfigs[index].ctrlRead;
     return 0;
 }
 
@@ -148,12 +161,7 @@ void ConnectionXillybus::Close()
         hReadStream[i] = INVALID_HANDLE_VALUE;
     }
 #else
-    if( hWrite >= 0)
-        close(hWrite);
-    hWrite = -1;
-    if( hRead >= 0)
-        close(hRead);
-    hRead = -1;
+    CloseControl();
     for (int i = 0; i < MAX_EP_CNT; i++)
     {
         if( hWriteStream[i] >= 0)
@@ -174,35 +182,11 @@ bool ConnectionXillybus::IsOpen()
     return isConnected;
 }
 
-int ConnectionXillybus::TransferPacket(GenericPacket &pkt)
+#ifdef __unix__
+int ConnectionXillybus::OpenControl()
 {
     int timeout_cnt = 100;
-    int status = -1;
-    std::lock_guard<std::mutex> lock(mTransferLock);
-#ifndef __unix__
-    while (--timeout_cnt)
-    {
-        if ((hWrite = CreateFileA(writeCtrlPort.c_str(), GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0))!=INVALID_HANDLE_VALUE)
-            break;
-        Sleep(1);
-    }
-    while (timeout_cnt--)
-    {
-        if ((hRead = CreateFileA(readCtrlPort.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0))!=INVALID_HANDLE_VALUE)
-            break;
-        Sleep(1);
-    }
-
-    if (hWrite != INVALID_HANDLE_VALUE && hRead != INVALID_HANDLE_VALUE)
-        status = LMS64CProtocol::TransferPacket(pkt);
-    else
-        ReportError("Unable to access control port");
-
-    CloseHandle(hWrite);
-    CloseHandle(hRead);
-    hWrite = INVALID_HANDLE_VALUE;
-    hRead = INVALID_HANDLE_VALUE;
-#else
+    usleep(200);  //avoids random bad packet(s) that was occurring when performing lots of consecutive transfers ~1000+
     while (--timeout_cnt)
     {
        if ((hWrite = open(writeCtrlPort.c_str(), O_WRONLY | O_NOCTTY | O_NONBLOCK))!=-1)
@@ -217,17 +201,41 @@ int ConnectionXillybus::TransferPacket(GenericPacket &pkt)
     }
 
     if (hWrite == -1 || hRead ==-1)
-        ReportError(errno);
-    else
-        status = LMS64CProtocol::TransferPacket(pkt);
-    close(hRead);
-    close(hWrite);
-    hWrite = -1;
-    hRead = -1;
-#endif
-    return status;
+        return ReportError(errno);
+    return 0;
 }
 
+void ConnectionXillybus::CloseControl()
+{
+    close(hWrite);
+    close(hRead);
+    hWrite = -1;
+    hRead = -1;
+}
+
+int ConnectionXillybus::TransferPacket(GenericPacket &pkt)
+{
+    int status;
+    std::lock_guard<std::mutex> lock(mTransferLock);
+    if (OpenControl() == 0)
+        status = LMS64CProtocol::TransferPacket(pkt);
+    else
+        status = -1;
+    CloseControl();
+    return status;
+}
+int ConnectionXillybus::ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)
+{
+    int status;
+    std::lock_guard<std::mutex> lock(mTransferLock);
+    if (OpenControl() == 0)
+        status = LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
+    else
+        status = -1;
+    CloseControl();
+    return status;
+}
+#endif
 /** @brief Sends given data buffer to chip through USB port.
     @param buffer data buffer, must not be longer than 64 bytes.
     @param length given buffer size.
@@ -238,11 +246,8 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
 {
 #ifndef __unix__
     if (hWrite == INVALID_HANDLE_VALUE)
-#else
-    if (hWrite == -1)
-#endif
         return -1;
-
+#endif
     int totalBytesWritten = 0;
     int bytesToWrite = length;
     auto t1 = chrono::high_resolution_clock::now();
@@ -316,11 +321,8 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 {
 #ifndef __unix__
     if (hRead == INVALID_HANDLE_VALUE)
-#else
-    if (hRead == -1)
-#endif
         return -1;
-
+#endif
     int totalBytesReaded = 0;
     int bytesToRead = length;
     auto t1 = chrono::high_resolution_clock::now();
