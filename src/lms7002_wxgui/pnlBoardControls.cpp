@@ -98,8 +98,9 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 	cmbBoardSelection->SetSelection( 0 );
 	fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
 
-    for (int i = 0; i < LMS_DEV_COUNT; ++i)
-        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
+	for (int i = 0; i < LMS_DEV_COUNT; ++i) {
+            cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
+	}
 
 	fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
 

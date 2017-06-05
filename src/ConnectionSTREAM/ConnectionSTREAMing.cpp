@@ -1,4 +1,4 @@
-    /**
+/**
     @file ConnectionSTREAMing.cpp
     @author Lime Microsystems
     @brief Implementation of STREAM board connection (streaming API)
@@ -205,9 +205,7 @@ int ConnectionSTREAM::ReadRawStreamData(char* buffer, unsigned length, int epInd
 }
 
 /** @brief Function dedicated for receiving data samples from board
-    @param rxFIFO FIFO to store received data
-    @param terminate periodically pooled flag to terminate thread
-    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
+    @param stream a pointer to an active receiver stream
 */
 void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
 {
@@ -408,9 +406,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
 }
 
 /** @brief Functions dedicated for transmitting packets to board
-    @param txFIFO data source FIFO
-    @param terminate periodically pooled flag to terminate thread
-    @param dataRate_Bps (optional) if not NULL periodically returns data rate in bytes per second
+    @param stream an active transmit stream
 */
 void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 {
@@ -456,16 +452,19 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     {
         if (bufferUsed[bi])
         {
-            unsigned bytesSent;
-            if (this->WaitForSending(handles[bi], 1000) == true)
+    	    unsigned bytesSent = 0; 
+            if (this->WaitForSending(handles[bi], 1000) == true) {
                 bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-            if (bytesSent != bufferSize)
-            {
-                for (auto value : stream->mTxStreams)
-                    value->overflow++;
+	    }
+
+            if (bytesSent != bufferSize) {
+	      for (auto value : stream->mTxStreams) {
+		value->overflow++;
+	      }
             }
-            else
+            else {
                 totalBytesSent += bytesSent;
+	    }
             bufferUsed[bi] = false;
         }
         int i=0;

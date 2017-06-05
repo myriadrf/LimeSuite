@@ -16,6 +16,8 @@
 #endif 
 
 #include "lms.h"
+#include "recipes.h"
+#include "rounding.h"
 
 /* Filter parity constants */
 #define EVEN    0
@@ -161,7 +163,8 @@ int **bincode, **csdcode, **csdcoder;
 	}
 
 	/* Solve the equations */
-	ludcmp(A, L, index, &d); lubksb(A, L, index, a);
+	ludcmp(A, L, index, &d); 
+	lubksb(A, L, index, a);
 
 	/* Calculate impulse response h[] from a[] */
 	for(i=0; i<n; i++) hr[i] = 0.0;

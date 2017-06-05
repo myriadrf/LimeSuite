@@ -525,6 +525,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@brief Starts asynchronous data reading from board
 	@param *buffer buffer where to store received data
 	@param length number of bytes to read
+	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, const uint8_t streamBulkInAddr)
@@ -654,6 +655,7 @@ void ConnectionSTREAM::AbortReading(int ep)
 	@brief Starts asynchronous data Sending to board
 	@param *buffer buffer to send
 	@param length number of bytes to send
+	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
 int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, const uint8_t streamBulkOutAddr)
@@ -707,11 +709,11 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
-    #ifndef __unix__
+#   ifndef __unix__
 	int status = 0;
-    status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
+	status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
 	return status;
-    #else
+#   else
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = chrono::high_resolution_clock::now();
 
@@ -723,7 +725,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
         t2 = chrono::high_resolution_clock::now();
     }
 	return contextsToSend[contextHandle].done == true;
-    #endif
+#   endif
     }
     else
         return 0;
