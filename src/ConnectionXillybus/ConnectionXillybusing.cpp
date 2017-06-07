@@ -15,6 +15,7 @@
 #include <ciso646>
 #include <FPGA_common.h>
 #include <ErrorReporting.h>
+#include "Logger.h"
 
 using namespace std;
 using namespace lime;
@@ -218,9 +219,6 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     }
 
     unsigned long totalBytesReceived = 0; //for data rate calculation
-    int m_bufferFailures = 0;
-    int32_t droppedSamples = 0;
-    int32_t packetLoss = 0;
     bool generate_started = false;
 
     vector<uint32_t> samplesReceived(chCount, 0);
@@ -282,7 +280,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
         bytesReceived = this->ReceiveData(&buffers[0], bufferSize, epIndex, 1000);
         totalBytesReceived += bytesReceived;
         if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
-            ++m_bufferFailures;
+            for(auto value: stream->mRxStreams)
+                value->underflow++;
 
         bool txLate=false;
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
@@ -296,18 +295,23 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
                     --resetFlagsDelay;
                 else
                 {
-                    printf("L");
+                    lime::info("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*2;
+                    stream->txLastLateTime.store(pkt[pktIndex].counter);
+                    for(auto value: stream->mTxStreams)
+                        value->pktLost++;
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
+                int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
 #ifndef NDEBUG
-                printf("\tRx pktLoss@%i - ts diff: %li  pktLoss: %.1f\n", pktIndex, pkt[pktIndex].counter - prevTs, float(pkt[pktIndex].counter - prevTs)/samplesInPacket);
+                printf("\tRx pktLoss: ts diff: %li  pktLoss: %i\n", pkt[pktIndex].counter - prevTs, packetLoss);
 #endif
-                packetLoss += (pkt[pktIndex].counter - prevTs)/samplesInPacket;
+                for(auto value: stream->mRxStreams)
+                    value->pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
             stream->rxLastTimestamp.store(pkt[pktIndex].counter);
@@ -325,14 +329,13 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
                 meta.flags = RingFIFO::OVERWRITE_OLD;
                 uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
-                    droppedSamples += samplesCount-samplesPushed;
+                    stream->mRxStreams[ch]->overflow++;;
             }
         }
         // Re-submit this request to keep the queue full
         if ((generate_started) && (!stream->generateData.load()))
-        {
             fpga::StartStreaming(this, epIndex);
-        }
+
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)
@@ -341,16 +344,9 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
 #ifndef NDEBUG
-            //each channel sample rate
-            float samplingRate = 1000.0*samplesReceived[0] / timePeriod;
-            printf("Rx: %.3f MB/s, Fs: %.3f MHz, overrun: %i, loss: %i \n", dataRate / 1000000.0, samplingRate / 1000000.0, droppedSamples, packetLoss);
+            printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
-            samplesReceived[0] = 0;
             totalBytesReceived = 0;
-            m_bufferFailures = 0;
-            droppedSamples = 0;
-            packetLoss = 0;
-
             stream->rxDataRate_Bps.store((uint32_t)dataRate);
         }
     }
@@ -391,13 +387,9 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
         return;
     }
 
-    int m_bufferFailures = 0;
     long totalBytesSent = 0;
-
-    uint32_t samplesSent = 0;
-
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     while (stream->terminateTx.load() != true)
     {
@@ -412,9 +404,12 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
+                    stream->mTxStreams[ch]->underflow++;
+                    stream->terminateTx.store(true);
                 #ifndef NDEBUG
                     printf("Warning popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
                 #endif
+                    break;
                 }
             }
             if(stream->terminateTx.load() == true) //early termination
@@ -430,14 +425,16 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
-            samplesSent += maxSamplesBatch;
             ++i;
         }
 
         uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 1000);
-                totalBytesSent += bytesSent;
-        if (bytesSent != bufferSize)
-            ++m_bufferFailures;
+        if (bytesSent != bufferSize){
+            for (auto value : stream->mTxStreams)
+		value->overflow++;
+        }
+        else
+            totalBytesSent += bytesSent;
 
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -446,19 +443,16 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
             //total number of bytes sent per second
             float dataRate = 1000.0*totalBytesSent / timePeriod;
             stream->txDataRate_Bps.store(dataRate);
-            m_bufferFailures = 0;
-            samplesSent = 0;
             totalBytesSent = 0;
             t1 = t2;
 #ifndef NDEBUG
-            //total number of samples from all channels per second
-            float sampleRate = 1000.0*samplesSent / timePeriod;
-            printf("Tx: %.3f MB/s, Fs: %.3f MHz, failures: %i\n", dataRate / 1000000.0, sampleRate / 1000000.0, m_bufferFailures);
+            printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
         }
     }
 
     // Wait for all the queued requests to be cancelled
     AbortSending(epIndex);
+    stream->txRunning.store(false);
     stream->txDataRate_Bps.store(0);
 }

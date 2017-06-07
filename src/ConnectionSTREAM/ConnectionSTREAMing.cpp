@@ -316,7 +316,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                     --resetFlagsDelay;
                 else
                 {
-                    lime::info("L %llu", (unsigned long long)pkt[pktIndex].counter);
+                    lime::info("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*buffersCount;
                     stream->txLastLateTime.store(pkt[pktIndex].counter);
@@ -414,6 +414,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     const uint8_t packetsToBatch = stream->txBatchSize; //packets in single USB transfer
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 500;
+
     const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
@@ -439,7 +440,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     {
         if (bufferUsed[bi])
         {
-    	    unsigned bytesSent = 0; 
+    	    unsigned bytesSent = 0;
             if (this->WaitForSending(handles[bi], 1000) == true) {
                 bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
 	    }
@@ -460,23 +461,20 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         {
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
-            bool badSamples = false;
             for(int ch=0; ch<chCount; ++ch)
             {
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    badSamples = true;
                     stream->mTxStreams[ch]->underflow++;
-                    stream->txDataRate_Bps.store(0);
+                    stream->terminateTx.store(true);
 #ifndef NDEBUG
                     printf("popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
 #endif
                     break;
                 }
             }
-            if (badSamples)
-                continue;
+
             if(stream->terminateTx.load() == true) //early termination
                 break;
             pkt[i].counter = meta.timestamp;
@@ -523,6 +521,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         }
         bi = (bi + 1) & (buffersCount-1);
     }
+    stream->txRunning.store(false);
     stream->txDataRate_Bps.store(0);
 }
 
