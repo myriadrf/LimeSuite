@@ -148,7 +148,6 @@ protected:
 private:
     lime::ADF4002* m_pModule;
     lms_device_t* lmsControl;
-    int m_adf4002SpiAddr;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);

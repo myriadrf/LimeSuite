@@ -541,7 +541,7 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = conn->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = conn->TransactSPI(conn->GetDeviceInfo().addrADF4002, dataWr.data(), nullptr, 4);
     if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
@@ -610,7 +610,7 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = conn->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = conn->TransactSPI(conn->GetDeviceInfo().addrADF4002, dataWr.data(), nullptr, 4);
     if (status != 0)
 wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
