@@ -1,9 +1,8 @@
 #!/bin/sh
 set -e
 
-RELEASE_NUM="17.02"
-DEST_DIR="/usr/share/LimeSuite/images/${RELEASE_NUM}"
-SOURCE_URL="http://downloads.myriadrf.org/project/limesuite/${RELEASE_NUM}/"
+DEST_DIR="/usr/share/LimeSuite/images/@RELEASE_NUM@"
+SOURCE_URL="http://downloads.myriadrf.org/project/limesuite/@RELEASE_NUM@/"
 
 if [ "$1" = "configure" ]; then
 	echo "Downloading ${SOURCE_URL} -> ${DEST_DIR}"

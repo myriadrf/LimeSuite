@@ -5,19 +5,29 @@
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 # extract the last section of the changelog version for extra info
-DEB_VERSION_EXTVER ?= $(shell dpkg-parsechangelog | grep ^Version: | rev | cut -d'-' -f1 | rev)
+DEB_CHANGELOG_VERSION ?= $(shell dpkg-parsechangelog -S Version)
+DEB_VERSION_EXTVER := $(lastword $(subst -, ,$(DEB_CHANGELOG_VERSION)))
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+#create install scripts with dynamic names based on the release
+#we could manually re-name them, but this automates everything but control/changelog
+VERSION_MAJOR ?= $(shell grep -Po 'VERSION_MAJOR \d+' CMakeLists.txt | cut -f2 -d' ')
+VERSION_MINOR ?= $(shell grep -Po 'VERSION_MINOR \d+' CMakeLists.txt | cut -f2 -d' ')
+RELEASE_NUM = $(VERSION_MAJOR).$(VERSION_MINOR)
+GENERATED_INSTALL_FILES := \
+	debian/limesuite-images$(RELEASE_NUM).dirs \
+	debian/limesuite-images$(RELEASE_NUM).postinst \
+	debian/limesuite-images$(RELEASE_NUM).prerm
+
+debian/limesuite-images$(RELEASE_NUM)%: debian/limesuite-images%.in
+	sed 's/@RELEASE_NUM@/$(RELEASE_NUM)/g' $< > $@
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-
 %:
 	dh $@ --buildsystem=cmake --parallel
 
-override_dh_auto_configure:
+override_dh_auto_configure: $(GENERATED_INSTALL_FILES)
 	dh_auto_configure -- \
 		-DBUILD_SHARED_LIBS=ON \
 		-DCMAKE_AUTOSET_INSTALL_RPATH=FALSE \
