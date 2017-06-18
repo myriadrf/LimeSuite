@@ -20,15 +20,17 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 
 ########################################################################
-# gather version information
+# Gather version information from the changelog
+# LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor
 ########################################################################
-# The version of this library: major, minor, and patch
-# Manually increment these numbers when creating releases.
-# LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor,
-# and must be set manually when non-patch releases are created.
-set(VERSION_MAJOR 17)
-set(VERSION_MINOR 03)
-set(VERSION_PATCH 0)
+file(READ "${PROJECT_SOURCE_DIR}/Changelog.txt" changelog_txt)
+string(REGEX MATCH "Release ([0-9]+)\\.([0-9]+)\\.([0-9]+) \\(" CHANGELOG_MATCH "${changelog_txt}")
+if(NOT CHANGELOG_MATCH)
+    message(FATAL_ERROR "Failed to extract version number from Changelog.txt")
+endif(NOT CHANGELOG_MATCH)
+set(VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(VERSION_MINOR "${CMAKE_MATCH_2}")
+set(VERSION_PATCH "${CMAKE_MATCH_3}")
 
 # the ABI compatibility number should be incremented when the ABI changes
 # the format is to use the same major and minor, but to have an incrementing
