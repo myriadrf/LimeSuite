@@ -34,18 +34,3 @@ SOAPY_SDR_MODULE_UTIL(
     LIBRARIES
         LimeSuite
 )
-
-########################################################################
-## Calibration utility
-########################################################################
-if(UNIX)
-    set(LIME_SUITE_CAL_NAME LimeSuiteCalibrate)
-elseif (WIN32)
-    set(LIME_SUITE_CAL_NAME LimeSuiteCalibrate.py)
-endif()
-
-install(
-    PROGRAMS LimeSuiteCalibrate.py
-    RENAME ${LIME_SUITE_CAL_NAME}
-    DESTINATION bin
-)

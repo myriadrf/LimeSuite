@@ -61,8 +61,7 @@ Multi-Arch: same
 Depends:
     liblimesuite17.03-1 (= ${binary:Version}),
     ${shlibs:Depends},
-    ${misc:Depends},
-    python, python-soapysdr
+    ${misc:Depends}
 Description: Lime Suite - SoapySDR bindings
  Lime Suite application software.
 
