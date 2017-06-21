@@ -1,4 +1,4 @@
-Release 17.03.0 (pending)
+Release 17.06.0 (2017-06-20)
 ==========================
 
 API additions:
