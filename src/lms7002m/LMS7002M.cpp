@@ -1053,8 +1053,8 @@ float_type LMS7002M::GetFrequencyCGEN()
 float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 {
     float_type cgenFreq = GetFrequencyCGEN();
-	float_type clklfreq = cgenFreq/pow(2.0, Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN)));
-    if(Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN)) == 0)
+	float_type clklfreq = cgenFreq/pow(2.0, Get_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN),true));
+    if(Get_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN),true) == 0)
         return tx ? clklfreq : cgenFreq/4.0;
     else
         return tx ? cgenFreq : clklfreq/4.0;
@@ -2380,27 +2380,24 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
 float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
 {
     float_type interface_Hz;
+    int ratio;
     auto chBck = GetActiveChannel();
     SetActiveChannel(ch);
     //if decimation/interpolation is 0(2^1) or 7(bypass), interface clocks should not be divided
     if (tx)
     {
-        int interpolation = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        float_type interfaceTx_Hz = GetReferenceClk_TSP(LMS7002M::Tx);
-        if (interpolation != 7)
-            interfaceTx_Hz /= 2*pow(2.0, interpolation);
-        interface_Hz = interfaceTx_Hz;
+        ratio = Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP),true);
+        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
-        int decimation = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        float_type interfaceRx_Hz = GetReferenceClk_TSP(LMS7002M::Rx);
-        if (decimation != 7)
-            interfaceRx_Hz /= 2*pow(2.0, decimation);
-        interface_Hz = interfaceRx_Hz;
+        ratio = Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP),true);
+        interface_Hz = GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
     SetActiveChannel(chBck);
-    return interface_Hz;
+    if (ratio != 7)
+        interface_Hz /= pow(2.0, ratio);
+    return interface_Hz/2.0;
 }
 
 void LMS7002M::ConfigureLML_RF2BB(

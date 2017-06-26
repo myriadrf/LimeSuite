@@ -86,6 +86,8 @@ public:
         std::atomic<uint64_t> txLastLateTime;
         uint64_t mTimestampOffset;
         int mChipID;
+        unsigned txBatchSize;
+        unsigned rxBatchSize;
     };
 
     ILimeSDRStreaming();

@@ -32,6 +32,7 @@ StreamMetadata::StreamMetadata(void):
 
 StreamConfig::StreamConfig(void):
     isTx(false),
+    performanceLatency(0.5),
     bufferLength(0),
     format(STREAM_12_BIT_IN_16),
     linkFormat(STREAM_12_BIT_IN_16)

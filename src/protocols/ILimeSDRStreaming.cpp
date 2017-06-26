@@ -339,6 +339,8 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     generateData = false;
     rxDataRate_Bps = 0;
     txDataRate_Bps = 0;
+    txBatchSize = 1;
+    rxBatchSize = 1;
     mChipID = dataPort->mStreamers.size();
 }
 
@@ -357,11 +359,31 @@ int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfi
     streamID = ~0;
     StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
-    if(config.isTx)
+    if(config.isTx){
         mTxStreams.push_back(stream);
+    }
     else
+    {
         mRxStreams.push_back(stream);
+    }
     streamID = size_t(stream);
+    LMS7002M lms;
+    lms.SetConnection(dataPort, mChipID);
+    double rate = lms.GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
+    int size = (config.isTx) ?  mRxStreams.size(): mRxStreams.size();
+
+    if (config.performanceLatency < 0.5)
+        rate = 0.5 + rate * config.performanceLatency * 2.0 * size;
+    else
+        rate += (config.performanceLatency - 0.5) * 40.0 * size;
+
+    printf("batch %1.1f\n", rate);
+    for (int batch = 1; batch < rate; batch <<= 1)
+        if (config.isTx)
+            txBatchSize = batch;
+        else
+            rxBatchSize = batch;
+
     return 0; //success
 }
 

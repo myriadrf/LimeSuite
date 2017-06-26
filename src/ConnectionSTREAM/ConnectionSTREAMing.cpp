@@ -216,13 +216,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
     const unsigned char ep = 0x81;
     const int chipID = stream->mChipID;
 
-    float latency=0;
-    for (int i = 0; i < chCount; i++)
-        latency += stream->mRxStreams[i]->config.performanceLatency/chCount;
-
-    const unsigned tmp_cnt = (latency * 6)+0.5;
-
-    const uint8_t packetsToBatch = (1<<tmp_cnt);
+    const uint8_t packetsToBatch = stream->rxBatchSize;
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint8_t buffersCount = 16;
     vector<int> handles(buffersCount, 0);
@@ -416,17 +410,10 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     const auto link = stream->mTxStreams[0]->config.linkFormat;
     const unsigned char ep  = 0x01;
 
-    double latency=0;
-    for (int i = 0; i < chCount; i++)
-        latency += stream->mTxStreams[i]->config.performanceLatency/chCount;
-
-    const unsigned tmp_cnt = (latency * 6)+0.5;
-
     const uint8_t buffersCount = 16; // must be power of 2
-    const uint8_t packetsToBatch = (1<<tmp_cnt); //packets in single USB transfer
+    const uint8_t packetsToBatch = stream->txBatchSize; //packets in single USB transfer
     const uint32_t bufferSize = packetsToBatch*4096;
-    const uint32_t popTimeout_ms = 100;
-
+    const uint32_t popTimeout_ms = 500;
     const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
