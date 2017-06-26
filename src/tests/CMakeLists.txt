@@ -1,7 +1,5 @@
-include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_TESTS "Enable library test programs" OFF "ENABLE_LIBRARY" OFF)
-add_feature_info(LimeSuiteTests ENABLE_TESTS "Download gtest and build test application")
 
 if (NOT ENABLE_TESTS)
     return()

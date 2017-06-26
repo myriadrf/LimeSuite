@@ -161,6 +161,32 @@ if (DEFINED UDEV_RULES_PATH)
 endif()
 
 ########################################################################
+## Doxygen
+########################################################################
+find_package(Doxygen QUIET)
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" ON "DOXYGEN_FOUND" OFF)
+add_feature_info(LimeSuiteDocAPI ENABLE_API_DOXYGEN "LMS API Doxygen documentation")
+if (ENABLE_API_DOXYGEN)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/DoxyfileAPI.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
+  add_custom_target(docAPI ALL
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating LMS API documentation with Doxygen" VERBATIM
+    )
+endif()
+
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+  add_custom_target(doc
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating documentation with Doxygen" VERBATIM
+    )
+endif()
+
+########################################################################
 ## freedesktop environment integration
 ########################################################################
 add_subdirectory(Desktop)
@@ -198,14 +224,4 @@ add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
-find_package(Doxygen QUIET)
-
-if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-  add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
-endif()
 

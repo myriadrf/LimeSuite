@@ -58,10 +58,10 @@ extern "C" {
 #   define CALL_CONV
 #endif
 
-/**Floating point data type*/
+///Floating point data type
 typedef double float_type;
 
-/**convenience constant for good return code*/
+///convenience constant for good return code
 static const int LMS_SUCCESS = 0;
 
 /**
@@ -72,10 +72,10 @@ static const int LMS_SUCCESS = 0;
  * @{
  */
 
-/**LMS Device handle */
+///LMS Device handle
 typedef void lms_device_t;
 
-/**Convenience type for fixed length LMS Device information string*/
+///Convenience type for fixed length LMS Device information string
 typedef char lms_info_str_t[256];
 
 /**
@@ -88,8 +88,7 @@ typedef char lms_info_str_t[256];
 API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
 
 /**
- * Opens device specified by the provided ::lms_dev_info string
- *
+ * Opens device specified by the provided ::lms_info_str_t string
  * This function should be used to open a device based upon the results of
  * LMS_GetDeviceList()
  *
@@ -102,7 +101,8 @@ API_EXPORT int CALL_CONV LMS_GetDeviceList(lms_info_str_t *dev_list);
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t info, void* args);
+API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t info,
+                                                         void* args);
 
 /**
  * Close device
@@ -125,10 +125,10 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
 
 /**
- * Checks if device port is opened
+ * Check if device port is opened
  *
  * @param   device  Device handle previously obtained by LMS_Open().
- * @param   port    0 - control port, 1- data port
+ * @param   port    port index (ignored if device has only 1 port)
  *
  * @return   true(1) if port is open, false (0) if - closed
  */
@@ -145,27 +145,29 @@ API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port);
  * @{
  */
 
-/**Convenience constants for TX/RX selection*/
-static const bool LMS_CH_TX = true;
-static const bool LMS_CH_RX = false;
+static const bool LMS_CH_TX = true;   ///<Convenience constants for TX selection
+static const bool LMS_CH_RX = false;  ///<Convenience constants for RX selection
+
+/** Convenience type for fixed length name string*/
+typedef char lms_name_t[16];
 
 /**Structure used to represent the allowed value range of various parameters*/
 typedef struct
 {
-    float_type min;     /**<Minimum allowed value*/
-    float_type max;     /**<Minimum allowed value*/
-    float_type step;    /**<Minimum value step*/
+    float_type min;     ///<Minimum allowed value
+    float_type max;     ///<Minimum allowed value
+    float_type step;    ///<Minimum value step
 }lms_range_t;
 
 /**Enumeration of LMS7 TEST signal types*/
 typedef enum
 {
-    LMS_TESTSIG_NONE=0,     /**<Disable test signals. Return to normal operation*/
-    LMS_TESTSIG_NCODIV8,    /**<Test signal from NCO half scale*/
-    LMS_TESTSIG_NCODIV4,    /**<Test signal from NCO half scale*/
-    LMS_TESTSIG_NCODIV8F,   /**<Test signal from NCO full scale*/
-    LMS_TESTSIG_NCODIV4F,   /**<Test signal from NCO full scale*/
-    LMS_TESTSIG_DC          /**<DC test signal*/
+    LMS_TESTSIG_NONE=0,     ///<Disable test signals. Return to normal operation
+    LMS_TESTSIG_NCODIV8,    ///<Test signal from NCO half scale
+    LMS_TESTSIG_NCODIV4,    ///<Test signal from NCO half scale
+    LMS_TESTSIG_NCODIV8F,   ///<Test signal from NCO full scale
+    LMS_TESTSIG_NCODIV4F,   ///<Test signal from NCO full scale
+    LMS_TESTSIG_DC          ///<DC test signal
 }lms_testsig_t;
 
 /**
@@ -223,26 +225,26 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t *device, float_type rate
                                            size_t oversample);
 
 /**
- * Get the sampling rate of the specified LMS device RX or TX channel.
+ * Get the sampling rate of the specified RX or TX channel.
  * The function obtains the sample rate used in data interface with the host and
  * the RF sample rate used by DAC/ADC.
  *
  * @param[in]   device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
+ * @param       chan        Channel index
  * @param[out]  host_Hz     sampling rate used for data exchange with the host
  * @param[out]  rf_Hz       RF sampling rate in Hz
  *
  * @return       0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t *device, bool dir_tx,
-                                           size_t chan, float_type *host_Hz,
-                                           float_type *rf_Hz);
+                           size_t chan, float_type *host_Hz, float_type *rf_Hz);
 /**
  * Get the range of supported sampling rates.
  *
- * @param device        Device handle previously obtained by LMS_Open().
- * @param dir_tx        Select RX or TX
- * @param range[out]    Allowed sample rate range in Hz.
+ * @param      device   Device handle previously obtained by LMS_Open().
+ * @param      dir_tx   Select RX or TX
+ * @param[out] range    Allowed sample rate range in Hz.
  *
  * @return              0 on success, (-1) on failure
  */
@@ -284,17 +286,68 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx,
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
- * @param       chan        Channel index
  * @param[out]  range       Supported RF center frequency in Hz
  *
  * @return      0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device,bool dir_tx,
+API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_tx,
                                                  lms_range_t *range);
 
 /**
- * Set the combined gain value
+ * Obtain antenna list with names. First item in the list is the name of antenna
+ * index 0.
  *
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param       dir_tx  Select RX or TX
+ * @param       chan    channel index
+ * @param[out]  list    List of antenna names (can be NULL)
+ *
+ * @return      number of available antennae, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *dev, bool dir_tx,
+                                            size_t chan, lms_name_t *list);
+
+/**
+ * Select the antenna for the specified RX or TX channel.
+ *
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param       dir_tx  Select RX or TX
+ * @param       chan    channel index
+ * @param       index   Index of antenna to select
+ *
+ * @return      0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *dev, bool dir_tx,
+                                        size_t chan, size_t index);
+
+/**
+ * Obtain currently selected antenna of the the specified RX or TX channel.
+ *
+ * @param dev       Device handle previously obtained by LMS_Open().
+ * @param dir_tx    Select RX or TX
+ * @param chan      channel index
+ *
+ * @return      Index of selected antenna on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *dev, bool dir_tx,
+                                        size_t chan);
+
+/**
+ * Obtains bandwidth (lower and upper frequency) of the specified antenna
+ *
+ * @param       dev     Device handle previously obtained by LMS_Open().
+ * @param       dir_tx  Select RX or TX
+ * @param       chan    channel index
+ * @param       index   Antenna index
+ * @param[out]  range   Antenna bandwidth
+ *
+ * @return      0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *dev, bool dir_tx,
+                                 size_t chan, size_t index, lms_range_t *range);
+
+/**
+ * Set the combined gain value
  * This function computes and sets the optimal gain values of various amplifiers
  * that are present in the device based on desired normalized gain value.
  *
@@ -310,7 +363,6 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
 
 /**
  * Set the combined gain value in dB
- *
  * This function computes and sets the optimal gain values of various amplifiers
  * that are present in the device based on desired  gain value in dB.
  *
@@ -345,7 +397,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index
- * @param[out]  gain        Current gain, range [0, 700]
+ * @param[out]  gain        Current gain, range [0, 70]
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx,
@@ -367,7 +419,6 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx,
 
 /**
  * Get the currently configured analog LPF RF bandwidth.
- *
  * @note readback from board is currently not supported, only returns last set
  * value cached by software.
  *
@@ -386,7 +437,6 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx,
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
- * @param       chan        Channel index
  * @param[out]  range       Supported RF bandwidth range in Hz
  *
  * @return  0 on success, (-1) on failure
@@ -405,7 +455,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx,
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx,
-                                    size_t chan, bool enabled);
+                                    size_t chan, bool enable);
 
 /**
  * Set up digital LPF using LMS chip GFIRS. This is a convenience function to
@@ -460,7 +510,7 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filena
  * Save LMS chip configuration to a file
  *
  * @param   device      Device handle
- * @param   module      path to file with LMS chip configuration
+ * @param   filename    path to file with LMS chip configuration
  *
  * @return  0 on success, (-1) on failure
  */
@@ -505,7 +555,7 @@ API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t *device, bool dir_tx,
  * @{
  */
 
-/**Enumeration of LMS7 GFIRS*/
+///Enumeration of LMS7 GFIRS
 typedef enum
 {
     LMS_GFIR1 = 0,
@@ -513,62 +563,8 @@ typedef enum
     LMS_GFIR3
 }lms_gfir_t;
 
-/**Number of NCO frequency/phase offset values*/
+///Number of NCO frequency/phase offset values
 static const int LMS_NCO_VAL_COUNT = 16;
-
-/** Convenience type for fixed length name string*/
-typedef char lms_name_t[16];
-
-/**
- * Obtain antenna list with names. First item in the list is the name of antenna
- * index 0.
- *
- * @param       device      Device handle previously obtained by LMS_Open().
- * @param       dir_tx      Select RX or TX
- * @param       chan        channel index
- * @param[out]  list        List of antenna names (can be NULL)
- *
- * @return      number of available antennae, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx,
-                                            size_t chan, lms_name_t *list);
-
-/**
- * Select the antenna for the specified RX or TX channel.
- *
- * @param       device      Device handle previously obtained by LMS_Open().
- * @param       dir_tx      Select RX or TX
- * @param       chan        channel index
- * @param       index       Index of antenna to select
- *
- * @return      0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx,
-                                        size_t chan, size_t index);
-
-/**
- * Obtain currently selected antenna of the the specified RX or TX channel.
- *
- * @param       dev        Device handle previously obtained by LMS_Open().
- * @param       dir_tx     Select RX or TX
- * @param       chan       channel index
- *
- * @return     Index of selected antenna on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan);
-
-/**
- * Obtains bandwidth (lower and upper frequency) of the specified antenna
- *
- * @param       dev        Device handle previously obtained by LMS_Open().
- * @param       dir_tx     Select RX or TX
- * @param       chan       channel index
- * @param       index      Antenna index
- * @param[out]  range      Antenna bandwidth
- *
- * @return      0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, size_t chan, size_t index, lms_range_t *range);
 
 /**
  * Set sampling rate for all RX or TX channels. Sample rate is in complex
@@ -587,6 +583,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
  * @param[in]   device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       rate        Sampling rate in Hz to set
+ * @param       oversample  RF oversampling ratio.
  *
  * @return      0 on success, (-1) on failure
  */
@@ -599,7 +596,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx,
  * Automatically starts NCO with frequency at index 0
  * Use LMS_SetNCOindex() to switch between NCO frequencies.
  *
- * @param       dev        Device handle previously obtained by LMS_Open().
+ * @param       device     Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       Channel index
  * @param[in]   freq       List of NCO frequencies. Values cannot be negative.
@@ -614,12 +611,12 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx,
 /**
  * Get the current NCO FCW mode configuration.
  *
- * @param       dev        Device handle previously obtained by LMS_Open().
+ * @param       device     Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       Channel index
  * @param[out]  freq       List of NCO frequencies. Must be at least
  *                         ::LMS_NCO_VAL_COUNT length;
- * @param[out]  pho1       Phase offset in deg
+ * @param[out]  pho        Phase offset in deg
  *
  * @return      0 on success, (-1) on failure
  */
@@ -632,7 +629,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx,
  * Automatically starts NCO with phase at index 0
  * Use LMS_SetNCOindex() to switch between NCO phases.
  *
- * @param       dev        Device handle previously obtained by LMS_Open().
+ * @param       device     Device handle previously obtained by LMS_Open().
  * @param       dir_tx     Select RX or TX
  * @param       chan       Channel index
  * @param[in]   phases     List of NCO phases. Values cannot be negative.
@@ -647,7 +644,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx,
 /**
  * Get the current NCO PHO mode configuration.
  *
- * @param       dev       Device handle previously obtained by LMS_Open().
+ * @param       device    Device handle previously obtained by LMS_Open().
  * @param       dir_tx    Select RX or TX
  * @param       chan      channel index
  * @param[out]  phases    List of configured NCO phases
@@ -663,7 +660,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx,
  * Switches between configured list of NCO frequencies/phase offsets. Also
  * Allows to switch CMIX mode to either downconvert or upconvert.
  *
- * @param dev       Device handle previously obtained by LMS_Open().
+ * @param device    Device handle previously obtained by LMS_Open().
  * @param dir_tx    Select RX or TX
  * @param chan      channel index
  * @param index     NCO frequency/phase index to activate or (-1) to disable NCO
@@ -677,7 +674,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx,
 /**
  * Get the currently active NCO frequency/phase offset index
  *
- * @param       dev       Device handle previously obtained by LMS_Open().
+ * @param       device    Device handle previously obtained by LMS_Open().
  * @param       dir_tx    Select RX or TX
  * @param       chan      Channel index
  *
@@ -714,7 +711,7 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device,
  * Configure LMS GFIR using specified filter coefficients. Maximum number of
  * coefficients is 40 for GFIR1 and GFIR2, and 120 for GFIR3.
  *
- * @param       dev       Device handle previously obtained by LMS_Open().
+ * @param       device       Device handle previously obtained by LMS_Open().
  * @param       dir_tx    Select RX or TX
  * @param       chan      Channel index
  * @param       filt      GFIR to configure
@@ -729,7 +726,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device_t * device, bool dir_tx,
 /**
  * Get currently set GFIR coefficients.
  *
- * @param       dev       Device handle previously obtained by LMS_Open().
+ * @param       device       Device handle previously obtained by LMS_Open().
  * @param       dir_tx    Select RX or TX
  * @param       chan      Channel index
  * @param       filt      GFIR to configure
@@ -744,7 +741,7 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx,
 /**
  * Enables or disables specified GFIR.
  *
- * @param dev       Device handle previously obtained by LMS_Open().
+ * @param device    Device handle previously obtained by LMS_Open().
  * @param dir_tx    Select RX or TX
  * @param chan      Channel index
  * @param filt      GFIR to configure
@@ -754,6 +751,30 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx,
  */
 API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
                                     size_t chan, lms_gfir_t filt, bool enabled);
+
+/**
+ * Write value to VCTCXO trim DAC. Used to adjust/calibrate reference clock
+ * generated by voltage controlled oscillator. 
+ * @note calling this functions switches clock source to VCTCXO 
+ *
+ * @param   dev         Device handle previously obtained by LMS_Open().
+ * @param   val         Value to write to VCTCXO trim DAC, range 0-255
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * dev, uint16_t val);
+
+/**
+ * Read value from VCTCXO trim DAC.
+ *
+ * @param[in]   dev     Device handle previously obtained by LMS_Open().
+ * @param[out]  val     Value to read from VCTCXO trim DAC
+ *
+ * @return 0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * dev, uint16_t *val);
+
+/** @} (End FN_ADVANCED) */
 
 /**
  * @defgroup FN_LOW_LVL    Low-Level control functions
@@ -845,38 +866,17 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
                             uint8_t id, float_type val, const lms_name_t units);
 
 /**
- * Write value to VCTCXO trim DAC. Used to adjust/calibrate reference clock
- * generated by voltage controlled oscillator.
- *
- * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   val         Value to write to VCTCXO trim DAC, range 0-255
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * dev, uint16_t val);
-
-/**
- * Read value from VCTCXO trim DAC.
- *
- * @param[in]   dev     Device handle previously obtained by LMS_Open().
- * @param[out]  val     Value to read from VCTCXO trim DAC
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * dev, uint16_t *val);
-
-/**
  * @defgroup LMS_CLOCK_ID   Clock definitions
  *
  * Clock definitions for accessing specific internal clocks
  * @{
  */
-#define LMS_CLOCK_REF   0x0000  /**<Chip reference clock*/
-#define LMS_CLOCK_SXR   0x0001  /**<RX LO clock*/
-#define LMS_CLOCK_SXT   0x0002  /**<TX LO clock*/
-#define LMS_CLOCK_CGEN  0x0003  /**<CGEN clock*/
-#define LMS_CLOCK_RXTSP 0x0004  /**<RXTSP reference clock*/
-#define LMS_CLOCK_TXTSP 0x0005  /**TXTSP reference clock*/
+#define LMS_CLOCK_REF   0x0000  ///<Chip reference clock
+#define LMS_CLOCK_SXR   0x0001  ///<RX LO clock
+#define LMS_CLOCK_SXT   0x0002  ///<TX LO clock
+#define LMS_CLOCK_CGEN  0x0003  ///<CGEN clock
+#define LMS_CLOCK_RXTSP 0x0004  ///<RXTSP reference clock
+#define LMS_CLOCK_TXTSP 0x0005  ///<TXTSP reference clock
 
 /** @} (End LMS_CLOCK_ID) */
 
@@ -975,8 +975,6 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind,
 
 /** @} (End FN_LOW_LVL) */
 
-/** @} (End FN_ADVANCED) */
-
 /**
  * @defgroup FN_STREAM    Sample Streaming functions
  * The functions in this section provides support for sending and receiving
@@ -987,7 +985,8 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind,
 /**Metadata structure used in sample transfers*/
 typedef struct
 {
-    /**Timestamp is a value of HW counter with a tick based on sample rate.
+    /** 
+     * Timestamp is a value of HW counter with a tick based on sample rate.
      * In RX: time when the first sample in the returned buffer was received
      * In TX: time when the first sample in the submitted buffer should be send
      */
@@ -1000,9 +999,9 @@ typedef struct
      */
     bool waitForTimestamp;
 
-    /**Indicates the end of send/receive transaction. Discards data remainder
-     * in buffer (if there is any) in RX or flushes transfer buffer in TX (even
-     * if the buffer is not full yet).*/
+    /**Indicates the end of send/receive transaction. Currently has no effect
+     * @todo force send samples to HW (ignore transfer size) when selected
+     */
     bool flushPartialPacket;
 
 }lms_stream_meta_t;
@@ -1010,7 +1009,8 @@ typedef struct
 /**Stream structure*/
 typedef struct
 {
-    /**Stream handle. Should not be modified manually.
+    /**
+     * Stream handle. Should not be modified manually.
      * Assigned by LMS_SetupStream().*/
     size_t handle;
 
@@ -1023,41 +1023,43 @@ typedef struct
     //! FIFO size (in samples) used by stream.
     uint32_t fifoSize;
 
-    /**Parameter for controlling configuration bias toward low latency or high
+    /**
+     * Parameter for controlling configuration bias toward low latency or high
      * data throughput range [0,1.0].
      * 0 - lowest latency, usually results in lower throughput
-     * 1 - higher throughput, usually results in higher latency*/
+     * 1 - higher throughput, usually results in higher latency
+     */
     float throughputVsLatency;
 
     //! Data output format
     enum
     {
-        LMS_FMT_F32=0,    /**<32-bit floating point*/
-        LMS_FMT_I16,      /**<16-bit integers*/
-        LMS_FMT_I12       /**<12-bit integers stored in 16-bit variables*/
+        LMS_FMT_F32=0,    ///<32-bit floating point
+        LMS_FMT_I16,      ///<16-bit integers
+        LMS_FMT_I12       ///<12-bit integers stored in 16-bit variables
     }dataFmt;
 }lms_stream_t;
 
 /**Streaming status structure*/
 typedef struct
 {
-    /**Indicates whether the stream is currently active*/
+    ///Indicates whether the stream is currently active
     bool active;
-    /**Number of samples in FIFO buffer*/
+    ///Number of samples in FIFO buffer
     uint32_t fifoFilledCount;
-    /**Size of FIFO buffer*/
+    ///Size of FIFO buffer
     uint32_t fifoSize;
-    /**FIFO underrun count*/
+    ///FIFO underrun count
     uint32_t underrun;
-    /**FIFO overrun count*/
+    ///FIFO overrun count
     uint32_t overrun;
-    /**Number of dropped packets by HW*/
+    ///Number of dropped packets by HW
     uint32_t droppedPackets;
-    /**Sampling rate of the stream*/
+    ///Sampling rate of the stream
     float_type sampleRate;
-    /**Combined data rate of all stream of the same direction (TX or RX)*/
+    ///Combined data rate of all stream of the same direction (TX or RX)
     float_type linkRate;
-    /**Current HW timestamp*/
+    ///Current HW timestamp
     uint64_t timestamp;
 
 } lms_stream_status_t;
@@ -1074,13 +1076,14 @@ typedef struct
 API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *stream);
 
 /**
- * Deallocate memory used for stream.
- * @todo
- * @param stream Stream structure previously initialized with LMS_SetupStream().
+ * Deallocate memory used by stream.
+ *
+ * @param dev       Device handle previously obtained by LMS_Open().
+ * @param stream    Stream structure previously initialized with LMS_SetupStream().
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream);
+API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *dev, lms_stream_t *stream);
 
 /**
  * Start stream
@@ -1098,7 +1101,7 @@ API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream);
  *
  * @return 0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *conf);
+API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *stream);
 
 /**
  * Read samples from the FIFO of the specified stream.
@@ -1140,7 +1143,8 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
                             const void *samples,size_t sample_count,
                             const lms_stream_meta_t *meta, unsigned timeout_ms);
 
-/** @brief Uploads waveform to on board memory for later use
+/** 
+ * Uploads waveform to on board memory for later use
  * @param device        Device handle previously obtained by LMS_Open().
  * @param samples       multiple channel samples data
  * @param chCount       number of waveform channels
@@ -1151,7 +1155,8 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
 API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **samples,
                                 uint8_t chCount, size_t sample_count, int format);
 
-/** @brief Enables/Disables transmitting of uploaded waveform
+/**
+ * Enables/Disables transmitting of uploaded waveform
  * @param device    Device handle previously obtained by LMS_Open().
  * @param chan      Channel index
  * @param active    Enable/Disable waveform playback
@@ -1172,21 +1177,21 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned chan, bo
 /**Enumeration of programming mode*/
 typedef enum
 {
-    LMS_PROG_MD_RAM = 0,    /**<load firmware/bitstream to volatile storage*/
-    LMS_PROG_MD_FLASH = 1,  /**<load firmware/bitstream to non-volatile storage*/
-    LMS_PROG_MD_RST = 2    /**<reset and boot from flash*/
+    LMS_PROG_MD_RAM = 0,   ///<load firmware/bitstream to volatile storage
+    LMS_PROG_MD_FLASH = 1, ///<load firmware/bitstream to non-volatile storage
+    LMS_PROG_MD_RST = 2    ///<reset and boot from flash
 }lms_prog_md_t;
 
 /**Enumeration of programmable board modules*/
 typedef enum
 {
-    LMS_PROG_TRG_FX3 = 0,
-    LMS_PROG_TRG_FPGA,
-    LMS_PROG_TRG_MCU,
+    LMS_PROG_TRG_FX3 = 0,   ///<program FX3 firmware
+    LMS_PROG_TRG_FPGA,      ///<program FPGA gateware
+    LMS_PROG_TRG_MCU,       ///<program LMS7 MCU firmware
     LMS_PROG_TRG_HPM7,
 }lms_prog_trg_t;
 
-/*!
+/**
  * Callback from programming processes
  * @param bsent number of bytes transferred
  * @param btotal total number of bytes to send
@@ -1201,33 +1206,39 @@ typedef bool (*lms_prog_callback_t)(int bsent, int btotal, const char* progressM
  * @param device    Device handle previously obtained by LMS_Open().
  * @param data      Pointer to memory containing firmware/bitsteam image
  * @param size      Size of firmware/bitsteam image in bytes.
- * @params target   device component to program ::lms_prog_trg_t
+ * @param target   device component to program ::lms_prog_trg_t
  * @param mode      programming mode ::lms_prog_md_t
+ * @param callback  callback function for monitoring progress
+ * 
  * @return          0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, size_t size,
            lms_prog_trg_t target, lms_prog_md_t mode, lms_prog_callback_t callback);
 
 /**
- * @param device    Device handle previously obtained by LMS_Open().
+ * Automatically update device firmware
+ * 
+ * @param dev       Device handle previously obtained by LMS_Open().
  * @param download  True to download missing images from the web.
+ * @param callback  callback function for monitoring progress
+ * 
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device,
-                const bool download, lms_prog_callback_t callback);
+API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *dev, bool download,
+                                           lms_prog_callback_t callback);
 
 /**Device information structure*/
 typedef struct
 {
-    char deviceName[32];            /**<The display name of the device*/
-    char expansionName[32];         /**<The display name of the expansion card*/
-    char firmwareVersion[16];       /**<The firmware version as a string*/
-    char hardwareVersion[16];       /**<The hardware version as a string*/
-    char protocolVersion[16];       /**<The protocol version as a string*/
-    uint32_t boardSerialNumber;     /**<A unique board serial number*/
-    char gatewareVersion[16];       /**<Gateware version as a string*/
-    char gatewareRevision[16];      /**<Gateware revision as a string*/
-    char gatewareTargetBoard[32];   /**<Which board should use this gateware*/
+    char deviceName[32];            ///<The display name of the device
+    char expansionName[32];         ///<The display name of the expansion card
+    char firmwareVersion[16];       ///<The firmware version as a string
+    char hardwareVersion[16];       ///<The hardware version as a string
+    char protocolVersion[16];       ///<The protocol version as a string
+    uint32_t boardSerialNumber;     ///<A unique board serial number
+    char gatewareVersion[16];       ///<Gateware version as a string
+    char gatewareRevision[16];      ///<Gateware revision as a string
+    char gatewareTargetBoard[32];   ///<Which board should use this gateware
 }lms_dev_info_t;
 
 /**

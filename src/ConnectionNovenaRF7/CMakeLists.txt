@@ -30,7 +30,7 @@ endif (HAS_I2CDEV_H)
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_NOVENARF7 "Enable NovenaRF7" ON "ENABLE_LIBRARY;HAS_SPIDEV_H;HAS_I2C_MSG" OFF)
+cmake_dependent_option(ENABLE_NOVENARF7 "Enable NovenaRF7" OFF "ENABLE_LIBRARY;HAS_SPIDEV_H;HAS_I2C_MSG" OFF)
 add_feature_info(ConnectionNovenaRF7 ENABLE_NOVENARF7 "NovenaRF7 Connection support")
 if (NOT ENABLE_NOVENARF7)
     return()

@@ -274,7 +274,6 @@ endif()
 # utilities
 #########################################################################
 cmake_dependent_option(ENABLE_UTILITIES "Enable utility programs" OFF "ENABLE_LIBRARY" OFF)
-add_feature_info(LimeSuiteUtilities ENABLE_UTILITIES "Additional utility programs for testing")
 if(ENABLE_UTILITIES)
     include_directories(utilityTools)
     set(utility_src_files utilityTools/pllTest.cpp)
