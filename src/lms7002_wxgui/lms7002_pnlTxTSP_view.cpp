@@ -419,7 +419,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
     {
         float_type phase[16] = { 0 };
         float_type fcw = 0;
-        if (LMS_GetNCOPhase(lmsControl, LMS_CH_TX, ch - 1, phase, &fcw) != 0)
+        if (LMS_GetNCOPhase(lmsControl, LMS_CH_TX, ch, phase, &fcw) != 0)
             return;
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
