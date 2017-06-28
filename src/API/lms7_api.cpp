@@ -1241,12 +1241,14 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned ch, bool
     uint16_t regAddr = 0x000D;
     uint16_t regValue = 0;
     int status = 0;
+    status = LMS_WriteFPGAReg(device, 0xFFFF, 1<<(ch/2));
+    if (status != 0)
+        return status;
     status = LMS_ReadFPGAReg(device, regAddr, &regValue);
     if(status != 0)
         return status;
-    unsigned offset = (ch/2)*2;
-    regValue = regValue & ~(0x6<<offset); //clear WFM_LOAD, WFM_PLAY
-    regValue |= (active << (1+offset));
+    regValue = regValue & ~0x6; //clear WFM_LOAD, WFM_PLAY
+    regValue |= active << 1;
     status = LMS_WriteFPGAReg(device, regAddr, regValue);
     return status;
 }

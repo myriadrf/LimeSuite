@@ -36,29 +36,29 @@ const uint16_t PHCFG_UPDN = 1 << 13;
 const uint16_t busyAddr = 0x0021;
 
 
-int StartStreaming(IConnection* serPort, unsigned endpointIndex)
+int StartStreaming(IConnection* serPort)
 {
     uint16_t interface_ctrl_000A;
     int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
     if (status != 0)
         return status;
-    uint32_t value = RX_EN << (2 * endpointIndex);
+    uint32_t value = RX_EN;
     status = serPort->WriteRegister(0x000A, interface_ctrl_000A | value);
     return status;
 }
 
-int StopStreaming(IConnection* serPort, unsigned endpointIndex)
+int StopStreaming(IConnection* serPort)
 {
     uint16_t interface_ctrl_000A;
     int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
     if (status != 0)
         return status;
-    uint32_t value = ~((RX_EN | TX_EN) << (2 * endpointIndex));
+    uint32_t value = ~(RX_EN | TX_EN);
     serPort->WriteRegister(0x000A, interface_ctrl_000A & value);
     return status;
 }
 
-int ResetTimestamp(IConnection* serPort, unsigned endpointIndex)
+int ResetTimestamp(IConnection* serPort)
 {
     int status;
 #ifndef NDEBUG
@@ -67,7 +67,7 @@ int ResetTimestamp(IConnection* serPort, unsigned endpointIndex)
     if (status != 0)
         return 0;
 
-    if ((interface_ctrl_000A & (RX_EN << (2 * endpointIndex))))
+    if ((interface_ctrl_000A & RX_EN))
         return ReportError(EPERM, "Streaming must be stopped to reset timestamp");
 
 #endif // NDEBUG
@@ -76,7 +76,7 @@ int ResetTimestamp(IConnection* serPort, unsigned endpointIndex)
     status = serPort->ReadRegister(0x0009, interface_ctrl_0009);
     if (status != 0)
         return 0;
-    uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR) << (2 * endpointIndex);
+    uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
     serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
     serPort->WriteRegister(0x0009, interface_ctrl_0009 | value);
     serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~value);

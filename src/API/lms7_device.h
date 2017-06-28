@@ -39,9 +39,10 @@ public:
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
     int Reset();
     virtual size_t GetNumChannels(const bool tx=false) const;
-    int SetRate(float_type f_MHz, int oversample);
-    int SetRate(bool tx, float_type f_MHz, size_t oversample = 0);
-    float_type GetRate(bool tx,size_t chan,float_type *rf_rate_Hz = NULL);
+    virtual int SetRate(double f_MHz, int oversample);
+    virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
+    virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
+    virtual double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL);
     lms_range_t GetRxRateRange(const size_t chan = 0)const;
     lms_range_t GetTxRateRange(const size_t chan = 0)const;
     std::vector<std::string> GetPathNames(bool dir_tx, size_t chan) const;

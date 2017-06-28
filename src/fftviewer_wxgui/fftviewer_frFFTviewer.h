@@ -29,6 +29,7 @@ protected:
     void OnWindowFunctionChanged( wxCommandEvent& event );
     void OnbtnStartStop( wxCommandEvent& event );
     void OnChannelVisibilityChange(wxCommandEvent& event);
+    void OnStreamChange(wxCommandEvent& event);
     void OnAvgChange(wxSpinEvent& event);
     void OnAvgChangeEnter(wxCommandEvent& event);
     void OnWindowFunctionChange(wxCommandEvent& event);
@@ -41,8 +42,8 @@ public:
     fftviewer_frFFTviewer( wxWindow* parent );
     ~fftviewer_frFFTviewer();
 //// end generated class members
-    void Initialize(lms_device_t* pDataPort, unsigned index);
-    void SetNyquistFrequency(float freqMHz);
+    void Initialize(lms_device_t* pDataPort);
+    void SetNyquistFrequency();
 
     void StartStreaming();
     void StopStreaming();

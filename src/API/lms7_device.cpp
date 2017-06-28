@@ -340,7 +340,7 @@ size_t LMS7_Device::GetNumChannels(const bool tx) const
     return 2;
 }
 
-int LMS7_Device::SetRate(float_type f_Hz, int oversample)
+int LMS7_Device::SetRate(double f_Hz, int oversample)
 {
    int decim = 0;
    float_type nco_f=0;
@@ -430,7 +430,7 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
     return 0;
 }
 
-int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
+int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 {
     float_type tx_clock;
     float_type rx_clock;
@@ -709,7 +709,13 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
    return 0;
 }
 
-double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
+int LMS7_Device::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
+{
+    //TODO: low importance : implement this and expose via LimeSuite.h 
+    return lime::ReportError(ERANGE, "Not implemented");;
+}
+
+double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz)
 {
 
     double interface_Hz;
@@ -720,12 +726,12 @@ double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
 
     if (tx)
     {
-        ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP),true);
         interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
-        ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP),true);
         interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
@@ -2022,6 +2028,6 @@ lime::LMS7002M* LMS7_Device::GetLMS(int index)
 
 int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt)
 {
-    return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, chCount>2 ? 1 : 0);
+    return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 

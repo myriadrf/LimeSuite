@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -89,6 +89,7 @@ class frFFTviewer : public wxFrame
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnStreamChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnWindowFunctionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }

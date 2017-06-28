@@ -14,15 +14,32 @@
 using namespace std;
 using namespace lime;
 
-void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort, unsigned index)
+void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
 {
     lmsControl = pDataPort;
-    lmsIndex = index;
+    lmsIndex = 0;
     for (unsigned i =0; i < this->cMaxChCount ; i++)
     {
         this->rxStreams[i].handle = 0;
         this->txStreams[i].handle = 0;
     }
+    cmbStreamType->Clear();
+    if (LMS_GetNumChannels(lmsControl, false)>2)
+    {
+        cmbStreamType->Append(_T("LMS1 SISO"));
+        cmbStreamType->Append(_T("LMS1 MIMO"));
+        cmbStreamType->Append(_T("LMS2 SISO"));
+        cmbStreamType->Append(_T("LMS2 MIMO"));
+        cmbStreamType->Append(_T("Ext. ADC/DAC"));
+    }
+    else
+    {
+        cmbStreamType->Append(_T("LMS SISO"));
+        cmbStreamType->Append(_T("LMS MIMO"));
+    }
+    cmbStreamType->SetSelection(0);
+    SetNyquistFrequency();
+
 }
 
 fftviewer_frFFTviewer::fftviewer_frFFTviewer( wxWindow* parent )
@@ -46,7 +63,7 @@ lmsControl(nullptr)
     mFFTpanel->series[1]->color = 0x0000FFFF;
     mFFTpanel->SetDrawingMode(GLG_LINE);
     mFFTpanel->settings.gridXlines = 15;
-    mFFTpanel->SetInitialDisplayArea(-16000000, 16000000, -100, 0);
+    mFFTpanel->SetInitialDisplayArea(-16000000, 16000000, -115, 0);
 
     mFFTpanel->settings.title = "FFT";
     mFFTpanel->settings.titleXaxis = "Frequency(MHz)";
@@ -70,8 +87,7 @@ lmsControl(nullptr)
     mTimeDomainPanel->series[1]->color = 0x0000FFFF;
     mTimeDomainPanel->series[2]->color = 0xFF00FFFF;
     mTimeDomainPanel->series[3]->color = 0x00FFFFFF;
-    mTimeDomainPanel->settings.marginLeft = 40;
-
+    mTimeDomainPanel->settings.marginLeft = 48;
     mConstelationPanel->settings.useVBO = true;
     mConstelationPanel->AddSerie(new cDataSerie());
     mConstelationPanel->AddSerie(new cDataSerie());
@@ -84,7 +100,7 @@ lmsControl(nullptr)
     mConstelationPanel->settings.titleYaxis = "Q";
     mConstelationPanel->settings.gridXlines = 8;
     mConstelationPanel->settings.gridYlines = 8;
-    mConstelationPanel->settings.marginLeft = 40;
+    mConstelationPanel->settings.marginLeft = 48;
 
     mGUIupdater = new wxTimer(this, wxID_ANY); //timer for updating plots
     Connect(wxEVT_THREAD, wxThreadEventHandler(fftviewer_frFFTviewer::OnUpdatePlots), NULL, this);
@@ -160,8 +176,8 @@ void fftviewer_frFFTviewer::StartStreaming()
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
     chkEnTx->Disable();
-
-    switch (cmbStreamType->GetSelection())
+    lmsIndex = cmbStreamType->GetSelection()/2;
+    switch (cmbStreamType->GetSelection()%2)
     {
     case 0: //SISO
         if (cmbChannelVisibility->GetSelection() > 1)
@@ -229,6 +245,7 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 {
+    double dbOffset = lmsIndex == 2 ? 93.319 : 69.2369;
     if (mStreamRunning.load() == false)
         return;
 
@@ -257,9 +274,9 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
         chPwr[c] = sum;
     }
 
-    float pwr1 = (chPwr[0] != 0 ? (10 * log10(chPwr[0])) - 69.2369 : -300);
+    float pwr1 = (chPwr[0] != 0 ? (10 * log10(chPwr[0])) - dbOffset : -300);
     lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
-    float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - 69.2369 : -300);
+    float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - dbOffset : -300);
     lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
     lbldBc->SetLabel(wxString::Format("%.3f", pwr2-pwr1));
 
@@ -283,7 +300,7 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
             {
                 for (int s = 0; s < fftSize; ++s)
                 {
-                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s])) - 69.2369 : -300);
+                    streamData.fftBins[ch][s] = (streamData.fftBins[ch][s] != 0 ? (10 * log10(streamData.fftBins[ch][s])) - dbOffset : -300);
                 }
             }
             mFFTpanel->series[0]->AssignValues(&fftFreqAxis[0], &streamData.fftBins[0][0], fftSize);
@@ -353,10 +370,10 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             captureBuffer[ch].resize(samplesToCapture[ch]);
         }
 
-    if ((pthis->lmsIndex == 1) && (LMS_GetNumChannels(pthis->lmsControl, false)>2))
-        ch_offset = 2;
+    if (LMS_GetNumChannels(pthis->lmsControl, false)>2)
+        ch_offset += 2*pthis->lmsIndex;
 
-    auto fmt = lms_stream_t::LMS_FMT_I12;
+    auto fmt = pthis->lmsIndex == 2 ? lms_stream_t::LMS_FMT_I16 : lms_stream_t::LMS_FMT_I12;
     for(int i=0; i<channelsCount; ++i)
     {
         pthis->rxStreams[i].channel = i + ch_offset;
@@ -572,10 +589,20 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
         return wxString::Format(_("%.0f B/s"), dataRate / 1000.0);
 }
 
-void fftviewer_frFFTviewer::SetNyquistFrequency(float freqHz)
+void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
-    txtNyquistFreqMHz->SetValue(wxString::Format(_("%f"), freqHz / 1e6));
-    mFFTpanel->SetInitialDisplayArea(-freqHz, freqHz, -100, 0);
+    double freqHz;
+    LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbStreamType->GetSelection()/2*2,&freqHz,nullptr);
+    txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
+    mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
+}
+
+void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
+{
+    SetNyquistFrequency();
+    int max = cmbStreamType->GetSelection() == 4 ? 32800 : 2050;
+    mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);
+    mConstelationPanel->SetInitialDisplayArea(-max, max, -max, max);
 }
 
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)

@@ -51,69 +51,74 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     lmsControl = nullptr;
     mStreamingTimer = new wxTimer(this, ID_STREAMING_TIMER);
 
-	wxFlexGridSizer* FlexGridSizer10;
-	wxFlexGridSizer* FlexGridSizer3;
-	wxFlexGridSizer* FlexGridSizer2;
-	wxStaticBoxSizer* StaticBoxSizer3;
-	wxFlexGridSizer* FlexGridSizer8;
-	wxFlexGridSizer* FlexGridSizer6;
-	wxFlexGridSizer* FlexGridSizer1;
+    wxFlexGridSizer* FlexGridSizer10;
+    wxFlexGridSizer* FlexGridSizer3;
+    wxFlexGridSizer* FlexGridSizer2;
+    wxStaticBoxSizer* StaticBoxSizer3;
+    wxFlexGridSizer* FlexGridSizer8;
+    wxFlexGridSizer* FlexGridSizer6;
+    wxFlexGridSizer* FlexGridSizer1;
 
-	Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
+    Create(parent, id, title, wxDefaultPosition, wxDefaultSize, styles, title);
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
-	FlexGridSizer1->AddGrowableCol(0);
-
+    FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
+    FlexGridSizer1->AddGrowableCol(0);
+    cmbDevice = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE"));
+    cmbDevice->Append(_T("LMS1"));
+    cmbDevice->Append(_T("LMS2"));
+    cmbDevice->Append(_T("ADC/DAC"));
+    cmbDevice->SetSelection(0);
+    FlexGridSizer1->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     wxStaticBoxSizer* digitalInterfaceGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Digital Interface"));
     chkDigitalLoopbackEnable = new wxCheckBox(this, wxNewId(), _("Digital Loopback enable"));
     digitalInterfaceGroup->Add(chkDigitalLoopbackEnable, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     Connect(chkDigitalLoopbackEnable->GetId(), wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick);
     FlexGridSizer1->Add(digitalInterfaceGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxLEFT, 5);
 
-	StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));
+    StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));
     FlexGridSizer6 = new wxFlexGridSizer(0, 1, 5, 0);
-	FlexGridSizer6->AddGrowableCol(0);
-	FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 5);
-	btnLoadOnetone = new wxToggleButton(this, ID_BUTTON6, _T("Onetone"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
+    FlexGridSizer6->AddGrowableCol(0);
+    FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 5);
+    btnLoadOnetone = new wxToggleButton(this, ID_BUTTON6, _T("Onetone"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
     btnLoadOnetone->SetToolTip(_T("Loads single tone waveform"));
-	FlexGridSizer8->Add(btnLoadOnetone, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer8->Add(btnLoadOnetone, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     btnLoadWCDMA = new wxToggleButton(this, ID_BUTTON7, _T("W-CDMA"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
     btnLoadWCDMA->SetToolTip(_T("Loads WCDMA waveform"));
-	FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
     FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
-	FlexGridSizer6->Add(FlexGridSizer8, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer10 = new wxFlexGridSizer(0, 3, 0, 5);
-	FlexGridSizer10->AddGrowableCol(2);
+    FlexGridSizer6->Add(FlexGridSizer8, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer10 = new wxFlexGridSizer(0, 3, 0, 5);
+    FlexGridSizer10->AddGrowableCol(2);
     btnLoadCustom = new wxToggleButton(this, ID_BUTTON8, _T("Custom"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON8"));
-	btnLoadCustom->SetToolTip(_T("Loads user selected custom file"));
-	FlexGridSizer10->Add(btnLoadCustom, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	btnOpenWFM = new wxBitmapButton(this, ID_BITMAPBUTTON1, wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_FILE_OPEN")),wxART_BUTTON), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW, wxDefaultValidator, _T("ID_BITMAPBUTTON1"));
-	FlexGridSizer10->Add(btnOpenWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	txtFilename = new wxStaticText(this, ID_STATICTEXT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
-	FlexGridSizer10->Add(txtFilename, 1, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
-	FlexGridSizer6->Add(FlexGridSizer10, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 0);
-	FlexGridSizer3->AddGrowableCol(1);
-	lblProgressPercent = new wxStaticText(this, ID_STATICTEXT5, _T("0 %"), wxDefaultPosition, wxSize(32,-1), 0, _T("ID_STATICTEXT5"));
-	FlexGridSizer3->Add(lblProgressPercent, 1, wxLEFT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
-	progressBar = new wxGauge(this, ID_GAUGE1, 100, wxDefaultPosition, wxSize(-1,10), 0, wxDefaultValidator, _T("ID_GAUGE1"));
-	FlexGridSizer3->Add(progressBar, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
-	FlexGridSizer6->Add(FlexGridSizer3, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer2 = new wxFlexGridSizer(0, 3, 0, 5);
-	btnPlayWFM = new wxButton(this, ID_BUTTON3, _T("Play >"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON3"));
-	FlexGridSizer2->Add(btnPlayWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	btnStopWFM = new wxButton(this, ID_BUTTON4, _T("Stop ||"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON4"));
-	FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer6->Add(FlexGridSizer2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-	FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
+    btnLoadCustom->SetToolTip(_T("Loads user selected custom file"));
+    FlexGridSizer10->Add(btnLoadCustom, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    btnOpenWFM = new wxBitmapButton(this, ID_BITMAPBUTTON1, wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_FILE_OPEN")),wxART_BUTTON), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW, wxDefaultValidator, _T("ID_BITMAPBUTTON1"));
+    FlexGridSizer10->Add(btnOpenWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    txtFilename = new wxStaticText(this, ID_STATICTEXT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
+    FlexGridSizer10->Add(txtFilename, 1, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer6->Add(FlexGridSizer10, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 0);
+    FlexGridSizer3->AddGrowableCol(1);
+    lblProgressPercent = new wxStaticText(this, ID_STATICTEXT5, _T("0 %"), wxDefaultPosition, wxSize(32,-1), 0, _T("ID_STATICTEXT5"));
+    FlexGridSizer3->Add(lblProgressPercent, 1, wxLEFT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+    progressBar = new wxGauge(this, ID_GAUGE1, 100, wxDefaultPosition, wxSize(-1,10), 0, wxDefaultValidator, _T("ID_GAUGE1"));
+    FlexGridSizer3->Add(progressBar, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer6->Add(FlexGridSizer3, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer2 = new wxFlexGridSizer(0, 3, 0, 5);
+    btnPlayWFM = new wxButton(this, ID_BUTTON3, _T("Play >"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON3"));
+    FlexGridSizer2->Add(btnPlayWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    btnStopWFM = new wxButton(this, ID_BUTTON4, _T("Stop ||"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON4"));
+    FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer6->Add(FlexGridSizer2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
 
-	SetSizer(FlexGridSizer1);
-	FlexGridSizer1->Fit(this);
-	FlexGridSizer1->SetSizeHints(this);
+    SetSizer(FlexGridSizer1);
+    FlexGridSizer1->Fit(this);
+    FlexGridSizer1->SetSizeHints(this);
 
     Connect(ID_BUTTON6, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadOnetoneClick);
     Connect(ID_BUTTON7, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadWCDMAClick);
@@ -123,10 +128,15 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     Connect(ID_BUTTON4,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnStopWFMClick);
 }
 
-void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort, int index)
+void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
 {
     lmsControl = dataPort;
-    lmsIndex = index;
+    
+    if (LMS_GetNumChannels(lmsControl,LMS_CH_TX) > 2)
+        cmbDevice->Show();
+    else
+        cmbDevice->Hide();
+    Layout();
 }
 
 FPGAcontrols_wxgui::~FPGAcontrols_wxgui()
@@ -183,8 +193,8 @@ int ReadWFM(const wxString filename, std::vector<int16_t> &iSamples, std::vector
         qint = (int)(qin);
 
         //convert from 16 bit to 12 bit values
-        iint = iint >> 4;
-        qint = qint >> 4;
+        //iint = iint >> 4;
+        //qint = qint >> 4;
 
         iSamples.push_back(iint);
         qSamples.push_back(qint);
@@ -202,13 +212,13 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 }
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
-{
-    LMS_EnableTxWFM(lmsControl, lmsIndex*2, true);
+{ 
+    LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
-    LMS_EnableTxWFM(lmsControl, lmsIndex*2, false);
+    LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, false);
 };
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
@@ -274,12 +284,12 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         }
     }
 
-    int status = LMS_UploadWFM(lmsControl, (const void**)src, lmsIndex ? 4 : 2, isamples.size(), 0);
+    int status = LMS_UploadWFM(lmsControl, (const void**)src, 2+cmbDevice->GetSelection()*2, isamples.size(), 0);
 
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
 
-    LMS_EnableTxWFM(lmsControl, lmsIndex*2, true);
+    LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
 
     btnPlayWFM->Enable(true);
     btnStopWFM->Enable(true);
@@ -303,8 +313,8 @@ void FPGAcontrols_wxgui::OnbtnLoadOnetoneClick(wxCommandEvent& event)
     for (int i = 0; i < samplesPerPeriod; i++)
     {
         const double PI  = 3.141592653589793238463;
-        isamples[i] = 2047.0*cos(2.0*PI*i/samplesPerPeriod)+0.5;
-        qsamples[i] = 2047.0*sin(2.0*PI*i/samplesPerPeriod)+0.5;;
+        isamples[i] = 32767.0*cos(2.0*PI*i/samplesPerPeriod)+0.5;
+        qsamples[i] = 32767.0*sin(2.0*PI*i/samplesPerPeriod)+0.5;;
     }
 
     if (UploadFile(isamples, qsamples) < 0)
@@ -327,8 +337,8 @@ void FPGAcontrols_wxgui::OnbtnLoadWCDMAClick(wxCommandEvent& event)
     for (int i = 0; i < samplesCnt; i++)
     {
         //TODO: generate WCDMA waveform instead of storing wfm data in header
-        isamples[i] = ((int16_t)wcdma_wfm[4*i]<<4)| (wcdma_wfm[4*i+1]>>4);
-        qsamples[i] = ((int16_t)wcdma_wfm[4*i+2]<<4)|(wcdma_wfm[4*i+3]>>4);
+        isamples[i] = ((int16_t)wcdma_wfm[4*i]<<8)| (wcdma_wfm[4*i+1]);
+        qsamples[i] = ((int16_t)wcdma_wfm[4*i+2]<<8)|(wcdma_wfm[4*i+3]);
     }
 
     if (UploadFile(isamples, qsamples) < 0)
@@ -364,18 +374,15 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
     }
 
     const uint16_t address = 0x0008;
-    uint16_t dataRd = 0;
-    int status;
-    status = LMS_ReadFPGAReg(lmsControl, address, &dataRd);
     unsigned short regValue = 0;
-
-    if (status == 0)
-        regValue = dataRd & 0xFFFF;
-    const int bitInd = 10+lmsIndex;
-    regValue = (regValue & ~(1<<bitInd)) | chkDigitalLoopbackEnable->IsChecked() << bitInd;
-
-    status = LMS_WriteFPGAReg(lmsControl, address, regValue);
-
-    if (status != 0)
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 1<< cmbDevice->GetSelection())!=0   
+    ||  LMS_ReadFPGAReg(lmsControl, address, &regValue)!=0)
+    {
+        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
+        return;
+    }
+    
+    regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
+    if (LMS_WriteFPGAReg(lmsControl, address, regValue)!=0)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
 }
