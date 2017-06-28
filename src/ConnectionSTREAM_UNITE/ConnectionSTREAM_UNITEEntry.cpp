@@ -150,15 +150,16 @@ std::vector<ConnectionHandle> ConnectionSTREAM_UNITEEntry::enumerate(const Conne
 
     for(auto usb : usbHandles)
     {
-        for(auto com : comHandles)
-        {
-            ConnectionHandle hnd(usb); //copy the usb index and serial
-            hnd.module = "STREAM+UNITE";
-            hnd.media = "USB+COM";
-            hnd.name = usb.name+"+"+com.name;
-            hnd.addr = usb.addr+"+"+com.addr;
-            handles.push_back(hnd);
-        }
+        if (usb.name.find("Stream") != std::string::npos)
+            for(auto com : comHandles)
+            {
+                ConnectionHandle hnd(usb); //copy the usb index and serial
+                hnd.module = "STREAM+UNITE";
+                hnd.media = "USB+COM";
+                hnd.name = usb.name+"+"+com.name;
+                hnd.addr = usb.addr+"+"+com.addr;
+                handles.push_back(hnd);
+            }
     }
     return handles;
 }

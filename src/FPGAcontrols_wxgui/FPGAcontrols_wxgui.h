@@ -7,6 +7,7 @@
 
 #include <wx/frame.h>
 #include <wx/timer.h>
+#include <wx/wx.h>
 class wxGauge;
 class wxStaticText;
 class wxBitmapButton;
@@ -25,7 +26,7 @@ class FPGAcontrols_wxgui: public wxFrame
 {
 	public:
         FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-        virtual void Initialize(lms_device_t* dataPort, int index);
+        virtual void Initialize(lms_device_t* dataPort);
         virtual ~FPGAcontrols_wxgui();
 
         int UploadFile(const wxString &filename);
@@ -56,6 +57,7 @@ class FPGAcontrols_wxgui: public wxFrame
         static const long ID_STREAMING_TIMER;
 
 	private:
+        wxChoice* cmbDevice;
         void OnbtnUploadClick(wxCommandEvent& event);
         void OnbtnOpenFileClick(wxCommandEvent& event);
         void OnbtnMifClick(wxCommandEvent& event);
@@ -70,7 +72,6 @@ class FPGAcontrols_wxgui: public wxFrame
         lms_device_t* lmsControl;
         wxTimer* mStreamingTimer;
         DECLARE_EVENT_TABLE()
-        int lmsIndex;
 };
 
 #endif

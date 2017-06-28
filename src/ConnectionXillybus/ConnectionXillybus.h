@@ -56,7 +56,7 @@ protected:
     void AbortSending(int epIndex);
 
 private:
-    static const int MAX_EP_CNT = 2;
+    static const int MAX_EP_CNT = 3;
     struct EPConfig
     {
         std::string ctrlRead;

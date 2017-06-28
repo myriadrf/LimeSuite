@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -69,6 +69,14 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer11->Add( m_staticText6, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtNyquistFreqMHz = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxT("15.36"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtNyquistFreqMHz->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtNyquistFreqMHz->SetMaxLength( 8 );
+	}
+	#else
+	txtNyquistFreqMHz->SetMaxLength( 8 );
+	#endif
 	txtNyquistFreqMHz->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer11->Add( txtNyquistFreqMHz, 0, wxEXPAND, 5 );
@@ -105,7 +113,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer91->SetFlexibleDirection( wxBOTH );
 	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString cmbStreamTypeChoices[] = { wxT("Packets SISO"), wxT("Packets MIMO") };
+	wxString cmbStreamTypeChoices[] = { wxT("LMS#1 SISO"), wxT("LMS#1 MIMO"), wxT("LMS#2 SISO"), wxT("LMS#2 MIMO"), wxT("Ext. ADC/DAC") };
 	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
 	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
 	cmbStreamType->SetSelection( 0 );
@@ -307,11 +315,27 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer122->Add( m_staticText151, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtCenterOffset1 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtCenterOffset1->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtCenterOffset1->SetMaxLength( 8 );
+	}
+	#else
+	txtCenterOffset1->SetMaxLength( 8 );
+	#endif
 	txtCenterOffset1->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtCenterOffset1, 0, wxEXPAND, 5 );
 	
 	txtCenterOffset2 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtCenterOffset2->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtCenterOffset2->SetMaxLength( 8 );
+	}
+	#else
+	txtCenterOffset2->SetMaxLength( 8 );
+	#endif
 	txtCenterOffset2->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtCenterOffset2, 0, wxEXPAND, 5 );
@@ -321,11 +345,27 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer122->Add( m_staticText161, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBW1 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtBW1->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtBW1->SetMaxLength( 8 );
+	}
+	#else
+	txtBW1->SetMaxLength( 8 );
+	#endif
 	txtBW1->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtBW1, 0, wxEXPAND, 5 );
 	
 	txtBW2 = new wxTextCtrl( sbSizer7->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtBW2->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtBW2->SetMaxLength( 8 );
+	}
+	#else
+	txtBW2->SetMaxLength( 8 );
+	#endif
 	txtBW2->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtBW2, 0, wxEXPAND, 5 );
@@ -368,6 +408,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	// Connect Events
 	spinFFTsize->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
+	cmbStreamType->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
 	btnStartStop->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
 	cmbWindowFunc->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );
@@ -379,6 +420,7 @@ frFFTviewer::~frFFTviewer()
 {
 	// Disconnect Events
 	spinFFTsize->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
+	cmbStreamType->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
 	btnStartStop->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
 	cmbWindowFunc->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );

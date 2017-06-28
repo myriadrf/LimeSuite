@@ -191,20 +191,20 @@ int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const doub
 int Connection_uLimeSDR::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
 {
     int totalBytesReceived = 0;
-    fpga::StopStreaming(this, epIndex);
+    fpga::StopStreaming(this);
 
     //ResetStreamBuffers();
     WriteRegister(0x0008, 0x0100 | 0x2);
     WriteRegister(0x0007, 1);
 
-    fpga::StartStreaming(this, epIndex);
+    fpga::StartStreaming(this);
 
     int handle = BeginDataReading(buffer, length);
     if (WaitForReading(handle, timeout_ms))
         totalBytesReceived = FinishDataReading(buffer, length, handle);
 
     AbortReading();
-    fpga::StopStreaming(this, epIndex);
+    fpga::StopStreaming(this);
 
     return totalBytesReceived;
 }

@@ -627,6 +627,7 @@
                                 <property name="minimum_size"></property>
                                 <property name="name">sbSizer1</property>
                                 <property name="orient">wxVERTICAL</property>
+                                <property name="parent">1</property>
                                 <property name="permission">none</property>
                                 <event name="OnUpdateUI"></event>
                                 <object class="sizeritem" expanded="1">
@@ -763,7 +764,7 @@
                                                 <property name="max_size"></property>
                                                 <property name="maximize_button">0</property>
                                                 <property name="maximum_size"></property>
-                                                <property name="maxlength"></property>
+                                                <property name="maxlength">8</property>
                                                 <property name="min_size"></property>
                                                 <property name="minimize_button">0</property>
                                                 <property name="minimum_size">64,-1</property>
@@ -1014,6 +1015,7 @@
                                 <property name="minimum_size"></property>
                                 <property name="name">sbSizer2</property>
                                 <property name="orient">wxVERTICAL</property>
+                                <property name="parent">1</property>
                                 <property name="permission">none</property>
                                 <event name="OnUpdateUI"></event>
                                 <object class="sizeritem" expanded="1">
@@ -1066,7 +1068,7 @@
                                                         <property name="caption"></property>
                                                         <property name="caption_visible">1</property>
                                                         <property name="center_pane">0</property>
-                                                        <property name="choices">&quot;Packets SISO&quot; &quot;Packets MIMO&quot;</property>
+                                                        <property name="choices">&quot;LMS#1 SISO&quot; &quot;LMS#1 MIMO&quot; &quot;LMS#2 SISO&quot; &quot;LMS#2 MIMO&quot; &quot;Ext. ADC/DAC&quot;</property>
                                                         <property name="close_button">1</property>
                                                         <property name="context_help"></property>
                                                         <property name="context_menu">1</property>
@@ -1111,7 +1113,7 @@
                                                         <property name="window_name"></property>
                                                         <property name="window_style"></property>
                                                         <event name="OnChar"></event>
-                                                        <event name="OnChoice"></event>
+                                                        <event name="OnChoice">OnStreamChange</event>
                                                         <event name="OnEnterWindow"></event>
                                                         <event name="OnEraseBackground"></event>
                                                         <event name="OnKeyDown"></event>
@@ -1666,16 +1668,17 @@
                                         <event name="OnUpdateUI"></event>
                                     </object>
                                 </object>
-                                <object class="sizeritem" expanded="0">
+                                <object class="sizeritem" expanded="1">
                                     <property name="border">5</property>
                                     <property name="flag">wxEXPAND</property>
                                     <property name="proportion">0</property>
-                                    <object class="wxStaticBoxSizer" expanded="0">
+                                    <object class="wxStaticBoxSizer" expanded="1">
                                         <property name="id">wxID_ANY</property>
                                         <property name="label">Window function:</property>
                                         <property name="minimum_size"></property>
                                         <property name="name">sbSizer6</property>
                                         <property name="orient">wxVERTICAL</property>
+                                        <property name="parent">1</property>
                                         <property name="permission">none</property>
                                         <event name="OnUpdateUI"></event>
                                         <object class="sizeritem" expanded="0">
@@ -1778,6 +1781,7 @@
                                         <property name="minimum_size"></property>
                                         <property name="name">sbSizer51</property>
                                         <property name="orient">wxVERTICAL</property>
+                                        <property name="parent">1</property>
                                         <property name="permission">none</property>
                                         <event name="OnUpdateUI"></event>
                                         <object class="sizeritem" expanded="1">
@@ -2081,6 +2085,7 @@
                                 <property name="minimum_size"></property>
                                 <property name="name">sbSizer3</property>
                                 <property name="orient">wxVERTICAL</property>
+                                <property name="parent">1</property>
                                 <property name="permission">none</property>
                                 <event name="OnUpdateUI"></event>
                                 <object class="sizeritem" expanded="0">
@@ -2737,6 +2742,7 @@
                                 <property name="minimum_size"></property>
                                 <property name="name">sbSizer5</property>
                                 <property name="orient">wxVERTICAL</property>
+                                <property name="parent">1</property>
                                 <property name="permission">none</property>
                                 <event name="OnUpdateUI"></event>
                                 <object class="sizeritem" expanded="0">
@@ -3109,6 +3115,7 @@
                                 <property name="minimum_size"></property>
                                 <property name="name">sbSizer7</property>
                                 <property name="orient">wxVERTICAL</property>
+                                <property name="parent">1</property>
                                 <property name="permission">none</property>
                                 <event name="OnUpdateUI"></event>
                                 <object class="sizeritem" expanded="1">
@@ -3421,7 +3428,7 @@
                                                 <property name="max_size"></property>
                                                 <property name="maximize_button">0</property>
                                                 <property name="maximum_size"></property>
-                                                <property name="maxlength"></property>
+                                                <property name="maxlength">8</property>
                                                 <property name="min_size"></property>
                                                 <property name="minimize_button">0</property>
                                                 <property name="minimum_size">32,-1</property>
@@ -3512,7 +3519,7 @@
                                                 <property name="max_size"></property>
                                                 <property name="maximize_button">0</property>
                                                 <property name="maximum_size"></property>
-                                                <property name="maxlength"></property>
+                                                <property name="maxlength">8</property>
                                                 <property name="min_size"></property>
                                                 <property name="minimize_button">0</property>
                                                 <property name="minimum_size">32,-1</property>
@@ -3686,7 +3693,7 @@
                                                 <property name="max_size"></property>
                                                 <property name="maximize_button">0</property>
                                                 <property name="maximum_size"></property>
-                                                <property name="maxlength"></property>
+                                                <property name="maxlength">8</property>
                                                 <property name="min_size"></property>
                                                 <property name="minimize_button">0</property>
                                                 <property name="minimum_size">32,-1</property>
@@ -3777,7 +3784,7 @@
                                                 <property name="max_size"></property>
                                                 <property name="maximize_button">0</property>
                                                 <property name="maximum_size"></property>
-                                                <property name="maxlength"></property>
+                                                <property name="maxlength">8</property>
                                                 <property name="min_size"></property>
                                                 <property name="minimize_button">0</property>
                                                 <property name="minimum_size">32,-1</property>

@@ -190,15 +190,16 @@ int ConnectionSTREAM::ResetStreamBuffers()
 int ConnectionSTREAM::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
 {
     const unsigned char ep = 0x81;
-    fpga::StopStreaming(this, epIndex);
+    WriteRegister(0xFFFF, 1 << epIndex);
+    fpga::StopStreaming(this);
 
     ResetStreamBuffers();
     WriteRegister(0x0008, 0x0100 | 0x2);
     WriteRegister(0x0007, 1);
-    fpga::StartStreaming(this, epIndex);
+    fpga::StartStreaming(this);
 
     int totalBytesReceived = ReceiveData(buffer,length, epIndex, timeout_ms);
-    fpga::StopStreaming(this, epIndex);
+    fpga::StopStreaming(this);
     AbortReading(ep);
 
     return totalBytesReceived;

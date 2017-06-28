@@ -57,10 +57,7 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         freq = lms->GetFrequencyCGEN();
 
         if (fftviewer)
-        {
-            LMS_GetSampleRate(lmsControl, LMS_CH_RX, m_lmsSelection*2, &freq, NULL);
-            fftviewer->SetNyquistFrequency(freq / 2);
-        }
+            fftviewer->SetNyquistFrequency();
     }
     else if (event.GetEventType() == SAMPLE_POS_CHANGED)
         this->mContent->mTabLimeLight->UpdateGUI();
@@ -234,13 +231,13 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
     if(si5351gui)
         si5351gui->Initialize(lmsControl);
     if(fftviewer)
-        fftviewer->Initialize(lmsControl, 0);
+        fftviewer->Initialize(lmsControl);
     if(adfGUI)
         adfGUI->Initialize(lmsControl);
     if(hpm7)
         hpm7->Initialize(lmsControl);
     if(fpgaControls)
-        fpgaControls->Initialize(lmsControl, m_lmsSelection);
+        fpgaControls->Initialize(lmsControl);
     if(myriad7)
         myriad7->Initialize(lmsControl);
     if(deviceInfo)
@@ -344,26 +341,18 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
         fftviewer->Show();
-        double freq;
-        LMS_GetSampleRate(lmsControl,LMS_CH_RX,0,&freq,NULL);
-        fftviewer->SetNyquistFrequency(freq / 2);
     }
-    fftviewer->Initialize(lmsControl, m_lmsSelection);
+    fftviewer->Initialize(lmsControl);
 }
 
 void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
 {
     m_lmsSelection = event.GetInt();
     if (fftviewer)
-    {
-        double freq;
-        LMS_GetSampleRate(lmsControl, LMS_CH_RX, m_lmsSelection*2, &freq, NULL);
-        fftviewer->SetNyquistFrequency(freq / 2);
-        fftviewer->Initialize(lmsControl, m_lmsSelection);
-    }
+        fftviewer->Initialize(lmsControl);
 
     if (fpgaControls)
-        fpgaControls->Initialize(lmsControl, m_lmsSelection);
+        fpgaControls->Initialize(lmsControl);
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
@@ -462,7 +451,7 @@ void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
     else
     {
         fpgaControls = new FPGAcontrols_wxgui(this, wxNewId(), _("FPGA Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        fpgaControls->Initialize(lmsControl, m_lmsSelection);
+        fpgaControls->Initialize(lmsControl);
         fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
         fpgaControls->Show();
     }
@@ -580,3 +569,4 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
     int checked = event.GetInt();
     LMS_EnableCalibCache(lmsControl,checked);
 }
+

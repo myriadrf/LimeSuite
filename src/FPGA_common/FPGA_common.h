@@ -14,9 +14,9 @@ namespace lime
 {
 namespace fpga
 {
-    int StartStreaming(IConnection* serPort, unsigned endpointIndex);
-    int StopStreaming(IConnection* serPort, unsigned endpointIndex);
-    int ResetTimestamp(IConnection* serPort, unsigned endpointIndex);
+    int StartStreaming(IConnection* serPort);
+    int StopStreaming(IConnection* serPort);
+    int ResetTimestamp(IConnection* serPort);
 
 struct FPGA_PLL_clock
 {

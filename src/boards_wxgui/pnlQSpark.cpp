@@ -248,6 +248,12 @@ void pnlQSpark::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     LMS_WriteFPGAReg(lmsControl, 0x001F, rbChannelB->GetValue() ? 0x2 : 0x1);
+    double freqHz;
+    LMS_GetSampleRate(lmsControl, LMS_CH_RX, 4, &freqHz,nullptr);
+    txtPllFreqRxMHz->SetValue(wxString::Format("%1.3f", freqHz/1e6));
+    LMS_GetSampleRate(lmsControl, LMS_CH_TX, 4, &freqHz,nullptr);
+    txtPllFreqTxMHz->SetValue(wxString::Format("%1.3f", freqHz/1e6));
+    
 }
 
 void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
@@ -341,8 +347,7 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     txtPllFreqTxMHz->GetValue().ToDouble(&FreqTxMHz);
     txtPllFreqRxMHz->GetValue().ToDouble(&FreqRxMHz);
 
-    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
-    if(conn->UpdateExternalDataRate(2,FreqTxMHz*1e6,FreqRxMHz*1e6,0,0))
+    if (((LMS7_Device*)lmsControl)->SetRate(4, FreqRxMHz*1e6, FreqTxMHz*1e6)!=0)
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
     else
         OnNcoFrequencyChanged(event);

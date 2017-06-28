@@ -8,7 +8,7 @@
 
 using namespace lime;
 
-static const int MAX_CHANNEL_COUNT = 4;
+static const int MAX_CHANNEL_COUNT = 6;
 
 ILimeSDRStreaming::ILimeSDRStreaming()
 {
@@ -142,12 +142,13 @@ int ILimeSDRStreaming::SendData(const char* buffer, int length, int epIndex, int
 
 int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
 {
+    WriteRegister(0xFFFF, 1 << epIndex);
     WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
-    WriteRegister(0x000E, 0x2); //12bit samples
+    WriteRegister(0x000E, 0x0); //16bit samples
 
     uint16_t regValue = 0;
     ReadRegister(0x000D,regValue);
-    regValue |= 0x4 << (epIndex*2);
+    regValue |= 0x4;
     WriteRegister(0x000D, regValue);
 
     lime::FPGA_DataPacket pkt;
@@ -178,8 +179,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
     {
         pkt.counter = 0;
         pkt.reserved[0] = 0;
-        int samplesToSend = cnt > 1360/chCount ? 1360/chCount : cnt;
-        cnt -= samplesToSend;
+        int samplesToSend = cnt > 1020/chCount ? 1020/chCount : cnt;
 
         for(unsigned i=0; i<chCount; ++i)
             batch[i] = &src[i][samplesUsed];
@@ -196,6 +196,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
         long bToSend = 16+payloadSize;
         if (SendData((const char*)&pkt,bToSend,epIndex,500)!=bToSend)
             break;
+        cnt -= samplesToSend;
     }
     delete[] batch;
     for(unsigned i=0; i<chCount; ++i)
@@ -204,7 +205,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
     delete[] samplesShort;
 
     /*Give FX3 some time to load samples to FPGA*/
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     if(cnt == 0)
         return 0;
     else
@@ -358,13 +359,10 @@ int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfi
     streamID = ~0;
     StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
-    if(config.isTx){
+    if(config.isTx)
         mTxStreams.push_back(stream);
-    }
     else
-    {
         mRxStreams.push_back(stream);
-    }
     streamID = size_t(stream);
     LMS7002M lms;
     lms.SetConnection(dataPort, mChipID);
@@ -448,8 +446,9 @@ uint64_t ILimeSDRStreaming::Streamer::GetHardwareTimestamp(void)
     if(not rxRunning.load() and not txRunning.load())
     {
         //stop streaming just in case the board has not been configured
-        fpga::StopStreaming(dataPort, mChipID);
-        fpga::ResetTimestamp(dataPort, mChipID);
+        dataPort->WriteRegister(0xFFFF, 1 << mChipID);
+        fpga::StopStreaming(dataPort);
+        fpga::ResetTimestamp(dataPort);
         mTimestampOffset = 0;
         return 0;
     }
@@ -499,15 +498,15 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         rxThread.join();
         rxRunning.store(false);
     }
-
+    dataPort->WriteRegister(0xFFFF, 1 << mChipID);
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
     {
         LMS7002M lmsControl;
         lmsControl.SetConnection(dataPort, mChipID);
         //enable FPGA streaming
-        fpga::StopStreaming(dataPort, mChipID);
-        fpga::ResetTimestamp(dataPort, mChipID);
+        fpga::StopStreaming(dataPort);
+        fpga::ResetTimestamp(dataPort);
         rxLastTimestamp.store(0);
         //Clear device stream buffers
         dataPort->ResetStreamBuffers();
@@ -597,12 +596,12 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
             lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
         }
 
-        fpga::StartStreaming(dataPort, mChipID);
+        fpga::StartStreaming(dataPort);
     }
     else if(not needTx and not needRx)
     {
         //disable FPGA streaming
-        fpga::StopStreaming(dataPort, mChipID);
+        fpga::StopStreaming(dataPort);
     }
 
     //FPGA should be configured and activated, start needed threads
