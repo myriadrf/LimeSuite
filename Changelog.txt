@@ -1,7 +1,11 @@
 Release 17.07.0 (pending)
 ==========================
 
+LimeSuite library:
 - Added transfer size adjustment based on sample rate
+
+LMS API changes:
+- Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq() 
 
 Release 17.06.0 (2017-06-20)
 ==========================

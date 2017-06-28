@@ -20,6 +20,7 @@
 #include "LMS64CProtocol.h"
 #include <assert.h>
 #include "ConnectionRegistry.h"
+#include "ADF4002.h"
 
 static const size_t LMS_PATH_NONE = 0;
 static const size_t LMS_PATH_HIGH = 1;
@@ -1734,6 +1735,9 @@ int LMS7_Device::GetClockFreq(size_t clk_id, float_type *freq)
     case LMS_CLOCK_TXTSP:
         *freq = lms_list.at(lms_chip_id)->GetReferenceClk_TSP(true);
         return 0;
+    case LMS_CLOCK_EXTREF:
+        lime::ReportError(ENOTSUP, "Reading external reference clock is not supported");
+        return -1;
     default:
         lime::ReportError(EINVAL, "Invalid clock ID.");
         return -1;
@@ -1798,6 +1802,27 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
     case LMS_CLOCK_TXTSP:
         lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
         return -1;
+    case LMS_CLOCK_EXTREF:
+        {
+            if (freq <= 0)
+            {
+                lime::ReportError(EINVAL, "Invalid frequency value.");
+                return -1;
+            }
+
+            lime::ADF4002 module;
+            module.SetDefaults();
+            double fvco = lms_list.at(lms_chip_id)->GetReferenceClk_SX(lime::LMS7002M::Rx);
+            int dummy;
+            module.SetFrefFvco(freq/1e6, fvco/1e6, dummy, dummy);
+            unsigned char data[12];
+            module.GetConfig(data);
+
+            std::vector<uint32_t> dataWr;
+            for(int i=0; i<12; i+=3)
+                dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+            return connection->TransactSPI(connection->GetDeviceInfo().addrADF4002, dataWr.data(), nullptr, 4);
+        }
     default:
         lime::ReportError(EINVAL, "Invalid clock ID.");
         return -1;
