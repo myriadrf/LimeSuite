@@ -23,6 +23,7 @@ class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
+class DPDTest;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -58,6 +59,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowBoardControls(wxCommandEvent& event);
         void OnChangeCacheSettings(wxCommandEvent& event);
         void OnLmsChanged(wxCommandEvent& event);
+        void OnDPDTestClose(wxCloseEvent& event);
+        void OnShowDPDTest(wxCommandEvent& event);
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
@@ -89,7 +92,7 @@ protected:
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
-
+        DPDTest* DPDTestGui;
 };
 
 

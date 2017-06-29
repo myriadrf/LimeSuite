@@ -42,6 +42,7 @@ public:
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
     int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
+    int ReadDPDBuffer(char* buffer, unsigned length)override;
 #ifdef __unix__
     int TransferPacket(GenericPacket &pkt) override;
     int ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)override;

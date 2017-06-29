@@ -587,3 +587,22 @@ void ConnectionXillybus::AbortSending(int epIndex)
     }
 #endif
 }
+
+int ConnectionXillybus::ReadDPDBuffer(char* buffer, unsigned length)
+{
+    vector<uint32_t> addrs;
+    vector<uint32_t> values;
+    addrs.push_back(0x0040); values.push_back(length/20);
+    addrs.push_back(0x0041); values.push_back(0);
+    this->WriteRegisters(addrs.data(), values.data(), values.size());
+    addrs.clear(); values.clear();
+    addrs.push_back(0x0041); values.push_back(1);
+    this->WriteRegisters(addrs.data(), values.data(), values.size());
+
+    int totalBytesReaded = ReceiveData( buffer, length, 2, 1000);
+
+    AbortReading(2);
+    return totalBytesReaded;
+}
+
+

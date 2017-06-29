@@ -195,6 +195,8 @@ public:
      */
     virtual DeviceInfo GetDeviceInfo(void);
 
+    virtual int ReadDPDBuffer(char* buffer, unsigned length) { return 0; };
+
     /***********************************************************************
      * Serial API
      **********************************************************************/

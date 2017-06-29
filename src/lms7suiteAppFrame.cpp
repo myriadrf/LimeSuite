@@ -36,6 +36,7 @@
 #include <sstream>
 #include <pnlQSpark.h>
 #include "lms7_device.h"
+#include "DPDTest.h"
 
 using namespace std;
 using namespace lime;
@@ -155,7 +156,13 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     boardControlsGui = nullptr;
     lmsControl = LMS7_Device::CreateDevice(nullptr);
+    DPDTestGui = nullptr;
 
+    wxMenuItem* mnuDPDTest;
+    mnuDPDTest = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("DPD Test") ) , wxEmptyString, wxITEM_NORMAL );
+    mnuModules->Append( mnuDPDTest );
+    Connect( mnuDPDTest->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( LMS7SuiteAppFrame::OnShowDPDTest ) );
+    
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
@@ -570,3 +577,24 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
     LMS_EnableCalibCache(lmsControl,checked);
 }
 
+void LMS7SuiteAppFrame::OnDPDTestClose(wxCloseEvent& event)
+{
+    DPDTestGui->Destroy();
+    DPDTestGui = nullptr;
+}
+
+void LMS7SuiteAppFrame::OnShowDPDTest(wxCommandEvent& event)
+{
+    if (DPDTestGui) //it's already opened
+        DPDTestGui->Show();
+    else
+    {
+        DPDTestGui = new DPDTest(this, wxNewId(), _("DPDTest"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+        DPDTestGui->Initialize(lmsControl);
+        double samplingFreq;
+        LMS_GetSampleRate(lmsControl, LMS_CH_RX, 0, &samplingFreq, NULL);
+        DPDTestGui->SetNyquist(samplingFreq / 2e6);
+        DPDTestGui->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnDPDTestClose), NULL, this);
+        DPDTestGui->Show();
+    }
+}

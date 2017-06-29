@@ -226,6 +226,7 @@ set(LMS7SUITE_GUI_SOURCES
     kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
+    DPDTest/DPDTest.cpp
 )
 
 include(FeatureSummary)
@@ -248,6 +249,8 @@ if (ENABLE_GUI)
     add_subdirectory(oglGraph)
 
     set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+
+include_directories(DPDTest)
 
     add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
     set_target_properties(LimeSuiteGUI PROPERTIES
