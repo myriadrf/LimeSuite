@@ -5,7 +5,8 @@ LimeSuite library:
 - Added transfer size adjustment based on sample rate
 
 LMS API changes:
-- Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq() 
+- Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq()  
+- Change LMS_SetGaindB() and LMS_SetNormalizedGain() to select optimal TBB gain for TX
 
 Release 17.06.0 (2017-06-20)
 ==========================

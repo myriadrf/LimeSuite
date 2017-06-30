@@ -1136,11 +1136,11 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
 
 int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
 {
-    const int gain_total = 27 + 12 + 31;
+    const int gain_total = 27 + 12 + 31; //LNA + TIA + PGA
     if (dir_tx)
-        return SetGain(dir_tx,chan,63*gain+0.49);
+        return SetGain(dir_tx, chan, maxTxGain*gain+0.49);
     else
-        return SetGain(dir_tx,chan,gain*gain_total+0.49);
+        return SetGain(dir_tx, chan, gain*gain_total+0.49);
 }
 
 int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
@@ -1149,16 +1149,32 @@ int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
         return -1;
 
-    if (dir_tx)
+    if (dir_tx) //TX valid gain range 0-52
     {
-        if (gain > 63)
-            gain = 63;
-        if (lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),gain,true)!=0)
+        if (lms->CalibrateTxGain(0,nullptr)!=0) //find optimal BB gain
+            return -1;
+        //From datasheet: TXPAD: 0<=Loss<=10 – Pout=Pout_max-Loss; 11<=Loss<31 – Pout=Pout_max-10-2*(Loss-10)
+        //therefore MAX TDPAD gain: 52 = 10+21*2
+        if (gain > 52) //increase BB gain over optimal, can cause saturation in amp
+        {
+            int gbb = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
+            double dgain = gain-52;
+            gain = (double)gbb*pow(10.0,dgain/20.0)+0.5;
+            lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),gain > 63 ? 63 : gain, true);
+            gain = 0;
+        }
+        else if (gain >= 42)
+            gain = 52-gain;
+        else
+            gain = 31-gain/2;
+        if (lms->Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF),gain,true)!=0)
+            return -1;
+        if (lms->Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF),gain,true)!=0)
             return -1;
     }
-    else
+    else //Rx valid gain range 0-70
     {
-        if (gain > 70)
+        if (gain > 70) //do not exceed gain table index
             gain = 70;
         unsigned lna = 0, tia = 0, pga = 0;
         //LNA table
@@ -1187,7 +1203,7 @@ int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
         lna = lnaTbl[gain];
         pga = pgaTbl[gain];
 
-        int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16;
+        int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16; //from datasheet
 
         if ((lms->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1,true)!=0)
           ||(lms->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1,true)!=0)
@@ -1200,10 +1216,10 @@ int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
 
 double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
 {
-    const double gain_total = 27 + 12 + 31;
+    const double gain_total = 27 + 12 + 31; //LNA + TIA + PGA
     double ret = GetGain(dir_tx, chan);
     if (dir_tx)
-        return ret / 63.0;
+        return ret > maxTxGain ? 1.0 : ret / maxTxGain;
     else
         return ret / gain_total;
 }
@@ -1215,8 +1231,20 @@ int LMS7_Device::GetGain(bool dir_tx, size_t chan)
         return -1;
     if (dir_tx)
     {
-        int ret = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-        return ret;
+        int gain = lms->Get_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF),true);
+        if (gain <= 10)
+            gain = 52-gain;
+        else
+            gain = 62-gain*2;
+        int bak = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true); //backup
+        if (lms->CalibrateTxGain(0,nullptr)!=0)
+            return -1;
+        int opt = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
+        gain += 20.0*log10((double)bak / (double) opt)+0.5;
+
+        lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),bak, true); //restore
+
+        return gain;
     }
     else
     {

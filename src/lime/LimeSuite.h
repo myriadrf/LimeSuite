@@ -351,6 +351,9 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *dev, bool dir_tx,
  * This function computes and sets the optimal gain values of various amplifiers
  * that are present in the device based on desired normalized gain value.
  *
+ * @note actual gain depends on LO frequency and analog LPF configuration and
+ * resulting output signal level may be different when those values are changed
+ *
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
@@ -366,12 +369,13 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
  * This function computes and sets the optimal gain values of various amplifiers
  * that are present in the device based on desired  gain value in dB.
  *
- * @note currently works only with RX
+ * @note actual gain depends on LO frequency and analog LPF configuration and
+ * resulting output signal levle may be different when those values are changed
  *
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
- * @param   gain        Desired gain, range [0, 70] for RX
+ * @param   gain        Desired gain, range [0, 70] for RX, [0, 60] for TX
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
@@ -379,6 +383,9 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
 
 /**
  * Obtain the current combined gain value
+ *
+ * @note actual gain depends on LO frequency and analog LPF configuration and
+ * resulting output signal level may be different when those values are changed
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
@@ -392,12 +399,13 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
 /**
  * Obtain the current combined gain value in dB
  *
- * @note currently works only with RX
+ * @note actual gain depends on LO frequency and analog LPF configuration and
+ * resulting output signal level may be different when those values are changed
  *
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index
- * @param[out]  gain        Current gain, range [0, 70]
+ * @param[out]  gain        Current gain, range [0, 70], [0, 60] for TX
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx,

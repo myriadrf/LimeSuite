@@ -95,6 +95,7 @@ public:
     static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::map<std::string, double> extra_parameters;
 protected:
+    const double maxTxGain = 60.0;
     lms_dev_info_t devInfo;
     std::vector<lms_channel_info> tx_channels;
     std::vector<lms_channel_info> rx_channels;
