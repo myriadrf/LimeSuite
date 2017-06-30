@@ -76,9 +76,6 @@ public:
         std::atomic<bool> txRunning;
         std::atomic<bool> terminateRx;
         std::atomic<bool> terminateTx;
-        std::mutex streamStateLock;
-        std::condition_variable safeToConfigInterface;
-        std::atomic<bool> generateData;
 
         std::vector<StreamChannel*> mRxStreams;
         std::vector<StreamChannel*> mTxStreams;

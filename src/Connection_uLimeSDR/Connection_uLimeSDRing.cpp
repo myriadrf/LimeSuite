@@ -237,7 +237,6 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
     const uint8_t chCount = stream->mRxStreams.size();
     const auto link =stream->mRxStreams[0]->config.linkFormat;
     const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
-    const int chipID = stream->mChipID;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
@@ -262,12 +261,8 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
         return;
     }
 
-    uint8_t activeTransfers = 0;
     for (int i = 0; i<buffersCount; ++i)
-    {
         handles[i] = this->BeginDataReading(&buffers[i*bufferSize], bufferSize);
-        ++activeTransfers;
-    }
 
     int bi = 0;
     unsigned long totalBytesReceived = 0; //for data rate calculation
@@ -305,38 +300,12 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
     uint64_t prevTs = 0;
     while (stream->terminateRx.load() == false)
     {
-        if(stream->generateData.load())
-        {
-            if(activeTransfers == 0) //stop FPGA when last transfer completes
-                fpga::StopStreaming(this, chipID);
-            stream->safeToConfigInterface.notify_all(); //notify that it's safe to change chip config
-            const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
-            IStreamChannel::Metadata meta;
-            for(int i=0; i<batchSize; ++i)
-            {
-                for(int ch=0; ch<chCount; ++ch)
-                {
-                    meta.timestamp = chFrames[ch].timestamp;
-                    for(int j=0; j<chFrames[ch].samplesCount; ++j)
-                    {
-                        chFrames[ch].samples[j].i = 0;
-                        chFrames[ch].samples[j].q = 0;
-                    }
-                    uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
-                    samplesReceived[ch] += chFrames[ch].samplesCount;
-                    if(samplesPushed != chFrames[ch].samplesCount)
-                        printf("Rx samples pushed %i/%i\n", samplesPushed, chFrames[ch].samplesCount);
-                }
-            }
-            this_thread::sleep_for(chrono::milliseconds(100));
-        }
         int32_t bytesReceived = 0;
         if(handles[bi] >= 0)
         {
             if (this->WaitForReading(handles[bi], 1000) == false)
                 ++m_bufferFailures;
             bytesReceived = this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-            --activeTransfers;
             totalBytesReceived += bytesReceived;
             if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
                 ++m_bufferFailures;
@@ -387,22 +356,9 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
             }
         }
         // Re-submit this request to keep the queue full
-        if(not stream->generateData.load())
-        {
-            if(activeTransfers == 0) //reactivate FPGA and USB transfers
-                fpga::StartStreaming(this, chipID);
-            for(int i=0; i<buffersCount-activeTransfers; ++i)
-            {
-                handles[bi] = this->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
-                bi = (bi + 1) & (buffersCount-1);
-                ++activeTransfers;
-            }
-        }
-        else
-        {
-            handles[bi] = -1;
-            bi = (bi + 1) & (buffersCount-1);
-        }
+        handles[bi] = this->BeginDataReading(&buffers[bi*bufferSize], bufferSize);
+        bi = (bi + 1) & (buffersCount-1);
+
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         if (timePeriod >= 1000)

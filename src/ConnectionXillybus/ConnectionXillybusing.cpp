@@ -224,7 +224,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     vector<uint32_t> samplesReceived(chCount, 0);
 
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     std::mutex txFlagsLock;
     condition_variable resetTxFlags;
@@ -250,31 +250,6 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     uint64_t prevTs = 0;
     while (stream->terminateRx.load() == false)
     {
-        if(stream->generateData.load())
-        {
-            generate_started = true;
-            fpga::StopStreaming(this, epIndex);
-            stream->safeToConfigInterface.notify_all(); //notify that it's safe to change chip config
-            const int batchSize = (this->mExpectedSampleRate/chFrames[0].samplesCount)/10;
-            IStreamChannel::Metadata meta;
-            for(int i=0; i<batchSize; ++i)
-            {
-                for(int ch=0; ch<chCount; ++ch)
-                {
-                    meta.timestamp = chFrames[ch].timestamp;
-                    for(int j=0; j<chFrames[ch].samplesCount; ++j)
-                    {
-                        chFrames[ch].samples[j].i = 0;
-                        chFrames[ch].samples[j].q = 0;
-                    }
-                    uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, chFrames[ch].samplesCount, &meta);
-                    samplesReceived[ch] += chFrames[ch].samplesCount;
-                    if(samplesPushed != chFrames[ch].samplesCount)
-                        printf("Rx samples pushed %i/%i\n", samplesPushed, chFrames[ch].samplesCount);
-                }
-            }
-            this_thread::sleep_for(chrono::milliseconds(100));
-        }
         int32_t bytesReceived = 0;
 
         bytesReceived = this->ReceiveData(&buffers[0], bufferSize, epIndex, 1000);
@@ -332,9 +307,6 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
                     stream->mRxStreams[ch]->overflow++;;
             }
         }
-        // Re-submit this request to keep the queue full
-        if ((generate_started) && (!stream->generateData.load()))
-            fpga::StartStreaming(this, epIndex);
 
         t2 = chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

@@ -338,7 +338,6 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     terminateTx = false;
     rxRunning = false;
     txRunning = false;
-    generateData = false;
     rxDataRate_Bps = 0;
     txDataRate_Bps = 0;
     txBatchSize = 1;
@@ -438,15 +437,12 @@ void ILimeSDRStreaming::Streamer::EnterSelfCalibration()
 {
     if(not rxRunning)
         return;
-    generateData.store(true);
-    std::unique_lock<std::mutex> lck(streamStateLock);
-    //wait untill all existing USB transfers complete
-    safeToConfigInterface.wait_for(lck, std::chrono::milliseconds(250));
+    UpdateThreads(true);
 }
 
 void ILimeSDRStreaming::Streamer::ExitSelfCalibration()
 {
-    generateData.store(false);
+    UpdateThreads();
 }
 
 uint64_t ILimeSDRStreaming::Streamer::GetHardwareTimestamp(void)
