@@ -251,7 +251,7 @@ int ILimeSDRStreaming::StreamChannel::Read(void* samples, const uint32_t count, 
         float* samplesFloat = (float*)samples;
         popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
         for(int i=2*popped-1; i>=0; --i)
-            samplesFloat[i] = (float)samplesShort[i]/2048.0;
+            samplesFloat[i] = (float)samplesShort[i]/32767.0f;
     }
     else
     {
@@ -271,12 +271,11 @@ int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t 
         const float* samplesFloat = (const float*)samples;
         int16_t* samplesShort = new int16_t[2*count];
         for(size_t i=0; i<2*count; ++i)
-            samplesShort[i] = samplesFloat[i]*2047;
+            samplesShort[i] = samplesFloat[i]*32767.0f;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
         delete[] samplesShort;
     }
-    //else if(config.format == StreamConfig::STREAM_12_BIT_IN_16)
     else
     {
         const complex16_t* ptr = (const complex16_t*)samples;
@@ -521,7 +520,7 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
 
         for(auto i : mRxStreams)
         {
-            if(i->config.format == StreamConfig::STREAM_12_BIT_IN_16)
+            if(i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
                 config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
@@ -529,7 +528,7 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         }
         for(auto i : mTxStreams)
         {
-            if(i->config.format == StreamConfig::STREAM_12_BIT_IN_16)
+            if(i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
                 config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
@@ -547,7 +546,7 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
             smpl_width = 0x2;
         else
-            smpl_width = 0x2;
+            smpl_width = 0x0;
 
         if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
             mode = 0x0040;
