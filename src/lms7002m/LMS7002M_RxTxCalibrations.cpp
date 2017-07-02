@@ -469,8 +469,9 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
 
     //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-    if(ch == 2)
+    if(ch == 1)
+        Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
+    else
         Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
 
     //BIAS
@@ -1524,7 +1525,11 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
 
     //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
+    if(ch == 1)
+        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
+    else
+        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
+
 
     //BIAS
     {
@@ -1765,7 +1770,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         case 1: lnaName = "LNAH"; break;
         case 2: lnaName = "LNAL"; break;
         case 3: lnaName = "LNAW"; break;
-        default: lnaName = "none"; break; 
+        default: lnaName = "none"; break;
     }
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
                 ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
