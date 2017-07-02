@@ -691,6 +691,8 @@ uint8_t CalibrateTxSetup()
     Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb , 2047);
     Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
     Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), 0);
 
     //RXTSP
     SetDefaults(SECTION_RxTSP);
@@ -733,13 +735,13 @@ uint8_t CalibrateTxSetup()
 
     EndBatch();*/
     if(x0020val & 0x3 == 1)
-        Modify_SPI_Reg_bits(PD_RX_AFE1, 0)
+        Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
     else
         Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
     {
         ROM const uint16_t TxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x0101,0x0113,0x0200,0x0201,0x0202,0x0208};
         ROM const uint16_t TxSetupData[] = {0x0400, 0x0001,0xF000,0x0001,0x001C,0x000C,0x07FF,0x07FF,0x0000};
-        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0x210B};
+        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0xF10B};
         uint8_t i;
         for(i=sizeof(TxSetupAddr)/sizeof(uint16_t); i; --i)
             SPI_write(TxSetupAddr[i-1], ( SPI_read(TxSetupAddr[i-1]) & ~TxSetupMask[i-1] ) | TxSetupData[i-1]);

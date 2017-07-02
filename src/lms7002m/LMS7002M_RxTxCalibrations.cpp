@@ -529,6 +529,8 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
     Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), 0);
     SetNCOFrequency(Tx, 0, bandwidth_Hz / calibUserBwDivider);
 
     //RXTSP
