@@ -227,21 +227,21 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI2_VAL")), 1, wxEXPAND, 0);
             rssi_vals[1] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[1]);
-            wndId2Enum[rssi_vals[1]] = LMS7_INTADC_CMPSTATUS_RSSI2;
+            wndId2Enum[rssi_vals[1]] = LMS7_RSSI_RSSI2_VAL;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI1_VAL")), 1, wxEXPAND, 0);
             rssi_vals[0] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[0]);
-            wndId2Enum[rssi_vals[0]] = LMS7_INTADC_CMPSTATUS_RSSI1;
+            wndId2Enum[rssi_vals[0]] = LMS7_RSSI_RSSI1_VAL;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("TREF_VAL")), 1, wxEXPAND, 0);
             tref_val = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(tref_val);
-            wndId2Enum[tref_val] = LMS7_INTADC_CMPSTATUS_TEMPREF;
+            wndId2Enum[tref_val] = LMS7_RSSI_TREF_VAL;
 
             sizer->Add(new wxStaticText(panel, wxID_ANY, _("TVPTAT_VAL")), 1, wxEXPAND, 0);
             tvptat_val = new wxStaticText(panel, wxID_ANY, _("????"));
-            wndId2Enum[tvptat_val] = LMS7_INTADC_CMPSTATUS_TEMPVPTAT;
+            wndId2Enum[tvptat_val] = LMS7_RSSI_TVPTAT_VAL;
             sizer->Add(tvptat_val);
 
             RSSIPDETGroup->Add(sizer);
