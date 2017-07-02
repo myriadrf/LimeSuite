@@ -1084,7 +1084,7 @@ TxCalibrationEnd:
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 1);
 
     Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-    LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    LoadDC_REG_IQ(Tx, (int16_t)0x3FFF, (int16_t)0x3FFF);
     Log("Tx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("#####Tx calibration RESULTS:###########################\n");
