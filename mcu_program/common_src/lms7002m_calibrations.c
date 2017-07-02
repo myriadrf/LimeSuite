@@ -85,7 +85,7 @@ void LoadDC_REG_TX_IQ()
 }
 
 #ifndef __cplusplus
-static void Dummy() 
+static void Dummy()
 {
     uint8_t i;
     volatile uint16_t t=0;
@@ -734,7 +734,7 @@ uint8_t CalibrateTxSetup()
     }
 
     EndBatch();*/
-    if(x0020val & 0x3 == 1)
+    if((x0020val & 0x3) == 1)
         Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
     else
         Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
@@ -988,7 +988,7 @@ uint8_t CalibrateRxSetup()
         Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
     }*/
     //AFE
-    if(x0020val & 0x3 == 1)
+    if((x0020val & 0x3) == 1)
         Modify_SPI_Reg_bits(PD_TX_AFE1, 0);
     else
         Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
