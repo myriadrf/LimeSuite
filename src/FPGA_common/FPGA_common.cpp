@@ -455,111 +455,87 @@ int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inp
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGAPacketPayload2Samples(const uint8_t* buffer, const size_t bufLen, const size_t chCount, const int format, complex16_t** samples, size_t* samplesCount)
+int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
 {
-    assert(samples != nullptr);
-    assert(buffer != nullptr);
-    int16_t sample;
-    size_t collected = 0;
-    if(format == StreamConfig::STREAM_12_BIT_COMPRESSED)
+    if(compressed) //compressed samples
     {
-        const uint8_t frameSize = 3;
-        const uint8_t stepSize = frameSize * chCount;
-        for(uint8_t ch=0; ch<chCount; ++ch)
+        int16_t sample;
+        int collected = 0;
+        for(int b=0; b<bufLen;collected++)
         {
-            collected = 0;
-            for(uint16_t b=0; b<bufLen; b+=stepSize)
+            //I sample
+            sample = buffer[b++];
+            sample |= (buffer[b] << 8);
+            sample <<= 4;
+            samples[0][collected].i = sample >> 4;
+            //Q sample
+            sample =  buffer[b++];
+            sample |= buffer[b++] << 8;
+            samples[0][collected].q = sample >> 4;
+            if (mimo)
             {
                 //I sample
-                sample = (buffer[b + 1 + frameSize * ch] & 0x0F) << 8;
-                sample |= (buffer[b + frameSize * ch] & 0xFF);
-                sample = sample << 4;
-                sample = sample >> 4;
-                samples[ch][collected].i = sample;
-
+                sample = buffer[b++];
+                sample |= (buffer[b] << 8);
+                sample <<= 4;
+                samples[1][collected].i = sample >> 4;
                 //Q sample
-                sample = buffer[b + 2 + frameSize * ch] << 4;
-                sample |= (buffer[b + 1 + frameSize * ch] >> 4) & 0x0F;
-                sample = sample << 4;
-                sample = sample >> 4;
-                samples[ch][collected].q = sample;
-                ++collected;
+                sample =  buffer[b++];
+                sample |= buffer[b++] << 8;
+                samples[1][collected].q = sample >> 4;
             }
         }
+        return collected;
     }
-    else if(format == StreamConfig::STREAM_12_BIT_IN_16)
+
+    if (mimo) //uncompressed samples
     {
-        const uint8_t frameSize = 4;
-        const uint8_t stepSize = frameSize * chCount;
-        for(uint8_t ch=0; ch<chCount; ++ch)
+        complex16_t* ptr = (complex16_t*)buffer;
+        const int collected = bufLen/sizeof(complex16_t)/2;
+        for(int i=0; i<collected;i++)
         {
-            collected = 0;
-            for(uint16_t b=0; b<bufLen; b+=stepSize)
-            {
-                //I sample
-                sample = buffer[b + 1 + frameSize * ch] << 8;
-                sample |= buffer[b + frameSize * ch];
-                samples[ch][collected].i = sample;
-
-                //Q sample
-                sample = buffer[b + 3 + frameSize * ch] << 8;
-                sample |= buffer[b + 2 + frameSize * ch];
-                samples[ch][collected].q = sample;
-                ++collected;
-            }
+            samples[0][i] = *ptr++;
+            samples[1][i] = *ptr++;
         }
+        return collected;
     }
-    else
-        return ReportError(EINVAL, "Unsupported samples format");
-    if(samplesCount)
-        *samplesCount = collected;
-    return 0;
+
+    memcpy(samples[0],buffer,bufLen);
+    return bufLen/sizeof(complex16_t);
 }
 
-int Samples2FPGAPacketPayload(const complex16_t* const* samples, const size_t samplesCount, const size_t chCount, const int format, uint8_t* buffer, size_t* bufLen)
+int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
 {
-    assert(samples != nullptr);
-    assert(buffer != nullptr);
-    size_t b=0;
-    if(format == StreamConfig::STREAM_12_BIT_COMPRESSED)
+    if(compressed)
     {
-        const uint8_t frameSize = 3;
-        const uint8_t stepSize = frameSize * chCount;
-        for(uint8_t ch=0; ch<chCount; ++ch)
+        int b=0;
+        for(int src=0; src<samplesCount; ++src)
         {
-            b = 0;
-            for(size_t src=0; src<samplesCount; ++src)
+            buffer[b++] = samples[0][src].i;
+            buffer[b++] = ((samples[0][src].i >> 8) & 0x0F) | (samples[0][src].q << 4);
+            buffer[b++] = samples[0][src].q >> 4;
+            if (mimo)
             {
-                buffer[b+frameSize*ch] = samples[ch][src].i & 0xFF;
-                buffer[b+1+frameSize*ch] = ((samples[ch][src].i >> 8) & 0x0F) |
-                                           ((samples[ch][src].q << 4) & 0xF0);
-                buffer[b+2+frameSize*ch] = (samples[ch][src].q >> 4) & 0xFF;
-                b += stepSize;
+                buffer[b++] = samples[1][src].i;
+                buffer[b++] = ((samples[1][src].i >> 8) & 0x0F) | (samples[1][src].q << 4);
+                buffer[b++] = samples[1][src].q >> 4;
             }
         }
+        return b;
     }
-    else if(format == StreamConfig::STREAM_12_BIT_IN_16)
+
+    if (mimo)
     {
-        const uint8_t frameSize = 4;
-        const uint8_t stepSize = frameSize * chCount;
-        for(uint8_t ch=0; ch<chCount; ++ch)
+        complex16_t* ptr = (complex16_t*)buffer;
+        for(int src=0; src<samplesCount; ++src)
         {
-            b = 0;
-            for(size_t src=0; src<samplesCount; ++src)
-            {
-                buffer[b+frameSize * ch] = samples[ch][src].i & 0xFF;
-                buffer[b+1+frameSize * ch] = (samples[ch][src].i >> 8) & 0xFF;
-                buffer[b+2+frameSize*ch] = samples[ch][src].q & 0xFF;
-                buffer[b+3+frameSize*ch] = (samples[ch][src].q >> 8) & 0xFF;
-                b += stepSize;
-            }
+            *ptr++ = samples[0][src];
+            *ptr++ = samples[1][src];
         }
+        return samplesCount*2*sizeof(complex16_t);
     }
-    else
-        return ReportError(EINVAL, "Unsupported samples format");
-    if(bufLen)
-        *bufLen = b;
-    return 0;
+    memcpy(buffer,samples[0],samplesCount*sizeof(complex16_t));
+    return samplesCount*sizeof(complex16_t);
 }
 
 } //namespace fpga

@@ -200,8 +200,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = stream->mRxStreams.size();
-    const auto link = stream->mRxStreams[0]->config.linkFormat;
-    const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
+    const bool packed = stream->mRxStreams[0]->config.linkFormat== StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const uint32_t samplesInPacket = (packed ? 1360 : 1020)/chCount;
     const int epIndex = stream->mChipID;
 
     const uint8_t packetsToBatch = stream->rxBatchSize*2;
@@ -219,7 +219,6 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
     }
 
     unsigned long totalBytesReceived = 0; //for data rate calculation
-    bool generate_started = false;
 
     vector<uint32_t> samplesReceived(chCount, 0);
 
@@ -294,15 +293,14 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
             vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 dest[c] = (chFrames[c].samples);
-            size_t samplesCount = 0;
-            fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount, link, dest.data(), &samplesCount);
+            int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
             for(int ch=0; ch<chCount; ++ch)
             {
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD;
-                uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;;
             }
@@ -338,13 +336,13 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = stream->mTxStreams.size();
-    const auto link = stream->mTxStreams[0]->config.linkFormat;
+    const bool packed = stream->mTxStreams[0]->config.linkFormat==StreamConfig::STREAM_12_BIT_COMPRESSED;
     const int epIndex = stream->mChipID;
 
     const uint8_t packetsToBatch = stream->txBatchSize*2;; //packets in single USB transfer
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 500;
-    const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
+    const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
     vector<complex16_t> samples[maxChannelCount];
     vector<char> buffers;
     try
@@ -396,7 +394,7 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
+            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             ++i;
         }
 

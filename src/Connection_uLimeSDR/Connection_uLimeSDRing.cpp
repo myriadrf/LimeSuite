@@ -235,8 +235,8 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
 {
     //at this point FPGA has to be already configured to output samples
     const uint8_t chCount = stream->mRxStreams.size();
-    const auto link =stream->mRxStreams[0]->config.linkFormat;
-    const uint32_t samplesInPacket = (link == StreamConfig::STREAM_12_BIT_COMPRESSED ? 1360 : 1020)/chCount;
+    const bool packed = stream->mRxStreams[0]->config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const uint32_t samplesInPacket = (packed ? 1360 : 1020)/chCount;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
@@ -342,15 +342,14 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
             vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 dest[c] = (chFrames[c].samples);
-            size_t samplesCount = 0;
-            fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount, link, dest.data(), &samplesCount);
+            int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
             for(int ch=0; ch<chCount; ++ch)
             {
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD;
-                uint32_t samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     droppedSamples += samplesCount-samplesPushed;
             }
@@ -404,7 +403,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = stream->mTxStreams.size();
-    const auto link = stream->mTxStreams[0]->config.linkFormat;
+    const bool packed = stream->mTxStreams[0]->config.linkFormat==StreamConfig::STREAM_12_BIT_COMPRESSED;
 
     double latency=0;
     for (int i = 0; i < chCount; i++)
@@ -419,7 +418,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
     const uint32_t bufferSize = packetsToBatch*4096;
     const uint32_t popTimeout_ms = 100;
 
-    const int maxSamplesBatch = (link==StreamConfig::STREAM_12_BIT_COMPRESSED?1360:1020)/chCount;
+    const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
     vector<uint32_t> bytesToSend(buffersCount, 0);
@@ -487,7 +486,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount, link, dataStart, nullptr);
+            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             samplesSent += maxSamplesBatch;
             ++i;
         }

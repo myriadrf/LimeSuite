@@ -185,8 +185,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
             batch[i] = &src[i][samplesUsed];
         samplesUsed += samplesToSend;
 
-        size_t bufPos = 0;
-        lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount, StreamConfig::STREAM_12_BIT_COMPRESSED, pkt.data, &bufPos);
+        int bufPos = lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, true, pkt.data);
         int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
             lime::error("Packet samples count not multiple of 4");
