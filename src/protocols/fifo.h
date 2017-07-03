@@ -74,35 +74,26 @@ public:
 
                 if(flags & OVERWRITE_OLD)
                 {
-                    int dropElements = ceil(((float)samplesCount-samplesTaken)/mBuffer[mTail].maxSamplesInPacket);
-                    if(dropElements == 0)
-                        dropElements = 1;
+                    int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;
                     mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
                     mElementsFilled -= dropElements;
                 }
-
-                //there is no space, wait on CV to give pop_samples the thread context
-                else
+                else  //there is no space, wait on CV to give pop_samples the thread context
                 {
                     hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms));
                 }
             }
-
-            while (mElementsFilled < mBufferSize && samplesTaken < samplesCount)
+            else
             {
                 mBuffer[mTail].timestamp = timestamp + samplesTaken;
-                mBuffer[mTail].first = 0;
-                mBuffer[mTail].last = 0;
                 mBuffer[mTail].flags = flags;
-                while (mBuffer[mTail].last < mBuffer[mTail].maxSamplesInPacket && samplesTaken < samplesCount)
-                {
-                    const int sampleIndex = mBuffer[mTail].last;
-                    mBuffer[mTail].samples[sampleIndex] = buffer[samplesTaken];
-                    ++samplesTaken;
-                    ++mBuffer[mTail].last;
-                }
-                mTail = (mTail + 1) & (mBufferSize - 1);//advance to next one
-                mTail = mTail;
+                int cnt = samplesCount-samplesTaken;
+                cnt = cnt > SamplesPacket::maxSamplesInPacket ? SamplesPacket::maxSamplesInPacket : cnt;
+                memcpy(mBuffer[mTail].samples,&buffer[samplesTaken],cnt*sizeof(complex16_t));
+                samplesTaken+=cnt;
+                mBuffer[mTail].last = cnt;
+                mBuffer[mTail++].first = 0;
+                mTail  &= (mBufferSize - 1);//advance to next one
                 ++mElementsFilled;
             }
         }
@@ -141,21 +132,22 @@ public:
             while(mElementsFilled > 0 && samplesFilled < samplesCount)
             {
                 if (flags != nullptr) *flags |= mBuffer[mHead].flags;
-                while (mBuffer[mHead].first < mBuffer[mHead].last && samplesFilled < samplesCount)
+                const int first = mBuffer[mHead].first;
+                
+                int cnt = samplesCount - samplesFilled;
+                const int cntbuf = mBuffer[mHead].last - first;
+                cnt = cnt > cntbuf ? cntbuf : cnt;
+
+                memcpy(&buffer[samplesFilled],&mBuffer[mHead].samples[first],cnt*sizeof(complex16_t));
+                samplesFilled += cnt;
+
+                if (cntbuf == cnt) //packet depleated
                 {
-                    buffer[samplesFilled] = mBuffer[mHead].samples[mBuffer[mHead].first];
-                    ++mBuffer[mHead].first;
-                    ++samplesFilled;
-                }
-                if (mBuffer[mHead].first == mBuffer[mHead].last) //packet depleated
-                {
-                    mBuffer[mHead].first = 0;
-                    mBuffer[mHead].last = 0;
-                    mBuffer[mHead].timestamp = 0;
                     mHead = (mHead + 1) & (mBufferSize - 1);//advance to next one
-                    mHead = mHead;
                     --mElementsFilled;
                 }
+                else
+                    mBuffer[mHead].first += cnt;
             }
         }
         lck.unlock();
