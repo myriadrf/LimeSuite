@@ -20,7 +20,9 @@ ConnectionSTREAM_UNITE::ConnectionSTREAM_UNITE(void* ctx, const std::string &vid
         {
             delete comPort;
             comPort = nullptr;
+            return;
         }
+        GetChipVersion();
     }
 }
 

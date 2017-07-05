@@ -112,12 +112,12 @@ void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBa
 
 int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
-    return ReportError(EPERM, "UpdateExternalDataRate not implemented");
+    return 0;
 }
 
 int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)
 {
-    return ReportError(EPERM, "Manual phase configuration not implemented");
+    return 0;
 }
 
 void IConnection::EnterSelfCalibration(const size_t channel)

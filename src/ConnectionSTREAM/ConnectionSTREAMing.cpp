@@ -79,7 +79,7 @@ int ConnectionSTREAM::UpdateExternalDataRate(const size_t channel, const double 
     auto info = GetDeviceInfo();
     bool phaseSearch = false;
     if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
-        if (this->chipVersion == 0x3841 && stoi(info.gatewareRevision) >= 7 && stoi(info.gatewareVersion) >= 2) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+        if (this->chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
             if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
                 phaseSearch = true;
 
