@@ -368,7 +368,7 @@ int LMS7002M::ResetChip()
 {
     checkConnection();
 
-    int status = controlPort->DeviceReset();
+    int status = controlPort->DeviceReset(mdevIndex);
     if (status == 0) Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
     return status;
 }

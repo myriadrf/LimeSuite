@@ -28,7 +28,7 @@ public:
     DeviceInfo GetDeviceInfo(void);
 
     //! DeviceReset implemented by LMS64C
-    int DeviceReset(void);
+    int DeviceReset(int ind=0);
 
     //! TransactSPI implemented by LMS64C
     int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)override;

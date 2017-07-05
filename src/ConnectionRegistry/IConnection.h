@@ -249,7 +249,7 @@ public:
      * Typically this will reset the RFIC using a GPIO,
      * and possibly other ICs located on the device.
      */
-    virtual int DeviceReset(void);
+    virtual int DeviceReset(int ind=0);
 
     /*!
      * Called by the LMS7002M driver after potential band-selection changes.

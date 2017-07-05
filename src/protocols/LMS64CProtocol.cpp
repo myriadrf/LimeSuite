@@ -51,7 +51,7 @@ LMS64CProtocol::~LMS64CProtocol(void)
     return;
 }
 
-int LMS64CProtocol::DeviceReset(void)
+int LMS64CProtocol::DeviceReset(int ind)
 {
     if (not this->IsOpen())
     {
@@ -60,6 +60,7 @@ int LMS64CProtocol::DeviceReset(void)
 
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
+    pkt.periphID = ind;
     pkt.outBuffer.push_back (LMS_RST_PULSE);
     int status = this->TransferPacket(pkt);
 
