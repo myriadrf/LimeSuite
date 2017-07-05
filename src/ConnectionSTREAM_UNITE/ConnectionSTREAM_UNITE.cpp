@@ -54,7 +54,7 @@ int ConnectionSTREAM_UNITE::TransactSPI(const int addr, const uint32_t *writeDat
         return ConnectionSTREAM::TransactSPI(addr, writeData, readData, size);
 }
 
-int ConnectionSTREAM_UNITE::DeviceReset(void)
+int ConnectionSTREAM_UNITE::DeviceReset(int ind)
 {
     if(comPort)
     {

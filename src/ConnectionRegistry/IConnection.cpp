@@ -99,7 +99,7 @@ int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &dat
  * LMS7002M Driver callbacks
  **********************************************************************/
 
-int IConnection::DeviceReset(void)
+int IConnection::DeviceReset(int ind)
 {
     ReportError(ENOTSUP);
     return -1;

@@ -20,7 +20,7 @@ public:
 
     virtual DeviceInfo GetDeviceInfo(void) override;
     virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
-    virtual int DeviceReset(void) override;
+    virtual int DeviceReset(int ind = 0) override;
     virtual int TransferPacket(GenericPacket &pkt) override;
 protected:
     ConnectionEVB7COM *comPort;
