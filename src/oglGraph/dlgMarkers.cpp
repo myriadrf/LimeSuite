@@ -143,10 +143,12 @@ void dlgMarkers::OnbtnCloseClick(wxCommandEvent& event)
 void dlgMarkers::OnMarkerChange(wxCommandEvent& event)
 {
     double freq = 0;
-    wxString str = event.GetString();
-    str.ToDouble(&freq);
+    int markerIndex = event.GetId() - 1000;
+    if (event.GetEventType() == wxEVT_COMMAND_TEXT_UPDATED)
+        event.GetString().ToDouble(&freq);
+    else 
+        freqs[markerIndex]->GetValue().ToDouble(&freq);
     freq *= 1000000;
-	int markerIndex = event.GetId()-1000;
     parent_graph->SetMarker(markerIndex, freq, enables[markerIndex]->IsChecked(), shows[markerIndex]->IsChecked());
 }
 
@@ -163,7 +165,6 @@ void dlgMarkers::UpdateValues()
             char text[128];
             double valueA = 0;
             double valueB = 0;
-            double freq =  parent_graph->markers[i].posX/1000000;
             int cnt=0;
 
             if(parent_graph->series[0]->size > 0 && parent_graph->series[0]->visible)
@@ -183,7 +184,6 @@ void dlgMarkers::UpdateValues()
             marker_valuesB[i] = valueB;
             enables[i]->SetValue(parent_graph->markers[i].used);
             shows[i]->SetValue(parent_graph->markers[i].show);
-            freqs[i]->SetValue(wxString::Format("%3.2f", freq));
         }
 
         for(int i=0; i<5; ++i)
@@ -206,9 +206,19 @@ void dlgMarkers::UpdateValues()
             }
             deltaValues[i]->SetLabel(wxString(text));
         }
+        if (refreshMarkFreq)
+        {
+            for (size_t i = 0; i < labels.size(); ++i)
+            {
+                double freq = parent_graph->markers[i].posX / 1000000;
+                freqs[i]->SetValue(wxString::Format("%3.2f", freq));
+            }
+            refreshMarkFreq = false;
+        }
     }
 }
 
 void dlgMarkers::OnButton1Click1(wxCommandEvent& event)
 {
 }
+

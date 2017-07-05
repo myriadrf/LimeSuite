@@ -1219,6 +1219,7 @@ int OpenGLGraph::AddMarkerAtValue(float xValue)
         mark->posX = series[0]->values[mark->dataValueIndex];
         mark->posY = series[0]->values[mark->dataValueIndex+1];
         mark->color = mMarkerColors[markers.size()];
+        mMarkersDlg->refreshMarkFreq = true;
         return mark->id;
     }
 	return -1;
@@ -1434,6 +1435,7 @@ void OpenGLGraph::MoveMarker(int markerID, int posX)
 		markers[markerID].iposX = posX;
 		markers[markerID].iposY = posY;
 	}
+    mMarkersDlg->refreshMarkFreq = true;
 	#ifdef OGL_REDRAW_ENABLED
         Refresh();
 	#endif
@@ -1590,6 +1592,7 @@ void OpenGLGraph::onShowMarkersMenu(wxCommandEvent& event)
     if(m_timer->IsRunning() == false)
         m_timer->Start(500);
     mMarkersDlg->Show();
+    mMarkersDlg->refreshMarkFreq = true;;
 }
 
 void OpenGLGraph::onLockAspect(wxCommandEvent& event)
@@ -1619,6 +1622,7 @@ void OpenGLGraph::onSearchPeak(wxCommandEvent& event)
 {
     SearchPeak();
     Refresh();
+    mMarkersDlg->refreshMarkFreq = true;;
 }
 
 void OpenGLGraph::onReset(wxCommandEvent& event)

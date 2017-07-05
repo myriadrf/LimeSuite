@@ -62,6 +62,7 @@ class dlgMarkers: public wxDialog
 		void OnButton1Click1(wxCommandEvent& event);
 		//*)
 		void OnEnableMarker(wxCommandEvent& event);
+        bool refreshMarkFreq;
 
 	protected:
 	    bool initialized;
