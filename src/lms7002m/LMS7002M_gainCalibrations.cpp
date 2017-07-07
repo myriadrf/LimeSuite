@@ -60,11 +60,24 @@ int LMS7002M::CalibrateTxGainSetup()
     Modify_SPI_Reg_bits(LMS7param(MAC), ch);
 
     //TxTSP
+    const int isinc = Get_SPI_Reg_bits(LMS7param(ISINC_BYP_TXTSP));
+    const int txcmixGainLSB = Get_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP));
+    const int txcmixGainMSB = Get_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3));
     SetDefaults(TxTSP);
     SetDefaults(TxNCO);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), txcmixGainLSB);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), txcmixGainMSB);
+    Modify_SPI_Reg_bits(LMS7param(ISINC_BYP_TXTSP), isinc);
     Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(INSEL_TXTSP), 1);
-    LoadDC_REG_IQ(LMS7002M::Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    int16_t tsgValue = 0x7FFF;
+    if(txcmixGainMSB == 0 && txcmixGainLSB == 1)
+        tsgValue = 0x3FFF;
+    else if(txcmixGainMSB == 1 && txcmixGainLSB == 0)
+        tsgValue = 0x5A85;
+    else
+        tsgValue = 0x7FFF;
+    LoadDC_REG_IQ(LMS7002M::Tx, tsgValue , tsgValue);
     SetNCOFrequency(LMS7002M::Tx, 0, 0.5e6);
 
     //RxTSP

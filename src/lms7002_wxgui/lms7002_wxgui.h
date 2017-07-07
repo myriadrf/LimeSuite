@@ -1726,6 +1726,7 @@ class pnlRxTSP_view : public wxPanel
 			ID_TSGMODE_RXTSP,
 			ID_INSEL_RXTSP,
 			ID_TSGFC_RXTSP,
+			ID_DCCORR_AVG,
 			ID_DC_REG_RXTSP,
 			ID_CMIX_SC_RXTSP,
 			ID_CMIX_GAIN_RXTSP,
@@ -1837,6 +1838,7 @@ class pnlRxTSP_view : public wxPanel
 		wxRadioBox* rgrTSGMODE_RXTSP;
 		wxRadioBox* rgrINSEL_RXTSP;
 		wxRadioBox* rgrTSGFC_RXTSP;
+		wxComboBox* cmbDCCORR_AVG;
 		wxStaticText* ID_STATICTEXT23;
 		wxTextCtrl* txtDC_REG_RXTSP;
 		wxButton* btnLoadDCI;

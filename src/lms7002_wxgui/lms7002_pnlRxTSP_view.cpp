@@ -59,6 +59,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     wndId2Enum[rgrTSGFC_RXTSP] = LMS7param(TSGFC_RXTSP);
     wndId2Enum[cmbDTHBIT_RX] = LMS7param(DTHBIT_RX);
     wndId2Enum[cmbHBD_DLY] = LMS7param(HBD_DLY);
+    wndId2Enum[cmbDCCORR_AVG] = LMS7param(DCCORR_AVG_RXTSP);
 
     wndId2Enum[rgrSEL0] = LMS7param(SEL_RX);
     wndId2Enum[rgrSEL01] = LMS7param(SEL_RX);
@@ -141,6 +142,11 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     for (int i = 0; i<16; ++i)
         temp.push_back(wxString::Format(_("%i"), i));
     cmbDTHBIT_RX->Set(temp);
+
+    temp.clear();
+    for(int i=0; i<7; ++i)
+        temp.push_back(wxString::Format(_("2^%i"), i+12));
+    cmbDCCORR_AVG->Set(temp);
 
     temp.clear();
     temp.push_back("2^1");

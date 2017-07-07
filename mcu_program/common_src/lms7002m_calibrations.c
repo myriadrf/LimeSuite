@@ -85,7 +85,7 @@ void LoadDC_REG_TX_IQ()
 }
 
 #ifndef __cplusplus
-static void Dummy() 
+static void Dummy()
 {
     uint8_t i;
     volatile uint16_t t=0;
@@ -691,6 +691,8 @@ uint8_t CalibrateTxSetup()
     Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb , 2047);
     Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
     Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), 0);
 
     //RXTSP
     SetDefaults(SECTION_RxTSP);
@@ -732,18 +734,21 @@ uint8_t CalibrateTxSetup()
     }
 
     EndBatch();*/
-
+    if((x0020val & 0x3) == 1)
+        Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
+    else
+        Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
     {
-        ROM const uint16_t TxSetupAddr[] = {0x0082,0x0085,0x00AE,0x0101,0x0113,0x0200,0x0201,0x0202,0x0208};
-        ROM const uint16_t TxSetupData[] = {0x0000,0x0001,0xF000,0x0001,0x001C,0x000C,0x07FF,0x07FF,0x0000};
-        ROM const uint16_t TxSetupMask[] = {0x0018,0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0x210B};
+        ROM const uint16_t TxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x0101,0x0113,0x0200,0x0201,0x0202,0x0208};
+        ROM const uint16_t TxSetupData[] = {0x0400, 0x0001,0xF000,0x0001,0x001C,0x000C,0x07FF,0x07FF,0x0000};
+        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0xF10B};
         uint8_t i;
         for(i=sizeof(TxSetupAddr)/sizeof(uint16_t); i; --i)
             SPI_write(TxSetupAddr[i-1], ( SPI_read(TxSetupAddr[i-1]) & ~TxSetupMask[i-1] ) | TxSetupData[i-1]);
     }
     {
-        ROM const uint16_t TxSetupAddrWrOnly[] = {0x0084,0x010C,0x0112,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0442,0x0443};
-        ROM const uint16_t TxSetupDataWrOnly[] = {0x0400,0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x2098,0x0020,0x0000,0x0000};
+        ROM const uint16_t TxSetupAddrWrOnly[] = {0x010C,0x0112,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0442,0x0443};
+        ROM const uint16_t TxSetupDataWrOnly[] = {0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x2098,0x0020,0x0000,0x0000};
 
         uint8_t i;
         for(i=sizeof(TxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
@@ -899,9 +904,9 @@ uint8_t CalibrateRxSetup()
     const uint16_t x0020val = SPI_read(0x0020);
     //rfe
     {
-        ROM const uint16_t RxSetupAddr[] = {0x0082,0x0085,0x00AE,0x010C,0x010D,0x0113,0x0115,0x0119};
-        ROM const uint16_t RxSetupData[] = {0x0000,0x0001,0xF000,0x0000,0x0040,0x000C,0x0000,0x0000};
-        ROM const uint16_t RxSetupMask[] = {0x0008,0x0007,0xF000,0x001A,0x0040,0x003C,0xC000,0x8000};
+        ROM const uint16_t RxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x010C,0x010D,0x0113,0x0115,0x0119};
+        ROM const uint16_t RxSetupData[] = {0x0400, 0x0001,0xF000,0x0000,0x0040,0x000C,0x0000,0x0000};
+        ROM const uint16_t RxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x001A,0x0040,0x003C,0xC000,0x8000};
         uint8_t i;
         for(i=sizeof(RxSetupAddr)/sizeof(uint16_t); i; --i)
             SPI_write(RxSetupAddr[i-1], ( SPI_read(RxSetupAddr[i-1]) & ~RxSetupMask[i-1] ) | RxSetupData[i-1]);
@@ -941,11 +946,6 @@ uint8_t CalibrateRxSetup()
     Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 1);
     Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
 
-    //AFE
-    Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
-
-
-
     //XBUF
     Modify_SPI_Reg_bits(0x0085, MSBLSB(2, 0), 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
 
@@ -980,13 +980,18 @@ uint8_t CalibrateRxSetup()
 
     //RSSI_DC_CALIBRATION
     SetDefaults(SECTION_RSSI_DC_CALIBRATION);
-    EndBatch();*/
+    EndBatch();
     //BIAS
     {
         uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, MSBLSB(10, 6));
-        //SetDefaults(SECTION_BIAS);
+        SetDefaults(SECTION_BIAS);
         Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
-    }
+    }*/
+    //AFE
+    if((x0020val & 0x3) == 1)
+        Modify_SPI_Reg_bits(PD_TX_AFE1, 0);
+    else
+        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
     {
         switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
         {

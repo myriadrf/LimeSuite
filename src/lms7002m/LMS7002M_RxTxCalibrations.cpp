@@ -469,8 +469,9 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     }
 
     //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-    if(ch == 2)
+    if(ch == 1)
+        Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
+    else
         Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
 
     //BIAS
@@ -528,6 +529,8 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
     Modify_SPI_Reg_bits(LMS7param(CMIX_SC_TXTSP), 0);
     LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), 0);
     SetNCOFrequency(Tx, 0, bandwidth_Hz / calibUserBwDivider);
 
     //RXTSP
@@ -1081,7 +1084,7 @@ TxCalibrationEnd:
     Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 1);
 
     Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-    LoadDC_REG_IQ(Tx, (int16_t)0x7FFF, (int16_t)0x8000);
+    LoadDC_REG_IQ(Tx, (int16_t)0x3FFF, (int16_t)0x3FFF);
     Log("Tx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("#####Tx calibration RESULTS:###########################\n");
@@ -1524,7 +1527,11 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
     Modify_SPI_Reg_bits(LMS7param(ICT_IAMP_GG_FRP_TBB), 6);
 
     //AFE
-    Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
+    if(ch == 1)
+        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
+    else
+        Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0);
+
 
     //BIAS
     {
@@ -1765,7 +1772,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         case 1: lnaName = "LNAH"; break;
         case 2: lnaName = "LNAL"; break;
         case 3: lnaName = "LNAW"; break;
-        default: lnaName = "none"; break; 
+        default: lnaName = "none"; break;
     }
     verbose_printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
                 ch == Channel::ChA ? "A" : "B", rxFreq/1e6,
