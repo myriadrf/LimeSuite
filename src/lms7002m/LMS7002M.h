@@ -179,7 +179,7 @@ public:
     ///@}
 
     ///@name Internal calibrations
-    int CalibrateInternalADC();
+    int CalibrateInternalADC(int clkDiv = 32);
     int CalibrateRP_BIAS();
     int CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS);
     int CalibrateAnalogRSSI_DC_Offset();
