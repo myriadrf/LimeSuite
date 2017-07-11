@@ -29,7 +29,7 @@ static const size_t LMS_PATH_WIDE = 3;
 static const size_t LMS_PATH_TX1 = 1;
 static const size_t LMS_PATH_TX2 = 2;
 
-const double LMS7_Device::LMS_CGEN_MAX = 640000000;
+const double LMS7_Device::LMS_CGEN_MAX = 640e6;
 
 LMS7_Device* LMS7_Device::CreateDevice(lime::IConnection* conn, LMS7_Device *obj)
 {
@@ -365,6 +365,9 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
        }
    }
 
+    if (oversample == 0)
+        oversample =  LMS_CGEN_MAX/(8*f_Hz);
+
    if (oversample > 1)
    {
        for (decim = 0; decim < 4; decim++)
@@ -373,8 +376,6 @@ int LMS7_Device::SetRate(float_type f_Hz, int oversample)
                 break;
        }
    }
-   else if (oversample == 0)
-       decim = 0;
    else decim = 7;
 
    int ratio = oversample <= 2 ? 2 : (2<<decim);
@@ -473,6 +474,9 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
        }
    }
 
+    if (oversample == 0)
+        oversample = tx ? LMS_CGEN_MAX/(2*f_Hz) : LMS_CGEN_MAX/(8*f_Hz);
+
     if (oversample > 1)
     {
         for (tmp = 0; tmp < 4; tmp++)
@@ -483,8 +487,6 @@ int LMS7_Device::SetRate(bool tx, float_type f_Hz, size_t oversample)
             }
         }
     }
-    else if (oversample == 0)
-        tmp = 0;
     else tmp = 7;
 
     int ratio = oversample <= 2 ? 2 : (2<<tmp);
@@ -742,8 +744,8 @@ double LMS7_Device::GetRate(bool tx, size_t chan,float_type *rf_rate_Hz)
 lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
 {
   lms_range_t ret;
-  ret.max = 30000000;
-  ret.min = 100000;
+  ret.max = 80e6;
+  ret.min = 100e3;
   ret.step = 1;
   return ret;
 }
@@ -751,8 +753,8 @@ lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
 lms_range_t LMS7_Device::GetTxRateRange(size_t chan) const
 {
   lms_range_t ret;
-  ret.max = 30000000;
-  ret.min = 100000;
+  ret.max = 80e6;
+  ret.min = 100e3;
   ret.step = 1;
   return ret;
 }
@@ -1619,24 +1621,43 @@ lms_range_t LMS7_Device::GetFrequencyRange(bool tx) const
 
 int LMS7_Device::Init()
 {
-    this->Reset();
+    struct regVal
+    {
+        uint16_t adr;
+        uint16_t val;
+     };
+
+    const std::vector<regVal> initVals = {
+        {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
+        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
+        {0x0089, 0x1078}, {0x008B, 0x1F8C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
+        {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x3026}, {0x010C, 0x8865},
+        {0x010E, 0x0000}, {0x0110, 0x0BFF}, {0x0113, 0x03C2}, {0x011C, 0xA941},
+        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xB9FF}, {0x0121, 0x3650},
+        {0x0122, 0x033F}, {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x0170},
+        {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x040B, 0x1020},
+        {0x040C, 0x00F8}
+    };
+
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
         lime::LMS7002M* lms = lms_list[i];
+        if (lms->ResetChip() != 0)
+            return -1;
 
-        lms->SetActiveChannel(lime::LMS7002M::ChA);
-        lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        for (auto i : initVals)
+            lms->SPI_write(i.adr, i.val);
 
-        lms->SetActiveChannel(lime::LMS7002M::ChAB);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(AGC_BYP_RXTSP), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        for (auto i : initVals)
+            if (i.adr >= 0x100)
+                lms->SPI_write(i.adr, i.val);
+        lms->EnableChannel(false, false);
+        lms->EnableChannel(true, false);
+
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+
         if (lms->UploadAll()!=0)
             return -1;
     }
