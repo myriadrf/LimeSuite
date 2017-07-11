@@ -8,7 +8,7 @@ using namespace std;
 
 using namespace lime;
 
-int LMS7002M::CalibrateInternalADC()
+int LMS7002M::CalibrateInternalADC(int clkDiv)
 {
     if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
@@ -21,7 +21,7 @@ int LMS7002M::CalibrateInternalADC()
     SPI_write(0x0603, 0x0000);
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 1);
-    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
+    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, clkDiv);
     Modify_SPI_Reg_bits(LMS7_RSSI_BIAS, 8);
     Modify_SPI_Reg_bits(LMS7_RSSI_DAC_VAL, 170);
 
@@ -35,6 +35,7 @@ int LMS7002M::CalibrateInternalADC()
     }
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
+    Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
     return 0;
 }
 
@@ -42,9 +43,10 @@ int LMS7002M::CalibrateRP_BIAS()
 {
     if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
+
+    CalibrateInternalADC(32);
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
-    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
 
     const uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 1);

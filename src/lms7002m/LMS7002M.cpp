@@ -2555,9 +2555,9 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
+    CalibrateInternalADC(32);
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
-    Modify_SPI_Reg_bits(LMS7_DAC_CLKDIV, 32);
     uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 2);
 
@@ -2606,9 +2606,9 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
 
 int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
 {
+    CalibrateInternalADC(0);
     Modify_SPI_Reg_bits(LMS7param(PD_RSSI_RFE), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), 0);
-    Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 26);
     int value = -63;
     uint8_t wrValue = abs(value);
     if(value < 0)
