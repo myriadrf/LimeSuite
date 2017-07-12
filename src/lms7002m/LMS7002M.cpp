@@ -2606,9 +2606,12 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
 
 int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
 {
+    Modify_SPI_Reg_bits(LMS7_EN_INSHSW_W_RFE, 1);
     CalibrateInternalADC(0);
     Modify_SPI_Reg_bits(LMS7param(PD_RSSI_RFE), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), 0);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 22);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO2), 0);
     int value = -63;
     uint8_t wrValue = abs(value);
     if(value < 0)
@@ -2644,5 +2647,6 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
         wrValue |= 0x40;
     Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
     printf("Found %i\n", found);
+    Modify_SPI_Reg_bits(LMS7_EN_INSHSW_W_RFE, 0);
     return 0;
 }
