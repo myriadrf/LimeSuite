@@ -15,6 +15,8 @@
 
 #include <FPGA_common.h>
 #include <lms7_device.h>
+#include "lms7suiteEvents.h"
+
 using namespace lime;
 using namespace std;
 
@@ -242,12 +244,15 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     controlsPtr2Registers[spinRX_PHCORR] = Register(0x00A3, 11, 0, 0);
 
     controlsPtr2Registers[cmbInsel] = Register(0x0080, 2, 2, 0);
+    
+    Bind(READ_ALL_VALUES, &pnlQSpark::OnReadAll, this, this->GetId());
+    Bind(WRITE_ALL_VALUES, &pnlQSpark::OnWriteAll, this, this->GetId());
 }
 
 void pnlQSpark::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
-    LMS_WriteFPGAReg(lmsControl, 0x001F, rbChannelB->GetValue() ? 0x2 : 0x1);
+    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
     double freqHz;
     LMS_GetSampleRate(lmsControl, LMS_CH_RX, 4, &freqHz,nullptr);
     txtPllFreqRxMHz->SetValue(wxString::Format("%1.3f", freqHz/1e6));
@@ -266,7 +271,7 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
         wxMessageBox(_("device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-
+    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
     Register reg = controlsPtr2Registers[event.GetEventObject()];
     unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
@@ -297,6 +302,7 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
     wxClassInfo* spinctr = wxClassInfo::FindClass("wxSpinCtrl");
     wxClassInfo* checkboxctr = wxClassInfo::FindClass("wxCheckBox");
     wxClassInfo* choicectr = wxClassInfo::FindClass("wxChoice");
+    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
     for (iter = controlsPtr2Registers.begin(); iter != controlsPtr2Registers.end(); ++iter)
     {
         Register reg = iter->second;
@@ -355,6 +361,7 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
 
 void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
 {
+    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
     double refClk_MHz, ncoFreq_MHz;
     txtPllFreqTxMHz->GetValue().ToDouble(&refClk_MHz);
     txtNcoFreq->GetValue().ToDouble(&ncoFreq_MHz);
@@ -390,7 +397,7 @@ void pnlQSpark::OnWriteAll(wxCommandEvent &event)
 
 void pnlQSpark::OnSwitchToChannelA(wxCommandEvent& event)
 {
-    if (LMS_WriteFPGAReg(lmsControl, 0x001F, 0x1) != 0)
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 0x1) != 0)
     {
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -401,7 +408,7 @@ void pnlQSpark::OnSwitchToChannelA(wxCommandEvent& event)
 
 void pnlQSpark::OnSwitchToChannelB(wxCommandEvent& event)
 {
-    if (LMS_WriteFPGAReg(lmsControl, 0x001F, 0x2) != 0)
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 0x2) != 0)
     {
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;

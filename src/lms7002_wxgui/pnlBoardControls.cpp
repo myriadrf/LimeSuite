@@ -229,6 +229,13 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         mParameters[i].units = units;
         mParameters[i].value = value;
     }
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(READ_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
+    }
     UpdatePanel();
 }
 
@@ -282,7 +289,7 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
 
 void pnlBoardControls::UpdatePanel()
 {
-    assert(mADCparameters.size() == mGUI_widgets.size());
+    assert(mParameters.size() == mGUI_widgets.size());
     for (size_t i = 0; i < mParameters.size(); ++i)
     {
         mGUI_widgets[i]->title->SetLabel(wxString(mParameters[i].name));
