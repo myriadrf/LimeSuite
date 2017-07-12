@@ -142,9 +142,26 @@ int ILimeSDRStreaming::SendData(const char* buffer, int length, int epIndex, int
 
 int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
 {
+    bool comp = true;
+    
+    switch (GetInfo().device)
+    {
+        case LMS_DEV_STREAM:
+        case LMS_DEV_LIMESDR:
+        case LMS_DEV_LIMESDR_PCIE:
+        case LMS_DEV_LMS7002M_ULTIMATE_EVB:
+            break;
+        case LMS_DEV_LIMESDR_QPCIE:
+            if (epIndex == 2)
+                comp = (format == StreamConfig::STREAM_12_BIT_COMPRESSED);
+            break;
+        default: return ReportError("UploadWFM not supported");
+    }
+    
+    const int samplesInPkt = comp ? 1360 : 1020;
     WriteRegister(0xFFFF, 1 << epIndex);
     WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
-    WriteRegister(0x000E, 0x0); //16bit samples
+    WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
 
     uint16_t regValue = 0;
     ReadRegister(0x000D,regValue);
@@ -153,16 +170,30 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
 
     lime::FPGA_DataPacket pkt;
     size_t samplesUsed = 0;
+    int cnt = sample_count;
+    
+    const complex16_t* const* src = (const complex16_t* const*)samples;
+    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
     lime::complex16_t** samplesShort = new lime::complex16_t*[chCount];
     for(unsigned i=0; i<chCount; ++i)
         samplesShort[i] = nullptr;
 
-    const complex16_t* const* src = format == StreamConfig::STREAM_COMPLEX_FLOAT32 ? samplesShort :(const complex16_t* const*)samples;
-    int cnt = sample_count;
-    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
-
-    if(format == StreamConfig::STREAM_COMPLEX_FLOAT32)
+    
+    if (format == StreamConfig::STREAM_12_BIT_IN_16 && comp == true)
     {
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = src[ch][i].i >> 4;
+                samplesShort[ch][i].q = src[ch][i].q >> 4;
+            }
+        src = samplesShort;
+    }
+    else if(format == StreamConfig::STREAM_COMPLEX_FLOAT32)
+    {
+        const float mult = comp ? 2047.0f : 32767.0f;
         for(unsigned i=0; i<chCount; ++i)
             samplesShort[i] = new lime::complex16_t[sample_count];
 
@@ -170,22 +201,23 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
         for (int ch = 0; ch < chCount; ch++)
             for(size_t i=0; i < sample_count; ++i)
             {
-                samplesShort[ch][i].i = samplesFloat[ch][2*i]*2047.0f;
-                samplesShort[ch][i].q = samplesFloat[ch][2*i+1]*2047.0f;
+                samplesShort[ch][i].i = samplesFloat[ch][2*i]*mult;
+                samplesShort[ch][i].q = samplesFloat[ch][2*i+1]*mult;
             }
+        src = samplesShort;
     }
 
     while(cnt > 0)
     {
         pkt.counter = 0;
         pkt.reserved[0] = 0;
-        int samplesToSend = cnt > 1020/chCount ? 1020/chCount : cnt;
+        int samplesToSend = cnt > samplesInPkt/chCount ? samplesInPkt/chCount : cnt;
 
         for(unsigned i=0; i<chCount; ++i)
             batch[i] = &src[i][samplesUsed];
         samplesUsed += samplesToSend;
 
-        int bufPos = lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, true, pkt.data);
+        int bufPos = lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, comp, pkt.data);
         int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
             lime::error("Packet samples count not multiple of 4");

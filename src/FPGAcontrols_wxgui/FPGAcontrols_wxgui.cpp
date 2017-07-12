@@ -284,7 +284,7 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         }
     }
 
-    int status = LMS_UploadWFM(lmsControl, (const void**)src, 2+cmbDevice->GetSelection()*2, isamples.size(), 0);
+    int status = LMS_UploadWFM(lmsControl, (const void**)src, 2+cmbDevice->GetSelection()*2, isamples.size(), 1);
 
     progressBar->SetValue(progressBar->GetRange());
     lblProgressPercent->SetLabelText(_("100%"));
