@@ -259,6 +259,13 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
             }
         }
     }
+    if(additionalControls)
+    {
+        wxCommandEvent evt;
+        evt.SetEventType(READ_ALL_VALUES);
+        evt.SetId(additionalControls->GetId());
+        wxPostEvent(additionalControls, evt);
+    }
     UpdatePanel();
 }
 
