@@ -2211,6 +2211,8 @@ class pnlGains_view : public wxPanel
 		wxSpinCtrl* spinRSSICeil;
 		wxStaticText* m_staticText360;
 		wxSpinCtrl* spinRSSIFloor;
+		wxStaticText* m_staticText361;
+		wxSpinCtrl* spinPGACeil;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }

@@ -9406,6 +9406,16 @@ pnlGains_view::pnlGains_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer256->Add( spinRSSIFloor, 0, wxLEFT, 5 );
 	
 	
+	fgSizer256->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText361 = new wxStaticText( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Max PGA"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText361->Wrap( -1 );
+	fgSizer256->Add( m_staticText361, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	spinPGACeil = new wxSpinCtrl( sbSizer135->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 12 );
+	fgSizer256->Add( spinPGACeil, 0, wxLEFT, 5 );
+	
+	
 	sbSizer135->Add( fgSizer256, 1, wxEXPAND, 5 );
 	
 	

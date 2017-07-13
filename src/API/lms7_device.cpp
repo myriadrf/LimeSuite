@@ -2026,7 +2026,7 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
     return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, chCount>2 ? 1 : 0);
 }
 
-int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t rssiMax)
+int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t rssiMax, uint8_t pgaCeil)
 {
     lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
@@ -2043,6 +2043,7 @@ int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t rssiMax)
     }
 
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x002D, 15, 0, rssiMax << 8 | rssiMin);
+    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x020C, 15, 0, pgaCeil);
     mcu->RunProcedure(254);
     return 0;
 }

@@ -76,7 +76,7 @@ void RunAGC()
     rssiCeil = Get_SPI_Reg_bits(0x002D, (15 << 4) | 8);
     rssiFloor = Get_SPI_Reg_bits(0x002D, (7 << 4) | 0);
     rssiStep = (rssiCeil-rssiFloor)/30.0;
-    pgaCeil = SPI_read(0x002D);
+    pgaCeil = SPI_read(0x020C); //temporarily using register to get value into mcu
     Modify_SPI_Reg_bits(0x0081, 15 << 4 | 15, 1);
 
     while(!gStopWork)
