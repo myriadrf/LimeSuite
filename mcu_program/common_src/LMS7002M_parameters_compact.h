@@ -554,6 +554,7 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define GFIR3_L_TXTSP 0x0207, 10<<4 |  8
 #define GFIR3_N_TXTSP 0x0207, 7<<4 |  0
 #define CMIX_GAIN_TXTSP 0x0208, 15<<4 |  14
+#define CMIX_GAIN_TXTSP_R3 0x0208, 12<<4 |  12
 #define CMIX_SC_TXTSP 0x0208, 13<<4 |  13
 #define CMIX_BYP_TXTSP 0x0208, 8<<4 |  8
 #define ISINC_BYP_TXTSP 0x0208, 7<<4 |  7
@@ -644,5 +645,6 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define DCRD_RXBQ 0x05CA, 14<<4 | 14
 
 #define R5_LPF_BYP_TBB 0x010B, 0<<4 | 0
+#define RSSI_RSSI1_VAL 0x0605, 7 << 4 | 0
 
 #endif
