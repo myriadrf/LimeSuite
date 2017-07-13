@@ -1324,6 +1324,17 @@ API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device, const bool down
     return lms->ProgramUpdate(download,callback);
 }
 
+API_EXPORT int CALL_CONV LMS_SetActiveChipID(lms_device_t *device, int id)
+{
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)device;
+    return lms->SetActiveChip(id);
+}
+    
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
 {
     return lime::GetLastErrorMessage();

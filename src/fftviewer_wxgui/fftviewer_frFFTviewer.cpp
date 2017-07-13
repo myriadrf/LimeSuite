@@ -592,7 +592,10 @@ wxString fftviewer_frFFTviewer::printDataRate(float dataRate)
 void fftviewer_frFFTviewer::SetNyquistFrequency()
 {
     double freqHz;
-    LMS_GetSampleRate(lmsControl,LMS_CH_RX,cmbStreamType->GetSelection()/2*2,&freqHz,nullptr);
+    int ch = 0;
+    if (LMS_GetNumChannels(lmsControl, false)>2)
+        ch = 2;
+    LMS_GetSampleRate(lmsControl,LMS_CH_RX,ch,&freqHz,nullptr);
     txtNyquistFreqMHz->SetValue(wxString::Format(_("%2.5f"), freqHz / 2e6));
     mFFTpanel->SetInitialDisplayArea(-freqHz/2, freqHz/2, -115, 0);
 }

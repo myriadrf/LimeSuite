@@ -385,29 +385,28 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
        lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
        return -1;
    }
-   for (unsigned i = 0; i < lms_list.size(); i++)
-   {
-        lime::LMS7002M* lms = lms_list[i];
-       if ((lms->SetFrequencyCGEN(cgen) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
-           || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
-           return -1;
 
-        float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        if (decim != 7)
-        {
-            fpgaTxPLL /= pow(2.0, decim);
-            fpgaRxPLL /= pow(2.0, decim);
-        }
-        if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
-           return -1;
-   }
+   lime::LMS7002M* lms = lms_list[lms_chip_id];
+   if ((lms->SetFrequencyCGEN(cgen) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim) != 0)
+       || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
+       || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
+       return -1;
+
+    float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (decim != 7)
+    {
+        fpgaTxPLL /= pow(2.0, decim);
+        fpgaRxPLL /= pow(2.0, decim);
+    }
+    if (this->connection->UpdateExternalDataRate(lms_chip_id, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
+       return -1;
+   
 
     for (size_t i = 0; i < GetNumChannels(false);i++)
     {
@@ -446,7 +445,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
    int min_dec = 1;
    bool retain_nco = false;
 
-   lime::LMS7002M* lms = lms_list[0];
+   lime::LMS7002M* lms = lms_list[lms_chip_id];
 
    for (size_t i = 0; i < GetNumChannels(false);i++)
    {
@@ -663,31 +662,27 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         return -1;
     }
 
-    for (unsigned i = 0; i < lms_list.size(); i++)
-      {
-        lms = lms_list[i];
-        if ((lms->SetFrequencyCGEN(cgen, retain_nco) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), clk_mux) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), clk_div) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation) != 0)
-	    || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
-	    || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interpolation, decimation) != 0))
-	  return -1;
+    if ((lms->SetFrequencyCGEN(cgen, retain_nco) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), clk_mux) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), clk_div) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
+        || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interpolation, decimation) != 0))
+      return -1;
 
-	float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-	float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-	if (interpolation != 7) {
-	  fpgaTxPLL /= pow(2.0, interpolation);
-	}
-	if (decimation != 7) {
-	  fpgaRxPLL /= pow(2.0, decimation);
-	}
-        if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
-	  return -1;
-      }
-
+    float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (interpolation != 7) {
+      fpgaTxPLL /= pow(2.0, interpolation);
+    }
+    if (decimation != 7) {
+      fpgaRxPLL /= pow(2.0, decimation);
+    }
+    if (this->connection->UpdateExternalDataRate(lms_chip_id, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
+      return -1;
+      
     for (size_t i = 0; i < GetNumChannels(false);i++)
     {
         float_type freq[LMS_NCO_VAL_COUNT]={0};

@@ -66,8 +66,8 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
     FlexGridSizer1->AddGrowableCol(0);
     cmbDevice = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE"));
-    cmbDevice->Append(_T("Channel A"));
-    cmbDevice->Append(_T("Channel B"));
+    cmbDevice->Append(_T("WFM 0"));
+    cmbDevice->Append(_T("WFM 1"));
     //cmbDevice->Append(_T("ADC/DAC"));
     cmbDevice->SetSelection(0);
     FlexGridSizer1->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
@@ -133,9 +133,15 @@ void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
     lmsControl = dataPort;
 
     if (LMS_GetNumChannels(lmsControl,LMS_CH_TX) > 2)
+    {
         cmbDevice->Show();
+        chkMIMO->Hide();
+    }
     else
+    {
         cmbDevice->Hide();
+        chkMIMO->Show();
+    }
     Layout();
 }
 

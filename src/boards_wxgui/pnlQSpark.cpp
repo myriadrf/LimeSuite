@@ -44,9 +44,9 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-    wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
-    FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
-
+    wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 10, 10);
+    FlexGridSizer1 = new wxFlexGridSizer(0, 2, 10, 10);
+    wxFlexGridSizer* FlexGridSizer2 =new wxFlexGridSizer(0, 1, 10, 10);
     SetSizer(mainSizer);
 
     wxSize freqTextfieldSize(64, -1);
@@ -72,9 +72,42 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     mPanelStreamPLL->SetSizer(streamPllGroup);
     streamPllGroup->Add(sizerPllControls, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     streamPllGroup->Fit(mPanelStreamPLL);
-    FlexGridSizer1->Add(mPanelStreamPLL, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    FlexGridSizer2->Add(mPanelStreamPLL, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    
+    mPanelPACtrl = new wxPanel(this, wxNewId());
+    wxFlexGridSizer* sizerPAMux = new wxFlexGridSizer(0, 2, 5, 5);
+    sizerPAMux->Add(new wxStaticText(mPanelPACtrl, wxID_ANY, _("RX1_W source")), 5, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    wxString pa_choices[] = { wxT("Ext. RF PA input 1"), wxT("PA1 coupler"), wxT("Ext. RF PA input 2"), wxT("PA2 coupler"), wxT("None")};
+    cmbPAsrc = new wxChoice(mPanelPACtrl, wxNewId(), wxDefaultPosition, wxDefaultSize, 5, pa_choices, 0);
+    cmbPAsrc->SetSelection(0);
+    Connect(cmbPAsrc->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+    sizerPAMux->Add(cmbPAsrc, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    chkPA1en = new wxCheckBox(mPanelPACtrl, wxNewId(), _("Enable RF PA1"));
+    sizerPAMux->Add(chkPA1en, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    Connect(chkPA1en->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+    chkPA2en = new wxCheckBox(mPanelPACtrl, wxNewId(), _("Enable RF PA2"));
+    sizerPAMux->Add(chkPA2en, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    Connect(chkPA2en->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+    sizerPAMux->Add(new wxStaticText(mPanelPACtrl, wxID_ANY, _("RF PA#1 switch")), 5, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    wxString sw1choices[] = { wxT("OFF"), wxT("PA1 IN1"), wxT("PA1 IN2")};
+    cmbPA1sw = new wxChoice(mPanelPACtrl, wxNewId(), wxDefaultPosition, wxDefaultSize, 3, sw1choices, 0);
+    cmbPA1sw->SetSelection(0);
+    sizerPAMux->Add(cmbPA1sw, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    Connect(cmbPA1sw->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+    sizerPAMux->Add(new wxStaticText(mPanelPACtrl, wxID_ANY, _("RF PA#1 switch")), 5, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    wxString sw2choices[] = { wxT("OFF"), wxT("PA2 IN1"), wxT("PA2 IN2")};
+    cmbPA2sw = new wxChoice(mPanelPACtrl, wxNewId(), wxDefaultPosition, wxDefaultSize, 3, sw2choices, 0);
+    cmbPA2sw->SetSelection(0);
+    sizerPAMux->Add(cmbPA2sw, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    Connect(cmbPA2sw->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+    wxStaticBoxSizer* paGroup = new wxStaticBoxSizer(wxHORIZONTAL, mPanelPACtrl, _T("PA Controls"));
+    mPanelPACtrl->SetSizer(paGroup);
+    paGroup->Add(sizerPAMux, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+    paGroup->Fit(mPanelPACtrl);
+    FlexGridSizer2->Add(mPanelPACtrl, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    FlexGridSizer1->Add(FlexGridSizer2, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    wxStaticBoxSizer* chBox = new wxStaticBoxSizer(wxVERTICAL, this, _T(""));
+    wxStaticBoxSizer* chBox = new wxStaticBoxSizer(wxVERTICAL, this, _T("TSP Controls"));
     wxFlexGridSizer* chSizer = new wxFlexGridSizer(6, 0, 0, 0);
     wxFlexGridSizer* chSelect = new wxFlexGridSizer(0, 2, 0, 0);
     rbChannelA = new wxRadioButton(this, wxNewId(), wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0);
@@ -242,8 +275,14 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     controlsPtr2Registers[spinRX_GCORRQ] = Register(0x00A1, 10, 0, 2047);
     controlsPtr2Registers[spinRX_GCORRI] = Register(0x00A2, 10, 0, 2047);
     controlsPtr2Registers[spinRX_PHCORR] = Register(0x00A3, 11, 0, 0);
-
+    
     controlsPtr2Registers[cmbInsel] = Register(0x0080, 2, 2, 0);
+
+    controlsPtr2Registers[cmbPAsrc] = Register(0x00CD, 12, 10, 0);
+    controlsPtr2Registers[cmbPA1sw] = Register(0x00CD, 4, 3, 0);
+    controlsPtr2Registers[cmbPA2sw] = Register(0x00CD, 9, 8, 0);
+    controlsPtr2Registers[chkPA1en] = Register(0x00CD, 2, 2, 0);
+    controlsPtr2Registers[chkPA2en] = Register(0x00CD, 7, 7, 0);
     
     Bind(READ_ALL_VALUES, &pnlQSpark::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnlQSpark::OnWriteAll, this, this->GetId());
@@ -279,8 +318,10 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     LMS_ReadFPGAReg(lmsControl,reg.address,&regValue);
 
     regValue &= ~mask;
-    regValue |= (event.GetInt() << reg.lsb) & mask;
-
+    if (event.GetEventObject() == cmbPAsrc)
+        regValue |= ((event.GetInt()+1) << reg.lsb) & mask;
+    else 
+        regValue |= (event.GetInt() << reg.lsb) & mask;
     if(LMS_WriteFPGAReg(lmsControl, reg.address, regValue) != 0)
         wxMessageBox(LMS_GetLastErrorMessage(), wxString::Format("%s", LMS_GetLastErrorMessage()));
 }
@@ -310,9 +351,10 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
         uint16_t value;
 
         LMS_ReadFPGAReg(lmsControl,reg.address,&value);
-
         value = value & mask;
         value = value >> reg.lsb;
+        if (iter->first == cmbPAsrc)
+            value--;
         if (iter->first->IsKindOf(spinctr))
             reinterpret_cast<wxSpinCtrl*>(iter->first)->SetValue(value);
         else if(iter->first->IsKindOf(checkboxctr))

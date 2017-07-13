@@ -27,6 +27,7 @@ public:
     wxComboBox* cmbVCXOcontrolVoltage;
 
     wxPanel* mPanelStreamPLL;
+    wxPanel* mPanelPACtrl;
     wxTextCtrl* txtPllFreqRxMHz;
     wxStaticText* lblRealFreqTx;
     wxStaticText* lblRealFreqRx;
@@ -51,6 +52,11 @@ public:
     wxSpinCtrl* spinRX_GCORRI;
     wxSpinCtrl* spinRX_PHCORR;
     wxChoice* cmbInsel;
+    wxChoice* cmbPAsrc;
+    wxChoice* cmbPA1sw;
+    wxChoice* cmbPA2sw;
+    wxCheckBox* chkPA1en;
+    wxCheckBox* chkPA2en;
     wxRadioButton* rbChannelA;
     wxRadioButton* rbChannelB;
 

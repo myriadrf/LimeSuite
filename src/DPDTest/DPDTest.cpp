@@ -92,7 +92,7 @@ DPDTest::DPDTest( wxWindow* parent, wxWindowID id, const wxString& title, const 
         plotst[i]->series[1]->color = 0x00FF00FF;
         plotst[i]->SetDrawingMode(GLG_LINE);
         plotst[i]->settings.gridXlines = 15;
-        plotst[i]->SetInitialDisplayArea(0, 1024, -2048, 2048);
+        plotst[i]->SetInitialDisplayArea(0, 1024, -8192, 8192);
 
         plotst[i]->settings.title = std::string(signalNames[i]) + " Time";
         plotst[i]->settings.titleXaxis = "";
@@ -251,7 +251,7 @@ void DPDTest::OnbtnCaptureClicked(wxCommandEvent& event)
         if (LMS_GetSampleRate(lmsControl,LMS_CH_RX,4,&ADCNyquistMHz,nullptr)!=0)
             ADCNyquistMHz = 1;
         else
-            ADCNyquistMHz /= 2*2e6;
+            ADCNyquistMHz /= 2e6;
         PlotFFT(mFFT_x, fftCalcOut, samplesReceived, ADCNyquistMHz);
 
         //free allocated memory
@@ -270,15 +270,18 @@ void DPDTest::OnbtnCaptureClicked(wxCommandEvent& event)
 
 void DPDTest::SetNyquist(float LmsNyquistMHz)
 {
-    mLmsNyquist_MHz = LmsNyquistMHz;
+    if (LMS_GetSampleRate(lmsControl,LMS_CH_TX,0,&mLmsNyquist_MHz,nullptr)!=0)
+        mLmsNyquist_MHz = 1;
+    else
+        mLmsNyquist_MHz  /= 1e6;
     double ADCNyquistMHz;
     if (LMS_GetSampleRate(lmsControl,LMS_CH_RX,4,&ADCNyquistMHz,nullptr)!=0)
         ADCNyquistMHz = 1;
-    mFFT_xp->SetInitialDisplayArea(-LmsNyquistMHz*1000000, LmsNyquistMHz*1000000, -100, 0);
-    mFFT_yp->SetInitialDisplayArea(-LmsNyquistMHz*1000000, LmsNyquistMHz*1000000, -100, 0);
-    mFFT_xp1->SetInitialDisplayArea(-LmsNyquistMHz * 1000000, LmsNyquistMHz * 1000000, -100, 0);
-    mFFT_yp1->SetInitialDisplayArea(-LmsNyquistMHz * 1000000, LmsNyquistMHz * 1000000, -100, 0);
-    mFFT_x->SetInitialDisplayArea(-ADCNyquistMHz*1000000, ADCNyquistMHz*1000000/2, -100, 0);
+    mFFT_xp->SetInitialDisplayArea(-LmsNyquistMHz, LmsNyquistMHz, -100, 0);
+    mFFT_yp->SetInitialDisplayArea(-LmsNyquistMHz, LmsNyquistMHz, -100, 0);
+    mFFT_xp1->SetInitialDisplayArea(-LmsNyquistMHz, LmsNyquistMHz, -100, 0);
+    mFFT_yp1->SetInitialDisplayArea(-LmsNyquistMHz, LmsNyquistMHz, -100, 0);
+    mFFT_x->SetInitialDisplayArea(-ADCNyquistMHz, ADCNyquistMHz, -100, 0);
 }
 
 /** @brief Normalizes the fft output and displays results in given graph
@@ -306,7 +309,7 @@ void DPDTest::PlotFFT(OpenGLGraph* plot, const kiss_fft_cpx* fftOutput, const in
     for (int i = 0; i < samplesCount / 2 + 1; ++i)
         outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
     for (int s = 0; s < samplesCount; ++s) //convert to dbFS
-        outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 69.2369 : -300);
+        outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 81.2781 : -300);
     plot->series[0]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
     plot->Refresh();
     plot->SetInitialDisplayArea(-nyquist_MHz * 1000000, nyquist_MHz * 1000000, -100, 0);

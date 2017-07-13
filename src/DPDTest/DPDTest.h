@@ -50,7 +50,7 @@ protected:
     
     void OnbtnCaptureClicked(wxCommandEvent& event);
     lms_device_t *lmsControl;
-    float mLmsNyquist_MHz;
+    double mLmsNyquist_MHz;
 
     void PlotFFT(OpenGLGraph* plot, const kiss_fft_cpx* fftOutput, const int samplesCount, const float nyquist_MHz);
     void PlotTimeDomain(OpenGLGraph* plot, const kiss_fft_cpx* samples, const int samplesCount);

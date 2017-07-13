@@ -1,7 +1,7 @@
 ########################################################################
 # Lime Util -- command line utility, info and connections
 ########################################################################
-cmake_dependent_option(ENABLE_LIME_UTIL "LimeSuite device utility" ON "ENABLE_LIBRARY" OFF)
+cmake_dependent_option(ENABLE_LIME_UTIL "LimeSuite device utility" OFF "ENABLE_LIBRARY" OFF)
 add_feature_info(LimeUtilCommand ENABLE_LIME_UTIL "Command line device discovery utility")
 if(ENABLE_LIME_UTIL)
     add_executable(LimeUtil

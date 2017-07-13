@@ -985,6 +985,8 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind,
                                                 float_type *temp);
 
+API_EXPORT int CALL_CONV LMS_SetActiveChipID(lms_device_t *device, int id);
+
 /** @} (End FN_LOW_LVL) */
 
 /**

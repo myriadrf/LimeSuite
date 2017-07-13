@@ -59,7 +59,7 @@ set(CONNECTION_uLimeSDR_LIBRARIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_uLimeSDR "Enable uLimeSDR" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
+cmake_dependent_option(ENABLE_uLimeSDR "Enable uLimeSDR" OFF "ENABLE_LIBRARY;USB_FOUND" OFF)
 add_feature_info(Connection_uLimeSDR ENABLE_uLimeSDR "uLimeSDR Connection support")
 if (NOT ENABLE_uLimeSDR)
     return()

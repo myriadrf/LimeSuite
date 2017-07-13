@@ -71,38 +71,38 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 {
     additionalControls = nullptr;
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
-	wxFlexGridSizer* fgSizer247;
-	fgSizer247 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer247->AddGrowableCol( 0 );
-	fgSizer247->AddGrowableRow( 1 );
-	fgSizer247->SetFlexibleDirection( wxBOTH );
-	fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer* fgSizer247;
+    fgSizer247 = new wxFlexGridSizer( 0, 1, 10, 10 );
+    fgSizer247->AddGrowableCol( 0 );
+    fgSizer247->AddGrowableRow( 1 );
+    fgSizer247->SetFlexibleDirection( wxBOTH );
+    fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	wxFlexGridSizer* fgSizer248;
-	fgSizer248 = new wxFlexGridSizer( 0, 4, 0, 0 );
-	fgSizer248->SetFlexibleDirection( wxBOTH );
-	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer* fgSizer248;
+    fgSizer248 = new wxFlexGridSizer( 0, 4, 0, 0 );
+    fgSizer248->SetFlexibleDirection( wxBOTH );
+    fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	btnReadAll = new wxButton( this, wxID_ANY, wxT("Read all"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( btnReadAll, 0, wxALL, 5 );
+    btnReadAll = new wxButton( this, wxID_ANY, wxT("Read all"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer248->Add( btnReadAll, 0, wxALL, 5 );
 
-	btnWriteAll = new wxButton( this, wxID_ANY, wxT("Write all"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( btnWriteAll, 0, wxALL, 5 );
+    btnWriteAll = new wxButton( this, wxID_ANY, wxT("Write all"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer248->Add( btnWriteAll, 0, wxALL, 5 );
 
-	m_staticText349 = new wxStaticText( this, wxID_ANY, wxT("Labels:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText349->Wrap( -1 );
-	fgSizer248->Add( m_staticText349, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    m_staticText349 = new wxStaticText( this, wxID_ANY, wxT("Labels:"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_staticText349->Wrap( -1 );
+    fgSizer248->Add( m_staticText349, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxArrayString cmbBoardSelectionChoices;
-	cmbBoardSelection = new wxChoice( this, wxNewId(), wxDefaultPosition, wxDefaultSize, cmbBoardSelectionChoices, 0 );
-	cmbBoardSelection->SetSelection( 0 );
-	fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
+    wxArrayString cmbBoardSelectionChoices;
+    cmbBoardSelection = new wxChoice( this, wxNewId(), wxDefaultPosition, wxDefaultSize, cmbBoardSelectionChoices, 0 );
+    cmbBoardSelection->SetSelection( 0 );
+    fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
 
-	for (int i = 0; i < LMS_DEV_COUNT; ++i) {
-            cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
-	}
+    for (int i = 0; i < LMS_DEV_COUNT; ++i) {
+        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
+    }
 
-	fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
+    fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
 
     pnlCustomControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Custom controls"));
     wxFlexGridSizer* sizerCustomControls = new wxFlexGridSizer(0, 5, 5, 5);
@@ -371,9 +371,30 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std:
         dacVoltage.value = 0;
         dacVoltage.minValue = 0;
         dacVoltage.maxValue = 255;
-
         paramList.push_back(dacVoltage);
     }
+    if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
+    {
+        ADC_DAC param;
+        param.name = "VCCADJ_PA1 (Pot wiper 0)";
+        param.channel = 2;
+        param.powerOf10 = 0;
+        param.units = RAW;
+        param.value = 0;
+        param.minValue = 0;
+        param.maxValue = 255;
+        paramList.push_back(param);
+        
+        param.name = "VCCADJ_PA2 (Pot wiper 1)";
+        param.channel = 3;
+        param.powerOf10 = 0;
+        param.units = RAW;
+        param.value = 0;
+        param.minValue = 0;
+        param.maxValue = 255;
+        paramList.push_back(param);
+    }
+    
     return paramList;
 }
 
@@ -531,7 +552,7 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
             if (lmsControl == nullptr)
                 return;
 
-            int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,units);
+            int status = LMS_WriteCustomBoardParam(lmsControl,mDACparameters[i].channel,mDACparameters[i].value,units);
             if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
@@ -582,7 +603,6 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
     strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
 
     double value = spinCustomValueWr->GetValue()*pow(10, powerOf10);
-
 
     int status = LMS_WriteCustomBoardParam(lmsControl,id,value,units);
     if (status != 0)
