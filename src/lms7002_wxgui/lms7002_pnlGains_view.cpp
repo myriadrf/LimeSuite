@@ -141,3 +141,19 @@ void lms7002_pnlGains_view::UpdateGUI()
     cmbCG_IAMP_TBB->Enable(value);
 
 }
+
+void lms7002_pnlGains_view::OnAGCStateChange(wxCommandEvent& event)
+{
+    if(chkAGC->GetValue() != 0)
+    {
+        LMS_MCU_AGCStart(lmsControl, spinRSSIFloor->GetValue(), spinRSSICeil->GetValue());
+        spinRSSIFloor->Disable();
+        spinRSSICeil->Disable();
+    }
+    else
+    {
+        LMS_MCU_AGCStop(lmsControl);
+        spinRSSIFloor->Enable();
+        spinRSSICeil->Enable();
+    }
+}

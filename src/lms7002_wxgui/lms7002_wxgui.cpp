@@ -136,9 +136,6 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
 	
-	btnCalibrateInternalADC = new wxButton( this, wxID_ANY, wxT("Cal. Int ADC"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer299->Add( btnCalibrateInternalADC, 0, 0, 5 );
-	
 	
 	fgSizer298->Add( fgSizer299, 1, wxALIGN_LEFT|wxALIGN_TOP|wxEXPAND|wxBOTTOM, 10 );
 	
@@ -200,7 +197,6 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
 	btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
-	btnCalibrateInternalADC->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnCalibrateInternalADC ), NULL, this );
 	tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 }
 
@@ -219,7 +215,6 @@ mainPanel::~mainPanel()
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
 	btnReadTemperature->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnReadTemperature ), NULL, this );
-	btnCalibrateInternalADC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnCalibrateInternalADC ), NULL, this );
 	tabsNotebook->Disconnect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
 	
 }
@@ -9380,6 +9375,43 @@ pnlGains_view::pnlGains_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer309->Add( sbSizer148, 1, 0, 5 );
 	
 	
+	fgSizer309->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer135;
+	sbSizer135 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("MCU AGC") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer256;
+	fgSizer256 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer256->SetFlexibleDirection( wxBOTH );
+	fgSizer256->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	chkAGC = new wxCheckBox( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Enable AGC"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer256->Add( chkAGC, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	m_staticText359 = new wxStaticText( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Max RSSI"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText359->Wrap( -1 );
+	fgSizer256->Add( m_staticText359, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	spinRSSICeil = new wxSpinCtrl( sbSizer135->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 203 );
+	fgSizer256->Add( spinRSSICeil, 0, wxLEFT, 5 );
+	
+	
+	fgSizer256->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticText360 = new wxStaticText( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Min RSSI"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText360->Wrap( -1 );
+	fgSizer256->Add( m_staticText360, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	spinRSSIFloor = new wxSpinCtrl( sbSizer135->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 120 );
+	fgSizer256->Add( spinRSSIFloor, 0, wxLEFT, 5 );
+	
+	
+	sbSizer135->Add( fgSizer256, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer309->Add( sbSizer135, 1, wxEXPAND, 5 );
+	
+	
 	this->SetSizer( fgSizer309 );
 	this->Layout();
 	fgSizer309->Fit( this );
@@ -9393,6 +9425,7 @@ pnlGains_view::pnlGains_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbLOSS_LIN_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_MAIN_TXPAD_TRF->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
 	cmbCG_IAMP_TBB->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
+	chkAGC->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlGains_view::OnAGCStateChange ), NULL, this );
 }
 
 pnlGains_view::~pnlGains_view()
@@ -9406,6 +9439,7 @@ pnlGains_view::~pnlGains_view()
 	cmbLOSS_LIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
 	cmbLOSS_MAIN_TXPAD_TRF->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
 	cmbCG_IAMP_TBB->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlGains_view::ParameterChangeHandler ), NULL, this );
+	chkAGC->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlGains_view::OnAGCStateChange ), NULL, this );
 	
 }
 

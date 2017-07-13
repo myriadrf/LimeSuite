@@ -94,6 +94,9 @@ public:
     int UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt);
     static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::map<std::string, double> extra_parameters;
+
+    int MCU_AGCStart(uint8_t rssiMin, uint8_t rssiMax);
+    int MCU_AGCStop();
 protected:
     const double maxTxGain = 60.0;
     lms_dev_info_t devInfo;

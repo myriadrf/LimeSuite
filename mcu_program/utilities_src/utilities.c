@@ -60,9 +60,9 @@ static ROM const int8_t agcTable[] =
 #define AGC_TABLE_ROW_CNT sizeof(agcTable)/sizeof(agcTable[0])
 #define AGC_TABLE_COL_CNT 3
 
-const uint8_t rssiFloor = 120;
-const uint8_t rssiCeil = 203;
-const float rssiStep = 2.75;
+uint8_t rssiFloor = 120;
+uint8_t rssiCeil = 203;
+
 uint8_t pgaCeil = 12;
 uint8_t tiaGain = 2;
 
@@ -72,7 +72,12 @@ void RunAGC()
 {
     uint8_t pga, lna, c_ctl_pga, needGain_dB, tableArrayOffset;
     int16_t rssiDiff;
+    float rssiStep;
+    rssiCeil = Get_SPI_Reg_bits(0x002D, (15 << 4) | 8);
+    rssiFloor = Get_SPI_Reg_bits(0x002D, (7 << 4) | 0);
+    rssiStep = (rssiCeil-rssiFloor)/30.0;
     pgaCeil = SPI_read(0x002D);
+    Modify_SPI_Reg_bits(0x0081, 15 << 4 | 15, 1);
 
     while(!gStopWork)
     {

@@ -105,7 +105,6 @@ class mainPanel : public wxPanel
 		wxButton* btnResetChip;
 		wxStaticText* txtTemperature;
 		wxButton* btnReadTemperature;
-		wxButton* btnCalibrateInternalADC;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -121,7 +120,6 @@ class mainPanel : public wxPanel
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnCalibrateInternalADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	
@@ -2208,10 +2206,16 @@ class pnlGains_view : public wxPanel
 		wxComboBox* cmbLOSS_LIN_TXPAD_TRF;
 		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
 		NumericSlider* cmbCG_IAMP_TBB;
+		wxCheckBox* chkAGC;
+		wxStaticText* m_staticText359;
+		wxSpinCtrl* spinRSSICeil;
+		wxStaticText* m_staticText360;
+		wxSpinCtrl* spinRSSIFloor;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnAGCStateChange( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

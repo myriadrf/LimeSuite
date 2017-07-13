@@ -28,8 +28,10 @@ void ext2_int() interrupt 7
     P1 = MCU_IDLE;
 }
 
+bool gStopWork;
 void ext3_int() interrupt 8
 {
+    gStopWork = true;
     P1 = MCU_WORKING;
     currentInstruction = P0;
     runProcedure = true;
@@ -39,8 +41,6 @@ void ext3_int() interrupt 8
     P1[7] : 0-MCU idle, 1-MCU_working
     P1[6:0] : return status (while working = 0x3F)
 */
-bool gStopWork;
-
 void main()  //main routine
 {
     SP=0xD0; // Set stack pointer
@@ -65,13 +65,15 @@ void main()  //main routine
                 P1 = MCU_IDLE;
                 break;
             case 254: //AGC
-                P1 = MCU_WORKING;
+                P1 = MCU_IDLE;
                 RunAGC();
+                P1 = MCU_IDLE;
             case 255: //return program ID
                 P1 = 0x04;
                 break;
             }
             runProcedure = false;
+            gStopWork = false;
         }
     }
 }
