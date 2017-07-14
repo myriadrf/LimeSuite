@@ -5,12 +5,12 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 	: pnlMiniLog_view( parent, id, pos, size, style )
 {
 	mDefaultStyle = txtMessageField->GetDefaultStyle();
-	mNewMessages = 0;
+        mMessages = 0;
 	wxUpdateUIEvent::SetUpdateInterval(100);
 }
 
 void pnlMiniLog::HandleMessage(wxCommandEvent &event)
-{   
+{
     time_t rawtime;
     struct tm * timeinfo;
     char buffer[80];
@@ -28,40 +28,34 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     if (mAllMessages.size() > allMessageLimit)
         mAllMessages.pop_front();
 
-    mMessageList.emplace_back(level, line);
-    const int miniLogMessageLimit = 1000;
-    if (mMessageList.size() > miniLogMessageLimit) {
-        mMessageList.pop_front();
+    const int miniLogMessageLimit = 800;
+    wxTextAttr style = mDefaultStyle;
+    switch(level)
+    {
+        case lime::LOG_LEVEL_CRITICAL:
+        case lime::LOG_LEVEL_ERROR:
+                style.SetTextColour(*wxRED);
+                break;
+        case lime::LOG_LEVEL_WARNING:
+                style.SetBackgroundColour(*wxYELLOW);
+                style.SetTextColour(*wxBLACK);
+                break;
+        default: break;
     }
-    ++mNewMessages;
+    txtMessageField->SetDefaultStyle(style);
+    txtMessageField->AppendText(line);
+    txtMessageField->SetDefaultStyle(mDefaultStyle);
+    txtMessageField->AppendText(_("\n"));
+    if (++mMessages > miniLogMessageLimit)
+    {
+        txtMessageField->Remove(0,txtMessageField->GetLineLength(0)+1);
+        mMessages--;
+    }
 }
 
 void pnlMiniLog::OnUpdateGUI(wxUpdateUIEvent& event)
-{	
-	if (mNewMessages == 0)
-		return;
-	txtMessageField->Clear();
-	for (auto msg : mMessageList)
-	{
-		wxTextAttr style = mDefaultStyle;
-		switch(msg.first)
-		{
-		case lime::LOG_LEVEL_CRITICAL:
-		case lime::LOG_LEVEL_ERROR:
-			style.SetTextColour(*wxRED);
-			break;
-		case lime::LOG_LEVEL_WARNING:
-			style.SetBackgroundColour(*wxYELLOW);
-			style.SetTextColour(*wxBLACK);
-			break;
-		default: break;
-		}
-		txtMessageField->SetDefaultStyle(style);
-		txtMessageField->AppendText(msg.second);
-		txtMessageField->SetDefaultStyle(mDefaultStyle);
-		txtMessageField->AppendText(_("\n"));
-	}
-	mNewMessages = 0;
+{
+
 }
 
 void pnlMiniLog::OnBtnClearClicked(wxCommandEvent& event)
