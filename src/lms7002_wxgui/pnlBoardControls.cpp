@@ -71,43 +71,42 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 {
     additionalControls = nullptr;
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
-	wxFlexGridSizer* fgSizer247;
-	fgSizer247 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer247->AddGrowableCol( 0 );
-	fgSizer247->AddGrowableRow( 1 );
-	fgSizer247->SetFlexibleDirection( wxBOTH );
-	fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer* fgSizer247;
+    fgSizer247 = new wxFlexGridSizer( 0, 1, 10, 10);
+    fgSizer247->AddGrowableCol( 0 );
+    fgSizer247->AddGrowableRow( 1 );
+    fgSizer247->SetFlexibleDirection( wxBOTH );
+    fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	wxFlexGridSizer* fgSizer248;
-	fgSizer248 = new wxFlexGridSizer( 0, 4, 0, 0 );
-	fgSizer248->SetFlexibleDirection( wxBOTH );
-	fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer* fgSizer248;
+    fgSizer248 = new wxFlexGridSizer( 0, 4, 0, 0 );
+    fgSizer248->SetFlexibleDirection( wxBOTH );
+    fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	btnReadAll = new wxButton( this, wxID_ANY, wxT("Read all"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( btnReadAll, 0, wxALL, 5 );
+    btnReadAll = new wxButton( this, wxID_ANY, wxT("Read all"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer248->Add( btnReadAll, 0, wxALL, 5 );
 
-	btnWriteAll = new wxButton( this, wxID_ANY, wxT("Write all"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( btnWriteAll, 0, wxALL, 5 );
+    btnWriteAll = new wxButton( this, wxID_ANY, wxT("Write all"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer248->Add( btnWriteAll, 0, wxALL, 5 );
 
-	m_staticText349 = new wxStaticText( this, wxID_ANY, wxT("Labels:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText349->Wrap( -1 );
-	fgSizer248->Add( m_staticText349, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    m_staticText349 = new wxStaticText( this, wxID_ANY, wxT("Labels:"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_staticText349->Wrap( -1 );
+    fgSizer248->Add( m_staticText349, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxArrayString cmbBoardSelectionChoices;
-	cmbBoardSelection = new wxChoice( this, wxNewId(), wxDefaultPosition, wxDefaultSize, cmbBoardSelectionChoices, 0 );
-	cmbBoardSelection->SetSelection( 0 );
-	fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
+    wxArrayString cmbBoardSelectionChoices;
+    cmbBoardSelection = new wxChoice( this, wxNewId(), wxDefaultPosition, wxDefaultSize, cmbBoardSelectionChoices, 0 );
+    cmbBoardSelection->SetSelection( 0 );
+    fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
 
-	for (int i = 0; i < LMS_DEV_COUNT; ++i) {
-            cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
-	}
+    for (int i = 0; i < LMS_DEV_COUNT; ++i) {
+        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
+    }
 
-	fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
+    fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
 
     pnlCustomControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Custom controls"));
     wxFlexGridSizer* sizerCustomControls = new wxFlexGridSizer(0, 5, 5, 5);
 
-    sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Ch.")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Value")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Power")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Units")));
@@ -164,12 +163,11 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     fgSizer249->SetFlexibleDirection( wxBOTH );
     fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    pnlReadControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Read"));
-    wxStaticBoxSizer* sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( pnlReadControls, wxID_ANY, wxT("Read") ), wxVERTICAL );
-    sizerAnalogRd = new wxFlexGridSizer( 0, 4, 2, 2 );
+    pnlReadControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("General"));
+    wxStaticBoxSizer* sbSizer133 = new wxStaticBoxSizer( new wxStaticBox( pnlReadControls, wxID_ANY, wxT("General") ), wxVERTICAL );
+    sizerAnalogRd = new wxFlexGridSizer( 0, 3, 2, 2 );
     sizerAnalogRd->SetFlexibleDirection( wxBOTH );
     sizerAnalogRd->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    sizerAnalogRd->Add(new wxStaticText(pnlReadControls, wxID_ANY, _("Ch.")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(pnlReadControls, wxID_ANY, _("Name")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(pnlReadControls, wxID_ANY, _("Value")), 1, wxALL, 5);
     sizerAnalogRd->Add(new wxStaticText(pnlReadControls, wxID_ANY, _("Units")), 1, wxALL, 5);
@@ -178,21 +176,6 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     pnlReadControls->Fit();
     pnlReadControls->Hide();
     fgSizer249->Add( pnlReadControls, 1, wxEXPAND, 5 );
-
-    pnlWriteControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Read"));
-    wxStaticBoxSizer* sbSizer134 = new wxStaticBoxSizer( new wxStaticBox( pnlWriteControls, wxID_ANY, wxT("Write") ), wxVERTICAL );
-    sizerAnalogWr = new wxFlexGridSizer( 0, 4, 2, 2 );
-    sizerAnalogWr->SetFlexibleDirection( wxBOTH );
-    sizerAnalogWr->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    sizerAnalogWr->Add(new wxStaticText(pnlWriteControls, wxID_ANY, _("Ch.")), 1, wxALL, 5);
-    sizerAnalogWr->Add(new wxStaticText(pnlWriteControls, wxID_ANY, _("Name")), 1, wxALL, 5);
-    sizerAnalogWr->Add(new wxStaticText(pnlWriteControls, wxID_ANY, _("Value")), 1, wxALL, 5);
-    sizerAnalogWr->Add(new wxStaticText(pnlWriteControls, wxID_ANY, _("Units")), 1, wxALL, 5);
-    sbSizer134->Add( sizerAnalogWr, 1, wxEXPAND, 5 );
-    pnlWriteControls->SetSizer(sbSizer134);
-    pnlWriteControls->Fit();
-    pnlWriteControls->Hide();
-    fgSizer249->Add( pnlWriteControls, 1, wxEXPAND, 5 );
 
     fgSizer247->Add( fgSizer249, 1, wxEXPAND, 5 );
 
@@ -224,7 +207,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     vector<double> values;
     vector<string> units;
 
-    for (const auto& param : mADCparameters)
+    for (const auto& param : mParameters)
     {
         ids.push_back(param.channel);
         values.push_back(0);
@@ -232,32 +215,19 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
     }
 
 
-    for (size_t i = 0; i < mADCparameters.size(); ++i)
+    for (size_t i = 0; i < mParameters.size(); ++i)
     {
         float_type value;
         lms_name_t units;
-        int status = LMS_ReadCustomBoardParam(lmsControl,mADCparameters[i].channel,&value,units);
+        int status = LMS_ReadCustomBoardParam(lmsControl,mParameters[i].channel,&value,units);
         if (status != 0)
         {
             wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
             return;
         }
-        mADCparameters[i].channel = ids[i];
-        mADCparameters[i].units = units;
-        mADCparameters[i].value = value;
-    }
-    for (size_t i = 0; i < mDACparameters.size(); ++i)
-    {
-        for (size_t j = 0; j < mADCparameters.size(); ++j)
-        {
-            if (mDACparameters[i].channel == mADCparameters[j].channel)
-            {
-                mDACparameters[i].value = mADCparameters[j].value;
-                mDACparameters[i].units = mADCparameters[j].units;
-                mDAC_GUI_widgets[i]->value->SetValue(mDACparameters[i].value);
-                break;
-            }
-        }
+        mParameters[i].channel = ids[i];
+        mParameters[i].units = units;
+        mParameters[i].value = value;
     }
     UpdatePanel();
 }
@@ -272,13 +242,14 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 
     vector<uint8_t> ids;
     vector<double> values;
-    //vector<string> units; currently is not used
 
-    for (size_t i = 0; i < mDACparameters.size(); ++i)
+    for (size_t i = 0; i < mParameters.size(); ++i)
     {
-        ids.push_back(mDACparameters[i].channel);
-        values.push_back(mDACparameters[i].value);
-        int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,NULL);
+        if (!mParameters[i].writable)
+            continue;
+        ids.push_back(mParameters[i].channel);
+        values.push_back(mParameters[i].value);
+        int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,NULL);
         if (status != 0)
         {
             wxMessageBox(_("Failes to write values"), _("Warning"));
@@ -311,13 +282,15 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
 
 void pnlBoardControls::UpdatePanel()
 {
-    assert(mADCparameters.size() == mADC_GUI_widgets.size());
-    for (size_t i = 0; i < mADCparameters.size(); ++i)
+    assert(mADCparameters.size() == mGUI_widgets.size());
+    for (size_t i = 0; i < mParameters.size(); ++i)
     {
-        mADC_GUI_widgets[i]->channel->SetLabel(wxString::Format(_("%i"), mADCparameters[i].channel));
-        mADC_GUI_widgets[i]->title->SetLabel(wxString(mADCparameters[i].name));
-        mADC_GUI_widgets[i]->value->SetLabel(wxString::Format(_("%1.0f"), mADCparameters[i].value));
-        mADC_GUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mADCparameters[i].units));
+        mGUI_widgets[i]->title->SetLabel(wxString(mParameters[i].name));
+        if (mGUI_widgets[i]->wValue)
+            mGUI_widgets[i]->wValue->SetValue(mParameters[i].value);
+        else
+            mGUI_widgets[i]->rValue->SetLabel(wxString::Format(_("%1.0f"), mParameters[i].value));
+        mGUI_widgets[i]->units->SetLabelText(wxString::Format("%s", mParameters[i].units));
     }
 
     if(additionalControls)
@@ -329,7 +302,7 @@ void pnlBoardControls::UpdatePanel()
     }
 }
 
-std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const string &boardID)
+std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const string &boardID)
 {
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
@@ -340,32 +313,8 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardADCs(const stri
         || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
 
-        paramList.push_back(ADC_DAC{"DAC", 0, 0, adcUnits2string(RAW)});
-        paramList.push_back(ADC_DAC{"Board Temperature", 0, 1, adcUnits2string(TEMPERATURE)});
-    }
-    return paramList;
-}
-
-std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardDACs(const std::string &boardID)
-{
-    std::vector<ADC_DAC> paramList;
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-        || boardID == GetDeviceName(LMS_DEV_ULIMESDR)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
-        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
-    {
-        ADC_DAC dacVoltage;
-        dacVoltage.name = "DAC";
-        dacVoltage.channel = 0;
-        dacVoltage.powerOf10 = 0;
-        dacVoltage.units = RAW;
-        dacVoltage.value = 0;
-        dacVoltage.minValue = 0;
-        dacVoltage.maxValue = 255;
-
-        paramList.push_back(dacVoltage);
+        paramList.push_back(ADC_DAC{"VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255});
+        paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
 }
@@ -392,60 +341,42 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         }
     }
 
-    for (auto &widget : mADC_GUI_widgets)
+    for (auto &widget : mGUI_widgets)
         delete widget;
-    mADC_GUI_widgets.clear(); //delete previously existing controls
-    mADCparameters = getBoardADCs(boardID); //update controls list by board type
-
-    for (auto &widget : mDAC_GUI_widgets)
-        delete widget;
-    mDAC_GUI_widgets.clear(); //delete previously existing controls
-    mDACparameters = getBoardDACs(boardID); //update controls list by board type
+    mGUI_widgets.clear(); //delete previously existing controls
+    mParameters = getBoardParams(boardID); //update controls list by board type
 
     if (boardID != GetDeviceName(LMS_DEV_UNKNOWN))
     {
-        if (mADCparameters.size()!=0)
+        if (mParameters.size()!=0)
             pnlReadControls->Show();
         else
             pnlReadControls->Hide();
 
-        for (size_t i = 0; i < mADCparameters.size(); ++i)
+        for (size_t i = 0; i < mParameters.size(); ++i)
         {
-            ADC_GUI *gui = new ADC_GUI();
-            gui->channel = new wxStaticText(pnlReadControls, wxID_ANY, wxString::Format(_("%i"), mADCparameters[i].channel));
-            gui->title = new wxStaticText(pnlReadControls, wxID_ANY, wxString(mADCparameters[i].name));
-            gui->value = new wxStaticText(pnlReadControls, wxID_ANY, _(""));
-            gui->units = new wxStaticText(pnlReadControls, wxID_ANY, wxString::Format("%s", mADCparameters[i].units));
-            mADC_GUI_widgets.push_back(gui);
-            sizerAnalogRd->Add(gui->channel, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+            Param_GUI *gui = new Param_GUI();
+            gui->title = new wxStaticText(pnlReadControls, wxID_ANY, wxString(mParameters[i].name));
+            if (mParameters[i].writable)
+            {
+                gui->wValue = new wxSpinCtrl(pnlReadControls, wxNewId(), _(""), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, mParameters[i].minValue, mParameters[i].maxValue, mParameters[i].minValue);
+                gui->wValue->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(pnlBoardControls::OnSetDACvalues), NULL, this);
+                gui->wValue->Connect(wxEVT_TEXT_ENTER, wxCommandEventHandler(pnlBoardControls::OnSetDACvaluesENTER), NULL, this);
+            }
+            else
+                gui->rValue = new wxStaticText(pnlReadControls, wxID_ANY, _(""));
+            gui->units = new wxStaticText(pnlReadControls, wxID_ANY, wxString::Format("%s", mParameters[i].units));
+            mGUI_widgets.push_back(gui);
+
             sizerAnalogRd->Add(gui->title, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-            sizerAnalogRd->Add(gui->value, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+            if (mParameters[i].writable)
+                sizerAnalogRd->Add(gui->wValue, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+            else
+                sizerAnalogRd->Add(gui->rValue, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-        }
-
-        if (mDACparameters.size()!=0)
-            pnlWriteControls->Show();
-        else
-            pnlWriteControls->Hide();
-
-        for (size_t i = 0; i < mDACparameters.size(); ++i)
-        {
-            DAC_GUI *gui = new DAC_GUI();
-            gui->channel = new wxStaticText(pnlWriteControls, wxID_ANY, wxString::Format(_("%i"), mDACparameters[i].channel));
-            gui->title = new wxStaticText(pnlWriteControls, wxID_ANY, wxString(mDACparameters[i].name));
-            gui->value = new wxSpinCtrl(pnlWriteControls, wxNewId(), _(""), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, mDACparameters[i].minValue, mDACparameters[i].maxValue, mDACparameters[i].minValue);
-            gui->value->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(pnlBoardControls::OnSetDACvalues), NULL, this);
-            gui->value->Connect(wxEVT_TEXT_ENTER, wxCommandEventHandler(pnlBoardControls::OnSetDACvaluesENTER), NULL, this);
-            gui->units = new wxStaticText(pnlWriteControls, wxID_ANY, wxString::Format("%s", mDACparameters[i].units));
-            mDAC_GUI_widgets.push_back(gui);
-            sizerAnalogWr->Add(gui->channel, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-            sizerAnalogWr->Add(gui->title, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-            sizerAnalogWr->Add(gui->value, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-            sizerAnalogWr->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
         }
     }
     sizerAnalogRd->Layout();
-    sizerAnalogWr->Layout();
 
     if(boardID == GetDeviceName(LMS_DEV_ULIMESDR))
     {
@@ -512,19 +443,19 @@ void pnlBoardControls::OnSetDACvaluesENTER(wxCommandEvent &event)
 
 void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
 {
-    for (size_t i = 0; i < mDAC_GUI_widgets.size(); ++i)
+    for (size_t i = 0; i < mGUI_widgets.size(); ++i)
     {
-        if (event.GetEventObject() == mDAC_GUI_widgets[i]->value)
+        if (event.GetEventObject() == mGUI_widgets[i]->wValue)
         {
-            mDACparameters[i].value = mDAC_GUI_widgets[i]->value->GetValue();
+            mParameters[i].value = mGUI_widgets[i]->wValue->GetValue();
             //write to chip
             lms_name_t units;
-            strncpy(units,mDACparameters[i].units.c_str(),sizeof(lms_name_t)-1);
+            strncpy(units,mParameters[i].units.c_str(),sizeof(lms_name_t)-1);
 
             if (lmsControl == nullptr)
                 return;
 
-            int status = LMS_WriteCustomBoardParam(lmsControl,mADCparameters[i].channel,mDACparameters[i].value,units);
+            int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,units);
             if (status != 0)
                 wxMessageBox(_("Failed to set value"), _("Warning"));
             return;
