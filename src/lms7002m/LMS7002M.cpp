@@ -25,6 +25,7 @@
 #include <chrono>
 #include <thread>
 #include "Logger.h"
+#include "mcu_programs.h"
 
 #include "MCU_BD.h"
 const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
@@ -193,6 +194,10 @@ LMS7002M::LMS7002M() :
     MemorySectionAddresses[RxGFIR3c][1] = 0x05A7;
     MemorySectionAddresses[RSSI_DC_CALIBRATION][0] = 0x05C0;
     MemorySectionAddresses[RSSI_DC_CALIBRATION][1] = 0x05CC;
+    MemorySectionAddresses[RSSI_PDET_TEMP_CONFIG][0] = 0x0600;
+    MemorySectionAddresses[RSSI_PDET_TEMP_CONFIG][1] = 0x0606;
+    MemorySectionAddresses[RSSI_DC_CONFIG][0] = 0x0640;
+    MemorySectionAddresses[RSSI_DC_CONFIG][1] = 0x0641;
 
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     mcuControl = new MCU_BD();
@@ -392,6 +397,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
         return ReportError(ENOENT, "LoadConfigLegacyFile(%s) - file not found", filename);
     }
     f.close();
+
     uint16_t addr = 0;
     uint16_t value = 0;
     Channel ch = this->GetActiveChannel(); //remember used channel
@@ -575,6 +581,14 @@ int LMS7002M::LoadConfig(const char* filename)
         return ReportError(ENOENT, "LoadConfig(%s) - file not found", filename);
     }
     f.close();
+
+    if(mcuControl)
+    {
+        mcuControl->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+        if(mcuControl->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+            mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+    }
+
     uint16_t addr = 0;
     uint16_t value = 0;
     Channel ch = this->GetActiveChannel(); //remember used channel
@@ -2610,8 +2624,14 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     CalibrateInternalADC(0);
     Modify_SPI_Reg_bits(LMS7param(PD_RSSI_RFE), 0);
     Modify_SPI_Reg_bits(LMS7param(PD_TIA_RFE), 0);
-    Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 22);
+
+    /*Modify_SPI_Reg_bits(LMS7param(RSSIDC_RSEL), 22);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_HYSCMP), 0);
+    Modify_SPI_Reg_bits(LMS7param(RSSIDC_PD), 0);*/
+    SPI_write(0x0640, 22 << 4);
+
     Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO2), 0);
+
     int value = -63;
     uint8_t wrValue = abs(value);
     if(value < 0)
