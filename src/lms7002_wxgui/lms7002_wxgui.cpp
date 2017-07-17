@@ -9388,16 +9388,6 @@ pnlGains_view::pnlGains_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	chkAGC = new wxCheckBox( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Enable AGC"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer256->Add( chkAGC, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
-	m_staticText359 = new wxStaticText( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Max RSSI"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText359->Wrap( -1 );
-	fgSizer256->Add( m_staticText359, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	spinRSSICeil = new wxSpinCtrl( sbSizer135->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 203 );
-	fgSizer256->Add( spinRSSICeil, 0, wxLEFT, 5 );
-	
-	
-	fgSizer256->Add( 0, 0, 1, wxEXPAND, 5 );
-	
 	m_staticText360 = new wxStaticText( sbSizer135->GetStaticBox(), wxID_ANY, wxT("Min RSSI"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText360->Wrap( -1 );
 	fgSizer256->Add( m_staticText360, 0, wxALIGN_CENTER_VERTICAL, 5 );

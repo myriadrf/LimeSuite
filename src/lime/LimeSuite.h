@@ -1278,7 +1278,7 @@ API_EXPORT const char* LMS_GetLibraryVersion();
  */
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
 
-API_EXPORT int CALL_CONV LMS_MCU_AGCStart(lms_device_t *device, uint8_t rssiMin, uint8_t rssiMax, uint8_t pgaCeil);
+API_EXPORT int CALL_CONV LMS_MCU_AGCStart(lms_device_t *device, uint8_t rssiMin, uint8_t pgaCeil);
 API_EXPORT int CALL_CONV LMS_MCU_AGCStop(lms_device_t *device);
 
 /** @} (End FN_VERSION) */

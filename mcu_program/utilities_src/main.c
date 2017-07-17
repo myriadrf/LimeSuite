@@ -31,9 +31,12 @@ void ext2_int() interrupt 7
 bool gStopWork;
 void ext3_int() interrupt 8
 {
-    gStopWork = true;
     P1 = MCU_WORKING;
     currentInstruction = P0;
+    if(P0 == 0)
+        gStopWork = true;
+    else
+        gStopWork = false;
     runProcedure = true;
 }
 
@@ -52,10 +55,10 @@ void main()  //main routine
     IEN0=0x80;
 
     ucSCLK=0; //repairs external SPI
-    ucSEN=1; 
+    ucSEN=1;
 
     //P1 returns MCU status
-    while(1) 
+    while(1)
     {
         if(runProcedure)
         {
@@ -67,7 +70,7 @@ void main()  //main routine
             case 254: //AGC
                 P1 = MCU_IDLE;
                 RunAGC();
-                P1 = MCU_IDLE;
+                //P1 = MCU_IDLE;
             case 255: //return program ID
                 P1 = 0x04;
                 break;

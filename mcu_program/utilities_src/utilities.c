@@ -1,6 +1,7 @@
 #include "utilities.h"
 #include "LMS7002M_parameters_compact.h"
 #include "spi.h"
+#include "LMS7002_REGx51.h"
 
 //db_gain, lna setting, pga setting offset
 //MUST have gain values in 1 increments starting from 0
@@ -61,22 +62,23 @@ static ROM const int8_t agcTable[] =
 #define AGC_TABLE_COL_CNT 3
 
 uint8_t rssiFloor = 120;
-uint8_t rssiCeil = 203;
 
-uint8_t pgaCeil = 12;
+int16_t pgaCeil = 12;
 uint8_t tiaGain = 2;
 
 extern bool gStopWork; //global variable to interupt infinite cycles
 
 void RunAGC()
 {
-    uint8_t pga, lna, c_ctl_pga, needGain_dB, tableArrayOffset;
+    bool increasing = true;
+    int8_t gainChange = 0;
+    uint8_t lastValue = 0;
+    int16_t lastNeedGain_dB = 0;
+    int16_t pga, lna, c_ctl_pga, needGain_dB, tableArrayOffset;
     int16_t rssiDiff;
-    float rssiStep;
-    rssiCeil = Get_SPI_Reg_bits(0x002D, (15 << 4) | 8);
+    const float rssiStep = 2.75;
     rssiFloor = Get_SPI_Reg_bits(0x002D, (7 << 4) | 0);
-    rssiStep = (rssiCeil-rssiFloor)/30.0;
-    pgaCeil = SPI_read(0x020C); //temporarily using register to get value into mcu
+    pgaCeil = Get_SPI_Reg_bits(0x002D, (15 << 4) | 8);
     Modify_SPI_Reg_bits(0x0081, 15 << 4 | 15, 1);
 
     while(!gStopWork)
@@ -88,10 +90,24 @@ void RunAGC()
         {
             needGain_dB = (rssiDiff/rssiStep+0.5);
             tableArrayOffset = needGain_dB*AGC_TABLE_COL_CNT;
-            if(tableArrayOffset > AGC_TABLE_ROW_CNT/AGC_TABLE_COL_CNT)
+            if(tableArrayOffset > AGC_TABLE_ROW_CNT*AGC_TABLE_COL_CNT)
                 tableArrayOffset = (AGC_TABLE_ROW_CNT-1)*AGC_TABLE_COL_CNT; //last entry, max gain
         }
 
+        gainChange = needGain_dB-lastNeedGain_dB;
+        
+        if( gainChange == -1  && increasing)
+            continue;
+        else if( gainChange == 1  && !increasing)
+            continue;
+        else if(gainChange == 0)
+        {
+            continue;
+        }
+        lastNeedGain_dB = needGain_dB;
+        increasing = gainChange > 0;
+
+        P1 = tableArrayOffset/3;
         lna = agcTable[tableArrayOffset+1];
         pga = agcTable[tableArrayOffset+2]+pgaCeil;
         if(pga < 0)

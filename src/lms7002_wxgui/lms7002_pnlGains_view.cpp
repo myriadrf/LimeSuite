@@ -146,14 +146,14 @@ void lms7002_pnlGains_view::OnAGCStateChange(wxCommandEvent& event)
 {
     if(chkAGC->GetValue() != 0)
     {
-        LMS_MCU_AGCStart(lmsControl, spinRSSIFloor->GetValue(), spinRSSICeil->GetValue(), spinPGACeil->GetValue());
+        LMS_MCU_AGCStart(lmsControl, spinRSSIFloor->GetValue(), spinPGACeil->GetValue());
         spinRSSIFloor->Disable();
-        spinRSSICeil->Disable();
+        spinPGACeil->Disable();
     }
     else
     {
         LMS_MCU_AGCStop(lmsControl);
         spinRSSIFloor->Enable();
-        spinRSSICeil->Enable();
+        spinPGACeil->Enable();
     }
 }

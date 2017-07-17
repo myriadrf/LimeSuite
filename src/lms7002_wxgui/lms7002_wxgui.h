@@ -2207,8 +2207,6 @@ class pnlGains_view : public wxPanel
 		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
 		NumericSlider* cmbCG_IAMP_TBB;
 		wxCheckBox* chkAGC;
-		wxStaticText* m_staticText359;
-		wxSpinCtrl* spinRSSICeil;
 		wxStaticText* m_staticText360;
 		wxSpinCtrl* spinRSSIFloor;
 		wxStaticText* m_staticText361;

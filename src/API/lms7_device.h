@@ -95,7 +95,7 @@ public:
     static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::map<std::string, double> extra_parameters;
 
-    int MCU_AGCStart(uint8_t rssiMin, uint8_t rssiMax, uint8_t pgaCeil);
+    int MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil);
     int MCU_AGCStop();
 protected:
     const double maxTxGain = 60.0;
