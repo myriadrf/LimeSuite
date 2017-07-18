@@ -21,6 +21,7 @@
 #include <assert.h>
 #include "ConnectionRegistry.h"
 #include "ADF4002.h"
+#include "mcu_programs.h"
 
 static const size_t LMS_PATH_NONE = 0;
 static const size_t LMS_PATH_HIGH = 1;
@@ -2031,3 +2032,31 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
     return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 
+int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)
+{
+    lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
+    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
+
+    uint8_t mcuID = mcu->ReadMCUProgramID();
+    printf("Current MCU firmware: %i, expected %i \n", mcuID, MCU_ID_AGC_IMAGE);
+    if(mcuID != MCU_ID_AGC_IMAGE)
+    {
+        printf("Uploading MCU AGC firmware\n");
+        int status = mcu->Program_MCU(mcu_program_lms7_agc_bin, lime::IConnection::MCU_PROG_MODE::SRAM);
+        printf("Done\n");
+        if(status != 0)
+            return status;
+    }
+
+    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x002D, 15, 0, pgaCeil << 8 | rssiMin);
+    mcu->RunProcedure(254);
+    return 0;
+}
+
+int LMS7_Device::MCU_AGCStop()
+{
+    lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
+    mcu->RunProcedure(0);
+    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
+    return 0;
+}

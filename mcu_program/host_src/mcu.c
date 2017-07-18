@@ -21,6 +21,7 @@ void MCU_RunProcedure(uint8_t id)
         (uint16_t)(x0002reg | interupt6),
         (uint16_t)(x0002reg & ~interupt6)};
     SPI_write_batch(addrs, values, 5);
+    SPI_read(0x0002);
 }
 
 uint8_t MCU_WaitForStatus(uint16_t timeout_ms)

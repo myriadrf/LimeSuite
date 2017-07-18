@@ -1335,3 +1335,17 @@ API_EXPORT const char* LMS_GetLibraryVersion()
     sprintf(libraryVersion, "%.32s", lime::GetLibraryVersion().c_str());
     return libraryVersion;
 }
+
+API_EXPORT int CALL_CONV LMS_MCU_AGCStart(lms_device_t *device, uint8_t rssiMin, uint8_t pgaCeil)
+{
+    LMS7_Device* lms = (LMS7_Device*)device;
+    lms->MCU_AGCStart(rssiMin, pgaCeil);
+    return 0;
+}
+
+API_EXPORT int CALL_CONV LMS_MCU_AGCStop(lms_device_t *device)
+{
+    LMS7_Device* lms = (LMS7_Device*)device;
+    lms->MCU_AGCStop();
+    return 0;
+}
