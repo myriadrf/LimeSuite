@@ -134,7 +134,7 @@ unsigned short MCU_BD:: mSPI_read(
     uint32_t rddata = 0;
     if(m_serPort->ReadLMS7002MSPI(&wrdata, &rddata, 1, mChipID)!=0)
         return 0;
-   
+
     return rddata & 0xFFFF;
 }
 
@@ -1009,8 +1009,11 @@ void MCU_BD::RunProcedure(uint8_t id)
     mSPI_write(0x0000, id);
     uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt6 = 0x08;
+    mSPI_write(0x0002, x0002reg & ~interupt6);
     mSPI_write(0x0002, x0002reg | interupt6);
     mSPI_write(0x0002, x0002reg & ~interupt6);
+    //MCU seems to be stuck at this point until any SPI operation is performed
+    mSPI_read(0x0002); //random spi action
     std::this_thread::sleep_for(std::chrono::microseconds(10));
 }
 
