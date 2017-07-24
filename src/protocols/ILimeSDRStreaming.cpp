@@ -73,7 +73,8 @@ int ILimeSDRStreaming::WriteStream(const size_t streamID, const void* buffs, con
     lime::IStreamChannel* channel = (lime::IStreamChannel*)streamID;
     lime::IStreamChannel::Metadata meta;
     meta.flags = 0;
-    meta.flags |= metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
+    meta.flags = metadata.hasTimestamp ? lime::IStreamChannel::Metadata::SYNC_TIMESTAMP : 0;
+    meta.flags |= metadata.endOfBurst ? lime::IStreamChannel::Metadata::END_BURST : 0;
     meta.timestamp = metadata.timestamp;
     int status = channel->Write(buffs, length, &meta, timeout_ms);
     return status;
@@ -143,7 +144,7 @@ int ILimeSDRStreaming::SendData(const char* buffer, int length, int epIndex, int
 int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
 {
     bool comp = true;
-    
+
     switch (GetInfo().device)
     {
         case LMS_DEV_STREAM:
@@ -157,7 +158,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
             break;
         default: return ReportError("UploadWFM not supported");
     }
-    
+
     const int samplesInPkt = comp ? 1360 : 1020;
     WriteRegister(0xFFFF, 1 << epIndex);
     WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
@@ -171,14 +172,14 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
     lime::FPGA_DataPacket pkt;
     size_t samplesUsed = 0;
     int cnt = sample_count;
-    
+
     const complex16_t* const* src = (const complex16_t* const*)samples;
     const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
     lime::complex16_t** samplesShort = new lime::complex16_t*[chCount];
     for(unsigned i=0; i<chCount; ++i)
         samplesShort[i] = nullptr;
 
-    
+
     if (format == StreamConfig::STREAM_12_BIT_IN_16 && comp == true)
     {
         for(unsigned i=0; i<chCount; ++i)

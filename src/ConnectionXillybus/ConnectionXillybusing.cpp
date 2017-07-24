@@ -299,7 +299,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
             {
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
-                meta.flags = RingFIFO::OVERWRITE_OLD;
+                meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
                 int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;;
@@ -374,11 +374,16 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
+                    if (meta.flags & IStreamChannel::Metadata::END_BURST)
+                    {
+                        memset(&samples[ch][samplesPopped],0,maxSamplesBatch-samplesPopped);
+                        continue;
+                    }
                     stream->mTxStreams[ch]->underflow++;
                     stream->terminateTx.store(true);
-                #ifndef NDEBUG
-                    printf("Warning popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
-                #endif
+#ifndef NDEBUG
+                    printf("popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
+#endif
                     break;
                 }
             }

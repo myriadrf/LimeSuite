@@ -652,6 +652,8 @@ public:
         enum
         {
             SYNC_TIMESTAMP = 1,
+            END_BURST = 2,
+            OVERWRITE_OLD = 4,
         };
         uint64_t timestamp;
         uint32_t flags;

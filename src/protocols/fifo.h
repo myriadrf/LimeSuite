@@ -11,16 +11,13 @@
 #include "dataTypes.h"
 #include <cmath>
 #include <assert.h>
+#include "IConnection.h"
 
 namespace lime{
 
 class RingFIFO
 {
 public:
-    enum FLAGS
-    {
-        OVERWRITE_OLD = 1,
-    };
 
     struct BufferInfo
     {
@@ -72,7 +69,7 @@ public:
                 if(t2-t1 >= std::chrono::milliseconds(timeout_ms))
                     return samplesTaken;
 
-                if(flags & OVERWRITE_OLD)
+                if(flags & IStreamChannel::Metadata::OVERWRITE_OLD)
                 {
                     int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;
                     mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
@@ -86,9 +83,14 @@ public:
             else
             {
                 mBuffer[mTail].timestamp = timestamp + samplesTaken;
-                mBuffer[mTail].flags = flags;
                 int cnt = samplesCount-samplesTaken;
-                cnt = cnt > SamplesPacket::maxSamplesInPacket ? SamplesPacket::maxSamplesInPacket : cnt;
+                if (cnt > SamplesPacket::maxSamplesInPacket)
+                {
+                    cnt = SamplesPacket::maxSamplesInPacket;
+                    mBuffer[mTail].flags = flags & IStreamChannel::Metadata::SYNC_TIMESTAMP;
+                }
+                else
+                    mBuffer[mTail].flags = flags;
                 memcpy(mBuffer[mTail].samples,&buffer[samplesTaken],cnt*sizeof(complex16_t));
                 samplesTaken+=cnt;
                 mBuffer[mTail].last = cnt;
@@ -133,7 +135,7 @@ public:
             {
                 if (flags != nullptr) *flags |= mBuffer[mHead].flags;
                 const int first = mBuffer[mHead].first;
-                
+
                 int cnt = samplesCount - samplesFilled;
                 const int cntbuf = mBuffer[mHead].last - first;
                 cnt = cnt > cntbuf ? cntbuf : cnt;

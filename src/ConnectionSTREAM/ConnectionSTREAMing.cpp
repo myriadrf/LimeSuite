@@ -317,7 +317,7 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
             {
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
-                meta.flags = RingFIFO::OVERWRITE_OLD;
+                meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
                 int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
@@ -369,7 +369,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
 
     const uint8_t buffersCount = 16; // must be power of 2
     const uint8_t packetsToBatch = stream->txBatchSize; //packets in single USB transfer
-    const uint32_t bufferSize = packetsToBatch*4096;
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint32_t popTimeout_ms = 500;
 
     const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
@@ -423,6 +423,11 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
+                    if (meta.flags & IStreamChannel::Metadata::END_BURST)
+                    {
+                        memset(&samples[ch][samplesPopped],0,maxSamplesBatch-samplesPopped);
+                        continue;
+                    }
                     stream->mTxStreams[ch]->underflow++;
                     stream->terminateTx.store(true);
 #ifndef NDEBUG
@@ -446,9 +451,11 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             ++i;
+            if (meta.flags & IStreamChannel::Metadata::END_BURST)
+                break;
         }
 
-        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bufferSize, ep);
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], i*sizeof(FPGA_DataPacket), ep);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
