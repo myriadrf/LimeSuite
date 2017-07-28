@@ -3,14 +3,9 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  Dual channel RX/TX example
  */
-
-#include <cstdlib>
 #include "lime/LimeSuite.h"
 #include <iostream>
-#include "math.h"
-#include <thread>
 #include <chrono>
-
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
@@ -78,9 +73,9 @@ int main(int argc, char** argv)
         error();
     //Set TX center frequency to 1 GHz
     //Automatically selects antenna port
-    if (LMS_SetLOFrequency(device, LMS_CH_TX, 0, 1e9) != 0)
+    if (LMS_SetLOFrequency(device, LMS_CH_TX, 0, 1.2e9) != 0)
         error();
-    if (LMS_SetLOFrequency(device, LMS_CH_TX, 1, 1e9) != 0)
+    if (LMS_SetLOFrequency(device, LMS_CH_TX, 1, 1.2e9) != 0)
         error();
 
     //Set sample rate to 10 MHz, preferred oversampling in RF 4x
@@ -108,7 +103,7 @@ int main(int argc, char** argv)
 
     //Streaming Setup
 
-    const int chCount = 2; //number of RX/TX steams
+    const int chCount = 2; //number of RX/TX streams
     lms_stream_t rx_streams[chCount];
     lms_stream_t tx_streams[chCount];
     //Initialize streams
@@ -117,14 +112,14 @@ int main(int argc, char** argv)
     {
         rx_streams[i].channel = i; //channel number
         rx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
-        rx_streams[i].throughputVsLatency = 0.0; //optimize for minimum latency
+        rx_streams[i].throughputVsLatency = 0.5; //some middle ground
         rx_streams[i].isTx = false; //RX channel
         rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
         if (LMS_SetupStream(device, &rx_streams[i]) != 0)
             error();
         tx_streams[i].channel = i; //channel number
         tx_streams[i].fifoSize = 1024 * 1024; //fifo size in samples
-        tx_streams[i].throughputVsLatency = 0.0; //optimize for minimum latency
+        tx_streams[i].throughputVsLatency = 0.5; //some middle ground
         tx_streams[i].isTx = true; //TX channel
         tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
         if (LMS_SetupStream(device, &tx_streams[i]) != 0)
@@ -148,19 +143,20 @@ int main(int argc, char** argv)
 
     //Streaming
 
-    lms_stream_meta_t rx_metadata; //Use metadata for additional control over sample receive function behaviour
-    rx_metadata.flushPartialPacket = false; //Do not discard data remainder when read size differs from packet size
-    rx_metadata.waitForTimestamp = false; //Do not wait for specific timestamps
+    lms_stream_meta_t rx_metadata; //Use metadata for additional control over sample receive function behavior
+    rx_metadata.flushPartialPacket = false; //currently has no effect in RX
+    rx_metadata.waitForTimestamp = false; //currently has no effect in RX
 
-    lms_stream_meta_t tx_metadata; //Use metadata for additional control over sample send function behaviour
-    tx_metadata.flushPartialPacket = false; //Do not discard data remainder when read size differs from packet size
+    lms_stream_meta_t tx_metadata; //Use metadata for additional control over sample send function behavior
+    tx_metadata.flushPartialPacket = false; //do not force sending of incomplete packet
     tx_metadata.waitForTimestamp = true; //Enable synchronization to HW timestamp
 
 #ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
+    gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
 #endif
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
     {
@@ -178,15 +174,11 @@ int main(int argc, char** argv)
         if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
         {
 #ifdef USE_GNU_PLOT
-            //Plot samples 
+            //Plot samples
             t2 = chrono::high_resolution_clock::now();
-            gp.write("set title 'Channels Rx AB'\n");
-            gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
-            gp.write("plot '-' with points");
+            gp.write("plot '-' with points title 'ch 0'");
             for (int i = 1; i < chCount; ++i)
-                gp.write(", '-' with points");
-            gp.write("\n");
-
+                gp.write(", '-' with points title 'ch 1'\n");
             for (int i = 0; i < chCount; ++i)
             {
                 for (uint32_t j = 0; j < bufersize / 8; ++j)
@@ -211,9 +203,8 @@ int main(int argc, char** argv)
     for (int i = 0; i < chCount; ++i)
     {
         LMS_StopStream(&rx_streams[i]); //stream is stopped but can be started again with LMS_StartStream()
-        LMS_StopStream(&tx_streams[i]);      
+        LMS_StopStream(&tx_streams[i]);
     }
-
     for (int i = 0; i < chCount; ++i)
     {
         LMS_DestroyStream(device, &rx_streams[i]); //stream is deallocated and can no longer be used

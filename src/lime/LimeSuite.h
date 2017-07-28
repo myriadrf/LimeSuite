@@ -293,6 +293,17 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx,
 API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_tx,
                                                  lms_range_t *range);
 
+///Enumeration of RF ports
+enum
+{
+    LMS_PATH_NONE = 0, ///<No active path (RX or TX)
+    LMS_PATH_LNAH = 1, ///<RX LNA_H port
+    LMS_PATH_LNAL = 2, ///<RX LNA_L port
+    LMS_PATH_LNAW = 3, ///<RX LNA_W port
+    LMS_PATH_TX1 = 1,  ///<TX port 1
+    LMS_PATH_TX2 = 2   ///<TX port 2
+};
+
 /**
  * Obtain antenna list with names. First item in the list is the name of antenna
  * index 0.
@@ -333,7 +344,8 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *dev, bool dir_tx,
                                         size_t chan);
 
 /**
- * Obtains bandwidth (lower and upper frequency) of the specified antenna
+ * Obtains recommended bandwidth (lower and upper frequency) for the specified
+ * antenna port. The ports can be used outside this range.
  *
  * @param       dev     Device handle previously obtained by LMS_Open().
  * @param       dir_tx  Select RX or TX

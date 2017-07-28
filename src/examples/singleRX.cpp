@@ -3,14 +3,9 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  RX example
  */
-
-#include <cstdlib>
 #include "lime/LimeSuite.h"
 #include <iostream>
-#include "math.h"
-#include <thread>
 #include <chrono>
-
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
@@ -76,9 +71,9 @@ int main(int argc, char** argv)
         error();
     cout << "\nCenter frequency: " << freq / 1e6 << " MHz\n";
 
-    //Override automatic antenna selection that was done by setting the center frequency
+    //select antenna port
     lms_name_t antenna_list[10];    //large enough list for antenna names.
-                                    //Alternatively, NULL can be passed to LMS_GetAntennaList() to find out number of available antennae
+                                    //Alternatively, NULL can be passed to LMS_GetAntennaList() to obtain number of antennae
     if ((n = LMS_GetAntennaList(device, LMS_CH_RX, 0, antenna_list)) < 0)
         error();
 
@@ -88,14 +83,16 @@ int main(int argc, char** argv)
 
     if ((n = LMS_GetAntenna(device, LMS_CH_RX, 0)) < 0) //get currently selected antenna index
         error();
-    cout << "Automatically selected antenna: " << n << ": " << antenna_list[n] << endl; //print antenna index and name
+    //print antenna index and name
+    cout << "Automatically selected antenna: " << n << ": " << antenna_list[n] << endl;
 
-    if (LMS_SetAntenna(device, LMS_CH_RX, 0, 3) != 0) // manually select antenna index 3
+    if (LMS_SetAntenna(device, LMS_CH_RX, 0, LMS_PATH_LNAW) != 0) // manually select antenna
         error();
 
     if ((n = LMS_GetAntenna(device, LMS_CH_RX, 0)) < 0) //get currently selected antenna index
         error();
-    cout << "Manually selected antenna: " << n << ": " << antenna_list[n] << endl; //print antenna index and name
+   //print antenna index and name
+    cout << "Manually selected antenna: " << n << ": " << antenna_list[n] << endl;
 
     //Set sample rate to 8 MHz, preferred oversampling in RF 8x
     //This set sampling rate for all channels
@@ -103,7 +100,7 @@ int main(int argc, char** argv)
         error();
     //print resulting sampling rates (interface to host , and ADC)
     float_type rate, rf_rate;
-    if (LMS_GetSampleRate(device, LMS_CH_RX, 0, &rate, &rf_rate) != 0)  //NULL can be passes
+    if (LMS_GetSampleRate(device, LMS_CH_RX, 0, &rate, &rf_rate) != 0)  //NULL can be passed
         error();
     cout << "\nHost interface sample rate: " << rate / 1e6 << " MHz\nRF ADC sample rate: " << rf_rate / 1e6 << "MHz\n\n";
 
@@ -121,20 +118,19 @@ int main(int argc, char** argv)
     if (LMS_SetLPFBW(device, LMS_CH_RX, 0, 8e6) != 0)
         error();
 
-    //print LPF bandwidth
-    float_type bw;
-    if (LMS_GetLPFBW(device, LMS_CH_RX, 0, &bw) != 0)
-        error();
-    cout << "LPF bandwidth: " << bw / 1e6 << " MHz\n\n";
-
     //Set RX gain
     if (LMS_SetNormalizedGain(device, LMS_CH_RX, 0, 0.7) != 0)
         error();
     //Print RX gain
-    float_type gain;
+    float_type gain; //normalized gain
     if (LMS_GetNormalizedGain(device, LMS_CH_RX, 0, &gain) != 0)
         error();
     cout << "Normalized RX Gain: " << gain << endl;
+
+    unsigned int gaindB; //gain in dB
+    if (LMS_GetGaindB(device, LMS_CH_RX, 0, &gaindB) != 0)
+        error();
+    cout << "RX Gain: " << gaindB << " dB" << endl;
 
     //Perform automatic calibration
     if (LMS_Calibrate(device, LMS_CH_RX, 0, 8e6, 0) != 0)
@@ -150,7 +146,7 @@ int main(int argc, char** argv)
     //Initialize stream
     lms_stream_t streamId;
     streamId.channel = 0; //channel number
-    streamId.fifoSize = 1024 * 128; //fifo size in samples
+    streamId.fifoSize = 1024 * 1024; //fifo size in samples
     streamId.throughputVsLatency = 1.0; //optimize for max throughput
     streamId.isTx = false; //RX channel
     streamId.dataFmt = lms_stream_t::LMS_FMT_F32; //32-bit floats
@@ -163,38 +159,25 @@ int main(int argc, char** argv)
     //Start streaming
     LMS_StartStream(&streamId);
 
-    //Streaming
-
-    lms_stream_meta_t metadata; //Use metadata for additional control over sample receive function behaviour
-    metadata.flushPartialPacket = false; //Do not discard data remainder when read size differs from packet size
-    metadata.waitForTimestamp = false; //Do not wait for specific timestamps
-
 #ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
+    gp.write("set size square\n set xrange[-1:1]\n set yrange[-1:1]\n");
 #endif
-
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
     {
         int samplesRead;
         //Receive samples
-        samplesRead = LMS_RecvStream(&streamId, buffer, bufersize, &metadata, 1000);
-
-        //Plot samples
+        samplesRead = LMS_RecvStream(&streamId, buffer, bufersize, NULL, 1000);
         //I and Q samples are interleaved in buffer: IQIQIQ...
-
 	/*
 		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
 	*/
-
+        //Plot samples
 #ifdef USE_GNU_PLOT
-        gp.write("set title 'Channel Rx A'\n");
-        gp.write("set size square\n set xrange[-1:1]\n set yrange[-1:1]\n");
-        gp.write("plot '-' with points");
-        gp.write("\n");
-
+        gp.write("plot '-' with points\n");
         for (int j = 0; j < samplesRead; ++j)
             gp.writef("%f %f\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");

@@ -23,13 +23,6 @@
 #include "ADF4002.h"
 #include "mcu_programs.h"
 
-static const size_t LMS_PATH_NONE = 0;
-static const size_t LMS_PATH_HIGH = 1;
-static const size_t LMS_PATH_LOW = 2;
-static const size_t LMS_PATH_WIDE = 3;
-static const size_t LMS_PATH_TX1 = 1;
-static const size_t LMS_PATH_TX2 = 2;
-
 const double LMS7_Device::LMS_CGEN_MAX = 640e6;
 
 LMS7_Device* LMS7_Device::CreateDevice(lime::IConnection* conn, LMS7_Device *obj)
@@ -712,7 +705,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
 int LMS7_Device::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
 {
-    //TODO: low importance : implement this and expose via LimeSuite.h 
+    //TODO: low importance : implement this and expose via LimeSuite.h
     return lime::ReportError(ERANGE, "Not implemented");;
 }
 
@@ -819,7 +812,7 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
   ret.step = 1;
   if (this->connection->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
   {
-      if (path == LMS_PATH_LOW)
+      if (path == LMS_PATH_LNAL)
       {
         ret.max = 3800000000;
         ret.min = 30000000;
@@ -834,16 +827,16 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
   else
   switch (path)
   {
-      case LMS_PATH_HIGH:
+      case LMS_PATH_LNAH:
             ret.max = 3800000000;
             ret.min = 2000000000;
             break;
-      case LMS_PATH_WIDE:
-            ret.max = 3800000000;
+      case LMS_PATH_LNAW:
+            ret.max = 2600000000;
             ret.min = 700000000;
             break;
-      case LMS_PATH_LOW:
-            ret.max = 1100000000;
+      case LMS_PATH_LNAL:
+            ret.max = 1000000000;
             ret.min = 30000000;
             break;
       default:
@@ -880,10 +873,10 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   {
       case LMS_PATH_TX2:
             ret.max = 3800000000;
-            ret.min = 1500000000;
+            ret.min = 2000000000;
             break;
       case LMS_PATH_TX1:
-            ret.max = 1500000000;
+            ret.max = 2000000000;
             ret.min = 30000000;
             break;
       default:

@@ -3,14 +3,9 @@
     @author Lime Microsystems (www.limemicro.com)
     @brief  minimal RX example
  */
-
-#include <cstdlib>
 #include "lime/LimeSuite.h"
 #include <iostream>
-#include "math.h"
-#include <thread>
 #include <chrono>
-
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
@@ -83,8 +78,8 @@ int main(int argc, char** argv)
         error();
 
     //Initialize data buffers
-    const int bufersize = 5000; //complex samples per buffer
-    int16_t buffer[bufersize * 2]; //buffer to hold complex values (2*samples))
+    const int sampleCnt = 5000; //complex samples per buffer
+    int16_t buffer[sampleCnt * 2]; //buffer to hold complex values (2*samples))
 
     //Start streaming
     LMS_StartStream(&streamId);
@@ -92,34 +87,27 @@ int main(int argc, char** argv)
     //Streaming
 #ifdef USE_GNU_PLOT
     GNUPlotPipe gp;
+    gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
 #endif
     auto t1 = chrono::high_resolution_clock::now();
     while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(5)) //run for 5 seconds
     {
-        int samplesRead;
         //Receive samples
-        samplesRead = LMS_RecvStream(&streamId, buffer, bufersize, NULL, 1000);
+        int samplesRead = LMS_RecvStream(&streamId, buffer, sampleCnt, NULL, 1000);
 	//I and Q samples are interleaved in buffer: IQIQIQ...
-
-		printf("Received %d samples\n", samplesRead);
-
+        printf("Received %d samples\n", samplesRead);
 	/*
 		INSERT CODE FOR PROCESSING RECEIVED SAMPLES
 	*/
-
 #ifdef USE_GNU_PLOT
         //Plot samples
-        gp.write("set title 'Channels Rx AB'\n");
-        gp.write("set size square\n set xrange[-2050:2050]\n set yrange[-2050:2050]\n");
-        gp.write("plot '-' with points");
-        gp.write("\n");
+        gp.write("plot '-' with points\n");
         for (int j = 0; j < samplesRead; ++j)
             gp.writef("%i %i\n", buffer[2 * j], buffer[2 * j + 1]);
         gp.write("e\n");
         gp.flush();
 #endif
     }
-
     //Stop streaming
     LMS_StopStream(&streamId); //stream is stopped but can be started again with LMS_StartStream()
     LMS_DestroyStream(device, &streamId); //stream is deallocated and can no longer be used
@@ -129,4 +117,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
