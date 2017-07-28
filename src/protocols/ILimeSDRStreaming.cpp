@@ -383,6 +383,12 @@ ILimeSDRStreaming::Streamer::~Streamer()
         CloseStream((size_t)i);
     for(auto i : mRxStreams)
         CloseStream((size_t)i);
+    terminateTx.store(true);
+    if (txThread.joinable())
+        txThread.join();
+    terminateRx.store(true);
+    if (rxThread.joinable())
+        rxThread.join();
 }
 
 int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfig& config)
