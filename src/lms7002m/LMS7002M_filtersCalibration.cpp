@@ -1100,6 +1100,9 @@ static int TBB_LPFH_FILTNUM = 600;
 
 int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
 {
+    if (!useCache)
+        return TuneTxFilter(bandwidth);
+    
     int ret = 0;
     bool found = true;
     const int idx = this->GetActiveChannelIndex();
@@ -1112,7 +1115,6 @@ int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
     const bool lpfladFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFLAD_FILTNUM, &rcal_lpflad_tbb, &ccal_lpflad_tbb) == 0);
     const bool lpfs5Found = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFS5_FILTNUM, &rcal_lpfs5_tbb, &ccal_lpflad_tbb) == 0);
     const bool lpfhFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Tx, TBB_LPFH_FILTNUM, &rcal_lpfh_tbb, &ccal_lpflad_tbb) == 0);
-    if (not useCache) found = false;
 
     //apply the calibration
     SPI_write(0x0106, 0x318C);
@@ -1167,6 +1169,9 @@ int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
 
 int LMS7002M::TuneRxFilterWithCaching(const float_type bandwidth)
 {
+    if(!useCache)
+        return TuneRxFilter(bandwidth);
+
     int ret = 0;
     bool found = true;
     const int idx = this->GetActiveChannelIndex();
@@ -1179,7 +1184,6 @@ int LMS7002M::TuneRxFilterWithCaching(const float_type bandwidth)
     const bool tiaFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RFE_TIA_FILTNUM, &rcomp_tia_rfe, &ccomp_tia_rfe, &cfb_tia_rfe) == 0);
     const bool lphlFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFL_FILTNUM, &rcc_ctl_lpfl_rbb, &c_ctl_lpfl_rbb) == 0);
     const bool lphhFound = (mValueCache->GetFilter_RC(boardId, bandwidth, idx, Rx, RBB_LPFH_FILTNUM, &rcc_ctl_lpfh_rbb, &c_ctl_lpfh_rbb) == 0);
-    if (not useCache) found = false;
 
     //apply the calibration
     if (not tiaFound) found = false;
