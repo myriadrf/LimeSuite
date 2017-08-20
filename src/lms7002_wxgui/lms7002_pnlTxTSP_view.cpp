@@ -444,7 +444,7 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     cmbHBI_OVR_TXTSP->SetSelection(value2index(hbi, hbi_ovr_txtsp_IndexValuePairs));
 
     int16_t value;
-    LMS_ReadParam(lmsControl,LMS7param(TSGFCW_RXTSP),(uint16_t*)&value);
+    LMS_ReadParam(lmsControl,LMS7param(TSGFCW_TXTSP),(uint16_t*)&value);
 
     rgrTSGFCW_TXTSP->SetSelection(value2index(value, tsgfcw_txtsp_IndexValuePairs));
 
