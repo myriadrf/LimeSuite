@@ -7,8 +7,8 @@
 #ifndef CONNECTION_REGISTRY_H
 #define CONNECTION_REGISTRY_H
 
-#include <LimeSuiteConfig.h>
-#include <ConnectionHandle.h>
+#include "LimeSuiteConfig.h"
+#include "ConnectionHandle.h"
 #include <string>
 #include <vector>
 

@@ -10,7 +10,7 @@ return lime::ReportError(code, message, ...);
 #ifndef LIMESUITE_ERROR_REPORTING_H
 #define LIMESUITE_ERROR_REPORTING_H
 
-#include <LimeSuiteConfig.h>
+#include "LimeSuiteConfig.h"
 #include <cerrno>
 #include <string>
 #include <stdexcept>

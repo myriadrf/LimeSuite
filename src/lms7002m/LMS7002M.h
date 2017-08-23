@@ -7,7 +7,7 @@
 #ifndef LMS7API_H
 #define LMS7API_H
 
-#include <LimeSuiteConfig.h>
+#include "LimeSuiteConfig.h"
 #include "LMS7002M_parameters.h"
 #include <cstdint>
 #include <sstream>

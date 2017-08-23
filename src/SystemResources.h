@@ -7,7 +7,7 @@
 #ifndef LIMESUITE_SYSTEM_RESOURCES_H
 #define LIMESUITE_SYSTEM_RESOURCES_H
 
-#include <LimeSuiteConfig.h>
+#include "LimeSuiteConfig.h"
 #include <string>
 #include <vector>
 

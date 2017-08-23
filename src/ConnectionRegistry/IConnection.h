@@ -7,8 +7,8 @@
 #ifndef ICONNECTION_H
 #define ICONNECTION_H
 
-#include <LimeSuiteConfig.h>
-#include <ConnectionHandle.h>
+#include "LimeSuiteConfig.h"
+#include "ConnectionHandle.h"
 #include <string>
 #include <vector>
 #include <cstring> //memset

@@ -7,7 +7,7 @@
 #ifndef LIMESUITE_LOGGER_H
 #define LIMESUITE_LOGGER_H
 
-#include <LimeSuiteConfig.h>
+#include "LimeSuiteConfig.h"
 #include <string>
 #include <cstdarg>
 

@@ -13,7 +13,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <IConnection.h>
+#include "IConnection.h"
 
 class LIME_API LMS7_Device
 {

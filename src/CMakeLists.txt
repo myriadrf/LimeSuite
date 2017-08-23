@@ -20,13 +20,12 @@ set(LIME_SUITE_PUBLIC_HEADERS
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
-    protocols/ILimeSDRStreaming.cpp
     protocols/LMSBoards.h
     protocols/dataTypes.h
     protocols/fifo.h
     Si5351C/Si5351C.h
     FPGA_common/FPGA_common.h
-    lime/LimeSuite.h
+    API/lms7_device.h
 )
 
 include(FeatureSummary)

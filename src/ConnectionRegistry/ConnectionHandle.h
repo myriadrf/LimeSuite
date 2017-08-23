@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <LimeSuiteConfig.h>
+#include "LimeSuiteConfig.h"
 #include <string>
 
 namespace lime{

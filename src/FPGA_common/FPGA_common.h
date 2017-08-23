@@ -8,7 +8,7 @@
 #define FPGA_COMMON_H
 #include "IConnection.h"
 #include <stdint.h>
-#include <dataTypes.h>
+#include "dataTypes.h"
 
 namespace lime
 {
