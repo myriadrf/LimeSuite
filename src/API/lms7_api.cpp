@@ -1310,8 +1310,6 @@ API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, siz
     return lms->Program(data,size,component,mode, callback);
 }
 
-
-
 API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device, const bool download, lms_prog_callback_t callback)
 {
     if (device == nullptr)
@@ -1334,18 +1332,4 @@ API_EXPORT const char* LMS_GetLibraryVersion()
     static char libraryVersion[32];
     sprintf(libraryVersion, "%.32s", lime::GetLibraryVersion().c_str());
     return libraryVersion;
-}
-
-API_EXPORT int CALL_CONV LMS_MCU_AGCStart(lms_device_t *device, uint8_t rssiMin, uint8_t pgaCeil)
-{
-    LMS7_Device* lms = (LMS7_Device*)device;
-    lms->MCU_AGCStart(rssiMin, pgaCeil);
-    return 0;
-}
-
-API_EXPORT int CALL_CONV LMS_MCU_AGCStop(lms_device_t *device)
-{
-    LMS7_Device* lms = (LMS7_Device*)device;
-    lms->MCU_AGCStop();
-    return 0;
 }

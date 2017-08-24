@@ -2,6 +2,7 @@
 #include "numericSlider.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
+#include "lms7_device.h"
 using namespace lime;
 using namespace LMS7002_WXGUI;
 
@@ -146,13 +147,15 @@ void lms7002_pnlGains_view::OnAGCStateChange(wxCommandEvent& event)
 {
     if(chkAGC->GetValue() != 0)
     {
-        LMS_MCU_AGCStart(lmsControl, spinRSSIFloor->GetValue(), spinPGACeil->GetValue());
+        LMS7_Device* lms = (LMS7_Device*)lmsControl;
+        lms->MCU_AGCStart(spinRSSIFloor->GetValue(), spinPGACeil->GetValue());
         spinRSSIFloor->Disable();
         spinPGACeil->Disable();
     }
     else
     {
-        LMS_MCU_AGCStop(lmsControl);
+        LMS7_Device* lms = (LMS7_Device*)lmsControl;
+        lms->MCU_AGCStop();
         spinRSSIFloor->Enable();
         spinPGACeil->Enable();
     }
