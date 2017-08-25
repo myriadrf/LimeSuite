@@ -206,6 +206,7 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
 
     const uint8_t packetsToBatch = stream->rxBatchSize*2;
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
+    printf("RX buffer size %d\n",bufferSize);
     vector<char>buffers(bufferSize, 0);
     vector<StreamChannel::Frame> chFrames;
     try
@@ -339,8 +340,9 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
     const bool packed = stream->mTxStreams[0]->config.linkFormat==StreamConfig::STREAM_12_BIT_COMPRESSED;
     const int epIndex = stream->mChipID;
 
-    const uint8_t packetsToBatch = stream->txBatchSize*2;; //packets in single USB transfer
-    const uint32_t bufferSize = packetsToBatch*4096;
+    const uint8_t packetsToBatch = stream->txBatchSize*2; //packets in single USB transfer
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
+    printf("TX buffer size %d\n",bufferSize);
     const uint32_t popTimeout_ms = 500;
     const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
     vector<complex16_t> samples[maxChannelCount];
