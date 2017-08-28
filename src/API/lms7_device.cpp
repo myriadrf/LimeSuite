@@ -408,16 +408,16 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = rx_channels[i].cF_offset_nco;
+           freq[0] = abs(rx_channels[i].cF_offset_nco);
            SetNCOFreq(false,i,freq,0);
-           SetNCO(false,i,0,true);
+           SetNCO(false,i,0,rx_channels[i].cF_offset_nco> 0);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = tx_channels[i].cF_offset_nco;
+           freq[0] = abs(tx_channels[i].cF_offset_nco);
            SetNCOFreq(true,i,freq,0);
-           SetNCO(true,i,0,true);
+           SetNCO(true,i,0,tx_channels[i].cF_offset_nco> 0);
         }
     }
 
@@ -687,16 +687,16 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = rx_channels[i].cF_offset_nco;
+           freq[0] = abs(rx_channels[i].cF_offset_nco);
            SetNCOFreq(false,i,freq,0);
-           SetNCO(false,i,0,true);
+           SetNCO(false,i,0,rx_channels[i].cF_offset_nco> 0);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = tx_channels[i].cF_offset_nco;
+           freq[0] = abs(tx_channels[i].cF_offset_nco);
            SetNCOFreq(true,i,freq,0);
-           SetNCO(true,i,0,true);
+           SetNCO(true,i,0,tx_channels[i].cF_offset_nco> 0);
         }
     }
 
@@ -1562,22 +1562,47 @@ int LMS7_Device::Calibrate(bool dir_tx, size_t chan, double bw, unsigned flags)
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
+    rx_channels[chan].freq = f_Hz;
+    int chA = chan&(~1);
+    int chB = chan|1;
+    
+    if (rx_channels[chA].freq > 0 && rx_channels[chB].freq > 0) 
+    {
+        double delta = abs(rx_channels[chA].freq - rx_channels[chB].freq);
+        if (delta > 1)
+        {
+            double rate = GetRate(false,chan);
+            if ((delta <= rate*31) && (delta+rate <= 160e6))
+            {
+                double center = (rx_channels[chA].freq+rx_channels[chB].freq)/2;
+                if (center < 30e6)
+                    center = 30e6;
+                rx_channels[chA].cF_offset_nco = center-rx_channels[chA].freq;
+                rx_channels[chB].cF_offset_nco = center-rx_channels[chB].freq;
+                if (lms->SetFrequencySX(false, center) != 0)
+                    return -1;
+                if (SetRate(false,rate,2)!=0)
+                    return -1;
+                return 0;
+            }
+        }
+    }
+    
     if (f_Hz < 30e6)
     {
         if (lms->SetFrequencySX(false, 30e6) != 0)
             return -1;
         rx_channels[chan].cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(false,GetRate(true,chan),2)!=0)
+        if (SetRate(false,GetRate(false,chan),2)!=0)
             return -1;
+        return 0;
     }
-    else
-    {
-        if (rx_channels[chan].cF_offset_nco != 0)
-            SetNCO(false,chan,-1,true);
-        rx_channels[chan].cF_offset_nco = 0;
-        if (lms->SetFrequencySX(false, f_Hz) != 0)
-            return -1;
-    }
+
+    if (rx_channels[chan].cF_offset_nco != 0)
+        SetNCO(false,chan,-1,true);
+    rx_channels[chan].cF_offset_nco = 0;
+    if (lms->SetFrequencySX(false, f_Hz) != 0)
+        return -1;
     return 0;
 }
 
@@ -1591,6 +1616,32 @@ float_type LMS7_Device::GetTRXFrequency(bool tx, size_t chan)
 int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
+    tx_channels[chan].freq = f_Hz;
+    int chA = chan&(~1);
+    int chB = chan|1;
+    
+    if (tx_channels[chA].freq > 0 && tx_channels[chB].freq > 0) 
+    {
+        double delta = abs(tx_channels[chA].freq - tx_channels[chB].freq);
+        if (delta > 1)
+        {
+            double rate = GetRate(true,chan);
+            if ((delta <= rate*31) && (delta+rate <= 640e6))
+            {
+                double center = (tx_channels[chA].freq+tx_channels[chB].freq)/2;
+                if (center < 30e6)
+                    center = 30e6;
+                tx_channels[chA].cF_offset_nco = center-tx_channels[chA].freq;
+                tx_channels[chB].cF_offset_nco = center-tx_channels[chB].freq;
+                if (lms->SetFrequencySX(true, center) != 0)
+                    return -1;
+                if (SetRate(true,rate,2)!=0)
+                    return -1;
+                return 0;
+            }
+        }
+    }
+    
     if (f_Hz < 30e6)
     {
         if (lms->SetFrequencySX(true, 30e6) != 0)
@@ -1598,15 +1649,14 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
         tx_channels[chan].cF_offset_nco = 30e6-f_Hz;
         if (SetRate(true,GetRate(true,chan),2)!=0)
             return -1;
+        return 0;
     }
-    else
-    {
-        if (tx_channels[chan].cF_offset_nco != 0)
-            SetNCO(true,chan,-1,false);
-        tx_channels[chan].cF_offset_nco = 0;
-        if (lms->SetFrequencySX(true, f_Hz) != 0)
-            return -1;
-    }
+
+    if (tx_channels[chan].cF_offset_nco != 0)
+        SetNCO(true,chan,-1,false);
+    tx_channels[chan].cF_offset_nco = 0;
+    if (lms->SetFrequencySX(true, f_Hz) != 0)
+        return -1;
     return 0;
 }
 

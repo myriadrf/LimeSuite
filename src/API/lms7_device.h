@@ -20,15 +20,11 @@ class LIME_API LMS7_Device
     class lms_channel_info
     {
     public:
-        lms_channel_info()
-        {
-            lpf_bw = 5e6;
-            cF_offset_nco = 0;
-            sample_rate = 30e6;
-        }
-        float_type lpf_bw;
-        float_type cF_offset_nco;
-        float_type sample_rate;
+        lms_channel_info():lpf_bw(5e6),cF_offset_nco(0),sample_rate(30e6),freq(0){}
+        double lpf_bw;
+        double cF_offset_nco;
+        double sample_rate;
+        double freq;
     };
 public:
     LMS7_Device(LMS7_Device *obj = nullptr);
