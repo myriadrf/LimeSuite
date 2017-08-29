@@ -1261,15 +1261,15 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_st
         return -1;
     lime::IStreamChannel::Info info = channel->GetInfo();
 
-    status->active = false;
-    status->droppedPackets = 0;
+    status->active = info.active;
+    status->droppedPackets = info.droppedPackets;
     status->fifoFilledCount = info.fifoItemsCount;
     status->fifoSize = info.fifoSize;
     status->linkRate = info.linkRate;
-    status->overrun = 0;
-    status->underrun = 0;
-    status->sampleRate = 0;
-    status->timestamp = 0;
+    status->overrun = info.overrun;
+    status->underrun = info.underrun;
+    status->sampleRate = info.sampleRate;
+    status->timestamp = info.timestamp;
     return 0;
 }
 

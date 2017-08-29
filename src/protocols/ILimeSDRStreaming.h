@@ -6,6 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <chrono>
 
 #include "dataTypes.h"
 #include "fifo.h"
@@ -47,6 +48,8 @@ public:
     protected:
         RingFIFO* fifo;
         bool mActive;
+        std::atomic<uint64_t> sampleCnt;
+        std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     private:
         StreamChannel() = default;
     };

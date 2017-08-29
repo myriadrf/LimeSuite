@@ -190,7 +190,8 @@ int main(int argc, char** argv)
             lms_stream_status_t status;
             //Get stream status
             LMS_GetStreamStatus(&streamId, &status);
-            cout << "RX rate: " << status.linkRate / 1e6 << " MB/s\n"; //link data rate
+            cout << "RX data rate: " << status.linkRate / 1e6 << " MB/s\n"; //link data rate
+            cout << "RX sample rate: " << status.sampleRate / 1e6 << " MSamples/s\n"; //link data rate
             cout << "RX fifo: " << 100 * status.fifoFilledCount / status.fifoSize << "%" << endl; //percentage of FIFO filled
         }
     }

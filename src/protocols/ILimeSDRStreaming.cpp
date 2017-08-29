@@ -255,6 +255,8 @@ ILimeSDRStreaming::StreamChannel::StreamChannel(Streamer* streamer, StreamConfig
     overflow = 0;
     underflow = 0;
     pktLost = 0;
+    sampleCnt = 0;
+    startTime = std::chrono::high_resolution_clock::now();
 
     if (this->config.bufferLength == 0) //default size
         this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
@@ -314,6 +316,7 @@ int ILimeSDRStreaming::StreamChannel::Write(const void* samples, const uint32_t 
         const complex16_t* ptr = (const complex16_t*)samples;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
     }
+    sampleCnt += pushed;
     return pushed;
 }
 
@@ -328,6 +331,11 @@ IStreamChannel::Info ILimeSDRStreaming::StreamChannel::GetInfo()
     stats.droppedPackets = pktLost;
     stats.overrun = overflow;
     stats.overrun = underflow;
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> timePeriod = endTime-startTime;
+    stats.sampleRate = sampleCnt/timePeriod.count();
+    sampleCnt.store(0);
+    startTime = endTime; 
     pktLost = 0;
     overflow = 0;
     underflow = 0;
@@ -350,6 +358,8 @@ int ILimeSDRStreaming::StreamChannel::Start()
     overflow = 0;
     underflow = 0;
     pktLost = 0;
+    sampleCnt.store(0);
+    startTime = std::chrono::high_resolution_clock::now();
     return mStreamer->UpdateThreads();
 }
 
