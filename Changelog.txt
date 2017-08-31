@@ -1,12 +1,21 @@
-Release 17.07.0 (pending)
+Release 17.09.0 (pending)
 ==========================
 
 LimeSuite library:
 - Added transfer size adjustment based on sample rate
+- Improved MCU calibration procedures
+- Initial support for LimeSDR-QPCIe
 
 LMS API changes:
 - Added external reference clock(LMS_CLOCK_EXTREF) configuration to LMS_SetClockFreq()  
 - Change LMS_SetGaindB() and LMS_SetNormalizedGain() to select optimal TBB gain for TX
+
+LimeSuiteGUI:
+- Unified read/write params in board controls panel
+
+General:
+- LimeSDR v1.4 updated to r2.9 gateware
+- Added LMS API doxygen generation to CMake
 
 Release 17.06.0 (2017-06-20)
 ==========================
