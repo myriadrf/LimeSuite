@@ -1,3 +1,8 @@
+Release 17.09.1 (pending)
+==========================
+
+- Removed private include in mcu_program/host_src/main.cpp
+
 Release 17.09.0 (2017-09-01)
 ==========================
 

@@ -1,5 +1,3 @@
-#include "ConnectionSTREAM.h"
-
 #include <stdio.h>
 #include "lms7002m_calibrations.h"
 #include "lms7002m_controls.h"
