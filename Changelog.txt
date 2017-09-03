@@ -1,6 +1,7 @@
 Release 17.09.1 (pending)
 ==========================
 
+- Fixed abs() overload compiler issue in lms7_device.cpp
 - Removed private include in mcu_program/host_src/main.cpp
 
 Release 17.09.0 (2017-09-01)

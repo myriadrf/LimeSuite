@@ -408,14 +408,14 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = abs(rx_channels[i].cF_offset_nco);
+           freq[0] = fabs(rx_channels[i].cF_offset_nco);
            SetNCOFreq(false,i,freq,0);
            SetNCO(false,i,0,rx_channels[i].cF_offset_nco> 0);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = abs(tx_channels[i].cF_offset_nco);
+           freq[0] = fabs(tx_channels[i].cF_offset_nco);
            SetNCOFreq(true,i,freq,0);
            SetNCO(true,i,0,tx_channels[i].cF_offset_nco> 0);
         }
@@ -687,14 +687,14 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         float_type freq[LMS_NCO_VAL_COUNT]={0};
         if (rx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = abs(rx_channels[i].cF_offset_nco);
+           freq[0] = fabs(rx_channels[i].cF_offset_nco);
            SetNCOFreq(false,i,freq,0);
            SetNCO(false,i,0,rx_channels[i].cF_offset_nco> 0);
         }
 
         if (tx_channels[i].cF_offset_nco != 0)
         {
-           freq[0] = abs(tx_channels[i].cF_offset_nco);
+           freq[0] = fabs(tx_channels[i].cF_offset_nco);
            SetNCOFreq(true,i,freq,0);
            SetNCO(true,i,0,tx_channels[i].cF_offset_nco> 0);
         }
@@ -1568,7 +1568,7 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
     
     if (rx_channels[chA].freq > 0 && rx_channels[chB].freq > 0) 
     {
-        double delta = abs(rx_channels[chA].freq - rx_channels[chB].freq);
+        double delta = fabs(rx_channels[chA].freq - rx_channels[chB].freq);
         if (delta > 1)
         {
             double rate = GetRate(false,chan);
@@ -1622,7 +1622,7 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
     
     if (tx_channels[chA].freq > 0 && tx_channels[chB].freq > 0) 
     {
-        double delta = abs(tx_channels[chA].freq - tx_channels[chB].freq);
+        double delta = fabs(tx_channels[chA].freq - tx_channels[chB].freq);
         if (delta > 1)
         {
             double rate = GetRate(true,chan);
