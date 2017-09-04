@@ -160,7 +160,7 @@ double ConnectionSTREAM::DetectRefClk(void)
     }
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter
     count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
-    lime::info("Estimated reference clock %1.4f MHz", count/1e6);
+    lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
     unsigned i = 0;
     double delta = 100e6;
 
@@ -171,7 +171,7 @@ double ConnectionSTREAM::DetectRefClk(void)
             delta = fabs(count - clkTbl[i++]);
 
     this->SetReferenceClockRate(clkTbl[i-1]);
-    lime::info("Selected reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
+    lime::info("Reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
     return clkTbl[i - 1];
 }
 

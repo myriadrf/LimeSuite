@@ -419,10 +419,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     int outBufPos = 0;
     int inDataPos = 0;
     if(outLen == 0)
-    {
-        //printf("packet outlen = 0\n");
         outLen = 1;
-    }
 
     if(protocol == LMS_PROTOCOL_NOVENA)
     {

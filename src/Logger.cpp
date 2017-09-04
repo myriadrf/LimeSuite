@@ -9,7 +9,11 @@
 
 static void defaultLogHandler(const lime::LogLevel level, const char *message)
 {
-    fprintf(stderr, "[%s] %s\n", lime::logLevelToName(level), message);
+#ifdef NDEBUG
+    if (level == lime::LOG_LEVEL_DEBUG)
+        return;
+#endif
+    fprintf(stderr, "%s\n", message);
 }
 
 static lime::LogHandler logHandler(&defaultLogHandler);

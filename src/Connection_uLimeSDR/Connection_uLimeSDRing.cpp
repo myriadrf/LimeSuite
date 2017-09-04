@@ -16,6 +16,7 @@
 #include <vector>
 #include <FPGA_common.h>
 #include "ErrorReporting.h"
+#include "Logger.h"
 
 using namespace lime;
 using namespace std;
@@ -135,9 +136,6 @@ int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const doub
         if (phaseSearch)
         {
             {
-#ifndef NDEBUG
-                printf("RX phase config:\n");
-#endif
                 clocks[3].findPhase = true;
                 const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
                     0xE4E4, 0x0086, 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED };
@@ -149,9 +147,6 @@ int Connection_uLimeSDR::UpdateExternalDataRate(const size_t channel, const doub
                 status = lime::fpga::SetPllFrequency(this, 0, rxInterfaceClk, clocks, 4);
             }
             {
-#ifndef NDEBUG
-                printf("TX phase config:\n");
-#endif
                 clocks[3].findPhase = false;
                 const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484 };
                 WriteRegister(0x000A, 0x0000);
@@ -322,7 +317,7 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
                     --resetFlagsDelay;
                 else
                 {
-                    printf("L");
+                    lime::warning("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = packetsToBatch*buffersCount;
                     stream->txLastLateTime.store(pkt[pktIndex].counter);
@@ -432,7 +427,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
     }
     catch (const std::bad_alloc& ex) //not enough memory for buffers
     {
-        printf("Error allocating Tx buffers, not enough memory\n");
+        lime::error("Error allocating Tx buffers, not enough memory");
         return;
     }
 

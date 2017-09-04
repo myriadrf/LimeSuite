@@ -9,6 +9,7 @@
 #include "VersionInfo.h"
 #include <assert.h>
 #include "FPGA_common.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -1332,4 +1333,16 @@ API_EXPORT const char* LMS_GetLibraryVersion()
     static char libraryVersion[32];
     sprintf(libraryVersion, "%.32s", lime::GetLibraryVersion().c_str());
     return libraryVersion;
+}
+
+static LMS_LogHandler api_msg_handler;
+static void APIMsgHandler(const lime::LogLevel level, const char *message)
+{
+    api_msg_handler(level,message);
+}
+
+API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
+{
+    lime::registerLogHandler(APIMsgHandler);
+    api_msg_handler = handler;
 }

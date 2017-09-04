@@ -11,6 +11,10 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 
 void pnlMiniLog::HandleMessage(wxCommandEvent &event)
 {
+#ifdef NDEBUG
+    if (level == lime::LOG_LEVEL_DEBUG)
+        return;
+#endif
     time_t rawtime;
     struct tm * timeinfo;
     char buffer[80];

@@ -16,6 +16,7 @@ using namespace std;
 #include <list>
 #include "ErrorReporting.h"
 #include "LMS7002M.h"
+#include "Logger.h"
 
 using namespace lime;
 
@@ -969,11 +970,6 @@ int MCU_BD::RunInstr_MCU(unsigned short * pPCVAL)
 	return retval;
 }
 
-void MCU_BD::Log(const char* msg)
-{
-    printf("%s", msg);
-}
-
 /** @brief Returns information about programming or reading data progress
 */
 MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
@@ -1036,7 +1032,7 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
     mSPI_write(0x0006, 0); //return SPI control to PC
     //if((value & 0x7f) != 0)
-        std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    lime::debug("MCU algorithm time: %li ms", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value & 0x7F;
 }
 

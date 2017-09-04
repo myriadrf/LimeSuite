@@ -228,24 +228,22 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
     libusb_reset_device(dev_handle);
     if(libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
     {
-        printf("Kernel Driver Active\n");
+        lime::debug("Kernel Driver Active");
         if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
-            printf("Kernel Driver Detached!\n");
+            lime::debug("Kernel Driver Detached!");
     }
     int r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
     if(r < 0)
     {
-        printf("Cannot Claim Interface\n");
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
     if(r < 0)
     {
-        printf("Cannot Claim Interface\n");
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
-    printf("Claimed Interface\n");
-
+    lime::debug("Claimed Interface");
+    
     FT_SetStreamPipe(0x82,64);
     FT_SetStreamPipe(0x02,64);
     isConnected = true;
@@ -408,42 +406,31 @@ static void callback_libusbtransfer(libusb_transfer *trans)
     switch(trans->status)
     {
         case LIBUSB_TRANSFER_CANCELLED:
-            //printf("Transfer %i canceled\n", context->id);
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
-            //context->reset();
             break;
         case LIBUSB_TRANSFER_COMPLETED:
-            //if(trans->actual_length == context->bytesExpected)
-            {
-                context->bytesXfered = trans->actual_length;
-                context->done.store(true);
-            }
+            context->bytesXfered = trans->actual_length;
+            context->done.store(true);
         break;
         case LIBUSB_TRANSFER_ERROR:
-            printf("TRANSFER ERRRO\n");
+            lime::error("TRANSFER ERROR");
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
             break;
         case LIBUSB_TRANSFER_TIMED_OUT:
-            //printf("transfer timed out %i\n", context->id);
+            lime::error("transfer timed out %i", context->id);
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
-
             break;
         case LIBUSB_TRANSFER_OVERFLOW:
-            printf("transfer overflow\n");
-
+            lime::error("transfer overflow\n");
             break;
         case LIBUSB_TRANSFER_STALL:
-            printf("transfer stalled\n");
+            lime::error("transfer stalled");
             break;
         case LIBUSB_TRANSFER_NO_DEVICE:
-            printf("transfer no device\n");
-
+            lime::error("transfer no device");
             break;
     }
     lck.unlock();
@@ -472,7 +459,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
     }
     if(!contextFound)
     {
-        printf("No contexts left for reading data\n");
+        lime::error("No contexts left for reading data");
         return -1;
     }
     contexts[i].used = true;
@@ -504,7 +491,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA READING %s\n", libusb_error_name(status));
+        lime::error("ERROR BEGIN DATA READING %s", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -656,7 +643,7 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA SENDING %s\n", libusb_error_name(status));
+        lime::error("ERROR BEGIN DATA SENDING %s", libusb_error_name(status));
         contextsToSend[i].used = false;
         return -1;
     }

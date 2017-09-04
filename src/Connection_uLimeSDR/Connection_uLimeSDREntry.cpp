@@ -5,6 +5,7 @@
 */
 
 #include "Connection_uLimeSDR.h"
+#include "Logger.h"
 using namespace lime;
 
 #ifdef __unix__
@@ -16,7 +17,7 @@ void Connection_uLimeSDREntry::handle_libusb_events()
     while(mProcessUSBEvents.load() == true)
     {
         int r = libusb_handle_events_timeout_completed(ctx, &tv, NULL);
-        if(r != 0) printf("error libusb_handle_events %s\n", libusb_strerror(libusb_error(r)));
+        if(r != 0) lime::error("error libusb_handle_events %s", libusb_strerror(libusb_error(r)));
     }
 }
 #endif // __UNIX__
@@ -37,7 +38,7 @@ Connection_uLimeSDREntry::Connection_uLimeSDREntry(void):
 #else
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
     if(r < 0)
-        printf("Init Error %i\n", r); //there was an error
+        lime::error("Init Error %i", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&Connection_uLimeSDREntry::handle_libusb_events, this);
@@ -81,7 +82,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0) {
-        printf("failed to get libusb device list: %s\n", libusb_strerror(libusb_error(usbDeviceCount)));
+        lime::error("failed to get libusb device list: %s", libusb_strerror(libusb_error(usbDeviceCount)));
         return handles;
     }
 
@@ -90,7 +91,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
     {
         int r = libusb_get_device_descriptor(devs[i], &desc);
         if(r<0)
-            printf("failed to get device description\n");
+            lime::error("failed to get device description");
         int pid = desc.idProduct;
         int vid = desc.idVendor;
 
@@ -103,11 +104,11 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
                 if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
                 {
                     if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                        printf("Kernel Driver Detached!\n");
+                        lime::debug("Kernel Driver Detached!");
                 }
                 if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
                 {
-                    printf("Cannot Claim Interface\n");
+                    lime::error("Cannot Claim Interface");
                 }
 
                 ConnectionHandle handle;
@@ -124,7 +125,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
                 memset(data, 0, 255);
                 int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
                 if(st < 0)
-                    printf("Error getting usb descriptor\n");
+                    lime::error("Error getting usb descriptor");
                 if(strlen(data) > 0)
                     handle.name = std::string(data, size_t(st));
                 handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
@@ -133,7 +134,7 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
                 {
                     r = libusb_get_string_descriptor_ascii(tempDev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
                     if(r<0)
-                        printf("failed to get serial number\n");
+                        lime::error("failed to get serial number");
                     else
                         handle.serial = std::string(data, size_t(r));
                 }

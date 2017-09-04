@@ -1494,7 +1494,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     }
     if(foundInCache)
     {
-        printf("SetFrequency using cache values vco:%i, csw:%i\n", vco_query, csw_query);
+        lime::info("SetFrequency using cache values vco:%i, csw:%i", vco_query, csw_query);
         sel_vco = vco_query;
         csw_value = csw_query;
     }
@@ -2191,7 +2191,7 @@ bool LMS7002M::IsSynced()
         }
         if (dataReceived[i] != regValue)
         {
-            printf("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X\n", addrToRead[i], regValue, dataReceived[i]);
+            lime::debug("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X", addrToRead[i], regValue, dataReceived[i]);
             isSynced = false;
             goto isSyncedEnding;
         }
@@ -2230,7 +2230,7 @@ bool LMS7002M::IsSynced()
         }
         if (dataReceived[i] != regValue)
         {
-            printf("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X\n", addrToRead[i], regValue, dataReceived[i]);
+            lime::debug("Addr: 0x%04X  gui: 0x%04X  chip: 0x%04X", addrToRead[i], regValue, dataReceived[i]);
             isSynced = false;
             goto isSyncedEnding;
         }
@@ -2594,7 +2594,7 @@ float_type LMS7002M::GetTemperature()
     Vdiff /= 3.9;
     float temperature = 40.5+Vdiff;
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
-    printf("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f\n", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
+    lime::debug("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
     return temperature;
 }
 
@@ -2667,7 +2667,7 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     }
     if(edges.size() != 2)
     {
-        printf("Not found\n");
+        lime::debug("Not found");
         return ReportError(EINVAL, "Failed to find value");
     }
     int8_t found = (edges[0]+edges[1])/2;
@@ -2675,7 +2675,7 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     if(found < 0)
         wrValue |= 0x40;
     Modify_SPI_Reg_bits(LMS7param(RSSIDC_DCO1), wrValue, true);
-    printf("Found %i\n", found);
+    lime::debug("Found %i", found);
     Modify_SPI_Reg_bits(LMS7_EN_INSHSW_W_RFE, 0);
     return 0;
 }
