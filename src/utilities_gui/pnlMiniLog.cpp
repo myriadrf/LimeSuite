@@ -11,10 +11,6 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 
 void pnlMiniLog::HandleMessage(wxCommandEvent &event)
 {
-#ifdef NDEBUG
-    if (level == lime::LOG_LEVEL_DEBUG)
-        return;
-#endif
     time_t rawtime;
     struct tm * timeinfo;
     char buffer[80];
@@ -24,6 +20,10 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     strftime(buffer, 80, "%H:%M:%S", timeinfo);
 
     auto level = lime::LogLevel(event.GetInt());
+#ifdef NDEBUG
+    if (level == lime::LOG_LEVEL_DEBUG)
+        return;
+#endif
     if (level == 0) level = lime::LOG_LEVEL_INFO;
     wxString line(wxString::Format("[%s] %s: %s", buffer, lime::logLevelToName(level), event.GetString()));
 
