@@ -133,6 +133,7 @@ public:
 
             while(mElementsFilled > 0 && samplesFilled < samplesCount)
             {
+                const bool hasEOB = mBuffer[mHead].flags & lime::IStreamChannel::Metadata::END_BURST;
                 if (flags != nullptr) *flags |= mBuffer[mHead].flags;
                 const int first = mBuffer[mHead].first;
 
@@ -150,8 +151,13 @@ public:
                 }
                 else
                     mBuffer[mHead].first += cnt;
+
+                //leave the loop early when end of burst is encountered
+                //so that the calling loop can flush out the buffer
+                if (hasEOB) goto done;
             }
         }
+        done:
         lck.unlock();
         hasItems.notify_one();
         return samplesFilled;
