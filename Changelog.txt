@@ -1,6 +1,7 @@
 Release 17.09.1 (pending)
 ==========================
 
+- Fixed late packet reporting in SoapyLMS7 stream status
 - Fixed WriteStream() end of burst flushing in fifo.h
 - Fixed abs() overload compiler issue in lms7_device.cpp
 - Removed private include in mcu_program/host_src/main.cpp

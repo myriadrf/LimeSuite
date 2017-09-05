@@ -384,10 +384,11 @@ int SoapyLMS7::readStreamStatus(
                 if (GetLastError() == EPERM) return SOAPY_SDR_NOT_SUPPORTED;
                 return SOAPY_SDR_TIMEOUT;
             }
+
+            //stop when event is detected
+            if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
+                goto found;
         }
-        //stop when event is detected
-        if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
-            break;
         //check timeout
         std::chrono::duration<double> seconds = std::chrono::high_resolution_clock::now()-start;
         if (seconds.count()> (double)timeoutUs/1e6)
@@ -399,6 +400,7 @@ int SoapyLMS7::readStreamStatus(
             std::this_thread::sleep_for(std::chrono::microseconds(1+timeoutUs/2));
     }
 
+    found:
     timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
     //output metadata
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
