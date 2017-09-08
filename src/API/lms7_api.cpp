@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "FPGA_common.h"
 #include "Logger.h"
+#include "LMS64CProtocol.h"
 
 using namespace std;
 
@@ -1345,4 +1346,38 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
     lime::registerLogHandler(APIMsgHandler);
     api_msg_handler = handler;
+}
+
+API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
+{
+    if (dev == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+            return -1;
+    }
+    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS64CProtocol::GenericPacket pkt;
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+
+    pkt.cmd = lime::eCMD_LMS(cmd);
+    for (size_t i = 0; i < *len; ++i)
+        pkt.outBuffer.push_back(data[i]);
+
+    lime::LMS64CProtocol* port = dynamic_cast<lime::LMS64CProtocol *>(conn);
+    if (port->TransferPacket(pkt) != 0)
+        return -1;
+
+    for (size_t i = 0; i < pkt.inBuffer.size(); ++i)
+        data[i] = pkt.inBuffer[i];
+    *len = pkt.inBuffer.size();
+
+    if (pkt.status != lime::STATUS_COMPLETED_CMD)
+        return lime::ReportError(-1, "%s", lime::status2string(pkt.status));
+
+    return 0;
 }
