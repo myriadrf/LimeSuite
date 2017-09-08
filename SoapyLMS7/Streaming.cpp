@@ -24,6 +24,7 @@ struct IConnectionStream
     int direction;
     size_t elemSize;
     size_t elemMTU;
+    bool enabled;
 
     //rx cmd requests
     bool hasCmd;
@@ -138,6 +139,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
             throw std::runtime_error("SoapyLMS7::setupStream() failed: " + std::string(GetLastErrorMessage()));
         stream->streamID.push_back(streamID);
         stream->elemMTU = _conn->GetStreamSize(streamID);
+        stream->enabled = false;
     }
 
     //calibrate these channels when activated
@@ -154,6 +156,13 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
+
+    //disable stream if left enabled
+    if (icstream->enabled)
+    {
+        for(auto i : streamID)
+            _conn->ControlStream(i, false);
+    }
 
     for(auto i : streamID)
         _conn->CloseStream(i);
@@ -197,12 +206,16 @@ int SoapyLMS7::activateStream(
     icstream->numElems = numElems;
     icstream->hasCmd = true;
 
-    for(auto i : streamID)
+    if (not icstream->enabled)
     {
-        int status = _conn->ControlStream(i, true);
-        if(status != 0)
-            return SOAPY_SDR_STREAM_ERROR;
+        for(auto i : streamID)
+        {
+            int status = _conn->ControlStream(i, true);
+            if(status != 0) return SOAPY_SDR_STREAM_ERROR;
+        }
+        icstream->enabled = true;
     }
+
     return 0;
 }
 
@@ -220,12 +233,17 @@ int SoapyLMS7::deactivateStream(
     metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, _conn->GetHardwareTimestampRate());
     metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
-    for(auto i : streamID)
+
+    if (icstream->enabled)
     {
-        int status = _conn->ControlStream(i, false);
-        if(status != 0)
-            return SOAPY_SDR_STREAM_ERROR;
+        for(auto i : streamID)
+        {
+            int status = _conn->ControlStream(i, false);
+            if(status != 0) return SOAPY_SDR_STREAM_ERROR;
+        }
+        icstream->enabled = false;
     }
+
     return 0;
 }
 
