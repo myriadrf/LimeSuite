@@ -9,6 +9,7 @@
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Time.hpp>
+#include <atomic>
 #include <thread>
 #include <algorithm> //min/max
 #include "ErrorReporting.h"
@@ -31,6 +32,9 @@ struct IConnectionStream
     int flags;
     long long timeNs;
     size_t numElems;
+
+    //tx status
+    std::atomic<uint64_t> endBurstTicks;
 };
 
 /*******************************************************************
@@ -101,6 +105,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     stream->direction = direction;
     stream->elemSize = SoapySDR::formatToSize(format);
     stream->hasCmd = false;
+    stream->endBurstTicks = 0;
 
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
@@ -374,6 +379,11 @@ int SoapyLMS7::writeStream(
         if(ret < 0) return SOAPY_SDR_STREAM_ERROR;
     }
 
+    if (metadata.endOfBurst and ret > 0)
+    {
+        icstream->endBurstTicks = metadata.timestamp + ret;
+    }
+
     //return num written or error code
     return (ret > 0)? ret : SOAPY_SDR_STREAM_ERROR;
 }
@@ -403,14 +413,20 @@ int SoapyLMS7::readStreamStatus(
                 return SOAPY_SDR_TIMEOUT;
             }
 
+            //generate a burst acknowledgement when the time surpasses the end of bust time
+            if (icstream->endBurstTicks != 0)
+                metadata.endOfBurst = _conn->GetHardwareTimestamp() > icstream->endBurstTicks.exchange(0);
+
             //stop when event is detected
             if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
                 goto found;
         }
+
         //check timeout
         std::chrono::duration<double> seconds = std::chrono::high_resolution_clock::now()-start;
         if (seconds.count()> (double)timeoutUs/1e6)
             return SOAPY_SDR_TIMEOUT;
+
         //sleep to avoid high CPU load
         if (timeoutUs >= 2000)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -420,6 +436,7 @@ int SoapyLMS7::readStreamStatus(
 
     found:
     timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, _conn->GetHardwareTimestampRate());
+
     //output metadata
     if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
     if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
