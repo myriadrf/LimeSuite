@@ -76,6 +76,7 @@ double Connection_uLimeSDR::DetectRefClk(void)
     const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
+    SetReferenceClockRate(40e6);
     if (this->WriteRegisters(addr, vals, 2) != 0)
     {
         return -1;

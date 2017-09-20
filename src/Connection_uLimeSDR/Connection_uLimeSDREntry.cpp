@@ -99,17 +99,9 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
         {
             if(pid == 0x601F)
             {
-                libusb_device_handle *tempDev_handle;
-                tempDev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-                if(libusb_kernel_driver_active(tempDev_handle, 0) == 1)   //find out if kernel driver is attached
-                {
-                    if(libusb_detach_kernel_driver(tempDev_handle, 0) == 0) //detach it
-                        lime::debug("Kernel Driver Detached!");
-                }
-                if(libusb_claim_interface(tempDev_handle, 0) < 0) //claim interface 0 (the first) of device
-                {
-                    lime::error("Cannot Claim Interface");
-                }
+                libusb_device_handle *tempDev_handle(nullptr);
+                if(libusb_open(devs[i], &tempDev_handle) != 0 || tempDev_handle == nullptr)
+                    continue;
 
                 ConnectionHandle handle;
                 //check operating speed
@@ -123,10 +115,10 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
                 //read device name
                 char data[255];
                 memset(data, 0, 255);
-                int st = libusb_get_string_descriptor_ascii(tempDev_handle, 2, (unsigned char*)data, 255);
+                int st = libusb_get_string_descriptor_ascii(tempDev_handle, LIBUSB_CLASS_COMM, (unsigned char*)data, 255);
                 if(st < 0)
                     lime::error("Error getting usb descriptor");
-                if(strlen(data) > 0)
+                else
                     handle.name = std::string(data, size_t(st));
                 handle.addr = std::to_string(int(pid))+":"+std::to_string(int(vid));
 

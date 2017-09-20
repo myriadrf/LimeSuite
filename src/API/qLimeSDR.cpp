@@ -17,6 +17,12 @@ size_t LMS7_qLimeSDR::GetNumChannels(const bool tx) const
     return 5;
 };
 
+unsigned LMS7_qLimeSDR::GetLMSCnt() const
+{
+    return 2;
+}
+
+
 int LMS7_qLimeSDR::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
 {
     if (ch ==4)

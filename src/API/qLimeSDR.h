@@ -16,6 +16,8 @@ public:
     size_t GetNumChannels(const bool tx = false) const override;
     double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL) override;
     int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0) override;
+protected:  
+    unsigned GetLMSCnt() const override;
 private:
     double dacRate;
     double adcRate;

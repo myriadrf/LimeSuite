@@ -54,7 +54,7 @@ const char LMS_DEV_NAMES[][80] =
     "LimeSDR-USB",
     "LimeSDR-PCIe",
     "LimeSDR-QPCIe",
-    "uLimeSDR",
+    "LimeSDR-mini",
     "uStream",
     "LimeSDR SONY PA",
     "LimeSDR-USB SP",

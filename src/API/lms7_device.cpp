@@ -7,6 +7,7 @@
 
 #include "lms7_device.h"
 #include "qLimeSDR.h"
+#include "LimeSDR_mini.h"
 #include "GFIR/lms_gfir.h"
 #include "IConnection.h"
 #include <cmath>
@@ -32,7 +33,9 @@ LMS7_Device* LMS7_Device::CreateDevice(lime::IConnection* conn, LMS7_Device *obj
     if (conn != nullptr)
     {
         auto info = conn->GetDeviceInfo();
-        if (info.deviceName == "LimeSDR-QPCIe")
+        if (info.deviceName == "LimeSDR-mini")
+            device = new LMS7_LimeSDR_mini(obj);
+        else if (info.deviceName == "LimeSDR-QPCIe")
             device = new LMS7_qLimeSDR(obj);
         else
             device = new LMS7_Device(obj);
@@ -70,18 +73,23 @@ LMS7_Device::~LMS7_Device()
 	lime::ConnectionRegistry::freeConnection(this->connection);
 }
 
+unsigned LMS7_Device::GetLMSCnt() const
+{
+    return 1;
+}
+
 void LMS7_Device::_Initialize(lime::IConnection* conn)
 {
     this->tx_channels.resize(this->GetNumChannels());
     this->rx_channels.resize(this->GetNumChannels());
 
-    while (this->lms_list.size() > this->GetNumChannels()/2)
+    while (this->lms_list.size() > GetLMSCnt())
     {
         delete this->lms_list.back();
         this->lms_list.pop_back();
     }
 
-    while (this->lms_list.size() < this->GetNumChannels()/2)
+    while (this->lms_list.size() < GetLMSCnt())
     {
         this->lms_list.push_back(new lime::LMS7002M());
     }
@@ -1710,6 +1718,12 @@ int LMS7_Device::Init()
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
         if (lms->UploadAll()!=0)
+            return -1;
+        if (SetTxFrequency(0,1200e6)!=0)
+            return -1;
+        if (SetRxFrequency(0,1200e6)!=0)
+            return -1;
+        if (SetRate(10e6,2)!=0)
             return -1;
     }
     return 0;

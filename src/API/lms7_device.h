@@ -31,7 +31,7 @@ public:
     virtual ~LMS7_Device();
     virtual int SetConnection(lime::IConnection* conn);
     virtual lime::IConnection* GetConnection(unsigned chan =0);
-    int Init();
+    virtual int Init();
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
     int Reset();
     virtual size_t GetNumChannels(const bool tx=false) const;
@@ -107,6 +107,7 @@ protected:
     int ConfigureGFIR(bool enabled,bool tx, float_type bandwidth,size_t ch);
     void _Initialize(lime::IConnection* conn);
     unsigned lms_chip_id;
+    virtual unsigned GetLMSCnt() const;
 };
 
 #endif	/* LMS7_DEVICE_H */
