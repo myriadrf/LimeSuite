@@ -59,7 +59,6 @@ class TestBasicStreaming(unittest.TestCase):
         print(sr)
         self.assertEqual(sr.ret, SOAPY_SDR_TIMEOUT)
 
-
     def testRxBurstNow(self):
         print('===== receive a burst asap =====')
         numElemsRequest = 10000

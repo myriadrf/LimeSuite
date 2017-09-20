@@ -403,6 +403,9 @@ int SoapyLMS7::readStreamStatus(
                 return SOAPY_SDR_TIMEOUT;
             }
 
+            //packet dropped doesnt mean anything for tx streams
+            if (icstream->direction == SOAPY_SDR_TX) metadata.packetDropped = false;
+
             //stop when event is detected
             if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
                 goto found;
