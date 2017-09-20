@@ -160,6 +160,15 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
+void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
+{
+    int status = LMS_Init(lmsControl);
+    if (status != 0)
+        wxMessageBox(wxString::Format(_("Load Default: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+    wxNotebookEvent evt;
+    Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
+}
+
 void lms7002_mainPanel::UpdateGUI()
 {
     wxLongLong t1, t2;

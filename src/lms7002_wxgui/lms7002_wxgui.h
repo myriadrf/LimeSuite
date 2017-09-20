@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -103,6 +103,7 @@ class mainPanel : public wxPanel
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
+		wxButton* btnLoadDefault;
 		wxStaticText* txtTemperature;
 		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
@@ -119,6 +120,7 @@ class mainPanel : public wxPanel
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnLoadDefault( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		

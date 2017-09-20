@@ -19,18 +19,19 @@ class lms7002_pnlR3_view;
 class lms7002_mainPanel : public mainPanel
 {
 	protected:
-		// Handlers for mainPanel events.
-		void OnNewProject( wxCommandEvent& event );
-		void OnOpenProject( wxCommandEvent& event );
-		void OnSaveProject( wxCommandEvent& event );
-		void OnUploadAll( wxCommandEvent& event );
-		void OnDownloadAll( wxCommandEvent& event );
-		void OnReset( wxCommandEvent& event );
-		void OnRegistersTest( wxCommandEvent& event );
+        // Handlers for mainPanel events.
+        void OnNewProject( wxCommandEvent& event );
+        void OnOpenProject( wxCommandEvent& event );
+        void OnSaveProject( wxCommandEvent& event );
+        void OnUploadAll( wxCommandEvent& event );
+        void OnDownloadAll( wxCommandEvent& event );
+        void OnReset( wxCommandEvent& event );
+        void OnRegistersTest( wxCommandEvent& event );
         void OnSwitchToChannelA(wxCommandEvent& event);
         void OnSwitchToChannelB(wxCommandEvent& event);
-		void Onnotebook_modulesPageChanged( wxNotebookEvent& event );
+        void Onnotebook_modulesPageChanged( wxNotebookEvent& event );
         void OnResetChip(wxCommandEvent& event);
+        void OnLoadDefault(wxCommandEvent& event);
         void OnReadTemperature(wxCommandEvent& event);
         void OnSyncABchecked(wxCommandEvent& event);
         void OnEnableMIMOchecked(wxCommandEvent& event);
