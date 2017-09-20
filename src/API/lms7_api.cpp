@@ -735,7 +735,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
     }
 
     *gain = lms->GetNormalizedGain(dir_tx,chan);
-    if (gain < 0)
+    if (*gain < 0)
         return -1;
     return LMS_SUCCESS;
 }
@@ -757,7 +757,7 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t
     }
 
     *gain = lms->GetGain(dir_tx,chan);
-    if (gain < 0)
+    if (*gain < 0)
         return -1;
     return LMS_SUCCESS;
 }
