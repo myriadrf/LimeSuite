@@ -414,8 +414,11 @@ int SoapyLMS7::readStreamStatus(
             }
 
             //generate a burst acknowledgement when the time surpasses the end of bust time
-            if (icstream->endBurstTicks != 0)
-                metadata.endOfBurst = _conn->GetHardwareTimestamp() > icstream->endBurstTicks.exchange(0);
+            if (icstream->endBurstTicks != 0 and _conn->GetHardwareTimestamp() > icstream->endBurstTicks)
+            {
+                metadata.endOfBurst = true;
+                icstream->endBurstTicks = 0;
+            }
 
             //stop when event is detected
             if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)

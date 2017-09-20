@@ -59,7 +59,6 @@ class TestBasicStreaming(unittest.TestCase):
         print(sr)
         self.assertEqual(sr.ret, SOAPY_SDR_TIMEOUT)
 
-
     def testRxBurstNow(self):
         print('===== receive a burst asap =====')
         numElemsRequest = 10000
@@ -145,6 +144,31 @@ class TestBasicStreaming(unittest.TestCase):
         print(sr)
         self.assertEqual(sr.ret, SOAPY_SDR_TIMEOUT)
 
+        self.sdr.deactivateStream(self.rxStream)
+
+    def testTxBurstAtTime(self):
+        print('===== test txing a timed burst =====')
+        self.sdr.activateStream(self.txStream)
+        self.sdr.activateStream(self.rxStream)
+        t0 = self.sdr.getHardwareTime()
+        tBurst = t0 + int(1e8)
+        buff0 = np.zeros(1024, np.complex64)
+        buff1 = np.zeros(1024, np.complex64)
+        flags = SOAPY_SDR_HAS_TIME | SOAPY_SDR_END_BURST
+        print('send a tx burst in the near future...')
+        self.sdr.writeStream(self.txStream,
+            [buff0, buff1], 1024,
+            flags=flags,
+            timeNs=tBurst,
+            timeoutUs=int(1e6))
+
+        print('readStreamStatus for a burst indicator...')
+        r0 = self.sdr.readStreamStatus(self.txStream)
+        self.assertEqual(r0.ret, 0)
+        self.assertTrue(r0.flags & SOAPY_SDR_HAS_TIME)
+        self.assertTrue(r0.flags & SOAPY_SDR_END_BURST)
+
+        self.sdr.deactivateStream(self.txStream)
         self.sdr.deactivateStream(self.rxStream)
 
     def testTxLate(self):
