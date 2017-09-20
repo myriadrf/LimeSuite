@@ -375,6 +375,7 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
     const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
+    vector<uint32_t> bytesToSend(buffersCount, 0);
     vector<complex16_t> samples[maxChannelCount];
     vector<char> buffers;
     try
@@ -399,10 +400,10 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         {
     	    unsigned bytesSent = 0;
             if (this->WaitForSending(handles[bi], 1000) == true) {
-                bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+                bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
 	    }
 
-            if (bytesSent != bufferSize) {
+            if (bytesSent != bytesToSend[bi]) {
 	      for (auto value : stream->mTxStreams) {
 		value->overflow++;
 	      }
@@ -455,7 +456,8 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
                 break;
         }
 
-        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], i*sizeof(FPGA_DataPacket), ep);
+        bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
+        handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], ep);
         bufferUsed[bi] = true;
 
         t2 = chrono::high_resolution_clock::now();
