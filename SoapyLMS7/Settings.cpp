@@ -70,6 +70,15 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
         st = _rfics.back()->SoftReset();
         if (st != 0) throw std::runtime_error("SoftReset() failed");
+        if (devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos)
+        {
+            st = _rfics.back()->SPI_write(0xA6,0x0001);
+            if (st != 0) throw std::runtime_error("SPI_write() failed");
+            st = _rfics.back()->SPI_write(0x92,0xFFFF);
+            if (st != 0) throw std::runtime_error("SPI_write() failed");
+            st = _rfics.back()->SPI_write(0x93,0x03FF);
+            if (st != 0) throw std::runtime_error("SPI_write() failed");
+        }
 
         st = _rfics.back()->UploadAll();
         if (st != 0) throw std::runtime_error("UploadAll() failed");
@@ -98,7 +107,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0);
         this->setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0);
         this->setAntenna(SOAPY_SDR_RX, channel, "LNAL");
-        this->setAntenna(SOAPY_SDR_TX, channel, "BAND1");
+        this->setAntenna(SOAPY_SDR_TX, channel, devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos ? "BAND2" : "BAND1");
         this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
