@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Sep 20 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -188,10 +188,6 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	
 	fgSizer2->Add( fgSizer3, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	
-	txtDescription = new wxStaticText( this, wxID_ANY, wxT("Software Description"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtDescription->Wrap( -1 );
-	fgSizer2->Add( txtDescription, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxFlexGridSizer* fgSizer5;
 	fgSizer5 = new wxFlexGridSizer( 0, 3, 0, 50 );

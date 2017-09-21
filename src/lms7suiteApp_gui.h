@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Sep 20 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -94,7 +94,6 @@ class dlgAbout_view : public wxDialog
 		wxStaticBitmap* imgLogo;
 		wxStaticText* ID_STATICTEXT1;
 		wxStaticText* txtVersion;
-		wxStaticText* txtDescription;
 		wxStaticText* ID_STATICTEXT4;
 		wxStaticText* ID_STATICTEXT5;
 		wxHyperlinkCtrl* ID_HYPERLINKCTRL1;
