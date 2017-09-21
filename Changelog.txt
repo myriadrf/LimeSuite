@@ -1,12 +1,20 @@
-Release 17.09.1 (pending)
+Release 17.09.1 (2017-09-21)
 ==========================
 
+SoapyLMS changes:
 - SoapyLMS7 caches stream enable and disables on close
 - Fixed late packet reporting in SoapyLMS7 stream status
+
+LMS API changes:
+- Added simple GPIO example utilizing functions from LimeSuite.h
 - Fixed WriteStream() end of burst flushing in fifo.h
 - Fixed abs() overload compiler issue in lms7_device.cpp
 - Removed private include in mcu_program/host_src/main.cpp
-- Added simple GPIO example utilizing functions from LimeSuite.h
+- Fixed error checking bug causing compilation error on MacOS in LMS_GetGaindB() and LMS_GetNormalizedGain() 
+
+Other changes:
+- LimeSDR v1.4 updated to r2.10 gateware
+
 
 Release 17.09.0 (2017-09-01)
 ==========================

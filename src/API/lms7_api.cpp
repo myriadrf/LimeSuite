@@ -756,9 +756,10 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t
         return -1;
     }
 
-    *gain = lms->GetGain(dir_tx,chan);
-    if (*gain < 0)
+    int ret = lms->GetGain(dir_tx,chan);
+    if (ret < 0)
         return -1;
+    *gain = ret;
     return LMS_SUCCESS;
 }
 
