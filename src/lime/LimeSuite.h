@@ -1290,6 +1290,22 @@ API_EXPORT const char* LMS_GetLibraryVersion();
  */
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
 
+/**
+ * Callback function for redirecting API messages
+ * 
+ * @param lvl   lower value represents higher priority/importance message, range [0,4].
+ * @param msg   string containing log message text.
+ */
+ typedef void (*LMS_LogHandler)(int lvl, const char *msg);
+ 
+/*!
+ * Register a new system log handler. Should be called to replace the default
+ * stdio handler.
+ * 
+ * @param handler   function for handling API messages
+ */
+API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler);
+
 /** @} (End FN_VERSION) */
 
 #ifdef __cplusplus

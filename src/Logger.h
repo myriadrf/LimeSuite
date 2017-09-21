@@ -16,11 +16,11 @@ namespace lime
 
 enum LogLevel
 {
-    LOG_LEVEL_CRITICAL = 50, //!< A critical error. The application might not be able to continue running successfully.
-    LOG_LEVEL_ERROR    = 40, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
-    LOG_LEVEL_WARNING  = 30, //!< A warning. An operation completed with an unexpected result.
-    LOG_LEVEL_INFO     = 20, //!< An informational message, usually denoting the successful completion of an operation.
-    LOG_LEVEL_DEBUG    = 10, //!< A debugging message.
+    LOG_LEVEL_CRITICAL = 0, //!< A critical error. The application might not be able to continue running successfully.
+    LOG_LEVEL_ERROR    = 1, //!< An error. An operation did not complete successfully, but the application as a whole is not affected.
+    LOG_LEVEL_WARNING  = 2, //!< A warning. An operation completed with an unexpected result.
+    LOG_LEVEL_INFO     = 3, //!< An informational message, usually denoting the successful completion of an operation.
+    LOG_LEVEL_DEBUG    = 4, //!< A debugging message, only shown in Debug configuration.
 };
 
 //! Log a critical error message with formatting

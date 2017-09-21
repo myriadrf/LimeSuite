@@ -14,6 +14,7 @@
 #include <FPGA_common.h>
 #include <LMS7002M.h>
 #include <ciso646>
+#include "Logger.h"
 
 using namespace std;
 using namespace lime;
@@ -64,8 +65,66 @@ Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const 
 #endif
     if (this->Open(index, vid, pid) != 0)
         std::cerr << GetLastErrorMessage() << std::endl;
-    this->SetReferenceClockRate(52e6);
+    DetectRefClk();
     GetChipVersion();
+}
+
+double Connection_uLimeSDR::DetectRefClk(void)
+{
+    const double fx3Clk = 100e6;   
+    const double fx3Cnt = 16777210;    //fixed fx3 counter in FPGA
+    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
+    const uint32_t addr[] = { 0x61, 0x63 };
+    const uint32_t vals[] = { 0x0, 0x0 };
+    if (this->WriteRegisters(addr, vals, 2) != 0)
+    {
+        return -1;
+    }
+    auto start = std::chrono::steady_clock::now();
+    if (this->WriteRegister(0x61, 0x4) != 0)
+    {
+        return -1;
+    }
+
+    while (1) //wait for test to finish
+    {
+        unsigned completed;
+        if (this->ReadRegister(0x65, completed) != 0)
+        {
+            return -1;
+        }
+        if (completed & 0x4)
+            break;
+
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        if (elapsed_seconds.count() > 0.5) //timeout
+        {
+            return -1;
+        }
+    }
+
+    const uint32_t addr2[] = { 0x72, 0x73 };
+    uint32_t vals2[2];
+    if (this->ReadRegisters(addr2, vals2, 2) != 0)
+    {
+        return -1;
+    }
+    double count = (vals2[0] | (vals2[1] << 16)); //cock counter
+    count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
+    lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
+    unsigned i = 0;
+    double delta = 100e6;
+
+    while (i < sizeof(clkTbl) / sizeof(*clkTbl))
+        if (delta < fabs(count - clkTbl[i]))
+            break;
+        else
+            delta = fabs(count - clkTbl[i++]);
+
+    this->SetReferenceClockRate(clkTbl[i-1]);
+    lime::debug("Selected reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
+    return clkTbl[i - 1];
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
@@ -105,7 +164,6 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
 
 int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
-
     int actual = 0;
     unsigned char wbuffer[20]={0};
 
@@ -170,24 +228,22 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
     libusb_reset_device(dev_handle);
     if(libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
     {
-        printf("Kernel Driver Active\n");
+        lime::debug("Kernel Driver Active");
         if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
-            printf("Kernel Driver Detached!\n");
+            lime::debug("Kernel Driver Detached!");
     }
     int r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
     if(r < 0)
     {
-        printf("Cannot Claim Interface\n");
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
     r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
     if(r < 0)
     {
-        printf("Cannot Claim Interface\n");
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
-    printf("Claimed Interface\n");
-
+    lime::debug("Claimed Interface");
+    
     FT_SetStreamPipe(0x82,64);
     FT_SetStreamPipe(0x02,64);
     isConnected = true;
@@ -350,42 +406,31 @@ static void callback_libusbtransfer(libusb_transfer *trans)
     switch(trans->status)
     {
         case LIBUSB_TRANSFER_CANCELLED:
-            //printf("Transfer %i canceled\n", context->id);
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
-            //context->reset();
             break;
         case LIBUSB_TRANSFER_COMPLETED:
-            //if(trans->actual_length == context->bytesExpected)
-            {
-                context->bytesXfered = trans->actual_length;
-                context->done.store(true);
-            }
+            context->bytesXfered = trans->actual_length;
+            context->done.store(true);
         break;
         case LIBUSB_TRANSFER_ERROR:
-            printf("TRANSFER ERRRO\n");
+            lime::error("TRANSFER ERROR");
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
             break;
         case LIBUSB_TRANSFER_TIMED_OUT:
-            //printf("transfer timed out %i\n", context->id);
+            lime::error("transfer timed out %i", context->id);
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-            //context->used = false;
-
             break;
         case LIBUSB_TRANSFER_OVERFLOW:
-            printf("transfer overflow\n");
-
+            lime::error("transfer overflow\n");
             break;
         case LIBUSB_TRANSFER_STALL:
-            printf("transfer stalled\n");
+            lime::error("transfer stalled");
             break;
         case LIBUSB_TRANSFER_NO_DEVICE:
-            printf("transfer no device\n");
-
+            lime::error("transfer no device");
             break;
     }
     lck.unlock();
@@ -414,7 +459,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
     }
     if(!contextFound)
     {
-        printf("No contexts left for reading data\n");
+        lime::error("No contexts left for reading data");
         return -1;
     }
     contexts[i].used = true;
@@ -446,7 +491,7 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA READING %s\n", libusb_error_name(status));
+        lime::error("ERROR BEGIN DATA READING %s", libusb_error_name(status));
         contexts[i].used = false;
         return -1;
     }
@@ -598,7 +643,7 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
-        printf("ERROR BEGIN DATA SENDING %s\n", libusb_error_name(status));
+        lime::error("ERROR BEGIN DATA SENDING %s", libusb_error_name(status));
         contextsToSend[i].used = false;
         return -1;
     }

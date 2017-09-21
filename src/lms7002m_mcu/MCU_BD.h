@@ -55,7 +55,6 @@ class MCU_BD
         std::atomic_ushort stepsDone;
         std::atomic_ushort stepsTotal;
         std::atomic_bool aborted;
-        void Log(const char* msg);
         int WaitUntilWritten();
         int ReadOneByte(unsigned char * data);
         int One_byte_command(unsigned short data1, unsigned char * rdata1);

@@ -22,6 +22,7 @@
 #include "ConnectionRegistry.h"
 #include "ADF4002.h"
 #include "mcu_programs.h"
+#include "Logger.h"
 
 const double LMS7_Device::LMS_CGEN_MAX = 640e6;
 
@@ -2081,12 +2082,12 @@ int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
 
     uint8_t mcuID = mcu->ReadMCUProgramID();
-    printf("Current MCU firmware: %i, expected %i \n", mcuID, MCU_ID_AGC_IMAGE);
+    lime::debug("Current MCU firmware: %i, expected %i", mcuID, MCU_ID_AGC_IMAGE);
     if(mcuID != MCU_ID_AGC_IMAGE)
     {
-        printf("Uploading MCU AGC firmware\n");
+        lime::debug("Uploading MCU AGC firmware");
         int status = mcu->Program_MCU(mcu_program_lms7_agc_bin, lime::IConnection::MCU_PROG_MODE::SRAM);
-        printf("Done\n");
+        lime::info("MCU AGC firmware uploaded");
         if(status != 0)
             return status;
     }

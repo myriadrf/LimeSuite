@@ -180,8 +180,6 @@ int ConnectionEVB7COM::Open(const char *comName, int baudrate)
     hComm = open(comName, O_RDWR | O_NOCTTY | O_SYNC);
     if(hComm < 0)
     {
-//        printf("%s",strerror(errno));
-//        MessageLog::getInstance()->write("Connection manager: failed opening COM port\n", LOG_ERROR);
         return ReportError("failed opening COM port");
     }
 

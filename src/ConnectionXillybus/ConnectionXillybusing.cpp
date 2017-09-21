@@ -353,7 +353,7 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
     }
     catch (const std::bad_alloc& ex) //not enough memory for buffers
     {
-        printf("Error allocating Tx buffers, not enough memory\n");
+        lime::error("Error allocating Tx buffers, not enough memory");
         return;
     }
 

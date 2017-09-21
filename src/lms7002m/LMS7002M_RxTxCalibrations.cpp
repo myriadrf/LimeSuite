@@ -15,7 +15,11 @@
 #include <fstream>
 #include "dataTypes.h"
 #include <thread>
+#include "Logger.h"
+
+#ifndef NDEBUG
 #define LMS_VERBOSE_OUTPUT
+#endif
 
 #include "LMS7002M_RegistersMap.h"
 
@@ -1445,7 +1449,7 @@ void LMS7002M::CalibrateTxDCAuto()
 
     Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), 2047);
     Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), 2047);
-    printf("I: %i, Q: %i\n", ivalue, qvalue);
+    lime::info("I: %i, Q: %i", ivalue, qvalue);
     verbose_printf("Tx DC DONE\n");
 }
 
@@ -1798,7 +1802,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         phaseOffset = phOffset;
         if(foundInCache)
         {
-            printf("Rx calibration: using cached values\n");
+            lime::info("Rx calibration: using cached values");
             SetRxDCOFF(dcoffi, dcoffq);
             Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), 1);
             Modify_SPI_Reg_bits(LMS7param(GCORRI_RXTSP), gainI);

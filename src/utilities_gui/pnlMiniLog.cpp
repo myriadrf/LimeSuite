@@ -20,6 +20,10 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     strftime(buffer, 80, "%H:%M:%S", timeinfo);
 
     auto level = lime::LogLevel(event.GetInt());
+#ifdef NDEBUG
+    if (level == lime::LOG_LEVEL_DEBUG)
+        return;
+#endif
     if (level == 0) level = lime::LOG_LEVEL_INFO;
     wxString line(wxString::Format("[%s] %s: %s", buffer, lime::logLevelToName(level), event.GetString()));
 
