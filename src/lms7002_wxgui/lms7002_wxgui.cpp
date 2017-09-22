@@ -3354,7 +3354,7 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer86->SetFlexibleDirection( wxBOTH );
 	fgSizer86->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	ID_STATICTEXT13 = new wxStaticText( sbSizer68->GetStaticBox(), wxID_ANY, wxT("CP2"), wxDefaultPosition, wxSize( 30,13 ), 0 );
+	ID_STATICTEXT13 = new wxStaticText( sbSizer68->GetStaticBox(), wxID_ANY, wxT("CP2"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_STATICTEXT13->Wrap( -1 );
 	fgSizer86->Add( ID_STATICTEXT13, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
