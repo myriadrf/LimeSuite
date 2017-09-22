@@ -370,7 +370,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	fgSizer122->Add( txtBW2, 0, wxEXPAND, 5 );
 	
-	m_staticText17 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Power (dbFS):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText17 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Power (dBFS):"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText17->Wrap( -1 );
 	fgSizer122->Add( m_staticText17, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
