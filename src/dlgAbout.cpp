@@ -16,7 +16,8 @@ void dlgAbout::OnInit( wxInitDialogEvent& event )
     msg << "Version: " << lime::GetLibraryVersion() << "\n";
     msg << "Build date: " << lime::GetBuildTimestamp();
 	txtVersion->SetLabel(msg);
-	txtDescription->SetLabel("");
+	this->Fit();
+	this->Layout();
 }
 
 void dlgAbout::OnbtnClose( wxCommandEvent& event )
