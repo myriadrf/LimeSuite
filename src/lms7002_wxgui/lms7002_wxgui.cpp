@@ -8594,7 +8594,7 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	wxBoxSizer* bSizer2;
 	bSizer2 = new wxBoxSizer( wxHORIZONTAL );
 	
-	ID_STATICTEXT1 = new wxStaticText( sbSizer124->GetStaticBox(), wxID_ANY, wxT("Select the file:"), wxDefaultPosition, wxSize( 76,13 ), 0 );
+	ID_STATICTEXT1 = new wxStaticText( sbSizer124->GetStaticBox(), wxID_ANY, wxT("Select the file:"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_STATICTEXT1->Wrap( -1 );
 	bSizer2->Add( ID_STATICTEXT1, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
