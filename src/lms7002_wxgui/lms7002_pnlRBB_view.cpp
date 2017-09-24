@@ -73,12 +73,12 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbRCC_CTL_LPFH_RBB->Set(temp);
 
     temp.clear();
-    temp.push_back("when rxMode is 1.4MHz");
-    temp.push_back("when 3MHz");
-    temp.push_back("when 5MHz");
-    temp.push_back("when 10MHz");
-    temp.push_back("when 15MHz");
-    temp.push_back("when 20MHz");
+    temp.push_back("when rxMode is 1.4 MHz");
+    temp.push_back("when 3 MHz");
+    temp.push_back("when 5 MHz");
+    temp.push_back("when 10 MHz");
+    temp.push_back("when 15 MHz");
+    temp.push_back("when 20 MHz");
     cmbRCC_CTL_LPFL_RBB->Set(temp);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);

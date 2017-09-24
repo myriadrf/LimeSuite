@@ -473,9 +473,9 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.6f"), freq[i]/1e6));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.3f"), pho));
-        lblFCWPHOmodeName->SetLabel(_("PHO(deg)"));
-        tableTitleCol1->SetLabel(_("FCW(MHz)"));
-        tableTitleCol2->SetLabel(_("PHO(deg)"));
+        lblFCWPHOmodeName->SetLabel(_("PHO (deg)"));
+        tableTitleCol1->SetLabel(_("FCW (MHz)"));
+        tableTitleCol2->SetLabel(_("PHO (deg)"));
     }
     else //PHO mode
     {
@@ -487,9 +487,9 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0 / 360.0)*phase[i]));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), fcw/1e6));
-        lblFCWPHOmodeName->SetLabel(_("FCW(MHz)"));
-        tableTitleCol2->SetLabel(_("FCW(MHz)"));
-        tableTitleCol1->SetLabel(_("PHO(deg)"));
+        lblFCWPHOmodeName->SetLabel(_("FCW (MHz)"));
+        tableTitleCol2->SetLabel(_("FCW (MHz)"));
+        tableTitleCol1->SetLabel(_("PHO (deg)"));
     }
 }
 
