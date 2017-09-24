@@ -162,21 +162,19 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    mMiniLog = new pnlMiniLog(this, wxNewId());
+    mMiniLog = new pnlMiniLog(m_scrolledWindow1, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
     contentSizer->AddGrowableRow(1);
     Layout();
     Fit();
-    SetMinSize(GetSize());
 
 
     obj_ptr = this;
     wxCommandEvent event;
     OnControlBoardConnect(event);
 
-    SetMinSize(GetBestSize());
     UpdateConnections(lmsControl);
 
     mnuCacheValues->Check(false);

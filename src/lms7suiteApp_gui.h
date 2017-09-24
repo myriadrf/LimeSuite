@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 20 2017)
+// C++ code generated with wxFormBuilder (version Sep 23 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -24,6 +24,7 @@ class lms7002_mainPanel;
 #include <wx/statusbr.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
+#include <wx/scrolwin.h>
 #include <wx/frame.h>
 #include <wx/statbmp.h>
 #include <wx/stattext.h>
@@ -54,6 +55,7 @@ class AppFrame_view : public wxFrame
 		wxMenu* mnuModules;
 		wxMenu* helpMenu;
 		wxStatusBar* statusBar;
+		wxScrolledWindow* m_scrolledWindow1;
 		wxFlexGridSizer* contentSizer;
 		lms7002_mainPanel* mContent;
 		

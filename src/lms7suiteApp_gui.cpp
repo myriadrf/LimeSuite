@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 20 2017)
+// C++ code generated with wxFormBuilder (version Sep 23 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -96,18 +96,33 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->SetMenuBar( mbar );
 	
 	statusBar = this->CreateStatusBar( 3, wxST_SIZEGRIP, wxID_ANY );
+	wxFlexGridSizer* fgSizer8;
+	fgSizer8 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer8->AddGrowableCol( 0 );
+	fgSizer8->AddGrowableRow( 0 );
+	fgSizer8->SetFlexibleDirection( wxBOTH );
+	fgSizer8->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_scrolledWindow1 = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxSize( 1180,665 ), wxHSCROLL|wxVSCROLL );
+	m_scrolledWindow1->SetScrollRate( 5, 5 );
 	contentSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
 	contentSizer->AddGrowableCol( 0 );
+	contentSizer->AddGrowableRow( 0 );
 	contentSizer->SetFlexibleDirection( wxBOTH );
 	contentSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	mContent = new lms7002_mainPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	mContent = new lms7002_mainPanel( m_scrolledWindow1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	contentSizer->Add( mContent, 1, wxEXPAND, 5 );
 	
 	
-	this->SetSizer( contentSizer );
+	m_scrolledWindow1->SetSizer( contentSizer );
+	m_scrolledWindow1->Layout();
+	fgSizer8->Add( m_scrolledWindow1, 1, wxEXPAND, 5 );
+	
+	
+	this->SetSizer( fgSizer8 );
 	this->Layout();
-	contentSizer->Fit( this );
+	fgSizer8->Fit( this );
 	
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( AppFrame_view::OnClose ) );
@@ -175,7 +190,7 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("LMS7002 Software "), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT1->Wrap( -1 );
-	ID_STATICTEXT1->SetFont( wxFont( 18, 70, 90, 90, false, wxEmptyString ) );
+	ID_STATICTEXT1->SetFont( wxFont( 18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 	
 	fgSizer4->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
