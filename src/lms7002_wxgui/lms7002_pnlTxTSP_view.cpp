@@ -419,8 +419,7 @@ void lms7002_pnlTxTSP_view::UpdateNCOinputs()
     {
         float_type phase[16] = { 0 };
         float_type fcw = 0;
-        if (LMS_GetNCOPhase(lmsControl, LMS_CH_TX, ch, phase, &fcw) != 0)
-            return;
+        LMS_GetNCOPhase(lmsControl, LMS_CH_TX, ch, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
             txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0/360.0)*  phase[i]));
