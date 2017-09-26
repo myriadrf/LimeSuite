@@ -145,7 +145,7 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
         lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1,true);
         lms->Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),2,true);
     }
-
+    lime::info("RX LPF configured");
     return 0;
 }
 
@@ -335,6 +335,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
         lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1, true);
         return lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1, true);
     }
+    lime::info("TX LPF configured");
     return 0;
 }
 

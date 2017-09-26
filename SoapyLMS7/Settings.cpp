@@ -78,6 +78,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
             if (st != 0) throw std::runtime_error("SPI_write() failed");
             st = _rfics.back()->SPI_write(0x93,0x03FF);
             if (st != 0) throw std::runtime_error("SPI_write() failed");
+            st = _rfics.back()->SPI_write(0x8B,0x338E);
+            if (st != 0) throw std::runtime_error("SPI_write() failed");
         }
 
         st = _rfics.back()->UploadAll();
