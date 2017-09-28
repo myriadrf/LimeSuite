@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 23 2017)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -55,6 +55,7 @@ class AppFrame_view : public wxFrame
 		wxMenu* mnuModules;
 		wxMenu* helpMenu;
 		wxStatusBar* statusBar;
+		wxBoxSizer* bSizer6;
 		wxScrolledWindow* m_scrolledWindow1;
 		wxFlexGridSizer* contentSizer;
 		lms7002_mainPanel* mContent;

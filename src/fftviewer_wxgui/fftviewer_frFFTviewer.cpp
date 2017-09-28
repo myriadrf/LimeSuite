@@ -16,6 +16,7 @@ using namespace lime;
 
 void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
 {
+    StopStreaming();
     lmsControl = pDataPort;
     lmsIndex = 0;
     for (unsigned i =0; i < this->cMaxChCount ; i++)

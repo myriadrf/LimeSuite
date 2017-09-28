@@ -1084,21 +1084,20 @@ int LMS7_Device::SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_
 int LMS7_Device::GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
-    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
-       return -1;
-   int16_t coef16[120];
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true);
+    int16_t coef16[120];
 
-   if (lms->GetGFIRCoefficients(tx, filt, coef16, filt == LMS_GFIR3 ? 120 : 40) != 0)
-       return -1;
-   if (coef != NULL)
-   {
-       for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
-       {
-           coef[i] = coef16[i];
-           coef[i] /= (1<<15);
-       }
-   }
-   return (filt==LMS_GFIR3) ? 120 : 40;
+    if (lms->GetGFIRCoefficients(tx, filt, coef16, filt == LMS_GFIR3 ? 120 : 40) != 0)
+        return -1;
+    if (coef != NULL)
+    {
+        for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
+        {
+            coef[i] = coef16[i];
+            coef[i] /= (1<<15);
+        }
+    }
+    return (filt==LMS_GFIR3) ? 120 : 40;
 }
 
 int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
@@ -1761,6 +1760,9 @@ int LMS7_Device::EnableChannel(bool dir_tx, size_t chan, bool enabled)
 
 int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lms_prog_md_t mode, lime::IConnection::ProgrammingCallback callback)
 {
+    if (connection == nullptr)
+        return lime::ReportError(EINVAL, "Device not connected");
+    
     switch (target)
     {
         case LMS_PROG_TRG_FX3:
@@ -1810,6 +1812,9 @@ int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lm
 
 int LMS7_Device::ProgramUpdate(const bool download,lime::IConnection::ProgrammingCallback callback)
 {
+    if (connection == nullptr)
+        return lime::ReportError(EINVAL, "Device not connected");
+
     return this->connection->ProgramUpdate(download,callback);
 }
 
@@ -2088,6 +2093,9 @@ lime::LMS7002M* LMS7_Device::GetLMS(int index)
 
 int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt)
 {
+    if (connection == nullptr)
+        return lime::ReportError(EINVAL, "Device not connected");
+    
     return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 

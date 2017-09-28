@@ -18,8 +18,8 @@ class OpenGLGraph;
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/string.h>
-#include <wx/splitter.h>
 #include <wx/sizer.h>
+#include <wx/splitter.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/valtext.h>
@@ -43,7 +43,6 @@ class frFFTviewer : public wxFrame
 	protected:
 		wxSplitterWindow* mPlotsSplitter;
 		wxPanel* mTimeConstellationPanel;
-		wxSplitterWindow* m_splitter3;
 		OpenGLGraph* mTimeDomainPanel;
 		OpenGLGraph* mConstelationPanel;
 		OpenGLGraph* mFFTpanel;
@@ -107,12 +106,6 @@ class frFFTviewer : public wxFrame
 		{
 			mPlotsSplitter->SetSashPosition( 0 );
 			mPlotsSplitter->Disconnect( wxEVT_IDLE, wxIdleEventHandler( frFFTviewer::mPlotsSplitterOnIdle ), NULL, this );
-		}
-		
-		void m_splitter3OnIdle( wxIdleEvent& )
-		{
-			m_splitter3->SetSashPosition( 0 );
-			m_splitter3->Disconnect( wxEVT_IDLE, wxIdleEventHandler( frFFTviewer::m_splitter3OnIdle ), NULL, this );
 		}
 	
 };

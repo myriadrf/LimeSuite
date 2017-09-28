@@ -28,19 +28,23 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	mTimeConstellationPanel = new wxPanel( mPlotsSplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer9;
-	fgSizer9 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer9 = new wxFlexGridSizer( 1, 2, 0, 0 );
 	fgSizer9->AddGrowableCol( 0 );
 	fgSizer9->AddGrowableRow( 0 );
 	fgSizer9->SetFlexibleDirection( wxBOTH );
 	fgSizer9->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_splitter3 = new wxSplitterWindow( mTimeConstellationPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D );
-	m_splitter3->Connect( wxEVT_IDLE, wxIdleEventHandler( frFFTviewer::m_splitter3OnIdle ), NULL, this );
+	wxBoxSizer* bSizer2;
+	bSizer2 = new wxBoxSizer( wxHORIZONTAL );
 	
-	mTimeDomainPanel = new OpenGLGraph( m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	mConstelationPanel = new OpenGLGraph( m_splitter3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	m_splitter3->SplitVertically( mTimeDomainPanel, mConstelationPanel, 0 );
-	fgSizer9->Add( m_splitter3, 1, wxEXPAND, 5 );
+	mTimeDomainPanel = new OpenGLGraph( mTimeConstellationPanel, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
+	bSizer2->Add( mTimeDomainPanel, 1, wxALL|wxEXPAND, 5 );
+	
+	mConstelationPanel = new OpenGLGraph( mTimeConstellationPanel, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
+	bSizer2->Add( mConstelationPanel, 0, wxALL|wxEXPAND|wxSHAPED, 5 );
+	
+	
+	fgSizer9->Add( bSizer2, 1, wxEXPAND, 5 );
 	
 	
 	mTimeConstellationPanel->SetSizer( fgSizer9 );

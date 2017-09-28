@@ -1769,8 +1769,6 @@ int LMS7002M::SetGFIRCoefficients(bool tx, uint8_t GFIR_index, const int16_t *co
 */
 int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, uint8_t coefCount)
 {
-    checkConnection();
-
     int status = -1;
     uint8_t index;
     uint8_t coefLimit;
@@ -1796,7 +1794,7 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
         addresses.push_back(startAddr + index + 24 * (index / 40));
     uint16_t spiData[120];
     memset(spiData, 0, 120 * sizeof(uint16_t));
-    if (controlPort->IsOpen())
+    if (controlPort && controlPort->IsOpen())
     {
         status = SPI_read_batch(&addresses[0], spiData, coefCount);
         for (index = 0; index < coefCount; ++index)

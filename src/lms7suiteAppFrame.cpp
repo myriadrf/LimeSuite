@@ -162,15 +162,19 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    mMiniLog = new pnlMiniLog(m_scrolledWindow1, wxNewId());
+    mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
-    contentSizer->Add(mMiniLog, 1, wxEXPAND, 5);
-    contentSizer->AddGrowableRow(1);
-    Layout();
+    bSizer6->Add(mMiniLog, 1, wxEXPAND, 5);
+    Layout(); 
     Fit();
-
-
+    int x,y1,y2;
+    m_scrolledWindow1->GetVirtualSize(&x,&y1);
+    mMiniLog->GetSize(nullptr,&y2);
+    SetSize(x+8,y1+y2+8);
+    m_scrolledWindow1->SetMinSize(wxSize(wxDefaultCoord,160));
+    m_scrolledWindow1->SetMaxSize(wxSize(wxDefaultCoord,y1));
+    SetMinSize(wxSize(640,320));
     obj_ptr = this;
     wxCommandEvent event;
     OnControlBoardConnect(event);
@@ -333,14 +337,19 @@ void LMS7SuiteAppFrame::OnFFTviewerClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
 {
     if (fftviewer) //it's already opened
-        fftviewer->Show();
+    {
+        fftviewer->Show(true);
+        fftviewer->Iconize(false); // restore the window if minimized
+        fftviewer->SetFocus();  // focus on my window
+        fftviewer->Raise();  // bring window to front
+    }
     else
     {
         fftviewer = new fftviewer_frFFTviewer(this);
         fftviewer->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFFTviewerClose), NULL, this);
-        fftviewer->Show();
+        fftviewer->Initialize(lmsControl);
+        fftviewer->Show(true);
     }
-    fftviewer->Initialize(lmsControl);
 }
 
 void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
@@ -362,7 +371,12 @@ void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowADF4002(wxCommandEvent& event)
 {
     if (adfGUI) //it's already opened
-        adfGUI->Show();
+    {
+        adfGUI->Show(true);
+        adfGUI->Iconize(false); // restore the window if minimized
+        adfGUI->SetFocus();  // focus on my window
+        adfGUI->Raise();  // bring window to front
+    }
     else
     {
         adfGUI = new ADF4002_wxgui(this, wxNewId(), _("ADF4002"));
@@ -381,7 +395,12 @@ void LMS7SuiteAppFrame::OnSi5351Close(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowSi5351C(wxCommandEvent& event)
 {
     if (si5351gui) //it's already opened
-        si5351gui->Show();
+    {
+        si5351gui->Show(true);
+        si5351gui->Iconize(false); // restore the window if minimized
+        si5351gui->SetFocus();  // focus on my window
+        si5351gui->Raise();  // bring window to front
+    }
     else
     {
         si5351gui = new Si5351C_wxgui(this, wxNewId(), _("Si5351C"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
@@ -402,7 +421,12 @@ void LMS7SuiteAppFrame::OnProgramingClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowPrograming(wxCommandEvent& event)
 {
     if (programmer) //it's already opened
-        programmer->Show();
+    {
+        programmer->Show(true);
+        programmer->Iconize(false); // restore the window if minimized
+        programmer->SetFocus();  // focus on my window
+        programmer->Raise();  // bring window to front
+    }
     else
     {
         programmer = new LMS_Programing_wxgui(this, wxNewId(), _("Programming"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
@@ -427,7 +451,12 @@ void LMS7SuiteAppFrame::OnHPM7Close(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
 {
     if (hpm7) //it's already opened
-        hpm7->Show();
+    {
+        hpm7->Show(true);
+        hpm7->Iconize(false); // restore the window if minimized
+        hpm7->SetFocus();  // focus on my window
+        hpm7->Raise();  // bring window to front
+    }
     else
     {
         hpm7 = new HPM7_wxgui(this, wxNewId(), _("HPM7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
@@ -445,7 +474,12 @@ void LMS7SuiteAppFrame::OnFPGAcontrolsClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
 {
     if (fpgaControls) //it's already opened
-        fpgaControls->Show();
+    {
+        fpgaControls->Show(true);
+        fpgaControls->Iconize(false); // restore the window if minimized
+        fpgaControls->SetFocus();  // focus on my window
+        fpgaControls->Raise();  // bring window to front
+    }
     else
     {
         fpgaControls = new FPGAcontrols_wxgui(this, wxNewId(), _("FPGA Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
@@ -463,7 +497,12 @@ void LMS7SuiteAppFrame::OnMyriad7Close(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowMyriad7(wxCommandEvent& event)
 {
     if (myriad7) //it's already opened
-        myriad7->Show();
+    {
+        myriad7->Show(true);
+        myriad7->Iconize(false); // restore the window if minimized
+        myriad7->SetFocus();  // focus on my window
+        myriad7->Raise();  // bring window to front
+    }
     else
     {
         myriad7 = new Myriad7_wxgui(this, wxNewId(), _("Myriad7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
@@ -482,7 +521,12 @@ void LMS7SuiteAppFrame::OnDeviceInfoClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowDeviceInfo(wxCommandEvent& event)
 {
     if (deviceInfo) //it's already opened
-        deviceInfo->Show();
+    {
+        deviceInfo->Show(true);
+        deviceInfo->Iconize(false); // restore the window if minimized
+        deviceInfo->SetFocus();  // focus on my window
+        deviceInfo->Raise();  // bring window to front
+    }
     else
     {
         deviceInfo = new dlgDeviceInfo(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
@@ -501,7 +545,12 @@ void LMS7SuiteAppFrame::OnSPIClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnShowSPI(wxCommandEvent& event)
 {
     if (spi) //it's already opened
-        spi->Show();
+    {
+        spi->Show(true);
+        spi->Iconize(false); // restore the window if minimized
+        spi->SetFocus();  // focus on my window
+        spi->Raise();  // bring window to front
+    }
     else
     {
         spi = new SPI_wxgui(this, wxNewId(), _("Device Info"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE);
