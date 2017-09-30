@@ -117,11 +117,19 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::STREAM_12_BIT_COMPRESSED;
         else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported format");
 
-        //optional buffer length if specified
+        //optional buffer length if specified (from device args)
+        const auto devArgsBufferLength = _deviceArgs.find(config.isTx?"txBufferLength":"rxBufferLength");
+        if (devArgsBufferLength != _deviceArgs.end())
+        {
+            config.bufferLength = std::stoul(devArgsBufferLength->second);
+        }
+
+        //optional buffer length if specified (takes precedent)
         if (args.count("bufferLength") != 0)
         {
             config.bufferLength = std::stoul(args.at("bufferLength"));
         }
+
         //optional packets latency, 0-maximum throughput, 1-lowest latency
         if (args.count("latency") != 0)
         {

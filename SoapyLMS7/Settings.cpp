@@ -35,6 +35,7 @@ using namespace lime;
  * Constructor/destructor
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
+    _deviceArgs(args),
     _conn(nullptr),
     _moduleName(handle.module)
 {

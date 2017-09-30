@@ -279,6 +279,7 @@ public:
     unsigned transactSPI(const int addr, const unsigned data, const size_t numBits);
 
 private:
+    const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     lime::IConnection *_conn;
     const std::string _moduleName;
 
