@@ -7,7 +7,7 @@ endif()
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_DESKTOP "Enable LimeSuite launcher and icons" ON "LINUX" OFF)
+cmake_dependent_option(ENABLE_DESKTOP "Enable LimeSuite launcher and icons" ON "ENABLE_GUI;LINUX" OFF)
 add_feature_info(LimeSuiteDesktop ENABLE_DESKTOP "LimeSuite freedesktop integration")
 if (NOT ENABLE_DESKTOP)
     return()
