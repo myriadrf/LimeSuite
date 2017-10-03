@@ -503,9 +503,10 @@ int LMS7002M::CalibrateTxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    uint8_t ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO));
     SetDefaults(SX);
+    Modify_SPI_Reg_bits(LMS7param(ICT_VCO), ict_vco);
     //SX VCO is powered up in SetFrequencySX/Tune
-    Modify_SPI_Reg_bits(LMS7param(ICT_VCO), 200);
     {
         float_type SXTfreq = GetFrequencySX(LMS7002M::Tx);
         float_type SXRfreq = SXTfreq - bandwidth_Hz / calibUserBwDivider - calibrationSXOffset_Hz;
@@ -1584,7 +1585,9 @@ int LMS7002M::CalibrateRxSetup(float_type bandwidth_Hz, const bool useExtLoopbac
 
         //SXT
         Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        uint8_t ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO));
         SetDefaults(SX);
+        Modify_SPI_Reg_bits(LMS7param(ICT_VCO), ict_vco);
         Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0);
 
         status = SetFrequencySX(LMS7002M::Tx, SXRfreqHz + bandwidth_Hz / calibUserBwDivider + 9e6);

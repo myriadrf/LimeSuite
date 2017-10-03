@@ -120,12 +120,14 @@ void RestoreChipState()
 
 void SetDefaultsSX()
 {
-    ROM const uint16_t SXAddr[]=    {0x011C, 0x011D, 0x011E, 0x011F, 0x0120, 0x0121, 0x0122, 0x0123};
-    ROM const uint16_t SXdefVals[]= {0xAD43, 0x0400, 0x0780, 0x3640, 0xB9FF, 0x3404, 0x033F, 0x067B};
+    ROM const uint16_t SXAddr[]=    {0x011C, 0x011D, 0x011E, 0x011F, 0x0121, 0x0122, 0x0123};
+    ROM const uint16_t SXdefVals[]= {0xAD43, 0x0400, 0x0780, 0x3640, 0x3404, 0x033F, 0x067B};
 
     uint8_t i;
     for(i=sizeof(SXAddr)/sizeof(uint16_t); i; --i)
         SPI_write(SXAddr[i-1], SXdefVals[i-1]);
+    //keep 0x0120[7:0]ICT_VCO bias value intact
+    Modify_SPI_Reg_bits(0x0120, 15<<4|8, 0xB9FF);
 }
 
 float_type GetFrequencyCGEN()

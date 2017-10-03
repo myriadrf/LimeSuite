@@ -672,7 +672,9 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_IF)
     Modify_SPI_Reg_bits(LMS7param(EN_G_XBUF), 1);
 
     //CGEN
+    uint8_t ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN));
     SetDefaults(CGEN);
+    Modify_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN), ict_vco);
     int cgenMultiplier = rx_lpf_IF*20 / 46.08e6 + 0.5;
     if(cgenMultiplier > 9 && cgenMultiplier < 12)
         cgenMultiplier = 12;
@@ -684,14 +686,18 @@ int LMS7002M::TuneRxFilterSetup(const float_type rx_lpf_IF)
 
     //SXR
     Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO));
     SetDefaults(SX);
+    Modify_SPI_Reg_bits(LMS7param(ICT_VCO), ict_vco);
     status = SetFrequencySX(LMS7002M::Rx, 539.9e6);
     if(status != 0)
         return status;
 
     //SXT
     Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO));
     SetDefaults(SX);
+    Modify_SPI_Reg_bits(LMS7param(ICT_VCO), ict_vco);
     status = SetFrequencySX(LMS7002M::Tx, 550e6);
     if(status != 0)
         return status;
@@ -825,7 +831,9 @@ int LMS7002M::TuneTxFilterSetup(const float_type tx_lpf_IF)
     Modify_SPI_Reg_bits(LMS7param(EN_G_XBUF), 1);
 
     //CGEN
+    uint8_t ict_vco = Get_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN));
     SetDefaults(CGEN);
+    Modify_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN), ict_vco);
     int cgenMultiplier = tx_lpf_IF*20/46.08e6 + 0.5;
     cgenMultiplier = clamp(cgenMultiplier, 2, 13);
 
@@ -1103,7 +1111,7 @@ int LMS7002M::TuneTxFilterWithCaching(const float_type bandwidth)
 {
     if (!useCache)
         return TuneTxFilter(bandwidth);
-    
+
     int ret = 0;
     bool found = true;
     const int idx = this->GetActiveChannelIndex();
