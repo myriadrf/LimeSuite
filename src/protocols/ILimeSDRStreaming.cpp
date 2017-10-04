@@ -616,10 +616,11 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, fromChip);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0, fromChip);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0, fromChip);
+        
         lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0, fromChip);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), 0, fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1), fromChip);
+        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1), fromChip);
 
         if (lmsControl.Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
         {
