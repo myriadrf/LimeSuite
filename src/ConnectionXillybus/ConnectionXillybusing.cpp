@@ -367,6 +367,7 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
 
         while(i<packetsToBatch)
         {
+            bool end_burst = false;
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[0]);
             for(int ch=0; ch<chCount; ++ch)
@@ -376,7 +377,8 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
                 {
                     if (meta.flags & IStreamChannel::Metadata::END_BURST)
                     {
-                        memset(&samples[ch][samplesPopped],0,maxSamplesBatch-samplesPopped);
+                        memset(&samples[ch][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                        end_burst = true;
                         continue;
                     }
                     stream->mTxStreams[ch]->underflow++;
@@ -387,8 +389,7 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
                     break;
                 }
             }
-            if(stream->terminateTx.load() == true) //early termination
-                break;
+
             pkt[i].counter = meta.timestamp;
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
@@ -401,7 +402,12 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             ++i;
+            if (end_burst)
+                break;
         }
+        
+        if(stream->terminateTx.load() == true) //early termination
+            break;
 
         uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 1000);
         if (bytesSent != bufferSize){

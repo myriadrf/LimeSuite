@@ -1208,6 +1208,7 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
     if (meta)
     {
         metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+        metadata.flags |= meta->flushPartialPacket * lime::IStreamChannel::Metadata::END_BURST;
         metadata.timestamp = meta->timestamp;
     }
     else metadata.timestamp = 0;

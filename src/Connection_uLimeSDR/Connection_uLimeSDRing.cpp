@@ -434,6 +434,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
 
         while(i<packetsToBatch && stream->terminateTx.load() != true)
         {
+            bool end_burst = false;
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<chCount; ++ch)
@@ -443,7 +444,8 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
                 {
                     if (meta.flags & IStreamChannel::Metadata::END_BURST)
                     {
-                        memset(&samples[ch][samplesPopped],0,maxSamplesBatch-samplesPopped);
+                        memset(&samples[ch][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                        end_burst = true;
                         continue;
                     }
                     stream->mTxStreams[ch]->underflow++;
@@ -455,8 +457,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
                 }
 
             }
-            if(stream->terminateTx.load() == true) //early termination
-                break;
+
             pkt[i].counter = meta.timestamp;
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
@@ -469,9 +470,12 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             ++i;
-            if (meta.flags & IStreamChannel::Metadata::END_BURST)
+            if (end_burst)
                 break;
         }
+        
+        if(stream->terminateTx.load() == true) //early termination
+            break;
 
         bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
         handles[bi] = this->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi]);
