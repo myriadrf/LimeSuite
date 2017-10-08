@@ -234,6 +234,12 @@ public:
      * Register API
      ******************************************************************/
 
+    std::vector<std::string> listRegisterInterfaces(void) const;
+
+    void writeRegister(const std::string &name, const unsigned addr, const unsigned value);
+
+    unsigned readRegister(const std::string &name, const unsigned addr) const;
+
     void writeRegister(const unsigned addr, const unsigned value);
 
     unsigned readRegister(const unsigned addr) const;

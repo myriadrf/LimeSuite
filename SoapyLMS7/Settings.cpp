@@ -1087,6 +1087,44 @@ std::string SoapyLMS7::readSensor(const int direction, const size_t channel, con
  * Register API
  ******************************************************************/
 
+std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
+{
+    std::vector<std::string> ifaces;
+    ifaces.push_back("BBIC");
+    for (size_t i = 0; i < _rfics.size(); i++)
+    {
+        ifaces.push_back("RFIC" + std::to_string(i));
+    }
+    return ifaces;
+}
+
+void SoapyLMS7::writeRegister(const std::string &name, const unsigned addr, const unsigned value)
+{
+    if (name == "BBIC") return this->writeRegister(addr, value);
+    for (size_t i = 0; i < _rfics.size(); i++)
+    {
+        if (("RFIC" + std::to_string(i)) != name) continue;
+        int st = _rfics[i]->SPI_write(addr, value);
+        if (st == 0) return;
+        throw std::runtime_error("SoapyLMS7::WriteRegister("+name+", "+std::to_string(addr)+") FAIL");
+    }
+    throw std::runtime_error("SoapyLMS7::WriteRegister("+name+") unknown interface");
+}
+
+unsigned SoapyLMS7::readRegister(const std::string &name, const unsigned addr) const
+{
+    if (name == "BBIC") return this->readRegister(addr);
+    for (size_t i = 0; i < _rfics.size(); i++)
+    {
+        if (("RFIC" + std::to_string(i)) != name) continue;
+        int st(0);
+        int value = _rfics[i]->SPI_read(addr, true, &st);
+        if (st == 0) return value;
+        throw std::runtime_error("SoapyLMS7::readRegister("+name+", "+std::to_string(addr)+") FAIL");
+    }
+    throw std::runtime_error("SoapyLMS7::readRegister("+name+") unknown interface");
+}
+
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)
 {
     auto st = _conn->WriteRegister(addr, value);
