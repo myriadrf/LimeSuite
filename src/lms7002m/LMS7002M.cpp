@@ -1988,12 +1988,12 @@ int LMS7002M::RegistersTest(const char* fileName)
     stringstream ss;
 
     //check single channel memory sections
-    vector<MemorySection> modulesToCheck = { AFE, BIAS, XBUF, CGEN, LDO, BIST, CDS, TRF, TBB, RFE, RBB, SX,
+    vector<MemorySection> modulesToCheck = { AFE, BIAS, XBUF, CGEN, BIST, CDS, TRF, TBB, RFE, RBB, SX,
         TxTSP, TxNCO, TxGFIR1, TxGFIR2, TxGFIR3a, TxGFIR3b, TxGFIR3c,
-        RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c, LimeLight };
-    const char* moduleNames[] = { "AFE", "BIAS", "XBUF", "CGEN", "LDO", "BIST", "CDS", "TRF", "TBB", "RFE", "RBB", "SX",
+        RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c, LimeLight, LDO };
+    const char* moduleNames[] = { "AFE", "BIAS", "XBUF", "CGEN", "BIST", "CDS", "TRF", "TBB", "RFE", "RBB", "SX",
         "TxTSP", "TxNCO", "TxGFIR1", "TxGFIR2", "TxGFIR3a", "TxGFIR3b", "TxGFIR3c",
-        "RxTSP", "RxNCO", "RxGFIR1", "RxGFIR2", "RxGFIR3a", "RxGFIR3b", "RxGFIR3c", "LimeLight" };
+        "RxTSP", "RxNCO", "RxGFIR1", "RxGFIR2", "RxGFIR3a", "RxGFIR3b", "RxGFIR3c", "LimeLight", "LDO"};
 
     const uint16_t patterns[] = { 0xAAAA, 0x5555 };
     const uint8_t patternsCount = 2;

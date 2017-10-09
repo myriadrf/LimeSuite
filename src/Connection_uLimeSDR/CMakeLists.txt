@@ -18,11 +18,6 @@ if(WIN32)
     #default is to use static libs
     option(FTD3XX_STATIC "Use static libs for FTD3XX" TRUE)
 
-    #force dynamic on MSVC2015 because of linker error
-    if (MSVC14)
-        set(FTD3XX_STATIC FALSE)
-    endif()
-
     #when using static libs specify FTD3XX_STATIC
     if (FTD3XX_STATIC)
         set(USB_LIBRARIES ${FTD3XX_LIB_DIR}/Static/FTD3XX.lib SetupAPI)

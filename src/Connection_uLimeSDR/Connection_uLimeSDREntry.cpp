@@ -61,20 +61,28 @@ std::vector<ConnectionHandle> Connection_uLimeSDREntry::enumerate(const Connecti
     std::vector<ConnectionHandle> handles;
 
 #ifndef __unix__
-    DWORD devCount = 0;
-    FT_STATUS ftStatus = FT_OK;
-    ftStatus = FT_ListDevices(&devCount, NULL, FT_LIST_NUMBER_ONLY);
-    if(FT_FAILED(ftStatus))
-        return handles;
-    if (devCount > 0)
+    FT_STATUS ftStatus=FT_OK;
+    static DWORD numDevs = 0;
+
+    ftStatus = FT_CreateDeviceInfoList(&numDevs);
+
+    if (!FT_FAILED(ftStatus) && numDevs > 0)
     {
-        for(int i = 0; i<devCount; ++i)
+        DWORD Flags = 0;
+        char SerialNumber[16] = { 0 };
+        char Description[32] = { 0 };
+        for (DWORD i = 0; i < numDevs; i++)
         {
-            ConnectionHandle handle;
-            handle.media = "USB";
-            handle.name = "uLimeSDR";
-            handle.index = i;
-            handles.push_back(handle);
+            ftStatus = FT_GetDeviceInfoDetail(i, &Flags, nullptr, nullptr, nullptr, SerialNumber, Description, nullptr);
+            if (!FT_FAILED(ftStatus))
+            {
+                ConnectionHandle handle;
+                handle.media = Flags & FT_FLAGS_SUPERSPEED ? "USB 3" : Flags & FT_FLAGS_HISPEED ? "USB 2" : "USB";
+                handle.name = Description;
+                handle.index = i;
+                handle.serial = SerialNumber;
+                handles.push_back(handle);
+            }
         }
     }
 #else
