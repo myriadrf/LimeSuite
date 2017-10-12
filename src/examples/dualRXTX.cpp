@@ -173,9 +173,9 @@ int main(int argc, char** argv)
         //Print stats every 1s
         if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
         {
+            t2 = chrono::high_resolution_clock::now();
 #ifdef USE_GNU_PLOT
             //Plot samples
-            t2 = chrono::high_resolution_clock::now();
             gp.write("plot '-' with points title 'ch 0'");
             for (int i = 1; i < chCount; ++i)
                 gp.write(", '-' with points title 'ch 1'\n");
