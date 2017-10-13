@@ -64,5 +64,51 @@ size_t LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
     return 1;
 };
 
+int LMS7_LimeSDR_mini::SetRxFrequency(size_t chan, double f_Hz)
+{
+    lime::LMS7002M* lms = lms_list[0];
+    rx_channels[0].freq = f_Hz;
+     
+    if (f_Hz < 30e6)
+    {
+        if (lms->SetFrequencySX(false, 30e6) != 0)
+            return -1;
+        rx_channels[0].cF_offset_nco = 30e6-f_Hz;
+        if (SetRate(false,GetRate(false,0),2)!=0)
+            return -1;
+        return 0;
+    }
+
+    if (rx_channels[0].cF_offset_nco != 0)
+        SetNCO(false,0,-1,true);
+    rx_channels[0].cF_offset_nco = 0;
+    if (lms->SetFrequencySX(false, f_Hz) != 0)
+        return -1;
+    return 0;
+}
+
+int LMS7_LimeSDR_mini::SetTxFrequency(size_t chan, double f_Hz)
+{
+    lime::LMS7002M* lms = lms_list[0];
+    tx_channels[0].freq = f_Hz;
+    
+    if (f_Hz < 30e6)
+    {
+        if (lms->SetFrequencySX(true, 30e6) != 0)
+            return -1;
+        tx_channels[0].cF_offset_nco = 30e6-f_Hz;
+        if (SetRate(true,GetRate(true,0),2)!=0)
+            return -1;
+        return 0;
+    }
+
+    if (tx_channels[0].cF_offset_nco != 0)
+        SetNCO(true,0,-1,false);
+    tx_channels[0].cF_offset_nco = 0;
+    if (lms->SetFrequencySX(true, f_Hz) != 0)
+        return -1;
+    return 0;
+}
+
 
 

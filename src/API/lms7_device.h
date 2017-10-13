@@ -44,8 +44,8 @@ public:
     std::vector<std::string> GetPathNames(bool dir_tx, size_t chan) const;
     int SetPath(bool tx,size_t chan, size_t path);
     size_t GetPath(bool tx, size_t chan);
-    int SetRxFrequency(size_t chan, float_type f_Hz);
-    int SetTxFrequency(size_t chan, float_type f_Hz);
+    virtual int SetRxFrequency(size_t chan, float_type f_Hz);
+    virtual int SetTxFrequency(size_t chan, float_type f_Hz);
     float_type GetTRXFrequency(bool tx, size_t chan);
     lms_range_t GetFrequencyRange(bool tx) const;
     lms_range_t GetRxPathBand(size_t path, size_t chan) const;
