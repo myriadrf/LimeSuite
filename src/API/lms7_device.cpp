@@ -346,43 +346,37 @@ size_t LMS7_Device::GetNumChannels(const bool tx) const
 
 int LMS7_Device::SetRate(double f_Hz, int oversample)
 {
-   int decim = 0;
-   float_type nco_f=0;
-   for (size_t i = 0; i < GetNumChannels(false);i++)
-   {
-        if (rx_channels[i].cF_offset_nco > nco_f)
-            nco_f = rx_channels[i].cF_offset_nco;
-        if (tx_channels[i].cF_offset_nco > nco_f)
-            nco_f = tx_channels[i].cF_offset_nco;
-        tx_channels[i].sample_rate = f_Hz;
-        rx_channels[i].sample_rate = f_Hz;
-   }
+    int decim = 0;
+    float_type nco_f=0;
+    for (size_t i = 0; i < GetNumChannels(false);i++)
+    {
+         if (rx_channels[i].cF_offset_nco > nco_f)
+             nco_f = rx_channels[i].cF_offset_nco;
+         if (tx_channels[i].cF_offset_nco > nco_f)
+             nco_f = tx_channels[i].cF_offset_nco;
+         tx_channels[i].sample_rate = f_Hz;
+         rx_channels[i].sample_rate = f_Hz;
+    }
 
-   if (nco_f != 0)
-   {
-       int nco_over = 2+2*(nco_f-1)/f_Hz;
-       oversample = oversample > nco_over ? oversample : nco_over;
-       if (oversample > 32)
-       {
-           lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
-           return -1;
-       }
-   }
+    if (nco_f != 0)
+    {
+        int nco_over = 2+2*(nco_f-1)/f_Hz;
+        oversample = oversample > nco_over ? oversample : nco_over;
+        if (oversample > 32)
+        {
+            lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
+            return -1;
+        }
+    }
 
     if (oversample == 0)
-        oversample =  LMS_CGEN_MAX/(8*f_Hz);
+        oversample =  LMS_CGEN_MAX/(4*f_Hz);
 
-   if (oversample > 1)
-   {
-       for (decim = 0; decim < 4; decim++)
-       {
-            if ( (1<<decim) >= (oversample+1)/2)
-                break;
-       }
-   }
-   else decim = 7;
+    for (decim = 0; decim < 4; decim++)
+         if ( (1<<decim) >= (oversample+1)/2)
+             break;
 
-   int ratio = oversample <= 2 ? 2 : (2<<decim);
+   int ratio = 2<<decim;
    float_type cgen = f_Hz*4*ratio;
    if (cgen > LMS_CGEN_MAX)
    {
@@ -404,11 +398,8 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
 
         float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
         float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        if (decim != 7)
-        {
-            fpgaTxPLL /= pow(2.0, decim);
-            fpgaRxPLL /= pow(2.0, decim);
-        }
+        fpgaTxPLL /= pow(2.0, decim);
+        fpgaRxPLL /= pow(2.0, decim);
         if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
            return -1;
    }
@@ -444,16 +435,16 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
     int interpolation;
     size_t tmp;
 
-   float_type nco_rx=0;
-   float_type nco_tx=0;
-   int min_int = 1;
-   int min_dec = 1;
-   bool retain_nco = false;
+    float_type nco_rx=0;
+    float_type nco_tx=0;
+    int min_int = 1;
+    int min_dec = 1;
+    bool retain_nco = false;
 
-   lime::LMS7002M* lms = lms_list[0];
+    lime::LMS7002M* lms = lms_list[0];
 
-   for (size_t i = 0; i < GetNumChannels(false);i++)
-   {
+    for (size_t i = 0; i < GetNumChannels(false);i++)
+    {
         if (rx_channels[i].cF_offset_nco > nco_rx)
             nco_rx = rx_channels[i].cF_offset_nco;
         if (tx_channels[i].cF_offset_nco > nco_tx)
@@ -462,38 +453,30 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
             tx_channels[i].sample_rate = f_Hz;
         else
             rx_channels[i].sample_rate = f_Hz;
-   }
+    }
 
-   if (nco_rx != 0 || nco_tx != 0)
-   {
-       retain_nco = true;
-       min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
-       min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
-       unsigned int nco_over = tx ? min_int : min_dec;
-       oversample = oversample > nco_over ? oversample : nco_over;
-       if (oversample > 32)
-       {
-           lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
-           return -1;
-       }
-   }
-
-    if (oversample == 0)
-        oversample = tx ? LMS_CGEN_MAX/(2*f_Hz) : LMS_CGEN_MAX/(8*f_Hz);
-
-    if (oversample > 1)
+    if (nco_rx != 0 || nco_tx != 0)
     {
-        for (tmp = 0; tmp < 4; tmp++)
+        retain_nco = true;
+        min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
+        min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
+        unsigned int nco_over = tx ? min_int : min_dec;
+        oversample = oversample > nco_over ? oversample : nco_over;
+        if (oversample > 32)
         {
-            if ( size_t(1<<tmp) >= (oversample+1)/2)
-            {
-                break;
-            }
+            lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
+            return -1;
         }
     }
-    else tmp = 7;
 
-    int ratio = oversample <= 2 ? 2 : (2<<tmp);
+    if (oversample == 0)
+        oversample = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
+   
+    for (tmp = 0; tmp < 4; tmp++)
+        if ( size_t(1<<tmp) >= (oversample+1)/2)
+            break;
+
+    int ratio = 2<<tmp;
 
     if (tx)
     {
@@ -635,12 +618,12 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
     if (tx)
     {
-        ratio = oversample <= 2 ? 2 : (2<<interpolation);
+        ratio = 2<<interpolation;
         cgen = f_Hz*ratio;
     }
     else
     {
-        ratio = oversample <= 2 ? 2 : (2<<decimation);
+        ratio = 2<<decimation;
         cgen = f_Hz * ratio * 4;
     }
 
@@ -682,12 +665,8 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
 	float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
 	float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-	if (interpolation != 7) {
-	  fpgaTxPLL /= pow(2.0, interpolation);
-	}
-	if (decimation != 7) {
-	  fpgaRxPLL /= pow(2.0, decimation);
-	}
+	fpgaTxPLL /= pow(2.0, interpolation);
+	fpgaRxPLL /= pow(2.0, decimation);
         if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
 	  return -1;
       }
