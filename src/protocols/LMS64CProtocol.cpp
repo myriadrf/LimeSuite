@@ -915,7 +915,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
         if(status != STATUS_COMPLETED_CMD)
         {
             std::stringstream ss;
-            ss << "Programing MCU: status : not completed, block " << packetNumber << std::endl;
+            ss << "Programming MCU: status : not completed, block " << packetNumber << std::endl;
             success = false;
             break;
         }
