@@ -8,6 +8,7 @@
 #include "LMS7002M.h"
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
+#include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
 #include <thread>
 #include <algorithm> //min/max
@@ -288,14 +289,25 @@ int SoapyLMS7::readStream(
     }
 
     ReadStreamAgain:
+
+    //read the 0th channel: get number of samples read and metadata
     StreamMetadata metadata;
-    int status = 0;
-    int bufIndex = 0;
-    for(auto i : streamID)
+    int status = _conn->ReadStream(streamID[0], buffs[0], numElems, timeoutUs/1000, metadata);
+    if (status == 0) return SOAPY_SDR_TIMEOUT;
+    if (status < 0) return SOAPY_SDR_STREAM_ERROR;
+
+    //read subsequent channels with the same size and large timeout
+    //we should always be able to get a matching buffer read quickly
+    //or there is an unknown internal issue with the stream fifo
+    for (size_t i = 1; i < streamID.size(); i++)
     {
-        status = _conn->ReadStream(i, buffs[bufIndex++], numElems, timeoutUs/1000, metadata);
-        if(status == 0) return SOAPY_SDR_TIMEOUT;
-        if(status < 0) return SOAPY_SDR_STREAM_ERROR;
+        StreamMetadata metadata_i;
+        int status_i = _conn->ReadStream(streamID[i], buffs[i], status, 1000/*1s*/, metadata_i);
+        if (status_i != status or metadata_i.timestamp != metadata.timestamp)
+        {
+            SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
+            return SOAPY_SDR_CORRUPTION;
+        }
     }
 
     //the command had a time, so we need to compare it to received time
@@ -373,17 +385,26 @@ int SoapyLMS7::writeStream(
     metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
 
-    int ret = 0;
-    int bufIndex = 0;
-    for(auto i : streamID)
+    //write the 0th channel: get number of samples written
+    int status = _conn->WriteStream(streamID[0], buffs[0], numElems, timeoutUs/1000, metadata);
+    if (status == 0) return SOAPY_SDR_TIMEOUT;
+    if (status < 0) return SOAPY_SDR_STREAM_ERROR;
+
+    //write subsequent channels with the same size and large timeout
+    //we should always be able to do a matching buffer write quickly
+    //or there is an unknown internal issue with the stream fifo
+    for (size_t i = 1; i < streamID.size(); i++)
     {
-        ret = _conn->WriteStream(i, buffs[bufIndex++], numElems, timeoutUs/1000, metadata);
-        if(ret == 0) return SOAPY_SDR_TIMEOUT;
-        if(ret < 0) return SOAPY_SDR_STREAM_ERROR;
+        int status_i = _conn->WriteStream(streamID[i], buffs[i], status, 1000/*1s*/, metadata);
+        if (status_i != status)
+        {
+            SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
+            return SOAPY_SDR_CORRUPTION;
+        }
     }
 
-    //return num written or error code
-    return (ret > 0)? ret : SOAPY_SDR_STREAM_ERROR;
+    //return num written
+    return status;
 }
 
 int SoapyLMS7::readStreamStatus(
