@@ -113,7 +113,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         this->setAntenna(SOAPY_SDR_TX, channel, devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos ? "BAND2" : "BAND1");
         this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
-        this->setGain(SOAPY_SDR_RX, channel, "TIA", 0);
+        this->setGain(SOAPY_SDR_RX, channel, "TIA", 9);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", -50);
         this->setSampleRate(SOAPY_SDR_RX, channel, defaultClockRate/8);
         this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
@@ -378,8 +378,8 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const size_t 
     std::vector<std::string> gains;
     if (direction == SOAPY_SDR_RX)
     {
-        gains.push_back("LNA");
         gains.push_back("TIA");
+        gains.push_back("LNA");
         gains.push_back("PGA");
     }
     if (direction == SOAPY_SDR_TX)
