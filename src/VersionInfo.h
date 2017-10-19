@@ -24,7 +24,7 @@
  * #endif
  * \endcode
  */
-#define LIME_SUITE_API_VERSION 0x20170900
+#define LIME_SUITE_API_VERSION 0x20171000
 
 namespace lime
 {

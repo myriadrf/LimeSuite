@@ -1,3 +1,23 @@
+Release 17.10.0 (2017-10-19)
+==========================
+
+SoapyLMS changes:
+- Initial support for LimeSDR-Mini
+- Disable calibration cache by default
+
+LMS API changes:
+- Initial support for LimeSDR-Mini
+
+LimeSuiteGUI changes:
+- Added scrollbars
+- Fix multiple crashes that occured when board is not connected 
+- Bring window to front when trying to open already opened window
+- Some cosmetic GUI changes
+- Added default config button to GUI
+
+Other changes:
+- LimeSDR v1.4 updated to r2.11 gateware
+
 Release 17.09.1 (2017-09-21)
 ==========================
 
@@ -14,7 +34,6 @@ LMS API changes:
 
 Other changes:
 - LimeSDR v1.4 updated to r2.10 gateware
-
 
 Release 17.09.0 (2017-09-01)
 ==========================
