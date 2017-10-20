@@ -346,7 +346,6 @@ size_t LMS7_Device::GetNumChannels(const bool tx) const
 
 int LMS7_Device::SetRate(double f_Hz, int oversample)
 {
-    int decim = 0;
     float_type nco_f=0;
     for (size_t i = 0; i < GetNumChannels(false);i++)
     {
@@ -368,41 +367,35 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
             return -1;
         }
     }
+    else if (oversample == 0)
+        oversample = LMS_CGEN_MAX/(4*f_Hz);
+    
+    int decim = 5;
+    while (--decim)
+        if ((2<<decim) <= oversample)
+            break;
+    oversample = 2<<decim;
+    
+    for (unsigned i = 0; i < lms_list.size(); i++)
+    {
+         lime::LMS7002M* lms = lms_list[i];
+        if ((lms->SetFrequencyCGEN(f_Hz*4*oversample) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim) != 0)
+            || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
+            || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
+            return -1;
 
-    if (oversample == 0)
-        oversample =  LMS_CGEN_MAX/(4*f_Hz);
-
-    for (decim = 0; decim < 4; decim++)
-         if ( (1<<decim) >= (oversample+1)/2)
-             break;
-
-   int ratio = 2<<decim;
-   float_type cgen = f_Hz*4*ratio;
-   if (cgen > LMS_CGEN_MAX)
-   {
-       lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
-       return -1;
-   }
-   for (unsigned i = 0; i < lms_list.size(); i++)
-   {
-        lime::LMS7002M* lms = lms_list[i];
-       if ((lms->SetFrequencyCGEN(cgen) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2, true) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decim) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), decim) != 0)
-           || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1, true) != 0)
-           || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
-           return -1;
-
-        float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        fpgaTxPLL /= pow(2.0, decim);
-        fpgaRxPLL /= pow(2.0, decim);
-        if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
-           return -1;
-   }
+         float_type fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+         float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+         fpgaTxPLL /= pow(2.0, decim);
+         fpgaRxPLL /= pow(2.0, decim);
+         if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
+            return -1;
+    }
 
     for (size_t i = 0; i < GetNumChannels(false);i++)
     {
@@ -433,7 +426,6 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
     int decimation;
     int interpolation;
-    size_t tmp;
 
     float_type nco_rx=0;
     float_type nco_tx=0;
@@ -468,12 +460,12 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
             return -1;
         }
     }
-
-    if (oversample == 0)
+    else if (oversample == 0)
         oversample = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
    
-    for (tmp = 0; tmp < 4; tmp++)
-        if ( size_t(1<<tmp) >= (oversample+1)/2)
+    size_t tmp = 5;
+    while (--tmp)
+        if ((2<<tmp) <= oversample)
             break;
 
     int ratio = 2<<tmp;
