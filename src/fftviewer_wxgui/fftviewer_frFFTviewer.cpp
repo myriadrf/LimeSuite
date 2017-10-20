@@ -411,6 +411,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
     meta.waitForTimestamp = true;
+    meta.flushPartialPacket = false;
     int fftCounter = 0;
 
     while (pthis->stopProcessing.load() == false)
