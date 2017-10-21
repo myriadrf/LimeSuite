@@ -313,14 +313,20 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
                 dest[c] = (chFrames[c].samples);
             int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
+            int samplesToWrite = samplesCount;
+            uint32_t timeout_ms = 100;
             for(int ch=0; ch<chCount; ++ch)
             {
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
-                meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
-                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                if (chCount == 1) meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD; //no overwrite for mimo alignment mode
+                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesToWrite, &meta, timeout_ms);
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
+
+                if (ch == 0) samplesToWrite = samplesPushed; //push the same amount on subsequent channels
+                else if (samplesToWrite != samplesPushed) lime::error("rx mimo alignment failure");
+                timeout_ms = 1000; //large timeout for subsequent channels
             }
         }
         // Re-submit this request to keep the queue full
