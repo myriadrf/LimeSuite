@@ -245,6 +245,7 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
     }
     lime::debug("Claimed Interface");
     
+    FT_FlushPipe(0x82);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(0x82,64);
     FT_SetStreamPipe(0x02,64);
     isConnected = true;
