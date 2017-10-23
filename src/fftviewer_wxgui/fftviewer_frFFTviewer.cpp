@@ -364,11 +364,13 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     vector<complex16_t> captureBuffer[cMaxChCount];
     uint32_t samplesToCapture[cMaxChCount];
+    uint32_t samplesCaptured[cMaxChCount];
     if(pthis->captureSamples.load() == true)
         for(int ch=0; ch<channelsCount; ++ch)
         {
             samplesToCapture[ch] = pthis->spinCaptureCount->GetValue();
             captureBuffer[ch].resize(samplesToCapture[ch]);
+            samplesCaptured[ch] = 0;
         }
 
     if (LMS_GetNumChannels(pthis->lmsControl, false)>2)
@@ -437,11 +439,12 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 for(int ch=0; ch<channelsCount; ++ch)
                 {
-                    uint32_t samplesToCopy = samplesPopped[ch] < samplesToCapture[ch] ? samplesPopped[ch] : samplesToCapture[ch];
+                    uint32_t samplesToCopy = min(samplesPopped[ch], samplesToCapture[ch]);
                     if(samplesToCopy <= 0)
                         break;
-                    memcpy(captureBuffer[ch].data(), buffers[ch], samplesPopped[ch]*sizeof(complex16_t));
-                    samplesToCapture[ch] -= samplesPopped[ch];
+                    memcpy((captureBuffer[ch].data() + samplesCaptured[ch]), buffers[ch], samplesToCopy*sizeof(complex16_t));
+                    samplesToCapture[ch] -= samplesToCopy;
+                    samplesCaptured[ch] += samplesToCopy;
                 }
             }
 
