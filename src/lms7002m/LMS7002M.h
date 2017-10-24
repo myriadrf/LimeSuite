@@ -399,7 +399,7 @@ public:
     enum MemorySection
     {
         LimeLight = 0, EN_DIR, AFE, BIAS, XBUF, CGEN, LDO, BIST, CDS,
-        TRF, TBB, RFE, RBB, SX, TxTSP,
+        TRF, TBB, RFE, RBB, SX, TRX_GAIN, TxTSP,
         TxNCO, TxGFIR1, TxGFIR2, TxGFIR3a, TxGFIR3b, TxGFIR3c,
         RxTSP, RxNCO, RxGFIR1, RxGFIR2, RxGFIR3a, RxGFIR3b, RxGFIR3c,
         RSSI_DC_CALIBRATION, RSSI_PDET_TEMP_CONFIG, RSSI_DC_CONFIG,

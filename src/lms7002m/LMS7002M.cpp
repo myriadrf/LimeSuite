@@ -157,13 +157,15 @@ LMS7002M::LMS7002M() :
     MemorySectionAddresses[TRF][0] = 0x0100;
     MemorySectionAddresses[TRF][1] = 0x0104;
     MemorySectionAddresses[TBB][0] = 0x0105;
-    MemorySectionAddresses[TBB][1] = 0x010A;
+    MemorySectionAddresses[TBB][1] = 0x010B;
     MemorySectionAddresses[RFE][0] = 0x010C;
     MemorySectionAddresses[RFE][1] = 0x0114;
     MemorySectionAddresses[RBB][0] = 0x0115;
     MemorySectionAddresses[RBB][1] = 0x011A;
     MemorySectionAddresses[SX][0] = 0x011C;
     MemorySectionAddresses[SX][1] = 0x0124;
+    MemorySectionAddresses[TRX_GAIN][0] = 0x0125;
+    MemorySectionAddresses[TRX_GAIN][1] = 0x0126;
     MemorySectionAddresses[TxTSP][0] = 0x0200;
     MemorySectionAddresses[TxTSP][1] = 0x020C;
     MemorySectionAddresses[TxNCO][0] = 0x0240;
