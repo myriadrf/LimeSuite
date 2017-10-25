@@ -418,10 +418,7 @@ int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfi
     double rate = lms.GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
     int size = (config.isTx) ?  mTxStreams.size(): mRxStreams.size();
 
-    if (config.performanceLatency < 0.5)
-        rate = 0.5 + rate * config.performanceLatency * 2.0 * size;
-    else
-        rate += (config.performanceLatency - 0.5) * 40.0 * size;
+    rate = (rate + 5) * config.performanceLatency * size;
 
     for (int batch = 1; batch < rate; batch <<= 1)
         if (config.isTx)

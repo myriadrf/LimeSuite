@@ -269,11 +269,19 @@ void ConnectionSTREAM::ReceivePacketsLoop(Streamer* stream)
         if(handles[bi] >= 0)
         {
             if (this->WaitForReading(handles[bi], 1000) == true)
+            {
                 bytesReceived = this->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
-            totalBytesReceived += bytesReceived;
-            if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
-                for(auto value: stream->mRxStreams)
-                    value->underflow++;
+                totalBytesReceived += bytesReceived;
+                if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
+                    for(auto value: stream->mRxStreams)
+                        value->underflow++;
+            }
+            else
+            { 
+                stream->rxDataRate_Bps.store(totalBytesReceived); 
+                totalBytesReceived = 0;
+                continue;
+            }
         }
         bool txLate=false;
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
@@ -399,19 +407,25 @@ void ConnectionSTREAM::TransmitPacketsLoop(Streamer* stream)
         if (bufferUsed[bi])
         {
     	    unsigned bytesSent = 0;
-            if (this->WaitForSending(handles[bi], 1000) == true) {
+            if (this->WaitForSending(handles[bi], 1000) == true)
+            {
                 bytesSent = this->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
-	    }
-
-            if (bytesSent != bytesToSend[bi]) {
-	      for (auto value : stream->mTxStreams) {
-		value->overflow++;
-	      }
+	    
+                if (bytesSent != bytesToSend[bi])
+                {
+                    for (auto value : stream->mTxStreams)
+                        value->overflow++;
+                }
+                else 
+                    totalBytesSent += bytesSent;
+                bufferUsed[bi] = false;
             }
-            else {
-                totalBytesSent += bytesSent;
-	    }
-            bufferUsed[bi] = false;
+            else
+            {
+                stream->txDataRate_Bps.store(totalBytesSent);
+                totalBytesSent = 0;
+                continue;
+            }
         }
         int i=0;
 

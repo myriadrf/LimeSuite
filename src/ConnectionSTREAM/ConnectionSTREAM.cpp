@@ -555,13 +555,12 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, const uint
     }
 	return i;
     #else
-    unsigned int Timeout = 500;
     libusb_transfer *tr = contexts[i].transfer;
-	libusb_fill_bulk_transfer(tr, dev_handle, streamBulkInAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], Timeout);
-	contexts[i].done = false;
-	contexts[i].bytesXfered = 0;
-	contexts[i].bytesExpected = length;
-	int status = libusb_submit_transfer(tr);
+    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkInAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
+    contexts[i].done = false;
+    contexts[i].bytesXfered = 0;
+    contexts[i].bytesExpected = length;
+    int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
         lime::error("BEGIN DATA READING %s", libusb_error_name(status));
@@ -682,12 +681,11 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, cons
     }
 	return i;
     #else
-    unsigned int Timeout = 500;
     libusb_transfer *tr = contextsToSend[i].transfer;
-	libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], Timeout);
-	contextsToSend[i].done = false;
-	contextsToSend[i].bytesXfered = 0;
-	contextsToSend[i].bytesExpected = length;
+    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
+    contextsToSend[i].done = false;
+    contextsToSend[i].bytesXfered = 0;
+    contextsToSend[i].bytesExpected = length;
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
