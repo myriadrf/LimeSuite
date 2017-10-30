@@ -27,12 +27,34 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
     wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
 
     SetSizer(mainSizer);
-    chkRFLB_A_EN = new wxCheckBox(this, wxNewId(), _("chkRFLB_A_EN"));
-    Connect(chkRFLB_A_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(chkRFLB_A_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    chkRFLB_B_EN = new wxCheckBox(this, wxNewId(), _("chkRFLB_B_EN"));
-    Connect(chkRFLB_B_EN->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(chkRFLB_B_EN, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    
+    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("RX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    wxArrayString rxChoices;
+    rxChoices.push_back(_("LNAH"));
+    rxChoices.push_back(_("LNAW"));
+    cmbRxPath = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, rxChoices, 1);
+    cmbRxPath->SetSelection(0);
+    Connect(cmbRxPath->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
+    mainSizer->Add(cmbRxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    
+    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("TX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    wxArrayString txChoices;
+    txChoices.push_back(_("Band 1"));
+    txChoices.push_back(_("Band 2"));
+    cmbTxPath = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, txChoices, 1);
+    cmbTxPath->SetSelection(0);
+    Connect(cmbTxPath->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
+    mainSizer->Add(cmbTxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("Loopback:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    txtLB = new wxStaticText(this, wxNewId(), _("TX Band 1 -> RX LNAH"));
+    mainSizer->Add(txtLB, 1, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    
+    chkTxLBSH = new wxCheckBox(this, wxNewId(), _("Loopback shunt"));
+    Connect(chkTxLBSH->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
+    mainSizer->Add(chkTxLBSH, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    chkTxLBAT = new wxCheckBox(this, wxNewId(), _("Loopback attenuator"));
+    Connect(chkTxLBAT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
+    mainSizer->Add(chkTxLBAT, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
@@ -49,31 +71,39 @@ void pnluLimeSDR::Initialize(lms_device_t* pControl)
 
 pnluLimeSDR::~pnluLimeSDR()
 {
-    chkRFLB_A_EN->Disconnect(wxEVT_CHECKBOX, chkRFLB_A_EN->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
-    chkRFLB_B_EN->Disconnect(wxEVT_CHECKBOX, chkRFLB_B_EN->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
+    chkTxLBSH->Disconnect(wxEVT_CHECKBOX, chkTxLBSH->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
+    chkTxLBAT->Disconnect(wxEVT_CHECKBOX, chkTxLBAT->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
+    cmbRxPath->Disconnect(wxEVT_CHOICE, cmbRxPath->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
+    cmbTxPath->Disconnect(wxEVT_CHOICE, cmbTxPath->GetId(), wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), 0, this);
 }
 
 void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    value |= chkRFLB_A_EN->GetValue() << 0;
-    value |= chkRFLB_B_EN->GetValue() << 1;
-    if(LMS_IsOpen(lmsControl, 0) && LMS_WriteFPGAReg(lmsControl,addr, value))
+    value |= chkTxLBSH->GetValue() << 2;
+    value |= chkTxLBAT->GetValue() << 1;
+    value |= cmbRxPath->GetSelection() == 1 ? 1<<9 : 1<<8;
+    value |= cmbTxPath->GetSelection() == 1 ? 1<<13 : 1<<12;
+    if(LMS_WriteFPGAReg(lmsControl,addr, value))
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
 }
 
 void pnluLimeSDR::UpdatePanel()
 {
     uint16_t addr = 0x0017;
     uint16_t value = 0;
-    if(LMS_IsOpen(lmsControl, 0) && LMS_ReadFPGAReg(lmsControl,addr, &value))
+    if(LMS_ReadFPGAReg(lmsControl,addr, &value))
     {
         wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    chkRFLB_A_EN->SetValue((value >> 0) & 0x1);
-    chkRFLB_B_EN->SetValue((value >> 1) & 0x1);
+    chkTxLBSH->SetValue((value >> 2) & 0x1);
+    chkTxLBAT->SetValue((value >> 1) & 0x1);
+    cmbRxPath->SetSelection((value >> 9) & 0x1);
+    cmbTxPath->SetSelection((value >> 13) & 0x1);
+    txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
 }
 
 void pnluLimeSDR::OnReadAll(wxCommandEvent &event)

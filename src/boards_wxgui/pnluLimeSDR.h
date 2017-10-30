@@ -4,6 +4,7 @@
 #include "lime/LimeSuite.h"
 #include <map>
 #include <wx/panel.h>
+#include <wx/choice.h>
 class wxStaticText;
 class wxFlexGridSizer;
 class wxCheckBox;
@@ -21,8 +22,11 @@ public:
     void OnWriteAll(wxCommandEvent &event);
 
 protected:
-    wxCheckBox* chkRFLB_A_EN;
-    wxCheckBox* chkRFLB_B_EN;
+    wxCheckBox* chkTxLBSH;
+    wxCheckBox* chkTxLBAT;
+    wxChoice* cmbRxPath;
+    wxChoice* cmbTxPath;
+    wxStaticText* txtLB;
     lms_device_t *lmsControl;
     DECLARE_EVENT_TABLE()
 };
