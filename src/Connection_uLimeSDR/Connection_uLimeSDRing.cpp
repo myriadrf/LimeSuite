@@ -229,9 +229,9 @@ int Connection_uLimeSDR::ResetStreamBuffers()
 void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
-    const uint8_t chCount = stream->mRxStreams.size();
+    const uint8_t chCount = stream->streamSize;
     const bool packed = stream->mRxStreams[0]->config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
-    const uint32_t samplesInPacket = (packed ? 1360 : 1020)/chCount;
+    const uint32_t samplesInPacket = (packed ? samples12InPkt : samples16InPkt)/chCount;
 
     const uint8_t packetsToBatch = stream->rxBatchSize;
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
@@ -291,7 +291,8 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
                 totalBytesReceived += bytesReceived;
                 if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
                     for(auto value: stream->mRxStreams)
-                        value->underflow++;
+                        if (value && value->mActive)
+                            value->underflow++;
             }
             else
             {
@@ -317,7 +318,8 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
                     resetFlagsDelay = packetsToBatch*buffersCount;
                     stream->txLastLateTime.store(pkt[pktIndex].counter);
                     for(auto value: stream->mTxStreams)
-                        value->pktLost++;
+                        if (value && value->mActive)
+                            value->pktLost++;
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
@@ -328,7 +330,8 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
                 printf("\tRx pktLoss ts diff %lli\n", (long long)pkt[pktIndex].counter - prevTs);
 #endif
                 for(auto value: stream->mRxStreams)
-                    value->pktLost += packetLoss;
+                    if (value && value->mActive)
+                        value->pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
             stream->rxLastTimestamp.store(pkt[pktIndex].counter);
@@ -340,11 +343,12 @@ void Connection_uLimeSDR::ReceivePacketsLoop(Connection_uLimeSDR::Streamer* stre
 
             for(int ch=0; ch<chCount; ++ch)
             {
+                if (stream->mRxStreams[ch]==nullptr || stream->mRxStreams[ch]->mActive==false)
+                    continue;
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
                 int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
-                if(samplesPushed != samplesCount)
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
             }
@@ -391,7 +395,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
-    const uint8_t chCount = stream->mTxStreams.size();
+    const uint8_t chCount = stream->streamSize;
     const bool packed = stream->mTxStreams[0]->config.linkFormat==StreamConfig::STREAM_12_BIT_COMPRESSED;
 
     const uint8_t buffersCount = 16; // must be power of 2
@@ -399,7 +403,7 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint32_t popTimeout_ms = 500;
 
-    const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
+    const int maxSamplesBatch = (packed ? samples12InPkt:samples16InPkt)/chCount;
     vector<int> handles(buffersCount, 0);
     vector<bool> bufferUsed(buffersCount, 0);
     vector<uint32_t> bytesToSend(buffersCount, 0);
@@ -432,7 +436,8 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
                 if (bytesSent != bytesToSend[bi])
                 {
                   for (auto value : stream->mTxStreams)
-                    value->overflow++;
+                    if (value && value->mActive)
+                        value->overflow++;
                 }
                 else
                     totalBytesSent += bytesSent;
@@ -454,6 +459,11 @@ void Connection_uLimeSDR::TransmitPacketsLoop(Streamer* stream)
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<chCount; ++ch)
             {
+                if (stream->mTxStreams[ch]==nullptr || stream->mTxStreams[ch]->mActive==false)
+                {
+                    memset(&samples[ch][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    continue;
+                }
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {

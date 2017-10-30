@@ -27,7 +27,7 @@ public:
         struct Frame
         {
             uint64_t timestamp;
-            static const uint16_t samplesCount = 1360;
+            static const uint16_t samplesCount = samples12InPkt;
             complex16_t samples[samplesCount];
         };
         StreamChannel(Streamer* streamer, StreamConfig config);
@@ -45,9 +45,9 @@ public:
         unsigned overflow;
         unsigned underflow;
         unsigned pktLost;
-    protected:
-        RingFIFO* fifo;
         bool mActive;
+    protected:
+        RingFIFO* fifo;   
         std::atomic<uint64_t> sampleCnt;
         std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     private:
@@ -62,7 +62,7 @@ public:
 
         int SetupStream(size_t& streamID, const StreamConfig& config);
         int CloseStream(const size_t streamID);
-        size_t GetStreamSize();
+        size_t GetStreamSize(bool tx);
 
         void EnterSelfCalibration();
         void ExitSelfCalibration();
@@ -80,12 +80,13 @@ public:
         std::atomic<bool> terminateRx;
         std::atomic<bool> terminateTx;
 
-        std::vector<StreamChannel*> mRxStreams;
-        std::vector<StreamChannel*> mTxStreams;
+        StreamChannel* mRxStreams[2];
+        StreamChannel* mTxStreams[2];
         std::atomic<uint64_t> rxLastTimestamp;
         std::atomic<uint64_t> txLastLateTime;
         uint64_t mTimestampOffset;
         int mChipID;
+        int streamSize;
         unsigned txBatchSize;
         unsigned rxBatchSize;
     };

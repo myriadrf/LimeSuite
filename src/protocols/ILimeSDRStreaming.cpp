@@ -39,7 +39,7 @@ int ILimeSDRStreaming::CloseStream(const size_t streamID)
 size_t ILimeSDRStreaming::GetStreamSize(const size_t streamID)
 {
     auto *stream = (StreamChannel* )streamID;
-    return stream->mStreamer->GetStreamSize();
+    return stream->mStreamer->GetStreamSize(stream->config.isTx);
 }
 
 int ILimeSDRStreaming::ControlStream(const size_t streamID, const bool enable)
@@ -159,7 +159,7 @@ int ILimeSDRStreaming::UploadWFM(const void* const* samples, uint8_t chCount, si
         default: return ReportError("UploadWFM not supported");
     }
 
-    const int samplesInPkt = comp ? 1360 : 1020;
+    const int samplesInPkt = comp ? samples12InPkt : samples16InPkt;
     WriteRegister(0xFFFF, 1 << epIndex);
     WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
     WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
@@ -385,14 +385,21 @@ ILimeSDRStreaming::Streamer::Streamer(ILimeSDRStreaming* port)
     txBatchSize = 1;
     rxBatchSize = 1;
     mChipID = dataPort->mStreamers.size();
+    streamSize = 1;
+    for(auto& i : mTxStreams)
+        i = nullptr;
+    for(auto& i : mRxStreams)
+        i = nullptr;
 }
 
 ILimeSDRStreaming::Streamer::~Streamer()
 {
-    for(auto i : mTxStreams)
-        CloseStream((size_t)i);
-    for(auto i : mRxStreams)
-        CloseStream((size_t)i);
+    for(auto& i : mTxStreams)
+        if (i != nullptr)
+            CloseStream((size_t)i);
+    for(auto& i : mRxStreams)
+        if (i != nullptr)
+            CloseStream((size_t)i);
     terminateTx.store(true);
     if (txThread.joinable())
         txThread.join();
@@ -403,22 +410,36 @@ ILimeSDRStreaming::Streamer::~Streamer()
 
 int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfig& config)
 {
-    /*if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before doing setups");*/
     streamID = ~0;
+    const int ch = config.channelID&1;
+    
+    if ((config.isTx && mTxStreams[ch]) || (!config.isTx && mRxStreams[ch]))
+    {
+        lime::error("Setup Stream: Channel already in use");
+        return -1;
+    }
+    
+    if ((txRunning.load()) || rxRunning.load() && (!mTxStreams[ch]) && (!mRxStreams[ch]))
+    {
+        lime::error("Stream cannot be set up while streaming is running");
+        return -1;
+    }
+              
     StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
     if(config.isTx)
-        mTxStreams.push_back(stream);
+        mTxStreams[ch] = stream;
     else
-        mRxStreams.push_back(stream);
+        mRxStreams[ch] = stream;
+    
     streamID = size_t(stream);
     LMS7002M lms;
     lms.SetConnection(dataPort, mChipID);
     double rate = lms.GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
-    int size = (config.isTx) ?  mTxStreams.size(): mRxStreams.size();
+    
+    streamSize = (mTxStreams[0]||mRxStreams[0]) + (mTxStreams[1]||mRxStreams[1]);
 
-    rate = (rate + 5) * config.performanceLatency * size;
+    rate = (rate + 5) * config.performanceLatency * streamSize;
 
     for (int batch = 1; batch < rate; batch <<= 1)
         if (config.isTx)
@@ -431,48 +452,37 @@ int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfi
 
 int ILimeSDRStreaming::Streamer::CloseStream(const size_t streamID)
 {
-    if(rxRunning.load() == true || txRunning.load() == true)
-        return ReportError(EPERM, "All streams must be stopped before closing");
     StreamChannel *stream = (StreamChannel*)streamID;
-    for(auto i=mRxStreams.begin(); i!=mRxStreams.end(); ++i)
-    {
-        if(*i==stream)
+    for(auto& i : mRxStreams)
+        if(i==stream)
         {
-            delete *i;
-            mRxStreams.erase(i);
-            break;
+            delete i;
+            i = nullptr;  
+            return 0;  
         }
-    }
-    for(auto i=mTxStreams.begin(); i!=mTxStreams.end(); ++i)
-    {
-        if(*i==stream)
+    
+    for(auto& i : mTxStreams)
+        if(i==stream)
         {
-            delete *i;
-            mTxStreams.erase(i);
-            break;
+            delete i;
+            i = nullptr;  
+            return 0;  
         }
-    }
     return 0;
 }
 
-size_t ILimeSDRStreaming::Streamer::GetStreamSize()
+size_t ILimeSDRStreaming::Streamer::GetStreamSize(bool tx)
 {
-    uint16_t channelEnables = 0;
-    for(uint8_t i=0; i<mRxStreams.size(); ++i)
-        channelEnables |= (1 << mRxStreams[i]->config.channelID);
-    for(uint8_t i=0; i<mTxStreams.size(); ++i)
-        channelEnables |= (1 << mTxStreams[i]->config.channelID);
-    uint8_t uniqueChannelCount = 0;
-    for(uint8_t i=0; i<16; ++i)
-    {
-        uniqueChannelCount += (channelEnables & 0x1);
-        channelEnables >>= 1;
-    }
-    //if no channels are setup return smallest number of samples in packet
-    if(uniqueChannelCount == 0)
-        return 680;
-    else
-        return 1360/uniqueChannelCount;
+    int batchSize = (tx ? txBatchSize : rxBatchSize)/streamSize;
+    for(auto i : mRxStreams)
+        if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
+            return samples16InPkt*batchSize;
+    
+    for(auto i : mTxStreams)
+        if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
+            return samples16InPkt*batchSize;
+
+    return samples12InPkt*batchSize;
 }
 
 void ILimeSDRStreaming::Streamer::EnterSelfCalibration()
@@ -518,13 +528,13 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
     if (!stopAll)
     {
         for(auto i : mRxStreams)
-            if(i->IsActive())
+            if(i && i->IsActive())
             {
                 needRx = true;
                 break;
             }
         for(auto i : mTxStreams)
-            if(i->IsActive())
+            if(i && i->IsActive())
             {
                 needTx = true;
                 break;
@@ -563,49 +573,38 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         //by default use 12 bit compressed, adjust link format for stream
 
         for(auto i : mRxStreams)
-        {
-            if(i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
+            if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
                 config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
-        }
+        
         for(auto i : mTxStreams)
-        {
-            if(i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
+            if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
                 config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
-        }
-        for(auto i : mRxStreams)
-            i->config.linkFormat = config.linkFormat;
-        for(auto i : mTxStreams)
-            i->config.linkFormat = config.linkFormat;
 
-        uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
-        uint16_t mode;
-        if(config.linkFormat == StreamConfig::STREAM_12_BIT_IN_16)
-            smpl_width = 0x0;
-        else if(config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED)
-            smpl_width = 0x2;
-        else
-            smpl_width = 0x0;
+        for(auto i : mRxStreams)
+            if (i)
+                i->config.linkFormat = config.linkFormat;
+        for(auto i : mTxStreams)
+            if (i)
+                i->config.linkFormat = config.linkFormat;
+
+        const uint16_t smpl_width = config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED ? 2 : 0; 
+        uint16_t mode = 0x0100;
 
         if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
             mode = 0x0040;
         else if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE),true))
             mode = 0x0180;
-        else
-            mode = 0x0100;
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
 
-        uint16_t channelEnables = 0;
-        for(uint8_t i=0; i<mRxStreams.size(); ++i)
-            channelEnables |= (1 << (mRxStreams[i]->config.channelID&1));
-        for(uint8_t i=0; i<mTxStreams.size(); ++i)
-            channelEnables |= (1 << (mTxStreams[i]->config.channelID&1));
+        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
+
         dataPort->WriteRegister(0x0007, channelEnables);
 
         bool fromChip = true;

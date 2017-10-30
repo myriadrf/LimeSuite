@@ -19,10 +19,13 @@ struct complex16_t
     int16_t q;
 };
 
+const int samples12InPkt = 1360;
+const int samples16InPkt = 1020; 
+
 class SamplesPacket
 {
 public:
-    static const int16_t maxSamplesInPacket = 1360; //total number of samples in all channels combined
+    static const int16_t maxSamplesInPacket = samples12InPkt; //total number of samples in all channels combined
     uint64_t timestamp; //timestamp of the packet
     uint16_t first; //index of first unused sample in samples
     uint16_t last; //end index of samples

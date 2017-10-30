@@ -199,9 +199,9 @@ int ConnectionXillybus::ReadRawStreamData(char* buffer, unsigned length, int epI
 void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
-    const uint8_t chCount = stream->mRxStreams.size();
+    const uint8_t chCount = stream->streamSize;
     const bool packed = stream->mRxStreams[0]->config.linkFormat== StreamConfig::STREAM_12_BIT_COMPRESSED;
-    const uint32_t samplesInPacket = (packed ? 1360 : 1020)/chCount;
+    const uint32_t samplesInPacket = (packed ? samples12InPkt : samples16InPkt)/chCount;
     const int epIndex = stream->mChipID;
 
     const uint8_t packetsToBatch = stream->rxBatchSize*2;
@@ -255,7 +255,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
         totalBytesReceived += bytesReceived;
         if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
             for(auto value: stream->mRxStreams)
-                value->underflow++;
+                if (value && value->mActive)
+                    value->underflow++;
 
         bool txLate=false;
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
@@ -274,7 +275,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
                     resetFlagsDelay = packetsToBatch*2;
                     stream->txLastLateTime.store(pkt[pktIndex].counter);
                     for(auto value: stream->mTxStreams)
-                        value->pktLost++;
+                        if (value && value->mActive)
+                            value->pktLost++;
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
@@ -285,7 +287,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
                 printf("\tRx pktLoss: ts diff: %li  pktLoss: %i\n", pkt[pktIndex].counter - prevTs, packetLoss);
 #endif
                 for(auto value: stream->mRxStreams)
-                    value->pktLost += packetLoss;
+                    if (value && value->mActive)
+                        value->pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
             stream->rxLastTimestamp.store(pkt[pktIndex].counter);
@@ -297,6 +300,8 @@ void ConnectionXillybus::ReceivePacketsLoop(Streamer* stream)
 
             for(int ch=0; ch<chCount; ++ch)
             {
+                if (stream->mRxStreams[ch]==nullptr || stream->mRxStreams[ch]->mActive==false)
+                    continue;
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
@@ -335,14 +340,14 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
-    const uint8_t chCount = stream->mTxStreams.size();
+    const uint8_t chCount = stream->streamSize;
     const bool packed = stream->mTxStreams[0]->config.linkFormat==StreamConfig::STREAM_12_BIT_COMPRESSED;
     const int epIndex = stream->mChipID;
 
     const uint8_t packetsToBatch = stream->txBatchSize*2;; //packets in single USB transfer
-    const uint32_t bufferSize = packetsToBatch*4096;
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint32_t popTimeout_ms = 500;
-    const int maxSamplesBatch = (packed ? 1360:1020)/chCount;
+    const int maxSamplesBatch = (packed ? samples12InPkt:samples16InPkt)/chCount;
     vector<complex16_t> samples[maxChannelCount];
     vector<char> buffers;
     try
@@ -372,6 +377,11 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[0]);
             for(int ch=0; ch<chCount; ++ch)
             {
+                if (stream->mTxStreams[ch]==nullptr || stream->mTxStreams[ch]->mActive==false)
+                {
+                    memset(&samples[ch][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    continue;
+                }
                 int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
@@ -412,7 +422,8 @@ void ConnectionXillybus::TransmitPacketsLoop(Streamer* stream)
         uint32_t bytesSent = this->SendData(&buffers[0], bufferSize, epIndex, 1000);
         if (bytesSent != bufferSize){
             for (auto value : stream->mTxStreams)
-		value->overflow++;
+                if (value && value->mActive)
+                    value->overflow++;
         }
         else
             totalBytesSent += bytesSent;
