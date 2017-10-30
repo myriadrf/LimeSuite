@@ -492,7 +492,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 		}
         break;
     case LIBUSB_TRANSFER_ERROR:
-        lime::error("TRANSFER ERRROR");
+        lime::error("TRANSFER ERROR");
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
         //context->used = false;

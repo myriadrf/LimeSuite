@@ -21,7 +21,7 @@
 #include "windows.h"
 #include "CyAPI.h"
 #else
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>

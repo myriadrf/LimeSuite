@@ -31,8 +31,8 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
 
     sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxEXPAND, 0);
     cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
-    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.18V"));
-    cmbCMPLO_CTRL->Append(_("Low treshold is set to 0.1V"));
+    cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.18V"));
+    cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.1V"));
     cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
     sizerR3->Add(cmbCMPLO_CTRL, 0, 0, 5);
     wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_SX;
