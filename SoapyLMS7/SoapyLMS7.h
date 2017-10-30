@@ -16,7 +16,10 @@ static const double DEFAULT_CLOCK_RATE = 80e6;
 namespace lime
 {
     class LMS7002M;
+    struct StreamMetadata;
 }
+
+struct IConnectionStream;
 
 class SoapyLMS7 : public SoapySDR::Device
 {
@@ -80,6 +83,14 @@ public:
         int &flags,
         long long &timeNs,
         const long timeoutUs = 100000);
+
+    int _readStreamAligned(
+        IConnectionStream *stream,
+        char * const *buffs,
+        size_t numElems,
+        uint64_t requestTime,
+        lime::StreamMetadata &mdOut,
+        const long timeoutMs);
 
     int writeStream(
         SoapySDR::Stream *stream,
