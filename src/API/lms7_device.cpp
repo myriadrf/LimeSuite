@@ -791,21 +791,6 @@ lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
 {
   lms_range_t ret;
   ret.step = 1;
-  if (this->connection->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
-  {
-      if (path == LMS_PATH_LNAL)
-      {
-        ret.max = 3800000000;
-        ret.min = 30000000;
-      }
-      else
-      {
-            ret.max = 0;
-            ret.min = 0;
-            ret.step = 0;
-      }
-  }
-  else
   switch (path)
   {
       case LMS_PATH_LNAH:
@@ -835,21 +820,6 @@ lms_range_t LMS7_Device::GetTxPathBand(size_t path, size_t chan) const
   lms_range_t ret;
 
   ret.step = 1;
-  if (this->connection->GetDeviceInfo().deviceName == lime::GetDeviceName(lime::LMS_DEV_ULIMESDR))
-  {
-      if (path == LMS_PATH_TX2)
-      {
-        ret.max = 3800000000;
-        ret.min = 30000000;
-      }
-      else
-      {
-            ret.max = 0;
-            ret.min = 0;
-            ret.step = 0;
-      }
-  }
-  else
   switch (path)
   {
       case LMS_PATH_TX2:

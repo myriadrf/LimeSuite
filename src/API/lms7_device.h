@@ -41,14 +41,14 @@ public:
     virtual double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL);
     lms_range_t GetRxRateRange(const size_t chan = 0)const;
     lms_range_t GetTxRateRange(const size_t chan = 0)const;
-    std::vector<std::string> GetPathNames(bool dir_tx, size_t chan) const;
-    int SetPath(bool tx,size_t chan, size_t path);
+    virtual std::vector<std::string> GetPathNames(bool dir_tx, size_t chan) const;
+    virtual int SetPath(bool tx,size_t chan, size_t path);
     size_t GetPath(bool tx, size_t chan);
     virtual int SetRxFrequency(size_t chan, float_type f_Hz);
     virtual int SetTxFrequency(size_t chan, float_type f_Hz);
     float_type GetTRXFrequency(bool tx, size_t chan);
     lms_range_t GetFrequencyRange(bool tx) const;
-    lms_range_t GetRxPathBand(size_t path, size_t chan) const;
+    virtual lms_range_t GetRxPathBand(size_t path, size_t chan) const;
     lms_range_t GetTxPathBand(size_t path, size_t chan) const;
     int SetLPF(bool tx, size_t chan, bool f, bool en, float_type bandwidth=-1);
     float_type GetLPFBW(bool tx,size_t chan, bool filt);

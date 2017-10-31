@@ -50,12 +50,8 @@ int LMS7SuiteAppFrame::m_lmsSelection = 0;
 
 void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
 {
-    double freq;
     if (event.GetEventType() == CGEN_FREQUENCY_CHANGED)
     {
-        LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
-        freq = lms->GetFrequencyCGEN();
-
         if (fftviewer)
             fftviewer->SetNyquistFrequency();
     }
@@ -594,7 +590,12 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
 void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
 {
     if (boardControlsGui) //it's already opened
-        boardControlsGui->Show();
+    {
+        boardControlsGui->Show(true);
+        boardControlsGui->Iconize(false); // restore the window if minimized
+        boardControlsGui->SetFocus();  // focus on my window
+        boardControlsGui->Raise();  // bring window to front
+    }
     else
     {
         boardControlsGui = new pnlBoardControls(this, wxNewId(), _("Board related controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
