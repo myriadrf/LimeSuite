@@ -286,7 +286,7 @@ int SoapyLMS7::_readStreamAligned(
     for (size_t i = 0; i < streamID.size(); first=false)
     {
         size_t &N = numWritten[i];
-        if (N == numElems) {i++; continue;} //channel already done
+        if (N == numElems) {i++; continue;} //this channel done, next channel
         const uint64_t expectedTime(requestTime + N);
 
         int status = _conn->ReadStream(streamID[i], buffs[i]+(elemSize*N), numElems-N, timeoutMs, md);
@@ -300,8 +300,8 @@ int SoapyLMS7::_readStreamAligned(
         //first read gets to decide maximum read size
         if (first) goto updateHead;
 
-        //good contiguous read, do the next index
-        if (expectedTime == md.timestamp) {i++; continue;}
+        //good contiguous read, read again for remainder
+        if (expectedTime == md.timestamp) continue;
 
         //request time is later, fast forward buffer
         if (md.timestamp < expectedTime)
