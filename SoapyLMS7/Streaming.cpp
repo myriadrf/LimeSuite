@@ -8,8 +8,10 @@
 #include "LMS7002M.h"
 #include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
+#include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
 #include <thread>
+#include <iostream>
 #include <algorithm> //min/max
 #include "ErrorReporting.h"
 
@@ -256,6 +258,85 @@ int SoapyLMS7::deactivateStream(
 }
 
 /*******************************************************************
+ * Stream alignment helper for multiple channels
+ ******************************************************************/
+static inline void fastForward(
+    char *buff, size_t &numWritten, const size_t elemSize,
+    const uint64_t oldHeadTime, const uint64_t desiredHeadTime)
+{
+    const size_t numPop = std::min<size_t>(desiredHeadTime - oldHeadTime, numWritten);
+    const size_t numMove = (numWritten-numPop);
+    numWritten -= numPop;
+    std::memmove(buff, buff+(numPop*elemSize), numMove*elemSize);
+}
+
+int SoapyLMS7::_readStreamAligned(
+    IConnectionStream *stream,
+    char * const *buffs,
+    size_t numElems,
+    uint64_t requestTime,
+    StreamMetadata &md,
+    const long timeoutMs)
+{
+    const auto &streamID = stream->streamID;
+    const size_t elemSize = stream->elemSize;
+    std::vector<size_t> numWritten(streamID.size(), 0);
+
+    for (size_t i = 0; i < streamID.size(); i += (numWritten[i]==numElems)?1:0)
+    {
+        size_t &N = numWritten[i];
+        const uint64_t expectedTime(requestTime + N);
+
+        int status = _conn->ReadStream(streamID[i], buffs[i]+(elemSize*N), numElems-N, timeoutMs, md);
+        if (status == 0) return SOAPY_SDR_TIMEOUT;
+        if (status < 0) return SOAPY_SDR_STREAM_ERROR;
+
+        //update accounting
+        const size_t elemsRead = size_t(status);
+        const size_t prevN = N;
+        N += elemsRead; //num written total
+
+        //unspecified request time, set the new head condition
+        if (requestTime == 0) goto updateHead;
+
+        //good contiguous read, read again for remainder
+        if (expectedTime == md.timestamp) continue;
+
+        //request time is later, fast forward buffer
+        if (md.timestamp < expectedTime)
+        {
+            if (prevN != 0)
+            {
+                SoapySDR::log(SOAPY_SDR_ERROR, "readStream() experienced non-monotonic timestamp");
+                return SOAPY_SDR_CORRUPTION;
+            }
+            fastForward(buffs[i], N, elemSize, md.timestamp, requestTime);
+            if (i == 0 and N != 0) numElems = N; //match size on other channels
+            continue; //read again into the remaining buffer
+        }
+
+        //overflow in the middle of a contiguous buffer
+        //fast-forward all prior channels and restart loop
+        if (md.timestamp > expectedTime)
+        {
+            for (size_t j = 0; j < i; j++)
+            {
+                fastForward(buffs[j], numWritten[j], elemSize, requestTime, md.timestamp);
+            }
+            fastForward(buffs[i], N, elemSize, md.timestamp-prevN, md.timestamp);
+            i = 0; //start over at ch0
+        }
+
+        updateHead:
+        requestTime = md.timestamp;
+        numElems = elemsRead;
+    }
+
+    md.timestamp = requestTime;
+    return int(numElems);
+}
+
+/*******************************************************************
  * Stream API
  ******************************************************************/
 int SoapyLMS7::readStream(
@@ -267,7 +348,6 @@ int SoapyLMS7::readStream(
     const long timeoutUs)
 {
     auto icstream = (IConnectionStream *)stream;
-    const auto &streamID = icstream->streamID;
 
     const auto exitTime = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs);
 
@@ -287,22 +367,14 @@ int SoapyLMS7::readStream(
         numElems = std::min(numElems, icstream->elemMTU);
     }
 
-    ReadStreamAgain:
     StreamMetadata metadata;
-    int status = 0;
-    int bufIndex = 0;
-    for(auto i : streamID)
-    {
-        status = _conn->ReadStream(i, buffs[bufIndex++], numElems, timeoutUs/1000, metadata);
-        if(status == 0) return SOAPY_SDR_TIMEOUT;
-        if(status < 0) return SOAPY_SDR_STREAM_ERROR;
-    }
+    const uint64_t cmdTicks = ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0)?SoapySDR::timeNsToTicks(icstream->timeNs, _conn->GetHardwareTimestampRate()):0;
+    int status = _readStreamAligned(icstream, (char * const *)buffs, numElems, cmdTicks, metadata, timeoutUs/1000);
+    if (status < 0) return status;
 
     //the command had a time, so we need to compare it to received time
     if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and metadata.hasTimestamp)
     {
-        const uint64_t cmdTicks = SoapySDR::timeNsToTicks(icstream->timeNs, _conn->GetHardwareTimestampRate());
-
         //our request time is now late, clear command and return error code
         if (cmdTicks < metadata.timestamp)
         {
@@ -310,23 +382,16 @@ int SoapyLMS7::readStream(
             return SOAPY_SDR_TIME_ERROR;
         }
 
-        //our request time is not in this received buffer, try again
-        if (cmdTicks >= (metadata.timestamp + status))
+        //_readStreamAligned should guarantee this condition
+        if (cmdTicks != metadata.timestamp)
         {
-            if (std::chrono::high_resolution_clock::now() > exitTime) return SOAPY_SDR_TIMEOUT;
-            goto ReadStreamAgain;
+            SoapySDR::logf(SOAPY_SDR_ERROR,
+                "readStream() alignment algorithm failed\n"
+                "Request time = %lld, actual time = %lld",
+                (long long)cmdTicks, (long long)metadata.timestamp);
+            return SOAPY_SDR_STREAM_ERROR;
         }
 
-        //otherwise our request is in this buffer, advance memory
-        const size_t numOff = (cmdTicks - metadata.timestamp);
-        metadata.timestamp += numOff;
-        status -= numOff;
-        const size_t elemSize = icstream->elemSize;
-        for (size_t i = 0; i < streamID.size(); i++)
-        {
-            const size_t memStart = size_t(buffs[i])+(numOff*elemSize);
-            std::memmove(buffs[i], (const void *)memStart, status*elemSize);
-        }
         icstream->flags &= ~SOAPY_SDR_HAS_TIME; //clear for next read
     }
 
@@ -373,17 +438,26 @@ int SoapyLMS7::writeStream(
     metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
 
-    int ret = 0;
-    int bufIndex = 0;
-    for(auto i : streamID)
+    //write the 0th channel: get number of samples written
+    int status = _conn->WriteStream(streamID[0], buffs[0], numElems, timeoutUs/1000, metadata);
+    if (status == 0) return SOAPY_SDR_TIMEOUT;
+    if (status < 0) return SOAPY_SDR_STREAM_ERROR;
+
+    //write subsequent channels with the same size and large timeout
+    //we should always be able to do a matching buffer write quickly
+    //or there is an unknown internal issue with the stream fifo
+    for (size_t i = 1; i < streamID.size(); i++)
     {
-        ret = _conn->WriteStream(i, buffs[bufIndex++], numElems, timeoutUs/1000, metadata);
-        if(ret == 0) return SOAPY_SDR_TIMEOUT;
-        if(ret < 0) return SOAPY_SDR_STREAM_ERROR;
+        int status_i = _conn->WriteStream(streamID[i], buffs[i], status, 1000/*1s*/, metadata);
+        if (status_i != status)
+        {
+            SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
+            return SOAPY_SDR_CORRUPTION;
+        }
     }
 
-    //return num written or error code
-    return (ret > 0)? ret : SOAPY_SDR_STREAM_ERROR;
+    //return num written
+    return status;
 }
 
 int SoapyLMS7::readStreamStatus(
