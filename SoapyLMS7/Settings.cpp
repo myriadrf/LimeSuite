@@ -109,8 +109,8 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     {
         this->setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0);
         this->setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0);
-        this->setAntenna(SOAPY_SDR_RX, channel, "LNAL");
-        this->setAntenna(SOAPY_SDR_TX, channel, devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos ? "BAND2" : "BAND1");
+        this->setAntenna(SOAPY_SDR_RX, channel, devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos ? "LNAH" :  "LNAL");
+        this->setAntenna(SOAPY_SDR_TX, channel, "BAND1");
         this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 9);
