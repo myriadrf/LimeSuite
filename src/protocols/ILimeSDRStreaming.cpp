@@ -14,6 +14,8 @@ ILimeSDRStreaming::ILimeSDRStreaming()
 {
     for (int i = 0; i < MAX_CHANNEL_COUNT/2; i++)
     	mStreamers.push_back(new Streamer(this));
+    RxLoopFunction = bind(&ILimeSDRStreaming::ReceivePacketsLoop, this, std::placeholders::_1);
+    TxLoopFunction = bind(&ILimeSDRStreaming::TransmitPacketsLoop, this, std::placeholders::_1);
 }
 ILimeSDRStreaming::~ILimeSDRStreaming()
 {

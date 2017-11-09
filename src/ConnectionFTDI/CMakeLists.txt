@@ -2,7 +2,7 @@
 ## Support for USB uLimeSDR connection
 ########################################################################
 
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Connection_uLimeSDR)
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionFTDI)
 
 if(WIN32)
     set(USB_FOUND TRUE)
@@ -39,13 +39,12 @@ endif()
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 
-set(CONNECTION_uLimeSDR_SOURCES
-    ${THIS_SOURCE_DIR}/Connection_uLimeSDREntry.cpp
-    ${THIS_SOURCE_DIR}/Connection_uLimeSDR.cpp
-    ${THIS_SOURCE_DIR}/Connection_uLimeSDRing.cpp
+set(CONNECTION_FTDI_SOURCES
+    ${THIS_SOURCE_DIR}/ConnectionFTDI.cpp
+    ${THIS_SOURCE_DIR}/ConnectionFTDIEntry.cpp
 )
 
-set(CONNECTION_uLimeSDR_LIBRARIES
+set(CONNECTION_FTDI_LIBRARIES
     ${USB_LIBRARIES}
 )
 
@@ -54,9 +53,9 @@ set(CONNECTION_uLimeSDR_LIBRARIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_uLimeSDR "Enable uLimeSDR" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
-add_feature_info(Connection_uLimeSDR ENABLE_uLimeSDR "uLimeSDR Connection support")
-if (NOT ENABLE_uLimeSDR)
+cmake_dependent_option(ENABLE_FTDI "Enable FTDI" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
+add_feature_info(ConnectionFTDI ENABLE_FTDI "FTDI Connection support")
+if (NOT ENABLE_FTDI)
     return()
 endif()
 
@@ -64,5 +63,5 @@ endif()
 ## Add to library
 ########################################################################
 target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS})
-target_sources(LimeSuite PRIVATE ${CONNECTION_uLimeSDR_SOURCES})
-target_link_libraries(LimeSuite ${CONNECTION_uLimeSDR_LIBRARIES})
+target_sources(LimeSuite PRIVATE ${CONNECTION_FTDI_SOURCES})
+target_link_libraries(LimeSuite ${CONNECTION_FTDI_LIBRARIES})

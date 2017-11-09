@@ -8,11 +8,11 @@
 #include <ConnectionRegistry.h>
 #include <ConnectionHandle.h>
 #include <ConnectionEVB7COM/ConnectionEVB7COM.h>
-#include <ConnectionSTREAM/ConnectionSTREAM.h>
+#include <ConnectionFX3/ConnectionFX3.h>
 
 namespace lime
 {
-class ConnectionSTREAM_UNITE : public virtual ConnectionSTREAM
+class ConnectionSTREAM_UNITE : public virtual ConnectionFX3
 {
 public:
     ConnectionSTREAM_UNITE(void* ctx, const std::string &vidpid, const std::string &serial, const unsigned index, const char* comPortName=nullptr);
@@ -26,7 +26,7 @@ protected:
     ConnectionEVB7COM *comPort;
 };
 
-class ConnectionSTREAM_UNITEEntry : public virtual ConnectionSTREAMEntry
+class ConnectionSTREAM_UNITEEntry : public virtual ConnectionFX3Entry
 {
 public:
     ConnectionSTREAM_UNITEEntry(void);

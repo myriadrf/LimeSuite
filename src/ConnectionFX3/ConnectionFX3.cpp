@@ -4,7 +4,7 @@
     @brief Implementation of STREAM board connection.
 */
 
-#include "ConnectionSTREAM.h"
+#include "ConnectionFX3.h"
 #include "ErrorReporting.h"
 #include <cstring>
 #include "Si5351C.h"
@@ -28,18 +28,18 @@ using namespace std;
 
 using namespace lime;
 
-const uint8_t ConnectionSTREAM::ctrlBulkOutAddr = 0x0F;
-const uint8_t ConnectionSTREAM::ctrlBulkInAddr = 0x8F;
+const uint8_t ConnectionFX3::ctrlBulkOutAddr = 0x0F;
+const uint8_t ConnectionFX3::ctrlBulkInAddr = 0x8F;
 
 //control commands to be send via bulk port for boards v1.1 and earlier
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw1 =
+const std::set<uint8_t> ConnectionFX3::commandsToBulkCtrlHw1 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
     CMD_LMS7002_RST,
 };
 //control commands to be send via bulk port for boards v1.2 and later
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
+const std::set<uint8_t> ConnectionFX3::commandsToBulkCtrlHw2 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
@@ -52,12 +52,10 @@ const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
+ConnectionFX3::ConnectionFX3(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
     bulkCtrlInProgress = false;
-    RxLoopFunction = bind(&ConnectionSTREAM::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&ConnectionSTREAM::TransmitPacketsLoop, this, std::placeholders::_1);
     isConnected = false;
 #ifndef __unix__
     if(arg == nullptr)
@@ -117,7 +115,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
     }
 }
 
-double ConnectionSTREAM::DetectRefClk(void)
+double ConnectionFX3::DetectRefClk(void)
 {
     const double fx3Clk = 100e6 * 1.008;    //fx3 clock 100MHz (adjusted to 100.8 MHz based on measurement on multiple boards)
     const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
@@ -177,7 +175,7 @@ double ConnectionSTREAM::DetectRefClk(void)
 
 /**	@brief Closes connection to chip and deallocates used memory.
 */
-ConnectionSTREAM::~ConnectionSTREAM()
+ConnectionFX3::~ConnectionFX3()
 {
     Close();
 #ifndef __unix__
@@ -188,7 +186,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 /**	@brief Tries to open connected USB device and find communication endpoints.
 	@return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
+int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
 #ifndef __unix__
@@ -346,7 +344,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
 }
 /**	@brief Closes communication to device.
 */
-void ConnectionSTREAM::Close()
+void ConnectionFX3::Close()
 {
     #ifndef __unix__
     USBDevicePrimary->Close();
@@ -378,7 +376,7 @@ void ConnectionSTREAM::Close()
 /**	@brief Returns connection status
 	@return 1-connection open, 0-connection closed.
 */
-bool ConnectionSTREAM::IsOpen()
+bool ConnectionFX3::IsOpen()
 {
     #ifndef __unix__
     return USBDevicePrimary->IsOpen() && isConnected;
@@ -393,7 +391,7 @@ bool ConnectionSTREAM::IsOpen()
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes sent.
 */
-int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFX3::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
@@ -437,7 +435,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes received.
 */
-int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFX3::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
@@ -528,7 +526,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
+int ConnectionFX3::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
     const unsigned char streamBulkInAddr = 0x81;
     int i = 0;
@@ -578,7 +576,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
+int ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -611,7 +609,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return negative values failure, positive number of bytes received
 */
-int ConnectionSTREAM::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
+int ConnectionFX3::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -636,7 +634,7 @@ int ConnectionSTREAM::FinishDataReading(char *buffer, uint32_t length, int conte
 /**
 	@brief Aborts reading operations
 */
-void ConnectionSTREAM::AbortReading(int ep)
+void ConnectionFX3::AbortReading(int ep)
 {
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
@@ -666,7 +664,7 @@ void ConnectionSTREAM::AbortReading(int ep)
 	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int ep)
+int ConnectionFX3::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
     const unsigned char streamBulkOutAddr = 0x01;
     int i = 0;
@@ -713,7 +711,7 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int 
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
+int ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
@@ -746,7 +744,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes sent
 */
-int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
+int ConnectionFX3::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     if( contextsToSend[contextHandle].used == true)
     {
@@ -770,7 +768,7 @@ int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int
 /**
 	@brief Aborts sending operations
 */
-void ConnectionSTREAM::AbortSending(int ep)
+void ConnectionFX3::AbortSending(int ep)
 {
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
@@ -793,17 +791,17 @@ void ConnectionSTREAM::AbortSending(int ep)
     }
 }
 
-int ConnectionSTREAM::GetBuffersCount() const 
+int ConnectionFX3::GetBuffersCount() const 
 {
     return 16;
 };
 
-int ConnectionSTREAM::CheckStreamSize(int size)const 
+int ConnectionFX3::CheckStreamSize(int size)const 
 {
     return size;
 };
 
-int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int timeout)
+int ConnectionFX3::SendData(const char* buffer, int length, int epIndex, int timeout)
 {
     const unsigned char ep = 0x01;
     int context = BeginDataSending((char*)buffer, length, ep);
@@ -812,7 +810,7 @@ int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int 
     return FinishDataSending((char*)buffer, length , context);
 }
 
-int ConnectionSTREAM::ReceiveData(char* buffer, int length, int epIndex, int timeout)
+int ConnectionFX3::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
     const unsigned char ep = 0x81;
     int context = BeginDataReading(buffer, length, ep);
@@ -821,7 +819,7 @@ int ConnectionSTREAM::ReceiveData(char* buffer, int length, int epIndex, int tim
     return FinishDataReading(buffer, length, context);
 }
 
-int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
+int ConnectionFX3::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
 {
     if (device == LMS64CProtocol::FX3 && programmingMode == 1)
     {
@@ -873,6 +871,191 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
     return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
 }
 
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
+*/
+int ConnectionFX3::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz, const double txPhase, const double rxPhase)
+{
+    lime::fpga::FPGA_PLL_clock clocks[2];
+
+    if (channel == 2)
+    {
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txRate_Hz;
+        return lime::fpga::SetPllFrequency(this, 4, 30.72e6, clocks, 2);
+    }
+
+    const float txInterfaceClk = 2 * txRate_Hz;
+    const float rxInterfaceClk = 2 * rxRate_Hz;
+    mExpectedSampleRate = rxRate_Hz;
+    const int pll_ind = (channel == 1) ? 2 : 0;
+
+    clocks[0].index = 0;
+    clocks[0].outFrequency = rxInterfaceClk;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = rxInterfaceClk;
+    clocks[1].phaseShift_deg = rxPhase;
+    if (lime::fpga::SetPllFrequency(this, pll_ind+1, rxInterfaceClk, clocks, 2)!=0)
+        return -1;
+
+    clocks[0].index = 0;
+    clocks[0].outFrequency = txInterfaceClk;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = txInterfaceClk;
+    clocks[1].phaseShift_deg = txPhase;
+    if (lime::fpga::SetPllFrequency(this, pll_ind, txInterfaceClk, clocks, 2)!=0)
+        return -1;
+
+    return 0;
+}
+
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
+*/
+int ConnectionFX3::UpdateExternalDataRate(const size_t channel, const double txRate_Hz, const double rxRate_Hz)
+{
+    const float txInterfaceClk = 2 * txRate_Hz;
+    const float rxInterfaceClk = 2 * rxRate_Hz;
+    const int pll_ind = (channel == 1) ? 2 : 0;
+    int status = 0;
+    uint32_t reg20;
+    const double rxPhC1[] = { 91.08, 89.46 };
+    const double rxPhC2[] = { -1 / 6e6, 1.24e-6 };
+    const double txPhC1[] = { 89.75, 89.61 };
+    const double txPhC2[] = { -3.0e-7, 2.71e-7 };
+
+    const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
+                                            0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
+    const int bakRegCnt = spiAddr.size() - 4;
+    auto info = GetDeviceInfo();
+    bool phaseSearch = false;
+    if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
+        if (this->chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+            if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
+                phaseSearch = true;
+
+    mExpectedSampleRate = rxRate_Hz;
+    std::vector<uint32_t> dataWr;
+    std::vector<uint32_t> dataRd;
+
+    if (phaseSearch)
+    {
+        dataWr.resize(spiAddr.size());
+        dataRd.resize(spiAddr.size());
+        //backup registers
+        dataWr[0] = (uint32_t(0x0020) << 16);
+        ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
+
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+        WriteLMS7002MSPI(dataWr.data(), 1, channel);
+
+        for (int i = 0; i < bakRegCnt; ++i)
+            dataWr[i] = (spiAddr[i] << 16);
+        ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, channel);
+    }
+
+    if(rxInterfaceClk >= 5e6)
+    {
+        if (phaseSearch)
+        {
+            const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
+                                                    0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
+            //Load test config
+            const int setRegCnt = spiData.size();
+            for (int i = 0; i < setRegCnt; ++i)
+                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        }
+        lime::fpga::FPGA_PLL_clock clocks[2];
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxInterfaceClk;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = rxInterfaceClk;
+        if (this->chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxInterfaceClk;
+        else
+            clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxInterfaceClk;
+        if (phaseSearch)
+            clocks[1].findPhase = true;
+        status = lime::fpga::SetPllFrequency(this, pll_ind+1, rxInterfaceClk, clocks, 2);
+    }
+    else
+        status = lime::fpga::SetDirectClocking(this, pll_ind+1, rxInterfaceClk, 90);
+
+    if(txInterfaceClk >= 5e6)
+    {
+        if (phaseSearch)
+        {
+            const std::vector<uint32_t> spiData = {0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
+            WriteRegister(0x000A, 0x0000);
+            //Load test config
+            const int setRegCnt = spiData.size();
+            for (int i = 0; i < setRegCnt; ++i)
+                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        }
+
+        lime::fpga::FPGA_PLL_clock clocks[2];
+        clocks[0].index = 0;
+        clocks[0].outFrequency = txInterfaceClk;
+        clocks[0].phaseShift_deg = 0;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txInterfaceClk;
+        if (this->chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = txPhC1[1] + txPhC2[1] * txInterfaceClk;
+        else
+            clocks[1].phaseShift_deg = txPhC1[0] + txPhC2[0] * txInterfaceClk;
+
+        if (phaseSearch)
+        {
+            clocks[1].findPhase = true;
+            WriteRegister(0x000A, 0x0200);
+        }
+        status = lime::fpga::SetPllFrequency(this, pll_ind, txInterfaceClk, clocks, 2);
+    }
+    else
+        status = lime::fpga::SetDirectClocking(this, pll_ind, txInterfaceClk, 90);
+
+    if (phaseSearch)
+    {
+        //Restore registers
+        for (int i = 0; i < bakRegCnt; ++i)
+            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
+        WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+        WriteLMS7002MSPI(dataWr.data(), 1, channel);
+        WriteRegister(0x000A, 0);
+    }
+    return status;
+}
+
+int ConnectionFX3::ResetStreamBuffers()
+{
+    //USB FIFO reset
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x00);
+    return TransferPacket(ctrPkt);
+}
+
+int ConnectionFX3::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
+{
+    const unsigned char ep = 0x81;
+    WriteRegister(0xFFFF, 1 << epIndex);
+    fpga::StopStreaming(this);
+
+    ResetStreamBuffers();
+    WriteRegister(0x0008, 0x0100 | 0x2);
+    WriteRegister(0x0007, 1);
+    fpga::StartStreaming(this);
+
+    int totalBytesReceived = ReceiveData(buffer,length, epIndex, timeout_ms);
+    fpga::StopStreaming(this);
+    AbortReading(ep);
+
+    return totalBytesReceived;
+}
+
 #ifdef __unix__
 
 #define MAX_FWIMG_SIZE  (512 * 1024)		// Maximum size of the firmware binary.
@@ -882,7 +1065,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
 #define VENDORCMD_TIMEOUT	(5000)		// Timeout for each vendor command is set to 5 seconds.
 
 
-int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
+int ConnectionFX3::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
 {
     const int MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
 	int r;
@@ -905,7 +1088,7 @@ int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int
 	return 0;
 }
 
-int ConnectionSTREAM::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
+int ConnectionFX3::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
 {
 	unsigned int  *data_p;
 	unsigned int i, checksum;

@@ -17,16 +17,15 @@ endif()
 message(STATUS "USB_INCLUDE_DIRS: ${USB_INCLUDE_DIRS}")
 message(STATUS "USB_LIBRARIES: ${USB_LIBRARIES}")
 
-set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionSTREAM)
+set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionFX3)
 
-set(CONNECTION_STREAM_SOURCES
-    ${THIS_SOURCE_DIR}/ConnectionSTREAMEntry.cpp
-    ${THIS_SOURCE_DIR}/ConnectionSTREAM.cpp
-    ${THIS_SOURCE_DIR}/ConnectionSTREAMing.cpp
-    ${THIS_SOURCE_DIR}/ConnectionSTREAMImages.cpp
+set(CONNECTION_FX3_SOURCES
+    ${THIS_SOURCE_DIR}/ConnectionFX3Entry.cpp
+    ${THIS_SOURCE_DIR}/ConnectionFX3.cpp
+    ${THIS_SOURCE_DIR}/ConnectionFX3Images.cpp
 )
 
-set(CONNECTION_STREAM_LIBRARIES
+set(CONNECTION_FX3_LIBRARIES
     ${USB_LIBRARIES}
 )
 
@@ -35,9 +34,9 @@ set(CONNECTION_STREAM_LIBRARIES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_STREAM "Enable STREAM" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
-add_feature_info(ConnectionSTREAM ENABLE_STREAM "STREAM Connection support")
-if (NOT ENABLE_STREAM)
+cmake_dependent_option(ENABLE_FX3 "Enable FX3" ON "ENABLE_LIBRARY;USB_FOUND" OFF)
+add_feature_info(ConnectionFX3 ENABLE_FX3 "FX3 Connection support")
+if (NOT ENABLE_FX3)
     return()
 endif()
 
@@ -45,5 +44,5 @@ endif()
 ## Add to library
 ########################################################################
 target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS})
-target_sources(LimeSuite PRIVATE ${CONNECTION_STREAM_SOURCES})
-target_link_libraries(LimeSuite ${CONNECTION_STREAM_LIBRARIES})
+target_sources(LimeSuite PRIVATE ${CONNECTION_FX3_SOURCES})
+target_link_libraries(LimeSuite ${CONNECTION_FX3_LIBRARIES})

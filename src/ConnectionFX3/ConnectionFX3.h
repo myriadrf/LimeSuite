@@ -90,11 +90,11 @@ public:
 #endif
 };
 
-class ConnectionSTREAM : public ILimeSDRStreaming
+class ConnectionFX3 : public ILimeSDRStreaming
 {
 public:
-    ConnectionSTREAM(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
-    ~ConnectionSTREAM(void);
+    ConnectionFX3(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
+    ~ConnectionFX3(void);
     void VersionCheck(void);
 
     int Open(const std::string &vidpid, const std::string &serial, const unsigned index);
@@ -167,12 +167,12 @@ protected:
     std::mutex mExtraUsbMutex;
 };
 
-class ConnectionSTREAMEntry : public ConnectionRegistryEntry
+class ConnectionFX3Entry : public ConnectionRegistryEntry
 {
 public:
-    ConnectionSTREAMEntry(void);
-    ConnectionSTREAMEntry(const std::string entryName);
-    virtual ~ConnectionSTREAMEntry(void);
+    ConnectionFX3Entry(void);
+    ConnectionFX3Entry(const std::string entryName);
+    virtual ~ConnectionFX3Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
     IConnection* make(const ConnectionHandle& handle);
 protected:

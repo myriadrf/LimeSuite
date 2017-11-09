@@ -11,7 +11,7 @@ namespace lime
 {
 
 ConnectionSTREAM_UNITE::ConnectionSTREAM_UNITE(void* ctx, const std::string &vidpid, const std::string &serial, const unsigned index, const char* comPortName)
-    : ConnectionSTREAM(ctx, vidpid, serial, index), comPort(nullptr)
+    : ConnectionFX3(ctx, vidpid, serial, index), comPort(nullptr)
 {
     if(comPortName && strlen(comPortName))
     {
@@ -34,7 +34,7 @@ ConnectionSTREAM_UNITE::~ConnectionSTREAM_UNITE(void)
 
 DeviceInfo ConnectionSTREAM_UNITE::GetDeviceInfo(void)
 {
-    DeviceInfo usbInfo = ConnectionSTREAM::GetDeviceInfo();
+    DeviceInfo usbInfo = ConnectionFX3::GetDeviceInfo();
     if(comPort)
     {
         DeviceInfo comInfo;
@@ -51,7 +51,7 @@ int ConnectionSTREAM_UNITE::TransactSPI(const int addr, const uint32_t *writeDat
         return comPort->TransactSPI(addr, writeData, readData, size);
     }
     else
-        return ConnectionSTREAM::TransactSPI(addr, writeData, readData, size);
+        return ConnectionFX3::TransactSPI(addr, writeData, readData, size);
 }
 
 int ConnectionSTREAM_UNITE::DeviceReset(int ind)
@@ -62,7 +62,7 @@ int ConnectionSTREAM_UNITE::DeviceReset(int ind)
         if(status != 0)
             return status;
     }
-    return ConnectionSTREAM::DeviceReset();
+    return ConnectionFX3::DeviceReset();
 }
 
 int ConnectionSTREAM_UNITE::TransferPacket(GenericPacket &pkt)
@@ -72,7 +72,7 @@ int ConnectionSTREAM_UNITE::TransferPacket(GenericPacket &pkt)
                    pkt.cmd == CMD_LMS7002_RD ))
         return comPort->TransferPacket(pkt);
     else
-        return ConnectionSTREAM::TransferPacket(pkt);
+        return ConnectionFX3::TransferPacket(pkt);
 }
 
 }

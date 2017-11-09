@@ -4,7 +4,7 @@
     @brief Image updating and version checking
 */
 
-#include "ConnectionSTREAM.h"
+#include "ConnectionFX3.h"
 #include "ErrorReporting.h"
 #include "SystemResources.h"
 #include "LMS64CProtocol.h"
@@ -56,7 +56,7 @@ static const ConnectionSTREAMImageEntry &lookupImageEntry(const LMS64CProtocol::
     return imageEntries.front(); //the -1 unknown entry
 }
 
-void ConnectionSTREAM::VersionCheck(void)
+void ConnectionFX3::VersionCheck(void)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);
@@ -99,7 +99,7 @@ static bool programmingCallbackStream(
     return callback(bsent, btotal, msg.c_str());
 }
 
-int ConnectionSTREAM::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
+int ConnectionFX3::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);

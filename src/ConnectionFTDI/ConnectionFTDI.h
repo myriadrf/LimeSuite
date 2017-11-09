@@ -29,7 +29,7 @@ namespace lime{
 
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
-class Connection_uLimeSDR : public ILimeSDRStreaming
+class ConnectionFTDI : public ILimeSDRStreaming
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -77,10 +77,10 @@ public:
 #endif
     };
 
-    Connection_uLimeSDR(void *arg);
-    Connection_uLimeSDR(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
+    ConnectionFTDI(void *arg);
+    ConnectionFTDI(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
 
-    virtual ~Connection_uLimeSDR(void);
+    virtual ~ConnectionFTDI(void);
 
     int Open(const unsigned index, const int vid, const int pid);
     void Close();
@@ -141,11 +141,11 @@ protected:
 
 
 
-class Connection_uLimeSDREntry : public ConnectionRegistryEntry
+class ConnectionFTDIEntry : public ConnectionRegistryEntry
 {
 public:
-    Connection_uLimeSDREntry(void);
-    ~Connection_uLimeSDREntry(void);
+    ConnectionFTDIEntry(void);
+    ~ConnectionFTDIEntry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle &hint);
     IConnection *make(const ConnectionHandle &handle);
 private:
