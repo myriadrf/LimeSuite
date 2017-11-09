@@ -317,7 +317,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
 
     status = TuneRxFilterSetup(rx_lpf_IF);
     if(status != 0)
-        return status;
+        goto RxFilterSearchEndStage;
 
     {
         uint8_t g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
@@ -342,7 +342,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF*1.3);
         if(status != 0)
-            return status;
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF*1.3, 0); //0
 
         if(rx_lpf_IF < 18e6)
@@ -372,7 +372,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 }
             }
             else if(status != 0)
-                return status;
+                goto RxFilterSearchEndStage;
             //LPFL END
         }
         else
@@ -411,12 +411,12 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 }
             }
             else if(status != 0)
-                return status;
+                goto RxFilterSearchEndStage;
             //LPFH END
         }
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF);
         if(status != 0)
-            return status;
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
 
         {
@@ -427,7 +427,10 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             else if(g_tia_rfe == 1)
                 cfb_tia_rfe = (int)( 5400e6 / (rx_lpf_IF * 0.72) - 15);
             else
-                return -3;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+            {
+                status = -3; //ReportError(EINVAL, "g_tia_rfe not allowed value");
+                goto RxFilterSearchEndStage;
+            }
             Modify_SPI_Reg_bits(CFB_TIA_RFE, clamp(cfb_tia_rfe, 0, 4095));
 
 			{
@@ -437,7 +440,10 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 else if(g_tia_rfe == 1)
                     ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
                 else
-                    return -4;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+                {
+                    status = -4;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+                    goto RxFilterSearchEndStage;
+                }
 
                 Modify_SPI_Reg_bits(CCOMP_TIA_RFE, clamp(ccomp_tia_rfe, 0, 15));
 			}
@@ -448,13 +454,13 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6 - rx_lpf_IF);
         if(status != 0)
-            return status;
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
     }
     //START TIA
     status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, 4096);
     if(status != 0)
-        return status;
+        goto RxFilterSearchEndStage;
     //END TIA
 
     {
@@ -471,7 +477,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     uint8_t pd_lpfl_rbb = Get_SPI_Reg_bits(PD_LPFL_RBB);
     uint8_t pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
     uint8_t input_ctl_pga_rbb = Get_SPI_Reg_bits(INPUT_CTL_PGA_RBB);
-
+RxFilterSearchEndStage:
     RestoreChipState();
     Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
     Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
