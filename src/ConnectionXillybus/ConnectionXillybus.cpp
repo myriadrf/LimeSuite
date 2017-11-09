@@ -376,6 +376,16 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
     return totalBytesReaded;
 }
 
+int ConnectionXillybus::GetBuffersCount() const 
+{
+    return 1;
+};
+
+int ConnectionXillybus::CheckStreamSize(int size) const 
+{
+    return size < 4 ? 4 : size;
+};
+
 /**
     @brief Reads data from board
     @param buffer array where to store received data
@@ -587,3 +597,30 @@ void ConnectionXillybus::AbortSending(int epIndex)
     }
 #endif
 }
+
+int ConnectionXillybus::BeginDataReading(char* buffer, uint32_t length, int ep) 
+{
+    return ep;
+}
+int ConnectionXillybus::WaitForReading(int contextHandle, unsigned int timeout_ms) 
+{
+    return true;
+}
+int ConnectionXillybus::FinishDataReading(char* buffer, uint32_t length, int contextHandle)
+{
+    return ReceiveData(buffer, length, contextHandle, 3000);
+}
+
+int ConnectionXillybus::BeginDataSending(const char* buffer, uint32_t length, int ep) 
+{
+    return SendData(buffer, length,  ep, 3000);
+}
+int ConnectionXillybus::WaitForSending(int contextHandle, uint32_t timeout_ms) 
+{
+    return true;
+}
+int ConnectionXillybus::FinishDataSending(const char* buffer, uint32_t length, int contextHandle) 
+{
+    return contextHandle;
+}
+

@@ -102,30 +102,30 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char* buffer, int length, int timeout_ms = 100) override;
-    virtual int Read(unsigned char* buffer, int length, int timeout_ms = 100) override;
+    int Write(const unsigned char* buffer, int length, int timeout_ms = 100) override;
+    int Read(unsigned char* buffer, int length, int timeout_ms = 100) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase) override;
-    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
+    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
+    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase) override;
+    int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
     int ProgramUpdate(const bool download, ProgrammingCallback callback);
     int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
 protected:
-    virtual void ReceivePacketsLoop(Streamer* args) override;
-    virtual void TransmitPacketsLoop(Streamer* args) override;
+    int GetBuffersCount() const;
+    int CheckStreamSize(int size)const;
     int SendData(const char* buffer, int length, int epIndex = 0, int timeout = 100)override;
     int ReceiveData(char* buffer, int length, int epIndex = 0, int timeout = 100)override;
 
-    virtual int BeginDataReading(char* buffer, uint32_t length, const uint8_t streamBulkInAddr = 0x81);
-    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
-    virtual void AbortReading(int ep);
+    int BeginDataReading(char* buffer, uint32_t length, int ep) override;
+    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
+    void AbortReading(int ep) override;
 
-    virtual int BeginDataSending(const char* buffer, uint32_t length, const uint8_t streamBulkOutAddr = 0x01);
-    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
-    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
-    virtual void AbortSending(int ep);
+    int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
+    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
+    void AbortSending(int ep) override;
 
     int ResetStreamBuffers() override;
     eConnectionType GetType(void) {return USB_PORT;}
@@ -173,8 +173,8 @@ public:
     ConnectionSTREAMEntry(void);
     ConnectionSTREAMEntry(const std::string entryName);
     virtual ~ConnectionSTREAMEntry(void);
-    virtual std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
-    virtual IConnection* make(const ConnectionHandle& handle);
+    std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
+    IConnection* make(const ConnectionHandle& handle);
 protected:
 #ifndef __unix__
     std::string DeviceName(unsigned int index);

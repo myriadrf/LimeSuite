@@ -47,12 +47,20 @@ public:
     int ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)override;
 #endif
 protected:
-    void ReceivePacketsLoop(Streamer* args) override;
-    void TransmitPacketsLoop(Streamer* args) override;
-
+    int GetBuffersCount() const override;
+    int CheckStreamSize(int size) const override;
+    
     int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100) override;
     int SendData(const char* buffer, int length, int epIndex, int timeout = 100) override;
+    
+    int BeginDataReading(char* buffer, uint32_t length, int ep) override;
+    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
     void AbortReading(int epIndex);
+
+    int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
+    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int epIndex);
 
 private:
@@ -66,10 +74,7 @@ private:
     };
 
     static const EPConfig deviceConfigs[];
-    eConnectionType GetType(void)
-    {
-        return PCIE_PORT;
-    }
+    eConnectionType GetType(void) {return PCIE_PORT;}
 
     std::string m_hardwareName;
     int m_hardwareVer;
@@ -94,8 +99,6 @@ private:
     std::string writeStreamPort[MAX_EP_CNT];
     std::string readStreamPort[MAX_EP_CNT];
 };
-
-
 
 class ConnectionXillybusEntry : public ConnectionRegistryEntry
 {
