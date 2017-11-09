@@ -95,18 +95,17 @@ public:
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
     int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
 protected:
-    virtual void ReceivePacketsLoop(Streamer* args) override;
-    virtual void TransmitPacketsLoop(Streamer* args) override;
+    int GetBuffersCount() const override;
+    int CheckStreamSize(int size) const override;
+    int BeginDataReading(char* buffer, uint32_t length, int ep) override;
+    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
+    void AbortReading(int ep) override;
 
-    virtual int BeginDataReading(char* buffer, uint32_t length);
-    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms);
-    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
-    virtual void AbortReading();
-
-    virtual int BeginDataSending(const char* buffer, uint32_t length);
-    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms);
-    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
-    virtual void AbortSending();
+    int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
+    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
+    void AbortSending(int ep) override;
     double DetectRefClk(void);
     
     int ResetStreamBuffers() override;
