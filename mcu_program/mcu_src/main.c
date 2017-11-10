@@ -109,10 +109,10 @@ void main()  //main routine
 			//	P1 = MCU_IDLE;
 			//	break;
 			case 1: //CalibrateTx
-				P1 = MCU_IDLE | CalibrateTx();
+				P1 = MCU_IDLE | CalibrateTxExternalLoop();
 				break;
 			case 2: //CalibrateRx
-                P1 = MCU_IDLE | CalibrateRx();
+                //P1 = MCU_IDLE | CalibrateRx();
 				break;
 			case 3: 
 				UpdateFreq(0);
@@ -123,10 +123,10 @@ void main()  //main routine
 				UpdateFreq(1);
 				break;
 			case 5:
-				P1 = TuneRxFilter(bandwidthRF);
+				//P1 = TuneRxFilter(bandwidthRF);
 				break;	
             case 6:
-				P1 = TuneTxFilter(bandwidthRF);
+				//P1 = TuneTxFilter(bandwidthRF);
 				break;	
             case 7:
                 P1 = ProxyWrite();

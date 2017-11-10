@@ -587,8 +587,8 @@ void CalibrateTxDCAuto()
     Modify_SPI_Reg_bits(DC_BYP_TXTSP, 1);
     //auto calibration
     Modify_SPI_Reg_bits(DCMODE, 1);
-    Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 0);
-    Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 0);
+    //Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 0);
+    //Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 0);
     iparams.param.msblsb = 10<<4 | 0;
     qparams.param.msblsb = 10<<4 | 0;
     if(ch == 1)
@@ -618,18 +618,18 @@ void CalibrateTxDCAuto()
     qparams.result = 0; //ReadAnalogDC(qparams.param.address);
     for(i=0; i<3; ++i)
     {
-        iparams.minValue = iparams.result-offset[i];
-        iparams.maxValue = iparams.result+offset[i];
-        qparams.minValue = qparams.result-offset[i];
-        qparams.maxValue = qparams.result+offset[i];
+        iparams.minValue = clamp(iparams.result-offset[i], -1024, 1023);
+        iparams.maxValue = clamp(iparams.result+offset[i], -1024, 1023);
+        qparams.minValue = clamp(qparams.result-offset[i], -1024, 1023);
+        qparams.maxValue = clamp(qparams.result+offset[i], -1024, 1023);
 
         TxDcBinarySearch(&iparams);
         TxDcBinarySearch(&qparams);
     }
     }
 
-    Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
-    Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
+    //Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
+    //Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
 #if VERBOSE
     printf("Done\n");
 #endif // VERBOSE
@@ -1032,7 +1032,9 @@ uint8_t CalibrateTxSetupExternalLoop()
         const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, 11 << 4 | 10);
         if(sel_band1_2_trf != 0x1)
         {
+#ifdef VERBOSE
             printf("Tx Calibration: external calibration is not supported on selected Tx band");
+#endif
             return 5;
         }
     }

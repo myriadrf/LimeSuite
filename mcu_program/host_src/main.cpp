@@ -18,10 +18,11 @@ lime::IConnection *serPort = nullptr;
 lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
-static bool useMCU =1;
-static bool tx = 0;
+static bool useMCU =0;
+static bool tx = 1;
 static bool filters = 0;
 static float FBW = 5e6;
+static bool extLoop = true;
 extern float RefClk;
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
@@ -42,11 +43,32 @@ int16_t ReadDCCorrector(bool tx, uint8_t channel)
         return (value & mask);
 }
 
+int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
+{
+    //enable external loopback switches
+    const uint32_t LoopbackCtrAddr = 0x0017;
+    uint32_t value = 0;
+    const uint16_t mask = 0x7;
+    const uint8_t shiftCount = (ch==2 ? 4 : 0);
+    int status;
+    status = port->ReadRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return -1;
+    value &= ~(mask << shiftCount);
+    value |= enable << shiftCount;   //EN_Loopback
+    value |= enable << (shiftCount+1); //EN_Attenuator
+    value |= !enable << (shiftCount+2); //EN_Shunt
+    status = port->WriteRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return -1;
+    return status;
+}
+
 void DCIQ()
 {
-    lime::LMS7002M_RegistersMap *backup; 
+    lime::LMS7002M_RegistersMap *backup;
     int status;
-    float freqStart = 1000e6;
+    float freqStart = 2000e6;
     float freqEnd = freqStart;//1000e6;
     float freqStep = 10e6;
 
@@ -59,6 +81,7 @@ void DCIQ()
 
     while(freq <= freqEnd)
     {
+        SetExtLoopback(lmsControl.GetConnection(), 0, extLoop);
         vfreqs.push_back(freq);
         //status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
         //status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
@@ -83,7 +106,6 @@ void DCIQ()
         }
         lmsControl.DownloadAll();
         backup = lmsControl.BackupRegisterMap();
-	(void) backup; // backup is created and then unused... perhaps for side-effect? 
 
         auto t1 = chrono::high_resolution_clock::now();
         if(useMCU) //using algorithm inside MCU
@@ -114,7 +136,8 @@ void DCIQ()
         else //calibrating with PC
         {
             if(tx)
-                status = CalibrateTx();
+                //status = CalibrateTx();
+                status = CalibrateTxExternalLoop();
             else
                 status = CalibrateRx();
         }
@@ -199,6 +222,7 @@ void DCIQ()
             lmsControl.Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), ph);
         }
         freq += freqStep;
+        SetExtLoopback(lmsControl.GetConnection(), 0, false);
     }
     if(tx)
     {
@@ -378,7 +402,7 @@ int main(int argc, char** argv)
     else
         filename = "RxTest.ini";*/
     //filename = "CalibSetup.ini";
-    filename = "rxtest.ini";
+    filename = "TxDCTest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");
