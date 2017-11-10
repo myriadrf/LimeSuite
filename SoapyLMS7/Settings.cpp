@@ -426,11 +426,6 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
         rfic->SetRFELoopbackLNA_dB(value);
     }
 
-    else if (direction == SOAPY_SDR_RX and name == "LB_LNA")
-    {
-        rfic->SetRFELoopbackLNA_dB(value);
-    }
-
     else if (direction == SOAPY_SDR_RX and name == "TIA")
     {
         rfic->SetRFETIA_dB(value);
@@ -444,11 +439,6 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
     else if (direction == SOAPY_SDR_TX and name == "PAD")
     {
         rfic->SetTRFPAD_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
-    {
-        rfic->SetTRFLoopbackPAD_dB(value);
     }
 
     else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
