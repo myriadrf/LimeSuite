@@ -7,6 +7,7 @@
 
 #include "typedefs.h"
 
+bool extLoopback = true;
 bool runProcedure = false;
 uint8_t currentInstruction;
 extern float_type RefClk;
@@ -109,8 +110,7 @@ void main()  //main routine
 			//	P1 = MCU_IDLE;
 			//	break;
 			case 1: //CalibrateTx
-                CalibrateTx();
-				P1 = MCU_IDLE | CalibrateTxExternalLoop();
+				P1 = MCU_IDLE | CalibrateTx(extLoopback);
 				break;
 			case 2: //CalibrateRx
                 CalibrateRx();

@@ -824,7 +824,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     return 0x0;
 }
 
-uint8_t CalibrateTx()
+uint8_t CalibrateTx(bool extLoopback)
 {
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(MAC);
 #ifdef __cplusplus
@@ -842,101 +842,11 @@ uint8_t CalibrateTx()
     uint8_t status;
     //BackupRegisters();
     SaveChipState();
-    status = CalibrateTxSetup(0);
+    status = CalibrateTxSetup(extLoopback);
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
-    CheckSaturationTxRx(0);
-    CalibrateRxDCAuto();
-
-    SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider), 0);
-    CalibrateTxDCAuto();
-    SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO, 0);
-    CalibrateIQImbalance(LMS7002M_Tx);
-TxCalibrationEnd:
-    if(status != 0)
-    {
-#if VERBOSE
-        printf("Tx calibration failed");
-#endif
-        RestoreChipState();
-        return status;
-    }
-    {
-        //uint16_t dccorri = Get_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb);
-        //uint16_t dccorrq = Get_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb);
-        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
-        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
-        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb);
-        RestoreChipState();
-        Modify_SPI_Reg_bits(MAC, ch);
-        //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
-        //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);
-        Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb, phaseOffset);
-    }
-
-    Modify_SPI_Reg_bits(DCMODE, 1);
-    if(ch == 1)
-        Modify_SPI_Reg_bits(PD_DCDAC_TXA, 0);
-    else
-        Modify_SPI_Reg_bits(PD_DCDAC_TXB, 0);
-    Modify_SPI_Reg_bits(DC_BYP_TXTSP, 1);
-    Modify_SPI_Reg_bits(0x0208, 1<<4 | 0, 0); //GC_BYP PH_BYP
-    LoadDC_REG_TX_IQ();
-
-    //LoadDC_REG_TX_IQ(); //not necessary, just for testing convenience
-#if VERBOSE
-    //printf("#####Tx calibration RESULTS:###########################\n");
-    /*printf("Tx ch.%s, BW: %g MHz, RF output: %s, Gain: %i\n",
-                    ch == 1 ? "A" : "B",
-                    bandwidthRF/1e6, sel_band1_trf==1 ? "BAND1" : "BAND2",
-                    1//Get_SPI_Reg_bits(CG_IAMP_TBB)
-                    );*/
-    {
-        int16_t dcI = ReadAnalogDC(ch==1? 0x5C3 : 0x5C5);
-        int16_t dcQ = ReadAnalogDC(ch==1? 0x5C4 : 0x5C6);
-        int16_t phaseSigned = toSigned(Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb), IQCORR_TXTSP.msblsb);
-        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
-        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
-        printf("   | DC  | GAIN | PHASE\n");
-        printf("---+-----+------+------\n");
-        printf("I: | %3i | %4i | %i\n", dcI, gcorri, phaseSigned);
-        printf("Q: | %3i | %4i |\n", dcQ, gcorrq);
-    }
-#ifdef __cplusplus
-    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-                       (std::chrono::high_resolution_clock::now()-beginTime).count();
-    printf("Duration: %i ms\n", duration);
-#endif
-#endif //LMS_VERBOSE_OUTPUT
-    return 0;
-}
-
-uint8_t CalibrateTxExternalLoop()
-{
-    uint8_t ch = (uint8_t)Get_SPI_Reg_bits(MAC);
-#ifdef __cplusplus
-    auto beginTime = std::chrono::high_resolution_clock::now();
-#endif
-#if VERBOSE
-
-    uint8_t sel_band1_trf = (uint8_t)Get_SPI_Reg_bits(SEL_BAND1_TRF);
-    printf("Tx ch.%s , BW: %g MHz, RF output: %s, Gain: %i\n",
-           ch == 0x1 ? "A" : "B",
-           bandwidthRF/1e6,
-           sel_band1_trf==1 ? "BAND1" : "BAND2",
-           Get_SPI_Reg_bits(CG_IAMP_TBB));
-#endif
-    uint8_t status;
-    //BackupRegisters();
-    SaveChipState();
-    status = CalibrateTxSetup(1);
-    if(status != 0)
-        goto TxCalibrationEnd; //go to ending stage to restore registers
-    CalibrateRxDCAuto();
-    CheckSaturationTxRx(1);
+    CheckSaturationTxRx(extLoopback);
     CalibrateRxDCAuto();
 
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider), 0);

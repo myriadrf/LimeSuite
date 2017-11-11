@@ -137,7 +137,7 @@ void DCIQ()
         {
             if(tx)
                 //status = CalibrateTx();
-                status = CalibrateTxExternalLoop();
+                status = CalibrateTx(true);
             else
                 status = CalibrateRx();
         }
