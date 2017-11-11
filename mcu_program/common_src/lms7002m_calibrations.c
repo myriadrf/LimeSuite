@@ -133,12 +133,11 @@ static void SetRxGFIR3Coefficients()
         SPI_write(0x0500 + index + 24 * (index / 40), firCoefs[119-index]);
 }
 
-void CheckSaturationTxRx()
+void CheckSaturationTxRx(bool extLoopback)
 {
     const uint16_t saturationLevel = 0x05000; //-3dBFS
     uint8_t g_pga;
-    uint8_t g_rxloop;
-    //uint16_t rssi_prev;
+    uint8_t g_rfe;
     uint16_t rssi;
 #ifdef DRAW_GNU_PLOTS
 #define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
@@ -158,24 +157,31 @@ void CheckSaturationTxRx()
     PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
 
     g_pga = (uint8_t)Get_SPI_Reg_bits(G_PGA_RBB);
-    g_rxloop = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+    if(extLoopback)
+        g_rfe = (uint8_t)Get_SPI_Reg_bits(G_LNA_RFE);
+    else
+        g_rfe = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
+
 
 #if VERBOSE
     printf("Receiver saturation search, target level: %i (%2.3f dBFS)\n", saturationLevel, ChipRSSI_2_dBFS(saturationLevel));
-    printf("initial  PGA: %2i, RxLoopback: %2i, %3.2f dbFS\n", g_pga, g_rxloop, ChipRSSI_2_dBFS(rssi));
+    printf("initial  PGA: %2i, %s: %2i, %3.2f dbFS\n", g_pga, (extLoopback ? "LNA":"RXLOOPB"), g_rfe, ChipRSSI_2_dBFS(rssi));
 #endif
     while(rssi < saturationLevel)
     {
-        if(g_rxloop < 15)
-            ++g_rxloop;
+        if(g_rfe < 15)
+            ++g_rfe;
         else
             break;
-        Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloop);
+        if(extLoopback)
+            Modify_SPI_Reg_bits(G_LNA_RFE, g_rfe);
+        else
+            Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rfe);
         rssi = GetRSSI();
         PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
     }
     PUSH_PLOT_VALUE(pgaFirstStage, rssi);
-    while(g_pga < 18 && g_rxloop == 15 && rssi < saturationLevel)
+    while(g_pga < 18 && g_rfe == 15 && rssi < saturationLevel)
     {
         if(g_pga < 18)
             ++g_pga;
@@ -187,94 +193,7 @@ void CheckSaturationTxRx()
         PUSH_PLOT_VALUE(pgaFirstStage, rssi);
     }
 #if VERBOSE
-    printf("adjusted PGA: %2i, RxLoopback: %2i, %3.2f dbFS\n", g_pga, g_rxloop, ChipRSSI_2_dBFS(rssi));
-#endif
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-#ifdef DRAW_GNU_PLOTS
-    {
-        saturationPlot.write("set yrange [:0]\n");
-        saturationPlot.write("set title 'Rx gains search'\n");
-        saturationPlot.write("set key right bottom\n");
-        saturationPlot.write("set xlabel 'measurement index'\n");
-        saturationPlot.write("set ylabel 'RSSI dbFS'\n");
-        saturationPlot.write("set grid xtics ytics\n");
-        saturationPlot.write("plot\
-'-' u 1:2 with lines title 'G_RXLOOPB',\
-'-' u 1:2 with lines title 'PGA',\
-'-' u 1:2 with lines title 'target Level'\n");
-        int index = 1;
-        const auto arrays = {&g_rxLoopbStage, &pgaFirstStage};
-        for(auto a : arrays)
-        {
-            --index;
-            for(size_t i=0; i<a->size(); ++i)
-                saturationPlot.writef("%i %f\n", index++, ChipRSSI_2_dBFS((*a)[i]));
-            saturationPlot.write("e\n");
-        }
-        saturationPlot.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(saturationLevel),
-                              index, ChipRSSI_2_dBFS(saturationLevel));
-        saturationPlot.flush();
-    }
-#endif
-#undef PUSH_PLOT_VALUE
-}
-
-void CheckSaturationTxRxExternal()
-{
-    const uint16_t saturationLevel = 0x05000; //-3dBFS
-    uint8_t g_pga;
-    uint8_t g_lna;
-    //uint16_t rssi_prev;
-    uint16_t rssi;
-#ifdef DRAW_GNU_PLOTS
-#define PUSH_PLOT_VALUE(vec, data) vec.push_back(data)
-    std::vector<float> g_rxLoopbStage;
-    std::vector<float> pgaFirstStage;
-    std::vector<float> lnaStage;
-    std::vector<float> tiaStage;
-    std::vector<float> pgaSecondStage;
-#else
-#define PUSH_PLOT_VALUE(vec, data)
-#endif
-    Modify_SPI_Reg_bits(DC_BYP_RXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
-    SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF / calibUserBwDivider) * 2, 0);
-
-    rssi = GetRSSI();
-    PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
-
-    g_pga = (uint8_t)Get_SPI_Reg_bits(G_PGA_RBB);
-    g_lna = (uint8_t)Get_SPI_Reg_bits(G_LNA_RFE);
-
-#if VERBOSE
-    printf("Receiver saturation search, target level: %i (%2.3f dBFS)\n", saturationLevel, ChipRSSI_2_dBFS(saturationLevel));
-    printf("initial  PGA: %2i, LNA: %2i, %3.2f dbFS\n", g_pga, g_lna, ChipRSSI_2_dBFS(rssi));
-#endif
-    while(rssi < saturationLevel)
-    {
-        if(g_lna < 15)
-            ++g_lna;
-        else
-            break;
-        Modify_SPI_Reg_bits(G_LNA_RFE, g_lna);
-        rssi = GetRSSI();
-        PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
-    }
-    PUSH_PLOT_VALUE(pgaFirstStage, rssi);
-    while(g_pga < 18 && g_lna == 15 && rssi < saturationLevel)
-    {
-        if(g_pga < 18)
-            ++g_pga;
-        else
-            break;
-        Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
-        rssi = GetRSSI();
-        //rssi_prev = rssi;
-        PUSH_PLOT_VALUE(pgaFirstStage, rssi);
-    }
-#if VERBOSE
-    printf("adjusted PGA: %2i, LNA: %2i, %3.2f dbFS\n", g_pga, g_lna, ChipRSSI_2_dBFS(rssi));
+    printf("adjusted  PGA: %2i, %s: %2i, %3.2f dbFS\n", g_pga, (extLoopback ? "LNA":"RXLOOPB"), g_rfe, ChipRSSI_2_dBFS(rssi));
 #endif
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
@@ -927,7 +846,7 @@ uint8_t CalibrateTx()
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
-    CheckSaturationTxRx();
+    CheckSaturationTxRx(0);
     CalibrateRxDCAuto();
 
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider), 0);
@@ -1017,7 +936,7 @@ uint8_t CalibrateTxExternalLoop()
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
-    CheckSaturationTxRxExternal();
+    CheckSaturationTxRx(1);
     CalibrateRxDCAuto();
 
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider), 0);
