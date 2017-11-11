@@ -744,7 +744,7 @@ uint8_t SetupCGEN()
     return status;
 }
 
-uint8_t CalibrateTxSetup()
+uint8_t CalibrateTxSetup(bool extLoopback)
 {
     uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020); //remember used channel
@@ -878,164 +878,28 @@ uint8_t CalibrateTxSetup()
     SetNCOFrequency(LMS7002M_Tx, bandwidthRF/ calibUserBwDivider, 0);
     {
         const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, 11 << 4 | 10);
-        if(sel_band1_2_trf != 0x1 && sel_band1_2_trf != 0x2) //BAND1
+        if(extLoopback)
         {
-            //printf("Tx Calibration: band not selected");
-            return 5;
+            if(sel_band1_2_trf != 0x1)
+            {
+                //printf("Tx Calibration: external calibration is not supported on selected Tx Band");
+                return 5;
+            }
         }
-        Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_band1_2_trf+1);
-        //Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, 0);
-        //Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 1);
-        Modify_SPI_Reg_bits(0x010C, 6 << 4 | 5, sel_band1_2_trf ^ 0x3);
-        //Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, 0);
-        //Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 1);
-        Modify_SPI_Reg_bits(0x010D, 4 << 4 | 3, sel_band1_2_trf ^ 0x3);
-    }
-    return 0x0;
-}
-
-uint8_t CalibrateTxSetupExternalLoop()
-{
-    uint8_t status;
-    const uint16_t x0020val = SPI_read(0x0020); //remember used channel
-
-    //BeginBatch("TxSetup");
-    //rfe
-    //reset RFE to defaults
-    SetDefaults(SECTION_RFE);
-    Modify_SPI_Reg_bits(G_LNA_RFE, 3);
-    Modify_SPI_Reg_bits(0x010C, 4 << 4 | 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
-    Modify_SPI_Reg_bits(CCOMP_TIA_RFE, 4);
-    Modify_SPI_Reg_bits(CFB_TIA_RFE, 50);
-    Modify_SPI_Reg_bits(SEL_PATH_RFE, 1);
-    Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
-
-    //RBB
-    //reset RBB to defaults
-    SetDefaults(SECTION_RBB);
-    Modify_SPI_Reg_bits(PD_LPFH_RBB, 0);
-    Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
-    Modify_SPI_Reg_bits(G_PGA_RBB, 0);
-    Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 1);
-    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 12);
-    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 12);
-
-    //TXTSP
-    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 1);
-    Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
-    Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb , 2047);
-    Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
-    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP_R3, 0);
-
-    //RXTSP
-    SetDefaults(SECTION_RxTSP);
-    SetDefaults(SECTION_RxNCO);
-    Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
-    Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4); //Decimation HBD ratio
-    Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
-
-
-
-    Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0x1);
-    Modify_SPI_Reg_bits(GFIR3_L_RXTSP, 7);
-
-
-    /*//AFE
-    Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
-    Modify_SPI_Reg_bits(PD_RX_AFE2, 0);*/
-
-    //XBUF
-    Modify_SPI_Reg_bits(0x0085, 2 << 4 | 0, 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
-
-    //CDS
-    Modify_SPI_Reg_bits(CDS_TXATSP, 3);
-    Modify_SPI_Reg_bits(CDS_TXBTSP, 3);
-
-    //TRF
-    //Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
-    //Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
-
-    //BIAS
-    {
-        uint16_t backup = Get_SPI_Reg_bits(RP_CALIB_BIAS);
-        SetDefaults(SECTION_BIAS);
-        Modify_SPI_Reg_bits(RP_CALIB_BIAS, backup);
-    }
-
-    //EndBatch();
-    if((x0020val & 0x3) == 1)
-        Modify_SPI_Reg_bits(PD_RX_AFE1, 0);
-    else
-        Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
-    /*{
-        ROM const uint16_t TxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x0101,0x0113,0x0200,0x0201,0x0202,0x0208};
-        ROM const uint16_t TxSetupData[] = {0x0400, 0x0001,0xF000,0x0001,0x001C,0x000C,0x07FF,0x07FF,0x0000};
-        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0xF10B};
-        uint8_t i;
-        for(i=sizeof(TxSetupAddr)/sizeof(uint16_t); i; --i)
-            SPI_write(TxSetupAddr[i-1], ( SPI_read(TxSetupAddr[i-1]) & ~TxSetupMask[i-1] ) | TxSetupData[i-1]);
-    }
-    {
-        ROM const uint16_t TxSetupAddrWrOnly[] = {0x010C,0x0112,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0442,0x0443};
-        ROM const uint16_t TxSetupDataWrOnly[] = {0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x2098,0x0020,0x0000,0x0000};
-
-        uint8_t i;
-        for(i=sizeof(TxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
-            if(i<=sizeof(TxSetupDataWrOnly)/sizeof(uint16_t))
-                SPI_write(TxSetupAddrWrOnly[i-1], TxSetupDataWrOnly[i-1]);
-            //else
-                //SPI_write(TxSetupAddrWrOnly[i-1], 0);
-    }*/
-    SetRxGFIR3Coefficients();
-    status = SetupCGEN();
-    if(status != 0)
-        return status;
-
-    //SXR
-    Modify_SPI_Reg_bits(MAC, 1); //switch to ch. A
-    //SetDefaults(SECTION_SX);
-    SetDefaultsSX();
-    {
-        const float_type SXRfreq = GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - calibrationSXOffset_Hz;
-        //SX VCO is powered up in SetFrequencySX/Tune
-        status = SetFrequencySX(LMS7002M_Rx, SXRfreq);
-        if(status != 0)
-            return status+0x60;
-    }
-
-    //if calibrating ch. B enable buffers
-    if(x0020val & 0x2)
-    {
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
-        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-    }
-
-    //SXT{
-    Modify_SPI_Reg_bits(MAC, 2); //switch to ch. B
-    Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
-    SPI_write(0x0020, x0020val); //restore used channel
-
-    LoadDC_REG_TX_IQ();
-    SetNCOFrequency(LMS7002M_Tx, bandwidthRF/ calibUserBwDivider, 0);
-    {
-        const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, 11 << 4 | 10);
-        if(sel_band1_2_trf != 0x1)
+        else
         {
-#ifdef VERBOSE
-            printf("Tx Calibration: external calibration is not supported on selected Tx band");
-#endif
-            return 5;
+            if(sel_band1_2_trf != 0x1 && sel_band1_2_trf != 0x2) //BAND1
+            {
+                //printf("Tx Calibration: band not selected");
+                return 5;
+            }
+            Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_band1_2_trf+1);
+            //Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, 0);
+            //Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 1);
+            Modify_SPI_Reg_bits(0x010C, 6 << 4 | 5, sel_band1_2_trf ^ 0x3);
+            //Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, 0);
+            //Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 1);
+            Modify_SPI_Reg_bits(0x010D, 4 << 4 | 3, sel_band1_2_trf ^ 0x3);
         }
     }
     return 0x0;
@@ -1059,7 +923,7 @@ uint8_t CalibrateTx()
     uint8_t status;
     //BackupRegisters();
     SaveChipState();
-    status = CalibrateTxSetup();
+    status = CalibrateTxSetup(0);
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
@@ -1149,7 +1013,7 @@ uint8_t CalibrateTxExternalLoop()
     uint8_t status;
     //BackupRegisters();
     SaveChipState();
-    status = CalibrateTxSetupExternalLoop();
+    status = CalibrateTxSetup(1);
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
@@ -1223,7 +1087,7 @@ TxCalibrationEnd:
 
 #define MSBLSB(x, y) x << 4 | y
 
-uint8_t CalibrateRxSetup()
+uint8_t CalibrateRxSetup(bool extLoopback)
 {
     uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020);
@@ -1251,6 +1115,8 @@ uint8_t CalibrateRxSetup()
     Modify_SPI_Reg_bits(G_RXLOOPB_RFE, 3);
     Modify_SPI_Reg_bits(0x010C, 4 << 4 | 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
     Modify_SPI_Reg_bits(0x010C, 1 << 4 | 1, 0); //PD_TIA 0
+    if(extLoopback)
+        Modify_SPI_Reg_bits(0x010C, 7 << 4 | 7, 0); //PD_LNA 0
 
     //RBB
     Modify_SPI_Reg_bits(0x0115, MSBLSB(15, 14), 0); //Loopback switches disable
@@ -1261,8 +1127,16 @@ uint8_t CalibrateRxSetup()
     SetDefaults(SECTION_TRF);
     Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
     Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
-
     Modify_SPI_Reg_bits(EN_G_TRF, 0);
+    if(extLoopback)
+    {
+        if(Get_SPI_Reg_bits(SEL_PATH_RFE) == 1)
+        {
+            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
+        }
+        Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, 15);
+    }
 
     //TBB
     //reset TBB to defaults
@@ -1312,11 +1186,20 @@ uint8_t CalibrateRxSetup()
         SetDefaults(SECTION_BIAS);
         Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
     }*/
+
+    /*if(!extLoopback)
+    {
+        Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 1);
+        Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
+    }*/
+
     //AFE
     if((x0020val & 0x3) == 1)
         Modify_SPI_Reg_bits(PD_TX_AFE1, 0);
     else
         Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
+
+    if(!extLoopback)
     {
         switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
         {
@@ -1333,154 +1216,6 @@ uint8_t CalibrateRxSetup()
             return 1;
         }
     }
-
-    Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
-
-    if(Get_SPI_Reg_bits(PD_LOCH_T2RBUF) == 0) //isTDD
-    {
-        //in TDD do nothing
-        Modify_SPI_Reg_bits(MAC, 1);
-        SetDefaultsSX();
-        status = SetFrequencySX(LMS7002M_Rx, GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - 9e6);
-    }
-    else
-    {
-        //SXR
-        //Modify_SPI_Reg_bits(MAC, 1); //Get freq already changes/restores ch
-        const float_type SXRfreqHz = GetFrequencySX(LMS7002M_Rx);
-
-        //SXT
-        Modify_SPI_Reg_bits(MAC, 2);
-        SetDefaultsSX();
-        status = SetFrequencySX(LMS7002M_Tx, SXRfreqHz + bandwidthRF/ calibUserBwDivider + 9e6);
-    }
-    if(status != 0)
-        return status+0x70;
-    SPI_write(0x0020, x0020val);
-
-    LoadDC_REG_TX_IQ();
-
-    //CGEN
-    // SetDefaults(SECTION_CGEN);
-    status = SetupCGEN();
-    if(status != 0)
-        return status +0x30;
-    SetRxGFIR3Coefficients();
-    SetNCOFrequency(LMS7002M_Tx, 9e6, 0);
-    SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider - offsetNCO, 0);
-    //modifications when calibrating channel B
-    if( (x0020val&0x3) == 2)
-    {
-        Modify_SPI_Reg_bits(MAC, 1);
-        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
-        SPI_write(0x0020, x0020val);
-    }
-    return 0;
-}
-
-uint8_t CalibrateRxSetupExternalLoop()
-{
-    uint8_t status;
-    const uint16_t x0020val = SPI_read(0x0020);
-    //rfe
-    /*{
-        ROM const uint16_t RxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x010C,0x010D,0x0113,0x0115,0x0119};
-        ROM const uint16_t RxSetupData[] = {0x0400, 0x0001,0xF000,0x0000,0x0040,0x000C,0x0000,0x0000};
-        ROM const uint16_t RxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x001A,0x0040,0x003C,0xC000,0x8000};
-        uint8_t i;
-        for(i=sizeof(RxSetupAddr)/sizeof(uint16_t); i; --i)
-            SPI_write(RxSetupAddr[i-1], ( SPI_read(RxSetupAddr[i-1]) & ~RxSetupMask[i-1] ) | RxSetupData[i-1]);
-    }
-    {
-        ROM const uint16_t RxSetupAddrWrOnly[] = {0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0200,0x0201,0x0202,0x0208,0x0240,0x0400,0x0401,0x0402,0x0403,0x0407,0x040A,0x040C,0x0440,0x05C0,0x05CB,0x0203,0x0204,0x0205,0x0206,0x0207,0x0241,0x0404,0x0405,0x0406,0x0408,0x0409,0x0441,0x05C1,0x05C2,0x05C3,0x05C4,0x05C5,0x05C6,0x05C7,0x05C8,0x05C9,0x05CA,0x05CC};
-        ROM const uint16_t RxSetupDataWrOnly[] = {0x3408,0x6001,0x3180,0x0A12,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x008D,0x07FF,0x07FF,0x2070,0x0020,0x0081,0x07FF,0x07FF,0x4000,0x0700,0x1000,0x2098,0x0020,0x00FF,0x2020};
-        uint8_t i;
-        for(i=sizeof(RxSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
-            if(i<=sizeof(RxSetupDataWrOnly)/sizeof(uint16_t))
-                SPI_write(RxSetupAddrWrOnly[i-1], RxSetupDataWrOnly[i-1]);
-            else
-                SPI_write(RxSetupAddrWrOnly[i-1], 0);
-    }
-    BeginBatch("RxSetup.txt");*/
-    Modify_SPI_Reg_bits(EN_DCOFF_RXFE_RFE, 1);
-    //Modify_SPI_Reg_bits(G_RXLOOPB_RFE, 3);
-    Modify_SPI_Reg_bits(0x010C, 4 << 4 | 3, 0); //PD_MXLOBUF_RFE 0, PD_QGEN_RFE 0
-    Modify_SPI_Reg_bits(0x010C, 1 << 4 | 1, 0); //PD_TIA 0
-    Modify_SPI_Reg_bits(0x010C, 7 << 4 | 7, 0); //PDA_LNA 0
-
-    //RBB
-    Modify_SPI_Reg_bits(0x0115, MSBLSB(15, 14), 0); //Loopback switches disable
-    Modify_SPI_Reg_bits(0x0119, MSBLSB(15, 15), 0); //OSW_PGA 0
-
-    //TRF
-    //reset TRF to defaults
-    SetDefaults(SECTION_TRF);
-    Modify_SPI_Reg_bits(L_LOOPB_TXPAD_TRF, 0);
-    Modify_SPI_Reg_bits(EN_LOOPB_TXPAD_TRF, 1);
-    int rxsel = Get_SPI_Reg_bits(SEL_PATH_RFE);
-    if(rxsel == 1)
-    {
-        Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
-        Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
-    }
-    Modify_SPI_Reg_bits(EN_G_TRF, 0);
-    Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF, 15);
-
-    //TBB
-    //reset TBB to defaults
-    SetDefaults(SECTION_TBB);
-    Modify_SPI_Reg_bits(CG_IAMP_TBB, 1);
-    //Modify_SPI_Reg_bits(ICT_IAMP_FRP_TBB, 12);
-    //Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 12);
-
-    //XBUF
-    Modify_SPI_Reg_bits(0x0085, MSBLSB(2, 0), 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
-
-    //TXTSP
-    SetDefaults(SECTION_TxTSP);
-    SetDefaults(SECTION_TxNCO);
-    Modify_SPI_Reg_bits(TSGFCW_TXTSP, 1);
-    Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1);
-    Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
-    Modify_SPI_Reg_bits(0x0208, MSBLSB(6, 4), 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
-    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 1);
-    Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
-
-    //RXTSP
-    SetDefaults(SECTION_RxTSP);
-    SetDefaults(SECTION_RxNCO);
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(5, 3), 0x3); //GFIR2_BYP, GFIR1_BYP
-    Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4);
-
-    Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
-    Modify_SPI_Reg_bits(CAPSEL, 0);
-    Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP, 0);
-    Modify_SPI_Reg_bits(GFIR3_L_RXTSP, 7);
-    Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 1);
-
-    //CDS
-    Modify_SPI_Reg_bits(CDS_TXATSP, 3);
-    Modify_SPI_Reg_bits(CDS_TXBTSP, 3);
-
-    //RSSI_DC_CALIBRATION
-    SetDefaults(SECTION_RSSI_DC_CALIBRATION);
-    //EndBatch();
-    //BIAS
-    {
-        uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, MSBLSB(10, 6));
-        SetDefaults(SECTION_BIAS);
-        Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
-    }
-    //AFE
-    if((x0020val & 0x3) == 1)
-        Modify_SPI_Reg_bits(PD_TX_AFE1, 0);
-    else
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
 
     Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
 
@@ -1743,7 +1478,7 @@ uint8_t CalibrateRxExternalLoop()
     printf("Rx calibration started\n");
 #endif
     SaveChipState();
-    status = CalibrateRxSetupExternalLoop();
+    status = CalibrateRxSetup(1);
     if(status != 0)
         goto RxCalibrationEndStage;
     CalibrateRxDCAuto();
@@ -1871,7 +1606,7 @@ uint8_t CalibrateRx()
     printf("Rx calibration started\n");
 #endif
     SaveChipState();
-    status = CalibrateRxSetup();
+    status = CalibrateRxSetup(0);
     if(status != 0)
         goto RxCalibrationEndStage;
     CalibrateRxDCAuto();
