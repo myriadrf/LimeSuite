@@ -113,8 +113,7 @@ void main()  //main routine
 				P1 = MCU_IDLE | CalibrateTx(extLoopback);
 				break;
 			case 2: //CalibrateRx
-                CalibrateRx();
-                P1 = MCU_IDLE | CalibrateRxExternalLoop();
+                P1 = MCU_IDLE | CalibrateRx(extLoopback);
 				break;
 			case 3: 
 				UpdateFreq(0);

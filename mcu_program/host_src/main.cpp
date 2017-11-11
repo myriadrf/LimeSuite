@@ -139,7 +139,7 @@ void DCIQ()
                 //status = CalibrateTx();
                 status = CalibrateTx(true);
             else
-                status = CalibrateRx();
+                status = CalibrateRx(true);
         }
         auto t2 = chrono::high_resolution_clock::now();
         long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();

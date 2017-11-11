@@ -13,7 +13,7 @@ extern uint16_t GetRSSI();
 extern void LoadDC_REG_TX_IQ();
 extern uint8_t CalibrateTx(bool extLoopback);
 extern uint8_t CalibrateTxExternalLoop();
-extern uint8_t CalibrateRx();
+extern uint8_t CalibrateRx(bool extLoopback);
 extern uint8_t CalibrateRxExternalLoop();
 
 #ifdef __cplusplus

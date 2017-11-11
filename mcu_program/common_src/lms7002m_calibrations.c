@@ -1192,15 +1192,12 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     return 0;
 }
 
-uint8_t CalibrateRxExternalLoop()
+uint8_t CalibrateRx(bool extLoopback)
 {
 #ifdef __cplusplus
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     uint8_t status;
-    //uint16_t gcorri;
-    //uint16_t gcorrq;
-    //int16_t phaseOffset;
     const uint16_t x0020val = SPI_read(0x0020); //remember used channel
 
 #if VERBOSE
@@ -1233,7 +1230,7 @@ uint8_t CalibrateRxExternalLoop()
     printf("Rx calibration started\n");
 #endif
     SaveChipState();
-    status = CalibrateRxSetup(1);
+    status = CalibrateRxSetup(extLoopback);
     if(status != 0)
         goto RxCalibrationEndStage;
     CalibrateRxDCAuto();
@@ -1259,138 +1256,9 @@ uint8_t CalibrateRxExternalLoop()
         Modify_SPI_Reg_bits(PD_VCO, 0);
     }
     SPI_write(0x0020, x0020val);
-    CheckSaturationRx(bandwidthRF, 1);
+    CheckSaturationRx(bandwidthRF, extLoopback);
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
-    //Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
-    SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider + offsetNCO, 0);
-    CalibrateIQImbalance(LMS7002M_Rx);
-RxCalibrationEndStage:
-    if (status != 0)
-    {
-        RestoreChipState();
-        //printf("Rx calibration failed", LOG_WARNING);
-        return status;
-    }
-    {
-        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb);
-        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb);
-        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb);
-        RestoreChipState();
-        SPI_write(0x0020, x0020val);
-        //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
-        //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);
-        Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb, phaseOffset);
-    }
-    Modify_SPI_Reg_bits(DCMODE, 1);
-    if(x0020val & 0x1)
-        Modify_SPI_Reg_bits(PD_DCDAC_RXA, 0);
-    else
-        Modify_SPI_Reg_bits(PD_DCDAC_RXB, 0);
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(2, 0), 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(8, 8), 0); //DCLOOP_STOP
-    //Log("Rx calibration finished", LOG_INFO);
-#if VERBOSE
-    printf("#####Rx calibration RESULTS:###########################\n");
-    printf("Method: %s %s loopback\n",
-           "RSSI",
-           "INTERNAL");
-    printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-           (x0020val & 3) == 1 ? "A" : "B", rxFreq/1e6,
-           bandwidthRF/1e6, lnaName,
-           Get_SPI_Reg_bits(G_PGA_RBB),
-           Get_SPI_Reg_bits(G_LNA_RFE),
-           Get_SPI_Reg_bits(G_TIA_RFE));
-    {
-        /*int8_t dcIsigned = (dcoffi & 0x3f) * (dcoffi&0x40 ? -1 : 1);
-        int8_t dcQsigned = (dcoffq & 0x3f) * (dcoffq&0x40 ? -1 : 1);
-        int16_t phaseSigned = phaseOffset << 4;
-        phaseSigned >>= 4;
-        verbose_printf("   | DC  | GAIN | PHASE\n");
-        verbose_printf("---+-----+------+------\n");
-        verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
-        verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);*/
-    }
-    int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
-                       (std::chrono::high_resolution_clock::now()-beginTime).count();
-    printf("Duration: %i ms\n", duration);
-#endif //LMS_VERBOSE_OUTPUT
-    return 0;
-}
-
-uint8_t CalibrateRx()
-{
-#ifdef __cplusplus
-    auto beginTime = std::chrono::high_resolution_clock::now();
-#endif
-    uint8_t status;
-    //uint16_t gcorri;
-    //uint16_t gcorrq;
-    //int16_t phaseOffset;
-    const uint16_t x0020val = SPI_read(0x0020); //remember used channel
-
-#if VERBOSE
-    double rxFreq = GetFrequencySX(LMS7002M_Rx);
-    const char* lnaName;
-    switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
-    {
-    case 0:
-        lnaName = "none";
-        break;
-    case 1:
-        lnaName = "LNAH";
-        break;
-    case 2:
-        lnaName = "LNAW";
-        break;
-    case 3:
-        lnaName = "LNAL";
-        break;
-    default:
-        lnaName = "none";
-        break;
-    }
-    printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-           (x0020val & 0x3) == 1 ? "A" : "B", rxFreq/1e6,
-           bandwidthRF/1e6, lnaName,
-           Get_SPI_Reg_bits(G_PGA_RBB),
-           Get_SPI_Reg_bits(G_LNA_RFE),
-           Get_SPI_Reg_bits(G_TIA_RFE));
-    printf("Rx calibration started\n");
-#endif
-    SaveChipState();
-    status = CalibrateRxSetup(0);
-    if(status != 0)
-        goto RxCalibrationEndStage;
-    CalibrateRxDCAuto();
-    {
-        if ((uint8_t)Get_SPI_Reg_bits(SEL_PATH_RFE) == 2)
-        {
-            Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 0);
-            Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 0);
-        }
-        else
-        {
-            Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, 0);
-            Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, 0);
-        }
-    }
-
-    Modify_SPI_Reg_bits(MAC, 2);
-    if (Get_SPI_Reg_bits(PD_LOCH_T2RBUF) == false)
-    {
-        Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
-        //TDD MODE
-        Modify_SPI_Reg_bits(MAC, 1);
-        Modify_SPI_Reg_bits(PD_VCO, 0);
-    }
-    SPI_write(0x0020, x0020val);
-    CheckSaturationRx(bandwidthRF, 0);
-    Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
-    Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
-    //Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider + offsetNCO, 0);
     CalibrateIQImbalance(LMS7002M_Rx);
 RxCalibrationEndStage:
