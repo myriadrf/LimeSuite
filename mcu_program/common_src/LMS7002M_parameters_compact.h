@@ -6,6 +6,8 @@
 #ifndef LMS7002M_PARAMETERS_COMPACT_H
 #define LMS7002M_PARAMETERS_COMPACT_H
 
+#define MSB_LSB(m, l) (m << 4 | l)
+
 #include "typedefs.h"
 
 typedef struct

@@ -25,33 +25,36 @@ uint16_t pow2(const uint8_t power)
 ROM const uint16_t chipStateAddr[] = {0x0021, 0x002F, SECTION_AFE, SECTION_BIAS, SECTION_XBUF, SECTION_CGEN, SECTION_LDO, SECTION_BIST, SECTION_CDS, SECTION_TRF, SECTION_TBB, SECTION_RFE, SECTION_RBB, SECTION_TxTSP, SECTION_TxNCO, SECTION_RxTSP, SECTION_RxNCO, 0x500, 0x5A7, 0x5C0, 0x5C0};
 xdata uint16_t chipStateData[500];
 
-void SaveChipState()
+void SaveChipState(bool wr)
 {
     uint16_t dest=0;
     uint8_t i;
     uint16_t addr;
     uint16_t ch = SPI_read(0x0020);
-    for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
+    //for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
+    for(i = sizeof(chipStateAddr)/sizeof(uint16_t); i; i-=2)
     {
-        for(addr=chipStateAddr[i]; addr<=chipStateAddr[i+1]; ++addr)
+        for(addr=chipStateAddr[i-1]; addr<=chipStateAddr[i]; ++addr)
         {
-            chipStateData[dest] = SPI_read(addr);
+            if(wr)
+                SPI_write(addr, chipStateData[dest]);
+            else
+                chipStateData[dest] = SPI_read(addr);
             ++dest;
         }
     }
-    //sxr
-    SPI_write(0x0020, 0xFFFD);
-    for(addr=0x011C; addr<=0x0123; ++addr)
+    //sxr and sxt
+    for(i=0; i<2; ++i)
     {
-        chipStateData[dest] = SPI_read(addr);
-        ++dest;
-    }
-    //sxt
-    SPI_write(0x0020, 0xFFFE);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        chipStateData[dest] = SPI_read(addr);
-        ++dest;
+        SPI_write(0x0020, 0xFFFD+i);
+        for(addr=0x011C; addr<=0x0123; ++addr)
+        {
+            if(wr)
+                SPI_write(addr, chipStateData[dest]);
+            else
+                chipStateData[dest] = SPI_read(addr);
+            ++dest;
+        }
     }
     SPI_write(0x0020, ch);
 }
@@ -87,6 +90,7 @@ void RestoreChipState()
     SPI_write(0x0020, ch);
 }
 
+#ifdef __cplusplus
 #include <vector>
 void SetDefaults(uint16_t start, uint16_t end)
 {
@@ -118,7 +122,7 @@ void SetDefaults(uint16_t start, uint16_t end)
 
 #endif
 }
-
+#endif
 void SetDefaultsSX()
 {
     ROM const uint16_t SXAddr[]=    {0x011C, 0x011D, 0x011E, 0x011F, 0x0121, 0x0122, 0x0123};
@@ -267,12 +271,6 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     return 0;
 }
 
-typedef struct
-{
-    int16_t high;
-    int16_t low;
-} CSWInteval;
-
 static void Delay()
 {
 #ifdef __cplusplus
@@ -295,53 +293,62 @@ static uint8_t ReadCMP(const bool SX)
     return (uint8_t)Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, 13 << 4 | 12);
 }
 
-uint8_t TuneVCO(uint8_t module) // 0-cgen, 1-SXR, 2-SXT
+uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
 {
-    const bool SX = (module != VCO_CGEN);
-    const uint16_t addrCSW_VCO = SX ? 0x0121 : 0x008B;
-    const uint8_t msblsb = SX ? (10 << 4 | 3) : (8 << 4 | 1); //CSW msb << 4 | lsb index
-    CSWInteval cswSearch[2];
+    typedef struct
+    {
+        uint8_t high;
+        uint8_t low;
+    } CSWInteval;
 
-    if(SX) //set addresses to SX module
-        //assuming the active channels is already correct
-        Modify_SPI_Reg_bits(0x011C, 2 << 4 | 1, 0); //activate VCO and comparator
-    else //set addresses to CGEN module
-        Modify_SPI_Reg_bits(0x0086, 2 << 4 | 1, 0); //activate VCO and comparator
+    uint16_t addrCSW_VCO;
+    uint8_t msblsb;
+
+    CSWInteval cswSearch[2];
+    cswSearch[0].high = 0; //search interval lowest value
+    cswSearch[0].low = cswSearch[1].high  = 128;
+    cswSearch[1].low = 255;
+
+    if(SX)
+    {
+        addrCSW_VCO = 0x0121;
+        msblsb = MSB_LSB(10, 3); //CSW msb lsb
+        //assuming the active channel is already correct
+        Modify_SPI_Reg_bits(0x011C, MSB_LSB(2, 1), 0); //activate VCO and comparator
+    }
+    else //CGEN
+    {
+        addrCSW_VCO = 0x008B;
+        msblsb = MSB_LSB(8, 1); //CSW msb lsb
+        Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
+    }
 
     //check if lock is within VCO range
-    {
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
-        if(ReadCMP(SX) == 3) //VCO too high
-            return 4;
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 255);
-        if(ReadCMP(SX) == 0) //VCO too low
-            return 4;
-    }
+    Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
+    if(ReadCMP(SX) == 3) //VCO too high
+        return 4;
+    Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 255);
+    if(ReadCMP(SX) == 0) //VCO too low
+        return 4;
 
     //search intervals [0-127][128-255]
     {
-        uint16_t t;
+        uint8_t t;
         for(t=0; t<2; ++t)
         {
-            int8_t i;
-            cswSearch[t].low = 128*(t+1);
-            cswSearch[t].high = 128*t; //search interval lowest value
+            uint8_t mask;
             Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
 
-            for(i=6; i>=0; --i)
+            for(mask = (1 << 6); mask; mask >>= 1)
             {
-                uint8_t cmphl; //comparators
-                cswSearch[t].high |= (1 << i); //CSW_VCO<i>=1
+                cswSearch[t].high |= mask; // CSW_VCO<i>=1
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
-                cmphl = ReadCMP(SX);
-                if(cmphl == 0x03) // reduce CSW
-                    cswSearch[t].high &= (~(((uint16_t)1) << i)); //CSW_VCO<i>=0
-                if((cmphl == 0x02) && (cswSearch[t].high <= cswSearch[t].low))
-                    cswSearch[t].low = cswSearch[t].high;
+                if(ReadCMP(SX) == 0x03) // reduce CSW
+                    cswSearch[t].high ^= mask; // CSW_VCO<i>=0
             }
-            while(cswSearch[t].low <= cswSearch[t].high && cswSearch[t].low > t*128)
+            //allow underflow, cycle will be broken by not locking comparators
+            for(cswSearch[t].low = cswSearch[t].high; cswSearch[t].low; --cswSearch[t].low)
             {
-                --cswSearch[t].low;
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].low);
                 if(ReadCMP(SX) != 0x2)
                 {
@@ -351,28 +358,24 @@ uint8_t TuneVCO(uint8_t module) // 0-cgen, 1-SXR, 2-SXT
             }
         }
     }
-    //check if the intervals are joined
     {
-        int16_t cswHigh, cswLow;
+        uint8_t cswValue;
+        //check if the intervals are joined
         if(cswSearch[0].high == cswSearch[1].low-1)
-        {
-            cswHigh = cswSearch[1].high;
-            cswLow = cswSearch[0].low;
-        }
+            cswValue = cswSearch[0].low +((cswSearch[1].high-cswSearch[0].low) >> 1);
         else //compare which interval is wider
         {
-            const uint8_t intervalIndex = (cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low) ? 1 : 0;
-            cswHigh = cswSearch[intervalIndex].high;
-            cswLow = cswSearch[intervalIndex].low;
+            if(cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low)
+                cswValue = cswSearch[1].low +((cswSearch[1].high-cswSearch[1].low) >> 1);
+            else
+                cswValue = cswSearch[0].low +((cswSearch[0].high-cswSearch[0].low) >> 1);
         }
 
-        cswLow = cswLow+(cswHigh-cswLow)/2;
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswLow);
-        if(ReadCMP(SX) != 0x2)
-            //just in case high-low==1, if low fails, check if high locks
-            Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswLow+1);
+        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswValue);
+        if(ReadCMP(SX) != 0x2) //just in case high-low==1, if low fails, check if high locks
+            Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, ++cswValue);
     }
-    if(ReadCMP(SX) != 0x2)
-        return 0x20 + module + 1;
-    return 0;
+    if(ReadCMP(SX) == 0x2)
+        return 0;
+    return 0x20;
 }

@@ -841,7 +841,7 @@ uint8_t CalibrateTx(bool extLoopback)
 #endif
     uint8_t status;
     //BackupRegisters();
-    SaveChipState();
+    SaveChipState(0);
     status = CalibrateTxSetup(extLoopback);
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
@@ -859,7 +859,7 @@ TxCalibrationEnd:
 #if VERBOSE
         printf("Tx calibration failed");
 #endif
-        RestoreChipState();
+        SaveChipState(1);
         return status;
     }
     {
@@ -868,7 +868,7 @@ TxCalibrationEnd:
         uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
         uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
         uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb);
-        RestoreChipState();
+        SaveChipState(1);
         Modify_SPI_Reg_bits(MAC, ch);
         //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
         //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);
@@ -1229,7 +1229,7 @@ uint8_t CalibrateRx(bool extLoopback)
            Get_SPI_Reg_bits(G_TIA_RFE));
     printf("Rx calibration started\n");
 #endif
-    SaveChipState();
+    SaveChipState(0);
     status = CalibrateRxSetup(extLoopback);
     if(status != 0)
         goto RxCalibrationEndStage;
@@ -1264,7 +1264,7 @@ uint8_t CalibrateRx(bool extLoopback)
 RxCalibrationEndStage:
     if (status != 0)
     {
-        RestoreChipState();
+        SaveChipState(1);
         //printf("Rx calibration failed", LOG_WARNING);
         return status;
     }
@@ -1272,7 +1272,7 @@ RxCalibrationEndStage:
         uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb);
         uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb);
         uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb);
-        RestoreChipState();
+        SaveChipState(1);
         SPI_write(0x0020, x0020val);
         //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
         //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);

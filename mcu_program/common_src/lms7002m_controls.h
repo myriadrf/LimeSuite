@@ -11,8 +11,7 @@ extern "C"
 {
 #endif
 
-extern void SaveChipState();
-extern void RestoreChipState();
+extern void SaveChipState(bool wr);
 extern void SetDefaults(uint16_t start, uint16_t end);
 extern void SetDefaultsSX();
 
@@ -30,7 +29,7 @@ enum VCO_ID
     VCO_SXT
 };
 
-extern uint8_t TuneVCO(const uint8_t module); // 0-cgen, 1-SXR, 2-SXT
+extern uint8_t TuneVCO(bool SX); // 0-cgen, 1-SXR, 2-SXT
 extern uint16_t pow2(const uint8_t power);
 #ifdef __cplusplus
 }

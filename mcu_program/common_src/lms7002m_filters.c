@@ -313,7 +313,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     uint8_t status = 0;
     //calculate intermediate frequency
     const float_type rx_lpf_IF = rx_lpf_freq_RF/2;
-    SaveChipState();
+    SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
     if(status != 0)
@@ -478,7 +478,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     uint8_t pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
     uint8_t input_ctl_pga_rbb = Get_SPI_Reg_bits(INPUT_CTL_PGA_RBB);
 RxFilterSearchEndStage:
-    RestoreChipState();
+    SaveChipState(1);
     Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
     Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
     Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
@@ -673,7 +673,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
                         TxLPF_RF_LimitMidHigh/1e6);*/
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     }
-    SaveChipState();
+    SaveChipState(1);
     status = TuneTxFilterSetup(tx_lpf_IF);
     if(status != 0)
         return status;
@@ -833,7 +833,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         uint8_t rcal_lpflad_tbb = Get_SPI_Reg_bits(RCAL_LPFLAD_TBB);
         uint16_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
         uint16_t rcal_lpfh_tbb = Get_SPI_Reg_bits(RCAL_LPFH_TBB);
-        RestoreChipState();
+        SaveChipState(1);
         SPI_write(0x0020, ch);
         SPI_write(0x0106, 0x318C);
         SPI_write(0x0107, 0x318C);
