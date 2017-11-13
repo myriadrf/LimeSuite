@@ -250,7 +250,8 @@ int IConnection::ProgramRead(char *buffer, const size_t length, const int index,
 
 int IConnection::ProgramUpdate(const bool download, ProgrammingCallback callback)
 {
-    return 0;
+    ReportError(ENOTSUP, "ProgramUpdate not supported");
+    return -1;
 }
 
 /***********************************************************************
