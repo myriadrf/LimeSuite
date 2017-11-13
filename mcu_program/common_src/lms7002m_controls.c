@@ -141,7 +141,7 @@ float_type GetFrequencyCGEN()
 uint8_t SetFrequencyCGEN(float_type freq)
 {
     float_type dFvco;
-    uint8_t intpart;
+    float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
         uint8_t iHdiv;
