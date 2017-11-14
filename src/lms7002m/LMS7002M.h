@@ -235,6 +235,16 @@ public:
 
     //! Get the actual TX PAD gain in dB
     float_type GetTRFPAD_dB(void);
+    
+        /*!
+     * Set the TBB frontend gain in dB
+     * @param gain in dB relative to optimal gain (0 - optimal gain, >0 may cause saturation)
+     * @return 0 for success, else error
+     */
+    int SetTBBIAMP_dB(const float_type gain);
+
+    //! Get the TBB frontend gain in dB
+    float_type GetTBBIAMP_dB(void);
 
     /*!
      * Set the TX loopback PAD gain in dB
