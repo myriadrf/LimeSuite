@@ -1731,7 +1731,9 @@ int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lm
                 prog_mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
             else
             {
-                mcu->Reset_MCU();
+                auto lms = lms_list.at(lms_chip_id);
+                lms->SPI_write(0x0002, 0x0000);
+                lms->SPI_write(0x0002, 0x0003);
                 return 0;
             }
 

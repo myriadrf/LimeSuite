@@ -5,7 +5,6 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 	: pnlMiniLog_view( parent, id, pos, size, style )
 {
 	mDefaultStyle = txtMessageField->GetDefaultStyle();
-        mMessages = 0;
 	wxUpdateUIEvent::SetUpdateInterval(100);
 }
 
@@ -50,11 +49,8 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     txtMessageField->AppendText(line);
     txtMessageField->SetDefaultStyle(mDefaultStyle);
     txtMessageField->AppendText(_("\n"));
-    if (++mMessages > miniLogMessageLimit)
-    {
+    if (mAllMessages.size() > miniLogMessageLimit)
         txtMessageField->Remove(0,txtMessageField->GetLineLength(0)+1);
-        mMessages--;
-    }
 }
 
 void pnlMiniLog::OnUpdateGUI(wxUpdateUIEvent& event)

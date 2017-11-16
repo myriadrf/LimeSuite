@@ -28,7 +28,6 @@ class pnlMiniLog : public pnlMiniLog_view
             wxTextAttr mDefaultStyle;
             std::deque<wxString> mAllMessages;
             std::deque<std::pair<lime::LogLevel, wxString>> mMessageList;
-            int mMessages;
 };
 
 #endif // __pnlMiniLog__

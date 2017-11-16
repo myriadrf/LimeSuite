@@ -219,6 +219,8 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
     FT_SetPipeTimeout(mFTHandle, 0x02, 500);
     FT_SetPipeTimeout(mFTHandle, 0x82, 500);
+    FT_SetPipeTimeout(mFTHandle, mStreamRdEndPtAddr, 0);
+    FT_SetPipeTimeout(mFTHandle, mStreamWrEndPtAddr, 0);
 	isConnected = true;
 	return 0;
 #else
