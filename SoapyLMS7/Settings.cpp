@@ -399,14 +399,17 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const double 
     //This differs from the default gain distribution in that it
     //does not scale the gain to the negative range of the PGA.
     //This keep the PGA in mid-range unless extreme values are used.
-    double remaining(value);
+    double remaining(direction == SOAPY_SDR_RX ? value : value-52.0);
     for (const auto &name : this->listGains(direction, channel))
     {
-        std::cout << remaining << std::endl;
         this->setGain(direction, channel, name, remaining);
         remaining -= this->getGain(direction, channel, name);
-        std::cout << remaining << std::endl;
     }
+}
+
+double SoapyLMS7::getGain(const int direction, const size_t channel) const
+{
+    return SoapySDR::Device::getGain(direction, channel)-12.0;
 }
 
 void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string &name, const double value)
@@ -506,9 +509,7 @@ SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channe
         return SoapySDR::Range(-12.0, 19.0+12.0+30.0);
     }
     else
-        return SoapySDR::Range(-52.0-12.0, 12.0);
-    
-        //return SoapySDR::Device::getGainRange(direction, channel);
+        return SoapySDR::Range(-12.0, 52.0+12.0);
 }
 
 SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel, const std::string &name) const
