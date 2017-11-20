@@ -143,14 +143,9 @@ void fftviewer_frFFTviewer::StartStreaming()
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
-
-    if (mStreamRunning.load() == true)
-        return;
+    
     stopProcessing.store(false);
     updateGUI.store(true);
-
-    if (threadProcessing.joinable())
-        threadProcessing.join();
 
     const int fftSize = spinFFTsize->GetValue();
     fftFreqAxis.resize(fftSize);
@@ -178,6 +173,8 @@ void fftviewer_frFFTviewer::StartStreaming()
     spinCaptureCount->Disable();
     chkEnTx->Disable();
     lmsIndex = cmbStreamType->GetSelection()/2;
+    if (mStreamRunning.load() == true)
+        return;
     switch (cmbStreamType->GetSelection()%2)
     {
     case 0: //SISO
