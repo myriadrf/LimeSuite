@@ -18,8 +18,8 @@ public:
     int SetRxFrequency(size_t chan, double f_Hz) override;
     int SetTxFrequency(size_t chan, double f_Hz) override;
     lms_range_t GetRxPathBand(size_t path, size_t chan) const override;
-    std::vector<std::string> GetPathNames(bool dir_tx, size_t chan) const override;
-    int SetPath(bool tx, size_t chan, size_t path) override;
+    std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
+    int SetPath(bool tx, unsigned chan, unsigned path) override;
 private:
 };
 

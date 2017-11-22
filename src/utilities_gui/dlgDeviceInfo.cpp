@@ -26,17 +26,7 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblHardwareCtr->SetLabel(info->hardwareVersion);
         lblProtocolCtr->SetLabel(info->protocolVersion);
         lblGatewareCtr->SetLabel(info->gatewareVersion);
-        lblGatewareRevCtr->SetLabel(info->gatewareRevision);
-        lblGatewareTargetCtr->SetLabel(info->gatewareTargetBoard);
 
-        lblDeviceData->SetLabel(info->deviceName);
-        lblExpansionData->SetLabel(info->expansionName);
-        lblFirmwareData->SetLabel(info->firmwareVersion);
-        lblHardwareData->SetLabel(info->hardwareVersion);
-        lblProtocolData->SetLabel(info->protocolVersion);
-        lblGatewareData->SetLabel(info->gatewareVersion);
-        lblGatewareRevData->SetLabel(info->gatewareRevision);
-        lblGatewareTargetData->SetLabel(info->gatewareTargetBoard);
     }
     else
     {
@@ -46,18 +36,5 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblHardwareCtr->SetLabel(_("???"));
         lblProtocolCtr->SetLabel(_("???"));
         lblGatewareCtr->SetLabel(_("???"));
-        lblGatewareRevCtr->SetLabel(_("???"));
-        lblGatewareTargetCtr->SetLabel(_("???"));
-
-        lblDeviceData->SetLabel(_("???"));
-        lblExpansionData->SetLabel(_("???"));
-        lblFirmwareData->SetLabel(_("???"));
-        lblHardwareData->SetLabel(_("???"));
-        lblProtocolData->SetLabel(_("???"));
-        lblGatewareData->SetLabel(_("???"));
-        lblGatewareRevData->SetLabel(_("???"));
-        lblGatewareTargetData->SetLabel(_("???"));
     }
-
-
 }

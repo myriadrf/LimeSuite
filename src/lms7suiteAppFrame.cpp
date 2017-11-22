@@ -265,7 +265,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(info->deviceName);
         LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
         double refClk = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision, refClk/1e6));
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
         auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();

@@ -202,10 +202,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    if (dir_tx)
-        *range = lms->GetRxRateRange();
-    else
-        *range = lms->GetTxRateRange();
+    *range = lms->GetRateRange(dir_tx);
     return LMS_SUCCESS;
 }
 

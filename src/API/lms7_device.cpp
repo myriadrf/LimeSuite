@@ -722,7 +722,7 @@ double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz)
     return interface_Hz;
 }
 
-lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
+lms_range_t LMS7_Device::GetRateRange(bool /*dir*/, unsigned /*chan*/) const
 {
   lms_range_t ret;
   ret.max = 80e6;
@@ -731,60 +731,33 @@ lms_range_t LMS7_Device::GetRxRateRange(const size_t chan) const
   return ret;
 }
 
-lms_range_t LMS7_Device::GetTxRateRange(size_t chan) const
-{
-  lms_range_t ret;
-  ret.max = 80e6;
-  ret.min = 100e3;
-  ret.step = 1;
-  return ret;
-}
-
-std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, size_t chan) const
+std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, unsigned /*chan*/) const
 {
     if (dir_tx)
-        return {"NONE", "TX_PATH1", "TX_PATH2"};
+        return {"NONE", "BAND1", "BAND2"};
     else
-        return {"NONE", "LNA_H", "LNA_L", "LNA_W"};
+        return {"NONE", "LNAH", "LNAL", "LNAW", "LB1", "LB2"};
 }
 
-int LMS7_Device::SetPath(bool tx, size_t chan, size_t path)
+int LMS7_Device::SetPath(bool tx, unsigned chan, unsigned path)
 {
-    lime::LMS7002M* lms = lms_list[chan / 2];
+    lime::LMS7002M* lms = lms_list.at(chan/2);
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
         return -1;
-    if (tx==false)
-    {
-        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path,true)!=0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), path != 2, true) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), path != 3, true) != 0))
-            return -1;
-    }
-    else
-    {
-        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), path == LMS_PATH_TX1, true) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), path == LMS_PATH_TX2, true) != 0))
-            return -1;
-    }
-    return 0;
+    
+    if (tx)
+        return lms->SetBandTRF(path);
+    return lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
 }
 
-size_t LMS7_Device::GetPath(bool tx, size_t chan)
+int LMS7_Device::GetPath(bool tx, unsigned chan)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
         return -1;
     if (tx)
-    {
-        if (lms->Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), true))
-            return LMS_PATH_TX2;
-        else if (lms->Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), true))
-            return LMS_PATH_TX1;
-        else
-            return 0;
-    }
-
-    return lms->Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), true);
+        return lms->GetBandTRF();
+    return lms->GetPathRFE();
 }
 
 lms_range_t LMS7_Device::GetRxPathBand(size_t path, size_t chan) const
@@ -1775,26 +1748,27 @@ int LMS7_Device::DACRead()
     return ret >=0 ? dval : -1;
 }
 
-float_type LMS7_Device::GetClockFreq(size_t clk_id)
+float_type LMS7_Device::GetClockFreq(size_t clk_id, int channel)
 {
+    int lmsInd = channel == -1 ? lms_chip_id : channel/2;
     switch (clk_id)
     {
     case LMS_CLOCK_REF:
-        return lms_list.at(lms_chip_id)->GetReferenceClk_SX(lime::LMS7002M::Rx);
+        return lms_list.at(lmsInd)->GetReferenceClk_SX(lime::LMS7002M::Rx);
     case LMS_CLOCK_SXR:
-        return lms_list.at(lms_chip_id)->GetFrequencySX(false);
+        return lms_list.at(lmsInd)->GetFrequencySX(false);
 
     case LMS_CLOCK_SXT:
-        return lms_list.at(lms_chip_id)->GetFrequencySX(true);
+        return lms_list.at(lmsInd)->GetFrequencySX(true);
 
     case LMS_CLOCK_CGEN:
-        return lms_list.at(lms_chip_id)->GetFrequencyCGEN();
+        return lms_list.at(lmsInd)->GetFrequencyCGEN();
 
     case LMS_CLOCK_RXTSP:
-        return lms_list.at(lms_chip_id)->GetReferenceClk_TSP(false);
+        return lms_list.at(lmsInd)->GetReferenceClk_TSP(false);
 
     case LMS_CLOCK_TXTSP:
-        return lms_list.at(lms_chip_id)->GetReferenceClk_TSP(true);
+        return lms_list.at(lmsInd)->GetReferenceClk_TSP(true);
     case LMS_CLOCK_EXTREF:
         lime::ReportError(ENOTSUP, "Reading external reference clock is not supported");
         return -1;
@@ -1804,9 +1778,10 @@ float_type LMS7_Device::GetClockFreq(size_t clk_id)
     }
 }
 
-int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
+int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq, int channel)
 {
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
+    int lmsInd = channel == -1 ? lms_chip_id : channel/2;
+    lime::LMS7002M* lms = lms_list[lmsInd];
     switch (clk_id)
     {
     case LMS_CLOCK_REF:
@@ -1854,7 +1829,7 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
         float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
-        return conn->UpdateExternalDataRate(lms_chip_id, fpgaTxPLL / 2, fpgaRxPLL / 2);
+        return conn->UpdateExternalDataRate(lmsInd, fpgaTxPLL / 2, fpgaRxPLL / 2);
     }
     case LMS_CLOCK_RXTSP:
         lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
@@ -1872,7 +1847,7 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
 
             lime::ADF4002 module;
             module.SetDefaults();
-            double fvco = lms_list.at(lms_chip_id)->GetReferenceClk_SX(lime::LMS7002M::Rx);
+            double fvco = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
             int dummy;
             module.SetFrefFvco(freq/1e6, fvco/1e6, dummy, dummy);
             unsigned char data[12];
@@ -1892,15 +1867,13 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq)
 lms_dev_info_t* LMS7_Device::GetInfo()
 {
     memset(&devInfo,0,sizeof(lms_dev_info_t));
-    auto info = this->connection->GetDeviceInfo();
+    auto info = connection->GetDeviceInfo();
     strncpy(devInfo.deviceName,info.deviceName.c_str(),sizeof(devInfo.deviceName)-1);
     strncpy(devInfo.expansionName,info.expansionName.c_str(),sizeof(devInfo.expansionName)-1);
     strncpy(devInfo.firmwareVersion,info.firmwareVersion.c_str(),sizeof(devInfo.firmwareVersion)-1);
     strncpy(devInfo.hardwareVersion,info.hardwareVersion.c_str(),sizeof(devInfo.hardwareVersion)-1);
     strncpy(devInfo.protocolVersion,info.protocolVersion.c_str(),sizeof(devInfo.protocolVersion)-1);
-    strncpy(devInfo.gatewareVersion,info.gatewareVersion.c_str(),sizeof(devInfo.gatewareVersion)-1);
-    strncpy(devInfo.gatewareRevision,info.gatewareRevision.c_str(),sizeof(devInfo.gatewareRevision)-1);
-    strncpy(devInfo.gatewareTargetBoard,info.gatewareTargetBoard.c_str(),sizeof(devInfo.gatewareTargetBoard)-1);
+    snprintf(devInfo.gatewareVersion,sizeof(devInfo.gatewareVersion)-1,"%s.%s", info.gatewareVersion.c_str(),info.gatewareRevision.c_str());
     info.boardSerialNumber = info.boardSerialNumber;
     devInfo.boardSerialNumber = info.boardSerialNumber;
     return &devInfo;

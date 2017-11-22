@@ -252,15 +252,6 @@ public:
     virtual int DeviceReset(int ind=0);
 
     /*!
-     * Called by the LMS7002M driver after potential band-selection changes.
-     * Implementations may have additional external bands to switch via GPIO.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     * @param trfBand the transmit frontend band selection: 1 or 2
-     * @param rfePath the receive frontend path selection: LMS7002M::PathRFE
-     */
-    virtual void UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath);
-
-    /*!
      * Called by the LMS7002M driver after TSP/DIQ rate changes.
      * Implementations may use these rate updates to configure
      * internal parameters or perhaps PLL circuitry in a FPGA.

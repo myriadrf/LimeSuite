@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -93,6 +93,14 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	fgSizer4->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	txtMessageField = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH2 );
+	#ifdef __WXGTK__
+	if ( !txtMessageField->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtMessageField->SetMaxLength( 100 );
+	}
+	#else
+	txtMessageField->SetMaxLength( 100 );
+	#endif
 	txtMessageField->SetMinSize( wxSize( 300,48 ) );
 	
 	fgSizer4->Add( txtMessageField, 0, wxEXPAND, 5 );
@@ -152,6 +160,14 @@ dlgFullMessageLog_view::dlgFullMessageLog_view( wxWindow* parent, wxWindowID id,
 	fgSizer19->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	txtMessageField = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH2 );
+	#ifdef __WXGTK__
+	if ( !txtMessageField->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtMessageField->SetMaxLength( 100 );
+	}
+	#else
+	txtMessageField->SetMaxLength( 100 );
+	#endif
 	txtMessageField->SetMinSize( wxSize( 300,100 ) );
 	
 	fgSizer19->Add( txtMessageField, 1, wxEXPAND, 5 );
@@ -177,172 +193,72 @@ dlgDeviceInfo_view::dlgDeviceInfo_view( wxWindow* parent, wxWindowID id, const w
 	fgSizer12->SetFlexibleDirection( wxBOTH );
 	fgSizer12->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	btnGetInfo = new wxButton( this, wxID_ANY, wxT("GET INFO"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer12->Add( btnGetInfo, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
-	
 	wxFlexGridSizer* fgSizer7;
 	fgSizer7 = new wxFlexGridSizer( 0, 2, 5, 5 );
 	fgSizer7->SetFlexibleDirection( wxBOTH );
 	fgSizer7->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	wxStaticBoxSizer* sbSizerControlPort;
-	sbSizerControlPort = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Control port") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer8;
 	fgSizer8 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer8->SetFlexibleDirection( wxBOTH );
 	fgSizer8->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText6 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Device:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText6 = new wxStaticText( this, wxID_ANY, wxT("Device:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText6->Wrap( -1 );
 	fgSizer8->Add( m_staticText6, 0, wxALL, 5 );
 	
-	lblDeviceCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	lblDeviceCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
 	lblDeviceCtr->Wrap( -1 );
 	fgSizer8->Add( lblDeviceCtr, 0, wxALL, 5 );
 	
-	m_staticText8 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Expansion:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText8 = new wxStaticText( this, wxID_ANY, wxT("Expansion:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText8->Wrap( -1 );
 	fgSizer8->Add( m_staticText8, 0, wxALL, 5 );
 	
-	lblExpansionCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblExpansionCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblExpansionCtr->Wrap( -1 );
 	fgSizer8->Add( lblExpansionCtr, 0, wxALL, 5 );
 	
-	m_staticText10 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Firmware:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText10 = new wxStaticText( this, wxID_ANY, wxT("Firmware:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText10->Wrap( -1 );
 	fgSizer8->Add( m_staticText10, 0, wxALL, 5 );
 	
-	lblFirmwareCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblFirmwareCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblFirmwareCtr->Wrap( -1 );
 	fgSizer8->Add( lblFirmwareCtr, 0, wxALL, 5 );
 	
-	m_staticText12 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Hardware:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText12 = new wxStaticText( this, wxID_ANY, wxT("Hardware:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText12->Wrap( -1 );
 	fgSizer8->Add( m_staticText12, 0, wxALL, 5 );
 	
-	lblHardwareCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblHardwareCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblHardwareCtr->Wrap( -1 );
 	fgSizer8->Add( lblHardwareCtr, 0, wxALL, 5 );
 	
-	m_staticText14 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Protocol:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText14 = new wxStaticText( this, wxID_ANY, wxT("Protocol:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText14->Wrap( -1 );
 	fgSizer8->Add( m_staticText14, 0, wxALL, 5 );
 	
-	lblProtocolCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblProtocolCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblProtocolCtr->Wrap( -1 );
 	fgSizer8->Add( lblProtocolCtr, 0, wxALL, 5 );
 	
-	m_staticText41 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText41 = new wxStaticText( this, wxID_ANY, wxT("Gateware:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText41->Wrap( -1 );
 	fgSizer8->Add( m_staticText41, 0, wxALL, 5 );
 	
-	lblGatewareCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblGatewareCtr = new wxStaticText( this, wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblGatewareCtr->Wrap( -1 );
 	fgSizer8->Add( lblGatewareCtr, 0, wxALL, 5 );
 	
-	m_staticText43 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware rev:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText43->Wrap( -1 );
-	fgSizer8->Add( m_staticText43, 0, wxALL, 5 );
 	
-	lblGatewareRevCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblGatewareRevCtr->Wrap( -1 );
-	fgSizer8->Add( lblGatewareRevCtr, 0, wxALL, 5 );
-	
-	m_staticText45 = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("Gateware target:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText45->Wrap( -1 );
-	fgSizer8->Add( m_staticText45, 0, wxALL, 5 );
-	
-	lblGatewareTargetCtr = new wxStaticText( sbSizerControlPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblGatewareTargetCtr->Wrap( -1 );
-	fgSizer8->Add( lblGatewareTargetCtr, 0, wxALL, 5 );
-	
-	
-	sbSizerControlPort->Add( fgSizer8, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer7->Add( sbSizerControlPort, 1, wxEXPAND, 5 );
-	
-	wxStaticBoxSizer* sbSizerDataPort;
-	sbSizerDataPort = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Data port") ), wxVERTICAL );
-	
-	wxFlexGridSizer* fgSizer81;
-	fgSizer81 = new wxFlexGridSizer( 0, 2, 0, 0 );
-	fgSizer81->SetFlexibleDirection( wxBOTH );
-	fgSizer81->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	m_staticText61 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Device:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText61->Wrap( -1 );
-	fgSizer81->Add( m_staticText61, 0, wxALL, 5 );
-	
-	lblDeviceData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
-	lblDeviceData->Wrap( -1 );
-	fgSizer81->Add( lblDeviceData, 0, wxALL, 5 );
-	
-	m_staticText81 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Expansion:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText81->Wrap( -1 );
-	fgSizer81->Add( m_staticText81, 0, wxALL, 5 );
-	
-	lblExpansionData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblExpansionData->Wrap( -1 );
-	fgSizer81->Add( lblExpansionData, 0, wxALL, 5 );
-	
-	m_staticText101 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Firmware:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText101->Wrap( -1 );
-	fgSizer81->Add( m_staticText101, 0, wxALL, 5 );
-	
-	lblFirmwareData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblFirmwareData->Wrap( -1 );
-	fgSizer81->Add( lblFirmwareData, 0, wxALL, 5 );
-	
-	m_staticText121 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Hardware:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText121->Wrap( -1 );
-	fgSizer81->Add( m_staticText121, 0, wxALL, 5 );
-	
-	lblHardwareData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblHardwareData->Wrap( -1 );
-	fgSizer81->Add( lblHardwareData, 0, wxALL, 5 );
-	
-	m_staticText141 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Protocol:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText141->Wrap( -1 );
-	fgSizer81->Add( m_staticText141, 0, wxALL, 5 );
-	
-	lblProtocolData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblProtocolData->Wrap( -1 );
-	fgSizer81->Add( lblProtocolData, 0, wxALL, 5 );
-	
-	m_staticText47 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText47->Wrap( -1 );
-	fgSizer81->Add( m_staticText47, 0, wxALL, 5 );
-	
-	lblGatewareData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblGatewareData->Wrap( -1 );
-	fgSizer81->Add( lblGatewareData, 0, wxALL, 5 );
-	
-	m_staticText49 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware rev:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText49->Wrap( -1 );
-	fgSizer81->Add( m_staticText49, 0, wxALL, 5 );
-	
-	lblGatewareRevData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblGatewareRevData->Wrap( -1 );
-	fgSizer81->Add( lblGatewareRevData, 0, wxALL, 5 );
-	
-	m_staticText51 = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("Gateware target:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText51->Wrap( -1 );
-	fgSizer81->Add( m_staticText51, 0, wxALL, 5 );
-	
-	lblGatewareTargetData = new wxStaticText( sbSizerDataPort->GetStaticBox(), wxID_ANY, wxT("?"), wxDefaultPosition, wxDefaultSize, 0 );
-	lblGatewareTargetData->Wrap( -1 );
-	fgSizer81->Add( lblGatewareTargetData, 0, wxALL, 5 );
-	
-	
-	sbSizerDataPort->Add( fgSizer81, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer7->Add( sbSizerDataPort, 1, wxEXPAND, 5 );
+	fgSizer7->Add( fgSizer8, 1, wxEXPAND, 5 );
 	
 	
 	fgSizer12->Add( fgSizer7, 1, wxEXPAND, 5 );
+	
+	btnGetInfo = new wxButton( this, wxID_ANY, wxT("GET INFO"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer12->Add( btnGetInfo, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
 	this->SetSizer( fgSizer12 );
@@ -385,7 +301,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer306->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSwriteAddr = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtLMSwriteAddr->SetMaxLength( 0 ); 
 	txtLMSwriteAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer306->Add( txtLMSwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -395,7 +310,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer306->Add( ID_STATICTEXT9, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSwriteValue = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtLMSwriteValue->SetMaxLength( 0 ); 
 	txtLMSwriteValue->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer306->Add( txtLMSwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -431,7 +345,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer307->Add( ID_STATICTEXT2, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSreadAddr = new wxTextCtrl( sbSizer161->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtLMSreadAddr->SetMaxLength( 0 ); 
 	txtLMSreadAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer307->Add( txtLMSreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -516,7 +429,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer320->Add( ID_STATICTEXT15, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardwriteAddr = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardwriteAddr->SetMaxLength( 0 ); 
 	txtBoardwriteAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer320->Add( txtBoardwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -526,7 +438,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer320->Add( ID_STATICTEXT16, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardwriteValue = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardwriteValue->SetMaxLength( 0 ); 
 	txtBoardwriteValue->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer320->Add( txtBoardwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -562,7 +473,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer321->Add( ID_STATICTEXT19, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardreadAddr = new wxTextCtrl( sbSizer170->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardreadAddr->SetMaxLength( 0 ); 
 	txtBoardreadAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer321->Add( txtBoardreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );

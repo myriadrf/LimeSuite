@@ -110,7 +110,7 @@ int LMS7_LimeSDR_mini::SetTxFrequency(size_t chan, double f_Hz)
     return 0;
 }
 
-std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, size_t chan) const
+std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned chan) const
 {
     if (dir_tx)
         return {"NONE", "TX_PATH1", "TX_PATH2"};
@@ -118,7 +118,7 @@ std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, size_t cha
         return {"NONE", "LNA_H", "LNA_L(NC)", "LNA_W"};
 }
 
-int LMS7_LimeSDR_mini::SetPath(bool tx, size_t chan, size_t path)
+int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
 {
     lime::LMS7002M* lms = lms_list[0];
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)

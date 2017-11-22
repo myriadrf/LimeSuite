@@ -262,11 +262,11 @@ public:
     enum PathRFE
     {
         PATH_RFE_NONE = 0,
-        PATH_RFE_LNAH = int('H'),
-        PATH_RFE_LNAL = int('L'),
-        PATH_RFE_LNAW = int('W'),
-        PATH_RFE_LB1 = 1,
-        PATH_RFE_LB2 = 2,
+        PATH_RFE_LNAH,
+        PATH_RFE_LNAL,
+        PATH_RFE_LNAW,
+        PATH_RFE_LB1,
+        PATH_RFE_LB2,
     };
 
     //! Set the RFE input path.
@@ -286,14 +286,6 @@ public:
      * @return the band 1 or 2
      */
     int GetBandTRF(void);
-
-    /*!
-     * Update the external band selection by calling
-     * UpdateExternalBandSelect() on the connection object.
-     * This is called automatically by the LMS7002M driver,
-     * but can also be called manually by the user.
-     */
-    void UpdateExternalBandSelect(void);
 
     ///@}
 

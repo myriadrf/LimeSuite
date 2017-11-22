@@ -1259,10 +1259,8 @@ typedef struct
     char firmwareVersion[16];       ///<The firmware version as a string
     char hardwareVersion[16];       ///<The hardware version as a string
     char protocolVersion[16];       ///<The protocol version as a string
-    uint32_t boardSerialNumber;     ///<A unique board serial number
+    uint64_t boardSerialNumber;     ///<A unique board serial number
     char gatewareVersion[16];       ///<Gateware version as a string
-    char gatewareRevision[16];      ///<Gateware revision as a string
-    char gatewareTargetBoard[32];   ///<Which board should use this gateware
 }lms_dev_info_t;
 
 /**

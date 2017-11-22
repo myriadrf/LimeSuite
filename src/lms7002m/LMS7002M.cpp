@@ -974,48 +974,34 @@ float_type LMS7002M::GetTBBIAMP_dB(void)
 
 int LMS7002M::SetPathRFE(PathRFE path)
 {
-    int sel_path_rfe = 0;
+    int sel_path_rfe;
+    int pd_lb1 = 1;
+    int pd_lb2 = 1;
     switch (path)
     {
-    case PATH_RFE_NONE: sel_path_rfe = 0; break;
-    case PATH_RFE_LNAH: sel_path_rfe = 1; break;
-    case PATH_RFE_LNAL: sel_path_rfe = 2; break;
-    case PATH_RFE_LNAW: sel_path_rfe = 3; break;
-    case PATH_RFE_LB1: sel_path_rfe = 3; break;
-    case PATH_RFE_LB2: sel_path_rfe = 2; break;
+        case PATH_RFE_LNAH: sel_path_rfe = 1; break;
+        case PATH_RFE_LB2: pd_lb2 = 0; 
+        case PATH_RFE_LNAL: sel_path_rfe = 2; break;
+        case PATH_RFE_LB1: pd_lb1 = 0;
+        case PATH_RFE_LNAW: sel_path_rfe = 3; break;
+        default: sel_path_rfe = 0; break;
     }
+    
+    Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), sel_path_rfe);
+    
+    int pd_lna_rfe = (path == PATH_RFE_LB2 || path == PATH_RFE_LB1 || sel_path_rfe == 0) ? 1 : 0;  
+    Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), pd_lna_rfe);
 
-    int pd_lna_rfe = 1;
-    switch (path)
-    {
-    case PATH_RFE_LNAH:
-    case PATH_RFE_LNAL:
-    case PATH_RFE_LNAW: pd_lna_rfe = 0; break;
-    default: break;
-    }
-
-    int pd_rloopb_1_rfe = (path == PATH_RFE_LB1)?0:1;
-    int pd_rloopb_2_rfe = (path == PATH_RFE_LB2)?0:1;
-    int en_inshsw_l_rfe = (path == PATH_RFE_LNAL)?0:1;
-    int en_inshsw_w_rfe = (path == PATH_RFE_LNAW)?0:1;
-    int en_inshsw_lb1_rfe = (path == PATH_RFE_LB1)?0:1;
-    int en_inshsw_lb2_rfe = (path == PATH_RFE_LB2)?0:1;
-
-    this->Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), pd_lna_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), pd_rloopb_1_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), pd_rloopb_2_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), en_inshsw_lb1_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), en_inshsw_lb2_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), en_inshsw_l_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), en_inshsw_w_rfe);
-    this->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), sel_path_rfe);
+    Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), pd_lb1);
+    Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), pd_lb2);
+    Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), pd_lb1);
+    Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), pd_lb2);
+    Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), (path == PATH_RFE_LNAL)?0:1);
+    Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), (path == PATH_RFE_LNAW)?0:1);
 
     //enable/disable the loopback path
     const bool loopback = (path == PATH_RFE_LB1) or (path == PATH_RFE_LB2);
-    this->Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), loopback?1:0);
-
-    //update external band-selection to match
-    this->UpdateExternalBandSelect();
+    Modify_SPI_Reg_bits(LMS7param(EN_LOOPB_TXPAD_TRF), loopback?1:0);
 
     return 0;
 }
@@ -1035,9 +1021,6 @@ int LMS7002M::SetBandTRF(const int band)
     this->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), (band==1)?1:0);
     this->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), (band==2)?1:0);
 
-    //update external band-selection to match
-    this->UpdateExternalBandSelect();
-
     return 0;
 }
 
@@ -1048,14 +1031,6 @@ int LMS7002M::GetBandTRF(void)
     return 0;
 }
 
-void LMS7002M::UpdateExternalBandSelect(void)
-{
-    if(controlPort)
-    return controlPort->UpdateExternalBandSelect(
-        this->GetActiveChannelIndex(),
-        this->GetBandTRF(),
-        int(this->GetPathRFE()));
-}
 
 int LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 {
@@ -2310,9 +2285,6 @@ int LMS7002M::UploadAll()
         return status;
     this->SetActiveChannel(ch); //restore last used channel
 
-    //update external band-selection to match
-    this->UpdateExternalBandSelect();
-
     return 0;
 }
 
@@ -2350,9 +2322,6 @@ int LMS7002M::DownloadAll()
         mRegistersMap->SetValue(1, addrToRead[i], dataReceived[i]);
 
     this->SetActiveChannel(ch); //retore previously used channel
-
-    //update external band-selection to match
-    this->UpdateExternalBandSelect();
 
     return 0;
 }
@@ -2646,8 +2615,6 @@ int LMS7002M::CopyChannelRegisters(const Channel src, const Channel dest, const 
     if(controlPort)
         UploadAll();
     this->SetActiveChannel(ch);
-    //update external band-selection to match
-    this->UpdateExternalBandSelect();
     return 0;
 }
 

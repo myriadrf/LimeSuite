@@ -105,11 +105,6 @@ int IConnection::DeviceReset(int ind)
     return -1;
 }
 
-void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
-{
-    return;
-}
-
 int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
 {
     return 0;
