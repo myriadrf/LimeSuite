@@ -897,7 +897,7 @@ float_type LMS7002M::GetRFETIA_dB(void)
 
 int LMS7002M::SetTRFPAD_dB(const float_type value)
 {
-    const double pmax = 0;
+    const double pmax = 52;
     int loss_int = (pmax-value)+0.5;
 
     //different scaling realm
@@ -915,7 +915,7 @@ int LMS7002M::SetTRFPAD_dB(const float_type value)
 
 float_type LMS7002M::GetTRFPAD_dB(void)
 {
-    const double pmax = 0;
+    const double pmax = 52;
     auto loss_int = this->Get_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF));
     if (loss_int > 10) return pmax-10-2*(loss_int-10);
     return pmax-loss_int;
