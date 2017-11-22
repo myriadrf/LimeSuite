@@ -13,7 +13,7 @@ class LMS7_qLimeSDR : public LMS7_Device
 {
 public:
     LMS7_qLimeSDR(LMS7_Device *obj = nullptr);
-    size_t GetNumChannels(const bool tx = false) const override;
+    unsigned GetNumChannels(const bool tx = false) const override;
     double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL) override;
     int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0) override;
 protected:  

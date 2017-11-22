@@ -13,9 +13,11 @@
 
 static const double DEFAULT_CLOCK_RATE = 80e6;
 
+class LIME_API LMS7_Device;
+
 namespace lime
 {
-    class LMS7002M;
+   
     struct StreamMetadata;
 }
 
@@ -299,11 +301,9 @@ public:
 
 private:
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
-    lime::IConnection *_conn;
     const std::string _moduleName;
 
-    lime::LMS7002M *getRFIC(const size_t channel) const;
-    std::vector<lime::LMS7002M *> _rfics;
+    LMS7_Device * lms7Device;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
 };

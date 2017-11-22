@@ -34,7 +34,8 @@ public:
     virtual int Init();
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
     int Reset();
-    virtual size_t GetNumChannels(const bool tx=false) const;
+    virtual unsigned GetNumChannels(const bool tx=false) const;
+    virtual unsigned GetLMSCnt() const;
     virtual int SetRate(double f_MHz, int oversample);
     virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
     virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
@@ -73,17 +74,17 @@ public:
     int ProgramUpdate(const bool download, lime::IConnection::ProgrammingCallback callback);
     int DACWrite(uint16_t val);
     int DACRead();
-    int GetClockFreq(size_t clk_id, float_type *freq);
+    float_type GetClockFreq(size_t clk_id);
     int SetClockFreq(size_t clk_id, float_type freq);
     lms_dev_info_t* GetInfo();
     int Synchronize(bool toChip);
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
     int EnableCalibCache(bool enable);
-    int GetChipTemperature(size_t ind, float_type *temp);
-    int LoadConfig(const char *filename);
-    int SaveConfig(const char *filename);
-    int ReadLMSReg(uint16_t address, uint16_t *val);
-    int WriteLMSReg(uint16_t address, uint16_t val);
+    double GetChipTemperature(size_t ind = 0);
+    int LoadConfig(const char *filename, int ind = -1);
+    int SaveConfig(const char *filename, int ind = -1);
+    int ReadLMSReg(uint16_t address, uint16_t *val, int ind = -1);
+    int WriteLMSReg(uint16_t address, uint16_t val, int ind = -1);
     int ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip = false);
     int WriteParam(struct LMS7Parameter param, uint16_t val);
     int SetActiveChip(unsigned ind);
@@ -94,6 +95,7 @@ public:
 
     int MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil);
     int MCU_AGCStop();
+    
 protected:
     const double maxTxGain = 60.0;
     lms_dev_info_t devInfo;
@@ -107,7 +109,6 @@ protected:
     int ConfigureGFIR(bool enabled,bool tx, float_type bandwidth,size_t ch);
     void _Initialize(lime::IConnection* conn);
     unsigned lms_chip_id;
-    virtual unsigned GetLMSCnt() const;
 };
 
 #endif	/* LMS7_DEVICE_H */

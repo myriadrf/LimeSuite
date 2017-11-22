@@ -59,7 +59,7 @@ int LMS7_LimeSDR_mini::Init()
     return 0;
 }
 
-size_t LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
+unsigned LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
 {
     return 1;
 };

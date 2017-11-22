@@ -12,7 +12,7 @@ LMS7_qLimeSDR::LMS7_qLimeSDR(LMS7_Device *obj) : LMS7_Device(obj)
     adcRate = 20e6;
 }
 
-size_t LMS7_qLimeSDR::GetNumChannels(const bool tx) const
+unsigned LMS7_qLimeSDR::GetNumChannels(const bool tx) const
 {
     return 5;
 };

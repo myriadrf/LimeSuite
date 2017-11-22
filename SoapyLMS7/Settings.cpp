@@ -6,11 +6,11 @@
 
 #include "SoapyLMS7.h"
 #include "ErrorReporting.h"
+#include "lms7_device.h"
 #include <IConnection.h>
 #include <stdexcept>
 #include <iostream>
 #include <memory>
-#include <LMS7002M.h>
 #include <LMS7002M_RegistersMap.h>
 #include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
@@ -22,10 +22,8 @@ using namespace lime;
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
 // arbitrary upper limit for CGEN automatic tune
-#define MIN_CGEN_RATE 6.4e6
+#define MIN_CGEN_RATE 4e6
 #define MAX_CGEN_RATE 640e6
-#define CGEN_DEADZONE_LO 450e6
-#define CGEN_DEADZONE_HI 491.5e6
 
 //reasonable limits when advertising the rate
 #define MIN_SAMP_RATE 1e5
@@ -36,88 +34,50 @@ using namespace lime;
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
     _deviceArgs(args),
-    _conn(nullptr),
     _moduleName(handle.module)
 {
     //connect
     SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
-    _conn = ConnectionRegistry::makeConnection(handle);
-    if (_conn == nullptr) throw std::runtime_error(
+    auto conn = ConnectionRegistry::makeConnection(handle);
+    if (conn == nullptr) throw std::runtime_error(
         "Failed to make connection with '" + handle.serialize() + "'");
 
     //device info
-    const auto devInfo = _conn->GetDeviceInfo();
-    const size_t numRFICs = devInfo.addrsLMS7002M.size();
+    lms7Device = LMS7_Device::CreateDevice(conn,nullptr);
+    const auto devInfo = lms7Device->GetInfo();
 
     //quick summary
-    SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo.deviceName.c_str());
-    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", _conn->GetReferenceClockRate()/1e6);
+    SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo->deviceName);
+    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", lms7Device->GetClockFreq(LMS_CLOCK_REF));
 
-    //LMS7002M driver for each RFIC
-    for (size_t i = 0; i < numRFICs; i++)
-    {
-        SoapySDR::logf(SOAPY_SDR_INFO, "Init LMS7002M(%d)", int(i));
-        _rfics.push_back(new LMS7002M());
-        _rfics.back()->SetConnection(_conn, i);
-        SoapySDR::logf(SOAPY_SDR_INFO, "Ver=%d, Rev=%d, Mask=%d",
-            _rfics.back()->Get_SPI_Reg_bits(LMS7param(VER), true),
-            _rfics.back()->Get_SPI_Reg_bits(LMS7param(REV), true),
-            _rfics.back()->Get_SPI_Reg_bits(LMS7param(MASK), true));
-
-        int st;
-
-        st = _rfics.back()->ResetChip();
-        if (st != 0) throw std::runtime_error("ResetChip() failed");
-
-        st = _rfics.back()->SoftReset();
-        if (st != 0) throw std::runtime_error("SoftReset() failed");
-        if (devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos)
-        {
-            st = _rfics.back()->SPI_write(0xA6,0x0001);
-            if (st != 0) throw std::runtime_error("SPI_write() failed");
-            st = _rfics.back()->SPI_write(0x92,0xFFFF);
-            if (st != 0) throw std::runtime_error("SPI_write() failed");
-            st = _rfics.back()->SPI_write(0x93,0x03FF);
-            if (st != 0) throw std::runtime_error("SPI_write() failed");
-            st = _rfics.back()->SPI_write(0x8B,0x338E);
-            if (st != 0) throw std::runtime_error("SPI_write() failed");
-        }
-
-        st = _rfics.back()->UploadAll();
-        if (st != 0) throw std::runtime_error("UploadAll() failed");
-    }
+    lms7Device->Init();
 
     //enable all channels
-    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
     {
-        auto rfic = getRFIC(channel);
-        rfic->EnableChannel(LMS7002M::Tx, true);
-        rfic->EnableChannel(LMS7002M::Rx, true);
+        lms7Device->EnableChannel(true, channel, true);   
+        lms7Device->EnableChannel(false, channel, true);
     }
 
     //enable use of calibration value cache automatically
     //or specify args[cacheCalibrations] == 0 to disable
     const bool cacheEnable = args.count("cacheCalibrations") and std::stoi(args.at("cacheCalibrations")) != 0;
     SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", cacheEnable?"Enable":"Disable");
-    for (auto rfic : _rfics) rfic->EnableValuesCache(cacheEnable);
+    lms7Device->EnableCalibCache(cacheEnable);
 
     //give all RFICs a default state
     double defaultClockRate = DEFAULT_CLOCK_RATE;
     if (args.count("clock")) defaultClockRate = std::stod(args.at("clock"));
     this->setMasterClockRate(defaultClockRate);
-    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
     {
         this->setFrequency(SOAPY_SDR_RX, channel, "BB", 0.0);
         this->setFrequency(SOAPY_SDR_TX, channel, "BB", 0.0);
-        this->setAntenna(SOAPY_SDR_RX, channel, devInfo.deviceName.find("LimeSDR-mini")!=std::string::npos ? "LNAH" :  "LNAL");
-        this->setAntenna(SOAPY_SDR_TX, channel, "BAND1");
         this->setGain(SOAPY_SDR_RX, channel, "PGA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_RX, channel, "TIA", 9);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
         this->setGain(SOAPY_SDR_TX, channel, "IAMP", 0);
-        this->setSampleRate(SOAPY_SDR_RX, channel, defaultClockRate/8);
-        this->setSampleRate(SOAPY_SDR_TX, channel, defaultClockRate/8);
         this->setBandwidth(SOAPY_SDR_RX, channel, 30e6);
         this->setBandwidth(SOAPY_SDR_TX, channel, 30e6);
         this->setDCOffsetMode(SOAPY_SDR_RX, channel, true);
@@ -136,26 +96,12 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 SoapyLMS7::~SoapyLMS7(void)
 {
     //power down all channels
-    for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
     {
-        auto rfic = getRFIC(channel);
-        rfic->EnableChannel(LMS7002M::Tx, false);
-        rfic->EnableChannel(LMS7002M::Rx, false);
+        lms7Device->EnableChannel(true, channel, false);   
+        lms7Device->EnableChannel(false, channel, false);
     }
-
-    for (auto rfic : _rfics) delete rfic;
-    ConnectionRegistry::freeConnection(_conn);
-}
-
-LMS7002M *SoapyLMS7::getRFIC(const size_t channel) const
-{
-    if (_rfics.size() <= channel/2)
-    {
-        throw std::out_of_range("SoapyLMS7::getRFIC("+std::to_string(channel)+") out of range");
-    }
-    auto rfic = _rfics.at(channel/2);
-    rfic->SetActiveChannel(((channel%2) == 0)?LMS7002M::ChA:LMS7002M::ChB);
-    return rfic;
+    delete lms7Device;
 }
 
 /*******************************************************************
@@ -168,21 +114,21 @@ std::string SoapyLMS7::getDriverKey(void) const
 
 std::string SoapyLMS7::getHardwareKey(void) const
 {
-    return _conn->GetDeviceInfo().deviceName;
+    return std::string(lms7Device->GetInfo()->deviceName);
 }
 
 SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
 {
-    auto devinfo = _conn->GetDeviceInfo();
+    auto devinfo = lms7Device->GetInfo();
     SoapySDR::Kwargs info;
-    if (devinfo.expansionName != "UNSUPPORTED")
-        info["expansionName"] = devinfo.expansionName;
-    info["firmwareVersion"] = devinfo.firmwareVersion;
-    info["hardwareVersion"] = devinfo.hardwareVersion;
-    info["protocolVersion"] = devinfo.protocolVersion;
-    if (devinfo.boardSerialNumber != unsigned(-1))
+    if (std::string(devinfo->expansionName) != "UNSUPPORTED")
+        info["expansionName"] = std::string(devinfo->expansionName);
+    info["firmwareVersion"] = std::string(devinfo->firmwareVersion);
+    info["hardwareVersion"] = std::string(devinfo->hardwareVersion);
+    info["protocolVersion"] = std::string(devinfo->protocolVersion);
+    if (devinfo->boardSerialNumber!= unsigned(-1))
     {
-        char buff[64]; sprintf(buff, "0x%lx", devinfo.boardSerialNumber);
+        char buff[64]; sprintf(buff, "0x%lx", devinfo->boardSerialNumber);
         info["boardSerialNumber"] = buff;
     }
     return info;
@@ -194,7 +140,7 @@ SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
 
 size_t SoapyLMS7::getNumChannels(const int /*direction*/) const
 {
-    return _rfics.size()*2;
+    return lms7Device->GetNumChannels();
 }
 
 bool SoapyLMS7::getFullDuplex(const int /*direction*/, const size_t /*channel*/) const
@@ -231,7 +177,7 @@ void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std:
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setAntenna(%s, %d, %s)", dirName, int(channel), name.c_str());
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_RX)
     {
@@ -264,7 +210,7 @@ void SoapyLMS7::setAntenna(const int direction, const size_t channel, const std:
 std::string SoapyLMS7::getAntenna(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);;
 
     if (direction == SOAPY_SDR_RX)
     {
@@ -304,7 +250,7 @@ bool SoapyLMS7::hasDCOffsetMode(const int direction, const size_t /*channel*/) c
 void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const bool automatic)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_RX) rfic->SetRxDCRemoval(automatic);
 }
@@ -312,7 +258,7 @@ void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const
 bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_RX) return rfic->GetRxDCRemoval();
 
@@ -327,7 +273,7 @@ bool SoapyLMS7::hasDCOffset(const int direction, const size_t /*channel*/) const
 void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_TX) rfic->SetTxDCOffset(offset.real(), offset.imag());
 }
@@ -335,7 +281,7 @@ void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std
 std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     double I = 0.0, Q = 0.0;
     if (direction == SOAPY_SDR_TX) rfic->GetTxDCOffset(I, Q);
@@ -350,7 +296,7 @@ bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) 
 void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     double gain = std::abs(balance);
@@ -362,7 +308,7 @@ void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const st
 std::complex<double> SoapyLMS7::getIQBalance(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     double phase, gainI, gainQ;
@@ -416,7 +362,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %d, %s, %g dB)", dirName, int(channel), name.c_str(), value);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
     {
@@ -461,7 +407,7 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string &name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_RX and name == "LNA")
     {
@@ -535,7 +481,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const
 void SoapyLMS7::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
 
@@ -580,7 +526,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 double SoapyLMS7::getFrequency(const int direction, const size_t channel, const std::string &name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     if (name == "RF")
@@ -619,7 +565,7 @@ std::vector<std::string> SoapyLMS7::listFrequencies(const int /*direction*/, con
 SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size_t channel, const std::string &name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     SoapySDR::RangeList ranges;
@@ -648,69 +594,26 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 
 static bool cgenRatePossible(const double rate)
 {
-    if (rate > MAX_CGEN_RATE) return false;
-    if (rate > CGEN_DEADZONE_LO and rate < CGEN_DEADZONE_HI) return false; //avoid range where CGEN does not lock
+    if (rate > MAX_CGEN_RATE || rate < MIN_CGEN_RATE) return false;
     return true;
-}
-
-static double calculateClockRate(
-    const int adcFactorRx,
-    const int dacFactorTx,
-    const double rateRx,
-    const double rateTx,
-    int &dspFactorRx,
-    int &dspFactorTx)
-{
-    double bestClockRate = 0.0;
-
-    for (int decim = 2; decim <= 32; decim *= 2)
-    {
-        const double rateClock = rateRx*decim*adcFactorRx;
-        if (not cgenRatePossible(rateClock)) continue;
-        if (rateClock < bestClockRate) continue;
-        for (int interp = 2; interp <= 32; interp *= 2)
-        {
-            const double actualRateTx = rateClock/(interp*dacFactorTx);
-
-            //good if we got the same output rate with small margin of error
-            if (std::abs(actualRateTx-rateTx) < 10.0)
-            {
-                bestClockRate = rateClock;
-                dspFactorRx = decim;
-                dspFactorTx = interp;
-            }
-        }
-    }
-
-    //return the best possible match
-    if (bestClockRate != 0.0) return bestClockRate;
-
-    SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(Rx %g MHz, Tx %g MHz) Failed -- no common clock rate", rateRx/1e6, rateTx/1e6);
-    throw std::runtime_error("SoapyLMS7::setSampleRate() -- no common clock rate");
 }
 
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+
+    //select automatic clock rate
+    if (not _fixedClockRate)
+    {
+        lms7Device->SetRate(direction == SOAPY_SDR_TX,rate);
+    }
+    
+    auto rfic = lms7Device->GetLMS(channel/2);
 
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     double clockRate = this->getMasterClockRate();
     const double dspFactor = clockRate/rfic->GetReferenceClk_TSP(lmsDir);
-
-    //select automatic clock rate
-    if (not _fixedClockRate)
-    {
-        double rxRate = rate, txRate = rate;
-        if (direction != SOAPY_SDR_RX and _fixedRxSampRate[channel]) rxRate = this->getSampleRate(SOAPY_SDR_RX, channel);
-        if (direction != SOAPY_SDR_TX and _fixedTxSampRate[channel]) txRate = this->getSampleRate(SOAPY_SDR_TX, channel);
-        clockRate = calculateClockRate(
-            clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Rx),
-            clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Tx),
-            rxRate, txRate, _decims[channel], _interps[channel]
-        );
-    }
 
     const double dspRate = clockRate/dspFactor;
     const double factor = dspRate/rate;
@@ -744,7 +647,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
     if(status != 0)
         SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
 
-    status = _conn->UpdateExternalDataRate(
+    status = lms7Device->GetConnection()->UpdateExternalDataRate(
         rfic->GetActiveChannelIndex(),
         rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
         rfic->GetSampleRate(LMS7002M::Rx, rfic->GetActiveChannel()));
@@ -755,16 +658,14 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
-    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
-    return rfic->GetSampleRate(lmsDir, rfic->GetActiveChannel());
+    return lms7Device->GetRate((direction == SOAPY_SDR_TX),channel);
 }
 
 std::vector<double> SoapyLMS7::_getEnumeratedRates(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
     std::vector<double> rates;
 
@@ -845,8 +746,7 @@ SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const siz
     //no enumerated rates? full continuous range is available
     if (rates.empty())
     {
-        ranges.push_back(SoapySDR::Range(MIN_SAMP_RATE, CGEN_DEADZONE_LO/8));
-        ranges.push_back(SoapySDR::Range(CGEN_DEADZONE_HI/8, MAX_SAMP_RATE));
+        ranges.push_back(SoapySDR::Range(MIN_SAMP_RATE, MAX_SAMP_RATE));
     }
 
     //normal list of enumerated rates becomes ranges with start == stop
@@ -872,13 +772,11 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     //save dc offset mode
     auto saveDcMode = this->getDCOffsetMode(direction, channel);
 
-    auto rfic = getRFIC(channel);
-
     _actualBw[direction][channel] = bw;
 
     if (direction == SOAPY_SDR_RX)
-    {
-        if (rfic->TuneRxFilterWithCaching(bw) != 0)
+    {        
+        if (lms7Device->SetLPF(false,channel,true,true,bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
             throw std::runtime_error(lime::GetLastErrorMessage());
@@ -887,7 +785,7 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
 
     if (direction == SOAPY_SDR_TX)
     {
-        if (rfic->TuneTxFilterWithCaching(bw) != 0)
+        if (lms7Device->SetLPF(true,channel,true,true,bw) != 0)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
             throw std::runtime_error(lime::GetLastErrorMessage());
@@ -936,29 +834,20 @@ SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size
 
 void SoapyLMS7::setMasterClockRate(const double rate)
 {
-    std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    for (auto rfic : _rfics)
-    {
-        //make tx rx rates equal
-        rfic->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0);
-        rfic->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2);
-        rfic->SetFrequencyCGEN(rate);
-    }
+    lms7Device->SetClockFreq(LMS_CLOCK_CGEN,rate);
     _fixedClockRate = true;
 }
 
 double SoapyLMS7::getMasterClockRate(void) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    //assume same rate for all RFIC in this wrapper
-    return _rfics.front()->GetFrequencyCGEN();
+    return lms7Device->GetClockFreq(LMS_CLOCK_CGEN);;
 }
 
 SoapySDR::RangeList SoapyLMS7::getMasterClockRates(void) const
 {
     SoapySDR::RangeList r;
-    r.push_back(SoapySDR::Range(MIN_CGEN_RATE, CGEN_DEADZONE_LO));
-    r.push_back(SoapySDR::Range(CGEN_DEADZONE_HI, MAX_CGEN_RATE));
+    r.push_back(SoapySDR::Range(MIN_CGEN_RATE, MAX_CGEN_RATE));
     return r;
 }
 
@@ -977,8 +866,8 @@ long long SoapyLMS7::getHardwareTime(const std::string &what) const
 {
     if (what.empty())
     {
-        auto ticks = _conn->GetHardwareTimestamp();
-        auto rate = _conn->GetHardwareTimestampRate();
+        auto ticks = lms7Device->GetConnection()->GetHardwareTimestamp();
+        auto rate = lms7Device->GetConnection()->GetHardwareTimestampRate();
         return SoapySDR::ticksToTimeNs(ticks, rate);
     }
     else
@@ -991,9 +880,9 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 {
     if (what.empty())
     {
-        auto rate = _conn->GetHardwareTimestampRate();
+        auto rate = lms7Device->GetConnection()->GetHardwareTimestampRate();
         auto ticks = SoapySDR::timeNsToTicks(timeNs, rate);
-        _conn->SetHardwareTimestamp(ticks);
+        lms7Device->GetConnection()->SetHardwareTimestamp(ticks);
     }
     else
     {
@@ -1042,11 +931,11 @@ std::string SoapyLMS7::readSensor(const std::string &name) const
 
     if (name == "clock_locked")
     {
-        return _rfics.front()->GetCGENLocked()?"true":"false";
+        return lms7Device->GetLMS()->GetCGENLocked()?"true":"false";
     }
     if (name == "lms7_temp")
     {
-        return std::to_string(_rfics.front()->GetTemperature());
+        return std::to_string(lms7Device->GetChipTemperature());
     }
 
     throw std::runtime_error("SoapyLMS7::readSensor("+name+") - unknown sensor name");
@@ -1076,7 +965,7 @@ SoapySDR::ArgInfo SoapyLMS7::getSensorInfo(const int direction, const size_t cha
 std::string SoapyLMS7::readSensor(const int direction, const size_t channel, const std::string &name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
 
     if (name == "lo_locked")
@@ -1095,7 +984,7 @@ std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
 {
     std::vector<std::string> ifaces;
     ifaces.push_back("BBIC");
-    for (size_t i = 0; i < _rfics.size(); i++)
+    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
     {
         ifaces.push_back("RFIC" + std::to_string(i));
     }
@@ -1105,10 +994,10 @@ std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
 void SoapyLMS7::writeRegister(const std::string &name, const unsigned addr, const unsigned value)
 {
     if (name == "BBIC") return this->writeRegister(addr, value);
-    for (size_t i = 0; i < _rfics.size(); i++)
+    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
     {
         if (("RFIC" + std::to_string(i)) != name) continue;
-        int st = _rfics[i]->SPI_write(addr, value);
+        int st = lms7Device->WriteLMSReg(addr, value,i);
         if (st == 0) return;
         throw std::runtime_error("SoapyLMS7::WriteRegister("+name+", "+std::to_string(addr)+") FAIL");
     }
@@ -1118,11 +1007,11 @@ void SoapyLMS7::writeRegister(const std::string &name, const unsigned addr, cons
 unsigned SoapyLMS7::readRegister(const std::string &name, const unsigned addr) const
 {
     if (name == "BBIC") return this->readRegister(addr);
-    for (size_t i = 0; i < _rfics.size(); i++)
+    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
     {
         if (("RFIC" + std::to_string(i)) != name) continue;
-        int st(0);
-        int value = _rfics[i]->SPI_read(addr, true, &st);
+        uint16_t value;
+        int st = lms7Device->ReadLMSReg(addr, &value, i);
         if (st == 0) return value;
         throw std::runtime_error("SoapyLMS7::readRegister("+name+", "+std::to_string(addr)+") FAIL");
     }
@@ -1131,7 +1020,7 @@ unsigned SoapyLMS7::readRegister(const std::string &name, const unsigned addr) c
 
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)
 {
-    auto st = _conn->WriteRegister(addr, value);
+    auto st = lms7Device->GetConnection()->WriteRegister(addr, value);
     if (st != 0) throw std::runtime_error(
         "SoapyLMS7::WriteRegister("+std::to_string(addr)+") FAIL");
 }
@@ -1139,7 +1028,7 @@ void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)
 unsigned SoapyLMS7::readRegister(const unsigned addr) const
 {
     unsigned readbackData = 0;
-    auto st = _conn->ReadRegister(addr, readbackData);
+    auto st = lms7Device->GetConnection()->ReadRegister(addr, readbackData);
     if (st != 0) throw std::runtime_error(
         "SoapyLMS7::ReadRegister("+std::to_string(addr)+") FAIL");
     return readbackData;
@@ -1159,7 +1048,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 {
     if (key == "RXTSP_CONST")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "TSP_CONST", value);
         }
@@ -1167,7 +1056,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "TXTSP_CONST")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "TSP_CONST", value);
         }
@@ -1175,7 +1064,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_TX")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "CALIBRATE_TX", value);
         }
@@ -1183,7 +1072,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_RX")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "CALIBRATE_RX", value);
         }
@@ -1191,7 +1080,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_TX_EXTLOOPBACK")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "CALIBRATE_TX_EXTLOOPBACK", value);
         }
@@ -1199,7 +1088,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_RX_EXTLOOPBACK")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "CALIBRATE_RX_EXTLOOPBACK", value);
         }
@@ -1207,7 +1096,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "ENABLE_RX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "ENABLE_GFIR_LPF", value);
         }
@@ -1215,7 +1104,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "ENABLE_TX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "ENABLE_GFIR_LPF", value);
         }
@@ -1223,7 +1112,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "DISABLE_RX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "DISABLE_GFIR_LPF", value);
         }
@@ -1231,7 +1120,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "DISABLE_TX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "DISABLE_GFIR_LPF", value);
         }
@@ -1239,7 +1128,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
      else if (key == "RXTSG_NCO")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "TSG_NCO", value);
         }
@@ -1247,7 +1136,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "TXTSG_NCO")
     {
-        for (size_t channel = 0; channel < _rfics.size()*2; channel++)
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "TSG_NCO", value);
         }
@@ -1255,13 +1144,11 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "SAVE_CONFIG")
     {
-        auto rfic = getRFIC(0);
-        rfic->SaveConfig(value.c_str());
+        lms7Device->SaveConfig(value.c_str());
     }
     else if (key == "LOAD_CONFIG")
     {
-        auto rfic = getRFIC(0);
-        rfic->LoadConfig(value.c_str());
+        lms7Device->LoadConfig(value.c_str());
     }
 
     else throw std::runtime_error("unknown setting key: "+key);
@@ -1287,7 +1174,7 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_
 void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = getRFIC(channel);
+    auto rfic = lms7Device->GetLMS(channel/2);
     const bool isTx = (direction == SOAPY_SDR_TX);
 
     if (key == "TSP_CONST")
@@ -1518,14 +1405,14 @@ std::vector<std::string> SoapyLMS7::listGPIOBanks(void) const
 void SoapyLMS7::writeGPIO(const std::string &, const unsigned value)
 {
     uint8_t buffer = uint8_t(value);
-    int r = _conn->GPIOWrite(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIOWrite(&buffer, 1);
     if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIO() " + std::string(lime::GetLastErrorMessage()));
 }
 
 unsigned SoapyLMS7::readGPIO(const std::string &) const
 {
     uint8_t buffer(0);
-    int r = _conn->GPIORead(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIORead(&buffer, 1);
     if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIO() " + std::string(lime::GetLastErrorMessage()));
     return unsigned(buffer);
 }
@@ -1533,14 +1420,14 @@ unsigned SoapyLMS7::readGPIO(const std::string &) const
 void SoapyLMS7::writeGPIODir(const std::string &, const unsigned dir)
 {
     uint8_t buffer = uint8_t(dir);
-    int r = _conn->GPIODirWrite(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIODirWrite(&buffer, 1);
     if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIODir() " + std::string(lime::GetLastErrorMessage()));
 }
 
 unsigned SoapyLMS7::readGPIODir(const std::string &) const
 {
     uint8_t buffer(0);
-    int r = _conn->GPIODirRead(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIODirRead(&buffer, 1);
     if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIODir() " + std::string(lime::GetLastErrorMessage()));
     return unsigned(buffer);
 }
@@ -1550,7 +1437,7 @@ unsigned SoapyLMS7::readGPIODir(const std::string &) const
  ******************************************************************/
 void SoapyLMS7::writeI2C(const int addr, const std::string &data)
 {
-    auto st = _conn->WriteI2C(addr, data);
+    auto st = lms7Device->GetConnection()->WriteI2C(addr, data);
     if (st != 0) throw std::runtime_error(
         "SoapyLMS7::writeI2C("+std::to_string(addr)+") FAIL");
 }
@@ -1558,7 +1445,7 @@ void SoapyLMS7::writeI2C(const int addr, const std::string &data)
 std::string SoapyLMS7::readI2C(const int addr, const size_t numBytes)
 {
     std::string result;
-    auto st = _conn->ReadI2C(addr, numBytes, result);
+    auto st = lms7Device->GetConnection()->ReadI2C(addr, numBytes, result);
     if (st != 0) throw std::runtime_error(
         "SoapyLMS7::readI2C("+std::to_string(addr)+") FAIL");
     return result;
@@ -1571,7 +1458,7 @@ unsigned SoapyLMS7::transactSPI(const int addr, const unsigned data, const size_
 {
     uint32_t input = data;
     uint32_t readback = 0;
-    auto st = _conn->TransactSPI(addr, &input, &readback, 1);
+    auto st = lms7Device->GetConnection()->TransactSPI(addr, &input, &readback, 1);
     if (st != 0) throw std::runtime_error(
         "SoapyLMS7::transactSPI("+std::to_string(addr)+") FAIL");
     return readback;

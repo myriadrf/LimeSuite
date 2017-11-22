@@ -14,7 +14,7 @@ class LMS7_LimeSDR_mini : public LMS7_Device
 public:
     LMS7_LimeSDR_mini(LMS7_Device *obj = nullptr);
     int Init() override;
-    size_t GetNumChannels(const bool tx = false) const override;
+    unsigned GetNumChannels(const bool tx = false) const override;
     int SetRxFrequency(size_t chan, double f_Hz) override;
     int SetTxFrequency(size_t chan, double f_Hz) override;
     lms_range_t GetRxPathBand(size_t path, size_t chan) const override;

@@ -339,7 +339,7 @@ int LMS7_Device::ConfigureTXLPF(bool enabled,int ch,double bandwidth)
     return 0;
 }
 
-size_t LMS7_Device::GetNumChannels(const bool tx) const
+unsigned LMS7_Device::GetNumChannels(const bool tx) const
 {
     return 2;
 }
@@ -1775,28 +1775,26 @@ int LMS7_Device::DACRead()
     return ret >=0 ? dval : -1;
 }
 
-int LMS7_Device::GetClockFreq(size_t clk_id, float_type *freq)
+float_type LMS7_Device::GetClockFreq(size_t clk_id)
 {
     switch (clk_id)
     {
     case LMS_CLOCK_REF:
-        *freq = lms_list.at(lms_chip_id)->GetReferenceClk_SX(lime::LMS7002M::Rx);
-        return 0;
+        return lms_list.at(lms_chip_id)->GetReferenceClk_SX(lime::LMS7002M::Rx);
     case LMS_CLOCK_SXR:
-        *freq = lms_list.at(lms_chip_id)->GetFrequencySX(false);
-        return 0;
+        return lms_list.at(lms_chip_id)->GetFrequencySX(false);
+
     case LMS_CLOCK_SXT:
-        *freq = lms_list.at(lms_chip_id)->GetFrequencySX(true);
-        return 0;
+        return lms_list.at(lms_chip_id)->GetFrequencySX(true);
+
     case LMS_CLOCK_CGEN:
-        *freq = lms_list.at(lms_chip_id)->GetFrequencyCGEN();
-        return 0;
+        return lms_list.at(lms_chip_id)->GetFrequencyCGEN();
+
     case LMS_CLOCK_RXTSP:
-        *freq = lms_list.at(lms_chip_id)->GetReferenceClk_TSP(false);
-        return 0;
+        return lms_list.at(lms_chip_id)->GetReferenceClk_TSP(false);
+
     case LMS_CLOCK_TXTSP:
-        *freq = lms_list.at(lms_chip_id)->GetReferenceClk_TSP(true);
-        return 0;
+        return lms_list.at(lms_chip_id)->GetReferenceClk_TSP(true);
     case LMS_CLOCK_EXTREF:
         lime::ReportError(ENOTSUP, "Reading external reference clock is not supported");
         return -1;
@@ -1953,15 +1951,14 @@ int LMS7_Device::EnableCalibCache(bool enable)
     return 0;
 }
 
-int LMS7_Device::GetChipTemperature(size_t ind, float_type *temp)
+float_type LMS7_Device::GetChipTemperature(size_t ind)
 {
-    *temp = lms_list[this->lms_chip_id]->GetTemperature();
-    return 0;
+    return lms_list[this->lms_chip_id]->GetTemperature();
 }
 
-int LMS7_Device::LoadConfig(const char *filename)
+int LMS7_Device::LoadConfig(const char *filename, int ind)
 {
-    lime::LMS7002M* lms = lms_list[lms_chip_id];
+    lime::LMS7002M* lms = lms_list.at(ind == -1 ? lms_chip_id : ind);
     if (lms->LoadConfig(filename)==0)
     {
         lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
@@ -1979,21 +1976,21 @@ int LMS7_Device::LoadConfig(const char *filename)
     return -1;
 }
 
-int LMS7_Device::SaveConfig(const char *filename)
+int LMS7_Device::SaveConfig(const char *filename, int ind)
 {
-    return lms_list[this->lms_chip_id]->SaveConfig(filename);
+    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SaveConfig(filename);
 }
 
-int LMS7_Device::ReadLMSReg(uint16_t address, uint16_t *val)
+int LMS7_Device::ReadLMSReg(uint16_t address, uint16_t *val, int ind)
 {
     int status;
-    *val = lms_list.at(lms_chip_id)->SPI_read(address & 0xFFFF, true, &status);
+    *val = lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_read(address & 0xFFFF, true, &status);
     return status;
 }
 
-int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val)
+int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind)
 {
-    return lms_list.at(lms_chip_id)->SPI_write(address & 0xFFFF, val);
+     return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);  
 }
 
 int LMS7_Device::ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip)

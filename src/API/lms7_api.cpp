@@ -296,8 +296,8 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, f
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    return lms->GetClockFreq(clk_id, freq);
+    *freq = lms->GetClockFreq(clk_id);
+    return freq > 0 ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
@@ -422,7 +422,8 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, f
         lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
-    return lms->GetChipTemperature(ind,temp);
+    *temp = lms->GetChipTemperature(ind);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
