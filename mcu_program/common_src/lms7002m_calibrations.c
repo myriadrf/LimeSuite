@@ -799,6 +799,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, 11 << 4 | 10);
         if(extLoopback)
         {
+            Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
             if(sel_band1_2_trf != 0x1)
             {
                 //printf("Tx Calibration: external calibration is not supported on selected Tx Band");
