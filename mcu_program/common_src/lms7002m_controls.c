@@ -149,16 +149,10 @@ uint8_t SetFrequencyCGEN(float_type freq)
     float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
-        uint8_t iHdiv;
-        for(iHdiv = 255; iHdiv; --iHdiv)
-        {
-            dFvco = 2 * (iHdiv) * freq;
-            if (dFvco >= 2e9 && dFvco <= 2.9e9)
-                goto VCO_FOUND;
-        }
-        return 3;//lime::ReportError(-2, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq / 1e6);
-VCO_FOUND:
-        //dFvco = vcoFreqs[vcoCnt / 2];
+        uint8_t iHdiv_high = 2.9e9/2 / freq;
+        uint8_t iHdiv_low = 2.0e9/2 / freq + 0.5;
+        uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+        dFvco = 2 * (iHdiv) * freq;
         Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv - 1);
     }
     //Integer division
