@@ -1232,9 +1232,9 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     }
 #if VERBOSE
     if(extLoopback)
-        printf("Initial gains:\tLOSS_MAIN_TXPAD: %2i, CG_IAMP: %2i | %2.3f dbFS\n", g_lossmain, cg_iamp, ChipRSSI_2_dBFS(rssi));
+        printf("Initial gains:\tLOSS_MAIN_TXPAD: %2i, CG_IAMP: %2i | %2.3f dbFS\n", Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF), Get_SPI_Reg_bits(CG_IAMP_TBB), ChipRSSI_2_dBFS(rssi));
     else
-        printf("Adjusted gains: G_RXLOOPB: %2i, CG_IAMP: %2i | %2.3f dbFS\n", g_rxloopb_rfe, cg_iamp, ChipRSSI_2_dBFS(rssi));
+        printf("Adjusted gains: G_RXLOOPB: %2i, CG_IAMP: %2i | %2.3f dbFS\n", Get_SPI_Reg_bits(G_RXLOOPB_RFE), Get_SPI_Reg_bits(CG_IAMP_TBB), ChipRSSI_2_dBFS(rssi));
 #endif
 #ifdef DRAW_GNU_PLOTS
     DrawMeasurement(gp, gMeasurements);
@@ -1319,7 +1319,6 @@ RxCalibrationEndStage:
     if (status != 0)
     {
         SaveChipState(1);
-        //printf("Rx calibration failed", LOG_WARNING);
         return status;
     }
     {
@@ -1328,11 +1327,20 @@ RxCalibrationEndStage:
         uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb);
         SaveChipState(1);
         SPI_write(0x0020, x0020val);
-        //Modify_SPI_Reg_bits(DCCORRI_TXTSP.address, DCCORRI_TXTSP.msblsb, dccorri);
-        //Modify_SPI_Reg_bits(DCCORRQ_TXTSP.address, DCCORRQ_TXTSP.msblsb, dccorrq);
+        // dc corrector values not overwritten by chip state restore
         Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, gcorri);
         Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, gcorrq);
         Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb, phaseOffset);
+#if VERBOSE
+        int ch = x0020val & 0x3;
+        int16_t dcI = ReadAnalogDC(ch==1? 0x5C7 : 0x5C8);
+        int16_t dcQ = ReadAnalogDC(ch==1? 0x5C9 : 0x5CA);
+        int16_t phaseSigned = toSigned(phaseOffset, IQCORR_RXTSP.msblsb);
+        printf("Tx | DC   | GAIN | PHASE\n");
+        printf("---+------+------+------\n");
+        printf("I: | %4i | %4i | %i\n", dcI, gcorri, phaseSigned);
+        printf("Q: | %4i | %4i |\n", dcQ, gcorrq);
+#endif
     }
     Modify_SPI_Reg_bits(DCMODE, 1);
     if(x0020val & 0x1)
@@ -1343,26 +1351,6 @@ RxCalibrationEndStage:
     Modify_SPI_Reg_bits(0x040C, MSBLSB(8, 8), 0); //DCLOOP_STOP
     //Log("Rx calibration finished", LOG_INFO);
 #if VERBOSE
-    printf("#####Rx calibration RESULTS:###########################\n");
-    printf("Method: %s %s loopback\n",
-           "RSSI",
-           "INTERNAL");
-    printf("Rx ch.%s @ %4g MHz, BW: %g MHz, RF input: %s, PGA: %i, LNA: %i, TIA: %i\n",
-           (x0020val & 3) == 1 ? "A" : "B", rxFreq/1e6,
-           bandwidthRF/1e6, lnaName,
-           Get_SPI_Reg_bits(G_PGA_RBB),
-           Get_SPI_Reg_bits(G_LNA_RFE),
-           Get_SPI_Reg_bits(G_TIA_RFE));
-    {
-        /*int8_t dcIsigned = (dcoffi & 0x3f) * (dcoffi&0x40 ? -1 : 1);
-        int8_t dcQsigned = (dcoffq & 0x3f) * (dcoffq&0x40 ? -1 : 1);
-        int16_t phaseSigned = phaseOffset << 4;
-        phaseSigned >>= 4;
-        verbose_printf("   | DC  | GAIN | PHASE\n");
-        verbose_printf("---+-----+------+------\n");
-        verbose_printf("I: | %3i | %4i | %i\n", dcIsigned, gcorri, phaseSigned);
-        verbose_printf("Q: | %3i | %4i |\n", dcQsigned, gcorrq);*/
-    }
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
                        (std::chrono::high_resolution_clock::now()-beginTime).count();
     printf("Duration: %i ms\n", duration);
