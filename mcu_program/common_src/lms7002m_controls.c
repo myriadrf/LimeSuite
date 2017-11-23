@@ -291,8 +291,8 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
 {
     typedef struct
     {
-        uint8_t high;
-        uint8_t low;
+        int16_t high;
+        int16_t low;
     } CSWInteval;
 
     uint16_t addrCSW_VCO;
