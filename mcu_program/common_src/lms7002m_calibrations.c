@@ -197,6 +197,9 @@ void CheckSaturationTxRx(bool extLoopback)
         PUSH_PLOT_VALUE(g_rxLoopbStage, rssi);
     }
     PUSH_PLOT_VALUE(pgaFirstStage, rssi);
+
+    {
+    uint16_t rssi_prev = rssi;
     while(g_pga < 18 && g_rfe == 15 && rssi < saturationLevel)
     {
         if(g_pga < 18)
@@ -205,8 +208,14 @@ void CheckSaturationTxRx(bool extLoopback)
             break;
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
         rssi = GetRSSI();
-        //rssi_prev = rssi;
+        if((float)rssi/rssi_prev < 1.11) // pga should give ~1dB change
+        {
+            --g_pga;
+            break;
+        }
+        rssi_prev = rssi;
         PUSH_PLOT_VALUE(pgaFirstStage, rssi);
+    }
     }
 #if VERBOSE
     printf("adjusted PGA: %2i, %s: %2i, %3.2f dbFS\n", g_pga, (extLoopback ? "LNA":"RXLOOPB"), g_rfe, ChipRSSI_2_dBFS(rssi));
