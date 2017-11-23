@@ -34,7 +34,7 @@ void SaveChipState(bool wr)
     //for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
     for(i = sizeof(chipStateAddr)/sizeof(uint16_t); i; i-=2)
     {
-        for(addr=chipStateAddr[i-1]; addr<=chipStateAddr[i]; ++addr)
+        for(addr=chipStateAddr[i-2]; addr<=chipStateAddr[i-1]; ++addr)
         {
             if(wr)
                 SPI_write(addr, chipStateData[dest]);
