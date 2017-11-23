@@ -13,20 +13,36 @@
 #include <vector>
 #include <chrono>
 #include <stdio.h>
+#include <sstream>
 
-typedef struct
-{
-    int16_t value;
-    uint32_t signalLevel;
-    std::vector<float> measurements;
-} BinSearchResults;
-BinSearchResults results;
+#define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({value, rssi})
 
 #include <gnuPlotPipe.h>
 GNUPlotPipe saturationPlot;
-GNUPlotPipe rxDCPlot;
 GNUPlotPipe IQImbalancePlot;
 GNUPlotPipe txDCPlot;
+
+typedef std::vector< std::pair<float, float> > MeasurementsVector;
+MeasurementsVector gMeasurements;
+
+void SortMeasurements(MeasurementsVector &vec)
+{
+    for(size_t i=0; i<vec.size(); ++i)
+        for(size_t j=i; j<vec.size(); ++j)
+            if(vec[i].first > vec[j].first)
+            {
+                auto temp = vec[i];
+                vec[i] = vec[j];
+                vec[j] = temp;
+            }
+}
+
+void DrawMeasurement(GNUPlotPipe &gp, const MeasurementsVector& vec)
+{
+    for(auto i : vec)
+        gp.writef("%f %f\n", i.first, i.second);
+    gp.write("e\n");
+}
 
 ///APPROXIMATE conversion
 float ChipRSSI_2_dBFS(uint32_t rssi)
@@ -45,6 +61,7 @@ int16_t toSigned(int16_t val, uint8_t msblsb)
 }
 #else
 #define VERBOSE 0
+#define PUSH_GMEASUREMENT_VALUES(value, rssi)
 #endif // __cplusplus
 
 float bandwidthRF = 5e6; //Calibration bandwidth
@@ -242,16 +259,10 @@ void BinarySearch(BinSearchParam bdata* args)
     int16_t step;
     const uint16_t addr = args->param.address;
     const uint8_t msblsb = args->param.msblsb;
-    //const uint16_t regValue = SPI_read(addr);
-#ifdef DRAW_GNU_PLOTS
-    std::vector<float> searchPoints;
-#define PUSH_PLOT_VALUE(vec, param, level) vec.push_back(param);vec.push_back(level)
-#else
-#define PUSH_PLOT_VALUE(vec, param, level)
-#endif
+
     Modify_SPI_Reg_bits(addr, msblsb, right);
     rssiRight = GetRSSI();
-    PUSH_PLOT_VALUE(searchPoints, right, rssiRight);
+    PUSH_GMEASUREMENT_VALUES(right, ChipRSSI_2_dBFS(rssiRight));
     while(right-left >= 1)
     {
         step = (right-left)/2;
@@ -259,13 +270,13 @@ void BinarySearch(BinSearchParam bdata* args)
         {
             Modify_SPI_Reg_bits(addr, msblsb, right);
             rssiRight = GetRSSI();
-            PUSH_PLOT_VALUE(searchPoints, right, rssiRight);
+            PUSH_GMEASUREMENT_VALUES(right, ChipRSSI_2_dBFS(rssiRight));
         }
         else
         {
             Modify_SPI_Reg_bits(addr, msblsb, left);
             rssiLeft = GetRSSI();
-            PUSH_PLOT_VALUE(searchPoints, left, rssiLeft);
+            PUSH_GMEASUREMENT_VALUES(left, ChipRSSI_2_dBFS(rssiLeft));
         }
         if(step <= 0)
             break;
@@ -276,27 +287,6 @@ void BinarySearch(BinSearchParam bdata* args)
     }
     args->result = rssiLeft < rssiRight ? left : right;
     Modify_SPI_Reg_bits(addr, msblsb, args->result);
-
-#ifdef DRAW_GNU_PLOTS
-    results.value = args->result;
-    results.signalLevel = rssiLeft < rssiRight ? rssiLeft : rssiRight;
-    results.measurements.clear();
-    results.measurements = searchPoints;
-    for(size_t i=0; i<results.measurements.size(); i+=2)
-        for(size_t j=i; j<results.measurements.size(); j+=2)
-        {
-            if(results.measurements[i] > results.measurements[j])
-            {
-                float temp = results.measurements[i];
-                results.measurements[i] = results.measurements[j];
-                results.measurements[j] = temp;
-                temp = results.measurements[i+1];
-                results.measurements[i+1] = results.measurements[j+1];
-                results.measurements[j+1] = temp;
-            }
-        }
-#endif //DRAW_GNU_PLOTS
-#undef PUSH_PLOT_VALUE
 }
 
 int16_t ReadAnalogDC(const uint16_t addr)
@@ -339,6 +329,7 @@ static void TxDcBinarySearch(BinSearchParam* args)
 
     WriteAnalogDC(args->param.address, right);
     rssiRight = GetRSSI();
+    PUSH_GMEASUREMENT_VALUES(right, ChipRSSI_2_dBFS(rssiRight));
 
     while(right-left >= 1)
     {
@@ -347,11 +338,13 @@ static void TxDcBinarySearch(BinSearchParam* args)
         {
             WriteAnalogDC(args->param.address, right);
             rssiRight = GetRSSI();
+            PUSH_GMEASUREMENT_VALUES(right, ChipRSSI_2_dBFS(rssiRight));
         }
         else
         {
             WriteAnalogDC(args->param.address, left);
             rssiLeft = GetRSSI();
+            PUSH_GMEASUREMENT_VALUES(left, ChipRSSI_2_dBFS(rssiLeft));
         }
         if(step == 0)
             break;
@@ -509,6 +502,11 @@ void CalibrateRxDCAuto()
 
 void CalibrateTxDCAuto()
 {
+#ifdef DRAW_GNU_PLOTS
+    GNUPlotPipe &gp = txDCPlot;
+    std::vector<MeasurementsVector> data;
+    gMeasurements.clear();
+#endif // DRAW_GNU_PLOTS
     BinSearchParam iparams;
     BinSearchParam qparams;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
@@ -556,7 +554,15 @@ void CalibrateTxDCAuto()
         qparams.maxValue = clamp(qparams.result+offset[i], -1024, 1023);
 
         TxDcBinarySearch(&iparams);
+#ifdef DRAW_GNU_PLOTS
+        data.push_back(gMeasurements);
+        gMeasurements.clear();
+#endif // DRAW_GNU_PLOTS
         TxDcBinarySearch(&qparams);
+#ifdef DRAW_GNU_PLOTS
+        data.push_back(gMeasurements);
+        gMeasurements.clear();
+#endif // DRAW_GNU_PLOTS
 #if VERBOSE
     {
         int16_t dci = ReadAnalogDC(iparams.param.address);
@@ -568,6 +574,27 @@ void CalibrateTxDCAuto()
     }
     }
 
+#ifdef DRAW_GNU_PLOTS
+    gp.writef("set title 'TxDC search'\n");
+    gp.write("set xlabel 'offset'\n");
+    gp.write("set ylabel 'RSSI dBFS'\n");
+    gp.write("set grid ytics xtics\n");
+    std::stringstream ss;
+    for(unsigned i=0; i<data.size()/2; ++i)
+    {
+        if(i>0)
+            ss << ", ";
+        ss << "'-' w l t '#" << i << " I', ";
+        ss << "'-' w l t '#" << i << " Q'";
+    }
+    gp.writef("plot %s\n", ss.str().c_str());
+    for(auto i : data)
+    {
+        SortMeasurements(i);
+        DrawMeasurement(gp, i);
+    }
+#endif // DRAW_GNU_PLOTS
+
     //Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
     //Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
 }
@@ -578,11 +605,14 @@ void CalibrateIQImbalance(bool tx)
     const char *dirName = tx ? "Tx" : "Rx";
 #endif
 #ifdef DRAW_GNU_PLOTS
-    IQImbalancePlot.writef("set title '%s IQ imbalance'\n", dirName);
-    IQImbalancePlot.write("set xlabel 'parameter value'\n");
-    IQImbalancePlot.write("set ylabel 'RSSI dBFS'\n");
-    IQImbalancePlot.write("set grid ytics xtics\n");
-    IQImbalancePlot.write("plot\
+    GNUPlotPipe &gp = IQImbalancePlot;
+    std::vector<MeasurementsVector> data;
+    gMeasurements.clear();
+    gp.writef("set title '%s IQ imbalance'\n", dirName);
+    gp.write("set xlabel 'parameter value'\n");
+    gp.write("set ylabel 'RSSI dBFS'\n");
+    gp.write("set grid ytics xtics\n");
+    gp.write("plot\
 '-' w l t '#0 phase',\
 '-' w l t '#1 gain',\
 '-' w l t '#2 phase'\
@@ -612,9 +642,9 @@ void CalibrateIQImbalance(bool tx)
     printf("#0 %s IQCORR: %i, %3.1f dBFS\n", dirName, argsPhase.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
 #ifdef DRAW_GNU_PLOTS
-    for(size_t i=0; i<results.measurements.size(); i+=2)
-        IQImbalancePlot.writef("%f %f\n", results.measurements[i], ChipRSSI_2_dBFS(results.measurements[i+1]));
-    IQImbalancePlot.write("e\n");
+    SortMeasurements(gMeasurements);
+    DrawMeasurement(gp, gMeasurements);
+    gMeasurements.clear();
 #endif
 
     //coarse gain
@@ -642,9 +672,9 @@ void CalibrateIQImbalance(bool tx)
     printf("#1 %s GAIN_%s: %i, %3.1f dBFS\n", dirName, chName, argsGain.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
 #ifdef DRAW_GNU_PLOTS
-    for(size_t i=0; i<results.measurements.size(); i+=2)
-        IQImbalancePlot.writef("%f %f\n", results.measurements[i], ChipRSSI_2_dBFS(results.measurements[i+1]));
-    IQImbalancePlot.write("e\n");
+    SortMeasurements(gMeasurements);
+    DrawMeasurement(gp, gMeasurements);
+    gMeasurements.clear();
 #endif
 
     argsPhase.maxValue = argsPhase.result+16;
@@ -654,9 +684,9 @@ void CalibrateIQImbalance(bool tx)
     printf("#2 %s IQCORR: %i, %3.1f dBFS\n", dirName, argsPhase.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
 #ifdef DRAW_GNU_PLOTS
-    for(size_t i=0; i<results.measurements.size(); i+=2)
-        IQImbalancePlot.writef("%f %f\n", results.measurements[i], ChipRSSI_2_dBFS(results.measurements[i+1]));
-    IQImbalancePlot.write("e\n");
+    SortMeasurements(gMeasurements);
+    DrawMeasurement(gp, gMeasurements);
+    gMeasurements.clear();
 #endif
     SPI_write(argsGain.param.address, argsGain.result);
     Modify_SPI_Reg_bits(argsPhase.param.address, argsPhase.param.msblsb, argsPhase.result);
