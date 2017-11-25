@@ -150,7 +150,7 @@ static void SetRxGFIR3Coefficients()
         SPI_write(0x0500 + index + 24 * (index / 40), firCoefs[119-index]);
 }
 
-void CheckSaturationTxRx(bool extLoopback)
+int CheckSaturationTxRx(bool extLoopback)
 {
     const uint16_t saturationLevel = 0x05000; //-3dBFS
     uint8_t g_pga;
@@ -234,8 +234,16 @@ void CheckSaturationTxRx(bool extLoopback)
 #if VERBOSE
     printf("adjusted PGA: %2i, %s: %2i, %3.2f dbFS\n", Get_SPI_Reg_bits(G_PGA_RBB), (extLoopback ? "LNA":"RXLOOPB"), g_rfe, ChipRSSI_2_dBFS(rssi));
 #endif
+    if( rssi < 0xB21 ) // ~(-30 dbFS)
+    {
+#if VERBOSE
+        printf("Signal strength (%3.1f dBFS) very low, loopback not working?\n", ChipRSSI_2_dBFS(rssi));
+#endif // VERBOSE
+        return 1;
+    }
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
+    return 0;
 }
 
 typedef struct
@@ -533,6 +541,8 @@ void CalibrateTxDCAuto()
         Modify_SPI_Reg_bits(PD_DCCMP_TXB, 0);
         //SPI_write(0x05C2, 0x0F0C);
     }
+    WriteAnalogDC(iparams.param.address, 0);
+    WriteAnalogDC(qparams.param.address, 0);
 
     //wait until finished
     //while(SPI_read(0x05C1) & 0x0F00);
@@ -894,7 +904,9 @@ uint8_t CalibrateTx(bool extLoopback)
     if(status != 0)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
-    CheckSaturationTxRx(extLoopback);
+    status = CheckSaturationTxRx(extLoopback);
+    if(status != 0)
+        goto TxCalibrationEnd;
     CalibrateRxDCAuto();
 
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF/ calibUserBwDivider), 0);
@@ -1080,6 +1092,21 @@ uint8_t CalibrateRxSetup(bool extLoopback)
             return 1;
         }
     }
+    else // external looback
+    {
+        switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
+        {
+        case 3: //LNA_W
+            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
+            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+        case 1: //LNA_H
+            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
+            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+            break;
+        default:
+            return 1;
+        }
+    }
 
     Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
 
@@ -1194,7 +1221,6 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 #endif // DRAW_GNU_PLOTS
 
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
-
     while(rssi < 0x01000)
     {
         cg_iamp += 2;
@@ -1226,6 +1252,13 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     gp.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(target_rssi), index, ChipRSSI_2_dBFS(target_rssi));
     gp.flush();
 #endif
+    if( rssi < 0xB21 ) // ~(-30 dbFS)
+    {
+#if VERBOSE
+        printf("Signal strength (%3.1f dBFS) very low, loopback not working?\n", ChipRSSI_2_dBFS(rssi));
+#endif // VERBOSE
+        return 1;
+    }
     return 0;
 }
 
@@ -1294,7 +1327,9 @@ uint8_t CalibrateRx(bool extLoopback)
         Modify_SPI_Reg_bits(PD_VCO, 0);
     }
     SPI_write(0x0020, x0020val);
-    CheckSaturationRx(bandwidthRF, extLoopback);
+    status = CheckSaturationRx(bandwidthRF, extLoopback);
+    if(status != 0)
+        goto RxCalibrationEndStage;
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider + offsetNCO, 0);
