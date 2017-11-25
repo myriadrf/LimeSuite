@@ -3,6 +3,7 @@
 #include "spi.h"
 #include "lms7002m_controls.h"
 #include <math.h>
+#include "mcu_defines.h"
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -69,15 +70,6 @@ float bandwidthRF = 5e6; //Calibration bandwidth
 #define offsetNCO 0.1e6
 #define calibUserBwDivider 5
 
-/*
-static uint8_t toDCOffset(const int8_t offset)
-{
-    if(offset >= 0)
-        return offset;
-    return (uint8_t)(abs((int)offset) | 0x40);
-}
-*/
-
 static int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
 {
     if(value < minBound)
@@ -123,9 +115,6 @@ static void Delay()
 #endif
 }
 
-#ifdef __cplusplus
-uint32_t rssiCounter = 0;
-#endif
 uint16_t GetRSSI()
 {
     Delay();
@@ -239,11 +228,11 @@ int CheckSaturationTxRx(bool extLoopback)
 #if VERBOSE
         printf("Signal strength (%3.1f dBFS) very low, loopback not working?\n", ChipRSSI_2_dBFS(rssi));
 #endif // VERBOSE
-        return 1;
+        return MCU_LOOPBACK_SIGNAL_WEAK;
     }
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(DC_BYP_RXTSP, 1);
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 typedef struct
@@ -821,7 +810,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     }
     SetRxGFIR3Coefficients();
     status = SetupCGEN();
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     //SXR
@@ -831,8 +820,8 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         const float_type SXRfreq = GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - calibrationSXOffset_Hz;
         //SX VCO is powered up in SetFrequencySX/Tune
         status = SetFrequencySX(LMS7002M_Rx, SXRfreq);
-        if(status != 0)
-            return status+0x60;
+        if(status != MCU_NO_ERROR)
+            return status;
     }
 
     //if calibrating ch. B enable buffers
@@ -860,7 +849,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
 #if VERBOSE
                 printf("Tx Calibration: external calibration is not supported on selected Tx Band");
 #endif
-                return 5;
+                return MCU_INVALID_TX_BAND;
             }
         }
         else
@@ -868,7 +857,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             if(sel_band1_2_trf != 0x1 && sel_band1_2_trf != 0x2) //BAND1
             {
                 //printf("Tx Calibration: band not selected");
-                return 5;
+                return MCU_INVALID_TX_BAND;
             }
             Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_band1_2_trf+1);
             //Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, 0);
@@ -879,7 +868,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(0x010D, MSB_LSB(4, 3), sel_band1_2_trf ^ 0x3);
         }
     }
-    return 0x0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t CalibrateTx(bool extLoopback)
@@ -901,11 +890,11 @@ uint8_t CalibrateTx(bool extLoopback)
     uint8_t status;
     SaveChipState(0);
     status = CalibrateTxSetup(extLoopback);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         goto TxCalibrationEnd; //go to ending stage to restore registers
     CalibrateRxDCAuto();
     status = CheckSaturationTxRx(extLoopback);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         goto TxCalibrationEnd;
     CalibrateRxDCAuto();
 
@@ -922,7 +911,7 @@ TxCalibrationEnd:
         SaveChipState(1);
         SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
         SPI_write(0x0020, x0020val);
-        if(status != 0)
+        if(status != MCU_NO_ERROR)
         {
 #if VERBOSE
             printf("Tx calibration failed");
@@ -1084,7 +1073,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
             break;
         default:
-            return 1;
+            return MCU_INVALID_RX_PATH;
         }
     }
     else // external looback
@@ -1099,7 +1088,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
             break;
         default:
-            return 1;
+            return MCU_INVALID_RX_PATH;
         }
     }
 
@@ -1123,16 +1112,16 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         SetDefaultsSX();
         status = SetFrequencySX(LMS7002M_Tx, SXRfreqHz + bandwidthRF/ calibUserBwDivider + 9e6);
     }
-    if(status != 0)
-        return status+0x70;
+    if(status != MCU_NO_ERROR)
+        return status;
     SPI_write(0x0020, x0020val);
 
     LoadDC_REG_TX_IQ();
 
     //CGEN
     status = SetupCGEN();
-    if(status != 0)
-        return status +0x30;
+    if(status != MCU_NO_ERROR)
+        return status;
     SetRxGFIR3Coefficients();
     SetNCOFrequency(LMS7002M_Tx, 9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider - offsetNCO, 0);
@@ -1145,7 +1134,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
         SPI_write(0x0020, x0020val);
     }
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
@@ -1252,9 +1241,9 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
 #if VERBOSE
         printf("Signal strength (%3.1f dBFS) very low, loopback not working?\n", ChipRSSI_2_dBFS(rssi));
 #endif // VERBOSE
-        return 1;
+        return MCU_LOOPBACK_SIGNAL_WEAK;
     }
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t CalibrateRx(bool extLoopback)
@@ -1323,7 +1312,7 @@ uint8_t CalibrateRx(bool extLoopback)
     }
     SPI_write(0x0020, x0020val);
     status = CheckSaturationRx(bandwidthRF, extLoopback);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         goto RxCalibrationEndStage;
     Modify_SPI_Reg_bits(CMIX_SC_RXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
@@ -1337,7 +1326,7 @@ RxCalibrationEndStage:
         SaveChipState(1);
         SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
         SPI_write(0x0020, x0020val);
-        if (status != 0)
+        if (status != MCU_NO_ERROR)
         {
 #if VERBOSE
             printf("Rx calibration failed");
@@ -1371,5 +1360,5 @@ RxCalibrationEndStage:
                        (std::chrono::high_resolution_clock::now()-beginTime).count();
     printf("Duration: %i ms\n", duration);
 #endif //LMS_VERBOSE_OUTPUT
-    return 0;
+    return MCU_NO_ERROR;
 }

@@ -4,6 +4,7 @@
 #include "LMS7002M_parameters_compact.h"
 #include "spi.h"
 #include <math.h>
+#include "mcu_defines.h"
 
 #ifdef __cplusplus
     #include <vector>
@@ -74,7 +75,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     uint8_t g_pga_rbb = Get_SPI_Reg_bits(G_PGA_RBB);
 
 	if(RxLPF_RF_LimitLow/2 > rx_lpf_IF || rx_lpf_IF > RxLPF_RF_LimitHigh/2)
-        return -1;//ReportError(ERANGE, "RxLPF frequency out of range, available range from 0.7 to 65 MHz");
+        return MCU_RX_LPF_OUT_OF_RANGE;
 #define BATCH_RX_SETUP 1
 #if BATCH_RX_SETUP
     {
@@ -183,7 +184,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         uint8_t cgenMultiplier = rx_lpf_IF*20 / 46.08e6 + 0.5;
         cgenMultiplier = clamp(cgenMultiplier, 2, 13);
         status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
-        if(status != 0)
+        if(status != MCU_NO_ERROR)
             return status;
     }
 
@@ -191,14 +192,14 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     Modify_SPI_Reg_bits(MAC, 1);
     SetDefaultsSX();
     status = SetFrequencySX(LMS7002M_Rx, 539.9e6);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     //SXT
     Modify_SPI_Reg_bits(MAC, 2);
     SetDefaultsSX();
     status = SetFrequencySX(LMS7002M_Tx, 550e6);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
     SPI_write(0x0020, ch);
     //LimeLight & PAD
@@ -230,7 +231,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
             ccomp_tia_rfe = cfb_tia_rfe/100 + 1;
         }
         else
-            return 0xAA;//ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
+            return MCU_RX_INVALID_TIA;//ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
         Modify_SPI_Reg_bits(CFB_TIA_RFE,   clamp(cfb_tia_rfe, 0, 4095));
         Modify_SPI_Reg_bits(CCOMP_TIA_RFE, clamp(ccomp_tia_rfe, 0, 15));
         Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15-cfb_tia_rfe/100, 0, 15));
@@ -304,7 +305,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
         Modify_SPI_Reg_bits(MAC, ch);
     }
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
@@ -316,7 +317,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         goto RxFilterSearchEndStage;
 
     {
@@ -341,7 +342,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     if(rx_lpf_IF <= 54e6)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF*1.3);
-        if(status != 0)
+        if(status != MCU_NO_ERROR)
             goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF*1.3, 0); //0
 
@@ -415,7 +416,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             //LPFH END
         }
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF);
-        if(status != 0)
+        if(status != MCU_NO_ERROR)
             goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
 
@@ -428,7 +429,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 cfb_tia_rfe = (int)( 5400e6 / (rx_lpf_IF * 0.72) - 15);
             else
             {
-                status = -3; //ReportError(EINVAL, "g_tia_rfe not allowed value");
+                status = MCU_RX_INVALID_TIA; //ReportError(EINVAL, "g_tia_rfe not allowed value");
                 goto RxFilterSearchEndStage;
             }
             Modify_SPI_Reg_bits(CFB_TIA_RFE, clamp(cfb_tia_rfe, 0, 4095));
@@ -441,7 +442,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                     ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
                 else
                 {
-                    status = -4;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+                    status = MCU_RX_INVALID_TIA;//ReportError(EINVAL, "g_tia_rfe not allowed value");
                     goto RxFilterSearchEndStage;
                 }
 
@@ -459,7 +460,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     }
     //START TIA
     status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, 4096);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         goto RxFilterSearchEndStage;
     //END TIA
 
@@ -498,7 +499,7 @@ RxFilterSearchEndStage:
     Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
     Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
     }
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
@@ -629,7 +630,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
 
         status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
     }
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     //SXR
@@ -651,7 +652,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetNCOFrequency(LMS7002M_Rx, 0.9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, tx_lpf_IF-0.1e6, 1);
 
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
@@ -662,20 +663,14 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
     uint16_t ch = SPI_read(0x0020);
 
     if(tx_lpf_freq_RF < TxLPF_RF_LimitLow || tx_lpf_freq_RF > TxLPF_RF_LimitHigh)
-        return 0x22;
+        return MCU_TX_LPF_OUT_OF_RANGE;
     //calculate intermediate frequency
     tx_lpf_IF = tx_lpf_freq_RF/2;
     if(tx_lpf_freq_RF > TxLPF_RF_LimitLowMid && tx_lpf_freq_RF < TxLPF_RF_LimitMidHigh)
-    {
-        /*printf("Tx lpf(%g MHz) out of range %g-%g MHz and %g-%g MHz. Setting to %g MHz", tx_lpf_freq_RF/1e6,
-                        TxLPF_RF_LimitLow/1e6, TxLPF_RF_LimitLowMid/1e6,
-                        TxLPF_RF_LimitMidHigh/1e6, TxLPF_RF_LimitHigh/1e6,
-                        TxLPF_RF_LimitMidHigh/1e6);*/
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
-    }
     SaveChipState(1);
     status = TuneTxFilterSetup(tx_lpf_IF);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
@@ -855,5 +850,5 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         }
     }
 
-    return 0;
+    return MCU_NO_ERROR;
 }

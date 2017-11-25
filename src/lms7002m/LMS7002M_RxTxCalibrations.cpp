@@ -208,8 +208,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
-        if(status != 0)
-            ReportError("MCU working too long or failed, status: %i", status);
+        if(status != MCU_BD::MCU_NO_ERROR)
+            return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //need to read back calibration results
@@ -331,8 +331,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
         status = mcuControl->WaitForMCU(1000);
-        if(status != 0)
-            ReportError("MCU working too long or failed, status:%i", status);
+        if(status != MCU_BD::MCU_NO_ERROR)
+            return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //read back for cache input and print

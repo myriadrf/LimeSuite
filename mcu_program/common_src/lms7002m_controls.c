@@ -3,6 +3,7 @@
 #include "LMS7002M_parameters_compact.h"
 #include "math.h"
 #include "typedefs.h"
+#include "mcu_defines.h"
 
 #ifdef __cplusplus
 #include <cmath>
@@ -106,7 +107,7 @@ void SetDefaults(uint16_t start, uint16_t end)
     std::vector<uint16_t> values;
     for(uint32_t address = start; address <= end; ++address)
     {
-        int i=0;
+        unsigned int i=0;
         for(i=0; i<sizeof(defaultAddrs)/sizeof(uint16_t); ++i)
         {
             if(defaultAddrs[i] == address)
@@ -169,7 +170,9 @@ uint8_t SetFrequencyCGEN(float_type freq)
 #if VERBOSE
     //printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
 #endif // NDEBUG
-    return TuneVCO(VCO_CGEN);
+    if(TuneVCO(VCO_CGEN) != 0)
+        return MCU_CGEN_TUNE_FAILED;
+    return 0;
 }
 
 float_type GetReferenceClk_TSP_MHz(bool tx)
@@ -261,7 +264,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
-        return 2;//lime::ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
+        return tx ? MCU_SXT_TUNE_FAILED : MCU_SXR_TUNE_FAILED;
     return 0;
 }
 
@@ -320,10 +323,10 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
     if(ReadCMP(SX) == 3) //VCO too high
-        return 4;
+        return MCU_ERROR;
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 255);
     if(ReadCMP(SX) == 0) //VCO too low
-        return 4;
+        return MCU_ERROR;
 
     //search intervals [0-127][128-255]
     {
@@ -370,6 +373,6 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
             Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, ++cswValue);
     }
     if(ReadCMP(SX) == 0x2)
-        return 0;
-    return 0x20;
+        return MCU_NO_ERROR;
+    return MCU_ERROR;
 }

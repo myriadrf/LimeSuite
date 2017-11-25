@@ -1127,3 +1127,27 @@ uint8_t MCU_BD::ReadMCUProgramID()
     auto statusMcu = WaitForMCU(10);
     return statusMcu & 0x7F;
 }
+
+static const char* MCU_ErrorMessages[] =
+{
+"No error",
+"Generic error",
+"CGEN tune failed",
+"SXR tune failed",
+"SXT tune failed",
+"Loopback signal weak, not connected?",
+"Invalid Rx path",
+"Invalid Tx band",
+"Rx LPF bandwidth out of range",
+"Rx invalid TIA gain",
+"Tx LPF bandwidth out of range",
+};
+
+const char* MCU_BD::MCUStatusMessage(const uint8_t code)
+{
+    if(code == 255)
+        return "MCU not programmed/procedure still in progress";
+    if(code >= MCU_ERROR_CODES_COUNT)
+        return "Error code undefined";
+    return MCU_ErrorMessages[code];
+}
