@@ -43,21 +43,95 @@ int16_t ReadDCCorrector(bool tx, uint8_t channel)
         return (value & mask);
 }
 
+class BoardLoopbackStore
+{
+public:
+    BoardLoopbackStore(lime::IConnection* port) : port(port)
+    {
+        if(port)
+            port->ReadRegister(LoopbackCtrAddr, mLoopbackState);
+    }
+    ~BoardLoopbackStore()
+    {
+        if(port)
+            port->WriteRegister(LoopbackCtrAddr, mLoopbackState);
+    }
+private:
+    lime::IConnection* port;
+    static const uint32_t LoopbackCtrAddr = 0x0017;
+    int mLoopbackState;
+};
+
 int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
 {
     //enable external loopback switches
     const uint32_t LoopbackCtrAddr = 0x0017;
     uint32_t value = 0;
-    const uint16_t mask = 0x7;
-    const uint8_t shiftCount = (ch==2 ? 4 : 0);
     int status;
     status = port->ReadRegister(LoopbackCtrAddr, value);
     if(status != 0)
         return -1;
-    value &= ~(mask << shiftCount);
-    value |= enable << shiftCount;   //EN_Loopback
-    value |= enable << (shiftCount+1); //EN_Attenuator
-    value |= !enable << (shiftCount+2); //EN_Shunt
+    auto devName = port->GetDeviceInfo().deviceName;
+
+    if(devName == "LimeSDR")
+    {
+        const uint16_t mask = 0x7;
+        const uint8_t shiftCount = (ch==2 ? 4 : 0);
+        value &= ~(mask << shiftCount);
+        value |= enable << shiftCount;   //EN_Loopback
+        value |= enable << (shiftCount+1); //EN_Attenuator
+        value |= !enable << (shiftCount+2); //EN_Shunt
+    }
+    else if (devName == "LimeSDR-mini")
+    {
+        //EN_Shunt
+        value &= ~(1 << 2);
+        value |= !enable << 2;
+
+        if(tx)
+        {
+            uint32_t wr = 0x0103 << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path >>= 10;
+            path &= 0x3;
+            if (path==1)
+            {
+                value &= ~(1<<13);
+                value |= 1<<12;
+
+                value &= ~(1<<8); //LNA_H
+                value |= 1<<9;
+            }
+            else if (path==2)
+            {
+                value &= ~(1<<12);
+                value |= 1<<13;
+
+                value &= ~(1<<9); //LNA_W
+                value |= 1<<8;
+            }
+            //value |= enable << 1; //EN_Attenuator
+        }
+        else
+        {
+            uint32_t wr = 0x010D << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path &= ~0x0180;
+            path >>= 7;
+            if (path==1)
+            {
+                value &= ~(1<<8);
+                value |= 1<<9;
+            }
+            else if (path==3)
+            {
+                value &= ~(1<<9);
+                value |= 1<<8;
+            }
+        }
+    }
     status = port->WriteRegister(LoopbackCtrAddr, value);
     if(status != 0)
         return -1;
@@ -66,7 +140,8 @@ int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
 
 void DCIQ()
 {
-    lime::LMS7002M_RegistersMap *backup;
+    BoardLoopbackStore loopbackCache(lmsControl.GetConnection());
+
     int status;
     float freqStart = 2000e6;
     float freqEnd = freqStart;//1000e6;
@@ -105,7 +180,6 @@ void DCIQ()
             lmsControl.Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), 0);
         }
         lmsControl.DownloadAll();
-        backup = lmsControl.BackupRegisterMap();
 
         auto t1 = chrono::high_resolution_clock::now();
         if(useMCU) //using algorithm inside MCU
@@ -123,9 +197,9 @@ void DCIQ()
             }
 
             if(tx)
-                MCU_RunProcedure(1); //initiate Tx calibration
+                MCU_RunProcedure(extLoop ? 17 : 1); //initiate Tx calibration
             else
-                MCU_RunProcedure(2); //initiate Rx calibration
+                MCU_RunProcedure(extLoop ? 18 : 2); //initiate Rx calibration
             status = MCU_WaitForStatus(10000); //wait until MCU finishes
             if(status != 0)
             {
@@ -136,10 +210,9 @@ void DCIQ()
         else //calibrating with PC
         {
             if(tx)
-                //status = CalibrateTx();
-                status = CalibrateTx(true);
+                status = CalibrateTx(extLoop);
             else
-                status = CalibrateRx(true);
+                status = CalibrateRx(extLoop);
         }
         auto t2 = chrono::high_resolution_clock::now();
         long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
@@ -401,7 +474,6 @@ int main(int argc, char** argv)
         filename = "TxTest.ini";
     else
         filename = "RxTest.ini";*/
-    //filename = "CalibSetup.ini";
     filename = "TxDCTest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
