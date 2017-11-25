@@ -17,6 +17,8 @@ namespace fpga
     int StartStreaming(IConnection* serPort);
     int StopStreaming(IConnection* serPort);
     int ResetTimestamp(IConnection* serPort);
+    int UploadWFM(IConnection* port, const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
+    
 
 struct FPGA_PLL_clock
 {

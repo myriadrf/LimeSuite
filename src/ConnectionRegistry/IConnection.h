@@ -286,15 +286,6 @@ public:
      */
     virtual StreamChannel* SetupStream(const StreamConfig &config);
 
-    /**	@brief Uploads waveform to on board memory for later use
-    @param samples multiple channel samples data
-    @param chCount number of waveform channels
-    @param sample_count number of samples in each channel
-    @param format waveform data format
-    @param epIndex endpoint identifier
-    */
-    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
-
     /**	@brief Read raw stream data from device streaming port
     @param buffer       read buffer pointer
     @param length       number of bytes to read
@@ -303,6 +294,8 @@ public:
     */
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100);
 
+    virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
+    virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
     /***********************************************************************
      * Programming API
      **********************************************************************/

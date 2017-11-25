@@ -145,7 +145,7 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(ILimeSDRStreaming* port)
+Streamer::Streamer(ILimeSDRStreaming* port, int chipID)
 {
     dataPort = port;
     rxRunning = false;
@@ -160,7 +160,7 @@ Streamer::Streamer(ILimeSDRStreaming* port)
     txDataRate_Bps = 0;
     txBatchSize = 1;
     rxBatchSize = 1;
-    mChipID = dataPort->mStreamers.size();
+    mChipID = chipID;
     streamSize = 1;
     for(auto& i : mTxStreams)
         i = nullptr;

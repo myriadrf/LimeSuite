@@ -164,9 +164,13 @@ StreamChannel* IConnection::SetupStream(const StreamConfig &config)
     return nullptr;
 }
 
-int IConnection::UploadWFM(const void * const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
+int IConnection::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
-    return ReportError(EPERM, "UploadTxWFM not implemented");
+    return 0;   
+}
+int IConnection::SendData(const char* buffer, int length, int epIndex, int timeout)
+{
+    return 0;
 }
 
 /** @brief Sets callback function which gets called each time data is sent or received

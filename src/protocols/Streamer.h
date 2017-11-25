@@ -74,7 +74,7 @@ struct LIME_API StreamConfig
 class Streamer
 {
 public:
-    Streamer(ILimeSDRStreaming* port);
+    Streamer(ILimeSDRStreaming* port, int chipID=0);
     ~Streamer();
 
     StreamChannel* SetupStream(const StreamConfig& config);

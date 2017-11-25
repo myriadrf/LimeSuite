@@ -465,7 +465,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
    
     size_t tmp = 5;
     while (--tmp)
-        if ((2<<tmp) <= oversample)
+        if ((2u<<tmp) <= oversample)
             break;
 
     int ratio = 2<<tmp;
@@ -2015,7 +2015,7 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
     
-    return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
+    return lime::fpga::UploadWFM(connection,samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 
 lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
@@ -2027,6 +2027,7 @@ lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
 int LMS7_Device::DestroyStream(lime::StreamChannel* streamID)
 {
     delete streamID;
+    return 0;
 }
 
 int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)

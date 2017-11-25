@@ -29,15 +29,12 @@ public:
     virtual uint64_t GetHardwareTimestamp(void);
     virtual void SetHardwareTimestamp(const uint64_t now);
 
-    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex) override;
     virtual int ResetStreamBuffers(){return 0;};
     std::vector<Streamer*> mStreamers;
 
     virtual int GetBuffersCount() const = 0;
     virtual int CheckStreamSize(int size) const = 0;
-    virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
-    virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
-   
+  
     virtual int BeginDataSending(const char* buffer, uint32_t length, int ep)=0;
     virtual int WaitForSending(int contextHandle, uint32_t timeout_ms) =0;
     virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) =0;

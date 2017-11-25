@@ -8,6 +8,7 @@
 #include <math.h>
 #include <assert.h>
 #include <thread>
+#include "Logger.h"
 using namespace std;
 
 #ifndef NDEBUG
@@ -536,6 +537,94 @@ int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCoun
     }
     memcpy(buffer,samples[0],samplesCount*sizeof(complex16_t));
     return samplesCount*sizeof(complex16_t);
+}
+
+int UploadWFM(IConnection* port, const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
+{
+    const int samplesInPkt = samples16InPkt;
+    port->WriteRegister(0xFFFF, 1 << epIndex);
+    port->WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
+    port->WriteRegister(0x000E, 0x0); //16bit samples
+
+    uint16_t regValue = 0;
+    port->ReadRegister(0x000D,regValue);
+    regValue |= 0x4;
+    port->WriteRegister(0x000D, regValue);
+
+    lime::FPGA_DataPacket pkt;
+    size_t samplesUsed = 0;
+    int cnt = sample_count;
+
+    const complex16_t* const* src = (const complex16_t* const*)samples;
+    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
+    lime::complex16_t** samplesShort = new lime::complex16_t*[chCount];
+    for(unsigned i=0; i<chCount; ++i)
+        samplesShort[i] = nullptr;
+
+
+    if (format == StreamConfig::FMT_INT12)
+    {
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = src[ch][i].i << 4;
+                samplesShort[ch][i].q = src[ch][i].q << 4;
+            }
+        src = samplesShort;
+    }
+    else if(format == StreamConfig::FMT_FLOAT32)
+    {
+        const float mult = 32767.5f;
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+
+        const float* const* samplesFloat = (const float* const*)samples;
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = samplesFloat[ch][2*i]*mult;
+                samplesShort[ch][i].q = samplesFloat[ch][2*i+1]*mult;
+            }
+        src = samplesShort;
+    }
+
+    while(cnt > 0)
+    {
+        pkt.counter = 0;
+        pkt.reserved[0] = 0;
+        int samplesToSend = cnt > samplesInPkt/chCount ? samplesInPkt/chCount : cnt;
+
+        for(unsigned i=0; i<chCount; ++i)
+            batch[i] = &src[i][samplesUsed];
+        samplesUsed += samplesToSend;
+
+        int bufPos = lime::fpga::Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, false, pkt.data);
+        int payloadSize = (bufPos / 4) * 4;
+        if(bufPos % 4 != 0)
+            lime::warning("Packet samples count not multiple of 4");
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = 16+payloadSize;
+        if (port->SendData((const char*)&pkt,bToSend,epIndex,500)!=bToSend)
+            break;
+        cnt -= samplesToSend;
+    }
+    delete[] batch;
+    for(unsigned i=0; i<chCount; ++i)
+        if (samplesShort[i])
+            delete [] samplesShort[i];
+    delete[] samplesShort;
+
+    /*Give some time to load samples to FPGA*/
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    if(cnt == 0)
+        return 0;
+    else
+        return ReportError(-1, "Failed to upload waveform");
 }
 
 } //namespace fpga
