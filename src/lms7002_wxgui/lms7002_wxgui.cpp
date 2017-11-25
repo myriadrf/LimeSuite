@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb 16 2016)
+// C++ code generated with wxFormBuilder (version Sep 23 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -3454,7 +3454,6 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer89->Add( ID_STATICTEXT3, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFrequency = new wxTextCtrl( sbSizer70->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0 );
-	txtFrequency->SetMaxLength( 0 ); 
 	fgSizer89->Add( txtFrequency, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 	
 	cmbCLKH_OV_CLKL_CGEN = new wxComboBox( sbSizer70->GetStaticBox(), ID_CLKH_OV_CLKL_CGEN, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
@@ -3463,7 +3462,6 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer89->Add( cmbCLKH_OV_CLKL_CGEN, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFrequencyCLKL = new wxTextCtrl( sbSizer70->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( 48,-1 ), wxTE_READONLY );
-	txtFrequencyCLKL->SetMaxLength( 0 ); 
 	txtFrequencyCLKL->Enable( false );
 	
 	fgSizer89->Add( txtFrequencyCLKL, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -4098,7 +4096,6 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	sbSizer79 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Frequency, MHz") ), wxVERTICAL );
 	
 	txtFrequency = new wxTextCtrl( sbSizer79->GetStaticBox(), wxID_ANY, wxT("2140"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtFrequency->SetMaxLength( 0 ); 
 	sbSizer79->Add( txtFrequency, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	btnCalculate = new wxButton( sbSizer79->GetStaticBox(), wxID_ANY, wxT("Calculate"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6511,7 +6508,6 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtDC_REG_TXTSP = new wxTextCtrl( this, ID_DC_REG_TXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
-	txtDC_REG_TXTSP->SetMaxLength( 0 ); 
 	fgSizer150->Add( txtDC_REG_TXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	
@@ -7681,7 +7677,6 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtDC_REG_RXTSP = new wxTextCtrl( this, ID_DC_REG_RXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
-	txtDC_REG_RXTSP->SetMaxLength( 0 ); 
 	fgSizer150->Add( txtDC_REG_RXTSP, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
 	
 	
@@ -8662,7 +8657,6 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer199->Add( ID_STATICTEXT4, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	m_sTestNo = new wxTextCtrl( sbSizer126->GetStaticBox(), ID_TESTNO, wxT("1"), wxDefaultPosition, wxSize( 73,-1 ), 0 );
-	m_sTestNo->SetMaxLength( 0 ); 
 	fgSizer199->Add( m_sTestNo, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	btnRunProductionTest = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Run production test"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -8704,7 +8698,6 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer201->Add( ID_STATICTEXT6, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	InstrNo = new wxTextCtrl( sbSizer128->GetStaticBox(), ID_INSTRNO, wxT("1"), wxDefaultPosition, wxSize( 68,-1 ), 0 );
-	InstrNo->SetMaxLength( 0 ); 
 	fgSizer201->Add( InstrNo, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	ResetPC = new wxButton( sbSizer128->GetStaticBox(), ID_RESETPC, wxT("Reset PC"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -8828,7 +8821,6 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer206->Add( ID_STATICTEXT11, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtRegValueWr = new wxTextCtrl( sbSizer132->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( 65,-1 ), 0 );
-	txtRegValueWr->SetMaxLength( 0 ); 
 	fgSizer206->Add( txtRegValueWr, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	rbtnRegRead = new wxRadioButton( sbSizer132->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -9209,11 +9201,15 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	fgSizer246->SetFlexibleDirection( wxVERTICAL );
 	fgSizer246->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("PC") };
+	wxString rgrCalibrationMethodChoices[] = { wxT("Chip internal"), wxT("On board external") };
 	int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
-	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration method"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
+	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration loopback:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
 	rgrCalibrationMethod->SetSelection( 0 );
 	fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, 5 );
+	
+	lblCalibrationNote = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	lblCalibrationNote->Wrap( -1 );
+	fgSizer246->Add( lblCalibrationNote, 0, wxALL, 5 );
 	
 	
 	sbSizer165->Add( fgSizer246, 0, 0, 5 );
@@ -9242,6 +9238,7 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	cmbDCCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	rgrCalibrationMethod->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCalibrations_view::OnCalibrationMethodChange ), NULL, this );
 }
 
 pnlCalibrations_view::~pnlCalibrations_view()
@@ -9262,6 +9259,7 @@ pnlCalibrations_view::~pnlCalibrations_view()
 	cmbDCCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	rgrCalibrationMethod->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCalibrations_view::OnCalibrationMethodChange ), NULL, this );
 	
 }
 
