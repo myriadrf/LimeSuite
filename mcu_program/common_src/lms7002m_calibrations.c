@@ -841,7 +841,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     LoadDC_REG_TX_IQ();
     SetNCOFrequency(LMS7002M_Tx, bandwidthRF/ calibUserBwDivider, 0);
     {
-        const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, 11 << 4 | 10);
+        const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, MSB_LSB(11, 10));
         if(extLoopback)
         {
             Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
@@ -863,10 +863,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(SEL_PATH_RFE, sel_band1_2_trf+1);
             //Modify_SPI_Reg_bits(PD_RLOOPB_1_RFE, 0);
             //Modify_SPI_Reg_bits(PD_RLOOPB_2_RFE, 1);
-            Modify_SPI_Reg_bits(0x010C, 6 << 4 | 5, sel_band1_2_trf ^ 0x3);
+            Modify_SPI_Reg_bits(0x010C, MSB_LSB(6, 5), sel_band1_2_trf ^ 0x3);
             //Modify_SPI_Reg_bits(EN_INSHSW_LB1_RFE, 0);
             //Modify_SPI_Reg_bits(EN_INSHSW_LB2_RFE, 1);
-            Modify_SPI_Reg_bits(0x010D, 4 << 4 | 3, sel_band1_2_trf ^ 0x3);
+            Modify_SPI_Reg_bits(0x010D, MSB_LSB(4, 3), sel_band1_2_trf ^ 0x3);
         }
     }
     return 0x0;
@@ -950,8 +950,6 @@ TxCalibrationEnd:
 #endif //LMS_VERBOSE_OUTPUT
     return 0;
 }
-
-#define MSBLSB(x, y) x << 4 | y
 
 uint8_t CalibrateRxSetup(bool extLoopback)
 {
@@ -1333,8 +1331,8 @@ RxCalibrationEndStage:
         Modify_SPI_Reg_bits(PD_DCDAC_RXA, 0);
     else
         Modify_SPI_Reg_bits(PD_DCDAC_RXB, 0);
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(2, 0), 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(8, 8), 0); //DCLOOP_STOP
+    Modify_SPI_Reg_bits(0x040C, MSB_LSB(2, 0), 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
+    Modify_SPI_Reg_bits(0x040C, MSB_LSB(8, 8), 0); //DCLOOP_STOP
     //Log("Rx calibration finished", LOG_INFO);
 #if VERBOSE
     int32_t duration = std::chrono::duration_cast<std::chrono::milliseconds>
