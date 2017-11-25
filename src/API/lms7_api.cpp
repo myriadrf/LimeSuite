@@ -11,6 +11,7 @@
 #include "FPGA_common.h"
 #include "Logger.h"
 #include "LMS64CProtocol.h"
+#include "Streamer.h"
 
 using namespace std;
 
@@ -1055,7 +1056,8 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Paramete
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->ReadParam(param,val);
+    *val = lms->ReadParam(param);
+    return LMS_SUCCESS;;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Parameter param, uint16_t val)
@@ -1138,19 +1140,20 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     switch(stream->dataFmt)
     {
         case lms_stream_t::LMS_FMT_F32:
-            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+            config.format = lime::StreamConfig::FMT_FLOAT32;
             break;
         case lms_stream_t::LMS_FMT_I16:
-            config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
+            config.format = lime::StreamConfig::FMT_INT16;
             break;
         case lms_stream_t::LMS_FMT_I12:
-            config.format = lime::StreamConfig::STREAM_12_BIT_COMPRESSED;
+            config.format = lime::StreamConfig::FMT_INT12;
             break;
         default:
-            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+            config.format = lime::StreamConfig::FMT_FLOAT32;
     }
     config.isTx = stream->isTx;
-    return lms->GetConnection(stream->channel)->SetupStream(stream->handle, config);
+    stream->handle = size_t(lms->SetupStream(config));
+    return stream->handle == 0 ? -1 : 0;
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream)
@@ -1159,33 +1162,33 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
         return lime::ReportError(EINVAL, "stream is NULL.");
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->GetConnection(stream->channel)->CloseStream(stream->handle);
+    return lms->DestroyStream((lime::StreamChannel*)stream->handle);
 }
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
 {
     if (stream==nullptr || stream->handle==0)
         return 0;
-    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Start();
+    return reinterpret_cast<lime::StreamChannel*>(stream->handle)->Start();
 }
 
 API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *stream)
 {
     if (stream==nullptr || stream->handle==0)
         return 0;
-    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Stop();
+    return reinterpret_cast<lime::StreamChannel*>(stream->handle)->Stop();
 }
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (stream==nullptr || stream->handle==0)
         return -1;
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    lime::IStreamChannel::Metadata metadata;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
+    lime::StreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
     {
-        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+        metadata.flags |= meta->waitForTimestamp * lime::RingFIFO::SYNC_TIMESTAMP;
         metadata.timestamp = meta->timestamp;
     }
     else metadata.timestamp = 0;
@@ -1200,13 +1203,13 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
 {
     if (stream==nullptr || stream->handle==0)
         return -1;
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    lime::IStreamChannel::Metadata metadata;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
+    lime::StreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
     {
-        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
-        metadata.flags |= meta->flushPartialPacket * lime::IStreamChannel::Metadata::END_BURST;
+        metadata.flags |= meta->waitForTimestamp * lime::RingFIFO::SYNC_TIMESTAMP;
+        metadata.flags |= meta->flushPartialPacket * lime::RingFIFO::END_BURST;
         metadata.timestamp = meta->timestamp;
     }
     else metadata.timestamp = 0;
@@ -1223,16 +1226,16 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device,
     switch(format)
     {
         case 0:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
             break;
         case 1:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_IN_16;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT16;
             break;
         case 2:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_COMPLEX_FLOAT32;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_FLOAT32;
             break;
         default:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
             break;
     }
     return lms->UploadWFM(samples, chCount, sample_count, fmt);
@@ -1258,10 +1261,10 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned ch, bool
 API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t* status)
 {
     assert(stream != nullptr);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
     if(channel == nullptr)
         return -1;
-    lime::IStreamChannel::Info info = channel->GetInfo();
+    lime::StreamChannel::Info info = channel->GetInfo();
 
     status->active = info.active;
     status->droppedPackets = info.droppedPackets;

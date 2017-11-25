@@ -11,7 +11,6 @@
 #include "dataTypes.h"
 #include <cmath>
 #include <assert.h>
-#include "IConnection.h"
 
 namespace lime{
 
@@ -23,6 +22,13 @@ public:
     {
         uint32_t size;
         uint32_t itemsFilled;
+    };
+    
+    enum StreamFlags
+    {
+        SYNC_TIMESTAMP = 1,
+        END_BURST = 2,
+        OVERWRITE_OLD = 4,
     };
 
     //! @brief Returns information about FIFO size and fullness
@@ -69,7 +75,7 @@ public:
                 if(t2-t1 >= std::chrono::milliseconds(timeout_ms))
                     return samplesTaken;
 
-                if(flags & IStreamChannel::Metadata::OVERWRITE_OLD)
+                if(flags & OVERWRITE_OLD)
                 {
                     int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;
                     mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
@@ -87,7 +93,7 @@ public:
                 if (cnt > SamplesPacket::maxSamplesInPacket)
                 {
                     cnt = SamplesPacket::maxSamplesInPacket;
-                    mBuffer[mTail].flags = flags & IStreamChannel::Metadata::SYNC_TIMESTAMP;
+                    mBuffer[mTail].flags = flags & SYNC_TIMESTAMP;
                 }
                 else
                     mBuffer[mTail].flags = flags;
@@ -133,7 +139,7 @@ public:
 
             while(mElementsFilled > 0 && samplesFilled < samplesCount)
             {
-                const bool hasEOB = mBuffer[mHead].flags & lime::IStreamChannel::Metadata::END_BURST;
+                const bool hasEOB = mBuffer[mHead].flags & END_BURST;
                 if (flags != nullptr) *flags |= mBuffer[mHead].flags;
                 const int first = mBuffer[mHead].first;
 

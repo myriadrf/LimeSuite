@@ -42,7 +42,6 @@ ConnectionFTDI::ConnectionFTDI(void *arg)
 */
 ConnectionFTDI::ConnectionFTDI(void *arg, const unsigned index, const int vid, const int pid)
 {
-    mExpectedSampleRate = 0;
     isConnected = false;
 
     mStreamWrEndPtAddr = 0x03;
@@ -772,8 +771,6 @@ int ConnectionFTDI::UpdateExternalDataRate(const size_t channel, const double tx
     const float rxInterfaceClk = 2 * rxRate;
     int status = 0;
 
-    mExpectedSampleRate = rxRate;
-
     lime::fpga::FPGA_PLL_clock clocks[4];
 
     clocks[0].bypass = false;
@@ -825,7 +822,6 @@ int ConnectionFTDI::UpdateExternalDataRate(const size_t channel, const double tx
     //if (this->chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
     /*if (rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
         phaseSearch = true;*/
-    mExpectedSampleRate = rxRate_Hz;
     std::vector<uint32_t> dataWr;
     std::vector<uint32_t> dataRd;
 

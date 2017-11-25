@@ -34,8 +34,8 @@ StreamConfig::StreamConfig(void):
     isTx(false),
     performanceLatency(0.5),
     bufferLength(0),
-    format(STREAM_12_BIT_IN_16),
-    linkFormat(STREAM_12_BIT_IN_16)
+    format(FMT_INT16),
+    linkFormat(FMT_INT16)
 {
     return;
 }
@@ -115,16 +115,6 @@ int IConnection::UpdateExternalDataRate(const size_t channel, const double txRat
     return 0;
 }
 
-void IConnection::EnterSelfCalibration(const size_t channel)
-{
-    return;
-}
-
-void IConnection::ExitSelfCalibration(const size_t channel)
-{
-    return;
-}
-
 /***********************************************************************
  * Reference clocks API
  **********************************************************************/
@@ -164,51 +154,14 @@ void IConnection::SetHardwareTimestamp(const uint64_t now)
     return;
 }
 
-double IConnection::GetHardwareTimestampRate(void)
-{
-    return 1.0;
-}
-
 /***********************************************************************
  * Stream API
  **********************************************************************/
 
-int IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
+StreamChannel* IConnection::SetupStream(const StreamConfig &config)
 {
-    streamID = ~0;
-    return ReportError(EPERM, "SetupStream not implemented");
-}
-
-int IConnection::CloseStream(const size_t streamID)
-{
-    return ReportError(EPERM, "CloseStream not implemented");
-}
-
-size_t IConnection::GetStreamSize(const size_t streamID)
-{
-    //this should be overloaded, but if not,
-    //pick a number that will probably work (power of 2)
-    return 16*1024;
-}
-
-int IConnection::ControlStream(const size_t streamID, const bool enable)
-{
-    return ReportError(EPERM, "ControlStream not implemented");
-}
-
-int IConnection::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
-{
-    return ReportError(EPERM, "ReadStream not implemented");
-}
-
-int IConnection::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
-{
-    return ReportError(EPERM, "WriteStream not implemented");
-}
-
-int IConnection::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
-{
-    return ReportError(EPERM, "ReadStreamStatus not implemented");
+    ReportError(EPERM, "SetupStream not implemented");
+    return nullptr;
 }
 
 int IConnection::UploadWFM(const void * const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)

@@ -6,7 +6,6 @@
 
 #include "SoapyLMS7.h"
 #include "lms7_device.h"
-#include <IConnection.h>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Logger.hpp>
 #include <SoapySDR/Time.hpp>
@@ -14,6 +13,7 @@
 #include <iostream>
 #include <algorithm> //min/max
 #include "ErrorReporting.h"
+#include "Streamer.h"
 
 using namespace lime;
 
@@ -22,7 +22,7 @@ using namespace lime;
  ******************************************************************/
 struct IConnectionStream
 {
-    std::vector<size_t> streamID;
+    std::vector<StreamChannel*> streamID;
     int direction;
     size_t elemSize;
     size_t elemMTU;
@@ -114,9 +114,9 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     for(size_t i=0; i<channelIDs.size(); ++i)
     {
         config.channelID = channelIDs[i];
-        if (format == SOAPY_SDR_CF32) config.format = StreamConfig::STREAM_COMPLEX_FLOAT32;
-        else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::STREAM_12_BIT_IN_16;
-        else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        if (format == SOAPY_SDR_CF32) config.format = StreamConfig::FMT_FLOAT32;
+        else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::FMT_INT16;
+        else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::FMT_INT12;
         else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported format");
 
         //optional buffer length if specified (from device args)
@@ -143,12 +143,11 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
         }
 
         //create the stream
-        size_t streamID(~0);
-        const int status = lms7Device->GetConnection()->SetupStream(streamID, config);
-        if (status != 0)
+        StreamChannel* streamID = lms7Device->SetupStream(config);
+        if (streamID == 0)
             throw std::runtime_error("SoapyLMS7::setupStream() failed: " + std::string(GetLastErrorMessage()));
         stream->streamID.push_back(streamID);
-        stream->elemMTU = lms7Device->GetConnection()->GetStreamSize(streamID);
+        stream->elemMTU = streamID->GetStreamSize();
         stream->enabled = false;
     }
 
@@ -171,11 +170,11 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
     if (icstream->enabled)
     {
         for(auto i : streamID)
-            lms7Device->GetConnection()->ControlStream(i, false);
+            i->Stop();
     }
 
     for(auto i : streamID)
-        lms7Device->GetConnection()->CloseStream(i);
+        lms7Device->DestroyStream(i);
 }
 
 size_t SoapyLMS7::getStreamMTU(SoapySDR::Stream *stream) const
@@ -194,7 +193,7 @@ int SoapyLMS7::activateStream(
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
 
-    if (lms7Device->GetConnection()->GetHardwareTimestampRate() == 0.0)
+    if (sampleRate == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
 
     //perform self calibration with current bandwidth settings
@@ -219,7 +218,7 @@ int SoapyLMS7::activateStream(
     {
         for(auto i : streamID)
         {
-            int status = lms7Device->GetConnection()->ControlStream(i, true);
+            int status = i->Start();
             if(status != 0) return SOAPY_SDR_STREAM_ERROR;
         }
         icstream->enabled = true;
@@ -239,7 +238,7 @@ int SoapyLMS7::deactivateStream(
     icstream->hasCmd = false;
 
     StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, lms7Device->GetConnection()->GetHardwareTimestampRate());
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate);
     metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
     metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
 
@@ -247,7 +246,7 @@ int SoapyLMS7::deactivateStream(
     {
         for(auto i : streamID)
         {
-            int status = lms7Device->GetConnection()->ControlStream(i, false);
+            int status = i->Stop();
             if(status != 0) return SOAPY_SDR_STREAM_ERROR;
         }
         icstream->enabled = false;
@@ -274,7 +273,7 @@ int SoapyLMS7::_readStreamAligned(
     char * const *buffs,
     size_t numElems,
     uint64_t requestTime,
-    StreamMetadata &md,
+    StreamChannel::Metadata &md,
     const long timeoutMs)
 {
     const auto &streamID = stream->streamID;
@@ -286,7 +285,7 @@ int SoapyLMS7::_readStreamAligned(
         size_t &N = numWritten[i];
         const uint64_t expectedTime(requestTime + N);
 
-        int status = lms7Device->GetConnection()->ReadStream(streamID[i], buffs[i]+(elemSize*N), numElems-N, timeoutMs, md);
+        int status = streamID[i]->Read(buffs[i]+(elemSize*N), numElems-N,&md, timeoutMs);
         if (status == 0) return SOAPY_SDR_TIMEOUT;
         if (status < 0) return SOAPY_SDR_STREAM_ERROR;
 
@@ -366,13 +365,13 @@ int SoapyLMS7::readStream(
         numElems = std::min(numElems, icstream->elemMTU);
     }
 
-    StreamMetadata metadata;
-    const uint64_t cmdTicks = ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0)?SoapySDR::timeNsToTicks(icstream->timeNs, lms7Device->GetConnection()->GetHardwareTimestampRate()):0;
+    StreamChannel::Metadata metadata;
+    const uint64_t cmdTicks = ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0)?SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate):0;
     int status = _readStreamAligned(icstream, (char * const *)buffs, numElems, cmdTicks, metadata, timeoutUs/1000);
     if (status < 0) return status;
 
     //the command had a time, so we need to compare it to received time
-    if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and metadata.hasTimestamp)
+    if ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0 and (metadata.flags & RingFIFO::SYNC_TIMESTAMP) != 0)
     {
         //our request time is now late, clear command and return error code
         if (cmdTicks < metadata.timestamp)
@@ -406,15 +405,15 @@ int SoapyLMS7::readStream(
         if (icstream->numElems == 0)
         {
             icstream->hasCmd = false;
-            metadata.endOfBurst = true;
+            metadata.flags |= RingFIFO::END_BURST;
         }
     }
 
     //output metadata
     flags = 0;
-    if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
-    if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, lms7Device->GetConnection()->GetHardwareTimestampRate());
+    if ((metadata.flags & RingFIFO::END_BURST) != 0) flags |= SOAPY_SDR_END_BURST;
+    if ((metadata.flags & RingFIFO::SYNC_TIMESTAMP) != 0) flags |= SOAPY_SDR_HAS_TIME;
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate);
 
     //return num read or error code
     return (status >= 0) ? status : SOAPY_SDR_STREAM_ERROR;
@@ -432,13 +431,13 @@ int SoapyLMS7::writeStream(
     const auto &streamID = icstream->streamID;
 
     //input metadata
-    StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, lms7Device->GetConnection()->GetHardwareTimestampRate());
-    metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
-    metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
+    StreamChannel::Metadata metadata;
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate);
+    metadata.flags = (flags & SOAPY_SDR_HAS_TIME) ? lime::RingFIFO::SYNC_TIMESTAMP : 0;
+    metadata.flags |= (flags & SOAPY_SDR_END_BURST) ? lime::RingFIFO::END_BURST : 0;
 
     //write the 0th channel: get number of samples written
-    int status = lms7Device->GetConnection()->WriteStream(streamID[0], buffs[0], numElems, timeoutUs/1000, metadata);
+    int status = streamID[0]->Write(buffs[0], numElems, &metadata, timeoutUs/1000);
     if (status == 0) return SOAPY_SDR_TIMEOUT;
     if (status < 0) return SOAPY_SDR_STREAM_ERROR;
 
@@ -447,7 +446,7 @@ int SoapyLMS7::writeStream(
     //or there is an unknown internal issue with the stream fifo
     for (size_t i = 1; i < streamID.size(); i++)
     {
-        int status_i = lms7Device->GetConnection()->WriteStream(streamID[i], buffs[i], status, 1000/*1s*/, metadata);
+        int status_i = streamID[0]->Write(buffs[i], status, &metadata, 1000/*1s*/);
         if (status_i != status)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
@@ -469,26 +468,17 @@ int SoapyLMS7::readStreamStatus(
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
 
-    StreamMetadata metadata;
+    lime::StreamChannel::Info metadata;
     flags = 0;
     auto start = std::chrono::high_resolution_clock::now();
     while (1)
     {
         for(auto i : streamID)
         {
-            int ret = lms7Device->GetConnection()->ReadStreamStatus(i, timeoutUs/1000, metadata);
-            if (ret != 0)
-            {
-                //handle the default not implemented case and return not supported
-                if (GetLastError() == EPERM) return SOAPY_SDR_NOT_SUPPORTED;
-                return SOAPY_SDR_TIMEOUT;
-            }
-
-            //packet dropped doesnt mean anything for tx streams
-            if (icstream->direction == SOAPY_SDR_TX) metadata.packetDropped = false;
+            metadata = i->GetInfo();
 
             //stop when event is detected
-            if (metadata.endOfBurst || metadata.lateTimestamp || metadata.packetDropped)
+            if (metadata.overrun || metadata.underrun || metadata.droppedPackets)
                 goto found;
         }
         //check timeout
@@ -503,13 +493,12 @@ int SoapyLMS7::readStreamStatus(
     }
 
     found:
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, lms7Device->GetConnection()->GetHardwareTimestampRate());
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate);
     //output metadata
-    if (metadata.endOfBurst) flags |= SOAPY_SDR_END_BURST;
-    if (metadata.hasTimestamp) flags |= SOAPY_SDR_HAS_TIME;
-
-    if (metadata.lateTimestamp) return SOAPY_SDR_TIME_ERROR;
-    if (metadata.packetDropped) return SOAPY_SDR_OVERFLOW;
+    flags |= SOAPY_SDR_HAS_TIME;
+    if (metadata.droppedPackets) return SOAPY_SDR_TIME_ERROR;
+    if (metadata.overrun) return SOAPY_SDR_OVERFLOW;
+    if (metadata.underrun) return SOAPY_SDR_UNDERFLOW;
 
     return 0;
 }

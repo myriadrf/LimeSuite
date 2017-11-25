@@ -63,9 +63,6 @@ const ConnectionXillybus::EPConfig ConnectionXillybus::deviceConfigs[] = {
 */
 ConnectionXillybus::ConnectionXillybus(const unsigned index)
 {
-    RxLoopFunction = bind(&ConnectionXillybus::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&ConnectionXillybus::TransmitPacketsLoop, this, std::placeholders::_1);
-
     m_hardwareName = "";
 #ifndef __unix__
     hWrite = INVALID_HANDLE_VALUE;
@@ -639,7 +636,6 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
 
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
-    mExpectedSampleRate = rxRate_Hz;
     const int pll_ind = (channel == 1) ? 2 : 0;
 
     clocks[0].index = 0;
@@ -684,7 +680,6 @@ int ConnectionXillybus::UpdateExternalDataRate(const size_t channel, const doubl
         if (this->chipVersion == 0x3841 && info.device == LMS_DEV_LIMESDR_PCIE) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
             if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
                 phaseSearch = true;
-    mExpectedSampleRate = rxRate_Hz;
 
     std::vector<uint32_t> dataWr;
     std::vector<uint32_t> dataRd;

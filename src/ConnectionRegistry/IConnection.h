@@ -14,6 +14,7 @@
 #include <cstring> //memset
 #include <functional>
 #include <stdint.h>
+#include "Streamer.h"
 
 namespace lime{
 
@@ -112,53 +113,7 @@ struct LIME_API StreamMetadata
     bool packetDropped;
 };
 
-/*!
- * The stream config structure is used with the SetupStream() API.
- */
-struct LIME_API StreamConfig
-{
-    StreamConfig(void);
 
-    //! True for transmit stream, false for receive
-    bool isTx;
-
-    /*!
-     * A list of channels to use.
-     *  - Example ChA on RFIC0: [0]
-     *  - Example MIMO on RFIC0: [0, 1]
-     *  - Example MIMO on RFIC1: [2, 3]
-     */
-    uint8_t channelID;
-
-    float performanceLatency;
-
-    //! Possible stream data formats
-    enum StreamDataFormat
-    {
-        STREAM_12_BIT_IN_16,
-        STREAM_12_BIT_COMPRESSED,
-        STREAM_COMPLEX_FLOAT32,
-    };
-
-    /*!
-     * The buffer length is a size in samples
-     * that used for allocating internal buffers.
-     * Default: 0, meaning automatic selection
-     */
-    size_t bufferLength;
-
-    //! The format of the samples in Read/WriteStream().
-    StreamDataFormat format;
-
-    /*!
-     * The format of samples over the wire.
-     * This is not the format presented to the API caller.
-     * Choosing a compressed format can decrease link use
-     * at the expense of additional processing on the PC
-     * Default: STREAM_12_BIT_IN_16
-     */
-    StreamDataFormat linkFormat;
-};
 
 /*!
  * IConnection is the interface class for a device with 1 or more Lime RFICs.
@@ -262,22 +217,6 @@ public:
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
     virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase);
 
-    /*!
-     * Called by the LMS7002M driver before the board begins self-calibration.
-     * Implementations should perform the necessary steps to power down
-     * external amplifiers and disable any BBIC interfaces which
-     * may be affected by the change in BBIC interface clock rate.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     */
-    virtual void EnterSelfCalibration(const size_t channel);
-
-    /*!
-     * Called by the LMS7002M driver after the board completes self-calibration.
-     * Implementations should restore the board to the pre-calibration state.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     */
-    virtual void ExitSelfCalibration(const size_t channel);
-
     /***********************************************************************
      * Reference clocks API
      **********************************************************************/
@@ -327,12 +266,6 @@ public:
      */
     virtual void SetHardwareTimestamp(const uint64_t now);
 
-    /*!
-     * Get the rate of the current timestamp in ticks per second.
-     * This call may be used often and should return a cached value.
-     */
-    virtual double GetHardwareTimestampRate(void);
-
     /***********************************************************************
      * Stream API
      **********************************************************************/
@@ -351,77 +284,7 @@ public:
      * @param config the requested stream configuration
      * @return 0-success, other failure
      */
-    virtual int SetupStream(size_t &streamID, const StreamConfig &config);
-
-    /*!
-     * Close an open stream give the stream ID.
-     * This invalidates the stream ID
-     * @param streamID the configured stream identifier
-     * @return 0-success, other failure
-     */
-    virtual int CloseStream(const size_t streamID);
-
-    /*!
-     * Get the transfer size per buffer in samples.
-     * Use the stream size buffers when possible
-     * with the ReadStream()/WriteStream() API
-     * to match up with the link transfer size.
-     * Consider this an optimization.
-     * @param streamID the configured stream identifier
-     * @return the transfer size per buffer in samples
-     */
-    virtual size_t GetStreamSize(const size_t streamID);
-
-    /*!
-     * Control streaming activation, bursts, and timing.
-     * While SetupStream() sets up and allocates resources,
-     * ControlStream() is resonsible for dis/enabling the stream
-     *
-     * - Use enable to activate/deactivate the stream.
-     *
-     * @param streamID the stream index number
-     * @param enable true to enable streaming, false to halt streaming
-     * @return true for success, otherwise false
-     */
-    virtual int ControlStream(const size_t streamID, const bool enable);
-
-    /*!
-     * Read blocking data from the stream into the specified buffer.
-     *
-     * @param streamID the RX stream index number
-     * @param buffer an array of buffers pointers
-     * @param length the number of samples per buffer
-     * @param timeout_ms the timeout in milliseconds
-     * @param metadata [out] optional stream metadata
-     * @return the number of samples read or error code
-     */
-    virtual int ReadStream(const size_t streamID, void* buffer, const size_t length, const long timeout_ms, StreamMetadata &metadata);
-
-    /*!
-     * Write blocking data into the stream from the specified buffer.
-     *
-     * - The metadata timestamp corresponds to the start of the buffer.
-     * - The end of burst only applies when all bytes have been written.
-     *
-     * @param streamID the TX stream stream number
-     * @param buffs an array of buffers pointers
-     * @param length the number of samples per buffer
-     * @param timeout_ms the timeout in milliseconds
-     * @param metadata optional stream metadata
-     * @return the number of samples written or error code
-     */
-    virtual int WriteStream(const size_t streamID, const void *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-
-    /*!
-     * Read reported stream status events such as
-     * overflow, underflow, late transmit, end of burst.
-     *
-     * @param streamID the RX stream index number
-     * @param timeout_ms the timeout in milliseconds
-     * @param [out] metadata stream status metadata
-     * @return 0 on success, -1 for timeout no data
-     */
-    virtual int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
+    virtual StreamChannel* SetupStream(const StreamConfig &config);
 
     /**	@brief Uploads waveform to on board memory for later use
     @param samples multiple channel samples data
@@ -616,61 +479,6 @@ int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     data = ReadType(data32);
     return st;
 }
-
-class LIME_API IStreamChannel
-{
-public:
-    struct Info
-    {
-        float sampleRate;
-        int fifoSize;
-        int fifoItemsCount;
-        int overrun;
-        int underrun;
-        bool active;
-        float linkRate;
-        int droppedPackets;
-        uint64_t timestamp;
-    };
-    IStreamChannel(){};
-    IStreamChannel(IConnection* port, StreamConfig conf){};
-    virtual int Start() = 0;
-    virtual int Stop() = 0;
-    virtual ~IStreamChannel(){};
-
-    struct Metadata
-    {
-        enum
-        {
-            SYNC_TIMESTAMP = 1,
-            END_BURST = 2,
-            OVERWRITE_OLD = 4,
-        };
-        uint64_t timestamp;
-        uint32_t flags;
-    };
-
-    /** @brief Returns samples from receiver FIFO
-        @param samples destination array of data type used in SetupStream()
-        @param count number of samples to read
-        @param metadata [in,out?] information about the transfer
-	@param timeout_ms return error if operation does not complete in timeout_ms (milliseconds)
-        @return number of samples received
-    */
-    virtual int Read(void* samples, const uint32_t count, Metadata* metadata, const int32_t timeout_ms = 100) = 0;
-
-    /** @brief Writes samples to transmitter FIFO
-        @param samples source array of data type used in SetupStream()
-        @param count number of samples to write
-	@param metadata [in,out?] information about the transfer
-	@param timeout_ms return error if operation does not complete in timeout_ms (milliseconds)
-        @return number of samples transmitted
-    */
-    virtual int Write(const void* samples, const uint32_t count, const Metadata* metadata, const int32_t timeout_ms = 100) = 0;
-
-    virtual Info GetInfo() = 0;
-};
-
 }
 #endif
 

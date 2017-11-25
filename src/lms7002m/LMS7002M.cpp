@@ -1086,7 +1086,6 @@ float_type LMS7002M::GetReferenceClk_TSP(bool tx)
 int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfrequencies, CGEN_details* output)
 {
     stringstream ss;
-    LMS7002M_SelfCalState state(this);
     float_type dFvco;
     float_type dFrac;
     int16_t iHdiv;
@@ -1840,6 +1839,14 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data)
 */
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
 {
+    //registers containing read only registers, which values can change
+    const uint16_t readOnlyRegs[] = { 0, 1, 2, 3, 4, 5, 6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F, 0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
+    for (unsigned i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
+        if (address == readOnlyRegs[i])
+        {
+            fromChip = true;
+            break;
+        }
     if (!controlPort || fromChip == false)
     {
         if (status && !controlPort)
@@ -2333,7 +2340,6 @@ int LMS7002M::DownloadAll()
 int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t interpolation, const uint8_t decimation)
 {
     int status = 0;
-    LMS7002M_SelfCalState state(this);
     status = Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation);
     if(status != 0)
         return status;
@@ -2513,33 +2519,6 @@ void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI,
     phase = (M_PI/2)*iqcorr/2047.0;
     gainI = gcorri/2047.0;
     gainQ = gcorrq/2047.0;
-}
-
-void LMS7002M::EnterSelfCalibration(void)
-{
-    if (controlPort && mSelfCalDepth == 0)
-    {
-        controlPort->EnterSelfCalibration(this->GetActiveChannelIndex());
-    }
-    mSelfCalDepth++;
-}
-
-void LMS7002M::ExitSelfCalibration(void)
-{
-    mSelfCalDepth--;
-    if (controlPort && mSelfCalDepth == 0)
-        controlPort->ExitSelfCalibration(this->GetActiveChannelIndex());
-}
-
-LMS7002M_SelfCalState::LMS7002M_SelfCalState(LMS7002M *rfic):
-    rfic(rfic)
-{
-    rfic->EnterSelfCalibration();
-}
-
-LMS7002M_SelfCalState::~LMS7002M_SelfCalState(void)
-{
-    rfic->ExitSelfCalibration();
 }
 
 void LMS7002M::EnableValuesCache(bool enabled)

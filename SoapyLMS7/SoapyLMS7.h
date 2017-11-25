@@ -10,16 +10,11 @@
 #include <chrono>
 #include <map>
 #include <set>
+#include "Streamer.h"
 
 static const double DEFAULT_CLOCK_RATE = 80e6;
 
 class LIME_API LMS7_Device;
-
-namespace lime
-{
-   
-    struct StreamMetadata;
-}
 
 struct IConnectionStream;
 
@@ -91,7 +86,7 @@ public:
         char * const *buffs,
         size_t numElems,
         uint64_t requestTime,
-        lime::StreamMetadata &mdOut,
+        lime::StreamChannel::Metadata &mdOut,
         const long timeoutMs);
 
     int writeStream(
@@ -302,8 +297,8 @@ public:
 private:
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
-
     LMS7_Device * lms7Device;
+    double sampleRate;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
 };

@@ -17,7 +17,7 @@ ConnectionNovenaRF7::StreamChannel::~StreamChannel()
 int ConnectionNovenaRF7::StreamChannel::Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms)
 {
     int popped = 0;
-    if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && !config.isTx)
+    if(config.format == StreamConfig::FMT_FLOAT32 && !config.isTx)
     {
         //in place conversion
         complex16_t* ptr = (complex16_t*)samples;
@@ -39,7 +39,7 @@ int ConnectionNovenaRF7::StreamChannel::Read(void* samples, const uint32_t count
 int ConnectionNovenaRF7::StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
 {
     int pushed = 0;
-    if(config.format == StreamConfig::STREAM_COMPLEX_FLOAT32 && config.isTx)
+    if(config.format == StreamConfig::FMT_FLOAT32 && config.isTx)
     {
         const float* samplesFloat = (const float*)samples;
         int16_t* samplesShort = new int16_t[2*count];

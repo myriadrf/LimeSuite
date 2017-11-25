@@ -1829,7 +1829,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
     verbose_printf(cDashLine);
-    LMS7002M_SelfCalState state(this);
     auto registersBackup = BackupRegisterMap();
     if(mCalibrationByMCU && not useExtLoopback)
     {

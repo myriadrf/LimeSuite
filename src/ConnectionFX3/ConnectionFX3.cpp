@@ -888,7 +888,6 @@ int ConnectionFX3::UpdateExternalDataRate(const size_t channel, const double txR
 
     const float txInterfaceClk = 2 * txRate_Hz;
     const float rxInterfaceClk = 2 * rxRate_Hz;
-    mExpectedSampleRate = rxRate_Hz;
     const int pll_ind = (channel == 1) ? 2 : 0;
 
     clocks[0].index = 0;
@@ -934,7 +933,6 @@ int ConnectionFX3::UpdateExternalDataRate(const size_t channel, const double txR
             if(rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
                 phaseSearch = true;
 
-    mExpectedSampleRate = rxRate_Hz;
     std::vector<uint32_t> dataWr;
     std::vector<uint32_t> dataRd;
 

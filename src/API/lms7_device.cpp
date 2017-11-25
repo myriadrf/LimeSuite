@@ -1608,7 +1608,8 @@ int LMS7_Device::Init()
         {0x010E, 0x0000}, {0x0110, 0x2B14}, {0x0113, 0x03C2}, {0x011C, 0xA941},
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0121, 0x3650}, {0x0122, 0x033F},
         {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x0170}, {0x020B, 0x4000},
-        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x040B, 0x1020}, {0x040C, 0x00F8}
+        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
+        {0x040C, 0x00F8}
     };
 
     for (unsigned i = 0; i < lms_list.size(); i++)
@@ -1966,25 +1967,31 @@ int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind)
      return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);  
 }
 
-int LMS7_Device::ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip)
+uint16_t LMS7_Device::ReadParam(struct LMS7Parameter param, int chan, bool forceReadFromChip)
 {
-    //registers containing read only registers, which values can change
-    const uint16_t readOnlyRegs[] = { 0, 1, 2, 3, 4, 5, 6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F, 0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
-    for (unsigned i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
+    int lmsChip; 
+    if (chan >= 0)
     {
-        if (param.address == readOnlyRegs[i])
-        {
-            forceReadFromChip = true;
-            break;
-        }
+        lmsChip = chan/2;
+        if (param.address >= 0x100)
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1,true);
     }
-    *val = lms_list.at(lms_chip_id)->Get_SPI_Reg_bits(param, forceReadFromChip);
-    return LMS_SUCCESS;
+    else lmsChip = lms_chip_id;
+    return lms_list.at(lmsChip)->Get_SPI_Reg_bits(param, forceReadFromChip);
 }
 
-int LMS7_Device::WriteParam(struct LMS7Parameter param, uint16_t val)
+int LMS7_Device::WriteParam(struct LMS7Parameter param, uint16_t val, int chan)
 {
-    return lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(param, val);
+    int lmsChip; 
+    if (chan >= 0)
+    {
+        lmsChip = chan/2;
+        if (param.address >= 0x100)
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1,true);
+    }
+    else lmsChip = lms_chip_id;
+    
+    return lms_list.at(lmsChip)->Modify_SPI_Reg_bits(param, val);
 }
 
 int LMS7_Device::SetActiveChip(unsigned ind)
@@ -2009,6 +2016,17 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
         return lime::ReportError(EINVAL, "Device not connected");
     
     return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
+}
+
+lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
+{
+    if (connection) return connection->SetupStream(config);
+    return nullptr;
+}
+
+int LMS7_Device::DestroyStream(lime::StreamChannel* streamID)
+{
+    delete streamID;
 }
 
 int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)

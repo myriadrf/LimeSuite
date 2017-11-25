@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "Streamer.h"
 #include "IConnection.h"
 
 class LIME_API LMS7_Device
@@ -84,17 +85,20 @@ public:
     int SaveConfig(const char *filename, int ind = -1);
     int ReadLMSReg(uint16_t address, uint16_t *val, int ind = -1);
     int WriteLMSReg(uint16_t address, uint16_t val, int ind = -1);
-    int ReadParam(struct LMS7Parameter param, uint16_t *val, bool forceReadFromChip = false);
-    int WriteParam(struct LMS7Parameter param, uint16_t val);
+    uint16_t ReadParam(struct LMS7Parameter param, int channel = -1, bool forceReadFromChip = false);
+    int WriteParam(struct LMS7Parameter param, uint16_t val, int channel = -1);
     int SetActiveChip(unsigned ind);
     lime::LMS7002M* GetLMS(int index = -1);
     int UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt);
     static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::map<std::string, double> extra_parameters;
-
+    
+    lime::StreamChannel* SetupStream(const lime::StreamConfig &config);
+    int DestroyStream(lime::StreamChannel* streamID);
+    
     int MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil);
     int MCU_AGCStop();
-    
+
 protected:
     const double maxTxGain = 60.0;
     lms_dev_info_t devInfo;

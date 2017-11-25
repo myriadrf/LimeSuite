@@ -33,7 +33,8 @@ using namespace lime;
  ******************************************************************/
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
     _deviceArgs(args),
-    _moduleName(handle.module)
+    _moduleName(handle.module),
+    sampleRate(0.0)
 {
     //connect
     SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
@@ -198,9 +199,9 @@ bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = lms7Device->GetLMS(channel/2);
-
+    
     if (direction == SOAPY_SDR_RX) return rfic->GetRxDCRemoval();
-
+    
     return false;
 }
 
@@ -215,7 +216,7 @@ void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std
     auto rfic = lms7Device->GetLMS(channel/2);
 
     if (direction == SOAPY_SDR_TX) rfic->SetTxDCOffset(offset.real(), offset.imag());
-}
+    }
 
 std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t channel) const
 {
@@ -237,7 +238,7 @@ void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const st
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = lms7Device->GetLMS(channel/2);
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-
+    
     double gain = std::abs(balance);
     double gainI = 1.0; if (gain < 1.0) gainI = gain/1.0;
     double gainQ = 1.0; if (gain > 1.0) gainQ = 1.0/gain;
@@ -523,10 +524,12 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
+    sampleRate = rate;
     //select automatic clock rate
     if (not _fixedClockRate)
     {
         lms7Device->SetRate(direction == SOAPY_SDR_TX,rate);
+        return;
     }
     
     auto rfic = lms7Device->GetLMS(channel/2);
@@ -788,8 +791,7 @@ long long SoapyLMS7::getHardwareTime(const std::string &what) const
     if (what.empty())
     {
         auto ticks = lms7Device->GetConnection()->GetHardwareTimestamp();
-        auto rate = lms7Device->GetConnection()->GetHardwareTimestampRate();
-        return SoapySDR::ticksToTimeNs(ticks, rate);
+        return SoapySDR::ticksToTimeNs(ticks, sampleRate);
     }
     else
     {
@@ -801,8 +803,7 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 {
     if (what.empty())
     {
-        auto rate = lms7Device->GetConnection()->GetHardwareTimestampRate();
-        auto ticks = SoapySDR::timeNsToTicks(timeNs, rate);
+        auto ticks = SoapySDR::timeNsToTicks(timeNs, sampleRate);
         lms7Device->GetConnection()->SetHardwareTimestamp(ticks);
     }
     else
@@ -1120,23 +1121,6 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, false)", bw);
         if(rfic->CalibrateRx(bw, false) != 0)
-            throw std::runtime_error(lime::GetLastErrorMessage());
-    }
-
-
-    else if (key == "CALIBRATE_TX_EXTLOOPBACK")
-    {
-        float_type bw = std::stof(value);
-        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, true)", bw);
-        if(rfic->CalibrateTx(bw, true) != 0)
-            throw std::runtime_error(lime::GetLastErrorMessage());
-    }
-
-    else if (key == "CALIBRATE_RX_EXTLOOPBACK")
-    {
-        float_type bw = std::stof(value);
-        SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, true)", bw);
-        if(rfic->CalibrateRx(bw, true) != 0)
             throw std::runtime_error(lime::GetLastErrorMessage());
     }
 

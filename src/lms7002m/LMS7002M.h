@@ -157,15 +157,6 @@ public:
     int RegistersTest(const char* fileName = "registersTest.txt");
     ///@}
 
-    ///@name Calibration protection:
-    ///Called internally by calibration and cgen API.
-    ///Call externally when performing multiple cals.
-    ///Safe to next calls to enter and exit.
-    ///Always match calls to enter+exit.
-    void EnterSelfCalibration(void);
-    void ExitSelfCalibration(void);
-    ///@}
-
     ///@name Transmitter, Receiver calibrations
     int CalibrateRx(float_type bandwidth, const bool useExtLoopback = false);
     int CalibrateTx(float_type bandwidth, const bool useExtLoopback = false);
@@ -499,22 +490,5 @@ protected:
 
     int LoadConfigLegacyFile(const char* filename);
 };
-
-
-/*!
- * Helper class to enter a calibration upon construction,
- * and to automatically exit calibration upon exit.
- */
-class LIME_API LMS7002M_SelfCalState
-{
-public:
-    LMS7002M_SelfCalState(LMS7002M *rfic);
-    ~LMS7002M_SelfCalState(void);
-
-private:
-    LMS7002M *rfic;
-};
-
-
 }
 #endif
