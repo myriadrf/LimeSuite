@@ -1,4 +1,3 @@
-#include "ILimeSDRStreaming.h"
 #include "ErrorReporting.h"
 #include <assert.h>
 #include "FPGA_common.h"
@@ -6,6 +5,7 @@
 #include <ciso646>
 #include "Logger.h"
 #include "Streamer.h"
+#include "IConnection.h"
 
 namespace lime
 {
@@ -145,9 +145,10 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(ILimeSDRStreaming* port, int chipID)
+Streamer::Streamer(IConnection* p, FPGA* f, int chipID)
 {
-    dataPort = port;
+    dataPort = p;
+    fpga = f;
     rxRunning = false;
     txRunning = false;
     mTimestampOffset = 0;
@@ -265,8 +266,8 @@ uint64_t Streamer::GetHardwareTimestamp(void)
     {
         //stop streaming just in case the board has not been configured
         dataPort->WriteRegister(0xFFFF, 1 << mChipID);
-        fpga::StopStreaming(dataPort);
-        fpga::ResetTimestamp(dataPort);
+        fpga->StopStreaming();
+        fpga->ResetTimestamp();
         mTimestampOffset = 0;
         return 0;
     }
@@ -323,8 +324,8 @@ int Streamer::UpdateThreads(bool stopAll)
         LMS7002M lmsControl;
         lmsControl.SetConnection(dataPort, mChipID);
         //enable FPGA streaming
-        fpga::StopStreaming(dataPort);
-        fpga::ResetTimestamp(dataPort);
+        fpga->StopStreaming();
+        fpga->ResetTimestamp();
         rxLastTimestamp.store(0);
         //Clear device stream buffers
         dataPort->ResetStreamBuffers();
@@ -404,12 +405,12 @@ int Streamer::UpdateThreads(bool stopAll)
             lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
         }
 
-        fpga::StartStreaming(dataPort);
+        fpga->StartStreaming();
     }
     else if(not needTx and not needRx)
     {
         //disable FPGA streaming
-        fpga::StopStreaming(dataPort);
+        fpga->StopStreaming();
     }
 
     //FPGA should be configured and activated, start needed threads
@@ -533,7 +534,7 @@ void Streamer::TransmitPacketsLoop()
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
-            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
+            FPGA::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             ++i;
             if (end_burst)
                 break;
@@ -607,7 +608,7 @@ void Streamer::ReceivePacketsLoop()
     std::mutex txFlagsLock;
     std::condition_variable resetTxFlags;
     //worker thread for reseting late Tx packet flags
-    std::thread txReset([](ILimeSDRStreaming* port,
+    std::thread txReset([](IConnection* port,
                         std::atomic<bool> *terminate,
                         std::mutex *spiLock,
                         std::condition_variable *doWork)
@@ -685,7 +686,7 @@ void Streamer::ReceivePacketsLoop()
             std::vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 dest[c] = (chFrames[c].samples);
-            int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
+            int samplesCount = FPGA::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
             for(int ch=0; ch<chCount; ++ch)
             {

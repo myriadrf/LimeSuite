@@ -7,13 +7,12 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
-#include <ILimeSDRStreaming.h>
+#include "LMS64CProtocol.h"
 #include <vector>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
-#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -29,7 +28,7 @@ namespace lime{
 
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
-class ConnectionFTDI : public ILimeSDRStreaming
+class ConnectionFTDI : public LMS64CProtocol
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -89,21 +88,17 @@ public:
 
     virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
     virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
-
-    //hooks to update FPGA plls when baseband interface data rate is changed
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
-    int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
+    
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
     int BeginDataReading(char* buffer, uint32_t length, int ep) override;
-    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    bool WaitForReading(int contextHandle, unsigned int timeout_ms) override;
     int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
     void AbortReading(int ep) override;
 
     int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
-    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int ep) override;
     double DetectRefClk(void);

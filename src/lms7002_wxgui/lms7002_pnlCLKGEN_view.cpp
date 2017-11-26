@@ -6,6 +6,7 @@
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
 #include "lms7_device.h"
+#include "FPGA_common.h"
 using namespace lime;
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent )
@@ -172,12 +173,8 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
         return ;
     }
-    auto conn = lms->GetConnection();
-    if (conn == nullptr)
-    {
-        wxMessageBox(_("Device not connected"));
-        return;
-    }
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+
     auto chipInd = lms->GetActiveChannelIndex()/2;
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     if (interp != 7)
@@ -185,7 +182,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
-    if (conn->UpdateExternalDataRate(chipInd,fpgaTxPLL/2,fpgaRxPLL/2, txPhase->GetValue(), rxPhase->GetValue())!=0)
+    if (fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
@@ -213,12 +210,8 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
         return ;
     }
-    auto conn = lms->GetConnection();
-    if (conn == nullptr)
-    {
-        wxMessageBox(_("Device not connected"));
-        return;
-    }
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+
     auto chipInd = lms->GetActiveChannelIndex()/2;
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     if (interp != 7)
@@ -228,9 +221,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         fpgaRxPLL /= pow(2.0, decim);
     int status;
     if (this->chkAutoPhase->GetValue())
-        status = conn->UpdateExternalDataRate(chipInd,fpgaTxPLL/2,fpgaRxPLL/2);
+        status = fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
     else
-        status = conn->UpdateExternalDataRate(chipInd,fpgaTxPLL/2,fpgaRxPLL/2, txPhase->GetValue(), rxPhase->GetValue());
+        status = fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     auto freq = lms->GetFrequencyCGEN();
@@ -254,12 +247,8 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
         return ;
     }
-    auto conn = lms->GetConnection();
-    if (conn == nullptr)
-    {
-        wxMessageBox(_("Device not connected"));
-        return;
-    }
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+
     auto chipInd = lms->GetActiveChannelIndex() / 2;
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
@@ -271,9 +260,9 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         fpgaRxPLL /= pow(2.0, decim);
     int status;
     if (this->chkAutoPhase->GetValue())
-        status = conn->UpdateExternalDataRate(chipInd, fpgaTxPLL / 2, fpgaRxPLL / 2);
+        status = fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, chipInd);
     else
-        status = conn->UpdateExternalDataRate(chipInd, fpgaTxPLL / 2, fpgaRxPLL / 2, txPhase->GetValue(), rxPhase->GetValue());
+        status = fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     uint16_t value;

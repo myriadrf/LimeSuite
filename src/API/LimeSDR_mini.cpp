@@ -6,10 +6,11 @@
  */
 #include "LimeSDR_mini.h"
 #include "Logger.h"
+#include "FPGA_Mini.h"
 
-LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(LMS7_Device *obj) : LMS7_Device(obj)
+LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(LMS7_Device *obj) : LMS7_Device(obj) 
 {
-
+    fpga = new lime::FPGA_Mini(connection);
 }
 
 int LMS7_LimeSDR_mini::Init()

@@ -13,33 +13,6 @@
 
 using namespace lime;
 
-DeviceInfo::DeviceInfo(void):
-    addrSi5351(-1),
-    addrADF4002(-1)
-{
-    return;
-}
-
-StreamMetadata::StreamMetadata(void):
-    timestamp(0),
-    hasTimestamp(false),
-    endOfBurst(false),
-    lateTimestamp(false),
-    packetDropped(false)
-{
-    return;
-}
-
-StreamConfig::StreamConfig(void):
-    isTx(false),
-    performanceLatency(0.5),
-    bufferLength(0),
-    format(FMT_INT16),
-    linkFormat(FMT_INT16)
-{
-    return;
-}
-
 IConnection::IConnection(void)
 {
     callback_logData = nullptr;
@@ -69,7 +42,6 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
-    info.addrsLMS7002M.push_back(0);
     return info;
 }
 
@@ -105,16 +77,6 @@ int IConnection::DeviceReset(int ind)
     return -1;
 }
 
-int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
-{
-    return 0;
-}
-
-int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)
-{
-    return 0;
-}
-
 /***********************************************************************
  * Reference clocks API
  **********************************************************************/
@@ -141,34 +103,40 @@ int IConnection::SetTxReferenceClockRate(const double rate)
 }
 
 /***********************************************************************
- * Timestamp API
- **********************************************************************/
-
-uint64_t IConnection::GetHardwareTimestamp(void)
-{
-    return 0;
-}
-
-void IConnection::SetHardwareTimestamp(const uint64_t now)
-{
-    return;
-}
-
-/***********************************************************************
  * Stream API
  **********************************************************************/
-
-StreamChannel* IConnection::SetupStream(const StreamConfig &config)
-{
-    ReportError(EPERM, "SetupStream not implemented");
-    return nullptr;
-}
 
 int IConnection::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
     return 0;   
 }
 int IConnection::SendData(const char* buffer, int length, int epIndex, int timeout)
+{
+    return 0;
+}
+
+int IConnection::BeginDataSending(const char* buffer, uint32_t length, int ep)
+{
+    return 0;
+}
+bool IConnection::WaitForSending(int contextHandle, uint32_t timeout_ms)
+{
+    return true;
+}
+int IConnection::FinishDataSending(const char* buffer, uint32_t length, int contextHandle)
+{
+    return 0;
+}
+
+int IConnection::BeginDataReading(char* buffer, uint32_t length, int ep)
+{
+    return 0;
+}
+bool IConnection::WaitForReading(int contextHandle, unsigned int timeout_ms)
+{
+    return true;
+}
+int IConnection::FinishDataReading(char* buffer, uint32_t length, int contextHandle)
 {
     return 0;
 }
@@ -180,10 +148,20 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
     callback_logData = callback;
 }
 
-int IConnection::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
+int IConnection::GetBuffersCount()const
 {
-    return ReportError(ENOTSUP, "Not implemented");
+ return 0;   
 }
+
+int IConnection::CheckStreamSize(int size)const
+{
+    return 0;
+}
+
+int IConnection::ResetStreamBuffers()
+{
+    return 0;
+};
 /***********************************************************************
  * Programming API
  **********************************************************************/

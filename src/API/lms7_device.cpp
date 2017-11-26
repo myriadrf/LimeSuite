@@ -51,7 +51,7 @@ LMS7_Device* LMS7_Device::CreateDevice(lime::IConnection* conn, LMS7_Device *obj
     return device;
 }
 
-LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
+LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0),fpga(nullptr)
 {
     if (obj != nullptr)
     {
@@ -66,11 +66,15 @@ LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
 
 LMS7_Device::~LMS7_Device()
 {
-    for (unsigned i = 0; i < this->lms_list.size();i++)
-        delete this->lms_list[i];
+    for (unsigned i = 0; i < lms_list.size();i++)
+        delete lms_list[i];
+    
+    for (unsigned i = 0; i < mStreamers.size(); i++)
+        delete mStreamers[i];
 
-    if (this->connection != nullptr)
-	lime::ConnectionRegistry::freeConnection(this->connection);
+    if (fpga) delete fpga;
+    if (connection != nullptr)
+	lime::ConnectionRegistry::freeConnection(connection);
 }
 
 unsigned LMS7_Device::GetLMSCnt() const
@@ -80,23 +84,24 @@ unsigned LMS7_Device::GetLMSCnt() const
 
 void LMS7_Device::_Initialize(lime::IConnection* conn)
 {
-    this->tx_channels.resize(this->GetNumChannels());
-    this->rx_channels.resize(this->GetNumChannels());
-
-    while (this->lms_list.size() > GetLMSCnt())
+    tx_channels.resize(GetNumChannels());
+    rx_channels.resize(GetNumChannels());
+    if (!fpga) fpga = new lime::FPGA(conn);
+    while (lms_list.size() > GetLMSCnt())
     {
-        delete this->lms_list.back();
-        this->lms_list.pop_back();
+        delete lms_list.back();
+        lms_list.pop_back();
     }
 
-    while (this->lms_list.size() < GetLMSCnt())
-    {
-        this->lms_list.push_back(new lime::LMS7002M());
-    }
+    while (lms_list.size() < GetLMSCnt())
+        lms_list.push_back(new lime::LMS7002M());
+    
+    for (unsigned i = 0; i < GetLMSCnt(); i++)
+        mStreamers.push_back(new lime::Streamer(connection,fpga,i));
 
-    for (unsigned i = 0; i < this->lms_list.size(); i++)
-        this->lms_list[i]->EnableValuesCache(false);
-    this->SetConnection(conn);
+    for (unsigned i = 0; i < lms_list.size(); i++)
+        lms_list[i]->EnableValuesCache(false);
+    SetConnection(conn);
 }
 
 int LMS7_Device::SetConnection(lime::IConnection* conn)
@@ -113,6 +118,11 @@ int LMS7_Device::SetConnection(lime::IConnection* conn)
 lime::IConnection* LMS7_Device::GetConnection(unsigned chan)
 {
     return this->connection;
+}
+
+lime::FPGA* LMS7_Device::GetFPGA()
+{
+    return fpga;
 }
 
 int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,float_type bandwidth)
@@ -393,7 +403,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
          float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
          fpgaTxPLL /= pow(2.0, decim);
          fpgaRxPLL /= pow(2.0, decim);
-         if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
+         if (fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0)
             return -1;
     }
 
@@ -659,7 +669,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
 	fpgaTxPLL /= pow(2.0, interpolation);
 	fpgaRxPLL /= pow(2.0, decimation);
-        if (this->connection->UpdateExternalDataRate(i, fpgaTxPLL / 2, fpgaRxPLL / 2) != 0)
+        if (fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0)
 	  return -1;
       }
 
@@ -1830,7 +1840,7 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq, int channel)
         float_type fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
-        return conn->UpdateExternalDataRate(lmsInd, fpgaTxPLL / 2, fpgaRxPLL / 2);
+        return fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, lmsInd);
     }
     case LMS_CLOCK_RXTSP:
         lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
@@ -1857,7 +1867,7 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq, int channel)
             std::vector<uint32_t> dataWr;
             for(int i=0; i<12; i+=3)
                 dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
-            return connection->TransactSPI(connection->GetDeviceInfo().addrADF4002, dataWr.data(), nullptr, 4);
+            return connection->TransactSPI(0x30, dataWr.data(), nullptr, 4);
         }
     default:
         lime::ReportError(EINVAL, "Invalid clock ID.");
@@ -1900,7 +1910,7 @@ int LMS7_Device::Synchronize(bool toChip)
                 if (decim != 7)
                     fpgaRxPLL /= pow(2.0, decim);
                 lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-                ret = connection->UpdateExternalDataRate(i,fpgaTxPLL/2,fpgaRxPLL/2);
+                ret = fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, i);
             }
         }
         else
@@ -1945,7 +1955,7 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
         lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-        return connection->UpdateExternalDataRate(lms_chip_id,fpgaTxPLL/2,fpgaRxPLL/2);
+        return fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, lms_chip_id);
     }
     return -1;
 }
@@ -2015,19 +2025,30 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
     
-    return lime::fpga::UploadWFM(connection,samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
+    return fpga->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 
 lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
 {
-    if (connection) return connection->SetupStream(config);
-    return nullptr;
+    if (config.channelID >= GetNumChannels())
+        return nullptr;
+    return mStreamers[config.channelID/2]->SetupStream(config);
 }
 
 int LMS7_Device::DestroyStream(lime::StreamChannel* streamID)
 {
     delete streamID;
     return 0;
+}
+
+uint64_t LMS7_Device::GetHardwareTimestamp(void)
+{
+    return mStreamers[0]->GetHardwareTimestamp();
+}
+
+void LMS7_Device::SetHardwareTimestamp(const uint64_t now)
+{
+    mStreamers[0]->SetHardwareTimestamp(now);
 }
 
 int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)

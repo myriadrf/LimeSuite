@@ -14,7 +14,6 @@
 #include <cstring> //memset
 #include <functional>
 #include <stdint.h>
-#include "Streamer.h"
 
 namespace lime{
 
@@ -28,7 +27,7 @@ namespace lime{
  */
 struct LIME_API DeviceInfo
 {
-    DeviceInfo(void);
+    DeviceInfo(void){};
 
     //! The displayable name for the device
     std::string deviceName;
@@ -56,64 +55,7 @@ struct LIME_API DeviceInfo
 
     //! A unique board serial number
     uint64_t boardSerialNumber;
-
-    /*!
-     * The SPI address numbers used to access each LMS7002M.
-     * This index will be used in the spi access functions.
-     */
-    std::vector<int> addrsLMS7002M;
-
-    /*!
-     * The I2C address number used to access the Si5351
-     * found on some development boards. -1 when not present.
-     */
-    int addrSi5351;
-
-    /*!
-     * The SPI address number used to access the ADF4002
-     * found on some development boards. -1 when not present.
-     */
-    int addrADF4002;
 };
-
-/*!
- * The Stream metadata structure is used with the streaming API to exchange
- * extra data associated with the stream such as timestamps and burst info.
- */
-struct LIME_API StreamMetadata
-{
-    StreamMetadata(void);
-
-    /*!
-     * The timestamp in clock units
-     * Set to 0 when the timestamp is not applicable.
-     * See GetHardwareTimestampRate() for tick rate.
-     */
-    uint64_t timestamp;
-
-    //! True to indicate that the timestamp is valid
-    bool hasTimestamp;
-
-    /*!
-     * True to indicate the end of a stream buffer.
-     * When false, subsequent calls continue the stream.
-     */
-    bool endOfBurst;
-
-    /*!
-     * True to indicate that the timestamp was late.
-     * Used in stream status reporting.
-     */
-    bool lateTimestamp;
-
-    /*!
-     * True to indicate that a packet was dropped
-     * perhaps in a receiver overflow event.
-     */
-    bool packetDropped;
-};
-
-
 
 /*!
  * IConnection is the interface class for a device with 1 or more Lime RFICs.
@@ -206,17 +148,6 @@ public:
      */
     virtual int DeviceReset(int ind=0);
 
-    /*!
-     * Called by the LMS7002M driver after TSP/DIQ rate changes.
-     * Implementations may use these rate updates to configure
-     * internal parameters or perhaps PLL circuitry in a FPGA.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     * @param txRate the baseband transmit data rate in Hz (BBIC to RFIC)
-     * @param rxRate the baseband receive data rate in Hz (RFIC to BBIC)
-     */
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase);
-
     /***********************************************************************
      * Reference clocks API
      **********************************************************************/
@@ -253,38 +184,8 @@ public:
     virtual int SetTxReferenceClockRate(const double rate);
 
     /***********************************************************************
-     * Timestamp API
-     **********************************************************************/
-
-    /*!
-     * Get the current timestamp in clock units.
-     */
-    virtual uint64_t GetHardwareTimestamp(void);
-
-    /*!
-     * Set the current timestamp in clock units.
-     */
-    virtual void SetHardwareTimestamp(const uint64_t now);
-
-    /***********************************************************************
      * Stream API
      **********************************************************************/
-
-    /*!
-     * Setup a stream with a request configuration.
-     * SetupStream() either sets a valid stream ID
-     * to be used with the other stream API calls,
-     * or a helpful error message when setup fails.
-     *
-     * SetupStream() may fail for a variety of reasons
-     * such as invalid channel, format, or buffer configurations,
-     * the stream is already open, or streaming not supported.
-     *
-     * @param [out] streamID the configured stream identifier
-     * @param config the requested stream configuration
-     * @return 0-success, other failure
-     */
-    virtual StreamChannel* SetupStream(const StreamConfig &config);
 
     /**	@brief Read raw stream data from device streaming port
     @param buffer       read buffer pointer
@@ -292,10 +193,22 @@ public:
     @param epIndex      endpoint identifier?
     @param timeout_ms   timeout in milliseconds
     */
-    virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100);
-
+    virtual int ResetStreamBuffers();
+    virtual int GetBuffersCount()const;
+    virtual int CheckStreamSize(int size)const;
     virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
     virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
+    
+    virtual int BeginDataSending(const char* buffer, uint32_t length, int ep);
+    virtual bool WaitForSending(int contextHandle, uint32_t timeout_ms);
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortSending(int ep){};
+    
+    virtual int BeginDataReading(char* buffer, uint32_t length, int ep);
+    virtual bool WaitForReading(int contextHandle, unsigned int timeout_ms);
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortReading(int ep){};
+    
     /***********************************************************************
      * Programming API
      **********************************************************************/

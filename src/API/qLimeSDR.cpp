@@ -5,6 +5,7 @@
  * Created on April 27, 2018
  */
 #include "qLimeSDR.h"
+#include "FPGA_common.h"
 
 LMS7_qLimeSDR::LMS7_qLimeSDR(LMS7_Device *obj) : LMS7_Device(obj)
 {
@@ -29,7 +30,7 @@ int LMS7_qLimeSDR::SetRate(unsigned ch, double rxRate, double txRate, unsigned o
     {
         adcRate = rxRate;
         dacRate = txRate;
-        return connection->UpdateExternalDataRate(2,txRate,rxRate,0,0);
+        return fpga->SetIntetfaceFreq(txRate,rxRate,0,0,2);
     }
     return LMS7_Device::SetRate(ch,rxRate,txRate,oversample);      
 }

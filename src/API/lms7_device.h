@@ -32,6 +32,7 @@ public:
     virtual ~LMS7_Device();
     virtual int SetConnection(lime::IConnection* conn);
     virtual lime::IConnection* GetConnection(unsigned chan =0);
+    lime::FPGA* GetFPGA();
     virtual int Init();
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
     int Reset();
@@ -95,6 +96,8 @@ public:
     
     lime::StreamChannel* SetupStream(const lime::StreamConfig &config);
     int DestroyStream(lime::StreamChannel* streamID);
+    uint64_t GetHardwareTimestamp(void);
+    void SetHardwareTimestamp(const uint64_t now);
     
     int MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil);
     int MCU_AGCStop();
@@ -112,6 +115,8 @@ protected:
     int ConfigureGFIR(bool enabled,bool tx, float_type bandwidth,size_t ch);
     void _Initialize(lime::IConnection* conn);
     unsigned lms_chip_id;
+    std::vector<lime::Streamer*> mStreamers;
+    lime::FPGA* fpga;
 };
 
 #endif	/* LMS7_DEVICE_H */

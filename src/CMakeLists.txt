@@ -61,7 +61,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
-    protocols/ILimeSDRStreaming.cpp
     protocols/Streamer.cpp
     Si5351C/Si5351C.cpp
     kissFFT/kiss_fft.c
@@ -70,6 +69,7 @@ set(LIME_SUITE_SOURCES
     API/qLimeSDR.cpp
     API/LimeSDR_mini.cpp
     FPGA_common/FPGA_common.cpp
+    FPGA_common/FPGA_Mini.cpp
     windowFunction.cpp
 )
 

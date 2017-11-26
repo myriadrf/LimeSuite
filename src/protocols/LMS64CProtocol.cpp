@@ -309,9 +309,6 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
     devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
     devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
-    devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
-    devInfo.addrSi5351 = Si5351_I2C_ADDR;
-    devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     devInfo.boardSerialNumber = lmsInfo.boardSerialNumber;
 
     FPGAinfo gatewareInfo = this->GetFPGAInfo();
@@ -940,13 +937,5 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 */
 int LMS64CProtocol::GetChipVersion()
 {
-    LMS64CProtocol::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
-    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
-    if(TransferPacket(ctrPkt) != 0)
-        this->chipVersion = 0;
-    else
-        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
-    return this->chipVersion;
+
 }

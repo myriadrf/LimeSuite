@@ -20,25 +20,20 @@
 namespace lime
 {
    
-class ILimeSDRStreaming;
+class IConnection;
 class StreamChannel;
+class FPGA;
 
 /*!
  * The stream config structure is used with the SetupStream() API.
  */
 struct LIME_API StreamConfig
 {
-    StreamConfig(void);
+    StreamConfig(void){};
 
     //! True for transmit stream, false for receive
     bool isTx;
 
-    /*!
-     * A list of channels to use.
-     *  - Example ChA on RFIC0: [0]
-     *  - Example MIMO on RFIC0: [0, 1]
-     *  - Example MIMO on RFIC1: [2, 3]
-     */
     uint8_t channelID;
 
     float performanceLatency;
@@ -74,7 +69,7 @@ struct LIME_API StreamConfig
 class Streamer
 {
 public:
-    Streamer(ILimeSDRStreaming* port, int chipID=0);
+    Streamer(IConnection* p, FPGA* f, int chipID=0);
     ~Streamer();
 
     StreamChannel* SetupStream(const StreamConfig& config);
@@ -87,7 +82,7 @@ public:
 
     std::atomic<uint32_t> rxDataRate_Bps;
     std::atomic<uint32_t> txDataRate_Bps;
-    ILimeSDRStreaming* dataPort;
+    IConnection* dataPort;
     std::thread rxThread;
     std::thread txThread;
     std::atomic<bool> rxRunning;
@@ -106,6 +101,8 @@ public:
     unsigned rxBatchSize;
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
+private:
+    FPGA* fpga;
 };
 
 class LIME_API StreamChannel 
@@ -156,7 +153,7 @@ public:
     bool mActive;
        
 protected:
-    RingFIFO* fifo;   
+    RingFIFO* fifo;  
     std::atomic<uint64_t> sampleCnt;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 private:
