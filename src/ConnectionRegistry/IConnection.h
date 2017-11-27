@@ -149,41 +149,6 @@ public:
     virtual int DeviceReset(int ind=0);
 
     /***********************************************************************
-     * Reference clocks API
-     **********************************************************************/
-
-    /*!
-     * Query the frequency of the reference clock.
-     * Some implementations have a fixed reference,
-     * some have a programmable synthesizer like Si5351C.
-     * @return the reference clock rate in Hz
-     */
-    virtual double GetReferenceClockRate(void);
-
-    /*!
-     * Set the programmable reference clock rate.
-     * Some implementations use the programmable Si5351C.
-     * @param rate the clock rate in Hz
-     */
-    virtual int SetReferenceClockRate(const double rate);
-
-    /*!
-     * Query the TX frequency of the reference clock.
-     * Some boards will use a separate tx reference, otherwise
-     * this call simply forwards to GetReferenceClockRate()
-     * @return the reference clock rate in Hz
-     */
-    virtual double GetTxReferenceClockRate(void);
-
-    /*!
-     * Set the programmable TX reference clock rate.
-     * Some boards will use a separate tx reference, otherwise
-     * this call simply forwards to SetReferenceClockRate()
-     * @param rate the clock rate in Hz
-     */
-    virtual int SetTxReferenceClockRate(const double rate);
-
-    /***********************************************************************
      * Stream API
      **********************************************************************/
 
@@ -370,7 +335,6 @@ public:
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
 protected:
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
-    bool mSystemBigEndian;
 
 private:
     friend class ConnectionRegistry;

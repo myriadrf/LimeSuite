@@ -523,60 +523,9 @@ static bool cgenRatePossible(const double rate)
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-
     sampleRate = rate;
-    //select automatic clock rate
-    if (not _fixedClockRate)
-    {
-        lms7Device->SetRate(direction == SOAPY_SDR_TX,rate);
-        return;
-    }
-    
-    auto rfic = lms7Device->GetLMS(channel/2);
-
-    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-
-    double clockRate = this->getMasterClockRate();
-    const double dspFactor = clockRate/rfic->GetReferenceClk_TSP(lmsDir);
-
-    const double dspRate = clockRate/dspFactor;
-    const double factor = dspRate/rate;
-    int intFactor = 1 << int((std::log(factor)/std::log(2.0)) + 0.5);
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setSampleRate(%s, %d, %g MHz), CGEN=%g MHz, %s=%g MHz, %s=%g",
-        dirName, int(channel), rate/1e6, clockRate/1e6,
-        (direction == SOAPY_SDR_RX)?"ADC":"DAC", dspRate/1e6,
-        (direction == SOAPY_SDR_RX)?"decim":"interp", factor);
-    if (intFactor < 2) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too high");
-    if (intFactor > 32) throw std::runtime_error("SoapyLMS7::setSampleRate() -- rate too low");
-
-    if (std::abs(factor-intFactor) > 0.01) SoapySDR::logf(SOAPY_SDR_WARNING,
-        "SoapyLMS7::setSampleRate(): not a power of two factor: TSP Rate = %g MHZ, Requested rate = %g MHz", dspRate/1e6, rate/1e6);
-
-    switch (direction)
-    {
-    case SOAPY_SDR_TX:
-        _fixedTxSampRate[channel] = true;
-        _interps[channel] = intFactor;
-        break;
-    case SOAPY_SDR_RX:
-        _fixedRxSampRate[channel] = true;
-        _decims[channel] = intFactor;
-        break;
-    }
-
-    int status = 0;
-    status = rfic->SetInterfaceFrequency(clockRate,
-        int(std::log(double(_interps[channel]))/std::log(2.0))-1,
-        int(std::log(double(_decims[channel]))/std::log(2.0))-1);
-    if(status != 0)
-        SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
-
-    status = lms7Device->GetConnection()->UpdateExternalDataRate(
-        rfic->GetActiveChannelIndex(),
-        rfic->GetSampleRate(LMS7002M::Tx, rfic->GetActiveChannel()),
-        rfic->GetSampleRate(LMS7002M::Rx, rfic->GetActiveChannel()));
-    if(status != 0)
-        SoapySDR::logf(SOAPY_SDR_ERROR, GetLastErrorMessage());
+    lms7Device->SetRate(direction == SOAPY_SDR_TX,rate);
+    return;
 }
 
 double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
@@ -693,9 +642,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
-    //save dc offset mode
-    auto saveDcMode = this->getDCOffsetMode(direction, channel);
-
     _actualBw[direction][channel] = bw;
 
     if (direction == SOAPY_SDR_RX)
@@ -715,9 +661,6 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
             throw std::runtime_error(lime::GetLastErrorMessage());
         }
     }
-
-    //restore dc offset mode
-    this->setDCOffsetMode(direction, channel, saveDcMode);
 
     _channelsToCal.emplace(direction, channel);
 }
@@ -790,7 +733,7 @@ long long SoapyLMS7::getHardwareTime(const std::string &what) const
 {
     if (what.empty())
     {
-        auto ticks = lms7Device->GetConnection()->GetHardwareTimestamp();
+        auto ticks = lms7Device->GetHardwareTimestamp();
         return SoapySDR::ticksToTimeNs(ticks, sampleRate);
     }
     else
@@ -804,7 +747,7 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
     if (what.empty())
     {
         auto ticks = SoapySDR::timeNsToTicks(timeNs, sampleRate);
-        lms7Device->GetConnection()->SetHardwareTimestamp(ticks);
+        lms7Device->SetHardwareTimestamp(ticks);
     }
     else
     {
@@ -1096,23 +1039,19 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_
 void SoapyLMS7::writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = lms7Device->GetLMS(channel/2);
     const bool isTx = (direction == SOAPY_SDR_TX);
 
     if (key == "TSP_CONST")
     {
         const auto ampl = std::stoi(value);
-        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFC_TXTSP):LMS7param(TSGFC_RXTSP), 1); //Full-scale
-        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGMODE_TXTSP):LMS7param(TSGMODE_RXTSP), 1); //DC
-        rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1); //SIGGEN
-        rfic->LoadDC_REG_IQ(isTx, ampl, 0);
+        lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_DC, ampl, 0);
     }
 
     else if (key == "CALIBRATE_TX")
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateTx(%f, false)", bw);
-        if(rfic->CalibrateTx(bw, false) != 0)
+        if (lms7Device->Calibrate(true, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
@@ -1120,7 +1059,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     {
         float_type bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Issuing CalibrateRx(%f, false)", bw);
-        if(rfic->CalibrateRx(bw, false) != 0)
+        if (lms7Device->Calibrate(false, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
@@ -1140,7 +1079,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         int i;
 
         uint8_t GFIR_Index;
-        int16_t * Coeffs;
+        double * Coeffs;
         uint8_t Coeff_Count;
 
         //CSV-to-int
@@ -1163,15 +1102,15 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             if(GFIR_Index > 2)
                 throw std::runtime_error("Invalid GFIR Index Specified: " + key);
 
-            Coeffs = (int16_t*) malloc(Coeff_Count * sizeof(int16_t));
+            Coeffs = (double*) malloc(Coeff_Count * sizeof(double));
             for(size_t k = 0; k < Coeff_Count; k++)
             {
-                Coeffs[k] = (int16_t) vect.at(k+3);
+                Coeffs[k] = (double) vect.at(k+3);
             }
 
-            SoapySDR::logf(SOAPY_SDR_INFO, "Issuing call to SetGFIRCoefficients; Channel = %d; isTx = %d; GFIR_Index = %d; #Coeffs = %d", channel, isTx, GFIR_Index, Coeff_Count);
+            SoapySDR::logf(SOAPY_SDR_INFO, "Issuing call to SetGFIRCoef; Channel = %d; isTx = %d; GFIR_Index = %d; #Coeffs = %d", channel, isTx, GFIR_Index, Coeff_Count);
 
-            rfic->SetGFIRCoefficients(isTx, GFIR_Index, (const int16_t*) Coeffs, Coeff_Count);
+            lms7Device->SetGFIRCoef(isTx,channel,lms_gfir_t(GFIR_Index),Coeffs,Coeff_Count);
 
             free(Coeffs);
 
@@ -1180,13 +1119,13 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             switch (GFIR_Index)
             {
                 case 0:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 0);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 0, channel);
                     break;
                 case 1:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 0);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 0, channel);
                     break;
                 case 2:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 0);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 0, channel);
                     break;
             }
 
@@ -1238,13 +1177,13 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
             switch (GFIR_Index)
             {
                 case 0:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 1);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR1_BYP_TXTSP):LMS7param(GFIR1_BYP_RXTSP), 1, channel);
                     break;
                 case 1:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 1);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR2_BYP_TXTSP):LMS7param(GFIR2_BYP_RXTSP), 1, channel);
                     break;
                 case 2:
-                    rfic->Modify_SPI_Reg_bits(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 1);
+                    lms7Device->WriteParam(isTx?LMS7param(GFIR3_BYP_TXTSP):LMS7param(GFIR3_BYP_RXTSP), 1, channel);
                     break;
             }
 
@@ -1268,29 +1207,19 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         if (select == -1)
         {
             //Requested to disable the TSG
-            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 0, true);
+            lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_NONE);
+        }
+        else if(select == 4)
+        {
+            lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_NCODIV4F);
+        }
+        else if (select == 8)
+        {
+            lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_NCODIV8F);
         }
         else
         {
-            //Requested to enable the TSG
-            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFC_TXTSP):LMS7param(TSGFC_RXTSP), 1, true); //Full Scale Control
-            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGMODE_TXTSP):LMS7param(TSGMODE_RXTSP), 0, true);
-            rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGSWAPIQ_TXTSP):LMS7param(TSGSWAPIQ_RXTSP), 0, true);
-
-            if(select == 4)
-            {
-                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFCW_TXTSP):LMS7param(TSGFCW_RXTSP), 2, true);
-                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1, true);
-            }
-            else if (select == 8)
-            {
-                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(TSGFCW_TXTSP):LMS7param(TSGFCW_RXTSP), 1, true);
-                rfic->Modify_SPI_Reg_bits(isTx?LMS7param(INSEL_TXTSP):LMS7param(INSEL_RXTSP), 1, true);
-            }
-            else
-            {
-                throw std::runtime_error("Invalid TSG_NCO option: " + value);
-            }
+            throw std::runtime_error("Invalid TSG_NCO option: " + value);
         }
     }
 

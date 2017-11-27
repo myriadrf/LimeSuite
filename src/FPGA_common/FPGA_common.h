@@ -18,8 +18,9 @@ class LIME_API FPGA
 {
 public:
     
-    FPGA(IConnection* conn);
+    FPGA(){};
     virtual ~FPGA(){};
+    void SetConnection(IConnection* conn);
     int StartStreaming();
     int StopStreaming();
     int ResetTimestamp();
@@ -44,15 +45,16 @@ public:
 
     virtual int SetIntetfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0);
     virtual int SetIntetfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
+    double DetectRefClk(double fx3Clk = 100e6);
 
     static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
     static int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
 protected:
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
+    IConnection* connection;
 private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
-    IConnection* connection;
     int SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val);
 };
 

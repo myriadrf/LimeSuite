@@ -15,13 +15,7 @@ using namespace lime;
 
 IConnection::IConnection(void)
 {
-    callback_logData = nullptr;
-    unsigned short test = 0x1234;
-    unsigned char* bytes = (unsigned char*)&test;
-    if(bytes[0] == 0x12 && bytes[1] == 0x34)
-        mSystemBigEndian = true;
-    else
-        mSystemBigEndian = false;
+    callback_logData = nullptr;;
 }
 
 IConnection::~IConnection(void)
@@ -75,31 +69,6 @@ int IConnection::DeviceReset(int ind)
 {
     ReportError(ENOTSUP);
     return -1;
-}
-
-/***********************************************************************
- * Reference clocks API
- **********************************************************************/
-
-double IConnection::GetReferenceClockRate(void)
-{
-    //this is the populated TCXO on many boards
-    return 61.44e6/2;
-}
-
-int IConnection::SetReferenceClockRate(const double rate)
-{
-    return ReportError(EPERM, "SetReferenceClockRate not implemented");
-}
-
-double IConnection::GetTxReferenceClockRate(void)
-{
-    return this->GetReferenceClockRate();
-}
-
-int IConnection::SetTxReferenceClockRate(const double rate)
-{
-    return this->SetReferenceClockRate(rate);
 }
 
 /***********************************************************************

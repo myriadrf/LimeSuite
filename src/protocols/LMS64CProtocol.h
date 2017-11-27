@@ -45,14 +45,6 @@ public:
     //! ReadRegisters (BRDSPI) implemented by LMS64C
     int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
 
-    //! Get the last-set reference clock rate
-    double GetReferenceClockRate(void);
-
-    /*!
-     * Set the reference using the Si5351C when available
-     */
-    int SetReferenceClockRate(const double rate);
-
     /// Supported connection types.
     enum eConnectionType
     {
@@ -189,9 +181,6 @@ public:
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
     int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
     int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
-protected:
-    int GetChipVersion();
-    unsigned chipVersion;
 private:
 
     int WriteSi5351I2C(const std::string &data);

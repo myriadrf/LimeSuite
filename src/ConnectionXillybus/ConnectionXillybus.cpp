@@ -78,7 +78,6 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     Open(index);
     isConnected = true;
 
-    GetChipVersion();
     std::shared_ptr<Si5351C> si5351module(new Si5351C());
     si5351module->Initialize(this);
     si5351module->SetPLL(0, 25000000, 0);

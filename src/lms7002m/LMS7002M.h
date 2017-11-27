@@ -487,7 +487,7 @@ protected:
     IConnection* controlPort;
     unsigned mdevIndex;
     size_t mSelfCalDepth;
-
+    double _cachedRefClockRate;
     int LoadConfigLegacyFile(const char* filename);
 };
 }

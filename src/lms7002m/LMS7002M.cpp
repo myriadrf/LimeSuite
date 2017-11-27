@@ -1034,12 +1034,7 @@ int LMS7002M::GetBandTRF(void)
 
 int LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 {
-    if(controlPort == nullptr)
-        return ReportError(ENODEV, "Device not connected");
-    if (tx)
-        return controlPort->SetTxReferenceClockRate(freq_Hz);
-    else
-        return controlPort->SetReferenceClockRate(freq_Hz);
+    _cachedRefClockRate=freq_Hz;
 }
 
 /**	@brief Returns reference clock in Hz used for SXT or SXR
@@ -1047,9 +1042,7 @@ int LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 */
 float_type LMS7002M::GetReferenceClk_SX(bool tx)
 {
-    if(controlPort == nullptr)
-        return 30.72e6; //return default reference clock
-    return (tx ? controlPort->GetTxReferenceClockRate() : controlPort->GetReferenceClockRate());
+    return _cachedRefClockRate;
 }
 
 /**	@return Current CLKGEN frequency in Hz

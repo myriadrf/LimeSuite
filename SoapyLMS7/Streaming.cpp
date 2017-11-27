@@ -237,11 +237,6 @@ int SoapyLMS7::deactivateStream(
     const auto &streamID = icstream->streamID;
     icstream->hasCmd = false;
 
-    StreamMetadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate);
-    metadata.hasTimestamp = (flags & SOAPY_SDR_HAS_TIME) != 0;
-    metadata.endOfBurst = (flags & SOAPY_SDR_END_BURST) != 0;
-
     if (icstream->enabled)
     {
         for(auto i : streamID)

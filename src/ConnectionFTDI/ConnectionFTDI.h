@@ -101,7 +101,6 @@ protected:
     bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int ep) override;
-    double DetectRefClk(void);
     
     int ResetStreamBuffers() override;
 

@@ -86,7 +86,8 @@ void LMS7_Device::_Initialize(lime::IConnection* conn)
 {
     tx_channels.resize(GetNumChannels());
     rx_channels.resize(GetNumChannels());
-    if (!fpga) fpga = new lime::FPGA(conn);
+    if (!fpga) fpga = new lime::FPGA();
+    fpga->SetConnection(conn);
     while (lms_list.size() > GetLMSCnt())
     {
         delete lms_list.back();
@@ -95,12 +96,13 @@ void LMS7_Device::_Initialize(lime::IConnection* conn)
 
     while (lms_list.size() < GetLMSCnt())
         lms_list.push_back(new lime::LMS7002M());
-    
+    double refClk = fpga->DetectRefClk();
     for (unsigned i = 0; i < GetLMSCnt(); i++)
-        mStreamers.push_back(new lime::Streamer(connection,fpga,i));
-
-    for (unsigned i = 0; i < lms_list.size(); i++)
+    {
+        mStreamers.push_back(new lime::Streamer(conn,fpga,i));
         lms_list[i]->EnableValuesCache(false);
+        lms_list[i]->SetReferenceClk_SX(false, refClk);
+    }
     SetConnection(conn);
 }
 
@@ -1802,7 +1804,6 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq, int channel)
             return -1;
         }
         lms->SetReferenceClk_SX(lime::LMS7002M::Tx, freq);
-        lms->SetReferenceClk_SX(lime::LMS7002M::Rx, freq);
         return 0;
     case LMS_CLOCK_SXR:
         if (freq <= 0)

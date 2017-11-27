@@ -10,7 +10,7 @@
 
 LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(LMS7_Device *obj) : LMS7_Device(obj) 
 {
-    fpga = new lime::FPGA_Mini(connection);
+    fpga = new lime::FPGA_Mini();
 }
 
 int LMS7_LimeSDR_mini::Init()

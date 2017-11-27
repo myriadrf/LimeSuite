@@ -126,23 +126,6 @@ int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &
     return ReportError(ENOTSUP, "unknown i2c address");
 }
 
-double LMS64CProtocol::GetReferenceClockRate(void)
-{
-    return _cachedRefClockRate;
-}
-
-int LMS64CProtocol::SetReferenceClockRate(const double rate)
-{
-    Si5351C pll;
-    pll.Initialize(this);
-
-    //TODO set the PLL freq
-
-    //stash the actual reference
-    _cachedRefClockRate = rate;
-    return 0;
-}
-
 /***********************************************************************
  * LMS7002M SPI access
  **********************************************************************/
@@ -935,7 +918,4 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 
 /**	@brief Reads chip version information form LMS7 chip.
 */
-int LMS64CProtocol::GetChipVersion()
-{
 
-}

@@ -10,7 +10,7 @@
 namespace lime
 {
 
-FPGA_Mini::FPGA_Mini(IConnection* conn) : FPGA(conn){}
+FPGA_Mini::FPGA_Mini() : FPGA(){}
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
@@ -62,7 +62,7 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const int bakRegCnt = spiAddr.size() - 4;
     
     std::vector<uint32_t> dataWr;
-    dataWr.push_back(uint32_t(0x0020) << 16);
+    dataWr.push_back(uint32_t(0x002F) << 16);
     uint32_t chipVersion=0;
     connection->ReadLMS7002MSPI(dataWr.data(), &chipVersion, 1, channel);
     dataWr.clear(); 
