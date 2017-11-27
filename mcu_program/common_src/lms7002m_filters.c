@@ -466,45 +466,68 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
 
     {
     //Restore settings
-    uint16_t cfb_tia_rfe = Get_SPI_Reg_bits(CFB_TIA_RFE);
-    uint8_t ccomp_tia_rfe = Get_SPI_Reg_bits(CCOMP_TIA_RFE);
-    uint8_t rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
-    uint16_t rcc_ctl_lpfl_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFL_RBB);
-    uint16_t c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
-    uint8_t c_ctl_pga_rbb = Get_SPI_Reg_bits(C_CTL_PGA_RBB);
-    uint8_t rcc_ctl_pga_rbb = Get_SPI_Reg_bits(RCC_CTL_PGA_RBB);
-    uint8_t rcc_ctl_lpfh_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFH_RBB);
-    uint8_t c_ctl_lpfh_rbb = Get_SPI_Reg_bits(C_CTL_LPFH_RBB);
-    uint8_t pd_lpfl_rbb = Get_SPI_Reg_bits(PD_LPFL_RBB);
-    uint8_t pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
+    //uint16_t cfb_tia_rfe = Get_SPI_Reg_bits(CFB_TIA_RFE);
+    //uint8_t ccomp_tia_rfe = Get_SPI_Reg_bits(CCOMP_TIA_RFE);
+    uint16_t ccomp_cfb_tia_rfe = SPI_read(0x0112);
+
+    //uint16_t rcc_ctl_lpfl_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFL_RBB);
+    //uint16_t c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
+    uint16_t rcc_c_ctl_lpfl_rbb = SPI_read(0x0117);
+
+    //uint8_t c_ctl_pga_rbb = Get_SPI_Reg_bits(C_CTL_PGA_RBB);
+    //uint8_t rcc_ctl_pga_rbb = Get_SPI_Reg_bits(RCC_CTL_PGA_RBB);
+    uint16_t rcc_c_ctl_pga_rbb = SPI_read(0x011A);
+
+    //uint8_t rcc_ctl_lpfh_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFH_RBB);
+    //uint8_t c_ctl_lpfh_rbb = Get_SPI_Reg_bits(C_CTL_LPFH_RBB);
+    uint16_t rcc_c_ctl_lpfh_rbb = SPI_read(0x0116) & 0x07FF;
+
+    //uint8_t pd_lpfl_rbb = Get_SPI_Reg_bits(PD_LPFL_RBB);
+    //uint8_t pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
+    uint8_t pd_lpfhl = Get_SPI_Reg_bits(0x0115, MSB_LSB(3, 2));
     uint8_t input_ctl_pga_rbb = Get_SPI_Reg_bits(INPUT_CTL_PGA_RBB);
+    uint8_t rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
 RxFilterSearchEndStage:
     SaveChipState(1);
+    if(status != MCU_NO_ERROR)
+        return status;
+    //Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
+    //Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
+    SPI_write(0x0112, ccomp_cfb_tia_rfe);
+
+    //Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl_lpfl_rbb);
+    //Modify_SPI_Reg_bits(C_CTL_LPFL_RBB, c_ctl_lpfl_rbb);
+    SPI_write(0x0117, rcc_c_ctl_lpfl_rbb);
+    //Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
+    //Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
+    SPI_write(0x011A, rcc_c_ctl_pga_rbb);
+
+    //Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
+    //Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl_lpfh_rbb);
+    //Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
+    SPI_write(0x0116, (16 << 11) | rcc_c_ctl_lpfh_rbb);
+
+    //Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, input_ctl_pga_rbb);
+    //Modify_SPI_Reg_bits(ICT_LPF_IN_RBB, 12);
+    //Modify_SPI_Reg_bits(ICT_LPF_OUT_RBB, 12);
+    SPI_write(0x0118, input_ctl_pga_rbb << 13 | 0x018C);
+
+    //Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
+    //Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
+    SPI_write(0x0114, rcomp_tia_rfe << 5 | 16);
+
+    //Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
+    //Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
+    Modify_SPI_Reg_bits(0x0119, MSB_LSB(14, 5), (20 << 5) | 20);
+
+    //Modify_SPI_Reg_bits(PD_LPFL_RBB, pd_lpfl_rbb);
+    //Modify_SPI_Reg_bits(PD_LPFH_RBB, pd_lpfh_rbb);
+    Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), pd_lpfhl);
     {
         const uint16_t x0020val = SPI_read(0x0020);
         SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
         SPI_write(0x0020, x0020val);
     }
-    if(status != MCU_NO_ERROR)
-        return status;
-    Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
-    Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
-    Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
-    Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl_lpfl_rbb);
-    Modify_SPI_Reg_bits(C_CTL_LPFL_RBB, c_ctl_lpfl_rbb);
-    Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl_lpfh_rbb);
-    Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
-    Modify_SPI_Reg_bits(PD_LPFL_RBB, pd_lpfl_rbb);
-    Modify_SPI_Reg_bits(PD_LPFH_RBB, pd_lpfh_rbb);
-    Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, input_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(ICT_LPF_IN_RBB, 12);
-    Modify_SPI_Reg_bits(ICT_LPF_OUT_RBB, 12);
-    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
-    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
-    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
-    Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
     }
     return MCU_NO_ERROR;
 }
@@ -831,32 +854,39 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         while(targetLevelNotReached && iterationsLeft>=0);
     }
     {
-        uint8_t rcal_lpflad_tbb = Get_SPI_Reg_bits(RCAL_LPFLAD_TBB);
+        uint16_t powerDowns;
         uint16_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
-        uint16_t rcal_lpfh_tbb = Get_SPI_Reg_bits(RCAL_LPFH_TBB);
+        //uint16_t rcal_lpfh_tbb = Get_SPI_Reg_bits(RCAL_LPFH_TBB);
+        //uint8_t rcal_lpflad_tbb = Get_SPI_Reg_bits(RCAL_LPFLAD_TBB);
+        uint16_t rcal_lpfh_lpflad_tbb = SPI_read(0x0109);
         SaveChipState(1);
+        Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+        powerDowns = SPI_read(0x0105) & ~0x0016;
+        if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
+        {
+            //Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
+            //Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
+            //Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
+            powerDowns |= 0x10;
+            Modify_SPI_Reg_bits(R5_LPF_BYP_TBB, 1);
+            //Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, rcal_lpflad_tbb);
+        }
+        else
+        {
+            //Modify_SPI_Reg_bits(PD_LPFH_TBB, 0);
+            //Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 1);
+            //Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
+            powerDowns |= 0x06;
+            //Modify_SPI_Reg_bits(RCAL_LPFH_TBB, rcal_lpfh_tbb);
+        }
+        SPI_write(0x0106, 0x318C);
+        SPI_write(0x0107, 0x318C);
+        SPI_write(0x0109, rcal_lpfh_lpflad_tbb);
+        SPI_write(0x0105, powerDowns);
         {
             uint16_t x0020val = SPI_read(0x0020);
             SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
             SPI_write(0x0020, x0020val);
-        }
-        SPI_write(0x0106, 0x318C);
-        SPI_write(0x0107, 0x318C);
-        Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
-        if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
-        {
-            Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
-            Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
-            Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
-            Modify_SPI_Reg_bits(R5_LPF_BYP_TBB, 1);
-            Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, rcal_lpflad_tbb);
-        }
-        else
-        {
-            Modify_SPI_Reg_bits(PD_LPFH_TBB, 0);
-            Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 1);
-            Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
-            Modify_SPI_Reg_bits(RCAL_LPFH_TBB, rcal_lpfh_tbb);
         }
     }
 
