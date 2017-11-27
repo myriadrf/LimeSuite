@@ -102,8 +102,9 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
         return ReportError(-1, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
     //sync registers to cache
-    for (int a = 0x010c; a <= 0x0114; a++) this->SPI_read(a, true);
-    for (int a = 0x0115; a <= 0x011b; a++) this->SPI_read(a, true);
+    std::vector<uint16_t> regsToSync = {0x0112, 0x0117, 0x011A, 0x0116, 0x0118, 0x0114, 0x0019, 0x0115};
+    for(const auto addr : regsToSync)
+        this->SPI_read(addr, true);
 
     return status;
 }
@@ -148,8 +149,9 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         return ReportError(-1, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
     //sync registers to cache
-    for (int a = 0x0105; a <= 0x010b; a++)
-        this->SPI_read(a, true);
+    std::vector<uint16_t> regsToSync = {0x0105, 0x0106, 0x0109, 0x010A, 0x010B};
+    for(const auto addr : regsToSync)
+        this->SPI_read(addr, true);
 
     if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
         Log(LOG_INFO, "Filter calibrated. Filter order-4th, filter bandwidth set to %g MHz."
