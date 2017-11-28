@@ -369,13 +369,13 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
     }
     else if (oversample == 0)
         oversample = LMS_CGEN_MAX/(4*f_Hz);
-    
+
     int decim = 5;
     while (--decim)
         if ((2<<decim) <= oversample)
             break;
     oversample = 2<<decim;
-    
+
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
          lime::LMS7002M* lms = lms_list[i];
@@ -462,7 +462,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
     }
     else if (oversample == 0)
         oversample = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
-   
+
     size_t tmp = 5;
     while (--tmp)
         if ((2<<tmp) <= oversample)
@@ -1501,12 +1501,12 @@ int LMS7_Device::Calibrate(bool dir_tx, size_t chan, double bw, unsigned flags)
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    lms->EnableCalibrationByMCU((flags&1) == 0);
+    //lms->EnableCalibrationByMCU((flags&1) == 0);
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true);
     if (dir_tx)
-        return lms->CalibrateTx(bw, false);
+        return lms->CalibrateTx(bw, flags & 1);
     else
-        return lms->CalibrateRx(bw, false);
+        return lms->CalibrateRx(bw, flags & 1);
 }
 
 int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
@@ -1515,8 +1515,8 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
     rx_channels[chan].freq = f_Hz;
     int chA = chan&(~1);
     int chB = chan|1;
-    
-    if (rx_channels[chA].freq > 0 && rx_channels[chB].freq > 0) 
+
+    if (rx_channels[chA].freq > 0 && rx_channels[chB].freq > 0)
     {
         double delta = fabs(rx_channels[chA].freq - rx_channels[chB].freq);
         if (delta > 1)
@@ -1537,7 +1537,7 @@ int LMS7_Device::SetRxFrequency(size_t chan, double f_Hz)
             }
         }
     }
-    
+
     if (f_Hz < 30e6)
     {
         if (lms->SetFrequencySX(false, 30e6) != 0)
@@ -1569,8 +1569,8 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
     tx_channels[chan].freq = f_Hz;
     int chA = chan&(~1);
     int chB = chan|1;
-    
-    if (tx_channels[chA].freq > 0 && tx_channels[chB].freq > 0) 
+
+    if (tx_channels[chA].freq > 0 && tx_channels[chB].freq > 0)
     {
         double delta = fabs(tx_channels[chA].freq - tx_channels[chB].freq);
         if (delta > 1)
@@ -1591,7 +1591,7 @@ int LMS7_Device::SetTxFrequency(size_t chan, double f_Hz)
             }
         }
     }
-    
+
     if (f_Hz < 30e6)
     {
         if (lms->SetFrequencySX(true, 30e6) != 0)
@@ -1702,7 +1702,7 @@ int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lm
 {
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
-    
+
     switch (target)
     {
         case LMS_PROG_TRG_FX3:
@@ -2037,7 +2037,7 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
 {
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
-    
+
     return connection->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 
