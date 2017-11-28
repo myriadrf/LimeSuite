@@ -242,25 +242,26 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
 
     canDeliverFrequency = false;
     {
-        int8_t sel_vco;
-        int8_t tuneScore[3] = { -128, -128, -128 }; //best is closest to 0
+        uint8_t sel_vco, bestVCO, bestCSW;
+        uint8_t bestScore = 255;// best is closest to 0
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
             Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
-            if( TuneVCO(tx ? VCO_SXT : VCO_SXR) == MCU_NO_ERROR)
+            if( TuneVCO(1) == MCU_NO_ERROR)
             {
-                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(CSW_VCO);
+                const uint8_t csw = Get_SPI_Reg_bits(CSW_VCO);
+                const uint8_t score = abs(csw - 128);
+                if(score < bestScore)
+                {
+                    bestScore = score;
+                    bestVCO = sel_vco;
+                    bestCSW = csw;
+                }
                 canDeliverFrequency = true;
             }
         }
-        sel_vco = 2;
-        if (abs(tuneScore[0]) < abs(tuneScore[sel_vco]))
-            sel_vco = 0;
-        if (abs(tuneScore[1]) < abs(tuneScore[sel_vco]))
-            sel_vco = 1;
-
-        Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
-        Modify_SPI_Reg_bits(CSW_VCO, tuneScore[sel_vco] + 128);
+        Modify_SPI_Reg_bits(SEL_VCO, bestVCO);
+        Modify_SPI_Reg_bits(CSW_VCO, bestCSW);
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
