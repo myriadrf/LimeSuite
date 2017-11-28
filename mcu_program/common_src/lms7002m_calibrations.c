@@ -640,23 +640,24 @@ void CalibrateIQImbalance(bool tx)
 
 uint8_t SetupCGEN()
 {
-    uint8_t status;
     uint8_t cgenMultiplier;
     uint8_t gfir3n;
-    cgenMultiplier = (uint8_t)((GetFrequencyCGEN() / 46.08e6) + 0.5);
-    if(cgenMultiplier < 2)
-        cgenMultiplier = 2;
-    if(cgenMultiplier > 13)
-        cgenMultiplier = 13;
-    //CGEN VCO is powered up in SetFrequencyCGEN/Tune
-    status = SetFrequencyCGEN(46.08e6 * cgenMultiplier);
-
+    cgenMultiplier = clamp((GetFrequencyCGEN() / 46.08e6) + 0.5, 2, 13);
     gfir3n = 4 * cgenMultiplier;
     if(Get_SPI_Reg_bits(EN_ADCCLKH_CLKGN) == 1)
         gfir3n /= pow2(Get_SPI_Reg_bits(CLKH_OV_CLKL_CGEN));
-    gfir3n = pow2((uint8_t)(log(gfir3n)/log(2)))-1; //could be log2(gfir3n)
-    Modify_SPI_Reg_bits(GFIR3_N_RXTSP, gfir3n);
-    return status;
+
+    { //gfir3n = pow2((uint8_t)log2(gfir3n))-1
+        uint8_t power;
+        for(power = 0x3F; power; power >>= 1)
+        {
+            if(gfir3n >= power)
+                break;
+        }
+        Modify_SPI_Reg_bits(GFIR3_N_RXTSP, power);
+    }
+    //CGEN VCO is powered up in SetFrequencyCGEN/Tune
+    return SetFrequencyCGEN(46.08e6 * cgenMultiplier);
 }
 
 uint8_t CalibrateTxSetup(bool extLoopback)
