@@ -247,7 +247,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
             Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
-            if( TuneVCO(tx ? VCO_SXT : VCO_SXR) == 0)
+            if( TuneVCO(tx ? VCO_SXT : VCO_SXR) == MCU_NO_ERROR)
             {
                 tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(CSW_VCO);
                 canDeliverFrequency = true;
@@ -265,7 +265,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
         return tx ? MCU_SXT_TUNE_FAILED : MCU_SXR_TUNE_FAILED;
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 static void Delay()

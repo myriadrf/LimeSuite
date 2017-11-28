@@ -85,6 +85,13 @@ static void FlipRisingEdge(const uint16_t addr, const uint8_t bits)
     Modify_SPI_Reg_bits(addr, bits, 1);
 }
 
+static bool IsPLLTuned()
+{
+    if( Get_SPI_Reg_bits(0x0123, MSB_LSB(13, 12)) == 2 )
+        return true;
+    return TuneVCO(true) == MCU_NO_ERROR;
+}
+
 void LoadDC_REG_TX_IQ()
 {
     SPI_write(0x020C, 0x7FFF);
@@ -712,7 +719,6 @@ uint8_t CalibrateTxSetup(bool extLoopback)
 {
     uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020); //remember used channel
-
     /*BeginBatch("TxSetup");
     //rfe
     //reset RFE to defaults
@@ -812,7 +818,6 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     status = SetupCGEN();
     if(status != MCU_NO_ERROR)
         return status;
-
     //SXR
     Modify_SPI_Reg_bits(MAC, 1); //switch to ch. A
     SetDefaultsSX();
@@ -835,6 +840,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     //SXT{
     Modify_SPI_Reg_bits(MAC, 2); //switch to ch. B
     Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
+    //check if Tx is tuned
+    if( !IsPLLTuned() )
+        return MCU_SXT_TUNE_FAILED;
+
     SPI_write(0x0020, x0020val); //restore used channel
 
     LoadDC_REG_TX_IQ();
@@ -844,7 +853,11 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         if(extLoopback)
         {
             Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
-            if(sel_band1_2_trf != 0x1)
+            if(sel_band1_2_trf == 1)
+                Modify_SPI_Reg_bits(SEL_PATH_RFE, 1); //LNA_H
+            else if(sel_band1_2_trf == 2)
+                Modify_SPI_Reg_bits(SEL_PATH_RFE, 3); //LNA_W
+            else
             {
 #if VERBOSE
                 printf("Tx Calibration: external calibration is not supported on selected Tx Band");
@@ -1104,8 +1117,12 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     else
     {
         //SXR
-        //Modify_SPI_Reg_bits(MAC, 1); //Get freq already changes/restores ch
-        const float_type SXRfreqHz = GetFrequencySX(LMS7002M_Rx);
+        float_type SXRfreqHz;
+        Modify_SPI_Reg_bits(MAC, 1);
+        //check if Rx is tuned
+        if(!IsPLLTuned())
+            return MCU_SXR_TUNE_FAILED;
+        SXRfreqHz = GetFrequencySX(LMS7002M_Rx);
 
         //SXT
         Modify_SPI_Reg_bits(MAC, 2);
