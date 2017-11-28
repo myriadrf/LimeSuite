@@ -91,24 +91,79 @@ static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& par
     return result;
 }
 
-static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable)
+static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
 {
     //enable external loopback switches
-    const uint16_t LoopbackCtrAddr = 0x0017;
-    uint16_t value = 0;
-    const uint16_t mask = 0x7;
-    const uint8_t shiftCount = (ch==2 ? 4 : 0);
+    const uint32_t LoopbackCtrAddr = 0x0017;
+    uint32_t value = 0;
     int status;
     status = port->ReadRegister(LoopbackCtrAddr, value);
     if(status != 0)
-        return ReportError(-1, "Failed to read Ext. Loopback controls");
-    value &= ~(mask << shiftCount);
-    value |= enable << shiftCount;   //EN_Loopback
-    value |= enable << (shiftCount+1); //EN_Attenuator
-    value |= !enable << (shiftCount+2); //EN_Shunt
+        return -1;
+    auto devName = port->GetDeviceInfo().deviceName;
+
+    if(devName == "LimeSDR")
+    {
+        const uint16_t mask = 0x7;
+        const uint8_t shiftCount = (ch==2 ? 4 : 0);
+        value &= ~(mask << shiftCount);
+        value |= enable << shiftCount;   //EN_Loopback
+        value |= enable << (shiftCount+1); //EN_Attenuator
+        value |= !enable << (shiftCount+2); //EN_Shunt
+    }
+    else if (devName == "LimeSDR-mini")
+    {
+        //EN_Shunt
+        value &= ~(1 << 2);
+        value |= !enable << 2;
+
+        if(tx)
+        {
+            uint32_t wr = 0x0103 << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path >>= 10;
+            path &= 0x3;
+            if (path==1)
+            {
+                value &= ~(1<<13);
+                value |= 1<<12;
+
+                value &= ~(1<<8); //LNA_H
+                value |= 1<<9;
+            }
+            else if (path==2)
+            {
+                value &= ~(1<<12);
+                value |= 1<<13;
+
+                value &= ~(1<<9); //LNA_W
+                value |= 1<<8;
+            }
+            //value |= enable << 1; //EN_Attenuator
+        }
+        else
+        {
+            uint32_t wr = 0x010D << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path &= ~0x0180;
+            path >>= 7;
+            if (path==1)
+            {
+                value &= ~(1<<8);
+                value |= 1<<9;
+            }
+            else if (path==3)
+            {
+                value &= ~(1<<9);
+                value |= 1<<8;
+            }
+        }
+    }
     status = port->WriteRegister(LoopbackCtrAddr, value);
     if(status != 0)
-        return ReportError(-1, "Failed to write Ext. Loopback controls");
+        return ReportError(status, "Failed to enable external loopback");
     return status;
 }
 
@@ -202,9 +257,9 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
-            status = SetExtLoopback(controlPort, ch, true);
+            status = SetExtLoopback(controlPort, ch, true, true);
             if(status != 0)
-                return status;
+                return ReportError(EINVAL, "Failed to enable external loopback");
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
@@ -324,7 +379,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
-            status = SetExtLoopback(controlPort, ch, true);
+            status = SetExtLoopback(controlPort, ch, true, false);
             if(status != 0)
                 return ReportError(EINVAL, "Failed to enable external loopback");
         }
