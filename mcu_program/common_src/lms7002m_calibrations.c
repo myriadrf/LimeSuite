@@ -360,87 +360,31 @@ static void TxDcBinarySearch(BinSearchParam* args)
 
 void AdjustAutoDC(const uint16_t address, bool tx)
 {
-    bool increment;
+    uint8_t i;
     uint16_t rssi;
     uint16_t minRSSI;
-    int16_t minValue = 0xffff;
+    int16_t minValue;
     int16_t initVal;
-    const uint16_t mask = tx ? 0x03FF : 0x003F;
-    const int16_t range = tx ? 1023 : 63;
-    SPI_write(address, 0);
-    SPI_write(address, 0x4000);
-    initVal = SPI_read(address);
-    SPI_write(address, 0);
-    if(initVal & (mask+1))
-    {
-        initVal &= mask;
-        initVal *= -1;
-    }
-    else
-        initVal &= mask;
-    minValue = initVal;
+    int8_t valChange;
+    uint16_t range = tx ? 1023 : 63;
 
-    rssi = GetRSSI();
-    minRSSI = rssi;
+    minValue = initVal = ReadAnalogDC(address);
+    minRSSI = rssi = GetRSSI();
+    WriteAnalogDC(address, clamp(initVal+1, -range, range));
+    valChange = GetRSSI() < rssi ? 1 : -1;
+
+    for(i = 8; i; --i)
     {
-        int16_t tempValue = clamp(initVal+1, -range, range);
-        uint16_t regValue = 0;
-        if(tempValue < 0)
-        {
-            regValue |= (mask+1);
-            regValue |= (abs(tempValue+mask) & mask);
-        }
-        else
-            regValue |= (abs(tempValue+mask+1) & mask);
-        SPI_write(address, regValue);
-        SPI_write(address, regValue | 0x8000);
-    }
-    increment = GetRSSI() < rssi;
-    {
-    int8_t iterations = 8;
-    while (iterations > 0)
-    {
-        SPI_write(address, 0);
-        if(increment)
-            ++initVal;
-        else
-            --initVal;
-        initVal = clamp(initVal, -range, range);
-        {
-            uint16_t regValue = 0;
-            if(initVal < 0)
-            {
-                regValue |= (mask+1);
-                regValue |= (abs(initVal+mask) & mask);
-            }
-            else
-                regValue |= (abs(initVal+mask+1) & mask);
-            SPI_write(address, regValue);
-            SPI_write(address, regValue | 0x8000);
-        }
+        initVal = clamp(initVal+valChange, -range, range);
+        WriteAnalogDC(address, initVal);
         rssi = GetRSSI();
         if(rssi < minRSSI)
         {
             minRSSI = rssi;
             minValue = initVal;
         }
-        --iterations;
     }
-    }
-    {
-        uint16_t regValue = 0;
-        initVal = minValue;
-        if(initVal < 0)
-        {
-            regValue |= (mask+1);
-            regValue |= (abs(initVal+mask) & mask);
-        }
-        else
-            regValue |= (abs(initVal+mask+1) & mask);
-        SPI_write(address, regValue);
-        SPI_write(address, regValue | 0x8000);
-        SPI_write(address, 0);
-    }
+    WriteAnalogDC(address, minValue);
 }
 
 void CalibrateRxDCAuto()
