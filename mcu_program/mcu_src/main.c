@@ -142,7 +142,7 @@ void main()  //main routine
                 P1 = MCU_IDLE | CalibrateRx(true);
                 break;
             case 255: //return program ID
-                P1 = 0x03;
+                P1 = 0x05;
                 break;
 
             }
