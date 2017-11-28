@@ -377,3 +377,19 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         return MCU_NO_ERROR;
     return MCU_ERROR;
 }
+
+void WriteMaskedRegs(const RegisterBatch ROM* regs)
+{
+    uint8_t i;
+    uint8_t index;
+    for(i=regs->cnt; i; --i)
+    {
+        index = i-1;
+        SPI_write(regs->addr[index], ( SPI_read(regs->addr[index]) & ~regs->mask[index] ) | regs->val[index]);
+    }
+    for(i=regs->wrOnlyAddrCnt; i; --i)
+    {
+        index = i-1;
+        SPI_write(regs->wrOnlyAddr[index], i > regs->wrOnlyDataCnt ? 0 : regs->wrOnlyData[index]);
+    }
+}

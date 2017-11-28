@@ -31,6 +31,21 @@ enum VCO_ID
 
 extern uint8_t TuneVCO(bool SX); // 0-cgen, 1-SXR, 2-SXT
 extern uint16_t pow2(const uint8_t power);
+
+typedef struct
+{
+    const uint16_t* addr;
+    const uint16_t* val;
+    const uint16_t* mask;
+    const uint8_t cnt;
+    const uint16_t* wrOnlyAddr;
+    const uint16_t* wrOnlyData;
+    const uint8_t wrOnlyAddrCnt;
+    const uint8_t wrOnlyDataCnt;
+} RegisterBatch;
+
+extern void WriteMaskedRegs(const RegisterBatch ROM* regs);
+
 #ifdef __cplusplus
 }
 #endif
