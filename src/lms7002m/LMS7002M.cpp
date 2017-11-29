@@ -582,13 +582,6 @@ int LMS7002M::LoadConfig(const char* filename)
     }
     f.close();
 
-    if(mcuControl)
-    {
-        mcuControl->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
-        if(mcuControl->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
-    }
-
     uint16_t addr = 0;
     uint16_t value = 0;
     Channel ch = this->GetActiveChannel(); //remember used channel
@@ -675,6 +668,14 @@ int LMS7002M::LoadConfig(const char* filename)
 
     this->SetActiveChannel(ChA);
     checkConnection();
+
+    if(mcuControl)
+    {
+        mcuControl->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+        if(mcuControl->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+            mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
+    }
+
     return 0;
 }
 
