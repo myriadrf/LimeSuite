@@ -4,12 +4,12 @@
     @brief Implementation of uLimeSDR board connection.
 */
 
-#include "ConnectionFTDI.h"
+#include "ConnectionFT601.h"
 #include "Logger.h"
 using namespace lime;
 
 #ifdef __unix__
-void ConnectionFTDIEntry::handle_libusb_events()
+void ConnectionFT601Entry::handle_libusb_events()
 {
     struct timeval tv;
     tv.tv_sec = 0;
@@ -22,16 +22,16 @@ void ConnectionFTDIEntry::handle_libusb_events()
 }
 #endif // __UNIX__
 
-int ConnectionFTDI::USBTransferContext::idCounter=0;
+int ConnectionFT601::USBTransferContext::idCounter=0;
 
 //! make a static-initialized entry in the registry
-void __loadConnectionFTDIEntry(void) //TODO fixme replace with LoadLibrary/dlopen
+void __loadConnectionFT601Entry(void) //TODO fixme replace with LoadLibrary/dlopen
 {
-    static ConnectionFTDIEntry FTDIEntry;
+    static ConnectionFT601Entry FTDIEntry;
 }
 
-ConnectionFTDIEntry::ConnectionFTDIEntry(void):
-    ConnectionRegistryEntry("uLimeSDR")
+ConnectionFT601Entry::ConnectionFT601Entry(void):
+    ConnectionRegistryEntry("FT601")
 {
 #ifndef __unix__
     //m_pDriver = new CDriverInterface();
@@ -41,11 +41,11 @@ ConnectionFTDIEntry::ConnectionFTDIEntry(void):
         lime::error("Init Error %i", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
     mProcessUSBEvents.store(true);
-    mUSBProcessingThread = std::thread(&ConnectionFTDIEntry::handle_libusb_events, this);
+    mUSBProcessingThread = std::thread(&ConnectionFT601Entry::handle_libusb_events, this);
 #endif
 }
 
-ConnectionFTDIEntry::~ConnectionFTDIEntry(void)
+ConnectionFT601Entry::~ConnectionFT601Entry(void)
 {
 #ifndef __unix__
     //delete m_pDriver;
@@ -56,7 +56,7 @@ ConnectionFTDIEntry::~ConnectionFTDIEntry(void)
 #endif
 }
 
-std::vector<ConnectionHandle> ConnectionFTDIEntry::enumerate(const ConnectionHandle &hint)
+std::vector<ConnectionHandle> ConnectionFT601Entry::enumerate(const ConnectionHandle &hint)
 {
     std::vector<ConnectionHandle> handles;
 
@@ -154,7 +154,7 @@ std::vector<ConnectionHandle> ConnectionFTDIEntry::enumerate(const ConnectionHan
     return handles;
 }
 
-IConnection *ConnectionFTDIEntry::make(const ConnectionHandle &handle)
+IConnection *ConnectionFT601Entry::make(const ConnectionHandle &handle)
 {
 #ifndef __unix__
     return new v(mFTHandle, handle.index);
@@ -163,6 +163,6 @@ IConnection *ConnectionFTDIEntry::make(const ConnectionHandle &handle)
     const auto splitPos = pidvid.find(":");
     const auto pid = std::stoi(pidvid.substr(0, splitPos));
     const auto vid = std::stoi(pidvid.substr(splitPos+1));
-    return new ConnectionFTDI(ctx, handle.index, vid, pid);
+    return new ConnectionFT601(ctx, handle.index, vid, pid);
 #endif
 }

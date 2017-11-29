@@ -28,7 +28,7 @@ namespace lime{
 
 #define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
 
-class ConnectionFTDI : public LMS64CProtocol
+class ConnectionFT601 : public LMS64CProtocol
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -76,10 +76,10 @@ public:
 #endif
     };
 
-    ConnectionFTDI(void *arg);
-    ConnectionFTDI(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
+    ConnectionFT601(void *arg);
+    ConnectionFT601(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
 
-    virtual ~ConnectionFTDI(void);
+    virtual ~ConnectionFT601(void);
 
     int Open(const unsigned index, const int vid, const int pid);
     void Close();
@@ -135,11 +135,11 @@ protected:
 
 
 
-class ConnectionFTDIEntry : public ConnectionRegistryEntry
+class ConnectionFT601Entry : public ConnectionRegistryEntry
 {
 public:
-    ConnectionFTDIEntry(void);
-    ~ConnectionFTDIEntry(void);
+    ConnectionFT601Entry(void);
+    ~ConnectionFT601Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle &hint);
     IConnection *make(const ConnectionHandle &handle);
 private:

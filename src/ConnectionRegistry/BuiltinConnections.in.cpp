@@ -14,7 +14,7 @@ void __loadConnectionEVB7COMEntry(void);
 void __loadConnectionFX3Entry(void);
 void __loadConnectionSTREAM_UNITEEntry(void);
 void __loadConnectionNovenaRF7Entry(void);
-void __loadConnectionFTDIEntry(void);
+void __loadConnectionFT601Entry(void);
 void __loadConnectionXillybusEntry(void);
 
 void __loadAllConnections(void)
@@ -32,7 +32,7 @@ void __loadAllConnections(void)
     #endif
 
     #ifdef ENABLE_FTDI
-    __loadConnectionFTDIEntry();
+    __loadConnectionFT601Entry();
     #endif
 
     #ifdef ENABLE_NOVENARF7

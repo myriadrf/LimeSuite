@@ -4,7 +4,7 @@
 @brief Implementation of uLimeSDR board connection.
 */
 
-#include "ConnectionFTDI.h"
+#include "ConnectionFT601.h"
 #include "ErrorReporting.h"
 #include <cstring>
 #include <iostream>
@@ -19,7 +19,7 @@
 using namespace std;
 using namespace lime;
 
-ConnectionFTDI::ConnectionFTDI(void *arg)
+ConnectionFT601::ConnectionFT601(void *arg)
 {
     isConnected = false;
 
@@ -40,7 +40,7 @@ ConnectionFTDI::ConnectionFTDI(void *arg)
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionFTDI::ConnectionFTDI(void *arg, const unsigned index, const int vid, const int pid)
+ConnectionFT601::ConnectionFT601(void *arg, const unsigned index, const int vid, const int pid)
 {
     isConnected = false;
 
@@ -63,12 +63,12 @@ ConnectionFTDI::ConnectionFTDI(void *arg, const unsigned index, const int vid, c
 
 /**	@brief Closes connection to chip and deallocates used memory.
 */
-ConnectionFTDI::~ConnectionFTDI()
+ConnectionFT601::~ConnectionFT601()
 {
     Close();
 }
 #ifdef __unix__
-int ConnectionFTDI::FT_FlushPipe(unsigned char ep)
+int ConnectionFT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
@@ -96,7 +96,7 @@ int ConnectionFTDI::FT_FlushPipe(unsigned char ep)
     return 0;
 }
 
-int ConnectionFTDI::FT_SetStreamPipe(unsigned char ep, size_t size)
+int ConnectionFT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
@@ -131,7 +131,7 @@ int ConnectionFTDI::FT_SetStreamPipe(unsigned char ep, size_t size)
 /**	@brief Tries to open connected USB device and find communication endpoints.
 @return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int ConnectionFTDI::Open(const unsigned index, const int vid, const int pid)
+int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
 	DWORD devCount;
@@ -190,7 +190,7 @@ int ConnectionFTDI::Open(const unsigned index, const int vid, const int pid)
 
 /**	@brief Closes communication to device.
 */
-void ConnectionFTDI::Close()
+void ConnectionFT601::Close()
 {
 #ifndef __unix__
 	FT_Close(mFTHandle);
@@ -210,7 +210,7 @@ void ConnectionFTDI::Close()
 /**	@brief Returns connection status
 @return 1-connection open, 0-connection closed.
 */
-bool ConnectionFTDI::IsOpen()
+bool ConnectionFT601::IsOpen()
 {
     return isConnected;
 }
@@ -231,7 +231,7 @@ int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
 @param timeout_ms timeout limit for operation in milliseconds
 @return number of bytes sent.
 */
-int ConnectionFTDI::Write(const unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFT601::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = 0;
@@ -287,7 +287,7 @@ big enough to fit received data.
 @return number of bytes received.
 */
 
-int ConnectionFTDI::Read(unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFT601::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
@@ -338,7 +338,7 @@ int ConnectionFTDI::Read(unsigned char *buffer, const int length, int timeout_ms
 */
 static void callback_libusbtransfer(libusb_transfer *trans)
 {
-    ConnectionFTDI::USBTransferContext *context = reinterpret_cast<ConnectionFTDI::USBTransferContext*>(trans->user_data);
+    ConnectionFT601::USBTransferContext *context = reinterpret_cast<ConnectionFT601::USBTransferContext*>(trans->user_data);
     std::unique_lock<std::mutex> lck(context->transferLock);
     switch(trans->status)
     {
@@ -375,12 +375,12 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-int ConnectionFTDI::GetBuffersCount() const 
+int ConnectionFT601::GetBuffersCount() const 
 {
     return 16;
 };
 
-int ConnectionFTDI::CheckStreamSize(int size)const 
+int ConnectionFT601::CheckStreamSize(int size)const 
 {
     return size;
 };
@@ -391,7 +391,7 @@ int ConnectionFTDI::CheckStreamSize(int size)const
 @param length number of bytes to read
 @return handle of transfer context
 */
-int ConnectionFTDI::BeginDataReading(char *buffer, uint32_t length, int ep)
+int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     bool contextFound = false;
@@ -451,7 +451,7 @@ int ConnectionFTDI::BeginDataReading(char *buffer, uint32_t length, int ep)
 @param timeout_ms number of miliseconds to wait
 @return 1-data received, 0-data not received
 */
-bool ConnectionFTDI::WaitForReading(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -483,7 +483,7 @@ bool ConnectionFTDI::WaitForReading(int contextHandle, unsigned int timeout_ms)
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes received
 */
-int ConnectionFTDI::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
+int ConnectionFT601::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -513,7 +513,7 @@ int ConnectionFTDI::FinishDataReading(char *buffer, uint32_t length, int context
 /**
 @brief Aborts reading operations
 */
-void ConnectionFTDI::AbortReading(int ep)
+void ConnectionFT601::AbortReading(int ep)
 {
 #ifndef __unix__
     FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
@@ -553,7 +553,7 @@ void ConnectionFTDI::AbortReading(int ep)
 @param length number of bytes to send
 @return handle of transfer context
 */
-int ConnectionFTDI::BeginDataSending(const char *buffer, uint32_t length, int ep)
+int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     //find not used context
@@ -610,7 +610,7 @@ int ConnectionFTDI::BeginDataSending(const char *buffer, uint32_t length, int ep
 @param timeout_ms number of miliseconds to wait
 @return 1-data received, 0-data not received
 */
-bool ConnectionFTDI::WaitForSending(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if(contextsToSend[contextHandle].used == true)
     {
@@ -641,7 +641,7 @@ bool ConnectionFTDI::WaitForSending(int contextHandle, unsigned int timeout_ms)
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes sent
 */
-int ConnectionFTDI::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
+int ConnectionFT601::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     if(contextsToSend[contextHandle].used == true)
     {
@@ -670,7 +670,7 @@ int ConnectionFTDI::FinishDataSending(const char *buffer, uint32_t length, int c
 /**
 @brief Aborts sending operations
 */
-void ConnectionFTDI::AbortSending(int ep)
+void ConnectionFT601::AbortSending(int ep)
 {
 #ifndef __unix__
     FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
@@ -703,7 +703,7 @@ void ConnectionFTDI::AbortSending(int ep)
 }
 
 
-int ConnectionFTDI::ResetStreamBuffers()
+int ConnectionFT601::ResetStreamBuffers()
 {
     rxSize = 0;
     txSize = 0;

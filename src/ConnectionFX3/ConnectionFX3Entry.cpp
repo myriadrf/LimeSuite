@@ -32,7 +32,7 @@ static ConnectionFX3Entry FX3Entry;
 int USBTransferContext::idCounter = 0;
 
 ConnectionFX3Entry::ConnectionFX3Entry(void):
-    ConnectionRegistryEntry("STREAM")
+    ConnectionRegistryEntry("FX3")
 {
 #ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
