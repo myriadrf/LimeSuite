@@ -267,6 +267,11 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
             return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
 
+    //sync registers to cache
+    const std::vector<uint16_t> regsToSync = {0x0208, 0x05C0};
+    for(const auto addr : regsToSync)
+        this->SPI_read(addr, true);
+
     //need to read back calibration results
     dccorri = ReadAnalogDC(this, channel ? LMS7_DC_TXBI : LMS7_DC_TXAI);
     dccorrq = ReadAnalogDC(this, channel ? LMS7_DC_TXBQ : LMS7_DC_TXAQ);
@@ -390,6 +395,11 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
             return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
     }
 
+    //sync registers to cache
+    const std::vector<uint16_t> regsToSync = {0x040C, 0x05C0};
+    for(const auto addr : regsToSync)
+        this->SPI_read(addr, true);
+
     //read back for cache input and print
     dcoffi = ReadAnalogDC(this, channel ? LMS7_DC_RXBI : LMS7_DC_RXAI);
     dcoffq = ReadAnalogDC(this, channel ? LMS7_DC_RXBQ : LMS7_DC_RXAQ);
@@ -399,11 +409,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     if(useCache)
         mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, dcoffi, dcoffq, gcorri, gcorrq, phaseOffset);
-    //logic reset
-    Modify_SPI_Reg_bits(LMS7_LRST_TX_A, 0);
-    Modify_SPI_Reg_bits(LMS7_LRST_TX_B, 0);
-    Modify_SPI_Reg_bits(LMS7_LRST_TX_A, 1);
-    Modify_SPI_Reg_bits(LMS7_LRST_TX_B, 1);
 
     Log("Rx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
