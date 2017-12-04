@@ -97,7 +97,6 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     const SoapySDR::Kwargs &args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-
     //store result into opaque stream object
     auto stream = new IConnectionStream;
     stream->direction = direction;
@@ -107,10 +106,10 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
     config.performanceLatency = 0.5;
+    config.bufferLength = 0; //auto
 
     //default to channel 0, if none were specified
     const std::vector<size_t> &channelIDs = channels.empty() ? std::vector<size_t>{0} : channels;
-
     for(size_t i=0; i<channelIDs.size(); ++i)
     {
         config.channelID = channelIDs[i];
@@ -156,7 +155,6 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     {
         _channelsToCal.emplace(direction, ch);
     }
-
     return (SoapySDR::Stream *)stream;
 }
 
@@ -192,10 +190,8 @@ int SoapyLMS7::activateStream(
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
-
     if (sampleRate == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
-
     //perform self calibration with current bandwidth settings
     //this is for the set-it-and-forget-it style of use case
     //where boards are configured, the stream is setup,
@@ -207,7 +203,6 @@ int SoapyLMS7::activateStream(
         lms7Device->Calibrate(dir== SOAPY_SDR_TX,ch,_actualBw.at(dir).at(ch),0);
         _channelsToCal.erase(_channelsToCal.begin());
     }
-
     //stream requests used with rx
     icstream->flags = flags;
     icstream->timeNs = timeNs;
@@ -223,7 +218,6 @@ int SoapyLMS7::activateStream(
         }
         icstream->enabled = true;
     }
-
     return 0;
 }
 
@@ -441,7 +435,7 @@ int SoapyLMS7::writeStream(
     //or there is an unknown internal issue with the stream fifo
     for (size_t i = 1; i < streamID.size(); i++)
     {
-        int status_i = streamID[0]->Write(buffs[i], status, &metadata, 1000/*1s*/);
+        int status_i = streamID[i]->Write(buffs[i], status, &metadata, 1000/*1s*/);
         if (status_i != status)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "Multi-channel stream alignment failed!");
@@ -463,8 +457,9 @@ int SoapyLMS7::readStreamStatus(
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
 
-    lime::StreamChannel::Info metadata;
+    int ret = 0;
     flags = 0;
+    lime::StreamChannel::Info metadata;
     auto start = std::chrono::high_resolution_clock::now();
     while (1)
     {
@@ -472,10 +467,11 @@ int SoapyLMS7::readStreamStatus(
         {
             metadata = i->GetInfo();
 
-            //stop when event is detected
-            if (metadata.overrun || metadata.underrun || metadata.droppedPackets)
-                goto found;
+            if (metadata.droppedPackets) ret = SOAPY_SDR_TIME_ERROR;
+            else if (metadata.overrun) ret = SOAPY_SDR_OVERFLOW;
+            else if (metadata.underrun) ret = SOAPY_SDR_UNDERFLOW;
         }
+        if (ret) break;
         //check timeout
         std::chrono::duration<double> seconds = std::chrono::high_resolution_clock::now()-start;
         if (seconds.count()> (double)timeoutUs/1e6)
@@ -487,13 +483,8 @@ int SoapyLMS7::readStreamStatus(
             std::this_thread::sleep_for(std::chrono::microseconds(1+timeoutUs/2));
     }
 
-    found:
     timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate);
     //output metadata
     flags |= SOAPY_SDR_HAS_TIME;
-    if (metadata.droppedPackets) return SOAPY_SDR_TIME_ERROR;
-    if (metadata.overrun) return SOAPY_SDR_OVERFLOW;
-    if (metadata.underrun) return SOAPY_SDR_UNDERFLOW;
-
-    return 0;
+    return ret;
 }

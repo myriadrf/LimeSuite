@@ -212,11 +212,9 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
     LMS7002M lms;
     lms.SetConnection(dataPort, mChipID);
     double rate = lms.GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
-    
     streamSize = (mTxStreams[0]||mRxStreams[0]) + (mTxStreams[1]||mRxStreams[1]);
 
     rate = (rate + 5) * config.performanceLatency * streamSize;
-
     for (int batch = 1; batch < rate; batch <<= 1)
         if (config.isTx)
             txBatchSize = batch;
@@ -405,7 +403,12 @@ int Streamer::UpdateThreads(bool stopAll)
             lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
         }
 
+        uint32_t reg9;
+        dataPort->ReadRegister(0x0009, reg9);
+        const uint32_t addr[] = {0x0009, 0x0009};
+        const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         fpga->StartStreaming();
+        dataPort->WriteRegisters(addr, data, 2);
     }
     else if(not needTx and not needRx)
     {
@@ -511,6 +514,7 @@ void Streamer::TransmitPacketsLoop()
                 {
                     if (meta.flags & RingFIFO::END_BURST)
                     {
+                        printf("EOB\n");
                         memset(&samples[ch][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                         end_burst = true;
                         continue;
@@ -528,6 +532,7 @@ void Streamer::TransmitPacketsLoop()
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
             const int ignoreTimestamp = !(meta.flags & RingFIFO::SYNC_TIMESTAMP);
+            if (ignoreTimestamp) printf("NOSYNC");
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
             std::vector<complex16_t*> src(chCount);
@@ -694,7 +699,7 @@ void Streamer::ReceivePacketsLoop()
                     continue;
                 StreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
-                meta.flags = RingFIFO::OVERWRITE_OLD;
+                meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
                 int samplesPushed = mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     mRxStreams[ch]->overflow++;

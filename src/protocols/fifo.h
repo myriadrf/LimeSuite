@@ -74,7 +74,6 @@ public:
                 auto t2 = std::chrono::high_resolution_clock::now();
                 if(t2-t1 >= std::chrono::milliseconds(timeout_ms))
                     return samplesTaken;
-
                 if(flags & OVERWRITE_OLD)
                 {
                     int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;

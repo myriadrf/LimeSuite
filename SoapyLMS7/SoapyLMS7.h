@@ -185,11 +185,6 @@ public:
 
     SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const;
 
-    //rate fixing flags applied when user makes a call
-    //helps to determine flexible sample rate requirements
-    bool _fixedClockRate;
-    std::map<size_t, bool> _fixedRxSampRate;
-    std::map<size_t, bool> _fixedTxSampRate;
     std::vector<double> _getEnumeratedRates(const int direction, const size_t channel) const;
 
     /*******************************************************************

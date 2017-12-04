@@ -73,12 +73,10 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     {
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
         this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
+        _actualBw[SOAPY_SDR_RX][channel] = 30e6;
+        _actualBw[SOAPY_SDR_TX][channel] = 60e6;
     }
 
-    //reset flags for user calls
-    _fixedClockRate = args.count("clock") != 0;
-    _fixedRxSampRate.clear();
-    _fixedTxSampRate.clear();
     _channelsToCal.clear();
 }
 
@@ -422,10 +420,10 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setFrequency(%s, %d, %s, %g MHz)", dirName, int(channel), name.c_str(), frequency/1e6);
-
+    bool isTx = direction == SOAPY_SDR_TX;
     if (name == "RF")
     {
-        if (direction == SOAPY_SDR_RX)
+        if (isTx)
             lms7Device->SetTxFrequency(channel, frequency);
         else
             lms7Device->SetRxFrequency(channel, frequency);
@@ -434,8 +432,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     }
 
     if (name == "BB")
-    {
-        bool isTx = direction == SOAPY_SDR_TX;
+    {     
         double ncoFreq[16] = {frequency};
         lms7Device->SetNCOFreq(isTx, channel, ncoFreq, 0);
         lms7Device->SetNCO(isTx, channel, 0, frequency < 0);
@@ -539,25 +536,15 @@ std::vector<double> SoapyLMS7::_getEnumeratedRates(const int direction, const si
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto rfic = lms7Device->GetLMS(channel/2);
-    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
     std::vector<double> rates;
 
     const double clockRate = this->getMasterClockRate();
     const double dacFactor = clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Tx);
     const double adcFactor = clockRate/rfic->GetReferenceClk_TSP(LMS7002M::Rx);
-    const double dspRate = rfic->GetReferenceClk_TSP(lmsDir);
-    const bool fixedRx = _fixedRxSampRate.count(channel) != 0 and _fixedRxSampRate.at(channel);
-    const bool fixedTx = _fixedTxSampRate.count(channel) != 0 and _fixedTxSampRate.at(channel);
-
-    //clock rate is fixed, only half-band chain is configurable
-    if (_fixedClockRate)
-    {
-        for (int i = 32; i >= 2; i /= 2) rates.push_back(dspRate/i);
-    }
 
     //special rates when looking for rx rates and tx is fixed
     //return all rates where the tx sample rate is achievable
-    else if (direction == SOAPY_SDR_RX and fixedTx)
+    if (direction == SOAPY_SDR_RX)
     {
         const double txRate = this->getSampleRate(SOAPY_SDR_TX, channel);
         for (int iTx = 32; iTx >= 2; iTx /= 2)
@@ -576,7 +563,7 @@ std::vector<double> SoapyLMS7::_getEnumeratedRates(const int direction, const si
 
     //special rates when looking for tx rates and rx is fixed
     //return all rates where the rx sample rate is achievable
-    else if (direction == SOAPY_SDR_TX and fixedRx)
+    else
     {
         const double rxRate = this->getSampleRate(SOAPY_SDR_RX, channel);
         for (int iRx = 32; iRx >= 2; iRx /= 2)
@@ -702,7 +689,6 @@ SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size
 void SoapyLMS7::setMasterClockRate(const double rate)
 {
     lms7Device->SetClockFreq(LMS_CLOCK_CGEN,rate);
-    _fixedClockRate = true;
 }
 
 double SoapyLMS7::getMasterClockRate(void) const

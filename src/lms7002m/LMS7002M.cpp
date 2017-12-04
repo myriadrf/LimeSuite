@@ -131,7 +131,8 @@ LMS7002M::LMS7002M() :
     mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),
     mdevIndex(0),
-    mSelfCalDepth(0)
+    mSelfCalDepth(0),
+    _cachedRefClockRate(30.72e6)
 {
     mCalibrationByMCU = true;
 
