@@ -1261,6 +1261,7 @@ typedef struct
     char protocolVersion[16];       ///<The protocol version as a string
     uint64_t boardSerialNumber;     ///<A unique board serial number
     char gatewareVersion[16];       ///<Gateware version as a string
+    char gatewareTargetBoard[32];   ///<Which board should use this gateware
 }lms_dev_info_t;
 
 /**

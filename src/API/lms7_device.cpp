@@ -1230,8 +1230,7 @@ int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan, lms_testsig_t sig, int1
         else if (sig == LMS_TESTSIG_NCODIV8F || sig == LMS_TESTSIG_NCODIV4F)
             lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_RXTSP), 1, true);
 
-        return lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), sig == LMS_TESTSIG_DC, true);
-        ;
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_RXTSP), sig == LMS_TESTSIG_DC, true);
     }
     else
     {
@@ -1248,8 +1247,8 @@ int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan, lms_testsig_t sig, int1
         else if (sig == LMS_TESTSIG_NCODIV8F || sig == LMS_TESTSIG_NCODIV4F)
             lms->Modify_SPI_Reg_bits(LMS7param(TSGFC_TXTSP), 1, true);
 
-        return lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), sig == LMS_TESTSIG_DC, true);
-        ;
+        lms->Modify_SPI_Reg_bits(LMS7param(TSGMODE_TXTSP), sig == LMS_TESTSIG_DC, true);
+
     }
 
     if (sig == LMS_TESTSIG_DC)
@@ -1886,6 +1885,7 @@ lms_dev_info_t* LMS7_Device::GetInfo()
     strncpy(devInfo.hardwareVersion,info.hardwareVersion.c_str(),sizeof(devInfo.hardwareVersion)-1);
     strncpy(devInfo.protocolVersion,info.protocolVersion.c_str(),sizeof(devInfo.protocolVersion)-1);
     snprintf(devInfo.gatewareVersion,sizeof(devInfo.gatewareVersion)-1,"%s.%s", info.gatewareVersion.c_str(),info.gatewareRevision.c_str());
+    strncpy(devInfo.gatewareTargetBoard,info.gatewareTargetBoard.c_str(),sizeof(devInfo.gatewareTargetBoard)-1);
     info.boardSerialNumber = info.boardSerialNumber;
     devInfo.boardSerialNumber = info.boardSerialNumber;
     return &devInfo;

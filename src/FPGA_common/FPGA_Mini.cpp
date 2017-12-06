@@ -68,9 +68,8 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     dataWr.clear(); 
     
     bool phaseSearch = false;
-    /*if (chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
-      if (rxInterfaceClk >= 5e6 || txInterfaceClk >= 5e6)
-        phaseSearch = true;*/
+      if (txRate_Hz >= 5e6 || rxRate_Hz >= 5e6)
+        phaseSearch = true;
 
     std::vector<uint32_t> dataRd;
 

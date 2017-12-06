@@ -532,7 +532,6 @@ void Streamer::TransmitPacketsLoop()
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
             const int ignoreTimestamp = !(meta.flags & RingFIFO::SYNC_TIMESTAMP);
-            if (ignoreTimestamp) printf("NOSYNC");
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
 
             std::vector<complex16_t*> src(chCount);

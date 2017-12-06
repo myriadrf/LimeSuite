@@ -770,7 +770,7 @@ int ConnectionFX3::ProgramWrite(const char *buffer, const size_t length, const i
             lime::error("failed to get device description");
         else if (desc.idProduct == 243)
 #else
-		if (USBDevicePrimary->ProductID == 243)
+        if (USBDevicePrimary->ProductID == 243)
 #endif
         {
 #ifdef __unix__
@@ -802,11 +802,11 @@ int ConnectionFX3::ProgramWrite(const char *buffer, const size_t length, const i
             return ret;
 #endif
         }
-		else
-		{
-			ReportError("FX3 bootloader NOT detected");
-			return -1;
-		}
+            else
+            {
+                ReportError("FX3 bootloader NOT detected");
+                return -1;
+            }
     }
     return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
 }

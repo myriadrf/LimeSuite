@@ -200,15 +200,6 @@ public:
     */
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
 
-    /**	@brief Reads current program from selected device
-        @param buffer destination for binary program data
-        @param length buffer length to read
-        @param index target device number
-        @param callback callback for progress reporting or early termination
-        @return the operation success state
-    */
-    virtual int ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
-
     enum MCU_PROG_MODE
     {
         RESET = 0,

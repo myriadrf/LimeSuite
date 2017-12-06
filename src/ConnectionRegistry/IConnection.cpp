@@ -141,12 +141,6 @@ int IConnection::ProgramWrite(const char *buffer, const size_t length, const int
     return -1;
 }
 
-int IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
-{
-    ReportError(ENOTSUP, "ProgramRead not supported");
-    return -1;
-}
-
 int IConnection::ProgramUpdate(const bool download, ProgrammingCallback callback)
 {
     ReportError(ENOTSUP, "ProgramUpdate not supported");

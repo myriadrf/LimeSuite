@@ -1036,6 +1036,7 @@ int LMS7002M::GetBandTRF(void)
 int LMS7002M::SetReferenceClk_SX(bool tx, float_type freq_Hz)
 {
     _cachedRefClockRate=freq_Hz;
+    return 0;
 }
 
 /**	@brief Returns reference clock in Hz used for SXT or SXR
