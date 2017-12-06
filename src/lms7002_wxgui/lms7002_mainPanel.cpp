@@ -157,6 +157,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
     if (status != 0)
         wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxNotebookEvent evt;
+    chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
@@ -166,6 +167,7 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
     if (status != 0)
         wxMessageBox(wxString::Format(_("Load Default: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
     wxNotebookEvent evt;
+    chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
@@ -345,14 +347,12 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     uint16_t chBck;
     LMS_ReadParam(lmsControl, LMS7param(MAC), &chBck);
     bool enable = chkEnableMIMO->IsChecked();
-    LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
-    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTRX_RFE), enable);
-    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTTX_TRF), enable);
-    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE1), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE2), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE1), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE2), 0);
-    LMS_WriteParam(lmsControl, LMS7param(MIMO_SISO), 0);
+    for (int ch = 0; ch < LMS_GetNumChannels(lmsControl,false);ch++)
+    {
+        if (!enable) ch++; //enable all, disable only B 
+        LMS_EnableChannel(lmsControl,LMS_CH_RX,ch,enable);
+        LMS_EnableChannel(lmsControl,LMS_CH_TX,ch,enable);
+    }
     LMS_WriteParam(lmsControl, LMS7param(MAC), chBck);
     UpdateVisiblePanel();
 }
