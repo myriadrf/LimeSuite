@@ -96,14 +96,14 @@ void LMS7_Device::_Initialize(lime::IConnection* conn)
 
     while (lms_list.size() < GetLMSCnt())
         lms_list.push_back(new lime::LMS7002M());
+    SetConnection(conn);
     double refClk = fpga->DetectRefClk();
     for (unsigned i = 0; i < GetLMSCnt(); i++)
     {
-        mStreamers.push_back(new lime::Streamer(conn,fpga,i));
+        mStreamers.push_back(new lime::Streamer(conn,fpga,lms_list[i]));
         lms_list[i]->EnableValuesCache(false);
         lms_list[i]->SetReferenceClk_SX(false, refClk);
     }
-    SetConnection(conn);
 }
 
 int LMS7_Device::SetConnection(lime::IConnection* conn)
@@ -1642,8 +1642,6 @@ int LMS7_Device::Init()
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-        if (lms->UploadAll()!=0)
-            return -1;
         if (SetTxFrequency(0,1250e6)!=0)
             return -1;
         if (SetRxFrequency(0,1200e6)!=0)
@@ -1661,7 +1659,6 @@ int LMS7_Device::Reset()
         lime::LMS7002M* lms = lms_list[i];
         if (lms->ResetChip() != 0)
             return -1;
-        lms->DownloadAll();
     }
     return LMS_SUCCESS;
 }

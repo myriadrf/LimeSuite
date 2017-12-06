@@ -46,9 +46,6 @@ int LMS7_LimeSDR_mini::Init()
     lms->EnableChannel(true, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-
-    if (lms->UploadAll()!=0)
-        return -1;
     
     if (SetTxFrequency(0,1250e6)!=0)
         return -1;

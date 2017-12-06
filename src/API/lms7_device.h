@@ -30,8 +30,8 @@ class LIME_API LMS7_Device
 public:
     LMS7_Device(LMS7_Device *obj = nullptr);
     virtual ~LMS7_Device();
-    virtual int SetConnection(lime::IConnection* conn);
-    virtual lime::IConnection* GetConnection(unsigned chan =0);
+    int SetConnection(lime::IConnection* conn);
+    lime::IConnection* GetConnection(unsigned chan =0);
     lime::FPGA* GetFPGA();
     virtual int Init();
     int EnableChannel(bool dir_tx, size_t chan, bool enabled);
@@ -103,7 +103,7 @@ public:
     int MCU_AGCStop();
 
 protected:
-    const double maxTxGain = 60.0;
+    const double maxTxGain = 64.0;
     lms_dev_info_t devInfo;
     std::vector<lms_channel_info> tx_channels;
     std::vector<lms_channel_info> rx_channels;

@@ -23,6 +23,7 @@ namespace lime
 class IConnection;
 class StreamChannel;
 class FPGA;
+class LMS7002M;
 
 /*!
  * The stream config structure is used with the SetupStream() API.
@@ -69,7 +70,7 @@ struct LIME_API StreamConfig
 class Streamer
 {
 public:
-    Streamer(IConnection* p, FPGA* f, int chipID=0);
+    Streamer(IConnection* p, FPGA* f, LMS7002M* chip);
     ~Streamer();
 
     StreamChannel* SetupStream(const StreamConfig& config);
@@ -95,7 +96,6 @@ public:
     std::atomic<uint64_t> rxLastTimestamp;
     std::atomic<uint64_t> txLastLateTime;
     uint64_t mTimestampOffset;
-    int mChipID;
     int streamSize;
     unsigned txBatchSize;
     unsigned rxBatchSize;
@@ -103,6 +103,7 @@ public:
     void TransmitPacketsLoop();
 private:
     FPGA* fpga;
+    LMS7002M* lms;
 };
 
 class LIME_API StreamChannel 

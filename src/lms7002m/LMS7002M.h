@@ -136,7 +136,7 @@ public:
     bool IsSynced();
     int CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
-	int ResetChip();
+    int ResetChip();
 
     /*!
      * Perform soft-reset sequence over SPI
@@ -408,6 +408,7 @@ public:
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
+    int GetChipID() const;
 
     enum LogType
     {

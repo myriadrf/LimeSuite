@@ -145,10 +145,11 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(IConnection* p, FPGA* f, int chipID)
+Streamer::Streamer(IConnection* p, FPGA* f, LMS7002M* chip)
 {
     dataPort = p;
     fpga = f;
+    lms = chip;
     rxRunning = false;
     txRunning = false;
     mTimestampOffset = 0;
@@ -161,7 +162,6 @@ Streamer::Streamer(IConnection* p, FPGA* f, int chipID)
     txDataRate_Bps = 0;
     txBatchSize = 1;
     rxBatchSize = 1;
-    mChipID = chipID;
     streamSize = 1;
     for(auto& i : mTxStreams)
         i = nullptr;
@@ -209,9 +209,7 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
     else
         mRxStreams[ch] = stream;
     
-    LMS7002M lms;
-    lms.SetConnection(dataPort, mChipID);
-    double rate = lms.GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
+    double rate = lms->GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
     streamSize = (mTxStreams[0]||mRxStreams[0]) + (mTxStreams[1]||mRxStreams[1]);
 
     rate = (rate + 5) * config.performanceLatency * streamSize;
@@ -263,7 +261,7 @@ uint64_t Streamer::GetHardwareTimestamp(void)
     if(not rxRunning.load() and not txRunning.load())
     {
         //stop streaming just in case the board has not been configured
-        dataPort->WriteRegister(0xFFFF, 1 << mChipID);
+        dataPort->WriteRegister(0xFFFF, 1 << lms->GetChipID());
         fpga->StopStreaming();
         fpga->ResetTimestamp();
         mTimestampOffset = 0;
@@ -315,12 +313,10 @@ int Streamer::UpdateThreads(bool stopAll)
         rxThread.join();
         rxRunning.store(false);
     }
-    dataPort->WriteRegister(0xFFFF, 1 << mChipID);
+    dataPort->WriteRegister(0xFFFF, 1 << lms->GetChipID());
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
     {
-        LMS7002M lmsControl;
-        lmsControl.SetConnection(dataPort, mChipID);
         //enable FPGA streaming
         fpga->StopStreaming();
         fpga->ResetTimestamp();
@@ -357,9 +353,9 @@ int Streamer::UpdateThreads(bool stopAll)
         const uint16_t smpl_width = config.linkFormat == StreamConfig::FMT_INT12 ? 2 : 0; 
         uint16_t mode = 0x0100;
 
-        if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
+        if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
             mode = 0x0040;
-        else if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE),true))
+        else if (lms->Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE)))
             mode = 0x0180;
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
@@ -368,39 +364,38 @@ int Streamer::UpdateThreads(bool stopAll)
 
         dataPort->WriteRegister(0x0007, channelEnables);
 
-        bool fromChip = true;
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0, fromChip);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
         
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0, fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1), fromChip);
-        lmsControl.Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1), fromChip);
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1));
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1));
 
-        if (lmsControl.Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
+        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
         {
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2, fromChip);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2);
         }
         else
         {
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3, fromChip);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3);
         }
 
         if(channelEnables & 0x2) //enable MIMO
         {
-            uint16_t macBck = lmsControl.Get_SPI_Reg_bits(LMS7param(MAC), fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1, fromChip);
-            lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), macBck, fromChip);
+            uint16_t macBck = lms->Get_SPI_Reg_bits(LMS7param(MAC));
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC), macBck);
         }
 
         uint32_t reg9;
@@ -442,7 +437,7 @@ void Streamer::TransmitPacketsLoop()
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = streamSize;
     const bool packed = mTxStreams[0]->config.linkFormat == StreamConfig::FMT_INT12;
-    const int epIndex = mChipID;
+    const int epIndex = lms->GetChipID();
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
@@ -583,7 +578,7 @@ void Streamer::ReceivePacketsLoop()
     const bool packed = mRxStreams[0]->config.linkFormat == StreamConfig::FMT_INT12;
     const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
     
-    const int epIndex = mChipID;
+    const int epIndex = lms->GetChipID();
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);

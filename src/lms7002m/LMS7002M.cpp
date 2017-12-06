@@ -379,6 +379,7 @@ int LMS7002M::ResetChip()
     checkConnection();
 
     int status = controlPort->DeviceReset(mdevIndex);
+    mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     if (status == 0) Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
     return status;
 }
@@ -2536,6 +2537,11 @@ bool LMS7002M::IsValuesCacheEnabled()
 MCU_BD* LMS7002M::GetMCUControls() const
 {
     return mcuControl;
+}
+
+int LMS7002M::GetChipID() const
+{
+    return mdevIndex;
 }
 
 void LMS7002M::EnableCalibrationByMCU(bool enabled)

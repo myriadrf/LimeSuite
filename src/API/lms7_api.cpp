@@ -4,11 +4,9 @@
 #include "lms7_device.h"
 #include "ErrorReporting.h"
 #include "errno.h"
-#include "MCU_BD.h"
 #include <cmath>
 #include "VersionInfo.h"
 #include <assert.h>
-#include "FPGA_common.h"
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Streamer.h"
@@ -206,8 +204,6 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
     *range = lms->GetRateRange(dir_tx);
     return LMS_SUCCESS;
 }
-
-
 
 API_EXPORT int CALL_CONV LMS_Init(lms_device_t * device)
 {
