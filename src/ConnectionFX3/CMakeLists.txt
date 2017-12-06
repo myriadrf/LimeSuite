@@ -22,7 +22,6 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionFX3)
 set(CONNECTION_FX3_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionFX3Entry.cpp
     ${THIS_SOURCE_DIR}/ConnectionFX3.cpp
-    ${THIS_SOURCE_DIR}/ConnectionFX3Images.cpp
 )
 
 set(CONNECTION_FX3_LIBRARIES

@@ -1812,7 +1812,7 @@ int LMS7_Device::SetClockFreq(size_t clk_id, float_type freq, int channel)
     case LMS_CLOCK_CGEN:
     {
         int ret =0;
-        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1);
         if (freq <= 0)
         {
             ret = lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
@@ -1935,7 +1935,7 @@ int LMS7_Device::EnableCalibCache(bool enable)
 
 float_type LMS7_Device::GetChipTemperature(size_t ind)
 {
-    return lms_list[this->lms_chip_id]->GetTemperature();
+    return lms_list.at(ind == -1 ? lms_chip_id : ind)->GetTemperature();
 }
 
 int LMS7_Device::LoadConfig(const char *filename, int ind)
@@ -1982,7 +1982,7 @@ uint16_t LMS7_Device::ReadParam(struct LMS7Parameter param, int chan, bool force
     {
         lmsChip = chan/2;
         if (param.address >= 0x100)
-            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1,true);
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
     }
     else lmsChip = lms_chip_id;
     return lms_list.at(lmsChip)->Get_SPI_Reg_bits(param, forceReadFromChip);
@@ -1995,7 +1995,7 @@ int LMS7_Device::WriteParam(struct LMS7Parameter param, uint16_t val, int chan)
     {
         lmsChip = chan/2;
         if (param.address >= 0x100)
-            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1,true);
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
     }
     else lmsChip = lms_chip_id;
     

@@ -22,7 +22,6 @@ ConnectionSTREAM_UNITE::ConnectionSTREAM_UNITE(void* ctx, const std::string &vid
             comPort = nullptr;
             return;
         }
-        GetChipVersion();
     }
 }
 

@@ -4,7 +4,6 @@
     @brief Image updating and version checking
 */
 
-#include "ConnectionFX3.h"
 #include "ErrorReporting.h"
 #include "SystemResources.h"
 #include "LMS64CProtocol.h"
@@ -18,7 +17,7 @@ using namespace lime;
 /*!
  * The entry structure that describes a board revision and its fw/gw images
  */
-struct ConnectionSTREAMImageEntry
+struct ConnectionImageEntry
 {
     eLMS_DEV dev;
     int hw_rev;
@@ -28,22 +27,25 @@ struct ConnectionSTREAMImageEntry
 
     int gw_ver;
     int gw_rev;
-    const char *gw_rbf;
+    const char *gw_img;
 };
 
 /*!
  * Lookup the board information given hardware type and revision.
  * Edit each entry for supported hardware and image updates.
  */
-static const ConnectionSTREAMImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinfo &info)
+static const ConnectionImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinfo &info)
 {
-    static const std::vector<ConnectionSTREAMImageEntry> imageEntries = {
-        ConnectionSTREAMImageEntry({LMS_DEV_UNKNOWN, -1, -1, "Unknown-USB.img", -1, -1, "Unknown-USB.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 12,  "LimeSDR-USB_HW_1.4_r2.12.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 3, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"})};
+    static const std::vector<ConnectionImageEntry> imageEntries = {
+        ConnectionImageEntry({LMS_DEV_UNKNOWN, -1, -1, nullptr, -1, -1, nullptr}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 12,  "LimeSDR-USB_HW_1.4_r2.12.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 3, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
+        ConnectionImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"}),
+        //ConnectionImageEntry({LMS_DEV_LIMESDR_PCIE,  0, 0, nullptr,  0, 0,  nullptr}),
+        //ConnectionImageEntry({LMS_DEV_ULIMESDR,  0, 0, nullptr,  0, 0,  nullptr})
+    };
 
     for(const auto &iter : imageEntries)
     {
@@ -56,7 +58,7 @@ static const ConnectionSTREAMImageEntry &lookupImageEntry(const LMS64CProtocol::
     return imageEntries.front(); //the -1 unknown entry
 }
 
-void ConnectionFX3::VersionCheck(void)
+void LMS64CProtocol::VersionCheck(void)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);
@@ -64,12 +66,11 @@ void ConnectionFX3::VersionCheck(void)
     //an entry match was not found
     if (entry.dev == LMS_DEV_UNKNOWN)
     {
-        lime::error("Unsupported hardware connected: %s[HW=%d]", GetDeviceName(info.device), info.hardware);
         return;
     }
 
     //check and warn about firmware mismatch problems
-    if (info.firmware != entry.fw_ver) lime::warning(
+    if (info.firmware != entry.fw_ver && entry.fw_img != nullptr) lime::warning(
         "Firmware version mismatch!\n"
         "  Expected firmware version %d, but found version %d\n"
         "  Follow the FW and FPGA upgrade instructions:\n"
@@ -78,16 +79,19 @@ void ConnectionFX3::VersionCheck(void)
         entry.fw_ver, info.firmware);
 
     //check and warn about gateware mismatch problems
-    const auto fpgaInfo = this->GetFPGAInfo();
-    if (fpgaInfo.gatewareVersion != entry.gw_ver
-        || fpgaInfo.gatewareRevision != entry.gw_rev) lime::warning(
-        "Gateware version mismatch!\n"
-        "  Expected gateware version %d, revision %d\n"
-        "  But found version %d, revision %d\n"
-        "  Follow the FW and FPGA upgrade instructions:\n"
-        "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
-        "  Or run update on the command line: LimeUtil --update\n",
-        entry.gw_ver, entry.gw_rev, fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision);
+    if ( entry.gw_img != nullptr)
+    {
+        const auto fpgaInfo = this->GetFPGAInfo();
+        if (fpgaInfo.gatewareVersion != entry.gw_ver
+            || fpgaInfo.gatewareRevision != entry.gw_rev) lime::warning(
+            "Gateware version mismatch!\n"
+            "  Expected gateware version %d, revision %d\n"
+            "  But found version %d, revision %d\n"
+            "  Follow the FW and FPGA upgrade instructions:\n"
+            "  http://wiki.myriadrf.org/Lime_Suite#Flashing_images\n"
+            "  Or run update on the command line: LimeUtil --update\n",
+            entry.gw_ver, entry.gw_rev, fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision);
+    }
 }
 
 static bool programmingCallbackStream(
@@ -99,7 +103,7 @@ static bool programmingCallbackStream(
     return callback(bsent, btotal, msg.c_str());
 }
 
-int ConnectionFX3::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
+int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);
@@ -107,13 +111,13 @@ int ConnectionFX3::ProgramUpdate(const bool download, IConnection::ProgrammingCa
     //an entry match was not found
     if (entry.dev == LMS_DEV_UNKNOWN)
     {
-        return lime::ReportError("Unsupported hardware connected: %s[HW=%d]", GetDeviceName(info.device), info.hardware);
+        return lime::ReportError("Update not supported: %s[HW=%d]", GetDeviceName(info.device), info.hardware);
     }
 
     //download images when missing
     if (download)
     {
-        const std::vector<std::string> images = {entry.fw_img, entry.gw_rbf};
+        const std::vector<std::string> images = {entry.fw_img, entry.gw_img};
         for (const auto &image : images)
         {
             if (not lime::locateImageResource(image).empty()) continue;
@@ -153,7 +157,7 @@ int ConnectionFX3::ProgramUpdate(const bool download, IConnection::ProgrammingCa
     {
         //open file
         std::ifstream file;
-        const auto path = lime::locateImageResource(entry.gw_rbf);
+        const auto path = lime::locateImageResource(entry.gw_img);
         file.open(path.c_str(), std::ios::in | std::ios::binary);
         if (not file.good()) return lime::ReportError("Error opening %s", path.c_str());
 

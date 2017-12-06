@@ -149,6 +149,8 @@ public:
     };
 
     FPGAinfo GetFPGAInfo();
+    void VersionCheck();
+    int ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback) override;
 
     //! implement in base class
     virtual eConnectionType GetType(void) = 0;

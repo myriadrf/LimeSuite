@@ -265,7 +265,7 @@ void LMS_Programing_wxgui::DoProgramming()
         evt.SetString(_("Programming Completed!"));
     else
     {
-        evt.SetString(_("Programming failed!"));
+        evt.SetString(_("Programming failed!\n"+std::string(LMS_GetLastErrorMessage())));
         wxPostEvent(this, evt);
         mProgrammingInProgress.store(false);
         return;

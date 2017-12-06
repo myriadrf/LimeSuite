@@ -94,7 +94,6 @@ class ConnectionFX3 : public LMS64CProtocol
 public:
     ConnectionFX3(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
     ~ConnectionFX3(void);
-    void VersionCheck(void);
 
     int Open(const std::string &vidpid, const std::string &serial, const unsigned index);
     void Close();
@@ -106,7 +105,6 @@ public:
 
     //hooks to update FPGA plls when baseband interface data rate is changed
     int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
-    int ProgramUpdate(const bool download, ProgrammingCallback callback);
 protected:
     int GetBuffersCount() const;
     int CheckStreamSize(int size)const;

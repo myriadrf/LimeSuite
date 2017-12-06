@@ -62,6 +62,7 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
     protocols/Streamer.cpp
+    protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
@@ -143,7 +144,7 @@ endif()
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-include(ConnectionNovenaRF7/CMakeLists.txt)
+#include(ConnectionNovenaRF7/CMakeLists.txt)
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 

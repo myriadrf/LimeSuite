@@ -24,7 +24,6 @@ const int LMS_RST_PULSE = 2;
 
 //! arbitrary spi constants used to dispatch calls
 #define LMS7002M_SPI_INDEX 0x10
-#define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
 
 static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket &pkt)
@@ -102,13 +101,7 @@ int LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-
-    switch(addr)
-    {
-    case Si5351_I2C_ADDR: return this->WriteSi5351I2C(data);
-    }
-
-    return ReportError(ENOTSUP, "unknown i2c address");
+    return this->WriteSi5351I2C(data);
 }
 
 int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &data)
@@ -117,13 +110,7 @@ int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-
-    switch(addr)
-    {
-    case Si5351_I2C_ADDR: return this->ReadSi5351I2C(numBytes, data);
-    }
-
-    return ReportError(ENOTSUP, "unknown i2c address");
+    return this->ReadSi5351I2C(numBytes, data);
 }
 
 /***********************************************************************
