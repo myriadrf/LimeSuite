@@ -15,9 +15,8 @@ public:
     LMS7_LimeSDR_mini(LMS7_Device *obj = nullptr);
     int Init() override;
     unsigned GetNumChannels(const bool tx = false) const override;
-    int SetRxFrequency(size_t chan, double f_Hz) override;
-    int SetTxFrequency(size_t chan, double f_Hz) override;
-    lms_range_t GetRxPathBand(size_t path, size_t chan) const override;
+    int SetFrequency(bool isTx, unsigned chan, double f_Hz) override;
+    Range GetRxPathBand(unsigned path, unsigned chan) const override;
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
     int SetPath(bool tx, unsigned chan, unsigned path) override;
 private:

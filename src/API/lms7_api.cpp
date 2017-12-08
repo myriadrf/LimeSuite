@@ -200,8 +200,9 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    *range = lms->GetRateRange(dir_tx);
+    auto retRange = lms->GetRateRange(dir_tx);
+    range->min = retRange.min;
+    range->max = retRange.max;
     return LMS_SUCCESS;
 }
 
@@ -448,18 +449,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    if (dir_tx)
-    {
-        if (lms->SetTxFrequency(chan,frequency)!=0)
-            return -1;
-    }
-    else
-    {
-        if (lms->SetRxFrequency(chan,frequency)!=0)
-            return -1;
-    }
-
-    return LMS_SUCCESS;
+    return lms->SetFrequency(dir_tx, chan,frequency);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
@@ -478,7 +468,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    *frequency = lms->GetTRXFrequency(dir_tx, chan);
+    *frequency = lms->GetFrequency(dir_tx, chan);
     return LMS_SUCCESS;
 }
 
@@ -491,7 +481,10 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    *range = lms->GetFrequencyRange(dir_tx);
+    auto retRange = lms->GetFrequencyRange(dir_tx);
+    range->min = retRange.min;
+    range->max = retRange.max;
+    range->step = 0;
     return LMS_SUCCESS;
 }
 
@@ -565,10 +558,15 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
+    LMS7_Device::Range ret;
     if (dir_tx)
-        *range = lms->GetTxPathBand(path,chan);
+        ret = lms->GetTxPathBand(path,chan);
     else
-        *range = lms->GetRxPathBand(path,chan);
+        ret = lms->GetRxPathBand(path,chan);
+    
+    range->max = ret.max;
+    range->min = ret.min;
+    range->step = 0;
 
     return LMS_SUCCESS;
 }
@@ -607,7 +605,7 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    *bandwidth = lms->GetLPFBW(dir_tx,chan,true);
+    *bandwidth = lms->GetLPFBW(dir_tx,chan);
     return LMS_SUCCESS;
 }
 
@@ -663,8 +661,11 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lm
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-
-    *range = lms->GetLPFRange(dir_tx,0,true);
+    
+    auto ret = lms->GetLPFRange(dir_tx,0);   
+    range->max = ret.max;
+    range->min = ret.min;
+    range->step = 0;
 
     return LMS_SUCCESS;
 }
@@ -689,7 +690,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
         gain = 1.0;
     else if (gain < 0)
         gain = 0;
-   lms_range_t range = lms->GetGainRange(dir_tx,chan,"");   
+   auto range = lms->GetGainRange(dir_tx,chan,"");   
    return lms->SetGain(dir_tx,chan,range.min+gain*(range.max-range.min));
 }
 
@@ -729,7 +730,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
         return -1;
     }
 
-    lms_range_t range = lms->GetGainRange(dir_tx,chan,"");
+    auto range = lms->GetGainRange(dir_tx,chan,"");
     *gain = (lms->GetGain(dir_tx,chan)-range.min)/(range.max-range.min);
 
     return LMS_SUCCESS;

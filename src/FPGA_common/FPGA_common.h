@@ -24,7 +24,7 @@ public:
     int StartStreaming();
     int StopStreaming();
     int ResetTimestamp();
-    int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
+    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
     
     struct FPGA_PLL_clock
     {

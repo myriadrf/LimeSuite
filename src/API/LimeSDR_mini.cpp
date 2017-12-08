@@ -47,9 +47,9 @@ int LMS7_LimeSDR_mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     
-    if (SetTxFrequency(0,1250e6)!=0)
+    if (SetFrequency(true,0,1250e6)!=0)
         return -1;
-    if (SetRxFrequency(0,1200e6)!=0)
+    if (SetFrequency(false,0,1200e6)!=0)
         return -1;
     if (SetRate(10e6,2)!=0)
         return -1;
@@ -62,48 +62,27 @@ unsigned LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
     return 1;
 };
 
-int LMS7_LimeSDR_mini::SetRxFrequency(size_t chan, double f_Hz)
+int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 {
     lime::LMS7002M* lms = lms_list[0];
-    rx_channels[0].freq = f_Hz;
+    
+    ChannelInfo& channel = isTx ? tx_channels[0] : rx_channels[0];
+    channel.freq = f_Hz;
      
     if (f_Hz < 30e6)
     {
-        if (lms->SetFrequencySX(false, 30e6) != 0)
+        if (lms->SetFrequencySX(isTx, 30e6) != 0)
             return -1;
-        rx_channels[0].cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(false,GetRate(false,0),2)!=0)
-            return -1;
-        return 0;
-    }
-
-    if (rx_channels[0].cF_offset_nco != 0)
-        SetNCO(false,0,-1,true);
-    rx_channels[0].cF_offset_nco = 0;
-    if (lms->SetFrequencySX(false, f_Hz) != 0)
-        return -1;
-    return 0;
-}
-
-int LMS7_LimeSDR_mini::SetTxFrequency(size_t chan, double f_Hz)
-{
-    lime::LMS7002M* lms = lms_list[0];
-    tx_channels[0].freq = f_Hz;
-    
-    if (f_Hz < 30e6)
-    {
-        if (lms->SetFrequencySX(true, 30e6) != 0)
-            return -1;
-        tx_channels[0].cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(true,GetRate(true,0),2)!=0)
+        channel.cF_offset_nco = 30e6-f_Hz;
+        if (SetRate(isTx,GetRate(isTx,0),2)!=0)
             return -1;
         return 0;
     }
 
-    if (tx_channels[0].cF_offset_nco != 0)
-        SetNCO(true,0,-1,false);
-    tx_channels[0].cF_offset_nco = 0;
-    if (lms->SetFrequencySX(true, f_Hz) != 0)
+    if (channel.cF_offset_nco != 0)
+        SetNCO(isTx,0,-1,true);
+    channel.cF_offset_nco = 0;
+    if (lms->SetFrequencySX(isTx, f_Hz) != 0)
         return -1;
     return 0;
 }
@@ -170,27 +149,14 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
     return 0;
 }
 
-lms_range_t LMS7_LimeSDR_mini::GetRxPathBand(size_t path, size_t chan) const
+LMS7_Device::Range LMS7_LimeSDR_mini::GetRxPathBand(unsigned path, unsigned chan) const
 {
-  lms_range_t ret;
-  ret.step = 1;
   switch (path)
   {
-      case LMS_PATH_LNAH:
-            ret.max = 3.8e9;
-            ret.min = 2e9;
-            break;
-      case LMS_PATH_LNAW:
-            ret.max = 2e9;
-            ret.min = 30e6;
-            break;
-      default:
-            ret.max = 0;
-            ret.min = 0;
-            ret.step = 0;
-            break;
+      case LMS_PATH_LNAH: return Range(2e9, 3.8e9);
+      case LMS_PATH_LNAW: return Range(30e6, 2e9);
+      default: return Range();
   }
-  return ret;
 }
 
 

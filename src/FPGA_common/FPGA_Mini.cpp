@@ -118,9 +118,6 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxRate_Hz;
         else
             clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxRate_Hz;
-        
-        printf("default rx phase %f\n",clocks[1].phaseShift_deg);
-        printf("default tx phase %f\n",clocks[3].phaseShift_deg);
 
         if (phaseSearch)
         {
@@ -133,7 +130,6 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
                 for (int i = 0; i < setRegCnt; ++i)
                     dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
                 connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
-                printf("RX: ");
                 status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
             }
             {
@@ -150,8 +146,6 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
             }
         }
-
-        printf("TX: ");
         status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
     }
     else
@@ -172,6 +166,11 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         connection->WriteRegister(0x000A, 0);
     }
     return status;
+}
+
+int FPGA_Mini::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
+{
+   return ReportError("UploadWFM not supported on LimeSDR-Mini"); 
 }
 
 
@@ -195,5 +194,7 @@ int FPGA_Mini::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int
 
     return totalBytesReceived;
 }
+
+
 
 } //namespace lime

@@ -331,10 +331,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     bool isTx = direction == SOAPY_SDR_TX;
     if (name == "RF")
     {
-        if (isTx)
-            lms7Device->SetTxFrequency(channel, frequency);
-        else
-            lms7Device->SetRxFrequency(channel, frequency);
+         lms7Device->SetFrequency(direction == SOAPY_SDR_TX, channel, frequency);
         _channelsToCal.emplace(direction, channel);
         return;
     }
