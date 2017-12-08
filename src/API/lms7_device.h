@@ -27,6 +27,7 @@ class LIME_API LMS7_Device
         double sample_rate;
         double freq;
     };
+            
 public:
     LMS7_Device(LMS7_Device *obj = nullptr);
     virtual ~LMS7_Device();
@@ -58,11 +59,10 @@ public:
     int SetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, const float_type* coef,size_t count);
     int GetGFIRCoef(bool tx, size_t chan, lms_gfir_t filt, float_type* coef);
     int SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled);
-    int SetGain(bool dir_tx, size_t chan,unsigned gain);
-    int GetGain(bool dir_tx, size_t chan);
-    int SetNormalizedGain(bool dir_tx, size_t chan,float_type gain);
-    float_type GetNormalizedGain(bool dir_tx, size_t chan);
-    int SetTestSignal(bool dir_tx, size_t chan,lms_testsig_t sig,int16_t dc_i =0, int16_t dc_q = 0);
+    int SetGain(bool dir_tx, int chan, double value, const std::string &name = "");
+    double GetGain(bool dir_tx, int chan, const std::string &name = "") const;
+    lms_range_t GetGainRange(bool dir_tx, int chan, const std::string &name = "") const;
+    int SetTestSignal(bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i = 0, int16_t dc_q = 0);
     int GetTestSignal(bool dir_tx, size_t chan);
     int SetNCOFreq(bool tx,size_t ch, const float_type *freq, float_type pho);
     int SetNCO(bool tx,size_t ch,int ind,bool down);

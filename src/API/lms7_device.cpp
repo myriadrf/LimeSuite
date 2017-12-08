@@ -1071,74 +1071,65 @@ int LMS7_Device::SetGFIR(bool tx, size_t chan, lms_gfir_t filt, bool enabled)
    return 0;
 }
 
-int LMS7_Device::SetNormalizedGain(bool dir_tx, size_t chan,double gain)
-{
-    const int gain_total = 27 + 12 + 31; //LNA + TIA + PGA
-    if (dir_tx)
-        return SetGain(dir_tx, chan, maxTxGain*gain+0.49);
-    else
-        return SetGain(dir_tx, chan, gain*gain_total+0.49);
-}
 
-int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
+int LMS7_Device::SetGain(bool dir_tx, int chan, double value, const std::string &name)
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
         return -1;
-
-    if (dir_tx) //TX valid gain range 0-52
+    
+    if (name == "LNA")
+        return lms->SetRFELNA_dB(value);
+    else if (name == "LB_LNA")
+        return lms->SetRFELoopbackLNA_dB(value);
+    else if (name == "TIA")
+        return lms->SetRFETIA_dB(value);
+    else if (name == "PGA")
+        return lms->SetRBBPGA_dB(value);
+    else if (name == "PAD")
+        return lms->SetTRFPAD_dB(value);
+    else if (name == "IAMP")
+        return lms->SetTBBIAMP_dB(value);
+    else if (name == "LB_PAD")
+        return lms->SetTRFLoopbackPAD_dB(value);
+    
+    if (dir_tx) 
     {
-        if (lms->CalibrateTxGain(0,nullptr)!=0) //find optimal BB gain
+        if (lms->SetTRFPAD_dB(value)!=0)
             return -1;
-        //From datasheet: TXPAD: 0<=Loss<=10 – Pout=Pout_max-Loss; 11<=Loss<31 – Pout=Pout_max-10-2*(Loss-10)
-        //therefore MAX TDPAD gain: 52 = 10+21*2
-        if (gain > 52) //increase BB gain over optimal, can cause saturation in amp
-        {
-            int gbb = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-            double dgain = gain-52;
-            gain = (double)gbb*pow(10.0,dgain/20.0)+0.5;
-            lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),gain > 63 ? 63 : gain, true);
-            gain = 0;
-        }
-        else if (gain >= 42)
-            gain = 52-gain;
-        else
-            gain = 31-gain/2;
-        if (lms->Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF),gain,true)!=0)
-            return -1;
-        if (lms->Modify_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF),gain,true)!=0)
+        value -= lms->GetTRFPAD_dB();
+        if (lms->SetTBBIAMP_dB(value)!=0)
             return -1;
     }
-    else //Rx valid gain range 0-70
+    else 
     {
-        if (gain > 70) //do not exceed gain table index
-            gain = 70;
+        const int maxGain = 74;
+        if (value > maxGain) //do not exceed gain table index
+            value = maxGain;
         unsigned lna = 0, tia = 0, pga = 0;
         //LNA table
-        const unsigned lnaTbl[71] = {
-            1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,  5,  5,  6,
-            6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11, 11, 11, 11,
-            11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+        const unsigned lnaTbl[maxGain] = {
+            0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+            5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+            11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
             14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-            14, 14, 14, 14, 14, 14, 14
+            14, 14, 14, 14, 14, 14, 14, 14, 14, 14
         };
         //PGA table
-        const unsigned pgaTbl[71] = {
+        const unsigned pgaTbl[maxGain] = {
             0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
-            1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,  5,  6,  7,
-            8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,  9,  10, 11,
-            12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-            25, 26, 27, 28, 29, 30, 31
+            1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+            5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
+            9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+            22, 23, 24, 25, 26, 27, 28, 29, 30, 31
         };
 
         //TIA table
-        if (gain > 48)
-            tia = 2;
-        else if (gain > 39)
-            tia = 1;
+        if (value > 51) tia = 2;
+        else if (value > 42) tia = 1;
 
-        lna = lnaTbl[gain];
-        pga = pgaTbl[gain];
+        lna = lnaTbl[int(value+0.5)];
+        pga = pgaTbl[int(value+0.5)];
 
         int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16; //from datasheet
 
@@ -1151,62 +1142,42 @@ int LMS7_Device::SetGain(bool dir_tx, size_t chan, unsigned gain)
     return 0;
 }
 
-double LMS7_Device::GetNormalizedGain(bool dir_tx, size_t chan)
-{
-    const double gain_total = 27 + 12 + 31; //LNA + TIA + PGA
-    double ret = GetGain(dir_tx, chan);
-    if (dir_tx)
-        return ret > maxTxGain ? 1.0 : ret / maxTxGain;
-    else
-        return ret / gain_total;
-}
-
-int LMS7_Device::GetGain(bool dir_tx, size_t chan)
+double LMS7_Device::GetGain(bool dir_tx, int chan, const std::string &name) const
 {
     lime::LMS7002M* lms = lms_list[chan / 2];
     if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
         return -1;
+
+    if (name == "LNA")
+        return lms->GetRFELNA_dB();
+    else if (name == "LB_LNA")
+        return lms->GetRFELoopbackLNA_dB();
+    else if (name == "TIA")
+        return lms->GetRFETIA_dB();
+    else if (name == "PGA")
+        return lms->GetRBBPGA_dB();
+    else if (name == "PAD")
+        return lms->GetTRFPAD_dB();
+    else if (name == "IAMP")
+        return lms->GetTBBIAMP_dB();
+    else if (name == "LB_PAD")
+        return lms->GetTRFLoopbackPAD_dB();
     if (dir_tx)
-    {
-        int gain = lms->Get_SPI_Reg_bits(LMS7param(LOSS_MAIN_TXPAD_TRF),true);
-        if (gain <= 10)
-            gain = 52-gain;
-        else
-            gain = 62-gain*2;
-        int bak = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true); //backup
-        if (lms->CalibrateTxGain(0,nullptr)!=0)
-            return -1;
-        int opt = lms->Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-        gain += 20.0*log10((double)bak / (double) opt)+0.5;
-
-        lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),bak, true); //restore
-
-        return gain;
-    }
+        return lms->GetTRFPAD_dB() + lms->GetTBBIAMP_dB();
     else
-    {
-        const int max_gain_lna = 27;
-        const int max_gain_tia = 12;
+        return lms->GetRFELNA_dB() + lms->GetRFETIA_dB() + lms->GetRBBPGA_dB();
+}
 
-        int pga = lms->Get_SPI_Reg_bits(LMS7param(G_PGA_RBB),true);
-        int ret = pga;
-
-        int tia = lms->Get_SPI_Reg_bits(LMS7param(G_TIA_RFE),true);
-        if (tia == 3)
-            ret +=max_gain_tia;
-        else if (tia == 2)
-            ret += max_gain_tia-3;
-
-        int lna = lms->Get_SPI_Reg_bits(LMS7param(G_LNA_RFE),true);
-
-        if (lna > 8)
-            ret += (max_gain_lna+lna-15);
-        else if (lna > 1)
-            ret += (lna-2)*3;
-
-        return ret;
-    }
-    return 0;
+lms_range_t LMS7_Device::GetGainRange(bool dir_tx, int chan, const std::string &name) const
+{
+    if (name == "LNA") return {0.0, 30.0, 0.0};
+    if (name == "LB_LNA") return {0.0, 40.0, 0.0};
+    if (name == "TIA") return {0.0, 12.0, 0.0};
+    if (name == "PGA") return {-12.0, 19.0, 0.0};
+    if (name == "PAD") return {0.0, 52.0, 0.0};
+    if (name == "IAMP") return {-12.0, 12.0, 0.0};
+    if (name == "LB_PAD") return {-4.3, 0.0, 0.0};
+    return {-12.0, 61.0, 0.0}; 
 }
 
 int LMS7_Device::SetTestSignal(bool dir_tx, size_t chan, lms_testsig_t sig, int16_t dc_i, int16_t dc_q)

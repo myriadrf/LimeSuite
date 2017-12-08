@@ -144,7 +144,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = t1;
     const auto timeout = chrono::seconds(3);
-
     if(not connection)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
     if(not connection->IsOpen())
@@ -394,13 +393,14 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             {
                 clocks[i].findPhase = false;
                 clocks[i].phaseShift_deg = (min+max)/2;
-#ifdef LMS_VERBOSE_OUTPUT
+//#ifdef LMS_VERBOSE_OUTPUT
                 printf("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
-#endif
+//#endif
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }
             else
             {
+                printf("phase search FAIL\n");
                 clocks[i].findPhase = false;
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }

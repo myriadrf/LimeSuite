@@ -279,65 +279,20 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const double 
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
 
-    //Distribute Rx gain from elements in the direction of RFE to RBB
-    //This differs from the default gain distribution in that it
-    //does not scale the gain to the negative range of the PGA.
-    //This keep the PGA in mid-range unless extreme values are used.
-    double remaining(value);
-    for (const auto &name : this->listGains(direction, channel))
-    {
-        this->setGain(direction, channel, name, remaining);
-        remaining -= this->getGain(direction, channel, name);
-    }
+    lms7Device->SetGain(direction==SOAPY_SDR_TX,channel,value);
 }
 
 double SoapyLMS7::getGain(const int direction, const size_t channel) const
 {
-    return SoapySDR::Device::getGain(direction, channel)-12.0;
+    return lms7Device->GetGain(direction==SOAPY_SDR_TX, channel);
 }
 
 void SoapyLMS7::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %d, %s, %g dB)", dirName, int(channel), name.c_str(), value);
-    auto rfic = lms7Device->GetLMS(channel/2);
-
-    if (direction == SOAPY_SDR_RX and name == "LNA")
-    {
-        rfic->SetRFELNA_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "LB_LNA")
-    {
-        rfic->SetRFELoopbackLNA_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "TIA")
-    {
-        rfic->SetRFETIA_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "PGA")
-    {
-        rfic->SetRBBPGA_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_TX and name == "PAD")
-    {
-        rfic->SetTRFPAD_dB(value);
-    }
     
-    else if (direction == SOAPY_SDR_TX and name == "IAMP")
-    {
-        rfic->SetTBBIAMP_dB(value);
-    }
-
-    else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
-    {
-        rfic->SetTRFLoopbackPAD_dB(value);
-    }
-
-    else throw std::runtime_error("SoapyLMS7::setGain("+name+") - unknown gain name");
+    lms7Device->SetGain(direction==SOAPY_SDR_TX, channel, value, name);
 
     SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s%s[%d] gain %g dB", dirName, name.c_str(), int(channel), this->getGain(direction, channel, name));
 }
@@ -345,67 +300,20 @@ void SoapyLMS7::setGain(const int direction, const size_t channel, const std::st
 double SoapyLMS7::getGain(const int direction, const size_t channel, const std::string &name) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    auto rfic = lms7Device->GetLMS(channel/2);
 
-    if (direction == SOAPY_SDR_RX and name == "LNA")
-    {
-        return rfic->GetRFELNA_dB();
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "LB_LNA")
-    {
-        return rfic->GetRFELoopbackLNA_dB();
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "TIA")
-    {
-        return rfic->GetRFETIA_dB();
-    }
-
-    else if (direction == SOAPY_SDR_RX and name == "PGA")
-    {
-        return rfic->GetRBBPGA_dB();
-    }
-
-    else if (direction == SOAPY_SDR_TX and name == "PAD")
-    {
-        return rfic->GetTRFPAD_dB();
-    }
-    
-    else if (direction == SOAPY_SDR_TX and name == "IAMP")
-    {
-        return rfic->GetTBBIAMP_dB();
-    }
-
-    else if (direction == SOAPY_SDR_TX and name == "LB_PAD")
-    {
-        return rfic->GetTRFLoopbackPAD_dB();
-    }
-
-    else throw std::runtime_error("SoapyLMS7::getGain("+name+") - unknown gain name");
+    return lms7Device->GetGain(direction==SOAPY_SDR_TX, channel, name);
 }
 
 SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel) const
 {
-    if (direction == SOAPY_SDR_RX)
-    {
-        //make it so gain of 0.0 sets PGA at its mid-range
-        return SoapySDR::Range(-12.0, 19.0+12.0+30.0);
-    }
-    else
-        return SoapySDR::Range(-12.0, 52.0+12.0);
+    auto range = lms7Device->GetGainRange(direction==SOAPY_SDR_TX, channel);
+    return SoapySDR::Range(range.min, range.max);
 }
 
 SoapySDR::Range SoapyLMS7::getGainRange(const int direction, const size_t channel, const std::string &name) const
 {
-    if (direction == SOAPY_SDR_RX and name == "LNA") return SoapySDR::Range(0.0, 30.0);
-    if (direction == SOAPY_SDR_RX and name == "LB_LNA") return SoapySDR::Range(0.0, 40.0);
-    if (direction == SOAPY_SDR_RX and name == "TIA") return SoapySDR::Range(0.0, 12.0);
-    if (direction == SOAPY_SDR_RX and name == "PGA") return SoapySDR::Range(-12.0, 19.0);
-    if (direction == SOAPY_SDR_TX and name == "PAD") return SoapySDR::Range(0.0, 52.0);
-    if (direction == SOAPY_SDR_TX and name == "IAMP") return SoapySDR::Range(-12.0, 12.0);
-    if (direction == SOAPY_SDR_TX and name == "LB_PAD") return SoapySDR::Range(-4.3, 0.0);
-    return SoapySDR::Device::getGainRange(direction, channel, name);
+    auto range = lms7Device->GetGainRange(direction==SOAPY_SDR_TX, channel, name);
+    return SoapySDR::Range(range.min, range.max);
 }
 
 /*******************************************************************

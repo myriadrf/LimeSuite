@@ -689,8 +689,8 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
         gain = 1.0;
     else if (gain < 0)
         gain = 0;
-
-   return lms->SetNormalizedGain(dir_tx,chan,gain);
+   lms_range_t range = lms->GetGainRange(dir_tx,chan,"");   
+   return lms->SetGain(dir_tx,chan,range.min+gain*(range.max-range.min));
 }
 
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
@@ -729,9 +729,9 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
         return -1;
     }
 
-    *gain = lms->GetNormalizedGain(dir_tx,chan);
-    if (*gain < 0)
-        return -1;
+    lms_range_t range = lms->GetGainRange(dir_tx,chan,"");
+    *gain = (lms->GetGain(dir_tx,chan)-range.min)/(range.max-range.min);
+
     return LMS_SUCCESS;
 }
 

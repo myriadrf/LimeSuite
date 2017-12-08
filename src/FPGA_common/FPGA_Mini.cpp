@@ -92,37 +92,40 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     if ((txRate_Hz >= 5e6) && (rxRate_Hz >= 5e6))
     {
         FPGA_PLL_clock clocks[4];
-        clocks[0].bypass = false;
-        clocks[0].index = 0;
-        clocks[0].outFrequency = txRate_Hz;
-        clocks[0].phaseShift_deg = 0;
-        clocks[0].findPhase = false;
-        clocks[1].bypass = false;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = txRate_Hz;
-        clocks[1].findPhase = false;
-        if (chipVersion == 0x3841)
-            clocks[1].phaseShift_deg = txPhC1[1] + txPhC2[1] * txRate_Hz;
-        else
-            clocks[1].phaseShift_deg = txPhC1[0] + txPhC2[0] * txRate_Hz;
         clocks[2].bypass = false;
-        clocks[2].index = 2;
-        clocks[2].outFrequency = rxRate_Hz;
+        clocks[2].index = 0;
+        clocks[2].outFrequency = txRate_Hz;
         clocks[2].phaseShift_deg = 0;
         clocks[2].findPhase = false;
         clocks[3].bypass = false;
-        clocks[3].index = 3;
-        clocks[3].outFrequency = rxRate_Hz;
+        clocks[3].index = 1;
+        clocks[3].outFrequency = txRate_Hz;
         clocks[3].findPhase = false;
         if (chipVersion == 0x3841)
-            clocks[3].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxRate_Hz;
+            clocks[3].phaseShift_deg = txPhC1[1] + txPhC2[1] * txRate_Hz;
         else
-            clocks[3].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxRate_Hz;
+            clocks[3].phaseShift_deg = txPhC1[0] + txPhC2[0] * txRate_Hz;
+        clocks[0].bypass = false;
+        clocks[0].index = 2;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[0].phaseShift_deg = 0;
+        clocks[0].findPhase = false;
+        clocks[1].bypass = false;
+        clocks[1].index = 3;
+        clocks[1].outFrequency = rxRate_Hz;
+        clocks[1].findPhase = false;
+        if (chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxRate_Hz;
+        else
+            clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxRate_Hz;
+        
+        printf("default rx phase %f\n",clocks[1].phaseShift_deg);
+        printf("default tx phase %f\n",clocks[3].phaseShift_deg);
 
         if (phaseSearch)
         {
             {
-                clocks[3].findPhase = true;
+                clocks[1].findPhase = true;
                 const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
                     0xE4E4, 0x0086, 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED };
                 //Load test config
@@ -130,10 +133,11 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
                 for (int i = 0; i < setRegCnt; ++i)
                     dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
                 connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+                printf("RX: ");
                 status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
             }
             {
-                clocks[3].findPhase = false;
+                clocks[1].findPhase = false;
                 const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484 };
                 connection->WriteRegister(0x000A, 0x0000);
                 //Load test config
@@ -141,11 +145,13 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
                 for (int i = 0; i < setRegCnt; ++i)
                     dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
                 connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
-                clocks[1].findPhase = true;
+                clocks[3].findPhase = true;
                 connection->WriteRegister(0x000A, 0x0200);
 
             }
         }
+
+        printf("TX: ");
         status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
     }
     else
