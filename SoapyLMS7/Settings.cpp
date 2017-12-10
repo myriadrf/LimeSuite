@@ -38,14 +38,12 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 {
     //connect
     SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
-    auto conn = ConnectionRegistry::makeConnection(handle);
-    if (conn == nullptr) throw std::runtime_error(
+
+    lms7Device = LMS7_Device::CreateDevice(handle);
+    if (lms7Device == nullptr) throw std::runtime_error(
         "Failed to make connection with '" + handle.serialize() + "'");
-
-    //device info
-    lms7Device = LMS7_Device::CreateDevice(conn,nullptr);
-    const auto devInfo = lms7Device->GetInfo();
-
+    
+    const auto devInfo = lms7Device->GetInfo();  
     //quick summary
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo->deviceName);
     SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", lms7Device->GetClockFreq(LMS_CLOCK_REF));
@@ -740,7 +738,7 @@ std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
 {
     std::vector<std::string> ifaces;
     ifaces.push_back("BBIC");
-    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
+    for (size_t i = 0; i < lms7Device->GetNumChannels()/2; i++)
     {
         ifaces.push_back("RFIC" + std::to_string(i));
     }
@@ -750,28 +748,25 @@ std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
 void SoapyLMS7::writeRegister(const std::string &name, const unsigned addr, const unsigned value)
 {
     if (name == "BBIC") return this->writeRegister(addr, value);
-    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
-    {
-        if (("RFIC" + std::to_string(i)) != name) continue;
-        int st = lms7Device->WriteLMSReg(addr, value,i);
-        if (st == 0) return;
-        throw std::runtime_error("SoapyLMS7::WriteRegister("+name+", "+std::to_string(addr)+") FAIL");
-    }
-    throw std::runtime_error("SoapyLMS7::WriteRegister("+name+") unknown interface");
+    if ("RFIC" != name.substr(0,4))  
+        throw std::runtime_error("SoapyLMS7::readRegister("+name+") unknown interface");
+
+    int st = lms7Device->WriteLMSReg(addr, value, name[4]-'0');
+    if (st == 0) return;
+    throw std::runtime_error("SoapyLMS7::WriteRegister("+name+", "+std::to_string(addr)+") FAIL");
+
 }
 
 unsigned SoapyLMS7::readRegister(const std::string &name, const unsigned addr) const
 {
     if (name == "BBIC") return this->readRegister(addr);
-    for (size_t i = 0; i < lms7Device->GetLMSCnt(); i++)
-    {
-        if (("RFIC" + std::to_string(i)) != name) continue;
-        uint16_t value;
-        int st = lms7Device->ReadLMSReg(addr, &value, i);
-        if (st == 0) return value;
-        throw std::runtime_error("SoapyLMS7::readRegister("+name+", "+std::to_string(addr)+") FAIL");
-    }
-    throw std::runtime_error("SoapyLMS7::readRegister("+name+") unknown interface");
+    if ("RFIC" != name.substr(0,4))  
+        throw std::runtime_error("SoapyLMS7::readRegister("+name+") unknown interface");
+    
+    uint16_t value;
+    int st = lms7Device->ReadLMSReg(addr, &value, name[4]-'0');
+    if (st == 0) return value;
+    throw std::runtime_error("SoapyLMS7::readRegister("+name+", "+std::to_string(addr)+") FAIL");
 }
 
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)

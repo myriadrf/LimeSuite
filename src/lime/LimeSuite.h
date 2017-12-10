@@ -116,15 +116,6 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t in
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 
 /**
- * Disconnect device but keep configuration cache (device is not deallocated).
- *
- * @param   device  Device handle previously obtained by LMS_Open().
- *
- * @return   0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
-
-/**
  * Check if device port is opened
  *
  * @param   device  Device handle previously obtained by LMS_Open().

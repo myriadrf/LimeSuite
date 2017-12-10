@@ -8,9 +8,23 @@
 #include "Logger.h"
 #include "FPGA_Mini.h"
 
-LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(LMS7_Device *obj) : LMS7_Device(obj) 
+LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Device(obj) 
 {
     fpga = new lime::FPGA_Mini();
+    tx_channels.resize(GetNumChannels());
+    rx_channels.resize(GetNumChannels());
+    while (obj && lms_list.size())
+    {
+        delete lms_list.back();
+        lms_list.pop_back();
+    }
+    
+    double refClk = fpga->DetectRefClk();
+    this->lms_list[0]->SetConnection(conn);
+    mStreamers.push_back(new lime::Streamer(fpga,lms_list[0]));
+    lms_list[0]->SetReferenceClk_SX(false, refClk);
+    fpga->SetConnection(conn);
+    connection = conn;
 }
 
 int LMS7_LimeSDR_mini::Init()

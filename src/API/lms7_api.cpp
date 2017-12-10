@@ -43,34 +43,14 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
     LMS7_Device* lms = (LMS7_Device*)*device;
-    if (lms != nullptr)
-        lms->SetConnection(nullptr);
 
     for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
-            auto conn = lime::ConnectionRegistry::makeConnection(handles[i]);
-            if (conn->IsOpen() == false)
-            {
-                lime::ConnectionRegistry::freeConnection(conn);
-                if (info != NULL)
-                {
-                    lime::ReportError(EBUSY, "Failed to open. Device is busy.");
-                    return -1;
-                }
-                else
-                    continue;
-            }
-            *device = LMS7_Device::CreateDevice(conn,lms);
+            *device = LMS7_Device::CreateDevice(handles[i],lms);
             return LMS_SUCCESS;
         }
-    }
-
-    if (info == NULL)
-    {
-        *device = LMS7_Device::CreateDevice(nullptr);
-        return LMS_SUCCESS;
     }
 
     lime::ReportError(ENODEV, "Specified device could not be found");
@@ -88,18 +68,6 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
     delete lms;
     return LMS_SUCCESS;
 }
-
-API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->SetConnection(nullptr);
-    }
 
 API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
 {

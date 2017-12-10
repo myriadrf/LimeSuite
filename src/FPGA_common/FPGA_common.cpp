@@ -40,6 +40,11 @@ void FPGA::SetConnection(IConnection* conn)
     connection = conn;
 }
 
+IConnection* FPGA::GetConnection() const
+{
+    return connection;
+}
+
 int FPGA::StartStreaming()
 {
     uint16_t interface_ctrl_000A;
@@ -777,8 +782,6 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 
 double FPGA::DetectRefClk(double fx3Clk)
 {
-    if (!connection)
-        return 30.72e6;
     const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
     const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };

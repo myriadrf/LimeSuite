@@ -12,7 +12,7 @@
 class LMS7_LimeSDR_mini : public LMS7_Device
 {
 public:
-    LMS7_LimeSDR_mini(LMS7_Device *obj = nullptr);
+    LMS7_LimeSDR_mini(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     int Init() override;
     unsigned GetNumChannels(const bool tx = false) const override;
     int SetFrequency(bool isTx, unsigned chan, double f_Hz) override;

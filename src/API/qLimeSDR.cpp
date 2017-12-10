@@ -7,10 +7,23 @@
 #include "qLimeSDR.h"
 #include "FPGA_common.h"
 
-LMS7_qLimeSDR::LMS7_qLimeSDR(LMS7_Device *obj) : LMS7_Device(obj)
+LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Device(obj), dacRate(20e6), adcRate(20e6)
 {
-    dacRate = 20e6;
-    adcRate = 20e6;
+    fpga = new lime::FPGA();
+    tx_channels.resize(GetNumChannels());
+    rx_channels.resize(GetNumChannels());
+  
+    while (lms_list.size() < 2)
+        lms_list.push_back(new lime::LMS7002M());
+
+    for (unsigned i = 0; i < 2; i++)
+    {
+        this->lms_list[i]->SetConnection(conn, i);
+        mStreamers.push_back(new lime::Streamer(fpga,lms_list[i]));
+        lms_list[i]->SetReferenceClk_SX(false, 30.72e6);
+    }
+    fpga->SetConnection(conn);
+    connection = conn;
 }
 
 unsigned LMS7_qLimeSDR::GetNumChannels(const bool tx) const
@@ -18,15 +31,9 @@ unsigned LMS7_qLimeSDR::GetNumChannels(const bool tx) const
     return 5;
 };
 
-unsigned LMS7_qLimeSDR::GetLMSCnt() const
-{
-    return 2;
-}
-
-
 int LMS7_qLimeSDR::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
 {
-    if (ch ==4)
+    if (ch == 4)
     {
         adcRate = rxRate;
         dacRate = txRate;

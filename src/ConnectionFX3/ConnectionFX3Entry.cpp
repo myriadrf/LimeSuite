@@ -44,19 +44,6 @@ ConnectionFX3Entry::ConnectionFX3Entry(void):
 #endif
 }
 
-ConnectionFX3Entry::ConnectionFX3Entry(const std::string entryName):
-    ConnectionRegistryEntry(entryName)
-{
-#ifdef __unix__
-    int r = libusb_init(&ctx); //initialize the library for the session we just declared
-    if(r < 0)
-        lime::error("Init Error %i", r); //there was an error
-    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
-    mProcessUSBEvents.store(true);
-    mUSBProcessingThread = std::thread(&ConnectionFX3Entry::handle_libusb_events, this);
-#endif
-}
-
 ConnectionFX3Entry::~ConnectionFX3Entry(void)
 {
 #ifdef __unix__

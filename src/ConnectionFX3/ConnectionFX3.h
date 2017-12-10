@@ -163,7 +163,6 @@ class ConnectionFX3Entry : public ConnectionRegistryEntry
 {
 public:
     ConnectionFX3Entry(void);
-    ConnectionFX3Entry(const std::string entryName);
     virtual ~ConnectionFX3Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
     IConnection* make(const ConnectionHandle& handle);

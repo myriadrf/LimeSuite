@@ -70,7 +70,7 @@ struct LIME_API StreamConfig
 class Streamer
 {
 public:
-    Streamer(IConnection* p, FPGA* f, LMS7002M* chip);
+    Streamer(FPGA* f, LMS7002M* chip);
     ~Streamer();
 
     StreamChannel* SetupStream(const StreamConfig& config);

@@ -18,25 +18,21 @@
 
 class LIME_API LMS7_Device
 {         
-public:
-    
+public:   
     struct Range
     {
         Range(double a=0, double b=0):min(a),max(b){}; 
         double min;
         double max;
     };
-    
-    LMS7_Device(LMS7_Device *obj = nullptr);
     virtual ~LMS7_Device();
-    int SetConnection(lime::IConnection* conn);
+    LMS7_Device(LMS7_Device *obj = nullptr);
     lime::IConnection* GetConnection(unsigned chan =0);
     lime::FPGA* GetFPGA();
     virtual int Init();
     int EnableChannel(bool dir_tx, unsigned chan, bool enabled);
     int Reset();
     virtual unsigned GetNumChannels(const bool tx=false) const;
-    virtual unsigned GetLMSCnt() const;
     virtual int SetRate(double f_MHz, int oversample);
     virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
     virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
@@ -88,7 +84,8 @@ public:
     int SetActiveChip(unsigned ind);
     lime::LMS7002M* GetLMS(int index = -1);
     int UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt);
-    static LMS7_Device* CreateDevice(lime::IConnection* conn, LMS7_Device *obj = nullptr);
+    static LMS7_Device* CreateDevice(const lime::ConnectionHandle& handle, LMS7_Device *obj = nullptr);
+    static std::vector<lime::ConnectionHandle> GetDeviceList();
     std::map<std::string, double> extra_parameters;
     
     lime::StreamChannel* SetupStream(const lime::StreamConfig &config);
@@ -110,7 +107,6 @@ protected:
         double sample_rate;
         double freq;
     };
-    
     lms_dev_info_t devInfo;
     std::vector<ChannelInfo> tx_channels;
     std::vector<ChannelInfo> rx_channels;

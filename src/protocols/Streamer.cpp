@@ -145,9 +145,9 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(IConnection* p, FPGA* f, LMS7002M* chip)
+Streamer::Streamer(FPGA* f, LMS7002M* chip)
 {
-    dataPort = p;
+    dataPort = f->GetConnection();
     fpga = f;
     lms = chip;
     rxRunning = false;

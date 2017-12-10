@@ -21,6 +21,7 @@ public:
     FPGA(){};
     virtual ~FPGA(){};
     void SetConnection(IConnection* conn);
+    IConnection* GetConnection() const;
     int StartStreaming();
     int StopStreaming();
     int ResetTimestamp();

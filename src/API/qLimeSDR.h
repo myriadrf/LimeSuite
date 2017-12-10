@@ -12,12 +12,10 @@
 class LMS7_qLimeSDR : public LMS7_Device
 {
 public:
-    LMS7_qLimeSDR(LMS7_Device *obj = nullptr);
+    LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     unsigned GetNumChannels(const bool tx = false) const override;
     double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL) override;
-    int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0) override;
-protected:  
-    unsigned GetLMSCnt() const override;
+    int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0) override;;
 private:
     double dacRate;
     double adcRate;
