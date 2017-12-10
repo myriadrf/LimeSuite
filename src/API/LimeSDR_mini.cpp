@@ -112,13 +112,13 @@ std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned c
 int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
 {
     lime::LMS7002M* lms = lms_list[0];
-    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1, true) != 0)
+    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1) != 0)
         return -1;
     if (tx==false)
     {
-        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path,true)!=0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), path != 2, true) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), path != 3, true) != 0))
+        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path)!=0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), path != 2) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), path != 3) != 0))
             return -1;
         if (path==LMS_PATH_LNAW)
         {     
@@ -141,8 +141,8 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
     }
     else
     {
-        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), path == LMS_PATH_TX1, true) != 0)
-        || (lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), path == LMS_PATH_TX2, true) != 0))
+        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), path == LMS_PATH_TX1) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), path == LMS_PATH_TX2) != 0))
             return -1;
         if (path==LMS_PATH_TX1)
         {     
