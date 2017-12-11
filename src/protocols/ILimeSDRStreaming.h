@@ -89,6 +89,7 @@ public:
         int streamSize;
         unsigned txBatchSize;
         unsigned rxBatchSize;
+        StreamConfig::StreamDataFormat dataLinkFormat;
     };
 
     ILimeSDRStreaming();

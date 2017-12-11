@@ -568,32 +568,31 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         dataPort->ResetStreamBuffers();
 
         //enable MIMO mode, 12 bit compressed values
-        StreamConfig config;
-        config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        dataLinkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
         //by default use 12 bit compressed, adjust link format for stream
 
         for(auto i : mRxStreams)
             if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
-                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                dataLinkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
         
         for(auto i : mTxStreams)
             if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
-                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                dataLinkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
 
         for(auto i : mRxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
         for(auto i : mTxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
 
-        const uint16_t smpl_width = config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED ? 2 : 0; 
+        const uint16_t smpl_width = dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED ? 2 : 0; 
         uint16_t mode = 0x0100;
 
         if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
@@ -673,7 +672,7 @@ void ILimeSDRStreaming::TransmitPacketsLoop(Streamer* stream)
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = stream->streamSize;
-    const bool packed = stream->mTxStreams[0]->config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const bool packed = stream->dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
     const int epIndex = stream->mChipID;
     const uint8_t buffersCount = GetBuffersCount();
     const uint8_t packetsToBatch = CheckStreamSize(stream->rxBatchSize);
@@ -734,19 +733,23 @@ void ILimeSDRStreaming::TransmitPacketsLoop(Streamer* stream)
             bool end_burst = false;
             IStreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
-            for(int ch=0; ch<chCount; ++ch)
+            for(int ch=0; ch<maxChannelCount; ++ch)
             {
-                if (stream->mTxStreams[ch]==nullptr || stream->mTxStreams[ch]->mActive==false)
+                if (!stream->mTxStreams[ch])
+                    continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
+                if (stream->mTxStreams[ch]->mActive==false)
                 {
-                    memset(&samples[ch][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    memset(&samples[ind][0],0,maxSamplesBatch*sizeof(complex16_t));
                     continue;
                 }
-                int samplesPopped = stream->mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
+
+                int samplesPopped = stream->mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
                     if (meta.flags & IStreamChannel::Metadata::END_BURST)
                     {
-                        memset(&samples[ch][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                        memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                         end_burst = true;
                         continue;
                     }
@@ -810,8 +813,9 @@ void ILimeSDRStreaming::TransmitPacketsLoop(Streamer* stream)
 void ILimeSDRStreaming::ReceivePacketsLoop(Streamer* stream)
 {
     //at this point FPGA has to be already configured to output samples
+    const uint8_t maxChannelCount = 2;
     const uint8_t chCount = stream->streamSize;
-    const bool packed = stream->mRxStreams[0]->config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const bool packed = stream->dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
     const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
     
     const int epIndex = stream->mChipID;
@@ -923,14 +927,15 @@ void ILimeSDRStreaming::ReceivePacketsLoop(Streamer* stream)
                 dest[c] = (chFrames[c].samples);
             int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
-            for(int ch=0; ch<chCount; ++ch)
+            for(int ch=0; ch<maxChannelCount; ++ch)
             {
                 if (stream->mRxStreams[ch]==nullptr || stream->mRxStreams[ch]->mActive==false)
                     continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
                 IStreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
-                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     stream->mRxStreams[ch]->overflow++;
             }
