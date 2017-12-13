@@ -919,12 +919,12 @@ SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size
 
     if (direction == SOAPY_SDR_RX)
     {
-        bws.push_back(SoapySDR::Range(1e6, 60e6));
+        bws.push_back(SoapySDR::Range(1.4e6, 130e6));
     }
     if (direction == SOAPY_SDR_TX)
     {
-        bws.push_back(SoapySDR::Range(0.8e6, 16e6));
-        bws.push_back(SoapySDR::Range(28e6, 60e6));
+        bws.push_back(SoapySDR::Range(5e6, 40e6));
+        bws.push_back(SoapySDR::Range(50e6, 130e6));
     }
 
     return bws;
