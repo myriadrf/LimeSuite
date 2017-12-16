@@ -1,6 +1,5 @@
 #include "FPGA_common.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
 #include "LMS64CProtocol.h"
 #include <ciso646>
 #include <vector>

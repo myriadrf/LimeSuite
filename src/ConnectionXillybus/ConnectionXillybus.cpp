@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionXillybus.h"
-#include "ErrorReporting.h"
 #ifndef __unix__
 #include "Windows.h"
 #else

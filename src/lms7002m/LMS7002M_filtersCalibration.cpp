@@ -6,7 +6,7 @@
 
 #include "LMS7002M.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "CalibrationCache.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>

@@ -4,7 +4,6 @@
     @brief Image updating and version checking
 */
 
-#include "ErrorReporting.h"
 #include "SystemResources.h"
 #include "LMS64CProtocol.h"
 #include "LMSBoards.h"

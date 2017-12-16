@@ -1,6 +1,5 @@
 #include "LMS7002M.h"
 #include "CalibrationCache.h"
-#include "ErrorReporting.h"
 #include <assert.h>
 #include "MCU_BD.h"
 #include "IConnection.h"

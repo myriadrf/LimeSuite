@@ -5,11 +5,7 @@
 */
 
 #include "IConnection.h"
-#include "ErrorReporting.h"
-#include <cstring> //memcpy
-#include <chrono>
-#include <thread>
-#include <iso646.h>
+#include "Logger.h"
 
 using namespace lime;
 
@@ -45,20 +41,17 @@ DeviceInfo IConnection::GetDeviceInfo(void)
 
 int IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("TransactSPI not supported");
 }
 
 int IConnection::WriteI2C(const int addr, const std::string &data)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("WriteI2C not supported");
 }
 
 int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("ReadI2C not supported");
 }
 
 /***********************************************************************
@@ -67,8 +60,7 @@ int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &dat
 
 int IConnection::DeviceReset(int ind)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("ProgramWrite not supported");
 }
 
 /***********************************************************************

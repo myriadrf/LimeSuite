@@ -13,8 +13,6 @@
 
 #include <ciso646>
 
-#include <ErrorReporting.h>
-
 using namespace lime;
 using namespace std;
 

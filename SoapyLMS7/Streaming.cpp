@@ -12,7 +12,7 @@
 #include <thread>
 #include <iostream>
 #include <algorithm> //min/max
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "Streamer.h"
 
 using namespace lime;

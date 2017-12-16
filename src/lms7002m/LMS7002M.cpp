@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <set>
 #include "IConnection.h"
-#include "ErrorReporting.h"
 #include "INI.h"
 #include <cmath>
 #include <iostream>

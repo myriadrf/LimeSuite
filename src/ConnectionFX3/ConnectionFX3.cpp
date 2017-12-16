@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionFX3.h"
-#include "ErrorReporting.h"
 #include <cstring>
 #include "Si5351C.h"
 #include "FPGA_common.h"

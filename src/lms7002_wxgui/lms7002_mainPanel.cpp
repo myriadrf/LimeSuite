@@ -190,7 +190,8 @@ void lms7002_mainPanel::UpdateGUI()
     }
     else
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
+        if (LMS_IsOpen(lmsControl, 0))
+            LMS_WriteParam(lmsControl,LMS7param(MAC),1);
         rbChannelA->SetValue(true);
         rbChannelB->SetValue(false);
     }

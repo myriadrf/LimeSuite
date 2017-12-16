@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionFT601.h"
-#include "ErrorReporting.h"
 #include <cstring>
 #include <iostream>
 

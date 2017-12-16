@@ -1,6 +1,6 @@
 #include "FPGA_Mini.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "LMS64CProtocol.h"
 #include <ciso646>
 #include <vector>

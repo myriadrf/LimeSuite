@@ -4,7 +4,7 @@
     @brief Implementation of LMS64C protocol.
 */
 
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Si5351C.h"
 #include <chrono>
