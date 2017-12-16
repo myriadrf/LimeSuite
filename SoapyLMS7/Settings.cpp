@@ -299,9 +299,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
 
     if (name == "BB")
     {     
-        double ncoFreq[16] = {frequency};
-        lms7Device->SetNCOFreq(isTx, channel, ncoFreq, 0);
-        lms7Device->SetNCO(isTx, channel, 0, frequency < 0);
+        lms7Device->SetNCOFreq(isTx, channel, 0, direction == SOAPY_SDR_TX ? frequency : -frequency);
         return;
     }
 
@@ -320,15 +318,9 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "BB")
     {
-        int sign = 0;
-        double ncoFreq[16] = {0};
         const bool isTx = (direction == SOAPY_SDR_TX);
-        lms7Device->GetNCOFreq(isTx, channel, ncoFreq);
-        if (isTx)
-            sign = lms7Device->ReadParam(LMS7param(CMIX_SC_TXTSP), channel) ? -1 : 1;
-        else
-            sign = lms7Device->ReadParam(LMS7param(CMIX_SC_RXTSP), channel) ? 1 : -1;
-        return ncoFreq[0] * sign;
+        double freq = lms7Device->GetNCOFreq(isTx, channel, 0);
+        return isTx ? freq : -freq;
     }
 
     throw std::runtime_error("SoapyLMS7::getFrequency("+name+") unknown name");
@@ -643,10 +635,7 @@ unsigned SoapyLMS7::readRegister(const std::string &name, const unsigned addr) c
     if ("RFIC" != name.substr(0,4))  
         throw std::runtime_error("SoapyLMS7::readRegister("+name+") unknown interface");
     
-    uint16_t value;
-    int st = lms7Device->ReadLMSReg(addr, &value, name[4]-'0');
-    if (st == 0) return value;
-    throw std::runtime_error("SoapyLMS7::readRegister("+name+", "+std::to_string(addr)+") FAIL");
+    return lms7Device->ReadLMSReg(addr, name[4]-'0');
 }
 
 void SoapyLMS7::writeRegister(const unsigned addr, const unsigned value)

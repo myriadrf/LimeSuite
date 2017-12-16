@@ -374,12 +374,7 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, f
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)dev;
-    uint16_t val;
-    if (lms->ReadLMSReg(0x2F, &val))
-    {
-        return -1;
-    }
-    if (val == 0x3840)
+    if (lms->ReadLMSReg(0x2F) == 0x3840)
     {
         lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
@@ -735,12 +730,7 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
 
     LMS7_Device* lms = (LMS7_Device*)device;
 
-    uint16_t val;
-    if (lms->ReadLMSReg(0x2F, &val))
-    {
-        return -1;
-    }
-    if (val == 0x3840)
+    if (lms->ReadLMSReg(0x2F) == 0x3840)
     {
         lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
@@ -846,9 +836,17 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx, 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    return lms->SetNCOFreq(dir_tx, ch,freq, pho);
+    
+    if (freq != nullptr)
+    {
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            if (lms->SetNCOFreq(dir_tx, ch, i, freq[i]) != 0)
+                return -1;
+        lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
+    }
+    return lms->GetLMS()->SetNCOPhaseOffsetForMode0(dir_tx, pho);
 }
+
 
 API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *freq, float_type *pho)
 {
@@ -865,15 +863,24 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+      
+    if (freq != nullptr)
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
 
-    return lms->GetNCOFreq(dir_tx,chan,freq,pho);
+    if (pho != nullptr)
+    {
+        uint16_t value = lms->ReadLMSReg(dir_tx ? 0x0241 : 0x0441, chan/2);
+        *pho = 360.0 * value / 65536.0;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, const float_type *phase, float_type fcw)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
@@ -881,11 +888,22 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx, size
 
     if (ch >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
-
-    return lms->SetNCOPhase(dir_tx, ch,phase, fcw);
+    
+    if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
+        return -1;
+    
+    if (phase != nullptr)
+    {
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            if (lms->SetNCOPhase(dir_tx, ch, i, phase[i])!=0)
+                return -1;
+        if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0))
+            return -1;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, float_type *phase, float_type *fcw)
@@ -903,11 +921,18 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+      
+    if (phase != nullptr)
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
+    
+    if (fcw != nullptr)
+        *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
 
-    return lms->GetNCOPhase(dir_tx,ch,phase,fcw);
+    return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, int index,bool down)
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, int ind, bool down)
 {
     if (device == nullptr)
     {
@@ -922,15 +947,31 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+    
+    if ((!dir_tx) && (lms->ReadParam(LMS7_MASK, chan) != 0))
+        down = !down;
 
-    return lms->SetNCO(dir_tx,chan,index,down);
+
+    if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan)!=0)
+    || (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan)!=0))
+        return -1;
+
+    if (ind < LMS_NCO_VAL_COUNT)
+    {
+            if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX,ind)!=0)
+            || (lms->WriteParam(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down)!=0))
+                return -1;
+    }
+    else
+        return lime::ReportError("Invalid NCO index value");
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
@@ -938,11 +979,16 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
-
-    return lms->GetNCO(dir_tx, chan);
+    
+    if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
+    {
+        lime::ReportError("NCO is disabled");
+        return -1;
+    }
+    return lms->ReadParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, uint16_t *val)
@@ -954,7 +1000,8 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, 
     }
 
     LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->ReadLMSReg(address, val);
+    *val = lms->ReadLMSReg(address);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)

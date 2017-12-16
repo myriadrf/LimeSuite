@@ -42,7 +42,7 @@ int LMS7_qLimeSDR::SetRate(unsigned ch, double rxRate, double txRate, unsigned o
     return LMS7_Device::SetRate(ch,rxRate,txRate,oversample);      
 }
 
-double LMS7_qLimeSDR::GetRate(bool tx, unsigned chan, double *rf_rate_Hz)
+double LMS7_qLimeSDR::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
 {
     if (chan == 4)
         return tx ? dacRate : adcRate;

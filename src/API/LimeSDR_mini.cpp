@@ -93,7 +93,7 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     }
 
     if (channel.cF_offset_nco != 0)
-        SetNCO(isTx,0,-1,true);
+        SetNCOFreq(isTx, 0, -1, 0.0);
     channel.cF_offset_nco = 0;
     if (lms->SetFrequencySX(isTx, f_Hz) != 0)
         return -1;
