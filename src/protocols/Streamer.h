@@ -99,6 +99,7 @@ public:
     int streamSize;
     unsigned txBatchSize;
     unsigned rxBatchSize;
+    StreamConfig::StreamDataFormat dataLinkFormat;
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
 private:

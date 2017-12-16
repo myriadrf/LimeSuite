@@ -1,4 +1,3 @@
-#include "ErrorReporting.h"
 #include <assert.h>
 #include "FPGA_common.h"
 #include "LMS7002M.h"
@@ -325,32 +324,31 @@ int Streamer::UpdateThreads(bool stopAll)
         dataPort->ResetStreamBuffers();
 
         //enable MIMO mode, 12 bit compressed values
-        StreamConfig config;
-        config.linkFormat = StreamConfig::FMT_INT12;
+        dataLinkFormat = StreamConfig::FMT_INT12;
         //by default use 12 bit compressed, adjust link format for stream
 
         for(auto i : mRxStreams)
             if(i && i->config.format != StreamConfig::FMT_INT12)
             {
-                config.linkFormat = StreamConfig::FMT_INT16;
+                dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
         
         for(auto i : mTxStreams)
             if(i && i->config.format != StreamConfig::FMT_INT12)
             {
-                config.linkFormat = StreamConfig::FMT_INT16;
+                dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
 
         for(auto i : mRxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
         for(auto i : mTxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
 
-        const uint16_t smpl_width = config.linkFormat == StreamConfig::FMT_INT12 ? 2 : 0; 
+        const uint16_t smpl_width = dataLinkFormat == StreamConfig::FMT_INT12 ? 2 : 0; 
         uint16_t mode = 0x0100;
 
         if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
@@ -436,7 +434,7 @@ void Streamer::TransmitPacketsLoop()
     //at this point FPGA has to be already configured to output samples
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = streamSize;
-    const bool packed = mTxStreams[0]->config.linkFormat == StreamConfig::FMT_INT12;
+    const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
     const int epIndex = lms->GetChipID();
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
@@ -497,20 +495,23 @@ void Streamer::TransmitPacketsLoop()
             bool end_burst = false;
             StreamChannel::Metadata meta;
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
-            for(int ch=0; ch<chCount; ++ch)
+            for(int ch=0; ch<maxChannelCount; ++ch)
             {
-                if (mTxStreams[ch]==nullptr || mTxStreams[ch]->mActive==false)
+                if (!mTxStreams[ch])
+                    continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
+                if (mTxStreams[ch]->mActive==false)
                 {
-                    memset(&samples[ch][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    memset(&samples[ind][0],0,maxSamplesBatch*sizeof(complex16_t));
                     continue;
                 }
-                int samplesPopped = mTxStreams[ch]->Read(samples[ch].data(), maxSamplesBatch, &meta, popTimeout_ms);
+                int samplesPopped = mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
                     if (meta.flags & RingFIFO::END_BURST)
                     {
                         printf("EOB\n");
-                        memset(&samples[ch][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                        memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                         end_burst = true;
                         continue;
                     }
@@ -574,8 +575,9 @@ void Streamer::TransmitPacketsLoop()
 void Streamer::ReceivePacketsLoop()
 {
     //at this point FPGA has to be already configured to output samples
+    const uint8_t maxChannelCount = 2;
     const uint8_t chCount = streamSize;
-    const bool packed = mRxStreams[0]->config.linkFormat == StreamConfig::FMT_INT12;
+    const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
     const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
     
     const int epIndex = lms->GetChipID();
@@ -687,14 +689,15 @@ void Streamer::ReceivePacketsLoop()
                 dest[c] = (chFrames[c].samples);
             int samplesCount = FPGA::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
 
-            for(int ch=0; ch<chCount; ++ch)
+            for(int ch=0; ch<maxChannelCount; ++ch)
             {
                 if (mRxStreams[ch]==nullptr || mRxStreams[ch]->mActive==false)
                     continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
                 StreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
-                int samplesPushed = mRxStreams[ch]->Write((const void*)chFrames[ch].samples, samplesCount, &meta, 100);
+                int samplesPushed = mRxStreams[ch]->Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
                     mRxStreams[ch]->overflow++;
             }
