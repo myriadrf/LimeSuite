@@ -2,7 +2,6 @@
 #include "ConnectionRegistry.h"
 #include "lime/LimeSuite.h"
 #include "lms7_device.h"
-#include "ErrorReporting.h"
 #include "errno.h"
 #include <cmath>
 #include "VersionInfo.h"
@@ -555,7 +554,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         return -1;
     }
 
-    return lms->SetLPF(dir_tx,chan,true,true,bandwidth);
+    return lms->SetLPF(dir_tx,chan,true,bandwidth);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
@@ -592,7 +591,7 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx, size_t ch
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    return lms->SetLPF(dir_tx,chan,true,enabled,1);
+    return lms->SetLPF(dir_tx,chan,enabled,-1);
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
@@ -616,8 +615,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    return lms->SetLPF(dir_tx,chan,false,enabled,bandwidth);
+    return lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)

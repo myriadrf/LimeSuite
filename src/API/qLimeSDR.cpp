@@ -16,13 +16,13 @@ LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_D
     while (lms_list.size() < 2)
         lms_list.push_back(new lime::LMS7002M());
 
+    fpga->SetConnection(conn);
     for (unsigned i = 0; i < 2; i++)
     {
         this->lms_list[i]->SetConnection(conn, i);
         mStreamers.push_back(new lime::Streamer(fpga,lms_list[i]));
         lms_list[i]->SetReferenceClk_SX(false, 30.72e6);
     }
-    fpga->SetConnection(conn);
     connection = conn;
 }
 

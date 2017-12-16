@@ -16,7 +16,6 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
-#include "ErrorReporting.h"
 #include "MCU_BD.h"
 #include "FPGA_common.h"
 #include "LMS64CProtocol.h"
@@ -67,6 +66,7 @@ LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
         std::swap(lms_list,obj->lms_list);
         this->rx_channels = obj->rx_channels;
         this->tx_channels = obj->tx_channels;
+        obj->connection = nullptr;
         delete obj;
     }
     else
@@ -138,7 +138,7 @@ int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,double bandwidth)
     return 0;
 }
 
-int LMS7_Device::ConfigureGFIR(bool enabled,bool tx, double bandwidth, unsigned ch)
+int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwidth)
 {
     double w,w2;
     int L;
@@ -748,24 +748,16 @@ LMS7_Device::Range LMS7_Device::GetTxPathBand(unsigned path, unsigned chan) cons
   }
 }
 
-int LMS7_Device::SetLPF(bool tx,unsigned chan, bool filt, bool en, double bandwidth)
+int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
 {
-    if (filt)
+    if (tx)
     {
-        if (tx)
-        {
-            if(en)
-                tx_channels[chan].lpf_bw = bandwidth;
-            return ConfigureTXLPF(en,chan,bandwidth)!=0;
-        }
-        else
-        {
-            if (en)
-                rx_channels[chan].lpf_bw = bandwidth;
-            return ConfigureRXLPF(en,chan,bandwidth);
-        }
+        if(en) tx_channels[chan].lpf_bw = bandwidth;
+        return ConfigureTXLPF(en,chan,bandwidth)!=0;
     }
-    return ConfigureGFIR(en,tx,bandwidth,chan);
+
+    if (en) rx_channels[chan].lpf_bw = bandwidth;
+    return ConfigureRXLPF(en,chan,bandwidth);
 }
 
 double LMS7_Device::GetLPFBW(bool tx,unsigned chan)

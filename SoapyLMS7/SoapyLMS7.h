@@ -126,15 +126,7 @@ public:
 
     bool hasDCOffset(const int direction, const size_t channel) const;
 
-    void setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset);
-
-    std::complex<double> getDCOffset(const int direction, const size_t channel) const;
-
     bool hasIQBalance(const int direction, const size_t channel) const;
-
-    void setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance);
-
-    std::complex<double> getIQBalance(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Gain API
@@ -159,10 +151,14 @@ public:
      ******************************************************************/
 
     SoapySDR::ArgInfoList getFrequencyArgsInfo(const int direction, const size_t channel) const;
+    
+    void setFrequency(int direction, size_t channel, double freq, const SoapySDR::Kwargs &args) override;
 
     void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 
     double getFrequency(const int direction, const size_t channel, const std::string &name) const;
+    
+    double getFrequency(const int direction, const size_t channel) const override;
 
     std::vector<std::string> listFrequencies(const int direction, const size_t channel) const;
 
@@ -184,8 +180,6 @@ public:
     std::vector<double> listSampleRates(const int direction, const size_t channel) const;
 
     SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const;
-
-    std::vector<double> _getEnumeratedRates(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Bandwidth API
@@ -274,20 +268,6 @@ public:
     void writeGPIODir(const std::string &bank, const unsigned dir);
 
     unsigned readGPIODir(const std::string &bank) const;
-
-    /*******************************************************************
-     * I2C API
-     ******************************************************************/
-
-    void writeI2C(const int addr, const std::string &data);
-
-    std::string readI2C(const int addr, const size_t numBytes);
-
-    /*******************************************************************
-     * SPI API
-     ******************************************************************/
-
-    unsigned transactSPI(const int addr, const unsigned data, const size_t numBits);
 
 private:
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments

@@ -46,7 +46,7 @@ public:
     Range GetFrequencyRange(bool tx) const;
     virtual Range GetRxPathBand(unsigned path, unsigned chan) const;
     Range GetTxPathBand(unsigned path, unsigned chan) const;
-    int SetLPF(bool tx, unsigned chan, bool f, bool en, double bandwidth=-1);
+    int SetLPF(bool tx, unsigned chan, bool en, double bandwidth=-1);
     double GetLPFBW(bool tx,unsigned chan);
     Range GetLPFRange(bool tx,unsigned chan);
     int SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const double* coef, unsigned count);
@@ -59,7 +59,7 @@ public:
     int GetTestSignal(bool dir_tx, unsigned chan);
     int SetNCOFreq(bool tx, unsigned ch, const double *freq, double pho);
     int SetNCO(bool tx, unsigned ch,int ind,bool down);
-    int GetNCOFreq(bool tx, unsigned ch, double * freq,double *pho);
+    int GetNCOFreq(bool tx, unsigned ch, double * freq, double *pho = nullptr);
     int SetNCOPhase(bool tx, unsigned ch, const double *phase, double fcw);
     int GetNCOPhase(bool tx, unsigned ch, double * phase, double *fcw);
     int GetNCO(bool tx, unsigned ch);
@@ -87,6 +87,7 @@ public:
     static LMS7_Device* CreateDevice(const lime::ConnectionHandle& handle, LMS7_Device *obj = nullptr);
     static std::vector<lime::ConnectionHandle> GetDeviceList();
     std::map<std::string, double> extra_parameters;
+    int ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwidth);
     
     lime::StreamChannel* SetupStream(const lime::StreamConfig &config);
     int DestroyStream(lime::StreamChannel* streamID);
@@ -116,7 +117,6 @@ protected:
     lime::LMS7002M* SelectChannel(unsigned chan) const;
     int ConfigureRXLPF(bool enabled,int ch, double bandwidth);
     int ConfigureTXLPF(bool enabled,int ch, double bandwidth);
-    int ConfigureGFIR(bool enabled,bool tx, double bandwidth, unsigned ch);
     void _Initialize(lime::IConnection* conn);
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;
