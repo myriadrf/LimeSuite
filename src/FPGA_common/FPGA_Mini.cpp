@@ -13,7 +13,7 @@ namespace lime
 FPGA_Mini::FPGA_Mini() : FPGA(){}
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
     int status = 0;
 
@@ -47,7 +47,7 @@ int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, double txPha
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-int FPGA_Mini::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     int status = 0;
     uint32_t reg20;

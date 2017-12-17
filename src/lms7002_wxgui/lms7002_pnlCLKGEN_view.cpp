@@ -182,7 +182,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
-    if (fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
+    if (fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
@@ -208,6 +208,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     if (lms->SetInterfaceFrequency(freqMHz*1e6, interp, decim))
     {
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        auto freq = lms->GetFrequencyCGEN();
+        lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
+        UpdateGUI();
         return ;
     }
     auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
@@ -221,9 +224,9 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         fpgaRxPLL /= pow(2.0, decim);
     int status;
     if (this->chkAutoPhase->GetValue())
-        status = fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
+        status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
     else
-        status = fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
+        status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     auto freq = lms->GetFrequencyCGEN();
@@ -260,9 +263,9 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         fpgaRxPLL /= pow(2.0, decim);
     int status;
     if (this->chkAutoPhase->GetValue())
-        status = fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, chipInd);
+        status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipInd);
     else
-        status = fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
+        status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
     if (status != 0)
         wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
     uint16_t value;

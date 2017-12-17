@@ -1,4 +1,5 @@
 #include "LMS7002M.h"
+#include "Logger.h"
 using namespace lime;
 
 int LMS7002M::CalibrateTxGainSetup()
@@ -92,6 +93,10 @@ int LMS7002M::CalibrateTxGainSetup()
 
 int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
 {
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
+    }
     int status;
     int cg_iamp;
     auto registersBackup = BackupRegisterMap();

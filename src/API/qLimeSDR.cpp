@@ -37,7 +37,7 @@ int LMS7_qLimeSDR::SetRate(unsigned ch, double rxRate, double txRate, unsigned o
     {
         adcRate = rxRate;
         dacRate = txRate;
-        return fpga->SetIntetfaceFreq(txRate,rxRate,0,0,2);
+        return fpga->SetInterfaceFreq(txRate,rxRate,0,0,2);
     }
     return LMS7_Device::SetRate(ch,rxRate,txRate,oversample);      
 }

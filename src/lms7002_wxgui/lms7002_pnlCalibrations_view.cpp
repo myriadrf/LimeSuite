@@ -117,25 +117,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     }
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status;
-    {
-#ifdef NDEBUG
-        wxBusyInfo wait("Please wait, calibrating transmitter...");
-#endif
-        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
-    }
-    if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-    {
-#ifdef NDEBUG
-        wxBusyInfo wait("Please wait, calibrating receiver...");
-#endif
-        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
-    }
-    if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+    int status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
 
-    wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
+
+    status |= LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+    if (status != 0)
+        wxMessageBox(_("Calibration Failed"), _("Info"), wxOK, this);   
+    else
+        wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();
 }
 

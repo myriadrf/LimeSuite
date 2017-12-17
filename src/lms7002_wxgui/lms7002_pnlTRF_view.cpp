@@ -165,17 +165,7 @@ void lms7002_pnlTRF_view::UpdateGUI()
     uint16_t macBck;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&macBck);
     if (macBck >= 2)
-    {
-        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
-        if (value != 0)
-            wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
-        LMS_WriteParam(lmsControl,LMS7param(MAC), 1);
-        LMS_ReadParam(lmsControl,LMS7param(EN_NEXTTX_TRF),&value);
-        if (value != 1)
-            wxMessageBox(_("Tx MIMO mode not enabled, EN_NEXTTX_TRF=0"), _("Warning"));
-        LMS_WriteParam(lmsControl,LMS7param(MAC), macBck);
         chkEN_NEXTTX_TRF->Hide();
-    }
     else
         chkEN_NEXTTX_TRF->Show();
 

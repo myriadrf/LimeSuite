@@ -137,9 +137,10 @@ void lms7002_pnlTBB_view::OnbtnTuneFilter( wxCommandEvent& event )
     int status;
     status = LMS_SetLPFBW(lmsControl,LMS_CH_TX,ch,input1*1e6);
 
-    if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-
+    if (status != 0) {
+        wxMessageBox(wxString(_("Tx calibration failed")));
+        return;
+    }
     LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }
@@ -154,8 +155,10 @@ void lms7002_pnlTBB_view::OnbtnTuneTxGain( wxCommandEvent& event )
     int status = lms->CalibrateTxGain(0, nullptr);
 
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx gain calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-
+    {
+        wxMessageBox(wxString(_("Tx gain calibration failed")));
+        return;
+    }
     LMS_Synchronize(lmsControl,false);
     UpdateGUI();
 }

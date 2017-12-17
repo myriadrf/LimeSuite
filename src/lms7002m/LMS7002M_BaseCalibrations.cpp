@@ -12,6 +12,10 @@ int LMS7002M::CalibrateInternalADC(int clkDiv)
 {
     if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
+    }
 
     const uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, 1);
@@ -43,6 +47,10 @@ int LMS7002M::CalibrateRP_BIAS()
 {
     if(Get_SPI_Reg_bits(LMS7_MASK) == 0)
         return ReportError(ENOTSUP, "Operation not supported");
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
+    }
 
     CalibrateInternalADC(32);
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);

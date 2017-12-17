@@ -541,7 +541,6 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     for(unsigned i=0; i<chCount; ++i)
         samplesShort[i] = nullptr;
 
-
     if (format == StreamConfig::FMT_INT16)
     {
         for(unsigned i=0; i<chCount; ++i)
@@ -610,7 +609,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-int FPGA::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
 
@@ -646,7 +645,7 @@ int FPGA::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
-int FPGA::SetIntetfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;

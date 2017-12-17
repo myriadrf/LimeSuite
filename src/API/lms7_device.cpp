@@ -370,7 +370,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
          double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
          fpgaTxPLL /= pow(2.0, decim);
          fpgaRxPLL /= pow(2.0, decim);
-         if ((fpga) && (fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
+         if ((fpga) && (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
             return -1;
     }
 
@@ -627,7 +627,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
 	fpgaTxPLL /= pow(2.0, interpolation);
 	fpgaRxPLL /= pow(2.0, decimation);
-        if ((fpga) && (fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
+        if ((fpga) && (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
 	  return -1;
       }
 
@@ -1480,7 +1480,7 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
         double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
-        return fpga ? fpga->SetIntetfaceFreq(fpgaTxPLL, fpgaRxPLL, lmsInd) : 0;
+        return fpga ? fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, lmsInd) : 0;
     }
     case LMS_CLOCK_RXTSP:
         lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
@@ -1551,7 +1551,7 @@ int LMS7_Device::Synchronize(bool toChip) const
                 if (decim != 7)
                     fpgaRxPLL /= pow(2.0, decim);
                 lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-                ret = fpga ? fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, i) : 0;
+                ret = fpga ? fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, i) : 0;
             }
         }
         else
@@ -1596,7 +1596,7 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
         if (decim != 7)
             fpgaRxPLL /= pow(2.0, decim);
         lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-        return fpga ?fpga->SetIntetfaceFreq(fpgaTxPLL,fpgaRxPLL, lms_chip_id) : 0;
+        return fpga ?fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, lms_chip_id) : 0;
     }
     return -1;
 }
