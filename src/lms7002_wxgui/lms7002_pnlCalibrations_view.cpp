@@ -62,6 +62,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Rx Calibrated"));
         wxPostEvent(this, evt);
     }
@@ -95,6 +96,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Tx Calibrated"));
         wxPostEvent(this, evt);
     }

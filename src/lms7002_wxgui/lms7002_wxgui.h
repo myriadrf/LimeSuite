@@ -92,14 +92,12 @@ class mainPanel : public wxPanel
 			ID_TAB_GAINS
 		};
 		
-		wxButton* ID_BUTTON1;
 		wxButton* ID_BUTTON2;
 		wxButton* ID_BUTTON3;
 		wxComboBox* cmbLmsDevice;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
 		wxCheckBox* chkEnableMIMO;
-		wxCheckBox* chkSyncAB;
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
@@ -109,14 +107,12 @@ class mainPanel : public wxPanel
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
-		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnLmsDeviceSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnSyncABchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }

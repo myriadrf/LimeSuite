@@ -11,6 +11,7 @@
 #include "lms7002_dlgVCOfrequencies.h"
 #include <string>
 #include "lms7_device.h"
+#include "Logger.h"
 using namespace std;
 using namespace lime;
 
@@ -522,6 +523,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     {
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         wxString msg;
         if (ch == 1)
             msg = _("SXR");

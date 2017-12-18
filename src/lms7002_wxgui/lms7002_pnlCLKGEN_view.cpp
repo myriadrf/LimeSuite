@@ -7,6 +7,7 @@
 #include "lms7002_dlgVCOfrequencies.h"
 #include "lms7_device.h"
 #include "FPGA_common.h"
+#include "Logger.h"
 using namespace lime;
 
 lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent )
@@ -193,6 +194,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     wxCommandEvent cmd;
     cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
     cmd.SetEventType(LOG_MESSAGE);
+    cmd.SetInt(lime::LOG_LEVEL_INFO);
     wxPostEvent(this, cmd);
 }
 
@@ -238,6 +240,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     wxCommandEvent cmd;
     cmd.SetString(_("CGEN frequency set to ") + lblRealOutFrequency->GetLabel() + _(" MHz"));
     cmd.SetEventType(LOG_MESSAGE);
+    cmd.SetInt(lime::LOG_LEVEL_INFO);
     wxPostEvent(this, cmd);
 }
 

@@ -123,6 +123,17 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	chkLogData = new wxCheckBox( this, wxID_ANY, wxT("Log data"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer5->Add( chkLogData, 0, 0, 5 );
 	
+	wxStaticText* m_staticText52;
+	m_staticText52 = new wxStaticText( this, wxID_ANY, wxT("Log level:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText52->Wrap( -1 );
+	fgSizer5->Add( m_staticText52, 0, wxTOP, 5 );
+	
+	wxString choiceLogLvlChoices[] = { wxT("Error"), wxT("Warning"), wxT("Info"), wxT("Debug") };
+	int choiceLogLvlNChoices = sizeof( choiceLogLvlChoices ) / sizeof( wxString );
+	choiceLogLvl = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, choiceLogLvlNChoices, choiceLogLvlChoices, 0 );
+	choiceLogLvl->SetSelection( 2 );
+	fgSizer5->Add( choiceLogLvl, 0, 0, 1 );
+	
 	
 	fgSizer4->Add( fgSizer5, 1, 0, 5 );
 	
@@ -136,6 +147,7 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	btnClear->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
 	chkLogData->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
+	choiceLogLvl->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMiniLog_view::onLogLvlChange ), NULL, this );
 }
 
 pnlMiniLog_view::~pnlMiniLog_view()
@@ -145,6 +157,7 @@ pnlMiniLog_view::~pnlMiniLog_view()
 	btnClear->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
 	chkLogData->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
+	choiceLogLvl->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMiniLog_view::onLogLvlChange ), NULL, this );
 	
 }
 

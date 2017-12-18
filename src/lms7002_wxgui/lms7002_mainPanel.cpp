@@ -38,8 +38,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 
     mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
     tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
-
-    chkSyncAB->Hide();
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
@@ -269,14 +267,9 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else
     {
-        if(chkSyncAB->IsChecked())
-            LMS_WriteParam(lmsControl,LMS7param(MAC), 3);
-        else
-        {
-            LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
-            rbChannelA->Enable();
-            rbChannelB->Enable();
-        }
+        LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
+        rbChannelA->Enable();
+        rbChannelB->Enable();
     }
 
 #ifdef __APPLE__

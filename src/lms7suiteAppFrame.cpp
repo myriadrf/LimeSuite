@@ -116,6 +116,7 @@ void LMS7SuiteAppFrame::OnLogEvent(const char* text, unsigned int type)
         return;
     wxCommandEvent evt;
     evt.SetEventType(LOG_MESSAGE);
+    evt.SetInt(lime::LOG_LEVEL_INFO);
     wxString msg;
 
     switch(type)
@@ -272,6 +273,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Connected ") + controlDev);
         LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
         wxPostEvent(this, evt);
@@ -285,6 +287,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Disconnected control port"));
         wxPostEvent(this, evt);
     }
@@ -315,6 +318,7 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
 //        statusBar->SetStatusText(_("Data port: Not Connected"), dataCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Disconnected data port"));
         wxPostEvent(this, evt);
     }
@@ -584,6 +588,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
+    evt->SetInt(lime::LOG_LEVEL_INFO);
     wxQueueEvent(obj_ptr, evt);
 }
 
