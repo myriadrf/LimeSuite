@@ -600,6 +600,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 
     /*Give some time to load samples to FPGA*/
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    connection->AbortSending(epIndex);
     if(cnt == 0)
         return 0;
     else
@@ -612,15 +613,6 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
-
-    if (channel == 2)
-    {
-        clocks[0].index = 0;
-        clocks[0].outFrequency = rxRate_Hz;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = txRate_Hz;
-        return SetPllFrequency(4, 30.72e6, clocks, 2);
-    }
 
     const int pll_ind = (channel == 1) ? 2 : 0;
 

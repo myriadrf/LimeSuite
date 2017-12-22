@@ -70,6 +70,7 @@ set(LIME_SUITE_SOURCES
     API/LimeSDR.cpp
     FPGA_common/FPGA_common.cpp
     FPGA_common/FPGA_Mini.cpp
+    FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
 )
 

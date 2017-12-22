@@ -408,7 +408,6 @@ public:
     MCU_BD* GetMCUControls() const;
     void EnableCalibrationByMCU(bool enabled);
     float_type GetTemperature();
-    int GetChipID() const;
 
     enum LogType
     {

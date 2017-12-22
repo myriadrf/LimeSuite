@@ -215,7 +215,7 @@ bool ConnectionFT601::IsOpen()
 }
 
 #ifndef __unix__
-int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
+int ConnectionFT601::ReinitPipe(unsigned char ep)
 {
     FT_AbortPipe(mFTHandle, ep);
     FT_FlushPipe(mFTHandle, ep);

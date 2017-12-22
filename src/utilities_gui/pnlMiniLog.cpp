@@ -3,7 +3,7 @@
 
 pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
 	: pnlMiniLog_view( parent, id, pos, size, style ),
-        log_level(2)
+        log_level(3)
 {
 	mDefaultStyle = txtMessageField->GetDefaultStyle();
 	wxUpdateUIEvent::SetUpdateInterval(100);

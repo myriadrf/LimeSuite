@@ -5,11 +5,11 @@
  * Created on April 27, 2018
  */
 #include "qLimeSDR.h"
-#include "FPGA_common.h"
+#include "FPGA_Q.h"
 
 LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Device(obj), dacRate(20e6), adcRate(20e6)
 {
-    fpga = new lime::FPGA();
+    fpga = new lime::FPGA_Q();
     tx_channels.resize(GetNumChannels());
     rx_channels.resize(GetNumChannels());
   
@@ -20,9 +20,10 @@ LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_D
     for (unsigned i = 0; i < 2; i++)
     {
         this->lms_list[i]->SetConnection(conn, i);
-        mStreamers.push_back(new lime::Streamer(fpga,lms_list[i]));
         lms_list[i]->SetReferenceClk_SX(false, 30.72e6);
-    }
+        mStreamers.push_back(new lime::Streamer(fpga,lms_list[i],i));
+    }       
+    mStreamers.push_back(new lime::Streamer(fpga,lms_list[0],2)); //adc/dac streamer
     connection = conn;
 }
 

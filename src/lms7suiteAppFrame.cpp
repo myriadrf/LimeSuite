@@ -354,12 +354,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
 {
-    m_lmsSelection = event.GetInt();
-    if (fftviewer)
-        fftviewer->Initialize(lmsControl);
-
-    if (fpgaControls)
-        fpgaControls->Initialize(lmsControl);
+    return;
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)

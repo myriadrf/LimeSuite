@@ -157,7 +157,7 @@ std::vector<ConnectionHandle> ConnectionFT601Entry::enumerate(const ConnectionHa
 IConnection *ConnectionFT601Entry::make(const ConnectionHandle &handle)
 {
 #ifndef __unix__
-    return new v(mFTHandle, handle.index);
+    return new ConnectionFT601(mFTHandle, handle.index);
 #else
     const auto pidvid = handle.addr;
     const auto splitPos = pidvid.find(":");

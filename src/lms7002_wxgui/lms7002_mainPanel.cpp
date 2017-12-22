@@ -368,6 +368,13 @@ void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
 {
     int deviceSelection = cmbLmsDevice->GetSelection();
     ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
+    
+    wxNotebookPage* page = tabsNotebook->GetCurrentPage();
+    if (page == mTabSXR) //change active channel to A
+        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
+    else if (page == mTabSXT) //change active channel to B
+        LMS_WriteParam(lmsControl,LMS7param(MAC),2);
+
     UpdateVisiblePanel();
     wxCommandEvent evt;
     evt.SetEventType(LMS_CHANGED);

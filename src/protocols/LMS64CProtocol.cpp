@@ -790,8 +790,10 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;
-        if(values[i] != 0)
-            powerOf10 = log10(values[i])/3;
+        if(values[i] > 65535.0 && (*units != ""))
+            powerOf10 = log10(values[i]/65.536)/3;
+        if (values[i] < 65.536 && (*units != ""))
+            powerOf10 = log10(values[i]/65535.0) / 3;
         int unitsId = 0; // need to convert given units to their enum
         pkt.outBuffer.push_back(unitsId << 4 | powerOf10);
         int value = values[i] / pow(10, 3*powerOf10);

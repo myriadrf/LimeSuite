@@ -19,7 +19,7 @@ class LIME_API LMS7_Device
 public:   
     struct Range
     {
-        Range(double a=0, double b=0):min(a),max(b){}; 
+        Range(double a = 0, double b = 0){ min = a, max = b; };
         double min;
         double max;
     };

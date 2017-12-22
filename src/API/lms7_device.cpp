@@ -379,7 +379,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
         if (rx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(false, i, 0, rx_channels[i].cF_offset_nco);
 
-        if (tx_channels[i].cF_offset_nco != 0);
+        if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
     }
 
@@ -636,7 +636,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         if (rx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(false, i, 0, rx_channels[i].cF_offset_nco);
 
-        if (tx_channels[i].cF_offset_nco != 0);
+        if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
     }
 
@@ -1293,13 +1293,13 @@ int LMS7_Device::Init()
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-        if (SetFrequency(true,0,1250e6)!=0)
+        if (SetFrequency(true,2*i,1250e6)!=0)
             return -1;
-        if (SetFrequency(false,0,1200e6)!=0)
-            return -1;
-        if (SetRate(10e6,2)!=0)
+        if (SetFrequency(false,2*i,1200e6)!=0)
             return -1;
     }
+    if (SetRate(10e6,2)!=0)
+        return -1;
     return 0;
 }
 

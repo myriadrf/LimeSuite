@@ -1239,7 +1239,8 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         if(cmphl == 3) //VCO too high
         {
             this->SetActiveChannel(ch); //restore previously used channel
-            return ReportError("TuneVCO(%s) - VCO too high", moduleName);
+            lime::debug("TuneVCO(%s) - VCO too high", moduleName);
+            return -1;
         }
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 255);
         this_thread::sleep_for(settlingTime);
@@ -1247,7 +1248,8 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         if(cmphl == 0) //VCO too low
         {
             this->SetActiveChannel(ch); //restore previously used channel
-            return ReportError("TuneVCO(%s) - VCO too low", moduleName);
+            lime::debug("TuneVCO(%s) - VCO too low", moduleName);
+            return -1;
         }
     }
 
@@ -1323,7 +1325,8 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     this->SetActiveChannel(ch); //restore previously used channel
     if(cmphl == 2)
         return 0;
-    return ReportError("TuneVCO(%s) - failed to lock (cmphl!=2)", moduleName);
+    lime::debug("TuneVCO(%s) - failed to lock (cmphl!=2)", moduleName);
+    return -1;
 }
 
 /** @brief Returns given parameter value from chip register
@@ -2559,11 +2562,6 @@ bool LMS7002M::IsValuesCacheEnabled()
 MCU_BD* LMS7002M::GetMCUControls() const
 {
     return mcuControl;
-}
-
-int LMS7002M::GetChipID() const
-{
-    return mdevIndex;
 }
 
 void LMS7002M::EnableCalibrationByMCU(bool enabled)

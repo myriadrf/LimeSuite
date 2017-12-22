@@ -107,6 +107,7 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     pnlCustomControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Custom controls"));
     wxFlexGridSizer* sizerCustomControls = new wxFlexGridSizer(0, 5, 5, 5);
 
+    sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("ID")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Value")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Power")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Units")));
@@ -319,8 +320,10 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
         || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
-
-        paramList.push_back(ADC_DAC{"VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255});
+        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
+        else
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
         paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
@@ -508,7 +511,7 @@ void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
     }
 
     uint8_t id = spinCustomChannelWr->GetValue();
-    int powerOf10 = cmbCustomPowerOf10Wr->GetSelection()*3;
+    int powerOf10 = (cmbCustomPowerOf10Wr->GetSelection()-8)*3;
     lms_name_t units;
     strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
 

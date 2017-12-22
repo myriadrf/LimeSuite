@@ -144,11 +144,9 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(FPGA* f, LMS7002M* chip)
+Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : fpga(f),lms(chip),chipId(id)
 {
     dataPort = f->GetConnection();
-    fpga = f;
-    lms = chip;
     rxRunning = false;
     txRunning = false;
     mTimestampOffset = 0;
@@ -260,7 +258,7 @@ uint64_t Streamer::GetHardwareTimestamp(void)
     if(not rxRunning.load() and not txRunning.load())
     {
         //stop streaming just in case the board has not been configured
-        dataPort->WriteRegister(0xFFFF, 1 << lms->GetChipID());
+        dataPort->WriteRegister(0xFFFF, 1 << chipId);
         fpga->StopStreaming();
         fpga->ResetTimestamp();
         mTimestampOffset = 0;
@@ -312,7 +310,7 @@ int Streamer::UpdateThreads(bool stopAll)
         rxThread.join();
         rxRunning.store(false);
     }
-    dataPort->WriteRegister(0xFFFF, 1 << lms->GetChipID());
+    dataPort->WriteRegister(0xFFFF, 1 << chipId);
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
     {
@@ -435,7 +433,7 @@ void Streamer::TransmitPacketsLoop()
     const uint8_t maxChannelCount = 2;
     const uint8_t chCount = streamSize;
     const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
-    const int epIndex = lms->GetChipID();
+    const int epIndex = chipId;
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
@@ -580,7 +578,7 @@ void Streamer::ReceivePacketsLoop()
     const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
     const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
     
-    const int epIndex = lms->GetChipID();
+    const int epIndex = chipId;
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
@@ -703,7 +701,7 @@ void Streamer::ReceivePacketsLoop()
             }
         }
         // Re-submit this request to keep the queue full
-        handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize, 0);
+        handles[bi] = dataPort->BeginDataReading(&buffers[bi*bufferSize], bufferSize, epIndex);
         bi = (bi + 1) & (buffersCount-1);
 
         t2 = std::chrono::high_resolution_clock::now();
