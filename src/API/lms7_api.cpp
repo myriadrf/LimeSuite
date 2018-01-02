@@ -70,8 +70,8 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 
     if (info == NULL)
     {
-        *device = LMS7_Device::CreateDevice(nullptr);
-        return LMS_SUCCESS;
+        lime::ReportError(ENODEV, "No default device available");
+        return -1;
     }
 
     lime::ReportError(ENODEV, "Specified device could not be found");
