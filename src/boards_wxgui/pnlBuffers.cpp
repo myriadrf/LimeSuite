@@ -105,7 +105,7 @@ void pnlBuffers::OnGPIOchanged( wxCommandEvent& event )
 
     LMS_GPIOWrite(lmsControl,&value,1);
     {
-        wxMessageBox(wxString::Format(_("GPIO write: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(wxString(_("GPIO Write Failed")));
     }
 }
 
@@ -126,7 +126,7 @@ void pnlBuffers::UpdatePanel()
         chkIQ_SEL2_DIR->SetValue(getbit(value, 4));
         chkG_PWR_DWN->SetValue(getbit(value, 5));
     }
-    else wxMessageBox(wxString::Format(_("GPIO read: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+    else wxMessageBox(wxString::Format(_("GPIO Read: Failed")));
 }
 
 void pnlBuffers::OnReadAll(wxCommandEvent &event)

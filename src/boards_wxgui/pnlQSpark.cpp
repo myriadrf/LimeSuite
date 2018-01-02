@@ -48,6 +48,74 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     FlexGridSizer1 = new wxFlexGridSizer(0, 1, 5, 5);
 
     SetSizer(mainSizer);
+    {
+        auto groupSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("External loopback controls") ), wxVERTICAL );
+        {
+            auto controlsSizer = new wxFlexGridSizer(0, 1, 5, 5);
+            chkLB_1A = new wxCheckBox(this, wxNewId(), _("RF loopback ch.A"));
+            chkLB_1A->SetToolTip(_("[RFLB_A_EN] External RF loopback TxBAND2->RxLNAH channel A"));
+            Connect(chkLB_1A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkLB_1A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkLB_1B = new wxCheckBox(this, wxNewId(), _("RF loopback ch.B"));
+            chkLB_1B->SetToolTip(_("[RFLB_B_EN] External RF loopback TxBAND2->RxLNAH channel B"));
+            Connect(chkLB_1B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkLB_1B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+
+            chkSH_1A = new wxCheckBox(this, wxNewId(), _("Ch.A shunt"));
+            chkSH_1A->SetToolTip(_("[TX1_2_LB_SH]"));
+            Connect(chkSH_1A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkSH_1A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkSH_1B = new wxCheckBox(this, wxNewId(), _("Ch.B shunt"));
+            chkSH_1B->SetToolTip(_("[TX2_2_LB_SH]"));
+            Connect(chkSH_1B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkSH_1B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkAT_1A = new wxCheckBox(this, wxNewId(), _("Ch.A attenuator"));
+            chkAT_1A->SetToolTip(_("[TX1_2_LB_AT]"));
+            Connect(chkAT_1A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkAT_1A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkAT_1B = new wxCheckBox(this, wxNewId(), _("Ch.B attenuator"));
+            chkAT_1B->SetToolTip(_("[TX2_2_LB_AT]"));
+            Connect(chkAT_1B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkAT_1B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            auto lms1sizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LMS#1") ), wxVERTICAL );
+            lms1sizer->Add(controlsSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+            groupSizer->Add(lms1sizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+        }
+        {
+            auto controlsSizer = new wxFlexGridSizer(0, 1, 5, 5);
+            chkLB_2A = new wxCheckBox(this, wxNewId(), _("RF loopback ch.A"));
+            chkLB_2A->SetToolTip(_("[RFLB_A_EN] External RF loopback TxBAND2->RxLNAH channel A"));
+            Connect(chkLB_2A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkLB_2A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkLB_2B = new wxCheckBox(this, wxNewId(), _("RF loopback ch.B"));
+            chkLB_2B->SetToolTip(_("[RFLB_B_EN] External RF loopback TxBAND2->RxLNAH channel B"));
+            Connect(chkLB_2B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkLB_2B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+
+            chkSH_2A = new wxCheckBox(this, wxNewId(), _("Ch.A shunt"));
+            chkSH_2A->SetToolTip(_("[TX1_2_LB_SH]"));
+            Connect(chkSH_2A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkSH_2A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkSH_2B = new wxCheckBox(this, wxNewId(), _("Ch.B shunt"));
+            chkSH_2B->SetToolTip(_("[TX2_2_LB_SH]"));
+            Connect(chkSH_2B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkSH_2B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkAT_2A = new wxCheckBox(this, wxNewId(), _("Ch.A attenuator"));
+            chkAT_2A->SetToolTip(_("[TX1_2_LB_AT]"));
+            Connect(chkAT_2A->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkAT_2A, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            chkAT_2B = new wxCheckBox(this, wxNewId(), _("Ch.B attenuator"));
+            chkAT_2B->SetToolTip(_("[TX2_2_LB_AT]"));
+            Connect(chkAT_2B->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnlQSpark::RegisterParameterChangeHandler), NULL, this);
+            controlsSizer->Add(chkAT_2B, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+            auto lms1sizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("LMS#2") ), wxVERTICAL );
+            lms1sizer->Add(controlsSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+            groupSizer->Add(lms1sizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP |  wxALL, 5);
+        }
+        mainSizer->Add(groupSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+    }
+
+
 
     wxSize freqTextfieldSize(64, -1);
     mPanelStreamPLL = new wxPanel(this, wxNewId());
@@ -74,7 +142,7 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     streamPllGroup->Fit(mPanelStreamPLL);
     FlexGridSizer1->Add(mPanelStreamPLL, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-    wxStaticBoxSizer* chBox = new wxStaticBoxSizer(wxVERTICAL, this, _T(""));
+    wxStaticBoxSizer* chBox = new wxStaticBoxSizer(wxVERTICAL, this, _T("ADC/DAC channel controls"));
     wxFlexGridSizer* chSizer = new wxFlexGridSizer(6, 0, 0, 0);
     wxFlexGridSizer* chSelect = new wxFlexGridSizer(0, 2, 0, 0);
     rbChannelA = new wxRadioButton(this, wxNewId(), wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0);
@@ -216,7 +284,7 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     loopbackGroup->Add(loopbackSizer, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
     chSizer->Add(loopbackGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND, 5);
 
-    mainSizer->Add(FlexGridSizer1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    mainSizer->Add(FlexGridSizer1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
 
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
@@ -242,6 +310,20 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     controlsPtr2Registers[spinRX_GCORRQ] = Register(0x00A1, 10, 0, 2047);
     controlsPtr2Registers[spinRX_GCORRI] = Register(0x00A2, 10, 0, 2047);
     controlsPtr2Registers[spinRX_PHCORR] = Register(0x00A3, 11, 0, 0);
+      
+    controlsPtr2Registers[chkLB_1A] = Register(0x0017, 1, 0, 2);
+    controlsPtr2Registers[chkLB_1B] = Register(0x0017, 5, 4, 2);
+    controlsPtr2Registers[chkLB_2A] = Register(0x0017, 9, 8, 2);
+    controlsPtr2Registers[chkLB_2B] = Register(0x0017, 13, 12, 2);
+    controlsPtr2Registers[chkSH_1A] = Register(0x0017, 3, 3, 1);
+    controlsPtr2Registers[chkSH_1B] = Register(0x0017, 7, 7, 1);
+    controlsPtr2Registers[chkSH_2A] = Register(0x0017, 11, 11, 1);
+    controlsPtr2Registers[chkSH_2B] = Register(0x0017, 15, 15, 1);
+    controlsPtr2Registers[chkAT_1A] = Register(0x0017, 2, 2, 0);
+    controlsPtr2Registers[chkAT_1B] = Register(0x0017, 6, 6, 0);
+    controlsPtr2Registers[chkAT_2A] = Register(0x0017, 10, 10, 0);
+    controlsPtr2Registers[chkAT_2B] = Register(0x0017, 14, 14, 0);
+
 
     controlsPtr2Registers[cmbInsel] = Register(0x0080, 2, 2, 0);
     
@@ -271,18 +353,23 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
         wxMessageBox(_("device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
-    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
     Register reg = controlsPtr2Registers[event.GetEventObject()];
+    int mac = (reg.address!=0x17) && (rbChannelB->GetValue()) ? 0x2 : 0x1;
+    LMS_WriteFPGAReg(lmsControl, 0xFFFF,  mac);
+
     unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
     uint16_t regValue;
     LMS_ReadFPGAReg(lmsControl,reg.address,&regValue);
 
     regValue &= ~mask;
-    regValue |= (event.GetInt() << reg.lsb) & mask;
+    int evtVal = event.GetInt();
+    if (event.GetEventObject() == chkLB_1A || event.GetEventObject() == chkLB_1B || event.GetEventObject() == chkLB_2A || event.GetEventObject() == chkLB_2B)
+        evtVal++;
+    regValue |= ( evtVal << reg.lsb) & mask;
 
     if(LMS_WriteFPGAReg(lmsControl, reg.address, regValue) != 0)
-        wxMessageBox(LMS_GetLastErrorMessage(), wxString::Format("%s", LMS_GetLastErrorMessage()));
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
 }
 
 pnlQSpark::~pnlQSpark()
@@ -313,6 +400,9 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
 
         value = value & mask;
         value = value >> reg.lsb;
+        
+        if (iter->first == chkLB_1A || iter->first == chkLB_1B || iter->first == chkLB_2A || iter->first == chkLB_2B)
+            value = value == 2 ? 1 : 0;
         if (iter->first->IsKindOf(spinctr))
             reinterpret_cast<wxSpinCtrl*>(iter->first)->SetValue(value);
         else if(iter->first->IsKindOf(checkboxctr))
@@ -331,7 +421,7 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
         uint16_t value;
         if (LMS_ReadFPGAReg(lmsControl, addrs[i], &value) != 0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+            wxMessageBox(_("Read FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
             return;
         }
         fcw <<= 16;
@@ -354,7 +444,7 @@ void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
     txtPllFreqRxMHz->GetValue().ToDouble(&FreqRxMHz);
 
     if (((LMS7_Device*)lmsControl)->SetRate(4, FreqRxMHz*1e6, FreqTxMHz*1e6)!=0)
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("PLL configuration failed"), _("Error"), wxICON_ERROR | wxOK);
     else
         OnNcoFrequencyChanged(event);
 }
@@ -378,7 +468,7 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
     {
         if (LMS_WriteFPGAReg(lmsControl,addrs[i],values[i]) !=0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+            wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
             return;
         }
     }
@@ -399,7 +489,7 @@ void pnlQSpark::OnSwitchToChannelA(wxCommandEvent& event)
 {
     if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 0x1) != 0)
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     wxCommandEvent evt;
@@ -410,7 +500,7 @@ void pnlQSpark::OnSwitchToChannelB(wxCommandEvent& event)
 {
     if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 0x2) != 0)
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     wxCommandEvent evt;

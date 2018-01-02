@@ -73,7 +73,7 @@ ConnectionFX3::ConnectionFX3(void *arg, const std::string &vidpid, const std::st
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(vidpid, serial, index) != 0)
-        lime::error(GetLastErrorMessage());
+        lime::error("Failed to open device");
 
     commandsToBulkCtrl = commandsToBulkCtrlHw2;
 

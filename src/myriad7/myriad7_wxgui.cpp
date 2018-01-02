@@ -79,7 +79,7 @@ void Myriad7_wxgui::ParameterChangeHandler(wxCommandEvent& event)
 
     if (status != 0)
     {
-        wxMessageBox(wxString::Format(_("Failed to write Myriad7 GPIOs: %s"), LMS_GetLastErrorMessage()), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Failed to write Myriad7 GPIOs"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
 }
@@ -99,7 +99,7 @@ void Myriad7_wxgui::UpdatePanel()
 
     if (status != 0)
     {
-        wxMessageBox(wxString::Format(_("Failed to read Myriad7 GPIOs: %s"), LMS_GetLastErrorMessage()), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Failed to read Myriad7 GPIOs"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     cmbGPIO_1_0->SetSelection(dataRd[0] & 0x3);

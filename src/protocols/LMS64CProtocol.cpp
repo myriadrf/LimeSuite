@@ -28,7 +28,7 @@ const int LMS_RST_PULSE = 2;
 
 static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket &pkt)
 {
-    if (status != 0) return ReportError(EIO, GetLastErrorMessage());
+    if (status != 0) return -1;
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return 0;

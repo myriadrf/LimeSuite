@@ -2060,7 +2060,7 @@ int LMS7002M::RegistersTest(const char* fileName)
     }
 
     if (allTestSuccess) return 0;
-    ReportError(-1, "RegistersTest() failed - %s", GetLastErrorMessage());
+    lime::error("RegistersTest() failed");
     return -1;
 }
 

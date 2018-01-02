@@ -56,7 +56,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("Rx calibration failed"));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
@@ -90,7 +90,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("Tx calibration failed"));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);

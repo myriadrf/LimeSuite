@@ -189,7 +189,7 @@ void RFSpark_wxgui::OnRefreshAllADC(wxCommandEvent& event)
         lms_name_t units;
         if (LMS_ReadCustomBoardParam(lmsControl,i,&val,units)!=0)
         {
-            wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+            wxMessageBox(_("Error reading ADC values"), _("Warning"));
             return;
         }
         mADCdata[i].channel = i;
@@ -211,7 +211,7 @@ void RFSpark_wxgui::OnWriteGPIO(wxCommandEvent& event)
         values[i] = value;
     }
     if (LMS_GPIOWrite(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("GPIO write failed"), _("Warning"));
 }
 
 void RFSpark_wxgui::OnReadGPIO(wxCommandEvent& event)
@@ -219,7 +219,7 @@ void RFSpark_wxgui::OnReadGPIO(wxCommandEvent& event)
     std::vector<uint8_t> values(mGPIOboxes.size()/8);
     if (LMS_GPIORead(lmsControl, values.data(), mGPIOboxes.size()/8) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("GPIO read failed"), _("Warning"));
         return;
     }
     size_t gpioIndex = 0;

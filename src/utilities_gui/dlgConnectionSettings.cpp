@@ -46,9 +46,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     if(selection != wxNOT_FOUND && selection < ret)
     {
         if (LMS_Open(lmsControl,list[selection],nullptr)!=0)
-        {
-            wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-        }
+            wxMessageBox(wxString(_("Failed to open device")));
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())

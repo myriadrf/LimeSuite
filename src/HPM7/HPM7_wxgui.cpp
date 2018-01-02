@@ -180,8 +180,7 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
     pkt.cmd = lime::CMD_MYRIAD_WR;
     pkt.outBuffer.push_back( 0x20 + tunerIndex * 2 );
     pkt.outBuffer.push_back( event.GetInt() );
-    if (m_serPort->TransferPacket(pkt) != 0)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
@@ -206,9 +205,7 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
     value |= chkTP[tunerIndex]->GetValue() << 4;
     value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);
     pkt.outBuffer.push_back(value);
-
-    if (m_serPort->TransferPacket(pkt) != 0)
-wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
@@ -249,7 +246,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
     if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Failed to read board parameters"));
         return;
     }
 
@@ -295,8 +292,7 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
         pkt.outBuffer.push_back(0x31);
         pkt.outBuffer.push_back(cmbDAC_B->GetSelection());
     }
-    if (m_serPort->TransferPacket(pkt) != 0)
-wxMessageBox(_("Board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::SelectBand(unsigned int i)
@@ -339,7 +335,7 @@ bool HPM7_wxgui::UploadGPIO()
     pkt.outBuffer.push_back(value);
     if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Uploading HPM7 GPIO failed"), _("Warning"));
         return false;
     }
 return true;

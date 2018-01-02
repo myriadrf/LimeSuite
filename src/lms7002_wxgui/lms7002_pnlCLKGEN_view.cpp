@@ -171,8 +171,8 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     if (lms->SetInterfaceFrequency(freqMHz*1e6, interp, decim))
     {
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-        return ;
+        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+        return;
     }
     auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
 
@@ -184,7 +184,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
     if (fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
@@ -209,7 +209,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     if (lms->SetInterfaceFrequency(freqMHz*1e6, interp, decim))
     {
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
         auto freq = lms->GetFrequencyCGEN();
         lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
         UpdateGUI();
@@ -230,7 +230,7 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     else
         status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
@@ -250,7 +250,7 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     if (lms->TuneVCO(lime::LMS7002M::VCO_CGEN)!=0)
     {
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(wxString(_("CLKGEN VCO Tune failed")));
         return ;
     }
     auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
@@ -270,7 +270,7 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
     else
         status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("CLKGEN VCO Tune: failed to set interface frequency"));
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(CSW_VCO_CGEN),&value);
     cmbCSW_VCO_CGEN->SetValue(value);

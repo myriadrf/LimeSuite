@@ -153,7 +153,7 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
     int status = LMS_Reset(lmsControl);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Chip reset failed"), _("Warning"));
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
@@ -163,7 +163,7 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
 {
     int status = LMS_Init(lmsControl);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Load Default: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Load Default failed"), _("Warning"));
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
@@ -213,7 +213,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     int status = LMS_LoadConfig(lmsControl,dlg.GetPath().To8BitData());
     if (status != 0)
     {
-            wxMessageBox(wxString::Format(_("Failed to load file: %s"), LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Failed to load file"), _("Warning"));
     }
     wxCommandEvent tevt;
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
@@ -287,7 +287,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,false);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Download all registers failed"), _("Warning"));
     UpdateVisiblePanel();
 }
 
@@ -295,7 +295,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,true);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Upload all registers failed"), _("Warning"));
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
@@ -304,10 +304,10 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
-    double t;
+    double t = 0.0;
     int status = LMS_GetChipTemperature(lmsControl,0,&t);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Read chip temperature: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Failed to read chip temperature"), _("Warning"));
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
 }
 
@@ -356,7 +356,7 @@ void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     int status = lms->CalibrateInternalADC();
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Internal ADC calibration failed"), _("Warning"));
 }
 
 int lms7002_mainPanel::GetLmsSelection()

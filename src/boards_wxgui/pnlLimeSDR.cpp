@@ -156,7 +156,7 @@ void pnlLimeSDR::OnGPIOChange(wxCommandEvent& event)
     value |= chkTX2_2_LB_SH->GetValue() << 6;
 
     if(lmsControl && LMS_WriteFPGAReg(lmsControl, addr, value))
-        lime::error("Board loopback: %s", LMS_GetLastErrorMessage());
+    lime::error("Board loopback cahnge failed");
 }
 
 void pnlLimeSDR::OnUsrGPIODirChange(wxCommandEvent& event)
@@ -172,7 +172,7 @@ void pnlLimeSDR::OnUsrGPIODirChange(wxCommandEvent& event)
         gpioOut[i]->Enable(check);
     }
     if(lmsControl && LMS_GPIODirWrite(lmsControl, value, gpioCnt/8))
-        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
+        lime::error("GPIO direction change failed");
 }
 
 void pnlLimeSDR::OnUsrGPIOChange(wxCommandEvent& event)
@@ -186,7 +186,7 @@ void pnlLimeSDR::OnUsrGPIOChange(wxCommandEvent& event)
     }
 
     if(lmsControl && LMS_GPIOWrite(lmsControl, value, gpioCnt/8))
-        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
+        lime::error("GPIO write failed");
 }
 
 void pnlLimeSDR::UpdatePanel()
@@ -206,7 +206,7 @@ void pnlLimeSDR::UpdatePanel()
         chkTX2_2_LB_SH->SetValue((value >> 6) & 0x1);
     }
     else
-        lime::error("Board loopback: %s", LMS_GetLastErrorMessage());
+        lime::error("Board loopback read failed");
 
     if(lmsControl && LMS_GPIODirRead(lmsControl, dir, gpioCnt/8)==0)
     {
@@ -219,7 +219,7 @@ void pnlLimeSDR::UpdatePanel()
     }
     else
     {
-        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
+        lime::error("GPIO direction read failed");
         return;
     }
 
@@ -232,7 +232,7 @@ void pnlLimeSDR::UpdatePanel()
         }
     }
     else
-        lime::error("GPIO: %s", LMS_GetLastErrorMessage());
+        lime::error("GPIO read failed");
 }
 
 void pnlLimeSDR::OnReadAll(wxCommandEvent &event)

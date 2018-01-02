@@ -223,7 +223,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         int status = LMS_ReadCustomBoardParam(lmsControl,mParameters[i].channel,&value,units);
         if (status != 0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
+            wxMessageBox(_("Error reading board parameters"), _("Warning"));
             return;
         }
         mParameters[i].channel = ids[i];

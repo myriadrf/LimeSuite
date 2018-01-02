@@ -57,7 +57,7 @@ ConnectionFT601::ConnectionFT601(void *arg, const unsigned index, const int vid,
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(index, vid, pid) != 0)
-        std::cerr << GetLastErrorMessage() << std::endl;
+        lime::error("Failed to open device");
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
