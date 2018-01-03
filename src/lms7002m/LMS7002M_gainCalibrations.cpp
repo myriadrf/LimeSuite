@@ -116,7 +116,7 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
     }
     RestoreRegisterMap(registersBackup);
     if (status == 0)
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp-1);
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp > 1 ? cg_iamp-1 : 1);
     //logic reset
     Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 0);
     Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 0);

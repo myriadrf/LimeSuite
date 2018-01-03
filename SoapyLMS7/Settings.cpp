@@ -187,7 +187,7 @@ void SoapyLMS7::setDCOffsetMode(const int direction, const size_t channel, const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     if (direction == SOAPY_SDR_RX)
-        lms7Device->ReadParam(LMS7param(DC_BYP_RXTSP),automatic == 0, channel);
+        lms7Device->WriteParam(LMS7param(DC_BYP_RXTSP),automatic == 0, channel);
 }
 
 bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
@@ -232,8 +232,9 @@ std::vector<std::string> SoapyLMS7::listGains(const int direction, const size_t 
 void SoapyLMS7::setGain(const int direction, const size_t channel, const double value)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setGain(%s, %d, %g dB)", dirName, int(channel), value);
     lms7Device->SetGain(direction==SOAPY_SDR_TX,channel,value);
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "Actual %s[%d] gain %g dB", dirName, int(channel), this->getGain(direction, channel));
 }
 
 double SoapyLMS7::getGain(const int direction, const size_t channel) const
@@ -291,7 +292,7 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     bool isTx = direction == SOAPY_SDR_TX;
     if (name == "RF")
     {
-        const auto clkId = (direction == SOAPY_SDR_TX)? LMS_CLOCK_TXTSP : LMS_CLOCK_RXTSP;
+        const auto clkId = (direction == SOAPY_SDR_TX)? LMS_CLOCK_SXT : LMS_CLOCK_SXR;
         lms7Device->SetClockFreq(clkId, frequency, channel);
         _channelsToCal.emplace(direction, channel);
         return;
@@ -312,7 +313,7 @@ double SoapyLMS7::getFrequency(const int direction, const size_t channel, const 
 
     if (name == "RF")
     {
-        const auto clkId = (direction == SOAPY_SDR_TX)? LMS_CLOCK_TXTSP : LMS_CLOCK_RXTSP;
+        const auto clkId = (direction == SOAPY_SDR_TX)? LMS_CLOCK_SXT : LMS_CLOCK_SXR;
         return lms7Device->GetClockFreq(clkId,channel);
     }
 
@@ -755,7 +756,10 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         lms7Device->LoadConfig(value.c_str());
     }
 
-    else throw std::runtime_error("unknown setting key: "+key);
+    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+    {
+        this->writeSetting(SOAPY_SDR_RX, channel, key, value);
+    }
 }
 
 SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_t channel) const
@@ -835,11 +839,31 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         {
             throw std::runtime_error("Invalid TSG_NCO option: " + value);
         }
+    }   
+    else
+    {
+        uint16_t val = std::stoi(value);
+        if (lms7Device->WriteParam(key,val,channel)!=-1)
+            return;
     }
 
-    else throw std::runtime_error("unknown setting key: "+key);
+    throw std::runtime_error("unknown setting key: "+key);
 }
-/*******************************************************************
+
+std::string SoapyLMS7::readSetting(const std::string &key) const
+{
+    return readSetting(SOAPY_SDR_TX, 0, key);
+}
+    
+std::string SoapyLMS7::readSetting(const int direction, const size_t channel, const std::string &key) const
+{
+    int val = lms7Device->ReadParam(key,channel);
+    if ( val !=-1)
+        return std::to_string(val);
+    
+    throw std::runtime_error("unknown setting key: "+key);
+}
+/******************************************************************
  * GPIO API
  ******************************************************************/
 

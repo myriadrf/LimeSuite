@@ -508,16 +508,13 @@ void Streamer::TransmitPacketsLoop()
                 {
                     if (meta.flags & RingFIFO::END_BURST)
                     {
-                        printf("EOB\n");
                         memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                         end_burst = true;
                         continue;
                     }
                     mTxStreams[ch]->underflow++;
                     terminateTx.store(true);
-#ifndef NDEBUG
-                    printf("popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
-#endif
+                    lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                     break;
                 }
             }
@@ -624,7 +621,7 @@ void Streamer::ReceivePacketsLoop()
         }
     }, dataPort, &terminateRx, &txFlagsLock, &resetTxFlags);
 
-    int resetFlagsDelay = 128;
+    int resetFlagsDelay = 0;
     uint64_t prevTs = 0;
     while (terminateRx.load() == false)
     {
@@ -661,7 +658,7 @@ void Streamer::ReceivePacketsLoop()
                 {
                     lime::warning("L");
                     resetTxFlags.notify_one();
-                    resetFlagsDelay = packetsToBatch*buffersCount;
+                    resetFlagsDelay = buffersCount;
                     txLastLateTime.store(pkt[pktIndex].counter);
                     for(auto value: mTxStreams)
                         if (value && value->mActive)
@@ -672,9 +669,7 @@ void Streamer::ReceivePacketsLoop()
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
                 int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
-#ifndef NDEBUG
-                printf("\tRx pktLoss: ts diff: %li  pktLoss: %i\n", pkt[pktIndex].counter - prevTs, packetLoss);
-#endif
+                lime::warning("Rx pktLoss: ts diff: %li  pktLoss: %i", pkt[pktIndex].counter - prevTs, packetLoss);
                 for(auto value: mRxStreams)
                     if (value && value->mActive)
                         value->pktLost += packetLoss;

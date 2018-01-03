@@ -155,6 +155,7 @@ public:
     int SPI_write(uint16_t address, uint16_t data, bool use_cache = true);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int *status = 0);
     int RegistersTest(const char* fileName = "registersTest.txt");
+    static const LMS7Parameter* GetParam(const std::string &name);
     ///@}
 
     ///@name Transmitter, Receiver calibrations
@@ -435,6 +436,7 @@ protected:
     ///@name Algorithms functions
     void BackupAllRegisters();
     void RestoreAllRegisters();
+    
     uint32_t GetRSSI(RSSI_measurements *measurements = nullptr);
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);

@@ -75,8 +75,10 @@ public:
     int SaveConfig(const char *filename, int ind = -1) const;
     int ReadLMSReg(uint16_t address, int ind = -1) const;
     int WriteLMSReg(uint16_t address, uint16_t val, int ind = -1) const;
-    uint16_t ReadParam(struct LMS7Parameter param, int channel = -1, bool forceReadFromChip = false) const;
-    int WriteParam(struct LMS7Parameter param, uint16_t val, int channel = -1);
+    uint16_t ReadParam(const struct LMS7Parameter& param, int channel = -1, bool forceReadFromChip = false) const;
+    int ReadParam(const std::string& param, int channel = -1, bool forceReadFromChip = false) const;
+    int WriteParam(const struct LMS7Parameter& param, uint16_t val, int channel = -1);
+    int WriteParam(const std::string& param, uint16_t val, int channel = -1);
     int SetActiveChip(unsigned ind);
     lime::LMS7002M* GetLMS(int index = -1) const;
     int UploadWFM(const void **samples, uint8_t chCount, int sample_count, lime::StreamConfig::StreamDataFormat fmt) const;

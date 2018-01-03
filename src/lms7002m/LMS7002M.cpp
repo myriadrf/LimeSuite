@@ -1336,7 +1336,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 */
 uint16_t LMS7002M::Get_SPI_Reg_bits(const LMS7Parameter &param, bool fromChip)
 {
-	return Get_SPI_Reg_bits(param.address, param.msb, param.lsb, fromChip);
+    return Get_SPI_Reg_bits(param.address, param.msb, param.lsb, fromChip);
 }
 
 /** @brief Returns given parameter value from chip register
@@ -1400,6 +1400,17 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, c
         return status;
     SPI_write_batch(&addresses[0], &data[0], addresses.size(), true);
     return status;
+}
+
+/** @brief Get parameter by name
+    @param name parameter name
+*/
+const LMS7Parameter* LMS7002M::GetParam(const std::string &name)
+{
+    for(const LMS7Parameter* parameter : LMS7parameterList)
+        if (std::string(parameter->name) == name)
+            return parameter;
+    return nullptr;
 }
 
 /** @brief Sets SX frequency

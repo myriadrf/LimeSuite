@@ -36,7 +36,10 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
 {
     LMS7_Device* device;
     if (obj)
+    {
         lime::ConnectionRegistry::freeConnection(obj->connection);
+        obj->connection = nullptr;
+    }
 
     auto conn = lime::ConnectionRegistry::makeConnection(handle);
     if (!conn)
@@ -64,8 +67,11 @@ LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
     if (obj != nullptr)
     {
         std::swap(lms_list,obj->lms_list);
+        for (auto lms : lms_list)
+            lms->SetConnection(nullptr);
         this->rx_channels = obj->rx_channels;
         this->tx_channels = obj->tx_channels;
+        lime::ConnectionRegistry::freeConnection(obj->connection);
         obj->connection = nullptr;
         delete obj;
     }
@@ -1524,7 +1530,7 @@ lms_dev_info_t* LMS7_Device::GetInfo()
     strncpy(devInfo.firmwareVersion,info.firmwareVersion.c_str(),sizeof(devInfo.firmwareVersion)-1);
     strncpy(devInfo.hardwareVersion,info.hardwareVersion.c_str(),sizeof(devInfo.hardwareVersion)-1);
     strncpy(devInfo.protocolVersion,info.protocolVersion.c_str(),sizeof(devInfo.protocolVersion)-1);
-    snprintf(devInfo.gatewareVersion,sizeof(devInfo.gatewareVersion)-1,"%s.%s", info.gatewareVersion.c_str(),info.gatewareRevision.c_str());
+    strncpy(devInfo.gatewareVersion, (info.gatewareVersion+"."+ info.gatewareRevision).c_str(), sizeof(devInfo.gatewareVersion) - 1);
     strncpy(devInfo.gatewareTargetBoard,info.gatewareTargetBoard.c_str(),sizeof(devInfo.gatewareTargetBoard)-1);
     info.boardSerialNumber = info.boardSerialNumber;
     devInfo.boardSerialNumber = info.boardSerialNumber;
@@ -1616,7 +1622,7 @@ int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind) const
      return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);  
 }
 
-uint16_t LMS7_Device::ReadParam(struct LMS7Parameter param, int chan, bool forceReadFromChip) const
+uint16_t LMS7_Device::ReadParam(const struct LMS7Parameter& param, int chan, bool fromChip) const
 {
     int lmsChip; 
     if (chan >= 0)
@@ -1626,10 +1632,28 @@ uint16_t LMS7_Device::ReadParam(struct LMS7Parameter param, int chan, bool force
             lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
     }
     else lmsChip = lms_chip_id;
-    return lms_list.at(lmsChip)->Get_SPI_Reg_bits(param, forceReadFromChip);
+    return lms_list.at(lmsChip)->Get_SPI_Reg_bits(param, fromChip);
 }
 
-int LMS7_Device::WriteParam(struct LMS7Parameter param, uint16_t val, int chan)
+int LMS7_Device::ReadParam(const std::string& name, int chan, bool fromChip) const
+{
+    const LMS7Parameter* param = lime::LMS7002M::GetParam(name);
+    if (!param)
+        return -1;
+    
+    int lmsChip; 
+    if (chan >= 0)
+    {
+        lmsChip = chan/2;
+        if (param->address >= 0x100)
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
+    }
+    else lmsChip = lms_chip_id;
+
+    return lms_list.at(lmsChip)->Get_SPI_Reg_bits(param->address, param->msb, param->lsb, fromChip);
+}
+
+int LMS7_Device::WriteParam(const struct LMS7Parameter& param, uint16_t val, int chan)
 {
     int lmsChip; 
     if (chan >= 0)
@@ -1641,6 +1665,25 @@ int LMS7_Device::WriteParam(struct LMS7Parameter param, uint16_t val, int chan)
     else lmsChip = lms_chip_id;
     
     return lms_list.at(lmsChip)->Modify_SPI_Reg_bits(param, val);
+}
+
+int LMS7_Device::WriteParam(const std::string& name, uint16_t val, int chan)
+{
+    const LMS7Parameter* param = lime::LMS7002M::GetParam(name);
+    
+    if (!param)
+        return -1;
+    
+    int lmsChip; 
+    if (chan >= 0)
+    {
+        lmsChip = chan/2;
+        if (param->address >= 0x100)
+            lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
+    }
+    else lmsChip = lms_chip_id;
+ 
+    return lms_list.at(lmsChip)->Modify_SPI_Reg_bits(param->address, param->msb, param->lsb, val);
 }
 
 int LMS7_Device::SetActiveChip(unsigned ind)

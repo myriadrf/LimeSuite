@@ -134,7 +134,7 @@ public:
 
     std::vector<std::string> listGains(const int direction, const size_t channel) const;
 
-    void setGain(const int direction, const size_t channel, const double value);
+    void setGain(const int direction, const size_t channel, const double value) override;
     
     double getGain(const int direction, const size_t channel) const;
 
@@ -254,6 +254,10 @@ public:
     SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const;
 
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
+    
+    std::string readSetting(const std::string &key) const;
+    
+    std::string readSetting(const int direction, const size_t channel, const std::string &key) const;
 
     /*******************************************************************
      * GPIO API
