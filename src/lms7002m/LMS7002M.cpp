@@ -1633,9 +1633,9 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
 float_type LMS7002M::GetFrequencySX(bool tx)
 {
     Channel ch = this->GetActiveChannel(); //remember previously used channel
-	float_type dMul;
-	this->SetActiveChannel(tx?ChSXT:ChSXR);
-	uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0);	// read whole register to reduce SPI transfers
+    float_type dMul;
+    this->SetActiveChannel(tx?ChSXT:ChSXR);
+    uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13, 0);	// read whole register to reduce SPI transfers
     uint32_t gFRAC = ((gINT&0xF) * 65536) | Get_SPI_Reg_bits(0x011D, 15, 0);
 
     const float_type refClk_Hz = GetReferenceClk_SX(tx);

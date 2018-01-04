@@ -1207,11 +1207,25 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     
     std::vector<ChannelInfo>& channels = isTx ? tx_channels : rx_channels;
     
+    auto setTDD = [=](double center)->int
+    {
+        std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;    
+        bool tdd =  fabs(other[chA].freq+other[chA].cF_offset_nco-center) > 0.1 ? false : true;    
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
+        lms->Modify_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF, tdd ? 0 : 1);
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        lms->Modify_SPI_Reg_bits(LMS7_PD_VCO, tdd ? 1 : 0);
+        if (isTx || (!tdd))
+            if (lms->SetFrequencySX(isTx, center) != 0)
+                return -1;
+        return 0;
+    };
+    
     channels[chan].freq = f_Hz;
     if (channels[chA].freq > 0 && channels[chB].freq > 0) 
     {
         double delta = fabs(channels[chA].freq - channels[chB].freq);
-        if (delta > 1)
+        if (delta > 0.1)
         {
             double rate = GetRate(isTx,chan);
             if ((delta <= rate*31) && (delta+rate <= 160e6))
@@ -1221,7 +1235,7 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
                     center = 30e6;
                 channels[chA].cF_offset_nco = center-channels[chA].freq;
                 channels[chB].cF_offset_nco = center-channels[chB].freq;
-                if (lms->SetFrequencySX(isTx, center) != 0)
+                if (setTDD(center) != 0)
                     return -1;
                 if (SetRate(isTx,rate,2)!=0)
                     return -1;
@@ -1232,7 +1246,7 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 
     if (f_Hz < 30e6)
     {
-        if (lms->SetFrequencySX(isTx, 30e6) != 0)
+        if (setTDD(30e6) != 0)
             return -1;
         channels[chan].cF_offset_nco = 30e6-f_Hz;
         if (SetRate(isTx,GetRate(isTx,chan),2)!=0)
@@ -1242,8 +1256,11 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 
     if (channels[chan].cF_offset_nco != 0)
         SetNCOFreq(isTx, 0, -1, 0.0);
-    channels[chan].cF_offset_nco = 0;
-    if (lms->SetFrequencySX(isTx, f_Hz) != 0)
+    channels[chA].cF_offset_nco = 0;
+    channels[chB].cF_offset_nco = 0;
+    channels[chA].freq = f_Hz;
+    channels[chB].freq = f_Hz;
+    if (setTDD(f_Hz) != 0)
         return -1;
     return 0;
 }
@@ -1252,6 +1269,8 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 {
    lime::LMS7002M* lms = lms_list[chan / 2];
    double offset = tx ? tx_channels[chan].cF_offset_nco : rx_channels[chan].cF_offset_nco;
+   if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0) && (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1))
+       tx = true; //TDD - Tx PLL used for TX and RX
    return lms->GetFrequencySX(tx) - offset;
 }
 

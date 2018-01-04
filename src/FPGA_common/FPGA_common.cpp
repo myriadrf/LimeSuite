@@ -10,10 +10,6 @@
 #include "Logger.h"
 using namespace std;
 
-#ifndef NDEBUG
-    #define LMS_VERBOSE_OUTPUT
-#endif
-
 namespace lime
 {
 
@@ -275,9 +271,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
     Fvco = inputFreq*M/N; //actual VCO freq
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("M=%i, N=%i, Fvco=%.3f MHz\n", M, N, Fvco / 1e6);
-#endif
+    lime::debug("M=%i, N=%i, Fvco=%.3f MHz\n", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
 
@@ -320,7 +314,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     addrs.push_back(0x0028); values.push_back(c15_c8_odds_byps);
     addrs.push_back(0x0023); values.push_back(reg23val | PLLCFG_START);
     if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-        ReportError(EIO, "SetPllFrequency: PLL CFG, failed to write registers");
+        lime::error("SetPllFrequency: PLL CFG, failed to write registers");
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
@@ -370,9 +364,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
                             j += 16;
                         if ((buf[j]!=0xAA || buf[j+1]!=0x5A || buf[j+2]!=0x55))
                         {
-#ifdef LMS_VERBOSE_OUTPUT
-                            printf("%d: %02X %02X %02X\n", j, buf[j], buf[j + 1], buf[j + 2]);
-#endif
                             result = false;
                             break;
                         }
@@ -397,14 +388,12 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             {
                 clocks[i].findPhase = false;
                 clocks[i].phaseShift_deg = (min+max)/2;
-//#ifdef LMS_VERBOSE_OUTPUT
-                printf("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
-//#endif
+                lime::debug("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }
             else
             {
-                printf("phase search FAIL\n");
+                lime::warning("phase search FAIL\n");
                 clocks[i].findPhase = false;
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }

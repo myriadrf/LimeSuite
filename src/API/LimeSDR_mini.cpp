@@ -37,7 +37,7 @@ int LMS7_LimeSDR_mini::Init()
     const std::vector<regVal> initVals = {
         {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
-        {0x0089, 0x1078}, {0x008B, 0x3992}, {0x008C, 0x267B}, {0x0092, 0xFFFF},
+        {0x0089, 0x1078}, {0x008B, 0x3E00}, {0x008C, 0x267B}, {0x0092, 0xFFFF},
 	{0x0093, 0x03FF}, {0x00A6, 0x0001}, {0x00A9, 0x8000}, {0x00AC, 0x2000},
         {0x0108, 0x318C}, {0x010C, 0x8865}, {0x010E, 0x0000}, {0x0110, 0x2B14},
         {0x0113, 0x03C2}, {0x011C, 0xA941}, {0x011D, 0x0000}, {0x011E, 0x0740},
@@ -81,10 +81,24 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     
     ChannelInfo& channel = isTx ? tx_channels[0] : rx_channels[0];
     channel.freq = f_Hz;
+       
+    auto setTDD = [=](double center)->int
+    {
+        ChannelInfo& other = isTx ? rx_channels[0] : tx_channels[0];    
+        bool tdd =  fabs(other.freq+other.cF_offset_nco-center) > 0.1 ? false : true;    
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
+        lms->Modify_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF, tdd ? 0 : 1);
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        lms->Modify_SPI_Reg_bits(LMS7_PD_VCO, tdd ? 1 : 0);
+        if (isTx || (!tdd))
+            if (lms->SetFrequencySX(isTx, center) != 0)
+                return -1;
+        return 0;
+    };
      
     if (f_Hz < 30e6)
     {
-        if (lms->SetFrequencySX(isTx, 30e6) != 0)
+        if (setTDD(30e6) != 0)
             return -1;
         channel.cF_offset_nco = 30e6-f_Hz;
         if (SetRate(isTx,GetRate(isTx,0),2)!=0)
@@ -95,7 +109,7 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     if (channel.cF_offset_nco != 0)
         SetNCOFreq(isTx, 0, -1, 0.0);
     channel.cF_offset_nco = 0;
-    if (lms->SetFrequencySX(isTx, f_Hz) != 0)
+    if (setTDD(f_Hz) != 0)
         return -1;
     return 0;
 }
