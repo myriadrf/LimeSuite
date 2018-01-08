@@ -100,13 +100,10 @@ protected:
 
     bool isConnected;
 
-    int mCtrlWrEndPtAddr;
-    int mCtrlRdEndPtAddr;
-    int mStreamWrEndPtAddr;
-    int mStreamRdEndPtAddr;
-
-    uint32_t txSize;
-    uint32_t rxSize;
+    static const int streamWrEp;
+    static const int streamRdEp;
+    static const int ctrlWrEp;
+    static const int ctrlRdEp;
 #ifndef __unix__
     FT_HANDLE mFTHandle;
     int ReinitPipe(unsigned char ep);
@@ -114,15 +111,11 @@ protected:
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
 #endif
-
     std::mutex mExtraUsbMutex;
 };
-
-
 
 class ConnectionFT601Entry : public ConnectionRegistryEntry
 {

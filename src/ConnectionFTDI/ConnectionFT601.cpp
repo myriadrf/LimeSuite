@@ -18,21 +18,19 @@
 using namespace std;
 using namespace lime;
 
+const int ConnectionFT601::streamWrEp = 0x03;
+const int ConnectionFT601::streamRdEp = 0x83;
+const int ConnectionFT601::ctrlWrEp = 0x02;
+const int ConnectionFT601::ctrlRdEp = 0x82;
+
 ConnectionFT601::ConnectionFT601(void *arg)
 {
     isConnected = false;
-
-    mStreamWrEndPtAddr = 0x03;
-    mStreamRdEndPtAddr = 0x83;
-    isConnected = false;
-    txSize = 0;
-    rxSize = 0;
 #ifndef __unix__
-	mFTHandle = NULL;
+    mFTHandle = NULL;
 #else
     dev_handle = 0;
-    devs = 0;
-	mUsbCounter = 0;
+    mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
 }
@@ -42,18 +40,11 @@ ConnectionFT601::ConnectionFT601(void *arg)
 ConnectionFT601::ConnectionFT601(void *arg, const unsigned index, const int vid, const int pid)
 {
     isConnected = false;
-
-    mStreamWrEndPtAddr = 0x03;
-    mStreamRdEndPtAddr = 0x83;
-    isConnected = false;
-    txSize = 0;
-    rxSize = 0;
 #ifndef __unix__
     mFTHandle = NULL;
 #else
     dev_handle = 0;
-    devs = 0;
-	mUsbCounter = 0;
+    mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(index, vid, pid) != 0)
@@ -133,28 +124,28 @@ int ConnectionFT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
-	DWORD devCount;
-	FT_STATUS ftStatus = FT_OK;
-	DWORD dwNumDevices = 0;
-	// Open a device
-	ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
-	if (FT_FAILED(ftStatus))
-	{
-		ReportError(ENODEV, "Failed to list USB Devices");
-		return -1;
-	}
-	FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
-	FT_AbortPipe(mFTHandle, 0x82);
-	FT_AbortPipe(mFTHandle, 0x02);
-	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x82, 64);
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
-    FT_SetPipeTimeout(mFTHandle, 0x02, 500);
-    FT_SetPipeTimeout(mFTHandle, 0x82, 500);
-    FT_SetPipeTimeout(mFTHandle, mStreamRdEndPtAddr, 0);
-    FT_SetPipeTimeout(mFTHandle, mStreamWrEndPtAddr, 0);
-	isConnected = true;
-	return 0;
+    DWORD devCount;
+    FT_STATUS ftStatus = FT_OK;
+    DWORD dwNumDevices = 0;
+    // Open a device
+    ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
+    if (FT_FAILED(ftStatus))
+    {
+        ReportError(ENODEV, "Failed to list USB Devices");
+        return -1;
+    }
+    FT_AbortPipe(mFTHandle, streamRdEp);
+    FT_AbortPipe(mFTHandle, ctrlRdEp);
+    FT_AbortPipe(mFTHandle, ctrlWrEp);
+    FT_AbortPipe(mFTHandle, streamWrEp);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlRdEp, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlWrEp, 64);
+    FT_SetPipeTimeout(mFTHandle, ctrlWrEp, 500);
+    FT_SetPipeTimeout(mFTHandle, ctrlRdEp, 500);
+    FT_SetPipeTimeout(mFTHandle, streamRdEp, 0);
+    FT_SetPipeTimeout(mFTHandle, streamWrEp, 0);
+    isConnected = true;
+    return 0;
 #else
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 
@@ -179,9 +170,9 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     }
     lime::debug("Claimed Interface");
     
-    FT_FlushPipe(0x82);  //clear ctrl ep rx buffer
-    FT_SetStreamPipe(0x82,64);
-    FT_SetStreamPipe(0x02,64);
+    FT_FlushPipe(ctrlRdEp);  //clear ctrl ep rx buffer
+    FT_SetStreamPipe(ctrlRdEp,64);
+    FT_SetStreamPipe(ctrlWrEp,64);
     isConnected = true;
     return 0;
 #endif
@@ -192,12 +183,12 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
 void ConnectionFT601::Close()
 {
 #ifndef __unix__
-	FT_Close(mFTHandle);
+    FT_Close(mFTHandle);
 #else
     if(dev_handle != 0)
     {
-        FT_FlushPipe(mStreamRdEndPtAddr);
-        FT_FlushPipe(0x82);
+        FT_FlushPipe(streamRdEp);
+        FT_FlushPipe(ctrlRdEp);
         libusb_release_interface(dev_handle, 1);
         libusb_close(dev_handle);
         dev_handle = 0;
@@ -238,16 +229,15 @@ int ConnectionFT601::Write(const unsigned char *buffer, const int length, int ti
         return 0;
 
 #ifndef __unix__
-    // Write to channel 1 ep 0x02
     ULONG ulBytesWrite = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED	vOverlapped = { 0 };
     FT_InitializeOverlapped(mFTHandle, &vOverlapped);
-    ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
+    ftStatus = FT_WritePipe(mFTHandle, ctrlWrEp, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
     if (ftStatus != FT_IO_PENDING)
     {
         FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
-        ReinitPipe(0x02);
+        ReinitPipe(ctrlWrEp);
         return -1;
     }
 
@@ -256,13 +246,13 @@ int ConnectionFT601::Write(const unsigned char *buffer, const int length, int ti
     {
         if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE) == FALSE)
         {
-            ReinitPipe(0x02);
+            ReinitPipe(ctrlWrEp);
             ulBytesWrite = -1;
         }
     }
     else
     {
-        ReinitPipe(0x02);
+        ReinitPipe(ctrlWrEp);
         ulBytesWrite = -1;
     }
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
@@ -271,7 +261,7 @@ int ConnectionFT601::Write(const unsigned char *buffer, const int length, int ti
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, timeout_ms);
+    libusb_bulk_transfer(dev_handle, ctrlWrEp, wbuffer, length, &actual, timeout_ms);
     len = actual;
     delete[] wbuffer;
     return len;
@@ -293,18 +283,15 @@ int ConnectionFT601::Read(unsigned char *buffer, const int length, int timeout_m
     if(IsOpen() == false)
         return 0;
 #ifndef __unix__
-    //
-    // Read from channel 1 ep 0x82
-    //
     ULONG ulBytesRead = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED	vOverlapped = { 0 };
     FT_InitializeOverlapped(mFTHandle, &vOverlapped);
-    ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, &vOverlapped);
+    ftStatus = FT_ReadPipe(mFTHandle, ctrlRdEp, buffer, length, &ulBytesRead, &vOverlapped);
     if (ftStatus != FT_IO_PENDING)
     {
         FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
-        ReinitPipe(0x82);
+        ReinitPipe(ctrlRdEp);
         return -1;;
     }
 
@@ -313,20 +300,20 @@ int ConnectionFT601::Read(unsigned char *buffer, const int length, int timeout_m
     {
         if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
         {
-            ReinitPipe(0x82);
+            ReinitPipe(ctrlRdEp);
             ulBytesRead = -1;
         }
     }
     else
     {
-        ReinitPipe(0x82);
+        ReinitPipe(ctrlRdEp);
         ulBytesRead = -1;
     }
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
     return ulBytesRead;
 #else
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, timeout_ms);
+    libusb_bulk_transfer(dev_handle, ctrlRdEp, buffer, len, &actual, timeout_ms);
     len = actual;
 #endif
     return len;
@@ -410,25 +397,15 @@ int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
     contexts[i].used = true;
 
 #ifndef __unix__
-	if (length != rxSize)
-	{
-		rxSize = length;
-		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, rxSize);
-	}
     FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
 	ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
-    ftStatus = FT_ReadPipe(mFTHandle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
+    ftStatus = FT_ReadPipe(mFTHandle, streamRdEp, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
     if (ftStatus != FT_IO_PENDING)
         return -1;
 #else
-    if (length != rxSize)
-    {
-        rxSize = length;
-        FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);
-    }
     libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
+    libusb_fill_bulk_transfer(tr, dev_handle, streamRdEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
     int status = libusb_submit_transfer(tr);
@@ -454,8 +431,8 @@ bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0)
-			return 1;
+            if (dwRet == WAIT_OBJECT_0)
+                return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
         auto t2 = t1;
@@ -511,7 +488,7 @@ int ConnectionFT601::FinishDataReading(char *buffer, uint32_t length, int contex
 void ConnectionFT601::AbortReading(int ep)
 {
 #ifndef __unix__
-    FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
+    FT_AbortPipe(mFTHandle, streamRdEp);
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contexts[i].used == true)
@@ -520,8 +497,7 @@ void ConnectionFT601::AbortReading(int ep)
             contexts[i].used = false;
         }
     }
-    FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
-    rxSize = 0;
+    FT_FlushPipe(mFTHandle, streamRdEp);
 #else
 
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -529,8 +505,7 @@ void ConnectionFT601::AbortReading(int ep)
         if(contexts[i].used)
             libusb_cancel_transfer(contexts[i].transfer);
     }
-    FT_FlushPipe(mStreamRdEndPtAddr);
-    rxSize = 0;
+    FT_FlushPipe(streamRdEp);
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
     {
         if(contexts[i].used)
@@ -568,25 +543,15 @@ int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int e
 #ifndef __unix__
 	FT_STATUS ftStatus = FT_OK;
 	ULONG ulActualBytesSend;
-	if (length != txSize)
-	{
-		txSize = length;
-		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, txSize);
-	}
     FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
-	ftStatus = FT_WritePipe(mFTHandle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
+	ftStatus = FT_WritePipe(mFTHandle, streamWrEp, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
 	if (ftStatus != FT_IO_PENDING)
 		return -1;
 #else
-    if (length != txSize)
-    {
-        txSize = length;
-        FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);
-    }
     libusb_transfer *tr = contextsToSend[i].transfer;
     contextsToSend[i].done = false;
     contextsToSend[i].bytesXfered = 0;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
+    libusb_fill_bulk_transfer(tr, dev_handle, streamWrEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -610,8 +575,8 @@ bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0)
-			return 1;
+            if (dwRet == WAIT_OBJECT_0)
+                return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
         auto t2 = t1;
@@ -666,7 +631,7 @@ int ConnectionFT601::FinishDataSending(const char *buffer, uint32_t length, int 
 void ConnectionFT601::AbortSending(int ep)
 {
 #ifndef __unix__
-    FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
+    FT_AbortPipe(mFTHandle, streamWrEp);
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contextsToSend[i].used == true)
@@ -675,7 +640,6 @@ void ConnectionFT601::AbortSending(int ep)
             contextsToSend[i].used = false;
         }
     }
-    txSize = 0;
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
@@ -690,25 +654,31 @@ void ConnectionFT601::AbortSending(int ep)
             FinishDataSending(nullptr, 0, i);
         }
     }    
-    txSize = 0;
 #endif
 }
 
-
 int ConnectionFT601::ResetStreamBuffers()
 {
-    rxSize = 0;
-    txSize = 0;
 #ifndef __unix__
-    if (FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr)!=FT_OK)
+    if (FT_AbortPipe(mFTHandle, streamRdEp)!=FT_OK)
         return -1;
-    if (FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr)!=FT_OK)
+    if (FT_AbortPipe(mFTHandle, streamWrEp)!=FT_OK)
         return -1;
-    if (FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr)!=FT_OK)
+    if (FT_FlushPipe(mFTHandle, streamRdEp)!=FT_OK)
+        return -1;
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket)) != 0)
+        return -1;
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket)) != 0)
         return -1;
 #else
-    FT_FlushPipe(mStreamWrEndPtAddr);
-    return FT_FlushPipe(mStreamRdEndPtAddr);
+    if (FT_FlushPipe(streamWrEp)!=0)
+        return -1;
+    if (FT_FlushPipe(streamRdEp)!=0)
+        return -1;
+    if (FT_SetStreamPipe(streamWrEp,sizeof(FPGA_DataPacket))!=0)
+        return -1;
+    if (FT_SetStreamPipe(streamRdEp,sizeof(FPGA_DataPacket))!=0)
+        return -1;
 #endif
     return 0;
 }
