@@ -1284,7 +1284,6 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_st
     status->linkRate = info.linkRate;
     status->overrun = info.overrun;
     status->underrun = info.underrun;
-    status->sampleRate = info.sampleRate;
     status->timestamp = info.timestamp;
     return 0;
 }

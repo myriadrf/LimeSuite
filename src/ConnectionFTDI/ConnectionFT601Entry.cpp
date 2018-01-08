@@ -22,8 +22,6 @@ void ConnectionFT601Entry::handle_libusb_events()
 }
 #endif // __UNIX__
 
-int ConnectionFT601::USBTransferContext::idCounter=0;
-
 //! make a static-initialized entry in the registry
 void __loadConnectionFT601Entry(void) //TODO fixme replace with LoadLibrary/dlopen
 {

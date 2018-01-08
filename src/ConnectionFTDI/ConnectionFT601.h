@@ -26,8 +26,6 @@
 
 namespace lime{
 
-#define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
-
 class ConnectionFT601 : public LMS64CProtocol
 {
 public:
@@ -38,13 +36,11 @@ public:
     public:
         USBTransferContext() : used(false)
         {
-            id = idCounter++;
 #ifndef __unix__
             context = NULL;
 #else
             transfer = libusb_alloc_transfer(0);
             bytesXfered = 0;
-            bytesExpected = 0;
             done = 0;
 #endif
         }
@@ -54,22 +50,13 @@ public:
             libusb_free_transfer(transfer);
 #endif
         }
-        bool reset()
-        {
-            if(used)
-                return false;
-            return true;
-        }
         bool used;
-        int id;
-        static int idCounter;
 #ifndef __unix__
         PUCHAR context;
         OVERLAPPED inOvLap;
 #else
         libusb_transfer* transfer;
         long bytesXfered;
-        long bytesExpected;
         std::atomic<bool> done;
         std::mutex transferLock;
         std::condition_variable cv;
@@ -105,6 +92,8 @@ protected:
     int ResetStreamBuffers() override;
 
     eConnectionType GetType(void) {return USB_PORT;}
+    
+    static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
 
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];

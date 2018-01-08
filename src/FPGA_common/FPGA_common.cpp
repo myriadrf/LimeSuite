@@ -271,7 +271,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
     Fvco = inputFreq*M/N; //actual VCO freq
-    lime::debug("M=%i, N=%i, Fvco=%.3f MHz\n", M, N, Fvco / 1e6);
+    lime::debug("M=%i, N=%i, Fvco=%.3f MHz", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
 
@@ -388,12 +388,12 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             {
                 clocks[i].findPhase = false;
                 clocks[i].phaseShift_deg = (min+max)/2;
-                lime::debug("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
+                lime::debug("phase: min %1.1f; max %1.1f; selected %1.1f)", min, max, clocks[i].phaseShift_deg);
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }
             else
             {
-                lime::warning("phase search FAIL\n");
+                lime::warning("phase search FAIL");
                 clocks[i].findPhase = false;
                 return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }

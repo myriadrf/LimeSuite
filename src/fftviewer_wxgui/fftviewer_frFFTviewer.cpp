@@ -126,7 +126,7 @@ void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 {
-    if (mStreamRunning == false)
+    if (threadProcessing.joinable() == false)
         StartStreaming();
     else
         StopStreaming();

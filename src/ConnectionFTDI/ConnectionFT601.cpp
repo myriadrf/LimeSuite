@@ -342,21 +342,20 @@ static void callback_libusbtransfer(libusb_transfer *trans)
     switch(trans->status)
     {
         case LIBUSB_TRANSFER_CANCELLED:
-            context->bytesXfered = trans->actual_length;
+            context->bytesXfered = trans->actual_length;  
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_COMPLETED:
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-        break;
+            break;
         case LIBUSB_TRANSFER_ERROR:
             lime::error("TRANSFER ERROR");
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_TIMED_OUT:
-            lime::error("transfer timed out %i", context->id);
-            context->bytesXfered = trans->actual_length;
+            lime::error("USB transfer timed out");
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_OVERFLOW:
@@ -376,7 +375,7 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 
 int ConnectionFT601::GetBuffersCount() const 
 {
-    return 16;
+    return USB_MAX_CONTEXTS;
 };
 
 int ConnectionFT601::CheckStreamSize(int size)const 
@@ -429,10 +428,9 @@ int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
         FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);
     }
     libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 10000);
+    libusb_fill_bulk_transfer(tr, dev_handle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
-    contexts[i].bytesExpected = length;
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -460,7 +458,7 @@ bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
 			return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
-        auto t2 = chrono::high_resolution_clock::now();
+        auto t2 = t1;
 
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
         while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -501,12 +499,10 @@ int ConnectionFT601::FinishDataReading(char *buffer, uint32_t length, int contex
 #else
         length = contexts[contextHandle].bytesXfered;
         contexts[contextHandle].used = false;
-        contexts[contextHandle].reset();
         return length;
 #endif
     }
-    else
-        return 0;
+    return 0;
 }
 
 /**
@@ -588,10 +584,9 @@ int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int e
         FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);
     }
     libusb_transfer *tr = contextsToSend[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 10000);
     contextsToSend[i].done = false;
     contextsToSend[i].bytesXfered = 0;
-    contextsToSend[i].bytesExpected = length;
+    libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -619,7 +614,7 @@ bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
 			return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
-        auto t2 = chrono::high_resolution_clock::now();
+        auto t2 = t1;
         std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
         while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
         {
@@ -658,7 +653,6 @@ int ConnectionFT601::FinishDataSending(const char *buffer, uint32_t length, int 
 #else
         length = contextsToSend[contextHandle].bytesXfered;
         contextsToSend[contextHandle].used = false;
-        contextsToSend[contextHandle].reset();
         return length;
 #endif
     }
@@ -695,8 +689,7 @@ void ConnectionFT601::AbortSending(int ep)
             WaitForSending(i, 250);
             FinishDataSending(nullptr, 0, i);
         }
-    }
-    FT_FlushPipe(mStreamWrEndPtAddr);
+    }    
     txSize = 0;
 #endif
 }
@@ -714,6 +707,7 @@ int ConnectionFT601::ResetStreamBuffers()
     if (FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr)!=FT_OK)
         return -1;
 #else
+    FT_FlushPipe(mStreamWrEndPtAddr);
     return FT_FlushPipe(mStreamRdEndPtAddr);
 #endif
     return 0;

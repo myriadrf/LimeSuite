@@ -339,24 +339,31 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
          tx_channels[i].sample_rate = f_Hz;
          rx_channels[i].sample_rate = f_Hz;
     }
+    
+    if (oversample == 0)
+    {
+        const int n = LMS_CGEN_MAX/(4*f_Hz);
+        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
+    }
 
     if (nco_f != 0)
     {
         int nco_over = 2+2*(nco_f-1)/f_Hz;
-        oversample = oversample > nco_over ? oversample : nco_over;
-        if (oversample > 32)
+        if (nco_over > 32)
         {
-            lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
+            lime::error("Cannot achieve desired sample rate: rate too low");
             return -1;
         }
+        oversample = oversample > nco_over ? oversample : nco_over;
     }
-    else if (oversample == 0)
-        oversample = LMS_CGEN_MAX/(4*f_Hz);
-    
-    int decim = 5;
-    while (--decim)
-        if ((2<<decim) <= oversample)
-            break;
+
+    int decim = 4;
+    if (oversample <= 16)
+    {
+        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3}; 
+        decim = decTbl[oversample];
+    }
+
     oversample = 2<<decim;
     
     for (unsigned i = 0; i < lms_list.size(); i++)
@@ -420,6 +427,12 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         else
             rx_channels[i].sample_rate = f_Hz;
     }
+    
+    if (oversample == 0)
+    {
+        int n = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
+        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
+    }
 
     if (nco_rx != 0 || nco_tx != 0)
     {
@@ -427,23 +440,24 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         min_int = 2+2*(nco_tx-1)/tx_channels[0].sample_rate;
         min_dec = 2+2*(nco_rx-1)/rx_channels[0].sample_rate;
         unsigned int nco_over = tx ? min_int : min_dec;
-        oversample = oversample > nco_over ? oversample : nco_over;
-        if (oversample > 32)
+        if (nco_over > 32)
         {
             lime::ReportError(ERANGE, "Cannot achieve desired sample rate: rate too low");
             return -1;
         }
+        oversample = oversample > nco_over ? oversample : nco_over;
+
     }
-    else if (oversample == 0)
-        oversample = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
-   
-    unsigned tmp = 5;
-    while (--tmp)
-        if ((2u<<tmp) <= oversample)
-            break;
+    
+    int tmp = 4;
+    if (oversample <= 16)
+    {
+        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3}; 
+        tmp = decTbl[oversample];
+    }
 
     int ratio = 2<<tmp;
-
+         
     if (tx)
     {
         interpolation = tmp;

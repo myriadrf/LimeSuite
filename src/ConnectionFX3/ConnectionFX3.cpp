@@ -413,42 +413,30 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
-        //lime::error("Transfer %i canceled", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
-        //context->reset();
         break;
     case LIBUSB_TRANSFER_COMPLETED:
-        //if(trans->actual_length == context->bytesExpected)
-		{
-			context->bytesXfered = trans->actual_length;
-			context->done.store(true);
-		}
+        context->bytesXfered = trans->actual_length;
+        context->done.store(true);
         break;
     case LIBUSB_TRANSFER_ERROR:
-        lime::error("TRANSFER ERROR");
+        lime::error("USB TRANSFER ERROR");
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
         break;
     case LIBUSB_TRANSFER_TIMED_OUT:
-        //lime::error("transfer timed out %i", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
-
         break;
     case LIBUSB_TRANSFER_OVERFLOW:
-        lime::error("transfer overflow");
-
+        lime::error("USB transfer overflow");
         break;
     case LIBUSB_TRANSFER_STALL:
-        lime::error("transfer stalled");
+        lime::error("USB transfer stalled");
         break;
     case LIBUSB_TRANSFER_NO_DEVICE:
-        lime::error("transfer no device");
-
+        lime::error("USB transfer no device");
         break;
 	}
 	lck.unlock();
@@ -495,7 +483,6 @@ int ConnectionFX3::BeginDataReading(char *buffer, uint32_t length, int ep)
     libusb_fill_bulk_transfer(tr, dev_handle, streamBulkInAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
-    contexts[i].bytesExpected = length;
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -523,7 +510,7 @@ bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
 	return status;
     #else
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
     while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -532,7 +519,7 @@ bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
         contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
-	return contexts[contextHandle].done.load() == true;
+    return contexts[contextHandle].done.load() == true;
     #endif
     }
     else
@@ -628,10 +615,9 @@ int ConnectionFX3::BeginDataSending(const char *buffer, uint32_t length, int ep)
 	return i;
     #else
     libusb_transfer *tr = contextsToSend[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     contextsToSend[i].done = false;
     contextsToSend[i].bytesXfered = 0;
-    contextsToSend[i].bytesExpected = length;
+    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -659,7 +645,7 @@ bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	return status;
 #   else
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
     while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -671,8 +657,7 @@ bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	return contextsToSend[contextHandle].done == true;
 #   endif
     }
-    else
-        return 0;
+    return 0;
 }
 
 /**
@@ -732,7 +717,7 @@ void ConnectionFX3::AbortSending(int ep)
 
 int ConnectionFX3::GetBuffersCount() const 
 {
-    return 16;
+    return USB_MAX_CONTEXTS;
 };
 
 int ConnectionFX3::CheckStreamSize(int size)const 

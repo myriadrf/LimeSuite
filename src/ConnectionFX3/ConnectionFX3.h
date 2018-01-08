@@ -29,8 +29,6 @@
 namespace lime
 {
 
-#define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
-
 /** @brief Wrapper class for holding USB asynchronous transfers contexts
 */
 class USBTransferContext
@@ -38,7 +36,6 @@ class USBTransferContext
 public:
     USBTransferContext() : used(false)
     {
-        id = idCounter++;
 #ifndef __unix__
         inOvLap = new OVERLAPPED;
         memset(inOvLap, 0, sizeof(OVERLAPPED));
@@ -48,7 +45,6 @@ public:
 #else
         transfer = libusb_alloc_transfer(0);
         bytesXfered = 0;
-        bytesExpected = 0;
         done = 0;
 #endif
     }
@@ -73,8 +69,6 @@ public:
         return true;
     }
     bool used;
-    int id;
-    static int idCounter;
 #ifndef __unix__
     PUCHAR context;
     CCyUSBEndPoint* EndPt;
@@ -82,7 +76,6 @@ public:
 #else
     libusb_transfer* transfer;
     long bytesXfered;
-    long bytesExpected;
     std::atomic<bool> done;
     std::mutex transferLock;
     std::condition_variable cv;
@@ -123,7 +116,9 @@ protected:
 
     int ResetStreamBuffers() override;
     eConnectionType GetType(void) {return USB_PORT;}
-
+    
+    static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
+    
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
 

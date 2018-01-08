@@ -17,8 +17,6 @@ StreamChannel::StreamChannel(Streamer* streamer, StreamConfig conf) :
     overflow = 0;
     underflow = 0;
     pktLost = 0;
-    sampleCnt = 0;
-    startTime = std::chrono::high_resolution_clock::now();
 
     if (this->config.bufferLength == 0) //default size
         this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
@@ -48,8 +46,6 @@ StreamChannel::~StreamChannel()
 int StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
 {
     int pushed = 0;
-    if (config.isTx && mActive && mStreamer->txRunning.load() == false)
-        mStreamer->UpdateThreads();
     if(config.format == StreamConfig::FMT_FLOAT32 && config.isTx)
     {
         const float* samplesFloat = (const float*)samples;
@@ -65,7 +61,6 @@ int StreamChannel::Write(const void* samples, const uint32_t count, const Metada
         const complex16_t* ptr = (const complex16_t*)samples;
         pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
     }
-    sampleCnt += pushed;
     return pushed;
 }
 
@@ -101,11 +96,6 @@ StreamChannel::Info StreamChannel::GetInfo()
     stats.droppedPackets = pktLost;
     stats.overrun = overflow;
     stats.overrun = underflow;
-    auto endTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> timePeriod = endTime-startTime;
-    stats.sampleRate = sampleCnt/timePeriod.count();
-    sampleCnt.store(0);
-    startTime = endTime; 
     pktLost = 0;
     overflow = 0;
     underflow = 0;
@@ -133,8 +123,6 @@ int StreamChannel::Start()
     overflow = 0;
     underflow = 0;
     pktLost = 0;
-    sampleCnt.store(0);
-    startTime = std::chrono::high_resolution_clock::now();
     return mStreamer->UpdateThreads();
 }
 
@@ -147,14 +135,10 @@ int StreamChannel::Stop()
 Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : fpga(f),lms(chip),chipId(id)
 {
     dataPort = f->GetConnection();
-    rxRunning = false;
-    txRunning = false;
     mTimestampOffset = 0;
     rxLastTimestamp = 0;
     terminateRx = false;
     terminateTx = false;
-    rxRunning = false;
-    txRunning = false;
     rxDataRate_Bps = 0;
     txDataRate_Bps = 0;
     txBatchSize = 1;
@@ -193,7 +177,7 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
         return nullptr;
     }
     
-    if ((txRunning.load() || rxRunning.load()) && (!mTxStreams[ch]) && (!mRxStreams[ch]))
+    if ((!mTxStreams[ch]) && (!mRxStreams[ch]) && (txThread.joinable() || rxThread.joinable()))
     {
         lime::error("Stream cannot be set up while streaming is running");
         return nullptr;
@@ -255,7 +239,7 @@ int Streamer::GetStreamSize(bool tx)
 
 uint64_t Streamer::GetHardwareTimestamp(void)
 {
-    if(not rxRunning.load() and not txRunning.load())
+    if(!(rxThread.joinable() || txThread.joinable()))
     {
         //stop streaming just in case the board has not been configured
         dataPort->WriteRegister(0xFFFF, 1 << chipId);
@@ -298,21 +282,19 @@ int Streamer::UpdateThreads(bool stopAll)
     }
 
     //stop threads if not needed
-    if(not needTx and txRunning.load())
+    if((!needTx) && txThread.joinable())
     {
         terminateTx.store(true);
         txThread.join();
-        txRunning.store(false);
     }
-    if(not needRx and rxRunning.load())
+    if((!needRx) && rxThread.joinable())
     {
         terminateRx.store(true);
         rxThread.join();
-        rxRunning.store(false);
     }
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     //configure FPGA on first start, or disable FPGA when not streaming
-    if((needTx or needRx) && (not rxRunning.load() and not txRunning.load()))
+    if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
     {
         //enable FPGA streaming
         fpga->StopStreaming();
@@ -408,18 +390,14 @@ int Streamer::UpdateThreads(bool stopAll)
     }
 
     //FPGA should be configured and activated, start needed threads
-    if(needRx and not rxRunning.load())
+    if(needRx && (!rxThread.joinable()))
     {
-        rxRunning.store(true);
         terminateRx.store(false);
         auto RxLoopFunction = std::bind(&Streamer::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
     }
-    if(needTx and not txRunning.load())
+    if(needTx && (!txThread.joinable()))
     {
-        if (txThread.joinable())
-            txThread.join();
-        txRunning.store(true);
         terminateTx.store(false);
         auto TxLoopFunction = std::bind(&Streamer::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
@@ -488,10 +466,10 @@ void Streamer::TransmitPacketsLoop()
         }
         int i=0;
 
-        while(i<packetsToBatch && terminateTx.load() != true)
+        while(i<packetsToBatch)
         {
             bool end_burst = false;
-            StreamChannel::Metadata meta;
+            StreamChannel::Metadata meta = {0, 0};
             FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
@@ -506,16 +484,14 @@ void Streamer::TransmitPacketsLoop()
                 int samplesPopped = mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    if (meta.flags & RingFIFO::END_BURST)
+                    if (!(meta.flags & RingFIFO::END_BURST)) 
                     {
-                        memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
-                        end_burst = true;
-                        continue;
+                        mTxStreams[ch]->underflow++;
+                        lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                     }
-                    mTxStreams[ch]->underflow++;
-                    terminateTx.store(true);
-                    lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
-                    break;
+                    end_burst = true;   
+                    memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                    continue;
                 }
             }
 
@@ -560,7 +536,6 @@ void Streamer::TransmitPacketsLoop()
 
     // Wait for all the queued requests to be cancelled
     dataPort->AbortSending(epIndex);
-    txRunning.store(false);
     txDataRate_Bps.store(0);
 }
 

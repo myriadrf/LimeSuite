@@ -86,8 +86,6 @@ public:
     IConnection* dataPort;
     std::thread rxThread;
     std::thread txThread;
-    std::atomic<bool> rxRunning;
-    std::atomic<bool> txRunning;
     std::atomic<bool> terminateRx;
     std::atomic<bool> terminateTx;
 
@@ -126,7 +124,6 @@ public:
     
     struct Info
     {
-        float sampleRate;
         int fifoSize;
         int fifoItemsCount;
         int overrun;
@@ -157,8 +154,6 @@ public:
        
 protected:
     RingFIFO* fifo;  
-    std::atomic<uint64_t> sampleCnt;
-    std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 private:
     StreamChannel() = default;
 };

@@ -1070,8 +1070,6 @@ typedef struct
     uint32_t overrun;
     ///Number of dropped packets by HW
     uint32_t droppedPackets;
-    ///Sampling rate of the stream
-    float_type sampleRate;
     ///Combined data rate of all stream of the same direction (TX or RX)
     float_type linkRate;
     ///Current HW timestamp

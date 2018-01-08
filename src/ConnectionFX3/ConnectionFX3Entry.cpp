@@ -29,8 +29,6 @@ void __loadConnectionFX3Entry(void) //TODO fixme replace with LoadLibrary/dlopen
 static ConnectionFX3Entry FX3Entry;
 }
 
-int USBTransferContext::idCounter = 0;
-
 ConnectionFX3Entry::ConnectionFX3Entry(void):
     ConnectionRegistryEntry("FX3")
 {
