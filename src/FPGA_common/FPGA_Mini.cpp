@@ -178,8 +178,9 @@ int FPGA_Mini::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int
 {
     int totalBytesReceived = 0;
     StopStreaming();
-
+#ifdef __unix__
     connection->ResetStreamBuffers();
+#endif
     connection->WriteRegister(0x0008, 0x0100 | 0x2);
     connection->WriteRegister(0x0007, 1);
 

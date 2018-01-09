@@ -140,6 +140,8 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     FT_AbortPipe(mFTHandle, streamWrEp);
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlRdEp, 64);
     FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlWrEp, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket));
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket));
     FT_SetPipeTimeout(mFTHandle, ctrlWrEp, 500);
     FT_SetPipeTimeout(mFTHandle, ctrlRdEp, 500);
     FT_SetPipeTimeout(mFTHandle, streamRdEp, 0);
@@ -498,6 +500,7 @@ void ConnectionFT601::AbortReading(int ep)
         }
     }
     FT_FlushPipe(mFTHandle, streamRdEp);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket));
 #else
 
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -640,6 +643,7 @@ void ConnectionFT601::AbortSending(int ep)
             contextsToSend[i].used = false;
         }
     }
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket));
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
