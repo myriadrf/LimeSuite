@@ -188,7 +188,8 @@ void lms7002_mainPanel::UpdateGUI()
     }
     else
     {
-        if (LMS_IsOpen(lmsControl, 0))
+        auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+        if (conn && conn->IsOpen())
             LMS_WriteParam(lmsControl,LMS7param(MAC),1);
         rbChannelA->SetValue(true);
         rbChannelB->SetValue(false);

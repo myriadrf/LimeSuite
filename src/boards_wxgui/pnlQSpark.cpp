@@ -348,14 +348,13 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     if (controlsPtr2Registers.find(event.GetEventObject()) == controlsPtr2Registers.end())
         return; //control not found in the table
 
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("device not connected"), _("Error"), wxICON_ERROR | wxOK);
-        return;
-    }
     Register reg = controlsPtr2Registers[event.GetEventObject()];
     int mac = (reg.address!=0x17) && (rbChannelB->GetValue()) ? 0x2 : 0x1;
-    LMS_WriteFPGAReg(lmsControl, 0xFFFF,  mac);
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF,  mac)!=0)
+    {
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK); 
+        return;
+    }
 
     unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
@@ -379,17 +378,15 @@ pnlQSpark::~pnlQSpark()
 
 void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Update GUI: device not connected"), _("Error"), wxICON_ERROR | wxOK);
-        return;
-    }
-
     map<wxObject*, Register>::iterator iter;
     wxClassInfo* spinctr = wxClassInfo::FindClass("wxSpinCtrl");
     wxClassInfo* checkboxctr = wxClassInfo::FindClass("wxCheckBox");
     wxClassInfo* choicectr = wxClassInfo::FindClass("wxChoice");
-    LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1);
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1)!= 0)
+    {
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK); 
+        return; 
+    }
     for (iter = controlsPtr2Registers.begin(); iter != controlsPtr2Registers.end(); ++iter)
     {
         Register reg = iter->second;
@@ -433,7 +430,9 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
 
 void pnlQSpark::OnConfigurePLL(wxCommandEvent &event)
 {
-    if (!LMS_IsOpen(lmsControl, 1))
+
+    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
     {
         wxMessageBox(_("device not connected"), _("Error"), wxICON_ERROR | wxOK);
         return;
@@ -458,11 +457,6 @@ void pnlQSpark::OnNcoFrequencyChanged(wxCommandEvent& event)
     uint32_t fcw = (uint32_t)((ncoFreq_MHz / refClk_MHz) * 4294967296);
     vector<uint32_t> addrs = { 0x008E, 0x008F };
     vector<uint32_t> values = { (fcw >> 16) & 0xFFFF, fcw & 0xFFFF };
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Update GUI: device not connected"), _("Error"), wxICON_ERROR | wxOK);
-        return;
-    }
 
     for (size_t i = 0; i <values.size();i++)
     {

@@ -446,7 +446,6 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
             return -1;
         }
         oversample = oversample > nco_over ? oversample : nco_over;
-
     }
     
     int tmp = 4;

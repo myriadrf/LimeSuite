@@ -242,12 +242,6 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Device not connected"), _("Warning"));
-        return;
-    }
-
     vector<uint8_t> ids;
     vector<double> values;
 
@@ -260,7 +254,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,NULL);
         if (status != 0)
         {
-            wxMessageBox(_("Failes to write values"), _("Warning"));
+            wxMessageBox(_("Failed to write values"), _("Warning"));
             return;
         }
     }
@@ -277,8 +271,6 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 void pnlBoardControls::Initialize(lms_device_t* controlPort)
 {
     lmsControl = controlPort;
-    if(!LMS_IsOpen(lmsControl,0))
-        return;
     const lms_dev_info_t* info;
     if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
@@ -480,12 +472,6 @@ void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
     uint8_t id = spinCustomChannelRd->GetValue();
     double value = 0;
     lms_name_t units;
@@ -504,12 +490,6 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
     uint8_t id = spinCustomChannelWr->GetValue();
     int powerOf10 = (cmbCustomPowerOf10Wr->GetSelection()-8)*3;
     lms_name_t units;

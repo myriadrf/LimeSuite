@@ -174,7 +174,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
         wxMessageBox(_("CLKGEN: failed to set interface frequency"));
         return;
     }
-    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
 
     auto chipInd = lms->GetActiveChannelIndex()/2;
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
@@ -183,8 +182,12 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
-    if (fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
-        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+    if (fpga)
+    {
+        if (fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd)!=0)
+            wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+    }
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
@@ -197,7 +200,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick(wxSpinEvent& event)
     cmd.SetInt(lime::LOG_LEVEL_INFO);
     wxPostEvent(this, cmd);
 }
-
 
 void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
 {
@@ -215,7 +217,6 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
         UpdateGUI();
         return ;
     }
-    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
 
     auto chipInd = lms->GetActiveChannelIndex()/2;
     auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
@@ -225,12 +226,16 @@ void lms7002_pnlCLKGEN_view::onbtnCalculateClick( wxCommandEvent& event )
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
     int status;
-    if (this->chkAutoPhase->GetValue())
-        status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
-    else
-        status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
-    if (status != 0)
-        wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+    if (fpga)
+    {
+        if (this->chkAutoPhase->GetValue())
+            status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
+        else
+            status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(),chipInd);
+        if (status != 0)
+            wxMessageBox(_("CLKGEN: failed to set interface frequency"));
+    }
     auto freq = lms->GetFrequencyCGEN();
     lblRealOutFrequency->SetLabel(wxString::Format(_("%f"), freq / 1e6));
     UpdateGUI();
@@ -253,7 +258,6 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
         wxMessageBox(wxString(_("CLKGEN VCO Tune failed")));
         return ;
     }
-    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
 
     auto chipInd = lms->GetActiveChannelIndex() / 2;
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
@@ -265,12 +269,16 @@ void lms7002_pnlCLKGEN_view::onbtnTuneClick( wxCommandEvent& event )
     if (decim != 7)
         fpgaRxPLL /= pow(2.0, decim);
     int status;
-    if (this->chkAutoPhase->GetValue())
-        status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipInd);
-    else
-        status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
-    if (status != 0)
-        wxMessageBox(_("CLKGEN VCO Tune: failed to set interface frequency"));
+    auto fpga = ((LMS7_Device*)lmsControl)->GetFPGA();
+    if (fpga)
+    {
+        if (this->chkAutoPhase->GetValue())
+            status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, chipInd);
+        else
+            status = fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, txPhase->GetValue(), rxPhase->GetValue(), chipInd);
+        if (status != 0)
+            wxMessageBox(_("CLKGEN VCO Tune: failed to set interface frequency"));
+    }
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(CSW_VCO_CGEN),&value);
     cmbCSW_VCO_CGEN->SetValue(value);

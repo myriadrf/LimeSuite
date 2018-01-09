@@ -10,6 +10,7 @@
 #include "windowFunction.h"
 #include <fstream>
 #include "lms7suiteEvents.h"
+#include "lms7_device.h"
 
 using namespace std;
 using namespace lime;
@@ -134,7 +135,8 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if(!LMS_IsOpen(lmsControl,1))
+    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
     {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;

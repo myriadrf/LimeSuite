@@ -368,7 +368,7 @@ void lms7002_pnlR3_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     uint16_t value;
-    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+    if (LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
         value = 1;
     this->Enable(value);
 }

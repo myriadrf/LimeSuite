@@ -115,15 +115,6 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t in
  */
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 
-/**
- * Check if device port is opened
- *
- * @param   device  Device handle previously obtained by LMS_Open().
- * @param   port    port index (ignored if device has only 1 port)
- *
- * @return   true(1) if port is open, false (0) if - closed
- */
-API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port);
 
 /** @} (End FN_INIT) */
 
@@ -1273,6 +1264,8 @@ API_EXPORT const char* LMS_GetLibraryVersion();
 
 /**
  * Get the error message detailing why the last error occurred.
+ * 
+ * @deprecated use LMS_RegisterLogHandler() to obtain error messages
  *
  * @return last error message.
  */

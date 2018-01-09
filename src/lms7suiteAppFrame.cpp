@@ -254,7 +254,8 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
     UpdateConnections(lmsControl);
     const int controlCollumn = 1;
-    if (LMS_IsOpen(lmsControl,0))
+    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+    if (conn && conn->IsOpen())
     {
         //bind callback for spi data logging
         obj_ptr = this;

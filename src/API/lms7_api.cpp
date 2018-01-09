@@ -35,7 +35,7 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device pointer cannot be NULL");
+        lime::error("Device pointer cannot be NULL");
         return -1;
     }
 
@@ -47,12 +47,18 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
-            *device = LMS7_Device::CreateDevice(handles[i],lms);
+            auto dev = LMS7_Device::CreateDevice(handles[i],lms);
+            if (dev == nullptr)
+            {
+                lime::error("Unable to open device");
+                return -1;
+            }
+            *device = dev;
             return LMS_SUCCESS;
         }
     }
 
-    lime::ReportError(ENODEV, "Specified device could not be found");
+    lime::error("Specified device could not be found");
     return -1;
 }
 
@@ -60,27 +66,12 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::error("Device cannot be NULL.");
         return -1;
     }
     LMS7_Device* lms = (LMS7_Device*)device;
     delete lms;
     return LMS_SUCCESS;
-}
-
-API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
-{
-    if (device == nullptr)
-        return false;
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-        auto conn = lms->GetConnection();
-        if (conn != nullptr)
-        {
-            return conn->IsOpen();
-        }
-    return false;
 }
 
 API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)

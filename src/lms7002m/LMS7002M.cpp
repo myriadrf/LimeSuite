@@ -1923,7 +1923,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         lime::error("No device connected");
         return -1;
     }
-    return controlPort->WriteLMS7002MSPI(data.data(), cnt, mdevIndex);
+    return controlPort->WriteLMS7002MSPI(data.data(), data.size(), mdevIndex);
 }
 
 /** @brief Batches multiple register reads into least amount of transactions
