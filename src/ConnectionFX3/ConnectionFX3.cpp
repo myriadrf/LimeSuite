@@ -568,7 +568,7 @@ void ConnectionFX3::AbortReading(int ep)
 #else
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
     {
-        if(contexts[i].used && contexts[i].transfer->endpoint == ep)
+        if(contexts[i].used && contexts[i].transfer->endpoint == 0x81)
             libusb_cancel_transfer( contexts[i].transfer );
     }
 #endif
@@ -701,7 +701,7 @@ void ConnectionFX3::AbortSending(int ep)
 #else
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
-        if(contextsToSend[i].used && contextsToSend[i].transfer->endpoint == ep)
+        if(contextsToSend[i].used && contextsToSend[i].transfer->endpoint == 0x01)
             libusb_cancel_transfer(contextsToSend[i].transfer);
     }
 #endif
