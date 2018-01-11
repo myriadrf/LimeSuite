@@ -235,12 +235,12 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
         if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
             lime::debug("Kernel Driver Detached!");
     }
-    int r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
+    int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
     if(r < 0)
     {
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     }
-    r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
+    r = libusb_claim_interface(dev_handle, 1); //claim interface 1 (the second) of device
     if(r < 0)
     {
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
