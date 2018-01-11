@@ -100,6 +100,7 @@ public:
     StreamConfig::StreamDataFormat dataLinkFormat;
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
+    void AlignRxTSP();
 private:
     FPGA* fpga;
     LMS7002M* lms;

@@ -259,6 +259,78 @@ void Streamer::SetHardwareTimestamp(const uint64_t now)
     mTimestampOffset = now - rxLastTimestamp.load();
 }
 
+void Streamer::AlignRxTSP()
+{
+    uint32_t reg20;
+    uint32_t regsA[2];
+    uint32_t regsB[2];
+    
+    //backup values
+    {   
+        const std::vector<uint32_t> bakAddr = {(uint32_t(0x0400)<<16), (uint32_t(0x040C)<<16)};
+        uint32_t data = (uint32_t(0x0020) << 16);
+        dataPort->ReadLMS7002MSPI(&data, &reg20, 1, chipId);    
+        data = (uint32_t(0x0020) << 16) | 0xFFFD;
+        dataPort->WriteLMS7002MSPI(&data, 1, chipId);
+        dataPort->ReadLMS7002MSPI(bakAddr.data(), regsA, bakAddr.size(), chipId);
+        data = (uint32_t(0x0020) << 16) | 0xFFFE;
+        dataPort->WriteLMS7002MSPI(&data, 1, chipId);
+        dataPort->ReadLMS7002MSPI(bakAddr.data(), regsB, bakAddr.size(), chipId);
+    }
+    
+    //alignment search
+    {
+        uint32_t dataWr[7];
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; 
+        dataWr[1] = (1 << 31) | (uint32_t(0x0400) << 16) | 0x8085; 
+        dataWr[2] = (1 << 31) | (uint32_t(0x040C) << 16) | 0x01FF; 
+        dataWr[3] = (1 << 31) | (uint32_t(0x0082) << 16) | 0x8006; 
+        dataWr[4] = (1 << 31) | (uint32_t(0x0086) << 16) | 0x4100; 
+        dataWr[5] = (1 << 31) | (uint32_t(0x0082) << 16) | 0x8001; 
+        dataWr[6] = (1 << 31) | (uint32_t(0x0086) << 16) | 0x4101; 
+        dataPort->WriteLMS7002MSPI(dataWr, 7, 1);
+        uint32_t* buf = new uint32_t[sizeof(FPGA_DataPacket)/sizeof(uint32_t)];
+
+        fpga->StopStreaming();
+        dataPort->WriteRegister(0xFFFF, 1 << chipId);
+        dataPort->WriteRegister(0x0008, 0x0100);
+        dataPort->WriteRegister(0x0007, 3);
+
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0x55FE;
+        dataWr[1] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD;
+
+        for (int i = 0; i < 10; i++)
+        {
+            dataPort->WriteLMS7002MSPI(dataWr, 2, 1);      
+            dataPort->ResetStreamBuffers();
+            fpga->StartStreaming();
+            if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50)!=sizeof(FPGA_DataPacket))
+            {
+                lime::error("Channel alignment failed");
+                break;
+            }
+            fpga->StopStreaming();
+            dataPort->AbortReading(chipId);
+            if (buf[4]==buf[5])
+                break;
+        }
+        delete [] buf;
+    }
+    
+    //restore values
+    {   
+        uint32_t dataWr[7];
+        dataWr[0] = (uint32_t(0x0020) << 16) | 0xFFFD;
+        dataWr[1] = (uint32_t(0x0400) << 16) | regsA[0];
+        dataWr[2] = (uint32_t(0x040C) << 16) | regsA[1];
+        dataWr[3] = (uint32_t(0x0020) << 16) | 0xFFFE;
+        dataWr[4] = (uint32_t(0x0400) << 16) | regsB[0];
+        dataWr[5] = (uint32_t(0x040C) << 16) | regsB[1];
+        dataWr[6] = (uint32_t(0x0020) << 16) | reg20;
+        dataPort->WriteLMS7002MSPI(dataWr, 7, chipId);    
+    } 
+}
+
 int Streamer::UpdateThreads(bool stopAll)
 {
     bool needTx = false;
@@ -295,7 +367,45 @@ int Streamer::UpdateThreads(bool stopAll)
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
-    {
+    {      
+        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
+
+        lms->Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
+        
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1));
+        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1));
+
+        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2);
+        }
+        else
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2);
+            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3);
+        }
+
+        if(channelEnables & 0x2) //enable MIMO
+        {
+            uint16_t macBck = lms->Get_SPI_Reg_bits(LMS7param(MAC));
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC), macBck);
+        }
+        
+        if (mRxStreams[0] && mRxStreams[1])
+            AlignRxTSP();
         //enable FPGA streaming
         fpga->StopStreaming();
         fpga->ResetTimestamp();
@@ -337,45 +447,9 @@ int Streamer::UpdateThreads(bool stopAll)
             mode = 0x0180;
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
-
-        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
-
-        dataPort->WriteRegister(0x0007, channelEnables);
-
-        lms->Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
         
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1));
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1));
-
-        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2);
-        }
-        else
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3);
-        }
-
-        if(channelEnables & 0x2) //enable MIMO
-        {
-            uint16_t macBck = lms->Get_SPI_Reg_bits(LMS7param(MAC));
-            lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(MAC), macBck);
-        }
-
+        dataPort->WriteRegister(0x0007, channelEnables);
+        
         uint32_t reg9;
         dataPort->ReadRegister(0x0009, reg9);
         const uint32_t addr[] = {0x0009, 0x0009};
