@@ -260,6 +260,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         //bind callback for spi data logging
         obj_ptr = this;
         const lms_dev_info_t* info;
+        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
                 return;
         wxString controlDev = _("Control port: ");
@@ -270,8 +271,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
-        auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
-        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);

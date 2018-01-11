@@ -983,9 +983,12 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     }
     else 
     {
-        const int maxGain = 74;
+        const int maxGain = 74; //gain table size
+        value += 12;           //pga offset
         if (value > maxGain) //do not exceed gain table index
             value = maxGain;
+        else if (value < 0)
+            value = 0;
         unsigned lna = 0, tia = 0, pga = 0;
         //LNA table
         const unsigned lnaTbl[maxGain] = {

@@ -661,7 +661,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         //backup registers
         dataWr[0] = (uint32_t(0x0020) << 16);
         connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
-
+        
         dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
         connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 

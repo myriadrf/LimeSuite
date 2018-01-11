@@ -6,6 +6,18 @@ int LMS7002M::CalibrateTxGainSetup()
 {
     int status;
     int ch = Get_SPI_Reg_bits(LMS7param(MAC));
+    
+    //RxTSP
+    SetDefaults(RxTSP);
+    SetDefaults(RxNCO);
+    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 1);
+    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
+    
+    //TBB
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
+    Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
 
     //RFE
     Modify_SPI_Reg_bits(LMS7param(EN_G_RFE), 0);
@@ -20,10 +32,6 @@ int LMS7002M::CalibrateTxGainSetup()
 
     //TRF
     Modify_SPI_Reg_bits(LMS7param(EN_G_TRF), 0);
-
-    //TBB
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
-    Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);
 
     //AFE
     const int isel_dac_afe = Get_SPI_Reg_bits(LMS7param(ISEL_DAC_AFE));
@@ -81,13 +89,6 @@ int LMS7002M::CalibrateTxGainSetup()
     LoadDC_REG_IQ(LMS7002M::Tx, tsgValue , tsgValue);
     SetNCOFrequency(LMS7002M::Tx, 0, 0.5e6);
 
-    //RxTSP
-    SetDefaults(RxTSP);
-    SetDefaults(RxNCO);
-    Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 1);
-    Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
     return 0;
 }
 
@@ -103,15 +104,12 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
     status = CalibrateTxGainSetup();
     if(status == 0)
     {
-        uint32_t rssi = GetRSSI();
         cg_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB));
-        while(rssi < 0x7FFF && cg_iamp <= 63)
+        while(GetRSSI() < 0x7FFF)
         {
-            ++cg_iamp;
-            if(cg_iamp > 63)
+            if(++cg_iamp > 63)
                 break;
             Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp);
-            rssi = GetRSSI();
         }
     }
     RestoreRegisterMap(registersBackup);

@@ -663,7 +663,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
         return -1;
     }
 
-   return lms->SetGain(dir_tx,chan,gain);
+   return lms->SetGain(dir_tx,chan,gain-12);
 }
 
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
