@@ -209,15 +209,15 @@ int CheckSaturationTxRx(bool extLoopback)
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
     {
     uint16_t rssi_prev = rssi;
-    while(g_pga < 18 && g_rfe == 15 && rssi < saturationLevel)
+    while(g_pga < 25 && g_rfe == 15 && rssi < saturationLevel)
     {
-        if(g_pga < 18)
+        if(g_pga < 25)
             ++g_pga;
         else
             break;
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga);
         rssi = GetRSSI();
-        if((float)rssi/rssi_prev < 1.11) // pga should give ~1dB change
+        if((float)rssi/rssi_prev < 1.05) // pga should give ~1dB change
             break;
         rssi_prev = rssi;
         PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
@@ -793,7 +793,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             if(sel_band1_2_trf == 1)
                 Modify_SPI_Reg_bits(SEL_PATH_RFE, 1); //LNA_H
             else if(sel_band1_2_trf == 2)
+            {
                 Modify_SPI_Reg_bits(SEL_PATH_RFE, 3); //LNA_W
+                Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, 0); //LNA_W
+            }
             else
             {
 #if VERBOSE
