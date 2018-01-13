@@ -894,18 +894,15 @@ float_type LMS7002M::GetRFETIA_dB(void)
 
 int LMS7002M::SetTRFPAD_dB(const float_type value)
 {
-    const double pmax = 0;
-    double loss = pmax-value;
+    const double pmax = 52;
+    int loss_int = (pmax-value)+0.5;
 
     //different scaling realm
-    if (loss > 10) loss = (loss+10)/2;
+    if (loss_int > 10) loss_int = (loss_int+10)/2;
 
     //clip
-    if (loss > 31) loss = 31;
-    if (loss < 0) loss = 0;
-
-    //integer round
-    int loss_int = (int)(loss + 0.5);
+    if (loss_int > 31) loss_int = 31;
+    if (loss_int < 0) loss_int = 0;
 
     int ret = 0;
     ret |= this->Modify_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF), loss_int);
@@ -915,7 +912,7 @@ int LMS7002M::SetTRFPAD_dB(const float_type value)
 
 float_type LMS7002M::GetTRFPAD_dB(void)
 {
-    const double pmax = 0;
+    const double pmax = 52;
     auto loss_int = this->Get_SPI_Reg_bits(LMS7param(LOSS_LIN_TXPAD_TRF));
     if (loss_int > 10) return pmax-10-2*(loss_int-10);
     return pmax-loss_int;
@@ -944,6 +941,33 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
     }
     return 0.0;
 }
+
+int LMS7002M::SetTBBIAMP_dB(const float_type gain)
+{
+   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain 
+       return -1;
+   if (gain != 0)
+   {
+         int g_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
+         g_iamp = (float_type)g_iamp*pow(10.0,gain/20.0)+0.5;
+         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
+   }
+   return 0;
+}
+
+float_type LMS7002M::GetTBBIAMP_dB(void)
+{
+    float_type gain = 0;
+    int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true); 
+    if (CalibrateTxGain(0,nullptr)==0)
+    {
+        int g_optimal = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
+        gain = 20.0*log10((float_type)g_current / (float_type) g_optimal);
+    }
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_current, true); //restore
+    return gain;
+}
+
 
 int LMS7002M::SetPathRFE(PathRFE path)
 {

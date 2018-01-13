@@ -49,7 +49,7 @@ int LMS7_LimeSDR_mini::Init()
     if (lms->UploadAll()!=0)
         return -1;
     
-    if (SetTxFrequency(0,1200e6)!=0)
+    if (SetTxFrequency(0,1250e6)!=0)
         return -1;
     if (SetRxFrequency(0,1200e6)!=0)
         return -1;

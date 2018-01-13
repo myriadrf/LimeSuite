@@ -39,7 +39,7 @@ static const ConnectionSTREAMImageEntry &lookupImageEntry(const LMS64CProtocol::
 {
     static const std::vector<ConnectionSTREAMImageEntry> imageEntries = {
         ConnectionSTREAMImageEntry({LMS_DEV_UNKNOWN, -1, -1, "Unknown-USB.img", -1, -1, "Unknown-USB.rbf"}),
-        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 4, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 2, 11,  "LimeSDR-USB_HW_1.4_r2.11.rbf"}),
+        ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 12,  "LimeSDR-USB_HW_1.4_r2.12.rbf"}),
         ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 3, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionSTREAMImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),

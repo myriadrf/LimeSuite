@@ -419,7 +419,7 @@ int ILimeSDRStreaming::Streamer::SetupStream(size_t& streamID, const StreamConfi
         return -1;
     }
     
-    if ((txRunning.load()) || rxRunning.load() && (!mTxStreams[ch]) && (!mRxStreams[ch]))
+    if ((txRunning.load() || rxRunning.load()) && (!mTxStreams[ch]) && (!mRxStreams[ch]))
     {
         lime::error("Stream cannot be set up while streaming is running");
         return -1;
@@ -568,32 +568,31 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         dataPort->ResetStreamBuffers();
 
         //enable MIMO mode, 12 bit compressed values
-        StreamConfig config;
-        config.linkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
+        dataLinkFormat = StreamConfig::STREAM_12_BIT_COMPRESSED;
         //by default use 12 bit compressed, adjust link format for stream
 
         for(auto i : mRxStreams)
             if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
-                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                dataLinkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
         
         for(auto i : mTxStreams)
             if(i && i->config.format != StreamConfig::STREAM_12_BIT_COMPRESSED)
             {
-                config.linkFormat = StreamConfig::STREAM_12_BIT_IN_16;
+                dataLinkFormat = StreamConfig::STREAM_12_BIT_IN_16;
                 break;
             }
 
         for(auto i : mRxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
         for(auto i : mTxStreams)
             if (i)
-                i->config.linkFormat = config.linkFormat;
+                i->config.linkFormat = dataLinkFormat;
 
-        const uint16_t smpl_width = config.linkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED ? 2 : 0; 
+        const uint16_t smpl_width = dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED ? 2 : 0; 
         uint16_t mode = 0x0100;
 
         if (lmsControl.Get_SPI_Reg_bits(LMS7param(LML1_SISODDR),true))
@@ -666,4 +665,301 @@ int ILimeSDRStreaming::Streamer::UpdateThreads(bool stopAll)
         txThread = std::thread(dataPort->TxLoopFunction, this);
     }
     return 0;
+}
+
+void ILimeSDRStreaming::TransmitPacketsLoop(Streamer* stream)
+{
+    //at this point FPGA has to be already configured to output samples
+    const uint8_t maxChannelCount = 2;
+    const uint8_t chCount = stream->streamSize;
+    const bool packed = stream->dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const int epIndex = stream->mChipID;
+    const uint8_t buffersCount = GetBuffersCount();
+    const uint8_t packetsToBatch = CheckStreamSize(stream->rxBatchSize);
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
+    const uint32_t popTimeout_ms = 500;
+
+    const int maxSamplesBatch = (packed ? samples12InPkt:samples16InPkt)/chCount;
+    std::vector<int> handles(buffersCount, 0);
+    std::vector<bool> bufferUsed(buffersCount, 0);
+    std::vector<uint32_t> bytesToSend(buffersCount, 0);
+    std::vector<complex16_t> samples[maxChannelCount];
+    std::vector<char> buffers;
+    try
+    {
+        for(int i=0; i<chCount; ++i)
+            samples[i].resize(maxSamplesBatch);
+        buffers.resize(buffersCount*bufferSize, 0);
+    }
+    catch (const std::bad_alloc& ex) //not enough memory for buffers
+    {
+        return lime::error("Error allocating Tx buffers, not enough memory");
+    }
+
+    long totalBytesSent = 0;
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1;
+
+    uint8_t bi = 0; //buffer index
+    while (stream->terminateTx.load() != true)
+    {
+        if (bufferUsed[bi])
+        {
+            if (WaitForSending(handles[bi], 1000) == true)
+            {
+                unsigned bytesSent = FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
+	    
+                if (bytesSent != bytesToSend[bi])
+                {
+                    for (auto value : stream->mTxStreams)
+                        if (value && value->mActive)
+                            value->overflow++;
+                }
+                else 
+                    totalBytesSent += bytesSent;
+                bufferUsed[bi] = false;
+            }
+            else
+            {
+                stream->txDataRate_Bps.store(totalBytesSent);
+                totalBytesSent = 0;
+                continue;
+            }
+        }
+        int i=0;
+
+        while(i<packetsToBatch && stream->terminateTx.load() != true)
+        {
+            bool end_burst = false;
+            IStreamChannel::Metadata meta;
+            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
+            for(int ch=0; ch<maxChannelCount; ++ch)
+            {
+                if (!stream->mTxStreams[ch])
+                    continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
+                if (stream->mTxStreams[ch]->mActive==false)
+                {
+                    memset(&samples[ind][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    continue;
+                }
+
+                int samplesPopped = stream->mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
+                if (samplesPopped != maxSamplesBatch)
+                {
+                    if (meta.flags & IStreamChannel::Metadata::END_BURST)
+                    {
+                        memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                        end_burst = true;
+                        continue;
+                    }
+                    stream->mTxStreams[ch]->underflow++;
+                    stream->terminateTx.store(true);
+#ifndef NDEBUG
+                    printf("popping from TX, samples popped %i/%i\n", samplesPopped, maxSamplesBatch);
+#endif
+                    break;
+                }
+            }
+
+            pkt[i].counter = meta.timestamp;
+            pkt[i].reserved[0] = 0;
+            //by default ignore timestamps
+            const int ignoreTimestamp = !(meta.flags & IStreamChannel::Metadata::SYNC_TIMESTAMP);
+            pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
+
+            std::vector<complex16_t*> src(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                src[c] = (samples[c].data());
+            uint8_t* const dataStart = (uint8_t*)pkt[i].data;
+            fpga::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
+            ++i;
+            if (end_burst)
+                break;
+        }
+        
+        if(stream->terminateTx.load() == true) //early termination
+            break;
+
+        bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
+        handles[bi] = BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
+        bufferUsed[bi] = true;
+
+        t2 = std::chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            //total number of bytes sent per second
+            float dataRate = 1000.0*totalBytesSent / timePeriod;
+            stream->txDataRate_Bps.store(dataRate);
+            totalBytesSent = 0;
+            t1 = t2;
+#ifndef NDEBUG
+            printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
+#endif
+        }
+        bi = (bi + 1) & (buffersCount-1);
+    }
+
+    // Wait for all the queued requests to be cancelled
+    AbortSending(epIndex);
+    stream->txRunning.store(false);
+    stream->txDataRate_Bps.store(0);
+}
+
+/** @brief Function dedicated for receiving data samples from board
+    @param stream a pointer to an active receiver stream
+*/
+void ILimeSDRStreaming::ReceivePacketsLoop(Streamer* stream)
+{
+    //at this point FPGA has to be already configured to output samples
+    const uint8_t maxChannelCount = 2;
+    const uint8_t chCount = stream->streamSize;
+    const bool packed = stream->dataLinkFormat == StreamConfig::STREAM_12_BIT_COMPRESSED;
+    const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
+    
+    const int epIndex = stream->mChipID;
+    const uint8_t buffersCount = GetBuffersCount();
+    const uint8_t packetsToBatch = CheckStreamSize(stream->rxBatchSize);
+    const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
+    std::vector<int> handles(buffersCount, 0);
+    std::vector<char>buffers(buffersCount*bufferSize, 0);
+    std::vector<StreamChannel::Frame> chFrames;
+    try
+    {
+        chFrames.resize(chCount);
+    }
+    catch (const std::bad_alloc &ex)
+    {
+        lime::error("Error allocating Rx buffers, not enough memory");
+        return;
+    }
+
+    for (int i = 0; i<buffersCount; ++i)
+        handles[i] = BeginDataReading(&buffers[i*bufferSize], bufferSize, epIndex);
+
+    int bi = 0;
+    unsigned long totalBytesReceived = 0; //for data rate calculation
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1;
+
+    std::mutex txFlagsLock;
+    std::condition_variable resetTxFlags;
+    //worker thread for reseting late Tx packet flags
+    std::thread txReset([](ILimeSDRStreaming* port,
+                        std::atomic<bool> *terminate,
+                        std::mutex *spiLock,
+                        std::condition_variable *doWork)
+    {
+        uint32_t reg9;
+        port->ReadRegister(0x0009, reg9);
+        const uint32_t addr[] = {0x0009, 0x0009};
+        const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
+        while (not terminate->load())
+        {
+            std::unique_lock<std::mutex> lck(*spiLock);
+            doWork->wait(lck);
+            port->WriteRegisters(addr, data, 2);
+        }
+    }, this, &stream->terminateRx, &txFlagsLock, &resetTxFlags);
+
+    int resetFlagsDelay = 128;
+    uint64_t prevTs = 0;
+    while (stream->terminateRx.load() == false)
+    {
+        int32_t bytesReceived = 0;
+        if(handles[bi] >= 0)
+        {
+            if (WaitForReading(handles[bi], 1000) == true)
+            {
+                bytesReceived = FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+                totalBytesReceived += bytesReceived;
+                if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
+                    for(auto value: stream->mRxStreams)
+                        if (value && value->mActive)
+                            value->underflow++;
+            }
+            else
+            { 
+                stream->rxDataRate_Bps.store(totalBytesReceived); 
+                totalBytesReceived = 0;
+                continue;
+            }
+        }
+        bool txLate=false;
+        for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
+        {
+            const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
+            const uint8_t byte0 = pkt[pktIndex].reserved[0];
+            if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
+            {
+                txLate = true;
+                if(resetFlagsDelay > 0)
+                    --resetFlagsDelay;
+                else
+                {
+                    lime::warning("L");
+                    resetTxFlags.notify_one();
+                    resetFlagsDelay = packetsToBatch*buffersCount;
+                    stream->txLastLateTime.store(pkt[pktIndex].counter);
+                    for(auto value: stream->mTxStreams)
+                        if (value && value->mActive)
+                            value->pktLost++;
+                }
+            }
+            uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
+            if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
+            {
+                int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
+#ifndef NDEBUG
+                printf("\tRx pktLoss: ts diff: %li  pktLoss: %i\n", pkt[pktIndex].counter - prevTs, packetLoss);
+#endif
+                for(auto value: stream->mRxStreams)
+                    if (value && value->mActive)
+                        value->pktLost += packetLoss;
+            }
+            prevTs = pkt[pktIndex].counter;
+            stream->rxLastTimestamp.store(prevTs);
+            //parse samples
+            std::vector<complex16_t*> dest(chCount);
+            for(uint8_t c=0; c<chCount; ++c)
+                dest[c] = (chFrames[c].samples);
+            int samplesCount = fpga::FPGAPacketPayload2Samples(pktStart, 4080, chCount==2, packed, dest.data());
+
+            for(int ch=0; ch<maxChannelCount; ++ch)
+            {
+                if (stream->mRxStreams[ch]==nullptr || stream->mRxStreams[ch]->mActive==false)
+                    continue;
+                const int ind = chCount == maxChannelCount ? ch : 0;
+                IStreamChannel::Metadata meta;
+                meta.timestamp = pkt[pktIndex].counter;
+                meta.flags = IStreamChannel::Metadata::OVERWRITE_OLD;
+                int samplesPushed = stream->mRxStreams[ch]->Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
+                if(samplesPushed != samplesCount)
+                    stream->mRxStreams[ch]->overflow++;
+            }
+        }
+        // Re-submit this request to keep the queue full
+        handles[bi] = BeginDataReading(&buffers[bi*bufferSize], bufferSize, 0);
+        bi = (bi + 1) & (buffersCount-1);
+
+        t2 = std::chrono::high_resolution_clock::now();
+        auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        if (timePeriod >= 1000)
+        {
+            t1 = t2;
+            //total number of bytes sent per second
+            double dataRate = 1000.0*totalBytesReceived / timePeriod;
+#ifndef NDEBUG
+            printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
+#endif
+            totalBytesReceived = 0;
+            stream->rxDataRate_Bps.store((uint32_t)dataRate);
+        }
+    }
+    AbortReading(epIndex);
+    resetTxFlags.notify_one();
+    txReset.join();
+    stream->rxDataRate_Bps.store(0);
 }

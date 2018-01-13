@@ -89,6 +89,7 @@ public:
         int streamSize;
         unsigned txBatchSize;
         unsigned rxBatchSize;
+        StreamConfig::StreamDataFormat dataLinkFormat;
     };
 
     ILimeSDRStreaming();
@@ -112,10 +113,22 @@ public:
     int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex) override;
 
 protected:
+    virtual int GetBuffersCount() const = 0;
+    virtual int CheckStreamSize(int size) const = 0;
     virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
     virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
-    virtual void ReceivePacketsLoop(Streamer* args) = 0;
-    virtual void TransmitPacketsLoop(Streamer* args) = 0;
+    void ReceivePacketsLoop(Streamer* args);
+    void TransmitPacketsLoop(Streamer* args);
+    
+    virtual int BeginDataSending(const char* buffer, uint32_t length, int ep)=0;
+    virtual int WaitForSending(int contextHandle, uint32_t timeout_ms) =0;
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) =0;
+    virtual void AbortSending(int ep)=0;
+    
+    virtual int BeginDataReading(char* buffer, uint32_t length, int ep)=0;
+    virtual int WaitForReading(int contextHandle, unsigned int timeout_ms)=0;
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle)=0;
+    virtual void AbortReading(int ep)=0;
     std::vector<Streamer*> mStreamers;
     std::condition_variable safeToConfigInterface;
     double mExpectedSampleRate; //rate used for generating data

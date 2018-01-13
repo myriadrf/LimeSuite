@@ -528,8 +528,9 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, const uint8_t streamBulkInAddr)
+int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
+    const unsigned char streamBulkInAddr = 0x81;
     int i = 0;
 	bool contextFound = false;
 	//find not used context
@@ -644,10 +645,18 @@ void ConnectionSTREAM::AbortReading(int ep)
 #else
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
     {
-        if(contexts[i].used && contexts[i].transfer->endpoint == ep)
+        if(contexts[i].used && contexts[i].transfer->endpoint == 0x81)
             libusb_cancel_transfer( contexts[i].transfer );
     }
 #endif
+    for(int i=0; i<USB_MAX_CONTEXTS; ++i)
+    {
+        if(contexts[i].used)
+        {
+            WaitForReading(i, 250);
+            FinishDataReading(nullptr, 0, i);
+        }
+    }
 }
 
 /**
@@ -657,8 +666,9 @@ void ConnectionSTREAM::AbortReading(int ep)
 	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, const uint8_t streamBulkOutAddr)
+int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
+    const unsigned char streamBulkOutAddr = 0x01;
     int i = 0;
 	//find not used context
 	bool contextFound = false;
@@ -741,15 +751,15 @@ int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int
     if( contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
-    long len = length;
-    contextsToSend[contextHandle].EndPt->FinishDataXfer((unsigned char*)buffer, len, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
-    contextsToSend[contextHandle].used = false;
-    contextsToSend[contextHandle].reset();
-    return len;
+        long len = length;
+        contextsToSend[contextHandle].EndPt->FinishDataXfer((unsigned char*)buffer, len, contextsToSend[contextHandle].inOvLap, contextsToSend[contextHandle].context);
+        contextsToSend[contextHandle].used = false;
+        contextsToSend[contextHandle].reset();
+        return len;
 #else
 	length = contextsToSend[contextHandle].bytesXfered;
 	contextsToSend[contextHandle].used = false;
-    contextsToSend[contextHandle].reset();
+        contextsToSend[contextHandle].reset();
 	return length;
 #endif
     }
@@ -769,11 +779,29 @@ void ConnectionSTREAM::AbortSending(int ep)
 #else
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
-        if(contextsToSend[i].used && contextsToSend[i].transfer->endpoint == ep)
+        if(contextsToSend[i].used && contextsToSend[i].transfer->endpoint == 0x01)
             libusb_cancel_transfer(contextsToSend[i].transfer);
     }
 #endif
+    for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
+    {
+        if(contextsToSend[i].used)
+        {
+            WaitForSending(i, 250);
+            FinishDataSending(nullptr, 0, i);
+        }
+    }
 }
+
+int ConnectionSTREAM::GetBuffersCount() const 
+{
+    return 16;
+};
+
+int ConnectionSTREAM::CheckStreamSize(int size)const 
+{
+    return size;
+};
 
 int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int timeout)
 {

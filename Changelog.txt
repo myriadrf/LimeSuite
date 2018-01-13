@@ -1,3 +1,35 @@
+Release 18.01.0 (pending)
+==========================
+
+SoapyLMS changes:
+- Filter BW reported to match filtersCalibration
+
+Other changes:
+- Fix B channel only streaming
+- Reduce SIMD flags when packaging for x86
+
+Release 17.12.0 (2017-10-19)
+==========================
+
+SoapyLMS changes:
+- Force MIMO alignment
+- Add TBB frontend gain configuration
+- Fix/adjust gain ranges
+
+LMS API changes:
+- Increased USB timeouts
+- Updated FTDI library (LimeSDR-Mini on Windows)
+- RF switch control for LimeSDR-Mini
+- Updated setup/destruction of streams
+- various bug fixes
+
+LimeSuiteGUI changes:
+- Update LimeSDR-Mini panel
+
+Other changes:
+- LimeSDR-USB v1.4 updated to r2.12 gateware
+- LimeSDR-USB v1.4 updated to v4.0 firmware
+
 Release 17.10.0 (2017-10-19)
 ==========================
 

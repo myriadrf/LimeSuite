@@ -442,13 +442,23 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
+int Connection_uLimeSDR::GetBuffersCount() const 
+{
+    return 16;
+};
+
+int Connection_uLimeSDR::CheckStreamSize(int size)const 
+{
+    return size;
+};
+
 /**
 @brief Starts asynchronous data reading from board
 @param *buffer buffer where to store received data
 @param length number of bytes to read
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length)
+int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     bool contextFound = false;
@@ -570,20 +580,20 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int co
 /**
 @brief Aborts reading operations
 */
-void Connection_uLimeSDR::AbortReading()
+void Connection_uLimeSDR::AbortReading(int ep)
 {
 #ifndef __unix__
-	FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
-	for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-	{
-		if (contexts[i].used == true)
-		{
+    FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        if (contexts[i].used == true)
+        {
             FT_ReleaseOverlapped(mFTHandle, &contexts[i].inOvLap);
-			contexts[i].used = false;
-		}
-	}
+            contexts[i].used = false;
+        }
+    }
     FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
-	rxSize = 0;
+    rxSize = 0;
 #else
 
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -593,6 +603,14 @@ void Connection_uLimeSDR::AbortReading()
     }
     FT_FlushPipe(mStreamRdEndPtAddr);
     rxSize = 0;
+    for(int i=0; i<USB_MAX_CONTEXTS; ++i)
+    {
+        if(contexts[i].used)
+        {
+            WaitForReading(i, 250);
+            FinishDataReading(nullptr, 0, i);
+        }
+    }
 #endif
 }
 
@@ -602,7 +620,7 @@ void Connection_uLimeSDR::AbortReading()
 @param length number of bytes to send
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length)
+int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     //find not used context
@@ -719,24 +737,32 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, 
 /**
 @brief Aborts sending operations
 */
-void Connection_uLimeSDR::AbortSending()
+void Connection_uLimeSDR::AbortSending(int ep)
 {
 #ifndef __unix__
-	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
-	for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
-	{
-		if (contextsToSend[i].used == true)
-		{
+    FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
+    for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
+    {
+        if (contextsToSend[i].used == true)
+        {
             FT_ReleaseOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
-			contextsToSend[i].used = false;
-		}
-	}
-	txSize = 0;
+            contextsToSend[i].used = false;
+        }
+    }
+    txSize = 0;
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
         if(contextsToSend[i].used)
             libusb_cancel_transfer(contextsToSend[i].transfer);
+    }
+    for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
+    {
+        if(contextsToSend[i].used)
+        {
+            WaitForSending(i, 250);
+            FinishDataSending(nullptr, 0, i);
+        }
     }
     FT_FlushPipe(mStreamWrEndPtAddr);
     txSize = 0;

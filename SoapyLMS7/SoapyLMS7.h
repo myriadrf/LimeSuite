@@ -146,6 +146,8 @@ public:
     std::vector<std::string> listGains(const int direction, const size_t channel) const;
 
     void setGain(const int direction, const size_t channel, const double value);
+    
+    double getGain(const int direction, const size_t channel) const;
 
     void setGain(const int direction, const size_t channel, const std::string &name, const double value);
 
