@@ -153,7 +153,7 @@ uint8_t SetFrequencyCGEN(float_type freq)
         uint8_t iHdiv_high = 2.9e9/2 / freq;
         uint8_t iHdiv_low = 2.0e9/2 / freq + 0.5;
         uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
-        dFvco = 2 * (iHdiv) * freq;
+        dFvco = 2 * (iHdiv+1) * freq;
         Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv - 1);
     }
     //Integer division
