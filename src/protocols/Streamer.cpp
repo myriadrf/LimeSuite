@@ -718,7 +718,6 @@ void Streamer::ReceivePacketsLoop()
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
                 int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
-                lime::warning("Rx pktLoss: ts diff: %li  pktLoss: %i", pkt[pktIndex].counter - prevTs, packetLoss);
                 for(auto value: mRxStreams)
                     if (value && value->mActive)
                         value->pktLost += packetLoss;

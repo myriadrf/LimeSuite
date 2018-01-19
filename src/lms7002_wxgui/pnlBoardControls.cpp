@@ -306,7 +306,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
 {
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-        || boardID == GetDeviceName(LMS_DEV_ULIMESDR)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
@@ -380,7 +380,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     }
     sizerAnalogRd->Layout();
 
-    if(boardID == GetDeviceName(LMS_DEV_ULIMESDR))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))
     {
         pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
         pnl->Initialize(lmsControl);

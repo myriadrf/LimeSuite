@@ -308,12 +308,15 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_TBB), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G_TBB), enable?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFIAMP_TBB), enable?0:1);
     }
     else
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_RBB), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G_RBB), enable?1:0);
         this->Modify_SPI_Reg_bits(LMS7param(PD_PGA_RBB), enable?0:1);
+        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB), enable?0:1);
     }
 
     //--- frontend ---
@@ -2591,12 +2594,12 @@ float_type LMS7002M::GetTemperature()
     this_thread::sleep_for(chrono::microseconds(250));
     const uint16_t reg606 = SPI_read(0x0606, true);
     float Vtemp = (reg606 >> 8) & 0xFF;
-    Vtemp *= 3.515625;
+    Vtemp *= 1.84;
     float Vptat = reg606 & 0xFF;
-    Vptat *= 3.515625;
+    Vptat *= 1.84;
     float Vdiff = Vptat-Vtemp;
     Vdiff /= 3.9;
-    float temperature = 40.5+Vdiff;
+    float temperature = 50.7+Vdiff;
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
     lime::debug("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
     return temperature;

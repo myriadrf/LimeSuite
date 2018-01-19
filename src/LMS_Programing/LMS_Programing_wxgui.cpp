@@ -66,16 +66,8 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer7 = new wxFlexGridSizer(0, 2, 0, 5);
     StaticText2 = new wxStaticText(this, wxID_ANY, _T("Device:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
     FlexGridSizer7->Add(StaticText2, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
-    StaticText3 = new wxStaticText(this, wxID_ANY, _T("Programming mode:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT6"));
-    FlexGridSizer7->Add(StaticText3, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     cmbDevice = new wxChoice(this, ID_CHOICE2, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE2"));
-    cmbDevice->Append(_T("HPM1000/HMP7"));
-    cmbDevice->Append(_T("FX3"));
-    cmbDevice->Append(_T("Altera FPGA"));
-    cmbDevice->SetSelection(cmbDevice->Append(_T("Automatic")));
     FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    cmbProgMode = new wxChoice(this, ID_CHOICE1, wxDefaultPosition, wxSize(176, -1), 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE1"));
-    FlexGridSizer7->Add(cmbProgMode, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer3->Add(FlexGridSizer7, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer1->Add(FlexGridSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     SetSizer(FlexGridSizer1);
@@ -87,9 +79,6 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     Connect(ID_CHOICE2, wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&LMS_Programing_wxgui::OncmbDeviceSelect);
     Connect(ID_PROGRAMING_FINISHED_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingFinished);
     Connect(ID_PROGRAMING_STATUS_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&LMS_Programing_wxgui::OnProgramingStatusUpdate);
-
-    wxCommandEvent evt;
-    OncmbDeviceSelect(evt);
 }
 
 LMS_Programing_wxgui::~LMS_Programing_wxgui()
@@ -105,12 +94,26 @@ LMS_Programing_wxgui::~LMS_Programing_wxgui()
 void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 {
     wxString wildcards;
-    switch(cmbDevice->GetSelection())
+    wxString deviceSelection = cmbDevice->GetStringSelection();
+    auto info = LMS_GetDeviceInfo(lmsControl);
+    if (info)
     {
-    case 2: wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"; break;
-    case 1: wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*"; break;
-    default: wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*"; break;
+        if (strstr(info->deviceName, "LimeSDR-USB"))
+        {
+            if (deviceSelection.find("FPGA") != wxString::npos)
+                wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
+            else
+                wildcards = "img(*.img)|*.img|All files(*.*)|*.*";
+        }
+        else if (strstr(info->deviceName, "LimeSDR-Mini"))
+            wildcards = "rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
+        else if (strstr(info->deviceName, "LimeSDR-PCIe"))
+            wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
     }
+    else if (deviceSelection.find("FPGA") != wxString::npos)
+        wildcards = "rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|img(*.img)|*.img|All files(*.*)|*.*";
+    else
+         wildcards = "img(*.img)|*.img|rbf(*.rbf)|*.rbf|bin(*.bin)|*.bin|rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
 
     wxFileDialog dlg(this, _("Select file"), _(""), _(""), wildcards, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
@@ -123,9 +126,11 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
 void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 {
     //if needed load program data from file
-    if((
-        (cmbDevice->GetSelection() == 3) ||
-        (cmbDevice->GetSelection() == 2 && cmbProgMode->GetSelection() == 2)) == false)
+    wxString deviceSelection = cmbDevice->GetStringSelection();
+
+    if(
+        (deviceSelection.find("Reset") == wxString::npos) &&
+        (deviceSelection.find("Auto") == wxString::npos))
     {
         if (lblFilename->GetLabel().length() <= 1)
         {
@@ -164,35 +169,13 @@ void LMS_Programing_wxgui::OnbtnStartProgrammingClick(wxCommandEvent& event)
 */
 void LMS_Programing_wxgui::OncmbDeviceSelect(wxCommandEvent& event)
 {
-    int deviceSelection = cmbDevice->GetSelection();
-    int progMode = cmbProgMode->GetSelection();
-    cmbProgMode->Clear();
-    if(deviceSelection == 3)
-    {
-        cmbProgMode->SetSelection(cmbProgMode->Append("Automatic update"));
-    }
-    else if(deviceSelection == 2)
-    {
-        cmbProgMode->Append("Bitstream to FPGA");
-        cmbProgMode->Append("Bitstream to Flash");
-        cmbProgMode->Append("Bitstream from Flash");
-        cmbProgMode->SetSelection(progMode < 3 ? progMode : 2);
-    }
-    else if(deviceSelection == 1)
-    {
-        cmbProgMode->Append(_("Firmware to RAM"));
-        cmbProgMode->Append(_("Firmware to Flash"));
-        cmbProgMode->SetSelection(progMode < 2 ? progMode : 1);
-    }
-    else if(deviceSelection == 0)
-    {
-        cmbProgMode->Append(_("Flash"));
-        for(int i=1; i<=8; ++i)
-            cmbProgMode->Append(wxString::Format("%i", i));
-        cmbProgMode->SetSelection(progMode);
-    }
-
-    btnOpenEnb = (deviceSelection != 3);
+    wxString deviceSelection = cmbDevice->GetStringSelection();
+    if(
+        (deviceSelection.find("Reset") == wxString::npos) &&
+        (deviceSelection.find("Auto") == wxString::npos))
+        btnOpenEnb = true;
+    else
+        btnOpenEnb = false;
     btnOpen->Enable(btnOpenEnb);
     StaticText1->Enable(btnOpenEnb);
     lblFilename->Enable(btnOpenEnb);
@@ -216,6 +199,19 @@ void LMS_Programing_wxgui::OnAbortProgramming(wxCommandEvent& event)
 void LMS_Programing_wxgui::SetConnection(lms_device_t* port)
 {
     lmsControl = port;
+    if (lmsControl)
+    {
+        cmbDevice->Clear();
+        lms_name_t modes[16];
+        int count = LMS_GetProgramModes(lmsControl, modes);
+        for (int i = 0; i < count; i ++)
+            if (strstr(modes[i],"MCU") == nullptr)
+                cmbDevice->Append(wxString(modes[i]));
+        cmbDevice->SetSelection(0);
+        wxCommandEvent evt;
+        OncmbDeviceSelect(evt);
+        Layout();
+    }
 }
 
 LMS_Programing_wxgui* LMS_Programing_wxgui::obj_ptr=nullptr;
@@ -236,58 +232,17 @@ void LMS_Programing_wxgui::DoProgramming()
 {
     mProgrammingInProgress.store(true);
     obj_ptr = this;
-    int device = cmbDevice->GetSelection();
-    int progMode = cmbProgMode->GetSelection();
-    int status = -1;
-    if (device == 1)
-    {
-        status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_FX3,(lms_prog_md_t)progMode,OnProgrammingCallback);
-    }
-    else if (device == 2)
-    {
-
-       status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_FPGA, (lms_prog_md_t)progMode,OnProgrammingCallback);
-    }
-    else if (device == 0)
-    {
-       status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), LMS_PROG_TRG_HPM7,(lms_prog_md_t)progMode,OnProgrammingCallback);
-    }
-    else if (device == 3)
-    {
-        status = LMS_ProgramUpdate(lmsControl, true/*download*/, OnProgrammingCallback);
-    }
+    wxString device = cmbDevice->GetStringSelection();
+    int status = LMS_Program(lmsControl, mProgramData.data(), mProgramData.size(), device.c_str(), OnProgrammingCallback);
     wxCommandEvent evt;
     evt.SetEventObject(this);
     evt.SetId(ID_PROGRAMING_FINISHED_EVENT);
     evt.SetEventType(wxEVT_COMMAND_THREAD);
+    evt.SetString(status == 0 ? _("Programming Completed!") : _("Programming failed!\n"));
 
-    if(status == 0)
-        evt.SetString(_("Programming Completed!"));
-    else
-    {
-        evt.SetString(_("Programming failed!\n"));
-        wxPostEvent(this, evt);
-        mProgrammingInProgress.store(false);
-        return;
-    }
-
-    //inform user about device reset
-    if(device == 1)
-    {
-        if (progMode == 1) //reset FX3 only after programming flash
-            status = LMS_Program(lmsControl, nullptr, 0,LMS_PROG_TRG_FX3, LMS_PROG_MD_RST,nullptr);
-        if(status == 0)
-            evt.SetString("FX3 firmware uploaded, device is going to be reset, please reconnect in connection settings");
-    }
-    else if(device == 2 && progMode == 1) //reset FPGA and FX3 after FPGA programming
-    {
-        status = LMS_Program(lmsControl, nullptr, 0, LMS_PROG_TRG_FPGA, LMS_PROG_MD_RST,nullptr);
-        status = LMS_Program(lmsControl, nullptr, 0, LMS_PROG_TRG_FX3, LMS_PROG_MD_RST,nullptr);
-        if(status == 0)
-            evt.SetString("FPGA gateware uploaded, device is going to be reset, please reconnect in connection settings");
-    }
     wxPostEvent(this, evt);
     mProgrammingInProgress.store(false);
+    return;
 }
 
 /** Updates GUI elements with programming status

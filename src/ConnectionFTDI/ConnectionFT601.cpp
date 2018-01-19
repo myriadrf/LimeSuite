@@ -7,6 +7,7 @@
 #include "ConnectionFT601.h"
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 #include <thread>
 #include <chrono>
@@ -686,3 +687,41 @@ int ConnectionFT601::ResetStreamBuffers()
 #endif
     return 0;
 }
+
+int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback)
+{
+    if (device != LMS64CProtocol::FPGA)
+    {
+        lime::error("Unsupported programming target");
+        return -1;
+    }
+    if (prog_mode == 0)
+    {
+        lime::error("Programming to RAM is not supported");
+        return -1;
+    }
+
+    if (prog_mode == 2)
+        return LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
+
+    LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    const int sizeUFM = 0x8000;
+    const int sizeCFM0 = 0x42000;
+    const int startUFM = 0x1000;
+    const int startCFM0 = 0x4B000;
+
+    if (length != startCFM0 + sizeCFM0)
+    { 
+        lime::error("Invalid image file");
+        return -1;
+    }
+    std::vector<char> buffer(sizeUFM + sizeCFM0); 
+    memcpy(buffer.data(), data_src + startUFM, sizeUFM);
+    memcpy(buffer.data() + sizeUFM, data_src + startCFM0, sizeCFM0);
+
+    int ret = LMS64CProtocol::ProgramWrite(buffer.data(), buffer.size(), prog_mode,  device, callback);
+    LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+    return ret;
+}
+

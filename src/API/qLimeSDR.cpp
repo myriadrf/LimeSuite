@@ -7,6 +7,9 @@
 #include "qLimeSDR.h"
 #include "FPGA_Q.h"
 
+namespace lime
+{
+
 LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Device(obj), dacRate(20e6), adcRate(20e6)
 {
     fpga = new lime::FPGA_Q();
@@ -49,3 +52,5 @@ double LMS7_qLimeSDR::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
         return tx ? dacRate : adcRate;
     return LMS7_Device::GetRate(tx, chan, rf_rate_Hz);
 }
+
+} //namespace lime

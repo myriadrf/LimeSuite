@@ -14,8 +14,10 @@
 
 static const double DEFAULT_CLOCK_RATE = 80e6;
 
-class LIME_API LMS7_Device;
-
+namespace lime
+{
+    class LIME_API LMS7_Device;
+}
 struct IConnectionStream;
 
 class SoapyLMS7 : public SoapySDR::Device
@@ -276,7 +278,7 @@ public:
 private:
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
-    LMS7_Device * lms7Device;
+    lime::LMS7_Device * lms7Device;
     double sampleRate;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;

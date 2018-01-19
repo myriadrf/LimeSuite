@@ -24,8 +24,10 @@
 #include "ADF4002.h"
 #include "mcu_programs.h"
 #include "Logger.h"
+#include "device_constants.h"
 
-const double LMS7_Device::LMS_CGEN_MAX = 640e6;
+namespace lime
+{
 
 std::vector<lime::ConnectionHandle> LMS7_Device::GetDeviceList()
 {
@@ -52,7 +54,7 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         return nullptr;
     }
     auto info = conn->GetDeviceInfo();
-    if (info.deviceName == "LimeSDR-mini")
+    if (info.deviceName == "LimeSDR-Mini")
         device = new LMS7_LimeSDR_mini(conn,obj);
     else if (info.deviceName == "LimeSDR-QPCIe")
         device = new LMS7_qLimeSDR(conn,obj);
@@ -342,7 +344,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
     
     if (oversample == 0)
     {
-        const int n = LMS_CGEN_MAX/(4*f_Hz);
+        const int n = lime::cgenMax/(4*f_Hz);
         oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
     }
 
@@ -430,7 +432,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
     
     if (oversample == 0)
     {
-        int n = tx ? LMS_CGEN_MAX/f_Hz : LMS_CGEN_MAX/(4*f_Hz);
+        int n = tx ? lime::cgenMax/f_Hz : lime::cgenMax/(4*f_Hz);
         oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
     }
 
@@ -608,7 +610,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
     if ((tx && clk_mux == 0)||(tx == false && clk_mux == 1))
     {
-        while (cgen*(1<<clk_div)>LMS_CGEN_MAX)
+        while (cgen*(1<<clk_div)>lime::cgenMax)
         {
             if (clk_div > 0)
             {
@@ -623,7 +625,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         cgen *= (1 << clk_div);
     }
 
-    if (cgen > LMS_CGEN_MAX)
+    if (cgen > lime::cgenMax)
     {
         lime::ReportError(ERANGE, "Cannot set desired sample rate. CGEN clock out of range");
         return -1;
@@ -686,7 +688,7 @@ double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
         interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
-    if (ratio == 7)
+    if (ratio == 7 && lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR) == 0)
        interface_Hz /= 2;
 
     if (rf_rate_Hz)
@@ -1364,81 +1366,55 @@ int LMS7_Device::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
     return LMS_SUCCESS;
 }
 
-int LMS7_Device::Program(const char* data, size_t len, lms_prog_trg_t target, lms_prog_md_t mode, lime::IConnection::ProgrammingCallback callback) const
+std::vector<std::string> LMS7_Device::GetProgramModes() const
+{
+    return {program_mode::fpgaRAM, program_mode::fpgaFlash, program_mode::fpgaReset,
+            program_mode::fx3RAM, program_mode::fx3Flash, program_mode::fx3Reset,
+            program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
+}
+
+
+int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const
 {
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
     
-    switch (target)
-    {
-        case LMS_PROG_TRG_FX3:
-            if (mode == LMS_PROG_MD_FLASH)
-                return this->connection->ProgramWrite(data, len, 2, 1, callback);
-            else if (mode == LMS_PROG_MD_RAM)
-                return this->connection->ProgramWrite(data, len, 1, 1, callback);
-            else
-                return this->connection->ProgramWrite(nullptr, 0, 0, 1, callback);
+    if (mode == program_mode::autoUpdate)
+        return this->connection->ProgramUpdate(true, callback);
+    if (mode == program_mode::fx3Flash)
+        return this->connection->ProgramWrite(data, len, 2, 1, callback);
+    else if (mode == program_mode::fx3RAM)
+        return this->connection->ProgramWrite(data, len, 1, 1, callback);
+    else if (mode == program_mode::fx3Reset)
+        return this->connection->ProgramWrite(nullptr, 0, 0, 1, callback);
+    else if (mode == program_mode::fpgaFlash)
+         return this->connection->ProgramWrite(data, len, 1, 2, callback);
+    else if (mode == program_mode::fpgaRAM)
+         return this->connection->ProgramWrite(data, len, 0, 2, callback);
+    else if (mode == program_mode::fpgaReset)
+         return this->connection->ProgramWrite(data, len, 2, 2, callback);
+    else if (mode == program_mode::mcuReset) {
+        auto lms = lms_list.at(lms_chip_id);
+        lms->SPI_write(0x0002, 0x0000);
+        return lms->SPI_write(0x0002, 0x0003);
+    } else if (mode == program_mode::mcuRAM || mode == program_mode::mcuEEPROM){
+        lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
+        lime::IConnection::MCU_PROG_MODE prog_mode;
+        uint8_t bin[lime::MCU_BD::cMaxFWSize];
+        memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
 
-        case LMS_PROG_TRG_FPGA:
-            return this->connection->ProgramWrite(data, len, mode, 2, callback);
-
-        case LMS_PROG_TRG_MCU:
-        {
-            lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
-            lime::IConnection::MCU_PROG_MODE prog_mode;
-            uint8_t bin[lime::MCU_BD::cMaxFWSize];
-
-            if(data != nullptr)
-                memcpy(bin,data,len>sizeof(bin) ? sizeof(bin) : len);
-
-            if (mode == LMS_PROG_MD_RAM)
-                prog_mode = lime::IConnection::MCU_PROG_MODE::SRAM;
-            else if (mode == LMS_PROG_MD_FLASH)
-                prog_mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
-            else
-            {
-                auto lms = lms_list.at(lms_chip_id);
-                lms->SPI_write(0x0002, 0x0000);
-                lms->SPI_write(0x0002, 0x0003);
-                return 0;
-            }
-
-            mcu->callback = callback;
-            mcu->Program_MCU(bin,prog_mode);
-            mcu->callback = nullptr;
-            return 0;
-        }
-
-        case LMS_PROG_TRG_HPM7:
-            return this->connection->ProgramWrite(data, len, mode, 0, callback);
-
-        default:
-            lime::ReportError(ENOTSUP, "Unsupported programming target");
-            return -1;
+        if (mode == program_mode::mcuRAM)
+            prog_mode = lime::IConnection::MCU_PROG_MODE::SRAM;
+        else 
+            prog_mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
+        mcu->callback = callback;
+        mcu->Program_MCU(bin,prog_mode);
+        mcu->callback = nullptr;
+        return 0;
     }
-}
-
-int LMS7_Device::ProgramUpdate(const bool download,lime::IConnection::ProgrammingCallback callback) const
-{
-    if (connection == nullptr)
-        return lime::ReportError(EINVAL, "Device not connected");
-
-    return this->connection->ProgramUpdate(download,callback);
-}
-
-int LMS7_Device::DACWrite(uint16_t val) const
-{
-    uint8_t id=0;
-    double dval= val;
-    return this->connection->CustomParameterWrite(&id, &dval, 1, NULL);
-}
-
-int LMS7_Device::DACRead() const
-{
-    uint8_t id=0;
-    double dval=0;
-    int ret = this->connection->CustomParameterRead(&id, &dval, 1, NULL);
-    return ret >=0 ? dval : -1;
+  
+    lime::ReportError(ENOTSUP, "Unsupported programming target");
+    return -1;
 }
 
 double LMS7_Device::GetClockFreq(unsigned clk_id, int channel) const
@@ -1796,3 +1772,5 @@ int LMS7_Device::MCU_AGCStop()
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
     return 0;
 }
+
+}//namespace lime

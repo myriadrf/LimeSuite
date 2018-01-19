@@ -73,9 +73,11 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
-    
+    int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
+    int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
+
+    int ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback) override;
+
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;

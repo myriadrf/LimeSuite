@@ -781,7 +781,7 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
+int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
@@ -790,9 +790,9 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;
-        if(values[i] > 65535.0 && (*units != ""))
+        if(values[i] > 65535.0 && (units != ""))
             powerOf10 = log10(values[i]/65.536)/3;
-        if (values[i] < 65.536 && (*units != ""))
+        if (values[i] < 65.536 && (units != ""))
             powerOf10 = log10(values[i]/65535.0) / 3;
         int unitsId = 0; // need to convert given units to their enum
         pkt.outBuffer.push_back(unitsId << 4 | powerOf10);

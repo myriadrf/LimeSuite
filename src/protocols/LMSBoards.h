@@ -26,7 +26,7 @@ enum eLMS_DEV
     LMS_DEV_LIMESDR,
     LMS_DEV_LIMESDR_PCIE,
     LMS_DEV_LIMESDR_QPCIE,
-    LMS_DEV_ULIMESDR,
+    LMS_DEV_LIMESDRMINI,
     LMS_DEV_USTREAM,
     LMS_DEV_LIMESDR_SONY, //stand alone board with Sony PAs, tuners
     LMS_DEV_LIMESDR_USB_SP,
@@ -54,7 +54,7 @@ const char LMS_DEV_NAMES[][80] =
     "LimeSDR-USB",
     "LimeSDR-PCIe",
     "LimeSDR-QPCIe",
-    "LimeSDR-mini",
+    "LimeSDR-Mini",
     "uStream",
     "LimeSDR SONY PA",
     "LimeSDR-USB SP",

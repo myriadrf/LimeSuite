@@ -14,11 +14,12 @@
 #include "Streamer.h"
 #include "IConnection.h"
 
+namespace lime
+{
 class LIME_API LMS7_Device
 {         
 public:   
-    struct Range
-    {
+    struct Range {
         Range(double a = 0, double b = 0){ min = a, max = b; };
         double min;
         double max;
@@ -60,10 +61,8 @@ public:
     int SetNCOPhase(bool tx, unsigned ch, int ind, double phase);
     double GetNCOPhase(bool tx, unsigned ch, int ind) const;
     int Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags);
-    int Program(const char* data, size_t len, lms_prog_trg_t target, lms_prog_md_t mode, lime::IConnection::ProgrammingCallback callback) const;
-    int ProgramUpdate(const bool download, lime::IConnection::ProgrammingCallback callback) const;
-    int DACWrite(uint16_t val) const;
-    int DACRead() const;
+    virtual std::vector<std::string> GetProgramModes() const;
+    virtual int Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const;
     double GetClockFreq(unsigned clk_id, int channel = -1) const;
     int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
     lms_dev_info_t* GetInfo();
@@ -108,7 +107,6 @@ protected:
     lms_dev_info_t devInfo;
     std::vector<ChannelInfo> tx_channels;
     std::vector<ChannelInfo> rx_channels;
-    static const double LMS_CGEN_MAX;
     lime::IConnection* connection;
     std::vector<lime::LMS7002M*> lms_list;
     lime::LMS7002M* SelectChannel(unsigned chan) const;
@@ -118,6 +116,8 @@ protected:
     std::vector<lime::Streamer*> mStreamers;
     lime::FPGA* fpga;
 };
+
+}
 
 #endif	/* LMS7_DEVICE_H */
 

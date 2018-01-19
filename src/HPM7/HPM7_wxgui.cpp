@@ -152,7 +152,7 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
 
 void HPM7_wxgui::Initialize(lms_device_t* dev)
 {
-    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     m_serPort = dynamic_cast<lime::LMS64CProtocol *>(lms->GetConnection());
 }
 

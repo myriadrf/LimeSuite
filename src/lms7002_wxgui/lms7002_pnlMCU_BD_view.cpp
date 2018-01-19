@@ -5,6 +5,7 @@
 #include "dlgViewIRAM.h"
 #include "dlgViewSFR.h"
 #include "MCU_File.h"
+#include "device_constants.h"
 
 
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_STATUS_EVENT = wxNewId();
@@ -148,7 +149,7 @@ void lms7002_pnlMCU_BD_view::OnchkResetClick( wxCommandEvent& event )
         // RESET
         m_iMode0 = 0;
         m_iMode1 = 0;
-        LMS_Program(lmsControl,nullptr,0,LMS_PROG_TRG_MCU,LMS_PROG_MD_RST,nullptr);
+        LMS_Program(lmsControl, nullptr, 0, lime::program_mode::mcuReset, nullptr);
         rgrMode->Enable(false);
         btnStartProgramming->Enable(false);
         DebugMode->SetValue(false);
@@ -198,17 +199,14 @@ void lms7002_pnlMCU_BD_view::OnbtnStartProgrammingClick( wxCommandEvent& event )
     mThreadWorking = true;
     mWorkerThread = std::thread([](lms7002_pnlMCU_BD_view* pthis, char mode1, char mode0)
     {
-        lms_prog_md_t prog_mode;
         int retval=0;
 
         if (mode0 == 1 && mode1 == 0)
-            prog_mode = LMS_PROG_MD_FLASH;
+            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuEEPROM, OnProgrammingCallback);
         else if (mode0 == 0 && mode1 == 1)
-            prog_mode = LMS_PROG_MD_RAM;
+            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuRAM, OnProgrammingCallback);
         else
-            prog_mode = LMS_PROG_MD_RST;
-
-        retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, LMS_PROG_TRG_MCU, prog_mode, OnProgrammingCallback);
+            retval = LMS_Program(pthis->lmsControl, (const char*)pthis->byte_array, max_array_size, lime::program_mode::mcuReset, OnProgrammingCallback);
 
         wxThreadEvent *evt = new wxThreadEvent();
         evt->SetInt(retval);

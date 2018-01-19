@@ -64,7 +64,7 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
-    *lmsControl = new LMS7_Device((LMS7_Device*)*lmsControl);
+    *lmsControl = new lime::LMS7_Device((lime::LMS7_Device*)*lmsControl);
     wxCommandEvent evt;
     evt.SetEventType(CONTROL_PORT_DISCONNECTED);
     if(GetParent())

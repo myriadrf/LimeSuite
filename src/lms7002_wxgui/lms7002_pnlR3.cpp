@@ -8,6 +8,7 @@
 #include <thread>
 #include "mcu_programs.h"
 #include "lms7_device.h"
+#include "device_constants.h"
 
 #include <vector>
 
@@ -466,7 +467,7 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
     {
         MCU_RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
         if(MCU_WaitForStatus(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            LMS_Program(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), LMS_PROG_TRG_MCU, LMS_PROG_MD_RAM, nullptr);
+            LMS_Program(lmsControl, (const char*)mcu_program_lms7_dc_iq_calibration_bin, sizeof(mcu_program_lms7_dc_iq_calibration_bin), lime::program_mode::mcuRAM, nullptr);
 
         //run mcu write
         LMS_WriteLMSReg(lmsControl, 0x002D, parameter.address);
@@ -618,7 +619,7 @@ void lms7002_pnlR3_view::UpdateGUISlow()
 
 void lms7002_pnlR3_view::OnCalibrateAnalogRSSI( wxCommandEvent& event )
 {
-    lime::LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    lime::LMS7002M* lms = ((lime::LMS7_Device*)lmsControl)->GetLMS();
     lms->CalibrateAnalogRSSI_DC_Offset();
     UpdateGUI();
 }

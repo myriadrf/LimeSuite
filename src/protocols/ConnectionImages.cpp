@@ -42,13 +42,14 @@ static const ConnectionImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinf
         ConnectionImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 22,  "LimeSDR-Mini_HW_1.1_r1.22.rpd"}),
         //ConnectionImageEntry({LMS_DEV_LIMESDR_PCIE,  0, 0, nullptr,  0, 0,  nullptr}),
         //ConnectionImageEntry({LMS_DEV_ULIMESDR,  0, 0, nullptr,  0, 0,  nullptr})
     };
 
     for(const auto &iter : imageEntries)
     {
-        if (info.device == iter.dev and info.hardware == iter.hw_rev)
+        if (info.device == iter.dev && info.hardware == iter.hw_rev)
         {
             return iter;
         }
@@ -108,15 +109,14 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
     const auto &entry = lookupImageEntry(info);
 
     //an entry match was not found
-    if (entry.dev == LMS_DEV_UNKNOWN)
-    {
+    if (entry.dev == LMS_DEV_UNKNOWN){
         return lime::ReportError("Update not supported: %s[HW=%d]", GetDeviceName(info.device), info.hardware);
     }
 
     //download images when missing
-    if (download)
-    {
-        const std::vector<std::string> images = {entry.fw_img, entry.gw_img};
+    if (download){
+        std::vector<std::string> images = {entry.gw_img};
+        if (entry.fw_img) images.push_back(std::string(entry.fw_img));
         for (const auto &image : images)
         {
             if (not lime::locateImageResource(image).empty()) continue;
@@ -129,7 +129,7 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
     }
 
     //load firmware into flash
-    {
+    if (entry.fw_img){
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.fw_img);
@@ -177,11 +177,10 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
     }
 
     //Reset FX3, FPGA should be reloaded on boot
-    {
+    if (entry.fw_img){
         int device = LMS64CProtocol::FX3; //FX3
         auto status = this->ProgramWrite(nullptr, 0, 0, device, nullptr);
         if (status != 0) return status;
     }
-
     return 0;
 }

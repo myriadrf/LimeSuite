@@ -1178,22 +1178,15 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned chan, bo
  * @{
  */
 
-/**Enumeration of programming mode*/
-typedef enum
-{
-    LMS_PROG_MD_RAM = 0,   ///<load firmware/bitstream to volatile storage
-    LMS_PROG_MD_FLASH = 1, ///<load firmware/bitstream to non-volatile storage
-    LMS_PROG_MD_RST = 2    ///<reset and boot from flash
-}lms_prog_md_t;
-
-/**Enumeration of programmable board modules*/
-typedef enum
-{
-    LMS_PROG_TRG_FX3 = 0,   ///<program FX3 firmware
-    LMS_PROG_TRG_FPGA,      ///<program FPGA gateware
-    LMS_PROG_TRG_MCU,       ///<program LMS7 MCU firmware
-    LMS_PROG_TRG_HPM7,
-}lms_prog_trg_t;
+/**
+ * Get the list of supported programming modes.
+ * 
+ * @param device        Device handle previously obtained by LMS_Open().
+ * @param[out]  list    list of programming modes (can be NULL).
+ * 
+ * @return      number of modes in the list, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t *device, lms_name_t *list);
 
 /**
  * Callback from programming processes
@@ -1210,26 +1203,13 @@ typedef bool (*lms_prog_callback_t)(int bsent, int btotal, const char* progressM
  * @param device    Device handle previously obtained by LMS_Open().
  * @param data      Pointer to memory containing firmware/bitsteam image
  * @param size      Size of firmware/bitsteam image in bytes.
- * @param target   device component to program ::lms_prog_trg_t
- * @param mode      programming mode ::lms_prog_md_t
+ * @param mode      programming mode, use LMS_GetProgramModes to get list of modes 
  * @param callback  callback function for monitoring progress
  *
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, size_t size,
-           lms_prog_trg_t target, lms_prog_md_t mode, lms_prog_callback_t callback);
-
-/**
- * Automatically update device firmware
- *
- * @param dev       Device handle previously obtained by LMS_Open().
- * @param download  True to download missing images from the web.
- * @param callback  callback function for monitoring progress
- *
- * @return          0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *dev, bool download,
-                                           lms_prog_callback_t callback);
+API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, 
+                size_t size, const lms_name_t mode, lms_prog_callback_t callback);
 
 /**Device information structure*/
 typedef struct
