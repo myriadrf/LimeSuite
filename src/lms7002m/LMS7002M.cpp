@@ -1022,12 +1022,13 @@ int LMS7002M::SetPathRFE(PathRFE path)
 
 LMS7002M::PathRFE LMS7002M::GetPathRFE(void)
 {
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE)) == 0) return PATH_RFE_LB1;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE)) == 0) return PATH_RFE_LB2;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE)) == 0) return PATH_RFE_LNAL;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE)) == 0) return PATH_RFE_LNAW;
-    if (this->Get_SPI_Reg_bits(LMS7param(PD_LNA_RFE)) == 0) return PATH_RFE_NONE;
-    return PATH_RFE_LNAH;
+    const int sel_path_rfe = this->Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE)) == 0 && sel_path_rfe == 3) return PATH_RFE_LB1;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE)) == 0 && sel_path_rfe == 2) return PATH_RFE_LB2;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE)) == 0 && sel_path_rfe == 2) return PATH_RFE_LNAL;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE)) == 0 && sel_path_rfe == 3) return PATH_RFE_LNAW;
+    if (sel_path_rfe == 1) return PATH_RFE_LNAH;
+    return PATH_RFE_NONE;
 }
 
 int LMS7002M::SetBandTRF(const int band)
