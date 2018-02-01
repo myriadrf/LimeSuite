@@ -306,7 +306,8 @@ public:
 	float_type GetFrequencySX(bool tx);
     int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
     int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
-	bool GetSXLocked(bool tx);
+    void EnableSX_TDD(bool tddMode);
+    bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
     {

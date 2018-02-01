@@ -2,6 +2,7 @@ Release 18.01.0 (pending)
 ==========================
 
 SoapyLMS changes:
+- Automatic TDD LO sharing on frequency tune match
 - Do not tune NCO when LO is within tuning range
 - Filter BW reported to match filtersCalibration
 

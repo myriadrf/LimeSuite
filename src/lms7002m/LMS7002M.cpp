@@ -1219,6 +1219,22 @@ bool LMS7002M::GetCGENLocked(void)
     return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO_CGEN).address, 13, 12, true) & 0x3) == 2;
 }
 
+void LMS7002M::EnableSX_TDD(bool tddMode)
+{
+    Channel ch = this->GetActiveChannel();
+
+    //enable the path of the Tx LO to Rx RFE input
+    this->SetActiveChannel(ChSXT);
+    Modify_SPI_Reg_bits(LMS7param(PD_LOCH_T2RBUF), tddMode?0:1);
+
+    //when TDD is enabled, the Rx LO must be disabled
+    this->SetActiveChannel(ChSXR);
+    int disabledChannels = (Get_SPI_Reg_bits(LMS7_PD_AFE.address,4,1)&0xF);//check if all channels are disabled
+    this->Modify_SPI_Reg_bits(LMS7param(EN_G), tddMode?0:((disabledChannels&0xC)==0xC?0:1));
+
+    this->SetActiveChannel(ch); //restore active channel
+}
+
 bool LMS7002M::GetSXLocked(bool tx)
 {
     SetActiveChannel(tx?ChSXT:ChSXR);

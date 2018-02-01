@@ -566,6 +566,11 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
         if (targetRfFreq > 3.8e9) targetRfFreq = 3.8e9;
         rfic->SetFrequencySX(lmsDir, targetRfFreq);
         _channelsToCal.emplace(direction, channel);
+
+        //enable tdd LO sharing when rx and tx are the same
+        const bool tdd = rfic->GetFrequencySX(LMS7002M::Tx) == rfic->GetFrequencySX(LMS7002M::Rx);
+        rfic->EnableSX_TDD(tdd);
+        if (tdd) SoapySDR::logf(SOAPY_SDR_NOTICE, "TDD LO sharing enabled");
         return;
     }
 
