@@ -532,6 +532,25 @@ SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const
     return SoapySDR::Device::getFrequencyArgsInfo(direction, channel);
 }
 
+void SoapyLMS7::setFrequency(const int direction, const size_t channel, const double frequency, const SoapySDR::Kwargs &args)
+{
+    //less than 30? use distributed algorithm with NCO to help tuning
+    if (frequency < 30e6)
+    {
+        SoapySDR::Device::setFrequency(direction, channel, frequency, args);
+    }
+
+    //otherwise tune the RF center frequency keeping any small errors
+    //the baseband NCO will be set to zero as part of tuning overall
+    //this allows the DC component for RX chain to be removed
+    //by the DC removal filter by ensuring the NCO is kept at 0
+    else
+    {
+        this->setFrequency(direction, channel, "RF", frequency, args);
+        this->setFrequency(direction, channel, "BB", 0.0,       args);
+    }
+}
+
 void SoapyLMS7::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
