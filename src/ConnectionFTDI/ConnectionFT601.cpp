@@ -12,7 +12,6 @@
 #include <thread>
 #include <chrono>
 #include <FPGA_common.h>
-#include <LMS7002M.h>
 #include <ciso646>
 #include "Logger.h"
 
@@ -162,8 +161,10 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
             lime::debug("Kernel Driver Detached!");
     }
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
+    if (r < 0)
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
-    r = libusb_claim_interface(dev_handle, 1); //claim interface 1 of device
+
+    if ((r = libusb_claim_interface(dev_handle, 1))<0) //claim interface 1 of device
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     lime::debug("Claimed Interface");
     
