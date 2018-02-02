@@ -26,7 +26,8 @@ void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
         this->txStreams[i].handle = 0;
     }
     cmbStreamType->Clear();
-    if (LMS_GetNumChannels(lmsControl, false)>2)
+    const int num_ch = LMS_GetNumChannels(lmsControl, false);
+    if (num_ch>2)
     {
         cmbStreamType->Append(_T("LMS1 SISO"));
         cmbStreamType->Append(_T("LMS1 MIMO"));
@@ -34,10 +35,14 @@ void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
         cmbStreamType->Append(_T("LMS2 MIMO"));
         cmbStreamType->Append(_T("Ext. ADC/DAC"));
     }
-    else
+    else if (num_ch == 2)
     {
         cmbStreamType->Append(_T("LMS SISO"));
         cmbStreamType->Append(_T("LMS MIMO"));
+    }
+    else
+    {
+        cmbStreamType->Append(_T("LMS SISO"));
     }
     cmbStreamType->SetSelection(0);
     SetNyquistFrequency();
