@@ -100,8 +100,11 @@ public:
     StreamConfig::StreamDataFormat dataLinkFormat;
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
-    void AlignRxTSP();
 private:
+    void AlignRxTSP();
+    void AlignRxRF(bool restoreValues, bool adjustHBDdelay);
+    void RstRxIQGen();
+    void RstTxIQGen();
     FPGA* fpga;
     LMS7002M* lms;
     int chipId;
