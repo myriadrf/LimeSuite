@@ -25,6 +25,19 @@ public:
     virtual ~pnlQSpark();
 
     wxComboBox* cmbVCXOcontrolVoltage;
+    
+    wxCheckBox* chkLB_1A;
+    wxCheckBox* chkLB_1B;
+    wxCheckBox* chkLB_2A;
+    wxCheckBox* chkLB_2B;
+    wxCheckBox* chkSH_1A;
+    wxCheckBox* chkSH_1B;
+    wxCheckBox* chkSH_2A;
+    wxCheckBox* chkSH_2B;
+    wxCheckBox* chkAT_1A;
+    wxCheckBox* chkAT_1B;
+    wxCheckBox* chkAT_2A;
+    wxCheckBox* chkAT_2B;
 
     wxPanel* mPanelStreamPLL;
     wxTextCtrl* txtPllFreqRxMHz;

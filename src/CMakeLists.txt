@@ -5,7 +5,6 @@ set(LIME_SUITE_PUBLIC_HEADERS
     lime/LimeSuite.h
     VersionInfo.h
     Logger.h
-    ErrorReporting.h
     SystemResources.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
@@ -44,7 +43,6 @@ endif()
 ########################################################################
 set(LIME_SUITE_SOURCES
     Logger.cpp
-    ErrorReporting.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
     ConnectionRegistry/IConnection.cpp
@@ -54,21 +52,26 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
-	lms7002m/LMS7002M_BaseCalibrations.cpp
+    lms7002m/LMS7002M_BaseCalibrations.cpp
     lms7002m/goert.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
-    protocols/ILimeSDRStreaming.cpp
+    protocols/Streamer.cpp
+    protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
+    API/LmsGeneric.cpp
     API/qLimeSDR.cpp
     API/LimeSDR_mini.cpp
+    API/LimeSDR.cpp
     FPGA_common/FPGA_common.cpp
+    FPGA_common/FPGA_Mini.cpp
+    FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
 )
 
@@ -140,10 +143,10 @@ endif()
 ## Supported connections
 ########################################################################
 include(ConnectionEVB7COM/CMakeLists.txt)
-include(ConnectionSTREAM/CMakeLists.txt)
+include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-include(ConnectionNovenaRF7/CMakeLists.txt)
-include(Connection_uLimeSDR/CMakeLists.txt)
+#include(ConnectionNovenaRF7/CMakeLists.txt)
+include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 
 configure_file(

@@ -107,6 +107,7 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     pnlCustomControls = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, _("Custom controls"));
     wxFlexGridSizer* sizerCustomControls = new wxFlexGridSizer(0, 5, 5, 5);
 
+    sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("ID")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Value")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Power")));
     sizerCustomControls->Add(new wxStaticText(pnlCustomControls, wxID_ANY, _("Units")));
@@ -222,7 +223,7 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         int status = LMS_ReadCustomBoardParam(lmsControl,mParameters[i].channel,&value,units);
         if (status != 0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
+            wxMessageBox(_("Error reading board parameters"), _("Warning"));
             return;
         }
         mParameters[i].channel = ids[i];
@@ -241,12 +242,6 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
 
 void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Device not connected"), _("Warning"));
-        return;
-    }
-
     vector<uint8_t> ids;
     vector<double> values;
 
@@ -259,7 +254,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
         int status = LMS_WriteCustomBoardParam(lmsControl,mParameters[i].channel,mParameters[i].value,NULL);
         if (status != 0)
         {
-            wxMessageBox(_("Failes to write values"), _("Warning"));
+            wxMessageBox(_("Failed to write values"), _("Warning"));
             return;
         }
     }
@@ -276,8 +271,6 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
 void pnlBoardControls::Initialize(lms_device_t* controlPort)
 {
     lmsControl = controlPort;
-    if(!LMS_IsOpen(lmsControl,0))
-        return;
     const lms_dev_info_t* info;
     if ((info = LMS_GetDeviceInfo(lmsControl))!=nullptr)
     {
@@ -313,14 +306,16 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
 {
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
-        || boardID == GetDeviceName(LMS_DEV_ULIMESDR)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
         || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
     {
-
-        paramList.push_back(ADC_DAC{"VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255});
+        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
+        else
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
         paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
@@ -385,7 +380,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     }
     sizerAnalogRd->Layout();
 
-    if(boardID == GetDeviceName(LMS_DEV_ULIMESDR))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))
     {
         pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
         pnl->Initialize(lmsControl);
@@ -477,12 +472,6 @@ void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
     uint8_t id = spinCustomChannelRd->GetValue();
     double value = 0;
     lms_name_t units;
@@ -501,14 +490,8 @@ void pnlBoardControls::OnCustomRead(wxCommandEvent& event)
 
 void pnlBoardControls::OnCustomWrite(wxCommandEvent& event)
 {
-    if (!LMS_IsOpen(lmsControl,1))
-    {
-        wxMessageBox(_("Board not connected"), _("Warning"));
-        return;
-    }
-
     uint8_t id = spinCustomChannelWr->GetValue();
-    int powerOf10 = cmbCustomPowerOf10Wr->GetSelection()*3;
+    int powerOf10 = (cmbCustomPowerOf10Wr->GetSelection()-8)*3;
     lms_name_t units;
     strncpy(units,adcUnits2string(cmbCustomUnitsWr->GetSelection()),sizeof(units)-1);
 

@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionXillybus.h"
-#include "ErrorReporting.h"
 #ifndef __unix__
 #include "Windows.h"
 #else
@@ -63,9 +62,6 @@ const ConnectionXillybus::EPConfig ConnectionXillybus::deviceConfigs[] = {
 */
 ConnectionXillybus::ConnectionXillybus(const unsigned index)
 {
-    RxLoopFunction = bind(&ConnectionXillybus::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&ConnectionXillybus::TransmitPacketsLoop, this, std::placeholders::_1);
-
     m_hardwareName = "";
 #ifndef __unix__
     hWrite = INVALID_HANDLE_VALUE;
@@ -81,7 +77,6 @@ ConnectionXillybus::ConnectionXillybus(const unsigned index)
     Open(index);
     isConnected = true;
 
-    GetChipVersion();
     std::shared_ptr<Si5351C> si5351module(new Si5351C());
     si5351module->Initialize(this);
     si5351module->SetPLL(0, 25000000, 0);
@@ -602,7 +597,7 @@ int ConnectionXillybus::BeginDataReading(char* buffer, uint32_t length, int ep)
 {
     return ep;
 }
-int ConnectionXillybus::WaitForReading(int contextHandle, unsigned int timeout_ms) 
+bool ConnectionXillybus::WaitForReading(int contextHandle, unsigned int timeout_ms) 
 {
     return true;
 }
@@ -615,7 +610,7 @@ int ConnectionXillybus::BeginDataSending(const char* buffer, uint32_t length, in
 {
     return SendData(buffer, length,  ep, 3000);
 }
-int ConnectionXillybus::WaitForSending(int contextHandle, uint32_t timeout_ms) 
+bool ConnectionXillybus::WaitForSending(int contextHandle, uint32_t timeout_ms) 
 {
     return true;
 }
@@ -623,4 +618,3 @@ int ConnectionXillybus::FinishDataSending(const char* buffer, uint32_t length, i
 {
     return contextHandle;
 }
-

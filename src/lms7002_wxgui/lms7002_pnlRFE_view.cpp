@@ -182,17 +182,7 @@ void lms7002_pnlRFE_view::UpdateGUI()
     uint16_t macBck;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&macBck);
     if (macBck >= 2)
-    {
-        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&value);
-        if (value != 0)
-            wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
-        LMS_WriteParam(lmsControl,LMS7param(MAC), 1);
-        LMS_ReadParam(lmsControl,LMS7param(EN_NEXTRX_RFE),&value);
-        if (value != 1)
-            wxMessageBox(_("Rx MIMO mode not enabled, EN_NEXTRX_RFE=0"), _("Warning"));
-        LMS_WriteParam(lmsControl,LMS7param(MAC), macBck);
         chkEN_NEXTRX_RFE->Hide();
-    }
     else
         chkEN_NEXTRX_RFE->Show();
 

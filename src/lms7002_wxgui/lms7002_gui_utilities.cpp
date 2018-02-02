@@ -44,7 +44,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
         wndClass = wnd->GetClassInfo();
 
         LMS7_Device* lms = (LMS7_Device*)lmsControl;
-        lms->ReadParam(idParam.second, &value, true);
+        value = lms->ReadParam(idParam.second, -1, true);
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
         {

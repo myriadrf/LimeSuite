@@ -4,13 +4,13 @@
     @brief Implementation of STREAM board connection.
 */
 
-#include "ConnectionSTREAM.h"
+#include "ConnectionFX3.h"
 #include "Logger.h"
 
 using namespace lime;
 
 #ifdef __unix__
-void ConnectionSTREAMEntry::handle_libusb_events()
+void ConnectionFX3Entry::handle_libusb_events()
 {
     struct timeval tv;
     tv.tv_sec = 0;
@@ -24,15 +24,13 @@ void ConnectionSTREAMEntry::handle_libusb_events()
 #endif // __UNIX__
 
 //! make a static-initialized entry in the registry
-void __loadConnectionSTREAMEntry(void) //TODO fixme replace with LoadLibrary/dlopen
+void __loadConnectionFX3Entry(void) //TODO fixme replace with LoadLibrary/dlopen
 {
-static ConnectionSTREAMEntry STREAMEntry;
+static ConnectionFX3Entry FX3Entry;
 }
 
-int USBTransferContext::idCounter = 0;
-
-ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
-    ConnectionRegistryEntry("STREAM")
+ConnectionFX3Entry::ConnectionFX3Entry(void):
+    ConnectionRegistryEntry("FX3")
 {
 #ifdef __unix__
     int r = libusb_init(&ctx); //initialize the library for the session we just declared
@@ -40,24 +38,11 @@ ConnectionSTREAMEntry::ConnectionSTREAMEntry(void):
         lime::error("Init Error %i", r); //there was an error
     libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
     mProcessUSBEvents.store(true);
-    mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
+    mUSBProcessingThread = std::thread(&ConnectionFX3Entry::handle_libusb_events, this);
 #endif
 }
 
-ConnectionSTREAMEntry::ConnectionSTREAMEntry(const std::string entryName):
-    ConnectionRegistryEntry(entryName)
-{
-#ifdef __unix__
-    int r = libusb_init(&ctx); //initialize the library for the session we just declared
-    if(r < 0)
-        lime::error("Init Error %i", r); //there was an error
-    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
-    mProcessUSBEvents.store(true);
-    mUSBProcessingThread = std::thread(&ConnectionSTREAMEntry::handle_libusb_events, this);
-#endif
-}
-
-ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
+ConnectionFX3Entry::~ConnectionFX3Entry(void)
 {
 #ifdef __unix__
     mProcessUSBEvents.store(false);
@@ -70,7 +55,7 @@ ConnectionSTREAMEntry::~ConnectionSTREAMEntry(void)
 /** @return name of usb device as string.
     @param index device index in list
 */
-std::string ConnectionSTREAMEntry::DeviceName(unsigned int index)
+std::string ConnectionFX3Entry::DeviceName(unsigned int index)
 {
     std::string name;
     char tempName[USB_STRING_MAXLEN];
@@ -93,7 +78,7 @@ std::string ConnectionSTREAMEntry::DeviceName(unsigned int index)
 }
 #endif
 
-std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionHandle &hint)
+std::vector<ConnectionHandle> ConnectionFX3Entry::enumerate(const ConnectionHandle &hint)
 {
     std::vector<ConnectionHandle> handles;
 
@@ -195,7 +180,7 @@ std::vector<ConnectionHandle> ConnectionSTREAMEntry::enumerate(const ConnectionH
     return handles;
 }
 
-IConnection *ConnectionSTREAMEntry::make(const ConnectionHandle &handle)
+IConnection *ConnectionFX3Entry::make(const ConnectionHandle &handle)
 {
-    return new ConnectionSTREAM(ctx, handle.addr, handle.serial, handle.index);
+    return new ConnectionFX3(ctx, handle.addr, handle.serial, handle.index);
 }

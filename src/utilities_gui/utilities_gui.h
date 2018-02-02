@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -22,6 +22,7 @@
 #include <wx/dialog.h>
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
+#include <wx/choice.h>
 #include <wx/panel.h>
 #include <wx/statbox.h>
 #include <wx/frame.h>
@@ -67,12 +68,14 @@ class pnlMiniLog_view : public wxPanel
 		wxTextCtrl* txtMessageField;
 		wxButton* btnClear;
 		wxButton* btnFullLog;
+		wxChoice* choiceLogLvl;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnUpdateGUI( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void OnBtnClearClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFullLog( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnLogDataClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onLogLvlChange( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

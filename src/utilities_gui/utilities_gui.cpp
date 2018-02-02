@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Feb 16 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -93,6 +93,14 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	fgSizer4->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	txtMessageField = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH2 );
+	#ifdef __WXGTK__
+	if ( !txtMessageField->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtMessageField->SetMaxLength( 100 );
+	}
+	#else
+	txtMessageField->SetMaxLength( 100 );
+	#endif
 	txtMessageField->SetMinSize( wxSize( 300,48 ) );
 	
 	fgSizer4->Add( txtMessageField, 0, wxEXPAND, 5 );
@@ -115,6 +123,17 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	chkLogData = new wxCheckBox( this, wxID_ANY, wxT("Log data"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer5->Add( chkLogData, 0, 0, 5 );
 	
+	wxStaticText* m_staticText52;
+	m_staticText52 = new wxStaticText( this, wxID_ANY, wxT("Log level:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText52->Wrap( -1 );
+	fgSizer5->Add( m_staticText52, 0, wxTOP, 5 );
+	
+	wxString choiceLogLvlChoices[] = { wxT("Error"), wxT("Warning"), wxT("Info"), wxT("Debug") };
+	int choiceLogLvlNChoices = sizeof( choiceLogLvlChoices ) / sizeof( wxString );
+	choiceLogLvl = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, choiceLogLvlNChoices, choiceLogLvlChoices, 0 );
+	choiceLogLvl->SetSelection( 2 );
+	fgSizer5->Add( choiceLogLvl, 0, 0, 1 );
+	
 	
 	fgSizer4->Add( fgSizer5, 1, 0, 5 );
 	
@@ -128,6 +147,7 @@ pnlMiniLog_view::pnlMiniLog_view( wxWindow* parent, wxWindowID id, const wxPoint
 	btnClear->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
 	chkLogData->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
+	choiceLogLvl->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMiniLog_view::onLogLvlChange ), NULL, this );
 }
 
 pnlMiniLog_view::~pnlMiniLog_view()
@@ -137,6 +157,7 @@ pnlMiniLog_view::~pnlMiniLog_view()
 	btnClear->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnBtnClearClicked ), NULL, this );
 	btnFullLog->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnShowFullLog ), NULL, this );
 	chkLogData->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlMiniLog_view::OnLogDataClicked ), NULL, this );
+	choiceLogLvl->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( pnlMiniLog_view::onLogLvlChange ), NULL, this );
 	
 }
 
@@ -152,6 +173,14 @@ dlgFullMessageLog_view::dlgFullMessageLog_view( wxWindow* parent, wxWindowID id,
 	fgSizer19->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	txtMessageField = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY|wxTE_RICH2 );
+	#ifdef __WXGTK__
+	if ( !txtMessageField->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtMessageField->SetMaxLength( 100 );
+	}
+	#else
+	txtMessageField->SetMaxLength( 100 );
+	#endif
 	txtMessageField->SetMinSize( wxSize( 300,100 ) );
 	
 	fgSizer19->Add( txtMessageField, 1, wxEXPAND, 5 );
@@ -385,7 +414,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer306->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSwriteAddr = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtLMSwriteAddr->SetMaxLength( 0 ); 
 	txtLMSwriteAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer306->Add( txtLMSwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -395,7 +423,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer306->Add( ID_STATICTEXT9, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSwriteValue = new wxTextCtrl( sbSizer160->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtLMSwriteValue->SetMaxLength( 0 ); 
 	txtLMSwriteValue->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer306->Add( txtLMSwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -431,7 +458,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer307->Add( ID_STATICTEXT2, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLMSreadAddr = new wxTextCtrl( sbSizer161->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxDefaultSize, 0 );
-	txtLMSreadAddr->SetMaxLength( 0 ); 
 	txtLMSreadAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer307->Add( txtLMSreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -516,7 +542,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer320->Add( ID_STATICTEXT15, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardwriteAddr = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardwriteAddr->SetMaxLength( 0 ); 
 	txtBoardwriteAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer320->Add( txtBoardwriteAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -526,7 +551,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer320->Add( ID_STATICTEXT16, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardwriteValue = new wxTextCtrl( sbSizer169->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardwriteValue->SetMaxLength( 0 ); 
 	txtBoardwriteValue->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer320->Add( txtBoardwriteValue, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -562,7 +586,6 @@ SPI_view::SPI_view( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	fgSizer321->Add( ID_STATICTEXT19, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtBoardreadAddr = new wxTextCtrl( sbSizer170->GetStaticBox(), wxID_ANY, wxT("FFFF"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	txtBoardreadAddr->SetMaxLength( 0 ); 
 	txtBoardreadAddr->SetMinSize( wxSize( 48,-1 ) );
 	
 	fgSizer321->Add( txtBoardreadAddr, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );

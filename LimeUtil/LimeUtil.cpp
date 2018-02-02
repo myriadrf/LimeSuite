@@ -13,7 +13,7 @@
 #include <ciso646>
 #include <getopt.h>
 #include <fstream>
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "LMS64CProtocol.h"
 
 using namespace lime;

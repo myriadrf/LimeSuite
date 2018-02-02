@@ -6,7 +6,7 @@
 
 #include "LMS7002M.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "CalibrationCache.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
@@ -87,7 +87,7 @@ void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
 
         //bulk write the original register values from backup
         this->SetActiveChannel((ch==0)?ChA:ChB);
-        SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size());
+        SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size(), false);
     }
 
     //cleanup
@@ -109,7 +109,11 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     int status;
     if(RxLPF_RF_LimitLow > rx_lpf_freq_RF || rx_lpf_freq_RF > RxLPF_RF_LimitHigh)
         return ReportError(ERANGE, "RxLPF frequency out of range, available range from %g to %g MHz", RxLPF_RF_LimitLow/1e6, RxLPF_RF_LimitHigh/1e6);
-
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
+    }
+    
     if(mCalibrationByMCU)
     {
         uint8_t mcuID = mcuControl->ReadMCUProgramID();
@@ -892,6 +896,11 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
                         TxLPF_RF_LimitMidHigh/1e6, TxLPF_RF_LimitHigh/1e6,
                         TxLPF_RF_LimitMidHigh/1e6);
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
+    }
+    
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
     }
 
     if(mCalibrationByMCU)

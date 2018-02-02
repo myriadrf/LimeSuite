@@ -5,7 +5,7 @@
 */
 
 #include "SystemResources.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 
 #include <cstdlib> //getenv, system
 #include <vector>

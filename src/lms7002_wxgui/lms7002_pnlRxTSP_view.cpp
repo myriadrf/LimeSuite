@@ -189,7 +189,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR1Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR1, &coefficients[0]);
     if (status < 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -217,7 +217,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR2Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR2, &coefficients[0]);
     if (status < 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -245,7 +245,7 @@ void lms7002_pnlRxTSP_view::onbtnGFIR3Coef( wxCommandEvent& event )
     int status =  LMS_GetGFIRCoeff(lmsControl, LMS_CH_RX, ch, LMS_GFIR3, &coefficients[0]);
     if (status < 0)
     {
-        wxMessageBox(_("Error reading GFIR coefficients: ") + wxString::From8BitData(LMS_GetLastErrorMessage()), _("ERROR"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Error reading GFIR coefficients"), _("ERROR"), wxICON_ERROR | wxOK);
         dlg->Destroy();
         return;
     }
@@ -265,7 +265,7 @@ void lms7002_pnlRxTSP_view::Initialize(lms_device_t* pControl)
     lmsControl = pControl;
     assert(lmsControl != nullptr);
     uint16_t value;
-    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+    if (LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
          value = 1;
     chkDC_LOOP_RXTSP->Enable(value);
     cmbHBD_DLY->Enable(value);
@@ -484,7 +484,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
         LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0 / 360.0)*phase[i]));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), phase[i]));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), fcw/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW (MHz)"));

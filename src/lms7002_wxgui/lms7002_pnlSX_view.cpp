@@ -11,6 +11,7 @@
 #include "lms7002_dlgVCOfrequencies.h"
 #include <string>
 #include "lms7_device.h"
+#include "Logger.h"
 using namespace std;
 using namespace lime;
 
@@ -489,7 +490,7 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
             LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,refClkMHz * 1e6);
             int status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,currentFreq_MHz * 1e6);
             if (status != 0)
-                wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+                wxMessageBox(_("Set SX frequency failed"));
             UpdateGUI();
         }
     }
@@ -517,11 +518,12 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
         status = lms->SetFrequencySX(isTx,freqMHz * 1e6);
 
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("Set SX frequency failed"));
     else
     {
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         wxString msg;
         if (ch == 1)
             msg = _("SXR");
@@ -541,7 +543,7 @@ void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status = LMS_SetClockFreq(lmsControl,ch == 2 ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,-1); //Tune
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
 }
 

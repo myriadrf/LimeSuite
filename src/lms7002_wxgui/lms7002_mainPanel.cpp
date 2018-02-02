@@ -38,8 +38,6 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 
     mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
     tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
-
-    chkSyncAB->Hide();
 }
 
 lms7002_mainPanel::~lms7002_mainPanel()
@@ -155,8 +153,9 @@ void lms7002_mainPanel::OnResetChip(wxCommandEvent &event)
 {
     int status = LMS_Reset(lmsControl);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Chip reset: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Chip reset failed"), _("Warning"));
     wxNotebookEvent evt;
+    chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
@@ -164,8 +163,9 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
 {
     int status = LMS_Init(lmsControl);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Load Default: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Load Default failed"), _("Warning"));
     wxNotebookEvent evt;
+    chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
 }
 
@@ -188,7 +188,9 @@ void lms7002_mainPanel::UpdateGUI()
     }
     else
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
+        auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+        if (conn && conn->IsOpen())
+            LMS_WriteParam(lmsControl,LMS7param(MAC),1);
         rbChannelA->SetValue(true);
         rbChannelB->SetValue(false);
     }
@@ -212,7 +214,7 @@ void lms7002_mainPanel::OnOpenProject( wxCommandEvent& event )
     int status = LMS_LoadConfig(lmsControl,dlg.GetPath().To8BitData());
     if (status != 0)
     {
-            wxMessageBox(wxString::Format(_("Failed to load file: %s"), LMS_GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Failed to load file"), _("Warning"));
     }
     wxCommandEvent tevt;
     LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
@@ -266,14 +268,9 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else
     {
-        if(chkSyncAB->IsChecked())
-            LMS_WriteParam(lmsControl,LMS7param(MAC), 3);
-        else
-        {
-            LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
-            rbChannelA->Enable();
-            rbChannelB->Enable();
-        }
+        LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
+        rbChannelA->Enable();
+        rbChannelB->Enable();
     }
 
 #ifdef __APPLE__
@@ -291,7 +288,7 @@ void lms7002_mainPanel::OnDownloadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,false);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Download all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Download all registers failed"), _("Warning"));
     UpdateVisiblePanel();
 }
 
@@ -299,7 +296,7 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 {
     int status = LMS_Synchronize(lmsControl,true);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Upload all registers: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Upload all registers failed"), _("Warning"));
     wxCommandEvent evt;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
     wxPostEvent(this, evt);
@@ -308,10 +305,10 @@ void lms7002_mainPanel::OnUploadAll(wxCommandEvent& event)
 
 void lms7002_mainPanel::OnReadTemperature(wxCommandEvent& event)
 {
-    double t;
+    double t = 0.0;
     int status = LMS_GetChipTemperature(lmsControl,0,&t);
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Read chip temperature: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Failed to read chip temperature"), _("Warning"));
     txtTemperature->SetLabel(wxString::Format("Temperature: %.0f C", t));
 }
 
@@ -345,14 +342,12 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     uint16_t chBck;
     LMS_ReadParam(lmsControl, LMS7param(MAC), &chBck);
     bool enable = chkEnableMIMO->IsChecked();
-    LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
-    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTRX_RFE), enable);
-    LMS_WriteParam(lmsControl, LMS7param(EN_NEXTTX_TRF), enable);
-    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE1), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_RX_AFE2), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE1), 0);
-    LMS_WriteParam(lmsControl, LMS7param(PD_TX_AFE2), 0);
-    LMS_WriteParam(lmsControl, LMS7param(MIMO_SISO), 0);
+    for (int ch = 0; ch < LMS_GetNumChannels(lmsControl,false);ch++)
+    {
+        if (!enable) ch++; //enable all, disable only B 
+        LMS_EnableChannel(lmsControl,LMS_CH_RX,ch,enable);
+        LMS_EnableChannel(lmsControl,LMS_CH_TX,ch,enable);
+    }
     LMS_WriteParam(lmsControl, LMS7param(MAC), chBck);
     UpdateVisiblePanel();
 }
@@ -362,7 +357,7 @@ void lms7002_mainPanel::OnCalibrateInternalADC(wxCommandEvent& event)
     LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
     int status = lms->CalibrateInternalADC();
     if (status != 0)
-        wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())), _("Warning"));
+        wxMessageBox(_("Internal ADC calibration failed"), _("Warning"));
 }
 
 int lms7002_mainPanel::GetLmsSelection()
@@ -374,6 +369,13 @@ void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
 {
     int deviceSelection = cmbLmsDevice->GetSelection();
     ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
+    
+    wxNotebookPage* page = tabsNotebook->GetCurrentPage();
+    if (page == mTabSXR) //change active channel to A
+        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
+    else if (page == mTabSXT) //change active channel to B
+        LMS_WriteParam(lmsControl,LMS7param(MAC),2);
+
     UpdateVisiblePanel();
     wxCommandEvent evt;
     evt.SetEventType(LMS_CHANGED);

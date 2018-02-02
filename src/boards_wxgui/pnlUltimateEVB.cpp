@@ -126,7 +126,7 @@ void pnlUltimateEVB::OnReadAll(wxCommandEvent &event)
         int status = LMS_ReadCustomBoardParam(lmsControl,pwrParams[i].channel,&value,units);
         if (status != 0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
+            wxMessageBox(_("Failed to read board parameters"), _("Warning"));
             return;
         }
         if (pwrParams[i].channel >= 47 && pwrParams[i].channel < 52)
@@ -140,7 +140,7 @@ void pnlUltimateEVB::OnReadAll(wxCommandEvent &event)
         int status = LMS_ReadCustomBoardParam(lmsControl,vltgParams[i].channel,&value,units);
         if (status != 0)
         {
-            wxMessageBox(LMS_GetLastErrorMessage(), _("Warning"));
+            wxMessageBox(_("Failed to read board parameters"), _("Warning"));
             return;
         }
         vltgParams[i].value->SetLabel(wxString::Format(_("%1.0f %s"), value, units));

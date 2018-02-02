@@ -2,15 +2,13 @@
 #include "ConnectionRegistry.h"
 #include "lime/LimeSuite.h"
 #include "lms7_device.h"
-#include "ErrorReporting.h"
 #include "errno.h"
-#include "MCU_BD.h"
 #include <cmath>
 #include "VersionInfo.h"
 #include <assert.h>
-#include "FPGA_common.h"
 #include "Logger.h"
 #include "LMS64CProtocol.h"
+#include "Streamer.h"
 
 using namespace std;
 
@@ -37,44 +35,30 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device pointer cannot be NULL");
+        lime::error("Device pointer cannot be NULL");
         return -1;
     }
 
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
-    LMS7_Device* lms = (LMS7_Device*)*device;
-    if (lms != nullptr)
-        lms->SetConnection(nullptr);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)*device;
 
     for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
-            auto conn = lime::ConnectionRegistry::makeConnection(handles[i]);
-            if (conn->IsOpen() == false)
+            auto dev = lime::LMS7_Device::CreateDevice(handles[i],lms);
+            if (dev == nullptr)
             {
-                lime::ConnectionRegistry::freeConnection(conn);
-                if (info != NULL)
-                {
-                    lime::ReportError(EBUSY, "Failed to open. Device is busy.");
-                    return -1;
-                }
-                else
-                    continue;
+                lime::error("Unable to open device");
+                return -1;
             }
-            *device = LMS7_Device::CreateDevice(conn,lms);
+            *device = dev;
             return LMS_SUCCESS;
         }
     }
 
-    if (info == NULL)
-    {
-        *device = LMS7_Device::CreateDevice(nullptr);
-        return LMS_SUCCESS;
-    }
-
-    lime::ReportError(ENODEV, "Specified device could not be found");
+    lime::error("Specified device could not be found");
     return -1;
 }
 
@@ -82,39 +66,12 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::error("Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     delete lms;
     return LMS_SUCCESS;
-}
-
-API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
-{
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->SetConnection(nullptr);
-    }
-
-API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
-{
-    if (device == nullptr)
-        return false;
-
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-        auto conn = lms->GetConnection();
-        if (conn != nullptr)
-        {
-            return conn->IsOpen();
-        }
-    return false;
 }
 
 API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
@@ -125,7 +82,7 @@ API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     return lms->Reset();
 }
 
@@ -137,7 +94,7 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, s
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->EnableChannel(dir_tx, chan,enabled);
 }
@@ -150,7 +107,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRate(lms_device_t * device, float_type rat
         return -1;
     }
 
-   LMS7_Device* lms = (LMS7_Device*)device;
+   lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
    return lms->SetRate(rate, oversample);
 }
@@ -163,7 +120,7 @@ API_EXPORT int CALL_CONV LMS_SetSampleRateDir(lms_device_t *device, bool dir_tx,
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->SetRate(dir_tx,rate,oversample);
 }
@@ -176,7 +133,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRate(lms_device_t *device, bool dir_tx, si
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -200,16 +157,12 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-    if (dir_tx)
-        *range = lms->GetRxRateRange();
-    else
-        *range = lms->GetTxRateRange();
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    auto retRange = lms->GetRateRange(dir_tx);
+    range->min = retRange.min;
+    range->max = retRange.max;
     return LMS_SUCCESS;
 }
-
-
 
 API_EXPORT int CALL_CONV LMS_Init(lms_device_t * device)
 {
@@ -219,7 +172,7 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t * device)
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->Init();
 }
@@ -232,7 +185,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     std::string str;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
@@ -253,39 +206,29 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
         lime::ReportError(EINVAL, "Device not connected");
         return -1;
     }
-    std::string str = units == nullptr ? "":units;
+    std::string str = units == nullptr ? "" : units;
     return conn->CustomParameterWrite(&param_id,&val,1,&str);
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->DACWrite(val);
+    return LMS_WriteCustomBoardParam(device, 0, val, "");
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
 {
-    if (device == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
-        return -1;
-    }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    int ret = lms->DACRead();
-    *val = ret;
-    return ret < 0 ? -1 : 0;
+    lms_name_t units;
+    double dval = 0.0;
+    int ret= LMS_ReadCustomBoardParam(device, 0, &dval, units);
+    *val = dval;
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, float_type *freq)
@@ -295,9 +238,9 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, f
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-    return lms->GetClockFreq(clk_id, freq);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    *freq = lms->GetClockFreq(clk_id);
+    return freq > 0 ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
@@ -307,7 +250,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, f
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     return lms->SetClockFreq(clk_id, freq);
 }
 
@@ -318,9 +261,9 @@ API_EXPORT  int CALL_CONV LMS_Synchronize(lms_device_t *dev, bool toChip)
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-     LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
 
-     return lms->Synchronize(toChip);
+    return lms->Synchronize(toChip);
 }
 
 API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev,  uint8_t* buffer, size_t len)
@@ -330,7 +273,7 @@ API_EXPORT int CALL_CONV LMS_GPIORead(lms_device_t *dev,  uint8_t* buffer, size_
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -347,7 +290,7 @@ API_EXPORT int CALL_CONV LMS_GPIOWrite(lms_device_t *dev, const uint8_t* buffer,
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-     LMS7_Device* lms = (LMS7_Device*)dev;
+     lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -364,7 +307,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirRead(lms_device_t *dev,  uint8_t* buffer, si
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -381,7 +324,7 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buff
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-     LMS7_Device* lms = (LMS7_Device*)dev;
+     lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -399,7 +342,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     return lms->EnableCalibCache(enable);
 }
 
@@ -411,18 +354,14 @@ API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, f
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)dev;
-    uint16_t val;
-    if (lms->ReadLMSReg(0x2F, &val))
-    {
-        return -1;
-    }
-    if (val == 0x3840)
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
+    if (lms->ReadLMSReg(0x2F) == 0x3840)
     {
         lime::ReportError(EINVAL, "Feature is not available on this chip revision");
         return -1;
     }
-    return lms->GetChipTemperature(ind,temp);
+    *temp = lms->GetChipTemperature(ind);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
@@ -433,7 +372,7 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     return lms->GetNumChannels(dir_tx);
 }
 
@@ -445,7 +384,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -453,18 +392,7 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    if (dir_tx)
-    {
-        if (lms->SetTxFrequency(chan,frequency)!=0)
-            return -1;
-    }
-    else
-    {
-        if (lms->SetRxFrequency(chan,frequency)!=0)
-            return -1;
-    }
-
-    return LMS_SUCCESS;
+    return lms->SetFrequency(dir_tx, chan,frequency);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
@@ -475,7 +403,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -483,7 +411,7 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    *frequency = lms->GetTRXFrequency(dir_tx, chan);
+    *frequency = lms->GetFrequency(dir_tx, chan);
     return LMS_SUCCESS;
 }
 
@@ -495,8 +423,11 @@ API_EXPORT int CALL_CONV LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-    *range = lms->GetFrequencyRange(dir_tx);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    auto retRange = lms->GetFrequencyRange(dir_tx);
+    range->min = retRange.min;
+    range->max = retRange.max;
+    range->step = 0;
     return LMS_SUCCESS;
 }
 
@@ -508,7 +439,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaList(lms_device_t *device, bool dir_tx, s
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -534,7 +465,7 @@ API_EXPORT int CALL_CONV LMS_SetAntenna(lms_device_t *device, bool dir_tx, size_
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -556,7 +487,7 @@ API_EXPORT int CALL_CONV LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->GetPath(dir_tx, chan);
 }
@@ -569,11 +500,16 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    lime::LMS7_Device::Range ret;
     if (dir_tx)
-        *range = lms->GetTxPathBand(path,chan);
+        ret = lms->GetTxPathBand(path,chan);
     else
-        *range = lms->GetRxPathBand(path,chan);
+        ret = lms->GetRxPathBand(path,chan);
+    
+    range->max = ret.max;
+    range->min = ret.min;
+    range->step = 0;
 
     return LMS_SUCCESS;
 }
@@ -586,7 +522,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -594,7 +530,7 @@ API_EXPORT int CALL_CONV LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         return -1;
     }
 
-    return lms->SetLPF(dir_tx,chan,true,true,bandwidth);
+    return lms->SetLPF(dir_tx,chan,true,bandwidth);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
@@ -605,14 +541,14 @@ API_EXPORT int CALL_CONV LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t 
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    *bandwidth = lms->GetLPFBW(dir_tx,chan,true);
+    *bandwidth = lms->GetLPFBW(dir_tx,chan);
     return LMS_SUCCESS;
 }
 
@@ -624,14 +560,14 @@ API_EXPORT int CALL_CONV LMS_SetLPF(lms_device_t *device, bool dir_tx, size_t ch
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    return lms->SetLPF(dir_tx,chan,true,enabled,1);
+    return lms->SetLPF(dir_tx,chan,enabled,-1);
 }
 
 API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
@@ -642,7 +578,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -655,8 +591,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    return lms->SetLPF(dir_tx,chan,false,enabled,bandwidth);
+    return lms->ConfigureGFIR(dir_tx, chan, enabled, bandwidth);
 }
 
 API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
@@ -667,9 +602,12 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lm
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-
-    *range = lms->GetLPFRange(dir_tx,0,true);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    
+    auto ret = lms->GetLPFRange(dir_tx,0);   
+    range->max = ret.max;
+    range->min = ret.min;
+    range->step = 0;
 
     return LMS_SUCCESS;
 }
@@ -682,7 +620,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -694,8 +632,8 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
         gain = 1.0;
     else if (gain < 0)
         gain = 0;
-
-   return lms->SetNormalizedGain(dir_tx,chan,gain);
+   auto range = lms->GetGainRange(dir_tx,chan,"");   
+   return lms->SetGain(dir_tx,chan,range.min+gain*(range.max-range.min));
 }
 
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
@@ -707,7 +645,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -715,7 +653,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
         return -1;
     }
 
-   return lms->SetGain(dir_tx,chan,gain);
+   return lms->SetGain(dir_tx,chan,gain-12);
 }
 
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
@@ -726,7 +664,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -734,9 +672,9 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
         return -1;
     }
 
-    *gain = lms->GetNormalizedGain(dir_tx,chan);
-    if (*gain < 0)
-        return -1;
+    auto range = lms->GetGainRange(dir_tx,chan,"");
+    *gain = (lms->GetGain(dir_tx,chan)-range.min)/(range.max-range.min);
+
     return LMS_SUCCESS;
 }
 
@@ -748,7 +686,7 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
@@ -767,26 +705,21 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
-    uint16_t val;
-    if (lms->ReadLMSReg(0x2F, &val))
+    if (lms->ReadLMSReg(0x2F) == 0x3840)
     {
-        return -1;
-    }
-    if (val == 0x3840)
-    {
-        lime::ReportError(EINVAL, "Feature is not available on this chip revision");
+        lime::ReportError("Calibration not supported");
         return -1;
     }
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
     return lms->Calibrate(dir_tx, chan, bw, flags);
@@ -796,11 +729,11 @@ API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filena
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->LoadConfig(filename);
 }
@@ -809,11 +742,11 @@ API_EXPORT int CALL_CONV LMS_SaveConfig(lms_device_t *device, const char *filena
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->SaveConfig(filename);
 }
@@ -822,21 +755,21 @@ API_EXPORT int CALL_CONV LMS_SetTestSignal(lms_device_t *device, bool dir_tx, si
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
 
     if (sig > LMS_TESTSIG_DC)
     {
-        lime::ReportError(EINVAL, "Invalid signal.");
+        lime::ReportError("Invalid signal.");
         return -1;
     }
 
@@ -849,15 +782,15 @@ API_EXPORT int CALL_CONV LMS_GetTestSignal(lms_device_t *device, bool dir_tx, si
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
 
@@ -877,16 +810,25 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx, 
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (ch >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-
-    return lms->SetNCOFreq(dir_tx, ch,freq, pho);
+    
+    if (freq != nullptr)
+    {
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            if (lms->SetNCOFreq(dir_tx, ch, i, freq[i]) != 0)
+                return -1;
+        lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, 0);
+        lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch);
+    }
+    return lms->GetLMS()->SetNCOPhaseOffsetForMode0(dir_tx, pho);
 }
+
 
 API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *freq, float_type *pho)
 {
@@ -896,34 +838,54 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, 
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+      
+    if (freq != nullptr)
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
 
-    return lms->GetNCOFreq(dir_tx,chan,freq,pho);
+    if (pho != nullptr)
+    {
+        uint16_t value = lms->ReadLMSReg(dir_tx ? 0x0241 : 0x0441, chan/2);
+        *pho = 360.0 * value / 65536.0;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, const float_type *phase, float_type fcw)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (ch >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
-
-    return lms->SetNCOPhase(dir_tx, ch,phase, fcw);
+    
+    if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
+        return -1;
+    
+    if (phase != nullptr)
+    {
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            if (lms->SetNCOPhase(dir_tx, ch, i, phase[i])!=0)
+                return -1;
+        if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, 0, ch) != 0))
+            return -1;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size_t ch, float_type *phase, float_type *fcw)
@@ -934,18 +896,25 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (ch >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+      
+    if (phase != nullptr)
+        for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
+            phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
+    
+    if (fcw != nullptr)
+        *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
 
-    return lms->GetNCOPhase(dir_tx,ch,phase,fcw);
+    return 0;
 }
 
-API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, int index,bool down)
+API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan, int ind, bool down)
 {
     if (device == nullptr)
     {
@@ -953,34 +922,55 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
+    
+    if ((!dir_tx) && (lms->ReadParam(LMS7_MASK, chan) != 0))
+        down = !down;
 
-    return lms->SetNCO(dir_tx,chan,index,down);
+
+    if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan)!=0)
+    || (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan)!=0))
+        return -1;
+
+    if (ind < LMS_NCO_VAL_COUNT)
+    {
+            if ((lms->WriteParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX,ind)!=0)
+            || (lms->WriteParam(dir_tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP, down)!=0))
+                return -1;
+    }
+    else
+        return lime::ReportError("Invalid NCO index value");
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size_t chan)
 {
     if (device == nullptr)
     {
-        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        lime::ReportError("Device cannot be NULL.");
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(dir_tx))
     {
-        lime::ReportError(EINVAL, "Invalid channel number.");
+        lime::ReportError("Invalid channel number.");
         return -1;
     }
-
-    return lms->GetNCO(dir_tx, chan);
+    
+    if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
+    {
+        lime::ReportError("NCO is disabled");
+        return -1;
+    }
+    return lms->ReadParam(dir_tx ? LMS7_SEL_TX : LMS7_SEL_RX, chan);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, uint16_t *val)
@@ -991,8 +981,9 @@ API_EXPORT int CALL_CONV LMS_ReadLMSReg(lms_device_t *device, uint32_t address, 
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->ReadLMSReg(address, val);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    *val = lms->ReadLMSReg(address);
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address, uint16_t val)
@@ -1003,7 +994,7 @@ API_EXPORT int CALL_CONV LMS_WriteLMSReg(lms_device_t *device, uint32_t address,
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     return lms->WriteLMSReg(address, val);
 }
 
@@ -1015,7 +1006,7 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     uint32_t addr = address;
     uint32_t data;
     auto conn = lms->GetConnection();
@@ -1039,7 +1030,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -1056,8 +1047,9 @@ API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Paramete
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->ReadParam(param,val);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    *val = lms->ReadParam(param);
+    return LMS_SUCCESS;;
 }
 
 API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Parameter param, uint16_t val)
@@ -1067,7 +1059,7 @@ API_EXPORT int CALL_CONV LMS_WriteParam(lms_device_t *device, struct LMS7Paramet
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     return lms->WriteParam(param, val);
 }
@@ -1079,7 +1071,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIRCoeff(lms_device_t * device, bool dir_tx, si
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -1096,7 +1088,7 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx, si
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -1113,7 +1105,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx, size_t 
         lime::ReportError(EINVAL, "Device cannot be NULL.");
         return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     if (chan >= lms->GetNumChannels(false))
     {
@@ -1131,7 +1123,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     if(stream == nullptr)
         return lime::ReportError(EINVAL, "stream is NULL.");
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     lime::StreamConfig config;
     config.bufferLength = stream->fifoSize;
@@ -1140,19 +1132,20 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     switch(stream->dataFmt)
     {
         case lms_stream_t::LMS_FMT_F32:
-            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+            config.format = lime::StreamConfig::FMT_FLOAT32;
             break;
         case lms_stream_t::LMS_FMT_I16:
-            config.format = lime::StreamConfig::STREAM_12_BIT_IN_16;
+            config.format = lime::StreamConfig::FMT_INT16;
             break;
         case lms_stream_t::LMS_FMT_I12:
-            config.format = lime::StreamConfig::STREAM_12_BIT_COMPRESSED;
+            config.format = lime::StreamConfig::FMT_INT12;
             break;
         default:
-            config.format = lime::StreamConfig::STREAM_COMPLEX_FLOAT32;
+            config.format = lime::StreamConfig::FMT_FLOAT32;
     }
     config.isTx = stream->isTx;
-    return lms->GetConnection(stream->channel)->SetupStream(stream->handle, config);
+    stream->handle = size_t(lms->SetupStream(config));
+    return stream->handle == 0 ? -1 : 0;
 }
 
 API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream)
@@ -1160,34 +1153,34 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
     if(stream == nullptr)
         return lime::ReportError(EINVAL, "stream is NULL.");
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->GetConnection(stream->channel)->CloseStream(stream->handle);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    return lms->DestroyStream((lime::StreamChannel*)stream->handle);
 }
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
 {
     if (stream==nullptr || stream->handle==0)
         return 0;
-    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Start();
+    return reinterpret_cast<lime::StreamChannel*>(stream->handle)->Start();
 }
 
 API_EXPORT int CALL_CONV LMS_StopStream(lms_stream_t *stream)
 {
     if (stream==nullptr || stream->handle==0)
         return 0;
-    return reinterpret_cast<lime::IStreamChannel*>(stream->handle)->Stop();
+    return reinterpret_cast<lime::StreamChannel*>(stream->handle)->Stop();
 }
 
 API_EXPORT int CALL_CONV LMS_RecvStream(lms_stream_t *stream, void *samples, size_t sample_count, lms_stream_meta_t *meta, unsigned timeout_ms)
 {
     if (stream==nullptr || stream->handle==0)
         return -1;
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    lime::IStreamChannel::Metadata metadata;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
+    lime::StreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
     {
-        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
+        metadata.flags |= meta->waitForTimestamp * lime::RingFIFO::SYNC_TIMESTAMP;
         metadata.timestamp = meta->timestamp;
     }
     else metadata.timestamp = 0;
@@ -1202,13 +1195,13 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream, const void *sample
 {
     if (stream==nullptr || stream->handle==0)
         return -1;
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
-    lime::IStreamChannel::Metadata metadata;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
+    lime::StreamChannel::Metadata metadata;
     metadata.flags = 0;
     if (meta)
     {
-        metadata.flags |= meta->waitForTimestamp * lime::IStreamChannel::Metadata::SYNC_TIMESTAMP;
-        metadata.flags |= meta->flushPartialPacket * lime::IStreamChannel::Metadata::END_BURST;
+        metadata.flags |= meta->waitForTimestamp * lime::RingFIFO::SYNC_TIMESTAMP;
+        metadata.flags |= meta->flushPartialPacket * lime::RingFIFO::END_BURST;
         metadata.timestamp = meta->timestamp;
     }
     else metadata.timestamp = 0;
@@ -1220,21 +1213,21 @@ API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device,
                                          const void **samples, uint8_t chCount,
                                          size_t sample_count, int format)
 {
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     lime::StreamConfig::StreamDataFormat fmt;
     switch(format)
     {
         case 0:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
             break;
         case 1:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_IN_16;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT16;
             break;
         case 2:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_COMPLEX_FLOAT32;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_FLOAT32;
             break;
         default:
-            fmt = lime::StreamConfig::StreamDataFormat::STREAM_12_BIT_COMPRESSED;
+            fmt = lime::StreamConfig::StreamDataFormat::FMT_INT12;
             break;
     }
     return lms->UploadWFM(samples, chCount, sample_count, fmt);
@@ -1260,10 +1253,10 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned ch, bool
 API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t* status)
 {
     assert(stream != nullptr);
-    lime::IStreamChannel* channel = (lime::IStreamChannel*)stream->handle;
+    lime::StreamChannel* channel = (lime::StreamChannel*)stream->handle;
     if(channel == nullptr)
         return -1;
-    lime::IStreamChannel::Info info = channel->GetInfo();
+    lime::StreamChannel::Info info = channel->GetInfo();
 
     status->active = info.active;
     status->droppedPackets = info.droppedPackets;
@@ -1272,7 +1265,6 @@ API_EXPORT int CALL_CONV LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_st
     status->linkRate = info.linkRate;
     status->overrun = info.overrun;
     status->underrun = info.underrun;
-    status->sampleRate = info.sampleRate;
     status->timestamp = info.timestamp;
     return 0;
 }
@@ -1285,7 +1277,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *devic
         return nullptr;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     auto conn = lms->GetConnection();
     if (conn == nullptr)
     {
@@ -1301,8 +1293,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *devic
     return lms->GetInfo();
 }
 
-API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, size_t size,
-           lms_prog_trg_t component, lms_prog_md_t mode, lms_prog_callback_t callback)
+API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t *device, lms_name_t *list)
 {
     if (device == nullptr)
     {
@@ -1310,11 +1301,20 @@ API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, siz
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->Program(data,size,component,mode, callback);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+
+
+    auto names = lms->GetProgramModes();
+    if (list != nullptr)
+        for (size_t i = 0; i < names.size(); i++)
+        {
+            strncpy(list[i], names[i].c_str(), sizeof(lms_name_t) - 1);
+            list[i][sizeof(lms_name_t) - 1] = 0;
+        }
+    return names.size();
 }
 
-API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device, const bool download, lms_prog_callback_t callback)
+API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, size_t size, const lms_name_t mode, lms_prog_callback_t callback)
 {
     if (device == nullptr)
     {
@@ -1322,8 +1322,9 @@ API_EXPORT int CALL_CONV LMS_ProgramUpdate(lms_device_t *device, const bool down
         return -1;
     }
 
-    LMS7_Device* lms = (LMS7_Device*)device;
-    return lms->ProgramUpdate(download,callback);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    std::string prog_mode(mode);
+    return lms->Program(prog_mode, data, size, callback);
 }
 
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
@@ -1357,7 +1358,7 @@ API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t*
         lime::ReportError(EINVAL, "Device cannot be NULL.");
             return -1;
     }
-    LMS7_Device* lms = (LMS7_Device*)dev;
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
     lime::LMS64CProtocol::GenericPacket pkt;
     auto conn = lms->GetConnection();
     if (conn == nullptr)

@@ -116,6 +116,7 @@ void LMS7SuiteAppFrame::OnLogEvent(const char* text, unsigned int type)
         return;
     wxCommandEvent evt;
     evt.SetEventType(LOG_MESSAGE);
+    evt.SetInt(lime::LOG_LEVEL_INFO);
     wxString msg;
 
     switch(type)
@@ -150,7 +151,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     deviceInfo = nullptr;
     spi = nullptr;
     boardControlsGui = nullptr;
-    lmsControl = LMS7_Device::CreateDevice(nullptr);
+    lmsControl = new LMS7_Device();
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
@@ -253,11 +254,13 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
     UpdateConnections(lmsControl);
     const int controlCollumn = 1;
-    if (LMS_IsOpen(lmsControl,0))
+    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+    if (conn && conn->IsOpen())
     {
         //bind callback for spi data logging
         obj_ptr = this;
         const lms_dev_info_t* info;
+        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         if ((info = LMS_GetDeviceInfo(lmsControl)) == nullptr)
                 return;
         wxString controlDev = _("Control port: ");
@@ -265,13 +268,12 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(info->deviceName);
         LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
         double refClk = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
-        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s GW_rev:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, info->gatewareRevision, refClk/1e6));
+        controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
-        auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
-        conn->SetDataLogCallback(&LMS7SuiteAppFrame::OnLogDataTransfer);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Connected ") + controlDev);
         LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
         wxPostEvent(this, evt);
@@ -285,6 +287,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         statusBar->SetStatusText(_("Control port: Not Connected"), controlCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Disconnected control port"));
         wxPostEvent(this, evt);
     }
@@ -315,6 +318,7 @@ void LMS7SuiteAppFrame::OnDataBoardConnect(wxCommandEvent& event)
 //        statusBar->SetStatusText(_("Data port: Not Connected"), dataCollumn);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Disconnected data port"));
         wxPostEvent(this, evt);
     }
@@ -350,12 +354,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
 {
-    m_lmsSelection = event.GetInt();
-    if (fftviewer)
-        fftviewer->Initialize(lmsControl);
-
-    if (fpgaControls)
-        fpgaControls->Initialize(lmsControl);
+    return;
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
@@ -584,6 +583,7 @@ void LMS7SuiteAppFrame::OnLogDataTransfer(bool Tx, const unsigned char* data, co
     evt->SetString(ss.str());
     evt->SetEventObject(obj_ptr);
     evt->SetEventType(LOG_MESSAGE);
+    evt->SetInt(lime::LOG_LEVEL_INFO);
     wxQueueEvent(obj_ptr, evt);
 }
 

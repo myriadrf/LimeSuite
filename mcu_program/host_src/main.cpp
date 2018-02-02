@@ -356,7 +356,7 @@ int main(int argc, char** argv)
         return 0;
     if (serPort != nullptr && !serPort->IsOpen())
     {
-        lime::ConnectionRegistry::freeConnection(serPort);
+        delete serPort;
         printf("failed to open LMS7 control device");
     }
     else

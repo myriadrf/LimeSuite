@@ -1,6 +1,5 @@
 #include "LMS7002M.h"
 #include "CalibrationCache.h"
-#include "ErrorReporting.h"
 #include <assert.h>
 #include "MCU_BD.h"
 #include "IConnection.h"
@@ -1829,7 +1828,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 
     verbose_printf("Performed by: %s\n", mCalibrationByMCU ? "MCU" : "PC");
     verbose_printf(cDashLine);
-    LMS7002M_SelfCalState state(this);
     auto registersBackup = BackupRegisterMap();
     if(mCalibrationByMCU && not useExtLoopback)
     {
@@ -2039,15 +2037,15 @@ void LMS7002M::BackupAllRegisters()
 void LMS7002M::RestoreAllRegisters()
 {
     Channel ch = this->GetActiveChannel();
-    SPI_write_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t));
+    SPI_write_batch(backupAddrs, backupRegs, sizeof(backupAddrs) / sizeof(uint16_t), false);
     //restore GFIR3
     SetGFIRCoefficients(LMS7002M::Rx, 2, rxGFIR3_backup, sizeof(rxGFIR3_backup)/sizeof(int16_t));
     this->SetActiveChannel(ChA); // channel A
     SPI_write(0x010D, backup0x010D); //restore EN_NEXTRX_RFE
     SPI_write(0x0100, backup0x0100); //restore EN_NEXTTX_TRF
-    SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_write_batch(backupSXAddr, backupRegsSXR, sizeof(backupRegsSXR) / sizeof(uint16_t), false);
     this->SetActiveChannel(ChB); // channel B
-    SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t));
+    SPI_write_batch(backupSXAddr, backupRegsSXT, sizeof(backupRegsSXR) / sizeof(uint16_t), false);
     this->SetActiveChannel(ch);
     //reset Tx logic registers, fixes interpolator
     uint16_t x0020val = SPI_read(0x0020);

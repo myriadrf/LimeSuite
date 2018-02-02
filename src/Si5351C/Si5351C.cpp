@@ -341,9 +341,9 @@ Si5351C::Status Si5351C::UploadConfiguration()
 */
 void Si5351C::Initialize(IConnection *mng)
 {
-	device = mng;
-	if (device != nullptr and device->IsOpen())
-		addrSi5351 = mng->GetDeviceInfo().addrSi5351;
+    device = mng;
+    if (device != nullptr and device->IsOpen())
+        addrSi5351 = 0x20;
 }
 
 /**

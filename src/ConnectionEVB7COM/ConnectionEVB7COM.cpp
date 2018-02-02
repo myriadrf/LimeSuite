@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <stdio.h>
+#include "Logger.h"
 #endif // LINUX
 
 static const int COM_RETRY_INTERVAL = 20; //ms
@@ -38,8 +39,7 @@ ConnectionEVB7COM::ConnectionEVB7COM(const char *comName, int baudrate)
     if (this->Open(comName, baudrate) != 0)
     {
         this->Close();
-
-        fprintf(stderr, "ConnectionEVB7COM(%s, %d) - %s", comName, baudrate, GetLastErrorMessage());
+        lime::error("Failed to open COM port");
     }
 }
 

@@ -127,7 +127,7 @@ void lms7002_pnlLimeLightPAD_view::Initialize(lms_device_t* pControl)
     lmsControl = pControl;
     assert(lmsControl != nullptr);
     uint16_t value;
-    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+    if (LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
          value = 1;
     chkMCLK1_INV->Enable(value);
     chkMCLK2_INV->Enable(value);

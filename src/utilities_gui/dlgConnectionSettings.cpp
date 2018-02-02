@@ -3,6 +3,7 @@
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "ConnectionHandle.h"
+#include "lms7_device.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 
@@ -45,9 +46,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     if(selection != wxNOT_FOUND && selection < ret)
     {
         if (LMS_Open(lmsControl,list[selection],nullptr)!=0)
-        {
-            wxMessageBox(wxString::Format(_("%s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-        }
+            wxMessageBox(wxString(_("Failed to open device")));
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())
@@ -65,15 +64,12 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
-    if (*lmsControl != nullptr)
-    {
-        LMS_Disconnect(*lmsControl);
-        wxCommandEvent evt;
-        evt.SetEventType(CONTROL_PORT_DISCONNECTED);
-        if(GetParent())
-            wxPostEvent(GetParent(), evt);
-        wxInitDialogEvent tmp_evt;
-        GetDeviceList(tmp_evt);
-    }
+    *lmsControl = new lime::LMS7_Device((lime::LMS7_Device*)*lmsControl);
+    wxCommandEvent evt;
+    evt.SetEventType(CONTROL_PORT_DISCONNECTED);
+    if(GetParent())
+        wxPostEvent(GetParent(), evt);
+    wxInitDialogEvent tmp_evt;
+    GetDeviceList(tmp_evt);
     mListLMS7ports->SetSelection(-1);
 }

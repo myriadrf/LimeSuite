@@ -33,7 +33,6 @@ protected:
     wxStaticText* lblFilename;
     wxStaticText* StaticText1;
     wxStaticText* StaticText3;
-    wxChoice* cmbProgMode;
     wxButton* btnStartStop;
     wxButton* btnOpen;
     bool btnOpenEnb;

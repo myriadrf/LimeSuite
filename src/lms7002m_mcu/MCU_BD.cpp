@@ -14,7 +14,6 @@ using namespace std;
 #include <assert.h>
 #include <thread>
 #include <list>
-#include "ErrorReporting.h"
 #include "LMS7002M.h"
 #include "Logger.h"
 

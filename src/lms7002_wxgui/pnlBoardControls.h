@@ -38,8 +38,8 @@ class pnlBoardControls : public wxFrame
             uint8_t channel;
             std::string units;
             int8_t powerOf10;
-            int16_t minValue;
-            int16_t maxValue;
+            int minValue;
+            int maxValue;
         };
 
         class Param_GUI

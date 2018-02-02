@@ -2,7 +2,8 @@
 #include "dlgFullMessageLog.h"
 
 pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
-	: pnlMiniLog_view( parent, id, pos, size, style )
+	: pnlMiniLog_view( parent, id, pos, size, style ),
+        log_level(3)
 {
 	mDefaultStyle = txtMessageField->GetDefaultStyle();
 	wxUpdateUIEvent::SetUpdateInterval(100);
@@ -10,6 +11,9 @@ pnlMiniLog::pnlMiniLog(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
 
 void pnlMiniLog::HandleMessage(wxCommandEvent &event)
 {
+    auto level = lime::LogLevel(event.GetInt());
+    if (level > log_level)
+        return;
     time_t rawtime;
     struct tm * timeinfo;
     char buffer[80];
@@ -17,13 +21,6 @@ void pnlMiniLog::HandleMessage(wxCommandEvent &event)
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(buffer, 80, "%H:%M:%S", timeinfo);
-
-    auto level = lime::LogLevel(event.GetInt());
-#ifdef NDEBUG
-    if (level == lime::LOG_LEVEL_DEBUG)
-        return;
-#endif
-    if (level == 0) level = lime::LOG_LEVEL_INFO;
     wxString line(wxString::Format("[%s] %s: %s", buffer, lime::logLevelToName(level), event.GetString()));
 
     mAllMessages.push_back(line);
@@ -70,4 +67,9 @@ void pnlMiniLog::OnShowFullLog(wxCommandEvent& event)
     dlgFullMessageLog *dlg = new dlgFullMessageLog(this);
     dlg->AddMessages(mAllMessages);
     dlg->ShowModal();
+}
+
+void pnlMiniLog::onLogLvlChange(wxCommandEvent& event)
+{
+    log_level = 1+event.GetInt();
 }
