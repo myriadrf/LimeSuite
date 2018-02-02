@@ -42,7 +42,7 @@ int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len,
 {
     int ret = LMS7_Device::Program(mode, data, len, callback);
     if ((mode == "FX3_FLASH") || (mode == "FPGA_FLASH"))
-        connection->ProgramWrite(nullptr, 0, 0, 1);
+        connection->ProgramWrite(nullptr, 0, 0, 1, nullptr);
     return ret;
 }
 
