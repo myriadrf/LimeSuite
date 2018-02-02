@@ -698,9 +698,11 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
 
     if (prog_mode == 2)
         return LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
-
-    LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    if (GetFPGAInfo().gatewareVersion != 0)
+    { 
+        LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
     const int sizeUFM = 0x8000;
     const int sizeCFM0 = 0x42000;
     const int startUFM = 0x1000;
@@ -717,6 +719,7 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
 
     int ret = LMS64CProtocol::ProgramWrite(buffer.data(), buffer.size(), prog_mode,  device, callback);
     LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+
     return ret;
 }
 
