@@ -94,6 +94,7 @@ void main()  //main routine
     DIR2=0x07;  // ;DIR2 -  Configure P2_3 is input
     IEN1=0xFF;//0x04;  //EX2=1 enable external interrupt 2
     IEN0=0x80;
+    TMOD = 0x01; // timer0 16-bit
 
     ucSCLK=0; //repairs external SPI
     ucSEN=1;//

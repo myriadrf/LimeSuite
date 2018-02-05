@@ -313,6 +313,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
+    UpdateRSSIDelay();
     if(status != MCU_NO_ERROR)
         goto RxFilterSearchEndStage;
 
@@ -653,6 +654,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     SaveChipState(1);
     status = TuneTxFilterSetup(tx_lpf_IF);
+    UpdateRSSIDelay();
     if(status != MCU_NO_ERROR)
         return status;
 

@@ -5,6 +5,10 @@
 #include <math.h>
 #include "mcu_defines.h"
 
+#ifndef __cplusplus
+#include "lms7002_regx51.h" //MCU timer sfr
+#endif
+
 #ifdef __cplusplus
 #include <cstdlib>
 #define VERBOSE 1
@@ -66,6 +70,7 @@ int16_t toSigned(int16_t val, uint8_t msblsb)
 #endif // __cplusplus
 
 float bandwidthRF = 5e6; //Calibration bandwidth
+uint16_t RSSIDelayCounter = 1; // MCU timer delay between RSSI measurements
 #define calibrationSXOffset_Hz 1e6
 #define offsetNCO 0.1e6
 #define calibUserBwDivider 5
@@ -100,31 +105,35 @@ void LoadDC_REG_TX_IQ()
     FlipRisingEdge(TSGDCLDQ_TXTSP);
 }
 
-#ifndef __cplusplus
-static void Dummy()
-{
-    uint8_t i;
-    volatile uint16_t t=0;
-    for(i=200; i; --i)
-        ++t;
-}
-#endif
 
-static void Delay()
+extern float_type RefClk;
+void UpdateRSSIDelay()
 {
-#ifdef __cplusplus
-    std::this_thread::sleep_for(std::chrono::microseconds(50));
-#else
-    uint8_t i;
-    volatile uint16_t t=0;
-    for(i=10; i; --i)
-        Dummy();
-#endif
+    const uint16_t sampleCount = (2 << 7) << Get_SPI_Reg_bits(AGC_AVG_RXTSP);
+    uint8_t decimation = Get_SPI_Reg_bits(HBD_OVR_RXTSP);
+    if(decimation < 6)
+        decimation = (2 << decimation);
+    else
+        decimation = 1; //bypass
+    {
+    float waitTime = sampleCount/((GetReferenceClk_TSP_MHz(false)/2) / decimation );
+    RSSIDelayCounter = (0xFFFF) - (uint16_t)(waitTime*RefClk/12);
+    }
 }
 
 uint16_t GetRSSI()
 {
-    Delay();
+#ifdef __cplusplus
+    int waitTime = 1000000.0*(0xFFFF - RSSIDelayCounter)*12/RefClk;
+    std::this_thread::sleep_for(std::chrono::microseconds(waitTime));
+#else
+    TR0 = 0; //stop timer 0
+    TH0 = (RSSIDelayCounter >> 8);
+    TL0 = (RSSIDelayCounter & 0xFF);
+    TF0 = 0; // clear overflow
+    TR0 = 1; //start timer 0
+    while( !TF0 ); // wait for timer overflow
+#endif
     FlipRisingEdge(CAPTURE);
     return ((SPI_read(0x040F) << 2) | (SPI_read(0x040E) & 0x3));
 }
@@ -845,6 +854,7 @@ uint8_t CalibrateTx(bool extLoopback)
     status = CalibrateTxSetup(extLoopback);
     if(status != MCU_NO_ERROR)
         goto TxCalibrationEnd; //go to ending stage to restore registers
+    UpdateRSSIDelay();
     CalibrateRxDCAuto();
     status = CheckSaturationTxRx(extLoopback);
     if(status != MCU_NO_ERROR)
@@ -1238,6 +1248,7 @@ uint8_t CalibrateRx(bool extLoopback)
     status = CalibrateRxSetup(extLoopback);
     if(status != 0)
         goto RxCalibrationEndStage;
+    UpdateRSSIDelay();
     CalibrateRxDCAuto();
     if(!extLoopback)
     {
