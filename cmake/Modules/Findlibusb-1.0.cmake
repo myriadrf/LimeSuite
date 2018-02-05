@@ -64,9 +64,7 @@ else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
     set(LIBUSB_1_LIBRARY_NAME usb)
   endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
-message(STATUS "DEBUG --->>>> SEARCHING FOR LIBUSB")
 if(NOT bananapi-r2)
-  message(STATUS "DEBUG --->>>> NOT BANANAPI")
   find_library(LIBUSB_1_LIBRARY
     NAMES ${LIBUSB_1_LIBRARY_NAME}
     PATHS
@@ -77,10 +75,9 @@ if(NOT bananapi-r2)
   )
 endif(NOT bananapi-r2)
 
-
 #bananapi-r2 ubuntu 16.04 has wrong libusb-1.0.so path
 #when compiling on bananapi-r2 run cmake with -DBananapi-r2=YES argument like so:
-#  $(builddir)/cmake -DBananapi-r2=YES ../
+#  $(builddir)/cmake -Dbananapi-r2=YES ../
 if(bananapi-r2)
     message(STATUS "DEBUG --->>>> BANANAPI")
     find_library(LIBUSB_1_LIBRARY
@@ -91,7 +88,6 @@ if(bananapi-r2)
     NO_DEFAULT_PATH
   )
 endif(bananapi-r2)  
-message(STATUS "DEBUG --->>>> LIBUSB ${LIBUSB_1_LIBRARY}")
 
   set(LIBUSB_1_INCLUDE_DIRS
     ${LIBUSB_1_INCLUDE_DIR}
