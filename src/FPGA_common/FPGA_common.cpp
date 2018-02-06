@@ -176,12 +176,16 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     reg23val &= ~PLLRST_START; //clear PLL reset
     reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
     reg23val |= pllIndex << 3;
+    
+    uint16_t reg25 = 0x0170;
+    connection->ReadRegister(0x0025, reg25);
 
     uint16_t statusReg;
     bool done = false;
     uint8_t errorCode = 0;
     vector<uint32_t> addrs;
     vector<uint32_t> values;
+    addrs.push_back(0x0025); values.push_back(reg25 | 0x80);
     addrs.push_back(0x0023); values.push_back(reg23val); //PLL_IND
     addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
     connection->WriteRegisters(addrs.data(), values.data(), values.size());
@@ -204,7 +208,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     addrs.push_back(0x0023); values.push_back(reg23val & ~PLLRST_START);
 
     //configure FPGA PLLs
-    const double vcoLimits_Hz[2] = { 600e6, 1050e6 };
+    const double vcoLimits_Hz[2] = { 600e6, 1300e6 };
 
     map< unsigned long, int> availableVCOs; //all available frequencies for VCO
     for(int i=0; i<clockCount; ++i)
@@ -246,7 +250,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             float coef = (it.first / inputFreq);
             int Ntemp = 1;
             int Mtemp = int(coef + 0.5);
-            while(inputFreq / (Ntemp + 1) > PLLlowerLimit)
+            while(inputFreq / Ntemp > PLLlowerLimit)
             {
                 ++Ntemp;
                 Mtemp = int(coef*Ntemp + 0.5);

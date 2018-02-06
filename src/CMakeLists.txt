@@ -276,13 +276,7 @@ endif()
 #########################################################################
 # utilities
 #########################################################################
-cmake_dependent_option(ENABLE_UTILITIES "Enable utility programs" OFF "ENABLE_LIBRARY" OFF)
-if(ENABLE_UTILITIES)
-    include_directories(utilityTools)
-    set(utility_src_files utilityTools/pllTest.cpp)
-    add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
-    target_link_libraries(utilityTools LimeSuite)
-endif()
+add_subdirectory(utilities)
 
 #########################################################################
 # tests
