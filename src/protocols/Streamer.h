@@ -92,7 +92,7 @@ public:
     StreamChannel* mRxStreams[2];
     StreamChannel* mTxStreams[2];
     std::atomic<uint64_t> rxLastTimestamp;
-    std::atomic<uint64_t> txLastLateTime;
+    std::atomic<uint64_t> txLastTimestamp;
     uint64_t mTimestampOffset;
     int streamSize;
     unsigned txBatchSize;

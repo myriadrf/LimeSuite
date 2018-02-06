@@ -100,9 +100,15 @@ StreamChannel::Info StreamChannel::GetInfo()
     overflow = 0;
     underflow = 0;
     if(config.isTx)
+    {
+        stats.timestamp = mStreamer->txLastTimestamp;
         stats.linkRate = mStreamer->txDataRate_Bps.load();
+    }
     else
+    {
+        stats.timestamp = mStreamer->rxLastTimestamp;
         stats.linkRate = mStreamer->rxDataRate_Bps.load();
+    }
     return stats;
 }
 
@@ -540,11 +546,11 @@ void Streamer::TransmitPacketsLoop()
         }
         int i=0;
 
+        FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
         while(i<packetsToBatch)
         {
             bool end_burst = false;
             StreamChannel::Metadata meta = {0, 0};
-            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
                 if (!mTxStreams[ch])
@@ -587,9 +593,10 @@ void Streamer::TransmitPacketsLoop()
         
         if(terminateTx.load() == true) //early termination
             break;
-
+        
         bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
+        txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
         bufferUsed[bi] = true;
 
         t2 = std::chrono::high_resolution_clock::now();
@@ -708,7 +715,6 @@ void Streamer::ReceivePacketsLoop()
                     lime::warning("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = buffersCount;
-                    txLastLateTime.store(pkt[pktIndex].counter);
                     for(auto value: mTxStreams)
                         if (value && value->mActive)
                             value->pktLost++;
