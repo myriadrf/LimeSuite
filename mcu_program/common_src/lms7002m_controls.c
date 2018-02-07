@@ -11,6 +11,9 @@
 using namespace std;
 #include <chrono>
 #include <thread>
+#else
+#include "lms7002_regx51.h" //MCU timer sfr
+uint16_t gComparatorDelayCounter = 0xFF00; // ~100us @ ref 30.72MHz
 #endif
 
 #define VERBOSE 0
@@ -269,25 +272,22 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     return MCU_NO_ERROR;
 }
 
-static void Delay()
-{
-#ifdef __cplusplus
-    std::this_thread::sleep_for(std::chrono::microseconds(1));
-#else
-    uint16_t i;
-    volatile uint16_t t=0;
-    for(i=0; i<400; ++i)
-        t <<= 1;
-#endif
-}
-
 /** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
     @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
     @return 0-success, other-failure
 */
 static uint8_t ReadCMP(const bool SX)
 {
-    Delay();
+#ifdef __cplusplus
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+#else
+    TR0 = 0; //stop timer 0
+    TH0 = (gComparatorDelayCounter >> 8);
+    TL0 = (gComparatorDelayCounter & 0xFF);
+    TF0 = 0; // clear overflow
+    TR0 = 1; //start timer 0
+    while( !TF0 ); // wait for timer overflow
+#endif
     return (uint8_t)Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, MSB_LSB(13, 12));
 }
 
@@ -320,7 +320,9 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         msblsb = MSB_LSB(8, 1); //CSW msb lsb
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
-
+#ifndef __cplusplus
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0001/12)*RefClk); // ~100us
+#endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
     if(ReadCMP(SX) == 3) //VCO too high
