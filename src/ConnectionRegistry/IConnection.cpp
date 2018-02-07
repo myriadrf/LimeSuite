@@ -192,7 +192,7 @@ int IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
  * Aribtrary settings API
  **********************************************************************/
 
-int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
+int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
 {
     ReportError(ENOTSUP, "CustomParameterWrite not supported");
     return -1;

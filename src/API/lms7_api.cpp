@@ -214,7 +214,7 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
         return -1;
     }
     std::string str = units == nullptr ? "" : units;
-    return conn->CustomParameterWrite(&param_id,&val,1,&str);
+    return conn->CustomParameterWrite(&param_id,&val,1,str);
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)

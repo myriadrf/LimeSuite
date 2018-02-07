@@ -310,7 +310,7 @@ public:
 	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
 
     /** @brief Returns value of custom on board control
 	@param ids indexes of controls to read

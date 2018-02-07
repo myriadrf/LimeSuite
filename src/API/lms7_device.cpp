@@ -643,7 +643,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation) != 0)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation) != 0)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
-	    || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interpolation, decimation) != 0))
+	    || (lms->SetInterfaceFrequency(cgen, interpolation, decimation) != 0))
 	  return -1;
 
 	double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);

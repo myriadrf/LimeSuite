@@ -1112,7 +1112,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     if (vcoFreqs.size() == 0)
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
     dFvco = vcoFreqs[vcoFreqs.size() / 2];
-    iHdiv = dFvco / freq_Hz / 2 - 1;
+    iHdiv = dFvco / freq_Hz / 2.0 - 1.0 + 0.01; //+0.01 to avoid bad round down when result is X.99999...
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
 
