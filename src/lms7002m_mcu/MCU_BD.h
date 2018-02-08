@@ -61,6 +61,7 @@ class MCU_BD
         {
             MCU_REF_CLK,
             MCU_BW,
+            MCU_EXT_LOOPBACK_PAIR,
         };
         void SetParameter(MCU_Parameter param, float value);
         int WaitForMCU(uint32_t timeout_ms);

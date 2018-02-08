@@ -1047,17 +1047,31 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
     inputRegs[2] = fracPart & 0xFF;
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
-    for(uint8_t i = 0; i < 3; ++i)
+    if(param==MCU_REF_CLK || param == MCU_BW)
     {
-        mSPI_write(0, inputRegs[2-i]);
-        mSPI_write(0x0002, x0002reg | interupt7);
-        mSPI_write(0x0002, x0002reg & ~interupt7);
-        this_thread::sleep_for(chrono::microseconds(5));
+        for(uint8_t i = 0; i < 3; ++i)
+        {
+            mSPI_write(0, inputRegs[2-i]);
+            mSPI_write(0x0002, x0002reg | interupt7);
+            mSPI_write(0x0002, x0002reg & ~interupt7);
+            this_thread::sleep_for(chrono::microseconds(5));
+        }
     }
     if(param==MCU_REF_CLK)
         RunProcedure(4);
     if(param == MCU_BW)
         RunProcedure(3);
+    if(param == MCU_EXT_LOOPBACK_PAIR)
+    {
+        uint8_t intVal = (int)value;
+        mSPI_write(0, intVal);
+        mSPI_write(0x0002, x0002reg | interupt7);
+        mSPI_write(0x0002, x0002reg & ~interupt7);
+        int status = WaitForMCU(10);
+        if(status != 0)
+            printf("MCU error status 0x%02X\n", status);
+        RunProcedure(9);
+    }
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted

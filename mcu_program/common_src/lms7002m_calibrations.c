@@ -811,6 +811,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
                 lnaPath = extLoopbackPair & 0x3;
                 Modify_SPI_Reg_bits(SEL_PATH_RFE, lnaPath);
                 Modify_SPI_Reg_bits(0x010D, MSB_LSB(2, 1), ~(lnaPath-1)); //EN_INSHSW_*_RFE
+
+                //check if correct tx band for external loop
+                if(extLoopbackPair >> 2 != !(sel_band1_2_trf-1))
+                    return MCU_INVALID_TX_BAND;
             }
             else
             {
@@ -1044,7 +1048,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         const uint8_t band = (extLoopbackPair >> 2) & 1; // 0-band1, 1-band2
         Modify_SPI_Reg_bits(SEL_BAND2_TRF, band);
         Modify_SPI_Reg_bits(SEL_BAND1_TRF, !band);
-        if(Get_SPI_Reg_bits(SEL_PATH_RFE) == 0)
+        if(Get_SPI_Reg_bits(SEL_PATH_RFE) != (extLoopbackPair&0x3))
             return MCU_INVALID_RX_PATH;
     }
 

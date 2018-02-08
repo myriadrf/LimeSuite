@@ -40,6 +40,24 @@ private:
     int mLoopbackState;
 };
 
+static uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
+{
+    uint8_t loopPair = 0;
+    lime::IConnection* port = ctr.GetConnection();
+    if(!port)
+        return 0;
+
+    auto devName = port->GetDeviceInfo().deviceName;
+    uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
+
+    if(devName == "LimeSDR-USB")
+        loopPair = 1 << 2 | 0x1; // band2 -> LNAH
+    else if(devName == "LimeSDR-mini")
+        loopPair = activeBand << 2 | activeLNA;
+    return loopPair;
+}
+
 /*!
  * Convert the 12-bit twos compliment register into a signed integer
  */
@@ -260,6 +278,8 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
             status = SetExtLoopback(controlPort, ch, true, true);
             if(status != 0)
                 return ReportError(EINVAL, "Failed to enable external loopback");
+            uint8_t loopPair = GetExtLoopPair(*this, true);
+            mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
@@ -387,6 +407,8 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
             status = SetExtLoopback(controlPort, ch, true, false);
             if(status != 0)
                 return ReportError(EINVAL, "Failed to enable external loopback");
+            uint8_t loopPair = GetExtLoopPair(*this, false);
+            mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
 
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);

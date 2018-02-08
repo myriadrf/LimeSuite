@@ -52,19 +52,33 @@ uint8_t MCU_SetParameter(MCU_Parameter param, float value)
     inputRegs[2] = fracPart & 0xFF;
     uint8_t x0002reg = SPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
-    for(uint8_t i = 0; i < 3; ++i)
+    if(param==MCU_REF_CLK || param == MCU_BW)
     {
-        SPI_write(0, inputRegs[2-i]);
-        SPI_write(0x0002, x0002reg | interupt7);
-        SPI_write(0x0002, x0002reg & ~interupt7);
-        int status = MCU_WaitForStatus(10);
-        if(status != 0)
-            printf("MCU error status 0x%02X\n", status);
+        for(uint8_t i = 0; i < 3; ++i)
+        {
+            SPI_write(0, inputRegs[2-i]);
+            SPI_write(0x0002, x0002reg | interupt7);
+            SPI_write(0x0002, x0002reg & ~interupt7);
+            int status = MCU_WaitForStatus(10);
+            if(status != 0)
+                printf("MCU error status 0x%02X\n", status);
+        }
     }
     if(param==MCU_REF_CLK)
         MCU_RunProcedure(4);
     if(param == MCU_BW)
         MCU_RunProcedure(3);
+    if(param == MCU_EXT_LOOPBACK_PAIR)
+    {
+        uint8_t intVal = (int)value;
+        SPI_write(0, intVal);
+        SPI_write(0x0002, x0002reg | interupt7);
+        SPI_write(0x0002, x0002reg & ~interupt7);
+        int status = MCU_WaitForStatus(10);
+        if(status != 0)
+            printf("MCU error status 0x%02X\n", status);
+        MCU_RunProcedure(9);
+    }
     int status = MCU_WaitForStatus(100);
     if(status != 0)
             printf("MCU error status 0x%02X\n", status);

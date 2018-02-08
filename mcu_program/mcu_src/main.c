@@ -11,6 +11,7 @@ bool runProcedure = false;
 uint8_t currentInstruction;
 extern float_type RefClk;
 extern float_type bandwidthRF;
+extern uint8_t extLoopbackPair;
 #define MCU_PARAMETER_ADDRESS 0x002D //register used to pass parameter values to MCU
 
 #define INPUT_COUNT 3
@@ -135,7 +136,10 @@ void main()  //main routine
             case 8:
                 P1 = ProxyRead();
                 break;
-
+            case 9:
+                extLoopbackPair = inputRegs[0];
+                P1 = MCU_IDLE;
+                break;
             case 17: //CalibrateTx
                 P1 = MCU_IDLE | CalibrateTx(true);
                 break;

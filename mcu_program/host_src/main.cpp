@@ -24,6 +24,25 @@ static bool filters = 0;
 static float FBW = 5e6;
 static bool extLoop = true;
 extern float RefClk;
+extern uint8_t extLoopbackPair;
+
+uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
+{
+    uint8_t loopPair = 0;
+    lime::IConnection* port = ctr.GetConnection();
+    if(!port)
+        return 0;
+
+    auto devName = port->GetDeviceInfo().deviceName;
+    uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
+
+    if(devName == "LimeSDR-USB")
+        loopPair = 1 << 2 | 0x1; // band2 -> LNAH
+    else if(devName == "LimeSDR-mini")
+        loopPair = activeBand << 2 | activeLNA;
+    return loopPair;
+}
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
@@ -73,7 +92,7 @@ int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
         return -1;
     auto devName = port->GetDeviceInfo().deviceName;
 
-    if(devName == "LimeSDR")
+    if(devName == "LimeSDR-USB")
     {
         const uint16_t mask = 0x7;
         const uint8_t shiftCount = (ch==2 ? 4 : 0);
@@ -189,10 +208,20 @@ void DCIQ()
             status = MCU_SetParameter(MCU_REF_CLK, RefClk);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
-            status = MCU_SetParameter(MCU_BW, FBW);
-            if(status != 0)
-                printf("Failed to set Bandwidth\n");
-            isSetBW = true;
+            if(filters)
+            {
+                status = MCU_SetParameter(MCU_BW, FBW);
+                if(status != 0)
+                    printf("Failed to set Bandwidth\n");
+                isSetBW = true;
+            }
+                if(extLoop)
+                {
+                    uint8_t loopPair = GetExtLoopPair(lmsControl, tx);
+                    status = MCU_SetParameter(MCU_EXT_LOOPBACK_PAIR, loopPair);
+                    if(status != 0)
+                        printf("Failed to set external loopback pair\n");
+                }
 
             }
 
@@ -205,10 +234,12 @@ void DCIQ()
             {
                 printf("MCU calibration FAILED : 0x%02X\n", status);
             }
-
         }
         else //calibrating with PC
         {
+            if(extLoop)
+                extLoopbackPair = GetExtLoopPair(lmsControl, tx);
+
             if(tx)
                 status = CalibrateTx(extLoop);
             else
@@ -347,6 +378,8 @@ void Filters()
             status = TuneTxFilter(FBW);
         else
             status = TuneRxFilter(FBW);
+        if(status != 0)
+            printf("Filter tune FAILED");
     }
     auto t2 = chrono::high_resolution_clock::now();
     long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
@@ -415,6 +448,7 @@ void Filters()
         printf("RCOMP: %i\n", rcomp_tia_rfe);
         printf("RCTL_LPFL: %i\n", rcc_ctl_lpfl_rbb);
         printf("RCTL_LPFH: %i\n", rcc_ctl_lpfh_rbb);
+        printf("C_CTL_LPFL: %i\n", c_ctl_lpfl_rbb);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
