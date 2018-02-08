@@ -75,6 +75,11 @@ uint16_t RSSIDelayCounter = 1; // MCU timer delay between RSSI measurements
 #define offsetNCO 0.1e6
 #define calibUserBwDivider 5
 
+// external loopback selection
+// [2] tx band, when calibrating Rx, 0-band1, 1-band2
+// [1:0] SEL_PATH_RFE, when calibrating Tx
+uint8_t extLoopbackPair = 0;
+
 static int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
 {
     if(value < minBound)
@@ -798,13 +803,14 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, MSB_LSB(11, 10));
         if(extLoopback)
         {
+            uint8_t lnaPath;
             Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
-            if(sel_band1_2_trf == 1)
-                Modify_SPI_Reg_bits(SEL_PATH_RFE, 1); //LNA_H
-            else if(sel_band1_2_trf == 2)
+            if(sel_band1_2_trf == 1 || sel_band1_2_trf == 2) //band2
             {
-                Modify_SPI_Reg_bits(SEL_PATH_RFE, 3); //LNA_W
-                Modify_SPI_Reg_bits(EN_INSHSW_W_RFE, 0); //LNA_W
+                //activate selected lna path for external loopback
+                lnaPath = extLoopbackPair & 0x3;
+                Modify_SPI_Reg_bits(SEL_PATH_RFE, lnaPath);
+                Modify_SPI_Reg_bits(0x010D, MSB_LSB(2, 1), ~(lnaPath-1)); //EN_INSHSW_*_RFE
             }
             else
             {
@@ -1035,18 +1041,11 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     }
     else // external looback
     {
-        switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
-        {
-        case 3: //LNA_W
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
-        case 1: //LNA_H
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
-            break;
-        default:
+        const uint8_t band = (extLoopbackPair >> 2) & 1; // 0-band1, 1-band2
+        Modify_SPI_Reg_bits(SEL_BAND2_TRF, band);
+        Modify_SPI_Reg_bits(SEL_BAND1_TRF, !band);
+        if(Get_SPI_Reg_bits(SEL_PATH_RFE) == 0)
             return MCU_INVALID_RX_PATH;
-        }
     }
 
     Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
