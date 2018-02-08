@@ -153,11 +153,11 @@ uint8_t SetFrequencyCGEN(float_type freq)
     float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
-        uint8_t iHdiv_high = 2.9e9/2 / freq;
-        uint8_t iHdiv_low = 2.0e9/2 / freq + 0.5;
+        uint8_t iHdiv_high = (2.9e9/2 / freq)-1;
+        uint8_t iHdiv_low = (2.0e9/2 / freq + 0.5)-1;
         uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
         dFvco = 2 * (iHdiv+1) * freq;
-        Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv - 1);
+        Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv);
     }
     //Integer division
     intpart = dFvco/RefClk;
@@ -321,7 +321,7 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
 #ifndef __cplusplus
-    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0001/12)*RefClk); // ~100us
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~100us
 #endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);

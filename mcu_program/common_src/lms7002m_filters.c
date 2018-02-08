@@ -652,7 +652,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
     tx_lpf_IF = tx_lpf_freq_RF/2;
     if(tx_lpf_freq_RF > TxLPF_RF_LimitLowMid && tx_lpf_freq_RF < TxLPF_RF_LimitMidHigh)
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
-    SaveChipState(1);
+    SaveChipState(0);
     status = TuneTxFilterSetup(tx_lpf_IF);
     UpdateRSSIDelay();
     if(status != MCU_NO_ERROR)
