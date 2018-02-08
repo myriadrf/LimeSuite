@@ -805,7 +805,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         {
             uint8_t lnaPath;
             Modify_SPI_Reg_bits(PD_LNA_RFE, 0);
-            if(sel_band1_2_trf == 1 || sel_band1_2_trf == 2) //band2
+            if(sel_band1_2_trf == 1 || sel_band1_2_trf == 2)
             {
                 //activate selected lna path for external loopback
                 lnaPath = extLoopbackPair & 0x3;

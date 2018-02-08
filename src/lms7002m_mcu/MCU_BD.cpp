@@ -1038,17 +1038,17 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 
 void MCU_BD::SetParameter(MCU_Parameter param, float value)
 {
-    uint8_t inputRegs[3];
-    value /= 1e6;
-    inputRegs[0] = (uint8_t)value; //frequency integer part
-
-    uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
-    inputRegs[1] = (fracPart >> 8) & 0xFF;
-    inputRegs[2] = fracPart & 0xFF;
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
     if(param==MCU_REF_CLK || param == MCU_BW)
     {
+        uint8_t inputRegs[3];
+        value /= 1e6;
+        inputRegs[0] = (uint8_t)value; //frequency integer part
+
+        uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
+        inputRegs[1] = (fracPart >> 8) & 0xFF;
+        inputRegs[2] = fracPart & 0xFF;
         for(uint8_t i = 0; i < 3; ++i)
         {
             mSPI_write(0, inputRegs[2-i]);
