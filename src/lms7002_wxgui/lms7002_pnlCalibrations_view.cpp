@@ -57,12 +57,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("Rx calibration failed"));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Rx Calibrated"));
         wxPostEvent(this, evt);
     }
@@ -90,12 +91,13 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+        wxMessageBox(_("Tx calibration failed"));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Tx Calibrated"));
         wxPostEvent(this, evt);
     }
@@ -118,25 +120,14 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     }
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status;
-    {
-#ifdef NDEBUG
-        wxBusyInfo wait("Please wait, calibrating transmitter...");
-#endif
-        status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
-    }
-    if (status != 0)
-        wxMessageBox(wxString::Format(_("Tx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
-    {
-#ifdef NDEBUG
-        wxBusyInfo wait("Please wait, calibrating receiver...");
-#endif
-        status = LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
-    }
-    if (status != 0)
-        wxMessageBox(wxString::Format(_("Rx calibration: %s"), wxString::From8BitData(LMS_GetLastErrorMessage())));
+    int status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
 
-    wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
+
+    status |= LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
+    if (status != 0)
+        wxMessageBox(_("Calibration Failed"), _("Info"), wxOK, this);   
+    else
+        wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();
 }
 
@@ -145,7 +136,7 @@ void lms7002_pnlCalibrations_view::Initialize(lms_device_t* pControl)
     lmsControl = pControl;
     assert(lmsControl != nullptr);
     uint16_t value;
-    if (!LMS_IsOpen(lmsControl,0) || LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
+    if (LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
         value = 1;
     chkDCMODE->Enable(value);
 }

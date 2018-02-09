@@ -4,8 +4,7 @@
     @brief Implementation of STREAM board connection.
 */
 
-#include "ConnectionSTREAM.h"
-#include "ErrorReporting.h"
+#include "ConnectionFX3.h"
 #include <cstring>
 #include "Si5351C.h"
 #include "FPGA_common.h"
@@ -28,18 +27,18 @@ using namespace std;
 
 using namespace lime;
 
-const uint8_t ConnectionSTREAM::ctrlBulkOutAddr = 0x0F;
-const uint8_t ConnectionSTREAM::ctrlBulkInAddr = 0x8F;
+const uint8_t ConnectionFX3::ctrlBulkOutAddr = 0x0F;
+const uint8_t ConnectionFX3::ctrlBulkInAddr = 0x8F;
 
 //control commands to be send via bulk port for boards v1.1 and earlier
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw1 =
+const std::set<uint8_t> ConnectionFX3::commandsToBulkCtrlHw1 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
     CMD_LMS7002_RST,
 };
 //control commands to be send via bulk port for boards v1.2 and later
-const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
+const std::set<uint8_t> ConnectionFX3::commandsToBulkCtrlHw2 =
 {
     CMD_BRDSPI_WR, CMD_BRDSPI_RD,
     CMD_LMS7002_WR, CMD_LMS7002_RD,
@@ -52,12 +51,10 @@ const std::set<uint8_t> ConnectionSTREAM::commandsToBulkCtrlHw2 =
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
+ConnectionFX3::ConnectionFX3(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
     bulkCtrlInProgress = false;
-    RxLoopFunction = bind(&ConnectionSTREAM::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&ConnectionSTREAM::TransmitPacketsLoop, this, std::placeholders::_1);
     isConnected = false;
 #ifndef __unix__
     if(arg == nullptr)
@@ -76,7 +73,7 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(vidpid, serial, index) != 0)
-        lime::error(GetLastErrorMessage());
+        lime::error("Failed to open device");
 
     commandsToBulkCtrl = commandsToBulkCtrlHw2;
 
@@ -89,10 +86,6 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
 
     this->VersionCheck();
 
-    if (info.device == LMS_DEV_LIMESDR || info.device == LMS_DEV_LIMESDR_USB_SP || info.device == LMS_DEV_LMS7002M_ULTIMATE_EVB)
-        DetectRefClk();
-
-    GetChipVersion();
     //must configure synthesizer before using LimeSDR
     if (info.device == LMS_DEV_LIMESDR && info.hardware < 4)
     {
@@ -117,67 +110,9 @@ ConnectionSTREAM::ConnectionSTREAM(void *arg, const std::string &vidpid, const s
     }
 }
 
-double ConnectionSTREAM::DetectRefClk(void)
-{
-    const double fx3Clk = 100e6 * 1.008;    //fx3 clock 100MHz (adjusted to 100.8 MHz based on measurement on multiple boards)
-    const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
-    const uint32_t addr[] = { 0x61, 0x63 };
-    const uint32_t vals[] = { 0x0, 0x0 };
-    if (this->WriteRegisters(addr, vals, 2) != 0)
-    {
-        return -1;
-    }
-    auto start = std::chrono::steady_clock::now();
-    if (this->WriteRegister(0x61, 0x4) != 0)
-    {
-        return -1;
-    }
-
-    while (1) //wait for test to finish
-    {
-        unsigned completed;
-        if (this->ReadRegister(0x65, completed) != 0)
-        {
-            return -1;
-        }
-        if (completed & 0x4)
-            break;
-
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        if (elapsed_seconds.count() > 0.5) //timeout
-        {
-            return -1;
-        }
-    }
-
-    const uint32_t addr2[] = { 0x72, 0x73 };
-    uint32_t vals2[2];
-    if (this->ReadRegisters(addr2, vals2, 2) != 0)
-    {
-        return -1;
-    }
-    double count = (vals2[0] | (vals2[1] << 16)); //cock counter
-    count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
-    lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
-    unsigned i = 0;
-    double delta = 100e6;
-
-    while (i < sizeof(clkTbl) / sizeof(*clkTbl))
-        if (delta < fabs(count - clkTbl[i]))
-            break;
-        else
-            delta = fabs(count - clkTbl[i++]);
-
-    this->SetReferenceClockRate(clkTbl[i-1]);
-    lime::info("Reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
-    return clkTbl[i - 1];
-}
-
 /**	@brief Closes connection to chip and deallocates used memory.
 */
-ConnectionSTREAM::~ConnectionSTREAM()
+ConnectionFX3::~ConnectionFX3()
 {
     Close();
 #ifndef __unix__
@@ -188,7 +123,7 @@ ConnectionSTREAM::~ConnectionSTREAM()
 /**	@brief Tries to open connected USB device and find communication endpoints.
 	@return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
+int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
 {
     bulkCtrlAvailable = false;
 #ifndef __unix__
@@ -346,7 +281,7 @@ int ConnectionSTREAM::Open(const std::string &vidpid, const std::string &serial,
 }
 /**	@brief Closes communication to device.
 */
-void ConnectionSTREAM::Close()
+void ConnectionFX3::Close()
 {
     #ifndef __unix__
     USBDevicePrimary->Close();
@@ -378,7 +313,7 @@ void ConnectionSTREAM::Close()
 /**	@brief Returns connection status
 	@return 1-connection open, 0-connection closed.
 */
-bool ConnectionSTREAM::IsOpen()
+bool ConnectionFX3::IsOpen()
 {
     #ifndef __unix__
     return USBDevicePrimary->IsOpen() && isConnected;
@@ -393,7 +328,7 @@ bool ConnectionSTREAM::IsOpen()
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes sent.
 */
-int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFX3::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
@@ -437,7 +372,7 @@ int ConnectionSTREAM::Write(const unsigned char *buffer, const int length, int t
     @param timeout_ms timeout limit for operation in milliseconds
 	@return number of bytes received.
 */
-int ConnectionSTREAM::Read(unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFX3::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
@@ -478,42 +413,30 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	switch(trans->status)
 	{
     case LIBUSB_TRANSFER_CANCELLED:
-        //lime::error("Transfer %i canceled", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
-        //context->reset();
         break;
     case LIBUSB_TRANSFER_COMPLETED:
-        //if(trans->actual_length == context->bytesExpected)
-		{
-			context->bytesXfered = trans->actual_length;
-			context->done.store(true);
-		}
+        context->bytesXfered = trans->actual_length;
+        context->done.store(true);
         break;
     case LIBUSB_TRANSFER_ERROR:
-        lime::error("TRANSFER ERROR");
+        lime::error("USB TRANSFER ERROR");
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
         break;
     case LIBUSB_TRANSFER_TIMED_OUT:
-        //lime::error("transfer timed out %i", context->id);
         context->bytesXfered = trans->actual_length;
         context->done.store(true);
-        //context->used = false;
-
         break;
     case LIBUSB_TRANSFER_OVERFLOW:
-        lime::error("transfer overflow");
-
+        lime::error("USB transfer overflow");
         break;
     case LIBUSB_TRANSFER_STALL:
-        lime::error("transfer stalled");
+        lime::error("USB transfer stalled");
         break;
     case LIBUSB_TRANSFER_NO_DEVICE:
-        lime::error("transfer no device");
-
+        lime::error("USB transfer no device");
         break;
 	}
 	lck.unlock();
@@ -528,7 +451,7 @@ void callback_libusbtransfer(libusb_transfer *trans)
 	@param streamBulkInAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
+int ConnectionFX3::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
     const unsigned char streamBulkInAddr = 0x81;
     int i = 0;
@@ -560,7 +483,6 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
     libusb_fill_bulk_transfer(tr, dev_handle, streamBulkInAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
-    contexts[i].bytesExpected = length;
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -578,7 +500,7 @@ int ConnectionSTREAM::BeginDataReading(char *buffer, uint32_t length, int ep)
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -588,7 +510,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 	return status;
     #else
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
     while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -597,7 +519,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
         contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
         t2 = chrono::high_resolution_clock::now();
     }
-	return contexts[contextHandle].done.load() == true;
+    return contexts[contextHandle].done.load() == true;
     #endif
     }
     else
@@ -611,7 +533,7 @@ int ConnectionSTREAM::WaitForReading(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return negative values failure, positive number of bytes received
 */
-int ConnectionSTREAM::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
+int ConnectionFX3::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -636,8 +558,9 @@ int ConnectionSTREAM::FinishDataReading(char *buffer, uint32_t length, int conte
 /**
 	@brief Aborts reading operations
 */
-void ConnectionSTREAM::AbortReading(int ep)
+void ConnectionFX3::AbortReading(int ep)
 {
+    ep = 0x81;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
         if (InEndPt[i] && InEndPt[i]->Address == ep)
@@ -666,7 +589,7 @@ void ConnectionSTREAM::AbortReading(int ep)
 	@param streamBulkOutAddr endpoint index?
 	@return handle of transfer context
 */
-int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int ep)
+int ConnectionFX3::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
     const unsigned char streamBulkOutAddr = 0x01;
     int i = 0;
@@ -692,10 +615,9 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int 
 	return i;
     #else
     libusb_transfer *tr = contextsToSend[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     contextsToSend[i].done = false;
     contextsToSend[i].bytesXfered = 0;
-    contextsToSend[i].bytesExpected = length;
+    libusb_fill_bulk_transfer(tr, dev_handle, streamBulkOutAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -713,7 +635,7 @@ int ConnectionSTREAM::BeginDataSending(const char *buffer, uint32_t length, int 
 	@param timeout_ms number of miliseconds to wait
 	@return 1-data received, 0-data not received
 */
-int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if( contextsToSend[contextHandle].used == true )
     {
@@ -723,7 +645,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	return status;
 #   else
     auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = chrono::high_resolution_clock::now();
+    auto t2 = t1;
 
     std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
     while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -735,8 +657,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	return contextsToSend[contextHandle].done == true;
 #   endif
     }
-    else
-        return 0;
+    return 0;
 }
 
 /**
@@ -746,7 +667,7 @@ int ConnectionSTREAM::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	@param contextHandle handle of which context to finish
 	@return false failure, true number of bytes sent
 */
-int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
+int ConnectionFX3::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     if( contextsToSend[contextHandle].used == true)
     {
@@ -770,8 +691,9 @@ int ConnectionSTREAM::FinishDataSending(const char *buffer, uint32_t length, int
 /**
 	@brief Aborts sending operations
 */
-void ConnectionSTREAM::AbortSending(int ep)
+void ConnectionFX3::AbortSending(int ep)
 {
+    ep = 0x01;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
         if (OutEndPt[i] && OutEndPt[i]->Address == ep)
@@ -793,17 +715,17 @@ void ConnectionSTREAM::AbortSending(int ep)
     }
 }
 
-int ConnectionSTREAM::GetBuffersCount() const 
+int ConnectionFX3::GetBuffersCount() const 
 {
-    return 16;
+    return USB_MAX_CONTEXTS;
 };
 
-int ConnectionSTREAM::CheckStreamSize(int size)const 
+int ConnectionFX3::CheckStreamSize(int size)const 
 {
     return size;
 };
 
-int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int timeout)
+int ConnectionFX3::SendData(const char* buffer, int length, int epIndex, int timeout)
 {
     const unsigned char ep = 0x01;
     int context = BeginDataSending((char*)buffer, length, ep);
@@ -812,7 +734,7 @@ int ConnectionSTREAM::SendData(const char* buffer, int length, int epIndex, int 
     return FinishDataSending((char*)buffer, length , context);
 }
 
-int ConnectionSTREAM::ReceiveData(char* buffer, int length, int epIndex, int timeout)
+int ConnectionFX3::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
     const unsigned char ep = 0x81;
     int context = BeginDataReading(buffer, length, ep);
@@ -821,7 +743,7 @@ int ConnectionSTREAM::ReceiveData(char* buffer, int length, int epIndex, int tim
     return FinishDataReading(buffer, length, context);
 }
 
-int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
+int ConnectionFX3::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback)
 {
     if (device == LMS64CProtocol::FX3 && programmingMode == 1)
     {
@@ -832,7 +754,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
             lime::error("failed to get device description");
         else if (desc.idProduct == 243)
 #else
-		if (USBDevicePrimary->ProductID == 243)
+        if (USBDevicePrimary->ProductID == 243)
 #endif
         {
 #ifdef __unix__
@@ -864,13 +786,22 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
             return ret;
 #endif
         }
-		else
-		{
-			ReportError("FX3 bootloader NOT detected");
-			return -1;
-		}
+            else
+            {
+                ReportError("FX3 bootloader NOT detected");
+                return -1;
+            }
     }
     return LMS64CProtocol::ProgramWrite(buffer,length,programmingMode,device,callback);
+}
+
+int ConnectionFX3::ResetStreamBuffers()
+{
+    //USB FIFO reset
+    LMS64CProtocol::GenericPacket ctrPkt;
+    ctrPkt.cmd = CMD_USB_FIFO_RST;
+    ctrPkt.outBuffer.push_back(0x00);
+    return TransferPacket(ctrPkt);
 }
 
 #ifdef __unix__
@@ -882,7 +813,7 @@ int ConnectionSTREAM::ProgramWrite(const char *buffer, const size_t length, cons
 #define VENDORCMD_TIMEOUT	(5000)		// Timeout for each vendor command is set to 5 seconds.
 
 
-int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
+int ConnectionFX3::ram_write(unsigned char *buf, unsigned int ramAddress, int len)
 {
     const int MAX_WRITE_SIZE = (2 * 1024);		// Max. size of data that can be written through one vendor command.
 	int r;
@@ -905,7 +836,7 @@ int ConnectionSTREAM::ram_write(unsigned char *buf, unsigned int ramAddress, int
 	return 0;
 }
 
-int ConnectionSTREAM::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
+int ConnectionFX3::fx3_usbboot_download(unsigned char *fwBuf, int filesize)
 {
 	unsigned int  *data_p;
 	unsigned int i, checksum;

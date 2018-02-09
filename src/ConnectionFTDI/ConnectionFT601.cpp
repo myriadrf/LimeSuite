@@ -4,138 +4,61 @@
 @brief Implementation of uLimeSDR board connection.
 */
 
-#include "Connection_uLimeSDR.h"
-#include "ErrorReporting.h"
+#include "ConnectionFT601.h"
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 #include <thread>
 #include <chrono>
 #include <FPGA_common.h>
-#include <LMS7002M.h>
 #include <ciso646>
 #include "Logger.h"
 
 using namespace std;
 using namespace lime;
 
-Connection_uLimeSDR::Connection_uLimeSDR(void *arg)
+const int ConnectionFT601::streamWrEp = 0x03;
+const int ConnectionFT601::streamRdEp = 0x83;
+const int ConnectionFT601::ctrlWrEp = 0x02;
+const int ConnectionFT601::ctrlRdEp = 0x82;
+
+ConnectionFT601::ConnectionFT601(void *arg)
 {
-    RxLoopFunction = bind(&Connection_uLimeSDR::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&Connection_uLimeSDR::TransmitPacketsLoop, this, std::placeholders::_1);
-
     isConnected = false;
-
-    mStreamWrEndPtAddr = 0x03;
-    mStreamRdEndPtAddr = 0x83;
-    isConnected = false;
-    txSize = 0;
-    rxSize = 0;
 #ifndef __unix__
-	mFTHandle = NULL;
+    mFTHandle = NULL;
 #else
     dev_handle = 0;
-    devs = 0;
-	mUsbCounter = 0;
+    mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
 }
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-Connection_uLimeSDR::Connection_uLimeSDR(void *arg, const unsigned index, const int vid, const int pid)
+ConnectionFT601::ConnectionFT601(void *arg, const unsigned index, const int vid, const int pid)
 {
-    RxLoopFunction = bind(&Connection_uLimeSDR::ReceivePacketsLoop, this, std::placeholders::_1);
-    TxLoopFunction = bind(&Connection_uLimeSDR::TransmitPacketsLoop, this, std::placeholders::_1);
-    mExpectedSampleRate = 0;
     isConnected = false;
-
-    mStreamWrEndPtAddr = 0x03;
-    mStreamRdEndPtAddr = 0x83;
-    isConnected = false;
-    txSize = 0;
-    rxSize = 0;
 #ifndef __unix__
     mFTHandle = NULL;
 #else
     dev_handle = 0;
-    devs = 0;
-	mUsbCounter = 0;
+    mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
     if (this->Open(index, vid, pid) != 0)
-        std::cerr << GetLastErrorMessage() << std::endl;
-    DetectRefClk();
-    GetChipVersion();
-}
-
-double Connection_uLimeSDR::DetectRefClk(void)
-{
-    const double fx3Clk = 100e6;   
-    const double fx3Cnt = 16777210;    //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
-    const uint32_t addr[] = { 0x61, 0x63 };
-    const uint32_t vals[] = { 0x0, 0x0 };
-    SetReferenceClockRate(40e6);
-    if (this->WriteRegisters(addr, vals, 2) != 0)
-    {
-        return -1;
-    }
-    auto start = std::chrono::steady_clock::now();
-    if (this->WriteRegister(0x61, 0x4) != 0)
-    {
-        return -1;
-    }
-
-    while (1) //wait for test to finish
-    {
-        unsigned completed;
-        if (this->ReadRegister(0x65, completed) != 0)
-        {
-            return -1;
-        }
-        if (completed & 0x4)
-            break;
-
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        if (elapsed_seconds.count() > 0.5) //timeout
-        {
-            return -1;
-        }
-    }
-
-    const uint32_t addr2[] = { 0x72, 0x73 };
-    uint32_t vals2[2];
-    if (this->ReadRegisters(addr2, vals2, 2) != 0)
-    {
-        return -1;
-    }
-    double count = (vals2[0] | (vals2[1] << 16)); //cock counter
-    count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
-    lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
-    unsigned i = 0;
-    double delta = 100e6;
-
-    while (i < sizeof(clkTbl) / sizeof(*clkTbl))
-        if (delta < fabs(count - clkTbl[i]))
-            break;
-        else
-            delta = fabs(count - clkTbl[i++]);
-
-    this->SetReferenceClockRate(clkTbl[i-1]);
-    lime::debug("Selected reference clock %1.3f MHz", clkTbl[i - 1] / 1e6);
-    return clkTbl[i - 1];
+        lime::error("Failed to open device");
 }
 
 /**	@brief Closes connection to chip and deallocates used memory.
 */
-Connection_uLimeSDR::~Connection_uLimeSDR()
+ConnectionFT601::~ConnectionFT601()
 {
     Close();
 }
 #ifdef __unix__
-int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
+int ConnectionFT601::FT_FlushPipe(unsigned char ep)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
@@ -163,7 +86,7 @@ int Connection_uLimeSDR::FT_FlushPipe(unsigned char ep)
     return 0;
 }
 
-int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
+int ConnectionFT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 {
     int actual = 0;
     unsigned char wbuffer[20]={0};
@@ -198,31 +121,33 @@ int Connection_uLimeSDR::FT_SetStreamPipe(unsigned char ep, size_t size)
 /**	@brief Tries to open connected USB device and find communication endpoints.
 @return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid)
+int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
 {
 #ifndef __unix__
-	DWORD devCount;
-	FT_STATUS ftStatus = FT_OK;
-	DWORD dwNumDevices = 0;
-	// Open a device
-	ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
-	if (FT_FAILED(ftStatus))
-	{
-		ReportError(ENODEV, "Failed to list USB Devices");
-		return -1;
-	}
-	FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
-	FT_AbortPipe(mFTHandle, 0x82);
-	FT_AbortPipe(mFTHandle, 0x02);
-	FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x82, 64);
-	FT_SetStreamPipe(mFTHandle, FALSE, FALSE, 0x02, 64);
-    FT_SetPipeTimeout(mFTHandle, 0x02, 500);
-    FT_SetPipeTimeout(mFTHandle, 0x82, 500);
-    FT_SetPipeTimeout(mFTHandle, mStreamRdEndPtAddr, 0);
-    FT_SetPipeTimeout(mFTHandle, mStreamWrEndPtAddr, 0);
-	isConnected = true;
-	return 0;
+    DWORD devCount;
+    FT_STATUS ftStatus = FT_OK;
+    DWORD dwNumDevices = 0;
+    // Open a device
+    ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
+    if (FT_FAILED(ftStatus))
+    {
+        ReportError(ENODEV, "Failed to list USB Devices");
+        return -1;
+    }
+    FT_AbortPipe(mFTHandle, streamRdEp);
+    FT_AbortPipe(mFTHandle, ctrlRdEp);
+    FT_AbortPipe(mFTHandle, ctrlWrEp);
+    FT_AbortPipe(mFTHandle, streamWrEp);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlRdEp, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, ctrlWrEp, 64);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket));
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket));
+    FT_SetPipeTimeout(mFTHandle, ctrlWrEp, 500);
+    FT_SetPipeTimeout(mFTHandle, ctrlRdEp, 500);
+    FT_SetPipeTimeout(mFTHandle, streamRdEp, 0);
+    FT_SetPipeTimeout(mFTHandle, streamWrEp, 0);
+    isConnected = true;
+    return 0;
 #else
     dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 
@@ -235,21 +160,17 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
         if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
             lime::debug("Kernel Driver Detached!");
     }
-    int r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
-    if(r < 0)
-    {
+    int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
+    if (r < 0)
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
-    }
-    r = libusb_claim_interface(dev_handle, 1); //claim interface 0 (the first) of device
-    if(r < 0)
-    {
+
+    if ((r = libusb_claim_interface(dev_handle, 1))<0) //claim interface 1 of device
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
-    }
     lime::debug("Claimed Interface");
     
-    FT_FlushPipe(0x82);  //clear ctrl ep rx buffer
-    FT_SetStreamPipe(0x82,64);
-    FT_SetStreamPipe(0x02,64);
+    FT_FlushPipe(ctrlRdEp);  //clear ctrl ep rx buffer
+    FT_SetStreamPipe(ctrlRdEp,64);
+    FT_SetStreamPipe(ctrlWrEp,64);
     isConnected = true;
     return 0;
 #endif
@@ -257,15 +178,15 @@ int Connection_uLimeSDR::Open(const unsigned index, const int vid, const int pid
 
 /**	@brief Closes communication to device.
 */
-void Connection_uLimeSDR::Close()
+void ConnectionFT601::Close()
 {
 #ifndef __unix__
-	FT_Close(mFTHandle);
+    FT_Close(mFTHandle);
 #else
     if(dev_handle != 0)
     {
-        FT_FlushPipe(mStreamRdEndPtAddr);
-        FT_FlushPipe(0x82);
+        FT_FlushPipe(streamRdEp);
+        FT_FlushPipe(ctrlRdEp);
         libusb_release_interface(dev_handle, 1);
         libusb_close(dev_handle);
         dev_handle = 0;
@@ -277,13 +198,13 @@ void Connection_uLimeSDR::Close()
 /**	@brief Returns connection status
 @return 1-connection open, 0-connection closed.
 */
-bool Connection_uLimeSDR::IsOpen()
+bool ConnectionFT601::IsOpen()
 {
     return isConnected;
 }
 
 #ifndef __unix__
-int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
+int ConnectionFT601::ReinitPipe(unsigned char ep)
 {
     FT_AbortPipe(mFTHandle, ep);
     FT_FlushPipe(mFTHandle, ep);
@@ -298,7 +219,7 @@ int Connection_uLimeSDR::ReinitPipe(unsigned char ep)
 @param timeout_ms timeout limit for operation in milliseconds
 @return number of bytes sent.
 */
-int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFT601::Write(const unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = 0;
@@ -306,16 +227,15 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
         return 0;
 
 #ifndef __unix__
-    // Write to channel 1 ep 0x02
     ULONG ulBytesWrite = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED	vOverlapped = { 0 };
     FT_InitializeOverlapped(mFTHandle, &vOverlapped);
-    ftStatus = FT_WritePipe(mFTHandle, 0x02, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
+    ftStatus = FT_WritePipe(mFTHandle, ctrlWrEp, (unsigned char*)buffer, length, &ulBytesWrite, &vOverlapped);
     if (ftStatus != FT_IO_PENDING)
     {
         FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
-        ReinitPipe(0x02);
+        ReinitPipe(ctrlWrEp);
         return -1;
     }
 
@@ -324,13 +244,13 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     {
         if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesWrite, FALSE) == FALSE)
         {
-            ReinitPipe(0x02);
+            ReinitPipe(ctrlWrEp);
             ulBytesWrite = -1;
         }
     }
     else
     {
-        ReinitPipe(0x02);
+        ReinitPipe(ctrlWrEp);
         ulBytesWrite = -1;
     }
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
@@ -339,7 +259,7 @@ int Connection_uLimeSDR::Write(const unsigned char *buffer, const int length, in
     unsigned char* wbuffer = new unsigned char[length];
     memcpy(wbuffer, buffer, length);
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x02, wbuffer, length, &actual, timeout_ms);
+    libusb_bulk_transfer(dev_handle, ctrlWrEp, wbuffer, length, &actual, timeout_ms);
     len = actual;
     delete[] wbuffer;
     return len;
@@ -354,25 +274,22 @@ big enough to fit received data.
 @return number of bytes received.
 */
 
-int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeout_ms)
+int ConnectionFT601::Read(unsigned char *buffer, const int length, int timeout_ms)
 {
     std::lock_guard<std::mutex> lock(mExtraUsbMutex);
     long len = length;
     if(IsOpen() == false)
         return 0;
 #ifndef __unix__
-    //
-    // Read from channel 1 ep 0x82
-    //
     ULONG ulBytesRead = 0;
     FT_STATUS ftStatus = FT_OK;
     OVERLAPPED	vOverlapped = { 0 };
     FT_InitializeOverlapped(mFTHandle, &vOverlapped);
-    ftStatus = FT_ReadPipe(mFTHandle, 0x82, buffer, length, &ulBytesRead, &vOverlapped);
+    ftStatus = FT_ReadPipe(mFTHandle, ctrlRdEp, buffer, length, &ulBytesRead, &vOverlapped);
     if (ftStatus != FT_IO_PENDING)
     {
         FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
-        ReinitPipe(0x82);
+        ReinitPipe(ctrlRdEp);
         return -1;;
     }
 
@@ -381,20 +298,20 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
     {
         if (GetOverlappedResult(mFTHandle, &vOverlapped, &ulBytesRead, FALSE)==FALSE)
         {
-            ReinitPipe(0x82);
+            ReinitPipe(ctrlRdEp);
             ulBytesRead = -1;
         }
     }
     else
     {
-        ReinitPipe(0x82);
+        ReinitPipe(ctrlRdEp);
         ulBytesRead = -1;
     }
     FT_ReleaseOverlapped(mFTHandle, &vOverlapped);
     return ulBytesRead;
 #else
     int actual = 0;
-    libusb_bulk_transfer(dev_handle, 0x82, buffer, len, &actual, timeout_ms);
+    libusb_bulk_transfer(dev_handle, ctrlRdEp, buffer, len, &actual, timeout_ms);
     len = actual;
 #endif
     return len;
@@ -405,26 +322,25 @@ int Connection_uLimeSDR::Read(unsigned char *buffer, const int length, int timeo
 */
 static void callback_libusbtransfer(libusb_transfer *trans)
 {
-    Connection_uLimeSDR::USBTransferContext *context = reinterpret_cast<Connection_uLimeSDR::USBTransferContext*>(trans->user_data);
+    ConnectionFT601::USBTransferContext *context = reinterpret_cast<ConnectionFT601::USBTransferContext*>(trans->user_data);
     std::unique_lock<std::mutex> lck(context->transferLock);
     switch(trans->status)
     {
         case LIBUSB_TRANSFER_CANCELLED:
-            context->bytesXfered = trans->actual_length;
+            context->bytesXfered = trans->actual_length;  
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_COMPLETED:
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
-        break;
+            break;
         case LIBUSB_TRANSFER_ERROR:
             lime::error("TRANSFER ERROR");
             context->bytesXfered = trans->actual_length;
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_TIMED_OUT:
-            lime::error("transfer timed out %i", context->id);
-            context->bytesXfered = trans->actual_length;
+            lime::error("USB transfer timed out");
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_OVERFLOW:
@@ -442,12 +358,12 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-int Connection_uLimeSDR::GetBuffersCount() const 
+int ConnectionFT601::GetBuffersCount() const 
 {
-    return 16;
+    return USB_MAX_CONTEXTS;
 };
 
-int Connection_uLimeSDR::CheckStreamSize(int size)const 
+int ConnectionFT601::CheckStreamSize(int size)const 
 {
     return size;
 };
@@ -458,7 +374,7 @@ int Connection_uLimeSDR::CheckStreamSize(int size)const
 @param length number of bytes to read
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length, int ep)
+int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     bool contextFound = false;
@@ -479,28 +395,17 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length, int ep)
     contexts[i].used = true;
 
 #ifndef __unix__
-	if (length != rxSize)
-	{
-		rxSize = length;
-		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamRdEndPtAddr, rxSize);
-	}
     FT_InitializeOverlapped(mFTHandle, &contexts[i].inOvLap);
 	ULONG ulActual;
     FT_STATUS ftStatus = FT_OK;
-    ftStatus = FT_ReadPipe(mFTHandle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
+    ftStatus = FT_ReadPipe(mFTHandle, streamRdEp, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
     if (ftStatus != FT_IO_PENDING)
         return -1;
 #else
-    if (length != rxSize)
-    {
-        rxSize = length;
-        FT_SetStreamPipe(mStreamRdEndPtAddr,rxSize);
-    }
     libusb_transfer *tr = contexts[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamRdEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 10000);
+    libusb_fill_bulk_transfer(tr, dev_handle, streamRdEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
     contexts[i].done = false;
     contexts[i].bytesXfered = 0;
-    contexts[i].bytesExpected = length;
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -518,17 +423,17 @@ int Connection_uLimeSDR::BeginDataReading(char *buffer, uint32_t length, int ep)
 @param timeout_ms number of miliseconds to wait
 @return 1-data received, 0-data not received
 */
-int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contexts[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0)
-			return 1;
+            if (dwRet == WAIT_OBJECT_0)
+                return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
-        auto t2 = chrono::high_resolution_clock::now();
+        auto t2 = t1;
 
         std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
         while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
@@ -550,7 +455,7 @@ int Connection_uLimeSDR::WaitForReading(int contextHandle, unsigned int timeout_
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes received
 */
-int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
+int ConnectionFT601::FinishDataReading(char *buffer, uint32_t length, int contextHandle)
 {
     if(contextHandle >= 0 && contexts[contextHandle].used == true)
     {
@@ -569,21 +474,19 @@ int Connection_uLimeSDR::FinishDataReading(char *buffer, uint32_t length, int co
 #else
         length = contexts[contextHandle].bytesXfered;
         contexts[contextHandle].used = false;
-        contexts[contextHandle].reset();
         return length;
 #endif
     }
-    else
-        return 0;
+    return 0;
 }
 
 /**
 @brief Aborts reading operations
 */
-void Connection_uLimeSDR::AbortReading(int ep)
+void ConnectionFT601::AbortReading(int ep)
 {
 #ifndef __unix__
-    FT_AbortPipe(mFTHandle, mStreamRdEndPtAddr);
+    FT_AbortPipe(mFTHandle, streamRdEp);
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contexts[i].used == true)
@@ -592,8 +495,8 @@ void Connection_uLimeSDR::AbortReading(int ep)
             contexts[i].used = false;
         }
     }
-    FT_FlushPipe(mFTHandle, mStreamRdEndPtAddr);
-    rxSize = 0;
+    FT_FlushPipe(mFTHandle, streamRdEp);
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket));
 #else
 
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
@@ -601,8 +504,7 @@ void Connection_uLimeSDR::AbortReading(int ep)
         if(contexts[i].used)
             libusb_cancel_transfer(contexts[i].transfer);
     }
-    FT_FlushPipe(mStreamRdEndPtAddr);
-    rxSize = 0;
+    FT_FlushPipe(streamRdEp);
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
     {
         if(contexts[i].used)
@@ -620,7 +522,7 @@ void Connection_uLimeSDR::AbortReading(int ep)
 @param length number of bytes to send
 @return handle of transfer context
 */
-int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length, int ep)
+int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int ep)
 {
     int i = 0;
     //find not used context
@@ -640,26 +542,15 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length, i
 #ifndef __unix__
 	FT_STATUS ftStatus = FT_OK;
 	ULONG ulActualBytesSend;
-	if (length != txSize)
-	{
-		txSize = length;
-		FT_SetStreamPipe(mFTHandle, FALSE, FALSE, mStreamWrEndPtAddr, txSize);
-	}
     FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
-	ftStatus = FT_WritePipe(mFTHandle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
+	ftStatus = FT_WritePipe(mFTHandle, streamWrEp, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
 	if (ftStatus != FT_IO_PENDING)
 		return -1;
 #else
-    if (length != txSize)
-    {
-        txSize = length;
-        FT_SetStreamPipe(mStreamWrEndPtAddr,txSize);
-    }
     libusb_transfer *tr = contextsToSend[i].transfer;
-    libusb_fill_bulk_transfer(tr, dev_handle, mStreamWrEndPtAddr, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 10000);
     contextsToSend[i].done = false;
     contextsToSend[i].bytesXfered = 0;
-    contextsToSend[i].bytesExpected = length;
+    libusb_fill_bulk_transfer(tr, dev_handle, streamWrEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contextsToSend[i], 0);
     int status = libusb_submit_transfer(tr);
     if(status != 0)
     {
@@ -677,17 +568,17 @@ int Connection_uLimeSDR::BeginDataSending(const char *buffer, uint32_t length, i
 @param timeout_ms number of miliseconds to wait
 @return 1-data received, 0-data not received
 */
-int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_ms)
+bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
     if(contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
-		if (dwRet == WAIT_OBJECT_0)
-			return 1;
+            if (dwRet == WAIT_OBJECT_0)
+                return 1;
 #else
         auto t1 = chrono::high_resolution_clock::now();
-        auto t2 = chrono::high_resolution_clock::now();
+        auto t2 = t1;
         std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
         while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
         {
@@ -708,7 +599,7 @@ int Connection_uLimeSDR::WaitForSending(int contextHandle, unsigned int timeout_
 @param contextHandle handle of which context to finish
 @return false failure, true number of bytes sent
 */
-int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
+int ConnectionFT601::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
     if(contextsToSend[contextHandle].used == true)
     {
@@ -726,7 +617,6 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, 
 #else
         length = contextsToSend[contextHandle].bytesXfered;
         contextsToSend[contextHandle].used = false;
-        contextsToSend[contextHandle].reset();
         return length;
 #endif
     }
@@ -737,10 +627,10 @@ int Connection_uLimeSDR::FinishDataSending(const char *buffer, uint32_t length, 
 /**
 @brief Aborts sending operations
 */
-void Connection_uLimeSDR::AbortSending(int ep)
+void ConnectionFT601::AbortSending(int ep)
 {
 #ifndef __unix__
-    FT_AbortPipe(mFTHandle, mStreamWrEndPtAddr);
+    FT_AbortPipe(mFTHandle, streamWrEp);
     for (int i = 0; i < USB_MAX_CONTEXTS; ++i)
     {
         if (contextsToSend[i].used == true)
@@ -749,7 +639,7 @@ void Connection_uLimeSDR::AbortSending(int ep)
             contextsToSend[i].used = false;
         }
     }
-    txSize = 0;
+    FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket));
 #else
     for(int i = 0; i<USB_MAX_CONTEXTS; ++i)
     {
@@ -763,8 +653,73 @@ void Connection_uLimeSDR::AbortSending(int ep)
             WaitForSending(i, 250);
             FinishDataSending(nullptr, 0, i);
         }
-    }
-    FT_FlushPipe(mStreamWrEndPtAddr);
-    txSize = 0;
+    }    
 #endif
 }
+
+int ConnectionFT601::ResetStreamBuffers()
+{
+#ifndef __unix__
+    if (FT_AbortPipe(mFTHandle, streamRdEp)!=FT_OK)
+        return -1;
+    if (FT_AbortPipe(mFTHandle, streamWrEp)!=FT_OK)
+        return -1;
+    if (FT_FlushPipe(mFTHandle, streamRdEp)!=FT_OK)
+        return -1;
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamRdEp, sizeof(FPGA_DataPacket)) != 0)
+        return -1;
+    if (FT_SetStreamPipe(mFTHandle, FALSE, FALSE, streamWrEp, sizeof(FPGA_DataPacket)) != 0)
+        return -1;
+#else
+    if (FT_FlushPipe(streamWrEp)!=0)
+        return -1;
+    if (FT_FlushPipe(streamRdEp)!=0)
+        return -1;
+    if (FT_SetStreamPipe(streamWrEp,sizeof(FPGA_DataPacket))!=0)
+        return -1;
+    if (FT_SetStreamPipe(streamRdEp,sizeof(FPGA_DataPacket))!=0)
+        return -1;
+#endif
+    return 0;
+}
+
+int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback)
+{
+    if (device != LMS64CProtocol::FPGA)
+    {
+        lime::error("Unsupported programming target");
+        return -1;
+    }
+    if (prog_mode == 0)
+    {
+        lime::error("Programming to RAM is not supported");
+        return -1;
+    }
+
+    if (prog_mode == 2)
+        return LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
+    if (GetFPGAInfo().gatewareVersion != 0)
+    { 
+        LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
+    const int sizeUFM = 0x8000;
+    const int sizeCFM0 = 0x42000;
+    const int startUFM = 0x1000;
+    const int startCFM0 = 0x4B000;
+
+    if (length != startCFM0 + sizeCFM0)
+    { 
+        lime::error("Invalid image file");
+        return -1;
+    }
+    std::vector<char> buffer(sizeUFM + sizeCFM0); 
+    memcpy(buffer.data(), data_src + startUFM, sizeUFM);
+    memcpy(buffer.data() + sizeUFM, data_src + startCFM0, sizeCFM0);
+
+    int ret = LMS64CProtocol::ProgramWrite(buffer.data(), buffer.size(), prog_mode,  device, callback);
+    LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+
+    return ret;
+}
+

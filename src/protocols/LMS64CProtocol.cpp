@@ -4,7 +4,7 @@
     @brief Implementation of LMS64C protocol.
 */
 
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Si5351C.h"
 #include <chrono>
@@ -24,12 +24,11 @@ const int LMS_RST_PULSE = 2;
 
 //! arbitrary spi constants used to dispatch calls
 #define LMS7002M_SPI_INDEX 0x10
-#define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
 
 static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket &pkt)
 {
-    if (status != 0) return ReportError(EIO, GetLastErrorMessage());
+    if (status != 0) return -1;
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return 0;
@@ -102,13 +101,7 @@ int LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-
-    switch(addr)
-    {
-    case Si5351_I2C_ADDR: return this->WriteSi5351I2C(data);
-    }
-
-    return ReportError(ENOTSUP, "unknown i2c address");
+    return this->WriteSi5351I2C(data);
 }
 
 int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &data)
@@ -117,30 +110,7 @@ int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-
-    switch(addr)
-    {
-    case Si5351_I2C_ADDR: return this->ReadSi5351I2C(numBytes, data);
-    }
-
-    return ReportError(ENOTSUP, "unknown i2c address");
-}
-
-double LMS64CProtocol::GetReferenceClockRate(void)
-{
-    return _cachedRefClockRate;
-}
-
-int LMS64CProtocol::SetReferenceClockRate(const double rate)
-{
-    Si5351C pll;
-    pll.Initialize(this);
-
-    //TODO set the PLL freq
-
-    //stash the actual reference
-    _cachedRefClockRate = rate;
-    return 0;
+    return this->ReadSi5351I2C(numBytes, data);
 }
 
 /***********************************************************************
@@ -309,9 +279,6 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
     devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
     devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
-    devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
-    devInfo.addrSi5351 = Si5351_I2C_ADDR;
-    devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     devInfo.boardSerialNumber = lmsInfo.boardSerialNumber;
 
     FPGAinfo gatewareInfo = this->GetFPGAInfo();
@@ -814,7 +781,7 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
+int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
@@ -823,8 +790,10 @@ int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *value
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;
-        if(values[i] != 0)
-            powerOf10 = log10(values[i])/3;
+        if(values[i] > 65535.0 && (units != ""))
+            powerOf10 = log10(values[i]/65.536)/3;
+        if (values[i] < 65.536 && (units != ""))
+            powerOf10 = log10(values[i]/65535.0) / 3;
         int unitsId = 0; // need to convert given units to their enum
         pkt.outBuffer.push_back(unitsId << 4 | powerOf10);
         int value = values[i] / pow(10, 3*powerOf10);
@@ -938,15 +907,4 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 
 /**	@brief Reads chip version information form LMS7 chip.
 */
-int LMS64CProtocol::GetChipVersion()
-{
-    LMS64CProtocol::GenericPacket ctrPkt;
-    ctrPkt.cmd = CMD_LMS7002_RD;
-    ctrPkt.outBuffer.push_back(0x00); //reset bulk endpoints
-    ctrPkt.outBuffer.push_back(0x2F); //reset bulk endpoints
-    if(TransferPacket(ctrPkt) != 0)
-        this->chipVersion = 0;
-    else
-        this->chipVersion=(ctrPkt.inBuffer[2]<<8)|ctrPkt.inBuffer[3];
-    return this->chipVersion;
-}
+

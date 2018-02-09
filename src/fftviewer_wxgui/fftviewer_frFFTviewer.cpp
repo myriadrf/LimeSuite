@@ -10,6 +10,7 @@
 #include "windowFunction.h"
 #include <fstream>
 #include "lms7suiteEvents.h"
+#include "lms7_device.h"
 
 using namespace std;
 using namespace lime;
@@ -25,7 +26,8 @@ void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
         this->txStreams[i].handle = 0;
     }
     cmbStreamType->Clear();
-    if (LMS_GetNumChannels(lmsControl, false)>2)
+    const int num_ch = LMS_GetNumChannels(lmsControl, false);
+    if (num_ch>2)
     {
         cmbStreamType->Append(_T("LMS1 SISO"));
         cmbStreamType->Append(_T("LMS1 MIMO"));
@@ -33,10 +35,14 @@ void fftviewer_frFFTviewer::Initialize(lms_device_t* pDataPort)
         cmbStreamType->Append(_T("LMS2 MIMO"));
         cmbStreamType->Append(_T("Ext. ADC/DAC"));
     }
-    else
+    else if (num_ch == 2)
     {
         cmbStreamType->Append(_T("LMS SISO"));
         cmbStreamType->Append(_T("LMS MIMO"));
+    }
+    else
+    {
+        cmbStreamType->Append(_T("LMS SISO"));
     }
     cmbStreamType->SetSelection(0);
     SetNyquistFrequency();
@@ -126,7 +132,7 @@ void fftviewer_frFFTviewer::OnWindowFunctionChanged( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 {
-    if (mStreamRunning == false)
+    if (threadProcessing.joinable() == false)
         StartStreaming();
     else
         StopStreaming();
@@ -134,7 +140,8 @@ void fftviewer_frFFTviewer::OnbtnStartStop( wxCommandEvent& event )
 
 void fftviewer_frFFTviewer::StartStreaming()
 {
-    if(!LMS_IsOpen(lmsControl,1))
+    auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
     {
         wxMessageBox(_("FFTviewer: Connection not initialized"), _("ERROR"));
         return;
@@ -143,14 +150,9 @@ void fftviewer_frFFTviewer::StartStreaming()
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
-
-    if (mStreamRunning.load() == true)
-        return;
+    
     stopProcessing.store(false);
     updateGUI.store(true);
-
-    if (threadProcessing.joinable())
-        threadProcessing.join();
 
     const int fftSize = spinFFTsize->GetValue();
     fftFreqAxis.resize(fftSize);
@@ -178,6 +180,8 @@ void fftviewer_frFFTviewer::StartStreaming()
     spinCaptureCount->Disable();
     chkEnTx->Disable();
     lmsIndex = cmbStreamType->GetSelection()/2;
+    if (mStreamRunning.load() == true)
+        return;
     switch (cmbStreamType->GetSelection()%2)
     {
     case 0: //SISO

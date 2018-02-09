@@ -136,7 +136,7 @@ public:
     bool IsSynced();
     int CopyChannelRegisters(const Channel src, const Channel dest, bool copySX);
 
-	int ResetChip();
+    int ResetChip();
 
     /*!
      * Perform soft-reset sequence over SPI
@@ -152,18 +152,10 @@ public:
     uint16_t Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip = false);
     int Modify_SPI_Reg_bits(const LMS7Parameter &param, const uint16_t value, bool fromChip = false);
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
-    int SPI_write(uint16_t address, uint16_t data);
+    int SPI_write(uint16_t address, uint16_t data, bool use_cache = true);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int *status = 0);
     int RegistersTest(const char* fileName = "registersTest.txt");
-    ///@}
-
-    ///@name Calibration protection:
-    ///Called internally by calibration and cgen API.
-    ///Call externally when performing multiple cals.
-    ///Safe to next calls to enter and exit.
-    ///Always match calls to enter+exit.
-    void EnterSelfCalibration(void);
-    void ExitSelfCalibration(void);
+    static const LMS7Parameter* GetParam(const std::string &name);
     ///@}
 
     ///@name Transmitter, Receiver calibrations
@@ -262,11 +254,11 @@ public:
     enum PathRFE
     {
         PATH_RFE_NONE = 0,
-        PATH_RFE_LNAH = int('H'),
-        PATH_RFE_LNAL = int('L'),
-        PATH_RFE_LNAW = int('W'),
-        PATH_RFE_LB1 = 1,
-        PATH_RFE_LB2 = 2,
+        PATH_RFE_LNAH,
+        PATH_RFE_LNAL,
+        PATH_RFE_LNAW,
+        PATH_RFE_LB1,
+        PATH_RFE_LB2,
     };
 
     //! Set the RFE input path.
@@ -287,14 +279,6 @@ public:
      */
     int GetBandTRF(void);
 
-    /*!
-     * Update the external band selection by calling
-     * UpdateExternalBandSelect() on the connection object.
-     * This is called automatically by the LMS7002M driver,
-     * but can also be called manually by the user.
-     */
-    void UpdateExternalBandSelect(void);
-
     ///@}
 
     ///@name CGEN and PLL
@@ -306,7 +290,7 @@ public:
 	float_type GetFrequencySX(bool tx);
     int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
     int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
-	bool GetSXLocked(bool tx);
+    bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
     {
@@ -371,6 +355,13 @@ public:
      * Get the RX DC removal filter enabled.
      */
     bool GetRxDCRemoval(void);
+    
+        /*!
+     * Enables/disables TDD mode 
+     * @param enable true - use same pll for Tx and Rx, false - us seperate PLLs
+     * @return 0 for success for error condition
+     */
+    int EnableSXTDD(bool enable);
 
     /*!
      * Set the TX DC offset adjustment.
@@ -452,6 +443,7 @@ protected:
     ///@name Algorithms functions
     void BackupAllRegisters();
     void RestoreAllRegisters();
+    
     uint32_t GetRSSI(RSSI_measurements *measurements = nullptr);
     uint32_t GetAvgRSSI(const int avgCount);
     void SetRxDCOFF(int8_t offsetI, int8_t offsetQ);
@@ -482,9 +474,9 @@ protected:
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
-    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt);
+    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool use_cache);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
-    int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
+    int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop, bool use_cache);
     ///@}
 
     virtual void Log(const char* text, LogType type);
@@ -504,25 +496,8 @@ protected:
     IConnection* controlPort;
     unsigned mdevIndex;
     size_t mSelfCalDepth;
-
+    double _cachedRefClockRate;
     int LoadConfigLegacyFile(const char* filename);
 };
-
-
-/*!
- * Helper class to enter a calibration upon construction,
- * and to automatically exit calibration upon exit.
- */
-class LIME_API LMS7002M_SelfCalState
-{
-public:
-    LMS7002M_SelfCalState(LMS7002M *rfic);
-    ~LMS7002M_SelfCalState(void);
-
-private:
-    LMS7002M *rfic;
-};
-
-
 }
 #endif

@@ -86,7 +86,7 @@ void pnluLimeSDR::OnLoopbackChange(wxCommandEvent& event)
     value |= cmbRxPath->GetSelection() == 1 ? 1<<9 : 1<<8;
     value |= cmbTxPath->GetSelection() == 1 ? 1<<13 : 1<<12;
     if(LMS_WriteFPGAReg(lmsControl,addr, value))
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Failed to write FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
     txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
 }
 
@@ -96,7 +96,7 @@ void pnluLimeSDR::UpdatePanel()
     uint16_t value = 0;
     if(LMS_ReadFPGAReg(lmsControl,addr, &value))
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox(_("Failed to read FPGA registers"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
     chkTxLBSH->SetValue((value >> 2) & 0x1);

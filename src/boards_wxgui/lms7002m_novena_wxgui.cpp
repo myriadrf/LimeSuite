@@ -65,7 +65,7 @@ void LMS7002M_Novena_wxgui::UpdatePanel()
 
     if (status != 0)
     {
-        wxMessageBox(LMS_GetLastErrorMessage(), _("Error"), wxICON_ERROR | wxOK);
+        wxMessageBox("Read register failed", _("Error"), wxICON_ERROR | wxOK);
         return;
     }
 

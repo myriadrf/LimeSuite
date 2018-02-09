@@ -5,50 +5,13 @@
 */
 
 #include "IConnection.h"
-#include "ErrorReporting.h"
-#include <cstring> //memcpy
-#include <chrono>
-#include <thread>
-#include <iso646.h>
+#include "Logger.h"
 
 using namespace lime;
 
-DeviceInfo::DeviceInfo(void):
-    addrSi5351(-1),
-    addrADF4002(-1)
-{
-    return;
-}
-
-StreamMetadata::StreamMetadata(void):
-    timestamp(0),
-    hasTimestamp(false),
-    endOfBurst(false),
-    lateTimestamp(false),
-    packetDropped(false)
-{
-    return;
-}
-
-StreamConfig::StreamConfig(void):
-    isTx(false),
-    performanceLatency(0.5),
-    bufferLength(0),
-    format(STREAM_12_BIT_IN_16),
-    linkFormat(STREAM_12_BIT_IN_16)
-{
-    return;
-}
-
 IConnection::IConnection(void)
 {
-    callback_logData = nullptr;
-    unsigned short test = 0x1234;
-    unsigned char* bytes = (unsigned char*)&test;
-    if(bytes[0] == 0x12 && bytes[1] == 0x34)
-        mSystemBigEndian = true;
-    else
-        mSystemBigEndian = false;
+    callback_logData = nullptr;;
 }
 
 IConnection::~IConnection(void)
@@ -69,7 +32,6 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
-    info.addrsLMS7002M.push_back(0);
     return info;
 }
 
@@ -79,20 +41,17 @@ DeviceInfo IConnection::GetDeviceInfo(void)
 
 int IConnection::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("TransactSPI not supported");
 }
 
 int IConnection::WriteI2C(const int addr, const std::string &data)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("WriteI2C not supported");
 }
 
 int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &data)
 {
-    ReportError(ENOTSUP);
-    return -1;
+    return ReportError("ReadI2C not supported");
 }
 
 /***********************************************************************
@@ -101,124 +60,46 @@ int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &dat
 
 int IConnection::DeviceReset(int ind)
 {
-    ReportError(ENOTSUP);
-    return -1;
-}
-
-void IConnection::UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath)
-{
-    return;
-}
-
-int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate)
-{
-    return 0;
-}
-
-int IConnection::UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)
-{
-    return 0;
-}
-
-void IConnection::EnterSelfCalibration(const size_t channel)
-{
-    return;
-}
-
-void IConnection::ExitSelfCalibration(const size_t channel)
-{
-    return;
-}
-
-/***********************************************************************
- * Reference clocks API
- **********************************************************************/
-
-double IConnection::GetReferenceClockRate(void)
-{
-    //this is the populated TCXO on many boards
-    return 61.44e6/2;
-}
-
-int IConnection::SetReferenceClockRate(const double rate)
-{
-    return ReportError(EPERM, "SetReferenceClockRate not implemented");
-}
-
-double IConnection::GetTxReferenceClockRate(void)
-{
-    return this->GetReferenceClockRate();
-}
-
-int IConnection::SetTxReferenceClockRate(const double rate)
-{
-    return this->SetReferenceClockRate(rate);
-}
-
-/***********************************************************************
- * Timestamp API
- **********************************************************************/
-
-uint64_t IConnection::GetHardwareTimestamp(void)
-{
-    return 0;
-}
-
-void IConnection::SetHardwareTimestamp(const uint64_t now)
-{
-    return;
-}
-
-double IConnection::GetHardwareTimestampRate(void)
-{
-    return 1.0;
+    return ReportError("ProgramWrite not supported");
 }
 
 /***********************************************************************
  * Stream API
  **********************************************************************/
 
-int IConnection::SetupStream(size_t &streamID, const StreamConfig &config)
+int IConnection::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
-    streamID = ~0;
-    return ReportError(EPERM, "SetupStream not implemented");
+    return 0;   
+}
+int IConnection::SendData(const char* buffer, int length, int epIndex, int timeout)
+{
+    return 0;
 }
 
-int IConnection::CloseStream(const size_t streamID)
+int IConnection::BeginDataSending(const char* buffer, uint32_t length, int ep)
 {
-    return ReportError(EPERM, "CloseStream not implemented");
+    return 0;
+}
+bool IConnection::WaitForSending(int contextHandle, uint32_t timeout_ms)
+{
+    return true;
+}
+int IConnection::FinishDataSending(const char* buffer, uint32_t length, int contextHandle)
+{
+    return 0;
 }
 
-size_t IConnection::GetStreamSize(const size_t streamID)
+int IConnection::BeginDataReading(char* buffer, uint32_t length, int ep)
 {
-    //this should be overloaded, but if not,
-    //pick a number that will probably work (power of 2)
-    return 16*1024;
+    return 0;
 }
-
-int IConnection::ControlStream(const size_t streamID, const bool enable)
+bool IConnection::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
-    return ReportError(EPERM, "ControlStream not implemented");
+    return true;
 }
-
-int IConnection::ReadStream(const size_t streamID, void* buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata)
+int IConnection::FinishDataReading(char* buffer, uint32_t length, int contextHandle)
 {
-    return ReportError(EPERM, "ReadStream not implemented");
-}
-
-int IConnection::WriteStream(const size_t streamID, const void* buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata)
-{
-    return ReportError(EPERM, "WriteStream not implemented");
-}
-
-int IConnection::ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata)
-{
-    return ReportError(EPERM, "ReadStreamStatus not implemented");
-}
-
-int IConnection::UploadWFM(const void * const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
-{
-    return ReportError(EPERM, "UploadTxWFM not implemented");
+    return 0;
 }
 
 /** @brief Sets callback function which gets called each time data is sent or received
@@ -228,10 +109,20 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
     callback_logData = callback;
 }
 
-int IConnection::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
+int IConnection::GetBuffersCount()const
 {
-    return ReportError(ENOTSUP, "Not implemented");
+ return 0;   
 }
+
+int IConnection::CheckStreamSize(int size)const
+{
+    return 0;
+}
+
+int IConnection::ResetStreamBuffers()
+{
+    return 0;
+};
 /***********************************************************************
  * Programming API
  **********************************************************************/
@@ -239,12 +130,6 @@ int IConnection::ReadRawStreamData(char* buffer, unsigned length, int epIndex, i
 int IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
     ReportError(ENOTSUP, "ProgramWrite not supported");
-    return -1;
-}
-
-int IConnection::ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback)
-{
-    ReportError(ENOTSUP, "ProgramRead not supported");
     return -1;
 }
 
@@ -307,7 +192,7 @@ int IConnection::WriteRegister(const uint32_t addr, const uint32_t data)
  * Aribtrary settings API
  **********************************************************************/
 
-int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string* units)
+int IConnection::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
 {
     ReportError(ENOTSUP, "CustomParameterWrite not supported");
     return -1;

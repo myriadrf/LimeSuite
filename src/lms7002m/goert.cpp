@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <chrono>
-#include "ErrorReporting.h"
+#include "Logger.h"
 
 using namespace std;
 using namespace lime;

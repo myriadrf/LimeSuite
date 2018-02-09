@@ -7,13 +7,12 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
-#include <ILimeSDRStreaming.h>
+#include "LMS64CProtocol.h"
 #include <vector>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
-#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -27,9 +26,7 @@
 
 namespace lime{
 
-#define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
-
-class Connection_uLimeSDR : public ILimeSDRStreaming
+class ConnectionFT601 : public LMS64CProtocol
 {
 public:
     /** @brief Wrapper class for holding USB asynchronous transfers contexts
@@ -39,13 +36,11 @@ public:
     public:
         USBTransferContext() : used(false)
         {
-            id = idCounter++;
 #ifndef __unix__
             context = NULL;
 #else
             transfer = libusb_alloc_transfer(0);
             bytesXfered = 0;
-            bytesExpected = 0;
             done = 0;
 #endif
         }
@@ -55,75 +50,62 @@ public:
             libusb_free_transfer(transfer);
 #endif
         }
-        bool reset()
-        {
-            if(used)
-                return false;
-            return true;
-        }
         bool used;
-        int id;
-        static int idCounter;
 #ifndef __unix__
         PUCHAR context;
         OVERLAPPED inOvLap;
 #else
         libusb_transfer* transfer;
         long bytesXfered;
-        long bytesExpected;
         std::atomic<bool> done;
         std::mutex transferLock;
         std::condition_variable cv;
 #endif
     };
 
-    Connection_uLimeSDR(void *arg);
-    Connection_uLimeSDR(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
+    ConnectionFT601(void *arg);
+    ConnectionFT601(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
 
-    virtual ~Connection_uLimeSDR(void);
+    virtual ~ConnectionFT601(void);
 
     int Open(const unsigned index, const int vid, const int pid);
     void Close();
     bool IsOpen();
     int GetOpenedIndex();
 
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
+    int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
+    int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
 
-    //hooks to update FPGA plls when baseband interface data rate is changed
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
-    virtual int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
-    int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
+    int ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback) override;
+
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
     int BeginDataReading(char* buffer, uint32_t length, int ep) override;
-    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    bool WaitForReading(int contextHandle, unsigned int timeout_ms) override;
     int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
     void AbortReading(int ep) override;
 
     int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
-    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int ep) override;
-    double DetectRefClk(void);
     
     int ResetStreamBuffers() override;
 
     eConnectionType GetType(void) {return USB_PORT;}
+    
+    static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
 
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
 
     bool isConnected;
 
-    int mCtrlWrEndPtAddr;
-    int mCtrlRdEndPtAddr;
-    int mStreamWrEndPtAddr;
-    int mStreamRdEndPtAddr;
-
-    uint32_t txSize;
-    uint32_t rxSize;
+    static const int streamWrEp;
+    static const int streamRdEp;
+    static const int ctrlWrEp;
+    static const int ctrlRdEp;
 #ifndef __unix__
     FT_HANDLE mFTHandle;
     int ReinitPipe(unsigned char ep);
@@ -131,21 +113,17 @@ protected:
     int FT_SetStreamPipe(unsigned char ep, size_t size);
     int FT_FlushPipe(unsigned char ep);
     uint32_t mUsbCounter;
-    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
     libusb_device_handle *dev_handle; //a device handle
     libusb_context *ctx; //a libusb session
 #endif
-
     std::mutex mExtraUsbMutex;
 };
 
-
-
-class Connection_uLimeSDREntry : public ConnectionRegistryEntry
+class ConnectionFT601Entry : public ConnectionRegistryEntry
 {
 public:
-    Connection_uLimeSDREntry(void);
-    ~Connection_uLimeSDREntry(void);
+    ConnectionFT601Entry(void);
+    ~ConnectionFT601Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle &hint);
     IConnection *make(const ConnectionHandle &handle);
 private:

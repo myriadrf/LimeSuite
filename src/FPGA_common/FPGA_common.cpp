@@ -1,6 +1,5 @@
 #include "FPGA_common.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
 #include "LMS64CProtocol.h"
 #include <ciso646>
 #include <vector>
@@ -8,15 +7,10 @@
 #include <math.h>
 #include <assert.h>
 #include <thread>
+#include "Logger.h"
 using namespace std;
 
-#ifndef NDEBUG
-    #define LMS_VERBOSE_OUTPUT
-#endif
-
 namespace lime
-{
-namespace fpga
 {
 
 // 0x000A
@@ -36,34 +30,44 @@ const uint16_t PHCFG_UPDN = 1 << 13;
 const uint16_t busyAddr = 0x0021;
 
 
-int StartStreaming(IConnection* serPort)
+void FPGA::SetConnection(IConnection* conn)
+{
+    connection = conn;
+}
+
+IConnection* FPGA::GetConnection() const
+{
+    return connection;
+}
+
+int FPGA::StartStreaming()
 {
     uint16_t interface_ctrl_000A;
-    int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
+    int status = connection->ReadRegister(0x000A, interface_ctrl_000A);
     if (status != 0)
         return status;
     uint32_t value = RX_EN;
-    status = serPort->WriteRegister(0x000A, interface_ctrl_000A | value);
+    status = connection->WriteRegister(0x000A, interface_ctrl_000A | value);
     return status;
 }
 
-int StopStreaming(IConnection* serPort)
+int FPGA::StopStreaming()
 {
     uint16_t interface_ctrl_000A;
-    int status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
+    int status = connection->ReadRegister(0x000A, interface_ctrl_000A);
     if (status != 0)
         return status;
     uint32_t value = ~(RX_EN | TX_EN);
-    serPort->WriteRegister(0x000A, interface_ctrl_000A & value);
+    connection->WriteRegister(0x000A, interface_ctrl_000A & value);
     return status;
 }
 
-int ResetTimestamp(IConnection* serPort)
+int FPGA::ResetTimestamp()
 {
     int status;
 #ifndef NDEBUG
     uint16_t interface_ctrl_000A;
-    status = serPort->ReadRegister(0x000A, interface_ctrl_000A);
+    status = connection->ReadRegister(0x000A, interface_ctrl_000A);
     if (status != 0)
         return 0;
 
@@ -73,17 +77,17 @@ int ResetTimestamp(IConnection* serPort)
 #endif // NDEBUG
     //reset hardware timestamp to 0
     uint16_t interface_ctrl_0009;
-    status = serPort->ReadRegister(0x0009, interface_ctrl_0009);
+    status = connection->ReadRegister(0x0009, interface_ctrl_0009);
     if (status != 0)
         return 0;
     uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 | value);
-    serPort->WriteRegister(0x0009, interface_ctrl_0009 & ~value);
+    connection->WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
+    connection->WriteRegister(0x0009, interface_ctrl_0009 | value);
+    connection->WriteRegister(0x0009, interface_ctrl_0009 & ~value);
     return status;
 }
 
-static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DEV boardType, uint16_t &reg23val)
+int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val)
 {
     const auto timeout = chrono::seconds(3);
     auto t1 = chrono::high_resolution_clock::now();
@@ -102,17 +106,17 @@ static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DE
     addrs.push_back(0x0023); values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
     addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
 
-    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         ReportError(EIO, "SetPllFrequency: PHCFG, failed to write registers");
     addrs.clear(); values.clear();
 
     bool done = false;
     uint8_t errorCode = 0;
     t1 = chrono::high_resolution_clock::now();
-    if(boardType == LMS_DEV_LIMESDR_QPCIE) do
+    if(waitLock) do
     {
         uint16_t statusReg;
-        serPort->ReadRegister(busyAddr, statusReg);
+        connection->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         t2 = chrono::high_resolution_clock::now();
@@ -123,7 +127,7 @@ static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DE
     if(errorCode != 0)
         return ReportError(EBUSY, "SetPllFrequency: error configuring PHCFG");
     addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
-    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         ReportError(EIO, "SetPllFrequency: configure FPGA PLL, failed to write registers");
     return 0;
 }
@@ -135,17 +139,16 @@ static int SetPllClock(IConnection* serPort, int clockIndex, int nSteps, eLMS_DE
 @param clocksCount number of clocks to configure
 @return 0-success, other-failure
 */
-int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
+int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_PLL_clock* clocks, const uint8_t clockCount)
 {
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = t1;
     const auto timeout = chrono::seconds(3);
-
-    if(not serPort)
+    if(not connection)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
-    if(not serPort->IsOpen())
+    if(not connection->IsOpen())
         return ReportError(ENODEV, "ConfigureFPGA_PLL: configure FPGA PLL, device not connected");
-    eLMS_DEV boardType = serPort->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
+    eLMS_DEV boardType = connection->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
 
     if(pllIndex > 15)
         ReportError(ERANGE, "SetPllFrequency: PLL index(%i) out of range [0-15]", pllIndex);
@@ -160,11 +163,11 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
 
     //disable direct clock source
     uint16_t drct_clk_ctrl_0005 = 0;
-    serPort->ReadRegister(0x0005, drct_clk_ctrl_0005);
-    serPort->WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
+    connection->ReadRegister(0x0005, drct_clk_ctrl_0005);
+    connection->WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
 
     uint16_t reg23val = 0;
-    if(serPort->ReadRegister(0x0003, reg23val) != 0)
+    if(connection->ReadRegister(0x0003, reg23val) != 0)
         return ReportError(ENODEV, "SetPllFrequency: failed to read register");
 
     reg23val &= ~(0x1F << 3); //clear PLL index
@@ -173,21 +176,25 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     reg23val &= ~PLLRST_START; //clear PLL reset
     reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
     reg23val |= pllIndex << 3;
+    
+    uint16_t reg25 = 0x0170;
+    connection->ReadRegister(0x0025, reg25);
 
     uint16_t statusReg;
     bool done = false;
     uint8_t errorCode = 0;
     vector<uint32_t> addrs;
     vector<uint32_t> values;
+    addrs.push_back(0x0025); values.push_back(reg25 | 0x80);
     addrs.push_back(0x0023); values.push_back(reg23val); //PLL_IND
     addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
-    serPort->WriteRegisters(addrs.data(), values.data(), values.size());
+    connection->WriteRegisters(addrs.data(), values.data(), values.size());
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
     if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for reset to activate
     {
-        serPort->ReadRegister(busyAddr, statusReg);
+        connection->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         std::this_thread::sleep_for(chrono::milliseconds(10));
@@ -201,7 +208,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     addrs.push_back(0x0023); values.push_back(reg23val & ~PLLRST_START);
 
     //configure FPGA PLLs
-    const double vcoLimits_Hz[2] = { 600e6, 1050e6 };
+    const double vcoLimits_Hz[2] = { 600e6, 1300e6 };
 
     map< unsigned long, int> availableVCOs; //all available frequencies for VCO
     for(int i=0; i<clockCount; ++i)
@@ -243,7 +250,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             float coef = (it.first / inputFreq);
             int Ntemp = 1;
             int Mtemp = int(coef + 0.5);
-            while(inputFreq / (Ntemp + 1) > PLLlowerLimit)
+            while(inputFreq / Ntemp > PLLlowerLimit)
             {
                 ++Ntemp;
                 Mtemp = int(coef*Ntemp + 0.5);
@@ -268,9 +275,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
     Fvco = inputFreq*M/N; //actual VCO freq
-#ifdef LMS_VERBOSE_OUTPUT
-    printf("M=%i, N=%i, Fvco=%.3f MHz\n", M, N, Fvco / 1e6);
-#endif
+    lime::debug("M=%i, N=%i, Fvco=%.3f MHz", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
 
@@ -312,14 +317,14 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     addrs.push_back(0x0027); values.push_back(c7_c0_odds_byps);
     addrs.push_back(0x0028); values.push_back(c15_c8_odds_byps);
     addrs.push_back(0x0023); values.push_back(reg23val | PLLCFG_START);
-    if(serPort->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
-        ReportError(EIO, "SetPllFrequency: PLL CFG, failed to write registers");
+    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+        lime::error("SetPllFrequency: PLL CFG, failed to write registers");
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
     if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for config to activate
     {
-        serPort->ReadRegister(busyAddr, statusReg);
+        connection->ReadRegister(busyAddr, statusReg);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         t2 = chrono::high_resolution_clock::now();
@@ -339,7 +344,7 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
         if (clocks[i].findPhase == false)
         {
            const int nSteps = 0.49 + clocks[i].phaseShift_deg  / Fstep_deg;
-           SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
+           SetPllClock(clocks[i].index,nSteps, boardType, reg23val);
         }
         else
         {
@@ -350,12 +355,12 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             int nSteps = 6.0/Fstep_deg;
             if (nSteps == 0) nSteps = 1;
             unsigned char* buf = new unsigned char[testSize];
-            SetPllClock(serPort, clocks[i].index, nSteps, boardType, reg23val);
+            SetPllClock(clocks[i].index, nSteps, boardType, reg23val);
             for (double phase = nSteps*Fstep_deg; phase <= maxPhase; phase += nSteps*Fstep_deg)
             {
-                SetPllClock(serPort,clocks[i].index,nSteps, boardType, reg23val);
+                SetPllClock(clocks[i].index,nSteps, boardType, reg23val);
                 bool result = true;
-                if (serPort->ReadRawStreamData((char*)buf, testSize, 0, 20)==testSize)
+                if (ReadRawStreamData((char*)buf, testSize, 0, 20)==testSize)
                 {
                     for (int j = 16; j < testSize;j+=3)
                     {
@@ -363,9 +368,6 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
                             j += 16;
                         if ((buf[j]!=0xAA || buf[j+1]!=0x5A || buf[j+2]!=0x55))
                         {
-#ifdef LMS_VERBOSE_OUTPUT
-                            printf("%d: %02X %02X %02X\n", j, buf[j], buf[j + 1], buf[j + 2]);
-#endif
                             result = false;
                             break;
                         }
@@ -390,15 +392,14 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
             {
                 clocks[i].findPhase = false;
                 clocks[i].phaseShift_deg = (min+max)/2;
-#ifdef LMS_VERBOSE_OUTPUT
-                printf("phase: min %1.1f; max %1.1f; selected %1.1f)\n", min, max, clocks[i].phaseShift_deg);
-#endif
-                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
+                lime::debug("phase: min %1.1f; max %1.1f; selected %1.1f)", min, max, clocks[i].phaseShift_deg);
+                return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }
             else
             {
+                lime::warning("phase search FAIL");
                 clocks[i].findPhase = false;
-                return SetPllFrequency(serPort, pllIndex, inputFreq, clocks,clockCount);
+                return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
             }
         }
 
@@ -406,56 +407,29 @@ int SetPllFrequency(IConnection* serPort, const uint8_t pllIndex, const double i
     return 0;
 }
 
-int SetDirectClocking(IConnection* serPort, uint8_t clockIndex, const double inputFreq, const double phaseShift_deg)
+int FPGA::SetDirectClocking(int clockIndex)
 {
-    if(not serPort)
+    if(not connection)
         return ReportError(ENODEV, "SetDirectClocking: connection port is NULL");
-    if(not serPort->IsOpen())
+    if(not connection->IsOpen())
         return ReportError(ENODEV, "SetDirectClocking: device not connected");
 
     uint16_t drct_clk_ctrl_0005 = 0;
-    serPort->ReadRegister(0x0005, drct_clk_ctrl_0005);
+    connection->ReadRegister(0x0005, drct_clk_ctrl_0005);
     uint16_t drct_clk_ctrl_0006;
-    serPort->ReadRegister(0x0006, drct_clk_ctrl_0006);
-
+    connection->ReadRegister(0x0006, drct_clk_ctrl_0006);
     vector<uint32_t> addres;
     vector<uint32_t> values;
-
     //enable direct clocking
     addres.push_back(0x0005); values.push_back(drct_clk_ctrl_0005 | (1 << clockIndex));
-    //not required anymore
-//    //clear CNT_ID and CLK_IND
-//    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 & ~0x3FF;
-//    const int cnt_ind = clockIndex << 5; // was 1<<5
-//    const int clk_ind = clockIndex;
-//    drct_clk_ctrl_0006 = drct_clk_ctrl_0006 | cnt_ind | clk_ind;
-//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
-//    const float oversampleClock_Hz = 100e6;
-//    //const int registerChainSize = 128;
-//    const float oversampleClock_ns = 1e9 / oversampleClock_Hz;
-//    const float phaseStep_deg = 360 * oversampleClock_ns*(1e-9) / (1 / inputFreq);
-//    uint16_t phase_reg_select = (phaseShift_deg / phaseStep_deg)+0.5;
-//    const float actualPhaseShift_deg = 360 * inputFreq / (1 / (phase_reg_select * oversampleClock_ns*1e-9));
-//#ifdef LMS_VERBOSE_OUTPUT
-//    printf("########################################\n");
-//    printf("Direct clocking. clock index: %i\n", clockIndex);
-//    printf("phase_reg_select : %i\n", phase_reg_select);
-//    printf("input clock: %g MHz\n", inputFreq/1e6);
-//    printf("phase shift(desired/actual) : %.2f/%.2f\n", phaseShift_deg, actualPhaseShift_deg);
-//    printf("########################################\n");
-//#endif
-//    addres.push_back(0x0004); values.push_back(phase_reg_select);
-//    //LOAD_PH_REG = 1 << 10;
-//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006 | 1 << 10);
-//    addres.push_back(0x0006); values.push_back(drct_clk_ctrl_0006);
-    if(serPort->WriteRegisters(addres.data(), values.data(), values.size()) != 0)
+    if(connection->WriteRegisters(addres.data(), values.data(), values.size()) != 0)
         return ReportError(EIO, "SetDirectClocking: failed to write registers");
     return 0;
 }
 
 /** @brief Parses FPGA packet payload into samples
 */
-int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
+int FPGA::FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples)
 {
     if(compressed) //compressed samples
     {
@@ -504,7 +478,7 @@ int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool
     return bufLen/sizeof(complex16_t);
 }
 
-int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
+int FPGA::Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer)
 {
     if(compressed)
     {
@@ -538,5 +512,304 @@ int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCoun
     return samplesCount*sizeof(complex16_t);
 }
 
-} //namespace fpga
+int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
+{
+    const int samplesInPkt = samples16InPkt;
+    connection->WriteRegister(0xFFFF, 1 << epIndex);
+    connection->WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
+    connection->WriteRegister(0x000E, 0x2); //12bit samples
+
+    uint16_t regValue = 0;
+    connection->ReadRegister(0x000D,regValue);
+    regValue |= 0x4;
+    connection->WriteRegister(0x000D, regValue);
+
+    lime::FPGA_DataPacket pkt;
+    size_t samplesUsed = 0;
+    int cnt = sample_count;
+
+    const complex16_t* const* src = (const complex16_t* const*)samples;
+    const lime::complex16_t** batch = new const lime::complex16_t*[chCount];
+    lime::complex16_t** samplesShort = new lime::complex16_t*[chCount];
+    for(unsigned i=0; i<chCount; ++i)
+        samplesShort[i] = nullptr;
+
+    if (format == StreamConfig::FMT_INT16)
+    {
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = src[ch][i].i >> 4;
+                samplesShort[ch][i].q = src[ch][i].q >> 4;
+            }
+        src = samplesShort;
+    }
+    else if(format == StreamConfig::FMT_FLOAT32)
+    {
+        const float mult = 2047.5f;
+        for(unsigned i=0; i<chCount; ++i)
+            samplesShort[i] = new lime::complex16_t[sample_count];
+
+        const float* const* samplesFloat = (const float* const*)samples;
+        for (int ch = 0; ch < chCount; ch++)
+            for(size_t i=0; i < sample_count; ++i)
+            {
+                samplesShort[ch][i].i = samplesFloat[ch][2*i]*mult;
+                samplesShort[ch][i].q = samplesFloat[ch][2*i+1]*mult;
+            }
+        src = samplesShort;
+    }
+
+    while(cnt > 0)
+    {
+        pkt.counter = 0;
+        pkt.reserved[0] = 0;
+        int samplesToSend = cnt > samplesInPkt/chCount ? samplesInPkt/chCount : cnt;
+
+        for(unsigned i=0; i<chCount; ++i)
+            batch[i] = &src[i][samplesUsed];
+        samplesUsed += samplesToSend;
+
+        int bufPos = Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, true, pkt.data);
+        int payloadSize = (bufPos / 4) * 4;
+        if(bufPos % 4 != 0)
+            lime::warning("Packet samples count not multiple of 4");
+        pkt.reserved[2] = (payloadSize >> 8) & 0xFF; //WFM loading
+        pkt.reserved[1] = payloadSize & 0xFF; //WFM loading
+        pkt.reserved[0] = 0x1 << 5; //WFM loading
+
+        long bToSend = 16+payloadSize;
+        if (connection->SendData((const char*)&pkt,bToSend,epIndex,500)!=bToSend)
+            break;
+        cnt -= samplesToSend;
+    }
+    delete[] batch;
+    for(unsigned i=0; i<chCount; ++i)
+        if (samplesShort[i])
+            delete [] samplesShort[i];
+    delete[] samplesShort;
+
+    /*Give some time to load samples to FPGA*/
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    connection->AbortSending(epIndex);
+    if(cnt == 0)
+        return 0;
+    else
+        return ReportError(-1, "Failed to upload waveform");
+}
+
+
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
+*/
+int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
+{
+    lime::FPGA::FPGA_PLL_clock clocks[2];
+
+    const int pll_ind = (channel == 1) ? 2 : 0;
+
+    clocks[0].index = 0;
+    clocks[0].outFrequency = rxRate_Hz;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = rxRate_Hz;
+    clocks[1].phaseShift_deg = rxPhase;
+    if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
+        return -1;
+
+    clocks[0].index = 0;
+    clocks[0].outFrequency = txRate_Hz;
+    clocks[1].index = 1;
+    clocks[1].outFrequency = txRate_Hz;
+    clocks[1].phaseShift_deg = txPhase;
+    if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)!=0)
+        return -1;
+
+    return 0;
+}
+
+/** @brief Configures FPGA PLLs to LimeLight interface frequency
+*/
+int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
+{
+    const int pll_ind = (channel == 1) ? 2 : 0;
+    int status = 0;
+    uint32_t reg20;
+    const double rxPhC1[] = { 91.08, 89.46 };
+    const double rxPhC2[] = { -1 / 6e6, 1.24e-6 };
+    const double txPhC1[] = { 89.75, 89.61 };
+    const double txPhC2[] = { -3.0e-7, 2.71e-7 };
+
+    const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
+                                            0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
+    const int bakRegCnt = spiAddr.size() - 4;
+    
+    std::vector<uint32_t> dataWr;
+    dataWr.push_back(uint32_t(0x002F) << 16);
+    uint32_t chipVersion=0;
+    connection->ReadLMS7002MSPI(dataWr.data(), &chipVersion, 1, channel);
+    dataWr.clear(); 
+    //auto info = GetDeviceInfo();
+    bool phaseSearch = false;
+    //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
+        if (chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
+            if(rxRate_Hz >= 5e6 || txRate_Hz >= 5e6)
+                phaseSearch = true;
+
+    std::vector<uint32_t> dataRd;
+
+    if (phaseSearch)
+    {
+        dataWr.resize(spiAddr.size());
+        dataRd.resize(spiAddr.size());
+        //backup registers
+        dataWr[0] = (uint32_t(0x0020) << 16);
+        connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
+        
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+        connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+
+        for (int i = 0; i < bakRegCnt; ++i)
+            dataWr[i] = (spiAddr[i] << 16);
+        connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, channel);
+    }
+
+    if(rxRate_Hz >= 5e6)
+    {
+        if (phaseSearch)
+        {
+            const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
+                                                    0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
+            //Load test config
+            const int setRegCnt = spiData.size();
+            for (int i = 0; i < setRegCnt; ++i)
+                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        }
+        lime::FPGA::FPGA_PLL_clock clocks[2];
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = rxRate_Hz;
+        if (chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxRate_Hz;
+        else
+            clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxRate_Hz;
+        if (phaseSearch)
+            clocks[1].findPhase = true;
+        status = SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
+    }
+    else
+        status = SetDirectClocking(pll_ind+1);
+
+    if(txRate_Hz >= 5e6)
+    {
+        if (phaseSearch)
+        {
+            const std::vector<uint32_t> spiData = {0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
+            connection->WriteRegister(0x000A, 0x0000);
+            //Load test config
+            const int setRegCnt = spiData.size();
+            for (int i = 0; i < setRegCnt; ++i)
+                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+            connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        }
+
+        lime::FPGA::FPGA_PLL_clock clocks[2];
+        clocks[0].index = 0;
+        clocks[0].outFrequency = txRate_Hz;
+        clocks[0].phaseShift_deg = 0;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txRate_Hz;
+        if (chipVersion == 0x3841)
+            clocks[1].phaseShift_deg = txPhC1[1] + txPhC2[1] * txRate_Hz;
+        else
+            clocks[1].phaseShift_deg = txPhC1[0] + txPhC2[0] * txRate_Hz;
+
+        if (phaseSearch)
+        {
+            clocks[1].findPhase = true;
+            connection->WriteRegister(0x000A, 0x0200);
+        }
+        status = SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+    }
+    else
+        status = SetDirectClocking(pll_ind);
+
+    if (phaseSearch)
+    {
+        //Restore registers
+        for (int i = 0; i < bakRegCnt; ++i)
+            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
+        connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+        connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+        connection->WriteRegister(0x000A, 0);
+    }
+    return status;
+}
+
+int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
+{
+    connection->WriteRegister(0xFFFF, 1 << epIndex);
+    StopStreaming();
+    connection->ResetStreamBuffers();
+    connection->WriteRegister(0x0008, 0x0100 | 0x2);
+    connection->WriteRegister(0x0007, 1);
+    StartStreaming();
+    int totalBytesReceived = connection->ReceiveData(buffer,length, epIndex, timeout_ms);
+    StopStreaming();
+    connection->AbortReading(epIndex);
+    return totalBytesReceived;
+}
+
+double FPGA::DetectRefClk(double fx3Clk)
+{
+    const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
+    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
+    const uint32_t addr[] = { 0x61, 0x63 };
+    const uint32_t vals[] = { 0x0, 0x0 };
+    if (connection->WriteRegisters(addr, vals, 2) != 0)
+        return -1;
+
+    auto start = std::chrono::steady_clock::now();
+    if (connection->WriteRegister(0x61, 0x4) != 0)
+        return -1;
+
+    while (1) //wait for test to finish
+    {
+        unsigned completed;
+        if (connection->ReadRegister(0x65, completed) != 0)
+            return -1;
+  
+        if (completed & 0x4)
+            break;
+
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        if (elapsed_seconds.count() > 0.5) //timeout
+            return -1;
+    }
+
+    const uint32_t addr2[] = { 0x72, 0x73 };
+    uint32_t vals2[2];
+    if (connection->ReadRegisters(addr2, vals2, 2) != 0)
+        return -1;
+    
+    double count = (vals2[0] | (vals2[1] << 16)); //cock counter
+    count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
+    lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
+    unsigned i = 0;
+    double delta = 100e6;
+
+    while (i < sizeof(clkTbl) / sizeof(*clkTbl))
+        if (delta < fabs(count - clkTbl[i]))
+            break;
+        else
+            delta = fabs(count - clkTbl[i++]);
+
+    lime::info("Reference clock %1.2f MHz", clkTbl[i - 1] / 1e6);
+    return clkTbl[i - 1];
+}
+
 } //namespace lime

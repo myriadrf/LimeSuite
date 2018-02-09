@@ -6,15 +6,14 @@
 
 #pragma once
 #include <ConnectionRegistry.h>
-#include <IConnection.h>
-#include <ILimeSDRStreaming.h>
+
+#include "LMS64CProtocol.h"
 #include <vector>
 #include <set>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
-#include "fifo.h"
 #include <ciso646>
 
 #ifndef __unix__
@@ -30,8 +29,6 @@
 namespace lime
 {
 
-#define USB_MAX_CONTEXTS 64 //maximum number of contexts for asynchronous transfers
-
 /** @brief Wrapper class for holding USB asynchronous transfers contexts
 */
 class USBTransferContext
@@ -39,7 +36,6 @@ class USBTransferContext
 public:
     USBTransferContext() : used(false)
     {
-        id = idCounter++;
 #ifndef __unix__
         inOvLap = new OVERLAPPED;
         memset(inOvLap, 0, sizeof(OVERLAPPED));
@@ -49,7 +45,6 @@ public:
 #else
         transfer = libusb_alloc_transfer(0);
         bytesXfered = 0;
-        bytesExpected = 0;
         done = 0;
 #endif
     }
@@ -74,8 +69,6 @@ public:
         return true;
     }
     bool used;
-    int id;
-    static int idCounter;
 #ifndef __unix__
     PUCHAR context;
     CCyUSBEndPoint* EndPt;
@@ -83,19 +76,17 @@ public:
 #else
     libusb_transfer* transfer;
     long bytesXfered;
-    long bytesExpected;
     std::atomic<bool> done;
     std::mutex transferLock;
     std::condition_variable cv;
 #endif
 };
 
-class ConnectionSTREAM : public ILimeSDRStreaming
+class ConnectionFX3 : public LMS64CProtocol
 {
 public:
-    ConnectionSTREAM(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
-    ~ConnectionSTREAM(void);
-    void VersionCheck(void);
+    ConnectionFX3(void* arg, const std::string &vidpid, const std::string &serial, const unsigned index);
+    ~ConnectionFX3(void);
 
     int Open(const std::string &vidpid, const std::string &serial, const unsigned index);
     void Close();
@@ -106,11 +97,7 @@ public:
     int Read(unsigned char* buffer, int length, int timeout_ms = 100) override;
 
     //hooks to update FPGA plls when baseband interface data rate is changed
-    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
-    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase) override;
     int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback) override;
-    int ProgramUpdate(const bool download, ProgrammingCallback callback);
-    int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
 protected:
     int GetBuffersCount() const;
     int CheckStreamSize(int size)const;
@@ -118,20 +105,20 @@ protected:
     int ReceiveData(char* buffer, int length, int epIndex = 0, int timeout = 100)override;
 
     int BeginDataReading(char* buffer, uint32_t length, int ep) override;
-    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    bool WaitForReading(int contextHandle, unsigned int timeout_ms) override;
     int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
     void AbortReading(int ep) override;
 
     int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
-    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int ep) override;
 
     int ResetStreamBuffers() override;
     eConnectionType GetType(void) {return USB_PORT;}
-
-    double DetectRefClk(void);
-
+    
+    static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
+    
     USBTransferContext contexts[USB_MAX_CONTEXTS];
     USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
 
@@ -167,12 +154,11 @@ protected:
     std::mutex mExtraUsbMutex;
 };
 
-class ConnectionSTREAMEntry : public ConnectionRegistryEntry
+class ConnectionFX3Entry : public ConnectionRegistryEntry
 {
 public:
-    ConnectionSTREAMEntry(void);
-    ConnectionSTREAMEntry(const std::string entryName);
-    virtual ~ConnectionSTREAMEntry(void);
+    ConnectionFX3Entry(void);
+    virtual ~ConnectionFX3Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);
     IConnection* make(const ConnectionHandle& handle);
 protected:

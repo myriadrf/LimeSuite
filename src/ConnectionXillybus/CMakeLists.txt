@@ -6,7 +6,6 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionXillybus)
 set(CONNECTION_XILLYBUS_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionXillybusEntry.cpp
     ${THIS_SOURCE_DIR}/ConnectionXillybus.cpp
-    ${THIS_SOURCE_DIR}/ConnectionXillybusing.cpp
 )
 
 ########################################################################

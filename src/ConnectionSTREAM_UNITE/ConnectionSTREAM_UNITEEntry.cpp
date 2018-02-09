@@ -16,7 +16,7 @@ static ConnectionSTREAM_UNITEEntry STREAM_UNITEEntry;
 }
 
 ConnectionSTREAM_UNITEEntry::ConnectionSTREAM_UNITEEntry(void):
-    ConnectionSTREAMEntry("STREAM+UNITE")
+    ConnectionFX3Entry("STREAM+UNITE")
 {
 
 }
@@ -123,7 +123,7 @@ std::vector<ConnectionHandle> ConnectionSTREAM_UNITEEntry::enumerate(const Conne
     std::vector<ConnectionHandle> comHandles;
     std::vector<ConnectionHandle> handles;
 
-    usbHandles = ConnectionSTREAMEntry::enumerate(hint);
+    usbHandles = ConnectionFX3Entry::enumerate(hint);
 
     std::vector<std::string> comPorts = FindAllComPorts();
     for(auto comName : comPorts)

@@ -53,10 +53,6 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer299->SetFlexibleDirection( wxBOTH );
 	fgSizer299->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	ID_BUTTON1 = new wxButton( this, wxID_ANY, wxT("New"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	ID_BUTTON1->SetDefault(); 
-	fgSizer299->Add( ID_BUTTON1, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
-	
 	ID_BUTTON2 = new wxButton( this, wxID_ANY, wxT("Open"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	ID_BUTTON2->SetDefault(); 
 	fgSizer299->Add( ID_BUTTON2, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
@@ -102,9 +98,6 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	
 	
 	fgSizer248->Add( fgSizer249, 0, 0, 5 );
-	
-	chkSyncAB = new wxCheckBox( this, wxID_ANY, wxT("Synchronize A to B"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer248->Add( chkSyncAB, 0, 0, 5 );
 	
 	
 	fgSizer300->Add( fgSizer248, 0, 0, 5 );
@@ -188,14 +181,12 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 	fgSizer298->Fit( this );
 	
 	// Connect Events
-	ID_BUTTON1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnNewProject ), NULL, this );
 	ID_BUTTON2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnOpenProject ), NULL, this );
 	ID_BUTTON3->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( mainPanel::OnLmsDeviceSelect ), NULL, this );
 	rbChannelA->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
 	chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
-	chkSyncAB->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
@@ -207,14 +198,12 @@ mainPanel::mainPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, const
 mainPanel::~mainPanel()
 {
 	// Disconnect Events
-	ID_BUTTON1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnNewProject ), NULL, this );
 	ID_BUTTON2->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnOpenProject ), NULL, this );
 	ID_BUTTON3->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnSaveProject ), NULL, this );
 	cmbLmsDevice->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( mainPanel::OnLmsDeviceSelect ), NULL, this );
 	rbChannelA->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelA ), NULL, this );
 	rbChannelB->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( mainPanel::OnSwitchToChannelB ), NULL, this );
 	chkEnableMIMO->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnEnableMIMOchecked ), NULL, this );
-	chkSyncAB->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( mainPanel::OnSyncABchecked ), NULL, this );
 	btnDownloadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnDownloadAll ), NULL, this );
 	btnUploadAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnUploadAll ), NULL, this );
 	btnResetChip->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( mainPanel::OnResetChip ), NULL, this );
@@ -885,6 +874,14 @@ pnlRBB_view::pnlRBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	fgSizer199->Add( m_staticText309, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtLowBW_MHz = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), ID_TXT_LOWBW, wxT("10"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtLowBW_MHz->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtLowBW_MHz->SetMaxLength( 10 );
+	}
+	#else
+	txtLowBW_MHz->SetMaxLength( 10 );
+	#endif
 	fgSizer199->Add( txtLowBW_MHz, 0, 0, 5 );
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -1647,6 +1644,14 @@ pnlTBB_view::pnlTBB_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 	fgSizer245->Add( lblFilterInputName, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFilterFrequency = new wxTextCtrl( sbSizerRxFilters->GetStaticBox(), wxID_ANY, wxT("56"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFilterFrequency->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFilterFrequency->SetMaxLength( 10 );
+	}
+	#else
+	txtFilterFrequency->SetMaxLength( 10 );
+	#endif
 	fgSizer245->Add( txtFilterFrequency, 0, 0, 5 );
 	
 	btnTuneFilter = new wxButton( sbSizerRxFilters->GetStaticBox(), ID_BTN_TUNE_FILTER, wxT("TUNE"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -3454,6 +3459,14 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer89->Add( ID_STATICTEXT3, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFrequency = new wxTextCtrl( sbSizer70->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	#ifdef __WXGTK__
+	if ( !txtFrequency->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFrequency->SetMaxLength( 10 );
+	}
+	#else
+	txtFrequency->SetMaxLength( 10 );
+	#endif
 	fgSizer89->Add( txtFrequency, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 	
 	cmbCLKH_OV_CLKL_CGEN = new wxComboBox( sbSizer70->GetStaticBox(), ID_CLKH_OV_CLKL_CGEN, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
@@ -3462,6 +3475,14 @@ pnlCLKGEN_view::pnlCLKGEN_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer89->Add( cmbCLKH_OV_CLKL_CGEN, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFrequencyCLKL = new wxTextCtrl( sbSizer70->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( 48,-1 ), wxTE_READONLY );
+	#ifdef __WXGTK__
+	if ( !txtFrequencyCLKL->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFrequencyCLKL->SetMaxLength( 10 );
+	}
+	#else
+	txtFrequencyCLKL->SetMaxLength( 10 );
+	#endif
 	txtFrequencyCLKL->Enable( false );
 	
 	fgSizer89->Add( txtFrequencyCLKL, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -4096,6 +4117,14 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	sbSizer79 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Frequency, MHz") ), wxVERTICAL );
 	
 	txtFrequency = new wxTextCtrl( sbSizer79->GetStaticBox(), wxID_ANY, wxT("2140"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFrequency->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFrequency->SetMaxLength( 10 );
+	}
+	#else
+	txtFrequency->SetMaxLength( 10 );
+	#endif
 	sbSizer79->Add( txtFrequency, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	btnCalculate = new wxButton( sbSizer79->GetStaticBox(), wxID_ANY, wxT("Calculate"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -4125,6 +4154,14 @@ pnlSX_view::pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, con
 	RefClkSpurSizer->Add( m_staticText359, 0, 0, 5 );
 	
 	txtRefSpurBW = new wxTextCtrl( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtRefSpurBW->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtRefSpurBW->SetMaxLength( 10 );
+	}
+	#else
+	txtRefSpurBW->SetMaxLength( 10 );
+	#endif
 	txtRefSpurBW->Enable( false );
 	
 	RefClkSpurSizer->Add( txtRefSpurBW, 0, 0, 5 );
@@ -6061,6 +6098,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer221->Add( rgrSEL0, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO0 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO0->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO0->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO0->SetMaxLength( 10 );
+	#endif
 	fgSizer221->Add( txtFCWPHO0, 0, 0, 5 );
 	
 	txtAnglePHO0 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.00000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6079,6 +6124,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2211->Add( rgrSEL01, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO01 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO01->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO01->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO01->SetMaxLength( 10 );
+	#endif
 	fgSizer2211->Add( txtFCWPHO01, 0, 0, 5 );
 	
 	txtAnglePHO01 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6097,6 +6150,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2212->Add( rgrSEL02, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO02 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO02->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO02->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO02->SetMaxLength( 10 );
+	#endif
 	fgSizer2212->Add( txtFCWPHO02, 0, 0, 5 );
 	
 	txtAnglePHO02 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6115,6 +6176,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2213->Add( rgrSEL03, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO03 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO03->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO03->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO03->SetMaxLength( 10 );
+	#endif
 	fgSizer2213->Add( txtFCWPHO03, 0, 0, 5 );
 	
 	txtAnglePHO03 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6133,6 +6202,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2214->Add( rgrSEL04, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO04 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO04->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO04->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO04->SetMaxLength( 10 );
+	#endif
 	fgSizer2214->Add( txtFCWPHO04, 0, 0, 5 );
 	
 	txtAnglePHO04 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6151,6 +6228,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2215->Add( rgrSEL05, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO05 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO05->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO05->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO05->SetMaxLength( 10 );
+	#endif
 	fgSizer2215->Add( txtFCWPHO05, 0, 0, 5 );
 	
 	txtAnglePHO05 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6169,6 +6254,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2216->Add( rgrSEL06, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO06 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO06->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO06->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO06->SetMaxLength( 10 );
+	#endif
 	fgSizer2216->Add( txtFCWPHO06, 0, 0, 5 );
 	
 	txtAnglePHO06 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6187,6 +6280,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2217->Add( rgrSEL07, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO07 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO07->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO07->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO07->SetMaxLength( 10 );
+	#endif
 	fgSizer2217->Add( txtFCWPHO07, 0, 0, 5 );
 	
 	txtAnglePHO07 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6205,6 +6306,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2218->Add( rgrSEL08, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO08 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO08->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO08->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO08->SetMaxLength( 10 );
+	#endif
 	fgSizer2218->Add( txtFCWPHO08, 0, 0, 5 );
 	
 	txtAnglePHO08 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6223,6 +6332,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2219->Add( rgrSEL09, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO09 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO09->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO09->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO09->SetMaxLength( 10 );
+	#endif
 	fgSizer2219->Add( txtFCWPHO09, 0, 0, 5 );
 	
 	txtAnglePHO09 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6241,6 +6358,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22110->Add( rgrSEL10, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO10 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO10->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO10->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO10->SetMaxLength( 10 );
+	#endif
 	fgSizer22110->Add( txtFCWPHO10, 0, 0, 5 );
 	
 	txtAnglePHO10 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6259,6 +6384,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22111->Add( rgrSEL11, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO11 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO11->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO11->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO11->SetMaxLength( 10 );
+	#endif
 	fgSizer22111->Add( txtFCWPHO11, 0, 0, 5 );
 	
 	txtAnglePHO11 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6277,6 +6410,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22112->Add( rgrSEL12, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO12 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO12->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO12->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO12->SetMaxLength( 10 );
+	#endif
 	fgSizer22112->Add( txtFCWPHO12, 0, 0, 5 );
 	
 	txtAnglePHO12 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6295,6 +6436,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22113->Add( rgrSEL13, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO13 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO13->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO13->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO13->SetMaxLength( 10 );
+	#endif
 	fgSizer22113->Add( txtFCWPHO13, 0, 0, 5 );
 	
 	txtAnglePHO13 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6313,6 +6462,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22114->Add( rgrSEL14, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO14 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO14->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO14->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO14->SetMaxLength( 10 );
+	#endif
 	fgSizer22114->Add( txtFCWPHO14, 0, 0, 5 );
 	
 	txtAnglePHO14 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6331,6 +6488,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22115->Add( rgrSEL15, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO15 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO15->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO15->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO15->SetMaxLength( 10 );
+	#endif
 	fgSizer22115->Add( txtFCWPHO15, 0, 0, 5 );
 	
 	txtAnglePHO15 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6387,6 +6552,14 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer229->Add( lblFCWPHOmodeName, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHOmodeAdditional = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHOmodeAdditional->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHOmodeAdditional->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHOmodeAdditional->SetMaxLength( 10 );
+	#endif
 	fgSizer229->Add( txtFCWPHOmodeAdditional, 1, wxEXPAND, 5 );
 	
 	
@@ -7221,6 +7394,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer221->Add( rgrSEL0, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO0 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO0->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO0->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO0->SetMaxLength( 10 );
+	#endif
 	fgSizer221->Add( txtFCWPHO0, 0, 0, 5 );
 	
 	txtAnglePHO0 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7239,6 +7420,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2211->Add( rgrSEL01, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO01 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO01->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO01->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO01->SetMaxLength( 10 );
+	#endif
 	fgSizer2211->Add( txtFCWPHO01, 0, 0, 5 );
 	
 	txtAnglePHO01 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7257,6 +7446,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2212->Add( rgrSEL02, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO02 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO02->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO02->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO02->SetMaxLength( 10 );
+	#endif
 	fgSizer2212->Add( txtFCWPHO02, 0, 0, 5 );
 	
 	txtAnglePHO02 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7275,6 +7472,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2213->Add( rgrSEL03, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO03 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO03->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO03->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO03->SetMaxLength( 10 );
+	#endif
 	fgSizer2213->Add( txtFCWPHO03, 0, 0, 5 );
 	
 	txtAnglePHO03 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7293,6 +7498,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2214->Add( rgrSEL04, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO04 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO04->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO04->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO04->SetMaxLength( 10 );
+	#endif
 	fgSizer2214->Add( txtFCWPHO04, 0, 0, 5 );
 	
 	txtAnglePHO04 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7311,6 +7524,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2215->Add( rgrSEL05, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO05 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO05->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO05->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO05->SetMaxLength( 10 );
+	#endif
 	fgSizer2215->Add( txtFCWPHO05, 0, 0, 5 );
 	
 	txtAnglePHO05 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7329,6 +7550,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2216->Add( rgrSEL06, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO06 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO06->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO06->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO06->SetMaxLength( 10 );
+	#endif
 	fgSizer2216->Add( txtFCWPHO06, 0, 0, 5 );
 	
 	txtAnglePHO06 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7347,6 +7576,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2217->Add( rgrSEL07, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO07 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO07->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO07->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO07->SetMaxLength( 10 );
+	#endif
 	fgSizer2217->Add( txtFCWPHO07, 0, 0, 5 );
 	
 	txtAnglePHO07 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7365,6 +7602,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2218->Add( rgrSEL08, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO08 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO08->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO08->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO08->SetMaxLength( 10 );
+	#endif
 	fgSizer2218->Add( txtFCWPHO08, 0, 0, 5 );
 	
 	txtAnglePHO08 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7383,6 +7628,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer2219->Add( rgrSEL09, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO09 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO09->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO09->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO09->SetMaxLength( 10 );
+	#endif
 	fgSizer2219->Add( txtFCWPHO09, 0, 0, 5 );
 	
 	txtAnglePHO09 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7401,6 +7654,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22110->Add( rgrSEL10, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO10 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO10->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO10->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO10->SetMaxLength( 10 );
+	#endif
 	fgSizer22110->Add( txtFCWPHO10, 0, 0, 5 );
 	
 	txtAnglePHO10 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7419,6 +7680,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22111->Add( rgrSEL11, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO11 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO11->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO11->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO11->SetMaxLength( 10 );
+	#endif
 	fgSizer22111->Add( txtFCWPHO11, 0, 0, 5 );
 	
 	txtAnglePHO11 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7437,6 +7706,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22112->Add( rgrSEL12, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO12 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO12->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO12->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO12->SetMaxLength( 10 );
+	#endif
 	fgSizer22112->Add( txtFCWPHO12, 0, 0, 5 );
 	
 	txtAnglePHO12 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7455,6 +7732,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22113->Add( rgrSEL13, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO13 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO13->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO13->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO13->SetMaxLength( 10 );
+	#endif
 	fgSizer22113->Add( txtFCWPHO13, 0, 0, 5 );
 	
 	txtAnglePHO13 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7473,6 +7758,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22114->Add( rgrSEL14, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO14 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO14->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO14->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO14->SetMaxLength( 10 );
+	#endif
 	fgSizer22114->Add( txtFCWPHO14, 0, 0, 5 );
 	
 	txtAnglePHO14 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7491,6 +7784,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer22115->Add( rgrSEL15, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHO15 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHO15->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHO15->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHO15->SetMaxLength( 10 );
+	#endif
 	fgSizer22115->Add( txtFCWPHO15, 0, 0, 5 );
 	
 	txtAnglePHO15 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7547,6 +7848,14 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer229->Add( lblFCWPHOmodeName, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	txtFCWPHOmodeAdditional = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtFCWPHOmodeAdditional->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtFCWPHOmodeAdditional->SetMaxLength( 10 );
+	}
+	#else
+	txtFCWPHOmodeAdditional->SetMaxLength( 10 );
+	#endif
 	fgSizer229->Add( txtFCWPHOmodeAdditional, 1, wxEXPAND, 5 );
 	
 	
@@ -8657,6 +8966,14 @@ pnlMCU_BD_view::pnlMCU_BD_view( wxWindow* parent, wxWindowID id, const wxPoint& 
 	fgSizer199->Add( ID_STATICTEXT4, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	m_sTestNo = new wxTextCtrl( sbSizer126->GetStaticBox(), ID_TESTNO, wxT("1"), wxDefaultPosition, wxSize( 73,-1 ), 0 );
+	#ifdef __WXGTK__
+	if ( !m_sTestNo->HasFlag( wxTE_MULTILINE ) )
+	{
+	m_sTestNo->SetMaxLength( 10 );
+	}
+	#else
+	m_sTestNo->SetMaxLength( 10 );
+	#endif
 	fgSizer199->Add( m_sTestNo, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	btnRunProductionTest = new wxButton( sbSizer126->GetStaticBox(), wxID_ANY, wxT("Run production test"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -9189,6 +9506,14 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	fgSizer328->Add( m_staticText372, 0, wxALL, 5 );
 	
 	txtCalibrationBW = new wxTextCtrl( sbSizer165->GetStaticBox(), wxID_ANY, wxT("5"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtCalibrationBW->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtCalibrationBW->SetMaxLength( 10 );
+	}
+	#else
+	txtCalibrationBW->SetMaxLength( 10 );
+	#endif
 	txtCalibrationBW->SetMinSize( wxSize( 50,-1 ) );
 	
 	fgSizer328->Add( txtCalibrationBW, 0, 0, 5 );
@@ -9589,6 +9914,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer241->Add( m_staticText341, 0, wxALL, 5 );
 	
 	txtVCOH_low = new wxTextCtrl( sbSizer129->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOH_low->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOH_low->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOH_low->SetMaxLength( 10 );
+	#endif
 	txtVCOH_low->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer241->Add( txtVCOH_low, 0, 0, 5 );
@@ -9598,6 +9931,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer241->Add( m_staticText342, 0, wxALL, 5 );
 	
 	txtVCOH_high = new wxTextCtrl( sbSizer129->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOH_high->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOH_high->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOH_high->SetMaxLength( 10 );
+	#endif
 	txtVCOH_high->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer241->Add( txtVCOH_high, 0, 0, 5 );
@@ -9621,6 +9962,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2411->Add( m_staticText3411, 0, wxALL, 5 );
 	
 	txtVCOM_low = new wxTextCtrl( sbSizer1291->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOM_low->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOM_low->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOM_low->SetMaxLength( 10 );
+	#endif
 	txtVCOM_low->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2411->Add( txtVCOM_low, 0, 0, 5 );
@@ -9630,6 +9979,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2411->Add( m_staticText3421, 0, wxALL, 5 );
 	
 	txtVCOM_high = new wxTextCtrl( sbSizer1291->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOM_high->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOM_high->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOM_high->SetMaxLength( 10 );
+	#endif
 	txtVCOM_high->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2411->Add( txtVCOM_high, 0, 0, 5 );
@@ -9653,6 +10010,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2412->Add( m_staticText3412, 0, wxALL, 5 );
 	
 	txtVCOL_low = new wxTextCtrl( sbSizer1292->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOL_low->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOL_low->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOL_low->SetMaxLength( 10 );
+	#endif
 	txtVCOL_low->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2412->Add( txtVCOL_low, 0, 0, 5 );
@@ -9662,6 +10027,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2412->Add( m_staticText3422, 0, wxALL, 5 );
 	
 	txtVCOL_high = new wxTextCtrl( sbSizer1292->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOL_high->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOL_high->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOL_high->SetMaxLength( 10 );
+	#endif
 	txtVCOL_high->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2412->Add( txtVCOL_high, 0, 0, 5 );
@@ -9685,6 +10058,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2413->Add( m_staticText3413, 0, wxALL, 5 );
 	
 	txtVCOCGEN_low = new wxTextCtrl( sbSizer1293->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOCGEN_low->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOCGEN_low->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOCGEN_low->SetMaxLength( 10 );
+	#endif
 	txtVCOCGEN_low->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2413->Add( txtVCOCGEN_low, 0, 0, 5 );
@@ -9694,6 +10075,14 @@ dlgVCOfrequencies::dlgVCOfrequencies( wxWindow* parent, wxWindowID id, const wxS
 	fgSizer2413->Add( m_staticText3423, 0, wxALL, 5 );
 	
 	txtVCOCGEN_high = new wxTextCtrl( sbSizer1293->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtVCOCGEN_high->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtVCOCGEN_high->SetMaxLength( 10 );
+	}
+	#else
+	txtVCOCGEN_high->SetMaxLength( 10 );
+	#endif
 	txtVCOCGEN_high->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer2413->Add( txtVCOCGEN_high, 0, 0, 5 );

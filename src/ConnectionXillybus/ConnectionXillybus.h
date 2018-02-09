@@ -6,13 +6,12 @@
 
 #pragma once
 #include <ConnectionRegistry.h>
-#include <ILimeSDRStreaming.h>
+#include "LMS64CProtocol.h"
 #include <vector>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <thread>
-#include "fifo.h"
 
 #ifndef __unix__
 #include "windows.h"
@@ -24,7 +23,7 @@
 
 namespace lime{
 
-class ConnectionXillybus : public ILimeSDRStreaming
+class ConnectionXillybus : public LMS64CProtocol
 {
 public:
     ConnectionXillybus(const unsigned index);
@@ -37,11 +36,7 @@ public:
 
     int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
     int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
-
-    //hooks to update FPGA plls when baseband interface data rate is changed
-    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate) override;
-    int UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate, const double txPhase, const double rxPhase)override;
-    int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms = 100)override;
+;
 #ifdef __unix__
     int TransferPacket(GenericPacket &pkt) override;
     int ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)override;
@@ -54,12 +49,12 @@ protected:
     int SendData(const char* buffer, int length, int epIndex, int timeout = 100) override;
     
     int BeginDataReading(char* buffer, uint32_t length, int ep) override;
-    int WaitForReading(int contextHandle, unsigned int timeout_ms) override;
+    bool WaitForReading(int contextHandle, unsigned int timeout_ms) override;
     int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;
     void AbortReading(int epIndex);
 
     int BeginDataSending(const char* buffer, uint32_t length, int ep) override;
-    int WaitForSending(int contextHandle, uint32_t timeout_ms) override;
+    bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int epIndex);
 

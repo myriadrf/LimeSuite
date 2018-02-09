@@ -10,15 +10,14 @@
 #include <chrono>
 #include <map>
 #include <set>
+#include "Streamer.h"
 
 static const double DEFAULT_CLOCK_RATE = 80e6;
 
 namespace lime
 {
-    class LMS7002M;
-    struct StreamMetadata;
+    class LIME_API LMS7_Device;
 }
-
 struct IConnectionStream;
 
 class SoapyLMS7 : public SoapySDR::Device
@@ -89,7 +88,7 @@ public:
         char * const *buffs,
         size_t numElems,
         uint64_t requestTime,
-        lime::StreamMetadata &mdOut,
+        lime::StreamChannel::Metadata &mdOut,
         const long timeoutMs);
 
     int writeStream(
@@ -129,15 +128,7 @@ public:
 
     bool hasDCOffset(const int direction, const size_t channel) const;
 
-    void setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset);
-
-    std::complex<double> getDCOffset(const int direction, const size_t channel) const;
-
     bool hasIQBalance(const int direction, const size_t channel) const;
-
-    void setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance);
-
-    std::complex<double> getIQBalance(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Gain API
@@ -145,7 +136,7 @@ public:
 
     std::vector<std::string> listGains(const int direction, const size_t channel) const;
 
-    void setGain(const int direction, const size_t channel, const double value);
+    void setGain(const int direction, const size_t channel, const double value) override;
     
     double getGain(const int direction, const size_t channel) const;
 
@@ -163,9 +154,13 @@ public:
 
     SoapySDR::ArgInfoList getFrequencyArgsInfo(const int direction, const size_t channel) const;
 
+    void setFrequency(const int direction, const size_t channel, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
+
     void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 
     double getFrequency(const int direction, const size_t channel, const std::string &name) const;
+    
+    double getFrequency(const int direction, const size_t channel) const override;
 
     std::vector<std::string> listFrequencies(const int direction, const size_t channel) const;
 
@@ -187,13 +182,6 @@ public:
     std::vector<double> listSampleRates(const int direction, const size_t channel) const;
 
     SoapySDR::RangeList getSampleRateRange(const int direction, const size_t channel) const;
-
-    //rate fixing flags applied when user makes a call
-    //helps to determine flexible sample rate requirements
-    bool _fixedClockRate;
-    std::map<size_t, bool> _fixedRxSampRate;
-    std::map<size_t, bool> _fixedTxSampRate;
-    std::vector<double> _getEnumeratedRates(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Bandwidth API
@@ -268,6 +256,10 @@ public:
     SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const;
 
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
+    
+    std::string readSetting(const std::string &key) const;
+    
+    std::string readSetting(const int direction, const size_t channel, const std::string &key) const;
 
     /*******************************************************************
      * GPIO API
@@ -283,27 +275,11 @@ public:
 
     unsigned readGPIODir(const std::string &bank) const;
 
-    /*******************************************************************
-     * I2C API
-     ******************************************************************/
-
-    void writeI2C(const int addr, const std::string &data);
-
-    std::string readI2C(const int addr, const size_t numBytes);
-
-    /*******************************************************************
-     * SPI API
-     ******************************************************************/
-
-    unsigned transactSPI(const int addr, const unsigned data, const size_t numBits);
-
 private:
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
-    lime::IConnection *_conn;
     const std::string _moduleName;
-
-    lime::LMS7002M *getRFIC(const size_t channel) const;
-    std::vector<lime::LMS7002M *> _rfics;
+    lime::LMS7_Device * lms7Device;
+    double sampleRate;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
 };

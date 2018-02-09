@@ -1,6 +1,6 @@
 #include "LMS7002M.h"
 #include "CalibrationCache.h"
-#include "ErrorReporting.h"
+#include <assert.h>
 #include "MCU_BD.h"
 #include "IConnection.h"
 #include "mcu_programs.h"
@@ -271,7 +271,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
 
     {
-        LMS7002M_SelfCalState state(this);
         BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
@@ -399,8 +398,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
 
     {
-        //disable samples streaming as calibration will be changing clocks
-        LMS7002M_SelfCalState state(this);
         BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {

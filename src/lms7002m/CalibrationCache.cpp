@@ -1,5 +1,5 @@
 #include "CalibrationCache.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "SystemResources.h"
 #include "Logger.h"
 #include <sstream>

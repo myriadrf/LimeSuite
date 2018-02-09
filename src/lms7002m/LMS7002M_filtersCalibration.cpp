@@ -6,7 +6,7 @@
 
 #include "LMS7002M.h"
 #include "IConnection.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 #include "CalibrationCache.h"
 #include "LMS7002M_RegistersMap.h"
 #include <cmath>
@@ -66,7 +66,7 @@ void LMS7002M::RestoreRegisterMap(LMS7002M_RegistersMap *backup)
 
         //bulk write the original register values from backup
         this->SetActiveChannel((ch==0)?ChA:ChB);
-        SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size());
+        SPI_write_batch(restoreAddrs.data(), restoreData.data(), restoreData.size(), false);
     }
 
     //cleanup
@@ -99,7 +99,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     if(status != MCU_BD::MCU_NO_ERROR)
     {
         lime::error("MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
-        return ReportError(-1, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+        return -1;
     }
     //sync registers to cache
     std::vector<uint16_t> regsToSync = {0x0112, 0x0117, 0x011A, 0x0116, 0x0118, 0x0114, 0x0019, 0x0115};
@@ -128,6 +128,11 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     }
 
+    if (!controlPort){
+        lime::error("No device connected");
+        return -1;
+    }
+
     if(mcuControl->ReadMCUProgramID() != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         if((status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM)))
@@ -146,7 +151,7 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     if(status != MCU_BD::MCU_NO_ERROR)
     {
         lime::error("MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
-        return ReportError(-1, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+        return -1;
     }
     //sync registers to cache
     std::vector<uint16_t> regsToSync = {0x0105, 0x0106, 0x0109, 0x010A, 0x010B};

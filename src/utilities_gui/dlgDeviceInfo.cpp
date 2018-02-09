@@ -26,7 +26,7 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblHardwareCtr->SetLabel(info->hardwareVersion);
         lblProtocolCtr->SetLabel(info->protocolVersion);
         lblGatewareCtr->SetLabel(info->gatewareVersion);
-        lblGatewareRevCtr->SetLabel(info->gatewareRevision);
+        lblGatewareRevCtr->SetLabel(info->gatewareVersion);
         lblGatewareTargetCtr->SetLabel(info->gatewareTargetBoard);
 
         lblDeviceData->SetLabel(info->deviceName);
@@ -35,7 +35,7 @@ void dlgDeviceInfo::OnGetInfo( wxCommandEvent& event )
         lblHardwareData->SetLabel(info->hardwareVersion);
         lblProtocolData->SetLabel(info->protocolVersion);
         lblGatewareData->SetLabel(info->gatewareVersion);
-        lblGatewareRevData->SetLabel(info->gatewareRevision);
+        lblGatewareRevData->SetLabel(info->gatewareVersion);
         lblGatewareTargetData->SetLabel(info->gatewareTargetBoard);
     }
     else
