@@ -313,10 +313,9 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
-    UpdateRSSIDelay();
     if(status != MCU_NO_ERROR)
         goto RxFilterSearchEndStage;
-
+    UpdateRSSIDelay();
     {
         uint8_t g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
         while(GetRSSI() < 0x2700 && g_rxloopb_rfe < 14)
@@ -654,9 +653,9 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
     SaveChipState(0);
     status = TuneTxFilterSetup(tx_lpf_IF);
-    UpdateRSSIDelay();
     if(status != MCU_NO_ERROR)
-        return status;
+        goto TxFilterSearchEndStage;
+    UpdateRSSIDelay();
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
     Modify_SPI_Reg_bits(SEL_TX, 0);
@@ -813,7 +812,10 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         uint16_t powerDowns;
         uint16_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
         uint16_t rcal_lpfh_lpflad_tbb = SPI_read(0x0109);
+    TxFilterSearchEndStage:
         SaveChipState(1);
+        if(status != MCU_NO_ERROR)
+            return status;
         Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
         powerDowns = SPI_read(0x0105) & ~0x0016;
         if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
