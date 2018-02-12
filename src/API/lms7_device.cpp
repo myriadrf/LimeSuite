@@ -989,8 +989,8 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     {
         const int maxGain = 74; //gain table size
         value += 12;           //pga offset
-        if (value > maxGain) //do not exceed gain table index
-            value = maxGain;
+        if (value >= maxGain) //do not exceed gain table index
+            value = maxGain-1;
         else if (value < 0)
             value = 0;
         unsigned lna = 0, tia = 0, pga = 0;
@@ -1276,8 +1276,6 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
         SetNCOFreq(isTx, 0, -1, 0.0);
     channels[chA].cF_offset_nco = 0;
     channels[chB].cF_offset_nco = 0;
-    channels[chA].freq = f_Hz;
-    channels[chB].freq = f_Hz;
     if (setTDD(f_Hz) != 0)
         return -1;
     return 0;
