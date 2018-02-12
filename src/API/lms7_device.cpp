@@ -1312,9 +1312,9 @@ int LMS7_Device::Init()
         {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x010C, 0x8865},
         {0x010E, 0x0000}, {0x0110, 0x2B14}, {0x0113, 0x03C2}, {0x011C, 0xA941},
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0121, 0x3650}, {0x0122, 0x033F},
-        {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x0170}, {0x020B, 0x4000},
+        {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x017B}, {0x020B, 0x4000},
         {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
-        {0x040C, 0x00F8}
+        {0x040C, 0x00FB}
     };
 
     for (unsigned i = 0; i < lms_list.size(); i++)
@@ -1362,7 +1362,19 @@ int LMS7_Device::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
     lime::LMS7002M* lms = SelectChannel(chan);
 
     lms->EnableChannel(dir_tx, enabled);
-
+    if (!enabled)
+    {
+        if (dir_tx)
+        {
+            tx_channels[chan].freq = -1.0;
+            tx_channels[chan].cF_offset_nco = 0.0;
+        }
+        else
+        {
+            rx_channels[chan].freq = -1.0;
+            rx_channels[chan].cF_offset_nco = 0.0;
+        }
+    }
     return LMS_SUCCESS;
 }
 
@@ -1372,7 +1384,6 @@ std::vector<std::string> LMS7_Device::GetProgramModes() const
             program_mode::fx3RAM, program_mode::fx3Flash, program_mode::fx3Reset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
-
 
 int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const
 {

@@ -930,10 +930,6 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
         return -1;
     }
     
-    if ((!dir_tx) && (lms->ReadParam(LMS7_MASK, chan) != 0))
-        down = !down;
-
-
     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan)!=0)
     || (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan)!=0))
         return -1;
