@@ -101,9 +101,15 @@ StreamChannel::Info StreamChannel::GetInfo()
     overflow = 0;
     underflow = 0;
     if(config.isTx)
+    {
+        stats.timestamp = mStreamer->txLastTimestamp;
         stats.linkRate = mStreamer->txDataRate_Bps.load();
+    }
     else
+    {
+        stats.timestamp = mStreamer->rxLastTimestamp;
         stats.linkRate = mStreamer->rxDataRate_Bps.load();
+    }
     return stats;
 }
 
@@ -262,7 +268,6 @@ void Streamer::SetHardwareTimestamp(const uint64_t now)
 
 void Streamer::RstRxIQGen()
 {
-    lime::info("Reset Rx IQ Generator");
     uint32_t data[16];
     uint32_t reg20;
     uint32_t reg11C;
@@ -289,7 +294,6 @@ void Streamer::RstRxIQGen()
 
 void Streamer::RstTxIQGen()
 {
-    lime::info("Reset Tx IQ Generator");
     uint32_t data[16];
     uint32_t reg20;
     uint32_t reg11C;
@@ -319,7 +323,6 @@ void Streamer::AlignRxTSP()
     uint32_t reg20;
     uint32_t regsA[2];
     uint32_t regsB[2];
-    lime::info("Align RxTSP");
     //backup values
     {
         const std::vector<uint32_t> bakAddr = { (uint32_t(0x0400) << 16), (uint32_t(0x040C) << 16) };
@@ -332,6 +335,7 @@ void Streamer::AlignRxTSP()
         dataPort->WriteLMS7002MSPI(&data, 1, chipId);
         dataPort->ReadLMS7002MSPI(bakAddr.data(), regsB, bakAddr.size(), chipId);
     }
+    
     //alignment search
     {
         uint32_t dataWr[4];
@@ -366,6 +370,7 @@ void Streamer::AlignRxTSP()
         }
         delete[] buf;
     }
+    
     //restore values
     {
         uint32_t dataWr[7];
@@ -380,18 +385,53 @@ void Streamer::AlignRxTSP()
     }
 }
 
+double Streamer::GetPhaseOffset(int bin)
+{
+    int16_t* buf = new int16_t[sizeof(FPGA_DataPacket)/sizeof(int16_t)];
+
+    dataPort->ResetStreamBuffers();
+    fpga->StartStreaming();
+    if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50)!=sizeof(FPGA_DataPacket))
+    {
+        lime::error("Channel alignment failed");
+        delete [] buf;
+        return -1000;
+    }
+    fpga->StopStreaming();
+    dataPort->AbortReading(chipId);
+    //calculate DFT bin of interest and check channel phase difference
+    const std::complex<double> iunit(0, 1);
+    const double pi = std::acos(-1);
+    const int N = 32;
+    std::complex<double> xA(0,0);
+    std::complex<double> xB(0, 0);
+    for (int n = 0; n < N; n++)
+    {
+        const std::complex<double> xAn(buf[8+4*n], buf[9+4*n]);
+        const std::complex<double> xBn(buf[10+4*n],buf[11+4*n]);
+        const std::complex<double> mult = std::exp(-2.0*iunit*pi* double(bin)* double(n)/double(N));
+        xA += xAn * mult;
+        xB += xBn * mult;
+    }
+    double phaseA = std::arg(xA) * 180.0 / pi;
+    double phaseB = std::arg(xB) * 180.0 / pi;
+    double phasediff = phaseB - phaseA;
+    if (phasediff < -180.0) phasediff +=360.0;
+    if (phasediff > 180.0) phasediff -=360.0;
+    delete [] buf;
+    return phasediff;
+}
+
 void Streamer::AlignRxRF(bool restoreValues, bool adjustHBDdelay)
 {
     auto regBackup = lms->BackupRegisterMap();
-
-    AlignRxTSP();
 
     lms->SPI_write(0x20, 0xFFFF);
     lms->SetDefaults(LMS7002M::RFE);
     lms->SetDefaults(LMS7002M::RBB);
     lms->SetDefaults(LMS7002M::TBB);
     lms->SetDefaults(LMS7002M::TRF);
-    lms->SPI_write(0x10C, 0x8845);
+    lms->SPI_write(0x10C, 0x88C5);
     lms->SPI_write(0x10D, 0x0117);
     lms->SPI_write(0x113, 0x024A);
     lms->SPI_write(0x118, 0x418C);
@@ -406,81 +446,37 @@ void Streamer::AlignRxRF(bool restoreValues, bool adjustHBDdelay)
     lms->SPI_write(0x40C, 0x01FF);
     lms->SPI_write(0x404, 0x0006);
     lms->LoadDC_REG_IQ(true, 0x3FFF, 0x3FFF);
-    lms->SetFrequencySX(false, 450e6);
     double srate = lms->GetSampleRate(false, LMS7002M::ChA);
-    lms->SetFrequencySX(true, 450e6 + srate / 16.0);
-    double step = 90 * srate / (lms->GetFrequencyCGEN());
-    int nSteps = 0;
+    lms->SetFrequencySX(false,450e6);
 
-    RstRxIQGen();
     //alignment search
     std::vector<uint32_t>  dataWr;
     dataWr.resize(16);
-    int16_t* buf = new int16_t[sizeof(FPGA_DataPacket) / sizeof(int16_t)];
 
     fpga->StopStreaming();
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     dataPort->WriteRegister(0x0008, 0x0100);
     dataPort->WriteRegister(0x0007, 3);
 
-    for (int i = 0; i < 100; i++)
-    {
-        dataPort->WriteLMS7002MSPI(dataWr.data(), 4, chipId);
-        dataPort->ResetStreamBuffers();
-        fpga->StartStreaming();
-        if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50) != sizeof(FPGA_DataPacket))
-        {
-            lime::error("Channel alignment failed");
-            break;
-        }
-        fpga->StopStreaming();
-        dataPort->AbortReading(chipId);
-        //calculate DFT bin of interest and check channel phase difference
-        const std::complex<double> iunit(0, 1);
-        const double pi = std::acos(-1);
-        const int N = 32;
-        std::complex<double> xA(0, 0);
-        std::complex<double> xB(0, 0);
-        for (int n = 0; n < N; n++)
-        {
-            const std::complex<double> xAn(buf[8 + 4 * n], buf[9 + 4 * n]);
-            const std::complex<double> xBn(buf[10 + 4 * n], buf[11 + 4 * n]);
-            const std::complex<double> mult = std::exp(-2.0*iunit*pi* 2.0* double(n) / double(N));
-            xA += xAn * mult;
-            xB += xBn * mult;
-        }
-        double phaseA = std::arg(xA) * 180.0 / pi;
-        double phaseB = std::arg(xB) * 180.0 / pi;
-        double phasediff = phaseB - phaseA;
-        if (phasediff < -180.0) phasediff += 360.0;
-        if (phasediff > 180.0) phasediff -= 360.0;
-        lime::debug("phase: A %.1f; B %.1f;  dif %.2f", phaseA, phaseB, phasediff);
+    for (int i = 0; i < 200; i++){
+        lms->Modify_SPI_Reg_bits(LMS7_PD_FDIV_O_CGEN, 1);
+        lms->Modify_SPI_Reg_bits(LMS7_PD_FDIV_O_CGEN, 0);
+        AlignRxTSP();
 
-        if (std::fabs(phasediff) > 90.0)
-        {
-            RstTxIQGen();
-            continue;
-        }
-        if (adjustHBDdelay){
-            nSteps = std::floor(0.5 + (phasediff + 13.0) / step); //13 - offset that seemed correct from testing results (may depend on board?)
-            lime::debug("nSteps: %d", nSteps);
-            if (nSteps > 4) nSteps = 4;
-            else if (nSteps < -4) nSteps = -4;
-        }
+        lms->SetFrequencySX(true, 450e6+srate/16.0);
+        double offset1 = GetPhaseOffset(2);
+        lms->SetFrequencySX(true, 450e6+srate/8.0);
+        double offset2 = GetPhaseOffset(4);
+        double diff = offset1-offset2;
+        //printf("diff diff %f\n", diff);
+        diff -= 180*floor(0.5+diff/180.0); 
+        //printf("diff diff %f\n\n", diff);
+        if (fabs(diff) < 0.35)
         break;
     }
-    delete[] buf;
-
+    RstRxIQGen(); 
     if (restoreValues)
         lms->RestoreRegisterMap(regBackup);
-
-    if (adjustHBDdelay){
-        lms->SPI_write(0x20, 0xFFFD);
-        lms->Modify_SPI_Reg_bits(LMS7_HBD_DLY, nSteps < 0 ? -nSteps : 0);
-        lms->SPI_write(0x20, 0xFFFE);
-        lms->Modify_SPI_Reg_bits(LMS7_HBD_DLY, nSteps > 0 ? nSteps : 0);
-    }
-    RstRxIQGen();
 }
 
 int Streamer::UpdateThreads(bool stopAll)
@@ -692,11 +688,11 @@ void Streamer::TransmitPacketsLoop()
         }
         int i=0;
 
+        FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
         while(i<packetsToBatch)
         {
             bool end_burst = false;
             StreamChannel::Metadata meta = {0, 0};
-            FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
                 if (!mTxStreams[ch])
@@ -739,9 +735,10 @@ void Streamer::TransmitPacketsLoop()
         
         if(terminateTx.load() == true) //early termination
             break;
-
+        
         bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
+        txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
         bufferUsed[bi] = true;
 
         t2 = std::chrono::high_resolution_clock::now();
@@ -860,7 +857,6 @@ void Streamer::ReceivePacketsLoop()
                     lime::warning("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = buffersCount;
-                    txLastLateTime.store(pkt[pktIndex].counter);
                     for(auto value: mTxStreams)
                         if (value && value->mActive)
                             value->pktLost++;
