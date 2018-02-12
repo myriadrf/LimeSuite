@@ -153,8 +153,8 @@ public:
      ******************************************************************/
 
     SoapySDR::ArgInfoList getFrequencyArgsInfo(const int direction, const size_t channel) const;
-    
-    void setFrequency(int direction, size_t channel, double freq, const SoapySDR::Kwargs &args) override;
+
+    void setFrequency(const int direction, const size_t channel, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 
     void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 

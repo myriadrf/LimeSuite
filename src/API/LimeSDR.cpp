@@ -34,7 +34,7 @@ std::vector<std::string> LMS7_LimeSDR::GetProgramModes() const
 {
     return {program_mode::autoUpdate,
             program_mode::fpgaFlash, program_mode::fpgaReset,
-            program_mode::fx3Flash, program_mode::fx3RAM, program_mode::fx3Reset,
+            program_mode::fx3Flash, program_mode::fx3Reset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
 

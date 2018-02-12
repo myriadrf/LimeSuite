@@ -1006,12 +1006,13 @@ int LMS7002M::SetPathRFE(PathRFE path)
 
 LMS7002M::PathRFE LMS7002M::GetPathRFE(void)
 {
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE)) == 0) return PATH_RFE_LB1;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE)) == 0) return PATH_RFE_LB2;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE)) == 0) return PATH_RFE_LNAL;
-    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE)) == 0) return PATH_RFE_LNAW;
-    if (this->Get_SPI_Reg_bits(LMS7param(PD_LNA_RFE)) == 0) return PATH_RFE_NONE;
-    return PATH_RFE_LNAH;
+    const int sel_path_rfe = this->Get_SPI_Reg_bits(LMS7param(SEL_PATH_RFE));
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE)) == 0 && sel_path_rfe == 3) return PATH_RFE_LB1;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE)) == 0 && sel_path_rfe == 2) return PATH_RFE_LB2;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE)) == 0 && sel_path_rfe == 2) return PATH_RFE_LNAL;
+    if (this->Get_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE)) == 0 && sel_path_rfe == 3) return PATH_RFE_LNAW;
+    if (sel_path_rfe == 1) return PATH_RFE_LNAH;
+    return PATH_RFE_NONE;
 }
 
 int LMS7002M::SetBandTRF(const int band)
@@ -1111,7 +1112,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     if (vcoFreqs.size() == 0)
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
     dFvco = vcoFreqs[vcoFreqs.size() / 2];
-    iHdiv = dFvco / freq_Hz / 2 - 1;
+    iHdiv = dFvco / freq_Hz / 2.0 - 1.0 + 0.01; //+0.01 to avoid bad round down when result is X.99999...
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
 
@@ -2507,6 +2508,14 @@ int LMS7002M::SetRxDCRemoval(const bool enable)
     this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP), enable?0:1);
     this->Modify_SPI_Reg_bits(LMS7param(DCCORR_AVG_RXTSP), 0x7);
     return 0;
+}
+
+int LMS7002M::EnableSXTDD(bool tdd)
+{
+    Modify_SPI_Reg_bits(LMS7_MAC, 2);
+    Modify_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF, tdd ? 0 : 1);
+    Modify_SPI_Reg_bits(LMS7_MAC, 1);
+    return Modify_SPI_Reg_bits(LMS7_PD_VCO, tdd ? 1 : 0);
 }
 
 bool LMS7002M::GetRxDCRemoval(void)

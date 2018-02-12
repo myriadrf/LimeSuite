@@ -65,6 +65,7 @@ set(LIME_SUITE_SOURCES
     kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
+    API/LmsGeneric.cpp
     API/qLimeSDR.cpp
     API/LimeSDR_mini.cpp
     API/LimeSDR.cpp
@@ -275,13 +276,7 @@ endif()
 #########################################################################
 # utilities
 #########################################################################
-cmake_dependent_option(ENABLE_UTILITIES "Enable utility programs" OFF "ENABLE_LIBRARY" OFF)
-if(ENABLE_UTILITIES)
-    include_directories(utilityTools)
-    set(utility_src_files utilityTools/pllTest.cpp)
-    add_executable(utilityTools ${utility_src_files} utilityTools/main.cpp)
-    target_link_libraries(utilityTools LimeSuite)
-endif()
+add_subdirectory(utilities)
 
 #########################################################################
 # tests

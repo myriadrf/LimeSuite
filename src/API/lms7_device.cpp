@@ -9,6 +9,7 @@
 #include "qLimeSDR.h"
 #include "LimeSDR_mini.h"
 #include "LimeSDR.h"
+#include "LmsGeneric.h"
 #include "GFIR/lms_gfir.h"
 #include "IConnection.h"
 #include <cmath>
@@ -58,9 +59,10 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         device = new LMS7_LimeSDR_mini(conn,obj);
     else if (info.deviceName == "LimeSDR-QPCIe")
         device = new LMS7_qLimeSDR(conn,obj);
-    else
+    else if (info.deviceName != "UNKNOWN")
         device = new LMS7_LimeSDR(conn,obj);
-    
+    else
+        device = new LMS7_Generic(conn,obj);
     return device;
 }
 
@@ -641,7 +643,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), decimation) != 0)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP), interpolation) != 0)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
-	    || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interpolation, decimation) != 0))
+	    || (lms->SetInterfaceFrequency(cgen, interpolation, decimation) != 0))
 	  return -1;
 
 	double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
@@ -1151,10 +1153,11 @@ int LMS7_Device::SetNCOFreq(bool tx, unsigned ch, int ind, double freq)
     || ( lms->Modify_SPI_Reg_bits( tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, enable)!=0))
         return -1;
     
+    if ((ind>=0) && (lms->SetNCOFrequency(tx, ind, std::fabs(freq)) != 0))
+        return -1;
+    
     if (enable)
     {
-        if (lms->SetNCOFrequency(tx, ind, std::fabs(freq)) != 0)
-            return -1;
         bool down = (freq < 0);
         if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_MASK) == 0))
             down = !down;
@@ -1187,10 +1190,10 @@ int LMS7_Device::SetNCOPhase(bool tx, unsigned ch, int ind, double phase)
     || ( lms->Modify_SPI_Reg_bits( tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, enable)!=0))
         return -1;
     
+    if ((ind>=0) && (lms->SetNCOPhaseOffset(tx, ind, phase)!=0))    
+        return -1;
     if (enable)
     {
-        if (lms->SetNCOPhaseOffset(tx, ind, phase)!=0)
-            return -1;
         if ((lms->Modify_SPI_Reg_bits( tx ? LMS7_SEL_TX : LMS7_SEL_RX, ind) != 0)
         || ( lms->Modify_SPI_Reg_bits(tx ? LMS7_MODE_TX : LMS7_MODE_RX, 1) != 0))
             return -1;
@@ -1229,10 +1232,7 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     {
         std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;    
         bool tdd =  fabs(other[chA].freq+other[chA].cF_offset_nco-center) > 0.1 ? false : true;    
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
-        lms->Modify_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF, tdd ? 0 : 1);
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
-        lms->Modify_SPI_Reg_bits(LMS7_PD_VCO, tdd ? 1 : 0);
+        lms->EnableSXTDD(tdd);
         if (isTx || (!tdd))
             if (lms->SetFrequencySX(isTx, center) != 0)
                 return -1;
@@ -1276,8 +1276,8 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
         SetNCOFreq(isTx, 0, -1, 0.0);
     channels[chA].cF_offset_nco = 0;
     channels[chB].cF_offset_nco = 0;
-    channels[chA].freq = f_Hz;
-    channels[chB].freq = f_Hz;
+    //channels[chA].freq = f_Hz;
+    //channels[chB].freq = f_Hz;
     if (setTDD(f_Hz) != 0)
         return -1;
     return 0;
@@ -1314,7 +1314,7 @@ int LMS7_Device::Init()
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0121, 0x3650}, {0x0122, 0x033F},
         {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x0170}, {0x020B, 0x4000},
         {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
-        {0x040C, 0x00F8}
+        {0x040C, 0x00FB}
     };
 
     for (unsigned i = 0; i < lms_list.size(); i++)

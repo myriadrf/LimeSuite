@@ -290,7 +290,7 @@ public:
 	float_type GetFrequencySX(bool tx);
     int SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output = nullptr);
     int SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, float_type BW);
-	bool GetSXLocked(bool tx);
+    bool GetSXLocked(bool tx);
     ///VCO modules available for tuning
     enum VCO_Module
     {
@@ -355,6 +355,13 @@ public:
      * Get the RX DC removal filter enabled.
      */
     bool GetRxDCRemoval(void);
+    
+        /*!
+     * Enables/disables TDD mode 
+     * @param enable true - use same pll for Tx and Rx, false - us seperate PLLs
+     * @return 0 for success for error condition
+     */
+    int EnableSXTDD(bool enable);
 
     /*!
      * Set the TX DC offset adjustment.

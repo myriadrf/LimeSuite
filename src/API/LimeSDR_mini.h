@@ -11,7 +11,6 @@
 
 namespace lime {
 
-
 class LMS7_LimeSDR_mini : public LMS7_Device
 {
 public:

@@ -49,7 +49,7 @@ int LMS7_LimeSDR_mini::Init()
         {0x011C, 0x8941}, {0x011D, 0x0000}, {0x011E, 0x0740}, {0x0120, 0xE6B4},
         {0x0121, 0x3650}, {0x0123, 0x000F}, {0x0200, 0x00E1}, {0x0208, 0x0170},
         {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
-        {0x040B, 0x1020}, {0x040C, 0x00F8}
+        {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
     lime::LMS7002M* lms = lms_list[0];
@@ -95,10 +95,7 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     {
         ChannelInfo& other = isTx ? rx_channels[0] : tx_channels[0];    
         bool tdd =  fabs(other.freq+other.cF_offset_nco-center) > 0.1 ? false : true;    
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
-        lms->Modify_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF, tdd ? 0 : 1);
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
-        lms->Modify_SPI_Reg_bits(LMS7_PD_VCO, tdd ? 1 : 0);
+        lms->EnableSXTDD(tdd);
         if (isTx || (!tdd))
             if (lms->SetFrequencySX(isTx, center) != 0)
                 return -1;

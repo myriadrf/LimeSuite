@@ -484,7 +484,7 @@ void lms7002_pnlRxTSP_view::UpdateNCOinputs()
         LMS_GetNCOPhase(lmsControl, LMS_CH_RX, ch, phase, &fcw);
         for (size_t i = 0; i < txtNCOinputs.size(); ++i)
         {
-            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), (65536.0 / 360.0)*phase[i]));
+            txtNCOinputs[i]->SetValue(wxString::Format(_("%.3f"), phase[i]));
         }
         txtFCWPHOmodeAdditional->SetValue(wxString::Format(_("%.6f"), fcw/1e6));
         lblFCWPHOmodeName->SetLabel(_("FCW (MHz)"));
