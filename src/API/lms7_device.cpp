@@ -369,7 +369,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
     }
 
     oversample = 2<<decim;
-    
+
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
          lime::LMS7002M* lms = lms_list[i];
@@ -1211,12 +1211,10 @@ int LMS7_Device::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags
 {
     lime::LMS7002M* lms = SelectChannel(chan);
 
-    lms->EnableCalibrationByMCU((flags&1) == 0);
-
     if (dir_tx)
-        return lms->CalibrateTx(bw, false);
+        return lms->CalibrateTx(bw, flags & 1);
     else
-        return lms->CalibrateRx(bw, false);
+        return lms->CalibrateRx(bw, flags & 1);
 }
 
 int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)

@@ -150,7 +150,7 @@ void checkForMinMax(int64_t lr, int64_t & lr_min, int64_t & lr_max)
     if(lr > lr_max)
         lr_max = lr;
 }
-extern int fftBin;
+static int fftBin;
 
 void CalcGoertzelI(int x[][2], int64_t real[], int64_t imag[], int Sp)
 {

@@ -31,6 +31,7 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[chkDCMODE] = LMS7param(DCMODE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
+    rgrCalibrationMethod->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
@@ -209,4 +210,12 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     lblCGENrefClk->SetLabel(wxString::Format(_("%f"), freq/1e6));
+}
+
+void lms7002_pnlCalibrations_view::OnCalibrationMethodChange( wxCommandEvent& event )
+{
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lblCalibrationNote->SetLabel("");
+    else
+        lblCalibrationNote->SetLabel("Some boards might not have onboard loopback for selected Rx/Tx paths");
 }

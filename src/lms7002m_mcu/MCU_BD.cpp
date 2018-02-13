@@ -1037,26 +1037,40 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 
 void MCU_BD::SetParameter(MCU_Parameter param, float value)
 {
-    uint8_t inputRegs[3];
-    value /= 1e6;
-    inputRegs[0] = (uint8_t)value; //frequency integer part
-
-    uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
-    inputRegs[1] = (fracPart >> 8) & 0xFF;
-    inputRegs[2] = fracPart & 0xFF;
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
-    for(uint8_t i = 0; i < 3; ++i)
+    if(param==MCU_REF_CLK || param == MCU_BW)
     {
-        mSPI_write(0, inputRegs[2-i]);
-        mSPI_write(0x0002, x0002reg | interupt7);
-        mSPI_write(0x0002, x0002reg & ~interupt7);
-        this_thread::sleep_for(chrono::microseconds(5));
+        uint8_t inputRegs[3];
+        value /= 1e6;
+        inputRegs[0] = (uint8_t)value; //frequency integer part
+
+        uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
+        inputRegs[1] = (fracPart >> 8) & 0xFF;
+        inputRegs[2] = fracPart & 0xFF;
+        for(uint8_t i = 0; i < 3; ++i)
+        {
+            mSPI_write(0, inputRegs[2-i]);
+            mSPI_write(0x0002, x0002reg | interupt7);
+            mSPI_write(0x0002, x0002reg & ~interupt7);
+            this_thread::sleep_for(chrono::microseconds(5));
+        }
     }
     if(param==MCU_REF_CLK)
         RunProcedure(4);
     if(param == MCU_BW)
         RunProcedure(3);
+    if(param == MCU_EXT_LOOPBACK_PAIR)
+    {
+        uint8_t intVal = (int)value;
+        mSPI_write(0, intVal);
+        mSPI_write(0x0002, x0002reg | interupt7);
+        mSPI_write(0x0002, x0002reg & ~interupt7);
+        int status = WaitForMCU(10);
+        if(status != 0)
+            printf("MCU error status 0x%02X\n", status);
+        RunProcedure(9);
+    }
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted
@@ -1125,4 +1139,28 @@ uint8_t MCU_BD::ReadMCUProgramID()
     RunProcedure(255);
     auto statusMcu = WaitForMCU(10);
     return statusMcu & 0x7F;
+}
+
+static const char* MCU_ErrorMessages[] =
+{
+"No error",
+"Generic error",
+"CGEN tune failed",
+"SXR tune failed",
+"SXT tune failed",
+"Loopback signal weak, not connected?",
+"Invalid Rx path",
+"Invalid Tx band",
+"Rx LPF bandwidth out of range",
+"Rx invalid TIA gain",
+"Tx LPF bandwidth out of range",
+};
+
+const char* MCU_BD::MCUStatusMessage(const uint8_t code)
+{
+    if(code == 255)
+        return "MCU not programmed/procedure still in progress";
+    if(code >= MCU_ERROR_CODES_COUNT)
+        return "Error code undefined";
+    return MCU_ErrorMessages[code];
 }

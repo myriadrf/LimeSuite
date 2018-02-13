@@ -18,11 +18,31 @@ lime::IConnection *serPort = nullptr;
 lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
-static bool useMCU =1;
-static bool tx = 0;
+static bool useMCU =0;
+static bool tx = 1;
 static bool filters = 0;
 static float FBW = 5e6;
+static bool extLoop = true;
 extern float RefClk;
+extern uint8_t extLoopbackPair;
+
+uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
+{
+    uint8_t loopPair = 0;
+    lime::IConnection* port = ctr.GetConnection();
+    if(!port)
+        return 0;
+
+    auto devName = port->GetDeviceInfo().deviceName;
+    uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
+
+    if(devName == "LimeSDR-USB")
+        loopPair = 1 << 2 | 0x1; // band2 -> LNAH
+    else if(devName == "LimeSDR-mini")
+        loopPair = activeBand << 2 | activeLNA;
+    return loopPair;
+}
 
 int16_t ReadDCCorrector(bool tx, uint8_t channel)
 {
@@ -42,11 +62,107 @@ int16_t ReadDCCorrector(bool tx, uint8_t channel)
         return (value & mask);
 }
 
+class BoardLoopbackStore
+{
+public:
+    BoardLoopbackStore(lime::IConnection* port) : port(port)
+    {
+        if(port)
+            port->ReadRegister(LoopbackCtrAddr, mLoopbackState);
+    }
+    ~BoardLoopbackStore()
+    {
+        if(port)
+            port->WriteRegister(LoopbackCtrAddr, mLoopbackState);
+    }
+private:
+    lime::IConnection* port;
+    static const uint32_t LoopbackCtrAddr = 0x0017;
+    int mLoopbackState;
+};
+
+int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
+{
+    //enable external loopback switches
+    const uint32_t LoopbackCtrAddr = 0x0017;
+    uint32_t value = 0;
+    int status;
+    status = port->ReadRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return -1;
+    auto devName = port->GetDeviceInfo().deviceName;
+
+    if(devName == "LimeSDR-USB")
+    {
+        const uint16_t mask = 0x7;
+        const uint8_t shiftCount = (ch==2 ? 4 : 0);
+        value &= ~(mask << shiftCount);
+        value |= enable << shiftCount;   //EN_Loopback
+        value |= enable << (shiftCount+1); //EN_Attenuator
+        value |= !enable << (shiftCount+2); //EN_Shunt
+    }
+    else if (devName == "LimeSDR-mini")
+    {
+        //EN_Shunt
+        value &= ~(1 << 2);
+        value |= !enable << 2;
+
+        if(tx)
+        {
+            uint32_t wr = 0x0103 << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path >>= 10;
+            path &= 0x3;
+            if (path==1)
+            {
+                value &= ~(1<<13);
+                value |= 1<<12;
+
+                value &= ~(1<<8); //LNA_H
+                value |= 1<<9;
+            }
+            else if (path==2)
+            {
+                value &= ~(1<<12);
+                value |= 1<<13;
+
+                value &= ~(1<<9); //LNA_W
+                value |= 1<<8;
+            }
+            //value |= enable << 1; //EN_Attenuator
+        }
+        else
+        {
+            uint32_t wr = 0x010D << 16;
+            uint32_t path;
+            port->ReadLMS7002MSPI(&wr, &path, 1);
+            path &= ~0x0180;
+            path >>= 7;
+            if (path==1)
+            {
+                value &= ~(1<<8);
+                value |= 1<<9;
+            }
+            else if (path==3)
+            {
+                value &= ~(1<<9);
+                value |= 1<<8;
+            }
+        }
+    }
+    status = port->WriteRegister(LoopbackCtrAddr, value);
+    if(status != 0)
+        return -1;
+    return status;
+}
+
 void DCIQ()
 {
-    lime::LMS7002M_RegistersMap *backup; 
+    BoardLoopbackStore loopbackCache(lmsControl.GetConnection());
+
     int status;
-    float freqStart = 1000e6;
+    float freqStart = 2000e6;
     float freqEnd = freqStart;//1000e6;
     float freqStep = 10e6;
 
@@ -59,6 +175,7 @@ void DCIQ()
 
     while(freq <= freqEnd)
     {
+        SetExtLoopback(lmsControl.GetConnection(), 0, extLoop);
         vfreqs.push_back(freq);
         //status = SetFrequencySX(true, freq + (tx ? 0 : 1e6));
         //status = SetFrequencySX(false, freq + (tx ? -1e6 : 0));
@@ -82,8 +199,6 @@ void DCIQ()
             lmsControl.Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), 0);
         }
         lmsControl.DownloadAll();
-        backup = lmsControl.BackupRegisterMap();
-	(void) backup; // backup is created and then unused... perhaps for side-effect? 
 
         auto t1 = chrono::high_resolution_clock::now();
         if(useMCU) //using algorithm inside MCU
@@ -93,30 +208,42 @@ void DCIQ()
             status = MCU_SetParameter(MCU_REF_CLK, RefClk);
             if(status != 0)
                 printf("Failed to set Reference Clk\n");
-            status = MCU_SetParameter(MCU_BW, FBW);
-            if(status != 0)
-                printf("Failed to set Bandwidth\n");
-            isSetBW = true;
+            if(filters)
+            {
+                status = MCU_SetParameter(MCU_BW, FBW);
+                if(status != 0)
+                    printf("Failed to set Bandwidth\n");
+                isSetBW = true;
+            }
+                if(extLoop)
+                {
+                    uint8_t loopPair = GetExtLoopPair(lmsControl, tx);
+                    status = MCU_SetParameter(MCU_EXT_LOOPBACK_PAIR, loopPair);
+                    if(status != 0)
+                        printf("Failed to set external loopback pair\n");
+                }
 
             }
 
             if(tx)
-                MCU_RunProcedure(1); //initiate Tx calibration
+                MCU_RunProcedure(extLoop ? 17 : 1); //initiate Tx calibration
             else
-                MCU_RunProcedure(2); //initiate Rx calibration
+                MCU_RunProcedure(extLoop ? 18 : 2); //initiate Rx calibration
             status = MCU_WaitForStatus(10000); //wait until MCU finishes
             if(status != 0)
             {
                 printf("MCU calibration FAILED : 0x%02X\n", status);
             }
-
         }
         else //calibrating with PC
         {
+            if(extLoop)
+                extLoopbackPair = GetExtLoopPair(lmsControl, tx);
+
             if(tx)
-                status = CalibrateTx();
+                status = CalibrateTx(extLoop);
             else
-                status = CalibrateRx();
+                status = CalibrateRx(extLoop);
         }
         auto t2 = chrono::high_resolution_clock::now();
         long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
@@ -199,6 +326,7 @@ void DCIQ()
             lmsControl.Modify_SPI_Reg_bits(LMS7param(IQCORR_RXTSP), ph);
         }
         freq += freqStep;
+        SetExtLoopback(lmsControl.GetConnection(), 0, false);
     }
     if(tx)
     {
@@ -250,6 +378,8 @@ void Filters()
             status = TuneTxFilter(FBW);
         else
             status = TuneRxFilter(FBW);
+        if(status != 0)
+            printf("Filter tune FAILED");
     }
     auto t2 = chrono::high_resolution_clock::now();
     long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
@@ -318,6 +448,7 @@ void Filters()
         printf("RCOMP: %i\n", rcomp_tia_rfe);
         printf("RCTL_LPFL: %i\n", rcc_ctl_lpfl_rbb);
         printf("RCTL_LPFH: %i\n", rcc_ctl_lpfh_rbb);
+        printf("C_CTL_LPFL: %i\n", c_ctl_lpfl_rbb);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(CFB_TIA_RFE), cfb_tia_rfe);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(CCOMP_TIA_RFE), ccomp_tia_rfe);
         lmsControl.Modify_SPI_Reg_bits(LMS7param(RCOMP_TIA_RFE), rcomp_tia_rfe);
@@ -377,8 +508,7 @@ int main(int argc, char** argv)
         filename = "TxTest.ini";
     else
         filename = "RxTest.ini";*/
-    //filename = "CalibSetup.ini";
-    filename = "rxtest.ini";
+    filename = "TxDCTest.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");

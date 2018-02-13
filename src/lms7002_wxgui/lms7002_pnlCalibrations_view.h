@@ -24,6 +24,7 @@ class lms7002_pnlCalibrations_view : public pnlCalibrations_view
 		void OnbtnCalibrateRx( wxCommandEvent& event );
 		void OnbtnCalibrateTx( wxCommandEvent& event );
 		void OnbtnCalibrateAll( wxCommandEvent& event );
+		void OnCalibrationMethodChange( wxCommandEvent& event );
 
 	public:
 		/** Constructor */

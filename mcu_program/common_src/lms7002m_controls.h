@@ -11,13 +11,13 @@ extern "C"
 {
 #endif
 
-extern void SaveChipState();
-extern void RestoreChipState();
+extern void SaveChipState(bool wr);
 extern void SetDefaults(uint16_t start, uint16_t end);
 extern void SetDefaultsSX();
 
 extern void SetNCOFrequency(const bool tx, const float freq_Hz, uint8_t index);
 
+extern float_type GetReferenceClk_TSP_MHz(bool tx);
 extern float_type GetFrequencyCGEN();
 extern uint8_t SetFrequencyCGEN(const float_type freq);
 extern float_type GetFrequencySX(const bool Tx);
@@ -30,8 +30,23 @@ enum VCO_ID
     VCO_SXT
 };
 
-extern uint8_t TuneVCO(const uint8_t module); // 0-cgen, 1-SXR, 2-SXT
+extern uint8_t TuneVCO(bool SX); // 0-cgen, 1-SXR, 2-SXT
 extern uint16_t pow2(const uint8_t power);
+
+typedef struct
+{
+    const uint16_t* addr;
+    const uint16_t* val;
+    const uint16_t* mask;
+    const uint8_t cnt;
+    const uint16_t* wrOnlyAddr;
+    const uint16_t* wrOnlyData;
+    const uint8_t wrOnlyAddrCnt;
+    const uint8_t wrOnlyDataCnt;
+} RegisterBatch;
+
+extern void WriteMaskedRegs(const RegisterBatch ROM* regs);
+
 #ifdef __cplusplus
 }
 #endif
