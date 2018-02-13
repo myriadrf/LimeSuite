@@ -26,6 +26,7 @@
 #include "mcu_programs.h"
 #include "Logger.h"
 #include "device_constants.h"
+#include "LMSBoards.h"
 
 namespace lime
 {
@@ -55,11 +56,11 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         return nullptr;
     }
     auto info = conn->GetDeviceInfo();
-    if (info.deviceName == "LimeSDR-Mini")
+    if (info.deviceName ==  lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
         device = new LMS7_LimeSDR_mini(conn,obj);
-    else if (info.deviceName == "LimeSDR-QPCIe")
+    else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE))
         device = new LMS7_qLimeSDR(conn,obj);
-    else if (info.deviceName != "UNKNOWN")
+    else if (info.deviceName != lime::GetDeviceName(lime::LMS_DEV_UNKNOWN))
         device = new LMS7_LimeSDR(conn,obj);
     else
         device = new LMS7_Generic(conn,obj);

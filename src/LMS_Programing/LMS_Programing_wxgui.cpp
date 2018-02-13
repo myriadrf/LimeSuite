@@ -16,6 +16,8 @@
 #include <wx/msgdlg.h>
 #include <wx/wfstream.h>
 
+#include "LMSBoards.h"
+
 const long LMS_Programing_wxgui::ID_PROGRAMING_FINISHED_EVENT = wxNewId();
 const long LMS_Programing_wxgui::ID_PROGRAMING_STATUS_EVENT = wxNewId();
 const long LMS_Programing_wxgui::ID_BUTTON1 = wxNewId();
@@ -98,16 +100,16 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
     auto info = LMS_GetDeviceInfo(lmsControl);
     if (info)
     {
-        if (strstr(info->deviceName, "LimeSDR-USB"))
+        if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
         {
             if (deviceSelection.find("FPGA") != wxString::npos)
                 wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
             else
                 wildcards = "img(*.img)|*.img|All files(*.*)|*.*";
         }
-        else if (strstr(info->deviceName, "LimeSDR-Mini"))
+        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
             wildcards = "rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
-        else if (strstr(info->deviceName, "LimeSDR-PCIe"))
+        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)))
             wildcards = "rbf(*.rbf)|*.rbf|All files(*.*)|*.*";
     }
     else if (deviceSelection.find("FPGA") != wxString::npos)

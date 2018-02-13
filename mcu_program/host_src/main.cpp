@@ -6,6 +6,7 @@
 #include "mcu.h"
 #include "mcuHexBin.h"
 
+#include "LMSBoards.h"
 #include "LMS7002M.h"
 #include "IConnection.h"
 #include "ConnectionRegistry.h"
@@ -37,9 +38,9 @@ uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
     uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
     uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
 
-    if(devName == "LimeSDR-USB")
+    if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
         loopPair = 1 << 2 | 0x1; // band2 -> LNAH
-    else if(devName == "LimeSDR-mini")
+    else if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
         loopPair = activeBand << 2 | activeLNA;
     return loopPair;
 }
@@ -92,7 +93,7 @@ int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
         return -1;
     auto devName = port->GetDeviceInfo().deviceName;
 
-    if(devName == "LimeSDR-USB")
+    if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
     {
         const uint16_t mask = 0x7;
         const uint8_t shiftCount = (ch==2 ? 4 : 0);
@@ -101,7 +102,7 @@ int SetExtLoopback(lime::IConnection* port, uint8_t ch, bool enable)
         value |= enable << (shiftCount+1); //EN_Attenuator
         value |= !enable << (shiftCount+2); //EN_Shunt
     }
-    else if (devName == "LimeSDR-mini")
+    else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
     {
         //EN_Shunt
         value &= ~(1 << 2);
