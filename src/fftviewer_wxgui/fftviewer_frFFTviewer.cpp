@@ -283,7 +283,8 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
     lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
     float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - dbOffset : -300);
     lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
-    lbldBc->SetLabel(wxString::Format("%.3f", pwr2-pwr1));
+    lblPhase->SetLabel(wxString::Format("%.1f", streamData.phase));
+
 
     if (fftSize > 0)
     {
@@ -419,7 +420,8 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     meta.waitForTimestamp = true;
     meta.flushPartialPacket = false;
     int fftCounter = 0;
-
+    double phases[2] = {0.0 , 0.0};
+    int maxind = 0;
     while (pthis->stopProcessing.load() == false)
     {
         do
@@ -489,12 +491,31 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                         localDataResults.fftBins[ch][output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
                     for (unsigned i = 0; i < fftSize / 2 + 1; ++i)
                         localDataResults.fftBins[ch][output_index++] += m_fftCalcOut[i].r * m_fftCalcOut[i].r + m_fftCalcOut[i].i * m_fftCalcOut[i].i;
+                    if (ch == 0)
+                    { 
+                        double maxval = 0;
+                        maxind = 0;
+                        for (unsigned i = 1; i < fftSize; ++i)
+                        if (localDataResults.fftBins[0][i] > maxval)
+                        {
+                            maxval = localDataResults.fftBins[0][i];
+                            maxind = i;
                 }
             }
+                    int tmpind = maxind + 1 - fftSize / 2;
+                    if (tmpind < 0) tmpind += fftSize;
+                    phases[ch] = atan2(m_fftCalcOut[tmpind].i, m_fftCalcOut[tmpind].r) * 180 / M_PI;               
+                }
+            }
+            double offset = phases[0] - phases[1];
+            if (offset > 180) offset -= 360;
+            if (offset < -180) offset += 360;
+            localDataResults.phase += offset;
         } while (++fftCounter < avgCount && pthis->stopProcessing.load() == false);
 
         if (fftCounter >= avgCount && pthis->updateGUI.load() == true)
         {
+            localDataResults.phase /= fftCounter; 
             //shift fft
             if (fftEnabled)
             {
@@ -516,6 +537,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
                 pthis->QueueEvent(evt);
             }
             fftCounter = 0;
+            localDataResults.phase = 0;
             fftEnabled = pthis->enableFFT.load();
             avgCount = pthis->averageCount.load();
             int wndFunctionSelection = pthis->windowFunctionID.load();

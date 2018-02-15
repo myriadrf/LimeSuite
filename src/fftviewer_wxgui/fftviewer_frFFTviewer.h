@@ -57,6 +57,7 @@ protected:
         std::vector<float> samplesQ[cMaxChCount];
         std::vector<float> fftBins[cMaxChCount];
         float nyquist_Hz;
+        float phase;
         float rxDataRate_Bps;
         float txDataRate_Bps;
 
@@ -73,10 +74,11 @@ protected:
                 this->fftBins[ch].clear();
                 this->fftBins[ch].reserve(src.fftBins[ch].size());
                 this->fftBins[ch] = src.fftBins[ch];
+            }
                 this->nyquist_Hz = src.nyquist_Hz;
                 this->rxDataRate_Bps = src.rxDataRate_Bps;
                 this->txDataRate_Bps = src.txDataRate_Bps;
-            }
+            this->phase = src.phase;
             return *this;
         }
     }streamData;

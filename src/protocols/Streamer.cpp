@@ -360,7 +360,7 @@ void Streamer::AlignRxTSP()
             fpga->StartStreaming();
             if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50) != sizeof(FPGA_DataPacket))
             {
-                lime::error("Channel alignment failed");
+                lime::warning("Channel alignment failed");
                 break;
             }
             fpga->StopStreaming();
@@ -393,7 +393,7 @@ double Streamer::GetPhaseOffset(int bin)
     fpga->StartStreaming();
     if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50)!=sizeof(FPGA_DataPacket))
     {
-        lime::error("Channel alignment failed");
+        lime::warning("Channel alignment failed");
         delete [] buf;
         return -1000;
     }
@@ -402,7 +402,7 @@ double Streamer::GetPhaseOffset(int bin)
     //calculate DFT bin of interest and check channel phase difference
     const std::complex<double> iunit(0, 1);
     const double pi = std::acos(-1);
-    const int N = 32;
+    const int N = 512;
     std::complex<double> xA(0,0);
     std::complex<double> xB(0, 0);
     for (int n = 0; n < N; n++)
@@ -422,7 +422,7 @@ double Streamer::GetPhaseOffset(int bin)
     return phasediff;
 }
 
-void Streamer::AlignRxRF(bool restoreValues, bool adjustHBDdelay)
+void Streamer::AlignRxRF(bool restoreValues)
 {
     auto regBackup = lms->BackupRegisterMap();
 
@@ -448,8 +448,12 @@ void Streamer::AlignRxRF(bool restoreValues, bool adjustHBDdelay)
     lms->LoadDC_REG_IQ(true, 0x3FFF, 0x3FFF);
     double srate = lms->GetSampleRate(false, LMS7002M::ChA);
     lms->SetFrequencySX(false,450e6);
+    int dec = lms->Get_SPI_Reg_bits(LMS7_HBD_OVR_RXTSP);
+    if (dec > 4) dec = 0;
 
-    //alignment search
+    double offsets[] = {1.15/60.0, 1.1/40.0, 0.55/20.0, 0.2/10.0, 0.18/5.0};
+    double tolerance[] = {0.9, 0.45, 0.25, 0.14, 0.06};
+    double offset = offsets[dec]*srate/1e6;
     std::vector<uint32_t>  dataWr;
     dataWr.resize(16);
 
@@ -457,26 +461,95 @@ void Streamer::AlignRxRF(bool restoreValues, bool adjustHBDdelay)
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     dataPort->WriteRegister(0x0008, 0x0100);
     dataPort->WriteRegister(0x0007, 3);
-
+    bool found = false;
     for (int i = 0; i < 200; i++){
         lms->Modify_SPI_Reg_bits(LMS7_PD_FDIV_O_CGEN, 1);
         lms->Modify_SPI_Reg_bits(LMS7_PD_FDIV_O_CGEN, 0);
         AlignRxTSP();
 
         lms->SetFrequencySX(true, 450e6+srate/16.0);
-        double offset1 = GetPhaseOffset(2);
+        double offset1 = GetPhaseOffset(32);
+        if (offset1 < -360)
+            break;
         lms->SetFrequencySX(true, 450e6+srate/8.0);
-        double offset2 = GetPhaseOffset(4);
+        double offset2 = GetPhaseOffset(64);
+        if (offset2 < -360)
+            break;
         double diff = offset1-offset2;
-        //printf("diff diff %f\n", diff);
-        diff -= 180*floor(0.5+diff/180.0); 
-        //printf("diff diff %f\n\n", diff);
-        if (fabs(diff) < 0.35)
-        break;
-    }
-    RstRxIQGen(); 
+        if (abs(diff-offset) < tolerance[dec])
+        {
+            found = true;
+            break;
+        }
+    } 
+    if (restoreValues) 
+        lms->RestoreRegisterMap(regBackup);
+    if (found)
+        AlignQuadrature(restoreValues);
+    else
+        lime::warning("Channel alignment failed");
+}
+
+void Streamer::AlignQuadrature(bool restoreValues)
+{
+    auto regBackup = lms->BackupRegisterMap();
+
+    lms->SPI_write(0x20, 0xFFFF);
+    lms->SetDefaults(LMS7002M::RBB);
+    lms->SetDefaults(LMS7002M::TBB);
+    lms->SetDefaults(LMS7002M::TRF);
+    lms->SPI_write(0x113, 0x0046);
+    lms->SPI_write(0x118, 0x418C);
+    lms->SPI_write(0x100, 0x4039);
+    lms->SPI_write(0x101, 0x7801);
+    lms->SPI_write(0x108, 0x318C);
+    lms->SPI_write(0x082, 0x8001);
+    lms->SPI_write(0x200, 0x008D);
+    lms->SPI_write(0x208, 0x01FB);
+    lms->SPI_write(0x400, 0x8081);
+    lms->SPI_write(0x40C, 0x01FF);
+    lms->SPI_write(0x404, 0x0006);
+    lms->LoadDC_REG_IQ(true, 0x3FFF, 0x3FFF);
+    lms->SPI_write(0x20, 0xFFFE);
+    lms->SPI_write(0x105, 0x0006);
+    lms->SPI_write(0x100, 0x4038);
+    lms->SPI_write(0x113, 0x007F); 
+    lms->SPI_write(0x119, 0x529B);
+    auto val = lms->Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE, true);
+    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F); 
+    lms->SPI_write(0x10C, val==2 ? 0x88C5 : 0x88A5);
+    lms->SPI_write(0x20, 0xFFFD);
+    lms->SPI_write(0x103, val==2 ? 0x612 : 0xA12);
+    val = lms->Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE, true);
+    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F); 
+    lms->SPI_write(0x10C, val==2 ? 0x88C5 : 0x88A5);
+    lms->SPI_write(0x119, 0x5293);
+    double srate = lms->GetSampleRate(false, LMS7002M::ChA);
+    double freq = lms->GetFrequencySX(false);
+
+    fpga->StopStreaming();
+    dataPort->WriteRegister(0xFFFF, 1 << chipId);
+    dataPort->WriteRegister(0x0008, 0x0100);
+    dataPort->WriteRegister(0x0007, 3);
+    lms->SetFrequencySX(true, freq+srate/16.0);
+    bool found = false;
+    for (int i = 0; i < 100; i++){
+    
+        double offset = GetPhaseOffset(32);
+        if (offset < -360)
+            break;
+        if (fabs(offset) <= 90.0)
+        {
+            found = true;
+            break;
+        }
+        RstRxIQGen(); 
+    } 
+
     if (restoreValues)
         lms->RestoreRegisterMap(regBackup);
+    if (!found)
+        lime::warning("Channel alignment failed");
 }
 
 int Streamer::UpdateThreads(bool stopAll)
@@ -553,7 +626,7 @@ int Streamer::UpdateThreads(bool stopAll)
         }
         
         if (mRxStreams[0] && mRxStreams[1])
-            AlignRxRF(true, true);
+            AlignRxRF(true);
         //enable FPGA streaming
         fpga->StopStreaming();
         fpga->ResetTimestamp();

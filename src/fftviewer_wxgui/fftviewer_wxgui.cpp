@@ -241,6 +241,14 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	cmbChannelVisibility->SetSelection( 0 );
 	fgSizer101->Add( cmbChannelVisibility, 0, 0, 5 );
 	
+	m_staticText20 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("Phase offset"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText20->Wrap( -1 );
+	fgSizer101->Add( m_staticText20, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
+	lblPhase = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblPhase->Wrap( -1 );
+	fgSizer101->Add( lblPhase, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	
 	m_staticText23 = new wxStaticText( sbSizer3->GetStaticBox(), wxID_ANY, wxT("FFT averaging:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText23->Wrap( -1 );
 	m_staticText23->SetToolTip( wxT("Number of FFTs to average") );
@@ -385,14 +393,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	lblPower2 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblPower2->Wrap( -1 );
 	fgSizer122->Add( lblPower2, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	m_staticText20 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("dBc"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText20->Wrap( -1 );
-	fgSizer122->Add( m_staticText20, 0, wxALIGN_CENTER_VERTICAL, 5 );
-	
-	lbldBc = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("???"), wxDefaultPosition, wxDefaultSize, 0 );
-	lbldBc->Wrap( -1 );
-	fgSizer122->Add( lbldBc, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
 	sbSizer7->Add( fgSizer122, 1, wxEXPAND|wxLEFT, 5 );

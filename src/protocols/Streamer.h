@@ -102,10 +102,10 @@ public:
     void TransmitPacketsLoop();
 private:
     void AlignRxTSP();
-    void AlignRxRF(bool restoreValues, bool adjustHBDdelay);
-    void RstRxIQGen();
+    void AlignRxRF(bool restoreValues);
+    void AlignQuadrature(bool restoreValues);
     void RstTxIQGen();
-private:
+    void RstRxIQGen();
     double GetPhaseOffset(int bin);
     FPGA* fpga;
     LMS7002M* lms;
