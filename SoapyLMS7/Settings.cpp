@@ -496,6 +496,10 @@ long long SoapyLMS7::getHardwareTime(const std::string &what) const
 {
     if (what.empty())
     {
+        if (sampleRate == 0)
+        {
+            throw std::runtime_error("SoapyLMS7::getHardwareTime() sample rate unset");
+        }
         auto ticks = lms7Device->GetHardwareTimestamp();
         return SoapySDR::ticksToTimeNs(ticks, sampleRate);
     }
@@ -509,6 +513,10 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
 {
     if (what.empty())
     {
+        if (sampleRate == 0)
+        {
+            throw std::runtime_error("SoapyLMS7::setHardwareTime() sample rate unset");
+        }
         auto ticks = SoapySDR::timeNsToTicks(timeNs, sampleRate);
         lms7Device->SetHardwareTimestamp(ticks);
     }
