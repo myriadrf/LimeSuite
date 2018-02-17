@@ -240,7 +240,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, f
     }
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     *freq = lms->GetClockFreq(clk_id);
-    return freq > 0 ? 0 : -1;
+    return *freq > 0 ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
