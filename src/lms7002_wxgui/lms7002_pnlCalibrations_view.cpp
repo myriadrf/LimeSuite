@@ -57,7 +57,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
-        wxMessageBox(_("Rx calibration failed"));
+        wxMessageBox(wxString::Format(_("Rx calibration failed: %s"), LMS_GetLastErrorMessage()));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
@@ -91,7 +91,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
-        wxMessageBox(_("Tx calibration failed"));
+        wxMessageBox(wxString::Format(_("Tx calibration failed: %s"), LMS_GetLastErrorMessage()));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
@@ -122,10 +122,16 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
 
+    if (status != 0)
+    {
+        wxMessageBox(wxString::Format(_("Tx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
+        UpdateGUI();
+        return;
+    }
 
     status |= LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     if (status != 0)
-        wxMessageBox(_("Calibration Failed"), _("Info"), wxOK, this);   
+        wxMessageBox(wxString::Format(_("Rx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
     else
         wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();

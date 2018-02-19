@@ -1148,7 +1148,7 @@ static const char* MCU_ErrorMessages[] =
 "CGEN tune failed",
 "SXR tune failed",
 "SXT tune failed",
-"Loopback signal weak, not connected?",
+"Loopback signal weak: not connected/insufficient gain?",
 "Invalid Rx path",
 "Invalid Tx band",
 "Rx LPF bandwidth out of range",
