@@ -41,13 +41,12 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
-    lime::LMS7_Device* lms = (lime::LMS7_Device*)*device;
 
     for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
-            auto dev = lime::LMS7_Device::CreateDevice(handles[i],lms);
+            auto dev = lime::LMS7_Device::CreateDevice(handles[i],nullptr);
             if (dev == nullptr)
             {
                 lime::error("Unable to open device");
