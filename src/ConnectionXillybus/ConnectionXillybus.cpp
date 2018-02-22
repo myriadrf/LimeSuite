@@ -301,6 +301,17 @@ int ConnectionXillybus::Write(const unsigned char *buffer, const int length, int
         ReportError(errno);
         break;
     }
+#else
+    if (totalBytesWritten != length)
+    {
+        CloseHandle(hWrite);
+        hWrite = CreateFileA(writeCtrlPort.c_str(), GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+        if (hWrite == INVALID_HANDLE_VALUE)
+        {
+            CloseHandle(hRead);
+            hWrite = INVALID_HANDLE_VALUE;
+        }
+     }
 #endif
     return totalBytesWritten;
 }
@@ -368,6 +379,18 @@ int ConnectionXillybus::Read(unsigned char *buffer, const int length, int timeou
 
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
 
+#ifndef __unix__
+    if (totalBytesReaded != length)
+    {
+        CloseHandle(hRead);
+        hRead = CreateFileA(readCtrlPort.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+        if (hRead == INVALID_HANDLE_VALUE)
+        {
+            CloseHandle(hRead);
+            hRead = INVALID_HANDLE_VALUE;
+        }
+    }
+#endif
     return totalBytesReaded;
 }
 

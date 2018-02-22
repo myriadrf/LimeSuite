@@ -41,7 +41,8 @@ std::vector<std::string> LMS7_LimeSDR::GetProgramModes() const
 int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const
 {
     int ret = LMS7_Device::Program(mode, data, len, callback);
-    if ((mode == "FX3_FLASH") || (mode == "FPGA_FLASH"))
+    
+    if ((mode == program_mode::fx3Flash) || (mode == program_mode::fpgaFlash))
         connection->ProgramWrite(nullptr, 0, 0, 1, nullptr);
     return ret;
 }

@@ -1,15 +1,28 @@
-Release 18.01.0 (pending)
+Release 18.02.0 (pending)
 ==========================
 
 SoapyLMS changes:
-- Automatic TDD LO sharing on frequency tune match
 - Do not tune NCO when LO is within tuning range
 - Filter BW reported to match filtersCalibration
+- Function implementations changed to use same code as LMS API
+
+LimeSuiteGUI changes:
+- Added log levels
+- Added additional controls to SPI panel
+- Reduced number of programming modes in Programming panel
+
+LimeSuite library changes:
+- Added LimeSDR-Mini programming
+- Changed default settings for LimeSDR-Mini
+- Updated calibrations
+- Updated FPGA PLL configuration
 
 Other changes:
 - Fix B channel only streaming
 - Reduce SIMD flags when packaging for x86
 - Fixed LMS7002M::GetPathRFE for LNAH case
+- LimeSDR-USB v1.4 updated to r2.14 gateware
+- LimeSDR-Mini v1.1 updated to r1.24 gateware
 
 Release 17.12.0 (2017-10-19)
 ==========================

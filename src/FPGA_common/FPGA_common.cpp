@@ -26,6 +26,7 @@ const uint16_t PLLCFG_START = 0x1;
 const uint16_t PHCFG_START = 0x2;
 const uint16_t PLLRST_START = 0x4;
 const uint16_t PHCFG_UPDN = 1 << 13;
+const uint16_t PHCFG_MODE = 1 << 14;
 
 const uint16_t busyAddr = 0x0021;
 
@@ -98,6 +99,7 @@ int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23
     addrs.push_back(0x0024); values.push_back(abs(nSteps)); //CNT_PHASE
     int cnt_ind = (clockIndex + 2) & 0x1F; //C0 index 2, C1 index 3...
     reg23val &= ~(0xF<<8);
+    reg23val &= ~(PHCFG_MODE);
     reg23val = reg23val | (cnt_ind << 8);
     if(nSteps >= 0)
         reg23val |= PHCFG_UPDN;
@@ -187,7 +189,10 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     vector<uint32_t> values;
     addrs.push_back(0x0025); values.push_back(reg25 | 0x80);
     addrs.push_back(0x0023); values.push_back(reg23val); //PLL_IND
-    addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
+    if (clocks->findPhase == false)
+    { 
+        addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
+    }
     connection->WriteRegisters(addrs.data(), values.data(), values.size());
     addrs.clear(); values.clear();
 
@@ -316,7 +321,10 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     }
     addrs.push_back(0x0027); values.push_back(c7_c0_odds_byps);
     addrs.push_back(0x0028); values.push_back(c15_c8_odds_byps);
-    addrs.push_back(0x0023); values.push_back(reg23val | PLLCFG_START);
+    if (clockCount != 4 || clocks->index == 3)
+    {
+        addrs.push_back(0x0023); values.push_back(reg23val | PLLCFG_START);
+    }
     if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         lime::error("SetPllFrequency: PLL CFG, failed to write registers");
     addrs.clear(); values.clear();
@@ -348,61 +356,49 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         }
         else
         {
-            double min = -1;
-            const double maxPhase = 360;
-            double max = maxPhase;
-            const int testSize = 16*1024;
-            int nSteps = 6.0/Fstep_deg;
-            if (nSteps == 0) nSteps = 1;
-            unsigned char* buf = new unsigned char[testSize];
-            SetPllClock(clocks[i].index, nSteps, boardType, reg23val);
-            for (double phase = nSteps*Fstep_deg; phase <= maxPhase; phase += nSteps*Fstep_deg)
-            {
-                SetPllClock(clocks[i].index,nSteps, boardType, reg23val);
-                bool result = true;
-                if (ReadRawStreamData((char*)buf, testSize, 0, 20)==testSize)
-                {
-                    for (int j = 16; j < testSize;j+=3)
-                    {
-                        if (j%4096 == 0)
-                            j += 16;
-                        if ((buf[j]!=0xAA || buf[j+1]!=0x5A || buf[j+2]!=0x55))
-                        {
-                            result = false;
-                            break;
-                        }
-                    }
-                }
-                else result = false;
+            const int nSteps = (360.0 / Fstep_deg)-0.5;
+            const auto timeout = chrono::seconds(3);
+            t1 = chrono::high_resolution_clock::now();
+            t2 = t1;
+            addrs.clear(); values.clear();
+            int cnt_ind = (clocks[i].index + 2) & 0x1F; //C0 index 2, C1 index 3...
+            reg23val &= ~PLLCFG_START;
+            reg23val &= ~(0xF << 8);
+            reg23val |= (cnt_ind << 8);
+            reg23val |= PHCFG_UPDN;
+            reg23val |= PHCFG_MODE;
 
-                if (result == true && min < 0)
-                {
-                    min = phase;
-                }
-                else if (result == false && min >= 0)
-                {
-                    max = phase;
-                    break;
-                }
-            }
+            addrs.push_back(0x0023); values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
+            addrs.push_back(0x0024); values.push_back(abs(nSteps)); //CNT_PHASE
+            addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
 
-            delete [] buf;
+            if (connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+                lime::error( "SetPllFrequency: find phase, failed to write registers");
+            addrs.clear(); values.clear();
 
-            if (min > -1.0)
+            bool done = false;
+            bool error = false;
+
+            t1 = chrono::high_resolution_clock::now();
+            //std::this_thread::sleep_for(chrono::milliseconds(300));
+            do
             {
-                clocks[i].findPhase = false;
-                clocks[i].phaseShift_deg = (min+max)/2;
-                lime::debug("phase: min %1.1f; max %1.1f; selected %1.1f)", min, max, clocks[i].phaseShift_deg);
-                return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
-            }
-            else
-            {
-                lime::warning("phase search FAIL");
-                clocks[i].findPhase = false;
-                return SetPllFrequency(pllIndex, inputFreq, clocks,clockCount);
-            }
+                uint16_t statusReg;
+                connection->ReadRegister(busyAddr, statusReg);
+                done = statusReg & 0x4;
+                error = statusReg & 0x08;
+                t2 = chrono::high_resolution_clock::now();
+                std::this_thread::sleep_for(chrono::milliseconds(10));
+            } while (!done && (t2 - t1) < timeout);
+            if (!done && t2 - t1 > timeout)
+                lime::error("SetPllFrequency: timeout, busy bit is still 1");
+            if (error)
+                lime::error("SetPllFrequency: error configuring phase");
+            addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
+            if (connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+                lime::error("SetPllFrequency: configure FPGA PLL, failed to write registers");
+            return 0;
         }
-
     }
     return 0;
 }
@@ -606,26 +602,31 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
+    int status = 0;
+    if  (rxRate_Hz >= 5e6)
+    { 
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = rxRate_Hz;
+        clocks[1].phaseShift_deg = rxPhase;
+        status = SetPllFrequency(1, rxRate_Hz, clocks, 2);
+    }
+    else
+        status = SetDirectClocking(1);
 
-    const int pll_ind = (channel == 1) ? 2 : 0;
-
-    clocks[0].index = 0;
-    clocks[0].outFrequency = rxRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = rxRate_Hz;
-    clocks[1].phaseShift_deg = rxPhase;
-    if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
-        return -1;
-
-    clocks[0].index = 0;
-    clocks[0].outFrequency = txRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = txRate_Hz;
-    clocks[1].phaseShift_deg = txPhase;
-    if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)!=0)
-        return -1;
-
-    return 0;
+    if (txRate_Hz >= 5e6)
+    { 
+        clocks[0].index = 0;
+        clocks[0].outFrequency = txRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txRate_Hz;
+        clocks[1].phaseShift_deg = txPhase;
+        status |= SetPllFrequency(0, txRate_Hz, clocks, 2);
+    }
+    else
+        status |= SetDirectClocking(0);
+    return status;
 }
 
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
@@ -635,117 +636,105 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;
     uint32_t reg20;
-    const double rxPhC1[] = { 91.08, 89.46 };
-    const double rxPhC2[] = { -1 / 6e6, 1.24e-6 };
-    const double txPhC1[] = { 89.75, 89.61 };
-    const double txPhC2[] = { -3.0e-7, 2.71e-7 };
+    const double rxPhC1 =  89.46;
+    const double rxPhC2 =  1.24e-6;
+    const double txPhC1 =  89.61;
+    const double txPhC2 =  2.71e-7;
 
     const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
                                             0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
     const int bakRegCnt = spiAddr.size() - 4;
     
-    std::vector<uint32_t> dataWr;
-    dataWr.push_back(uint32_t(0x002F) << 16);
-    uint32_t chipVersion=0;
-    connection->ReadLMS7002MSPI(dataWr.data(), &chipVersion, 1, channel);
-    dataWr.clear(); 
-    //auto info = GetDeviceInfo();
     bool phaseSearch = false;
     //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
-        if (chipVersion == 0x3841) //0x3840 LMS7002Mr2, 0x3841 LMS7002Mr3
-            if(rxRate_Hz >= 5e6 || txRate_Hz >= 5e6)
-                phaseSearch = true;
+        if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
+            phaseSearch = true;
 
-    std::vector<uint32_t> dataRd;
+    if (!phaseSearch)
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
 
-    if (phaseSearch)
-    {
-        dataWr.resize(spiAddr.size());
-        dataRd.resize(spiAddr.size());
-        //backup registers
-        dataWr[0] = (uint32_t(0x0020) << 16);
-        connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
+    std::vector<uint32_t> dataRdA;
+    std::vector<uint32_t> dataRdB;
+    std::vector<uint32_t> dataWr;
+
+    dataWr.resize(spiAddr.size());
+    dataRdA.resize(spiAddr.size());
+    dataRdB.resize(spiAddr.size());
+    //backup registers
+    dataWr[0] = (uint32_t(0x0020) << 16);
+    connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
         
-        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
-        for (int i = 0; i < bakRegCnt; ++i)
-            dataWr[i] = (spiAddr[i] << 16);
-        connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, channel);
-    }
+    for (int i = 0; i < bakRegCnt; ++i)
+        dataWr[i] = (spiAddr[i] << 16);
+    connection->ReadLMS7002MSPI(dataWr.data(),dataRdA.data(), bakRegCnt, channel);
 
-    if(rxRate_Hz >= 5e6)
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+
+    for (int i = 0; i < bakRegCnt; ++i)
+        dataWr[i] = (spiAddr[i] << 16);
+    connection->ReadLMS7002MSPI(dataWr.data(), dataRdB.data(), bakRegCnt, channel);
+
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+
     {
-        if (phaseSearch)
-        {
-            const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
-                                                    0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
-            //Load test config
-            const int setRegCnt = spiData.size();
-            for (int i = 0; i < setRegCnt; ++i)
-                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-            connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
-        }
-        lime::FPGA::FPGA_PLL_clock clocks[2];
-        clocks[0].index = 0;
-        clocks[0].outFrequency = rxRate_Hz;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = rxRate_Hz;
-        if (chipVersion == 0x3841)
-            clocks[1].phaseShift_deg = rxPhC1[1] + rxPhC2[1] * rxRate_Hz;
-        else
-            clocks[1].phaseShift_deg = rxPhC1[0] + rxPhC2[0] * rxRate_Hz;
-        if (phaseSearch)
-            clocks[1].findPhase = true;
-        status = SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
+        const std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
+                                                0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
+        //Load test config
+        const int setRegCnt = spiData.size();
+        for (int i = 0; i < setRegCnt; ++i)
+            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+        connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
     }
-    else
-        status = SetDirectClocking(pll_ind+1);
 
-    if(txRate_Hz >= 5e6)
+    lime::FPGA::FPGA_PLL_clock clocks[2];
+    clocks[0].index = 1;
+    clocks[0].outFrequency = rxRate_Hz;
+    clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
+    clocks[0].findPhase = true;
+    clocks[1] = clocks[0];
+    lime::info("Configure Rx PLL");
+    status = SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
+
     {
-        if (phaseSearch)
-        {
-            const std::vector<uint32_t> spiData = {0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
-            connection->WriteRegister(0x000A, 0x0000);
-            //Load test config
-            const int setRegCnt = spiData.size();
-            for (int i = 0; i < setRegCnt; ++i)
-                dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-            connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
-        }
-
-        lime::FPGA::FPGA_PLL_clock clocks[2];
-        clocks[0].index = 0;
-        clocks[0].outFrequency = txRate_Hz;
-        clocks[0].phaseShift_deg = 0;
-        clocks[1].index = 1;
-        clocks[1].outFrequency = txRate_Hz;
-        if (chipVersion == 0x3841)
-            clocks[1].phaseShift_deg = txPhC1[1] + txPhC2[1] * txRate_Hz;
-        else
-            clocks[1].phaseShift_deg = txPhC1[0] + txPhC2[0] * txRate_Hz;
-
-        if (phaseSearch)
-        {
-            clocks[1].findPhase = true;
-            connection->WriteRegister(0x000A, 0x0200);
-        }
-        status = SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+        const std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
+        connection->WriteRegister(0xFFFF, 1 << channel);
+        connection->WriteRegister(0x000A, 0x0000);
+        //Load test config
+        const int setRegCnt = spiData.size();
+        for (int i = 0; i < setRegCnt; ++i)
+            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
+        connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
     }
-    else
-        status = SetDirectClocking(pll_ind);
 
-    if (phaseSearch)
-    {
-        //Restore registers
-        for (int i = 0; i < bakRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
-        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
-        connection->WriteRegister(0x000A, 0);
-    }
+    clocks[0].index = 1;
+    clocks[0].outFrequency = txRate_Hz;
+    clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
+    clocks[0].findPhase = true;
+    clocks[1] = clocks[0];
+    connection->WriteRegister(0x000A, 0x0200);
+    lime::info("Configure Tx PLL");
+    status = SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+
+    //Restore registers
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    for (int i = 0; i < bakRegCnt; ++i)
+        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdA[i]; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    for (int i = 0; i < bakRegCnt; ++i)
+        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[i]; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    connection->WriteRegister(0x000A, 0);
+
     return status;
 }
 
