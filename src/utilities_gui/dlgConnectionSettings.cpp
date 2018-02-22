@@ -40,12 +40,13 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 
 void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
-    lms_info_str_t list[32];
-    int ret = LMS_GetDeviceList(list);
+    auto list = lime::LMS7_Device::GetDeviceList();
+
     const int selection = mListLMS7ports->GetSelection();
-    if(selection != wxNOT_FOUND && selection < ret)
+    if(selection != wxNOT_FOUND && selection < list.size())
     {
-        if (LMS_Open(lmsControl,list[selection],nullptr)!=0)
+        *lmsControl = lime::LMS7_Device::CreateDevice(list[selection], (lime::LMS7_Device*)*lmsControl);
+        if (!lmsControl)
             wxMessageBox(wxString(_("Failed to open device")));
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);

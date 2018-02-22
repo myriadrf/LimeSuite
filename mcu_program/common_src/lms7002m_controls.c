@@ -3,6 +3,7 @@
 #include "LMS7002M_parameters_compact.h"
 #include "math.h"
 #include "typedefs.h"
+#include "mcu_defines.h"
 
 #ifdef __cplusplus
 #include <cmath>
@@ -10,6 +11,9 @@
 using namespace std;
 #include <chrono>
 #include <thread>
+#else
+#include "lms7002_regx51.h" //MCU timer sfr
+uint16_t gComparatorDelayCounter = 0xFF00; // ~100us @ ref 30.72MHz
 #endif
 
 #define VERBOSE 0
@@ -25,33 +29,36 @@ uint16_t pow2(const uint8_t power)
 ROM const uint16_t chipStateAddr[] = {0x0021, 0x002F, SECTION_AFE, SECTION_BIAS, SECTION_XBUF, SECTION_CGEN, SECTION_LDO, SECTION_BIST, SECTION_CDS, SECTION_TRF, SECTION_TBB, SECTION_RFE, SECTION_RBB, SECTION_TxTSP, SECTION_TxNCO, SECTION_RxTSP, SECTION_RxNCO, 0x500, 0x5A7, 0x5C0, 0x5C0};
 xdata uint16_t chipStateData[500];
 
-void SaveChipState()
+void SaveChipState(bool wr)
 {
     uint16_t dest=0;
     uint8_t i;
     uint16_t addr;
     uint16_t ch = SPI_read(0x0020);
-    for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
+    //for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
+    for(i = sizeof(chipStateAddr)/sizeof(uint16_t); i; i-=2)
     {
-        for(addr=chipStateAddr[i]; addr<=chipStateAddr[i+1]; ++addr)
+        for(addr=chipStateAddr[i-2]; addr<=chipStateAddr[i-1]; ++addr)
         {
-            chipStateData[dest] = SPI_read(addr);
+            if(wr)
+                SPI_write(addr, chipStateData[dest]);
+            else
+                chipStateData[dest] = SPI_read(addr);
             ++dest;
         }
     }
-    //sxr
-    SPI_write(0x0020, 0xFFFD);
-    for(addr=0x011C; addr<=0x0123; ++addr)
+    //sxr and sxt
+    for(i=0; i<2; ++i)
     {
-        chipStateData[dest] = SPI_read(addr);
-        ++dest;
-    }
-    //sxt
-    SPI_write(0x0020, 0xFFFE);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        chipStateData[dest] = SPI_read(addr);
-        ++dest;
+        SPI_write(0x0020, 0xFFFD+i);
+        for(addr=0x011C; addr<=0x0123; ++addr)
+        {
+            if(wr)
+                SPI_write(addr, chipStateData[dest]);
+            else
+                chipStateData[dest] = SPI_read(addr);
+            ++dest;
+        }
     }
     SPI_write(0x0020, ch);
 }
@@ -87,7 +94,9 @@ void RestoreChipState()
     SPI_write(0x0020, ch);
 }
 
-/*void SetDefaults(uint16_t start, uint16_t end)
+#ifdef __cplusplus
+#include <vector>
+void SetDefaults(uint16_t start, uint16_t end)
 {
     ROM const uint16_t defaultAddrs[] = {
 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,0x0028,0x0029,0x002A,0x002B,0x002C,0x002E,0x002F,0x0081,0x0082,0x0084,0x0085,0x0086,0x0087,0x0088,0x0089,0x008A,0x008B,0x008C,0x0092,0x0093,0x0094,0x0095,0x0096,0x0097,0x0098,0x0099,0x009A,0x009B,0x009C,0x009D,0x009E,0x009F,0x00A0,0x00A1,0x00A2,0x00A3,0x00A4,0x00A5,0x00A6,0x00A7,0x00A8,0x00AA,0x00AB,0x00AD,0x00AE,0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x010B,0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0114,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x011C,0x011D,0x011E,0x011F,0x0120,0x0121,0x0122,0x0123,0x0124,0x0125,0x0126,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0209,0x020A,0x020C,0x0240,0x0242,0x0243,0x0244,0x0245,0x0246,0x0247,0x0248,0x0249,0x024A,0x024B,0x024C,0x024D,0x024E,0x024F,0x0250,0x0251,0x0252,0x0253,0x0254,0x0255,0x0256,0x0257,0x0258,0x0259,0x025A,0x025B,0x025C,0x025D,0x025E,0x025F,0x0260,0x0261,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040B,0x040C,0x040E,0x0440,0x0442,0x0443,0x0444,0x0445,0x0446,0x0447,0x0448,0x0449,0x044A,0x044B,0x044C,0x044D,0x044E,0x044F,0x0450,0x0451,0x0452,0x0453,0x0454,0x0455,0x0456,0x0457,0x0458,0x0459,0x045A,0x045B,0x045C,0x045D,0x045E,0x045F,0x0460,0x0461,0x05C0,0x05C1,0x05C2,0x05C3,0x05C4,0x05C5,0x05C6,0x05C7,0x05C8,0x05C9,0x05CA,0x05CB,0x05CC,0x0600,0x0601,0x0602,0x0603,0x0604,0x0605,0x0606,0x0640,0x0641
@@ -101,7 +110,7 @@ void RestoreChipState()
     std::vector<uint16_t> values;
     for(uint32_t address = start; address <= end; ++address)
     {
-        int i=0;
+        unsigned int i=0;
         for(i=0; i<sizeof(defaultAddrs)/sizeof(uint16_t); ++i)
         {
             if(defaultAddrs[i] == address)
@@ -116,8 +125,8 @@ void RestoreChipState()
 #else
 
 #endif
-} */
-
+}
+#endif
 void SetDefaultsSX()
 {
     ROM const uint16_t SXAddr[]=    {0x011C, 0x011D, 0x011E, 0x011F, 0x0121, 0x0122, 0x0123};
@@ -127,14 +136,14 @@ void SetDefaultsSX()
     for(i=sizeof(SXAddr)/sizeof(uint16_t); i; --i)
         SPI_write(SXAddr[i-1], SXdefVals[i-1]);
     //keep 0x0120[7:0]ICT_VCO bias value intact
-    Modify_SPI_Reg_bits(0x0120, 15<<4|8, 0xB9FF);
+    Modify_SPI_Reg_bits(0x0120, MSB_LSB(15, 8), 0xB9FF);
 }
 
 float_type GetFrequencyCGEN()
 {
     const float_type dMul = (RefClk/2.0)/(Get_SPI_Reg_bits(DIV_OUTCH_CGEN)+1); //DIV_OUTCH_CGEN
-    const uint16_t gINT = Get_SPI_Reg_bits(0x0088, 13<<4 | 0); //read whole register to reduce SPI transfers
-    const uint32_t gFRAC = ((uint32_t)(gINT & 0xF) << 16) | Get_SPI_Reg_bits(0x0087, 15 << 4 | 0);
+    const uint16_t gINT = Get_SPI_Reg_bits(0x0088, MSB_LSB(13, 0)); //read whole register to reduce SPI transfers
+    const uint32_t gFRAC = ((uint32_t)(gINT & 0xF) << 16) | Get_SPI_Reg_bits(0x0087, MSB_LSB(15, 0));
     return dMul * (((gINT>>4) + 1 + gFRAC/1048576.0));
 }
 
@@ -144,17 +153,11 @@ uint8_t SetFrequencyCGEN(float_type freq)
     float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
-        uint8_t iHdiv;
-        for(iHdiv = 255; iHdiv; --iHdiv)
-        {
-            dFvco = 2 * (iHdiv) * freq;
-            if (dFvco >= 2e9 && dFvco <= 2.9e9)
-                goto VCO_FOUND;
-        }
-        return 3;//lime::ReportError(-2, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq / 1e6);
-VCO_FOUND:
-        //dFvco = vcoFreqs[vcoCnt / 2];
-        Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv - 1);
+        uint8_t iHdiv_high = (2.9e9/2 / freq)-1;
+        uint8_t iHdiv_low = (2.0e9/2 / freq + 0.5)-1;
+        uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+        dFvco = 2 * (iHdiv+1) * freq;
+        Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv);
     }
     //Integer division
     intpart = dFvco/RefClk;
@@ -163,14 +166,16 @@ VCO_FOUND:
     {
         const float_type dFrac = intpart - (uint32_t)(dFvco/RefClk);
         const uint32_t gFRAC = (uint32_t)(dFrac * 1048576);
-        Modify_SPI_Reg_bits(0x0087, 15 << 4 | 0, gFRAC&0xFFFF); //INT_SDM_CGEN[15:0]
-        Modify_SPI_Reg_bits(0x0088, 3 << 4 | 0, gFRAC>>16); //INT_SDM_CGEN[19:16]
+        Modify_SPI_Reg_bits(0x0087, MSB_LSB(15, 0), gFRAC&0xFFFF); //INT_SDM_CGEN[15:0]
+        Modify_SPI_Reg_bits(0x0088, MSB_LSB(3, 0), gFRAC>>16); //INT_SDM_CGEN[19:16]
     }
 
 #if VERBOSE
     //printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
 #endif // NDEBUG
-    return TuneVCO(VCO_CGEN);
+    if(TuneVCO(VCO_CGEN) != 0)
+        return MCU_CGEN_TUNE_FAILED;
+    return 0;
 }
 
 float_type GetReferenceClk_TSP_MHz(bool tx)
@@ -196,7 +201,7 @@ float_type GetFrequencySX(const bool Tx)
     const uint16_t ch = SPI_read(0x0020);//(uint8_t)Get_SPI_Reg_bits(MAC); //remember previously used channel
     Modify_SPI_Reg_bits(MAC, Tx ? 2 : 1); // Rx mac = 1, Tx mac = 2
     {
-        const uint16_t gINT = Get_SPI_Reg_bits(0x011E, 13 << 4 | 0);    // read whole register to reduce SPI transfers
+        const uint16_t gINT = Get_SPI_Reg_bits(0x011E, MSB_LSB(13, 0));    // read whole register to reduce SPI transfers
         const uint32_t gFRAC = ((uint32_t)(gINT&0xF) << 16) | SPI_read(0x011D);
         const uint8_t enDiv2 = Get_SPI_Reg_bits(EN_DIV2_DIVPROG)+1;
         const uint8_t divLoch = Get_SPI_Reg_bits(DIV_LOCH) + 1;
@@ -233,55 +238,38 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
             fractionalPart = (uint32_t)((temp - (uint32_t)(temp)) * 1048576);
 
             Modify_SPI_Reg_bits(INT_SDM, (uint16_t)(temp - 4)); //INT_SDM
-            Modify_SPI_Reg_bits(0x011E, 3 << 4 | 0, (fractionalPart >> 16)); //FRAC_SDM[19:16]
+            Modify_SPI_Reg_bits(0x011E, MSB_LSB(3, 0), (fractionalPart >> 16)); //FRAC_SDM[19:16]
             SPI_write(0x011D, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
         }
     }
 
     canDeliverFrequency = false;
     {
-        int8_t sel_vco;
-        int8_t tuneScore[3] = { -128, -128, -128 }; //best is closest to 0
+        uint8_t sel_vco, bestVCO, bestCSW;
+        uint8_t bestScore = 255;// best is closest to 0
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
             Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
-            if( TuneVCO(tx ? VCO_SXT : VCO_SXR) == 0)
+            if( TuneVCO(1) == MCU_NO_ERROR)
             {
-                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(CSW_VCO);
+                const uint8_t csw = Get_SPI_Reg_bits(CSW_VCO);
+                const uint8_t score = abs(csw - 128);
+                if(score < bestScore)
+                {
+                    bestScore = score;
+                    bestVCO = sel_vco;
+                    bestCSW = csw;
+                }
                 canDeliverFrequency = true;
             }
         }
-        sel_vco = 2;
-        if (abs(tuneScore[0]) < abs(tuneScore[sel_vco]))
-            sel_vco = 0;
-        if (abs(tuneScore[1]) < abs(tuneScore[sel_vco]))
-            sel_vco = 1;
-
-        Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
-        Modify_SPI_Reg_bits(CSW_VCO, tuneScore[sel_vco] + 128);
+        Modify_SPI_Reg_bits(SEL_VCO, bestVCO);
+        Modify_SPI_Reg_bits(CSW_VCO, bestCSW);
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
-        return 2;//lime::ReportError(EINVAL, "SetFrequencySX%s(%g MHz) - cannot deliver frequency\n%s", tx?"T":"R", freq_Hz / 1e6, ss.str().c_str());
-    return 0;
-}
-
-typedef struct
-{
-    int16_t high;
-    int16_t low;
-} CSWInteval;
-
-static void Delay()
-{
-#ifdef __cplusplus
-    std::this_thread::sleep_for(std::chrono::microseconds(1));
-#else
-    uint16_t i;
-    volatile uint16_t t=0;
-    for(i=0; i<400; ++i)
-        t <<= 1;
-#endif
+        return tx ? MCU_SXT_TUNE_FAILED : MCU_SXR_TUNE_FAILED;
+    return MCU_NO_ERROR;
 }
 
 /** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
@@ -290,57 +278,77 @@ static void Delay()
 */
 static uint8_t ReadCMP(const bool SX)
 {
-    Delay();
-    return (uint8_t)Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, 13 << 4 | 12);
+#ifdef __cplusplus
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+#else
+    TR0 = 0; //stop timer 0
+    TH0 = (gComparatorDelayCounter >> 8);
+    TL0 = (gComparatorDelayCounter & 0xFF);
+    TF0 = 0; // clear overflow
+    TR0 = 1; //start timer 0
+    while( !TF0 ); // wait for timer overflow
+#endif
+    return (uint8_t)Get_SPI_Reg_bits(SX ? 0x0123 : 0x008C, MSB_LSB(13, 12));
 }
 
-uint8_t TuneVCO(uint8_t module) // 0-cgen, 1-SXR, 2-SXT
+uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
 {
-    const bool SX = (module != VCO_CGEN);
-    const uint16_t addrCSW_VCO = SX ? 0x0121 : 0x008B;
-    const uint8_t msblsb = SX ? (10 << 4 | 3) : (8 << 4 | 1); //CSW msb << 4 | lsb index
-    CSWInteval cswSearch[2];
-
-    if(SX) //set addresses to SX module
-        //assuming the active channels is already correct
-        Modify_SPI_Reg_bits(0x011C, 2 << 4 | 1, 0); //activate VCO and comparator
-    else //set addresses to CGEN module
-        Modify_SPI_Reg_bits(0x0086, 2 << 4 | 1, 0); //activate VCO and comparator
-
-    //check if lock is within VCO range
+    typedef struct
     {
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
-        if(ReadCMP(SX) == 3) //VCO too high
-            return 4;
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 255);
-        if(ReadCMP(SX) == 0) //VCO too low
-            return 4;
+        int16_t high;
+        int16_t low;
+    } CSWInteval;
+
+    uint16_t addrCSW_VCO;
+    uint8_t msblsb;
+
+    CSWInteval cswSearch[2];
+    cswSearch[0].high = 0; //search interval lowest value
+    cswSearch[0].low = cswSearch[1].high  = 128;
+    cswSearch[1].low = 255;
+
+    if(SX)
+    {
+        addrCSW_VCO = 0x0121;
+        msblsb = MSB_LSB(10, 3); //CSW msb lsb
+        //assuming the active channel is already correct
+        Modify_SPI_Reg_bits(0x011C, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
+    else //CGEN
+    {
+        addrCSW_VCO = 0x008B;
+        msblsb = MSB_LSB(8, 1); //CSW msb lsb
+        Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
+    }
+#ifndef __cplusplus
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~100us
+#endif
+    //check if lock is within VCO range
+    Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
+    if(ReadCMP(SX) == 3) //VCO too high
+        return MCU_ERROR;
+    Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 255);
+    if(ReadCMP(SX) == 0) //VCO too low
+        return MCU_ERROR;
 
     //search intervals [0-127][128-255]
     {
-        uint16_t t;
+        uint8_t t;
         for(t=0; t<2; ++t)
         {
-            int8_t i;
-            cswSearch[t].low = 128*(t+1);
-            cswSearch[t].high = 128*t; //search interval lowest value
+            uint8_t mask;
             Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
 
-            for(i=6; i>=0; --i)
+            for(mask = (1 << 6); mask; mask >>= 1)
             {
-                uint8_t cmphl; //comparators
-                cswSearch[t].high |= (1 << i); //CSW_VCO<i>=1
+                cswSearch[t].high |= mask; // CSW_VCO<i>=1
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
-                cmphl = ReadCMP(SX);
-                if(cmphl == 0x03) // reduce CSW
-                    cswSearch[t].high &= (~(((uint16_t)1) << i)); //CSW_VCO<i>=0
-                if((cmphl == 0x02) && (cswSearch[t].high <= cswSearch[t].low))
-                    cswSearch[t].low = cswSearch[t].high;
+                if(ReadCMP(SX) == 0x03) // reduce CSW
+                    cswSearch[t].high ^= mask; // CSW_VCO<i>=0
             }
-            while(cswSearch[t].low <= cswSearch[t].high && cswSearch[t].low > t*128)
+            //allow underflow, cycle will be broken by not locking comparators
+            for(cswSearch[t].low = cswSearch[t].high; cswSearch[t].low; --cswSearch[t].low)
             {
-                --cswSearch[t].low;
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].low);
                 if(ReadCMP(SX) != 0x2)
                 {
@@ -350,28 +358,40 @@ uint8_t TuneVCO(uint8_t module) // 0-cgen, 1-SXR, 2-SXT
             }
         }
     }
-    //check if the intervals are joined
     {
-        int16_t cswHigh, cswLow;
+        uint8_t cswValue;
+        //check if the intervals are joined
         if(cswSearch[0].high == cswSearch[1].low-1)
-        {
-            cswHigh = cswSearch[1].high;
-            cswLow = cswSearch[0].low;
-        }
+            cswValue = cswSearch[0].low +((cswSearch[1].high-cswSearch[0].low) >> 1);
         else //compare which interval is wider
         {
-            const uint8_t intervalIndex = (cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low) ? 1 : 0;
-            cswHigh = cswSearch[intervalIndex].high;
-            cswLow = cswSearch[intervalIndex].low;
+            if(cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low)
+                cswValue = cswSearch[1].low +((cswSearch[1].high-cswSearch[1].low) >> 1);
+            else
+                cswValue = cswSearch[0].low +((cswSearch[0].high-cswSearch[0].low) >> 1);
         }
 
-        cswLow = cswLow+(cswHigh-cswLow)/2;
-        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswLow);
-        if(ReadCMP(SX) != 0x2)
-            //just in case high-low==1, if low fails, check if high locks
-            Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswLow+1);
+        Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswValue);
+        if(ReadCMP(SX) != 0x2) //just in case high-low==1, if low fails, check if high locks
+            Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, ++cswValue);
     }
-    if(ReadCMP(SX) != 0x2)
-        return 0x20 + module + 1;
-    return 0;
+    if(ReadCMP(SX) == 0x2)
+        return MCU_NO_ERROR;
+    return MCU_ERROR;
+}
+
+void WriteMaskedRegs(const RegisterBatch ROM* regs)
+{
+    uint8_t i;
+    uint8_t index;
+    for(i=regs->cnt; i; --i)
+    {
+        index = i-1;
+        SPI_write(regs->addr[index], ( SPI_read(regs->addr[index]) & ~regs->mask[index] ) | regs->val[index]);
+    }
+    for(i=regs->wrOnlyAddrCnt; i; --i)
+    {
+        index = i-1;
+        SPI_write(regs->wrOnlyAddr[index], i > regs->wrOnlyDataCnt ? 0 : regs->wrOnlyData[index]);
+    }
 }

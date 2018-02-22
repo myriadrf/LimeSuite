@@ -4,6 +4,7 @@
 #include "LMS7002M_parameters_compact.h"
 #include "spi.h"
 #include <math.h>
+#include "mcu_defines.h"
 
 #ifdef __cplusplus
     #include <vector>
@@ -74,23 +75,19 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     uint8_t g_pga_rbb = Get_SPI_Reg_bits(G_PGA_RBB);
 
 	if(RxLPF_RF_LimitLow/2 > rx_lpf_IF || rx_lpf_IF > RxLPF_RF_LimitHigh/2)
-        return -1;//ReportError(ERANGE, "RxLPF frequency out of range, available range from 0.7 to 65 MHz");
+        return MCU_RX_LPF_OUT_OF_RANGE;
 #define BATCH_RX_SETUP 1
 #if BATCH_RX_SETUP
     {
         ROM const uint16_t RxFilterSetupAddr[] = {0x0085,0x010D,0x0113,0x0114, 0x0084, 0x008B};
         ROM const uint16_t RxFilterSetupData[] = {0x0001,0x0100,0x0004,0x0010, 0x0400, 0x2100};
         ROM const uint16_t RxFilterSetupMask[] = {0x0007,0x0188,0x003C,0x001F, 0xF83F, 0xC1FF};
-        uint8_t i;
-        for(i=sizeof(RxFilterSetupAddr)/sizeof(uint16_t); i; --i)
-            SPI_write(RxFilterSetupAddr[i-1], ( SPI_read(RxFilterSetupAddr[i-1]) & ~RxFilterSetupMask[i-1] ) | RxFilterSetupData[i-1]);
-    }
-    {
-        ROM const uint16_t RxFilterSetupAddrWrOnly[] = {0x0082,0x0086,0x0087,0x0088,0x0089,0x008A,0x008C,0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x010C,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0209,0x0240,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440};
-        ROM const uint16_t RxFilterSetupDataWrOnly[] = {0x8003,0x4901,0x0400,0x0780,0x0020,0x0514,0x067B,0x3409,0x6001,0x3180,0x0612,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x88C5,0x0009,0x8180,0x280C,0x018C,0x528B,0x2E02,0x008D,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x2070,0x0000,0x0020,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1001,0x2038,0x0020};
-        uint16_t i;
-        for(i=sizeof(RxFilterSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
-            SPI_write(RxFilterSetupAddrWrOnly[i-1], RxFilterSetupDataWrOnly[i-1]);
+        ROM const uint16_t RxFilterSetupWrOnlyAddr[] = {0x0082,0x0086,0x0087,0x0088,0x0089,0x008A,0x008C,0x0100,0x0101,0x0102,0x0103,0x0104,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x010C,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0209,0x0240,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440};
+        ROM const uint16_t RxFilterSetupWrOnlyData[] = {0x8003,0x4901,0x0400,0x0780,0x0020,0x0514,0x067B,0x3409,0x6001,0x3180,0x0612,0x0088,0x0007,0x318C,0x318C,0x0426,0x61C1,0x104C,0x88C5,0x0009,0x8180,0x280C,0x018C,0x528B,0x2E02,0x008D,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x2070,0x0000,0x0020,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1001,0x2038,0x0020};
+        ROM const RegisterBatch batch = {
+            RxFilterSetupAddr, RxFilterSetupData, RxFilterSetupMask, sizeof(RxFilterSetupAddr)/sizeof(uint16_t),
+            RxFilterSetupWrOnlyAddr, RxFilterSetupWrOnlyData, sizeof(RxFilterSetupWrOnlyAddr)/sizeof(uint16_t), sizeof(RxFilterSetupWrOnlyData)/sizeof(uint16_t)};
+        WriteMaskedRegs(&batch);
     }
 #else
     const uint8_t ict_vco = Get_SPI_Reg_bits(ICT_VCO_CGEN);
@@ -183,7 +180,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         uint8_t cgenMultiplier = rx_lpf_IF*20 / 46.08e6 + 0.5;
         cgenMultiplier = clamp(cgenMultiplier, 2, 13);
         status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
-        if(status != 0)
+        if(status != MCU_NO_ERROR)
             return status;
     }
 
@@ -191,14 +188,14 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     Modify_SPI_Reg_bits(MAC, 1);
     SetDefaultsSX();
     status = SetFrequencySX(LMS7002M_Rx, 539.9e6);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     //SXT
     Modify_SPI_Reg_bits(MAC, 2);
     SetDefaultsSX();
     status = SetFrequencySX(LMS7002M_Tx, 550e6);
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
     SPI_write(0x0020, ch);
     //LimeLight & PAD
@@ -230,7 +227,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
             ccomp_tia_rfe = cfb_tia_rfe/100 + 1;
         }
         else
-            return 0xAA;//ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
+            return MCU_RX_INVALID_TIA;//ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
         Modify_SPI_Reg_bits(CFB_TIA_RFE,   clamp(cfb_tia_rfe, 0, 4095));
         Modify_SPI_Reg_bits(CCOMP_TIA_RFE, clamp(ccomp_tia_rfe, 0, 15));
         Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15-cfb_tia_rfe/100, 0, 15));
@@ -304,21 +301,21 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
         Modify_SPI_Reg_bits(MAC, ch);
     }
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
 {
-	uint16_t rssi_3dB ;
+    uint16_t rssi_3dB ;
     uint8_t status = 0;
     //calculate intermediate frequency
     const float_type rx_lpf_IF = rx_lpf_freq_RF/2;
-    SaveChipState();
+    SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
-    if(status != 0)
-        return status;
-
+    if(status != MCU_NO_ERROR)
+        goto RxFilterSearchEndStage;
+    UpdateRSSIDelay();
     {
         uint8_t g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
         while(GetRSSI() < 0x2700 && g_rxloopb_rfe < 14)
@@ -341,8 +338,8 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     if(rx_lpf_IF <= 54e6)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF*1.3);
-        if(status != 0)
-            return status;
+        if(status != MCU_NO_ERROR)
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF*1.3, 0); //0
 
         if(rx_lpf_IF < 18e6)
@@ -372,7 +369,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 }
             }
             else if(status != 0)
-                return status;
+                goto RxFilterSearchEndStage;
             //LPFL END
         }
         else
@@ -411,12 +408,12 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 }
             }
             else if(status != 0)
-                return status;
+                goto RxFilterSearchEndStage;
             //LPFH END
         }
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF);
-        if(status != 0)
-            return status;
+        if(status != MCU_NO_ERROR)
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
 
         {
@@ -427,72 +424,70 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             else if(g_tia_rfe == 1)
                 cfb_tia_rfe = (int)( 5400e6 / (rx_lpf_IF * 0.72) - 15);
             else
-                return -3;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+            {
+                status = MCU_RX_INVALID_TIA; //ReportError(EINVAL, "g_tia_rfe not allowed value");
+                goto RxFilterSearchEndStage;
+            }
             Modify_SPI_Reg_bits(CFB_TIA_RFE, clamp(cfb_tia_rfe, 0, 4095));
 
-			{
+            {
                 uint8_t ccomp_tia_rfe;
                 if(g_tia_rfe > 1)
                     ccomp_tia_rfe = cfb_tia_rfe / 100;
                 else if(g_tia_rfe == 1)
                     ccomp_tia_rfe = cfb_tia_rfe / 100 + 1;
                 else
-                    return -4;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+                {
+                    status = MCU_RX_INVALID_TIA;//ReportError(EINVAL, "g_tia_rfe not allowed value");
+                    goto RxFilterSearchEndStage;
+                }
 
                 Modify_SPI_Reg_bits(CCOMP_TIA_RFE, clamp(ccomp_tia_rfe, 0, 15));
-			}
-			Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15 - cfb_tia_rfe/100, 0, 15));
+            }
+            Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15 - cfb_tia_rfe/100, 0, 15));
         }
     }
     else//if(rx_lpf_IF > 54e6)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6 - rx_lpf_IF);
         if(status != 0)
-            return status;
+            goto RxFilterSearchEndStage;
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
     }
     //START TIA
     status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, 4096);
-    if(status != 0)
-        return status;
+    if(status != MCU_NO_ERROR)
+        goto RxFilterSearchEndStage;
     //END TIA
 
     {
     //Restore settings
-    uint16_t cfb_tia_rfe = Get_SPI_Reg_bits(CFB_TIA_RFE);
-    uint8_t ccomp_tia_rfe = Get_SPI_Reg_bits(CCOMP_TIA_RFE);
-    uint8_t rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
-    uint16_t rcc_ctl_lpfl_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFL_RBB);
-    uint16_t c_ctl_lpfl_rbb = Get_SPI_Reg_bits(C_CTL_LPFL_RBB);
-    uint8_t c_ctl_pga_rbb = Get_SPI_Reg_bits(C_CTL_PGA_RBB);
-    uint8_t rcc_ctl_pga_rbb = Get_SPI_Reg_bits(RCC_CTL_PGA_RBB);
-    uint8_t rcc_ctl_lpfh_rbb = Get_SPI_Reg_bits(RCC_CTL_LPFH_RBB);
-    uint8_t c_ctl_lpfh_rbb = Get_SPI_Reg_bits(C_CTL_LPFH_RBB);
-    uint8_t pd_lpfl_rbb = Get_SPI_Reg_bits(PD_LPFL_RBB);
-    uint8_t pd_lpfh_rbb = Get_SPI_Reg_bits(PD_LPFH_RBB);
+    uint16_t ccomp_cfb_tia_rfe = SPI_read(0x0112);
+    uint16_t rcc_c_ctl_lpfl_rbb = SPI_read(0x0117);
+    uint16_t rcc_c_ctl_pga_rbb = SPI_read(0x011A);
+    uint16_t rcc_c_ctl_lpfh_rbb = SPI_read(0x0116) & 0x07FF;
+    uint8_t pd_lpfhl = Get_SPI_Reg_bits(0x0115, MSB_LSB(3, 2));
     uint8_t input_ctl_pga_rbb = Get_SPI_Reg_bits(INPUT_CTL_PGA_RBB);
-
-    RestoreChipState();
-    Modify_SPI_Reg_bits(CFB_TIA_RFE, cfb_tia_rfe);
-    Modify_SPI_Reg_bits(CCOMP_TIA_RFE, ccomp_tia_rfe);
-    Modify_SPI_Reg_bits(RCOMP_TIA_RFE, rcomp_tia_rfe);
-    Modify_SPI_Reg_bits(RCC_CTL_LPFL_RBB, rcc_ctl_lpfl_rbb);
-    Modify_SPI_Reg_bits(C_CTL_LPFL_RBB, c_ctl_lpfl_rbb);
-    Modify_SPI_Reg_bits(C_CTL_PGA_RBB, c_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(RCC_CTL_PGA_RBB, rcc_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(RCC_CTL_LPFH_RBB, rcc_ctl_lpfh_rbb);
-    Modify_SPI_Reg_bits(C_CTL_LPFH_RBB, c_ctl_lpfh_rbb);
-    Modify_SPI_Reg_bits(PD_LPFL_RBB, pd_lpfl_rbb);
-    Modify_SPI_Reg_bits(PD_LPFH_RBB, pd_lpfh_rbb);
-    Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, input_ctl_pga_rbb);
-    Modify_SPI_Reg_bits(ICT_LPF_IN_RBB, 12);
-    Modify_SPI_Reg_bits(ICT_LPF_OUT_RBB, 12);
-    Modify_SPI_Reg_bits(ICT_PGA_OUT_RBB, 20);
-    Modify_SPI_Reg_bits(ICT_PGA_IN_RBB, 20);
-    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, 16);
-    Modify_SPI_Reg_bits(RFB_TIA_RFE, 16);
+    uint8_t rcomp_tia_rfe = Get_SPI_Reg_bits(RCOMP_TIA_RFE);
+RxFilterSearchEndStage:
+    SaveChipState(1);
+    if(status != MCU_NO_ERROR)
+        return status;
+    SPI_write(0x0112, ccomp_cfb_tia_rfe);
+    SPI_write(0x0117, rcc_c_ctl_lpfl_rbb);
+    SPI_write(0x011A, rcc_c_ctl_pga_rbb);
+    SPI_write(0x0116, (16 << 11) | rcc_c_ctl_lpfh_rbb);
+    SPI_write(0x0118, input_ctl_pga_rbb << 13 | 0x018C);
+    SPI_write(0x0114, rcomp_tia_rfe << 5 | 16);
+    Modify_SPI_Reg_bits(0x0119, MSB_LSB(14, 5), (20 << 5) | 20);
+    Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), pd_lpfhl);
+    {
+        const uint16_t x0020val = SPI_read(0x0020);
+        SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
+        SPI_write(0x0020, x0020val);
     }
-    return 0;
+    }
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
@@ -506,16 +501,12 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
         ROM const uint16_t TxFilterSetupAddr[] = {0x0082,0x0085,0x0100,0x010C,0x010D, 0x0084, 0x008B};
         ROM const uint16_t TxFilterSetupData[] = {0x8001,0x0001,0x0000,0x0000,0x001E, 0x0400, 0x2100};
         ROM const uint16_t TxFilterSetupMask[] = {0x1FFF,0x0007,0x0001,0x0001,0x001E, 0xF83F, 0xC1FF};
-        uint8_t i;
-        for(i=sizeof(TxFilterSetupAddr)/sizeof(uint16_t); i; --i)
-            SPI_write(TxFilterSetupAddr[i-1], ( SPI_read(TxFilterSetupAddr[i-1]) & ~TxFilterSetupMask[i-1] ) | TxFilterSetupData[i-1]);
-    }
-    {
-        ROM const uint16_t TxFilterSetupAddrWrOnly[] = {0x0086,0x0087,0x0088,0x0089,0x008A,0x008C,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0240,0x0241,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0441};
-        ROM const uint16_t TxFilterSetupDataWrOnly[] = {0x4901,0x0400,0x0780,0x0020,0x0514,0x067B,0x3007,0x318C,0x318C,0x058C,0x61C1,0x104C,0x000D,0x8180,0x280C,0x618C,0x528C,0x2E02,0x008D,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0070,0x0020,0x0000,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1001,0x2038,0x0020,0x0000};
-        uint8_t i;
-        for(i=sizeof(TxFilterSetupAddrWrOnly)/sizeof(uint16_t); i; --i)
-            SPI_write(TxFilterSetupAddrWrOnly[i-1], TxFilterSetupDataWrOnly[i-1]);
+        ROM const uint16_t TxFilterSetupWrOnlyAddr[] = {0x0086,0x0087,0x0088,0x0089,0x008A,0x008C,0x0105,0x0106,0x0107,0x0108,0x0109,0x010A,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0200,0x0201,0x0202,0x0203,0x0204,0x0205,0x0206,0x0207,0x0208,0x0240,0x0241,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0441};
+        ROM const uint16_t TxFilterSetupWrOnlyData[] = {0x4901,0x0400,0x0780,0x0020,0x0514,0x067B,0x3007,0x318C,0x318C,0x058C,0x61C1,0x104C,0x000D,0x8180,0x280C,0x618C,0x528C,0x2E02,0x008D,0x07FF,0x07FF,0x0000,0x0000,0x0000,0x0000,0x0000,0x0070,0x0020,0x0000,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1001,0x2038,0x0020,0x0000};
+        ROM const RegisterBatch batch = {
+            TxFilterSetupAddr, TxFilterSetupData, TxFilterSetupMask, sizeof(TxFilterSetupAddr)/sizeof(uint16_t),
+            TxFilterSetupWrOnlyAddr, TxFilterSetupWrOnlyData, sizeof(TxFilterSetupWrOnlyAddr)/sizeof(uint16_t), sizeof(TxFilterSetupWrOnlyData)/sizeof(uint16_t)};
+        WriteMaskedRegs(&batch);
     }
 #else
     const uint8_t ict_vco = Get_SPI_Reg_bits(ICT_VCO_CGEN);
@@ -623,7 +614,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
 
         status = SetFrequencyCGEN(46.08e6 * cgenMultiplier + 10e6);
     }
-    if(status != 0)
+    if(status != MCU_NO_ERROR)
         return status;
 
     //SXR
@@ -645,7 +636,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetNCOFrequency(LMS7002M_Rx, 0.9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, tx_lpf_IF-0.1e6, 1);
 
-    return 0;
+    return MCU_NO_ERROR;
 }
 
 uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
@@ -653,24 +644,18 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
     uint16_t rssi;
     float_type tx_lpf_IF;
     int status;
-    uint16_t ch = SPI_read(0x0020);
 
     if(tx_lpf_freq_RF < TxLPF_RF_LimitLow || tx_lpf_freq_RF > TxLPF_RF_LimitHigh)
-        return 0x22;
+        return MCU_TX_LPF_OUT_OF_RANGE;
     //calculate intermediate frequency
     tx_lpf_IF = tx_lpf_freq_RF/2;
     if(tx_lpf_freq_RF > TxLPF_RF_LimitLowMid && tx_lpf_freq_RF < TxLPF_RF_LimitMidHigh)
-    {
-        /*printf("Tx lpf(%g MHz) out of range %g-%g MHz and %g-%g MHz. Setting to %g MHz", tx_lpf_freq_RF/1e6,
-                        TxLPF_RF_LimitLow/1e6, TxLPF_RF_LimitLowMid/1e6,
-                        TxLPF_RF_LimitMidHigh/1e6, TxLPF_RF_LimitHigh/1e6,
-                        TxLPF_RF_LimitMidHigh/1e6);*/
         tx_lpf_IF = TxLPF_RF_LimitMidHigh/2;
-    }
-    SaveChipState();
+    SaveChipState(0);
     status = TuneTxFilterSetup(tx_lpf_IF);
-    if(status != 0)
-        return status;
+    if(status != MCU_NO_ERROR)
+        goto TxFilterSearchEndStage;
+    UpdateRSSIDelay();
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
     Modify_SPI_Reg_bits(SEL_TX, 0);
@@ -824,30 +809,33 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         while(targetLevelNotReached && iterationsLeft>=0);
     }
     {
-        uint8_t rcal_lpflad_tbb = Get_SPI_Reg_bits(RCAL_LPFLAD_TBB);
+        uint16_t powerDowns;
         uint16_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
-        uint16_t rcal_lpfh_tbb = Get_SPI_Reg_bits(RCAL_LPFH_TBB);
-        RestoreChipState();
-        SPI_write(0x0020, ch);
-        SPI_write(0x0106, 0x318C);
-        SPI_write(0x0107, 0x318C);
+        uint16_t rcal_lpfh_lpflad_tbb = SPI_read(0x0109);
+    TxFilterSearchEndStage:
+        SaveChipState(1);
+        if(status != MCU_NO_ERROR)
+            return status;
         Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+        powerDowns = SPI_read(0x0105) & ~0x0016;
         if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
         {
-            Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
-            Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
-            Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
+            powerDowns |= 0x10;
             Modify_SPI_Reg_bits(R5_LPF_BYP_TBB, 1);
-            Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, rcal_lpflad_tbb);
         }
         else
+            powerDowns |= 0x06;
+
+        SPI_write(0x0106, 0x318C);
+        SPI_write(0x0107, 0x318C);
+        SPI_write(0x0109, rcal_lpfh_lpflad_tbb);
+        SPI_write(0x0105, powerDowns);
         {
-            Modify_SPI_Reg_bits(PD_LPFH_TBB, 0);
-            Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 1);
-            Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
-            Modify_SPI_Reg_bits(RCAL_LPFH_TBB, rcal_lpfh_tbb);
+            uint16_t x0020val = SPI_read(0x0020);
+            SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
+            SPI_write(0x0020, x0020val);
         }
     }
 
-    return 0;
+    return MCU_NO_ERROR;
 }

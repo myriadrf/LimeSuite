@@ -17,8 +17,6 @@ lms_device_t* device = NULL;
 
 int error()
 {
-    //print last error message
-    cout << "ERROR:" << LMS_GetLastErrorMessage();
     if (device != NULL)
         LMS_Close(device);
     exit(-1);

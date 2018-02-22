@@ -26,6 +26,7 @@
 #include "mcu_programs.h"
 #include "Logger.h"
 #include "device_constants.h"
+#include "LMSBoards.h"
 
 namespace lime
 {
@@ -55,11 +56,11 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         return nullptr;
     }
     auto info = conn->GetDeviceInfo();
-    if (info.deviceName == "LimeSDR-Mini")
+    if (info.deviceName ==  lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
         device = new LMS7_LimeSDR_mini(conn,obj);
-    else if (info.deviceName == "LimeSDR-QPCIe")
+    else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE))
         device = new LMS7_qLimeSDR(conn,obj);
-    else if (info.deviceName != "UNKNOWN")
+    else if (info.deviceName != lime::GetDeviceName(lime::LMS_DEV_UNKNOWN))
         device = new LMS7_LimeSDR(conn,obj);
     else
         device = new LMS7_Generic(conn,obj);
@@ -369,7 +370,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
     }
 
     oversample = 2<<decim;
-    
+
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
          lime::LMS7002M* lms = lms_list[i];
@@ -989,8 +990,8 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     {
         const int maxGain = 74; //gain table size
         value += 12;           //pga offset
-        if (value > maxGain) //do not exceed gain table index
-            value = maxGain;
+        if (value >= maxGain) //do not exceed gain table index
+            value = maxGain-1;
         else if (value < 0)
             value = 0;
         unsigned lna = 0, tia = 0, pga = 0;
@@ -1211,12 +1212,10 @@ int LMS7_Device::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags
 {
     lime::LMS7002M* lms = SelectChannel(chan);
 
-    lms->EnableCalibrationByMCU((flags&1) == 0);
-
     if (dir_tx)
-        return lms->CalibrateTx(bw, false);
+        return lms->CalibrateTx(bw, flags & 1);
     else
-        return lms->CalibrateRx(bw, false);
+        return lms->CalibrateRx(bw, flags & 1);
 }
 
 int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
@@ -1309,10 +1308,10 @@ int LMS7_Device::Init()
         {0x0089, 0x1078}, {0x008B, 0x1F8C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
         {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x010C, 0x8865},
         {0x010E, 0x0000}, {0x0110, 0x2B14}, {0x0113, 0x03C2}, {0x011C, 0xA941},
-        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0121, 0x3650}, {0x0122, 0x033F},
-        {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x0170}, {0x020B, 0x4000},
-        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
-        {0x040C, 0x00FB}
+        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xB996}, {0x0121, 0x3650},
+        {0x0122, 0x033F}, {0x0123, 0x267B}, {0x0200, 0x00E1}, {0x0208, 0x017B},
+        {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
+        {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
     for (unsigned i = 0; i < lms_list.size(); i++)
@@ -1360,7 +1359,19 @@ int LMS7_Device::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
     lime::LMS7002M* lms = SelectChannel(chan);
 
     lms->EnableChannel(dir_tx, enabled);
-
+    if (!enabled)
+    {
+        if (dir_tx)
+        {
+            tx_channels[chan].freq = -1.0;
+            tx_channels[chan].cF_offset_nco = 0.0;
+        }
+        else
+        {
+            rx_channels[chan].freq = -1.0;
+            rx_channels[chan].cF_offset_nco = 0.0;
+        }
+    }
     return LMS_SUCCESS;
 }
 
@@ -1370,7 +1381,6 @@ std::vector<std::string> LMS7_Device::GetProgramModes() const
             program_mode::fx3RAM, program_mode::fx3Flash, program_mode::fx3Reset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
-
 
 int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const
 {

@@ -27,10 +27,6 @@
 #include "mcu_programs.h"
 
 #include "MCU_BD.h"
-const static uint16_t MCU_PARAMETER_ADDRESS = 0x002D; //register used to pass parameter values to MCU
-#define MCU_ID_DC_IQ_CALIBRATIONS 0x01
-#define MCU_FUNCTION_CALIBRATE_TX 1
-#define MCU_FUNCTION_CALIBRATE_RX 2
 
 using namespace std;
 using namespace lime;
@@ -584,13 +580,6 @@ int LMS7002M::LoadConfig(const char* filename)
         return ReportError(ENOENT, "LoadConfig(%s) - file not found", filename);
     }
     f.close();
-
-    if(mcuControl)
-    {
-        mcuControl->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
-        if(mcuControl->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
-            mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
-    }
 
     uint16_t addr = 0;
     uint16_t value = 0;
@@ -1817,8 +1806,8 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
     }
 
     return status;
-}
 
+}
 /** @brief Write given data value to whole register
     @param address SPI address
     @param data new register value

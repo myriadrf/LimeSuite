@@ -41,13 +41,12 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t** device, const lms_info_str_t in
 
     std::vector<lime::ConnectionHandle> handles;
     handles = lime::ConnectionRegistry::findConnections();
-    lime::LMS7_Device* lms = (lime::LMS7_Device*)*device;
 
     for (size_t i = 0; i < handles.size(); i++)
     {
         if (info == NULL || strcmp(handles[i].serialize().c_str(),info) == 0)
         {
-            auto dev = lime::LMS7_Device::CreateDevice(handles[i],lms);
+            auto dev = lime::LMS7_Device::CreateDevice(handles[i],nullptr);
             if (dev == nullptr)
             {
                 lime::error("Unable to open device");
@@ -240,7 +239,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, f
     }
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
     *freq = lms->GetClockFreq(clk_id);
-    return freq > 0 ? 0 : -1;
+    return *freq > 0 ? 0 : -1;
 }
 
 API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *device, size_t clk_id, float_type freq)
@@ -653,7 +652,7 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
         return -1;
     }
 
-   return lms->SetGain(dir_tx,chan,gain-12);
+   return lms->SetGain(dir_tx,chan,int(gain-12));
 }
 
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
@@ -694,10 +693,7 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t
         return -1;
     }
 
-    int ret = lms->GetGain(dir_tx,chan);
-    if (ret < 0)
-        return -1;
-    *gain = ret;
+    *gain = lms->GetGain(dir_tx,chan)+12;
     return LMS_SUCCESS;
 }
 
@@ -930,10 +926,6 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
         return -1;
     }
     
-    if ((!dir_tx) && (lms->ReadParam(LMS7_MASK, chan) != 0))
-        down = !down;
-
-
     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan)!=0)
     || (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan)!=0))
         return -1;

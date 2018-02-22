@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb 16 2016)
+// C++ code generated with wxFormBuilder (version Sep 23 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -9526,11 +9526,15 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	fgSizer246->SetFlexibleDirection( wxVERTICAL );
 	fgSizer246->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxString rgrCalibrationMethodChoices[] = { wxT("MCU"), wxT("PC") };
+	wxString rgrCalibrationMethodChoices[] = { wxT("Chip internal"), wxT("On board external") };
 	int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
-	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration method"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
+	rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration loopback:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
 	rgrCalibrationMethod->SetSelection( 0 );
 	fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, 5 );
+	
+	lblCalibrationNote = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	lblCalibrationNote->Wrap( -1 );
+	fgSizer246->Add( lblCalibrationNote, 0, wxALL, 5 );
 	
 	
 	sbSizer165->Add( fgSizer246, 0, 0, 5 );
@@ -9559,6 +9563,7 @@ pnlCalibrations_view::pnlCalibrations_view( wxWindow* parent, wxWindowID id, con
 	cmbDCCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	rgrCalibrationMethod->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCalibrations_view::OnCalibrationMethodChange ), NULL, this );
 }
 
 pnlCalibrations_view::~pnlCalibrations_view()
@@ -9579,6 +9584,7 @@ pnlCalibrations_view::~pnlCalibrations_view()
 	cmbDCCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
 	btnCalibrateTx->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateTx ), NULL, this );
 	btnCalibrateAll->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlCalibrations_view::OnbtnCalibrateAll ), NULL, this );
+	rgrCalibrationMethod->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( pnlCalibrations_view::OnCalibrationMethodChange ), NULL, this );
 	
 }
 

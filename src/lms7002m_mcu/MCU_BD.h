@@ -19,6 +19,23 @@ class IConnection;
 class MCU_BD
 {
     public:
+        enum MCU_ERROR_CODES
+        {
+            MCU_NO_ERROR = 0,
+            MCU_ERROR,
+            MCU_CGEN_TUNE_FAILED,
+            MCU_SXR_TUNE_FAILED,
+            MCU_SXT_TUNE_FAILED,
+            MCU_LOOPBACK_SIGNAL_WEAK,
+            MCU_INVALID_RX_PATH,
+            MCU_INVALID_TX_BAND,
+            MCU_RX_LPF_OUT_OF_RANGE,
+            MCU_RX_INVALID_TIA,
+            MCU_TX_LPF_OUT_OF_RANGE,
+
+            MCU_ERROR_CODES_COUNT
+        };
+
         enum OperationStatus
         {
             SUCCESS = 0,
@@ -44,9 +61,11 @@ class MCU_BD
         {
             MCU_REF_CLK,
             MCU_BW,
+            MCU_EXT_LOOPBACK_PAIR,
         };
         void SetParameter(MCU_Parameter param, float value);
         int WaitForMCU(uint32_t timeout_ms);
+        static const char* MCUStatusMessage(const uint8_t code);
 
         static const int cMaxFWSize = 1024 * 16;
 

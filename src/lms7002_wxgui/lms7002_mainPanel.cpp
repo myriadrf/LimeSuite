@@ -164,9 +164,13 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
     int status = LMS_Init(lmsControl);
     if (status != 0)
         wxMessageBox(_("Load Default failed"), _("Warning"));
+
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
+    wxCommandEvent evt2;
+    evt.SetEventType(CGEN_FREQUENCY_CHANGED);
+    wxPostEvent(this, evt2);
 }
 
 void lms7002_mainPanel::UpdateGUI()

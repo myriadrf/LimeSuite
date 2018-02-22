@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb 16 2016)
+// C++ code generated with wxFormBuilder (version Sep 23 2017)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -2160,6 +2160,7 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
 		wxRadioBox* rgrCalibrationMethod;
+		wxStaticText* lblCalibrationNote;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
@@ -2167,6 +2168,7 @@ class pnlCalibrations_view : public wxPanel
 		virtual void OnbtnCalibrateRx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateTx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateAll( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCalibrationMethodChange( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

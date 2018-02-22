@@ -31,6 +31,7 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     wndId2Enum[chkDCMODE] = LMS7param(DCMODE);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
+    rgrCalibrationMethod->Hide();
 }
 
 void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
@@ -56,7 +57,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateRx(wxCommandEvent& event)
         status = LMS_Calibrate(lmsControl, LMS_CH_RX, ch, bandwidth_MHz * 1e6, flags);
     }
     if (status != 0)
-        wxMessageBox(_("Rx calibration failed"));
+        wxMessageBox(wxString::Format(_("Rx calibration failed: %s"), LMS_GetLastErrorMessage()));
     else
     {
         wxMessageBox(_("Rx Calibration Finished"), _("Info"), wxOK, this);
@@ -90,7 +91,7 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateTx( wxCommandEvent& event )
         status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     }
     if (status != 0)
-        wxMessageBox(_("Tx calibration failed"));
+        wxMessageBox(wxString::Format(_("Tx calibration failed: %s"), LMS_GetLastErrorMessage()));
     else
     {
         wxMessageBox(_("Tx Calibration Finished"), _("Info"), wxOK, this);
@@ -121,10 +122,16 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
 
+    if (status != 0)
+    {
+        wxMessageBox(wxString::Format(_("Tx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
+        UpdateGUI();
+        return;
+    }
 
     status |= LMS_Calibrate(lmsControl,LMS_CH_RX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);
     if (status != 0)
-        wxMessageBox(_("Calibration Failed"), _("Info"), wxOK, this);   
+        wxMessageBox(wxString::Format(_("Rx Calibration Failed: %s"), LMS_GetLastErrorMessage()), _("Info"), wxOK, this);
     else
         wxMessageBox(_("Calibration Finished"), _("Info"), wxOK, this);
     UpdateGUI();
@@ -209,4 +216,12 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     float_type freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     lblCGENrefClk->SetLabel(wxString::Format(_("%f"), freq/1e6));
+}
+
+void lms7002_pnlCalibrations_view::OnCalibrationMethodChange( wxCommandEvent& event )
+{
+    if(rgrCalibrationMethod->GetSelection() == 0)
+        lblCalibrationNote->SetLabel("");
+    else
+        lblCalibrationNote->SetLabel("Some boards might not have onboard loopback for selected Rx/Tx paths");
 }
