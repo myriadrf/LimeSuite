@@ -380,7 +380,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             bool error = false;
 
             t1 = chrono::high_resolution_clock::now();
-            //std::this_thread::sleep_for(chrono::milliseconds(300));
             do
             {
                 uint16_t statusReg;
@@ -397,7 +396,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
             if (connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
                 lime::error("SetPllFrequency: configure FPGA PLL, failed to write registers");
-            return 0;
+            return (!done) || error ? -1 : 0;
         }
     }
     return 0;
@@ -635,6 +634,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;
+    int ret = 0;
     uint32_t reg20;
     const double rxPhC1 =  89.46;
     const double rxPhC2 =  1.24e-6;
@@ -647,8 +647,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     
     bool phaseSearch = false;
     //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
-        if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
+    if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
+    {
+        uint32_t addr[2] = {1, 2};
+        uint32_t vals[2];
+        connection->ReadRegisters(addr,vals,2);
+        if (vals[0]>1 && vals[1] > 0xE)
             phaseSearch = true;
+    }
 
     if (!phaseSearch)
         return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
@@ -697,8 +703,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
     clocks[0].findPhase = true;
     clocks[1] = clocks[0];
-    lime::info("Configure Rx PLL");
-    status = SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
+    if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
+    {
+        clocks[0].index = 0;
+        clocks[0].phaseShift_deg = 0;
+        clocks[0].findPhase = false;
+        clocks[1].findPhase = false;
+        status = SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2);
+    }
 
     {
         const std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
@@ -717,8 +729,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     clocks[0].findPhase = true;
     clocks[1] = clocks[0];
     connection->WriteRegister(0x000A, 0x0200);
-    lime::info("Configure Tx PLL");
-    status = SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+    if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)!=0)
+    {
+        clocks[0].index = 0;
+        clocks[0].phaseShift_deg = 0;
+        clocks[0].findPhase = false;
+        clocks[1].findPhase = false;
+        status |= SetPllFrequency(pll_ind, txRate_Hz, clocks, 2);
+    }
 
     //Restore registers
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write

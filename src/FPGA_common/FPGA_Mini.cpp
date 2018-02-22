@@ -109,8 +109,9 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     clocks[1] = clocks[0];
     clocks[2] = clocks[0];
     clocks[3] = clocks[0];
-    status = SetPllFrequency(0, rxRate_Hz, clocks, 4);
-
+    if (SetPllFrequency(0, rxRate_Hz, clocks, 4)!=0)
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+    
     //Config TX
     {
         const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484 };
@@ -130,7 +131,8 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     clocks[2] = clocks[0];
     clocks[3] = clocks[0];
     connection->WriteRegister(0x000A, 0x0200);
-    status = SetPllFrequency(0, txRate_Hz, clocks, 4);
+    if (SetPllFrequency(0, txRate_Hz, clocks, 4)!=0)
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
 
     {
         //Restore registers
