@@ -185,8 +185,8 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
     
     if ((!mTxStreams[ch]) && (!mRxStreams[ch]) && (txThread.joinable() || rxThread.joinable()))
     {
-        lime::error("Stream cannot be set up while streaming is running");
-        return nullptr;
+        lime::warning("Stopping data stream to set up a new stream");
+        UpdateThreads(true);
     }
               
     StreamChannel* stream = new StreamChannel(this,config);
