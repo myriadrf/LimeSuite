@@ -10,11 +10,15 @@ class TestBasicStreaming(unittest.TestCase):
 
     def setUp(self):
         self.sdr = SoapySDR.Device(SDR_ARGS)
-        for ch in [0, 1]:
+        # We need to detect the number of channels as the LimeSDR has two
+        # and the LimeSDR-Mini has one
+        chans = range(self.sdr.getNumChannels(0))
+
+        for ch in chans:
             self.sdr.setSampleRate(SOAPY_SDR_RX, ch, 10e6)
             self.sdr.setSampleRate(SOAPY_SDR_TX, ch, 10e6)
-        self.rxStream = self.sdr.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0, 1])
-        self.txStream = self.sdr.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32, [0, 1])
+        self.rxStream = self.sdr.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, chans)
+        self.txStream = self.sdr.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32, chans)
 
     def tearDown(self):
         self.sdr.closeStream(self.rxStream)
