@@ -51,33 +51,6 @@ ConnectionFX3Entry::~ConnectionFX3Entry(void)
 #endif
 }
 
-#ifndef __unix__
-/** @return name of usb device as string.
-    @param index device index in list
-*/
-std::string ConnectionFX3Entry::DeviceName(unsigned int index)
-{
-    std::string name;
-    char tempName[USB_STRING_MAXLEN];
-    CCyUSBDevice device;
-    if (index >= device.DeviceCount())
-        return "";
-
-    for (int i = 0; i < USB_STRING_MAXLEN; ++i)
-            tempName[i] = device.DeviceName[i];
-    if (device.bSuperSpeed == true)
-        name = "USB 3.0";
-    else if (device.bHighSpeed == true)
-        name = "USB 2.0";
-    else
-        name = "USB";
-    name += " (";
-    name += tempName;
-    name += ")";
-    return name;
-}
-#endif
-
 std::vector<ConnectionHandle> ConnectionFX3Entry::enumerate(const ConnectionHandle &hint)
 {
     std::vector<ConnectionHandle> handles;
@@ -94,8 +67,13 @@ std::vector<ConnectionHandle> ConnectionFX3Entry::enumerate(const ConnectionHand
 				device.Close();
             device.Open(i);
             ConnectionHandle handle;
-            handle.media = "USB";
-            handle.name = DeviceName(i);
+            if (device.bSuperSpeed == true)
+                handle.media = "USB 3.0";
+            else if (device.bHighSpeed == true)
+                handle.media = "USB 2.0";
+            else
+                handle.media = "USB";
+            handle.name = device.DeviceName;
             handle.index = i;
             std::wstring ws(device.SerialNumber);
             handle.serial = std::string(ws.begin(),ws.end());

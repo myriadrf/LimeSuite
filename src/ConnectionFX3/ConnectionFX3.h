@@ -163,7 +163,6 @@ public:
     IConnection* make(const ConnectionHandle& handle);
 protected:
 #ifndef __unix__
-    std::string DeviceName(unsigned int index);
     void *ctx; //not used, just for mirroring unix
 #else
     libusb_context* ctx; //a libusb session
