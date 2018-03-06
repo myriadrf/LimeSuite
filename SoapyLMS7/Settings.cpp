@@ -884,30 +884,28 @@ std::vector<std::string> SoapyLMS7::listGPIOBanks(void) const
 
 void SoapyLMS7::writeGPIO(const std::string &, const unsigned value)
 {
-    uint8_t buffer = uint8_t(value);
-    int r = lms7Device->GetConnection()->GPIOWrite(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIOWrite((uint8_t*)&value, sizeof(value));
     if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIO() " + std::string(lime::GetLastErrorMessage()));
 }
 
 unsigned SoapyLMS7::readGPIO(const std::string &) const
 {
-    uint8_t buffer(0);
-    int r = lms7Device->GetConnection()->GPIORead(&buffer, 1);
+    unsigned buffer(0);
+    int r = lms7Device->GetConnection()->GPIORead((uint8_t*)&buffer, sizeof(buffer));
     if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIO() " + std::string(lime::GetLastErrorMessage()));
-    return unsigned(buffer);
+    return buffer;
 }
 
 void SoapyLMS7::writeGPIODir(const std::string &, const unsigned dir)
 {
-    uint8_t buffer = uint8_t(dir);
-    int r = lms7Device->GetConnection()->GPIODirWrite(&buffer, 1);
+    int r = lms7Device->GetConnection()->GPIODirWrite((uint8_t*)&dir, sizeof(dir));
     if (r != 0) throw std::runtime_error("SoapyLMS7::writeGPIODir() " + std::string(lime::GetLastErrorMessage()));
 }
 
 unsigned SoapyLMS7::readGPIODir(const std::string &) const
 {
-    uint8_t buffer(0);
-    int r = lms7Device->GetConnection()->GPIODirRead(&buffer, 1);
+    unsigned buffer(0);
+    int r = lms7Device->GetConnection()->GPIODirRead((uint8_t*)&buffer, sizeof(buffer));
     if (r != 0) throw std::runtime_error("SoapyLMS7::readGPIODir() " + std::string(lime::GetLastErrorMessage()));
-    return unsigned(buffer);
+    return buffer;
 }
