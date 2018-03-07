@@ -25,7 +25,7 @@ public:
 
     virtual ~LMS64CProtocol(void);
 
-    DeviceInfo GetDeviceInfo(void);
+    virtual DeviceInfo GetDeviceInfo(void);
 
     //! DeviceReset implemented by LMS64C
     int DeviceReset(int ind=0);

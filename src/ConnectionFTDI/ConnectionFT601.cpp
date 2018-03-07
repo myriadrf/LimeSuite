@@ -37,17 +37,24 @@ ConnectionFT601::ConnectionFT601(void *arg)
 
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionFT601::ConnectionFT601(void *arg, const unsigned index, const int vid, const int pid)
+ConnectionFT601::ConnectionFT601(void *arg, const ConnectionHandle &handle)
 {
     isConnected = false;
+    int pid = -1;
+    int vid = -1;
+    mSerial = std::strtoll(handle.serial.c_str(),nullptr,16);
 #ifndef __unix__
     mFTHandle = NULL;
 #else
+    const auto pidvid = handle.addr;
+    const auto splitPos = pidvid.find(":");
+    pid = std::stoi(pidvid.substr(0, splitPos));
+    vid = std::stoi(pidvid.substr(splitPos+1));
     dev_handle = 0;
     mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
-    if (this->Open(index, vid, pid) != 0)
+    if (this->Open(handle.index, vid, pid) != 0)
         lime::error("Failed to open device");
 }
 
@@ -721,5 +728,12 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
     LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
 
     return ret;
+}
+
+DeviceInfo ConnectionFT601::GetDeviceInfo(void)
+{
+    DeviceInfo info = LMS64CProtocol::GetDeviceInfo();
+    info.boardSerialNumber = mSerial; 
+    return info;
 }
 

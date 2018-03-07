@@ -64,7 +64,7 @@ public:
     };
 
     ConnectionFT601(void *arg);
-    ConnectionFT601(void *ctx, const unsigned index, const int vid = -1, const int pid = -1);
+    ConnectionFT601(void *ctx, const ConnectionHandle &handle);
 
     virtual ~ConnectionFT601(void);
 
@@ -77,6 +77,8 @@ public:
     int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
 
     int ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback) override;
+    
+    DeviceInfo GetDeviceInfo(void)override;
 
 protected:
     int GetBuffersCount() const override;
@@ -117,6 +119,7 @@ protected:
     libusb_context *ctx; //a libusb session
 #endif
     std::mutex mExtraUsbMutex;
+    uint64_t mSerial;
 };
 
 class ConnectionFT601Entry : public ConnectionRegistryEntry
