@@ -634,7 +634,6 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 {
     const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;
-    int ret = 0;
     uint32_t reg20;
     const double rxPhC1 =  89.46;
     const double rxPhC2 =  1.24e-6;

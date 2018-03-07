@@ -115,6 +115,28 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t in
  */
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 
+/**
+ * Disconnect device but keep configuration cache (device is not deallocated).
+ *
+ * @deprecated use LMS_Close() to disconnect and close device
+ *
+ * @param   device  Device handle previously obtained by LMS_Open().
+ *
+ * @return   0 on success, (-1) on failure
+ */
+API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
+
+/**
+ * Check if device port is opened
+ *
+ * @deprecated use return status of LMS_Open() as indication. 
+ *
+ * @param   device  Device handle previously obtained by LMS_Open().
+ * @param   port    port index (ignored if device has only 1 port)
+ *
+ * @return   true(1) if port is open, false (0) if - closed
+ */
+API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port);
 
 /** @} (End FN_INIT) */
 
@@ -1061,6 +1083,8 @@ typedef struct
     uint32_t overrun;
     ///Number of dropped packets by HW
     uint32_t droppedPackets;
+    ///Currently not used
+    float_type sampleRate;
     ///Combined data rate of all stream of the same direction (TX or RX)
     float_type linkRate;
     ///Current HW timestamp

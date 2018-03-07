@@ -5,7 +5,7 @@
 */
 
 #include "ConnectionEVB7COM.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 
 #include "string.h"
 #ifdef __unix__

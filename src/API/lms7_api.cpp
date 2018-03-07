@@ -73,6 +73,33 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
     return LMS_SUCCESS;
 }
 
+API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
+{
+    lime::warning("LMS_Disconnect() deprecated: closing connection without closing device is no longer supporeted\nuse LMS_Close() to disconnect and close device");
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    return 0;
+}
+
+API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
+{
+    lime::warning("LMS_IsOpen() deprecated: device is now always open after successful LMS_Open() call\ninvalid (non-null) device pointer will result in segfault");
+    if (device == nullptr)
+        return false;
+    
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+
+    auto conn = lms->GetConnection();
+    if (conn != nullptr)
+    {
+        return conn->IsOpen();
+    }
+    return false;
+}
+
 API_EXPORT int CALL_CONV LMS_Reset(lms_device_t *device)
 {
     if (device == nullptr)
