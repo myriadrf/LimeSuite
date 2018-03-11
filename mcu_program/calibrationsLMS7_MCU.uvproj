@@ -100,11 +100,11 @@
           <SimDllName>S8051.DLL</SimDllName>
           <SimDllArguments></SimDllArguments>
           <SimDlgDll>DP51.DLL</SimDlgDll>
-          <SimDlgDllArguments>-p51</SimDlgDllArguments>
+          <SimDlgDllArguments>-p52</SimDlgDllArguments>
           <TargetDllName>S8051.DLL</TargetDllName>
           <TargetDllArguments></TargetDllArguments>
           <TargetDlgDll>TP51.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-p51</TargetDlgDllArguments>
+          <TargetDlgDllArguments>-p52</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -565,6 +565,11 @@
               <FileName>lms7002m_filters.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\common_src\lms7002m_filters.c</FilePath>
+            </File>
+            <File>
+              <FileName>lms7002m_agc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\common_src\lms7002m_agc.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1000,7 +1000,7 @@ std::string MCU_BD::GetProgramFilename() const
 */
 void MCU_BD::RunProcedure(uint8_t id)
 {
-    mSPI_write(0x0006, id != 0);
+    mSPI_write(0x0006, 1);
     mSPI_write(0x0000, id);
     uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt6 = 0x08;

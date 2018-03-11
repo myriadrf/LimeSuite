@@ -599,6 +599,7 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define DC_REG_RXTSP 0x040B, 15<<4 |  0
 #define CMIX_GAIN_RXTSP 0x040C, 15<<4 |  14
 #define CMIX_SC_RXTSP 0x040C, 13<<4 |  13
+#define CMIX_GAIN_RXTSP_R3 0x040C, 12<<4 | 12
 #define CMIX_BYP_RXTSP 0x040C, 7<<4 |  7
 #define AGC_BYP_RXTSP 0x040C, 6<<4 |  6
 #define GFIR3_BYP_RXTSP 0x040C, 5<<4 |  5
@@ -648,5 +649,22 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 
 #define R5_LPF_BYP_TBB 0x010B, 0<<4 | 0
 #define RSSI_RSSI1_VAL 0x0605, 7 << 4 | 0
+#define TRX_GAIN_SRC 0x0081, 15 << 4 | 15
+#define G_LNA_RFE_R3 0x0126, 5 << 4 | 2
+#define G_PGA_RBB_R3 0x0126, 10 << 4 | 6
+#define G_TIA_RFE_R3 0x0126, 1 << 4 | 0
+
+
+#define DCOFFI_RFE 0x010E, 13<<4 | 7
+#define DCOFFQ_RFE 0x010E, 6<<4 | 0
+#define DCCORRI_TXTSP 0x0204, 15<<4 | 8
+#define DCCORRQ_TXTSP 0x0204, 7<<4 | 0
+#define IQCORR_TXTSP 0x0203, 11<<4 | 0
+#define IQCORR_RXTSP 0x0403, 11<<4 | 0
+#define GCORRI_TXTSP 0x0202, 10<<4 | 0
+#define GCORRQ_TXTSP 0x0201, 10<<4 | 0
+#define GCORRI_RXTSP 0x0402, 10<<4 | 0
+#define GCORRQ_RXTSP 0x0401, 10<<4 | 0
+
 
 #endif

@@ -7,6 +7,8 @@
 
 #include "typedefs.h"
 
+bool stopProcedure = false;
+bool hasStopped = true;
 bool runProcedure = false;
 uint8_t currentInstruction;
 extern float_type RefClk;
@@ -49,6 +51,7 @@ void ext3_int() interrupt 8
 {
     P1 = MCU_WORKING;
     currentInstruction = P0;
+    stopProcedure = true;
     runProcedure = true;
 }
 
@@ -61,11 +64,9 @@ uint8_t ProxyWrite()
     uint16_t addr;
     uint16_t wrValue;
     P1 = MCU_WORKING;
-    slowSPI = 1;
     addr = SPI_read(proxyRegAddr);
     wrValue = SPI_read(proxyWrValue);
-    SPI_write(addr, wrValue);
-    slowSPI = 0;
+    SPI_write_slow(addr, wrValue);
     return MCU_IDLE;
 }
 
@@ -74,11 +75,9 @@ uint8_t ProxyRead()
     uint16_t addr;
     uint16_t rdValue;
     P1 = MCU_WORKING;
-    slowSPI = 1;
     addr = SPI_read(proxyRegAddr);
-    rdValue = SPI_read(addr);
+    rdValue = SPI_read_slow(addr);
     SPI_write(proxyRdValue, rdValue);
-    slowSPI = 0;
     return MCU_IDLE;
 }
 
@@ -107,14 +106,17 @@ void main()  //main routine
         {
             switch(currentInstruction)
             {
-            //case 0:
-            //    P1 = MCU_IDLE;
-            //    break;
+            case 0:
+                runProcedure = false;
+                while(!hasStopped);
+
+                P1 = MCU_IDLE;
+                break;
             case 1: //CalibrateTx
                 P1 = MCU_IDLE | CalibrateTx(false);
                 break;
             case 2: //CalibrateRx
-                P1 = MCU_IDLE | CalibrateRx(false);
+                P1 = MCU_IDLE | CalibrateRx(false, false);
                 break;
             case 3:
                 UpdateFreq(0);
@@ -140,11 +142,16 @@ void main()  //main routine
                 extLoopbackPair = inputRegs[0];
                 P1 = MCU_IDLE;
                 break;
+            case 10:
+                P1 = MCU_IDLE;
+                stopProcedure = false;
+                RunAGC(((uint32_t)SPI_read(MCU_PARAMETER_ADDRESS))<<2);
+                break;
             case 17: //CalibrateTx
                 P1 = MCU_IDLE | CalibrateTx(true);
                 break;
             case 18: //CalibrateRx
-                P1 = MCU_IDLE | CalibrateRx(true);
+                P1 = MCU_IDLE | CalibrateRx(true, false);
                 break;
             case 255: //return program ID
                 P1 = 0x05;

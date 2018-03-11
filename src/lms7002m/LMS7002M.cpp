@@ -370,7 +370,7 @@ int LMS7002M::ResetChip()
     int status = 0;
     if (controlPort)
         status = controlPort->DeviceReset(mdevIndex);
-    else 
+    else
         lime::warning("No device connected");
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     status |= Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
@@ -934,7 +934,7 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
 
 int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 {
-   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain 
+   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
        return -1;
    if (gain != 0)
    {
@@ -948,7 +948,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 float_type LMS7002M::GetTBBIAMP_dB(void)
 {
     float_type gain = 0;
-    int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true); 
+    int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
     if (CalibrateTxGain(0,nullptr)==0)
     {
         int g_optimal = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
@@ -967,16 +967,16 @@ int LMS7002M::SetPathRFE(PathRFE path)
     switch (path)
     {
         case PATH_RFE_LNAH: sel_path_rfe = 1; break;
-        case PATH_RFE_LB2: pd_lb2 = 0; 
+        case PATH_RFE_LB2: pd_lb2 = 0;
         case PATH_RFE_LNAL: sel_path_rfe = 2; break;
         case PATH_RFE_LB1: pd_lb1 = 0;
         case PATH_RFE_LNAW: sel_path_rfe = 3; break;
         default: sel_path_rfe = 0; break;
     }
-    
+
     Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), sel_path_rfe);
-    
-    int pd_lna_rfe = (path == PATH_RFE_LB2 || path == PATH_RFE_LB1 || sel_path_rfe == 0) ? 1 : 0;  
+
+    int pd_lna_rfe = (path == PATH_RFE_LB2 || path == PATH_RFE_LB1 || sel_path_rfe == 0) ? 1 : 0;
     Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), pd_lna_rfe);
 
     Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), pd_lb1);
@@ -1818,11 +1818,14 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool use_cache)
     if(address == 0x0640 || address == 0x0641)
     {
         MCU_BD* mcu = GetMCUControls();
+        mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+        if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+            mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
         SPI_write(0x002D, address);
         SPI_write(0x020C, data);
         mcu->RunProcedure(7);
         mcu->WaitForMCU(50);
-        return SPI_read(0x040B);
+        return SPI_read(0x040B) == data ? 0 : -1;
     }
     else
         return this->SPI_write_batch(&address, &data, 1, use_cache);
@@ -1860,6 +1863,9 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
         if(address == 0x0640 || address == 0x0641)
         {
             MCU_BD* mcu = GetMCUControls();
+            mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+            if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+                mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
             SPI_write(0x002D, address);
             mcu->RunProcedure(8);
             mcu->WaitForMCU(50);
@@ -1889,7 +1895,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) || (spiAddr[i] < 0x0100);
         bool wr1 = ((mac & 0x2) != 0) && (spiAddr[i] >= 0x0100);
-        
+
         if (use_cache) {
             if (wr0 && (mRegistersMap->GetValue(0, spiAddr[i]) == spiData[i]))
                 wr0 = false;
@@ -1898,7 +1904,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
             if (!(wr0 || wr1))
                 continue;
         }
-        
+
         data.push_back ((1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]); //msbit 1=SPI write
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1907,7 +1913,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         if(spiAddr[i] == LMS7param(MAC).address)
             mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
     }
-    
+
     if (data.size() == 0)
         return 0;
     if (!controlPort)
@@ -2273,7 +2279,7 @@ int LMS7002M::UploadAll()
     if (!controlPort) {
         lime::error("No device connected");
         return -1;
-    }        
+    }
 
     Channel ch = this->GetActiveChannel(); //remember used channel
 
@@ -2325,7 +2331,7 @@ int LMS7002M::DownloadAll()
     if (!controlPort) {
         lime::error("No device connected");
         return -1;
-    }  
+    }
     int status;
     Channel ch = this->GetActiveChannel(false);
 

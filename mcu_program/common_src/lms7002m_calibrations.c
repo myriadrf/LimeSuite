@@ -80,7 +80,7 @@ uint16_t RSSIDelayCounter = 1; // MCU timer delay between RSSI measurements
 // [1:0] SEL_PATH_RFE, when calibrating Tx
 uint8_t extLoopbackPair = 0;
 
-static int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
+int16_t clamp(int16_t value, int16_t minBound, int16_t maxBound)
 {
     if(value < minBound)
         return minBound;
@@ -126,8 +126,9 @@ void UpdateRSSIDelay()
     }
 }
 
-uint16_t GetRSSI()
+uint32_t GetRSSI()
 {
+    uint32_t rssi;
 #ifdef __cplusplus
     int waitTime = 1000000.0*(0xFFFF - RSSIDelayCounter)*12/RefClk;
     std::this_thread::sleep_for(std::chrono::microseconds(waitTime));
@@ -140,7 +141,8 @@ uint16_t GetRSSI()
     while( !TF0 ); // wait for timer overflow
 #endif
     FlipRisingEdge(CAPTURE);
-    return ((SPI_read(0x040F) << 2) | (SPI_read(0x040E) & 0x3));
+    rssi = SPI_read(0x040F);
+    return (rssi << 2 | (SPI_read(0x040E) & 0x3));
 }
 
 static void SetRxGFIR3Coefficients()
@@ -437,9 +439,9 @@ void CalibrateRxDCAuto()
 #endif // VERBOSE
 
     //manual adjustments
-    Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 0);
+    Modify_SPI_Reg_bits(GCORRQ_RXTSP, 0);
     AdjustAutoDC(dcRegAddr, false);
-    Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, 2047);
+    Modify_SPI_Reg_bits(GCORRQ_RXTSP, 2047);
     AdjustAutoDC(dcRegAddr+1, false);
 
 #if VERBOSE
@@ -578,21 +580,23 @@ void CalibrateIQImbalance(bool tx)
 '-' w l t '#2 phase'\
 \n");
 #endif // DRAW_GNU_PLOTS
+    uint16_t gcorriAddress;
+    uint16_t gcorrqAddress;
     BinSearchParam argsPhase;
     BinSearchParam argsGain;
-    LMS7Parameter gcorri;
-    LMS7Parameter gcorrq;
+    argsGain.param.msblsb = MSB_LSB(10,0);
+    argsPhase.param.msblsb = MSB_LSB(11,0);
     if(tx)
     {
-        gcorri = GCORRI_TXTSP;
-        gcorrq = GCORRQ_TXTSP;
-        argsPhase.param = IQCORR_TXTSP;
+        gcorrqAddress = 0x0201;
+        gcorriAddress = 0x0202;
+        argsPhase.param.address = 0x0203;
     }
     else
     {
-        gcorri = GCORRI_RXTSP;
-        gcorrq = GCORRQ_RXTSP;
-        argsPhase.param = IQCORR_RXTSP;
+        gcorrqAddress = 0x0401;
+        gcorriAddress = 0x0402;
+        argsPhase.param.address = 0x0403;
     }
 
     argsPhase.maxValue = 128;
@@ -611,24 +615,24 @@ void CalibrateIQImbalance(bool tx)
     {
         uint16_t rssiIgain;
         uint16_t rssiQgain;
-        SPI_write(gcorri.address, 2047 - 64);
-        SPI_write(gcorrq.address, 2047);
+        SPI_write(gcorriAddress, 2047 - 64);
+        SPI_write(gcorrqAddress, 2047);
         rssiIgain = GetRSSI();
-        SPI_write(gcorri.address, 2047);
-        SPI_write(gcorrq.address, 2047 - 64);
+        SPI_write(gcorriAddress, 2047);
+        SPI_write(gcorrqAddress, 2047 - 64);
         rssiQgain = GetRSSI();
 
         if(rssiIgain < rssiQgain)
-            argsGain.param = gcorri;
+            argsGain.param.address = gcorriAddress;
         else
-            argsGain.param = gcorrq;
-        SPI_write(gcorrq.address, 2047);
+            argsGain.param.address = gcorrqAddress;
+        SPI_write(gcorrqAddress, 2047);
     }
     argsGain.maxValue = 2047;
     argsGain.minValue = 2047-512;
     BinarySearch(&argsGain);
 #if VERBOSE
-    const char* chName = (argsGain.param.address == gcorri.address ? "I" : "Q");
+    const char* chName = (argsGain.param.address == gcorriAddress ? "I" : "Q");
     printf("#1 %s GAIN_%s: %i, %3.1f dBFS\n", dirName, chName, argsGain.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
 #ifdef DRAW_GNU_PLOTS
@@ -878,12 +882,10 @@ uint8_t CalibrateTx(bool extLoopback)
 TxCalibrationEnd:
     {
         //analog dc is not overwritten by chip state restore
-        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb);
-        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb);
-        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb);
+        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_TXTSP);
+        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP);
+        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_TXTSP);
         SaveChipState(1);
-        SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
-        SPI_write(0x0020, x0020val);
         if(status != MCU_NO_ERROR)
         {
 #if VERBOSE
@@ -891,15 +893,15 @@ TxCalibrationEnd:
 #endif
             return status;
         }
-        Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_TXTSP.address, IQCORR_TXTSP.msblsb, phaseOffset);
+        Modify_SPI_Reg_bits(GCORRI_TXTSP, gcorri);
+        Modify_SPI_Reg_bits(GCORRQ_TXTSP, gcorrq);
+        Modify_SPI_Reg_bits(IQCORR_TXTSP, phaseOffset);
 #if VERBOSE
         int16_t dcI = ReadAnalogDC((x0020val & 1) ? 0x5C3 : 0x5C5);
         int16_t dcQ = ReadAnalogDC((x0020val & 1) ? 0x5C4 : 0x5C6);
         printf("Tx | DC   | GAIN | PHASE\n");
         printf("---+------+------+------\n");
-        printf("I: | %4i | %4i | %i\n", dcI, gcorri, toSigned(phaseOffset, IQCORR_TXTSP.msblsb));
+        printf("I: | %4i | %4i | %i\n", dcI, gcorri, toSigned(phaseOffset, MSB_LSB(11, 0)));
         printf("Q: | %4i | %4i |\n", dcQ, gcorrq);
 #endif
     }
@@ -1031,13 +1033,15 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
         {
         case 2: //LNA_L
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+            //Modify_SPI_Reg_bits(SEL_BAND2_TRF, 1);
+            //Modify_SPI_Reg_bits(SEL_BAND1_TRF, 0);
+            Modify_SPI_Reg_bits(0x0103, MSB_LSB(11, 10), 1);
             break;
         case 3: //LNA_W
         case 1: //LNA_H
-            Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
-            Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+            //Modify_SPI_Reg_bits(SEL_BAND2_TRF, 0);
+            //Modify_SPI_Reg_bits(SEL_BAND1_TRF, 1);
+            Modify_SPI_Reg_bits(0x0103, MSB_LSB(11, 10), 2);
             break;
         default:
             return MCU_INVALID_RX_PATH;
@@ -1045,9 +1049,8 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     }
     else // external looback
     {
-        const uint8_t band = (extLoopbackPair >> 2) & 1; // 0-band1, 1-band2
-        Modify_SPI_Reg_bits(SEL_BAND2_TRF, band);
-        Modify_SPI_Reg_bits(SEL_BAND1_TRF, !band);
+        const uint8_t band1_band2 = 2-((extLoopbackPair >> 2) & 1);
+        Modify_SPI_Reg_bits(0x0103, MSB_LSB(11, 10), band1_band2);
         if(Get_SPI_Reg_bits(SEL_PATH_RFE) != (extLoopbackPair&0x3))
             return MCU_INVALID_RX_PATH;
     }
@@ -1210,7 +1213,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     return MCU_NO_ERROR;
 }
 
-uint8_t CalibrateRx(bool extLoopback)
+uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
 {
 #ifdef __cplusplus
     auto beginTime = std::chrono::high_resolution_clock::now();
@@ -1253,6 +1256,8 @@ uint8_t CalibrateRx(bool extLoopback)
         goto RxCalibrationEndStage;
     UpdateRSSIDelay();
     CalibrateRxDCAuto();
+    if(dcOnly)
+        goto RxCalibrationEndStage;
     if(!extLoopback)
     {
         if ((uint8_t)Get_SPI_Reg_bits(SEL_PATH_RFE) == 2)
@@ -1285,12 +1290,10 @@ uint8_t CalibrateRx(bool extLoopback)
     CalibrateIQImbalance(LMS7002M_Rx);
 RxCalibrationEndStage:
     {
-        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb);
-        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb);
-        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb);
+        uint16_t gcorri = Get_SPI_Reg_bits(GCORRI_RXTSP);
+        uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
+        uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
         SaveChipState(1);
-        SPI_write(0x0020, x0020val & ~0xAA00); //do TSP logic resets
-        SPI_write(0x0020, x0020val);
         if (status != MCU_NO_ERROR)
         {
 #if VERBOSE
@@ -1299,13 +1302,16 @@ RxCalibrationEndStage:
             return status;
         }
         // dc corrector values not overwritten by chip state restore
-        Modify_SPI_Reg_bits(GCORRI_RXTSP.address, GCORRI_RXTSP.msblsb, gcorri);
-        Modify_SPI_Reg_bits(GCORRQ_RXTSP.address, GCORRQ_RXTSP.msblsb, gcorrq);
-        Modify_SPI_Reg_bits(IQCORR_RXTSP.address, IQCORR_RXTSP.msblsb, phaseOffset);
+        if(!dcOnly)
+        {
+            Modify_SPI_Reg_bits(GCORRI_RXTSP, gcorri);
+            Modify_SPI_Reg_bits(GCORRQ_RXTSP, gcorrq);
+            Modify_SPI_Reg_bits(IQCORR_RXTSP, phaseOffset);
+        }
 #if VERBOSE
         int16_t dcI = ReadAnalogDC((x0020val & 1) ? 0x5C7 : 0x5C8);
         int16_t dcQ = ReadAnalogDC((x0020val & 1) ? 0x5C9 : 0x5CA);
-        int16_t phaseSigned = toSigned(phaseOffset, IQCORR_RXTSP.msblsb);
+        int16_t phaseSigned = toSigned(phaseOffset, MSB_LSB(11, 0));
         printf("Tx | DC   | GAIN | PHASE\n");
         printf("---+------+------+------\n");
         printf("I: | %4i | %4i | %i\n", dcI, gcorri, phaseSigned);
