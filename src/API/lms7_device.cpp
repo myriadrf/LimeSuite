@@ -1768,6 +1768,9 @@ int LMS7_Device::MCU_AGCStart(uint32_t wantedRSSI)
             return status;
     }
 
+    long refClk = lms_list.at(lms_chip_id)->GetReferenceClk_SX(false);
+    mcu->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x002D, 15, 0, wantedRSSI >> 2);
     mcu->RunProcedure(MCU_FUNCTION_AGC);
     return 0;
