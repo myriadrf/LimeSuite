@@ -164,7 +164,7 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     if(libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
     {
         lime::debug("Kernel Driver Active");
-        if(libusb_detach_kernel_driver(dev_handle, 1) == 0) //detach it
+        if(libusb_set_auto_detach_kernel_driver(dev_handle, 1) == 0) //detach it
             lime::debug("Kernel Driver Detached!");
     }
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
