@@ -46,6 +46,18 @@ lms7002_mainPanel::~lms7002_mainPanel()
 
 void lms7002_mainPanel::UpdateVisiblePanel()
 {
+    wxWindow* currentPage = tabsNotebook->GetCurrentPage();
+    uint16_t spisw_ctrl = 0;
+    LMS_ReadLMSReg(lmsControl, 0x0006, &spisw_ctrl);
+    if(spisw_ctrl & 1) // transceiver controlled by MCU
+    {
+        if(currentPage != mTabMCU && currentPage != mTabTrxGain)
+            currentPage->Disable();
+        return;
+    }
+    else
+        currentPage->Enable();
+
     wxLongLong t1, t2;
     t1 = wxGetUTCTimeMillis();
     long visibleTabId = tabsNotebook->GetCurrentPage()->GetId();
@@ -348,7 +360,7 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     bool enable = chkEnableMIMO->IsChecked();
     for (int ch = 0; ch < LMS_GetNumChannels(lmsControl,false);ch++)
     {
-        if (!enable) ch++; //enable all, disable only B 
+        if (!enable) ch++; //enable all, disable only B
         LMS_EnableChannel(lmsControl,LMS_CH_RX,ch,enable);
         LMS_EnableChannel(lmsControl,LMS_CH_TX,ch,enable);
     }
@@ -373,7 +385,7 @@ void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
 {
     int deviceSelection = cmbLmsDevice->GetSelection();
     ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
-    
+
     wxNotebookPage* page = tabsNotebook->GetCurrentPage();
     if (page == mTabSXR) //change active channel to A
         LMS_WriteParam(lmsControl,LMS7param(MAC),1);
