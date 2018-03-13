@@ -98,7 +98,7 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     status = mcuControl->WaitForMCU(1000);
     if(status != MCU_BD::MCU_NO_ERROR)
     {
-        lime::error("MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+        lime::error("Tune Rx Filter: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
         return -1;
     }
     //sync registers to cache
@@ -129,7 +129,7 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     }
 
     if (!controlPort){
-        lime::error("No device connected");
+        lime::error("Tune Tx Filter: No device connected");
         return -1;
     }
 
@@ -150,7 +150,7 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
     status = mcuControl->WaitForMCU(1000);
     if(status != MCU_BD::MCU_NO_ERROR)
     {
-        lime::error("MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+        lime::error("Tune Tx Filter: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
         return -1;
     }
     //sync registers to cache

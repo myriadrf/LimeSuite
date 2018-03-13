@@ -204,16 +204,16 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+        return ReportError(ERANGE, "Tx Calibration: Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
-        return ReportError(EINVAL, "Device not connected");
+        return ReportError(EINVAL, "Tx Calibration: Device not connected");
 #ifdef __cplusplus
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
     if(ch == 0 || ch == 3)
-        return ReportError(EINVAL, "Incorrect channel selection MAC %i", ch);
+        return ReportError(EINVAL, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
     //caching variables
     DeviceInfo info = controlPort->GetDeviceInfo();
@@ -277,14 +277,14 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             status = SetExtLoopback(controlPort, ch, true, true);
             if(status != 0)
-                return ReportError(EINVAL, "Failed to enable external loopback");
+                return ReportError(EINVAL, "Tx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, true);
             mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_TX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_TX);
         status = mcuControl->WaitForMCU(1000);
         if(status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(EINVAL, "Tx Calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
@@ -321,9 +321,9 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+        return ReportError(ERANGE, "Rx Calibration: Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
-        return ReportError(ENODEV, "Device not connected");
+        return ReportError(ENODEV, "Rx Calibration: Device not connected");
 #ifdef __cplusplus
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
@@ -332,7 +332,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
     if(ch == 0 || ch == 3)
-        return ReportError(EINVAL, "Incorrect channel selection MAC %i", ch);
+        return ReportError(EINVAL, "Rx Calibration: Incorrect channel selection MAC %i", ch);
     uint32_t boardId = info.boardSerialNumber;
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
@@ -404,7 +404,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         {
             status = SetExtLoopback(controlPort, ch, true, false);
             if(status != 0)
-                return ReportError(EINVAL, "Failed to enable external loopback");
+                return ReportError(EINVAL, "Rx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, false);
             mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
@@ -412,7 +412,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         mcuControl->RunProcedure(useExtLoopback ? MCU_FUNCTION_CALIBRATE_RX_EXTLOOPB : MCU_FUNCTION_CALIBRATE_RX);
         status = mcuControl->WaitForMCU(1000);
         if(status != MCU_BD::MCU_NO_ERROR)
-            return ReportError(EINVAL, "MCU error code(%i): %s", status, MCU_BD::MCUStatusMessage(status));
+            return ReportError(EINVAL, "Rx calibration: MCU error %i (%s)", status, MCU_BD::MCUStatusMessage(status));
     }
 
     //sync registers to cache
