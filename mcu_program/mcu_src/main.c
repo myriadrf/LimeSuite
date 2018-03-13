@@ -145,7 +145,7 @@ void main()  //main routine
             case 10:
                 P1 = MCU_IDLE;
                 stopProcedure = false;
-                RunAGC(((uint32_t)SPI_read(MCU_PARAMETER_ADDRESS))<<2);
+                P1 = RunAGC(((uint32_t)SPI_read(MCU_PARAMETER_ADDRESS))<<2);
                 break;
             case 17: //CalibrateTx
                 P1 = MCU_IDLE | CalibrateTx(true);

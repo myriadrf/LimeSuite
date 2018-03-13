@@ -98,8 +98,9 @@ TABLE_ENTRY(48,14,31),
 TABLE_ENTRY(49,15,31)
 };
 
-void RunAGC(uint32_t wantedRSSI)
+uint8_t RunAGC(uint32_t wantedRSSI)
 {
+    uint8_t status;
     uint8_t gainLNA = 11;
     uint8_t gainPGA = 31;
     hasStopped = false;
@@ -112,7 +113,12 @@ void RunAGC(uint32_t wantedRSSI)
     //C_CTL_PGA_RBB 0, TIA 2
     SPI_write(0x0126, (gainPGA << 6) | (gainLNA << 2) | 2);
 
-    CalibrateRx(false, true);
+    status = CalibrateRx(false, false);
+    if(status != MCU_NO_ERROR)
+    {
+        StoreState(true);
+        return status;
+    }
 
     //Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
     //Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
@@ -164,4 +170,5 @@ void RunAGC(uint32_t wantedRSSI)
     StoreState(true);
     ClockLogicResets();
     hasStopped = true;
+    return 0;
 }

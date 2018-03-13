@@ -781,7 +781,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         //SX VCO is powered up in SetFrequencySX/Tune
         status = SetFrequencySX(LMS7002M_Rx, SXRfreq);
         if(status != MCU_NO_ERROR)
+        {
+            SPI_write(0x0020, x0020val); //restore used channel
             return status;
+        }
     }
 
     //if calibrating ch. B enable buffers
@@ -797,7 +800,10 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
     //check if Tx is tuned
     if( !IsPLLTuned() )
+    {
+        SPI_write(0x0020, x0020val); //restore used channel
         return MCU_SXT_TUNE_FAILED;
+    }
 
     SPI_write(0x0020, x0020val); //restore used channel
 
@@ -886,6 +892,7 @@ TxCalibrationEnd:
         uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_TXTSP);
         uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_TXTSP);
         SaveChipState(1);
+        SPI_write(0x0020, x0020val);
         if(status != MCU_NO_ERROR)
         {
 #if VERBOSE
@@ -1079,9 +1086,9 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         SetDefaultsSX();
         status = SetFrequencySX(LMS7002M_Tx, SXRfreqHz + bandwidthRF/ calibUserBwDivider + 9e6);
     }
+    SPI_write(0x0020, x0020val);
     if(status != MCU_NO_ERROR)
         return status;
-    SPI_write(0x0020, x0020val);
 
     LoadDC_REG_TX_IQ();
 
@@ -1294,6 +1301,7 @@ RxCalibrationEndStage:
         uint16_t gcorrq = Get_SPI_Reg_bits(GCORRQ_RXTSP);
         uint16_t phaseOffset = Get_SPI_Reg_bits(IQCORR_RXTSP);
         SaveChipState(1);
+        SPI_write(0x0020, x0020val);
         if (status != MCU_NO_ERROR)
         {
 #if VERBOSE
