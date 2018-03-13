@@ -1071,6 +1071,8 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
             printf("MCU error status 0x%02X\n", status);
         RunProcedure(9);
     }
+    if(WaitForMCU(100) != 0)
+        lime::debug("Failed to set MCU parameter");
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted
