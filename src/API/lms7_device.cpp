@@ -748,7 +748,7 @@ LMS7_Device::Range LMS7_Device::GetTxPathBand(unsigned path, unsigned chan) cons
 {
   switch (path)
   {
-      case LMS_PATH_TX2: return Range(2e6, 3.8e6);
+      case LMS_PATH_TX2: return Range(2e9, 3.8e9);
       case LMS_PATH_TX1: return Range(30e3, 2e9);
       default: return Range();
   }
@@ -1291,7 +1291,7 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 
 LMS7_Device::Range LMS7_Device::GetFrequencyRange(bool tx) const
 {
-  return Range(30e6, 3.8e6);
+  return Range(30e6, 3.8e9);
 }
 
 int LMS7_Device::Init()
