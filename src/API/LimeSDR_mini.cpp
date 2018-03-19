@@ -175,6 +175,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
         {
             uint16_t value;
             connection->ReadRegister(0x17,value);
+            value &= ~(1<<12);
             value |= 1<<13;
             connection->WriteRegister(0x17, value);
         }   
@@ -279,6 +280,17 @@ LMS7_Device::Range LMS7_LimeSDR_mini::GetRxPathBand(unsigned path, unsigned chan
       default: return Range();
   }
 }
+
+LMS7_Device::Range LMS7_LimeSDR_mini::GetTxPathBand(unsigned path, unsigned chan) const
+{
+  switch (path)
+  {
+      case LMS_PATH_TX1: return Range(2e9, 3.8e9);
+      case LMS_PATH_TX2: return Range(30e6, 2e9);
+      default: return Range();
+  }
+}
+
 
 std::vector<std::string> LMS7_LimeSDR_mini::GetProgramModes() const
 {

@@ -44,7 +44,7 @@ public:
     double GetFrequency(bool tx, unsigned chan) const;
     Range GetFrequencyRange(bool tx) const;
     virtual Range GetRxPathBand(unsigned path, unsigned chan) const;
-    Range GetTxPathBand(unsigned path, unsigned chan) const;
+    virtual Range GetTxPathBand(unsigned path, unsigned chan) const;
     int SetLPF(bool tx, unsigned chan, bool en, double bandwidth=-1);
     double GetLPFBW(bool tx,unsigned chan) const;
     Range GetLPFRange(bool tx,unsigned chan) const;
@@ -110,7 +110,6 @@ protected:
     lime::IConnection* connection;
     std::vector<lime::LMS7002M*> lms_list;
     lime::LMS7002M* SelectChannel(unsigned chan) const;
-    int ConfigureRXLPF(bool enabled,int ch, double bandwidth);
     int ConfigureTXLPF(bool enabled,int ch, double bandwidth);
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;

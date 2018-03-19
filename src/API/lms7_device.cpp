@@ -117,38 +117,6 @@ lime::LMS7002M* LMS7_Device::SelectChannel(unsigned ch) const
     return lms;
 }
 
-int LMS7_Device::ConfigureRXLPF(bool enabled,int ch,double bandwidth)
-{
-    lime::LMS7002M* lms = SelectChannel(ch);
-
-    if (enabled)
-    {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),0)!=0)
-            return -1;
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),0);
-        lms->Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),0);
-
-        if (bandwidth > 0)
-        {
-            if (lms->SPI_read(0x2F, false)== 0x3840)
-                lms->EnableCalibrationByMCU(false);
-            else
-                lms->EnableCalibrationByMCU(true);
-            if (lms->TuneRxFilter(bandwidth)!=0)
-                return -1;
-        }
-    }
-    else
-    {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFL_RBB),1)!=0)
-            return -1;
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_RBB),1);
-        lms->Modify_SPI_Reg_bits(LMS7param(INPUT_CTL_PGA_RBB),2);
-    }
-    lime::info("RX LPF configured");
-    return 0;
-}
-
 int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwidth)
 {
     double w,w2;
@@ -309,10 +277,6 @@ int LMS7_Device::ConfigureTXLPF(bool enabled, int ch,double bandwidth)
 
             if (bandwidth > 0)
             {
-                if (lms->SPI_read(0x2F, true)== 0x3840)
-                    lms->EnableCalibrationByMCU(false);
-                else
-                    lms->EnableCalibrationByMCU(true);
                 if (lms->TuneTxFilter(bandwidth) != 0)
                     return -1;
             }
@@ -749,21 +713,41 @@ LMS7_Device::Range LMS7_Device::GetTxPathBand(unsigned path, unsigned chan) cons
   switch (path)
   {
       case LMS_PATH_TX2: return Range(2e9, 3.8e9);
-      case LMS_PATH_TX1: return Range(30e3, 2e9);
+      case LMS_PATH_TX1: return Range(30e6, 2e9);
       default: return Range();
   }
 }
 
 int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
-{
-    if (tx)
-    {
-        if(en) tx_channels[chan].lpf_bw = bandwidth;
-        return ConfigureTXLPF(en,chan,bandwidth)!=0;
+{   
+    lime::LMS7002M* lms = SelectChannel(chan);
+    
+    auto bw_range = GetLPFRange(tx,chan);
+    std::vector<ChannelInfo>& channels = tx ? tx_channels : rx_channels;
+    
+    if (!en){
+        bandwidth = bw_range.max;
     }
+    else if (bandwidth < 0){
+        bandwidth = channels[chan].lpf_bw;
+    }
+    else{
+        if (bandwidth < bw_range.min){
+            lime::warning("%cXLPF set to %.3f MHz (requested %0.3f MHz [out of range])", tx ? 'T':'R', bw_range.min/1e6, bandwidth/1e6);
+            bandwidth = bw_range.min;           
+        }
+        else if (bandwidth > bw_range.max){
+            lime::warning("%cXLPF set to %.3f MHz (requested %0.3f MHz [out of range])", tx ? 'T':'R', bw_range.max/1e6, bandwidth/1e6);
+            bandwidth = bw_range.max;
+        }
+        channels[chan].lpf_bw = bandwidth;      
+    }
+        
+    if (lms->TuneRxFilter(bandwidth)!=0)
+        return -1;
 
-    if (en) rx_channels[chan].lpf_bw = bandwidth;
-    return ConfigureRXLPF(en,chan,bandwidth);
+    lime::info("%cX LPF configured",tx ? 'T' : 'R');
+    return 0;
 }
 
 double LMS7_Device::GetLPFBW(bool tx,unsigned chan) const
@@ -773,7 +757,7 @@ double LMS7_Device::GetLPFBW(bool tx,unsigned chan) const
 
 LMS7_Device::Range LMS7_Device::GetLPFRange(bool tx, unsigned chan) const
 {
-    return tx ? Range(5e6, 130e6) : Range(1.4e6, 130e6);
+    return tx ? Range(5e6, 130e6) : Range(1.4001e6, 130e6);
 }
 
 int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const double* coef,unsigned count)
@@ -1211,11 +1195,15 @@ double LMS7_Device::GetNCOPhase(bool tx, unsigned ch, int ind) const
 int LMS7_Device::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags)
 {
     lime::LMS7002M* lms = SelectChannel(chan);
-
+    int ret;
+    auto reg20 = lms->SPI_read(0x20);
+    lms->SPI_write(0x20,reg20 | (20 << (chan%2)));
     if (dir_tx)
-        return lms->CalibrateTx(bw, flags & 1);
+        ret = lms->CalibrateTx(bw, flags & 1);
     else
-        return lms->CalibrateRx(bw, flags & 1);
+        ret = lms->CalibrateRx(bw, flags & 1);
+    lms->SPI_write(0x20,reg20);
+    return ret;
 }
 
 int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
@@ -1305,7 +1293,7 @@ int LMS7_Device::Init()
     const std::vector<regVal> initVals = {
         {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
-        {0x0089, 0x1078}, {0x008B, 0x1F8C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
+        {0x0089, 0x1078}, {0x008B, 0x258C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
         {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x010C, 0x8865},
         {0x010E, 0x0000}, {0x0110, 0x2B14}, {0x0113, 0x03C2}, {0x011C, 0xA941},
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xB996}, {0x0121, 0x3650},

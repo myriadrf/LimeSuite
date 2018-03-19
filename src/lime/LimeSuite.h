@@ -258,9 +258,11 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
 /**
  * Set RF center frequency in Hz.
  *
- * @note setting different frequencies for A and B channels is not supported by
- * LMS7 chip. Changing frequency for one (A or B) channel will result in
- * frequency being changed for both (A and B) channels.
+ * @note channels A and B in LMS7 chip share the same clock so ability to set
+ * different frequencies for channels A and B is very limited. This function 
+ * will attempt to achieve diffrent requested frequencies using NCO when 
+ * possible, however often changing frequency for one (A or B) channel will
+ * result in frequency being changed for both (A and B) channels.
  *
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
@@ -391,7 +393,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
- * @param   gain        Desired gain, range [0, 70] for RX, [0, 60] for TX
+ * @param   gain        Desired gain, range [0, 73]
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
@@ -421,7 +423,7 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index
- * @param[out]  gain        Current gain, range [0, 70], [0, 60] for TX
+ * @param[out]  gain        Current gain
  * @return  0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx,

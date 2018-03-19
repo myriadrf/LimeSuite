@@ -1,4 +1,4 @@
-Release 18.02.0 (pending)
+Release 18.03.0 (pending)
 ==========================
 
 SoapyLMS changes:
@@ -15,12 +15,23 @@ LimeSuite library changes:
 - Added LimeSDR-Mini programming
 - Changed default settings for LimeSDR-Mini
 - Updated calibrations
+- Add phase alignment for dual channel configuration
 - Updated FPGA PLL configuration
+- Fix B channel only streaming
+- Fixed LMS7002M::GetPathRFE for LNAH case
+
+LMS API changes:
+- LMS_Open() can no longer succeed without connecting to hardware
+- LMS_Disconnect() and LMS_IsOpen() are now deprecated because of above change
+- Changed firmware/gateware programming functions
+- Changed lms_dev_info_t structure
+- LMS_SetLOFrequency() now attempts to set different frequencies for A/B channels using NCO
+- Fix Rx NCO direction flip (downconvert flag used to set Rx NCO to upconvert) 
+- Disabling LPF is now same as setting it to maximum bandwidth 
+- Extented gain range for LMS_SetGaindB()
 
 Other changes:
-- Fix B channel only streaming
 - Reduce SIMD flags when packaging for x86
-- Fixed LMS7002M::GetPathRFE for LNAH case
 - LimeSDR-USB v1.4 updated to r2.14 gateware
 - LimeSDR-Mini v1.1 updated to r1.24 gateware
 
