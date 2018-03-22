@@ -33,7 +33,7 @@ LMS API changes:
 
 Other changes:
 - Reduce SIMD flags when packaging for x86
-- LimeSDR-USB v1.4 updated to r2.14 gateware
+- LimeSDR-USB v1.4 updated to r2.15 gateware
 - LimeSDR-Mini v1.1 updated to r1.24 gateware
 
 Release 17.12.0 (2017-10-19)
