@@ -61,37 +61,8 @@ void SaveChipState(bool wr)
         }
     }
     SPI_write(0x0020, ch);
-}
-
-void RestoreChipState()
-{
-    uint16_t src=0;
-    uint8_t i;
-    uint16_t addr;
-    uint16_t ch = SPI_read(0x0020);
-    for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
-    {
-        for(addr=chipStateAddr[i]; addr<=chipStateAddr[i+1]; ++addr)
-        {
-            SPI_write(addr, chipStateData[src]);
-            ++src;
-        }
-    }
-    //sxr
-    SPI_write(0x0020, 0xFFFD);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        SPI_write(addr, chipStateData[src]);
-        ++src;
-    }
-    //sxt
-    SPI_write(0x0020, 0xFFFE);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        SPI_write(addr, chipStateData[src]);
-        ++src;
-    }
-    SPI_write(0x0020, ch);
+    if(wr)
+        ClockLogicResets();
 }
 
 #ifdef __cplusplus
@@ -137,6 +108,19 @@ void SetDefaultsSX()
         SPI_write(SXAddr[i-1], SXdefVals[i-1]);
     //keep 0x0120[7:0]ICT_VCO bias value intact
     Modify_SPI_Reg_bits(0x0120, MSB_LSB(15, 8), 0xB9FF);
+}
+
+void ClockLogicResets()
+{
+    //MCLK2 toggle
+    uint16_t reg = SPI_read(0x002B);
+    SPI_write(0x002B, reg ^ (1<<9));
+    SPI_write(0x002B, reg);
+
+    //TSP logic reset
+    reg = SPI_read(0x0020);
+    SPI_write(0x0020, reg & ~0xAA00);
+    SPI_write(0x0020, reg);
 }
 
 float_type GetFrequencyCGEN()
@@ -394,4 +378,15 @@ void WriteMaskedRegs(const RegisterBatch ROM* regs)
         index = i-1;
         SPI_write(regs->wrOnlyAddr[index], i > regs->wrOnlyDataCnt ? 0 : regs->wrOnlyData[index]);
     }
+}
+
+uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb)
+{
+    if(g_pga_rbb < 21)
+        return 1;
+    if(g_pga_rbb < 13)
+        return 2;
+    if(g_pga_rbb < 8)
+        return 3;
+    return 0;
 }

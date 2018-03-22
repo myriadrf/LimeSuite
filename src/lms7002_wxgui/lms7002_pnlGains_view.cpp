@@ -148,15 +148,16 @@ void lms7002_pnlGains_view::OnAGCStateChange(wxCommandEvent& event)
     if(chkAGC->GetValue() != 0)
     {
         LMS7_Device* lms = (LMS7_Device*)lmsControl;
-        lms->MCU_AGCStart(spinRSSIFloor->GetValue(), spinPGACeil->GetValue());
-        spinRSSIFloor->Disable();
-        spinPGACeil->Disable();
+        double crestFactor;
+        txtCrestFactor->GetValue().ToDouble(&crestFactor);
+        uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
+        lms->MCU_AGCStart(wantedRSSI);
+        txtCrestFactor->Disable();
     }
     else
     {
         LMS7_Device* lms = (LMS7_Device*)lmsControl;
         lms->MCU_AGCStop();
-        spinRSSIFloor->Enable();
-        spinPGACeil->Enable();
+        txtCrestFactor->Enable();
     }
 }

@@ -22,14 +22,14 @@ set(HOST_SOURCES
     common_src/lms7002m_calibrations.c
     common_src/lms7002m_controls.c
     common_src/lms7002m_filters.c
-    common_src/LMS7002M_parameters_compact.c
+    common_src/lms7002m_agc.c
 )
 
 SET_SOURCE_FILES_PROPERTIES( 
 	host_src/mcu.c
 	common_src/lms7002m_calibrations.c
 	common_src/lms7002m_controls.c
-    common_src/LMS7002M_parameters_compact.c
+    common_src/lms7002m_agc.c
 	PROPERTIES LANGUAGE CXX )
 
 

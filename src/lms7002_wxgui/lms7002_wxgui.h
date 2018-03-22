@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 23 2017)
+// C++ code generated with wxFormBuilder (version Mar  6 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __LMS7002_WXGUI_H__
@@ -2208,9 +2208,7 @@ class pnlGains_view : public wxPanel
 		NumericSlider* cmbCG_IAMP_TBB;
 		wxCheckBox* chkAGC;
 		wxStaticText* m_staticText360;
-		wxSpinCtrl* spinRSSIFloor;
-		wxStaticText* m_staticText361;
-		wxSpinCtrl* spinPGACeil;
+		wxTextCtrl* txtCrestFactor;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }

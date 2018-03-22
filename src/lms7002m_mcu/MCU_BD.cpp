@@ -1000,7 +1000,7 @@ std::string MCU_BD::GetProgramFilename() const
 */
 void MCU_BD::RunProcedure(uint8_t id)
 {
-    mSPI_write(0x0006, id != 0);
+    mSPI_write(0x0006, 1);
     mSPI_write(0x0000, id);
     uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt6 = 0x08;
@@ -1071,6 +1071,8 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
             printf("MCU error status 0x%02X\n", status);
         RunProcedure(9);
     }
+    if(WaitForMCU(100) != 0)
+        lime::debug("Failed to set MCU parameter");
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted

@@ -8,7 +8,8 @@ extern "C"
 {
 #endif
 
-extern bool slowSPI;
+extern void SPI_write_slow(uint16_t spiAddrReg, uint16_t spiDataReg);
+extern uint16_t SPI_read_slow (uint16_t spiAddrReg);
 
 extern void SPI_write(uint16_t spiAddrReg, uint16_t spiDataReg);
 extern uint16_t SPI_read (uint16_t spiAddrReg);
