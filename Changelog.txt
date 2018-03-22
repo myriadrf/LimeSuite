@@ -19,6 +19,7 @@ LimeSuite library changes:
 - Updated FPGA PLL configuration
 - Fix B channel only streaming
 - Fixed LMS7002M::GetPathRFE for LNAH case
+- Fixed CGEN not tuning to 484-487 MHz
 
 LMS API changes:
 - LMS_Open() can no longer succeed without connecting to hardware

@@ -34,7 +34,7 @@ using namespace lime;
 #include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1950e6, 2900e6};
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1900e6, 2900e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
@@ -1100,7 +1100,7 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
     }
     if (vcoFreqs.size() == 0)
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
-    dFvco = vcoFreqs[vcoFreqs.size() / 2];
+    dFvco = vcoFreqs[(vcoFreqs.size()-1) / 2];
     iHdiv = dFvco / freq_Hz / 2.0 - 1.0 + 0.01; //+0.01 to avoid bad round down when result is X.99999...
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
@@ -1141,16 +1141,6 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 #ifndef NDEBUG
     printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq_Hz/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
 #endif // NDEBUG
-    //adjust VCO bias current to lock on 491.52 MHz
-    if(abs(freq_Hz - 491.52e6) < 2e6)
-    {
-        if(Modify_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN), 31) == 0)
-        {
-#ifndef NDEBUG
-            printf("CGEN ICT_VCO_CGEN changed to %i\n", 31);
-#endif // NDEBUG
-        }
-    }
     if(TuneVCO(VCO_CGEN) != 0)
     {
         if (output)
