@@ -166,12 +166,10 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
 */
 #endif
     Modify_SPI_Reg_bits(G_TIA_RFE, g_tia_rfe);
-    if(g_pga_rbb == 31) {
+    if(g_pga_rbb == 31)
         Modify_SPI_Reg_bits(G_PGA_RBB, 22);
-    }
-    else {
+    else
         Modify_SPI_Reg_bits(G_PGA_RBB, g_pga_rbb);
-    }
 
     status = ConfigCGEN_ForLPF_IF(rx_lpf_IF);
     if(status != MCU_NO_ERROR)
@@ -198,13 +196,9 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     SetNCOFrequency(LMS7002M_Tx, 10e6, 0); //0
     SetNCOFrequency(LMS7002M_Rx, 0, 0); //0
 
-
     if(rx_lpf_IF <= 54e6)
     {
-        //Modify_SPI_Reg_bits(CFB_TIA_RFE, 1);
-        //Modify_SPI_Reg_bits(CCOMP_TIA_RFE, 0);
-        SPI_write(0x0112, 1);
-
+        SPI_write(0x0112, 1); //CFB_TIA_RFE=1, CCOMP_TIA_RFE=0
         Modify_SPI_Reg_bits(RCOMP_TIA_RFE, 15);
     }
     else
@@ -222,7 +216,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
             ccomp_tia_rfe = cfb_tia_rfe/100 + 1;
         }
         else
-            return MCU_RX_INVALID_TIA;//ReportError(EINVAL ,"Calibration setup: G_TIA_RFE value not allowed");
+            return MCU_RX_INVALID_TIA;
         SPI_write(0x0112, (clamp(ccomp_tia_rfe, 0, 15)<<8) | clamp(cfb_tia_rfe, 0, 4095));
 
         Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15-cfb_tia_rfe/100, 0, 15));
@@ -233,10 +227,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     }
     if(rx_lpf_IF < 18e6)
     {
-        //Modify_SPI_Reg_bits(PD_LPFL_RBB, 0);
-        //Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
-        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 2);
-
+        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 2); //PD_LPFL_RBB=0, PD_LPFH_RBB=1
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 0);
         {
             const float freqIF = rx_lpf_IF*1.3;
@@ -258,10 +249,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     }
     else if(rx_lpf_IF <= 54e6)
     {
-        //Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
-        //Modify_SPI_Reg_bits(PD_LPFH_RBB, 0);
-        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 1);
-
+        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 1); //PD_LPFL_RBB=1, PD_LPFH_RBB=0
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 1);
         {
             const float lpfIF_adjusted = rx_lpf_IF*1.3;
@@ -272,10 +260,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     }
     else // rx_lpf_IF > 54e6
     {
-        //Modify_SPI_Reg_bits(PD_LPFL_RBB, 1);
-        //Modify_SPI_Reg_bits(PD_LPFH_RBB, 1);
-        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 3);
-
+        Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 3); //PD_LPFL_RBB=1, PD_LPFH_RBB=1
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 2);
     }
 
@@ -416,7 +401,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
                 cfb_tia_rfe = (int)( 5400e6 / (rx_lpf_IF * 0.72) - 15);
             else
             {
-                status = MCU_RX_INVALID_TIA; //ReportError(EINVAL, "g_tia_rfe not allowed value");
+                status = MCU_RX_INVALID_TIA;
                 goto RxFilterSearchEndStage;
             }
             cfb_tia_rfe = clamp(cfb_tia_rfe, 0, 4095);
@@ -619,7 +604,7 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
 {
     uint16_t rssi;
     float_type tx_lpf_IF;
-    int status;
+    uint8_t status;
 
     if(tx_lpf_freq_RF < TxLPF_RF_LimitLow || tx_lpf_freq_RF > TxLPF_RF_LimitHigh)
         return MCU_TX_LPF_OUT_OF_RANGE;
@@ -766,7 +751,6 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
                     uint8_t R;
                     targetLevelNotReached = true;
                     Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
-                    //R = (int16_t)Get_SPI_Reg_bits(RCAL_LPFH_TBB)-10;
                     R = clamp((int16_t)Get_SPI_Reg_bits(RCAL_LPFH_TBB)-10, 0, 255);
                     Modify_SPI_Reg_bits(RCAL_LPFH_TBB, R);
                 }
