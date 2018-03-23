@@ -9,6 +9,8 @@
 #include "lms7002_regx51.h" //MCU timer sfr
 #endif
 
+#define ENABLE_EXTERNAL_LOOPBACK 0
+
 #ifdef __cplusplus
 #include <cstdlib>
 #define VERBOSE 1
@@ -190,12 +192,14 @@ int CheckSaturationTxRx(bool extLoopback)
     SetNCOFrequency(LMS7002M_Rx, calibrationSXOffset_Hz - offsetNCO + (bandwidthRF / calibUserBwDivider) * 2, 0);
 
     g_pga = (uint8_t)Get_SPI_Reg_bits(G_PGA_RBB);
+#if ENABLE_EXTERNAL_LOOPBACK
     if(extLoopback)
     {
         g_rfe = 0;
         Modify_SPI_Reg_bits(G_LNA_RFE, g_rfe);
     }
     else
+#endif
         g_rfe = (uint8_t)Get_SPI_Reg_bits(G_RXLOOPB_RFE);
     rssi = GetRSSI();
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
@@ -210,9 +214,11 @@ int CheckSaturationTxRx(bool extLoopback)
             ++g_rfe;
         else
             break;
+#if ENABLE_EXTERNAL_LOOPBACK
         if(extLoopback)
             Modify_SPI_Reg_bits(G_LNA_RFE, g_rfe);
         else
+#endif
             Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rfe);
         rssi = GetRSSI();
         PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
@@ -811,6 +817,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     SetNCOFrequency(LMS7002M_Tx, bandwidthRF/ calibUserBwDivider, 0);
     {
         const uint8_t sel_band1_2_trf = (uint8_t)Get_SPI_Reg_bits(0x0103, MSB_LSB(11, 10));
+#if ENABLE_EXTERNAL_LOOPBACK
         if(extLoopback)
         {
             uint8_t lnaPath;
@@ -835,6 +842,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             }
         }
         else
+#endif
         {
             if(sel_band1_2_trf != 0x1 && sel_band1_2_trf != 0x2) //BAND1
             {
@@ -871,6 +879,10 @@ uint8_t CalibrateTx(bool extLoopback)
            extLoopback ? "external" : "internal");
 #endif
     uint8_t status;
+#if !ENABLE_EXTERNAL_LOOPBACK
+    if(extLoopback)
+        return MCU_PROCEDURE_DISABLED;
+#endif
     SaveChipState(0);
     status = CalibrateTxSetup(extLoopback);
     if(status != MCU_NO_ERROR)
@@ -1036,7 +1048,16 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     else
         Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
 
-    if(!extLoopback) //chip internal loopbacks
+#if ENABLE_EXTERNAL_LOOPBACK
+    if(extLoopback) // external looback
+    {
+        const uint8_t band1_band2 = 2-((extLoopbackPair >> 2) & 1);
+        Modify_SPI_Reg_bits(0x0103, MSB_LSB(11, 10), band1_band2);
+        if(Get_SPI_Reg_bits(SEL_PATH_RFE) != (extLoopbackPair&0x3))
+            return MCU_INVALID_RX_PATH;
+    }
+    else //chip internal loopbacks
+#endif
     {
         switch(Get_SPI_Reg_bits(SEL_PATH_RFE))
         {
@@ -1054,13 +1075,6 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         default:
             return MCU_INVALID_RX_PATH;
         }
-    }
-    else // external looback
-    {
-        const uint8_t band1_band2 = 2-((extLoopbackPair >> 2) & 1);
-        Modify_SPI_Reg_bits(0x0103, MSB_LSB(11, 10), band1_band2);
-        if(Get_SPI_Reg_bits(SEL_PATH_RFE) != (extLoopbackPair&0x3))
-            return MCU_INVALID_RX_PATH;
     }
 
     Modify_SPI_Reg_bits(MAC, 2); //Get freq already changes/restores ch
@@ -1137,6 +1151,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     Modify_SPI_Reg_bits(CMIX_BYP_RXTSP, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidth_Hz / calibUserBwDivider - offsetNCO, 0);
 
+#if ENABLE_EXTERNAL_LOOPBACK
     if(extLoopback)
     {
         int8_t g_lossmain = 15;
@@ -1157,6 +1172,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
         }
     }
     else
+#endif
     {
         uint8_t g_rxloopb_rfe = 2;
         Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
@@ -1230,6 +1246,10 @@ uint8_t CalibrateRx(bool extLoopback, bool dcOnly)
     uint8_t status;
     const uint16_t x0020val = SPI_read(0x0020); //remember used channel
 
+#if !ENABLE_EXTERNAL_LOOPBACK
+    if(extLoopback)
+        return MCU_PROCEDURE_DISABLED;
+#endif
 #if VERBOSE
     double rxFreq = GetFrequencySX(LMS7002M_Rx);
     const char* lnaName;

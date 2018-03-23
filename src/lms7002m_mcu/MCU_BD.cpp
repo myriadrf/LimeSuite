@@ -1156,6 +1156,7 @@ static const char* MCU_ErrorMessages[] =
 "Rx LPF bandwidth out of range",
 "Rx invalid TIA gain",
 "Tx LPF bandwidth out of range",
+"Procedure is disabled",
 };
 
 const char* MCU_BD::MCUStatusMessage(const uint8_t code)

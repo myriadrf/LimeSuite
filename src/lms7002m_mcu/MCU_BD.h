@@ -32,6 +32,7 @@ class MCU_BD
             MCU_RX_LPF_OUT_OF_RANGE,
             MCU_RX_INVALID_TIA,
             MCU_TX_LPF_OUT_OF_RANGE,
+            MCU_PROCEDURE_DISABLED,
 
             MCU_ERROR_CODES_COUNT
         };
