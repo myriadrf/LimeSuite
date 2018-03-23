@@ -239,6 +239,21 @@ if(DOXYGEN_FOUND)
 endif()
 
 ########################################################################
+# CMake Project config files
+########################################################################
+if (ENABLE_HEADERS AND ENABLE_LIBRARY)
+    configure_file(
+        ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuiteConfigVersion.in.cmake
+        ${PROJECT_BINARY_DIR}/LimeSuiteConfigVersion.cmake
+    @ONLY)
+
+    install(FILES
+        ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuiteConfig.cmake
+        ${PROJECT_BINARY_DIR}/LimeSuiteConfigVersion.cmake
+        DESTINATION lib/cmake/${PROJECT_NAME})
+endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
+
+########################################################################
 ## freedesktop environment integration
 ########################################################################
 add_subdirectory(Desktop)
