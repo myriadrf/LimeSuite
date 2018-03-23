@@ -81,6 +81,13 @@ int LMS7002M::TuneRxFilter(float_type rx_lpf_freq_RF)
     if(RxLPF_RF_LimitLow > rx_lpf_freq_RF || rx_lpf_freq_RF > RxLPF_RF_LimitHigh)
         return ReportError(ERANGE, "RxLPF frequency out of range, available range from %g to %g MHz", RxLPF_RF_LimitLow/1e6, RxLPF_RF_LimitHigh/1e6);
 
+    uint8_t g_tia = Get_SPI_Reg_bits(LMS7param(G_TIA_RFE));
+    if(g_tia == 1 && rx_lpf_freq_RF < 4e6)
+    {
+        rx_lpf_freq_RF = 4e6;
+        Log(LOG_WARNING, "Rx LPF min bandwidth is 4MHz when TIA gain is set to -12 dB");
+    }
+
     if(mcuControl->ReadMCUProgramID() != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         if((status = mcuControl->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM)))

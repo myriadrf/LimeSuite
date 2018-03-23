@@ -294,7 +294,14 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     uint16_t rssi_3dB ;
     uint8_t status = 0;
     //calculate intermediate frequency
-    const float_type rx_lpf_IF = rx_lpf_freq_RF/2;
+    float_type rx_lpf_IF;
+    {
+        const uint8_t g_tia = Get_SPI_Reg_bits(G_TIA_RFE);
+        if(g_tia == 1 && rx_lpf_freq_RF<4e6)
+            rx_lpf_IF = 2e6;
+        else
+            rx_lpf_IF = rx_lpf_freq_RF/2;
+    }
     SaveChipState(0);
 
     status = TuneRxFilterSetup(rx_lpf_IF);
