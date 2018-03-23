@@ -400,15 +400,10 @@ uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb)
 
 void EnableChannelPowerControls()
 {
-    uint8_t mac = Get_SPI_Reg_bits(MAC);
-    if(mac == 1)
-    {
-        Modify_SPI_Reg_bits(TXEN_A, 1);
-        Modify_SPI_Reg_bits(RXEN_A, 1);
-    }
+    uint16_t value = SPI_read(0x0020);
+    if((value & 3) == 1)
+        value = value | 0x0014;
     else
-    {
-        Modify_SPI_Reg_bits(TXEN_B, 1);
-        Modify_SPI_Reg_bits(RXEN_B, 1);
-    }
+        value = value | 0x0028;
+    SPI_write(0x0020, value);
 }

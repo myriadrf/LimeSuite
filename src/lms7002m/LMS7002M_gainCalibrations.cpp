@@ -7,17 +7,12 @@ int LMS7002M::CalibrateTxGainSetup()
     int status;
     int ch = Get_SPI_Reg_bits(LMS7param(MAC));
 
-    uint8_t mac = Get_SPI_Reg_bits(LMS7param(MAC));
-    if(mac == 1)
-    {
-        Modify_SPI_Reg_bits(LMS7param(TXEN_A), 1);
-        Modify_SPI_Reg_bits(LMS7param(RXEN_A), 1);
-    }
+    uint16_t value = SPI_read(0x0020);
+    if( (value & 3) == 1)
+        value = value | 0x0014;
     else
-    {
-        Modify_SPI_Reg_bits(LMS7param(TXEN_B), 1);
-        Modify_SPI_Reg_bits(LMS7param(RXEN_B), 1);
-    }
+        value = value | 0x0028;
+    SPI_write(0x0020, value);
 
     //RxTSP
     SetDefaults(RxTSP);
