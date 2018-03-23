@@ -16,6 +16,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     lms7002m/LMS7002M.h
     lms7002m/LMS7002M_RegistersMap.h
     lms7002m/LMS7002M_parameters.h
+    protocols/Streamer.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
