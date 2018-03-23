@@ -34,7 +34,7 @@ using namespace lime;
 #include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1950e6, 2900e6};
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1930e6, 2940e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
@@ -1069,7 +1069,6 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 {
     float_type dFvco;
     float_type dFrac;
-    int16_t iHdiv;
 
     //remember NCO frequencies
     Channel chBck = this->GetActiveChannel();
@@ -1091,17 +1090,12 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         }
     }
     //VCO frequency selection according to F_CLKH
-    vector<float_type> vcoFreqs;
-    for (iHdiv = 0; iHdiv < 256; ++iHdiv)
-    {
-        dFvco = 2 * (iHdiv + 1) * freq_Hz;
-        if (dFvco >= gCGEN_VCO_frequencies[0] && dFvco <= gCGEN_VCO_frequencies[1])
-            vcoFreqs.push_back(dFvco);
-    }
-    if (vcoFreqs.size() == 0)
+    uint8_t iHdiv_high = (2.94e9/2 / freq_Hz)-1;
+    uint8_t iHdiv_low = (1.93e9/2 / freq_Hz);
+    uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    dFvco = 2 * (iHdiv+1) * freq_Hz;
+    if (dFvco <= gCGEN_VCO_frequencies[0] || dFvco >= gCGEN_VCO_frequencies[1])
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
-    dFvco = vcoFreqs[vcoFreqs.size() / 2];
-    iHdiv = dFvco / freq_Hz / 2.0 - 1.0 + 0.01; //+0.01 to avoid bad round down when result is X.99999...
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
 

@@ -137,8 +137,8 @@ uint8_t SetFrequencyCGEN(float_type freq)
     float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
-        uint8_t iHdiv_high = (2.9e9/2 / freq)-1;
-        uint8_t iHdiv_low = (2.0e9/2 / freq + 0.5)-1;
+        uint8_t iHdiv_high = (2.94e9/2 / freq)-1;
+        uint8_t iHdiv_low = (1.93e9/2 / freq);
         uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
         dFvco = 2 * (iHdiv+1) * freq;
         Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv);
