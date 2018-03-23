@@ -264,9 +264,10 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
 
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 1);
         {
-            uint8_t c_ctl_lpfh_rbb = clamp( 6000e6/(rx_lpf_IF*1.3) - 50, 0, 255);
-            uint8_t rcc_ctl_lpfh_rbb = clamp((rx_lpf_IF*1.3/10)-3, 0, 8);
-            Modify_SPI_Reg_bits(0x0116, MSB_LSB(10, 8), (rcc_ctl_lpfh_rbb<<8) | c_ctl_lpfh_rbb);
+            const float lpfIF_adjusted = rx_lpf_IF*1.3;
+            uint8_t c_ctl_lpfh_rbb = clamp( 6000e6/lpfIF_adjusted - 50, 0, 255);
+            uint8_t rcc_ctl_lpfh_rbb = clamp( lpfIF_adjusted/10e6 - 3, 0, 7);
+            Modify_SPI_Reg_bits(0x0116, MSB_LSB(10, 0), (rcc_ctl_lpfh_rbb<<8) | c_ctl_lpfh_rbb);
         }
     }
     else // rx_lpf_IF > 54e6
@@ -560,14 +561,16 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     Modify_SPI_Reg_bits(RP_CALIB_BIAS, rp_calib_bias);
     }*/
 
+    {
+    uint16_t filterPDs = SPI_read(0x0105) & ~0x0016;
     if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
     {
         int16_t rcal_lpflad_tbb;
         const float_type freq = (16.0/20.0)*tx_lpf_IF/1e6;
-        Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
-        Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
-        Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
-        //Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
+        //Modify_SPI_Reg_bits(PD_LPFH_TBB, 1);
+        //Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 0);
+        //Modify_SPI_Reg_bits(PD_LPFS5_TBB, 0);
+        filterPDs |= 0x10;
         Modify_SPI_Reg_bits(R5_LPF_BYP_TBB, 1);
 
         rcal_lpflad_tbb =
@@ -582,10 +585,10 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     {
         int16_t rcal_lpfh_tbb;
         const float_type freq = tx_lpf_IF/1e6;
-        Modify_SPI_Reg_bits(PD_LPFH_TBB, 0);
-        Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 1);
-        Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
-        //Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
+        //Modify_SPI_Reg_bits(PD_LPFH_TBB, 0);
+        //Modify_SPI_Reg_bits(PD_LPFLAD_TBB, 1);
+        //Modify_SPI_Reg_bits(PD_LPFS5_TBB, 1);
+        filterPDs |= 0x06;
 
         rcal_lpfh_tbb = pow(freq, 4)*1.10383261611112e-06
             + pow(freq, 3)*(-0.000210800032517545)
@@ -593,6 +596,8 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
             + freq*1.43317445923528
             + (-47.6950779298333);
         Modify_SPI_Reg_bits(RCAL_LPFH_TBB, clamp(rcal_lpfh_tbb, 0, 255));
+    }
+    SPI_write(0x0105, filterPDs);
     }
 
     //CGEN
