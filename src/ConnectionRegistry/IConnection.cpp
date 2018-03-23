@@ -60,7 +60,7 @@ int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &dat
 
 int IConnection::DeviceReset(int ind)
 {
-    return ReportError("ProgramWrite not supported");
+    return ReportError("DeviceReset not supported");
 }
 
 /***********************************************************************
