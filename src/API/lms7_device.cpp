@@ -60,6 +60,8 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         device = new LMS7_LimeSDR_mini(conn,obj);
     else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE))
         device = new LMS7_qLimeSDR(conn,obj);
+    else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_PCIE))
+        device = new LMS7_LimeSDR_PCIE(conn,obj);
     else if (info.deviceName != lime::GetDeviceName(lime::LMS_DEV_UNKNOWN))
         device = new LMS7_LimeSDR(conn,obj);
     else
@@ -1626,7 +1628,7 @@ int LMS7_Device::ReadLMSReg(uint16_t address, int ind) const
 
 int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind) const
 {
-     return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);  
+     return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val, false);
 }
 
 uint16_t LMS7_Device::ReadParam(const struct LMS7Parameter& param, int chan, bool fromChip) const

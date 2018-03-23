@@ -11,23 +11,8 @@
 namespace lime
 {
 
-LMS7_LimeSDR::LMS7_LimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Device(obj) 
+LMS7_LimeSDR::LMS7_LimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Generic(conn, obj)
 {
-    fpga = new lime::FPGA();
-    tx_channels.resize(GetNumChannels());
-    rx_channels.resize(GetNumChannels());
-    
-    while (obj && lms_list.size() > 1)
-    {
-        delete lms_list.back();
-        lms_list.pop_back();
-    }
-    fpga->SetConnection(conn);
-    double refClk = fpga->DetectRefClk(100.6e6);
-    this->lms_list[0]->SetConnection(conn);
-    mStreamers.push_back(new lime::Streamer(fpga,lms_list[0],0));
-    lms_list[0]->SetReferenceClk_SX(false, refClk);
-    connection = conn;
 }
 
 std::vector<std::string> LMS7_LimeSDR::GetProgramModes() const
@@ -45,6 +30,16 @@ int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len,
     if ((mode == program_mode::fx3Flash) || (mode == program_mode::fpgaFlash))
         connection->ProgramWrite(nullptr, 0, 0, 1, nullptr);
     return ret;
+}
+
+LMS7_LimeSDR_PCIE::LMS7_LimeSDR_PCIE(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Generic(conn, obj)
+{
+}
+
+std::vector<std::string> LMS7_LimeSDR_PCIE::GetProgramModes() const
+{
+    return {program_mode::fpgaFlash, program_mode::fpgaReset,
+            program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
 
 }

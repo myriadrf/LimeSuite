@@ -648,10 +648,10 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
     if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
     {
-        uint32_t addr[2] = {1, 2};
-        uint32_t vals[2];
-        connection->ReadRegisters(addr,vals,2);
-        if (vals[0]>1 && vals[1] > 0xE)
+        uint32_t addr[3] = {0, 1, 2};
+        uint32_t vals[3];
+        connection->ReadRegisters(addr,vals,3);
+        if ((vals[0]==0xE && vals[1]>1 && vals[2] > 0xE)||(vals[0]==0xF && vals[1]>1 && vals[2] > 6))
             phaseSearch = true;
     }
 
