@@ -286,6 +286,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
         Modify_SPI_Reg_bits(MAC, ch);
     }
+    EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
 
@@ -618,6 +619,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetNCOFrequency(LMS7002M_Rx, 0.9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, tx_lpf_IF-0.1e6, 1);
 
+    EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
 

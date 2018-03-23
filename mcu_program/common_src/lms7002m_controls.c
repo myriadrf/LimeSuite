@@ -26,6 +26,7 @@ uint16_t pow2(const uint8_t power)
     return 1 << power;
 }
 
+xdata uint16_t x0020state;
 ROM const uint16_t chipStateAddr[] = {0x0021, 0x002F, SECTION_AFE, SECTION_BIAS, SECTION_XBUF, SECTION_CGEN, SECTION_LDO, SECTION_BIST, SECTION_CDS, SECTION_TRF, SECTION_TBB, SECTION_RFE, SECTION_RBB, SECTION_TxTSP, SECTION_TxNCO, SECTION_RxTSP, SECTION_RxNCO, 0x500, 0x5A7, 0x5C0, 0x5C0};
 xdata uint16_t chipStateData[500];
 
@@ -35,6 +36,8 @@ void SaveChipState(bool wr)
     uint8_t i;
     uint16_t addr;
     uint16_t ch = SPI_read(0x0020);
+    if(!wr)
+        x0020state = ch;
     //for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
     for(i = sizeof(chipStateAddr)/sizeof(uint16_t); i; i-=2)
     {
@@ -60,9 +63,13 @@ void SaveChipState(bool wr)
             ++dest;
         }
     }
-    SPI_write(0x0020, ch);
     if(wr)
+    {
         ClockLogicResets();
+        SPI_write(0x0020, x0020state);
+    }
+    else
+        SPI_write(0x0020, ch);
 }
 
 #ifdef __cplusplus
@@ -389,4 +396,19 @@ uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb)
     if(g_pga_rbb < 8)
         return 3;
     return 0;
+}
+
+void EnableChannelPowerControls()
+{
+    uint8_t mac = Get_SPI_Reg_bits(MAC);
+    if(mac == 1)
+    {
+        Modify_SPI_Reg_bits(TXEN_A, 1);
+        Modify_SPI_Reg_bits(RXEN_A, 1);
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(TXEN_B, 1);
+        Modify_SPI_Reg_bits(RXEN_B, 1);
+    }
 }

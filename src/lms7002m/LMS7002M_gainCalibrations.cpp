@@ -6,7 +6,19 @@ int LMS7002M::CalibrateTxGainSetup()
 {
     int status;
     int ch = Get_SPI_Reg_bits(LMS7param(MAC));
-    
+
+    uint8_t mac = Get_SPI_Reg_bits(LMS7param(MAC));
+    if(mac == 1)
+    {
+        Modify_SPI_Reg_bits(LMS7param(TXEN_A), 1);
+        Modify_SPI_Reg_bits(LMS7param(RXEN_A), 1);
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(TXEN_B), 1);
+        Modify_SPI_Reg_bits(LMS7param(RXEN_B), 1);
+    }
+
     //RxTSP
     SetDefaults(RxTSP);
     SetDefaults(RxNCO);
@@ -14,7 +26,7 @@ int LMS7002M::CalibrateTxGainSetup()
     Modify_SPI_Reg_bits(LMS7param(AGC_AVG_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 1);
     Modify_SPI_Reg_bits(LMS7param(CMIX_BYP_RXTSP), 1);
-    
+
     //TBB
     Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), 1);
     Modify_SPI_Reg_bits(LMS7param(LOOPB_TBB), 3);

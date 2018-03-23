@@ -850,6 +850,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(0x010D, MSB_LSB(4, 3), sel_band1_2_trf ^ 0x3);
         }
     }
+    EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
 
@@ -1108,6 +1109,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
         SPI_write(0x0020, x0020val);
     }
+    EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
 
