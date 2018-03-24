@@ -6,13 +6,6 @@
 #include <math.h>
 #include "mcu_defines.h"
 
-#ifdef __cplusplus
-    #include <vector>
-    #include "ErrorReporting.h"
-    #include <math.h>
-    using namespace lime;
-#endif // __cplusplus
-
 #define E_DECREASE_R 0x0080
 #define E_INCREASE_R 0x0081
 
@@ -193,8 +186,8 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     //do nothing
 
     LoadDC_REG_TX_IQ();
-    SetNCOFrequency(LMS7002M_Tx, 10e6, 0); //0
-    SetNCOFrequency(LMS7002M_Rx, 0, 0); //0
+    SetNCOFrequency(LMS7002M_Tx, 10e6, 0);
+    SetNCOFrequency(LMS7002M_Rx, 0, 0);
 
     if(rx_lpf_IF <= 54e6)
     {
@@ -205,7 +198,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     {
         int16_t cfb_tia_rfe;
         int8_t ccomp_tia_rfe;
-        if(g_tia_rfe == 3 || g_tia_rfe == 2)
+        if(g_tia_rfe > 1)
         {
             cfb_tia_rfe = (int16_t)( 1680e6/rx_lpf_IF - 10);
             ccomp_tia_rfe = cfb_tia_rfe/100;
@@ -222,9 +215,10 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15-cfb_tia_rfe/100, 0, 15));
     }
     {
-        const int8_t rcc_ctl_pga_rbb = clamp((430 * pow(0.65, g_pga_rbb/10) - 110.35)/20.45 + 16, 0, 31);
+        const int8_t rcc_ctl_pga_rbb = (430 * pow(0.65, g_pga_rbb/10) - 110.35)/20.45 + 16;
         SPI_write(0x011A, rcc_ctl_pga_rbb<<9 | GetValueOf_c_ctl_pga_rbb(g_pga_rbb));
     }
+
     if(rx_lpf_IF < 18e6)
     {
         Modify_SPI_Reg_bits(0x0115, MSB_LSB(3, 2), 2); //PD_LPFL_RBB=0, PD_LPFH_RBB=1
