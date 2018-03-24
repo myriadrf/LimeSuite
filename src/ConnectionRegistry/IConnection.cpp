@@ -133,6 +133,12 @@ int IConnection::ProgramWrite(const char *buffer, const size_t length, const int
     return -1;
 }
 
+int IConnection::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
+{
+    ReportError(ENOTSUP, "ProgramMCU not supported");
+    return -1;
+}
+
 int IConnection::ProgramUpdate(const bool download, ProgrammingCallback callback)
 {
     ReportError(ENOTSUP, "ProgramUpdate not supported");
