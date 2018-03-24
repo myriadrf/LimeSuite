@@ -267,6 +267,21 @@ if (ENABLE_GUI)
 endif()
 
 ########################################################################
+# Build pkg config file
+########################################################################
+if (ENABLE_HEADERS AND ENABLE_LIBRARY)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/LimeSuite.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/LimeSuite.pc
+@ONLY)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/LimeSuite.pc
+    DESTINATION lib${LIB_SUFFIX}/pkgconfig
+)
+endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
+
+########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
