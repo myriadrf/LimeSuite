@@ -9,6 +9,8 @@ set(INCLUDED_LIMESUITE_CONFIG_CMAKE TRUE)
 # The following will be set after find_package(LimeSuite):
 # LimeSuite_LIBRARIES    - development libraries
 # LimeSuite_INCLUDE_DIRS - development includes
+#
+# Or link with the import library target LimeSuite
 ########################################################################
 
 ########################################################################
@@ -43,3 +45,9 @@ if(NOT LIMESUITE_INCLUDE_DIR)
 endif()
 set(LimeSuite_INCLUDE_DIRS ${LIMESUITE_INCLUDE_DIR})
 
+########################################################################
+## create import library target
+########################################################################
+add_library(LimeSuite SHARED IMPORTED)
+set_property(TARGET LimeSuite PROPERTY IMPORTED_LOCATION ${LIMESUITE_LIBRARY})
+set_property(TARGET LimeSuite PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LIMESUITE_INCLUDE_DIR})
