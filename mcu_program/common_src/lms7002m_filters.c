@@ -276,6 +276,30 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     return MCU_NO_ERROR;
 }
 
+typedef struct
+{
+    uint16_t addr;
+    uint8_t msblsb;
+    uint8_t step;
+    uint8_t limit;
+} ReachRSSIparams;
+
+static uint32_t ChangeUntilReachRSSI(const ReachRSSIparams ROM* param, uint16_t rssiTarget)
+{
+    uint16_t rssi;
+    int8_t gain = Get_SPI_Reg_bits(param->addr, param->msblsb);
+    while((rssi = GetRSSI()) < rssiTarget)
+    {
+        gain += param->step;
+        if(param->step > 0 && gain > param->limit)
+            break;
+        else if(gain < param->limit)
+            break;
+        Modify_SPI_Reg_bits(param->addr, param->msblsb, gain);
+    }
+    return rssi;
+}
+
 uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
 {
     uint16_t rssi_3dB ;
@@ -293,20 +317,10 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
         goto RxFilterSearchEndStage;
     UpdateRSSIDelay();
     {
-        uint8_t g_rxloopb_rfe = Get_SPI_Reg_bits(G_RXLOOPB_RFE);
-        while(GetRSSI() < 0x2700 && g_rxloopb_rfe < 14)
-        {
-            g_rxloopb_rfe += 2;
-            Modify_SPI_Reg_bits(G_RXLOOPB_RFE, g_rxloopb_rfe);
-        }
-    }
-    {
-        uint8_t cg_iamp_tbb = Get_SPI_Reg_bits(CG_IAMP_TBB);
-        while(GetRSSI() < 0x2700 && cg_iamp_tbb < 30)
-        {
-            cg_iamp_tbb += 2;
-            Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp_tbb);
-        }
+    ROM const ReachRSSIparams paramTX = {CG_IAMP_TBB, 2, 30};
+    ROM const ReachRSSIparams paramRX = {G_RXLOOPB_RFE, 2, 14};
+    ChangeUntilReachRSSI(&paramRX, 0x2700);
+    ChangeUntilReachRSSI(&paramTX, 0x2700);
     }
 
     rssi_3dB = GetRSSI() * 0.7071 * pow(10, (-0.0018 * rx_lpf_IF/1e6)/20);
@@ -321,10 +335,10 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
         if(rx_lpf_IF < 18e6)
         {
             //LPFL START
+            uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
             status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, 2048);
             if(status == E_DECREASE_R)
             {
-                uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
                 while(r_ctl_lpf > 1)
                 {
                     r_ctl_lpf /= 2;
@@ -334,7 +348,6 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             }
             if(status == E_INCREASE_R)
             {
-                uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
                 while(r_ctl_lpf < 31)
                 {
                     r_ctl_lpf += 4;
@@ -351,10 +364,10 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
         else
         {
             //LPFH START
+            uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
             status = RxFilterSearch(C_CTL_LPFH_RBB, rssi_3dB, 256);
             if(status == E_DECREASE_R)
             {
-                uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
                 while(r_ctl_lpf > 0)
                 {
                     r_ctl_lpf -= 1;
@@ -369,7 +382,6 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             }
             if(status == E_INCREASE_R)
             {
-                uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
                 while(r_ctl_lpf < 31)
                 {
                     r_ctl_lpf += 1;
@@ -600,8 +612,18 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     return MCU_NO_ERROR;
 }
 
+static void AdjustFilterRCAL(uint16_t addr, uint8_t msblsb, int8_t offset)
+{
+    int16_t R;
+    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
+    R = clamp((int16_t)Get_SPI_Reg_bits(addr, msblsb)+offset, 0, 255);
+    Modify_SPI_Reg_bits(addr, msblsb, R);
+}
+
 uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
 {
+    ROM const ReachRSSIparams paramLPF_LAD_decrease = {CCAL_LPFLAD_TBB, -1, 0};
+    ROM const ReachRSSIparams paramLPF_LAD_increase = {CCAL_LPFLAD_TBB, 1, 31};
     uint16_t rssi;
     float_type tx_lpf_IF;
     uint8_t status;
@@ -620,15 +642,9 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
 
     Modify_SPI_Reg_bits(SEL_RX, 0);
     Modify_SPI_Reg_bits(SEL_TX, 0);
-    rssi = GetRSSI();
     {
-        uint8_t cg_iamp_tbb = Get_SPI_Reg_bits(CG_IAMP_TBB);
-        while(rssi < 0x2700 && cg_iamp_tbb < 43)
-        {
-            ++cg_iamp_tbb;
-            Modify_SPI_Reg_bits(CG_IAMP_TBB, cg_iamp_tbb);
-            rssi = GetRSSI();
-        }
+        ROM const ReachRSSIparams paramTX = {CG_IAMP_TBB, 1, 43};
+        ChangeUntilReachRSSI(&paramTX, 0x2700);
     }
 
     if(tx_lpf_IF <= TxLPF_RF_LimitLowMid/2)
@@ -637,58 +653,40 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
         int8_t iterationsLeft = 5;
         do
         {
-            uint16_t rssi_dc_lad;
             uint16_t rssi_3dB_lad;
-            int16_t ccal_lpflad_tbb;
-
             Modify_SPI_Reg_bits(SEL_TX, 0);
             Modify_SPI_Reg_bits(SEL_RX, 0);
-            rssi_dc_lad = GetRSSI();
-            rssi_3dB_lad = rssi_dc_lad * 0.7071;
+            rssi_3dB_lad = GetRSSI() * 0.7071;
             Modify_SPI_Reg_bits(SEL_TX, 1);
             Modify_SPI_Reg_bits(SEL_RX, 1);
             rssi = GetRSSI();
 
-            ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
             if(rssi < rssi_3dB_lad)
             {
-                while(rssi < rssi_3dB_lad && ccal_lpflad_tbb > 0)
+                rssi = ChangeUntilReachRSSI(&paramLPF_LAD_decrease, rssi_3dB_lad);
+                if(rssi < rssi_3dB_lad && Get_SPI_Reg_bits(CCAL_LPFLAD_TBB) == 0)
                 {
-                    ccal_lpflad_tbb -= 1;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
-                    rssi = GetRSSI();
-                }
-                if(rssi < rssi_3dB_lad && ccal_lpflad_tbb == 0)
-                {
-                    uint16_t R;
                     targetLevelNotReached = true;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
-                    R = clamp(Get_SPI_Reg_bits(RCAL_LPFLAD_TBB)+25, 0, 255);
-                    Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, R);
+                    AdjustFilterRCAL(RCAL_LPFLAD_TBB, 25);
                 }
                 else
                     targetLevelNotReached = false;
             }
             else if(rssi > rssi_3dB_lad)
             {
-                while(rssi > rssi_3dB_lad && ccal_lpflad_tbb < 31)
+                rssi = ChangeUntilReachRSSI(&paramLPF_LAD_increase, rssi_3dB_lad);
+                if(rssi > rssi_3dB_lad && Get_SPI_Reg_bits(CCAL_LPFLAD_TBB) == 31)
                 {
-                    ccal_lpflad_tbb += 1;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
-                    rssi = GetRSSI();
-                }
-                if(rssi > rssi_3dB_lad && ccal_lpflad_tbb == 31)
-                {
-                    int16_t R;
                     targetLevelNotReached = true;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
-                    R = clamp((int16_t)Get_SPI_Reg_bits(RCAL_LPFLAD_TBB)-10, 0, 255);
-                    Modify_SPI_Reg_bits(RCAL_LPFLAD_TBB, R);
+                    AdjustFilterRCAL(RCAL_LPFLAD_TBB, -10);
                 }
                 else
                     targetLevelNotReached = false;
+                {
+                uint8_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
                 ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
                 Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+                }
             }
             --iterationsLeft;
             {
@@ -707,57 +705,40 @@ uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
 
         do
         {
-            uint16_t rssi_dc_h;
             uint16_t rssi_3dB_h;
-            int16_t ccal_lpflad_tbb;
             Modify_SPI_Reg_bits(SEL_TX, 0);
             Modify_SPI_Reg_bits(SEL_RX, 0);
-            rssi_dc_h = GetRSSI();
-            rssi_3dB_h = rssi_dc_h * 0.7071;
+            rssi_3dB_h = GetRSSI() * 0.7071;
             Modify_SPI_Reg_bits(SEL_TX, 1);
             Modify_SPI_Reg_bits(SEL_RX, 1);
             rssi = GetRSSI();
 
-            ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
             if(rssi < rssi_3dB_h)
             {
-                while(rssi < rssi_3dB_h && ccal_lpflad_tbb > 0)
+                rssi = ChangeUntilReachRSSI(&paramLPF_LAD_decrease, rssi_3dB_h);
+                if(rssi < rssi_3dB_h && Get_SPI_Reg_bits(CCAL_LPFLAD_TBB) == 0)
                 {
-                    ccal_lpflad_tbb -= 1;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
-                    rssi = GetRSSI();
-                }
-                if(rssi < rssi_3dB_h && ccal_lpflad_tbb == 0)
-                {
-                    uint8_t R;
                     targetLevelNotReached = true;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
-                    R = clamp(Get_SPI_Reg_bits(RCAL_LPFH_TBB)+25, 0, 255);
-                    Modify_SPI_Reg_bits(RCAL_LPFH_TBB, R);
+                    AdjustFilterRCAL(RCAL_LPFH_TBB, 25);
                 }
                 else
                     targetLevelNotReached = false;
             }
             else if(rssi > rssi_3dB_h)
             {
-                while(rssi > rssi_3dB_h && ccal_lpflad_tbb < 31)
+                rssi = ChangeUntilReachRSSI(&paramLPF_LAD_increase, rssi_3dB_h);
+                if(rssi > rssi_3dB_h && Get_SPI_Reg_bits(CCAL_LPFLAD_TBB) == 31)
                 {
-                    ccal_lpflad_tbb += 1;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
-                    rssi = GetRSSI();
-                }
-                if(rssi > rssi_3dB_h && ccal_lpflad_tbb == 31)
-                {
-                    uint8_t R;
                     targetLevelNotReached = true;
-                    Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
-                    R = clamp((int16_t)Get_SPI_Reg_bits(RCAL_LPFH_TBB)-10, 0, 255);
-                    Modify_SPI_Reg_bits(RCAL_LPFH_TBB, R);
+                    AdjustFilterRCAL(RCAL_LPFH_TBB, -10);
                 }
                 else
                     targetLevelNotReached = false;
+                {
+                uint8_t ccal_lpflad_tbb = Get_SPI_Reg_bits(CCAL_LPFLAD_TBB);
                 ccal_lpflad_tbb = clamp(++ccal_lpflad_tbb, 0, 31);
                 Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, ccal_lpflad_tbb);
+                }
             }
             --iterationsLeft;
             {
