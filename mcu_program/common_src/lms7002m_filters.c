@@ -267,7 +267,7 @@ typedef struct
 {
     uint16_t addr;
     uint8_t msblsb;
-    uint8_t step;
+    int8_t step;
     uint8_t limit;
 } ReachRSSIparams;
 
@@ -307,85 +307,49 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
     ROM const ReachRSSIparams paramTX = {CG_IAMP_TBB, 2, 30};
     ROM const ReachRSSIparams paramRX = {G_RXLOOPB_RFE, 2, 14};
     ChangeUntilReachRSSI(&paramRX, 0x2700);
-    ChangeUntilReachRSSI(&paramTX, 0x2700);
+    rssi_3dB = ChangeUntilReachRSSI(&paramTX, 0x2700);
     }
 
-    rssi_3dB = GetRSSI() * 0.7071 * pow(10, (-0.0018 * rx_lpf_IF/1e6)/20);
+    rssi_3dB = rssi_3dB * 0.7071 * pow(10, (-0.0018 * rx_lpf_IF/1e6)/20);
 
     if(rx_lpf_IF <= 54e6)
     {
+        uint16_t Caddr, Crange;
+        uint8_t Cmsblsb;
+        int8_t Rstep;
+
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF*1.3);
         if(status != MCU_NO_ERROR)
             goto RxFilterSearchEndStage;
-        SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF*1.3, 0); //0
+        SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF*1.3, 0);
 
-        if(rx_lpf_IF < 18e6)
+        if(rx_lpf_IF < 18e6) //LPFL
         {
-            //LPFL START
-            uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
-            status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, 2048);
-            if(status == E_DECREASE_R)
-            {
-                while(r_ctl_lpf > 1)
-                {
-                    r_ctl_lpf /= 2;
-                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
-                    status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, 2048);
-                }
-            }
-            if(status == E_INCREASE_R)
-            {
-                while(r_ctl_lpf < 31)
-                {
-                    r_ctl_lpf += 4;
-                    if(r_ctl_lpf > 31)
-                        break;
-                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
-                    status = RxFilterSearch(C_CTL_LPFL_RBB, rssi_3dB, 2048);
-                }
-            }
-            else if(status != 0)
-                goto RxFilterSearchEndStage;
-            //LPFL END
+            Caddr = 0x0117; //C_CTL_LPFL_RBB
+            Cmsblsb = MSB_LSB(10, 0);
+            Rstep = 2;
+            Crange = 2048;
         }
-        else
+        else //LPFH
         {
-            //LPFH START
-            uint8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
-            status = RxFilterSearch(C_CTL_LPFH_RBB, rssi_3dB, 256);
-            if(status == E_DECREASE_R)
-            {
-                while(r_ctl_lpf > 0)
-                {
-                    r_ctl_lpf -= 1;
-                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
-                    if(GetRSSI() < rssi_3dB)
-                    {
-                        status = 0;
-                        break;
-                    }
+            Caddr = 0x0116; //C_CTL_LPFH_RBB
+            Cmsblsb = MSB_LSB(7, 0);
+            Rstep = 1;
+            Crange = 256;
+        }
+        { // Find RC
+        int8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
+        while((status = RxFilterSearch(Caddr, Cmsblsb, rssi_3dB, Crange)) != 0)
+        {
+            r_ctl_lpf += status==E_INCREASE_R ? Rstep : -Rstep;
+            if(r_ctl_lpf < 0 || 31 < r_ctl_lpf)
+                break;
+            Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
+        }
+        if(status != 0)
+            goto RxFilterSearchEndStage;
+        }
 
-                }
-            }
-            if(status == E_INCREASE_R)
-            {
-                while(r_ctl_lpf < 31)
-                {
-                    r_ctl_lpf += 1;
-                    if(r_ctl_lpf > 31)
-                        break;
-                    Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
-                    if(GetRSSI() > rssi_3dB)
-                    {
-                        status = 0;
-                        break;
-                    }
-                }
-            }
-            else if(status != 0)
-                goto RxFilterSearchEndStage;
-            //LPFH END
-        }
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF);
         if(status != MCU_NO_ERROR)
             goto RxFilterSearchEndStage;
@@ -415,7 +379,7 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             Modify_SPI_Reg_bits(RCOMP_TIA_RFE, clamp(15 - cfb_tia_rfe/100, 0, 15));
         }
     }
-    else//if(rx_lpf_IF > 54e6)
+    else //if(rx_lpf_IF > 54e6)
     {
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6 - rx_lpf_IF);
         if(status != 0)
