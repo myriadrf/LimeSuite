@@ -6,6 +6,7 @@
 
 #include "IConnection.h"
 #include "Logger.h"
+#include "LMSBoards.h"
 
 using namespace lime;
 
@@ -32,6 +33,10 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
+    //initialize to UNKNOWN board type
+    //causes lms7_device::CreateDevice() to use LMS7_Generic
+    info.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
+    info.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     return info;
 }
 
