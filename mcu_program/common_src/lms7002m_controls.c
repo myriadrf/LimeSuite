@@ -407,3 +407,17 @@ void EnableChannelPowerControls()
         value = value | 0x0028;
     SPI_write(0x0020, value);
 }
+
+void EnableMIMOBuffersIfNecessary()
+{
+//modifications when calibrating channel B
+    uint16_t x0020val = SPI_read(0x0020);
+    if( (x0020val&0x3) == 2)
+    {
+        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
+        SPI_write(0x0020, x0020val);
+    }
+}

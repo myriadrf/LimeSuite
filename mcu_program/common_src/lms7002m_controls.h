@@ -24,6 +24,7 @@ extern uint8_t SetFrequencyCGEN(const float_type freq);
 extern float_type GetFrequencySX(const bool Tx);
 extern uint8_t SetFrequencySX(const bool Tx, const float_type freq);
 extern void EnableChannelPowerControls();
+extern void EnableMIMOBuffersIfNecessary();
 
 enum VCO_ID
 {

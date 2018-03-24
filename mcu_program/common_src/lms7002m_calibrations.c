@@ -794,12 +794,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     }
 
     //if calibrating ch. B enable buffers
-    if(x0020val & 0x2)
-    {
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
-        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-    }
+    EnableMIMOBuffersIfNecessary();
 
     //SXT{
     Modify_SPI_Reg_bits(MAC, 2); //switch to ch. B
@@ -1115,14 +1110,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     SetNCOFrequency(LMS7002M_Tx, 9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, bandwidthRF/calibUserBwDivider - offsetNCO, 0);
     //modifications when calibrating channel B
-    if( (x0020val&0x3) == 2)
-    {
-        Modify_SPI_Reg_bits(MAC, 1);
-        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
-        SPI_write(0x0020, x0020val);
-    }
+    EnableMIMOBuffersIfNecessary();
     EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }

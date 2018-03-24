@@ -71,7 +71,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
     uint8_t g_tia_rfe = Get_SPI_Reg_bits(G_TIA_RFE);
     uint8_t g_pga_rbb = Get_SPI_Reg_bits(G_PGA_RBB);
 
-	if(RxLPF_RF_LimitLow/2 > rx_lpf_IF || rx_lpf_IF > RxLPF_RF_LimitHigh/2)
+    if(RxLPF_RF_LimitLow/2 > rx_lpf_IF || rx_lpf_IF > RxLPF_RF_LimitHigh/2)
         return MCU_RX_LPF_OUT_OF_RANGE;
 #define BATCH_RX_SETUP 1
 #if BATCH_RX_SETUP
@@ -264,14 +264,7 @@ uint8_t TuneRxFilterSetup(const float_type rx_lpf_IF)
         Modify_SPI_Reg_bits(INPUT_CTL_PGA_RBB, 2);
     }
 
-    if( (ch&0x3) == 2)
-    {
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
-        Modify_SPI_Reg_bits(MAC, 1);
-        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
-        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-        Modify_SPI_Reg_bits(MAC, ch);
-    }
+    EnableMIMOBuffersIfNecessary();
     EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
@@ -608,6 +601,7 @@ uint8_t TuneTxFilterSetup(const float_type tx_lpf_IF)
     SetNCOFrequency(LMS7002M_Rx, 0.9e6, 0);
     SetNCOFrequency(LMS7002M_Rx, tx_lpf_IF-0.1e6, 1);
 
+    EnableMIMOBuffersIfNecessary();
     EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
