@@ -1135,16 +1135,6 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 #ifndef NDEBUG
     printf("CGEN: Freq=%g MHz, VCO=%g GHz, INT=%i, FRAC=%i, DIV_OUTCH_CGEN=%i\n", freq_Hz/1e6, dFvco/1e9, gINT, gFRAC, iHdiv);
 #endif // NDEBUG
-    //adjust VCO bias current to lock on 491.52 MHz
-    if(abs(freq_Hz - 491.52e6) < 2e6)
-    {
-        if(Modify_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN), 31) == 0)
-        {
-#ifndef NDEBUG
-            printf("CGEN ICT_VCO_CGEN changed to %i\n", 31);
-#endif // NDEBUG
-        }
-    }
     if(TuneVCO(VCO_CGEN) != 0)
     {
         if (output)

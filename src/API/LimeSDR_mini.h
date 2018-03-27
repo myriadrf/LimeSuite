@@ -21,6 +21,7 @@ public:
     unsigned GetNumChannels(const bool tx = false) const override;
     int SetFrequency(bool isTx, unsigned chan, double f_Hz) override;
     Range GetRxPathBand(unsigned path, unsigned chan) const override;
+    Range GetTxPathBand(unsigned path, unsigned chan) const override;
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
     int SetPath(bool tx, unsigned chan, unsigned path) override;
     std::vector<std::string> GetProgramModes() const override;
