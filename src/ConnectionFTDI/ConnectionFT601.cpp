@@ -160,7 +160,7 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
 
     if(dev_handle == nullptr)
         return ReportError(ENODEV, "libusb_open failed");
-    libusb_reset_device(dev_handle);
+
     if(libusb_kernel_driver_active(dev_handle, 1) == 1)   //find out if kernel driver is attached
     {
         lime::debug("Kernel Driver Active");
@@ -174,6 +174,9 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     if ((r = libusb_claim_interface(dev_handle, 1))<0) //claim interface 1 of device
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     lime::debug("Claimed Interface");
+    
+    if (libusb_reset_device(dev_handle)!=0)
+        return ReportError(-1, "USB reset failed", libusb_strerror(libusb_error(r)));
     
     FT_FlushPipe(ctrlRdEp);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlRdEp,64);
