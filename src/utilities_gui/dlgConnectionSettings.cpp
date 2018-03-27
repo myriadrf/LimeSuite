@@ -45,9 +45,13 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     const int selection = mListLMS7ports->GetSelection();
     if(selection != wxNOT_FOUND && selection < list.size())
     {
-        *lmsControl = lime::LMS7_Device::CreateDevice(list[selection], (lime::LMS7_Device*)*lmsControl);
-        if (!lmsControl)
+        auto dev = lime::LMS7_Device::CreateDevice(list[selection], (lime::LMS7_Device*)*lmsControl);
+        if (!dev)
+        {
             wxMessageBox(wxString(_("Failed to open device")));
+            return;
+        }
+        *lmsControl = dev;
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())
