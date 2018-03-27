@@ -27,7 +27,26 @@ uint16_t pow2(const uint8_t power)
 }
 
 xdata uint16_t x0020state;
-ROM const uint16_t chipStateAddr[] = {0x0021, 0x002F, SECTION_AFE, SECTION_BIAS, SECTION_XBUF, SECTION_CGEN, SECTION_LDO, SECTION_BIST, SECTION_CDS, SECTION_TRF, SECTION_TBB, SECTION_RFE, SECTION_RBB, SECTION_TxTSP, SECTION_TxNCO, SECTION_RxTSP, SECTION_RxNCO, 0x500, 0x5A7, 0x5C0, 0x5C0};
+ROM const uint16_t chipStateAddr[] = {
+    0x0021, 0x002F, //LimeLight
+    0x0081, 0x0082, //EN_DIR Configuration + AFE
+    SECTION_BIAS,
+    SECTION_XBUF,
+    SECTION_CGEN,
+    SECTION_LDO,
+    SECTION_BIST,
+    SECTION_CDS,
+    SECTION_TRF,
+    SECTION_TBB,
+    SECTION_RFE,
+    SECTION_RBB,
+    SECTION_TxTSP,
+    SECTION_TxNCO,
+    SECTION_RxTSP,
+    SECTION_RxNCO,
+    0x500, 0x5A7, //GFIR3
+    0x5C0, 0x5C0 //DC Calibration Configuration
+};
 xdata uint16_t chipStateData[500];
 
 void SaveChipState(bool wr)
@@ -312,7 +331,7 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
 #ifndef __cplusplus
-    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~100us
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~300us
 #endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
@@ -417,7 +436,6 @@ void EnableMIMOBuffersIfNecessary()
         Modify_SPI_Reg_bits(MAC, 1);
         Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
         Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
-        Modify_SPI_Reg_bits(PD_TX_AFE2, 0);
         SPI_write(0x0020, x0020val);
     }
 }
