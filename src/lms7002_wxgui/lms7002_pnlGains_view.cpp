@@ -84,7 +84,11 @@ void lms7002_pnlGains_view::Initialize(lms_device_t* pControl)
     }
     else
         chkTRX_GAIN_SRC->Enable(true);
+}
 
+void lms7002_pnlGains_view::ParameterChangeHandler(wxSpinEvent& event)
+{
+    ParameterChangeHandler(static_cast<wxCommandEvent&>(event));
 }
 
 void lms7002_pnlGains_view::ParameterChangeHandler(wxCommandEvent& event)

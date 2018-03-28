@@ -18,7 +18,8 @@ class lms7002_pnlGains_view : public pnlGains_view
 {
 	protected:
 	// Handlers for pnlGains_view events.
-	void ParameterChangeHandler( wxCommandEvent& event );
+	void ParameterChangeHandler(wxSpinEvent& event);
+        void ParameterChangeHandler(wxCommandEvent& event);
 	public:
 	/** Constructor */
 	lms7002_pnlGains_view( wxWindow* parent );
