@@ -5,6 +5,7 @@
 #include "mcu_defines.h"
 #include "lms7002m_calibrations.h"
 
+
 #include <math.h>
 
 #ifdef __cplusplus
@@ -16,18 +17,28 @@ extern bool stopProcedure;
 #endif
 
 static uint16_t ROM stateAddresses[] = {0x0081, 0x010F, 0x0126, 0x040A, 0x040C};
-static uint16_t xdata stateStorage[sizeof(stateAddresses)/sizeof(uint16_t)];
+//double space to store both channels
+static uint16_t xdata stateStorage[2*sizeof(stateAddresses)/sizeof(uint16_t)];
 
 static void StoreState(bool write)
 {
-    uint8_t i = 0;
-    for(; i < sizeof(stateAddresses)/sizeof(uint16_t); ++i)
+    uint16_t x0020 = SPI_read(0x0020);
+    uint8_t storageIndex = 0;
+    uint8_t ch;
+    for(ch = 2; ch>0; --ch)
     {
-        if(write)
-            SPI_write(stateAddresses[i], stateStorage[i]);
-        else
-            stateStorage[i] = SPI_read(stateAddresses[i]);
+        uint8_t i = 0;
+        SPI_write(0x0020, (x0020 & 0xFFFC) | i);
+        for(; i < sizeof(stateAddresses)/sizeof(uint16_t); ++i)
+        {
+            if(write)
+                SPI_write(stateAddresses[i], stateStorage[storageIndex]);
+            else
+                stateStorage[storageIndex] = SPI_read(stateAddresses[i]);
+            ++storageIndex;
+        }
     }
+    SPI_write(0x0020, x0020);
 }
 
 #define TABLE_ENTRY(gain_setting, gainLNA, gainPGA) (gainPGA << 4 | gainLNA)
@@ -100,75 +111,102 @@ TABLE_ENTRY(49,15,31)
 
 uint8_t RunAGC(uint32_t wantedRSSI)
 {
+    xdata uint32_t lastRSSI[2];
+    uint16_t x0400[2];
     uint8_t status;
-    uint8_t gainLNA = 11;
-    uint8_t gainPGA = 31;
+    uint8_t gainLNA[2];
+    uint8_t gainPGA[2];
+    uint8_t ch;
+    uint16_t x0020 = SPI_read(0x0020);
+    gainLNA[1] = gainLNA[0] = 11;
+    gainPGA[1] = gainPGA[0] = 31;
     hasStopped = false;
     StoreState(false);
     //Setup
     Modify_SPI_Reg_bits(TRX_GAIN_SRC, 1);
-    Modify_SPI_Reg_bits(ICT_TIAMAIN_RFE, 31);
-    Modify_SPI_Reg_bits(ICT_TIAOUT_RFE, 4);
-
-    //C_CTL_PGA_RBB 0, TIA 2
-    SPI_write(0x0126, (gainPGA << 6) | (gainLNA << 2) | 2);
-
-    status = CalibrateRx(false, false);
-    if(status != MCU_NO_ERROR)
+    for(ch=0; ch<2; ++ch)
     {
-        StoreState(true);
-        return status;
-    }
+        SPI_write(0x0020, (x0020 & 0xFFFC) | (ch+1));
+        Modify_SPI_Reg_bits(ICT_TIAMAIN_RFE, 31);
+        Modify_SPI_Reg_bits(ICT_TIAOUT_RFE, 4);
+        //C_CTL_PGA_RBB 0, TIA 2
+        SPI_write(0x0126, (gainPGA[ch] << 6) | (gainLNA[ch] << 2) | 2);
 
-    //Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
-    //Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
-    SPI_write(0x040A, 0x1000);
-    Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 0);
+        status = CalibrateRx(false, false);
+        if(status != MCU_NO_ERROR)
+            goto AGC_END;
+        //Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
+        //Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
+        SPI_write(0x040A, 0x1000);
+        Modify_SPI_Reg_bits(AGC_BYP_RXTSP, 0);
 
-    if(Get_SPI_Reg_bits(CMIX_BYP_RXTSP) == 0)
-    {
-        Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP, 1);
-        Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP_R3, 0);
+        if(Get_SPI_Reg_bits(CMIX_BYP_RXTSP) == 0)
+        {
+            Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP, 1);
+            Modify_SPI_Reg_bits(CMIX_GAIN_RXTSP_R3, 0);
+        }
+        x0400[ch] = SPI_read(0x0400) & ~0xF000; //CAPTURE 0, CAPSEL 0
     }
-    //-----------
     UpdateRSSIDelay();
 
     while(!stopProcedure)
     {
-        float dBdiff;
-        uint8_t LNA_gain_available;
-        uint32_t rssi = GetRSSI();
-        if(rssi == 0)
-            continue;
-
-        if(gainLNA <= 9)
-            LNA_gain_available = 3*(11-gainLNA); //G_LNA=0 not allowed
-        else
-            LNA_gain_available = 15-gainLNA;
-
-        dBdiff = 20*log10((float)wantedRSSI/rssi);
-        if (dBdiff < 0 && rssi > 0x14000)
+        //Need to wait only
+        for(ch=0; ch<2; ++ch)
         {
-            gainPGA = clamp(gainPGA - 12, 0, 31);
-            gainLNA = clamp(gainLNA -  3, 0, 15);
-        }
-        else if(dBdiff < 0 || (dBdiff > 0 && LNA_gain_available+31-gainPGA > 0))
-        {
-            int8_t total_gain_current = 30-LNA_gain_available + gainPGA;
-            const uint16_t gains = AGC_gain_table[clamp(total_gain_current+dBdiff, 0, 61)];
-            gainLNA = GET_LNA_GAIN(gains);
-            gainPGA = GET_PGA_GAIN(gains);
-        }
-        {
-            uint16_t reg126;
-            //set C_CTL_PGA_RBB
-            reg126 = GetValueOf_c_ctl_pga_rbb(gainPGA) << 11;
+            float dBdiff;
+            uint8_t LNA_gain_available;
+            uint32_t rssi;
+            bool needUpdate = false;
+            SPI_write(0x0020, (x0020 & 0xFFFC) | ch);
+            //CAPTURE RSSI
+            SPI_write(0x0400, x0400[ch]);
+            SPI_write(0x0400, x0400[ch] | 0x8000);
+            rssi = SPI_read(0x040F);
+            rssi = (rssi << 2 | (SPI_read(0x040E) & 0x3));
 
-            SPI_write(0x0126, reg126 | (gainPGA << 6) | (gainLNA << 2) | 2);
+            if(rssi == lastRSSI[ch] || rssi == 0)
+                continue;
+            lastRSSI[ch] = rssi;
+
+            if(gainLNA[ch] <= 9)
+                LNA_gain_available = 3*(11-gainLNA[ch]); //G_LNA=0 not allowed
+            else
+                LNA_gain_available = 15-gainLNA[ch];
+
+            dBdiff = 20*log10((float)wantedRSSI/rssi);
+            if (dBdiff < 0 && rssi > 0x14000)
+            {
+                gainPGA[ch] = clamp(gainPGA[ch] - 12, 0, 31);
+                gainLNA[ch] = clamp(gainLNA[ch] -  3, 0, 15);
+                needUpdate = true;
+            }
+            else if(dBdiff < 0 || (dBdiff > 0 && LNA_gain_available+31-gainPGA[ch] > 0))
+            {
+                int8_t total_gain_current = 30-LNA_gain_available + gainPGA[ch];
+                const uint16_t gains = AGC_gain_table[clamp(total_gain_current+dBdiff, 0, 61)];
+                uint8_t newLNA = GET_LNA_GAIN(gains);
+                uint8_t newPGA = GET_PGA_GAIN(gains);
+                if(newPGA != gainPGA[ch] || newLNA != gainLNA[ch])
+                {
+                    gainLNA[ch] = GET_LNA_GAIN(gains);
+                    gainPGA[ch] = GET_PGA_GAIN(gains);
+                    needUpdate = true;
+                }
+            }
+            if(needUpdate)
+            {
+                uint16_t reg126;
+                //set C_CTL_PGA_RBB
+                reg126 = GetValueOf_c_ctl_pga_rbb(gainPGA[ch]) << 11;
+                SPI_write(0x0126, reg126 | (gainPGA[ch] << 6) | (gainLNA[ch] << 2) | 2);
+            }
         }
     }
+AGC_END:
     StoreState(true);
+    SPI_write(0x0020, x0020);
     ClockLogicResets();
     hasStopped = true;
-    return 0;
+    return status;
 }
