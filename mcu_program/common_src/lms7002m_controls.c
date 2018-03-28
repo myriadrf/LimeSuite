@@ -26,7 +26,27 @@ uint16_t pow2(const uint8_t power)
     return 1 << power;
 }
 
-ROM const uint16_t chipStateAddr[] = {0x0021, 0x002F, SECTION_AFE, SECTION_BIAS, SECTION_XBUF, SECTION_CGEN, SECTION_LDO, SECTION_BIST, SECTION_CDS, SECTION_TRF, SECTION_TBB, SECTION_RFE, SECTION_RBB, SECTION_TxTSP, SECTION_TxNCO, SECTION_RxTSP, SECTION_RxNCO, 0x500, 0x5A7, 0x5C0, 0x5C0};
+xdata uint16_t x0020state;
+ROM const uint16_t chipStateAddr[] = {
+    0x0021, 0x002F, //LimeLight
+    0x0081, 0x0082, //EN_DIR Configuration + AFE
+    SECTION_BIAS,
+    SECTION_XBUF,
+    SECTION_CGEN,
+    SECTION_LDO,
+    SECTION_BIST,
+    SECTION_CDS,
+    SECTION_TRF,
+    SECTION_TBB,
+    SECTION_RFE,
+    SECTION_RBB,
+    SECTION_TxTSP,
+    SECTION_TxNCO,
+    SECTION_RxTSP,
+    SECTION_RxNCO,
+    0x500, 0x5A7, //GFIR3
+    0x5C0, 0x5C0 //DC Calibration Configuration
+};
 xdata uint16_t chipStateData[500];
 
 void SaveChipState(bool wr)
@@ -35,6 +55,8 @@ void SaveChipState(bool wr)
     uint8_t i;
     uint16_t addr;
     uint16_t ch = SPI_read(0x0020);
+    if(!wr)
+        x0020state = ch;
     //for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
     for(i = sizeof(chipStateAddr)/sizeof(uint16_t); i; i-=2)
     {
@@ -60,38 +82,13 @@ void SaveChipState(bool wr)
             ++dest;
         }
     }
-    SPI_write(0x0020, ch);
-}
-
-void RestoreChipState()
-{
-    uint16_t src=0;
-    uint8_t i;
-    uint16_t addr;
-    uint16_t ch = SPI_read(0x0020);
-    for(i=0; i<sizeof(chipStateAddr)/sizeof(uint16_t); i+=2)
+    if(wr)
     {
-        for(addr=chipStateAddr[i]; addr<=chipStateAddr[i+1]; ++addr)
-        {
-            SPI_write(addr, chipStateData[src]);
-            ++src;
-        }
+        ClockLogicResets();
+        SPI_write(0x0020, x0020state);
     }
-    //sxr
-    SPI_write(0x0020, 0xFFFD);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        SPI_write(addr, chipStateData[src]);
-        ++src;
-    }
-    //sxt
-    SPI_write(0x0020, 0xFFFE);
-    for(addr=0x011C; addr<=0x0123; ++addr)
-    {
-        SPI_write(addr, chipStateData[src]);
-        ++src;
-    }
-    SPI_write(0x0020, ch);
+    else
+        SPI_write(0x0020, ch);
 }
 
 #ifdef __cplusplus
@@ -139,6 +136,19 @@ void SetDefaultsSX()
     Modify_SPI_Reg_bits(0x0120, MSB_LSB(15, 8), 0xB9FF);
 }
 
+void ClockLogicResets()
+{
+    //MCLK2 toggle
+    uint16_t reg = SPI_read(0x002B);
+    SPI_write(0x002B, reg ^ (1<<9));
+    SPI_write(0x002B, reg);
+
+    //TSP logic reset
+    reg = SPI_read(0x0020);
+    SPI_write(0x0020, reg & ~0xAA00);
+    SPI_write(0x0020, reg);
+}
+
 float_type GetFrequencyCGEN()
 {
     const float_type dMul = (RefClk/2.0)/(Get_SPI_Reg_bits(DIV_OUTCH_CGEN)+1); //DIV_OUTCH_CGEN
@@ -153,8 +163,8 @@ uint8_t SetFrequencyCGEN(float_type freq)
     float_type intpart;
     //VCO frequency selection according to F_CLKH
     {
-        uint8_t iHdiv_high = (2.9e9/2 / freq)-1;
-        uint8_t iHdiv_low = (2.0e9/2 / freq + 0.5)-1;
+        uint8_t iHdiv_high = (2.94e9/2 / freq)-1;
+        uint8_t iHdiv_low = (1.93e9/2 / freq);
         uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
         dFvco = 2 * (iHdiv+1) * freq;
         Modify_SPI_Reg_bits(DIV_OUTCH_CGEN, iHdiv);
@@ -321,7 +331,7 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
 #ifndef __cplusplus
-    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~100us
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~300us
 #endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
@@ -393,5 +403,39 @@ void WriteMaskedRegs(const RegisterBatch ROM* regs)
     {
         index = i-1;
         SPI_write(regs->wrOnlyAddr[index], i > regs->wrOnlyDataCnt ? 0 : regs->wrOnlyData[index]);
+    }
+}
+
+uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb)
+{
+    if(g_pga_rbb < 21)
+        return 1;
+    if(g_pga_rbb < 13)
+        return 2;
+    if(g_pga_rbb < 8)
+        return 3;
+    return 0;
+}
+
+void EnableChannelPowerControls()
+{
+    uint16_t value = SPI_read(0x0020);
+    if((value & 3) == 1)
+        value = value | 0x0014;
+    else
+        value = value | 0x0028;
+    SPI_write(0x0020, value);
+}
+
+void EnableMIMOBuffersIfNecessary()
+{
+//modifications when calibrating channel B
+    uint16_t x0020val = SPI_read(0x0020);
+    if( (x0020val&0x3) == 2)
+    {
+        Modify_SPI_Reg_bits(MAC, 1);
+        Modify_SPI_Reg_bits(EN_NEXTRX_RFE, 1);
+        Modify_SPI_Reg_bits(EN_NEXTTX_TRF, 1);
+        SPI_write(0x0020, x0020val);
     }
 }

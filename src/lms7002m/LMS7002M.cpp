@@ -34,7 +34,7 @@ using namespace lime;
 #include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
-float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1900e6, 2900e6};
+float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1930e6, 2940e6};
 
 ///define for parameter enumeration if prefix might be needed
 extern std::vector<const LMS7Parameter*> LMS7parameterList;
@@ -370,7 +370,7 @@ int LMS7002M::ResetChip()
     int status = 0;
     if (controlPort)
         status = controlPort->DeviceReset(mdevIndex);
-    else 
+    else
         lime::warning("No device connected");
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     status |= Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
@@ -934,7 +934,7 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
 
 int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 {
-   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain 
+   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
        return -1;
    if (gain != 0)
    {
@@ -948,7 +948,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 float_type LMS7002M::GetTBBIAMP_dB(void)
 {
     float_type gain = 0;
-    int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true); 
+    int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
     if (CalibrateTxGain(0,nullptr)==0)
     {
         int g_optimal = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
@@ -967,16 +967,16 @@ int LMS7002M::SetPathRFE(PathRFE path)
     switch (path)
     {
         case PATH_RFE_LNAH: sel_path_rfe = 1; break;
-        case PATH_RFE_LB2: pd_lb2 = 0; 
+        case PATH_RFE_LB2: pd_lb2 = 0;
         case PATH_RFE_LNAL: sel_path_rfe = 2; break;
         case PATH_RFE_LB1: pd_lb1 = 0;
         case PATH_RFE_LNAW: sel_path_rfe = 3; break;
         default: sel_path_rfe = 0; break;
     }
-    
+
     Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), sel_path_rfe);
-    
-    int pd_lna_rfe = (path == PATH_RFE_LB2 || path == PATH_RFE_LB1 || sel_path_rfe == 0) ? 1 : 0;  
+
+    int pd_lna_rfe = (path == PATH_RFE_LB2 || path == PATH_RFE_LB1 || sel_path_rfe == 0) ? 1 : 0;
     Modify_SPI_Reg_bits(LMS7param(PD_LNA_RFE), pd_lna_rfe);
 
     Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), pd_lb1);
@@ -1069,7 +1069,6 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
 {
     float_type dFvco;
     float_type dFrac;
-    int16_t iHdiv;
 
     //remember NCO frequencies
     Channel chBck = this->GetActiveChannel();
@@ -1091,17 +1090,12 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         }
     }
     //VCO frequency selection according to F_CLKH
-    vector<float_type> vcoFreqs;
-    for (iHdiv = 0; iHdiv < 256; ++iHdiv)
-    {
-        dFvco = 2 * (iHdiv + 1) * freq_Hz;
-        if (dFvco >= gCGEN_VCO_frequencies[0] && dFvco <= gCGEN_VCO_frequencies[1])
-            vcoFreqs.push_back(dFvco);
-    }
-    if (vcoFreqs.size() == 0)
+    uint8_t iHdiv_high = (2.94e9/2 / freq_Hz)-1;
+    uint8_t iHdiv_low = (1.93e9/2 / freq_Hz);
+    uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    dFvco = 2 * (iHdiv+1) * freq_Hz;
+    if (dFvco <= gCGEN_VCO_frequencies[0] || dFvco >= gCGEN_VCO_frequencies[1])
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
-    dFvco = vcoFreqs[(vcoFreqs.size()-1) / 2];
-    iHdiv = dFvco / freq_Hz / 2.0 - 1.0 + 0.01; //+0.01 to avoid bad round down when result is X.99999...
     //Integer division
     uint16_t gINT = (uint16_t)(dFvco/GetReferenceClk_SX(Rx) - 1);
 
@@ -1808,11 +1802,14 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool use_cache)
     if(address == 0x0640 || address == 0x0641)
     {
         MCU_BD* mcu = GetMCUControls();
+        mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+        if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+            mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
         SPI_write(0x002D, address);
         SPI_write(0x020C, data);
         mcu->RunProcedure(7);
         mcu->WaitForMCU(50);
-        return SPI_read(0x040B);
+        return SPI_read(0x040B) == data ? 0 : -1;
     }
     else
         return this->SPI_write_batch(&address, &data, 1, use_cache);
@@ -1850,6 +1847,9 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
         if(address == 0x0640 || address == 0x0641)
         {
             MCU_BD* mcu = GetMCUControls();
+            mcu->RunProcedure(MCU_FUNCTION_GET_PROGRAM_ID);
+            if(mcu->WaitForMCU(100) != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
+                mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, IConnection::MCU_PROG_MODE::SRAM);
             SPI_write(0x002D, address);
             mcu->RunProcedure(8);
             mcu->WaitForMCU(50);
@@ -1879,7 +1879,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         //or always when below the MAC mapped register space
         bool wr0 = ((mac & 0x1) != 0) || (spiAddr[i] < 0x0100);
         bool wr1 = ((mac & 0x2) != 0) && (spiAddr[i] >= 0x0100);
-        
+
         if (use_cache) {
             if (wr0 && (mRegistersMap->GetValue(0, spiAddr[i]) == spiData[i]))
                 wr0 = false;
@@ -1888,7 +1888,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
             if (!(wr0 || wr1))
                 continue;
         }
-        
+
         data.push_back ((1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]); //msbit 1=SPI write
         if (wr0) mRegistersMap->SetValue(0, spiAddr[i], spiData[i]);
         if (wr1) mRegistersMap->SetValue(1, spiAddr[i], spiData[i]);
@@ -1897,7 +1897,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         if(spiAddr[i] == LMS7param(MAC).address)
             mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
     }
-    
+
     if (data.size() == 0)
         return 0;
     if (!controlPort)
@@ -2263,7 +2263,7 @@ int LMS7002M::UploadAll()
     if (!controlPort) {
         lime::error("No device connected");
         return -1;
-    }        
+    }
 
     Channel ch = this->GetActiveChannel(); //remember used channel
 
@@ -2315,7 +2315,7 @@ int LMS7002M::DownloadAll()
     if (!controlPort) {
         lime::error("No device connected");
         return -1;
-    }  
+    }
     int status;
     Channel ch = this->GetActiveChannel(false);
 

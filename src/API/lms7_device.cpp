@@ -94,10 +94,10 @@ LMS7_Device::~LMS7_Device()
 {
     for (unsigned i = 0; i < lms_list.size();i++)
         delete lms_list[i];
-    
+
     for (unsigned i = 0; i < mStreamers.size(); i++)
         delete mStreamers[i];
-    
+
     if (fpga) delete fpga;
     lime::ConnectionRegistry::freeConnection(connection);
 }
@@ -310,11 +310,11 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
          tx_channels[i].sample_rate = f_Hz;
          rx_channels[i].sample_rate = f_Hz;
     }
-    
+
     if (oversample == 0)
     {
         const int n = lime::cgenMax/(4*f_Hz);
-        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
+        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
     }
 
     if (nco_f != 0)
@@ -331,7 +331,7 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
     int decim = 4;
     if (oversample <= 16)
     {
-        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3}; 
+        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
         decim = decTbl[oversample];
     }
 
@@ -398,11 +398,11 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         else
             rx_channels[i].sample_rate = f_Hz;
     }
-    
+
     if (oversample == 0)
     {
         int n = tx ? lime::cgenMax/f_Hz : lime::cgenMax/(4*f_Hz);
-        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2; 
+        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
     }
 
     if (nco_rx != 0 || nco_tx != 0)
@@ -418,16 +418,16 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
         }
         oversample = oversample > nco_over ? oversample : nco_over;
     }
-    
+
     int tmp = 4;
     if (oversample <= 16)
     {
-        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3}; 
+        const int decTbl[] = {0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
         tmp = decTbl[oversample];
     }
 
     int ratio = 2<<tmp;
-         
+
     if (tx)
     {
         interpolation = tmp;
@@ -685,7 +685,7 @@ std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, unsigned /*chan*
 int LMS7_Device::SetPath(bool tx, unsigned chan, unsigned path)
 {
     lime::LMS7002M* lms = SelectChannel(chan);
-    
+
     if (tx)
         return lms->SetBandTRF(path);
     return lms->SetPathRFE(lime::LMS7002M::PathRFE(path));
@@ -721,12 +721,12 @@ LMS7_Device::Range LMS7_Device::GetTxPathBand(unsigned path, unsigned chan) cons
 }
 
 int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
-{   
+{
     lime::LMS7002M* lms = SelectChannel(chan);
-    
+
     auto bw_range = GetLPFRange(tx,chan);
     std::vector<ChannelInfo>& channels = tx ? tx_channels : rx_channels;
-    
+
     if (!en){
         bandwidth = bw_range.max;
     }
@@ -736,15 +736,15 @@ int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
     else{
         if (bandwidth < bw_range.min){
             lime::warning("%cXLPF set to %.3f MHz (requested %0.3f MHz [out of range])", tx ? 'T':'R', bw_range.min/1e6, bandwidth/1e6);
-            bandwidth = bw_range.min;           
+            bandwidth = bw_range.min;
         }
         else if (bandwidth > bw_range.max){
             lime::warning("%cXLPF set to %.3f MHz (requested %0.3f MHz [out of range])", tx ? 'T':'R', bw_range.max/1e6, bandwidth/1e6);
             bandwidth = bw_range.max;
         }
-        channels[chan].lpf_bw = bandwidth;      
+        channels[chan].lpf_bw = bandwidth;
     }
-        
+
     if (lms->TuneRxFilter(bandwidth)!=0)
         return -1;
 
@@ -948,7 +948,7 @@ int LMS7_Device::SetGFIR(bool tx, unsigned chan, lms_gfir_t filt, bool enabled)
 int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::string &name)
 {
     lime::LMS7002M* lms = SelectChannel(chan);
-    
+
     if (name == "LNA")
         return lms->SetRFELNA_dB(value);
     else if (name == "LB_LNA")
@@ -963,8 +963,8 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
         return lms->SetTBBIAMP_dB(value);
     else if (name == "LB_PAD")
         return lms->SetTRFLoopbackPAD_dB(value);
-    
-    if (dir_tx) 
+
+    if (dir_tx)
     {
         if (lms->SetTRFPAD_dB(value)!=0)
             return -1;
@@ -972,7 +972,7 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
         if (lms->SetTBBIAMP_dB(value)!=0)
             return -1;
     }
-    else 
+    else
     {
         const int maxGain = 74; //gain table size
         value += 12;           //pga offset
@@ -1049,7 +1049,7 @@ LMS7_Device::Range LMS7_Device::GetGainRange(bool isTx, unsigned chan, const std
     if (name == "PAD") return Range(0.0, 52.0);
     if (name == "IAMP") return Range(-12.0, 12.0);
     if (name == "LB_PAD") return Range(-4.3, 0.0);
-    if (name == "") return Range(-12.0, isTx ? 64.0 : 61.0); 
+    if (name == "") return Range(-12.0, isTx ? 64.0 : 61.0);
     return Range();
 }
 
@@ -1133,16 +1133,16 @@ int LMS7_Device::GetTestSignal(bool dir_tx, unsigned chan) const
 int LMS7_Device::SetNCOFreq(bool tx, unsigned ch, int ind, double freq)
 {
     lime::LMS7002M* lms = SelectChannel(ch);
-   
+
     bool enable = (ind>=0) && (freq != 0);
 
     if ((lms->Modify_SPI_Reg_bits(tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP,!enable)!=0)
     || ( lms->Modify_SPI_Reg_bits( tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, enable)!=0))
         return -1;
-    
+
     if ((ind>=0) && (lms->SetNCOFrequency(tx, ind, std::fabs(freq)) != 0))
         return -1;
-    
+
     if (enable)
     {
         bool down = (freq < 0);
@@ -1159,25 +1159,25 @@ int LMS7_Device::SetNCOFreq(bool tx, unsigned ch, int ind, double freq)
 double LMS7_Device::GetNCOFreq(bool tx, unsigned ch, int ind) const
 {
     lime::LMS7002M* lms = SelectChannel(ch);
-    double freq = lms->GetNCOFrequency(tx,ind,true); 
-    
+    double freq = lms->GetNCOFrequency(tx,ind,true);
+
     bool down = lms->Get_SPI_Reg_bits(tx ? LMS7_CMIX_SC_TXTSP : LMS7_CMIX_SC_RXTSP);
     if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_MASK) == 0))
-        down = !down;           
-    return down ? -freq : freq;  
+        down = !down;
+    return down ? -freq : freq;
 }
 
 int LMS7_Device::SetNCOPhase(bool tx, unsigned ch, int ind, double phase)
 {
     lime::LMS7002M* lms = SelectChannel(ch);
-   
+
     bool enable = (ind>=0) && (phase != 0);
 
     if ((lms->Modify_SPI_Reg_bits(tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP,!enable)!=0)
     || ( lms->Modify_SPI_Reg_bits( tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, enable)!=0))
         return -1;
-    
-    if ((ind>=0) && (lms->SetNCOPhaseOffset(tx, ind, phase)!=0))    
+
+    if ((ind>=0) && (lms->SetNCOPhaseOffset(tx, ind, phase)!=0))
         return -1;
     if (enable)
     {
@@ -1190,7 +1190,7 @@ int LMS7_Device::SetNCOPhase(bool tx, unsigned ch, int ind, double phase)
 
 double LMS7_Device::GetNCOPhase(bool tx, unsigned ch, int ind) const
 {
-    lime::LMS7002M* lms = SelectChannel(ch);  
+    lime::LMS7002M* lms = SelectChannel(ch);
     return lms->GetNCOPhaseOffset_Deg(tx, ind);
 }
 
@@ -1214,22 +1214,22 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 
     int chA = chan&(~1);
     int chB = chan|1;
-    
+
     std::vector<ChannelInfo>& channels = isTx ? tx_channels : rx_channels;
-    
+
     auto setTDD = [=](double center)->int
     {
-        std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;    
-        bool tdd =  fabs(other[chA].freq+other[chA].cF_offset_nco-center) > 0.1 ? false : true;    
+        std::vector<ChannelInfo>& other = isTx ? rx_channels : tx_channels;
+        bool tdd =  fabs(other[chA].freq+other[chA].cF_offset_nco-center) > 0.1 ? false : true;
         lms->EnableSXTDD(tdd);
         if (isTx || (!tdd))
             if (lms->SetFrequencySX(isTx, center) != 0)
                 return -1;
         return 0;
     };
-    
+
     channels[chan].freq = f_Hz;
-    if (channels[chA].freq > 0 && channels[chB].freq > 0) 
+    if (channels[chA].freq > 0 && channels[chB].freq > 0)
     {
         double delta = fabs(channels[chA].freq - channels[chB].freq);
         if (delta > 0.1)
@@ -1376,7 +1376,7 @@ int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, 
 {
     if (connection == nullptr)
         return lime::ReportError(EINVAL, "Device not connected");
-    
+
     if (mode == program_mode::autoUpdate)
         return this->connection->ProgramUpdate(true, callback);
     if (mode == program_mode::fx3Flash)
@@ -1403,14 +1403,14 @@ int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, 
 
         if (mode == program_mode::mcuRAM)
             prog_mode = lime::IConnection::MCU_PROG_MODE::SRAM;
-        else 
+        else
             prog_mode = lime::IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM;
         mcu->callback = callback;
         mcu->Program_MCU(bin,prog_mode);
         mcu->callback = nullptr;
         return 0;
     }
-  
+
     lime::ReportError(ENOTSUP, "Unsupported programming target");
     return -1;
 }
@@ -1628,12 +1628,12 @@ int LMS7_Device::ReadLMSReg(uint16_t address, int ind) const
 
 int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind) const
 {
-     return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val, false);
+    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val, false);
 }
 
 uint16_t LMS7_Device::ReadParam(const struct LMS7Parameter& param, int chan, bool fromChip) const
 {
-    int lmsChip; 
+    int lmsChip;
     if (chan >= 0)
     {
         lmsChip = chan/2;
@@ -1649,8 +1649,8 @@ int LMS7_Device::ReadParam(const std::string& name, int chan, bool fromChip) con
     const LMS7Parameter* param = lime::LMS7002M::GetParam(name);
     if (!param)
         return -1;
-    
-    int lmsChip; 
+
+    int lmsChip;
     if (chan >= 0)
     {
         lmsChip = chan/2;
@@ -1664,7 +1664,7 @@ int LMS7_Device::ReadParam(const std::string& name, int chan, bool fromChip) con
 
 int LMS7_Device::WriteParam(const struct LMS7Parameter& param, uint16_t val, int chan)
 {
-    int lmsChip; 
+    int lmsChip;
     if (chan >= 0)
     {
         lmsChip = chan/2;
@@ -1672,18 +1672,18 @@ int LMS7_Device::WriteParam(const struct LMS7Parameter& param, uint16_t val, int
             lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
     }
     else lmsChip = lms_chip_id;
-    
+
     return lms_list.at(lmsChip)->Modify_SPI_Reg_bits(param, val);
 }
 
 int LMS7_Device::WriteParam(const std::string& name, uint16_t val, int chan)
 {
     const LMS7Parameter* param = lime::LMS7002M::GetParam(name);
-    
+
     if (!param)
         return -1;
-    
-    int lmsChip; 
+
+    int lmsChip;
     if (chan >= 0)
     {
         lmsChip = chan/2;
@@ -1691,7 +1691,7 @@ int LMS7_Device::WriteParam(const std::string& name, uint16_t val, int chan)
             lms_list.at(lmsChip)->Modify_SPI_Reg_bits(LMS7param(MAC),(chan%2) + 1);
     }
     else lmsChip = lms_chip_id;
- 
+
     return lms_list.at(lmsChip)->Modify_SPI_Reg_bits(param->address, param->msb, param->lsb, val);
 }
 
@@ -1715,7 +1715,7 @@ int LMS7_Device::UploadWFM(const void **samples, uint8_t chCount, int sample_cou
 {
     if (!fpga)
         return lime::ReportError("Device not connected");
-    
+
     return fpga->UploadWFM(samples, chCount%2 ? 1 : 2, sample_count, fmt, (chCount-1)/2);
 }
 
@@ -1742,24 +1742,27 @@ void LMS7_Device::SetHardwareTimestamp(const uint64_t now)
     mStreamers[0]->SetHardwareTimestamp(now);
 }
 
-int LMS7_Device::MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil)
+int LMS7_Device::MCU_AGCStart(uint32_t wantedRSSI)
 {
     lime::MCU_BD *mcu = lms_list.at(lms_chip_id)->GetMCUControls();
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
 
     uint8_t mcuID = mcu->ReadMCUProgramID();
-    lime::debug("Current MCU firmware: %i, expected %i", mcuID, MCU_ID_AGC_IMAGE);
-    if(mcuID != MCU_ID_AGC_IMAGE)
+    lime::debug("Current MCU firmware: %i, expected %i", mcuID, MCU_ID_CALIBRATIONS_SINGLE_IMAGE);
+    if(mcuID != MCU_ID_CALIBRATIONS_SINGLE_IMAGE)
     {
         lime::debug("Uploading MCU AGC firmware");
-        int status = mcu->Program_MCU(mcu_program_lms7_agc_bin, lime::IConnection::MCU_PROG_MODE::SRAM);
+        int status = mcu->Program_MCU(mcu_program_lms7_dc_iq_calibration_bin, lime::IConnection::MCU_PROG_MODE::SRAM);
         lime::info("MCU AGC firmware uploaded");
         if(status != 0)
             return status;
     }
 
-    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x002D, 15, 0, pgaCeil << 8 | rssiMin);
-    mcu->RunProcedure(254);
+    long refClk = lms_list.at(lms_chip_id)->GetReferenceClk_SX(false);
+    mcu->SetParameter(MCU_BD::MCU_REF_CLK, refClk);
+
+    lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x002D, 15, 0, wantedRSSI >> 2);
+    mcu->RunProcedure(MCU_FUNCTION_AGC);
     return 0;
 }
 

@@ -17,8 +17,8 @@
 namespace lime
 {
 class LIME_API LMS7_Device
-{         
-public:   
+{
+public:
     struct Range {
         Range(double a = 0, double b = 0){ min = a, max = b; };
         double min;
@@ -84,17 +84,17 @@ public:
     static LMS7_Device* CreateDevice(const lime::ConnectionHandle& handle, LMS7_Device *obj = nullptr);
     static std::vector<lime::ConnectionHandle> GetDeviceList();
     int ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwidth);
-    
+
     lime::StreamChannel* SetupStream(const lime::StreamConfig &config);
     int DestroyStream(lime::StreamChannel* streamID);
     uint64_t GetHardwareTimestamp(void) const;
     void SetHardwareTimestamp(const uint64_t now);
-    
-    int MCU_AGCStart(uint8_t rssiMin, uint8_t pgaCeil);
+
+    int MCU_AGCStart(uint32_t wantedRSSI);
     int MCU_AGCStop();
 
 protected:
-    
+
     struct ChannelInfo
     {
     public:

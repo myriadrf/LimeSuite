@@ -13,13 +13,14 @@
 #include <chrono>
 #include <fstream>
 #include <gnuPlotPipe.h>
+#include <math.h>
 using namespace std;
 
 lime::IConnection *serPort = nullptr;
 lime::LMS7002M lmsControl;
 
 //use the LMS7002M or calibrate directly from Host
-static bool useMCU =0;
+static bool useMCU =1;
 static bool tx = 1;
 static bool filters = 0;
 static float FBW = 5e6;
@@ -244,7 +245,7 @@ void DCIQ()
             if(tx)
                 status = CalibrateTx(extLoop);
             else
-                status = CalibrateRx(extLoop);
+                status = CalibrateRx(extLoop, false);
         }
         auto t2 = chrono::high_resolution_clock::now();
         long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
@@ -510,6 +511,7 @@ int main(int argc, char** argv)
     else
         filename = "RxTest.ini";*/
     filename = "TxDCTest.ini";
+    //filename = "AGC_RSSI_test.ini";
     if(lmsControl.LoadConfig(filename.c_str()) != 0)
     {
         printf("Failed to load .ini file\n");
@@ -530,6 +532,9 @@ int main(int argc, char** argv)
     //backup chip state
 
     //lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    float crestFactor = 1;
+    uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
+    //RunAGC(wantedRSSI);
 
     status = 0;
     if(useMCU)

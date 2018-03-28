@@ -14,6 +14,7 @@ extern "C"
 extern void SaveChipState(bool wr);
 extern void SetDefaults(uint16_t start, uint16_t end);
 extern void SetDefaultsSX();
+extern void ClockLogicResets();
 
 extern void SetNCOFrequency(const bool tx, const float freq_Hz, uint8_t index);
 
@@ -22,6 +23,8 @@ extern float_type GetFrequencyCGEN();
 extern uint8_t SetFrequencyCGEN(const float_type freq);
 extern float_type GetFrequencySX(const bool Tx);
 extern uint8_t SetFrequencySX(const bool Tx, const float_type freq);
+extern void EnableChannelPowerControls();
+extern void EnableMIMOBuffersIfNecessary();
 
 enum VCO_ID
 {
@@ -46,6 +49,7 @@ typedef struct
 } RegisterBatch;
 
 extern void WriteMaskedRegs(const RegisterBatch ROM* regs);
+extern uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb);
 
 #ifdef __cplusplus
 }
