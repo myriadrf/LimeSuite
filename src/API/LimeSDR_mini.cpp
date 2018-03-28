@@ -123,9 +123,9 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned chan) const
 {
     if (dir_tx)
-        return {"NONE", "TX_PATH1", "TX_PATH2"};
+        return {"NONE", "BAND1", "BAND2"};
     else
-        return {"NONE", "LNA_H", "LNA_L(NC)", "LNA_W"};
+	return {"NONE", "LNAH", "LNAL_NC", "LNAW"};
 }
 
 int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
