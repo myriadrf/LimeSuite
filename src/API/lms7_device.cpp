@@ -744,8 +744,13 @@ int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
         }
         channels[chan].lpf_bw = bandwidth;
     }
+    int status = 0;
+    if(tx)
+        status = lms->TuneTxFilter(bandwidth);
+    else
+        status = lms->TuneRxFilter(bandwidth);
 
-    if (lms->TuneRxFilter(bandwidth)!=0)
+    if (status!=0)
         return -1;
 
     lime::info("%cX LPF configured",tx ? 'T' : 'R');
