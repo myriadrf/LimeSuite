@@ -216,7 +216,7 @@ public:
 
         This could be a quite long operation, use callback to get progress info or to terminate early
     */
-    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0)=0;
+    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
 
     /*!
      * Download up-to-date images files and flash the board when applicable.

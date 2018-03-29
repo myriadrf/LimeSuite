@@ -207,7 +207,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(ERANGE, "Tx Calibration: Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
-#ifdef __cplusplus
+#ifdef LMS_VERBOSE_OUTPUT
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
     int status;
@@ -324,7 +324,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(ERANGE, "Rx Calibration: Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(ENODEV, "Rx Calibration: Device not connected");
-#ifdef __cplusplus
+#ifdef LMS_VERBOSE_OUTPUT
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 

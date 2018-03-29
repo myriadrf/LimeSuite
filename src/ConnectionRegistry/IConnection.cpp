@@ -6,6 +6,7 @@
 
 #include "IConnection.h"
 #include "Logger.h"
+#include "LMSBoards.h"
 
 using namespace lime;
 
@@ -32,6 +33,10 @@ bool IConnection::IsOpen(void)
 DeviceInfo IConnection::GetDeviceInfo(void)
 {
     DeviceInfo info;
+    //initialize to UNKNOWN board type
+    //causes lms7_device::CreateDevice() to use LMS7_Generic
+    info.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
+    info.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
     return info;
 }
 
@@ -60,7 +65,7 @@ int IConnection::ReadI2C(const int addr, const size_t numBytes, std::string &dat
 
 int IConnection::DeviceReset(int ind)
 {
-    return ReportError("ProgramWrite not supported");
+    return ReportError("DeviceReset not supported");
 }
 
 /***********************************************************************
@@ -130,6 +135,12 @@ int IConnection::ResetStreamBuffers()
 int IConnection::ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback)
 {
     ReportError(ENOTSUP, "ProgramWrite not supported");
+    return -1;
+}
+
+int IConnection::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
+{
+    ReportError(ENOTSUP, "ProgramMCU not supported");
     return -1;
 }
 

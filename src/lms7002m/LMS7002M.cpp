@@ -1549,7 +1549,7 @@ int LMS7002M::SetFrequencySXWithSpurCancelation(bool tx, float_type freq_Hz, flo
         needCancelation = true;
 
     int status;
-    float newFreq;
+    float newFreq(0);
     if(needCancelation)
     {
         newFreq = (int)(freq_Hz/refClk+0.5)*refClk;

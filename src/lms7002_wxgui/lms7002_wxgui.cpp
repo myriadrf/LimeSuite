@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Mar  6 2018)
+// C++ code generated with wxFormBuilder (version Jan 23 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -9651,7 +9651,7 @@ pnlGains_view::pnlGains_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	ID_STATICTEXT3->Wrap( -1 );
 	rxSizer->Add( ID_STATICTEXT3, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
 	
-	cmbC_CTL_PGA_RBB = new NumericSlider( sbSizer159->GetStaticBox(), ID_C_CTL_PGA_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
+	cmbC_CTL_PGA_RBB = new NumericSlider( sbSizer159->GetStaticBox(), ID_C_CTL_PGA_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 3, 0 );
 	rxSizer->Add( cmbC_CTL_PGA_RBB, 0, wxALIGN_LEFT, 5 );
 	
 	
