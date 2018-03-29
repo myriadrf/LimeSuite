@@ -129,8 +129,8 @@ uint8_t RunAGC(uint32_t wantedRSSI)
         {
             SPI_write(0x0020, (x0020 & 0xFFFC) | (ch+1));
             Modify_SPI_Reg_bits(CG_IAMP_TBB_R3, Get_SPI_Reg_bits(CG_IAMP_TBB));
-            Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF_R3));
-            Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF_R3));
+            Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF));
+            Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF));
         }
     }
     Modify_SPI_Reg_bits(TRX_GAIN_SRC, 1);
