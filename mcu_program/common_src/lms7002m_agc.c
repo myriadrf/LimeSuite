@@ -123,6 +123,16 @@ uint8_t RunAGC(uint32_t wantedRSSI)
     hasStopped = false;
     StoreState(false);
     //Setup
+    if(Get_SPI_Reg_bits(TRX_GAIN_SRC) == false)
+    {
+        for(ch=0; ch<2; ++ch)
+        {
+            SPI_write(0x0020, (x0020 & 0xFFFC) | (ch+1));
+            Modify_SPI_Reg_bits(CG_IAMP_TBB_R3, Get_SPI_Reg_bits(CG_IAMP_TBB));
+            Modify_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_LIN_TXPAD_TRF_R3));
+            Modify_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF_R3, Get_SPI_Reg_bits(LOSS_MAIN_TXPAD_TRF_R3));
+        }
+    }
     Modify_SPI_Reg_bits(TRX_GAIN_SRC, 1);
     for(ch=0; ch<2; ++ch)
     {
@@ -133,8 +143,8 @@ uint8_t RunAGC(uint32_t wantedRSSI)
         SPI_write(0x0126, (gainPGA[ch] << 6) | (gainLNA[ch] << 2) | 2);
 
         status = CalibrateRx(false, false);
-        if(status != MCU_NO_ERROR)
-            goto AGC_END;
+        //if(status != MCU_NO_ERROR)
+            //goto AGC_END;
         //Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
         //Modify_SPI_Reg_bits(AGC_AVG_RXTSP, 0);
         SPI_write(0x040A, 0x1000);
@@ -158,7 +168,7 @@ uint8_t RunAGC(uint32_t wantedRSSI)
             uint8_t LNA_gain_available;
             uint32_t rssi;
             bool needUpdate = false;
-            SPI_write(0x0020, (x0020 & 0xFFFC) | ch);
+            SPI_write(0x0020, (x0020 & 0xFFFC) | (ch+1));
             //CAPTURE RSSI
             SPI_write(0x0400, x0400[ch]);
             SPI_write(0x0400, x0400[ch] | 0x8000);

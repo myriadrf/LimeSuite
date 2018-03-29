@@ -653,7 +653,9 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define G_LNA_RFE_R3 0x0126, 5 << 4 | 2
 #define G_PGA_RBB_R3 0x0126, 10 << 4 | 6
 #define G_TIA_RFE_R3 0x0126, 1 << 4 | 0
-
+#define CG_IAMP_TBB_R3 0x0125, 15 << 4 | 10
+#define LOSS_LIN_TXPAD_TRF_R3 0x0125, 9 << 4 | 5
+#define LOSS_MAIN_TXPAD_TRF_R3 0x0125, 4 << 4 | 0
 
 #define DCOFFI_RFE 0x010E, 13<<4 | 7
 #define DCOFFQ_RFE 0x010E, 6<<4 | 0
@@ -665,6 +667,5 @@ extern ROM const LMS7Parameter GCORRQ_RXTSP;
 #define GCORRQ_TXTSP 0x0201, 10<<4 | 0
 #define GCORRI_RXTSP 0x0402, 10<<4 | 0
 #define GCORRQ_RXTSP 0x0401, 10<<4 | 0
-
 
 #endif
