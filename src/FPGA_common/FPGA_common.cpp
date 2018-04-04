@@ -178,7 +178,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     reg23val &= ~PLLRST_START; //clear PLL reset
     reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
     reg23val |= pllIndex << 3;
-    
+
     uint16_t reg25 = 0x0170;
     connection->ReadRegister(0x0025, reg25);
 
@@ -190,7 +190,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     addrs.push_back(0x0025); values.push_back(reg25 | 0x80);
     addrs.push_back(0x0023); values.push_back(reg23val); //PLL_IND
     if (clocks->findPhase == false)
-    { 
+    {
         addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
     }
     connection->WriteRegisters(addrs.data(), values.data(), values.size());
@@ -603,7 +603,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
     lime::FPGA::FPGA_PLL_clock clocks[2];
     int status = 0;
     if  (rxRate_Hz >= 5e6)
-    { 
+    {
         clocks[0].index = 0;
         clocks[0].outFrequency = rxRate_Hz;
         clocks[1].index = 1;
@@ -615,7 +615,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
         status = SetDirectClocking(1);
 
     if (txRate_Hz >= 5e6)
-    { 
+    {
         clocks[0].index = 0;
         clocks[0].outFrequency = txRate_Hz;
         clocks[1].index = 1;
@@ -640,10 +640,10 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const double txPhC1 =  89.61;
     const double txPhC2 =  2.71e-7;
 
-    const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
+    const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A, 0x82,
                                             0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
     const int bakRegCnt = spiAddr.size() - 4;
-    
+
     bool phaseSearch = false;
     //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
     if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
@@ -663,12 +663,12 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     std::vector<uint32_t> dataWr;
 
     dataWr.resize(spiAddr.size());
-    dataRdA.resize(spiAddr.size());
-    dataRdB.resize(spiAddr.size());
+    dataRdA.resize(bakRegCnt);
+    dataRdB.clear();
     //backup registers
     dataWr[0] = (uint32_t(0x0020) << 16);
     connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
-        
+
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
@@ -680,14 +680,15 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
     for (int i = 0; i < bakRegCnt; ++i)
-        dataWr[i] = (spiAddr[i] << 16);
-    connection->ReadLMS7002MSPI(dataWr.data(), dataRdB.data(), bakRegCnt, channel);
+        if (spiAddr[i] >= 0x100)
+            dataRdB.push_back(spiAddr[i] << 16);
+    connection->ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size(), channel);
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
     {
-        const std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086,
+        const std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086, 0x8001,
                                                 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
         //Load test config
         const int setRegCnt = spiData.size();
@@ -712,7 +713,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     }
 
     {
-        const std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484};
+        const std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
         connection->WriteRegister(0xFFFF, 1 << channel);
         connection->WriteRegister(0x000A, 0x0000);
         //Load test config
@@ -745,9 +746,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+
+    int k = 0;
     for (int i = 0; i < bakRegCnt; ++i)
-        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[i]; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+        if (spiAddr[i] >= 0x100){
+            dataWr[k] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[k]; //msbit 1=SPI write
+            k++;
+        }
+    connection->WriteLMS7002MSPI(dataWr.data(), k, channel);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
     connection->WriteRegister(0x000A, 0);
@@ -787,7 +793,7 @@ double FPGA::DetectRefClk(double fx3Clk)
         unsigned completed;
         if (connection->ReadRegister(0x65, completed) != 0)
             return -1;
-  
+
         if (completed & 0x4)
             break;
 
@@ -801,7 +807,7 @@ double FPGA::DetectRefClk(double fx3Clk)
     uint32_t vals2[2];
     if (connection->ReadRegisters(addr2, vals2, 2) != 0)
         return -1;
-    
+
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter
     count *= fx3Clk / fx3Cnt;   //estimate ref clock based on FX3 Clock
     lime::debug("Estimated reference clock %1.4f MHz", count/1e6);
