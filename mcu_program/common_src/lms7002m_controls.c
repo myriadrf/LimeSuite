@@ -305,8 +305,9 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
 {
     typedef struct
     {
-        int16_t high;
-        int16_t low;
+        uint8_t high;
+        uint8_t low;
+        uint8_t hasLock;
     } CSWInteval;
 
     uint16_t addrCSW_VCO;
@@ -314,8 +315,10 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
 
     CSWInteval cswSearch[2];
     cswSearch[0].high = 0; //search interval lowest value
-    cswSearch[0].low = cswSearch[1].high  = 128;
+    cswSearch[0].low = 127;
+    cswSearch[1].high = 128;
     cswSearch[1].low = 255;
+    cswSearch[1].hasLock = cswSearch[0].hasLock = false;
 
     if(SX)
     {
@@ -347,22 +350,27 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         for(t=0; t<2; ++t)
         {
             uint8_t mask;
-            Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
-
             for(mask = (1 << 6); mask; mask >>= 1)
             {
+                uint8_t cmpValue;
                 cswSearch[t].high |= mask; // CSW_VCO<i>=1
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].high);
-                if(ReadCMP(SX) == 0x03) // reduce CSW
+                cmpValue = ReadCMP(SX);
+                if(cmpValue == 0x03) // reduce CSW
                     cswSearch[t].high ^= mask; // CSW_VCO<i>=0
+                else if(cmpValue == 0x02 && cswSearch[t].high <= cswSearch[t].low)
+                {
+                    cswSearch[t].hasLock = true;
+                    cswSearch[t].low = cswSearch[t].high;
+                }
             }
-            //allow underflow, cycle will be broken by not locking comparators
-            for(cswSearch[t].low = cswSearch[t].high; cswSearch[t].low; --cswSearch[t].low)
+            for(; cswSearch[t].low; --cswSearch[t].low)
             {
                 Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, cswSearch[t].low);
                 if(ReadCMP(SX) != 0x2)
                 {
-                    ++cswSearch[t].low;
+                    if(cswSearch[t].low < cswSearch[t].high)
+                        ++cswSearch[t].low;
                     break;
                 }
             }
@@ -370,12 +378,9 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
     }
     {
         uint8_t cswValue;
-        //check if the intervals are joined
-        if(cswSearch[0].high == cswSearch[1].low-1)
-            cswValue = cswSearch[0].low +((cswSearch[1].high-cswSearch[0].low) >> 1);
-        else //compare which interval is wider
+        //compare which interval is wider
         {
-            if(cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low)
+            if(cswSearch[1].hasLock && (cswSearch[1].high-cswSearch[1].low >= cswSearch[0].high-cswSearch[0].low))
                 cswValue = cswSearch[1].low +((cswSearch[1].high-cswSearch[1].low) >> 1);
             else
                 cswValue = cswSearch[0].low +((cswSearch[0].high-cswSearch[0].low) >> 1);
