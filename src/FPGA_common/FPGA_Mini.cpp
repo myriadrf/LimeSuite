@@ -73,12 +73,13 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     if (!phaseSearch)
         return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
-    
+
     std::vector<uint32_t> dataRd;
     std::vector<uint32_t> dataWr;
     dataWr.resize(spiAddr.size());
     dataRd.resize(spiAddr.size());
-    
+    lime::FPGA::FPGA_PLL_clock clocks[4];
+
     //backup registers
     dataWr[0] = (uint32_t(0x0020) << 16);
     connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, 0);
@@ -90,7 +91,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         dataWr[i] = (spiAddr[i] << 16);
         connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, 0);
 
-    //Config Rx 
+    //Config Rx
     {
         const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4,
                  0xE4E4, 0x0086, 0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED };
@@ -99,20 +100,23 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         for (int i = 0; i < setRegCnt; ++i)
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
         connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, 0);
+
+        clocks[0].index = 3;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
+        clocks[0].findPhase = true;
+        clocks[1] = clocks[0];
+        clocks[2] = clocks[0];
+        clocks[3] = clocks[0];
+        if (SetPllFrequency(0, rxRate_Hz, clocks, 4)!=0)
+        {
+            status = -1;
+            SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+        }
     }
 
-    lime::FPGA::FPGA_PLL_clock clocks[4];
-    clocks[0].index = 3;
-    clocks[0].outFrequency = rxRate_Hz;
-    clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
-    clocks[0].findPhase = true;
-    clocks[1] = clocks[0];
-    clocks[2] = clocks[0];
-    clocks[3] = clocks[0];
-    if (SetPllFrequency(0, rxRate_Hz, clocks, 4)!=0)
-        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
-    
     //Config TX
+    if (status == 0)
     {
         const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484 };
         connection->WriteRegister(0x000A, 0x0000);
@@ -121,34 +125,36 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         for (int i = 0; i < setRegCnt; ++i)
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
                 connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, 0);
+
+        clocks[0].index = 1;
+        clocks[0].outFrequency = txRate_Hz;
+        clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
+        clocks[0].findPhase = true;
+        clocks[1] = clocks[0];
+        clocks[2] = clocks[0];
+        clocks[3] = clocks[0];
+        connection->WriteRegister(0x000A, 0x0200);
+        if (SetPllFrequency(0, txRate_Hz, clocks, 4)!=0)
+        {
+            status = -1;
+            SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+        }
     }
 
-    clocks[0].index = 1;
-    clocks[0].outFrequency = txRate_Hz;
-    clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
-    clocks[0].findPhase = true;
-    clocks[1] = clocks[0];
-    clocks[2] = clocks[0];
-    clocks[3] = clocks[0];
-    connection->WriteRegister(0x000A, 0x0200);
-    if (SetPllFrequency(0, txRate_Hz, clocks, 4)!=0)
-        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+    //Restore registers
+    for (int i = 0; i < bakRegCnt; ++i)
+        dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+    dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    connection->WriteRegister(0x000A, 0);
 
-    {
-        //Restore registers
-        for (int i = 0; i < bakRegCnt; ++i)
-            dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRd[i]; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
-        dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
-        connection->WriteRegister(0x000A, 0);
-    }
     return status;
 }
 
 int FPGA_Mini::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
 {
-   return ReportError("UploadWFM not supported on LimeSDR-Mini"); 
+   return ReportError("UploadWFM not supported on LimeSDR-Mini");
 }
 
 
