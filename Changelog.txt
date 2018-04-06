@@ -1,4 +1,13 @@
-Release 18.03.0 (pending)
+Release 18.04.0 (2018-04-06)
+==========================
+
+- Fixed Tx filter calibration
+- Fixed FPGA PLL configuration when B channel is disabled
+- Fixed non-working controls in LimeSuiteGUI 'TRX Gain' tab
+- Changed CGEN VCO tune algorithm
+- LimeSDR-USB v1.4 updated to r2.16 gateware
+
+Release 18.03.0 (2018-03-28)
 ==========================
 
 SoapyLMS changes:

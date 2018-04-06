@@ -131,7 +131,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
             config.bufferLength = std::stoul(args.at("bufferLength"));
         }
 
-        //optional packets latency, 0-maximum throughput, 1-lowest latency
+        //optional packets latency, 1-maximum throughput, 0-lowest latency
         if (args.count("latency") != 0)
         {
             config.performanceLatency = std::stof(args.at("latency"));
