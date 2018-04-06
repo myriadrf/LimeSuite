@@ -16,7 +16,7 @@ using namespace lime;
 auto t1 = chrono::high_resolution_clock::now();
 auto t2 = chrono::high_resolution_clock::now();
 
-void ConfigureCGEN(LMS7_Device* device, double freqMHz);
+bool ConfigureCGEN(LMS7_Device* device, double freqMHz);
 
 int printHelp(void);
 
@@ -30,8 +30,8 @@ void log_func(const lime::LogLevel level, const char *message)
 
 int main(int argc, char** argv)
 {
-    double beginFreq = 20e6;
-    double endFreq = 600e6;
+    double beginFreq = 50e6;
+    double endFreq = 500e6;
     double stepFreq = 1e6;
     string configFilename = "";
     bool init = false;
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
             {"stepFreq",    required_argument, 0, 's'},
             {"endFreq",     required_argument, 0, 'e'},
             {"log",         required_argument, 0, 'l'},
-            {"config",      optional_argument, 0, 'c'},
+            {"config",      required_argument, 0, 'c'},
             {"device",      required_argument, 0, 'd'},
             {"help",        no_argument, 0, 'h'},
             {0, 0, 0, 0}
@@ -158,27 +158,28 @@ int main(int argc, char** argv)
     {
         device->Init();
     }
-    
-    lime::registerLogHandler(log_func);
-    
-    for (double freq = beginFreq; freq < endFreq; freq += stepFreq)
-        ConfigureCGEN(device, freq);
 
+    lime::registerLogHandler(log_func);
+    int errors = 0;
+    for (double freq = beginFreq; freq < endFreq; freq += stepFreq)
+        if (ConfigureCGEN(device, freq)==false)
+            errors++;
+    cout << "Errors: " << errors << endl;
     delete device;
     return 0;
 }
 
-void ConfigureCGEN(LMS7_Device* device, double freqMHz)
+bool ConfigureCGEN(LMS7_Device* device, double freqMHz)
 {
-    std::cout << "Set CGEN " << freqMHz/1e6 << " MHz" << std::endl;
+    std::cout << "Set CGEN " << freqMHz/1e6 << " MHz: ";
     LMS7002M* lms = device->GetLMS();
     lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
     int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
     int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
     if (lms->SetInterfaceFrequency(freqMHz, interp, decim)!=0)
-    {   
-        std::cout << "Set LMS interface frequency " << freqMHz/1e6 << " MHz - FAILED" << std::endl;
-        return ;
+    {
+        std::cout << "LMS VCO Fail" << endl;
+        return false;
     }
 
     auto chipInd = lms->GetActiveChannelIndex()/2;
@@ -193,8 +194,13 @@ void ConfigureCGEN(LMS7_Device* device, double freqMHz)
     {
         int status = fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL,chipInd);
         if (status != 0)
-            std::cout << "Set FPGA interface frequency " << freqMHz/1e6 << " MHz - FAILED" << std::endl;
+        {
+            std::cout << "FPGA Fail" << endl;
+            return false;
+        }
     }
+    std::cout << "OK" << endl;
+    return true;
 }
 
 /***********************************************************************
