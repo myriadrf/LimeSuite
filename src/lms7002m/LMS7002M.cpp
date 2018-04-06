@@ -1160,12 +1160,61 @@ bool LMS7002M::GetSXLocked(bool tx)
     return (Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true) & 0x3) == 2;
 }
 
+/** @brief Performs VCO tuning operations for CLKGEN
+    @return 0-success, other-failure
+*/
+int LMS7002M::TuneCGENVCO()
+{
+#ifndef NDEBUG
+    lime::debug("ICT_VCO_CGEN: %d", Get_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN)));
+#endif
+    // Initialization activate VCO and comparator
+    if(int status = Modify_SPI_Reg_bits (LMS7_PD_VCO_CGEN.address, 2, 1, 0) != 0)
+        return status;
+
+    auto checkCSW = [this] (int cswVal){
+            Modify_SPI_Reg_bits (LMS7_CSW_VCO_CGEN, cswVal);    //write CSW value
+            this_thread::sleep_for(chrono::microseconds(50)); //comparator settling time
+            return Get_SPI_Reg_bits(LMS7_VCO_CMPHO_CGEN.address, 13, 12, true); //read comparators
+        };
+    //find lock
+    int csw = 127;
+    for (int step = 64; step > 0; step>>=1)
+    {
+        auto cmphl = checkCSW(csw);
+        if (cmphl == 0)
+            csw += step;
+        else if (cmphl == 3)
+            csw -= step;
+        else
+            break;
+    }
+    //search around (+/-7) to determine lock interval
+    //number of iterations could be reduced in some cases by narrowing down the search interval in find lock phase
+    int cswLow = csw, cswHigh = csw;
+    for (int step = 4; step > 0; step>>=1)
+        if (checkCSW(cswLow-step) != 0)
+            cswLow = cswLow-step;
+    for (int step = 4; step > 0; step>>=1)
+        if (checkCSW(cswHigh+step) == 2)
+            cswHigh = cswHigh+step;
+
+    lime::debug("csw %d; interval [%d, %d]", (cswHigh+cswLow)/2, cswLow, cswHigh);
+    auto cmphl = checkCSW((cswHigh+cswLow)/2);
+    if(cmphl == 2)
+        return 0;
+    lime::error("TuneVCO(CGEN) - failed to lock (cmphl!=%d)", cmphl);
+    return -1;
+}
+
 /** @brief Performs VCO tuning operations for CLKGEN, SXR, SXT modules
     @param module module selection for tuning 0-cgen, 1-SXR, 2-SXT
     @return 0-success, other-failure
 */
 int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 {
+    if (module == VCO_CGEN)
+        return TuneCGENVCO();
     auto settlingTime = chrono::microseconds(50); //can be lower
     struct CSWInteval
     {
@@ -1232,7 +1281,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
 
     //search intervals [0-127][128-255]
     for(int t=0; t<2; ++t)
-    {
+        {
         cswSearch[t].low = 128*(t+1);
         cswSearch[t].high = 128*t; //search interval lowest value
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , cswSearch[t].high);
@@ -1256,11 +1305,11 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) != 2)
             {
                 ++cswSearch[t].low;
-                break;
-            }
+            break;
         }
+    }
         if(cmphl == 2)
-        {
+    {
             lime::debug("CSW: lowest=%d, highest=%d, selected=%d",
                         cswSearch[t].low,
                         cswSearch[t].high,
@@ -1278,7 +1327,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         cswLow = cswSearch[0].low;
     }
     //compare which interval is wider
-    else
+        else
     {
         uint8_t intervalIndex = (cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low);
         cswHigh = cswSearch[intervalIndex].high;
@@ -2362,8 +2411,8 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
 
     //clock rate already set because the readback frequency is pretty-close,
     //dont set the cgen frequency again to save time due to VCO selection
-    const auto freqDiff = std::abs(this->GetFrequencyCGEN() - cgen_freq_Hz);
-    if (not this->GetCGENLocked() or freqDiff > 10.0)
+    //const auto freqDiff = std::abs(this->GetFrequencyCGEN() - cgen_freq_Hz);
+    //if (not this->GetCGENLocked() or freqDiff > 10.0)
     {
         status = SetFrequencyCGEN(cgen_freq_Hz);
         if (status != 0) return status;

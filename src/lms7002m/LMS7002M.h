@@ -296,6 +296,7 @@ public:
     {
         VCO_CGEN, VCO_SXR, VCO_SXT
     };
+    int TuneCGENVCO();
     int TuneVCO(VCO_Module module);
     ///@}
 
