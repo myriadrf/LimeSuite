@@ -13,7 +13,7 @@
 namespace lime
 {
 
-LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(lime::IConnection* conn, lime::LMS7_Device *obj) : lime::LMS7_Device(obj) 
+LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(lime::IConnection* conn, lime::LMS7_Device *obj) : lime::LMS7_Device(obj)
 {
     fpga = new lime::FPGA_Mini();
     while (obj && lms_list.size() > 1)
@@ -37,10 +37,10 @@ int LMS7_LimeSDR_mini::Init()
         uint16_t val;
     };
 
-    const std::vector<regVal> initVals = {
+    const std::vector<regVal> initVals_1v0 = {
         {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
-        {0x0089, 0x1078}, {0x008B, 0x3E00}, {0x008C, 0x267B}, {0x0092, 0xFFFF},
+        {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x0092, 0xFFFF},
 	{0x0093, 0x03FF}, {0x00A1, 0x656A}, {0x00A6, 0x0001}, {0x00A9, 0x8000},
         {0x00AC, 0x2000}, {0x0105, 0x0011}, {0x0108, 0x118C}, {0x0109, 0x6100},
         {0x010A, 0x1F4C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000},
@@ -52,13 +52,32 @@ int LMS7_LimeSDR_mini::Init()
         {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
+    const std::vector<regVal> initVals_1v2 = { 
+        {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
+        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
+        {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x00A1, 0x656A},
+        {0x00A6, 0x0009}, {0x00A7, 0x8A8A}, {0x00A9, 0x8000}, {0x00AC, 0x2000},
+        {0x0105, 0x0011}, {0x0108, 0x118C}, {0x0109, 0x6100}, {0x010A, 0x1F4C},
+        {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000}, {0x010F, 0x3142},
+        {0x0110, 0x2B14}, {0x0111, 0x0000}, {0x0112, 0x942E}, {0x0113, 0x03C2},
+        {0x0114, 0x00D0}, {0x0117, 0x1230}, {0x0119, 0x18D2}, {0x011C, 0x8941},
+        {0x011D, 0x0000}, {0x011E, 0x0740}, {0x0120, 0xE6B4}, {0x0121, 0x3650},
+        {0x0123, 0x000F}, {0x0200, 0x00E1}, {0x0208, 0x017B}, {0x020B, 0x4000},
+        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
+        {0x040C, 0x00FB}
+    };
+
+    int hw_version = 0;
+    connection->ReadRegister(1,hw_version);
+    auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
+
     lime::LMS7002M* lms = lms_list[0];
     if (lms->ResetChip() != 0)
         return -1;
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     for (auto i : initVals)
-        lms->SPI_write(i.adr, i.val);
+        lms->SPI_write(i.adr, i.val, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     lms->SPI_write(0x0123, 0x000F);  //SXT
@@ -68,7 +87,7 @@ int LMS7_LimeSDR_mini::Init()
     lms->EnableChannel(true, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-    
+
     if (SetFrequency(true,0,1250e6)!=0)
         return -1;
     if (SetFrequency(false,0,1200e6)!=0)
@@ -87,21 +106,21 @@ unsigned LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
 int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 {
     lime::LMS7002M* lms = lms_list[0];
-    
+
     ChannelInfo& channel = isTx ? tx_channels[0] : rx_channels[0];
     channel.freq = f_Hz;
-       
+
     auto setTDD = [=](double center)->int
     {
-        ChannelInfo& other = isTx ? rx_channels[0] : tx_channels[0];    
-        bool tdd =  fabs(other.freq+other.cF_offset_nco-center) > 0.1 ? false : true;    
+        ChannelInfo& other = isTx ? rx_channels[0] : tx_channels[0];
+        bool tdd =  fabs(other.freq+other.cF_offset_nco-center) > 0.1 ? false : true;
         lms->EnableSXTDD(tdd);
         if (isTx || (!tdd))
             if (lms->SetFrequencySX(isTx, center) != 0)
                 return -1;
         return 0;
     };
-     
+
     if (f_Hz < 30e6)
     {
         if (setTDD(30e6) != 0)
@@ -140,7 +159,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
         || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), path != 3) != 0))
             return -1;
         if (path==LMS_PATH_LNAW)
-        {     
+        {
             uint16_t value;
             connection->ReadRegister(0x17,value);
             value &= ~(1<<8);
@@ -154,7 +173,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(1<<9);
             value |= 1<<8;
             connection->WriteRegister(0x17, value);
-        }       
+        }
         else if (LMS_PATH_LNAL)
             lime::warning("LNAL has no connection to RF ports");
     }
@@ -164,7 +183,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
         || (lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), path == LMS_PATH_TX2) != 0))
             return -1;
         if (path==LMS_PATH_TX1)
-        {     
+        {
             uint16_t value;
             connection->ReadRegister(0x17,value);
             value &= ~(1<<13);
@@ -178,7 +197,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(1<<12);
             value |= 1<<13;
             connection->WriteRegister(0x17, value);
-        }   
+        }
     }
     return 0;
 }
@@ -186,22 +205,22 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
 int LMS7_LimeSDR_mini::SetRate(double f_Hz, int oversample)
 {
     lime::LMS7002M* lms = lms_list[0];
-    
+
     if (oversample == 0)
         oversample = lime::cgenMax/(16*f_Hz);
     bool sisoDDR = (oversample <= 1 && tx_channels[0].cF_offset_nco == 0.0 && rx_channels[0].cF_offset_nco == 0.0);
-    
+
     if ((lms->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR,sisoDDR)!=0)
         || (lms->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR,sisoDDR)!=0)
         || (lms->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML,!sisoDDR)!=0))
             return -1;
-    
+
     if (!sisoDDR)
         return LMS7_Device::SetRate(f_Hz, oversample);
-       
+
     tx_channels[0].sample_rate = f_Hz;
     rx_channels[0].sample_rate = f_Hz;
-    
+
     if ((lms->SetFrequencyCGEN(f_Hz*4) != 0)
         || (lms->Modify_SPI_Reg_bits(LMS7param(EN_ADCCLKH_CLKGN), 0) != 0)
         || (lms->Modify_SPI_Reg_bits(LMS7param(CLKH_OV_CLKL_CGEN), 2) != 0)

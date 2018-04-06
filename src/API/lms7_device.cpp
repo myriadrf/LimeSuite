@@ -1300,7 +1300,7 @@ int LMS7_Device::Init()
     const std::vector<regVal> initVals = {
         {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
-        {0x0089, 0x1078}, {0x008B, 0x258C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
+        {0x0089, 0x1078}, {0x008B, 0x218C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
         {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x010C, 0x8865},
         {0x010E, 0x0000}, {0x0110, 0x2B14}, {0x0113, 0x03C2}, {0x011C, 0xA941},
         {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xB996}, {0x0121, 0x3650},
@@ -1317,12 +1317,12 @@ int LMS7_Device::Init()
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
-            lms->SPI_write(i.adr, i.val);
+            lms->SPI_write(i.adr, i.val, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
             if (i.adr >= 0x100)
-                lms->SPI_write(i.adr, i.val);
+                lms->SPI_write(i.adr, i.val, false);
         lms->EnableChannel(false, false);
         lms->EnableChannel(true, false);
 
