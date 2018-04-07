@@ -34,7 +34,7 @@ void LMS7002M_RegistersMap::InitializeDefaultValues(const std::vector<const LMS7
     //add NCO/PHO registers
     const uint16_t addr = 0x0242;
     for (int i = 0; i < 32; ++i)
-    {   
+    {
         mChannelA[addr + i].defaultValue = 0;
         mChannelA[addr + i].value = 0;
         mChannelB[addr + i].defaultValue = 0;
@@ -43,6 +43,30 @@ void LMS7002M_RegistersMap::InitializeDefaultValues(const std::vector<const LMS7
         mChannelA[addr + i + 0x0200].value = 0;
         mChannelB[addr + i + 0x0200].defaultValue = 0;
         mChannelB[addr + i + 0x0200].value = 0;
+    }
+
+    //add GFIRS
+    std::vector<std::pair<uint16_t, uint16_t> > intervals = {
+        {0x0280, 0x02A7},
+        {0x02C0, 0x02E7},
+        {0x0300, 0x0327},
+        {0x0340, 0x0367},
+        {0x0380, 0x03A7},
+    };
+    for (const auto &range : intervals)
+    {
+        for(int i=range.first; i<=range.second; ++i)
+        {
+            mChannelA[i].defaultValue = 0;
+            mChannelA[i].value = 0;
+            mChannelB[i].defaultValue = 0;
+            mChannelB[i].value = 0;
+
+            mChannelA[i+0x0200].defaultValue = 0;
+            mChannelA[i+0x0200].value = 0;
+            mChannelB[i+0x0200].defaultValue = 0;
+            mChannelB[i+0x0200].value = 0;
+        }
     }
 }
 
