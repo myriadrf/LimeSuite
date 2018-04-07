@@ -250,7 +250,7 @@ if (ENABLE_HEADERS AND ENABLE_LIBRARY)
     install(FILES
         ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuiteConfig.cmake
         ${PROJECT_BINARY_DIR}/LimeSuiteConfigVersion.cmake
-        DESTINATION lib/cmake/${PROJECT_NAME})
+        DESTINATION lib${LIB_SUFFIX}/cmake/${PROJECT_NAME})
 endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
 
 ########################################################################
