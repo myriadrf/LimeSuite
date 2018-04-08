@@ -38,7 +38,8 @@ before_install:
 
   # install development dependencies
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq libusb-1.0-0-dev cmake libwxbase3.0-dev libwxgtk3.0-dev;fi;
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libusb wxmac ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew list libusb || brew install libusb ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew list wxmac || brew install wxmac ; fi
 
 install:
 
