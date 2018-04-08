@@ -54,6 +54,6 @@ install:
 
 script:
   - mkdir temp && cd temp
-  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_STREAM_UNITE=ON
+  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_EVB7COM=ON
   - make -j2
   - sudo make install
