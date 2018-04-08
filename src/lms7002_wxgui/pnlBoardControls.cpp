@@ -135,7 +135,7 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
 
     wxArrayString powerChoices;
     for (int i = -8; i <= 7; ++i)
-        powerChoices.push_back(wxString::From8BitData(power2unitsString(i)));
+        powerChoices.push_back(wxString::From8BitData((power2unitsString(i).c_str())));
     cmbCustomPowerOf10Wr = new wxChoice(pnlCustomControls, wxNewId(), wxDefaultPosition, wxDefaultSize, powerChoices, 0);
     cmbCustomPowerOf10Wr->SetSelection(0);
     sizerCustomControls->Add(cmbCustomPowerOf10Wr, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 0);
