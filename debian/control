@@ -8,9 +8,7 @@ Build-Depends:
     libusb-1.0-0-dev,
     libwxgtk3.0-dev,
     libsoapysdr-dev,
-    libi2c-dev,
     freeglut3-dev,
-    libsqlite3-dev
 Standards-Version: 4.1.1
 Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git

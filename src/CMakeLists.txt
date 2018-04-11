@@ -56,7 +56,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_BaseCalibrations.cpp
     lms7002m/goert.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
-    lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
@@ -106,13 +105,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-#sqlite depedency
-list(APPEND LIME_SUITE_INCLUDES ${SQLITE3_INCLUDE_DIRS})
-list(APPEND LIME_SUITE_LIBRARIES ${SQLITE3_LIBRARIES})
-
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "SQLITE3_FOUND" OFF)
+option(ENABLE_LIBRARY "Enable build library" ON)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})

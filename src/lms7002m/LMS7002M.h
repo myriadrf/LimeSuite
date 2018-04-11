@@ -18,7 +18,6 @@
 namespace lime{
 class IConnection;
 class LMS7002M_RegistersMap;
-class CalibrationCache;
 class MCU_BD;
 class BinSearchParam;
 class GridSearchParam;
@@ -152,7 +151,7 @@ public:
     uint16_t Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip = false);
     int Modify_SPI_Reg_bits(const LMS7Parameter &param, const uint16_t value, bool fromChip = false);
     int Modify_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, uint16_t value, bool fromChip = false);
-    int SPI_write(uint16_t address, uint16_t data, bool use_cache = true);
+    int SPI_write(uint16_t address, uint16_t data, bool toChip = false);
     uint16_t SPI_read(uint16_t address, bool fromChip = false, int *status = 0);
     int RegistersTest(const char* fileName = "registersTest.txt");
     static const LMS7Parameter* GetParam(const std::string &name);
@@ -433,7 +432,6 @@ protected:
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;
     bool useCache;
-    CalibrationCache *mValueCache;
     LMS7002M_RegistersMap *mRegistersMap;
 
     static const uint16_t readOnlyRegisters[];
@@ -475,9 +473,9 @@ protected:
     int TuneTxFilterSetup(const float_type tx_lpf_IF);
 
     int RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16_t pattern, std::stringstream &ss);
-    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool use_cache);
+    int SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip = false);
     int SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_t cnt);
-    int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop, bool use_cache);
+    int Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop);
     ///@}
 
     virtual void Log(const char* text, LogType type);

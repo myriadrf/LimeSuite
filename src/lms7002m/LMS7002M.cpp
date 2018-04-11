@@ -18,7 +18,6 @@
 #include <fstream>
 #include <algorithm>
 #include "LMS7002M_RegistersMap.h"
-#include "CalibrationCache.h"
 #include <math.h>
 #include <assert.h>
 #include <chrono>
@@ -122,7 +121,6 @@ It requires IConnection to be set by SetConnection() to communicate with chip
 */
 LMS7002M::LMS7002M() :
     useCache(0),
-    mValueCache(nullptr),
     mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),
     mdevIndex(0),
@@ -204,8 +202,6 @@ LMS7002M::LMS7002M() :
 
 LMS7002M::~LMS7002M()
 {
-    if (mValueCache)
-        delete mValueCache;
     delete mcuControl;
     delete mRegistersMap;
 }
@@ -446,7 +442,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 addrToWrite.push_back(addr);
                 dataToWrite.push_back(value);
             }
-            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
 
@@ -513,7 +509,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
                 dataToWrite.push_back(value);
             }
             this->SetActiveChannel(ChB); //select B channel
-            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
 
@@ -630,7 +626,7 @@ int LMS7002M::LoadConfig(const char* filename)
                 addrToWrite.push_back(addr);
                 dataToWrite.push_back(value);
             }
-            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
             status = SPI_write(0x0020, x0020_value);
@@ -654,7 +650,7 @@ int LMS7002M::LoadConfig(const char* filename)
                 dataToWrite.push_back(value);
             }
             this->SetActiveChannel(ChB); //select B channel
-            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+            status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
         }
@@ -1407,7 +1403,7 @@ int LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb, con
     @param start starting index of given arrays
     @param stop end index of given arrays
 */
-int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop, bool use_cache)
+int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, const uint16_t *values, uint8_t start, uint8_t stop)
 {
     int status;
     uint16_t reg_data;
@@ -1424,7 +1420,7 @@ int LMS7002M::Modify_SPI_Reg_mask(const uint16_t *addr, const uint16_t *masks, c
     }
     if (status != 0)
         return status;
-    SPI_write_batch(&addresses[0], &data[0], addresses.size(), true);
+    SPI_write_batch(&addresses[0], &data[0], addresses.size());
     return status;
 }
 
@@ -1457,7 +1453,6 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     uint16_t integerPart;
     uint32_t fractionalPart;
     int16_t csw_value;
-    uint32_t boardId = 0;
 
     //find required VCO frequency
     for (div_loch = 6; div_loch >= 0; --div_loch)
@@ -1510,59 +1505,40 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
 
-    bool foundInCache = false;
-    int vco_query;
-    int csw_query;
-    if(useCache)
+    canDeliverFrequency = false;
+    int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
+    for (sel_vco = 0; sel_vco < 3; ++sel_vco)
     {
-        boardId = controlPort->GetDeviceInfo().boardSerialNumber;
-        foundInCache = (mValueCache->GetVCO_CSW(boardId, freq_Hz, mdevIndex, tx, &vco_query, &csw_query) == 0);
+        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+        int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
+        if(status == 0)
+        {
+            tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
+            canDeliverFrequency = true;
+        }
+        lime::debug("%s : csw=%d %s",
+                    vcoNames[sel_vco],
+                    tuneScore[sel_vco]+128,
+                    (status == 0 ? "tune ok" : "tune fail"));
     }
-    if(foundInCache)
+    if (abs(tuneScore[0]) < abs(tuneScore[1]))
     {
-        lime::info("SetFrequency using cache values vco:%i, csw:%i", vco_query, csw_query);
-        sel_vco = vco_query;
-        csw_value = csw_query;
+        if (abs(tuneScore[0]) < abs(tuneScore[2]))
+            sel_vco = 0;
+        else
+            sel_vco = 2;
     }
     else
     {
-        canDeliverFrequency = false;
-        int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
-        for (sel_vco = 0; sel_vco < 3; ++sel_vco)
-        {
-            Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-            int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
-            if(status == 0)
-            {
-                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
-                canDeliverFrequency = true;
-            }
-            lime::debug("%s : csw=%d %s",
-                        vcoNames[sel_vco],
-                        tuneScore[sel_vco]+128,
-                        (status == 0 ? "tune ok" : "tune fail"));
-        }
-        if (abs(tuneScore[0]) < abs(tuneScore[1]))
-        {
-            if (abs(tuneScore[0]) < abs(tuneScore[2]))
-                sel_vco = 0;
-            else
-                sel_vco = 2;
-        }
+        if (abs(tuneScore[1]) < abs(tuneScore[2]))
+            sel_vco = 1;
         else
-        {
-            if (abs(tuneScore[1]) < abs(tuneScore[2]))
-                sel_vco = 1;
-            else
-                sel_vco = 2;
-        }
-        csw_value = tuneScore[sel_vco] + 128;
-        lime::debug("Selected: %s", vcoNames[sel_vco]);
+            sel_vco = 2;
     }
-    if(useCache && !foundInCache)
-    {
-        mValueCache->InsertVCO_CSW(boardId, freq_Hz, mdevIndex, tx, sel_vco, csw_value);
-    }
+    csw_value = tuneScore[sel_vco] + 128;
+    lime::debug("Selected: %s", vcoNames[sel_vco]);
+
+
     if (output)
     {
         if (canDeliverFrequency)
@@ -1846,7 +1822,7 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
     @param data new register value
     @return 0-succes, other-failure
 */
-int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool use_cache)
+int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool toChip)
 {
     if(address == 0x0640 || address == 0x0641)
     {
@@ -1861,7 +1837,7 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool use_cache)
         return SPI_read(0x040B) == data ? 0 : -1;
     }
     else
-        return this->SPI_write_batch(&address, &data, 1, use_cache);
+        return this->SPI_write_batch(&address, &data, 1, toChip);
 }
 
 /** @brief Reads whole register value from given address
@@ -1872,6 +1848,7 @@ int LMS7002M::SPI_write(uint16_t address, uint16_t data, bool use_cache)
 */
 uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
 {
+    fromChip |= !useCache;
     //registers containing read only registers, which values can change
     const uint16_t readOnlyRegs[] = { 0, 1, 2, 3, 4, 5, 6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F, 0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
     for (unsigned i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
@@ -1913,14 +1890,16 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
     return 0;
 }
 
-/** @brief Batches multiple register writes into least ammount of transactions
+/** @brief Batches multiple register writes into least amount of transactions
     @param spiAddr spi register addresses to be written
     @param spiData registers data to be written
     @param cnt number of registers to write
+    @param toChip force write to chip
     @return 0-success, other-failure
 */
-int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool use_cache)
+int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, uint16_t cnt, bool toChip)
 {
+    toChip |= !useCache;
     int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
     std::vector<uint32_t> data;
     for (size_t i = 0; i < cnt; ++i) {
@@ -1929,7 +1908,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         bool wr0 = ((mac & 0x1) != 0) || (spiAddr[i] < 0x0100);
         bool wr1 = ((mac & 0x2) != 0) && (spiAddr[i] >= 0x0100);
 
-        if (use_cache) {
+        if (!toChip) {
             if (wr0 && (mRegistersMap->GetValue(0, spiAddr[i]) == spiData[i]))
                 wr0 = false;
             if (wr1 && (mRegistersMap->GetValue(1, spiAddr[i]) == spiData[i]))
@@ -1951,7 +1930,7 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         return 0;
     if (!controlPort)
     {
-        if (use_cache) return 0;
+        if (useCache) return 0;
         lime::error("No device connected");
         return -1;
     }
@@ -2089,9 +2068,9 @@ int LMS7002M::RegistersTest(const char* fileName)
 
     //restore register values
     this->SetActiveChannel(ChA);
-    SPI_write_batch(&ch1Addresses[0], &ch1Data[0], ch1Addresses.size(), false);
+    SPI_write_batch(&ch1Addresses[0], &ch1Data[0], ch1Addresses.size(), true);
     this->SetActiveChannel(ChB);
-    SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size(), false);
+    SPI_write_batch(&ch2Addresses[0], &ch2Data[0], ch2Addresses.size(), true);
     this->SetActiveChannel(ch);
 
     if (fileName)
@@ -2146,7 +2125,7 @@ int LMS7002M::RegistersTestInterval(uint16_t startAddr, uint16_t endAddr, uint16
     }
     dataReceived.resize(addrToWrite.size(), 0);
     int status;
-    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
     if (status != 0)
         return status;
     status = SPI_read_batch(&addrToWrite[0], &dataReceived[0], addrToWrite.size());
@@ -2204,7 +2183,7 @@ int LMS7002M::SetDefaults(MemorySection module)
         addrs.push_back(address);
         values.push_back(mRegistersMap->GetDefaultValue(address));
     }
-    status = SPI_write_batch(&addrs[0], &values[0], addrs.size(), true);
+    status = SPI_write_batch(&addrs[0], &values[0], addrs.size());
     return status;
 }
 
@@ -2330,7 +2309,7 @@ int LMS7002M::UploadAll()
     for (auto address : addrToWrite)
         dataToWrite.push_back(mRegistersMap->GetValue(0, address));
 
-    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
     if (status != 0)
         return status;
     //after all channel A registers have been written, update 0x0020 register value
@@ -2348,7 +2327,7 @@ int LMS7002M::UploadAll()
         dataToWrite.push_back(mRegistersMap->GetValue(1, address));
     }
     this->SetActiveChannel(ChB); //select B channel
-    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), false);
+    status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
     if (status != 0)
         return status;
     this->SetActiveChannel(ch); //restore last used channel
@@ -2595,13 +2574,6 @@ void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI,
 
 void LMS7002M::EnableValuesCache(bool enabled)
 {
-    if (mValueCache && (!enabled))
-    {
-        delete mValueCache;
-        mValueCache = nullptr;
-    }
-    else if (mValueCache == nullptr && enabled)
-        mValueCache = new CalibrationCache();
     useCache = enabled;
 }
 

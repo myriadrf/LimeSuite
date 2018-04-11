@@ -38,7 +38,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuConnectionSettings = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("ConnectionSettings") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuOptions->Append( mnuConnectionSettings );
 	
-	mnuCacheValues = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("Cache calibration values") ) , wxEmptyString, wxITEM_CHECK );
+	mnuCacheValues = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("Use cache ") ) , wxEmptyString, wxITEM_CHECK );
 	mnuOptions->Append( mnuCacheValues );
 	
 	mbar->Append( mnuOptions, wxT("Options") ); 

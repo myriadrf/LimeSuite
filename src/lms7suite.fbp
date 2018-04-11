@@ -179,7 +179,7 @@
                         <property name="help"></property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_CHECK</property>
-                        <property name="label">Cache calibration values</property>
+                        <property name="label">Use cache </property>
                         <property name="name">mnuCacheValues</property>
                         <property name="permission">protected</property>
                         <property name="shortcut"></property>

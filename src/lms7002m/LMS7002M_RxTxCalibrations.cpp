@@ -1,5 +1,4 @@
 #include "LMS7002M.h"
-#include "CalibrationCache.h"
 #include <assert.h>
 #include "MCU_BD.h"
 #include "IConnection.h"
@@ -217,33 +216,11 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 
     //caching variables
     DeviceInfo info = controlPort->GetDeviceInfo();
-    uint32_t boardId = info.boardSerialNumber;
     double txFreq = GetFrequencySX(LMS7002M::Tx);
     uint8_t channel = ch == 1 ? 0 : 1;
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
 
     int dccorri(0), dccorrq(0), gcorri(0), gcorrq(0),phaseOffset(0);
-    if(useCache)
-    {
-        bool foundInCache = (mValueCache->GetDC_IQ(boardId, txFreq, channel, true, band, &dccorri, &dccorrq, &gcorri, &gcorrq, &phaseOffset) == 0);
-        if(foundInCache)
-        {
-            Modify_SPI_Reg_bits(channel ? LMS7_PD_DCDAC_TXB : LMS7_PD_DCDAC_TXA, 0);
-            WriteAnalogDC(this, channel ? LMS7_DC_TXBI : LMS7_DC_TXAI, dccorri);
-            WriteAnalogDC(this, channel ? LMS7_DC_TXBQ : LMS7_DC_TXAQ, dccorrq);
-            Modify_SPI_Reg_bits(LMS7_GCORRI_TXTSP, gcorri);
-            Modify_SPI_Reg_bits(LMS7_GCORRQ_TXTSP, gcorrq);
-            Modify_SPI_Reg_bits(LMS7_IQCORR_TXTSP, phaseOffset);
-            Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-            verbose_printf("Tx calibration values found in cache:\n");
-            verbose_printf("Tx | DC  | GAIN | PHASE\n");
-            verbose_printf("---+-----+------+------\n");
-            verbose_printf("I: | %3i | %4i | %i\n", dccorri, gcorri, phaseOffset);
-            verbose_printf("Q: | %3i | %4i |\n", dccorrq, gcorrq);
-            return 0;
-        }
-    }
-
     verbose_printf("Tx calibration using MCU %s loopback\n",
                     useExtLoopback ? "EXTERNAL" : "INTERNAL");
     verbose_printf("Tx ch.%s @ %4g MHz, BW: %g MHz, RF output: %s, Gain: %i\n",
@@ -299,9 +276,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     gcorrq = Get_SPI_Reg_bits(LMS7_GCORRQ_TXTSP, true);
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_TXTSP, true));
 
-    if(useCache)
-        mValueCache->InsertDC_IQ(boardId, txFreq, channel, true, band, dccorri, dccorrq, gcorri, gcorrq, phaseOffset);
-
     Log("Tx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT
     verbose_printf("Tx | DC  | GAIN | PHASE\n");
@@ -333,7 +307,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
     if(ch == 0 || ch == 3)
         return ReportError(EINVAL, "Rx Calibration: Incorrect channel selection MAC %i", ch);
-    uint32_t boardId = info.boardSerialNumber;
     uint8_t channel = ch == 1 ? 0 : 1;
     uint8_t lna = (uint8_t)Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
     double rxFreq = GetFrequencySX(LMS7002M::Rx);
@@ -357,28 +330,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
                 Get_SPI_Reg_bits(LMS7_G_TIA_RFE));
 
     int dcoffi(0), dcoffq(0), gcorri(0), gcorrq(0), phaseOffset(0);
-    if(useCache)
-    {
-        bool foundInCache = (mValueCache->GetDC_IQ(boardId, rxFreq, channel, false, lna, &dcoffi, &dcoffq, &gcorri, &gcorrq, &phaseOffset) == 0);
-        if(foundInCache)
-        {
-            lime::info("Rx calibration: using cached values");
-            WriteAnalogDC(this, channel ? LMS7_DC_RXBI : LMS7_DC_RXAI, dcoffi);
-            WriteAnalogDC(this, channel ? LMS7_DC_RXBQ : LMS7_DC_RXAQ, dcoffq);
-            Modify_SPI_Reg_bits(LMS7_GCORRI_RXTSP, gcorri);
-            Modify_SPI_Reg_bits(LMS7_GCORRQ_RXTSP, gcorri);
-            Modify_SPI_Reg_bits(LMS7_IQCORR_RXTSP, phaseOffset);
-            Modify_SPI_Reg_bits(0x040C, 2, 0, 0); //DC_BYP 0, GC_BYP 0, PH_BYP 0
-            Modify_SPI_Reg_bits(channel ? LMS7_PD_DCDAC_RXB : LMS7_PD_DCDAC_RXA, 0);
-            verbose_printf("Rx calibration values found in cache:\n");
-            verbose_printf("Rx | DC  | GAIN | PHASE\n");
-            verbose_printf("---+-----+------+------\n");
-            verbose_printf("I: | %3i | %4i | %i\n", dcoffi, gcorri, phaseOffset);
-            verbose_printf("Q: | %3i | %4i |\n", dcoffq, gcorrq);
-            return 0;
-        }
-    }
-
     //check if MCU has correct firmware
     uint8_t mcuID = mcuControl->ReadMCUProgramID();
     verbose_printf("Current MCU firmware: %i, %s\n", mcuID,
@@ -426,9 +377,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     gcorri = Get_SPI_Reg_bits(LMS7_GCORRI_RXTSP, true);
     gcorrq = Get_SPI_Reg_bits(LMS7_GCORRQ_RXTSP, true);
     phaseOffset = signextIqCorr(Get_SPI_Reg_bits(LMS7_IQCORR_RXTSP, true));
-
-    if(useCache)
-        mValueCache->InsertDC_IQ(boardId, rxFreq, channel, false, lna, dcoffi, dcoffq, gcorri, gcorrq, phaseOffset);
 
     Log("Rx calibration finished", LOG_INFO);
 #ifdef LMS_VERBOSE_OUTPUT

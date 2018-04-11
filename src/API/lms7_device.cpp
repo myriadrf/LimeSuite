@@ -1317,12 +1317,12 @@ int LMS7_Device::Init()
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
-            lms->SPI_write(i.adr, i.val, false);
+            lms->SPI_write(i.adr, i.val, true);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
             if (i.adr >= 0x100)
-                lms->SPI_write(i.adr, i.val, false);
+                lms->SPI_write(i.adr, i.val, true);
         lms->EnableChannel(false, false);
         lms->EnableChannel(true, false);
 
@@ -1628,12 +1628,12 @@ int LMS7_Device::SaveConfig(const char *filename, int ind) const
 
 int LMS7_Device::ReadLMSReg(uint16_t address, int ind) const
 {
-    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_read(address & 0xFFFF, true);
+    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_read(address & 0xFFFF);
 }
 
 int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind) const
 {
-    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val, false);
+    return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);
 }
 
 uint16_t LMS7_Device::ReadParam(const struct LMS7Parameter& param, int chan, bool fromChip) const

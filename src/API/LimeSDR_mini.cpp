@@ -52,7 +52,7 @@ int LMS7_LimeSDR_mini::Init()
         {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
-    const std::vector<regVal> initVals_1v2 = { 
+    const std::vector<regVal> initVals_1v2 = {
         {0x0022, 0x07FF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
         {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x00A1, 0x656A},
@@ -77,7 +77,7 @@ int LMS7_LimeSDR_mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     for (auto i : initVals)
-        lms->SPI_write(i.adr, i.val, false);
+        lms->SPI_write(i.adr, i.val, true);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     lms->SPI_write(0x0123, 0x000F);  //SXT

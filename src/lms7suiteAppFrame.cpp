@@ -163,7 +163,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
     bSizer6->Add(mMiniLog, 1, wxEXPAND, 5);
-    Layout(); 
+    Layout();
     Fit();
     int x,y1,y2;
     m_scrolledWindow1->GetVirtualSize(&x,&y1);
@@ -270,6 +270,8 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         double refClk = lms->GetReferenceClk_SX(lime::LMS7002M::Rx);
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
+
+        LMS_EnableCalibCache(lmsControl,mnuCacheValues->IsChecked());
 
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
