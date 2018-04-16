@@ -79,7 +79,9 @@ std::vector<ConnectionHandle> ConnectionFT601Entry::enumerate(const ConnectionHa
                 handle.name = Description;
                 handle.index = i;
                 handle.serial = SerialNumber;
-                handles.push_back(handle);
+                //add handle conditionally, filter by serial number
+                if (hint.serial.empty() || hint.serial == handle.serial)
+                    handles.push_back(handle);
             }
         }
     }

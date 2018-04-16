@@ -68,7 +68,7 @@ public:
 
     virtual ~ConnectionFT601(void);
 
-    int Open(const unsigned index, const int vid, const int pid);
+    int Open(const std::string &serial, int vid, int pid);
     void Close();
     bool IsOpen();
     int GetOpenedIndex();

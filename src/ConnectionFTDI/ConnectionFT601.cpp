@@ -54,7 +54,7 @@ ConnectionFT601::ConnectionFT601(void *arg, const ConnectionHandle &handle)
     mUsbCounter = 0;
     ctx = (libusb_context *)arg;
 #endif
-    if (this->Open(handle.index, vid, pid) != 0)
+    if (this->Open(handle.serial, vid, pid) != 0)
         lime::error("Failed to open device");
 }
 
@@ -128,14 +128,14 @@ int ConnectionFT601::FT_SetStreamPipe(unsigned char ep, size_t size)
 /**	@brief Tries to open connected USB device and find communication endpoints.
 @return Returns 0-Success, other-EndPoints not found or device didn't connect.
 */
-int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
+int ConnectionFT601::Open(const std::string &serial, int vid, int pid)
 {
 #ifndef __unix__
     DWORD devCount;
     FT_STATUS ftStatus = FT_OK;
     DWORD dwNumDevices = 0;
     // Open a device
-    ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &mFTHandle);
+    ftStatus = FT_Create((void*)serial.c_str(), FT_OPEN_BY_SERIAL_NUMBER, &mFTHandle);
     if (FT_FAILED(ftStatus))
     {
         ReportError(ENODEV, "Failed to list USB Devices");
@@ -156,7 +156,41 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     isConnected = true;
     return 0;
 #else
-    dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+
+    libusb_device **devs; //pointer to pointer of device, used to retrieve a list of devices
+    int usbDeviceCount = libusb_get_device_list(ctx, &devs);
+
+    if (usbDeviceCount < 0)
+        return ReportError(-1, "libusb_get_device_list failed: %s", libusb_strerror(libusb_error(usbDeviceCount)));
+
+    for(int i=0; i<usbDeviceCount; ++i)
+    {
+        libusb_device_descriptor desc;
+        int r = libusb_get_device_descriptor(devs[i], &desc);
+        if(r<0) {
+            lime::error("failed to get device description");
+            continue;
+        }
+        if (desc.idProduct != pid) continue;
+        if (desc.idVendor != vid) continue;
+        if(libusb_open(devs[i], &dev_handle) != 0) continue;
+
+        std::string foundSerial;
+        if (desc.iSerialNumber > 0)
+        {
+            char data[255];
+            r = libusb_get_string_descriptor_ascii(dev_handle,desc.iSerialNumber,(unsigned char*)data, sizeof(data));
+            if(r<0)
+                lime::error("failed to get serial number");
+            else
+                foundSerial = std::string(data, size_t(r));
+        }
+
+        if (serial == foundSerial) break; //found it
+        libusb_close(dev_handle);
+        dev_handle = nullptr;
+    }
+    libusb_free_device_list(devs, 1);
 
     if(dev_handle == nullptr)
         return ReportError(ENODEV, "libusb_open failed");
@@ -174,10 +208,10 @@ int ConnectionFT601::Open(const unsigned index, const int vid, const int pid)
     if ((r = libusb_claim_interface(dev_handle, 1))<0) //claim interface 1 of device
         return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
     lime::debug("Claimed Interface");
-    
+
     if (libusb_reset_device(dev_handle)!=0)
         return ReportError(-1, "USB reset failed", libusb_strerror(libusb_error(r)));
-    
+
     FT_FlushPipe(ctrlRdEp);  //clear ctrl ep rx buffer
     FT_SetStreamPipe(ctrlRdEp,64);
     FT_SetStreamPipe(ctrlWrEp,64);
@@ -337,7 +371,7 @@ static void callback_libusbtransfer(libusb_transfer *trans)
     switch(trans->status)
     {
         case LIBUSB_TRANSFER_CANCELLED:
-            context->bytesXfered = trans->actual_length;  
+            context->bytesXfered = trans->actual_length;
             context->done.store(true);
             break;
         case LIBUSB_TRANSFER_COMPLETED:
@@ -368,12 +402,12 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 }
 #endif
 
-int ConnectionFT601::GetBuffersCount() const 
+int ConnectionFT601::GetBuffersCount() const
 {
     return USB_MAX_CONTEXTS;
 };
 
-int ConnectionFT601::CheckStreamSize(int size)const 
+int ConnectionFT601::CheckStreamSize(int size)const
 {
     return size;
 };
@@ -663,7 +697,7 @@ void ConnectionFT601::AbortSending(int ep)
             WaitForSending(i, 250);
             FinishDataSending(nullptr, 0, i);
         }
-    }    
+    }
 #endif
 }
 
@@ -709,7 +743,7 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
     if (prog_mode == 2)
         return LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
     if (GetFPGAInfo().gatewareVersion != 0)
-    { 
+    {
         LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
@@ -719,11 +753,11 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
     const int startCFM0 = 0x4B000;
 
     if (length != startCFM0 + sizeCFM0)
-    { 
+    {
         lime::error("Invalid image file");
         return -1;
     }
-    std::vector<char> buffer(sizeUFM + sizeCFM0); 
+    std::vector<char> buffer(sizeUFM + sizeCFM0);
     memcpy(buffer.data(), data_src + startUFM, sizeUFM);
     memcpy(buffer.data() + sizeUFM, data_src + startCFM0, sizeCFM0);
 
@@ -736,7 +770,7 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
 DeviceInfo ConnectionFT601::GetDeviceInfo(void)
 {
     DeviceInfo info = LMS64CProtocol::GetDeviceInfo();
-    info.boardSerialNumber = mSerial; 
+    info.boardSerialNumber = mSerial;
     return info;
 }
 

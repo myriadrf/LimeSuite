@@ -204,7 +204,7 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
     int usbDeviceCount = libusb_get_device_list(ctx, &devs);
 
     if (usbDeviceCount < 0) {
-        return ReportError(-1, "ConnectionSTREAM: libusb_get_device_list failed: %s", libusb_strerror(libusb_error(usbDeviceCount)));
+        return ReportError(-1, "libusb_get_device_list failed: %s", libusb_strerror(libusb_error(usbDeviceCount)));
     }
 
     for(int i=0; i<usbDeviceCount; ++i)
@@ -237,7 +237,7 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
     libusb_free_device_list(devs, 1);
 
     if(dev_handle == nullptr)
-        return ReportError(-1, "ConnectionSTREAM: libusb_open failed");
+        return ReportError(-1, "libusb_open failed");
     if(libusb_kernel_driver_active(dev_handle, 0) == 1)   //find out if kernel driver is attached
     {
         lime::info("Kernel Driver Active");
@@ -246,7 +246,7 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
     }
     int r = libusb_claim_interface(dev_handle, 0); //claim interface 0 (the first) of device
     if(r < 0)
-        return ReportError(-1, "ConnectionSTREAM: Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
+        return ReportError(-1, "Cannot claim interface - %s", libusb_strerror(libusb_error(r)));
 
     libusb_device* device = libusb_get_device(dev_handle);
     libusb_config_descriptor* descriptor = nullptr;
@@ -715,12 +715,12 @@ void ConnectionFX3::AbortSending(int ep)
     }
 }
 
-int ConnectionFX3::GetBuffersCount() const 
+int ConnectionFX3::GetBuffersCount() const
 {
     return USB_MAX_CONTEXTS;
 };
 
-int ConnectionFX3::CheckStreamSize(int size)const 
+int ConnectionFX3::CheckStreamSize(int size)const
 {
     return size;
 };
