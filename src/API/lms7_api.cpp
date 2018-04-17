@@ -1354,7 +1354,7 @@ API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void)
 API_EXPORT const char* LMS_GetLibraryVersion()
 {
     static char libraryVersion[32];
-    sprintf(libraryVersion, "%.32s", lime::GetLibraryVersion().c_str());
+    sprintf(libraryVersion, "%.31s", lime::GetLibraryVersion().c_str());
     return libraryVersion;
 }
 
