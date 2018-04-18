@@ -62,7 +62,7 @@ set(LIME_SUITE_SOURCES
     protocols/Streamer.cpp
     protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
-    kissFFT/kiss_fft.c
+    ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     API/lms7_api.cpp
     API/lms7_device.cpp
     API/LmsGeneric.cpp
@@ -90,7 +90,7 @@ set(LIME_SUITE_INCLUDES
     lms7002m_mcu
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
-    kissFFT
+    ${PROJECT_SOURCE_DIR}/external/kissFFT/
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
@@ -222,7 +222,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnluLimeSDR.cpp
     boards_wxgui/pnlUltimateEVB.cpp
     boards_wxgui/pnlBuffers.cpp
-    kissFFT/kiss_fft.c
+    ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
 )

@@ -15,7 +15,8 @@ if(${CMAKE_MAJOR_VERSION} GREATER 2)
     cmake_policy(SET CMP0043 NEW)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "")
+list(FIND CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}" index)
+if (${index} EQUAL -1)
    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
@@ -178,6 +179,7 @@ endif()
 add_subdirectory(src)
 add_subdirectory(mcu_program)
 add_subdirectory(LimeUtil)
+add_subdirectory(QuickTest)
 
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
