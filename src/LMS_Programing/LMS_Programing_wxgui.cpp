@@ -66,10 +66,10 @@ LMS_Programing_wxgui::LMS_Programing_wxgui(wxWindow* parent, wxWindowID id, cons
     FlexGridSizer1->Add(FlexGridSizer2, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 5);
     FlexGridSizer7 = new wxFlexGridSizer(0, 2, 0, 5);
-    StaticText2 = new wxStaticText(this, wxID_ANY, _T("Device:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
-    FlexGridSizer7->Add(StaticText2, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+    StaticText2 = new wxStaticText(this, wxID_ANY, _T("Programming mode:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
+    FlexGridSizer7->Add(StaticText2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     cmbDevice = new wxChoice(this, ID_CHOICE2, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE2"));
-    FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    FlexGridSizer7->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer3->Add(FlexGridSizer7, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer1->Add(FlexGridSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     SetSizer(FlexGridSizer1);
