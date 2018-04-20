@@ -89,7 +89,7 @@ API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port)
     lime::warning("LMS_IsOpen() deprecated: device is now always open after successful LMS_Open() call\ninvalid (non-null) device pointer will result in segfault");
     if (device == nullptr)
         return false;
-    
+
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
 
     auto conn = lms->GetConnection();
@@ -532,7 +532,7 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, siz
         ret = lms->GetTxPathBand(path,chan);
     else
         ret = lms->GetRxPathBand(path,chan);
-    
+
     range->max = ret.max;
     range->min = ret.min;
     range->step = 0;
@@ -629,8 +629,8 @@ API_EXPORT int CALL_CONV LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lm
     }
 
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-    
-    auto ret = lms->GetLPFRange(dir_tx,0);   
+
+    auto ret = lms->GetLPFRange(dir_tx,0);
     range->max = ret.max;
     range->min = ret.min;
     range->step = 0;
@@ -658,7 +658,7 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
         gain = 1.0;
     else if (gain < 0)
         gain = 0;
-   auto range = lms->GetGainRange(dir_tx,chan,"");   
+   auto range = lms->GetGainRange(dir_tx,chan,"");
    return lms->SetGain(dir_tx,chan,range.min+gain*(range.max-range.min));
 }
 
@@ -840,7 +840,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx, 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    
+
     if (freq != nullptr)
     {
         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
@@ -868,7 +868,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, 
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-      
+
     if (freq != nullptr)
         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
             freq[i] = std::fabs(lms->GetNCOFreq(dir_tx, chan, i));
@@ -896,10 +896,10 @@ API_EXPORT int CALL_CONV LMS_SetNCOPhase(lms_device_t *device, bool dir_tx, size
         lime::ReportError("Invalid channel number.");
         return -1;
     }
-    
+
     if (lms->SetNCOFreq(dir_tx, ch, 0, fcw) != 0)
         return -1;
-    
+
     if (phase != nullptr)
     {
         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
@@ -926,11 +926,11 @@ API_EXPORT int CALL_CONV LMS_GetNCOPhase(lms_device_t *device, bool dir_tx, size
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-      
+
     if (phase != nullptr)
         for (unsigned i = 0; i < LMS_NCO_VAL_COUNT; i++)
             phase[i] = lms->GetNCOPhase(dir_tx, ch, i);
-    
+
     if (fcw != nullptr)
         *fcw = lms->GetNCOFreq(dir_tx, ch, 0);
 
@@ -952,7 +952,7 @@ API_EXPORT int CALL_CONV LMS_SetNCOIndex(lms_device_t *device, bool dir_tx, size
         lime::ReportError(EINVAL, "Invalid channel number.");
         return -1;
     }
-    
+
     if ((lms->WriteParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, ind < 0 ? 1 : 0, chan)!=0)
     || (lms->WriteParam(dir_tx ? LMS7_CMIX_GAIN_TXTSP : LMS7_CMIX_GAIN_RXTSP, ind < 0 ? 0 : 1, chan)!=0))
         return -1;
@@ -983,7 +983,7 @@ API_EXPORT int CALL_CONV LMS_GetNCOIndex(lms_device_t *device, bool dir_tx, size
         lime::ReportError("Invalid channel number.");
         return -1;
     }
-    
+
     if (lms->ReadParam(dir_tx ? LMS7_CMIX_BYP_TXTSP : LMS7_CMIX_BYP_RXTSP, chan) != 0)
     {
         lime::ReportError("NCO is disabled");
@@ -1370,7 +1370,7 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
     api_msg_handler = handler;
 }
 
-API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
+extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
 {
     if (dev == nullptr)
     {
