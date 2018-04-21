@@ -1157,10 +1157,14 @@ static const char* MCU_ErrorMessages[] =
 "Rx invalid TIA gain",
 "Tx LPF bandwidth out of range",
 "Procedure is disabled",
+"Rx R_CTL_LPF range limit reached",
+"Rx CFB_TIA_RFE range limit reached",
+"Tx RCAL_LPF range limit reached,"
 };
 
 const char* MCU_BD::MCUStatusMessage(const uint8_t code)
 {
+    static_assert(MCU_ERROR_CODES_COUNT == sizeof(MCU_ErrorMessages)/sizeof(char*), "MCU errors enum/string count mismatch");
     if(code == 255)
         return "MCU not programmed/procedure still in progress";
     if(code >= MCU_ERROR_CODES_COUNT)

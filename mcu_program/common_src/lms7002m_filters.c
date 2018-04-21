@@ -6,8 +6,12 @@
 #include <math.h>
 #include "mcu_defines.h"
 
-#define E_DECREASE_R 0x0080
-#define E_INCREASE_R 0x0081
+enum
+{
+    SEARCH_SUCCESS = 0,
+    SEARCH_NEED_TO_DECREASE,
+    SEARCH_NEED_TO_INCREASE
+};
 
 //rx lpf range limits
 static ROM const float_type RxLPF_RF_LimitLow = 1.4e6;
@@ -43,7 +47,7 @@ static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const u
         if(doDecrement != (GetRSSI() < rssi_3dB))
             break;
         if(stepSize >= stepLimit)
-            return doDecrement ? E_INCREASE_R : E_DECREASE_R;
+            return doDecrement ? SEARCH_NEED_TO_INCREASE : SEARCH_NEED_TO_DECREASE;
     }
     while(stepSize > 1)
     {
@@ -339,16 +343,20 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
             Crange = 256;
         }
         { // Find RC
+        uint8_t searchStatus;
         int8_t r_ctl_lpf = Get_SPI_Reg_bits(R_CTL_LPF_RBB);
-        while((status = RxFilterSearch(Caddr, Cmsblsb, rssi_3dB, Crange)) != 0)
+        while((searchStatus = RxFilterSearch(Caddr, Cmsblsb, rssi_3dB, Crange)) != SEARCH_SUCCESS)
         {
-            r_ctl_lpf += status==E_INCREASE_R ? Rstep : -Rstep;
+            r_ctl_lpf += (searchStatus == SEARCH_NEED_TO_INCREASE) ? Rstep : -Rstep;
             if(r_ctl_lpf < 0 || 31 < r_ctl_lpf)
                 break;
             Modify_SPI_Reg_bits(R_CTL_LPF_RBB, r_ctl_lpf);
         }
-        if(status != 0)
+        if(searchStatus != SEARCH_SUCCESS)
+        {
+            status = MCU_R_CTL_LPF_LIMIT_REACHED;
             goto RxFilterSearchEndStage;
+        }
         }
 
         status = SetFrequencySX(LMS7002M_Rx, 539.9e6-rx_lpf_IF);
@@ -388,9 +396,11 @@ uint8_t TuneRxFilter(const float_type rx_lpf_freq_RF)
         SetNCOFrequency(LMS7002M_Rx, rx_lpf_IF, 0); //0
     }
     //START TIA
-    status = RxFilterSearch(CFB_TIA_RFE, rssi_3dB, 4096);
-    if(status != MCU_NO_ERROR)
+    if(RxFilterSearch(CFB_TIA_RFE, rssi_3dB, 4096) != SEARCH_SUCCESS)
+    {
+        status = MCU_CFB_TIA_RFE_LIMIT_REACHED;
         goto RxFilterSearchEndStage;
+    }
     //END TIA
 
     {
@@ -608,7 +618,8 @@ static uint8_t SearchTxFilterCCAL_RCAL(uint16_t addr, uint8_t msblsb)
             uint8_t R = Get_SPI_Reg_bits(addr, msblsb);
             if(R == 0 || R == 255)
             {
-                targetLevelReached = true;
+                if(R != 0)
+                    targetLevelReached = true;
                 break;
             }
             Modify_SPI_Reg_bits(addr, msblsb, clamp(R+rcal_step, 0, 255));
@@ -622,7 +633,7 @@ static uint8_t SearchTxFilterCCAL_RCAL(uint16_t addr, uint8_t msblsb)
         }
         --iterationsLeft;
     } while(!targetLevelReached && iterationsLeft);
-    return targetLevelReached ? MCU_NO_ERROR : MCU_ERROR;
+    return targetLevelReached ? MCU_NO_ERROR : MCU_RCAL_LPF_LIMIT_REACHED;
 }
 
 uint8_t TuneTxFilter(const float_type tx_lpf_freq_RF)
