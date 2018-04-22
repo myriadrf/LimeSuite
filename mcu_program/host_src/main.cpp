@@ -233,7 +233,7 @@ void DCIQ()
         long duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
         if(status != MCU_NO_ERROR)
-            printf("MCU calibration FAILED : 0x%02X (%s)\n", status, lime::MCU_BD::MCUStatusMessage(status));
+            printf("MCU calibration FAILED : 0x%02X\n", status);
 
         int16_t dci, dcq, ph, gi, gq;
         dci = ReadDCCorrector(tx, 0);
@@ -252,7 +252,7 @@ void DCIQ()
 
         printf("F: %4.0f MHz, DCI:%3i DCQ:%3i GI:%4i GQ:%4i PH:%4i - %s | %li ms\n",
             freq/1e6, dci, dcq, gi, gq, ph,
-            (status == MCU_NO_ERROR ? "OK" : lime::MCU_BD::MCUStatusMessage(status)),
+            (status == MCU_NO_ERROR ? "OK" : "FAIL"),
             duration);
         freq += freqStep;
     }
@@ -289,7 +289,7 @@ void Filters()
         int16_t lpfh = lmsControl.Get_SPI_Reg_bits(LMS7param(RCAL_LPFH_TBB));
         printf("Tx filter BW: %.0f MHz, RCAL_LPFLAD: %i, CCAL_LPFLAD: %i, RCAL_LPFH: %i | %li ms (%s)\n",
                 FBW/1e6, rcal_lpflad, ccal_lpflad, lpfh, duration,
-                status == MCU_NO_ERROR ? "OK" : lime::MCU_BD::MCUStatusMessage(status));
+                status == MCU_NO_ERROR ? "OK" : "FAIL");
     }
     else
     {
@@ -303,7 +303,7 @@ void Filters()
             "RCTL_LPFL: %i, RCTL_LPFH: %i, C_CTL_LPFL: %i | %li ms (%s)\n",
             FBW/1e6, cfb_tia_rfe, ccomp_tia_rfe, rcomp_tia_rfe, rcc_ctl_lpfl_rbb,
             rcc_ctl_lpfh_rbb, c_ctl_lpfl_rbb, duration,
-            status == MCU_NO_ERROR ? "OK" : lime::MCU_BD::MCUStatusMessage(status));
+            status == MCU_NO_ERROR ? "OK" : "FAIL");
     }
 
     if(tx)
