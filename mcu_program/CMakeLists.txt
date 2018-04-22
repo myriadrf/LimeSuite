@@ -3,6 +3,10 @@ cmake_policy(SET CMP0003 NEW)
 #C++11 is a required language feature for this project
 set(CMAKE_CXX_STANDARD 11)
 
+cmake_dependent_option(ENABLE_MCU_TESTBENCH "MCU functions testing project" OFF "ENABLE_LIBRARY" OFF)
+
+if(ENABLE_MCU_TESTBENCH)
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 
     #enable C++11 on older versions of cmake
@@ -49,3 +53,5 @@ endif()
 if(WIN32)
     target_link_libraries(MCU_TestBench ${CYAPI_LIBRARIES} SetupAPI)
 endif()
+
+endif(ENABLE_MCU_TESTBENCH)
