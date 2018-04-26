@@ -21,6 +21,7 @@ LimeSDRTest::LimeSDRTest(TestCallback cb)
     step = 0;
     running = false;
     lmsControl = nullptr;
+    device = nullptr;
 }
 
 LimeSDRTest::~LimeSDRTest()
