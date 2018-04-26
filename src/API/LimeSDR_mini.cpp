@@ -206,8 +206,11 @@ int LMS7_LimeSDR_mini::SetRate(double f_Hz, int oversample)
 {
     lime::LMS7002M* lms = lms_list[0];
 
-    if (oversample == 0)
-        oversample = lime::cgenMax/(16*f_Hz);
+    if (oversample == 0) {
+        int n = lime::cgenMax / (4 * f_Hz);
+        oversample = (n >= 32) ? 32 : (n >= 16) ? 16 : (n >= 8) ? 8 : (n >= 4) ? 4 : 2;
+        lime::info("Setting oversampling of %i", oversample);
+    }
     bool sisoDDR = (oversample <= 1 && tx_channels[0].cF_offset_nco == 0.0 && rx_channels[0].cF_offset_nco == 0.0);
 
     if ((lms->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR,sisoDDR)!=0)
