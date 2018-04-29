@@ -133,19 +133,22 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false);
-
     }
     else
     {
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false);
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false);
-        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) != 0)
+        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        if (ch%2)
         {
-            if (ch%2)
-                lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), enabled == false);
-            else
-                lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), enabled == false);
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), !(enabled|sisoDDR));
+        }
+        else
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), enabled? 3 : 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
         }
     }
 
@@ -943,6 +946,17 @@ int LMS7_Device::SetGFIR(bool tx, unsigned chan, lms_gfir_t filt, bool enabled)
         {
             if (lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false) != 0)
                 return -1;
+        }
+        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        if (chan%2)
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), !(enabled|sisoDDR));
+        }
+        else
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), enabled? 3 : 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
         }
     }
 
