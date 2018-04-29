@@ -245,8 +245,8 @@ LMS7_Device::Range LMS7_LimeSDR_mini::GetRxPathBand(unsigned path, unsigned chan
 {
   switch (path)
   {
-      case LMS_PATH_LNAH: return Range(2e9, 3.8e9);
-      case LMS_PATH_LNAW: return Range(30e6, 2e9);
+      case LMS_PATH_LNAH: return Range(2e9, 2.6e9);
+      case LMS_PATH_LNAW: return Range(700e6, 900e6);
       default: return Range();
   }
 }
@@ -255,8 +255,8 @@ LMS7_Device::Range LMS7_LimeSDR_mini::GetTxPathBand(unsigned path, unsigned chan
 {
   switch (path)
   {
-      case LMS_PATH_TX1: return Range(2e9, 3.8e9);
-      case LMS_PATH_TX2: return Range(30e6, 2e9);
+      case LMS_PATH_TX1: return Range(2e9, 2.6e9);
+      case LMS_PATH_TX2: return Range(30e6, 1.9e9);
       default: return Range();
   }
 }
@@ -267,6 +267,16 @@ std::vector<std::string> LMS7_LimeSDR_mini::GetProgramModes() const
     return {program_mode::autoUpdate,
             program_mode::fpgaFlash, program_mode::fpgaReset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
+}
+
+LMS7_Device::Range LMS7_LimeSDR_mini::GetRateRange(bool /*dir*/, unsigned /*chan*/) const
+{
+    return Range(100e3, 30.72e6);
+}
+
+LMS7_Device::Range LMS7_LimeSDR_mini::GetFrequencyRange(bool tx) const
+{
+    return Range(10e6, 3.5e9);
 }
 
 

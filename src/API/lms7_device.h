@@ -36,13 +36,13 @@ public:
     virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
     virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
     virtual double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL) const;
-    Range GetRateRange(bool dir = false, const unsigned chan = 0)const;
+    virtual Range GetRateRange(bool dir = false, unsigned chan = 0)const;
     virtual std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan = 0) const;
     virtual int SetPath(bool tx,unsigned chan, unsigned path);
     int GetPath(bool tx, unsigned chan) const;
     virtual int SetFrequency(bool tx, unsigned chan, double f_Hz);
     double GetFrequency(bool tx, unsigned chan) const;
-    Range GetFrequencyRange(bool tx) const;
+    virtual Range GetFrequencyRange(bool tx) const;
     virtual Range GetRxPathBand(unsigned path, unsigned chan) const;
     virtual Range GetTxPathBand(unsigned path, unsigned chan) const;
     int SetLPF(bool tx, unsigned chan, bool en, double bandwidth=-1);

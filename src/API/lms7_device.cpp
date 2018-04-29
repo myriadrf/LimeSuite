@@ -674,7 +674,7 @@ double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
 
 LMS7_Device::Range LMS7_Device::GetRateRange(bool /*dir*/, unsigned /*chan*/) const
 {
-  return Range(100e3, 80e6);
+    return Range(100e3, 61.44e6);
 }
 
 std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, unsigned /*chan*/) const
@@ -706,9 +706,9 @@ LMS7_Device::Range LMS7_Device::GetRxPathBand(unsigned path, unsigned chan) cons
 {
   switch (path)
   {
-      case LMS_PATH_LNAH: return Range(2e9, 3.8e9);
+      case LMS_PATH_LNAH: return Range(2e9, 2.6e9);
       case LMS_PATH_LNAW: return Range(700e6, 2.6e9);
-      case LMS_PATH_LNAL: return Range(30e6, 1e9);
+      case LMS_PATH_LNAL: return Range(700e6, 900e6);
       default: return Range();
   }
 }
@@ -717,8 +717,8 @@ LMS7_Device::Range LMS7_Device::GetTxPathBand(unsigned path, unsigned chan) cons
 {
   switch (path)
   {
-      case LMS_PATH_TX2: return Range(2e9, 3.8e9);
-      case LMS_PATH_TX1: return Range(30e6, 2e9);
+      case LMS_PATH_TX2: return Range(2e9, 2.6e9);
+      case LMS_PATH_TX1: return Range(30e6, 1.9e9);
       default: return Range();
   }
 }
@@ -1300,7 +1300,7 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 
 LMS7_Device::Range LMS7_Device::GetFrequencyRange(bool tx) const
 {
-  return Range(30e6, 3.8e9);
+  return Range(100e3, 3.8e9);
 }
 
 int LMS7_Device::Init()
