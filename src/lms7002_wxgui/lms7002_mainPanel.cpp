@@ -358,9 +358,8 @@ void lms7002_mainPanel::OnEnableMIMOchecked(wxCommandEvent& event)
     uint16_t chBck;
     LMS_ReadParam(lmsControl, LMS7param(MAC), &chBck);
     bool enable = chkEnableMIMO->IsChecked();
-    for (int ch = 0; ch < LMS_GetNumChannels(lmsControl,false);ch++)
+    for (int ch = enable ? 0 : 1 ; ch < LMS_GetNumChannels(lmsControl,false);ch++)
     {
-        if (!enable) ch++; //enable all, disable only B
         LMS_EnableChannel(lmsControl,LMS_CH_RX,ch,enable);
         LMS_EnableChannel(lmsControl,LMS_CH_TX,ch,enable);
     }

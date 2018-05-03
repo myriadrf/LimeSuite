@@ -618,7 +618,7 @@ void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
 {
     bool visibilities[cMaxChCount];
 
-    if (cmbStreamType->GetSelection() == 1)
+    if (cmbStreamType->GetSelection()%2)
     {
         switch (event.GetInt())
         {

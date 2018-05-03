@@ -277,7 +277,7 @@ void Streamer::RstRxIQGen()
     data[0] = (uint32_t(0x010C) << 16);
     dataPort->ReadLMS7002MSPI(data, &reg10C, 1, chipId);
     data[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD;
-    dataPort->WriteLMS7002MSPI(data, 1, 0);
+    dataPort->WriteLMS7002MSPI(data, 1, chipId);
     data[0] = (uint32_t(0x011C) << 16);
     dataPort->ReadLMS7002MSPI(data, &reg11C, 1, chipId);
     data[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD;             //SXR
@@ -316,7 +316,7 @@ void Streamer::AlignRxTSP()
         dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF;
         dataWr[1] = (1 << 31) | (uint32_t(0x0400) << 16) | 0x8085;
         dataWr[2] = (1 << 31) | (uint32_t(0x040C) << 16) | 0x01FF;
-        dataPort->WriteLMS7002MSPI(dataWr, 3, 1);
+        dataPort->WriteLMS7002MSPI(dataWr, 3, chipId);
         uint32_t* buf = new uint32_t[sizeof(FPGA_DataPacket) / sizeof(uint32_t)];
 
         fpga->StopStreaming();
@@ -329,7 +329,7 @@ void Streamer::AlignRxTSP()
 
         for (int i = 0; i < 100; i++)
         {
-            dataPort->WriteLMS7002MSPI(&dataWr[0], 2, 1);
+            dataPort->WriteLMS7002MSPI(&dataWr[0], 2, chipId);
             dataPort->ResetStreamBuffers();
             fpga->StartStreaming();
             if (dataPort->ReceiveData((char*)buf, sizeof(FPGA_DataPacket), chipId, 50) != sizeof(FPGA_DataPacket))
@@ -398,8 +398,12 @@ double Streamer::GetPhaseOffset(int bin)
 
 void Streamer::AlignRxRF(bool restoreValues)
 {
+    uint32_t addr = 0, val =0;
+    dataPort->ReadRegisters(&addr,&val,1);
+    if (val==0xF ||val==0x10) //do not perform for PCIE versions as they seem to have issues
+        return;
+  
     auto regBackup = lms->BackupRegisterMap();
-
     lms->SPI_write(0x20, 0xFFFF);
     lms->SetDefaults(LMS7002M::RFE);
     lms->SetDefaults(LMS7002M::RBB);
@@ -431,8 +435,8 @@ void Streamer::AlignRxRF(bool restoreValues)
     std::vector<uint32_t>  dataWr;
     dataWr.resize(16);
 
-    fpga->StopStreaming();
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
+    fpga->StopStreaming();
     dataPort->WriteRegister(0x0008, 0x0100);
     dataPort->WriteRegister(0x0007, 3);
     bool found = false;
@@ -501,8 +505,8 @@ void Streamer::AlignQuadrature(bool restoreValues)
     double srate = lms->GetSampleRate(false, LMS7002M::ChA);
     double freq = lms->GetFrequencySX(false);
 
-    fpga->StopStreaming();
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
+    fpga->StopStreaming();
     dataPort->WriteRegister(0x0008, 0x0100);
     dataPort->WriteRegister(0x0007, 3);
     lms->SetFrequencySX(true, freq+srate/16.0);

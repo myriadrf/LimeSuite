@@ -651,12 +651,13 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         uint32_t addr[3] = {0, 1, 2};
         uint32_t vals[3];
         connection->ReadRegisters(addr,vals,3);
-        if ((vals[0]==0xE && vals[1]>1 && vals[2] > 0xE)||(vals[0]==0xF && vals[1]>1 && vals[2] > 6))
+        vals[1] = (vals[1]<<8)|vals[2];
+        if ((vals[0]==0xE && vals[1]>0x20E)||(vals[0]==0xF && vals[1]>0x206)||(vals[0]==0x10 && vals[1]>0x102))
             phaseSearch = true;
     }
 
     if (!phaseSearch)
-        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, 0);
+        return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, channel);
 
     std::vector<uint32_t> dataRdA;
     std::vector<uint32_t> dataRdB;

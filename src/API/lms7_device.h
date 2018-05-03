@@ -29,7 +29,7 @@ public:
     lime::IConnection* GetConnection(unsigned chan =0);
     lime::FPGA* GetFPGA();
     virtual int Init();
-    int EnableChannel(bool dir_tx, unsigned chan, bool enabled);
+    virtual int EnableChannel(bool dir_tx, unsigned chan, bool enabled);
     int Reset();
     virtual unsigned GetNumChannels(const bool tx=false) const;
     virtual int SetRate(double f_MHz, int oversample);
