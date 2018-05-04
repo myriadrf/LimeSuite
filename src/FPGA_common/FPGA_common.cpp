@@ -509,10 +509,12 @@ int FPGA::Samples2FPGAPacketPayload(const complex16_t* const* samples, int sampl
 
 int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
 {
-    const int samplesInPkt = samples16InPkt;
+    bool comp = (epIndex==2 && format!=StreamConfig::FMT_INT12) ? false : true;
+
+    const int samplesInPkt = comp ? samples12InPkt : samples16InPkt;
     connection->WriteRegister(0xFFFF, 1 << epIndex);
     connection->WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
-    connection->WriteRegister(0x000E, 0x2); //12bit samples
+    connection->WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
 
     uint16_t regValue = 0;
     connection->ReadRegister(0x000D,regValue);
@@ -529,7 +531,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     for(unsigned i=0; i<chCount; ++i)
         samplesShort[i] = nullptr;
 
-    if (format == StreamConfig::FMT_INT16)
+    if (format == StreamConfig::FMT_INT16 && comp == true)
     {
         for(unsigned i=0; i<chCount; ++i)
             samplesShort[i] = new lime::complex16_t[sample_count];
@@ -543,7 +545,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     }
     else if(format == StreamConfig::FMT_FLOAT32)
     {
-        const float mult = 2047.5f;
+        const float mult = comp ? 2047.0f : 32767.0f;
         for(unsigned i=0; i<chCount; ++i)
             samplesShort[i] = new lime::complex16_t[sample_count];
 
@@ -567,7 +569,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
             batch[i] = &src[i][samplesUsed];
         samplesUsed += samplesToSend;
 
-        int bufPos = Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, true, pkt.data);
+        int bufPos = Samples2FPGAPacketPayload(batch, samplesToSend, chCount==2, comp, pkt.data);
         int payloadSize = (bufPos / 4) * 4;
         if(bufPos % 4 != 0)
             lime::warning("Packet samples count not multiple of 4");
