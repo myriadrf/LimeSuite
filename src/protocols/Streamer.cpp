@@ -566,43 +566,7 @@ int Streamer::UpdateThreads(bool stopAll)
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
-    {      
-        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
-
-        lms->Modify_SPI_Reg_bits(LMS7param(LML1_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML2_MODE), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML1_FIDM), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(LML2_FIDM), 0);
-        
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), (channelEnables&2 ? 0 : 1));
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), (channelEnables&2 ? 0 : 1));
-
-        if (lms->Get_SPI_Reg_bits(LMS7_MASK, true) == 0)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 0);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 3);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 2);
-        }
-        else
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S0S), 0);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S1S), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S2S), 2);
-            lms->Modify_SPI_Reg_bits(LMS7param(LML2_S3S), 3);
-        }
-
-        if(channelEnables & 0x2) //enable MIMO
-        {
-            uint16_t macBck = lms->Get_SPI_Reg_bits(LMS7param(MAC));
-            lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTRX_RFE), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(EN_NEXTTX_TRF), 1);
-            lms->Modify_SPI_Reg_bits(LMS7param(MAC), macBck);
-        }
-        
+    {       
         if (mRxStreams[0] && mRxStreams[1])
             AlignRxRF(true);
         //enable FPGA streaming
@@ -647,6 +611,7 @@ int Streamer::UpdateThreads(bool stopAll)
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
         
+        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
         dataPort->WriteRegister(0x0007, channelEnables);
         
         uint32_t reg9;
