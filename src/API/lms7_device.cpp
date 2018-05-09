@@ -143,11 +143,11 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         if (ch%2)
         {
             lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled? 3 : 0);
         }
         else
         {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), enabled? 3 : 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled|sisoDDR));
             lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
         }
     }
@@ -948,11 +948,11 @@ int LMS7_Device::SetGFIR(bool tx, unsigned chan, lms_gfir_t filt, bool enabled)
         if (chan%2)
         {
             lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled? 3 : 0);
         }
         else
         {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), enabled? 3 : 0);
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled|sisoDDR));
             lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
         }
     }
