@@ -604,12 +604,21 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
 {
     lime::FPGA::FPGA_PLL_clock clocks[2];
     int status = 0;
+
+    const uint32_t addr[2] = {0x203<<16, 0x403<<16};
+    uint32_t vals[2];
+    vals[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(vals, 1, channel);
+    connection->ReadLMS7002MSPI(addr, vals, 2, channel);
+    bool bypassTx = (vals[0]&0x7000) == 0x7000;
+    bool bypassRx = (vals[1]&0x7000) == 0x7000;
+
     if  (rxRate_Hz >= 5e6)
     {
         clocks[0].index = 0;
-        clocks[0].outFrequency = rxRate_Hz;
+        clocks[0].outFrequency = bypassRx ? 2*rxRate_Hz:rxRate_Hz;
         clocks[1].index = 1;
-        clocks[1].outFrequency = rxRate_Hz;
+        clocks[1].outFrequency = bypassRx ? 2*rxRate_Hz:rxRate_Hz;
         clocks[1].phaseShift_deg = rxPhase;
         status = SetPllFrequency(1, rxRate_Hz, clocks, 2);
     }
@@ -619,9 +628,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
     if (txRate_Hz >= 5e6)
     {
         clocks[0].index = 0;
-        clocks[0].outFrequency = txRate_Hz;
+        clocks[0].outFrequency = bypassTx ? 2*txRate_Hz:txRate_Hz;
         clocks[1].index = 1;
-        clocks[1].outFrequency = txRate_Hz;
+        clocks[1].outFrequency = bypassTx ? 2*txRate_Hz:txRate_Hz;
         clocks[1].phaseShift_deg = txPhase;
         status |= SetPllFrequency(0, txRate_Hz, clocks, 2);
     }
@@ -637,6 +646,8 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const int pll_ind = (channel == 1) ? 2 : 0;
     int status = 0;
     uint32_t reg20;
+    bool bypassTx = false;
+    bool bypassRx = false;
     const double rxPhC1 =  89.46;
     const double rxPhC2 =  1.24e-6;
     const double txPhC1 =  89.61;
@@ -679,6 +690,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         dataWr[i] = (spiAddr[i] << 16);
     connection->ReadLMS7002MSPI(dataWr.data(),dataRdA.data(), bakRegCnt, channel);
 
+    {
+        uint32_t addr[2] = {0x203<<16, 0x403<<16};
+        uint32_t vals[2];
+        connection->ReadLMS7002MSPI(addr, vals, 2, channel);
+        bypassTx = (vals[0]&0x7000) == 0x7000;
+        bypassRx = (vals[1]&0x7000) == 0x7000;
+    }
+
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
@@ -691,8 +710,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
 
     {
-        const std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086, 0x8001,
-                                                0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
+        std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086, 0x8001,
+                                          0x028D, 0x00FF, 0x5555, 0x02CD, 0xAAAA, 0x02ED};
+        if (bypassRx)spiData[5] = 0xD;
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
@@ -702,7 +722,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     lime::FPGA::FPGA_PLL_clock clocks[2];
     clocks[0].index = 1;
-    clocks[0].outFrequency = rxRate_Hz;
+    clocks[0].outFrequency = bypassRx ? 2*rxRate_Hz : rxRate_Hz;
     clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
     clocks[0].findPhase = true;
     clocks[1] = clocks[0];
@@ -717,7 +737,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     }
 
     {
-        const std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
+        std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
+        if (bypassTx)spiData[5] ^= 0x80;
+        if (bypassRx)spiData[5] ^= 0x9;
         connection->WriteRegister(0xFFFF, 1 << channel);
         connection->WriteRegister(0x000A, 0x0000);
         //Load test config
@@ -728,7 +750,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     }
 
     clocks[0].index = 1;
-    clocks[0].outFrequency = txRate_Hz;
+    clocks[0].outFrequency = bypassTx ? 2*txRate_Hz:txRate_Hz;
     clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
     clocks[0].findPhase = true;
     clocks[1] = clocks[0];

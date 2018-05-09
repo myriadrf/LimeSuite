@@ -660,9 +660,6 @@ double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
         interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
-    if (ratio == 7 && lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR) == 0)
-       interface_Hz /= 2;
-
     if (rf_rate_Hz)
         *rf_rate_Hz = interface_Hz;
 
