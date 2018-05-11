@@ -20,7 +20,6 @@
 static Fl_Button** buttons;
 static Fl_Window* popup = nullptr;
 static Fl_Multiline_Output* out;
-static LimeSDRTest* testObj;
 static Fl_Output* detect;
 static std::string logfile;
 static int started = false;
@@ -145,7 +144,7 @@ void Timer_CB(void *data)
         win->SetErrorMsg(0);
         int ret;
         str = "";
-        if ((ret = testObj->CheckDevice(str)) == 0)
+        if ((ret = LimeSDRTest::CheckDevice(str)) == 0)
         {
             detect->textcolor(CL_DARK);
             if (!started)
@@ -175,20 +174,6 @@ static void Window_CB(Fl_Widget*, void*)
     if (Fl::event() == FL_SHORTCUT && Fl::event_key() == FL_Escape)
         return; // ignore Escape
     exit(0);
-}
-
-static void Start_CB(Fl_Widget*, void*)
-{
-    out->value("");
-    logfile = "";
-    for (unsigned i = 0; i < testNames.size(); i++)
-    {
-        buttons[i]->color(FL_BACKGROUND_COLOR);
-        buttons[i]->deactivate();
-    }
-    started = true;
-    if (testObj->RunTests() == 0)
-        start->deactivate();
 }
 
 static void AddLine(const char * str)
@@ -226,7 +211,7 @@ static void DrawButtons(int X, int Y)
     g->end();
 }
 
-static int CB_Function(int id, int event, int prog, const char* msg)
+static int CB_Function(int id, int event, const char* msg)
 {
     Fl::lock();
     if (event == LMS_TEST_INFO)
@@ -288,19 +273,28 @@ static int CB_Function(int id, int event, int prog, const char* msg)
 
     if (id == -1)
     start->activate();
-    else if (prog >= 0)
-    {
-        static std::string label;
-        label = testNames[id] + " ( " + std::to_string(prog) + "% )";
-    }
 
     win->redraw();
     Fl::unlock();
     return 0;
-};
+}
+
+static void Start_CB(Fl_Widget*, void*)
+{
+    out->value("");
+    logfile = "";
+    for (unsigned i = 0; i < testNames.size(); i++)
+    {
+        buttons[i]->color(FL_BACKGROUND_COLOR);
+        buttons[i]->deactivate();
+    }
+    started = true;
+    if (LimeSDRTest::RunTests(CB_Function) == 0)
+        start->deactivate();
+}
 
 
-static int CB_FunctionCLI(int id, int event, int prog, const char* msg)
+static int CB_FunctionCLI(int id, int event, const char* msg)
 {
     if (event == LMS_TEST_LOGFILE)
     {
@@ -311,7 +305,7 @@ static int CB_FunctionCLI(int id, int event, int prog, const char* msg)
     else
         std::cout << msg << std::endl;
     return 0;
-};
+}
 
 
 int main(int argc, char** argv)
@@ -341,7 +335,6 @@ int main(int argc, char** argv)
     if (gui)
     {
         Fl::scheme("gleam");
-        testObj = new LimeSDRTest(CB_Function);
         win = new Lms_Double_window(860, 135+testNames.size()*55, "LimeSDR TestApp");
         out = new Fl_Multiline_Output(260, 22, win->w()-270, win->h()-50, "Message Log");
         out->align(FL_ALIGN_TOP_LEFT);
@@ -365,8 +358,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        testObj = new LimeSDRTest(CB_FunctionCLI);
-        return testObj->RunTests(false); //returns bit field of failed tests
+        return LimeSDRTest::RunTests(CB_FunctionCLI, false); //returns bit field of failed tests
     }
 }
 

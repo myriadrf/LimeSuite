@@ -17,6 +17,7 @@
 #include "lms7_device.h"
 #include <IConnection.h>
 #include <atomic>
+#include "Logger.h"
 
 #define LMS_TEST_FAIL       -1
 #define LMS_TEST_SUCCESS    0
@@ -27,7 +28,13 @@ extern const std::vector<std::string>testNames;
 
 class LimeSDRTest
 {
-    typedef std::function<int(int testID, int event, int progress, const char* msg)> TestCallback;
+    typedef std::function<int(int testID, int event, const char* msg)> TestCallback;
+
+public:
+    static int RunTests(TestCallback cb, bool nonblock = true);
+    static int CheckDevice(std::string &str);
+    
+protected:
     
     struct RFTestData
     {
@@ -35,51 +42,56 @@ class LimeSDRTest
         float txfreq;
         float peakval;
         float peakfreq;
-        int padGain;
+        int ch;
     };
-
-public:
-    LimeSDRTest(TestCallback cb);
-    ~LimeSDRTest();
-    int RunTests(bool nonblock = true);
-    int CheckDevice(std::string &str);
-
-private:
-    int Connect();
-    void Disconnect();
-    int UpdateStatus(int event, int progress = -1, const char* msg = nullptr);
-
-    int FPGA_EEPROM_Test();
+    
+    LimeSDRTest(lime::LMS7_Device* dev);
+    virtual ~LimeSDRTest();
+    static void UpdateStatus(int event, const char* msg = nullptr);
     int InitFPGATest(unsigned test, double timeout);
     int GPIFClkTest();
     int VCTCXOTest();
-    int ClockNetworkTest();
-
+    bool RunTest(float &peakval, float &peakFreq, int ch = 0);
+    static std::string RFTestInfo(const RFTestData& data, bool passed);	
+    lime::LMS7_Device* device;
+    
+private:
+    
+    static LimeSDRTest* Connect();
+    int FPGA_EEPROM_Test();
+    virtual int ClockNetworkTest()=0;
+    virtual int RFTest() = 0;
     int LMS7002mTest();
-
-    int ConfigureLMS(const std::vector<uint32_t> &lmsConfigRF);
-    int CollectAndCalculateFFT(float* results, unsigned fftSize);
     int Reg_write(uint16_t address, uint16_t data);
     uint16_t Reg_read(uint16_t address);
-    bool RunTest(RFTestData &data);
-    int RFTest();
 
-    static std::string RFTestInfo(const RFTestData data, bool passed);	
-    lime::LMS7_Device* device;
-    lime::IConnection* conn;
-    int step;
-    TestCallback callback;
-    static void _perform_tests(LimeSDRTest* pthis);
+    static int step;
+    static TestCallback callback;
+    int Perform_tests();
     int TransferLMS64C(unsigned char* packet);
 
-    float nyquistFrequency;                 // sampling rate of LMS
-    lime::LMS7002M *lmsControl;  // LMS7002M control
-    std::atomic<bool> running;
-    int tests_failed;
-    std::chrono::steady_clock::time_point tp_start;
+    static std::atomic<bool> running;
+    static std::chrono::steady_clock::time_point tp_start;
+    static void OnLogEvent(const lime::LogLevel level, const char *message);
 };
 
+class LimeSDRTest_Mini : public LimeSDRTest
+{
+    friend class LimeSDRTest;
+    LimeSDRTest_Mini(lime::LMS7_Device* dev):LimeSDRTest(dev){};
+    int ClockNetworkTest() override;
+    int RFTest() override;
+};
 
+class LimeSDRTest_USB : public LimeSDRTest
+{
+    friend class LimeSDRTest;
+    LimeSDRTest_USB(lime::LMS7_Device* dev):LimeSDRTest(dev){};
+    int ClockNetworkTest() override;
+    int RFTest() override;
+    int Si5351CTest();
+    int ADF4002Test();
+};
 
 #endif /* LIMESDRTEST_H */
 

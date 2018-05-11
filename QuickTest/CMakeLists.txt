@@ -9,7 +9,13 @@ add_feature_info(LimeQuickTest ENABLE_QUICKTEST "LimeSDR-QuickTest Utility")
 
 if(ENABLE_QUICKTEST)
     include_directories(${FLTK_INCLUDE_DIR})
-    add_executable(LimeQuickTest LimeSDRTest.cpp TestGUI.cpp resources/resource.rc  ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c)
+    add_executable(LimeQuickTest
+		   LimeSDRTest.cpp
+		   LimeSDRTest_Mini.cpp
+		   LimeSDRTest_USB.cpp
+        	   TestGUI.cpp
+		   resources/resource.rc
+		   ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c)
     target_link_libraries(LimeQuickTest
 		      LimeSuite
 		      ${FLTK_LDFLAGS}
