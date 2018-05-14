@@ -1,3 +1,10 @@
+Release 18.04.2 (pending)
+==========================
+- Added LimeSDR-USB support to LimeQuickTest
+- Some fixes for LimeSDR-QPCIe
+- Added HBD/HBI bypass mode for LimeSDR-USB
+- Fixed some issues with GFIR usage
+
 Release 18.04.1 (2018-04-19)
 ==========================
 
