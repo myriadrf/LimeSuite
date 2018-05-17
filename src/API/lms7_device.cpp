@@ -1290,8 +1290,15 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 {
    lime::LMS7002M* lms = lms_list[chan / 2];
    double offset = tx ? tx_channels[chan].cF_offset_nco : rx_channels[chan].cF_offset_nco;
-   if ((!tx) && (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0) && (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1))
-       tx = true; //TDD - Tx PLL used for TX and RX
+
+   if (!tx)
+   {
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
+        if (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0);
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1)
+            tx = true; //TDD - Tx PLL used for TX and RX
+   }
    return lms->GetFrequencySX(tx) - offset;
 }
 
