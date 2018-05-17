@@ -26,8 +26,8 @@ class OpenGLGraph;
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 #include <wx/choice.h>
-#include <wx/button.h>
 #include <wx/checkbox.h>
+#include <wx/button.h>
 #include <wx/gauge.h>
 #include <wx/frame.h>
 
@@ -51,12 +51,14 @@ class frFFTviewer : public wxFrame
 		wxStaticText* m_staticText7;
 		wxSpinCtrl* spinFFTsize;
 		wxChoice* cmbStreamType;
+		wxChoice* cmbFmt;
+		wxCheckBox* chkEnTx;
+		wxCheckBox* chkEnSync;
 		wxButton* btnStartStop;
 		wxStaticText* m_staticText8;
 		wxStaticText* lblRxDataRate;
 		wxStaticText* m_staticText18;
 		wxStaticText* lblTxDataRate;
-		wxCheckBox* chkEnTx;
 		wxChoice* cmbWindowFunc;
 		wxCheckBox* chkCaptureToFile;
 		wxStaticText* m_staticText12;
@@ -72,6 +74,7 @@ class frFFTviewer : public wxFrame
 		wxGauge* gaugeRxBuffer;
 		wxStaticText* m_staticText16;
 		wxGauge* gaugeTxBuffer;
+		wxCheckBox* chkEnPwr;
 		wxStaticText* m_staticText13;
 		wxStaticText* m_staticText14;
 		wxStaticText* m_staticText151;
@@ -89,11 +92,14 @@ class frFFTviewer : public wxFrame
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnFFTsamplesCountChanged( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnStreamChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnFmtChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnTx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnStartStop( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnWindowFunctionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChannelVisibilityChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAvgChange( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnAvgChangeEnter( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnEnPwr( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

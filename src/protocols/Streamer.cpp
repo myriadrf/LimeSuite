@@ -35,12 +35,12 @@ StreamChannel::~StreamChannel()
 {
     for(auto& i : mStreamer->mRxStreams)
         if(i==this)
-            i = nullptr;  
-    
+            i = nullptr;
+
     for(auto& i : mStreamer->mTxStreams)
         if(i==this)
-            i = nullptr;  
-    
+            i = nullptr;
+
     delete fifo;
 }
 
@@ -177,26 +177,26 @@ Streamer::~Streamer()
 StreamChannel* Streamer::SetupStream(const StreamConfig& config)
 {
     const int ch = config.channelID&1;
-    
+
     if ((config.isTx && mTxStreams[ch]) || (!config.isTx && mRxStreams[ch]))
     {
         lime::error("Setup Stream: Channel already in use");
         return nullptr;
     }
-    
+
     if ((!mTxStreams[ch]) && (!mRxStreams[ch]) && (txThread.joinable() || rxThread.joinable()))
     {
         lime::warning("Stopping data stream to set up a new stream");
         UpdateThreads(true);
     }
-              
+
     StreamChannel* stream = new StreamChannel(this,config);
     //TODO check for duplicate streams
     if(config.isTx)
         mTxStreams[ch] = stream;
     else
         mRxStreams[ch] = stream;
-    
+
     double rate = lms->GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
     streamSize = (mTxStreams[0]||mRxStreams[0]) + (mTxStreams[1]||mRxStreams[1]);
 
@@ -216,16 +216,16 @@ int Streamer::CloseStream(StreamChannel* streamID)
         if(i==streamID)
         {
             delete i;
-            i = nullptr;  
-            return 0;  
+            i = nullptr;
+            return 0;
         }
-    
+
     for(auto& i : mTxStreams)
         if(i==streamID)
         {
             delete i;
-            i = nullptr;  
-            return 0;  
+            i = nullptr;
+            return 0;
         }
     return 0;
 }
@@ -236,7 +236,7 @@ int Streamer::GetStreamSize(bool tx)
     for(auto i : mRxStreams)
         if(i && i->config.format != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
-    
+
     for(auto i : mTxStreams)
         if(i && i->config.format != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
@@ -309,7 +309,7 @@ void Streamer::AlignRxTSP()
         dataPort->WriteLMS7002MSPI(&data, 1, chipId);
         dataPort->ReadLMS7002MSPI(bakAddr.data(), regsB, bakAddr.size(), chipId);
     }
-    
+
     //alignment search
     {
         uint32_t dataWr[4];
@@ -344,7 +344,7 @@ void Streamer::AlignRxTSP()
         }
         delete[] buf;
     }
-    
+
     //restore values
     {
         uint32_t dataWr[7];
@@ -400,9 +400,9 @@ void Streamer::AlignRxRF(bool restoreValues)
 {
     uint32_t addr = 0, val =0;
     dataPort->ReadRegisters(&addr,&val,1);
-    if (val==0xF ||val==0x10) //do not perform for PCIE versions as they seem to have issues
+    if (val==0x10) //does not work on LimeSDR-QPCIE
         return;
-  
+    uint32_t reg20 = lms->SPI_read(0x20);
     auto regBackup = lms->BackupRegisterMap();
     lms->SPI_write(0x20, 0xFFFF);
     lms->SetDefaults(LMS7002M::RFE);
@@ -459,13 +459,14 @@ void Streamer::AlignRxRF(bool restoreValues)
             found = true;
             break;
         }
-    } 
-    if (restoreValues) 
+    }
+    if (restoreValues)
         lms->RestoreRegisterMap(regBackup);
     if (found)
         AlignQuadrature(restoreValues);
     else
         lime::warning("Channel alignment failed");
+    lms->SPI_write(0x20, reg20);
 }
 
 void Streamer::AlignQuadrature(bool restoreValues)
@@ -491,15 +492,15 @@ void Streamer::AlignQuadrature(bool restoreValues)
     lms->SPI_write(0x20, 0xFFFE);
     lms->SPI_write(0x105, 0x0006);
     lms->SPI_write(0x100, 0x4038);
-    lms->SPI_write(0x113, 0x007F); 
+    lms->SPI_write(0x113, 0x007F);
     lms->SPI_write(0x119, 0x529B);
     auto val = lms->Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE, true);
-    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F); 
+    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F);
     lms->SPI_write(0x10C, val==2 ? 0x88C5 : 0x88A5);
     lms->SPI_write(0x20, 0xFFFD);
     lms->SPI_write(0x103, val==2 ? 0x612 : 0xA12);
     val = lms->Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE, true);
-    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F); 
+    lms->SPI_write(0x10D, val==3 ? 0x18F : val==2 ? 0x117 : 0x08F);
     lms->SPI_write(0x10C, val==2 ? 0x88C5 : 0x88A5);
     lms->SPI_write(0x119, 0x5293);
     double srate = lms->GetSampleRate(false, LMS7002M::ChA);
@@ -512,7 +513,7 @@ void Streamer::AlignQuadrature(bool restoreValues)
     lms->SetFrequencySX(true, freq+srate/16.0);
     bool found = false;
     for (int i = 0; i < 100; i++){
-    
+
         double offset = GetPhaseOffset(32);
         if (offset < -360)
             break;
@@ -521,8 +522,8 @@ void Streamer::AlignQuadrature(bool restoreValues)
             found = true;
             break;
         }
-        RstRxIQGen(); 
-    } 
+        RstRxIQGen();
+    }
 
     if (restoreValues)
         lms->RestoreRegisterMap(regBackup);
@@ -566,7 +567,7 @@ int Streamer::UpdateThreads(bool stopAll)
     dataPort->WriteRegister(0xFFFF, 1 << chipId);
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
-    {       
+    {
         if (mRxStreams[0] && mRxStreams[1])
             AlignRxRF(true);
         //enable FPGA streaming
@@ -586,7 +587,7 @@ int Streamer::UpdateThreads(bool stopAll)
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
-        
+
         for(auto i : mTxStreams)
             if(i && i->config.format != StreamConfig::FMT_INT12)
             {
@@ -601,7 +602,7 @@ int Streamer::UpdateThreads(bool stopAll)
             if (i)
                 i->config.linkFormat = dataLinkFormat;
 
-        const uint16_t smpl_width = dataLinkFormat == StreamConfig::FMT_INT12 ? 2 : 0; 
+        const uint16_t smpl_width = dataLinkFormat == StreamConfig::FMT_INT12 ? 2 : 0;
         uint16_t mode = 0x0100;
 
         if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
@@ -610,10 +611,10 @@ int Streamer::UpdateThreads(bool stopAll)
             mode = 0x0180;
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
-        
+
         const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
         dataPort->WriteRegister(0x0007, channelEnables);
-        
+
         uint32_t reg9;
         dataPort->ReadRegister(0x0009, reg9);
         const uint32_t addr[] = {0x0009, 0x0009};
@@ -684,14 +685,14 @@ void Streamer::TransmitPacketsLoop()
             if (dataPort->WaitForSending(handles[bi], 1000) == true)
             {
                 unsigned bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
-	    
+
                 if (bytesSent != bytesToSend[bi])
                 {
                     for (auto value : mTxStreams)
                         if (value && value->mActive)
                             value->overflow++;
                 }
-                else 
+                else
                     totalBytesSent += bytesSent;
                 bufferUsed[bi] = false;
             }
@@ -722,12 +723,12 @@ void Streamer::TransmitPacketsLoop()
                 int samplesPopped = mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    if (!(meta.flags & RingFIFO::END_BURST)) 
+                    if (!(meta.flags & RingFIFO::END_BURST))
                     {
                         mTxStreams[ch]->underflow++;
                         lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                     }
-                    end_burst = true;   
+                    end_burst = true;
                     memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                     continue;
                 }
@@ -748,10 +749,10 @@ void Streamer::TransmitPacketsLoop()
             if (end_burst)
                 break;
         }
-        
+
         if(terminateTx.load() == true) //early termination
             break;
-        
+
         bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
         handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
         txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
@@ -788,7 +789,7 @@ void Streamer::ReceivePacketsLoop()
     const uint8_t chCount = streamSize;
     const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
     const uint32_t samplesInPacket = (packed  ? samples12InPkt : samples16InPkt)/chCount;
-    
+
     const int epIndex = chipId;
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
@@ -852,8 +853,8 @@ void Streamer::ReceivePacketsLoop()
                             value->underflow++;
             }
             else
-            { 
-                rxDataRate_Bps.store(totalBytesReceived); 
+            {
+                rxDataRate_Bps.store(totalBytesReceived);
                 totalBytesReceived = 0;
                 continue;
             }

@@ -111,23 +111,31 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer12->SetFlexibleDirection( wxBOTH );
 	fgSizer12->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	wxFlexGridSizer* fgSizer91;
-	fgSizer91 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer91->AddGrowableCol( 0 );
-	fgSizer91->SetFlexibleDirection( wxBOTH );
-	fgSizer91->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
 	wxString cmbStreamTypeChoices[] = { wxT("LMS#1 SISO"), wxT("LMS#1 MIMO"), wxT("LMS#2 SISO"), wxT("LMS#2 MIMO"), wxT("Ext. ADC/DAC") };
 	int cmbStreamTypeNChoices = sizeof( cmbStreamTypeChoices ) / sizeof( wxString );
 	cmbStreamType = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbStreamTypeNChoices, cmbStreamTypeChoices, 0 );
 	cmbStreamType->SetSelection( 0 );
-	fgSizer91->Add( cmbStreamType, 0, wxEXPAND, 5 );
+	fgSizer12->Add( cmbStreamType, 0, wxEXPAND, 5 );
+	
+	wxString cmbFmtChoices[] = { wxT("12 bit format"), wxT("16 bit format") };
+	int cmbFmtNChoices = sizeof( cmbFmtChoices ) / sizeof( wxString );
+	cmbFmt = new wxChoice( sbSizer2->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, cmbFmtNChoices, cmbFmtChoices, 0 );
+	cmbFmt->SetSelection( 0 );
+	fgSizer12->Add( cmbFmt, 0, wxEXPAND, 5 );
+	
+	chkEnTx = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Loopback RX to TX"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnTx->SetToolTip( wxT("Freezes FFT plot") );
+	
+	fgSizer12->Add( chkEnTx, 0, wxALL, 2 );
+	
+	chkEnSync = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Sync timestamp"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnSync->Enable( false );
+	chkEnSync->SetToolTip( wxT("Freezes FFT plot") );
+	
+	fgSizer12->Add( chkEnSync, 0, wxALL, 2 );
 	
 	btnStartStop = new wxButton( sbSizer2->GetStaticBox(), wxID_ANY, wxT("START"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer91->Add( btnStartStop, 1, wxEXPAND, 5 );
-	
-	
-	fgSizer12->Add( fgSizer91, 1, wxEXPAND, 5 );
+	fgSizer12->Add( btnStartStop, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer13;
 	fgSizer13 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -155,11 +163,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	
 	sbSizer2->Add( fgSizer12, 1, wxEXPAND, 5 );
-	
-	chkEnTx = new wxCheckBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Loopback RX to TX"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkEnTx->SetToolTip( wxT("Freezes FFT plot") );
-	
-	sbSizer2->Add( chkEnTx, 0, wxALL, 5 );
 	
 	wxStaticBoxSizer* sbSizer6;
 	sbSizer6 = new wxStaticBoxSizer( new wxStaticBox( sbSizer2->GetStaticBox(), wxID_ANY, wxT("Window function:") ), wxVERTICAL );
@@ -303,8 +306,10 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer122->SetFlexibleDirection( wxBOTH );
 	fgSizer122->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	chkEnPwr = new wxCheckBox( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Enable"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkEnPwr->SetToolTip( wxT("Freezes FFT plot") );
 	
-	fgSizer122->Add( 0, 0, 1, wxEXPAND, 5 );
+	fgSizer122->Add( chkEnPwr, 0, wxTOP, 5 );
 	
 	m_staticText13 = new wxStaticText( sbSizer7->GetStaticBox(), wxID_ANY, wxT("Ch 1"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText13->Wrap( -1 );
@@ -327,6 +332,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	#else
 	txtCenterOffset1->SetMaxLength( 8 );
 	#endif
+	txtCenterOffset1->Enable( false );
 	txtCenterOffset1->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtCenterOffset1, 0, wxEXPAND, 5 );
@@ -340,6 +346,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	#else
 	txtCenterOffset2->SetMaxLength( 8 );
 	#endif
+	txtCenterOffset2->Enable( false );
 	txtCenterOffset2->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtCenterOffset2, 0, wxEXPAND, 5 );
@@ -357,6 +364,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	#else
 	txtBW1->SetMaxLength( 8 );
 	#endif
+	txtBW1->Enable( false );
 	txtBW1->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtBW1, 0, wxEXPAND, 5 );
@@ -370,6 +378,7 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	#else
 	txtBW2->SetMaxLength( 8 );
 	#endif
+	txtBW2->Enable( false );
 	txtBW2->SetMinSize( wxSize( 32,-1 ) );
 	
 	fgSizer122->Add( txtBW2, 0, wxEXPAND, 5 );
@@ -413,11 +422,14 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	// Connect Events
 	spinFFTsize->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
 	cmbStreamType->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
+	cmbFmt->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnFmtChange ), NULL, this );
+	chkEnTx->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnTx ), NULL, this );
 	btnStartStop->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
 	cmbWindowFunc->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );
 	spinAvgCount->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnAvgChange ), NULL, this );
 	spinAvgCount->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( frFFTviewer::OnAvgChangeEnter ), NULL, this );
+	chkEnPwr->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnPwr ), NULL, this );
 }
 
 frFFTviewer::~frFFTviewer()
@@ -425,10 +437,13 @@ frFFTviewer::~frFFTviewer()
 	// Disconnect Events
 	spinFFTsize->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnFFTsamplesCountChanged ), NULL, this );
 	cmbStreamType->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnStreamChange ), NULL, this );
+	cmbFmt->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnFmtChange ), NULL, this );
+	chkEnTx->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnTx ), NULL, this );
 	btnStartStop->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( frFFTviewer::OnbtnStartStop ), NULL, this );
 	cmbWindowFunc->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnWindowFunctionChange ), NULL, this );
 	cmbChannelVisibility->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( frFFTviewer::OnChannelVisibilityChange ), NULL, this );
 	spinAvgCount->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( frFFTviewer::OnAvgChange ), NULL, this );
 	spinAvgCount->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( frFFTviewer::OnAvgChangeEnter ), NULL, this );
+	chkEnPwr->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( frFFTviewer::OnEnPwr ), NULL, this );
 	
 }

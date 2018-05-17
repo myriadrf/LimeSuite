@@ -150,7 +150,8 @@ void fftviewer_frFFTviewer::StartStreaming()
     txtNyquistFreqMHz->Disable();
     cmbStreamType->Disable();
     spinFFTsize->Disable();
-    
+    chkEnSync->Disable();
+
     stopProcessing.store(false);
     updateGUI.store(true);
 
@@ -178,6 +179,7 @@ void fftviewer_frFFTviewer::StartStreaming()
         captureSamples.store(false);
     chkCaptureToFile->Disable();
     spinCaptureCount->Disable();
+    cmbFmt->Disable();
     chkEnTx->Disable();
     lmsIndex = cmbStreamType->GetSelection()/2;
     if (mStreamRunning.load() == true)
@@ -212,6 +214,8 @@ void fftviewer_frFFTviewer::StopStreaming()
     spinFFTsize->Enable();
     chkCaptureToFile->Enable();
     spinCaptureCount->Enable();
+    chkEnSync->Enable();
+    cmbFmt->Enable();
     cmbChannelVisibility->Enable();
     chkEnTx->Enable();
 }
@@ -250,40 +254,43 @@ void fftviewer_frFFTviewer::OnUpdateStats(wxTimerEvent& event)
 
 void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
 {
-    double dbOffset = lmsIndex == 2 ? 93.319 : 69.2369;
+    double dbOffset = cmbFmt->GetSelection() == 1 ? 93.319 : 69.2369;
     if (mStreamRunning.load() == false)
         return;
 
     const int fftSize = streamData.fftBins[0].size();
 
-    float chPwr[2] = { 0, 0 };
-    double cFreq[2] = { 0, 0 };
-    txtCenterOffset1->GetValue().ToDouble(&cFreq[0]);
-    txtCenterOffset2->GetValue().ToDouble(&cFreq[1]);
-    double bw[2] = {1, 1};
-    txtBW1->GetValue().ToDouble(&bw[0]);
-    txtBW2->GetValue().ToDouble(&bw[1]);
-
-    for (int c = 0; c<2; ++c)
+    if (chkEnPwr->GetValue())
     {
-        float f0 = (cFreq[c] - bw[c]/2) * 1e6;
-        float fn = (cFreq[c] + bw[c]/2) * 1e6;
-        float sum = 0;
-        int bins = 0;
-        for (int i = 0; i<fftSize; ++i)
-            if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
-            {
-                sum += streamData.fftBins[0][i];
-                ++bins;
-            }
-        chPwr[c] = sum;
-    }
+        float chPwr[2] = { 0, 0 };
+        double cFreq[2] = { 0, 0 };
+        txtCenterOffset1->GetValue().ToDouble(&cFreq[0]);
+        txtCenterOffset2->GetValue().ToDouble(&cFreq[1]);
+        double bw[2] = {1, 1};
+        txtBW1->GetValue().ToDouble(&bw[0]);
+        txtBW2->GetValue().ToDouble(&bw[1]);
 
-    float pwr1 = (chPwr[0] != 0 ? (10 * log10(chPwr[0])) - dbOffset : -300);
-    lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
-    float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - dbOffset : -300);
-    lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
-    lbldBc->SetLabel(wxString::Format("%.3f", pwr2-pwr1));
+        for (int c = 0; c<2; ++c)
+        {
+            float f0 = (cFreq[c] - bw[c]/2) * 1e6;
+            float fn = (cFreq[c] + bw[c]/2) * 1e6;
+            float sum = 0;
+            int bins = 0;
+            for (int i = 0; i<fftSize; ++i)
+                if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
+                {
+                    sum += streamData.fftBins[0][i];
+                    ++bins;
+                }
+            chPwr[c] = sum;
+        }
+
+        float pwr1 = (chPwr[0] != 0 ? (10 * log10(chPwr[0])) - dbOffset : -300);
+        lblPower1->SetLabel(wxString::Format("%.3f", pwr1));
+        float pwr2 = (chPwr[1] != 0 ? (10 * log10(chPwr[1])) - dbOffset : -300);
+        lblPower2->SetLabel(wxString::Format("%.3f", pwr2));
+        lbldBc->SetLabel(wxString::Format("%.3f", pwr2-pwr1));
+    }
 
     if (fftSize > 0)
     {
@@ -344,6 +351,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     int wndFunction = pthis->windowFunctionID.load();
     bool fftEnabled = true;
     int ch_offset = 0;
+    bool syncTx = pthis->chkEnSync->GetValue();
     if (channelsCount == 1)
     {
         if (pthis->cmbChannelVisibility->GetSelection() == 1)
@@ -380,7 +388,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     if (LMS_GetNumChannels(pthis->lmsControl, false)>2)
         ch_offset += 2*pthis->lmsIndex;
 
-    auto fmt = pthis->lmsIndex == 2 ? lms_stream_t::LMS_FMT_I16 : lms_stream_t::LMS_FMT_I12;
+    auto fmt = pthis->cmbFmt->GetSelection() == 1 ? lms_stream_t::LMS_FMT_I16 : lms_stream_t::LMS_FMT_I12;
     for(int i=0; i<channelsCount; ++i)
     {
         pthis->rxStreams[i].channel = i + ch_offset;
@@ -416,7 +424,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
 
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
-    meta.waitForTimestamp = true;
+    meta.waitForTimestamp = syncTx;
     meta.flushPartialPacket = false;
     int fftCounter = 0;
 
@@ -435,7 +443,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             for(int i=0; runTx && i<channelsCount; ++i)
             {
                 meta.timestamp = ts[i];
-                meta.waitForTimestamp = true;
+                meta.waitForTimestamp = syncTx;
                 LMS_SendStream(&pthis->txStreams[i], &buffers[i][0], samplesPopped[i], &meta, 1000);
             }
 
@@ -609,10 +617,40 @@ void fftviewer_frFFTviewer::SetNyquistFrequency()
 void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
 {
     SetNyquistFrequency();
-    int max = cmbStreamType->GetSelection() == 4 ? 32800 : 2050;
+
+
+    int tmp = cmbChannelVisibility->GetSelection();
+    cmbChannelVisibility->Clear();
+    cmbChannelVisibility->Append(_T("A"));
+    cmbChannelVisibility->Append(_T("B"));
+    if (cmbStreamType->GetSelection()%2==1)
+        cmbChannelVisibility->Append(_T("A&B"));
+    else if (tmp > 1)
+        tmp = 0;
+    cmbChannelVisibility->SetSelection(tmp);
+}
+
+void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
+{
+    int max = event.GetInt() == 1 ? 32800 : 2050;
     mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);
     mConstelationPanel->SetInitialDisplayArea(-max, max, -max, max);
 }
+
+void fftviewer_frFFTviewer::OnEnTx(wxCommandEvent& event)
+{
+    chkEnSync->Enable(event.GetInt());
+}
+
+void fftviewer_frFFTviewer::OnEnPwr(wxCommandEvent& event)
+{
+    bool en = event.GetInt();
+    txtCenterOffset1->Enable(en);
+    txtCenterOffset2->Enable(en);
+    txtBW1->Enable(en);
+    txtBW2->Enable(en);
+}
+
 
 void fftviewer_frFFTviewer::OnChannelVisibilityChange(wxCommandEvent& event)
 {
