@@ -18,6 +18,11 @@ set(INCLUDED_LIMESUITE_CONFIG_CMAKE TRUE)
 ########################################################################
 get_filename_component(LIMESUITE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 
+#Or support when the LIB_SUFFIX is an additional directory (ex debian)
+if (NOT EXISTS ${LIMESUITE_ROOT}/include AND EXISTS ${LIMESUITE_ROOT}/../include)
+    get_filename_component(LIMESUITE_ROOT "${LIMESUITE_ROOT}/.." ABSOLUTE)
+endif ()
+
 ########################################################################
 ## locate the library
 ########################################################################
