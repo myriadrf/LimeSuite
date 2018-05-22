@@ -145,6 +145,9 @@ int LMS7002M::TuneTxFilter(const float_type tx_lpf_freq_RF)
             return ReportError(status, "Tune Tx Filter: failed to program MCU");
     }
 
+    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    opt_gain_tbb[ind] = -1;
+
     //set reference clock parameter inside MCU
     long refClk = GetReferenceClk_SX(false);
     mcuControl->SetParameter(MCU_BD::MCU_REF_CLK, refClk);

@@ -120,8 +120,12 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
         }
     }
     RestoreRegisterMap(registersBackup);
+
+    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    opt_gain_tbb[ind] = cg_iamp > 1 ? cg_iamp-1 : 1;
+
     if (status == 0)
-        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), cg_iamp > 1 ? cg_iamp-1 : 1);
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB), opt_gain_tbb[ind]);
     //logic reset
     Modify_SPI_Reg_bits(LMS7param(LRST_TX_A), 0);
     Modify_SPI_Reg_bits(LMS7param(LRST_TX_B), 0);

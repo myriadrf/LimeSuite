@@ -746,7 +746,11 @@ int LMS7_Device::SetLPF(bool tx,unsigned chan, bool en, double bandwidth)
     }
     int status = 0;
     if(tx)
+    {
+        int gain = lms->GetTBBIAMP_dB();
         status = lms->TuneTxFilter(bandwidth);
+        lms->SetTBBIAMP_dB(gain);
+    }
     else
         status = lms->TuneRxFilter(bandwidth);
 

@@ -68,7 +68,7 @@ int LMS7_LimeSDR_mini::Init()
     };
 
     int hw_version = 0;
-    connection->ReadRegister(1,hw_version);
+    connection->ReadRegister(4,hw_version);
     auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
 
     lime::LMS7002M* lms = lms_list[0];
@@ -101,7 +101,7 @@ int LMS7_LimeSDR_mini::Init()
 unsigned LMS7_LimeSDR_mini::GetNumChannels(const bool tx) const
 {
     return 1;
-};
+}
 
 int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
 {

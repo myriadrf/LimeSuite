@@ -128,7 +128,8 @@ LMS7002M::LMS7002M() :
     _cachedRefClockRate(30.72e6)
 {
     mCalibrationByMCU = true;
-
+    opt_gain_tbb[0] = -1;
+    opt_gain_tbb[1] = -1;
     //memory intervals for registers tests and calibration algorithms
     MemorySectionAddresses[LimeLight][0] = 0x0020;
     MemorySectionAddresses[LimeLight][1] = 0x002F;
@@ -930,28 +931,33 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
 
 int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 {
-   if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
-       return -1;
-   if (gain != 0)
-   {
-         int g_iamp = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-         g_iamp = (float_type)g_iamp*pow(10.0,gain/20.0)+0.5;
-         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
-   }
-   return 0;
+    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    if (opt_gain_tbb[ind] <= 0)
+    {
+        if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
+            return -1;
+    }
+
+    if (gain != 0)
+    {
+          int g_iamp = (float_type)opt_gain_tbb[ind]*pow(10.0,gain/20.0)+0.4;
+          Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
+    }
+    return 0;
 }
 
 float_type LMS7002M::GetTBBIAMP_dB(void)
 {
-    float_type gain = 0;
     int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-    if (CalibrateTxGain(0,nullptr)==0)
+    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+
+    if (opt_gain_tbb[ind] <= 0)
     {
-        int g_optimal = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-        gain = 20.0*log10((float_type)g_current / (float_type) g_optimal);
+        if (CalibrateTxGain(0,nullptr)==0)
+            return 0.0;
+        Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_current, true); //restore
     }
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_current, true); //restore
-    return gain;
+    return 20.0*log10((float_type)g_current / (float_type) opt_gain_tbb[ind]);
 }
 
 

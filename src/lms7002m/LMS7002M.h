@@ -71,7 +71,7 @@ public:
         bool success;
     };
 
-	LMS7002M();
+    LMS7002M();
 
     /*!
      * Set the connection for the LMS7002M driver.
@@ -86,7 +86,7 @@ public:
         return controlPort;
     }
 
-	virtual ~LMS7002M();
+    virtual ~LMS7002M();
 
     /*!
      * Enum for configuring the channel selection.
@@ -495,6 +495,7 @@ protected:
     IConnection* controlPort;
     unsigned mdevIndex;
     size_t mSelfCalDepth;
+    int opt_gain_tbb[2];
     double _cachedRefClockRate;
     int LoadConfigLegacyFile(const char* filename);
 };
