@@ -637,6 +637,7 @@ int Streamer::UpdateThreads(bool stopAll)
     }
     if(needTx && (!txThread.joinable()))
     {
+        dataPort->WriteRegister(0xD, 0); //stop WFM
         terminateTx.store(false);
         auto TxLoopFunction = std::bind(&Streamer::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
@@ -676,7 +677,7 @@ void Streamer::TransmitPacketsLoop()
     long totalBytesSent = 0;
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
-
+    bool end_burst = false;
     uint8_t bi = 0; //buffer index
     while (terminateTx.load() != true)
     {
@@ -703,12 +704,12 @@ void Streamer::TransmitPacketsLoop()
                 continue;
             }
         }
-        int i=0;
 
         FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
-        while(i<packetsToBatch)
+        int i=0;
+        do
         {
-            bool end_burst = false;
+            bool has_samples = false;
             StreamChannel::Metadata meta = {0, 0};
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
@@ -723,17 +724,21 @@ void Streamer::TransmitPacketsLoop()
                 int samplesPopped = mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    if (!(meta.flags & RingFIFO::END_BURST))
+                    if ((!end_burst) && !(meta.flags & RingFIFO::END_BURST))
                     {
                         mTxStreams[ch]->underflow++;
                         lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
+                        continue;
                     }
-                    end_burst = true;
                     memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
-                    continue;
                 }
+                has_samples = true;
             }
 
+            if (!has_samples)
+                break;
+
+            end_burst = (meta.flags & RingFIFO::END_BURST);
             pkt[i].counter = meta.timestamp;
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
@@ -745,18 +750,20 @@ void Streamer::TransmitPacketsLoop()
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             FPGA::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
-            ++i;
-            if (end_burst)
-                break;
-        }
+
+        }while(++i<packetsToBatch && end_burst == false);
 
         if(terminateTx.load() == true) //early termination
             break;
 
-        bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
-        handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
-        txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
-        bufferUsed[bi] = true;
+        if (i)
+        {
+            bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
+            handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
+            txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
+            bufferUsed[bi] = true;
+            bi = (bi + 1) & (buffersCount-1);
+        }
 
         t2 = std::chrono::high_resolution_clock::now();
         auto timePeriod = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -771,7 +778,6 @@ void Streamer::TransmitPacketsLoop()
             printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
         }
-        bi = (bi + 1) & (buffersCount-1);
     }
 
     // Wait for all the queued requests to be cancelled
