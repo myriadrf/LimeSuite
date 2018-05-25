@@ -245,18 +245,23 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     }
 
     //--- ADC/DAC ---
-    this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_AFE), 1);
-    if (ch == ChA)
+    Modify_SPI_Reg_bits(LMS7param(EN_DIR_AFE), 1);
+
+    if (!enable)
     {
-        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE1), enable?0:1);
-        else      this->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE1), enable?0:1);
+        bool disable;
+        if (ch == ChA)
+            disable = Get_SPI_Reg_bits(isTx ? LMS7_TXEN_B : LMS7_RXEN_B)==0;
+        else
+            disable = Get_SPI_Reg_bits(isTx ? LMS7_TXEN_A : LMS7_RXEN_A)==0;
+        Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE1 : LMS7_PD_RX_AFE1, disable);
     }
     else
-    {
-        if (isTx) this->Modify_SPI_Reg_bits(LMS7param(PD_TX_AFE2), enable?0:1);
-        else      this->Modify_SPI_Reg_bits(LMS7param(PD_RX_AFE2), enable?0:1);
-    }
+        Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE1 : LMS7_PD_RX_AFE1, 0);
 
+    if (ch == ChB)
+        Modify_SPI_Reg_bits(isTx ? LMS7_PD_TX_AFE2 : LMS7_PD_RX_AFE2, enable?0:1);
+    
     int disabledChannels = (Get_SPI_Reg_bits(LMS7_PD_AFE.address,4,1)&0xF);//check if all channels are disabled
     Modify_SPI_Reg_bits(LMS7param(EN_G_AFE),disabledChannels==0xF ? 0 : 1);
     Modify_SPI_Reg_bits(LMS7param(PD_AFE), disabledChannels==0xF ? 1 : 0);
