@@ -46,7 +46,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     const auto devInfo = lms7Device->GetInfo();  
     //quick summary
     SoapySDR::logf(SOAPY_SDR_INFO, "Device name: %s", devInfo->deviceName);
-    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", lms7Device->GetClockFreq(LMS_CLOCK_REF));
+    SoapySDR::logf(SOAPY_SDR_INFO, "Reference: %g MHz", lms7Device->GetClockFreq(LMS_CLOCK_REF)/1e6);
 
     lms7Device->Init();
 
