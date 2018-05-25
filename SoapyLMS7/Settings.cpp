@@ -798,20 +798,22 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_DC, ampl, 0);
     }
 
-    else if (key == "CALIBRATE_TX")
+    else if (key == "CALIBRATE_TX" or (isTx and key == "CALIBRATE"))
     {
         double bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Calibrate Tx %f", bw);
         if (lms7Device->Calibrate(true, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
+        _channelsToCal.erase(std::make_pair(direction, channel));
     }
 
-    else if (key == "CALIBRATE_RX")
+    else if (key == "CALIBRATE_RX" or (not isTx and key == "CALIBRATE"))
     {
         double bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "CalibrateRx %f", bw);
         if (lms7Device->Calibrate(false, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
+        _channelsToCal.erase(std::make_pair(direction, channel));
     }
 
     else if (key == "ENABLE_GFIR_LPF")
