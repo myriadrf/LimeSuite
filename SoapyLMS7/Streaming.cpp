@@ -27,6 +27,7 @@ struct IConnectionStream
     size_t elemSize;
     size_t elemMTU;
     bool enabled;
+    bool skipCal;
 
     //rx cmd requests
     bool hasCmd;
@@ -84,6 +85,17 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
         argInfos.push_back(info);
     }
 
+    //link format
+    {
+        SoapySDR::ArgInfo info;
+        info.value = "false";
+        info.key = "skipCal";
+        info.name = "Skip Calibration";
+        info.description = "Skip automatic activation calibration.";
+        info.type = SoapySDR::ArgInfo::BOOL;
+        argInfos.push_back(info);
+    }
+
     return argInfos;
 }
 
@@ -102,6 +114,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     stream->direction = direction;
     stream->elemSize = SoapySDR::formatToSize(format);
     stream->hasCmd = false;
+    stream->skipCal = args.count("skipCal") != 0 and args.at("skipCal") == "true";
 
     StreamConfig config;
     config.isTx = (direction == SOAPY_SDR_TX);
@@ -196,7 +209,7 @@ int SoapyLMS7::activateStream(
     //this is for the set-it-and-forget-it style of use case
     //where boards are configured, the stream is setup,
     //and the configuration is maintained throughout the run
-    while (not _channelsToCal.empty())
+    while (not _channelsToCal.empty() and not icstream->skipCal)
     {
         auto dir  = _channelsToCal.begin()->first;
         auto ch  = _channelsToCal.begin()->second;
