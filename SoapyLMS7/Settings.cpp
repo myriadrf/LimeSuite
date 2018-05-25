@@ -847,15 +847,14 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         {
             throw std::runtime_error("Invalid TSG_NCO option: " + value);
         }
-    }   
+    }
     else
     {
         uint16_t val = std::stoi(value);
         if (lms7Device->WriteParam(key,val,channel)!=-1)
             return;
+        throw std::runtime_error("unknown setting key: "+key);
     }
-
-    throw std::runtime_error("unknown setting key: "+key);
 }
 
 std::string SoapyLMS7::readSetting(const std::string &key) const
