@@ -911,7 +911,7 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
  * Get frequency of the specified clock.
  *
  * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   clk_id  Clock identifier
+ * @param   clk_id  Clock identifier (\ref LMS_CLOCK_ID)
  * @param   freq    Clock frequency in Hz
  *
  * @return 0 on success, (-1) on failure
@@ -926,7 +926,7 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *dev, size_t clk_id,
  * ::LMS_VCTCXOWrite() to change back to VCTCXO
  *
  * @param   dev     Device handle previously obtained by LMS_Open().
- * @param   clk_id  Clock identifier
+ * @param   clk_id  Clock identifier (\ref LMS_CLOCK_ID)
  * @param   freq    Clock frequency in Hz. Pass zero or negative value to only
  *                  perform tune (if supported) without recalculating values
  *
@@ -1278,9 +1278,24 @@ API_EXPORT const char* LMS_GetLibraryVersion();
 API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
 
 /**
+ * @defgroup LMS_LOG_LEVEL  Message logging level
+ *
+ * @{
+ */
+///An error message . An operation did not complete successfully.
+#define LMS_LOG_ERROR    1  
+///A warning message. An operation completed with an unexpected result.
+#define LMS_LOG_WARNING  2  
+///An informational message, usually denoting the successful completion of an operation
+#define LMS_LOG_INFO     3  
+ ///A debugging message.
+#define LMS_LOG_DEBUG    4 
+/** @} (End LMS_LOG_LEVEL) */
+
+/**
  * Callback function for redirecting API messages
  * 
- * @param lvl   lower value represents higher priority/importance message, range [0,4].
+ * @param lvl   \ref LMS_LOG_LEVEL.
  * @param msg   string containing log message text.
  */
  typedef void (*LMS_LogHandler)(int lvl, const char *msg);
