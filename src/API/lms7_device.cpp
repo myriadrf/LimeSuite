@@ -1297,11 +1297,15 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 
    if (!tx)
    {
+        const uint8_t mac = lms->Get_SPI_Reg_bits(LMS7_MAC);
         lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
-        if (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0);
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
-        if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1)
-            tx = true; //TDD - Tx PLL used for TX and RX
+        if (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0)
+        {
+            lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+            if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1)
+                tx = true; //TDD - Tx PLL used for TX and RX
+        }
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, mac);
    }
    return lms->GetFrequencySX(tx) - offset;
 }
