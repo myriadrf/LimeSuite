@@ -617,11 +617,7 @@ static uint8_t SearchTxFilterCCAL_RCAL(uint16_t addr, uint8_t msblsb)
         {
             uint8_t R = Get_SPI_Reg_bits(addr, msblsb);
             if(R == 0 || R == 255)
-            {
-                if(R != 0)
-                    targetLevelReached = true;
-                break;
-            }
+                return MCU_NO_ERROR; // reached filter bandwidth limit
             Modify_SPI_Reg_bits(addr, msblsb, clamp(R+rcal_step, 0, 255));
             Modify_SPI_Reg_bits(CCAL_LPFLAD_TBB, 16);
         }
