@@ -82,8 +82,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
     endif()
 
-    #common warnings enabled
-    add_compile_options(-Wall)
+    #enable warnings in Debug configurations
+    if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    	add_compile_options(-Wall -Wpedantic)
+    endif()
 
     #symbols are only exported from libraries/modules explicitly
     add_compile_options(-fvisibility=hidden)
