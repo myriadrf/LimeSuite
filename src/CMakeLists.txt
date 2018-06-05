@@ -15,7 +15,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     ConnectionRegistry/ConnectionRegistry.h
     lms7002m/LMS7002M.h
     lms7002m/LMS7002M_RegistersMap.h
-    lms7002m/LMS7002M_parameters.h
+    lime/LMS7002M_parameters.h
     protocols/Streamer.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
@@ -78,6 +78,7 @@ set(LIME_SUITE_SOURCES
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
     API
+    lime
     GFIR
     protocols
     ConnectionRegistry
