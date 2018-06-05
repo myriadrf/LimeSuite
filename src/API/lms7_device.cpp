@@ -1762,7 +1762,7 @@ lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
 
 int LMS7_Device::DestroyStream(lime::StreamChannel* streamID)
 {
-    delete streamID;
+    reinterpret_cast<lime::StreamChannel*>(streamID)->Close();
     return 0;
 }
 

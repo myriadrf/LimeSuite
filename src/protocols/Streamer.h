@@ -16,13 +16,14 @@
 
 #include "dataTypes.h"
 #include "fifo.h"
+#include <vector>
 
 namespace lime
 {
    
 class IConnection;
-class StreamChannel;
 class FPGA;
+class Streamer;
 class LMS7002M;
 
 /*!
@@ -66,50 +67,6 @@ struct LIME_API StreamConfig
      */
     StreamDataFormat linkFormat;
 };
-    
-class Streamer
-{
-public:
-    Streamer(FPGA* f, LMS7002M* chip, int id);
-    ~Streamer();
-
-    StreamChannel* SetupStream(const StreamConfig& config);
-    int CloseStream(StreamChannel* streamID);
-    int GetStreamSize(bool tx);
-
-    uint64_t GetHardwareTimestamp(void);
-    void SetHardwareTimestamp(const uint64_t now);
-    int UpdateThreads(bool stopAll = false);
-
-    std::atomic<uint32_t> rxDataRate_Bps;
-    std::atomic<uint32_t> txDataRate_Bps;
-    IConnection* dataPort;
-    std::thread rxThread;
-    std::thread txThread;
-    std::atomic<bool> terminateRx;
-    std::atomic<bool> terminateTx;
-
-    StreamChannel* mRxStreams[2];
-    StreamChannel* mTxStreams[2];
-    std::atomic<uint64_t> rxLastTimestamp;
-    std::atomic<uint64_t> txLastTimestamp;
-    uint64_t mTimestampOffset;
-    int streamSize;
-    unsigned txBatchSize;
-    unsigned rxBatchSize;
-    StreamConfig::StreamDataFormat dataLinkFormat;
-    void ReceivePacketsLoop();
-    void TransmitPacketsLoop();
-private:
-    void AlignRxTSP();
-    void AlignRxRF(bool restoreValues);
-    void AlignQuadrature(bool restoreValues);
-    void RstRxIQGen();
-    double GetPhaseOffset(int bin);
-    FPGA* fpga;
-    LMS7002M* lms;
-    int chipId;
-};
 
 class LIME_API StreamChannel 
 {
@@ -139,9 +96,12 @@ public:
         uint64_t timestamp;
     };
     
-    StreamChannel(Streamer* streamer, StreamConfig config);
+    StreamChannel(Streamer* streamer);
     ~StreamChannel();
     
+    
+    void Setup(StreamConfig conf);
+    void Close();
     int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
     int Write(const void* samples, const uint32_t count, const Metadata* meta, const int32_t timeout_ms = 100);
     StreamChannel::Info GetInfo();
@@ -156,15 +116,54 @@ public:
     unsigned underflow;
     unsigned pktLost;
     bool mActive;
+    bool used;
        
 protected:
     RingFIFO* fifo;  
-private:
-    StreamChannel() = default;
 };
+    
+class Streamer
+{
+public:
+    Streamer(FPGA* f, LMS7002M* chip, int id);
+    ~Streamer();
 
+    StreamChannel* SetupStream(const StreamConfig& config);
+    int GetStreamSize(bool tx);
 
+    uint64_t GetHardwareTimestamp(void);
+    void SetHardwareTimestamp(const uint64_t now);
+    int UpdateThreads(bool stopAll = false);
 
+    std::atomic<uint32_t> rxDataRate_Bps;
+    std::atomic<uint32_t> txDataRate_Bps;
+    IConnection* dataPort;
+    std::thread rxThread;
+    std::thread txThread;
+    std::atomic<bool> terminateRx;
+    std::atomic<bool> terminateTx;
+
+    std::vector<StreamChannel> mRxStreams;
+    std::vector<StreamChannel> mTxStreams;
+    std::atomic<uint64_t> rxLastTimestamp;
+    std::atomic<uint64_t> txLastTimestamp;
+    uint64_t mTimestampOffset;
+    int streamSize;
+    unsigned txBatchSize;
+    unsigned rxBatchSize;
+    StreamConfig::StreamDataFormat dataLinkFormat;
+    void ReceivePacketsLoop();
+    void TransmitPacketsLoop();
+private:
+    void AlignRxTSP();
+    void AlignRxRF(bool restoreValues);
+    void AlignQuadrature(bool restoreValues);
+    void RstRxIQGen();
+    double GetPhaseOffset(int bin);
+    FPGA* fpga;
+    LMS7002M* lms;
+    int chipId;
+};
 }
 
 #endif /* STREAMER_H */

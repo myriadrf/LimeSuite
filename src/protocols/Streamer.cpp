@@ -10,17 +10,32 @@
 namespace lime
 {
 
-StreamChannel::StreamChannel(Streamer* streamer, StreamConfig conf) :
+StreamChannel::StreamChannel(Streamer* streamer) :
     mActive(false)
 {
     mStreamer = streamer;
-    this->config = conf;
     overflow = 0;
     underflow = 0;
     pktLost = 0;
+    fifo = nullptr;
+    used = false;
+}
 
-    if (this->config.bufferLength == 0) //default size
-        this->config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
+StreamChannel::~StreamChannel()
+{
+    if (fifo)
+        delete fifo;
+}
+
+void StreamChannel::Setup(StreamConfig conf)
+{
+    used = true;
+    config = conf;
+    overflow = 0;
+    underflow = 0;
+    pktLost = 0;
+    if (config.bufferLength == 0) //default size
+        config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
     else
     {
         size_t fifoSize = 64;
@@ -28,20 +43,19 @@ StreamChannel::StreamChannel(Streamer* streamer, StreamConfig conf) :
             fifoSize <<= 1;
         this->config.bufferLength = fifoSize*SamplesPacket::maxSamplesInPacket;
     }
-    fifo = new RingFIFO(this->config.bufferLength);
+    if (fifo)
+        delete fifo;
+    fifo = new RingFIFO(config.bufferLength);
 }
 
-StreamChannel::~StreamChannel()
+void StreamChannel::Close()
 {
-    for(auto& i : mStreamer->mRxStreams)
-        if(i==this)
-            i = nullptr;
-
-    for(auto& i : mStreamer->mTxStreams)
-        if(i==this)
-            i = nullptr;
-
-    delete fifo;
+    if (mActive)
+        Stop();
+    if (fifo)
+        delete fifo;
+    fifo = nullptr;
+    used = false;
 }
 
 int StreamChannel::Write(const void* samples, const uint32_t count, const Metadata *meta, const int32_t timeout_ms)
@@ -139,8 +153,11 @@ int StreamChannel::Stop()
     return mStreamer->UpdateThreads();
 }
 
-Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : fpga(f),lms(chip),chipId(id)
+Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : mRxStreams(2, this), mTxStreams(2, this)
 {
+    lms = chip,
+    fpga = f;
+    chipId = id;
     dataPort = f->GetConnection();
     mTimestampOffset = 0;
     rxLastTimestamp = 0;
@@ -151,20 +168,10 @@ Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : fpga(f),lms(chip),chipId(i
     txBatchSize = 1;
     rxBatchSize = 1;
     streamSize = 1;
-    for(auto& i : mTxStreams)
-        i = nullptr;
-    for(auto& i : mRxStreams)
-        i = nullptr;
 }
 
 Streamer::~Streamer()
 {
-    for(auto& i : mTxStreams)
-        if (i != nullptr)
-            CloseStream(i);
-    for(auto& i : mRxStreams)
-        if (i != nullptr)
-            CloseStream(i);
     terminateTx.store(true);
     if (txThread.joinable())
         txThread.join();
@@ -178,27 +185,26 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
 {
     const int ch = config.channelID&1;
 
-    if ((config.isTx && mTxStreams[ch]) || (!config.isTx && mRxStreams[ch]))
+    if ((config.isTx && mTxStreams[ch].used) || (!config.isTx && mRxStreams[ch].used))
     {
         lime::error("Setup Stream: Channel already in use");
         return nullptr;
     }
 
-    if ((!mTxStreams[ch]) && (!mRxStreams[ch]) && (txThread.joinable() || rxThread.joinable()))
+    if ((!mTxStreams[ch].used) && (!mRxStreams[ch].used) && (txThread.joinable() || rxThread.joinable()))
     {
         lime::warning("Stopping data stream to set up a new stream");
         UpdateThreads(true);
     }
 
-    StreamChannel* stream = new StreamChannel(this,config);
-    //TODO check for duplicate streams
+
     if(config.isTx)
-        mTxStreams[ch] = stream;
+        mTxStreams[ch].Setup(config);
     else
-        mRxStreams[ch] = stream;
+        mRxStreams[ch].Setup(config);
 
     double rate = lms->GetSampleRate(config.isTx,LMS7002M::ChA)/1e6;
-    streamSize = (mTxStreams[0]||mRxStreams[0]) + (mTxStreams[1]||mRxStreams[1]);
+    streamSize = (mTxStreams[0].used||mRxStreams[0].used) + (mTxStreams[1].used||mRxStreams[1].used);
 
     rate = (rate + 5) * config.performanceLatency * streamSize;
     for (int batch = 1; batch < rate; batch <<= 1)
@@ -207,38 +213,18 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
         else
             rxBatchSize = batch;
 
-    return stream; //success
-}
-
-int Streamer::CloseStream(StreamChannel* streamID)
-{
-    for(auto& i : mRxStreams)
-        if(i==streamID)
-        {
-            delete i;
-            i = nullptr;
-            return 0;
-        }
-
-    for(auto& i : mTxStreams)
-        if(i==streamID)
-        {
-            delete i;
-            i = nullptr;
-            return 0;
-        }
-    return 0;
+    return config.isTx ? &mTxStreams[ch] : &mRxStreams[ch]; //success
 }
 
 int Streamer::GetStreamSize(bool tx)
 {
     int batchSize = (tx ? txBatchSize : rxBatchSize)/streamSize;
-    for(auto i : mRxStreams)
-        if(i && i->config.format != StreamConfig::FMT_INT12)
+    for(auto &i : mRxStreams)
+        if(i.used && i.config.format != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
 
-    for(auto i : mTxStreams)
-        if(i && i->config.format != StreamConfig::FMT_INT12)
+    for(auto &i : mTxStreams)
+        if(i.used && i.config.format != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
 
     return samples12InPkt*batchSize;
@@ -539,14 +525,14 @@ int Streamer::UpdateThreads(bool stopAll)
     //check which threads are needed
     if (!stopAll)
     {
-        for(auto i : mRxStreams)
-            if(i && i->IsActive())
+        for(auto &i : mRxStreams)
+            if(i.used && i.IsActive())
             {
                 needRx = true;
                 break;
             }
-        for(auto i : mTxStreams)
-            if(i && i->IsActive())
+        for(auto &i : mTxStreams)
+            if(i.used && i.IsActive())
             {
                 needTx = true;
                 break;
@@ -568,7 +554,7 @@ int Streamer::UpdateThreads(bool stopAll)
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
     {
-        if (mRxStreams[0] && mRxStreams[1])
+        if (mRxStreams[0].used && mRxStreams[1].used)
             AlignRxRF(true);
         //enable FPGA streaming
         fpga->StopStreaming();
@@ -581,26 +567,26 @@ int Streamer::UpdateThreads(bool stopAll)
         dataLinkFormat = StreamConfig::FMT_INT12;
         //by default use 12 bit compressed, adjust link format for stream
 
-        for(auto i : mRxStreams)
-            if(i && i->config.format != StreamConfig::FMT_INT12)
+        for(auto &i : mRxStreams)
+            if(i.used && i.config.format != StreamConfig::FMT_INT12)
             {
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
 
-        for(auto i : mTxStreams)
-            if(i && i->config.format != StreamConfig::FMT_INT12)
+        for(auto &i : mTxStreams)
+            if(i.used && i.config.format != StreamConfig::FMT_INT12)
             {
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
 
-        for(auto i : mRxStreams)
-            if (i)
-                i->config.linkFormat = dataLinkFormat;
-        for(auto i : mTxStreams)
-            if (i)
-                i->config.linkFormat = dataLinkFormat;
+        for(auto &i : mRxStreams)
+            if (i.used)
+                i.config.linkFormat = dataLinkFormat;
+        for(auto &i : mTxStreams)
+            if (i.used)
+                i.config.linkFormat = dataLinkFormat;
 
         const uint16_t smpl_width = dataLinkFormat == StreamConfig::FMT_INT12 ? 2 : 0;
         uint16_t mode = 0x0100;
@@ -612,7 +598,7 @@ int Streamer::UpdateThreads(bool stopAll)
 
         dataPort->WriteRegister(0x0008, mode | smpl_width);
 
-        const uint16_t channelEnables = (mRxStreams[0]||mTxStreams[0]) + 2 * (mRxStreams[1]||mTxStreams[1]);
+        const uint16_t channelEnables = (mRxStreams[0].used||mTxStreams[0].used) + 2 * (mRxStreams[1].used||mTxStreams[1].used);
         dataPort->WriteRegister(0x0007, channelEnables);
 
         uint32_t reg9;
@@ -689,9 +675,9 @@ void Streamer::TransmitPacketsLoop()
 
                 if (bytesSent != bytesToSend[bi])
                 {
-                    for (auto value : mTxStreams)
-                        if (value && value->mActive)
-                            value->overflow++;
+                    for (auto &value : mTxStreams)
+                        if (value.used && value.mActive)
+                            value.overflow++;
                 }
                 else
                     totalBytesSent += bytesSent;
@@ -713,20 +699,20 @@ void Streamer::TransmitPacketsLoop()
             StreamChannel::Metadata meta = {0, 0};
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
-                if (!mTxStreams[ch])
+                if (!mTxStreams[ch].used)
                     continue;
                 const int ind = chCount == maxChannelCount ? ch : 0;
-                if (mTxStreams[ch]->mActive==false)
+                if (mTxStreams[ch].mActive==false)
                 {
                     memset(&samples[ind][0],0,maxSamplesBatch*sizeof(complex16_t));
                     continue;
                 }
-                int samplesPopped = mTxStreams[ch]->Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
+                int samplesPopped = mTxStreams[ch].Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
                     if ((!end_burst) && !(meta.flags & RingFIFO::END_BURST))
                     {
-                        mTxStreams[ch]->underflow++;
+                        mTxStreams[ch].underflow++;
                         lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                         continue;
                     }
@@ -854,9 +840,9 @@ void Streamer::ReceivePacketsLoop()
                 bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
                 totalBytesReceived += bytesReceived;
                 if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
-                    for(auto value: mRxStreams)
-                        if (value && value->mActive)
-                            value->underflow++;
+                    for(auto &value: mRxStreams)
+                        if (value.used && value.mActive)
+                            value.underflow++;
             }
             else
             {
@@ -880,18 +866,18 @@ void Streamer::ReceivePacketsLoop()
                     lime::warning("L");
                     resetTxFlags.notify_one();
                     resetFlagsDelay = buffersCount;
-                    for(auto value: mTxStreams)
-                        if (value && value->mActive)
-                            value->pktLost++;
+                    for(auto &value: mTxStreams)
+                        if (value.used && value.mActive)
+                            value.pktLost++;
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
                 int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
-                for(auto value: mRxStreams)
-                    if (value && value->mActive)
-                        value->pktLost += packetLoss;
+                for(auto &value: mRxStreams)
+                    if (value.used && value.mActive)
+                        value.pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
             rxLastTimestamp.store(prevTs);
@@ -903,15 +889,15 @@ void Streamer::ReceivePacketsLoop()
 
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
-                if (mRxStreams[ch]==nullptr || mRxStreams[ch]->mActive==false)
+                if (mRxStreams[ch].used==false || mRxStreams[ch].mActive==false)
                     continue;
                 const int ind = chCount == maxChannelCount ? ch : 0;
                 StreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
-                int samplesPushed = mRxStreams[ch]->Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
+                int samplesPushed = mRxStreams[ch].Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
                 if(samplesPushed != samplesCount)
-                    mRxStreams[ch]->overflow++;
+                    mRxStreams[ch].overflow++;
             }
         }
         // Re-submit this request to keep the queue full
