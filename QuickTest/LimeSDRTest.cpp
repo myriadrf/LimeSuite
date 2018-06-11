@@ -403,7 +403,7 @@ int LimeSDRTest::Perform_tests()
 {
     int status = 0;
     step = 0;
-    int tests_failed;
+    int tests_failed = 0;
     while (running.load() == true)
     {
         int ret = 0;

@@ -145,7 +145,7 @@ int LimeSDRTest_USB::RFTest()
             return false;
 
         for (int ch = 0; ch < 2; ch++) {
-            RFTestData testinfo = {rxfreq, rxfreq+tx_offset, -14, tx_offset, ch};
+            RFTestData testinfo = {rxfreq, rxfreq+tx_offset, -15, tx_offset, ch};
             device->SetPath(false, ch, rxPath);
             device->SetPath(true, ch, rxPath==4? 1 : 2);
             if (rxPath == 1)

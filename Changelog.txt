@@ -1,10 +1,25 @@
-Release 18.04.2 (pending)
+Release 18.06.0 (2018-06-11)
 ==========================
-- Added LimeSDR-USB support to LimeQuickTest
-- Some fixes for LimeSDR-QPCIe
+
+LimeSuite library changes:
+- Fixed zero filled packet transmitted on Tx FIFO timeout
+- Fixed LMS_GetFrequency() to return correct frequency in TDD mode
 - Added HBD/HBI bypass mode for LimeSDR-USB
+- Made automatic Tx gain calibrations less frequent
 - Fixed some issues with GFIR usage
+- Some fixes for LimeSDR-QPCIe
+
+SoapyLMS changes:
+- Fixed writeSetting to not throw every time
+- Added 'skipCal' stream argument to disable calibration
+- Added 'CALIBRATE' setting for writeSetting()
+
+Other changes:
+- Added LimeSDR-USB support to LimeQuickTest
+- Added sample format and Tx sync selection to FFTviewer
 - Fix LimeSuiteConfig for debian packages
+- LimeSDR-USB v1.4 updated to r2.17 gateware
+- LimeSDR-Mini v1.1 updated to r1.25 gateware
 
 Release 18.04.1 (2018-04-19)
 ==========================

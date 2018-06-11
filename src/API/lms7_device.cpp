@@ -1297,22 +1297,16 @@ double LMS7_Device::GetFrequency(bool tx, unsigned chan) const
 
    if (!tx)
    {
-        const uint8_t mac = lms->Get_SPI_Reg_bits(LMS7_MAC);
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, 2);
-        if (lms->Get_SPI_Reg_bits(LMS7_PD_LOCH_T2RBUF)==0)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
-            if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1)
-                tx = true; //TDD - Tx PLL used for TX and RX
-        }
-        lms->Modify_SPI_Reg_bits(LMS7_MAC, mac);
+        lms->Modify_SPI_Reg_bits(LMS7_MAC, 1);
+        if (lms->Get_SPI_Reg_bits(LMS7_PD_VCO)==1)
+            tx = true; //assume that Tx PLL used for TX and RX
    }
    return lms->GetFrequencySX(tx) - offset;
 }
 
 LMS7_Device::Range LMS7_Device::GetFrequencyRange(bool tx) const
 {
-  return Range(100e3, 3.8e9);
+    return Range(100e3, 3.8e9);
 }
 
 int LMS7_Device::Init()
@@ -1321,7 +1315,7 @@ int LMS7_Device::Init()
     {
         uint16_t adr;
         uint16_t val;
-     };
+    };
 
     const std::vector<regVal> initVals = {
         {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
