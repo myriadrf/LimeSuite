@@ -185,8 +185,7 @@ int lime::downloadImageResource(const std::string &name)
         #else
         const std::string mkdirCmd("md.exe \""+destDir+"\"");
         #endif
-        int result = std::system(mkdirCmd.c_str());
-        if (result != 0) return lime::ReportError(result, "Failed: %s", mkdirCmd.c_str());
+        std::system(mkdirCmd.c_str());
     }
 
     //check for write access
