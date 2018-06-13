@@ -1,4 +1,4 @@
-Release 18.06.0 (2018-06-11)
+Release 18.06.0 (2018-06-13)
 ==========================
 
 LimeSuite library changes:
