@@ -168,6 +168,7 @@ static int programUpdate(const std::string &argStr)
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
         printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        fflush(stdout);
         return 0;
     };
 
@@ -220,6 +221,7 @@ static int programGateware(const std::string &argStr)
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
         printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        fflush(stdout);
         return 0;
     };
 
@@ -276,6 +278,7 @@ static int programFirmware(const std::string &argStr)
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
         printf("[%3i%%] %5i/%5i Bytes %s\r", int(100.0*bsent/btotal+0.5), bsent, btotal, progressMsg);
+        fflush(stdout);
         return 0;
     };
 
