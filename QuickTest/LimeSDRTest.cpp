@@ -239,22 +239,33 @@ int LimeSDRTest::GPIFClkTest()
 
 int LimeSDRTest::VCTCXOTest()
 {
-    uint8_t id = 0;
+    const uint8_t id = 0;
     double val = 0;
     unsigned count1;
     unsigned count2;
+    double dac_value;
     std::string units = "";
     auto conn = device->GetConnection();
+
+    if (conn->CustomParameterRead(&id, &dac_value, 1, nullptr) != 0)
+        return -1;
+
+    auto restore_dac = [&,id](int ret){
+        if (conn->CustomParameterWrite(&id, &dac_value, 1, units) != 0)
+            return -1;
+        return ret;
+    };
+
     if (conn->CustomParameterWrite(&id, &val, 1, units) != 0)
         return -1;
 
     if ((InitFPGATest(0x04, 1.0) & 0x4) != 0x4)
-        return -1;
+        return restore_dac(-1);
 
     uint32_t addr[] = { 0x72, 0x73 };
     uint32_t vals[2];
     if (conn->ReadRegisters(addr, vals, 2) != 0)
-        return -1;
+        return restore_dac(-1);
 
     count1 = vals[0] + (vals[1] << 16);
     val = 254;
@@ -262,10 +273,10 @@ int LimeSDRTest::VCTCXOTest()
         return -1;
 
     if ((InitFPGATest(0x04, 1.0) & 0x4) != 0x4)
-        return -1;
+        return restore_dac(-1);;
 
     if (conn->ReadRegisters(addr, vals, 2) != 0)
-        return -1;
+        return restore_dac(-1);;
 
     count2 = vals[0] + (vals[1] << 16);
     std::string str = "  Results : " + std::to_string(count1) + " (min); " + std::to_string(count2) + " (max)";
@@ -274,11 +285,11 @@ int LimeSDRTest::VCTCXOTest()
     {
         str += " - FAILED";
         UpdateStatus(LMS_TEST_INFO, str.c_str());
-        return -1;
+        return restore_dac(-1);;
     }
     str += " - PASSED";
     UpdateStatus(LMS_TEST_INFO, str.c_str());
-    return 0;
+    return restore_dac(0);
 }
 
 int LimeSDRTest::Reg_write(uint16_t address, uint16_t data)
