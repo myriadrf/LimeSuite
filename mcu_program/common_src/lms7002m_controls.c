@@ -424,12 +424,20 @@ uint8_t GetValueOf_c_ctl_pga_rbb(uint8_t g_pga_rbb)
 
 void EnableChannelPowerControls()
 {
+    uint16_t afe = SPI_read(0x0082);
     uint16_t value = SPI_read(0x0020);
     if((value & 3) == 1)
+    {
         value = value | 0x0014;
+        afe &= ~0x14;
+    }
     else
+    {
         value = value | 0x0028;
+        afe &= ~0x0A;
+    }
     SPI_write(0x0020, value);
+    SPI_write(0x0082, afe);
 }
 
 void EnableMIMOBuffersIfNecessary()

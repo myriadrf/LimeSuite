@@ -56,6 +56,7 @@ static uint8_t RxFilterSearch(const uint16_t addr, const uint8_t msblsb, const u
             value += stepSize;
         else
             value -= stepSize;
+        value = clamp(value, 0, maxValue);
         Modify_SPI_Reg_bits(addr, msblsb, value);
     }
     return 0;
