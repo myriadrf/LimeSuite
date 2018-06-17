@@ -59,9 +59,7 @@ int LMS7002M::CalibrateTxGainSetup()
     //do nothing
 
     //XBUF
-    Modify_SPI_Reg_bits(LMS7param(PD_XBUF_RX), 0);
-    Modify_SPI_Reg_bits(LMS7param(PD_XBUF_TX), 0);
-    Modify_SPI_Reg_bits(LMS7param(EN_G_XBUF), 1);
+    //use configured xbuf settings
 
     //CGEN
     SetDefaults(CGEN);
