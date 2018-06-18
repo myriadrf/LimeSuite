@@ -35,6 +35,7 @@ public:
     virtual int SetRate(double f_MHz, int oversample);
     virtual int SetRate(bool tx, double f_MHz, unsigned oversample = 0);
     virtual int SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample = 0);
+    int SetFPGAInterfaceFreq(int interp = -1, int dec = -1, double txPhase = 999, double rxPhase = 999);
     virtual double GetRate(bool tx, unsigned chan, double *rf_rate_Hz = NULL) const;
     virtual Range GetRateRange(bool dir = false, unsigned chan = 0)const;
     virtual std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan = 0) const;

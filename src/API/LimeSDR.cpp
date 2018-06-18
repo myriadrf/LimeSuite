@@ -54,12 +54,7 @@ int LMS7_LimeSDR::SetRate(double f_Hz, int oversample)
        || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), 7, 7) != 0))
        return -1;
 
-    double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-    double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-    if (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
-       return -1;
-
-    return 0;
+    return SetFPGAInterfaceFreq(7, 7);
 }
 
 int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const

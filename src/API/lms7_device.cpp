@@ -352,13 +352,9 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
             || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
             || (lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), decim, decim) != 0))
             return -1;
-
-         double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-         double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-         fpgaTxPLL /= pow(2.0, decim);
-         fpgaRxPLL /= pow(2.0, decim);
-         if ((fpga) && (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
-            return -1;
+         lms_chip_id = i;
+         if (SetFPGAInterfaceFreq(decim, decim)!=0)
+             return -1;
     }
 
     for (unsigned i = 0; i < GetNumChannels();i++)
@@ -616,12 +612,8 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	    || (lms->SetInterfaceFrequency(cgen, interpolation, decimation) != 0))
 	  return -1;
 
-	double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-	double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-	fpgaTxPLL /= pow(2.0, interpolation);
-	fpgaRxPLL /= pow(2.0, decimation);
-        if ((fpga) && (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, i) != 0))
-	  return -1;
+         if (SetFPGAInterfaceFreq(interpolation, decimation)!=0)
+             return -1;
       }
 
     for (unsigned i = 0; i < GetNumChannels();i++)
@@ -641,6 +633,35 @@ int LMS7_Device::SetRate(unsigned ch, double rxRate, double txRate, unsigned ove
     if (SetRate(true, txRate, oversample)!=0)
         return -1;
     return SetRate(false, rxRate, oversample);
+}
+
+int LMS7_Device::SetFPGAInterfaceFreq(int interp, int dec, double txPhase, double rxPhase)
+{
+    if (!fpga)
+        return 0;
+    auto lms = lms_list[lms_chip_id];
+    if (interp < 0)
+        interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+    if (dec < 0)
+        dec = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+
+    auto fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+    if (interp != 7)
+    {
+        auto siso =  lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        fpgaTxPLL /= pow(2.0, interp + siso);
+    }
+    auto fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+    if (dec != 7)
+    {
+        auto siso =  lms->Get_SPI_Reg_bits(LMS7_LML2_SISODDR);
+        fpgaRxPLL /= pow(2.0, dec + siso);
+    }
+
+    if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360)
+        return fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, lms_chip_id);
+    else
+        return fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase, rxPhase, lms_chip_id);
 }
 
 double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
@@ -1475,8 +1496,8 @@ double LMS7_Device::GetClockFreq(unsigned clk_id, int channel) const
 
 int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
 {
-    int lmsInd = channel == -1 ? lms_chip_id : channel/2;
-    lime::LMS7002M* lms = lms_list[lmsInd];
+    int lms_chip_id = channel == -1 ? lms_chip_id : channel/2;
+    lime::LMS7002M* lms = lms_list[lms_chip_id];
     switch (clk_id)
     {
     case LMS_CLOCK_REF:
@@ -1509,21 +1530,7 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
         }
         if (ret != 0)
             return -1;
-        auto conn = lms->GetConnection();
-        if (conn == nullptr)
-        {
-            lime::ReportError(EINVAL, "Device not connected");
-            return -1;
-        }
-        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        if (interp != 7)
-            fpgaTxPLL /= pow(2.0, interp);
-        double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        if (decim != 7)
-            fpgaRxPLL /= pow(2.0, decim);
-        return fpga ? fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, lmsInd) : 0;
+        return SetFPGAInterfaceFreq();
     }
     case LMS_CLOCK_RXTSP:
         lime::ReportError(ENOTSUP, "Setting TSP clocks is not supported.");
