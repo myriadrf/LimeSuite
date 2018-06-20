@@ -1,14 +1,7 @@
-
-#find FLTK
-set(FLTK_SKIP_FLUID true)
-find_package(FLTK)
-execute_process(COMMAND fltk-config --ldflags OUTPUT_VARIABLE FLTK_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-cmake_dependent_option(ENABLE_QUICKTEST "LimeSDR quick test utility" ON "ENABLE_LIBRARY;FLTK_FOUND" OFF)
+cmake_dependent_option(ENABLE_QUICKTEST "LimeSDR quick test utility" ON "ENABLE_LIBRARY" OFF)
 add_feature_info(LimeQuickTest ENABLE_QUICKTEST "LimeSDR-QuickTest Utility")
 
 if(ENABLE_QUICKTEST)
-    include_directories(${FLTK_INCLUDE_DIR})
     add_executable(LimeQuickTest
 		   LimeSDRTest.cpp
 		   LimeSDRTest_Mini.cpp
@@ -22,6 +15,19 @@ if(ENABLE_QUICKTEST)
 		      ${FLTK_LIBRARIES}
 		      ${GLUT_LIBRARY}
 		      )
+    #find FLTK
+    set(FLTK_SKIP_FLUID true)
+    find_package(FLTK)
+    execute_process(COMMAND fltk-config --ldflags OUTPUT_VARIABLE FLTK_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (FLTK_FOUND)
+   	include_directories(${FLTK_INCLUDE_DIR})
+	target_compile_definitions(LimeQuickTest PRIVATE -DQUICKTEST_GUI)
+    	target_link_libraries(LimeQuickTest
+		      ${FLTK_LDFLAGS}
+		      ${FLTK_LIBRARIES}
+		      ${GLUT_LIBRARY}
+		      )
+    endif()
     install(TARGETS LimeQuickTest DESTINATION bin)
 endif()
 

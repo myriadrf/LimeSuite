@@ -1,13 +1,16 @@
+#ifdef QUICKTEST_GUI
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Multiline_Output.H>
+#include <FL/Fl_Box.H>
+#include "FL/fl_draw.H"
+#endif
 #include <vector>
 #include <string>
 #include <fstream>
-#include <FL/Fl_Multiline_Output.H>
+
 #include "LimeSDRTest.h"
-#include <FL/Fl_Box.H>
-#include "FL/fl_draw.H"
 #include <iostream>
 #include <getopt.h>
 
@@ -17,6 +20,7 @@
 #endif
 #endif
 
+#ifdef QUICKTEST_GUI
 static Fl_Button** buttons;
 static Fl_Window* popup = nullptr;
 static Fl_Multiline_Output* out;
@@ -292,7 +296,7 @@ static void Start_CB(Fl_Widget*, void*)
     if (LimeSDRTest::RunTests(CB_Function) == 0)
         start->deactivate();
 }
-
+#endif
 
 static int CB_FunctionCLI(int id, int event, const char* msg)
 {
@@ -310,6 +314,7 @@ static int CB_FunctionCLI(int id, int event, const char* msg)
 
 int main(int argc, char** argv)
 {
+#ifdef QUICKTEST_GUI
 #ifdef __unix
     int gui = 0;
 #else
@@ -331,7 +336,6 @@ int main(int argc, char** argv)
             return -1;
         }
     }
-
     if (gui)
     {
         Fl::scheme("gleam");
@@ -356,10 +360,9 @@ int main(int argc, char** argv)
         delete win;
         return 0;
     }
-    else
-    {
-        return LimeSDRTest::RunTests(CB_FunctionCLI, false); //returns bit field of failed tests
-    }
+#endif
+    return LimeSDRTest::RunTests(CB_FunctionCLI, false); //returns bit field of failed tests
+
 }
 
 
