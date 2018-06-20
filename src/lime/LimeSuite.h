@@ -901,13 +901,26 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
  * Clock definitions for accessing specific internal clocks
  * @{
  */
-#define LMS_CLOCK_REF    0x0000  ///<Chip reference clock
-#define LMS_CLOCK_SXR    0x0001  ///<RX LO clock
-#define LMS_CLOCK_SXT    0x0002  ///<TX LO clock
-#define LMS_CLOCK_CGEN   0x0003  ///<CGEN clock
-#define LMS_CLOCK_RXTSP  0x0004  ///<RXTSP reference clock
-#define LMS_CLOCK_TXTSP  0x0005  ///<TXTSP reference clock
-#define LMS_CLOCK_EXTREF 0x0006  ///<External reference clock
+///Chip reference clock
+#define LMS_CLOCK_REF    0x0000  
+///RX LO clock
+#define LMS_CLOCK_SXR    0x0001  
+///TX LO clock
+#define LMS_CLOCK_SXT    0x0002 
+///CGEN clock
+#define LMS_CLOCK_CGEN   0x0003  
+///RXTSP reference clock (read-only)
+#define LMS_CLOCK_RXTSP  0x0004 
+///TXTSP reference clock (read-only)
+#define LMS_CLOCK_TXTSP  0x0005 
+/** 
+ * @brief External reference clock (write-only)
+ * 
+ * Set to positive value to enable usage of external reference clock of the
+ * specified frequency. Set to 0 or negative value to disable usage of external
+ * reference clock
+ */ 
+#define LMS_CLOCK_EXTREF 0x0006  
 
 /** @} (End LMS_CLOCK_ID) */
 

@@ -1496,7 +1496,7 @@ double LMS7_Device::GetClockFreq(unsigned clk_id, int channel) const
 
 int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
 {
-    int lms_chip_id = channel == -1 ? lms_chip_id : channel/2;
+    lms_chip_id = channel == -1 ? lms_chip_id : channel/2;
     lime::LMS7002M* lms = lms_list[lms_chip_id];
     switch (clk_id)
     {
@@ -1542,8 +1542,12 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
         {
             if (freq <= 0)
             {
-                lime::ReportError(EINVAL, "Invalid frequency value.");
-                return -1;
+                lime::info("Disabling external reference clock");
+                double val;
+                uint8_t id = 0;
+                connection->CustomParameterRead(&id, &val, 1, nullptr);
+                connection->CustomParameterWrite(&id, &val, 1, "");
+                return 0;
             }
 
             lime::ADF4002 module;
