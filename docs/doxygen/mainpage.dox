@@ -1,0 +1,32 @@
+/*! \mainpage Introduction
+
+LMS API is a set of C functions that are exported by LimeSuite library. Its main purpose is to  provide a relatively simple interface for controlling LimeSDR boards. LMS API provides both high-level and low-level methods for configuring devices. \ref FN_HIGH_LVL allow to quickly configure device by accessing and modifying multiple internal device settings during their execution. Meanwhile, \ref FN_LOW_LVL provide an ability to individually access various internal device settings (registers, clocks, etc.).
+
+
+### Further Information
+
+\li \ref page_changelog "LMS API Changelog"
+\li <a href="https://wiki.myriadrf.org/LimeSDR">LimeSDR boards </a>
+\li <a href="https://github.com/myriadrf/LimeSuite">LimeSuite GitHub page</a>
+
+*/
+
+/*! \page page_changelog Changelog
+
+### v18.06.1
+
+\li Fixed LMS_SetLPFBW() failing to bandwidth lower than ~2MHz for second channel 
+
+### v18.06.0
+
+\li Added log level definitions (\ref LMS_LOG_LEVEL) to LimeSuite.h
+\li Zeros filled packet is no longer transmited every ~500 ms when Tx FIFO is empty
+\li Added support of oversample=1 to LMS_SetSampleRate() for LimeSDR-USB board
+\li LMS_SetNormalizedGain() and LMS_SetGaindB() no longer calibrate gain everytime Tx gain is changed 
+\li Updated parameter range information returned by API to match datasheets/schematics
+\li Fixed some sample timing isues when using LMS_SetGFIRLPF()
+
+*/
+
+
+

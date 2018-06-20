@@ -3,6 +3,7 @@ Release 18.06.1 (pending)
 
 - Fix CalibrateTxGain() XBUF settings for 3rd party boards
 - Add interpolation/decimation support for SISODDR mode
+- Fix Rx filter calibration for 2nd channel with low bandwidth values
 
 Release 18.06.0 (2018-06-13)
 ==========================
