@@ -285,6 +285,7 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
     devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
     devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
+    devInfo.hardwareVersion = std::to_string(int(gatewareInfo.hwVersion));
 
     return devInfo;
 }
@@ -330,8 +331,8 @@ LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
     info.gatewareRevision = 0;
     GenericPacket pkt;
     pkt.cmd = CMD_BRDSPI_RD;
-    const uint16_t addrs[] = {0x0000, 0x0001, 0x0002};
-    for (size_t i = 0; i < 3; ++i)
+    const uint16_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
+    for (size_t i = 0; i < 4; ++i)
     {
         pkt.outBuffer.push_back(addrs[i] >> 8);
         pkt.outBuffer.push_back(addrs[i] & 0xFF);
@@ -342,6 +343,7 @@ LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
         info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
         info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
         info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
+        info.hwVersion = (pkt.inBuffer[14] << 8) | pkt.inBuffer[15];
     }
     return info;
 }

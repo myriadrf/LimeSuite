@@ -68,7 +68,7 @@ int LMS7_LimeSDR_mini::Init()
     };
 
     int hw_version = 0;
-    connection->ReadRegister(4,hw_version);
+    connection->ReadRegister(3, hw_version);
     auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
 
     lime::LMS7002M* lms = lms_list[0];

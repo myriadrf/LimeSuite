@@ -146,6 +146,7 @@ public:
         int boardID;
         int gatewareVersion;
         int gatewareRevision;
+        int hwVersion;
     };
 
     FPGAinfo GetFPGAInfo();
