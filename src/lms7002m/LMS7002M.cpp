@@ -936,7 +936,7 @@ float_type LMS7002M::GetTRFLoopbackPAD_dB(void)
 
 int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 {
-    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    int ind = this->GetActiveChannelIndex()%2;
     if (opt_gain_tbb[ind] <= 0)
     {
         if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
@@ -954,7 +954,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
 float_type LMS7002M::GetTBBIAMP_dB(void)
 {
     int g_current = Get_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),true);
-    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    int ind = this->GetActiveChannelIndex()%2;
 
     if (opt_gain_tbb[ind] <= 0)
     {

@@ -119,7 +119,7 @@ int LMS7002M::CalibrateTxGain(float maxGainOffset_dBFS, float *actualGain_dBFS)
     }
     RestoreRegisterMap(registersBackup);
 
-    int ind = Get_SPI_Reg_bits(LMS7_MAC);
+    int ind = this->GetActiveChannelIndex()%2;
     opt_gain_tbb[ind] = cg_iamp > 1 ? cg_iamp-1 : 1;
 
     if (status == 0)

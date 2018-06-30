@@ -2,6 +2,7 @@ Release 18.06.1 (pending)
 ==========================
 
 - Fix CalibrateTxGain() XBUF settings for 3rd party boards
+- Fix index lookup for opt_gain_tbb cache (ChB out of bounds)
 
 Release 18.06.0 (2018-06-13)
 ==========================
