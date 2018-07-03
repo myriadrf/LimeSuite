@@ -835,6 +835,12 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     else
         L = div;
 
+    if ((filt==LMS_GFIR3 ? 15 : 5)*L < count)
+    {
+        lime::warning("GFIR: disabling auto coef ordering (auto length < coef count)");
+        L = 8;
+    }
+
     double max=0;
     for (unsigned i=0; i< count; i++)
         if (fabs(coef[i])>max)
@@ -925,7 +931,7 @@ int LMS7_Device::GetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, double* co
         for (int i = 0; i < (filt==LMS_GFIR3 ? 120 : 40) ; i++)
         {
             coef[i] = coef16[i];
-            coef[i] /= (1<<15);
+            coef[i] /= 32767.0;
         }
     }
     return (filt==LMS_GFIR3) ? 120 : 40;
