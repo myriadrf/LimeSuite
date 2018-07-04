@@ -30,5 +30,9 @@ add_executable(gpio_example gpio_example.cpp)
 set_target_properties(gpio_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(gpio_example LimeSuite)
 
+add_executable(basicTX basicTX.cpp)
+set_target_properties(basicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(basicTX LimeSuite)
+
 
 
