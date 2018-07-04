@@ -81,7 +81,8 @@ int main(int argc, char** argv)
     const int tx_size = 1024*8;
     float tx_buffer[2*tx_size];     //buffer to hold complex values (2*samples))
     for (int i = 0; i <tx_size; i++) {      //generate TX tone
-        double w = 2*M_PI*i*tone_freq/sample_rate;
+        const double pi = acos(-1);
+        double w = 2*pi*i*tone_freq/sample_rate;
         tx_buffer[2*i] = cos(w);
         tx_buffer[2*i+1] = sin(w);
     }
