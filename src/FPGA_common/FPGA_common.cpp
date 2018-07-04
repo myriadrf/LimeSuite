@@ -605,13 +605,13 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
     lime::FPGA::FPGA_PLL_clock clocks[2];
     int status = 0;
 
-    const uint32_t addr[2] = {0x203<<16, 0x403<<16};
-    uint32_t vals[2];
-    vals[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(vals, 1, channel);
-    connection->ReadLMS7002MSPI(addr, vals, 2, channel);
-    bool bypassTx = (vals[0]&0x7000) == 0x7000;
-    bool bypassRx = (vals[1]&0x7000) == 0x7000;
+    const uint32_t addr = (0x02A<<16);
+    uint32_t val;
+    val = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
+    connection->WriteLMS7002MSPI(&val, 1, channel);
+    connection->ReadLMS7002MSPI(&addr, &val, 1, channel);
+    bool bypassTx = (val&0xF0) == 0x00;
+    bool bypassRx = (val&0x0F) == 0x0D;
 
     if  (rxRate_Hz >= 5e6)
     {
@@ -691,11 +691,11 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->ReadLMS7002MSPI(dataWr.data(),dataRdA.data(), bakRegCnt, channel);
 
     {
-        uint32_t addr[2] = {0x203<<16, 0x403<<16};
-        uint32_t vals[2];
-        connection->ReadLMS7002MSPI(addr, vals, 2, channel);
-        bypassTx = (vals[0]&0x7000) == 0x7000;
-        bypassRx = (vals[1]&0x7000) == 0x7000;
+        const uint32_t addr = (0x02A<<16);
+        uint32_t val;
+        connection->ReadLMS7002MSPI(&addr, &val, 1, channel);
+        bypassTx = (val&0xF0) == 0x00;
+        bypassRx = (val&0x0F) == 0x0D;
     }
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write

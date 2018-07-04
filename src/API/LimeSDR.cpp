@@ -36,10 +36,6 @@ int LMS7_LimeSDR::SetRate(double f_Hz, int oversample)
     }
 
     lime::LMS7002M* lms = lms_list[0];
-    lms->Modify_SPI_Reg_bits(LMS7param(RXRDCLK_MUX),bypass ? 3 : 1);
-    lms->Modify_SPI_Reg_bits(LMS7param(RXWRCLK_MUX),bypass ? 1 : 2);
-    lms->Modify_SPI_Reg_bits(LMS7param(TXRDCLK_MUX),bypass ? 0 : 2);
-    lms->Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
 
     if (!bypass)
         return LMS7_Device::SetRate(f_Hz,oversample);

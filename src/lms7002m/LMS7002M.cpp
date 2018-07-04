@@ -2414,6 +2414,9 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(RXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(RXDIVEN), false);
         Modify_SPI_Reg_bits(LMS7param(MCLK2SRC), (mclk2src & 1) | 0x2);
+        bool mimoBypass = (decimation == 7) && (siso == 0);
+        Modify_SPI_Reg_bits(LMS7param(RXRDCLK_MUX),mimoBypass ? 3 : 1);
+        Modify_SPI_Reg_bits(LMS7param(RXWRCLK_MUX),mimoBypass ? 1 : 2);
     }
     else
     {
@@ -2432,6 +2435,9 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
         Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
+        bool mimoBypass = (interpolation == 7) && (siso == 0);
+        Modify_SPI_Reg_bits(LMS7param(TXRDCLK_MUX),mimoBypass ? 0 : 2);
+        Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
     else
     {
