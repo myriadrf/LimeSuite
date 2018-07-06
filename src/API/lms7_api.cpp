@@ -75,7 +75,7 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t * device)
 
 API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device)
 {
-    lime::warning("LMS_Disconnect() deprecated: closing connection without closing device is no longer supporeted\nuse LMS_Close() to disconnect and close device");
+    lime::warning("LMS_Disconnect() deprecated: closing connection without closing device is no longer supported\nuse LMS_Close() to disconnect and close device");
     if (device == nullptr)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
