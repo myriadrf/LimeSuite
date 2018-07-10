@@ -231,6 +231,14 @@ int SoapyLMS7::activateStream(
         }
         icstream->enabled = true;
     }
+    else
+    {
+        // stream is already running -> clear the buffers!
+        for(auto i : streamID)
+        {
+            i->Clear();
+        }
+    }
     return 0;
 }
 
