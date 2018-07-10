@@ -1454,6 +1454,9 @@ const LMS7Parameter* LMS7002M::GetParam(const std::string &name)
 */
 int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 {
+    static map<float_type, int8_t> tuning_cache_sel_vco;
+    static map<float_type, int16_t> tuning_cache_csw_value;
+
     const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500e6; //threshold to enable additional divider
@@ -1512,9 +1515,29 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
         output->div_loch = div_loch;
     }
 
-    //find which VCO supports required frequency
+    // turn on VCO and comparator
     Modify_SPI_Reg_bits(LMS7param(PD_VCO), 0); //
-    Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0); //
+    Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0);
+
+    // try setting tuning values from the cache, if it fails perform full tuning
+    if  (tuning_cache_sel_vco.count(freq_Hz) > 0)
+    {
+        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), tuning_cache_sel_vco[freq_Hz]);
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, tuning_cache_csw_value[freq_Hz]);
+        this_thread::sleep_for(chrono::microseconds(50)); // probably no need for this as the interface is already very slow..
+        auto cmphl = (uint8_t)Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true);
+        if(cmphl == 2) {
+            lime::info("Fast Tune success; vco=%d value=%d", tuning_cache_sel_vco[freq_Hz], tuning_cache_csw_value[freq_Hz]);
+            this->SetActiveChannel(ch); //restore used channel
+            if (output)
+            {
+                output->success = true;
+                output->sel_vco = sel_vco;
+                output->csw = csw_value;
+            }
+            return 0;
+        }
+    }
 
     canDeliverFrequency = false;
     int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
@@ -1559,6 +1582,13 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     }
     Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
+
+    // save successful tuning results in cache
+    if (canDeliverFrequency) {
+        tuning_cache_sel_vco[freq_Hz] = sel_vco;
+        tuning_cache_csw_value[freq_Hz] = csw_value;
+    }
+
     this->SetActiveChannel(ch); //restore used channel
 
     if (canDeliverFrequency == false)
