@@ -208,14 +208,14 @@ int LMS7_LimeSDR_mini::SetRate(double f_Hz, int oversample)
 
     if (oversample == 0)
         oversample = lime::cgenMax/(16*f_Hz);
-    bool sisoDDR = (oversample <= 1 && tx_channels[0].cF_offset_nco == 0.0 && rx_channels[0].cF_offset_nco == 0.0);
+    bool bypass = (oversample <= 1 && tx_channels[0].cF_offset_nco == 0.0 && rx_channels[0].cF_offset_nco == 0.0);
 
-    if ((lms->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR,sisoDDR)!=0)
-        || (lms->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR,sisoDDR)!=0)
-        || (lms->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML,!sisoDDR)!=0))
+    if ((lms->Modify_SPI_Reg_bits(LMS7_LML1_SISODDR, 1)!=0)
+        || (lms->Modify_SPI_Reg_bits(LMS7_LML2_SISODDR, 1)!=0)
+        || (lms->Modify_SPI_Reg_bits(LMS7_CDSN_RXALML, !bypass)!=0))
             return -1;
 
-    if (!sisoDDR)
+    if (!bypass)
         return LMS7_Device::SetRate(f_Hz, oversample);
 
     tx_channels[0].sample_rate = f_Hz;
