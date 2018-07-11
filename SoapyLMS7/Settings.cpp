@@ -739,7 +739,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
         }
     }
 
-     else if (key == "RXTSG_NCO")
+    else if (key == "RXTSG_NCO")
     {
         for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
         {
@@ -759,14 +759,18 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
     {
         lms7Device->SaveConfig(value.c_str());
     }
+
     else if (key == "LOAD_CONFIG")
     {
         lms7Device->LoadConfig(value.c_str());
     }
 
-    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+    else
     {
-        this->writeSetting(SOAPY_SDR_RX, channel, key, value);
+        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        {
+            this->writeSetting(SOAPY_SDR_RX, channel, key, value);
+        }
     }
 }
 
