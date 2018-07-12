@@ -26,7 +26,6 @@ struct IConnectionStream
     int direction;
     size_t elemSize;
     size_t elemMTU;
-    bool enabled;
     bool skipCal;
 
     //rx cmd requests
@@ -160,7 +159,6 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
             throw std::runtime_error("SoapyLMS7::setupStream() failed: " + std::string(GetLastErrorMessage()));
         stream->streamID.push_back(streamID);
         stream->elemMTU = streamID->GetStreamSize();
-        stream->enabled = false;
     }
 
     //calibrate these channels when activated
@@ -178,11 +176,8 @@ void SoapyLMS7::closeStream(SoapySDR::Stream *stream)
     const auto &streamID = icstream->streamID;
 
     //disable stream if left enabled
-    if (icstream->enabled)
-    {
-        for(auto i : streamID)
-            i->Stop();
-    }
+    for(auto i : streamID)
+        i->Stop();
 
     for(auto i : streamID)
         lms7Device->DestroyStream(i);
@@ -222,14 +217,10 @@ int SoapyLMS7::activateStream(
     icstream->numElems = numElems;
     icstream->hasCmd = true;
 
-    if (not icstream->enabled)
+    for(auto i : streamID)
     {
-        for(auto i : streamID)
-        {
-            int status = i->Start();
-            if(status != 0) return SOAPY_SDR_STREAM_ERROR;
-        }
-        icstream->enabled = true;
+        int status = i->Start();
+        if(status != 0) return SOAPY_SDR_STREAM_ERROR;
     }
     return 0;
 }
@@ -244,14 +235,10 @@ int SoapyLMS7::deactivateStream(
     const auto &streamID = icstream->streamID;
     icstream->hasCmd = false;
 
-    if (icstream->enabled)
+    for(auto i : streamID)
     {
-        for(auto i : streamID)
-        {
-            int status = i->Stop();
-            if(status != 0) return SOAPY_SDR_STREAM_ERROR;
-        }
-        icstream->enabled = false;
+        int status = i->Stop();
+        if(status != 0) return SOAPY_SDR_STREAM_ERROR;
     }
 
     return 0;
