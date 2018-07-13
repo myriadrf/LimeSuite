@@ -1520,7 +1520,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     Modify_SPI_Reg_bits(LMS7param(PD_VCO_COMP), 0);
 
     // try setting tuning values from the cache, if it fails perform full tuning
-    if  (tuning_cache_sel_vco.count(freq_Hz) > 0)
+    if  (useCache && tuning_cache_sel_vco.count(freq_Hz) > 0)
     {
         Modify_SPI_Reg_bits(LMS7param(SEL_VCO), tuning_cache_sel_vco[freq_Hz]);
         Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, tuning_cache_csw_value[freq_Hz]);
@@ -1584,7 +1584,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     Modify_SPI_Reg_bits(LMS7param(CSW_VCO), csw_value);
 
     // save successful tuning results in cache
-    if (canDeliverFrequency) {
+    if (useCache && canDeliverFrequency) {
         tuning_cache_sel_vco[freq_Hz] = sel_vco;
         tuning_cache_csw_value[freq_Hz] = csw_value;
     }
