@@ -10,7 +10,7 @@
 namespace lime
 {
 
-FPGA_Q::FPGA_Q() : FPGA(){};
+FPGA_Q::FPGA_Q() : FPGA(){}
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, double rxPhase, int channel)
@@ -47,6 +47,15 @@ int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase,
     return 0;
 }
 
+int FPGA_Q::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt)
+{
+    return connection->WriteRegisters(addrs, data, cnt);
+}
+int FPGA_Q::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
+{
+    return connection->ReadRegisters(addrs, data, cnt);
+}
+
 /** @brief Configures FPGA PLLs to LimeLight interface frequency
 */
 /*
@@ -63,12 +72,12 @@ int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     const std::vector<uint32_t> spiAddr = { 0x021, 0x022, 0x023, 0x024, 0x027, 0x02A,
                                             0x400, 0x40C, 0x40B, 0x400, 0x40B, 0x400};
     const int bakRegCnt = spiAddr.size() - 4;
-    
+
     std::vector<uint32_t> dataWr;
     dataWr.push_back(uint32_t(0x002F) << 16);
     uint32_t chipVersion=0;
     connection->ReadLMS7002MSPI(dataWr.data(), &chipVersion, 1, channel);
-    dataWr.clear(); 
+    dataWr.clear();
     //auto info = GetDeviceInfo();
     bool phaseSearch = false;
 

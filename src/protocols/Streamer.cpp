@@ -235,7 +235,7 @@ uint64_t Streamer::GetHardwareTimestamp(void)
     if(!(rxThread.joinable() || txThread.joinable()))
     {
         //stop streaming just in case the board has not been configured
-        dataPort->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0xFFFF, 1 << chipId);
         fpga->StopStreaming();
         fpga->ResetTimestamp();
         mTimestampOffset = 0;
@@ -306,9 +306,9 @@ void Streamer::AlignRxTSP()
         uint32_t* buf = new uint32_t[sizeof(FPGA_DataPacket) / sizeof(uint32_t)];
 
         fpga->StopStreaming();
-        dataPort->WriteRegister(0xFFFF, 1 << chipId);
-        dataPort->WriteRegister(0x0008, 0x0100);
-        dataPort->WriteRegister(0x0007, 3);
+        fpga->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0x0008, 0x0100);
+        fpga->WriteRegister(0x0007, 3);
 
         dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0x55FE;
         dataWr[1] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD;
@@ -385,7 +385,7 @@ double Streamer::GetPhaseOffset(int bin)
 void Streamer::AlignRxRF(bool restoreValues)
 {
     uint32_t addr = 0, val =0;
-    dataPort->ReadRegisters(&addr,&val,1);
+    fpga->ReadRegisters(&addr,&val,1);
     if (val==0x10) //does not work on LimeSDR-QPCIE
         return;
     uint32_t reg20 = lms->SPI_read(0x20);
@@ -421,10 +421,10 @@ void Streamer::AlignRxRF(bool restoreValues)
     std::vector<uint32_t>  dataWr;
     dataWr.resize(16);
 
-    dataPort->WriteRegister(0xFFFF, 1 << chipId);
+    fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
-    dataPort->WriteRegister(0x0008, 0x0100);
-    dataPort->WriteRegister(0x0007, 3);
+    fpga->WriteRegister(0x0008, 0x0100);
+    fpga->WriteRegister(0x0007, 3);
     bool found = false;
     for (int i = 0; i < 200; i++){
         lms->Modify_SPI_Reg_bits(LMS7_PD_FDIV_O_CGEN, 1);
@@ -492,10 +492,10 @@ void Streamer::AlignQuadrature(bool restoreValues)
     double srate = lms->GetSampleRate(false, LMS7002M::ChA);
     double freq = lms->GetFrequencySX(false);
 
-    dataPort->WriteRegister(0xFFFF, 1 << chipId);
+    fpga->WriteRegister(0xFFFF, 1 << chipId);
     fpga->StopStreaming();
-    dataPort->WriteRegister(0x0008, 0x0100);
-    dataPort->WriteRegister(0x0007, 3);
+    fpga->WriteRegister(0x0008, 0x0100);
+    fpga->WriteRegister(0x0007, 3);
     lms->SetFrequencySX(true, freq+srate/16.0);
     bool found = false;
     for (int i = 0; i < 100; i++){
@@ -554,7 +554,7 @@ int Streamer::UpdateThreads(bool stopAll)
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
     {
-        dataPort->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0xFFFF, 1 << chipId);
         if (mRxStreams[0].used && mRxStreams[1].used)
             AlignRxRF(true);
         //enable FPGA streaming
@@ -597,22 +597,21 @@ int Streamer::UpdateThreads(bool stopAll)
         else if (lms->Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE)))
             mode = 0x0180;
 
-        dataPort->WriteRegister(0x0008, mode | smpl_width);
+        fpga->WriteRegister(0x0008, mode | smpl_width);
 
         const uint16_t channelEnables = (mRxStreams[0].used||mTxStreams[0].used) + 2 * (mRxStreams[1].used||mTxStreams[1].used);
-        dataPort->WriteRegister(0x0007, channelEnables);
+        fpga->WriteRegister(0x0007, channelEnables);
 
-        uint32_t reg9;
-        dataPort->ReadRegister(0x0009, reg9);
+        uint32_t reg9 = fpga->ReadRegister(0x0009);
         const uint32_t addr[] = {0x0009, 0x0009};
         const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         fpga->StartStreaming();
-        dataPort->WriteRegisters(addr, data, 2);
+        fpga->WriteRegisters(addr, data, 2);
     }
     else if(not needTx and not needRx)
     {
         //disable FPGA streaming
-        dataPort->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0xFFFF, 1 << chipId);
         fpga->StopStreaming();
     }
 
@@ -625,8 +624,8 @@ int Streamer::UpdateThreads(bool stopAll)
     }
     if(needTx && (!txThread.joinable()))
     {
-        dataPort->WriteRegister(0xFFFF, 1 << chipId);
-        dataPort->WriteRegister(0xD, 0); //stop WFM
+        fpga->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0xD, 0); //stop WFM
         terminateTx.store(false);
         auto TxLoopFunction = std::bind(&Streamer::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
@@ -814,22 +813,21 @@ void Streamer::ReceivePacketsLoop()
     std::mutex txFlagsLock;
     std::condition_variable resetTxFlags;
     //worker thread for reseting late Tx packet flags
-    std::thread txReset([](IConnection* port,
+    std::thread txReset([](FPGA* fpga,
                         std::atomic<bool> *terminate,
                         std::mutex *spiLock,
                         std::condition_variable *doWork)
     {
-        uint32_t reg9;
-        port->ReadRegister(0x0009, reg9);
+        uint32_t reg9 = fpga->ReadRegister(0x0009);
         const uint32_t addr[] = {0x0009, 0x0009};
         const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         while (not terminate->load())
         {
             std::unique_lock<std::mutex> lck(*spiLock);
             doWork->wait(lck);
-            port->WriteRegisters(addr, data, 2);
+            fpga->WriteRegisters(addr, data, 2);
         }
-    }, dataPort, &terminateRx, &txFlagsLock, &resetTxFlags);
+    }, fpga, &terminateRx, &txFlagsLock, &resetTxFlags);
 
     int resetFlagsDelay = 0;
     uint64_t prevTs = 0;

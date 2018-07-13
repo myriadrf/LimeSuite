@@ -67,8 +67,7 @@ int LMS7_LimeSDR_mini::Init()
         {0x040C, 0x00FB}
     };
 
-    int hw_version = 0;
-    connection->ReadRegister(3, hw_version);
+    int hw_version = fpga->ReadRegister(3);
     auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
 
     lime::LMS7002M* lms = lms_list[0];
@@ -160,19 +159,17 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             return -1;
         if (path==LMS_PATH_LNAW)
         {
-            uint16_t value;
-            connection->ReadRegister(0x17,value);
+            uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(1<<8);
             value |= 1<<9;
-            connection->WriteRegister(0x17, value);
+            fpga->WriteRegister(0x17, value);
         }
         else if (path==LMS_PATH_LNAH)
         {
-            uint16_t value;
-            connection->ReadRegister(0x17,value);
+            uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(1<<9);
             value |= 1<<8;
-            connection->WriteRegister(0x17, value);
+            fpga->WriteRegister(0x17, value);
         }
         else if (LMS_PATH_LNAL)
             lime::warning("LNAL has no connection to RF ports");
@@ -184,19 +181,17 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             return -1;
         if (path==LMS_PATH_TX1)
         {
-            uint16_t value;
-            connection->ReadRegister(0x17,value);
+            uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(1<<13);
             value |= 1<<12;
-            connection->WriteRegister(0x17, value);
+            fpga->WriteRegister(0x17, value);
         }
         else if (path==LMS_PATH_TX2)
         {
-            uint16_t value;
-            connection->ReadRegister(0x17,value);
+            uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(1<<12);
             value |= 1<<13;
-            connection->WriteRegister(0x17, value);
+            fpga->WriteRegister(0x17, value);
         }
     }
     return 0;

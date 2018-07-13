@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <thread>
 #include "Logger.h"
+#include <algorithm>
 using namespace std;
 
 namespace lime
@@ -30,6 +31,101 @@ const uint16_t PHCFG_MODE = 1 << 14;
 
 const uint16_t busyAddr = 0x0021;
 
+FPGA::FPGA()
+{
+    useCache = false;
+}
+
+void FPGA::EnableValuesCache(bool enabled)
+{
+    useCache = enabled;
+    if (!useCache)
+        regsCache.clear();
+}
+
+int FPGA::WriteRegister(uint32_t addr, uint32_t val)
+{
+    return WriteRegisters(&addr, &val, 1);
+}
+
+int FPGA::ReadRegister(uint32_t addr)
+{
+    uint32_t val = -1;
+    ReadRegisters(&addr, &val, 1);
+    return val;
+}
+
+int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt)
+{
+    if (useCache)
+    {
+        const int readonly_regs[] = {
+            0x000, 0x001, 0x002, 0x003, 0x021, 0x022, 0x065, 0x067, 0x069, 0x06A,
+            0x06B, 0x06C, 0x06D, 0x06F, 0x070, 0x071, 0x072, 0x073, 0x074, 0x076,
+            0x077, 0x078, 0x07A, 0x07B, 0x07C, 0x0C2, 0x100, 0x101, 0x102, 0x103,
+            0x104, 0x105, 0x106, 0x107, 0x108, 0x109, 0x10A, 0x10B, 0x10C, 0x10D,
+            0x10E, 0x10F, 0x110, 0x111, 0x114};
+
+        std::vector<uint32_t> reg_addr;
+        std::vector<uint32_t> reg_val;
+        for (unsigned i = 0; i < cnt; i++)
+        {
+            auto endptr = readonly_regs + sizeof(readonly_regs)/sizeof(*readonly_regs);
+            if (std::find(readonly_regs, endptr, addrs[i])!=endptr)
+                continue;
+
+            auto result = regsCache.find(addrs[i]);
+            if (result != regsCache.end() && result->second == data[i])
+                continue;
+            reg_addr.push_back(addrs[i]);
+            reg_val.push_back(data[i]);
+            regsCache[addrs[i]] = data[i];
+        }
+        if (reg_val.size())
+            return connection->WriteRegisters(reg_addr.data(), reg_val.data(), reg_val.size());
+        return 0;
+    }
+    return connection->WriteRegisters(addrs, data, cnt);
+}
+
+int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
+{
+    if (useCache)
+    {
+        const int volatile_regs[] = {
+            0x021, 0x022, 0x060, 0x065, 0x067, 0x069, 0x06A, 0x06B, 0x06C, 0x06D,
+            0x06F, 0x070, 0x071, 0x072, 0x073, 0x074, 0x076, 0x077, 0x078, 0x07A,
+            0x07B, 0x07C, 0x0C2, 0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106,
+            0x107, 0x108, 0x109, 0x10A, 0x10B, 0x10C, 0x10D, 0x10E, 0x10F, 0x110,
+            0x111, 0x114};
+
+        std::vector<uint32_t> reg_addr;
+        for (unsigned i = 0; i < cnt; i++)
+        {
+            auto endptr = volatile_regs + sizeof(volatile_regs)/sizeof(*volatile_regs);
+            if (std::find(volatile_regs, endptr, addrs[i])==endptr)
+            {
+                auto result = regsCache.find(addrs[i]);
+                if (result != regsCache.end())
+                    continue;
+            }
+            reg_addr.push_back(addrs[i]);
+        }
+
+        if (reg_addr.size())
+        {
+            std::vector<uint32_t> reg_val(reg_addr.size());
+            if (connection->ReadRegisters(reg_addr.data(), reg_val.data(), reg_addr.size()) <0)
+                return -1;
+            for (unsigned i = 0; i < reg_addr.size(); i++)
+                regsCache[reg_addr[i]] = reg_val[i];
+        }
+        for (unsigned i = 0; i < cnt; i++)
+            data[i] = regsCache[addrs[i]];
+        return 0;
+    }
+    return connection->ReadRegisters(addrs, data, cnt);
+}
 
 void FPGA::SetConnection(IConnection* conn)
 {
@@ -43,33 +139,28 @@ IConnection* FPGA::GetConnection() const
 
 int FPGA::StartStreaming()
 {
-    uint16_t interface_ctrl_000A;
-    int status = connection->ReadRegister(0x000A, interface_ctrl_000A);
-    if (status != 0)
-        return status;
+    int interface_ctrl_000A = ReadRegister(0x000A);
+    if (interface_ctrl_000A < 0)
+        return -1;
     uint32_t value = RX_EN;
-    status = connection->WriteRegister(0x000A, interface_ctrl_000A | value);
-    return status;
+    return WriteRegister(0x000A, interface_ctrl_000A | value);
 }
 
 int FPGA::StopStreaming()
 {
-    uint16_t interface_ctrl_000A;
-    int status = connection->ReadRegister(0x000A, interface_ctrl_000A);
-    if (status != 0)
-        return status;
+    int interface_ctrl_000A = ReadRegister(0x000A);
+    if (interface_ctrl_000A < 0)
+        return -1;
     uint32_t value = ~(RX_EN | TX_EN);
-    connection->WriteRegister(0x000A, interface_ctrl_000A & value);
-    return status;
+    return WriteRegister(0x000A, interface_ctrl_000A & value);
 }
 
 int FPGA::ResetTimestamp()
 {
     int status;
 #ifndef NDEBUG
-    uint16_t interface_ctrl_000A;
-    status = connection->ReadRegister(0x000A, interface_ctrl_000A);
-    if (status != 0)
+    int interface_ctrl_000A = ReadRegister(0x000A);
+    if (interface_ctrl_000A < 0)
         return 0;
 
     if ((interface_ctrl_000A & RX_EN))
@@ -77,14 +168,13 @@ int FPGA::ResetTimestamp()
 
 #endif // NDEBUG
     //reset hardware timestamp to 0
-    uint16_t interface_ctrl_0009;
-    status = connection->ReadRegister(0x0009, interface_ctrl_0009);
-    if (status != 0)
+    int interface_ctrl_0009 = ReadRegister(0x0009);
+    if (interface_ctrl_0009 < 0)
         return 0;
     uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
-    connection->WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
-    connection->WriteRegister(0x0009, interface_ctrl_0009 | value);
-    connection->WriteRegister(0x0009, interface_ctrl_0009 & ~value);
+    WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
+    WriteRegister(0x0009, interface_ctrl_0009 | value);
+    WriteRegister(0x0009, interface_ctrl_0009 & ~value);
     return status;
 }
 
@@ -108,7 +198,7 @@ int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23
     addrs.push_back(0x0023); values.push_back(reg23val); //PHCFG_UpDn, CNT_IND
     addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
 
-    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+    if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         ReportError(EIO, "SetPllFrequency: PHCFG, failed to write registers");
     addrs.clear(); values.clear();
 
@@ -117,8 +207,7 @@ int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23
     t1 = chrono::high_resolution_clock::now();
     if(waitLock) do
     {
-        uint16_t statusReg;
-        connection->ReadRegister(busyAddr, statusReg);
+        uint16_t statusReg = ReadRegister(busyAddr);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         t2 = chrono::high_resolution_clock::now();
@@ -129,7 +218,7 @@ int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23
     if(errorCode != 0)
         return ReportError(EBUSY, "SetPllFrequency: error configuring PHCFG");
     addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
-    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+    if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         ReportError(EIO, "SetPllFrequency: configure FPGA PLL, failed to write registers");
     return 0;
 }
@@ -164,13 +253,10 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             return ReportError(ERANGE, "SetPllFrequency: clock(%i) must be >=%g MHz", i, PLLlowerLimit/1e6);
 
     //disable direct clock source
-    uint16_t drct_clk_ctrl_0005 = 0;
-    connection->ReadRegister(0x0005, drct_clk_ctrl_0005);
-    connection->WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
+    uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
+    WriteRegister(0x0005, drct_clk_ctrl_0005 & ~(1 << pllIndex));
 
-    uint16_t reg23val = 0;
-    if(connection->ReadRegister(0x0003, reg23val) != 0)
-        return ReportError(ENODEV, "SetPllFrequency: failed to read register");
+    uint16_t reg23val = ReadRegister(0x0003);
 
     reg23val &= ~(0x1F << 3); //clear PLL index
     reg23val &= ~PLLCFG_START; //clear PLLCFG_START
@@ -179,8 +265,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     reg23val &= ~PHCFG_UPDN; //clear PHCFG_UpDn
     reg23val |= pllIndex << 3;
 
-    uint16_t reg25 = 0x0170;
-    connection->ReadRegister(0x0025, reg25);
+    uint16_t reg25 = ReadRegister(0x0025);
 
     uint16_t statusReg;
     bool done = false;
@@ -193,13 +278,13 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     {
         addrs.push_back(0x0023); values.push_back(reg23val | PLLRST_START);
     }
-    connection->WriteRegisters(addrs.data(), values.data(), values.size());
+    WriteRegisters(addrs.data(), values.data(), values.size());
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
     if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for reset to activate
     {
-        connection->ReadRegister(busyAddr, statusReg);
+        statusReg = ReadRegister(busyAddr);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         std::this_thread::sleep_for(chrono::milliseconds(10));
@@ -325,14 +410,14 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     {
         addrs.push_back(0x0023); values.push_back(reg23val | PLLCFG_START);
     }
-    if(connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+    if(WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
         lime::error("SetPllFrequency: PLL CFG, failed to write registers");
     addrs.clear(); values.clear();
 
     t1 = chrono::high_resolution_clock::now();
     if(boardType == LMS_DEV_LIMESDR_QPCIE) do //wait for config to activate
     {
-        connection->ReadRegister(busyAddr, statusReg);
+        statusReg = ReadRegister(busyAddr);
         done = statusReg & 0x1;
         errorCode = (statusReg >> 7) & 0xFF;
         t2 = chrono::high_resolution_clock::now();
@@ -352,7 +437,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         if (clocks[i].findPhase == false)
         {
            const int nSteps = 0.49 + clocks[i].phaseShift_deg  / Fstep_deg;
-           SetPllClock(clocks[i].index,nSteps, boardType, reg23val);
+           SetPllClock(clocks[i].index, nSteps, boardType, reg23val);
         }
         else
         {
@@ -372,7 +457,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             addrs.push_back(0x0024); values.push_back(abs(nSteps)); //CNT_PHASE
             addrs.push_back(0x0023); values.push_back(reg23val | PHCFG_START);
 
-            if (connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+            if (WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
                 lime::error( "SetPllFrequency: find phase, failed to write registers");
             addrs.clear(); values.clear();
 
@@ -382,8 +467,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             t1 = chrono::high_resolution_clock::now();
             do
             {
-                uint16_t statusReg;
-                connection->ReadRegister(busyAddr, statusReg);
+                uint16_t statusReg = ReadRegister(busyAddr);
                 done = statusReg & 0x4;
                 error = statusReg & 0x08;
                 t2 = chrono::high_resolution_clock::now();
@@ -394,7 +478,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if (error)
                 lime::error("SetPllFrequency: error configuring phase");
             addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
-            if (connection->WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
+            if (WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
                 lime::error("SetPllFrequency: configure FPGA PLL, failed to write registers");
             return (!done) || error ? -1 : 0;
         }
@@ -409,15 +493,13 @@ int FPGA::SetDirectClocking(int clockIndex)
     if(not connection->IsOpen())
         return ReportError(ENODEV, "SetDirectClocking: device not connected");
 
-    uint16_t drct_clk_ctrl_0005 = 0;
-    connection->ReadRegister(0x0005, drct_clk_ctrl_0005);
-    uint16_t drct_clk_ctrl_0006;
-    connection->ReadRegister(0x0006, drct_clk_ctrl_0006);
+    uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
+    uint16_t drct_clk_ctrl_0006 = ReadRegister(0x0006);
     vector<uint32_t> addres;
     vector<uint32_t> values;
     //enable direct clocking
     addres.push_back(0x0005); values.push_back(drct_clk_ctrl_0005 | (1 << clockIndex));
-    if(connection->WriteRegisters(addres.data(), values.data(), values.size()) != 0)
+    if(WriteRegisters(addres.data(), values.data(), values.size()) != 0)
         return ReportError(EIO, "SetDirectClocking: failed to write registers");
     return 0;
 }
@@ -512,14 +594,13 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     bool comp = (epIndex==2 && format!=StreamConfig::FMT_INT12) ? false : true;
 
     const int samplesInPkt = comp ? samples12InPkt : samples16InPkt;
-    connection->WriteRegister(0xFFFF, 1 << epIndex);
-    connection->WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
-    connection->WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
+    WriteRegister(0xFFFF, 1 << epIndex);
+    WriteRegister(0x000C, chCount == 2 ? 0x3 : 0x1); //channels 0,1
+    WriteRegister(0x000E, comp ? 0x2 : 0x0); //16bit samples
 
-    uint16_t regValue = 0;
-    connection->ReadRegister(0x000D,regValue);
+    uint16_t regValue = ReadRegister(0x000D);
     regValue |= 0x4;
-    connection->WriteRegister(0x000D, regValue);
+    WriteRegister(0x000D, regValue);
 
     lime::FPGA_DataPacket pkt;
     size_t samplesUsed = 0;
@@ -663,7 +744,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     {
         uint32_t addr[3] = {0, 1, 2};
         uint32_t vals[3];
-        connection->ReadRegisters(addr,vals,3);
+        ReadRegisters(addr,vals,3);
         vals[1] = (vals[1]<<8)|vals[2];
         if ((vals[0]==0xE && vals[1]>0x20E)||(vals[0]==0xF && vals[1]>0x206)||(vals[0]==0x10 && vals[1]>0x102))
             phaseSearch = true;
@@ -740,8 +821,8 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         std::vector<uint32_t> spiData = {0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0484, 0x8001};
         if (bypassTx)spiData[5] ^= 0x80;
         if (bypassRx)spiData[5] ^= 0x9;
-        connection->WriteRegister(0xFFFF, 1 << channel);
-        connection->WriteRegister(0x000A, 0x0000);
+        WriteRegister(0xFFFF, 1 << channel);
+        WriteRegister(0x000A, 0x0000);
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
@@ -754,7 +835,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
     clocks[0].findPhase = true;
     clocks[1] = clocks[0];
-    connection->WriteRegister(0x000A, 0x0200);
+    WriteRegister(0x000A, 0x0200);
     if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)!=0)
     {
         status = -1;
@@ -783,18 +864,18 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->WriteLMS7002MSPI(dataWr.data(), k, channel);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
-    connection->WriteRegister(0x000A, 0);
+    WriteRegister(0x000A, 0);
 
     return status;
 }
 
 int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms)
 {
-    connection->WriteRegister(0xFFFF, 1 << epIndex);
+    WriteRegister(0xFFFF, 1 << epIndex);
     StopStreaming();
     connection->ResetStreamBuffers();
-    connection->WriteRegister(0x0008, 0x0100 | 0x2);
-    connection->WriteRegister(0x0007, 1);
+    WriteRegister(0x0008, 0x0100 | 0x2);
+    WriteRegister(0x0007, 1);
     StartStreaming();
     int totalBytesReceived = connection->ReceiveData(buffer,length, epIndex, timeout_ms);
     StopStreaming();
@@ -808,19 +889,18 @@ double FPGA::DetectRefClk(double fx3Clk)
     const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
-    if (connection->WriteRegisters(addr, vals, 2) != 0)
+    if (WriteRegisters(addr, vals, 2) != 0)
         return -1;
 
     auto start = std::chrono::steady_clock::now();
-    if (connection->WriteRegister(0x61, 0x4) != 0)
+    if (WriteRegister(0x61, 0x4) != 0)
         return -1;
 
     while (1) //wait for test to finish
     {
-        unsigned completed;
-        if (connection->ReadRegister(0x65, completed) != 0)
+        int completed = ReadRegister(0x65);
+        if (completed < 0)
             return -1;
-
         if (completed & 0x4)
             break;
 
@@ -832,7 +912,7 @@ double FPGA::DetectRefClk(double fx3Clk)
 
     const uint32_t addr2[] = { 0x72, 0x73 };
     uint32_t vals2[2];
-    if (connection->ReadRegisters(addr2, vals2, 2) != 0)
+    if (ReadRegisters(addr2, vals2, 2) != 0)
         return -1;
 
     double count = (vals2[0] | (vals2[1] << 16)); //cock counter

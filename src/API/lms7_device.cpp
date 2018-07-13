@@ -1633,6 +1633,8 @@ int LMS7_Device::EnableCalibCache(bool enable)
 {
     for (unsigned i = 0; i < lms_list.size(); i++)
         lms_list[i]->EnableValuesCache(enable);
+    if (fpga)
+        fpga->EnableValuesCache(enable);
     return 0;
 }
 
@@ -1674,6 +1676,15 @@ int LMS7_Device::ReadLMSReg(uint16_t address, int ind) const
 int LMS7_Device::WriteLMSReg(uint16_t address, uint16_t val, int ind) const
 {
     return lms_list.at(ind == -1 ? lms_chip_id : ind)->SPI_write(address & 0xFFFF, val);
+}
+
+int LMS7_Device:: ReadFPGAReg(uint16_t address) const
+{
+    return fpga ? fpga->ReadRegister(address): 0;
+}
+int LMS7_Device::WriteFPGAReg(uint16_t address, uint16_t val) const
+{
+    return fpga ? fpga->WriteRegister(address, val): 0;
 }
 
 uint16_t LMS7_Device::ReadParam(const struct LMS7Parameter& param, int chan, bool fromChip) const

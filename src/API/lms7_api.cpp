@@ -1026,18 +1026,9 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
     }
 
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-    uint32_t addr = address;
-    uint32_t data;
-    auto conn = lms->GetConnection();
-    if (conn == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device not connected");
-        return -1;
-    }
-    *val = conn->ReadRegisters(&addr,&data,1);
-    if (*val != LMS_SUCCESS)
+    *val = lms->ReadFPGAReg(address);
+    if (*val < 0)
         return *val;
-    *val = data;
     return LMS_SUCCESS;
 }
 
@@ -1050,13 +1041,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
     }
 
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-    auto conn = lms->GetConnection();
-    if (conn == nullptr)
-    {
-        lime::ReportError(EINVAL, "Device not connected");
-        return -1;
-    }
-    return conn->WriteRegister(address,val);
+    return lms->WriteFPGAReg(address,val);
 }
 
 API_EXPORT int CALL_CONV LMS_ReadParam(lms_device_t *device, struct LMS7Parameter param, uint16_t *val)

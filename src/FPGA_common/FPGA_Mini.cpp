@@ -119,7 +119,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     if (status == 0)
     {
         const std::vector<uint32_t> spiData = { 0x0E9F, 0x07FF, 0x5550, 0xE4E4, 0xE4E4, 0x0484 };
-        connection->WriteRegister(0x000A, 0x0000);
+        WriteRegister(0x000A, 0x0000);
         //Load test config
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
@@ -133,7 +133,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         clocks[1] = clocks[0];
         clocks[2] = clocks[0];
         clocks[3] = clocks[0];
-        connection->WriteRegister(0x000A, 0x0200);
+        WriteRegister(0x000A, 0x0200);
         if (SetPllFrequency(0, txRate_Hz, clocks, 4)!=0)
         {
             status = -1;
@@ -147,7 +147,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
     connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
-    connection->WriteRegister(0x000A, 0);
+    WriteRegister(0x000A, 0);
 
     return status;
 }
@@ -165,8 +165,8 @@ int FPGA_Mini::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int
 #ifdef __unix__
     connection->ResetStreamBuffers();
 #endif
-    connection->WriteRegister(0x0008, 0x0100 | 0x2);
-    connection->WriteRegister(0x0007, 1);
+    WriteRegister(0x0008, 0x0100 | 0x2);
+    WriteRegister(0x0007, 1);
 
     StartStreaming();
 

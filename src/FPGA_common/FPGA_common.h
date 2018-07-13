@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "dataTypes.h"
 #include "Streamer.h"
+#include <map>
 
 namespace lime
 {
@@ -18,7 +19,7 @@ class LIME_API FPGA
 {
 public:
     
-    FPGA(){};
+    FPGA();
     virtual ~FPGA(){};
     void SetConnection(IConnection* conn);
     IConnection* GetConnection() const;
@@ -50,6 +51,11 @@ public:
 
     static int FPGAPacketPayload2Samples(const uint8_t* buffer, int bufLen, bool mimo, bool compressed, complex16_t** samples);
     static int Samples2FPGAPacketPayload(const complex16_t* const* samples, int samplesCount, bool mimo, bool compressed, uint8_t* buffer);
+    virtual void EnableValuesCache(bool enabled);
+    virtual int WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt);
+    virtual int ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt);
+    int WriteRegister(uint32_t addr, uint32_t val);
+    int ReadRegister(uint32_t addr);
 protected:
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
@@ -57,6 +63,8 @@ protected:
 private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
     int SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val);
+    bool useCache;
+    std::map<uint16_t, uint16_t> regsCache;
 };
 
 }
