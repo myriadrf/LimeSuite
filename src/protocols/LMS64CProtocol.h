@@ -9,6 +9,7 @@
 #include <mutex>
 #include <LMS64CCommands.h>
 #include <LMSBoards.h>
+#include <thread>
 
 namespace lime{
 
@@ -184,8 +185,16 @@ public:
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
     int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
     int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
+protected:
+#ifdef REMOTE_CONTROL
+    void InitRemote();
+    void CloseRemote();
+    void ProcessConnections();
+    bool remoteOpen;
+    int socketFd;
+    std::thread remoteThread;
+#endif
 private:
-
     int WriteSi5351I2C(const std::string &data);
     int ReadSi5351I2C(const size_t numBytes, std::string &data);
 

@@ -43,10 +43,17 @@ LMS64CProtocol::LMS64CProtocol(void)
 {
     //set a sane-default for the rate
     _cachedRefClockRate = 61.44e6/2;
+#ifdef REMOTE_CONTROL
+    InitRemote();
+#endif
+
 }
 
 LMS64CProtocol::~LMS64CProtocol(void)
 {
+#ifdef REMOTE_CONTROL
+    CloseRemote();
+#endif
     return;
 }
 

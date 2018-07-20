@@ -45,6 +45,16 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     const int selection = mListLMS7ports->GetSelection();
     if(selection != wxNOT_FOUND && selection < list.size())
     {
+        if (list[selection].module == "Z_Remote")
+        {
+            wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter remote IP address"), _("Remote IP address"));
+            dlg->SetTextValidator(wxFILTER_NUMERIC);
+            dlg->SetValue("127.0.0.1");
+            if (dlg->ShowModal() == wxID_OK)
+                list[selection].addr = dlg->GetValue();
+            delete dlg;
+        }
+
         auto dev = lime::LMS7_Device::CreateDevice(list[selection], (lime::LMS7_Device*)*lmsControl);
         if (!dev)
         {
