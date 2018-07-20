@@ -124,7 +124,6 @@ void LMS64CProtocol::ProcessConnections()
         {
             continue;
         }
-        printf("Accepted\n");
         unsigned long ips = cli_addr.sin_addr.s_addr;
 
         bool connected = true;
@@ -187,7 +186,6 @@ void LMS64CProtocol::ProcessConnections()
             close(clientFd);
 #endif
         }
-        printf("remote handling done\n");
     }
     return;
 }
