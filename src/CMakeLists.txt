@@ -146,6 +146,7 @@ include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionRemote/CMakeLists.txt)
+include(ConnectionSPI/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
