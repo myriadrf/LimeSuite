@@ -941,13 +941,13 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
     {
         if (CalibrateTxGain(0,nullptr)!=0) //set optimal BB gain
             return -1;
+        if (std::fabs(gain) < 0.2) // optimal gain = ~0dB
+            return 0;
     }
 
-    if (gain != 0)
-    {
-          int g_iamp = (float_type)opt_gain_tbb[ind]*pow(10.0,gain/20.0)+0.4;
-          Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
-    }
+    int g_iamp = (float_type)opt_gain_tbb[ind]*pow(10.0,gain/20.0)+0.4;
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
+
     return 0;
 }
 
@@ -958,7 +958,7 @@ float_type LMS7002M::GetTBBIAMP_dB(void)
 
     if (opt_gain_tbb[ind] <= 0)
     {
-        if (CalibrateTxGain(0,nullptr)==0)
+        if (CalibrateTxGain(0,nullptr)!=0)
             return 0.0;
         Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_current, true); //restore
     }
