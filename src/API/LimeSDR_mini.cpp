@@ -23,6 +23,11 @@ LMS7_LimeSDR_mini::LMS7_LimeSDR_mini(lime::IConnection* conn, lime::LMS7_Device 
     }
     fpga->SetConnection(conn);
     double refClk = fpga->DetectRefClk();
+    if (refClk < 0)
+    {
+    	lime::error("Failed to detect reference clock");
+    	refClk = 40e6;
+    }
     this->lms_list[0]->SetConnection(conn);
     mStreamers.push_back(new lime::Streamer(fpga,lms_list[0],0));
     lms_list[0]->SetReferenceClk_SX(false, refClk);

@@ -813,21 +813,6 @@ void Streamer::ReceivePacketsLoop()
     std::mutex txFlagsLock;
     std::condition_variable resetTxFlags;
     //worker thread for reseting late Tx packet flags
-    std::thread txReset([](FPGA* fpga,
-                        std::atomic<bool> *terminate,
-                        std::mutex *spiLock,
-                        std::condition_variable *doWork)
-    {
-        uint32_t reg9 = fpga->ReadRegister(0x0009);
-        const uint32_t addr[] = {0x0009, 0x0009};
-        const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
-        while (not terminate->load())
-        {
-            std::unique_lock<std::mutex> lck(*spiLock);
-            doWork->wait(lck);
-            fpga->WriteRegisters(addr, data, 2);
-        }
-    }, fpga, &terminateRx, &txFlagsLock, &resetTxFlags);
 
     int resetFlagsDelay = 0;
     uint64_t prevTs = 0;
@@ -865,7 +850,6 @@ void Streamer::ReceivePacketsLoop()
                 else
                 {
                     lime::warning("L");
-                    resetTxFlags.notify_one();
                     resetFlagsDelay = buffersCount;
                     for(auto &value: mTxStreams)
                         if (value.used && value.mActive)
@@ -875,6 +859,7 @@ void Streamer::ReceivePacketsLoop()
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
+            	lime::warning("Rx ts diff %lu (%lu : %lu)", pkt[pktIndex].counter - prevTs, pkt[pktIndex].counter, prevTs);
                 int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
                 for(auto &value: mRxStreams)
                     if (value.used && value.mActive)
@@ -920,8 +905,6 @@ void Streamer::ReceivePacketsLoop()
         }
     }
     dataPort->AbortReading(epIndex);
-    resetTxFlags.notify_one();
-    txReset.join();
     rxDataRate_Bps.store(0);
 }
 

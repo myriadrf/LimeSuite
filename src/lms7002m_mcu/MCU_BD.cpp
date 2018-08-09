@@ -13,6 +13,7 @@ using namespace std;
 #include "LMS64CProtocol.h"
 #include <assert.h>
 #include <thread>
+#include <chrono>
 #include <list>
 #include "LMS7002M.h"
 #include "Logger.h"
@@ -120,7 +121,7 @@ void MCU_BD:: mSPI_write(
 {
     if(m_serPort == nullptr)
         return;
-    uint32_t wrdata = addr_reg << 16 | data_reg;
+    uint32_t wrdata = (1 << 31) | addr_reg << 16 | data_reg;
     m_serPort->WriteLMS7002MSPI(&wrdata, 1, mChipID);
 }
 
@@ -594,14 +595,14 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const IConnection::MCU_PROG_MODE 
     const uint32_t addrDTM = 0x0004 << 16; //data to MCU
     const uint16_t EMTPY_WRITE_BUFF = 1 << 0;
     const uint16_t PROGRAMMED = 1 << 6;
-    const uint8_t fifoLen = 64;
+    const uint8_t fifoLen = 1;
     uint32_t wrdata[fifoLen];
     uint32_t rddata = 0;
     int status;
     bool abort = false;
         //reset MCU, set mode
-    wrdata[0] = controlAddr | 0;
-    wrdata[1] = controlAddr | (mode & 0x3);
+    wrdata[0] = (1 << 31) | controlAddr | 0;
+    wrdata[1] = (1 << 31) | controlAddr | (mode & 0x3);
     if((status = m_serPort->WriteLMS7002MSPI(wrdata, 2, mChipID))!=0)
         return status;
 
@@ -627,7 +628,8 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const IConnection::MCU_PROG_MODE 
 
         //write 32 bytes into FIFO
         for(uint8_t j=0; j<fifoLen; ++j)
-            wrdata[j] = addrDTM | buffer[i+j];
+            wrdata[j] = (1 << 31) | addrDTM | buffer[i+j];
+
         if((status = m_serPort->WriteLMS7002MSPI(wrdata,fifoLen, mChipID))!=0)
             return status;
         if(callback)

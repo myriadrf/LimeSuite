@@ -10,7 +10,7 @@
 #cmakedefine ENABLE_FTDI
 #cmakedefine ENABLE_PCIE_XILLYBUS
 #cmakedefine ENABLE_REMOTE
-#cmakedefine ENABLE_PCIE_SPI
+#cmakedefine ENABLE_SPI
 
 void __loadConnectionEVB7COMEntry(void);
 void __loadConnectionFX3Entry(void);

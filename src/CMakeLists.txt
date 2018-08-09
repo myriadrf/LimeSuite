@@ -139,12 +139,12 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-include(ConnectionEVB7COM/CMakeLists.txt)
-include(ConnectionFX3/CMakeLists.txt)
-include(ConnectionSTREAM_UNITE/CMakeLists.txt)
+#include(ConnectionEVB7COM/CMakeLists.txt)
+#include(ConnectionFX3/CMakeLists.txt)
+#include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 #include(ConnectionNovenaRF7/CMakeLists.txt)
-include(ConnectionFTDI/CMakeLists.txt)
-include(ConnectionXillybus/CMakeLists.txt)
+#include(ConnectionFTDI/CMakeLists.txt)
+#include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionRemote/CMakeLists.txt)
 include(ConnectionSPI/CMakeLists.txt)
 
@@ -232,7 +232,7 @@ set(LMS7SUITE_GUI_SOURCES
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+cmake_dependent_option(ENABLE_GUI "Enable build GUI" OFF "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
 add_feature_info(LimeSuiteGUI ENABLE_GUI "GUI Application for LimeSuite")
 if (ENABLE_GUI)
 
@@ -282,20 +282,20 @@ endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
-if(UNIX)
-    add_executable(boardEmulator boardEmulator.cpp)
-    target_link_libraries(boardEmulator LimeSuite)
-endif()
+#if(UNIX)
+#    add_executable(boardEmulator boardEmulator.cpp)
+#    target_link_libraries(boardEmulator LimeSuite)
+#endif()
 
 #########################################################################
 # utilities
 #########################################################################
-add_subdirectory(utilities)
+#add_subdirectory(utilities)
 
 #########################################################################
 # tests
 #########################################################################
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 #########################################################################
 # examples
