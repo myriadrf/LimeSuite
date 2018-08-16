@@ -137,13 +137,18 @@ bool StreamChannel::IsActive() const
     return mActive;
 }
 
-int StreamChannel::Start()
+void StreamChannel::Clear()
 {
-    mActive = true;
     fifo->Clear();
     overflow = 0;
     underflow = 0;
     pktLost = 0;
+}
+
+int StreamChannel::Start()
+{
+    Clear();
+    mActive = true;
     return mStreamer->UpdateThreads();
 }
 

@@ -222,6 +222,14 @@ int SoapyLMS7::activateStream(
         int status = i->Start();
         if(status != 0) return SOAPY_SDR_STREAM_ERROR;
     }
+    else
+    {
+        // stream is already running -> clear the buffers!
+        for(auto i : streamID)
+        {
+            i->Clear();
+        }
+    }
     return 0;
 }
 

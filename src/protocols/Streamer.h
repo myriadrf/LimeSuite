@@ -110,6 +110,7 @@ public:
     bool IsActive() const;
     int Start();
     int Stop();
+    void Clear();
     StreamConfig config;
     Streamer* mStreamer;
     unsigned overflow;
@@ -119,7 +120,7 @@ public:
     bool used;
        
 protected:
-    RingFIFO* fifo;  
+    RingFIFO* fifo;
 };
     
 class Streamer
