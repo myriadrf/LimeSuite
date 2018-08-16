@@ -203,7 +203,7 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Tx Calibration: Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+        return ReportError(ERANGE, "Tx Calibration: Bandwidth out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
 #ifdef LMS_VERBOSE_OUTPUT
@@ -295,7 +295,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
     if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Rx Calibration: Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+        return ReportError(ERANGE, "Rx Calibration: Bandwidth out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
     if(controlPort == nullptr)
         return ReportError(ENODEV, "Rx Calibration: Device not connected");
 #ifdef LMS_VERBOSE_OUTPUT
