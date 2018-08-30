@@ -65,7 +65,7 @@ public:
     virtual std::vector<std::string> GetProgramModes() const;
     virtual int Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const;
     double GetClockFreq(unsigned clk_id, int channel = -1) const;
-    int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
+    virtual int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
     lms_dev_info_t* GetInfo();
     int Synchronize(bool toChip) const;
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));

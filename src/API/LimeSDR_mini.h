@@ -27,6 +27,7 @@ public:
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
     int SetPath(bool tx, unsigned chan, unsigned path) override;
     std::vector<std::string> GetProgramModes() const override;
+    int SetClockFreq(unsigned clk_id, double freq, int channel) override;
 private:
 };
 
