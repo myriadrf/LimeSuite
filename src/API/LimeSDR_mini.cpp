@@ -278,7 +278,7 @@ int LMS7_LimeSDR_mini::SetClockFreq(unsigned clk_id, double freq, int channel)
 {
     if (clk_id == LMS_CLOCK_EXTREF)
         clk_id =  LMS_CLOCK_REF;
-    LMS7_Device::SetClockFreq(clk_id, freq, channel);
+    return LMS7_Device::SetClockFreq(clk_id, freq, channel);
 }
 
 }//namespace lime
