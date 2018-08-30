@@ -38,6 +38,7 @@ public:
 
     void OnReadAll(wxCommandEvent &event);
     void OnWriteAll(wxCommandEvent &event);
+    void OnSave(wxCommandEvent &event);
 
 protected:
     std::vector<ADCparam> pwrParams;

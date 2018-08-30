@@ -6,6 +6,7 @@
 #include "Streamer.h"
 #include "IConnection.h"
 #include <complex>
+#include "LMSBoards.h"
 
 namespace lime
 {
@@ -386,7 +387,7 @@ void Streamer::AlignRxRF(bool restoreValues)
 {
     uint32_t addr = 0, val =0;
     fpga->ReadRegisters(&addr,&val,1);
-    if (val==0x10) //does not work on LimeSDR-QPCIE
+    if (val!= LMS_DEV_LIMESDR && val != LMS_DEV_LIMESDR_PCIE)
         return;
     uint32_t reg20 = lms->SPI_read(0x20);
     auto regBackup = lms->BackupRegisterMap();

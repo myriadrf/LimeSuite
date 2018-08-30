@@ -74,7 +74,7 @@ int IConnection::DeviceReset(int ind)
 
 int IConnection::ReceiveData(char* buffer, int length, int epIndex, int timeout)
 {
-    return 0;   
+    return 0;
 }
 int IConnection::SendData(const char* buffer, int length, int epIndex, int timeout)
 {
@@ -116,7 +116,7 @@ void IConnection::SetDataLogCallback(std::function<void(bool, const unsigned cha
 
 int IConnection::GetBuffersCount()const
 {
- return 0;   
+ return 0;
 }
 
 int IConnection::CheckStreamSize(int size)const
@@ -127,7 +127,7 @@ int IConnection::CheckStreamSize(int size)const
 int IConnection::ResetStreamBuffers()
 {
     return 0;
-};
+}
 /***********************************************************************
  * Programming API
  **********************************************************************/

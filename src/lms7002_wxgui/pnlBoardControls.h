@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <LMSBoards.h>
 
 namespace lime{
 }
@@ -77,6 +78,7 @@ class pnlBoardControls : public wxFrame
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);
         void OnSetDACvaluesENTER(wxCommandEvent &event);
+        static std::vector<ADC_DAC> mParameters;
 	protected:
         wxPanel* pnlCustomControls;
         wxPanel* pnlReadControls;
@@ -109,9 +111,10 @@ class pnlBoardControls : public wxFrame
         wxStaticText* m_staticText349;
         wxChoice* cmbBoardSelection;
 
-        std::vector<ADC_DAC> mParameters;
+
 
         std::vector<Param_GUI*> mGUI_widgets;
+        static const std::vector<lime::eLMS_DEV> board_list;
 };
 
 #endif // __pnlAnalog_view__

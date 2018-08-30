@@ -224,6 +224,7 @@ set(LMS7SUITE_GUI_SOURCES
     boards_wxgui/pnluLimeSDR.cpp
     boards_wxgui/pnlUltimateEVB.cpp
     boards_wxgui/pnlBuffers.cpp
+    boards_wxgui/pnlCoreSDR.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp

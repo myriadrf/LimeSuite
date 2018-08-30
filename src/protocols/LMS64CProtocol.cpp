@@ -350,7 +350,7 @@ LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
         info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
         info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
         info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        info.hwVersion = (pkt.inBuffer[14] << 8) | pkt.inBuffer[15];
+        info.hwVersion = pkt.inBuffer[15]&0x7F;
     }
     return info;
 }
@@ -776,11 +776,15 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
         if(units)
         {
 
-            const char adc_units_prefix[] = {
-                ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
-                'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
-            units[i] = adc_units_prefix[unitsIndex&0x0F];
-            units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+            if (unitsIndex&0x0F)
+            {
+                const char adc_units_prefix[] = {
+                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
+            }
+            else
+                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
         }
         values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
 
