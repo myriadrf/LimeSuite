@@ -117,13 +117,13 @@ StreamChannel::Info StreamChannel::GetInfo()
     underflow = 0;
     if(config.isTx)
     {
-        stats.timestamp = mStreamer->txLastTimestamp;
-        stats.linkRate = mStreamer->txDataRate_Bps.load();
+        stats.timestamp = mStreamer->txLastTimestamp.load(std::memory_order_relaxed);
+        stats.linkRate = mStreamer->txDataRate_Bps.load(std::memory_order_relaxed);
     }
     else
     {
-        stats.timestamp = mStreamer->rxLastTimestamp;
-        stats.linkRate = mStreamer->rxDataRate_Bps.load();
+        stats.timestamp = mStreamer->rxLastTimestamp.load(std::memory_order_relaxed);
+        stats.linkRate = mStreamer->rxDataRate_Bps.load(std::memory_order_relaxed);
     }
     return stats;
 }
@@ -161,11 +161,11 @@ Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : mRxStreams(2, this), mTxSt
     chipId = id;
     dataPort = f->GetConnection();
     mTimestampOffset = 0;
-    rxLastTimestamp = 0;
-    terminateRx = false;
-    terminateTx = false;
-    rxDataRate_Bps = 0;
-    txDataRate_Bps = 0;
+    rxLastTimestamp.store(0, std::memory_order_relaxed);
+    terminateRx.store(false, std::memory_order_relaxed);
+    terminateTx.store(false, std::memory_order_relaxed);
+    rxDataRate_Bps.store(0, std::memory_order_relaxed);
+    txDataRate_Bps.store(0, std::memory_order_relaxed);
     txBatchSize = 1;
     rxBatchSize = 1;
     streamSize = 1;
@@ -173,10 +173,10 @@ Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : mRxStreams(2, this), mTxSt
 
 Streamer::~Streamer()
 {
-    terminateTx.store(true);
+    terminateRx.store(true, std::memory_order_relaxed);
+    terminateTx.store(true, std::memory_order_relaxed);
     if (txThread.joinable())
         txThread.join();
-    terminateRx.store(true);
     if (rxThread.joinable())
         rxThread.join();
 }
@@ -244,13 +244,13 @@ uint64_t Streamer::GetHardwareTimestamp(void)
     }
     else
     {
-        return rxLastTimestamp.load()+mTimestampOffset;
+        return rxLastTimestamp.load(std::memory_order_relaxed)+mTimestampOffset;
     }
 }
 
 void Streamer::SetHardwareTimestamp(const uint64_t now)
 {
-    mTimestampOffset = now - rxLastTimestamp.load();
+    mTimestampOffset = now - rxLastTimestamp.load(std::memory_order_relaxed);
 }
 
 void Streamer::RstRxIQGen()
@@ -543,12 +543,12 @@ int Streamer::UpdateThreads(bool stopAll)
     //stop threads if not needed
     if((!needTx) && txThread.joinable())
     {
-        terminateTx.store(true);
+        terminateTx.store(true, std::memory_order_relaxed);
         txThread.join();
     }
     if((!needRx) && rxThread.joinable())
     {
-        terminateRx.store(true);
+        terminateRx.store(true, std::memory_order_relaxed);
         rxThread.join();
     }
 
@@ -561,7 +561,7 @@ int Streamer::UpdateThreads(bool stopAll)
         //enable FPGA streaming
         fpga->StopStreaming();
         fpga->ResetTimestamp();
-        rxLastTimestamp.store(0);
+        rxLastTimestamp.store(0, std::memory_order_relaxed);
         //Clear device stream buffers
         dataPort->ResetStreamBuffers();
 
@@ -619,7 +619,7 @@ int Streamer::UpdateThreads(bool stopAll)
     //FPGA should be configured and activated, start needed threads
     if(needRx && (!rxThread.joinable()))
     {
-        terminateRx.store(false);
+        terminateRx.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&Streamer::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
     }
@@ -627,7 +627,7 @@ int Streamer::UpdateThreads(bool stopAll)
     {
         fpga->WriteRegister(0xFFFF, 1 << chipId);
         fpga->WriteRegister(0xD, 0); //stop WFM
-        terminateTx.store(false);
+        terminateTx.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&Streamer::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
     }
@@ -668,7 +668,7 @@ void Streamer::TransmitPacketsLoop()
     auto t2 = t1;
     bool end_burst = false;
     uint8_t bi = 0; //buffer index
-    while (terminateTx.load() != true)
+    while (terminateTx.load(std::memory_order_relaxed) != true)
     {
         if (bufferUsed[bi])
         {
@@ -688,7 +688,7 @@ void Streamer::TransmitPacketsLoop()
             }
             else
             {
-                txDataRate_Bps.store(totalBytesSent);
+                txDataRate_Bps.store(totalBytesSent, std::memory_order_relaxed);
                 totalBytesSent = 0;
                 continue;
             }
@@ -742,14 +742,14 @@ void Streamer::TransmitPacketsLoop()
 
         }while(++i<packetsToBatch && end_burst == false);
 
-        if(terminateTx.load() == true) //early termination
+        if(terminateTx.load(std::memory_order_relaxed) == true) //early termination
             break;
 
         if (i)
         {
             bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
             handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
-            txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1); //timestamp of the last sample that was sent to HW
+            txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1, std::memory_order_relaxed); //timestamp of the last sample that was sent to HW
             bufferUsed[bi] = true;
             bi = (bi + 1) & (buffersCount-1);
         }
@@ -760,7 +760,7 @@ void Streamer::TransmitPacketsLoop()
         {
             //total number of bytes sent per second
             float dataRate = 1000.0*totalBytesSent / timePeriod;
-            txDataRate_Bps.store(dataRate);
+            txDataRate_Bps.store(dataRate, std::memory_order_relaxed);
             totalBytesSent = 0;
             t1 = t2;
 #ifndef NDEBUG
@@ -771,7 +771,7 @@ void Streamer::TransmitPacketsLoop()
 
     // Wait for all the queued requests to be cancelled
     dataPort->AbortSending(epIndex);
-    txDataRate_Bps.store(0);
+    txDataRate_Bps.store(0, std::memory_order_relaxed);
 }
 
 /** @brief Function dedicated for receiving data samples from board
@@ -811,28 +811,9 @@ void Streamer::ReceivePacketsLoop()
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
 
-    std::mutex txFlagsLock;
-    std::condition_variable resetTxFlags;
-    //worker thread for reseting late Tx packet flags
-    std::thread txReset([](FPGA* fpga,
-                        std::atomic<bool> *terminate,
-                        std::mutex *spiLock,
-                        std::condition_variable *doWork)
-    {
-        uint32_t reg9 = fpga->ReadRegister(0x0009);
-        const uint32_t addr[] = {0x0009, 0x0009};
-        const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
-        while (not terminate->load())
-        {
-            std::unique_lock<std::mutex> lck(*spiLock);
-            doWork->wait(lck);
-            fpga->WriteRegisters(addr, data, 2);
-        }
-    }, fpga, &terminateRx, &txFlagsLock, &resetTxFlags);
-
     int resetFlagsDelay = 0;
     uint64_t prevTs = 0;
-    while (terminateRx.load() == false)
+    while (terminateRx.load(std::memory_order_relaxed) == false)
     {
         int32_t bytesReceived = 0;
         if(handles[bi] >= 0)
@@ -848,30 +829,27 @@ void Streamer::ReceivePacketsLoop()
             }
             else
             {
-                rxDataRate_Bps.store(totalBytesReceived);
+                rxDataRate_Bps.store(totalBytesReceived, std::memory_order_relaxed);
                 totalBytesReceived = 0;
                 continue;
             }
         }
-        bool txLate=false;
         for (uint8_t pktIndex = 0; pktIndex < bytesReceived / sizeof(FPGA_DataPacket); ++pktIndex)
         {
             const FPGA_DataPacket* pkt = (FPGA_DataPacket*)&buffers[bi*bufferSize];
             const uint8_t byte0 = pkt[pktIndex].reserved[0];
-            if ((byte0 & (1 << 3)) != 0 && !txLate) //report only once per batch
+            if ((byte0 & (1 << 3)) != 0) 
             {
-                txLate = true;
                 if(resetFlagsDelay > 0)
                     --resetFlagsDelay;
                 else
                 {
                     lime::warning("L");
-                    resetTxFlags.notify_one();
-                    resetFlagsDelay = buffersCount;
-                    for(auto &value: mTxStreams)
-                        if (value.used && value.mActive)
-                            value.pktLost++;
+                    resetFlagsDelay = buffersCount*2;
                 }
+                for(auto &value: mTxStreams)
+                    if (value.used && value.mActive)
+                        value.pktLost++;
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
@@ -882,7 +860,7 @@ void Streamer::ReceivePacketsLoop()
                         value.pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
-            rxLastTimestamp.store(prevTs);
+            rxLastTimestamp.store(prevTs, std::memory_order_relaxed);
             //parse samples
             std::vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)
@@ -917,13 +895,11 @@ void Streamer::ReceivePacketsLoop()
             printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
             totalBytesReceived = 0;
-            rxDataRate_Bps.store((uint32_t)dataRate);
+            rxDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);
         }
     }
     dataPort->AbortReading(epIndex);
-    resetTxFlags.notify_one();
-    txReset.join();
-    rxDataRate_Bps.store(0);
+    rxDataRate_Bps.store(0, std::memory_order_relaxed);
 }
 
 }
