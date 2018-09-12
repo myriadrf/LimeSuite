@@ -157,7 +157,6 @@ int FPGA::StopStreaming()
 
 int FPGA::ResetTimestamp()
 {
-    int status;
 #ifndef NDEBUG
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
@@ -174,8 +173,7 @@ int FPGA::ResetTimestamp()
     uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
     WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
     WriteRegister(0x0009, interface_ctrl_0009 | value);
-    WriteRegister(0x0009, interface_ctrl_0009 & ~value);
-    return status;
+    return WriteRegister(0x0009, interface_ctrl_0009 & ~value);
 }
 
 int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val)
