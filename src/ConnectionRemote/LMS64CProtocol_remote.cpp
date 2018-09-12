@@ -38,8 +38,8 @@ void LMS64CProtocol::InitRemote()
 #ifdef __unix__
     fcntl(socketFd, F_SETFL, O_NONBLOCK);
 #else
-    u_long iMode = 0;
-    ioctlsocket(socketFd, FIONBIO, &iMode);
+    u_long NonBlock = 1;
+    ioctlsocket(socketFd, FIONBIO, &NonBlock);
 #endif
 
     struct sockaddr_in host;
