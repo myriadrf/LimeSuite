@@ -111,7 +111,7 @@ StreamChannel::Info StreamChannel::GetInfo()
     stats.active = mActive;
     stats.droppedPackets = pktLost;
     stats.overrun = overflow;
-    stats.overrun = underflow;
+    stats.underrun = underflow;
     pktLost = 0;
     overflow = 0;
     underflow = 0;
