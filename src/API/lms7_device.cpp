@@ -152,8 +152,11 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         }
     }
 
-    if (bandwidth < 0)
-        return 0;
+    if (bandwidth <= 0)
+    {
+        lime::error("GFIR LPF cannot be set to the requested bandwidth");
+        return -1;
+    }
 
     if (enabled)
     {
@@ -172,9 +175,7 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
             interface_MHz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / 1e6;
         }
 
-        if (ratio == 7)
-            interface_MHz /= 2;
-        else
+        if (ratio != 7)
             div = (2<<(ratio));
 
         w = (bandwidth/2)/(interface_MHz/div);
@@ -186,11 +187,12 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         w2 = w*1.1;
         if (w2 > 0.495)
         {
-         w2 = w*1.05;
-         if (w2 > 0.495)
-         {
-             return 0; //Filter disabled
-         }
+            w2 = w*1.05;
+            if (w2 > 0.495)
+            {
+                lime::error("GFIR LPF cannot be set to the requested bandwidth");
+                return -1; //Filter disabled
+            }
         }
     }
     else return 0;
