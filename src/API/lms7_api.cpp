@@ -362,6 +362,11 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buff
 
 API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
 {
+    return  LMS_EnableCache(dev, enable);
+}
+
+API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t *dev, bool enable)
+{
     if (dev == nullptr)
     {
         lime::ReportError(EINVAL, "Device cannot be NULL.");
@@ -369,7 +374,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
     }
 
     lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
-    return lms->EnableCalibCache(enable);
+    return lms->EnableCache(enable);
 }
 
 API_EXPORT int CALL_CONV LMS_GetChipTemperature(lms_device_t *dev, size_t ind, float_type *temp)

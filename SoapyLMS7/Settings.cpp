@@ -61,7 +61,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     //or specify args[cacheCalibrations] == 0 to disable
     const bool cacheEnable = args.count("cacheCalibrations") and std::stoi(args.at("cacheCalibrations")) != 0;
     SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", cacheEnable?"Enable":"Disable");
-    lms7Device->EnableCalibCache(cacheEnable);
+    lms7Device->EnableCache(cacheEnable);
 
     //give all RFICs a default state
     double defaultClockRate = DEFAULT_CLOCK_RATE;

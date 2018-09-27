@@ -1631,7 +1631,7 @@ int LMS7_Device::SetLogCallback(void(*func)(const char* cstr, const unsigned int
     return 0;
 }
 
-int LMS7_Device::EnableCalibCache(bool enable)
+int LMS7_Device::EnableCache(bool enable)
 {
     for (unsigned i = 0; i < lms_list.size(); i++)
         lms_list[i]->EnableValuesCache(enable);

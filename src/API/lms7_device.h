@@ -69,7 +69,7 @@ public:
     lms_dev_info_t* GetInfo();
     int Synchronize(bool toChip) const;
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
-    int EnableCalibCache(bool enable);
+    int EnableCache(bool enable);
     double GetChipTemperature(int ind = -1) const;
     int LoadConfig(const char *filename, int ind = -1);
     int SaveConfig(const char *filename, int ind = -1) const;
