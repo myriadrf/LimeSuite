@@ -37,12 +37,12 @@ static const ConnectionImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinf
 {
     static const std::vector<ConnectionImageEntry> imageEntries = {
         ConnectionImageEntry({LMS_DEV_UNKNOWN, -1, -1, nullptr, -1, -1, nullptr}),
-        ConnectionImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 17,  "LimeSDR-USB_HW_1.4_r2.17.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 18,  "LimeSDR-USB_HW_1.4_r2.18.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 3, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"}),
-        ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 26,  "LimeSDR-Mini_HW_1.1_r1.26.rpd"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 27,  "LimeSDR-Mini_HW_1.1_r1.27.rpd"}),
     };
 
     for(const auto &iter : imageEntries)
