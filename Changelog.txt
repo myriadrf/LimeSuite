@@ -1,4 +1,4 @@
-Release 18.10.0 (2018-10-01)
+Release 18.10.0 (2018-10-04)
 ==========================
 
 LimeSuite library changes:
