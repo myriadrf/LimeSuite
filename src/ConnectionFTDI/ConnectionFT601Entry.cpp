@@ -84,7 +84,7 @@ std::vector<ConnectionHandle> ConnectionFT601Entry::enumerate(const ConnectionHa
                 handle.index = i;
                 handle.serial = SerialNumber;
                 //add handle conditionally, filter by serial number
-                if (hint.serial.empty() || hint.serial == handle.serial)
+                if (hint.serial.empty() || handle.serial.find(hint.serial) != std::string::npos)
                     handles.push_back(handle);
             }
         }
@@ -145,7 +145,7 @@ std::vector<ConnectionHandle> ConnectionFT601Entry::enumerate(const ConnectionHa
                 libusb_close(tempDev_handle);
 
                 //add handle conditionally, filter by serial number
-                if (hint.serial.empty() or hint.serial == handle.serial)
+                if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
                 {
                     handles.push_back(handle);
                 }
