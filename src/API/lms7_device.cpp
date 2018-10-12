@@ -127,40 +127,15 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
 
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
-
-    if (tx)
-    {
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false);
-    }
-    else
-    {
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false);
-        lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false);
-        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
-        if (ch%2)
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled? 3 : 0);
-        }
-        else
-        {
-            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled|sisoDDR));
-            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
-        }
-    }
-
+    
     if (bandwidth <= 0)
     {
-        lime::error("GFIR LPF cannot be set to the requested bandwidth");
-        return -1;
+        lime::warning("GFIR LPF cannot be set to the requested bandwidth");
+        enabled = false;
     }
-
+    
     if (enabled)
     {
-
         double interface_MHz;
         int ratio;
 
@@ -190,20 +165,45 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
             w2 = w*1.05;
             if (w2 > 0.495)
             {
-                lime::error("GFIR LPF cannot be set to the requested bandwidth");
-                return -1; //Filter disabled
+                lime::warning("GFIR LPF cannot be set to the requested bandwidth");
+                enabled = false; //Filter disabled
             }
         }
     }
-    else return 0;
 
-  double coef[120];
-  double coef2[40];
-  short gfir1[120];
-  short gfir2[40];
+    if (tx)
+    {
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false);
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_TXTSP),enabled==false);
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_TXTSP),enabled==false);
+    }
+    else
+    {
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_RXTSP), enabled == false);
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR2_BYP_RXTSP), enabled == false);
+        lms->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), enabled == false);
+        bool sisoDDR = lms->Get_SPI_Reg_bits(LMS7_LML1_SISODDR);
+        if (ch%2)
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXBLML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXBLML), enabled? 3 : 0);
+        }
+        else
+        {
+            lms->Modify_SPI_Reg_bits(LMS7param(CDSN_RXALML), !(enabled|sisoDDR));
+            lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
+        }
+    }
+    if (!enabled)
+        return 0;
 
-  GenerateFilter(L*15, w, w2, 1.0, 0, coef);
-  GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
+    double coef[120];
+    double coef2[40];
+    short gfir1[120];
+    short gfir2[40];
+
+    GenerateFilter(L*15, w, w2, 1.0, 0, coef);
+    GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
 
     int sample = 0;
     for(int i=0; i<15; i++)
@@ -268,8 +268,8 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         || (lms->SetGFIRCoefficients(tx, 1, gfir2, 40) != 0)
         || (lms->SetGFIRCoefficients(tx, 2, gfir1, 120) != 0))
         return -1;
-
-  return 0;
+    
+    return lms->ResetLogicregisters();
 }
 
 int LMS7_Device::ConfigureTXLPF(bool enabled, int ch,double bandwidth)
