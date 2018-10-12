@@ -141,6 +141,7 @@ public:
      * Perform soft-reset sequence over SPI
      */
     int SoftReset();
+    int ResetLogicregisters();
 
 	int LoadConfig(const char* filename);
 	int SaveConfig(const char* filename);

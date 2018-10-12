@@ -667,8 +667,16 @@ int LMS7002M::LoadConfig(const char* filename)
         this->SetReferenceClk_SX(Tx, parser.get("sxt_ref_clk_mhz", 30.72) * 1e6);
     }
 
+    ResetLogicregisters();
     this->SetActiveChannel(ChA);
     return 0;
+}
+
+int LMS7002M:: ResetLogicregisters()
+{
+    auto x0020_value = SPI_read(0x0020); //reset logic registers
+    SPI_write(0x0020, x0020_value & 0x55FF);
+    return SPI_write(0x0020, x0020_value | 0xFF00);  
 }
 
 /** @brief Reads all registers from chip and saves to file
@@ -2489,7 +2497,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
 
-    return status;
+    return ResetLogicregisters();
 }
 
 float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
