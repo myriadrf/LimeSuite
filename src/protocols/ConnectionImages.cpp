@@ -101,10 +101,12 @@ static bool programmingCallbackStream(
     return callback(bsent, btotal, msg.c_str());
 }
 
-int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
+int LMS64CProtocol::ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);
+    bool fwUpdateNeeded = true;
+    bool gwUpdateNeeded = true;
 
     //an entry match was not found
     if (entry.dev == LMS_DEV_UNKNOWN){
@@ -125,9 +127,24 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
             if (callback) callback(1, 1, "Done!");
         }
     }
-
+    if (!force){
+        const auto fpgaInfo = this->GetFPGAInfo();
+        if (entry.fw_img && info.firmware >= entry.fw_ver) {
+            lime::info("Existing firmware is same or more recent than update : %d >= %d", info.firmware, entry.fw_ver);
+            fwUpdateNeeded = false;
+        }
+        if (entry.gw_img && fpgaInfo.gatewareVersion >= entry.gw_ver && fpgaInfo.gatewareRevision >= entry.gw_rev){
+            lime::info("Existing gateware is same or more recent than update : %d.%d >= %d.%d",
+                          fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision, entry.gw_ver, entry.gw_rev);
+            gwUpdateNeeded = false;
+        }
+        if (!(gwUpdateNeeded || fwUpdateNeeded)){
+            lime::info("Firmware and Gateware update is not required.");
+            return 0;
+        }
+    }
     //load firmware into flash
-    if (entry.fw_img){
+    if (fwUpdateNeeded && entry.fw_img){
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.fw_img);
@@ -151,7 +168,7 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
     }
 
     //load gateware into flash
-    {
+    if (gwUpdateNeeded && entry.gw_img){
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.gw_img);
