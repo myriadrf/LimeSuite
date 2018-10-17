@@ -231,10 +231,11 @@ public:
      *   then up-to-date images will be written to the flash on the board.
      *
      * @param download true to enable downloading missing images
+     * @param force true to flash even if new image is the same or older version
      * @param callback callback for progress reporting or early termination
      * @return 0-success
      */
-    virtual int ProgramUpdate(const bool download = true, ProgrammingCallback callback = 0);
+    virtual int ProgramUpdate(const bool download = true, const bool force = true, ProgrammingCallback callback = 0);
 
     /***********************************************************************
      * GPIO API

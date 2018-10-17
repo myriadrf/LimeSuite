@@ -144,7 +144,7 @@ int IConnection::ProgramMCU(const uint8_t *buffer, const size_t length, const MC
     return -1;
 }
 
-int IConnection::ProgramUpdate(const bool download, ProgrammingCallback callback)
+int IConnection::ProgramUpdate(const bool download, const bool force, ProgrammingCallback callback)
 {
     ReportError(ENOTSUP, "ProgramUpdate not supported");
     return -1;
