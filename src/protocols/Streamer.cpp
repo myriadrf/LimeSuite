@@ -593,7 +593,7 @@ int Streamer::UpdateThreads(bool stopAll)
         uint16_t mode = 0x0100;
 
         if (lms->Get_SPI_Reg_bits(LMS7param(LML1_SISODDR)))
-            mode = 0x0040;
+            mode = 0x0040;//IGNORE TIMESTAMPS - 0240, default - 0040
         else if (lms->Get_SPI_Reg_bits(LMS7param(LML1_TRXIQPULSE)))
             mode = 0x0180;
 
@@ -762,9 +762,9 @@ void Streamer::TransmitPacketsLoop()
             txDataRate_Bps.store(dataRate);
             totalBytesSent = 0;
             t1 = t2;
-#ifndef NDEBUG
+//#ifndef NDEBUG
             printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
-#endif
+//#endif
         }
     }
 
@@ -849,17 +849,35 @@ void Streamer::ReceivePacketsLoop()
                     --resetFlagsDelay;
                 else
                 {
-                    lime::warning("L");
+	            printf("L\n");
+                    //lime::warning("L");
                     resetFlagsDelay = buffersCount;
-                    for(auto &value: mTxStreams)
+                    /*for(auto &value: mTxStreams)
                         if (value.used && value.mActive)
-                            value.pktLost++;
+                            value.pktLost++;*/
                 }
             }
             uint8_t* pktStart = (uint8_t*)pkt[pktIndex].data;
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
-            	lime::warning("Rx ts diff %lu (%lu : %lu)", pkt[pktIndex].counter - prevTs, pkt[pktIndex].counter, prevTs);
+            	uint64_t ts_diff = pkt[pktIndex].counter - prevTs;
+            	printf("Rx ts diff %llu (%llu : %llu)\n", ts_diff, pkt[pktIndex].counter, prevTs);
+                if (ts_diff > samplesInPacket)
+                {
+                	static const complex16_t dummy[samples12InPkt] = {0};
+					StreamChannel::Metadata meta;
+					meta.timestamp = prevTs+samplesInPacket;
+					meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
+					while (meta.timestamp < pkt[pktIndex].counter)
+					{
+						int samplesCount = pkt[pktIndex].counter-meta.timestamp;
+						if (samplesCount > samplesInPacket)
+							samplesCount = samplesInPacket;
+						mRxStreams[0].Write((const void*)dummy, samplesCount, &meta, 100);
+						meta.timestamp += samplesCount;
+					}
+                }
+
                 int packetLoss = ((pkt[pktIndex].counter - prevTs)/samplesInPacket)-1;
                 for(auto &value: mRxStreams)
                     if (value.used && value.mActive)
@@ -897,9 +915,9 @@ void Streamer::ReceivePacketsLoop()
             t1 = t2;
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
-#ifndef NDEBUG
+//#ifndef NDEBUG
             printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
-#endif
+//#endif
             totalBytesReceived = 0;
             rxDataRate_Bps.store((uint32_t)dataRate);
         }

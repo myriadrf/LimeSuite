@@ -28,8 +28,8 @@ using namespace std;
 
 using namespace lime;
 
-
-#define INT_PIN_WPI 22
+//#define INT_PIN_WPI 22
+#define INT_PIN_WPI 12
 #define SPI_STREAM_SPEED_HZ 50000000
 
 ConnectionSPI* ConnectionSPI::pthis = nullptr;
@@ -507,18 +507,25 @@ void ConnectionSPI::SPIcallback()
         static const FPGA_DataPacket dummy_packet = {0};
         FPGA_DataPacket rx_packet;
         FPGA_DataPacket tx_packet;
-
-        pthis->mTxStreamLock.lock();
-        if (pthis->txQueue.empty())
-        {
+	static uint64_t rx_timestamp = 1360;
+	while (1)
+	{
+        	pthis->mTxStreamLock.lock();
+        	if (pthis->txQueue.empty())
+        	{
+			pthis->mTxStreamLock.unlock();
 			tx_packet = dummy_packet;
-        }
-        else
-        {
+        	}
+        	else
+        	{
 			tx_packet = pthis->txQueue.front();
 			pthis->txQueue.pop();
-        }
-        pthis->mTxStreamLock.unlock();
+			pthis->mTxStreamLock.unlock();
+			if (tx_packet.counter < rx_timestamp+5*1360)
+				continue;
+        	}
+		break;
+	}
 
         {
 			spi_ioc_transfer tr = { (unsigned long)&tx_packet,
@@ -529,6 +536,7 @@ void ConnectionSPI::SPIcallback()
 									8 };
 			ioctl(pthis->fd_stream, SPI_IOC_MESSAGE(1), &tr);
         }
+ 	rx_timestamp = rx_packet.counter;
 
         pthis->mRxStreamLock.lock();
 	
@@ -545,7 +553,7 @@ void ConnectionSPI::SPIcallback()
 									0,
 									8 };
 			ioctl(pthis->fd_stream_clocks, SPI_IOC_MESSAGE(1), &tr);
-        }
+        } 
     //}
     //pthis->last_int_time = current_time;
 }
