@@ -50,11 +50,11 @@ Package: soapysdr-module-lms7
 Section: libs
 Architecture: all
 Pre-Depends: ${misc:Pre-Depends}
-Depends: soapysdr0.6-module-lms7, ${misc:Depends}
+Depends: soapysdr0.7-module-lms7, ${misc:Depends}
 Description: Lime Suite - SoapySDR bindings metapackage
  Lime Suite application software.
 
-Package: soapysdr0.6-module-lms7
+Package: soapysdr0.7-module-lms7
 Section: comm
 Architecture: any
 Multi-Arch: same
