@@ -18,9 +18,9 @@
 #include <FPGA_common.h>
 #include "Logger.h"
 
+#include <fstream>
 #include <thread>
 #include <chrono>
-
 
 #include <sys/resource.h>
 
@@ -28,42 +28,41 @@ using namespace std;
 
 using namespace lime;
 
-//#define INT_PIN_WPI 22
-#define INT_PIN_WPI 12
 #define SPI_STREAM_SPEED_HZ 50000000
+
 
 ConnectionSPI* ConnectionSPI::pthis = nullptr;
 /** @brief Initializes port type and object necessary to communicate to usb device.
 */
-ConnectionSPI::ConnectionSPI(const unsigned index)
-{
-	
+ConnectionSPI::ConnectionSPI(const unsigned index) :
+    fd_stream(-1),
+    fd_stream_clocks(-1),
+    fd_control_lms(-1),
+    fd_control_fpga(-1),
+    fd_control_dac(-1),
+    int_pin(26)
+{	
     pthis = this;
     if (Open(index) < 0)
         lime::error("Failed to open SPI device");
     
-    #ifndef DISABLESTREAM
-    //piHiPri(50);
+    std::ifstream file("/proc/device-tree/model");
+    if (file.good())
+    {
+        std::string str;
+        std::getline(file, str);
+        lime::info(str.c_str());
+        if (str.find("Module")!=std::string::npos)
+            int_pin = 12;
+    }
+    
     wiringPiSetup();
-    pinMode(INT_PIN_WPI, OUTPUT);
-
-    /*
-    int which = PRIO_PROCESS;
-    id_t pid;
-    int priority = 20;
-    int ret;
-    pid = getpid();
-    ret = setpriority(which, pid, priority);
-    printf("priority set: %d", ret);*/
-
-    wiringPiISR(INT_PIN_WPI, INT_EDGE_RISING, &ConnectionSPI::SPIcallback);
-
-    #endif
-
-    last_int_time = std::chrono::high_resolution_clock::now();
-
-
-    dac_value = 128;
+    pinMode(int_pin, INPUT);
+    pullUpDnControl(int_pin, PUD_OFF);
+    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
+    uint8_t id = 0;
+    double val = 35487;
+    CustomParameterWrite(&id, &val, 1, "");
 }
 /** @brief Closes connection to chip and deallocates used memory.
 */
@@ -169,11 +168,16 @@ int ConnectionSPI::Open(const unsigned index)
 */
 void ConnectionSPI::Close()
 {
-    close(fd_stream);
-    close(fd_stream_clocks);
-    close(fd_control_lms);
-    close(fd_control_fpga);
-    close(fd_control_dac);
+	if (fd_stream != -1)
+		close(fd_stream);
+	if (fd_stream_clocks != -1)
+		close(fd_stream_clocks);
+	if (fd_control_lms != -1)
+		close(fd_control_lms);
+	if (fd_control_fpga != -1)
+		close(fd_control_fpga);
+	if (fd_control_dac != -1)
+		close(fd_control_dac);
 }
 
 /** @brief Returns connection status
@@ -189,11 +193,11 @@ bool ConnectionSPI::IsOpen()
 int ConnectionSPI::TransferSPI(int fd, const void *tx, void *rx, uint32_t len)
 {
     spi_ioc_transfer tr = { (unsigned long)tx,
-    						(unsigned long)rx,
-							len,
-							2000000,
-							0,
-							8 };
+                            (unsigned long)rx,
+                            len,
+                            2000000,
+                            0,
+                            8 };
 
     return ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
 }
@@ -290,23 +294,23 @@ int ConnectionSPI::ReadRegisters(const uint32_t *addrs, uint32_t *vals, const si
     	writeData[4*i+3] = 0;
     }
     if (TransferSPI(fd_control_fpga, writeData, readData, size*4) != size*4)
-	{
-		lime::error("Read FPGA: SPI transfer error");
-		ret = -1;
-	}
+    {
+        lime::error("Read FPGA: SPI transfer error");
+        ret = -1;
+    }
 
     for (unsigned i = 0; i < size; i++)
     	vals[i] = readData[4*i+3] | (readData[4*i+2]<<8);
 
     delete [] readData;
     delete [] writeData;
-    return 0;
+    return ret;
 }
 
 int ConnectionSPI::CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units)
 {
-    for (int i = 0; i < count; i++)
-		values[i] = ids[i] == 0 ? dac_value : 0;
+    for (unsigned i = 0; i < count; i++)
+        values[i] = ids[i] == 0 ? dac_value : 0;
 
     return 0;
 }
@@ -315,19 +319,19 @@ int ConnectionSPI::CustomParameterWrite(const uint8_t *ids, const double *vals, 
 {
    int ret = 0;
 
-   for (int i = 0; i < count; i++)
+   for (unsigned i = 0; i < count; i++)
         if (ids[i] == 0)
         {
             uint16_t rx;
             dac_value = vals[i];
             uint16_t tx = (dac_value << 14);
             tx |= dac_value>>2;
-
+            lime::info("DAC write: %d", dac_value);
             if (TransferSPI(fd_control_dac, &tx, &rx, 2) != 2)
-        	{
-        		lime::error("Read FPGA: SPI transfer error");
-        		ret = -1;
-        	}
+            {
+                lime::error("Read FPGA: SPI transfer error");
+                ret = -1;
+            }
         }
 
     return ret;
@@ -335,11 +339,11 @@ int ConnectionSPI::CustomParameterWrite(const uint8_t *ids, const double *vals, 
 
 DeviceInfo ConnectionSPI::GetDeviceInfo(void)
 {
-	DeviceInfo info;
-	info.deviceName = "LimeSDR-Mini";
-	info.protocolVersion = "0";
-	info.firmwareVersion = "0";
-	info.expansionName = "EXP_BOARD_UNKNOWN";
+    DeviceInfo info;
+    info.deviceName = "LimeSDR-Mini";
+    info.protocolVersion = "0";
+    info.firmwareVersion = "0";
+    info.expansionName = "EXP_BOARD_UNKNOWN";
 
     const uint32_t addrs[] = {0x0001, 0x0002, 0x0003};
     uint32_t vals[3] = {0};
@@ -349,20 +353,24 @@ DeviceInfo ConnectionSPI::GetDeviceInfo(void)
     info.gatewareRevision = std::to_string(vals[1]);
     info.hardwareVersion = std::to_string(vals[2]);
     info.gatewareTargetBoard = "LimeSDR-Mini";
-	return info;
+    return info;
 }
 
 int ConnectionSPI::DeviceReset(int ind)
 {
-	const uint32_t addrs[2] = {0x13, 0x13};
-	uint32_t vals[2] = {};
-	ReadRegisters(addrs, vals, 1);
-	vals[0] = vals[0] & (~0x02);
-	vals[1] = vals[0] | 0x02;
-	WriteRegisters(addrs, vals, 2);
-	return 0;
+    const uint32_t addrs[2] = {0x13, 0x13};
+    uint32_t vals[2] = {};
+    ReadRegisters(addrs, vals, 1);
+    vals[0] = vals[0] & (~0x02);
+    vals[1] = vals[0] | 0x02;
+    WriteRegisters(addrs, vals, 2);
+    return 0;
 }
 
+int ConnectionSPI::ResetStreamBuffers()
+{  
+    return 0;
+}
 
 int ConnectionSPI::GetBuffersCount() const
 {
@@ -395,12 +403,9 @@ int ConnectionSPI::ReceiveData(char *buffer, int length, int epIndex, int timeou
     return count * sizeof(FPGA_DataPacket);
 }
 
-/**
-    @brief Aborts reading operations
-*/
 void ConnectionSPI::AbortReading(int epIndex)
 {
-	return;
+    return;
 }
 
 /**
@@ -424,17 +429,14 @@ int ConnectionSPI::SendData(const char *buffer, int length, int epIndex, int tim
     return count * sizeof(FPGA_DataPacket);
 }
 
-/**
-	@brief Aborts sending operations
-*/
 void ConnectionSPI::AbortSending(int epIndex)
 {
-	return;
+    return;
 }
 
 int ConnectionSPI::BeginDataReading(char* buffer, uint32_t length, int ep)
 {
-	return 0;
+    return 0;
 }
 
 bool ConnectionSPI::WaitForReading(int contextHandle, unsigned int timeout_ms)
@@ -496,66 +498,159 @@ bool ConnectionSPI::WaitForSending(int contextHandle, uint32_t timeout_ms)
 
 int ConnectionSPI::FinishDataSending(const char* buffer, uint32_t length, int contextHandle)
 {
-	return contextHandle;
+    return contextHandle;
 }
 
-void ConnectionSPI::SPIcallback()
+void ConnectionSPI::StreamISR()
 {
-   // auto current_time = std::chrono::high_resolution_clock::now();
-   // if (std::chrono::duration_cast<std::chrono::microseconds>(current_time - pthis->last_int_time).count() > 200)
-   // {
-        static const FPGA_DataPacket dummy_packet = {0};
-        FPGA_DataPacket rx_packet;
-        FPGA_DataPacket tx_packet;
-	static uint64_t rx_timestamp = 1360;
-	while (1)
-	{
-        	pthis->mTxStreamLock.lock();
-        	if (pthis->txQueue.empty())
-        	{
-			pthis->mTxStreamLock.unlock();
-			tx_packet = dummy_packet;
-        	}
-        	else
-        	{
-			tx_packet = pthis->txQueue.front();
-			pthis->txQueue.pop();
-			pthis->mTxStreamLock.unlock();
-			if (tx_packet.counter < rx_timestamp+5*1360)
-				continue;
-        	}
-		break;
-	}
-
+    static const FPGA_DataPacket dummy_packet = {0};
+    FPGA_DataPacket rx_packet;
+    FPGA_DataPacket tx_packet;
+    static uint64_t rx_timestamp = 1360;
+    while (1)
+    {
+        pthis->mTxStreamLock.lock();
+        if (pthis->txQueue.empty())
         {
-			spi_ioc_transfer tr = { (unsigned long)&tx_packet,
-									(unsigned long)&rx_packet,
-									sizeof(tx_packet),
-									SPI_STREAM_SPEED_HZ,
-									0,
-									8 };
-			ioctl(pthis->fd_stream, SPI_IOC_MESSAGE(1), &tr);
+            pthis->mTxStreamLock.unlock();
+            tx_packet = dummy_packet;
         }
- 	rx_timestamp = rx_packet.counter;
-
-        pthis->mRxStreamLock.lock();
-	
-		if (pthis->rxQueue.size() >= 10)
-			pthis->rxQueue.pop();
-		pthis->rxQueue.push(rx_packet);
-		pthis->mRxStreamLock.unlock();
-
+        else
         {
-			spi_ioc_transfer tr = { (unsigned long)&dummy_packet,
-									(unsigned long)&rx_packet,
-									2,
-									SPI_STREAM_SPEED_HZ,
-									0,
-									8 };
-			ioctl(pthis->fd_stream_clocks, SPI_IOC_MESSAGE(1), &tr);
-        } 
-    //}
-    //pthis->last_int_time = current_time;
+            tx_packet = pthis->txQueue.front();
+            pthis->txQueue.pop();
+            pthis->mTxStreamLock.unlock();
+            if (tx_packet.counter < rx_timestamp+5*1360)
+                continue;
+        }
+        break;
+    }
+
+    {
+        spi_ioc_transfer tr = { (unsigned long)&tx_packet,
+                                (unsigned long)&rx_packet,
+                                sizeof(tx_packet),
+                                SPI_STREAM_SPEED_HZ,
+                                0,
+                                8 };
+        ioctl(pthis->fd_stream, SPI_IOC_MESSAGE(1), &tr);
+    }
+   
+    rx_timestamp = rx_packet.counter;
+
+    pthis->mRxStreamLock.lock();
+
+    if (pthis->rxQueue.size() >= 10)
+        pthis->rxQueue.pop();
+    pthis->rxQueue.push(rx_packet);
+    pthis->mRxStreamLock.unlock();
+    
+    {
+        spi_ioc_transfer tr = { (unsigned long)&dummy_packet,
+                                (unsigned long)&rx_packet,
+                                2,
+                                SPI_STREAM_SPEED_HZ,
+                                0,
+                                8 };
+        ioctl(pthis->fd_stream_clocks, SPI_IOC_MESSAGE(1), &tr);
+    }
+}
+
+int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, int device, ProgrammingCallback cb)
+{
+    if (device != 2)
+    {
+        lime::error("Unsupported programming target");
+        return -1;
+    }
+    if (prog_mode != 1)
+    {
+        lime::error("Programming mode not supported");
+        return -1;
+    }
+ 
+    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::ProgramISR);
+    uint32_t addr = 0x7F;
+    uint32_t val = 0x00;
+    WriteRegisters(&addr, &val, 1);
+    val = 0x01;
+    WriteRegisters(&addr, &val, 1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    program_ready.store(false);
+    val = 0x00;
+    WriteRegisters(&addr, &val, 1);
+    val = 0x01;
+    WriteRegisters(&addr, &val, 1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    static unsigned char rx_buffer[4096];
+
+    const int sizeUFM = 0x8000;
+    const int sizeCFM0 = 0x42000;
+    const int startUFM = 0x1000;
+    const int startCFM0 = 0x4B000;
+
+    if (length != startCFM0 + sizeCFM0)
+    {
+        lime::error("Invalid image file");
+        return -1;
+    }
+    std::vector<char> buffer(sizeUFM + sizeCFM0);
+    memcpy(buffer.data(), data + startUFM, sizeUFM);
+    memcpy(buffer.data() + sizeUFM, data + startCFM0, sizeCFM0);
+
+    unsigned data_sent = 0;
+    while (data_sent < buffer.size())
+    {
+        int cnt = 0;
+        auto t1 = chrono::high_resolution_clock::now();
+        while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < 3000)
+            if (program_ready.load())
+            {
+                cnt = buffer.size() - data_sent;
+                if (cnt > 4096)
+                    cnt = 4096;
+                {
+                    spi_ioc_transfer tr = { (unsigned long)(&buffer[data_sent]),
+                                            (unsigned long)&rx_buffer,
+                                            cnt,
+                                            SPI_STREAM_SPEED_HZ,
+                                            0,
+                                            8 };
+                    ioctl(pthis->fd_stream, SPI_IOC_MESSAGE(1), &tr);
+                }
+                program_ready.store(false);
+                {
+                    spi_ioc_transfer tr = { (unsigned long)&rx_buffer,
+                                            (unsigned long)&rx_buffer,
+                                            2,
+                                            SPI_STREAM_SPEED_HZ,
+                                            0,
+                                            8 };
+                    ioctl(pthis->fd_stream_clocks, SPI_IOC_MESSAGE(1), &tr);
+                }
+                data_sent +=cnt;
+                break;
+            } 
+        if (cnt == 0)
+        {
+            lime::error("timeout");
+            break;
+        }
+        if(cb && cb(data_sent, buffer.size(), ""))
+        {
+            lime::info("aborted");
+            break;
+        }
+    }
+    
+    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
+    return 0;
+}
+
+void ConnectionSPI::ProgramISR()
+{
+    pthis->program_ready.store(true);
 }
 
 

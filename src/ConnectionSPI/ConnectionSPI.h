@@ -40,6 +40,8 @@ public:
     int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
     DeviceInfo GetDeviceInfo(void) override;
     int DeviceReset(int ind) override;
+    int ResetStreamBuffers() override;
+    int ProgramWrite(const char *data, size_t length, int progMode, int ind, ProgrammingCallback cb) override;
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
@@ -61,19 +63,21 @@ private:
     
     static int TransferSPI(int fd, const void *tx, void *rx, uint32_t len);
     static ConnectionSPI* pthis;
-    static void SPIcallback();
+    static void StreamISR();
+    static void ProgramISR();
+    std::atomic<bool> program_ready;
     int fd_stream;
     int fd_stream_clocks;
     int fd_control_lms;
     int fd_control_fpga;
     int fd_control_dac;
     int dac_value;
+    int int_pin;
     std::mutex mTxStreamLock;
     std::mutex mRxStreamLock;
     
     std::queue<FPGA_DataPacket> rxQueue;
     std::queue<FPGA_DataPacket> txQueue;  
-    std::chrono::time_point<std::chrono::high_resolution_clock> last_int_time;
 };
 
 class ConnectionSPIEntry : public ConnectionRegistryEntry
