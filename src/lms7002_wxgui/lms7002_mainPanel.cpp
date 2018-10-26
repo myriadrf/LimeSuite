@@ -179,6 +179,7 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
 
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
+    ((LMS7_Device*)lmsControl)->SetActiveChip(cmbLmsDevice->GetSelection());
     Onnotebook_modulesPageChanged(evt); //after reset chip active channel might change, this refresh channel for active tab
     wxCommandEvent evt2;
     evt.SetEventType(CGEN_FREQUENCY_CHANGED);
