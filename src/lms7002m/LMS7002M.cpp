@@ -2659,7 +2659,8 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
-    CalibrateInternalADC(32);
+    if(CalibrateInternalADC(32) != 0)
+        return 0;
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
     uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);
