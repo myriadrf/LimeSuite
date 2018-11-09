@@ -779,7 +779,7 @@ int ConnectionFT601::GPIOWrite(const uint8_t *buffer, size_t len)
     if ((!buffer)||(len==0))
         return -1;
     const uint32_t addr = 0xC6;
-    const uint32_t value = buffer[0];
+    const uint32_t value = (len == 1) ? buffer[0] : buffer[0] | (buffer[1]<<8);
     return WriteRegisters(&addr, &value, 1);
 }
 
@@ -791,6 +791,8 @@ int ConnectionFT601::GPIORead(uint8_t *buffer, size_t len)
     uint32_t value;
     int ret = ReadRegisters(&addr, &value, 1);
     buffer[0] = value;
+    if (len > 1)
+        buffer[1] = (value >> 8);
     return ret;
 }
 
@@ -799,7 +801,7 @@ int ConnectionFT601::GPIODirWrite(const uint8_t *buffer, size_t len )
     if ((!buffer)||(len==0))
         return -1;
     const uint32_t addr = 0xC4;
-    const uint32_t value = buffer[0];
+    const uint32_t value = (len == 1) ? buffer[0] : buffer[0] | (buffer[1]<<8);
     return WriteRegisters(&addr, &value, 1);
 }
 
@@ -811,5 +813,7 @@ int ConnectionFT601::GPIODirRead(uint8_t *buffer, size_t len)
     uint32_t value;
     int ret = ReadRegisters(&addr, &value, 1);
     buffer[0] = value;
+    if (len > 1)
+        buffer[1] = (value >> 8);
     return ret;
 }
