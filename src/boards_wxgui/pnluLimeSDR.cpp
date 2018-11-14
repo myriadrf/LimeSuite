@@ -7,9 +7,7 @@
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
 #include "lms7suiteEvents.h"
-
-#include <ciso646>
-
+#include "pnlGPIO.h"
 
 using namespace std;
 
@@ -24,42 +22,40 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
 #ifdef WIN32
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 #endif
-    wxFlexGridSizer* mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
+    mainSizer = new wxFlexGridSizer(0, 2, 5, 5);
 
     SetSizer(mainSizer);
-    
-    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("RX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    wxFlexGridSizer* lbSizer = new wxFlexGridSizer(0, 2, 5, 5);
+    lbSizer->Add(new wxStaticText(this, wxID_ANY, _("RX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     wxArrayString rxChoices;
     rxChoices.push_back(_("LNAH"));
     rxChoices.push_back(_("LNAW"));
     cmbRxPath = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, rxChoices, 1);
     cmbRxPath->SetSelection(0);
     Connect(cmbRxPath->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(cmbRxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    lbSizer->Add(cmbRxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     
-    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("TX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    lbSizer->Add(new wxStaticText(this, wxID_ANY, _("TX RF port path:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     wxArrayString txChoices;
     txChoices.push_back(_("Band 1"));
     txChoices.push_back(_("Band 2"));
     cmbTxPath = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, txChoices, 1);
     cmbTxPath->SetSelection(0);
     Connect(cmbTxPath->GetId(), wxEVT_CHOICE, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(cmbTxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    mainSizer->Add(new wxStaticText(this, wxID_ANY, _("Loopback:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    lbSizer->Add(cmbTxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    lbSizer->Add(new wxStaticText(this, wxID_ANY, _("Loopback:")), 1, wxALL | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     txtLB = new wxStaticText(this, wxNewId(), _("TX Band 1 -> RX LNAH"));
-    mainSizer->Add(txtLB, 1, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    lbSizer->Add(txtLB, 1, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     
     chkTxLBSH = new wxCheckBox(this, wxNewId(), _("Loopback shunt"));
     Connect(chkTxLBSH->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(chkTxLBSH, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    lbSizer->Add(chkTxLBSH, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     chkTxLBAT = new wxCheckBox(this, wxNewId(), _("Loopback attenuator"));
     Connect(chkTxLBAT->GetId(), wxEVT_CHECKBOX, wxCommandEventHandler(pnluLimeSDR::OnLoopbackChange), NULL, this);
-    mainSizer->Add(chkTxLBAT, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-
-    mainSizer->Fit(this);
-    mainSizer->SetSizeHints(this);
-    Layout();
-
+    lbSizer->Add(chkTxLBAT, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    mainSizer->Add(lbSizer, 1, wxEXPAND | wxALL, 5);
+    pnl_gpio = new pnlGPIO(this, wxNewId());
+    mainSizer->Add(pnl_gpio, 1, wxEXPAND | wxALL, 5);
     Bind(READ_ALL_VALUES, &pnluLimeSDR::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnluLimeSDR::OnLoopbackChange, this, this->GetId());
 }
@@ -67,6 +63,10 @@ pnluLimeSDR::pnluLimeSDR(wxWindow* parent,wxWindowID id, const wxPoint& pos,cons
 void pnluLimeSDR::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
+    pnl_gpio->Initialize(lmsControl);
+    mainSizer->Fit(this);
+    mainSizer->SetSizeHints(this);
+    Layout();
 }
 
 pnluLimeSDR::~pnluLimeSDR()
@@ -104,6 +104,7 @@ void pnluLimeSDR::UpdatePanel()
     cmbRxPath->SetSelection((value >> 9) & 0x1);
     cmbTxPath->SetSelection((value >> 13) & 0x1);
     txtLB->SetLabel(wxString::Format(_("TX Band %c -> RX LNA%c"), ((value>>13)&1)?'1':'2',((value>>9)&1)?'H':'W'));
+    pnl_gpio->UpdatePanel();
 }
 
 void pnluLimeSDR::OnReadAll(wxCommandEvent &event)
@@ -114,4 +115,6 @@ void pnluLimeSDR::OnReadAll(wxCommandEvent &event)
 void pnluLimeSDR::OnWriteAll(wxCommandEvent &event)
 {
     OnLoopbackChange(event);
+    pnl_gpio->OnUsrGPIODirChange(event);
+    pnl_gpio->OnUsrGPIOChange(event);
 }

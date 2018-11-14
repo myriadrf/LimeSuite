@@ -2,12 +2,13 @@
 #define PNL_ULIMESDR_H
 
 #include "lime/LimeSuite.h"
-#include <map>
 #include <wx/panel.h>
-#include <wx/choice.h>
+
+class wxChoice;
 class wxStaticText;
-class wxFlexGridSizer;
 class wxCheckBox;
+class wxFlexGridSizer;
+class pnlGPIO;
 
 class pnluLimeSDR : public wxPanel
 {
@@ -22,6 +23,8 @@ public:
     void OnWriteAll(wxCommandEvent &event);
 
 protected:
+    wxFlexGridSizer* mainSizer;
+    pnlGPIO* pnl_gpio;
     wxCheckBox* chkTxLBSH;
     wxCheckBox* chkTxLBAT;
     wxChoice* cmbRxPath;
