@@ -113,7 +113,6 @@ protected:
     lime::IConnection* connection;
     std::vector<lime::LMS7002M*> lms_list;
     lime::LMS7002M* SelectChannel(unsigned chan) const;
-    int ConfigureTXLPF(bool enabled,int ch, double bandwidth);
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;
     lime::FPGA* fpga;

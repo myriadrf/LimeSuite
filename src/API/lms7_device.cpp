@@ -272,32 +272,6 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     return lms->ResetLogicregisters();
 }
 
-int LMS7_Device::ConfigureTXLPF(bool enabled, int ch,double bandwidth)
-{
-    lime::LMS7002M* lms = SelectChannel(ch);
-    if (enabled)
-    {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 0) != 0)
-            return -1;
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
-
-            if (bandwidth > 0)
-            {
-                if (lms->TuneTxFilter(bandwidth) != 0)
-                    return -1;
-            }
-    }
-    else
-    {
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
-        return lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
-    }
-    lime::info("TX LPF configured");
-    return 0;
-}
-
 unsigned LMS7_Device::GetNumChannels(const bool tx) const
 {
     return 2;
