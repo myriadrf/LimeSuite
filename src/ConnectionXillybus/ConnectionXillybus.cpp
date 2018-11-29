@@ -28,32 +28,64 @@ using namespace std;
 
 using namespace lime;
 
-const ConnectionXillybus::EPConfig ConnectionXillybus::deviceConfigs[] = {
+const std::vector<ConnectionXillybus::EPConfig> ConnectionXillybus::deviceConfigs = {
 #ifndef __unix__
     {
+        "LimeSDR-PCIe",
         "\\\\.\\xillybus_read_8",
         "\\\\.\\xillybus_write_8",
         {"\\\\.\\xillybus_read_32", "\\\\.\\xillybus_read_32", "\\\\.\\xillybus_read_32"},
         {"\\\\.\\xillybus_write_32", "\\\\.\\xillybus_write_32", "\\\\.\\xillybus_write_32"}
     },
     {
+        "LimeSDR-QPCIe",
         "\\\\.\\xillybus_control0_read_32",
         "\\\\.\\xillybus_control0_write_32",
         {"\\\\.\\xillybus_stream0_read_32", "\\\\.\\xillybus_stream1_read_32", "\\\\.\\xillybus_stream2_read_32"},
         {"\\\\.\\xillybus_stream0_write_32", "\\\\.\\xillybus_stream1_write_32", "\\\\.\\xillybus_stream2_write_32"}
-    }
+    },
+{
+        "LimeSDR-PCIe (0)",
+        "\\\\.\\xillybus_control0_read_8",
+        "\\\\.\\xillybus_control0_write_8",
+        { "\\\\.\\xillybus_stream0_read_32", "", "" },
+        { "\\\\.\\xillybus_stream0_write_32", "", "" }
+},
+{
+        "LimeSDR-PCIe (1)",
+        "\\\\.\\xillybus_control1_read_8",
+        "\\\\.\\xillybus_control1_write_8",
+        { "\\\\.\\xillybus_stream1_read_32", "", "" },
+        { "\\\\.\\xillybus_stream1_write_32", "", "" }
+}
 #else
     {
+        "LimeSDR-PCIe",
         "/dev/xillybus_read_8",
         "/dev/xillybus_write_8",
-        {"/dev/xillybus_read_32", "/dev/xillybus_read_32", "/dev/xillybus_read_32"},
-        {"/dev/xillybus_write_32", "/dev/xillybus_write_32", "/dev/xillybus_write_32"}
+        {"/dev/xillybus_read_32", "", ""},
+        {"/dev/xillybus_write_32", "", ""}
     },
     {
+        "LimeSDR-QPCIe",
         "/dev/xillybus_control0_read_32",
         "/dev/xillybus_control0_write_32",
         {"/dev/xillybus_stream0_read_32", "/dev/xillybus_stream1_read_32", "/dev/xillybus_stream2_read_32"},
         {"/dev/xillybus_stream0_write_32", "/dev/xillybus_stream1_write_32", "/dev/xillybus_stream2_write_32"}
+    },
+    {
+        "LimeSDR-PCIe (0)",
+        "/dev/xillybus_control0_read_8",
+        "/dev/xillybus_control0_write_8",
+        { "/dev/xillybus_stream0_read_32", "", "" },
+        { "/dev/xillybus_stream0_write_32", "", "" }
+    },
+    {
+        "LimeSDR-PCIe (1)",
+        "/dev/xillybus_control1_read_8",
+        "/dev/xillybus_control1_write_8",
+        { "/dev/xillybus_stream1_read_32", "", "" },
+        { "/dev/xillybus_stream1_write_32", "", "" }
     }
 #endif
 };

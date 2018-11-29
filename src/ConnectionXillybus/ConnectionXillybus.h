@@ -56,18 +56,19 @@ protected:
     bool WaitForSending(int contextHandle, uint32_t timeout_ms) override;
     int FinishDataSending(const char* buffer, uint32_t length, int contextHandle) override;
     void AbortSending(int epIndex);
-
 private:
+    friend class ConnectionXillybusEntry;
     static const int MAX_EP_CNT = 3;
     struct EPConfig
     {
+        std::string name;
         std::string ctrlRead;
         std::string ctrlWrite;
         std::string streamRead[MAX_EP_CNT];
         std::string streamWrite[MAX_EP_CNT];
     };
 
-    static const EPConfig deviceConfigs[];
+    static const std::vector<EPConfig> deviceConfigs;
     eConnectionType GetType(void) {return PCIE_PORT;}
 
     std::string m_hardwareName;
