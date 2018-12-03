@@ -243,18 +243,42 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
     return conn->CustomParameterWrite(&param_id,&val,1,str);
 }
 
-API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
+API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val, bool memory)
 {
-    return LMS_WriteCustomBoardParam(device, 0, val, "");
+    int ret = LMS_WriteCustomBoardParam(device, 0, val, "");
+    if (memory)
+    {
+        lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+        auto conn = dynamic_cast<lime::LMS64CProtocol*>(lms->GetConnection());
+        unsigned char packet[64] = {0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};     
+        packet[32] = val&0xFF; 
+        packet[33] = val>>8;
+        if (conn->Write(packet, 64) != 64 || conn->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+            return -1;
+    }
+    return ret; 
 }
 
-API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
+API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val, bool memory)
 {
-    lms_name_t units;
-    double dval = 0.0;
-    int ret= LMS_ReadCustomBoardParam(device, 0, &dval, units);
-    *val = dval;
-    return ret;
+    if (memory)
+    {
+        lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+        auto conn = dynamic_cast<lime::LMS64CProtocol*>(lms->GetConnection());
+        unsigned char packet[64] = {0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};     
+        if (conn->Write(packet, 64) != 64 || conn->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+            return -1;
+        *val = packet[32] | (packet[33]<<8);
+    }
+    else
+    {
+        lms_name_t units;
+        double dval = 0.0;
+        if (LMS_ReadCustomBoardParam(device, 0, &dval, units) != 0)
+            return -1;
+        *val = dval;
+    }
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *device, size_t clk_id, float_type *freq)

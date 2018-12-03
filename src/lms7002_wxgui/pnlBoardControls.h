@@ -28,6 +28,8 @@
 namespace lime{
 }
 
+class wxTextCtrl;
+
 class pnlBoardControls : public wxFrame
 {
 	public:
@@ -46,16 +48,13 @@ class pnlBoardControls : public wxFrame
         class Param_GUI
         {
         public:
-            Param_GUI() : title(nullptr), units(nullptr),
-                powerOf10(nullptr), rValue(nullptr),wValue(nullptr){};
+            Param_GUI() : title(nullptr), units(nullptr), rValue(nullptr),wValue(nullptr){};
             ~Param_GUI()
             {
                 if (title)
                     title->Destroy();
                 if (units)
                     units->Destroy();
-                if (powerOf10)
-                    powerOf10->Destroy();
                 if (rValue)
                     rValue->Destroy();
                 if (wValue)
@@ -63,7 +62,6 @@ class pnlBoardControls : public wxFrame
             }
             wxStaticText* title;
             wxStaticText* units;
-            wxStaticText* powerOf10;
             wxStaticText* rValue;
             wxSpinCtrl* wValue;
         };
@@ -78,6 +76,7 @@ class pnlBoardControls : public wxFrame
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);
         void OnSetDACvaluesENTER(wxCommandEvent &event);
+        void OnDACWrite(wxCommandEvent &event);
         static std::vector<ADC_DAC> mParameters;
 	protected:
         wxPanel* pnlCustomControls;
@@ -96,10 +95,14 @@ class pnlBoardControls : public wxFrame
         void OnCustomWrite(wxCommandEvent& event);
 
         wxFlexGridSizer* sizerAnalogRd;
+        wxPanel* additionalControls;
+        wxStaticText* txtDACTitle;
+        wxTextCtrl* txtDACValue;
+        wxButton* btnDAC;
+        wxFlexGridSizer* sizerDAC;
 
         wxFlexGridSizer* sizerAdditionalControls;
-        wxPanel* additionalControls;
-
+        
         std::vector<ADC_DAC> getBoardParams(const std::string &boardID);
 
         void OnUserChangedBoardType(wxCommandEvent& event);

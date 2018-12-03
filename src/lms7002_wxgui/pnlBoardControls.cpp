@@ -78,9 +78,15 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
                                                 LMS_DEV_LMS7002M_ULTIMATE_EVB,
                                                 LMS_DEV_LIMESDR_CORE_SDR};
 
-pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style), lmsControl(nullptr)
+pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
+    wxFrame(parent, id, title, pos, size, style),
+    lmsControl(nullptr), 
+    additionalControls(nullptr),
+    txtDACTitle(nullptr),
+    txtDACValue(nullptr),  
+    btnDAC(nullptr),
+    sizerDAC(nullptr)
 {
-    additionalControls = nullptr;
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     wxFlexGridSizer* fgSizer247;
     fgSizer247 = new wxFlexGridSizer( 0, 1, 10, 10);
@@ -247,6 +253,12 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         evt.SetId(additionalControls->GetId());
         wxPostEvent(additionalControls, evt);
     }
+    {
+        uint16_t val;
+        LMS_VCTCXORead(lmsControl, &val, true);
+        txtDACValue->SetValue(wxString::Format("%d", val));    
+    }
+    
     UpdatePanel();
 }
 
@@ -324,12 +336,21 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
     {
         if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
         else
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
-        paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
+        if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI)) 
+            paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
+}
+
+void pnlBoardControls::OnDACWrite(wxCommandEvent &event)
+{
+    long val;
+    txtDACValue->GetValue().ToLong(&val);
+    LMS_VCTCXOWrite(lmsControl, val, true);
+    OnReadAll(event);
 }
 
 void pnlBoardControls::SetupControls(const std::string &boardID)
@@ -339,6 +360,30 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
     {
         additionalControls->Destroy();
         additionalControls = nullptr;
+    }
+    
+    if(txtDACTitle)
+    {
+        txtDACTitle->Destroy();
+        txtDACTitle = nullptr;
+    }
+    
+    if(txtDACValue)
+    {
+        txtDACValue->Destroy();
+        txtDACValue = nullptr;
+    }
+    
+    if(btnDAC)
+    {
+        btnDAC->Destroy();
+        btnDAC = nullptr;
+    }
+
+    if (sizerDAC)
+    {
+        sizerAnalogRd->Remove(sizerDAC);
+        sizerDAC = nullptr;
     }
 
     cmbBoardSelection->SetSelection(0);
@@ -389,8 +434,21 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
             else
                 sizerAnalogRd->Add(gui->rValue, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-        }
+        }          
     }
+    if (cmbBoardSelection->GetSelection() > 2)
+    {
+        txtDACTitle = new wxStaticText(pnlReadControls, wxID_ANY, _("VCTCXO DAC (permament)"));
+        sizerAnalogRd->Add(txtDACTitle, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+        sizerDAC = new wxFlexGridSizer(0, 2, 0, 0);
+        txtDACValue = new wxTextCtrl(pnlReadControls, wxNewId(), _("128"), wxDefaultPosition, wxSize(64, -1));
+        sizerDAC->Add(txtDACValue, 1, wxALIGN_CENTER_VERTICAL, 0);
+        btnDAC = new wxButton(pnlReadControls, wxNewId(), _("Write"), wxDefaultPosition, wxSize(64, -1));
+        sizerDAC->Add(btnDAC, 1,  wxALIGN_CENTER_VERTICAL, 0);
+        Connect(btnDAC->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlBoardControls::OnDACWrite), NULL, this);
+        sizerAnalogRd->Add(sizerDAC, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    }
+
     sizerAnalogRd->Layout();
 
     if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))
