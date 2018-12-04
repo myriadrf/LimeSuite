@@ -1409,7 +1409,7 @@ int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, 
         return lime::ReportError(EINVAL, "Device not connected");
 
     if (mode == program_mode::autoUpdate)
-        return this->connection->ProgramUpdate(true, false, callback);
+        return this->connection->ProgramUpdate(true, true, callback);
     if (mode == program_mode::fx3Flash)
         return this->connection->ProgramWrite(data, len, 2, 1, callback);
     else if (mode == program_mode::fx3RAM)

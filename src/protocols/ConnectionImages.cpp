@@ -129,13 +129,13 @@ int LMS64CProtocol::ProgramUpdate(const bool download, const bool force, IConnec
     }
     if (!force){
         const auto fpgaInfo = this->GetFPGAInfo();
-        if (entry.fw_img && info.firmware >= entry.fw_ver) {
-            lime::info("Existing firmware is same or more recent than update : %d >= %d", info.firmware, entry.fw_ver);
+        if (entry.fw_img && info.firmware == entry.fw_ver) {
+            lime::info("Existing firmware is same as update (%d)", info.firmware);
             fwUpdateNeeded = false;
         }
-        if (entry.gw_img && fpgaInfo.gatewareVersion >= entry.gw_ver && fpgaInfo.gatewareRevision >= entry.gw_rev){
-            lime::info("Existing gateware is same or more recent than update : %d.%d >= %d.%d",
-                          fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision, entry.gw_ver, entry.gw_rev);
+        if (entry.gw_img && fpgaInfo.gatewareVersion == entry.gw_ver && fpgaInfo.gatewareRevision == entry.gw_rev){
+            lime::info("Existing gateware is same as update (%d.%d)",
+                          fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision);
             gwUpdateNeeded = false;
         }
         if (!(gwUpdateNeeded || fwUpdateNeeded)){
