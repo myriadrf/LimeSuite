@@ -504,6 +504,7 @@ int ConnectionSPI::FinishDataSending(const char* buffer, uint32_t length, int co
 void ConnectionSPI::StreamISR()
 {
     static const FPGA_DataPacket dummy_packet = {0};
+    static char last_flags = 0x10; // no sync by default
     FPGA_DataPacket rx_packet;
     FPGA_DataPacket tx_packet;
     static uint64_t rx_timestamp = 1360;
@@ -514,10 +515,12 @@ void ConnectionSPI::StreamISR()
         {
             pthis->mTxStreamLock.unlock();
             tx_packet = dummy_packet;
+            tx_packet.reserved[0] = last_flags;
         }
         else
         {
             tx_packet = pthis->txQueue.front();
+            last_flags = tx_packet.reserved[0];
             pthis->txQueue.pop();
             pthis->mTxStreamLock.unlock();
             if (tx_packet.counter < rx_timestamp+5*1360)
