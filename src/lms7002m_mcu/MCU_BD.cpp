@@ -1068,7 +1068,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
         mSPI_write(0x0002, x0002reg & ~interupt7);
         int status = WaitForMCU(10);
         if(status != 0)
-            printf("MCU error status 0x%02X\n", status);
+            lime::debug("MCU error status 0x%02X\n", status);
         RunProcedure(9);
     }
     if(WaitForMCU(100) != 0)

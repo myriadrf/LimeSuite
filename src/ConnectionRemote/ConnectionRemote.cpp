@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdio.h>
 #include "FPGA_common.h"
+#include "Logger.h"
 #ifdef __unix__
 
 #include <errno.h>
@@ -41,7 +42,7 @@ ConnectionRemote::ConnectionRemote(const char *comName)
 #ifndef __unix__
     WSADATA wsaData;
     if( int err = WSAStartup(0x0202, &wsaData))
-        printf("WSAStartup error %i\n", err);
+        lime::log(lime::LOG_LEVEL_ERROR, "RemoteControl: WSAStartup error %i\n", err);
 #endif
 }
 
@@ -91,9 +92,9 @@ int ConnectionRemote::Connect(const char* ip, uint16_t port)
     if(socketFd < 0)
     {
 #ifndef __unix__
-        printf("socket failed with error: %d\n", WSAGetLastError());
+        lime::log(lime::LOG_LEVEL_ERROR, "RemoteControl: socket failed with error: %d\n", WSAGetLastError());
 #else
-        printf("socket failed with error %i", socketFd);
+        lime::log(lime::LOG_LEVEL_ERROR, "RemoteControl: socket failed with error: %i\n", socketFd);
 #endif
 
         return -1;
@@ -102,10 +103,10 @@ int ConnectionRemote::Connect(const char* ip, uint16_t port)
     if(int result = connect(socketFd, (struct sockaddr*)&clientService, sizeof(clientService)) )
     {
 #ifndef __unix__
-        printf("connect failed with error: %d\n", WSAGetLastError());
+        lime::log(lime::LOG_LEVEL_ERROR, "RemoteControl: connect failed with error: %d\n", WSAGetLastError());
         closesocket(socketFd);
 #else
-        printf("connect failed with error: %d\n", result);
+        lime::log(lime::LOG_LEVEL_ERROR, "RemoteControl: connect failed with error: %d\n", result);
         close(socketFd);
 #endif
         return -1;
@@ -133,7 +134,7 @@ int ConnectionRemote::Write(const unsigned char *data, int len, int timeout_ms)
         int wrBytes = send(socketFd, (char*)data+bytesWritten, len-bytesWritten, 0);
         if(wrBytes < 0)
         {
-            printf("Write failed\n");
+            lime::log(lime::LOG_LEVEL_ERROR, "ConnectionRemote write failed: %d\n", wrBytes);
             return 0;
         }
         bytesWritten += wrBytes;
@@ -150,7 +151,7 @@ int ConnectionRemote::Read(unsigned char *response, int len, int timeout_ms)
         int rdBytes = recv(socketFd, (char*)response+bytesRead, len-bytesRead, 0);
         if(rdBytes < 0)
         {
-            printf("Read failed\n");
+            lime::log(lime::LOG_LEVEL_ERROR, "ConnectionRemote read failed: %d\n", rdBytes);
             return 0;
         }
         bytesRead += rdBytes;

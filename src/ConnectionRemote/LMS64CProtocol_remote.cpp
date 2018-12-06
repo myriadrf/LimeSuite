@@ -14,6 +14,7 @@
 #include <thread>
 #include <chrono>
 #include "LMS64CProtocol.h"
+#include "Logger.h"
 
 namespace lime
 {
@@ -26,13 +27,13 @@ void LMS64CProtocol::InitRemote()
 #ifndef __unix__
     WSADATA wsaData;
     if( int err = WSAStartup(0x0202, &wsaData))
-        printf("WSAStartup error %i\n", err);
+        lime::log(LOG_LEVEL_ERROR, "RemoteControl: WSAStartup error %i\n", err);
 #endif
 
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if(socketFd < 0)
     {
-        fprintf(stderr, "socket error %i\n", socketFd);
+        lime::log(LOG_LEVEL_ERROR, "RemoteControl: socket error %i\n", socketFd);
         return;
     }
 #ifdef __unix__
@@ -49,18 +50,18 @@ void LMS64CProtocol::InitRemote()
     host.sin_port = htons(port);
     if(bind(socketFd, (struct sockaddr*)&host, sizeof(host)) < 0)
     {
-        fprintf(stderr, "bind error on port %i\n", port);
+        lime::log(LOG_LEVEL_ERROR, "RemoteControl: bind error on port %i\n", port);
         CloseRemote();
         return;
     }
 
-    printf("Listening on port: %i\n", port);
+    lime::log(LOG_LEVEL_INFO, "RemoteControl Listening on port: %i\n", port);
     if(int error = listen(socketFd, SOMAXCONN) )
     {
 #ifndef __unix__
         error =  WSAGetLastError();
 #endif
-        fprintf(stderr, "listen error %i\n", error);
+        lime::log(LOG_LEVEL_ERROR, "RemoteControl listen error %i\n", error);
         CloseRemote();
         return;
     }
@@ -68,7 +69,7 @@ void LMS64CProtocol::InitRemote()
     remoteThread = std::thread(&LMS64CProtocol::ProcessConnections, this);
     if(not remoteThread.joinable())
     {
-        fprintf(stderr, "Error creating listening thread\n");
+        lime::log(LOG_LEVEL_ERROR, "RemoteControl: Error creating listening thread\n");
         CloseRemote();
         return;
     }
@@ -103,7 +104,6 @@ void LMS64CProtocol::CloseRemote()
 
 void LMS64CProtocol::ProcessConnections()
 {
-    printf("Started listening thread\n");
     struct sockaddr_in cli_addr;
 #ifndef __unix__
     SOCKET clientFd;
@@ -147,7 +147,7 @@ void LMS64CProtocol::ProcessConnections()
 #ifndef __unix__
                     brecv = WSAGetLastError();
 #endif
-                    printf("recv with error: %d\n", brecv);
+                    lime::log(LOG_LEVEL_ERROR, "RemoteControl recv with error: %d\n", brecv);
                     connected = false;
                     break;
                 }
@@ -168,7 +168,7 @@ void LMS64CProtocol::ProcessConnections()
                 int r = send(clientFd, data+bsent, msgSize-bsent, 0);
                 if(r < 0)
                 {
-                    printf("response error %i\n", r);
+                    lime::log(LOG_LEVEL_ERROR, "RemoteControl send with error: %d\n", r);
                     connected = false;
                     break;
                 }

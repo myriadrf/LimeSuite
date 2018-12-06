@@ -750,9 +750,9 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
 	if ((device == 2 && prog_mode == 2) == false)
-        printf("Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+	    lime::log(LOG_LEVEL_INFO, "Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
-		printf("FPGA configuring initiated\n");
+        lime::log(LOG_LEVEL_INFO, "FPGA configuring initiated\n");
 #endif
     return 0;
 }
@@ -892,7 +892,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
         if (callback)
             terminate = callback(CntEnd+fifoLen,length,"");
 #ifndef NDEBUG
-        printf("MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
+        lime::log(LOG_LEVEL_INFO, "MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
 #endif
         if(status != STATUS_COMPLETED_CMD)
         {
@@ -911,7 +911,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 	};
 #ifndef NDEBUG
     auto timeEnd = std::chrono::high_resolution_clock::now();
-    printf("\nMCU Programming finished, %li ms\n",
+    lime::log(LOG_LEVEL_INFO, "\nMCU Programming finished, %li ms\n",
             std::chrono::duration_cast<std::chrono::milliseconds>
             (timeEnd-timeStart).count());
 #endif
