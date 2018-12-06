@@ -405,12 +405,12 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 int ConnectionFT601::GetBuffersCount() const
 {
     return USB_MAX_CONTEXTS;
-};
+}
 
 int ConnectionFT601::CheckStreamSize(int size)const
 {
     return size;
-};
+}
 
 /**
 @brief Starts asynchronous data reading from board

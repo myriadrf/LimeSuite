@@ -80,21 +80,6 @@ static const char cDashLine[] =
         fprintf(stderr, __VA_ARGS__);\
     }} while (0)
 
-static void WriteAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param, int value)
-{
-    uint16_t mask = param.address < 0x05C7 ? 0x03FF : 0x003F;
-    int16_t regValue = 0;
-    if(value < 0)
-    {
-        regValue |= (mask+1);
-        regValue |= (abs(value+mask) & mask);
-    }
-    else
-        regValue |= (abs(value+mask+1) & mask);
-    lmsControl->SPI_write(param.address, regValue);
-    lmsControl->SPI_write(param.address, regValue | 0x8000);
-}
-
 static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param)
 {
     uint16_t mask = param.address < 0x05C7 ? 0x03FF : 0x003F;

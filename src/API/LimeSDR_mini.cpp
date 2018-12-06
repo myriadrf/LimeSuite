@@ -171,7 +171,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             value |= 1<<8;
             fpga->WriteRegister(0x17, value);
         }
-        else if (LMS_PATH_LNAL)
+        else if (path==LMS_PATH_LNAL)
             lime::warning("LNAL has no connection to RF ports");
     }
     else

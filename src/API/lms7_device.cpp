@@ -127,13 +127,13 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
 
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
-    
+
     if (bandwidth <= 0)
     {
         lime::warning("GFIR LPF cannot be set to the requested bandwidth");
         enabled = false;
     }
-    
+
     if (enabled)
     {
         double interface_MHz;
@@ -268,7 +268,7 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         || (lms->SetGFIRCoefficients(tx, 1, gfir2, 40) != 0)
         || (lms->SetGFIRCoefficients(tx, 2, gfir1, 120) != 0))
         return -1;
-    
+
     return lms->ResetLogicregisters();
 }
 
@@ -797,7 +797,7 @@ LMS7_Device::Range LMS7_Device::GetLPFRange(bool tx, unsigned chan) const
 int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const double* coef,unsigned count)
 {
     short gfir[120];
-    int L;
+    unsigned int L;
     int div = 1;
     int ret = 0;
 
@@ -856,7 +856,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     unsigned sample = 0;
     for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
     {
-        for(int j=0; j<8; j++)
+        for(unsigned int j=0; j<8; j++)
         {
             if( (j < L) && (sample < count) )
             {

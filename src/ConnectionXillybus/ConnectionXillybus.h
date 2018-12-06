@@ -36,7 +36,6 @@ public:
 
     int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
     int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
-;
 #ifdef __unix__
     int TransferPacket(GenericPacket &pkt) override;
     int ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)override;
@@ -44,10 +43,10 @@ public:
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
-    
+
     int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100) override;
     int SendData(const char* buffer, int length, int epIndex, int timeout = 100) override;
-    
+
     int BeginDataReading(char* buffer, uint32_t length, int ep) override;
     bool WaitForReading(int contextHandle, unsigned int timeout_ms) override;
     int FinishDataReading(char* buffer, uint32_t length, int contextHandle) override;

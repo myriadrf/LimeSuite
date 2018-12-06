@@ -124,7 +124,6 @@ void LMS64CProtocol::ProcessConnections()
         {
             continue;
         }
-        unsigned long ips = cli_addr.sin_addr.s_addr;
 
         bool connected = true;
 

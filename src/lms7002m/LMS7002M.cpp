@@ -676,7 +676,7 @@ int LMS7002M:: ResetLogicregisters()
 {
     auto x0020_value = SPI_read(0x0020); //reset logic registers
     SPI_write(0x0020, x0020_value & 0x55FF);
-    return SPI_write(0x0020, x0020_value | 0xFF00);  
+    return SPI_write(0x0020, x0020_value | 0xFF00);
 }
 
 /** @brief Reads all registers from chip and saves to file
@@ -1530,8 +1530,10 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     // try setting tuning values from the cache, if it fails perform full tuning
     if  (useCache && tuning_cache_sel_vco.count(freq_Hz) > 0)
     {
-        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), tuning_cache_sel_vco[freq_Hz]);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, tuning_cache_csw_value[freq_Hz]);
+        sel_vco = tuning_cache_sel_vco[freq_Hz];
+        csw_value = tuning_cache_csw_value[freq_Hz];
+        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, csw_value);
         this_thread::sleep_for(chrono::microseconds(50)); // probably no need for this as the interface is already very slow..
         auto cmphl = (uint8_t)Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true);
         if(cmphl == 2) {
