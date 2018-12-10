@@ -13,6 +13,11 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
+### v18.10.1
+
+- Changed LMS_VCTCXOWrite() to take 3 parameters instead of 2 (added parameter for saving value to non-volatile storage)
+- Chneged LMS_VCTCXORead() to take 3 parameters instead of 2 (added parameter for reading value from non-volatile storage)
+
 ### v18.09.0
 
 \li Fixed LMS_SetLPFBW() failing to set bandwidth lower than ~2MHz for the second channel 

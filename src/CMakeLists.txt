@@ -142,7 +142,7 @@ endif()
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-#include(ConnectionNovenaRF7/CMakeLists.txt)
+#include(ConnectionNovenaRF7/CMakeLists.txt)	#No longer supported
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionRemote/CMakeLists.txt)

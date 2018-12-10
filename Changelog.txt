@@ -1,3 +1,24 @@
+Release 18.10.1 (pending)
+==========================
+
+LimeSuite library changes:
+- Allow filtering devices by partial serial number
+- Add GPIO control for LimeSDR-Mini
+- Add parameter to LMS_VCTCXOWrite() for saving value to non-volatile storage
+- Add parameter to LMS_VCTCXORead() for reading value from non-volatile storage
+- Make some improvements in GFIR setup
+
+LimeSuiteGUI:
+- Add GPIO controls to "Board controls" panel for LimeSDR-Mini
+- Add option to "Board controls" panel to write VCTCXO value to non-volatile storage
+
+Other changes:
+- Add Octave plugin to CMake build
+- Add IQ/DC calibration to basicTX example
+- SoapyLMS: update to soapysdr0.7 module ABI
+- LimeSDR-USB v1.4 updated to r2.19 gateware
+- LimeSDR-Mini updated to r1.28 gateware
+
 Release 18.10.0 (2018-10-04)
 ==========================
 
