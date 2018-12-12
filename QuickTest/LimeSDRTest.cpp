@@ -13,7 +13,7 @@ using namespace lime;
 const std::vector<std::string>testNames =
 {"Clock Network Test", "FPGA EEPROM Test", "LMS7002M Test", "RF Loopback Test"};
 
-int LimeSDRTest::step = 0;
+unsigned LimeSDRTest::step = 0;
 std::atomic<bool> LimeSDRTest::running(false);
 LimeSDRTest::TestCallback LimeSDRTest::callback = nullptr;
 std::chrono::steady_clock::time_point LimeSDRTest::tp_start;
@@ -56,8 +56,7 @@ LimeSDRTest* LimeSDRTest::Connect()
     }
     if (handles.size() > 1)
     {
-        UpdateStatus(LMS_TEST_FAIL, "Error: Multiple Devices Connected");
-        return nullptr;
+        UpdateStatus(LMS_TEST_INFO, "Warning: Multiple devices detected, connecting to the first device");
     }
 
     auto dev = LMS7_Device::CreateDevice(handles[0]);

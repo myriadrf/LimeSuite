@@ -65,7 +65,7 @@ private:
     int Reg_write(uint16_t address, uint16_t data);
     uint16_t Reg_read(uint16_t address);
 
-    static int step;
+    static unsigned step;
     static TestCallback callback;
     int Perform_tests();
     int TransferLMS64C(unsigned char* packet);
