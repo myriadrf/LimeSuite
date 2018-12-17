@@ -2,6 +2,8 @@
 #FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V7 as sysroot
 FROM raspbian/stretch as sysroot
 
+COPY rerelln.sh rerelln.sh
+
 RUN apt-get update && apt-get install -y \
 	git \
 	build-essential \
@@ -22,7 +24,9 @@ RUN apt-get update && apt-get install -y \
 	libi2c-dev \
 	&& pip3 install requests \
 	&& apt-get clean \
-	&& rm -rf /var/lib/apt/lists
+	&& rm -rf /var/lib/apt/lists \
+	&& sh rerelln.sh /usr/lib/arm-linux-gnueabihf/libusb-1.0.so
+
 
 FROM registry.gitlab.com/pantacor/platform-tools/docker-glibc-cross-arm:master as crossbuilder
 
@@ -34,13 +38,13 @@ COPY . src
 
 RUN cd src && cmake -DCMAKE_TOOLCHAIN_FILE=cmake-cross/glibc-armhf \
 	&& make \
-	&& make install
+	&& make install || true
 
 FROM raspbian/stretch
 #FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V7
 #FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V5
 
-RUN apt-get update; apt-get install libstdc++ libusb-1.0-0 && apt-get clean; rm -rf /var/lib/apt/lists
+RUN apt-get update; apt-get install libusb-1.0-0 libfftw3-3 && apt-get clean; rm -rf /var/lib/apt/lists
 
 COPY --from=crossbuilder /work/stage /usr/local
 
