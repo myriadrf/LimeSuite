@@ -281,6 +281,14 @@ int LMS7_LimeSDR_mini::SetClockFreq(unsigned clk_id, double freq, int channel)
     return LMS7_Device::SetClockFreq(clk_id, freq, channel);
 }
 
+int LMS7_LimeSDR_mini::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
+{
+    int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
+    if (lms_list[0]->Get_SPI_Reg_bits(0x82, 4, 1) == 0xD)
+        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0); 
+    return ret;
+}
+
 }//namespace lime
 
 

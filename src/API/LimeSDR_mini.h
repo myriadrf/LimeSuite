@@ -28,6 +28,7 @@ public:
     int SetPath(bool tx, unsigned chan, unsigned path) override;
     std::vector<std::string> GetProgramModes() const override;
     int SetClockFreq(unsigned clk_id, double freq, int channel) override;
+    int EnableChannel(bool dir_tx, unsigned chan, bool enabled) override;
 private:
 };
 
