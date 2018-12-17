@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 	cmake \
 	g++ \
 	libsqlite3-dev \
-	libusb-dev \
+	libusb-1.0-0-dev \
 	libfftw3-dev \
 	libpng-dev \
 	python3 \
