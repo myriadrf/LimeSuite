@@ -12,7 +12,7 @@ before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   - docker run --rm --privileged multiarch/qemu-user-static:register || true
 
-build-arm:
+build-alpine-arm:
   stage: build
   script:
     - docker pull $CONTAINER_IMAGE:ARM32V6 || true
@@ -21,4 +21,14 @@ build-arm:
     - docker push $CONTAINER_IMAGE:$CI_BUILD_REF
     - docker push $CONTAINER_IMAGE:ARM32V6
     - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_TAG || true
+
+build-glibc-armhf:
+  stage: build
+  script:
+    - docker pull $CONTAINER_IMAGE:ARMHF-GLIBC || true
+    - docker build -f Dockerfile.ARMHF-GLIBC --cache-from $CONTAINER_IMAGE:ARMHF-GLIBC --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARMHF-GLIBC .
+    - test -n "$CI_BUILD_TAG" && docker tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
+    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF
+    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC
+    - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
 
