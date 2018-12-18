@@ -11,7 +11,7 @@ RUN mkdir /work/stage; apt-get update; apt-get install cmake cmake-data -y; apt-
 COPY --from=sysroot / /sysroot-arm
 COPY . src
 
-RUN cd src; cmake --debug-output -DCMAKE_TOOLCHAIN_FILE=cmake-cross/arm32v6; make; make install
+RUN cd src; cmake --debug-output -DCMAKE_TOOLCHAIN_FILE=cmake-cross/musl-arm32v6; make; make install
 
 FROM registry.gitlab.com/pantacor/pv-platforms/alpine-base:ARM32V6
 
