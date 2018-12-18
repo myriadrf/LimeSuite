@@ -32,8 +32,8 @@ public:
     bool IsOpen();
     int GetOpenedIndex();
 
-    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size, unsigned periphID) override;
-    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID) override;
+    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size, unsigned periphID = 0) override;
+    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
     int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size) override;
     int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size) override;
     int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) override;
@@ -42,6 +42,7 @@ public:
     int DeviceReset(int ind) override;
     int ResetStreamBuffers() override;
     int ProgramWrite(const char *data, size_t length, int progMode, int ind, ProgrammingCallback cb) override;
+    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
@@ -60,7 +61,8 @@ protected:
     void AbortSending(int epIndex);
 
 private:
-    
+    void SetChipSelect(int cs);
+    int WriteADF4002SPI(const uint32_t *writeData, const size_t size);
     static int TransferSPI(int fd, const void *tx, void *rx, uint32_t len);
     static ConnectionSPI* pthis;
     static void StreamISR();

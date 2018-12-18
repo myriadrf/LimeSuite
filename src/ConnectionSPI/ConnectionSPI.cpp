@@ -21,6 +21,8 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #include <sys/resource.h>
 
@@ -30,6 +32,17 @@ using namespace lime;
 
 #define SPI_STREAM_SPEED_HZ 50000000
 
+static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
+{
+    std::stringstream ss;
+    ss << (Tx ? "Wr(" : "Rd(");
+    ss << length << "): ";
+    ss << std::hex << std::setfill('0');
+    for (size_t i = 0; i<length; ++i)
+        //casting to short to print as numbers
+        ss << " " << std::setw(2) << (unsigned short)data[i];
+    cout << ss.str() << endl;
+}
 
 ConnectionSPI* ConnectionSPI::pthis = nullptr;
 /** @brief Initializes port type and object necessary to communicate to usb device.
@@ -43,6 +56,7 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
     int_pin(26)
 {	
     pthis = this;
+    //callback_logData = OnLogDataTransfer;
     if (Open(index) < 0)
         lime::error("Failed to open SPI device");
     
@@ -114,19 +128,19 @@ int ConnectionSPI::Open(const unsigned index)
             lime::error("Failed to set SPI read max speed");
     }
 
-    if ((fd_control_dac = open("/dev/spidev1.0", O_RDWR)) != -1)
+    if ((fd_control_fpga = open("/dev/spidev1.0", O_RDWR)) != -1)
     {
-        if (ioctl(fd_control_dac, SPI_IOC_WR_MODE, &mode) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_WR_MODE, &mode) < 0)
             lime::error("Failed to set SPI write mode");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_MODE, &mode) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_RD_MODE, &mode) < 0)
             lime::error("Failed to set SPI read mode");
-        if (ioctl(fd_control_dac, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
             lime::error("Failed to set SPI bits per word (write)");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
             lime::error("Failed to set SPI bits per word (read)");
-        if (ioctl(fd_control_dac, SPI_IOC_WR_MAX_SPEED_HZ, &speed_control) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_WR_MAX_SPEED_HZ, &speed_control) < 0)
             lime::error("Failed to set SPI write max speed");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_MAX_SPEED_HZ, &speed_control) < 0)
+        if (ioctl(fd_control_fpga, SPI_IOC_RD_MAX_SPEED_HZ, &speed_control) < 0)
             lime::error("Failed to set SPI read max speed");
     }
 
@@ -146,19 +160,19 @@ int ConnectionSPI::Open(const unsigned index)
             lime::error("Failed to set SPI read max speed");
     }
 
-    if ((fd_control_fpga = open("/dev/spidev1.2", O_RDWR)) != -1)
+    if ((fd_control_dac = open("/dev/spidev1.2", O_RDWR)) != -1)
     {
-        if (ioctl(fd_control_fpga, SPI_IOC_WR_MODE, &mode) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_WR_MODE, &mode) < 0)
             lime::error("Failed to set SPI write mode");
-        if (ioctl(fd_control_fpga, SPI_IOC_RD_MODE, &mode) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_RD_MODE, &mode) < 0)
             lime::error("Failed to set SPI read mode");
-        if (ioctl(fd_control_fpga, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
             lime::error("Failed to set SPI bits per word (write)");
-        if (ioctl(fd_control_fpga, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
             lime::error("Failed to set SPI bits per word (read)");
-        if (ioctl(fd_control_fpga, SPI_IOC_WR_MAX_SPEED_HZ, &speed_control) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_WR_MAX_SPEED_HZ, &speed_control) < 0)
             lime::error("Failed to set SPI write max speed");
-        if (ioctl(fd_control_fpga, SPI_IOC_RD_MAX_SPEED_HZ, &speed_control) < 0)
+        if (ioctl(fd_control_dac, SPI_IOC_RD_MAX_SPEED_HZ, &speed_control) < 0)
             lime::error("Failed to set SPI read max speed");
     }
     return IsOpen() ? 0 : -1;
@@ -190,6 +204,27 @@ bool ConnectionSPI::IsOpen()
     return true;
 }
 
+int ConnectionSPI::TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)
+{
+    if (not this->IsOpen())
+    {
+        ReportError(ENOTCONN, "connection is not open");
+        return -1;
+    }
+
+    //perform spi writes when there is no read data
+    if (readData == nullptr) switch(addr)
+    {
+        case 0x10: return this->WriteLMS7002MSPI(writeData, size);
+        case 0x30: return this->WriteADF4002SPI(writeData, size);
+    }
+
+    if (readData != nullptr && addr == 0x10) 
+        return this->ReadLMS7002MSPI(writeData, readData, size);
+
+    return ReportError(ENOTSUP, "unknown spi address");
+}
+
 int ConnectionSPI::TransferSPI(int fd, const void *tx, void *rx, uint32_t len)
 {
     spi_ioc_transfer tr = { (unsigned long)tx,
@@ -198,8 +233,47 @@ int ConnectionSPI::TransferSPI(int fd, const void *tx, void *rx, uint32_t len)
                             2000000,
                             0,
                             8 };
+    int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+    if (pthis->callback_logData)
+    {
+        pthis->callback_logData(true, (const unsigned char*)tx, len);
+        pthis->callback_logData(false, (const unsigned char*)rx, len);
+    }
+    return ret;
+}
 
-    return ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+void ConnectionSPI::SetChipSelect(int cs)
+{
+    uint32_t addr = 0x12, val = ~(1<<cs);
+    WriteRegisters(&addr, &val, 1); //CS from FPGA
+}
+
+int ConnectionSPI::WriteADF4002SPI(const uint32_t *data, const size_t size)
+{
+    //disable DAC
+    uint8_t rx[3];
+    uint8_t tx[3] = {3, 0, 0};
+    SetChipSelect(1);
+    if (TransferSPI(fd_control_lms, &tx, &rx, 3) != 3)
+        lime::error("Write DAC: SPI transfer error");
+    
+    uint8_t readData[3];
+    uint8_t writeData[3];
+    int ret = 0;
+    for (unsigned i = 0; i < size; i++)
+    {
+    	writeData[0] = (data[i]>>16)&0xff;
+    	writeData[1] = (data[i]>>8)&0xff;
+    	writeData[2] = data[i]&0xff;
+        SetChipSelect(2);
+        if (TransferSPI(fd_control_lms, writeData, readData, 3)!=3)
+        {
+            lime::error("Write ADF: SPI transfer error");
+            return -1;
+        }
+        SetChipSelect(0);
+    }
+    return 0;
 }
 
 /***********************************************************************
@@ -219,6 +293,7 @@ int ConnectionSPI::WriteLMS7002MSPI(const uint32_t *data, size_t size, unsigned 
     	writeData[4*i+3] = data[i]&0xff;
     }
 
+    SetChipSelect(0);
     if (TransferSPI(fd_control_lms, writeData, readData, size*4)!=size*4)
     {
     	lime::error("Write LMS7: SPI transfer error");
@@ -243,6 +318,7 @@ int ConnectionSPI::ReadLMS7002MSPI(const uint32_t *data_in, uint32_t *data_out, 
     	writeData[4*i+3] = 0;
     }
 
+    SetChipSelect(0);
     if (TransferSPI(fd_control_lms, writeData, readData, size*4) != size*4)
     {
     	lime::error("Read LMS7: SPI transfer error");
@@ -322,14 +398,31 @@ int ConnectionSPI::CustomParameterWrite(const uint8_t *ids, const double *vals, 
    for (unsigned i = 0; i < count; i++)
         if (ids[i] == 0)
         {
-            uint16_t rx;
-            dac_value = vals[i];
-            uint16_t tx = (dac_value << 14);
-            tx |= dac_value>>2;
-            lime::info("DAC write: %d", dac_value);
-            if (TransferSPI(fd_control_dac, &tx, &rx, 2) != 2)
+            //disable ADF
+            uint8_t writeData[12] = {0x1F, 0x81, 0xF3, 0x1F, 0x81, 0xF2, 0, 1, 0xF4, 1, 0x80, 1};
+            uint8_t readData[3];
+            for (unsigned i = 0; i < sizeof(writeData); i+=3)
             {
-                lime::error("Read FPGA: SPI transfer error");
+                SetChipSelect(2);
+                if (TransferSPI(fd_control_lms, writeData+i, readData, 3)!=3)
+                {
+                   lime::error("Write ADF: SPI transfer error");
+                   ret = -1;
+                }
+                SetChipSelect(0);
+            }
+
+            if (TransferSPI(fd_control_lms, writeData, readData, 12)!=12)
+                lime::error("Write ADF: SPI transfer error");
+
+            uint8_t  rx[3];
+            dac_value = vals[i];
+            uint8_t  tx[3] = {0, (dac_value>>8), (dac_value&0xFF)};
+            SetChipSelect(1);
+            lime::info("DAC write: %d", dac_value);
+            if (TransferSPI(fd_control_dac, &tx, &rx, 3) != 3)
+            {
+                lime::error("Write DAC: SPI transfer error");
                 ret = -1;
             }
         }
