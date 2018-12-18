@@ -16,19 +16,19 @@ build-alpine-arm:
   stage: build
   script:
     - docker pull $CONTAINER_IMAGE:ARM32V6 || true
-    - docker build -f Dockerfile.ARM32V6 --cache-from $CONTAINER_IMAGE:ARM32V6 --tag $CONTAINER_IMAGE:$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARM32V6 .
+    - docker build -f Dockerfile.ARM32V6 --cache-from $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG --tag $CONTAINER_IMAGE:$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG .
     - test -n "$CI_BUILD_TAG" && docker tag $CONTAINER_IMAGE:$CI_BUILD_REF $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_TAG || true
     - docker push $CONTAINER_IMAGE:$CI_BUILD_REF
-    - docker push $CONTAINER_IMAGE:ARM32V6
+    - docker push $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG
     - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_TAG || true
 
 build-glibc-armhf:
   stage: build
   script:
     - docker pull $CONTAINER_IMAGE:ARMHF-GLIBC || true
-    - docker build -f Dockerfile.ARMHF-GLIBC --cache-from $CONTAINER_IMAGE:ARMHF-GLIBC --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARMHF-GLIBC .
+    - docker build -f Dockerfile.ARMHF-GLIBC --cache-from $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG .
     - test -n "$CI_BUILD_TAG" && docker tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
     - docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF
-    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC
+    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG
     - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
 
