@@ -13,7 +13,7 @@ COPY . src
 
 RUN cd src; cmake --debug-output -DCMAKE_TOOLCHAIN_FILE=cmake-cross/arm32v6; make; make install
 
-FROM registry.gitlab.com/pantacor/pvplatform-alpine-base:ARM32V6
+FROM registry.gitlab.com/pantacor/pv-platforms/alpine-base:ARM32V6
 
 RUN apk update && apk add libstdc++ libusb  && rm -rf /var/cache/apk/*
 
