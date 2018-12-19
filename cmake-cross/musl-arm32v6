@@ -1,0 +1,15 @@
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR armv6)
+
+set(CMAKE_SYSROOT /sysroot-arm)
+set(CMAKE_STAGING_PREFIX /work/stage)
+
+set(tools /opt/cross/arm-linux-musleabihf/)
+set(CMAKE_C_COMPILER ${tools}/bin/arm-linux-musleabihf-gcc)
+set(CMAKE_CXX_COMPILER ${tools}/bin/arm-linux-musleabihf-g++)
+set(DEFAULT_SIMD_FLAGS "cross")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)

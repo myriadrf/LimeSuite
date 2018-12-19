@@ -1,0 +1,34 @@
+image: docker:stable
+
+services:
+  - docker:dind
+
+variables:
+  CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH
+  DOCKER_DRIVER: overlay2
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  - docker run --rm --privileged multiarch/qemu-user-static:register || true
+
+build-alpine-arm:
+  stage: build
+  script:
+    - docker pull $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG || true
+    - docker build -f Dockerfile.ARM32V6 --cache-from $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG --tag $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG .
+    - test -n "$CI_BUILD_TAG" && docker tag $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_REF $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_TAG || true
+    - docker push $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_REF
+    - docker push $CONTAINER_IMAGE:ARM32V6-$CI_COMMIT_REF_SLUG
+    - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARM32V6-$CI_BUILD_TAG || true
+
+build-glibc-armhf:
+  stage: build
+  script:
+    - docker pull $CONTAINER_IMAGE:ARMHF-GLIBC || true
+    - docker build -f Dockerfile.ARMHF-GLIBC --cache-from $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF --tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG .
+    - test -n "$CI_BUILD_TAG" && docker tag $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
+    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_REF
+    - docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_COMMIT_REF_SLUG
+    - test -n "$CI_BUILD_TAG" && docker push $CONTAINER_IMAGE:ARMHF-GLIBC-$CI_BUILD_TAG || true
+
