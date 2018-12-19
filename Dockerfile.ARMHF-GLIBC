@@ -1,5 +1,3 @@
-#FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V5 as sysroot
-#FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V7 as sysroot
 FROM raspbian/stretch as sysroot
 
 COPY rerelln.sh rerelln.sh
@@ -41,8 +39,6 @@ RUN cd src && cmake -DCMAKE_TOOLCHAIN_FILE=cmake-cross/glibc-armhf \
 	&& make install || true
 
 FROM raspbian/stretch
-#FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V7
-#FROM registry.gitlab.com/pantacor/pv-platforms/debian-base:ARM32V5
 
 RUN apt-get update; apt-get install libusb-1.0-0 libfftw3-3 && apt-get clean; rm -rf /var/lib/apt/lists
 
