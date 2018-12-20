@@ -128,7 +128,15 @@ public:
 
     bool hasDCOffset(const int direction, const size_t channel) const;
 
+    void setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset);
+
+    std::complex<double> getDCOffset(const int direction, const size_t channel) const;
+
     bool hasIQBalance(const int direction, const size_t channel) const;
+    
+    void setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance);
+
+    std::complex<double> getIQBalance(const int direction, const size_t channel) const;
 
     /*******************************************************************
      * Gain API

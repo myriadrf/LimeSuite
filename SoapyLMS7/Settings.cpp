@@ -200,12 +200,52 @@ bool SoapyLMS7::getDCOffsetMode(const int direction, const size_t channel) const
 
 bool SoapyLMS7::hasDCOffset(const int /*direction*/, const size_t /*channel*/) const
 {
-    return false;
+    return true;
+}
+
+void SoapyLMS7::setDCOffset(const int direction, const size_t channel, const std::complex<double> &offset)
+{
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+    auto rfic = lms7Device->GetLMS(channel/2);
+    rfic->Modify_SPI_Reg_bits(LMS7param(MAC),(channel%2)+1);
+    rfic->SetDCOffset(lmsDir, offset.real(), offset.imag());
+}
+
+std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t channel) const
+{
+    double I = 0.0, Q = 0.0;
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+    auto rfic = lms7Device->GetLMS(channel/2);
+    rfic->Modify_SPI_Reg_bits(LMS7param(MAC),(channel%2)+1);
+    rfic->GetDCOffset(lmsDir, I, Q);
+    return std::complex<double>(I, Q);
 }
 
 bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
 {
     return false;
+}
+
+void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance)
+{
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+
+    double gain = std::abs(balance);
+    double gainI = 1.0; if (gain < 1.0) gainI = gain/1.0;
+    double gainQ = 1.0; if (gain > 1.0) gainQ = 1.0/gain;
+    auto rfic = lms7Device->GetLMS(channel/2);
+    rfic->Modify_SPI_Reg_bits(LMS7param(MAC),(channel%2)+1);
+    rfic->SetIQBalance(lmsDir, std::arg(balance), gainI, gainQ);
+}
+
+std::complex<double> SoapyLMS7::getIQBalance(const int direction, const size_t channel) const
+{
+    const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
+    double phase, gainI, gainQ;
+    auto rfic = lms7Device->GetLMS(channel/2);
+    rfic->Modify_SPI_Reg_bits(LMS7param(MAC),(channel%2)+1);
+    rfic->GetIQBalance(lmsDir, phase, gainI, gainQ);
+    return (gainI/gainQ)*std::polar(1.0, phase);
 }
 
 /*******************************************************************

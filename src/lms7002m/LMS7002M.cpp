@@ -2597,19 +2597,40 @@ bool LMS7002M::GetRxDCRemoval(void)
     return this->Get_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP)) == 0;
 }
 
-int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
+int LMS7002M::SetDCOffset(bool tx, const float_type I, const float_type Q)
 {
     const bool bypass = I == 0.0 and Q == 0.0;
-    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), bypass?1:0);
-    this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*128));
-    this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*128));
-	return 0;
+    if (tx)
+    {
+        this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), bypass?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*127));
+        this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*127));
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), bypass ? 0 : 1);
+        unsigned val = std::lrint(std::abs(I*63)) + (I < 0 ? 64 : 0);
+        Modify_SPI_Reg_bits(LMS7param(DCOFFI_RFE), val);
+        val = std::lrint(std::abs(Q*63)) + (Q < 0 ? 64 : 0);
+        Modify_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), val);
+    }
+    return 0;
 }
 
-void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
+void LMS7002M::GetDCOffset(bool tx, float_type &I, float_type &Q)
 {
-    I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP)))/128.0; //signed 8-bit
-    Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP)))/128.0; //signed 8-bit
+    if (tx)
+    {
+        I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP)))/127.0; //signed 8-bit
+        Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP)))/127.0; //signed 8-bit
+    }
+    else
+    {
+        auto i = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+        I = ((i&0x40) ? -1.0 : 1.0) * (i&0x3F)/63.0;
+        auto q = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+        Q = ((q&0x40) ? -1.0 : 1.0) * (q&0x3F)/63.0;
+    }
 }
 
 int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
@@ -2625,7 +2646,7 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
     this->Modify_SPI_Reg_bits(tx?LMS7param(IQCORR_TXTSP):LMS7param(IQCORR_RXTSP), iqcorr);
     this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRI_TXTSP):LMS7param(GCORRI_RXTSP), gcorri);
     this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRQ_TXTSP):LMS7param(GCORRQ_RXTSP), gcorrq);
-	return 0;
+    return 0;
 }
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
