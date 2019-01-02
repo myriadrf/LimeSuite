@@ -608,11 +608,15 @@ int Streamer::UpdateThreads(bool stopAll)
         const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         fpga->StartStreaming();
         fpga->WriteRegisters(addr, data, 2);
+        fpga->WriteRegister(0xCC, 1);
+        fpga->WriteRegister(0xCD, 1);
     }
     else if(not needTx and not needRx)
     {
         //disable FPGA streaming
         fpga->WriteRegister(0xFFFF, 1 << chipId);
+        fpga->WriteRegister(0xCD, 0);
+        fpga->WriteRegister(0xCC, 0);
         fpga->StopStreaming();
     }
 
