@@ -73,7 +73,7 @@ int LMS7_LimeSDR_mini::Init()
         {0x040C, 0x00FB}
     };
 
-    int hw_version = fpga->ReadRegister(3);
+    int hw_version = fpga->ReadRegister(3) & 0xF;
     auto &initVals = hw_version >= 2 ? initVals_1v2 : initVals_1v0;
 
     lime::LMS7002M* lms = lms_list[0];
@@ -293,6 +293,85 @@ int LMS7_LimeSDR_mini::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
     if (lms_list[0]->Get_SPI_Reg_bits(0x82, 4, 1) == 0xD)
         lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0); 
     return ret;
+}
+
+LMS7_LimeNET_micro::LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj):
+    LMS7_LimeSDR_mini(conn, obj)
+{
+}
+
+std::vector<std::string> LMS7_LimeNET_micro::GetPathNames(bool dir_tx, unsigned chan) const
+{
+    if (dir_tx)
+        return {"NONE", "BAND1", "BAND2"};
+    else
+	return {"NONE", "LNAH", "LNAL", "LNAW_NC"};
+}
+
+int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
+{
+    lime::LMS7002M* lms = lms_list[0];
+    if (lms->Modify_SPI_Reg_bits(LMS7param(MAC), (chan%2) + 1) != 0)
+        return -1;
+    int bom_ver = (fpga->ReadRegister(3)>>4);
+    if (tx==false)
+    {
+        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE),path)!=0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_L_RFE), path != 2) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_W_RFE), path != 3) != 0))
+            return -1;
+        if (path==LMS_PATH_LNAW)
+        {
+            lime::warning("LNAW has no connection to RF ports");
+        }
+        else if (path==LMS_PATH_LNAL)
+        {
+            uint16_t value = fpga->ReadRegister(0x17);
+            value &= ~(3<<8);
+            if (bom_ver == 0 || bom_ver == 3)
+                fpga->WriteRegister(0x17, value | (1<<8));
+        }
+        else if (path==LMS_PATH_LNAH)
+        {
+            uint16_t value = fpga->ReadRegister(0x17);
+            value &= ~(3<<8);
+            if (bom_ver == 0)
+                fpga->WriteRegister(0x17, value | (1<<8));
+            else if (bom_ver == 3)
+                fpga->WriteRegister(0x17, value | (2<<8));
+        }
+           
+    }
+    else
+    {
+        if ((lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), path == LMS_PATH_TX1) != 0)
+        || (lms->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), path == LMS_PATH_TX2) != 0))
+            return -1;
+        if (path==LMS_PATH_TX1)
+        {
+            uint16_t value = fpga->ReadRegister(0x17);
+            value &= ~(3<<12);
+            value |= 1<<12;
+            if (bom_ver == 0 || bom_ver == 3)
+                fpga->WriteRegister(0x17, value | (1<<12));
+        }
+        else if (path==LMS_PATH_TX2)
+        {
+            uint16_t value = fpga->ReadRegister(0x17);
+            value &= ~(3<<12);
+            if (bom_ver == 0)
+                fpga->WriteRegister(0x17, value | (1<<12));
+            else if (bom_ver == 3)
+                fpga->WriteRegister(0x17, value | (2<<12));
+        }
+    }
+    return 0;
+}
+
+ std::vector<std::string> LMS7_LimeNET_micro::GetProgramModes() const
+{
+    return {program_mode::fpgaFlash, program_mode::fpgaReset,
+            program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
 
 }//namespace lime
