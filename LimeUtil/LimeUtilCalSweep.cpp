@@ -50,7 +50,7 @@ int deviceCalSweep(
         return EXIT_FAILURE;
     }
 
-    if (LMS_EnableCalibCache(device, true) != 0)
+    if (LMS_EnableCache(device, true) != 0)
     {
         std::cerr << "Failed to enable cal cache: " << LMS_GetLastErrorMessage() << std::endl;
         return EXIT_FAILURE;

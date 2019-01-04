@@ -37,12 +37,12 @@ static const ConnectionImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinf
 {
     static const std::vector<ConnectionImageEntry> imageEntries = {
         ConnectionImageEntry({LMS_DEV_UNKNOWN, -1, -1, nullptr, -1, -1, nullptr}),
-        ConnectionImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 17,  "LimeSDR-USB_HW_1.4_r2.17.rbf"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDR, 4, 4, "LimeSDR-USB_HW_1.4_r4.0.img", 2, 19,  "LimeSDR-USB_HW_1.4_r2.19.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 3, 3, "LimeSDR-USB_HW_1.3_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 2, 3, "LimeSDR-USB_HW_1.2_r3.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMESDR, 1, 7, "LimeSDR-USB_HW_1.1_r7.0.img", 1, 20, "LimeSDR-USB_HW_1.1_r1.20.rbf"}),
         ConnectionImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"}),
-        ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 26,  "LimeSDR-Mini_HW_1.1_r1.26.rpd"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 28,  "LimeSDR-Mini_HW_1.2_r1.28.rpd"}),
     };
 
     for(const auto &iter : imageEntries)
@@ -101,10 +101,12 @@ static bool programmingCallbackStream(
     return callback(bsent, btotal, msg.c_str());
 }
 
-int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingCallback callback)
+int LMS64CProtocol::ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback)
 {
     const auto info = this->GetInfo();
     const auto &entry = lookupImageEntry(info);
+    bool fwUpdateNeeded = true;
+    bool gwUpdateNeeded = true;
 
     //an entry match was not found
     if (entry.dev == LMS_DEV_UNKNOWN){
@@ -125,9 +127,24 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
             if (callback) callback(1, 1, "Done!");
         }
     }
-
+    if (!force){
+        const auto fpgaInfo = this->GetFPGAInfo();
+        if (entry.fw_img && info.firmware == entry.fw_ver) {
+            lime::info("Existing firmware is same as update (%d)", info.firmware);
+            fwUpdateNeeded = false;
+        }
+        if (entry.gw_img && fpgaInfo.gatewareVersion == entry.gw_ver && fpgaInfo.gatewareRevision == entry.gw_rev){
+            lime::info("Existing gateware is same as update (%d.%d)",
+                          fpgaInfo.gatewareVersion, fpgaInfo.gatewareRevision);
+            gwUpdateNeeded = false;
+        }
+        if (!(gwUpdateNeeded || fwUpdateNeeded)){
+            lime::info("Firmware and Gateware update is not required.");
+            return 0;
+        }
+    }
     //load firmware into flash
-    if (entry.fw_img){
+    if (fwUpdateNeeded && entry.fw_img){
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.fw_img);
@@ -151,7 +168,7 @@ int LMS64CProtocol::ProgramUpdate(const bool download, IConnection::ProgrammingC
     }
 
     //load gateware into flash
-    {
+    if (gwUpdateNeeded && entry.gw_img){
         //open file
         std::ifstream file;
         const auto path = lime::locateImageResource(entry.gw_img);

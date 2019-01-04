@@ -13,9 +13,19 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
-### v18.06.1
+### v18.10.1
 
-\li Fixed LMS_SetLPFBW() failing to bandwidth lower than ~2MHz for second channel 
+- Changed LMS_VCTCXOWrite() to take 3 parameters instead of 2 (added parameter for saving value to non-volatile storage)
+- Chneged LMS_VCTCXORead() to take 3 parameters instead of 2 (added parameter for reading value from non-volatile storage)
+
+### v18.09.0
+
+\li Fixed LMS_SetLPFBW() failing to set bandwidth lower than ~2MHz for the second channel 
+\li Fixed incorrectly set or reported Tx gain values under certain conditions
+\li LMS_SetSampleRate() and LMS_SetSampleRateDir() now always selects SISOSDR mode for LimeSDR-Mini
+\li LMS_EnableCalibCache() has been depracated because of confusing name, LMS_EnableCache() has been added to take its place.
+\li LMS_EnableCache()/LMS_EnableCalibCache() now also enables caching of FPGA registers and LMS7 VCO setting values.
+\li LMS_SetGFIRCoeff() no longer attempts to order GFIR coefficient based on oversampling when coefficient count is to high
 
 ### v18.06.0
 

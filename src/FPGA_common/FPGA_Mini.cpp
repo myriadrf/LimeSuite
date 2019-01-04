@@ -89,7 +89,7 @@ int FPGA_Mini::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     for (int i = 0; i < bakRegCnt; ++i)
         dataWr[i] = (spiAddr[i] << 16);
-        connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, 0);
+    connection->ReadLMS7002MSPI(dataWr.data(),dataRd.data(), bakRegCnt, 0);
 
     //Config Rx
     {

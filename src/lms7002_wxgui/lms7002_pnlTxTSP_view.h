@@ -29,6 +29,7 @@ protected:
     void onbtnGFIR2Coef( wxCommandEvent& event );
     void onbtnGFIR3Coef( wxCommandEvent& event );
     void OnbtnUploadNCOClick( wxCommandEvent& event );
+    void OnbtnSetLPFClick( wxCommandEvent& event );
 public:
     /** Constructor */
     lms7002_pnlTxTSP_view( wxWindow* parent );

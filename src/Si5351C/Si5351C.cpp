@@ -359,7 +359,7 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
     char line[len];
 
     int addr;
-    int value;
+    unsigned int value;
 
     while(!fin.eof())
     {
@@ -374,7 +374,7 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
 
     fin.close();
 	return false;
-};
+}
 
 /** @brief Calculates multisynth dividers and VCO frequencies
     @param clocks output clocks configuration

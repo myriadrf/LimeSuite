@@ -259,7 +259,7 @@ for(int k = fftBin-span; k <= fftBin+span; k++)
     cout << li2_min << " | " << lr1_max << endl;
     */
   #endif
-};
+}
 /* Goertzel Algorithm Implementation, float numbers*/
 void CalcGoertzelF(int x[][2], float real[], float imag[], int Sp)
 {
@@ -310,7 +310,7 @@ void CalcGoertzelF(int x[][2], float real[], float imag[], int Sp)
   }
 
   //fclose(fp);
-};
+}
 
 
 int SelectGoertzelBin(IConnection* port, uint16_t bin, uint16_t samplesCount)

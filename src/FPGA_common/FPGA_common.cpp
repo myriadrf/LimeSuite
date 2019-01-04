@@ -157,7 +157,6 @@ int FPGA::StopStreaming()
 
 int FPGA::ResetTimestamp()
 {
-    int status;
 #ifndef NDEBUG
     int interface_ctrl_000A = ReadRegister(0x000A);
     if (interface_ctrl_000A < 0)
@@ -174,8 +173,7 @@ int FPGA::ResetTimestamp()
     uint32_t value = (TXPCT_LOSS_CLR | SMPL_NR_CLR);
     WriteRegister(0x0009, interface_ctrl_0009 & ~(value));
     WriteRegister(0x0009, interface_ctrl_0009 | value);
-    WriteRegister(0x0009, interface_ctrl_0009 & ~value);
-    return status;
+    return WriteRegister(0x0009, interface_ctrl_0009 & ~value);
 }
 
 int FPGA::SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val)
@@ -494,7 +492,7 @@ int FPGA::SetDirectClocking(int clockIndex)
         return ReportError(ENODEV, "SetDirectClocking: device not connected");
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
-    uint16_t drct_clk_ctrl_0006 = ReadRegister(0x0006);
+    //uint16_t drct_clk_ctrl_0006 = ReadRegister(0x0006);
     vector<uint32_t> addres;
     vector<uint32_t> values;
     //enable direct clocking
@@ -746,7 +744,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         uint32_t vals[3];
         ReadRegisters(addr,vals,3);
         vals[1] = (vals[1]<<8)|vals[2];
-        if ((vals[0]==0xE && vals[1]>0x20E)||(vals[0]==0xF && vals[1]>0x206)||(vals[0]==0x10 && vals[1]>0x102))
+        if ((vals[0]==0xE && vals[1]>0x20E)||(vals[0]==0xF && vals[1]>0x206)||(vals[0]==0x10 && vals[1]>0x102)||vals[0]==0x17)
             phaseSearch = true;
     }
 

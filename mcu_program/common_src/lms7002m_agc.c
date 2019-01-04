@@ -213,7 +213,6 @@ uint8_t RunAGC(uint32_t wantedRSSI)
             }
         }
     }
-AGC_END:
     StoreState(true);
     SPI_write(0x0020, x0020);
     ClockLogicResets();

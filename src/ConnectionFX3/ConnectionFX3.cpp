@@ -79,10 +79,8 @@ ConnectionFX3::ConnectionFX3(void *arg, const std::string &vidpid, const std::st
 
     LMSinfo info = this->GetInfo();
 
-    if (info.hardware <= 1)
-    {
+    if (info.device == LMS_DEV_LIMESDR && info.hardware <= 1)
         commandsToBulkCtrl = commandsToBulkCtrlHw1;
-    }
 
     this->VersionCheck();
 
@@ -718,12 +716,12 @@ void ConnectionFX3::AbortSending(int ep)
 int ConnectionFX3::GetBuffersCount() const
 {
     return USB_MAX_CONTEXTS;
-};
+}
 
 int ConnectionFX3::CheckStreamSize(int size)const
 {
     return size;
-};
+}
 
 int ConnectionFX3::SendData(const char* buffer, int length, int epIndex, int timeout)
 {

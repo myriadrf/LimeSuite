@@ -80,21 +80,6 @@ static const char cDashLine[] =
         fprintf(stderr, __VA_ARGS__);\
     }} while (0)
 
-static void WriteAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param, int value)
-{
-    uint16_t mask = param.address < 0x05C7 ? 0x03FF : 0x003F;
-    int16_t regValue = 0;
-    if(value < 0)
-    {
-        regValue |= (mask+1);
-        regValue |= (abs(value+mask) & mask);
-    }
-    else
-        regValue |= (abs(value+mask+1) & mask);
-    lmsControl->SPI_write(param.address, regValue);
-    lmsControl->SPI_write(param.address, regValue | 0x8000);
-}
-
 static int16_t ReadAnalogDC(lime::LMS7002M* lmsControl, const LMS7Parameter& param)
 {
     uint16_t mask = param.address < 0x05C7 ? 0x03FF : 0x003F;
@@ -202,8 +187,16 @@ uint32_t LMS7002M::GetRSSI(RSSI_measurements *measurements)
 */
 int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 {
-    if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Tx Calibration: Frequency out of range, available range: %g-%g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+    if (TrxCalib_RF_LimitLow > bandwidth_Hz)
+    {
+        lime::warning("Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow/1e6, bandwidth_Hz/1e6);
+        bandwidth_Hz = TrxCalib_RF_LimitLow;
+    }
+    else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
+    {    
+        lime::warning("Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
+        bandwidth_Hz = TrxCalib_RF_LimitHigh;
+    }
     if(controlPort == nullptr)
         return ReportError(EINVAL, "Tx Calibration: Device not connected");
 #ifdef LMS_VERBOSE_OUTPUT
@@ -294,8 +287,16 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
 */
 int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
 {
-    if (TrxCalib_RF_LimitLow > bandwidth_Hz || bandwidth_Hz > TrxCalib_RF_LimitHigh)
-        return ReportError(ERANGE, "Rx Calibration: Frequency out of range, available range: from %g to %g MHz", TrxCalib_RF_LimitLow / 1e6, TrxCalib_RF_LimitHigh / 1e6);
+    if (TrxCalib_RF_LimitLow > bandwidth_Hz)
+    {
+        lime::warning("Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitLow/1e6, bandwidth_Hz/1e6);
+        bandwidth_Hz = TrxCalib_RF_LimitLow;
+    }
+    else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
+    {    
+        lime::warning("Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
+        bandwidth_Hz = TrxCalib_RF_LimitHigh;
+    }
     if(controlPort == nullptr)
         return ReportError(ENODEV, "Rx Calibration: Device not connected");
 #ifdef LMS_VERBOSE_OUTPUT

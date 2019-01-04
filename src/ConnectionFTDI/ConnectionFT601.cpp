@@ -405,12 +405,12 @@ static void callback_libusbtransfer(libusb_transfer *trans)
 int ConnectionFT601::GetBuffersCount() const
 {
     return USB_MAX_CONTEXTS;
-};
+}
 
 int ConnectionFT601::CheckStreamSize(int size)const
 {
     return size;
-};
+}
 
 /**
 @brief Starts asynchronous data reading from board
@@ -774,3 +774,46 @@ DeviceInfo ConnectionFT601::GetDeviceInfo(void)
     return info;
 }
 
+int ConnectionFT601::GPIOWrite(const uint8_t *buffer, size_t len)
+{
+    if ((!buffer)||(len==0))
+        return -1;
+    const uint32_t addr = 0xC6;
+    const uint32_t value = (len == 1) ? buffer[0] : buffer[0] | (buffer[1]<<8);
+    return WriteRegisters(&addr, &value, 1);
+}
+
+int ConnectionFT601::GPIORead(uint8_t *buffer, size_t len)
+{
+    if ((!buffer)||(len==0))
+        return -1;
+    const uint32_t addr = 0xC2;
+    uint32_t value;
+    int ret = ReadRegisters(&addr, &value, 1);
+    buffer[0] = value;
+    if (len > 1)
+        buffer[1] = (value >> 8);
+    return ret;
+}
+
+int ConnectionFT601::GPIODirWrite(const uint8_t *buffer, size_t len )
+{
+    if ((!buffer)||(len==0))
+        return -1;
+    const uint32_t addr = 0xC4;
+    const uint32_t value = (len == 1) ? buffer[0] : buffer[0] | (buffer[1]<<8);
+    return WriteRegisters(&addr, &value, 1);
+}
+
+int ConnectionFT601::GPIODirRead(uint8_t *buffer, size_t len)
+{
+    if ((!buffer)||(len==0))
+        return -1;
+    const uint32_t addr = 0xC4;
+    uint32_t value;
+    int ret = ReadRegisters(&addr, &value, 1);
+    buffer[0] = value;
+    if (len > 1)
+        buffer[1] = (value >> 8);
+    return ret;
+}

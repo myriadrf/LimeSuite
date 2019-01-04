@@ -350,7 +350,7 @@ LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
         info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
         info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
         info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        info.hwVersion = (pkt.inBuffer[14] << 8) | pkt.inBuffer[15];
+        info.hwVersion = pkt.inBuffer[15]&0x7F;
     }
     return info;
 }
@@ -750,9 +750,9 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
 	if ((device == 2 && prog_mode == 2) == false)
-        printf("Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+	    lime::log(LOG_LEVEL_INFO, "Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
-		printf("FPGA configuring initiated\n");
+        lime::log(LOG_LEVEL_INFO, "FPGA configuring initiated\n");
 #endif
     return 0;
 }
@@ -776,11 +776,15 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
         if(units)
         {
 
-            const char adc_units_prefix[] = {
-                ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
-                'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
-            units[i] = adc_units_prefix[unitsIndex&0x0F];
-            units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
+            if (unitsIndex&0x0F)
+            {
+                const char adc_units_prefix[] = {
+                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
+                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
+                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
+            }
+            else
+                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
         }
         values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
 
@@ -888,7 +892,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
         if (callback)
             terminate = callback(CntEnd+fifoLen,length,"");
 #ifndef NDEBUG
-        printf("MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
+        lime::log(LOG_LEVEL_INFO, "MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
 #endif
         if(status != STATUS_COMPLETED_CMD)
         {
@@ -907,7 +911,7 @@ int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const
 	};
 #ifndef NDEBUG
     auto timeEnd = std::chrono::high_resolution_clock::now();
-    printf("\nMCU Programming finished, %li ms\n",
+    lime::log(LOG_LEVEL_INFO, "\nMCU Programming finished, %li ms\n",
             std::chrono::duration_cast<std::chrono::milliseconds>
             (timeEnd-timeStart).count());
 #endif

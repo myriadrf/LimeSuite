@@ -55,8 +55,8 @@ void PrintDeviceInfo(lms_device_t* port)
     {
         octave_stdout << "Connected to device: " << info->deviceName
                       << " FW: " << info->firmwareVersion << " HW: " << info->hardwareVersion
-                      << " Protocol: " << info->protocolVersion << " GW: " << info->gatewareVersion
-                      << " GW_rev: " << info->gatewareRevision << endl;
+                      << " Protocol: " << info->protocolVersion
+                      << " GW: " << info->gatewareVersion << endl;
     }
 }
 

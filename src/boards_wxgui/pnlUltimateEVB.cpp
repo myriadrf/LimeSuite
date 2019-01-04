@@ -10,6 +10,10 @@
 
 #include <ciso646>
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <algorithm>
+#include "pnlBoardControls.h"
 
 
 using namespace std;
@@ -42,7 +46,7 @@ pnlUltimateEVB::pnlUltimateEVB(wxWindow* parent,wxWindowID id, const wxPoint& po
 
     for (unsigned i = 0; i<names.size(); i++)
     {
-        const int offset = 35+i;
+        const int offset = 36+i;
         pwrParams.push_back(ADCparam(offset,names[i]));
         pwrParams.push_back(ADCparam(offset+names.size(),names[i]));
         pwrParams.push_back(ADCparam(offset+2*names.size(),names[i]));
@@ -75,14 +79,15 @@ pnlUltimateEVB::pnlUltimateEVB(wxWindow* parent,wxWindowID id, const wxPoint& po
     sizerVoltageRd->Add(new wxStaticText(this, wxID_ANY, _("Voltage")), 1, wxALL, 5);
 
     const std::vector<std::string> voltages = {
-        "AMUX_VDD_AFE", "AMUX_VDD12_RXBUF", "AMUX_VDD12_VCO_SXR", "AMUX_DVDD_SXR",
-        "AMUX_VDD_DIV_SXR", "AMUX_VDD_CP_SXR", "AMUX_VDD18_SXR", "AMUX_VDD_MXLOBUF_RFE",
-        "AMUX_VDD12_TIA_RFE", "AMUX_VDD14_LNA_RFE", "AMUX_VDD14_TIA_RFE", "AMUX_DIGPRVDD1_1",
-        "AMUX_VDD12_LNA_RFE", "AMUX_VDD14_RBB", "AMUX_DVDD_SXT", "AMUX_VDD_TBB",
-        "AMUX_VDD_TPAD_TRF", "AMUX_VDD12_DIG", "AMUX_VDD_CP_SXT", "AMUX_VDD12_VCO_SXT",
-        "AMUX_DIGPRVDD1_2", "AMUX_DVDD_CGEN", "AMUX_VDD_DIV_CGEN", "AMUX_VDD_SPI_BUF",
-        "AMUX_VDD12_TXBUF", "AMUX_VDD_DIV_SXT", "AMUX_VDD_TLOBUF_TRF", "AMUX_VDD14_VCO_CGEN",
-        "AMUX_VDD_CP_CGEN", "AMUX_LMS_TSTAO", "AMUX_LMS_TSTDO1", "AMUX_LMS_TSTDO0"
+        "VDD_AFE", "VDD12_RXBUF", "VDD12_VCO_SXR", "DVDD_SXR",
+        "VDD_DIV_SXR", "VDD_CP_SXR", "VDD18_SXR", "VDD_MXLOBUF_RFE",
+        "VDD12_TIA_RFE", "VDD14_LNA_RFE", "VDD14_TIA_RFE", "DIGPRVDD1_1",
+        "VDD12_LNA_RFE", "VDD14_RBB", "DVDD_SXT", "VDD_TBB",
+        "VDD_TPAD_TRF", "VDD12_DIG", "VDD_CP_SXT", "VDD12_VCO_SXT",
+        "DIGPRVDD1_2", "DVDD_CGEN", "VDD_DIV_CGEN", "VDD_SPI_BUF",
+        "VDD12_TXBUF", "VDD_DIV_SXT", "VDD_TLOBUF_TRF", "VDD14_VCO_CGEN",
+        "VDD_CP_CGEN", "LMS_TSTAO", "LMS_TSTDO1", "LMS_TSTDO0",
+        "VDIO_LMS", "VCC_EXT"
     };
 
     for (unsigned i = 0; i<voltages.size(); i++)
@@ -100,6 +105,9 @@ pnlUltimateEVB::pnlUltimateEVB(wxWindow* parent,wxWindowID id, const wxPoint& po
 
     mainSizer->Add( voltageBox, 1, wxEXPAND, 5 );
     mainSizer->Add( powerBox, 1, wxEXPAND, 5 );
+    auto button = new wxButton(this, wxNewId(), _("Save to CSV"));
+    mainSizer->Add(button, 1, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    Connect(button->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlUltimateEVB::OnSave), NULL, this);
     mainSizer->Fit(this);
     //mainSizer->SetSizeHints(this);
     Layout();
@@ -129,7 +137,7 @@ void pnlUltimateEVB::OnReadAll(wxCommandEvent &event)
             wxMessageBox(_("Failed to read board parameters"), _("Warning"));
             return;
         }
-        if (pwrParams[i].channel >= 47 && pwrParams[i].channel < 52)
+        if (pwrParams[i].channel >= 48 && pwrParams[i].channel < 53)
             sumPwr += value;
         pwrParams[i].value->SetLabel(wxString::Format(_("%1.0f %s"), value, units));
     }
@@ -151,4 +159,45 @@ void pnlUltimateEVB::OnReadAll(wxCommandEvent &event)
 
 void pnlUltimateEVB::OnWriteAll(wxCommandEvent &event)
 {
+
+}
+
+void pnlUltimateEVB::OnSave(wxCommandEvent &event)
+{
+
+    wxFileDialog dlg(this, _("Save samples file"), "", "", "CSV (*.csv)|*.csv", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dlg.ShowModal() == wxID_CANCEL)
+        return;
+    std::string captureFilename = std::string(dlg.GetPath());
+    std::ofstream ofile(captureFilename);
+
+    if (ofile)
+    {
+        ofile << "Temperature;" << pnlBoardControls::mParameters[1].value << ";" << pnlBoardControls::mParameters[1].units << std::endl;
+        ofile << "Name;Voltage;;Current;;Power;;" << std::endl;
+        for (size_t i = 0; i < vltgParams.size(); ++i)
+        {
+            std::string str = std::string(vltgParams[i].value->GetLabel());
+            str.replace(str.find(' '), 1, 1, ';');
+            ofile << vltgParams[i].name << ";" << str << ";" << std::endl;
+        }
+        for (size_t i = 0; i < pwrParams.size(); ++i)
+        {
+            ofile << pwrParams[i].name << ";";
+            std::string str = std::string(pwrParams[i++].value->GetLabel());
+            str.replace(str.find(' '), 1, 1, ';');
+            ofile << str << ";";
+            str = pwrParams[i++].value->GetLabel();
+            str.replace(str.find(' '), 1, 1, ';');
+            ofile << str << ";";
+            str = pwrParams[i].value->GetLabel();
+            str.replace(str.find(' '), 1, 1, ';');
+            ofile << str << ";" << std::endl;
+        }
+        {
+            std::string str = std::string(totalPwr->GetLabel());
+            str.replace(str.find(' '), 1, 1, ';');
+            ofile << "Total LMS power;;;;;" << str << ";" << std::endl;
+        }
+    }
 }

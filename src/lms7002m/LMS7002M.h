@@ -141,6 +141,7 @@ public:
      * Perform soft-reset sequence over SPI
      */
     int SoftReset();
+    int ResetLogicregisters();
 
 	int LoadConfig(const char* filename);
 	int SaveConfig(const char* filename);
@@ -369,14 +370,14 @@ public:
      * @param Q the imaginary adjustment [+1.0, -1.0]
      * @return 0 for success for error condition
      */
-    int SetTxDCOffset(const float_type I, const float_type Q);
+    int SetDCOffset(bool tx, const float_type I, const float_type Q);
 
     /*!
      * Readback the TX DC offset adjustment.
      * @param [out] I the real adjustment [+1.0, -1.0]
      * @param [out] Q the imaginary adjustment [+1.0, -1.0]
      */
-    void GetTxDCOffset(float_type &I, float_type &Q);
+    void GetDCOffset(bool tx, float_type &I, float_type &Q);
 
     /*!
      * Set the IQ imbalance correction.

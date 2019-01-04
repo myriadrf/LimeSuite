@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jan 23 2018)
+// C++ code generated with wxFormBuilder (version Sep 24 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -1660,6 +1660,11 @@ class pnlTxTSP_view : public wxPanel
 		wxStaticText* ID_STATICTEXT15;
 		wxSpinCtrl* cmbGFIR3_N_TXTSP;
 		wxButton* btnGFIR3Coef;
+		wxStaticText* txtBW;
+		wxTextCtrl* txtLPFBW;
+		wxButton* btnSetLPF;
+		wxStaticText* txtRATE;
+		wxStaticText* txtRATEVAL;
 		NumericSlider* cmbIQCORR_TXTSP;
 		wxStaticText* ID_STATICTEXT16;
 		wxStaticText* txtPhaseAlpha;
@@ -1686,6 +1691,7 @@ class pnlTxTSP_view : public wxPanel
 		virtual void onbtnGFIR1Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR2Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR3Coef( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnSetLPFClick( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -1861,6 +1867,11 @@ class pnlRxTSP_view : public wxPanel
 		wxStaticText* ID_STATICTEXT15;
 		wxSpinCtrl* cmbGFIR3_N_RXTSP;
 		wxButton* btnGFIR3Coef;
+		wxStaticText* txtBW;
+		wxTextCtrl* txtLPFBW;
+		wxButton* btnSetLPF;
+		wxStaticText* txtRate;
+		wxStaticText* txtRateVal;
 		NumericSlider* cmbIQCORR_RXTSP;
 		wxStaticText* ID_STATICTEXT16;
 		wxStaticText* txtPhaseAlpha;
@@ -1892,11 +1903,12 @@ class pnlRxTSP_view : public wxPanel
 		virtual void onbtnGFIR1Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR2Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR3Coef( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnSetLPFClick( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		pnlRxTSP_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
+		pnlRxTSP_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1145,536 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlRxTSP_view();
 	
 };

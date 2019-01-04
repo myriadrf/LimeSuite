@@ -128,6 +128,49 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
 
+    if (bandwidth <= 0)
+    {
+        lime::warning("GFIR LPF cannot be set to the requested bandwidth");
+        enabled = false;
+    }
+
+    if (enabled)
+    {
+        double interface_MHz;
+        int ratio;
+
+        if (tx)
+        {
+            ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+            interface_MHz = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / 1e6;
+        }
+        else
+        {
+            ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+            interface_MHz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / 1e6;
+        }
+
+        if (ratio != 7)
+            div = (2<<(ratio));
+
+        w = (bandwidth/2)/(interface_MHz/div);
+
+        L = div > 8 ? 8 : div;
+        div -= 1;
+
+        w *=0.95;
+        w2 = w*1.1;
+        if (w2 > 0.495)
+        {
+            w2 = w*1.05;
+            if (w2 > 0.495)
+            {
+                lime::warning("GFIR LPF cannot be set to the requested bandwidth");
+                enabled = false; //Filter disabled
+            }
+        }
+    }
+
     if (tx)
     {
         lms->Modify_SPI_Reg_bits(LMS7param(GFIR1_BYP_TXTSP),enabled==false);
@@ -151,57 +194,16 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
             lms->Modify_SPI_Reg_bits(LMS7param(CDS_RXALML),  enabled? 3 : 0);
         }
     }
-
-    if (bandwidth < 0)
+    if (!enabled)
         return 0;
 
-    if (enabled)
-    {
+    double coef[120];
+    double coef2[40];
+    short gfir1[120];
+    short gfir2[40];
 
-        double interface_MHz;
-        int ratio;
-
-        if (tx)
-        {
-            ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-            interface_MHz = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx) / 1e6;
-        }
-        else
-        {
-            ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-            interface_MHz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx) / 1e6;
-        }
-
-        if (ratio == 7)
-            interface_MHz /= 2;
-        else
-            div = (2<<(ratio));
-
-        w = (bandwidth/2)/(interface_MHz/div);
-
-        L = div > 8 ? 8 : div;
-        div -= 1;
-
-        w *=0.95;
-        w2 = w*1.1;
-        if (w2 > 0.495)
-        {
-         w2 = w*1.05;
-         if (w2 > 0.495)
-         {
-             return 0; //Filter disabled
-         }
-        }
-    }
-    else return 0;
-
-  double coef[120];
-  double coef2[40];
-  short gfir1[120];
-  short gfir2[40];
-
-  GenerateFilter(L*15, w, w2, 1.0, 0, coef);
-  GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
+    GenerateFilter(L*15, w, w2, 1.0, 0, coef);
+    GenerateFilter(L*5, w, w2, 1.0, 0, coef2);
 
     int sample = 0;
     for(int i=0; i<15; i++)
@@ -267,33 +269,7 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         || (lms->SetGFIRCoefficients(tx, 2, gfir1, 120) != 0))
         return -1;
 
-  return 0;
-}
-
-int LMS7_Device::ConfigureTXLPF(bool enabled, int ch,double bandwidth)
-{
-    lime::LMS7002M* lms = SelectChannel(ch);
-    if (enabled)
-    {
-        if (lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 0) != 0)
-            return -1;
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 0);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 0);
-
-            if (bandwidth > 0)
-            {
-                if (lms->TuneTxFilter(bandwidth) != 0)
-                    return -1;
-            }
-    }
-    else
-    {
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFLAD_TBB), 1);
-        lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFS5_TBB), 1);
-        return lms->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), 1);
-    }
-    lime::info("TX LPF configured");
-    return 0;
+    return lms->ResetLogicregisters();
 }
 
 unsigned LMS7_Device::GetNumChannels(const bool tx) const
@@ -795,7 +771,7 @@ LMS7_Device::Range LMS7_Device::GetLPFRange(bool tx, unsigned chan) const
 int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const double* coef,unsigned count)
 {
     short gfir[120];
-    int L;
+    unsigned int L;
     int div = 1;
     int ret = 0;
 
@@ -854,7 +830,7 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     unsigned sample = 0;
     for(int i=0; i< (filt==LMS_GFIR3 ? 15 : 5); i++)
     {
-        for(int j=0; j<8; j++)
+        for(unsigned int j=0; j<8; j++)
         {
             if( (j < L) && (sample < count) )
             {
@@ -1433,7 +1409,7 @@ int LMS7_Device::Program(const std::string& mode, const char* data, size_t len, 
         return lime::ReportError(EINVAL, "Device not connected");
 
     if (mode == program_mode::autoUpdate)
-        return this->connection->ProgramUpdate(true, callback);
+        return this->connection->ProgramUpdate(true, true, callback);
     if (mode == program_mode::fx3Flash)
         return this->connection->ProgramWrite(data, len, 2, 1, callback);
     else if (mode == program_mode::fx3RAM)
@@ -1629,7 +1605,7 @@ int LMS7_Device::SetLogCallback(void(*func)(const char* cstr, const unsigned int
     return 0;
 }
 
-int LMS7_Device::EnableCalibCache(bool enable)
+int LMS7_Device::EnableCache(bool enable)
 {
     for (unsigned i = 0; i < lms_list.size(); i++)
         lms_list[i]->EnableValuesCache(enable);

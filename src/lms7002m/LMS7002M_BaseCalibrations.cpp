@@ -33,6 +33,11 @@ int LMS7002M::CalibrateInternalADC(int clkDiv)
     uint16_t regValue = SPI_read(0x0601, true);
     while( ((regValue >> 5) & 0x1) != 1)
     {
+        if(bias > 31)
+        {
+            lime::error("Temperature internal ADC calibration failed");
+            return -2;
+        }
         ++bias;
         Modify_SPI_Reg_bits(LMS7_RSSI_BIAS, bias);
         regValue = SPI_read(0x0601, true);

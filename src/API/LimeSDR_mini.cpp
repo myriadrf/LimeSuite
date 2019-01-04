@@ -177,7 +177,7 @@ int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
             value |= 1<<8;
             fpga->WriteRegister(0x17, value);
         }
-        else if (LMS_PATH_LNAL)
+        else if (path==LMS_PATH_LNAL)
             lime::warning("LNAL has no connection to RF ports");
     }
     else
@@ -280,6 +280,20 @@ LMS7_Device::Range LMS7_LimeSDR_mini::GetFrequencyRange(bool tx) const
     return Range(10e6, 3.5e9);
 }
 
+int LMS7_LimeSDR_mini::SetClockFreq(unsigned clk_id, double freq, int channel)
+{
+    if (clk_id == LMS_CLOCK_EXTREF)
+        clk_id =  LMS_CLOCK_REF;
+    return LMS7_Device::SetClockFreq(clk_id, freq, channel);
+}
+
+int LMS7_LimeSDR_mini::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
+{
+    int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
+    if (lms_list[0]->Get_SPI_Reg_bits(0x82, 4, 1) == 0xD)
+        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0); 
+    return ret;
+}
 
 }//namespace lime
 

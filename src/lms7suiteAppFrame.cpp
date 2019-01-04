@@ -271,7 +271,7 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         controlDev.Append(wxString::Format(_(" FW:%s HW:%s Protocol:%s GW:%s Ref Clk: %1.2f MHz"), info->firmwareVersion, info->hardwareVersion, info->protocolVersion, info->gatewareVersion, refClk/1e6));
         statusBar->SetStatusText(controlDev, controlCollumn);
 
-        LMS_EnableCalibCache(lmsControl,mnuCacheValues->IsChecked());
+        LMS_EnableCache(lmsControl,mnuCacheValues->IsChecked());
 
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
@@ -617,6 +617,6 @@ void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
 {
     int checked = event.GetInt();
-    LMS_EnableCalibCache(lmsControl,checked);
+    LMS_EnableCache(lmsControl,checked);
 }
 

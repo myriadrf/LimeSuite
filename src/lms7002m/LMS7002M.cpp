@@ -667,8 +667,16 @@ int LMS7002M::LoadConfig(const char* filename)
         this->SetReferenceClk_SX(Tx, parser.get("sxt_ref_clk_mhz", 30.72) * 1e6);
     }
 
+    ResetLogicregisters();
     this->SetActiveChannel(ChA);
     return 0;
+}
+
+int LMS7002M:: ResetLogicregisters()
+{
+    auto x0020_value = SPI_read(0x0020); //reset logic registers
+    SPI_write(0x0020, x0020_value & 0x55FF);
+    return SPI_write(0x0020, x0020_value | 0xFF00);
 }
 
 /** @brief Reads all registers from chip and saves to file
@@ -1522,8 +1530,10 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     // try setting tuning values from the cache, if it fails perform full tuning
     if  (useCache && tuning_cache_sel_vco.count(freq_Hz) > 0)
     {
-        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), tuning_cache_sel_vco[freq_Hz]);
-        Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, tuning_cache_csw_value[freq_Hz]);
+        sel_vco = tuning_cache_sel_vco[freq_Hz];
+        csw_value = tuning_cache_csw_value[freq_Hz];
+        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+        Modify_SPI_Reg_bits(LMS7param(CSW_VCO).address, LMS7param(CSW_VCO).msb, LMS7param(CSW_VCO).lsb, csw_value);
         this_thread::sleep_for(chrono::microseconds(50)); // probably no need for this as the interface is already very slow..
         auto cmphl = (uint8_t)Get_SPI_Reg_bits(LMS7param(VCO_CMPHO).address, 13, 12, true);
         if(cmphl == 2) {
@@ -2489,7 +2499,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
 
-    return status;
+    return ResetLogicregisters();
 }
 
 float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
@@ -2587,19 +2597,40 @@ bool LMS7002M::GetRxDCRemoval(void)
     return this->Get_SPI_Reg_bits(LMS7param(DC_BYP_RXTSP)) == 0;
 }
 
-int LMS7002M::SetTxDCOffset(const float_type I, const float_type Q)
+int LMS7002M::SetDCOffset(bool tx, const float_type I, const float_type Q)
 {
     const bool bypass = I == 0.0 and Q == 0.0;
-    this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), bypass?1:0);
-    this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*128));
-    this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*128));
-	return 0;
+    if (tx)
+    {
+        this->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), bypass?1:0);
+        this->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), std::lrint(I*127));
+        this->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), std::lrint(Q*127));
+    }
+    else
+    {
+        Modify_SPI_Reg_bits(LMS7param(EN_DCOFF_RXFE_RFE), bypass ? 0 : 1);
+        unsigned val = std::lrint(std::abs(I*63)) + (I < 0 ? 64 : 0);
+        Modify_SPI_Reg_bits(LMS7param(DCOFFI_RFE), val);
+        val = std::lrint(std::abs(Q*63)) + (Q < 0 ? 64 : 0);
+        Modify_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), val);
+    }
+    return 0;
 }
 
-void LMS7002M::GetTxDCOffset(float_type &I, float_type &Q)
+void LMS7002M::GetDCOffset(bool tx, float_type &I, float_type &Q)
 {
-    I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP)))/128.0; //signed 8-bit
-    Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP)))/128.0; //signed 8-bit
+    if (tx)
+    {
+        I = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP)))/127.0; //signed 8-bit
+        Q = int8_t(this->Get_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP)))/127.0; //signed 8-bit
+    }
+    else
+    {
+        auto i = Get_SPI_Reg_bits(LMS7param(DCOFFI_RFE));
+        I = ((i&0x40) ? -1.0 : 1.0) * (i&0x3F)/63.0;
+        auto q = Get_SPI_Reg_bits(LMS7param(DCOFFQ_RFE));
+        Q = ((q&0x40) ? -1.0 : 1.0) * (q&0x3F)/63.0;
+    }
 }
 
 int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_type gainI, const float_type gainQ)
@@ -2615,7 +2646,7 @@ int LMS7002M::SetIQBalance(const bool tx, const float_type phase, const float_ty
     this->Modify_SPI_Reg_bits(tx?LMS7param(IQCORR_TXTSP):LMS7param(IQCORR_RXTSP), iqcorr);
     this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRI_TXTSP):LMS7param(GCORRI_RXTSP), gcorri);
     this->Modify_SPI_Reg_bits(tx?LMS7param(GCORRQ_TXTSP):LMS7param(GCORRQ_RXTSP), gcorrq);
-	return 0;
+    return 0;
 }
 
 void LMS7002M::GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ)
@@ -2651,7 +2682,8 @@ void LMS7002M::EnableCalibrationByMCU(bool enabled)
 
 float_type LMS7002M::GetTemperature()
 {
-    CalibrateInternalADC(32);
+    if(CalibrateInternalADC(32) != 0)
+        return 0;
     Modify_SPI_Reg_bits(LMS7_RSSI_PD, 0);
     Modify_SPI_Reg_bits(LMS7_RSSI_RSSIMODE, 0);
     uint16_t biasMux = Get_SPI_Reg_bits(LMS7_MUX_BIAS_OUT);

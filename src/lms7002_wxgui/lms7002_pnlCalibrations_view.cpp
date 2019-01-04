@@ -113,11 +113,6 @@ void lms7002_pnlCalibrations_view::OnbtnCalibrateAll( wxCommandEvent& event )
         useExtLoopback = true;
     double bandwidth_MHz = 0;
     txtCalibrationBW->GetValue().ToDouble(&bandwidth_MHz);
-    if (2.5 > bandwidth_MHz || bandwidth_MHz > 120.0)
-    {
-        wxMessageBox(wxString("Frequency out of range, available range: 2.5-120 MHz"));
-        return;
-    }
     uint16_t ch;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     int status = LMS_Calibrate(lmsControl,LMS_CH_TX,ch-1,bandwidth_MHz * 1e6,useExtLoopback);

@@ -263,10 +263,11 @@ int ConnectionEVB7COM::Write(const unsigned char *buffer, int length, int timeou
 #endif
     if(bytesWriten == length)
         status = true;
-    if(status == false);
+
+    if(status == false)
         ReportError(EIO, "Failed to write data");
 
-	return bytesWriten;
+    return bytesWriten;
 }
 
 /** @brief Reads data from COM port

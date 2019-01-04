@@ -65,11 +65,11 @@ public:
     virtual std::vector<std::string> GetProgramModes() const;
     virtual int Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const;
     double GetClockFreq(unsigned clk_id, int channel = -1) const;
-    int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
+    virtual int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
     lms_dev_info_t* GetInfo();
     int Synchronize(bool toChip) const;
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
-    int EnableCalibCache(bool enable);
+    int EnableCache(bool enable);
     double GetChipTemperature(int ind = -1) const;
     int LoadConfig(const char *filename, int ind = -1);
     int SaveConfig(const char *filename, int ind = -1) const;
@@ -113,7 +113,6 @@ protected:
     lime::IConnection* connection;
     std::vector<lime::LMS7002M*> lms_list;
     lime::LMS7002M* SelectChannel(unsigned chan) const;
-    int ConfigureTXLPF(bool enabled,int ch, double bandwidth);
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;
     lime::FPGA* fpga;

@@ -10,13 +10,13 @@
 
 #include "pnlUltimateEVB.h"
 #include "pnluLimeSDR.h"
+#include "pnlCoreSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
 #include "lms7002m_novena_wxgui.h"
 #include "RFSpark_wxgui.h"
  #include "pnlQSpark.h"
 #include <IConnection.h>
-#include <LMSBoards.h>
 #include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
@@ -67,9 +67,26 @@ static wxString power2unitsString(char powerx3)
     }
 }
 
-pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style), lmsControl(nullptr)
+std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::mParameters;
+const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
+                                                LMS_DEV_EVB7,
+                                                LMS_DEV_RFESPARK,
+                                                LMS_DEV_LIMESDR,
+                                                LMS_DEV_LIMESDR_PCIE,
+                                                LMS_DEV_LIMESDR_QPCIE,
+                                                LMS_DEV_LIMESDRMINI,
+                                                LMS_DEV_LMS7002M_ULTIMATE_EVB,
+                                                LMS_DEV_LIMESDR_CORE_SDR};
+
+pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
+    wxFrame(parent, id, title, pos, size, style),
+    lmsControl(nullptr), 
+    additionalControls(nullptr),
+    txtDACTitle(nullptr),
+    txtDACValue(nullptr),  
+    btnDAC(nullptr),
+    sizerDAC(nullptr)
 {
-    additionalControls = nullptr;
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     wxFlexGridSizer* fgSizer247;
     fgSizer247 = new wxFlexGridSizer( 0, 1, 10, 10);
@@ -98,9 +115,8 @@ pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxStri
     cmbBoardSelection->SetSelection( 0 );
     fgSizer248->Add( cmbBoardSelection, 0, wxALL, 5 );
 
-    for (int i = 0; i < LMS_DEV_COUNT; ++i) {
-        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName((eLMS_DEV)i)));
-    }
+    for (unsigned i = 0; i < board_list.size(); ++i)
+        cmbBoardSelection->AppendString(wxString::From8BitData(GetDeviceName(board_list[i])));
 
     fgSizer247->Add( fgSizer248, 1, wxEXPAND, 5 );
 
@@ -237,6 +253,12 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         evt.SetId(additionalControls->GetId());
         wxPostEvent(additionalControls, evt);
     }
+    {
+        uint16_t val;
+        LMS_VCTCXORead(lmsControl, &val, true);
+        txtDACValue->SetValue(wxString::Format("%d", val));    
+    }
+    
     UpdatePanel();
 }
 
@@ -310,15 +332,25 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
-        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
+        || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
     {
-        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
+        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
         else
-            paramList.push_back(ADC_DAC{ "VCTCXO DAC", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
-        paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
+        if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI)) 
+            paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
+}
+
+void pnlBoardControls::OnDACWrite(wxCommandEvent &event)
+{
+    long val;
+    txtDACValue->GetValue().ToLong(&val);
+    LMS_VCTCXOWrite(lmsControl, val, true);
+    OnReadAll(event);
 }
 
 void pnlBoardControls::SetupControls(const std::string &boardID)
@@ -329,27 +361,53 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls->Destroy();
         additionalControls = nullptr;
     }
-
-    if (boardID == GetDeviceName(LMS_DEV_UNKNOWN))
-        pnlCustomControls->Show();
-    else
-        pnlCustomControls->Hide();
-    for(int i=0; i<LMS_DEV_COUNT; ++i)
+    
+    if(txtDACTitle)
     {
-        if(boardID == GetDeviceName((eLMS_DEV)i))
+        txtDACTitle->Destroy();
+        txtDACTitle = nullptr;
+    }
+    
+    if(txtDACValue)
+    {
+        txtDACValue->Destroy();
+        txtDACValue = nullptr;
+    }
+    
+    if(btnDAC)
+    {
+        btnDAC->Destroy();
+        btnDAC = nullptr;
+    }
+
+    if (sizerDAC)
+    {
+        sizerAnalogRd->Remove(sizerDAC);
+        sizerDAC = nullptr;
+    }
+
+    cmbBoardSelection->SetSelection(0);
+    for(unsigned i=0; i<board_list.size(); ++i)
+    {
+        if(boardID == GetDeviceName(board_list[i]))
         {
             cmbBoardSelection->SetSelection(i);
             break;
         }
     }
 
+    if (cmbBoardSelection->GetSelection() == 0)
+        pnlCustomControls->Show();
+    else
+        pnlCustomControls->Hide();
+
     for (auto &widget : mGUI_widgets)
         delete widget;
     mGUI_widgets.clear(); //delete previously existing controls
-    mParameters = getBoardParams(boardID); //update controls list by board type
 
-    if (boardID != GetDeviceName(LMS_DEV_UNKNOWN))
+    if (cmbBoardSelection->GetSelection() != 0)
     {
+        mParameters = getBoardParams(boardID); //update controls list by board type
         if (mParameters.size()!=0)
             pnlReadControls->Show();
         else
@@ -376,8 +434,21 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
             else
                 sizerAnalogRd->Add(gui->rValue, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-        }
+        }          
     }
+    if (cmbBoardSelection->GetSelection() > 2)
+    {
+        txtDACTitle = new wxStaticText(pnlReadControls, wxID_ANY, _("VCTCXO DAC (permament)"));
+        sizerAnalogRd->Add(txtDACTitle, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+        sizerDAC = new wxFlexGridSizer(0, 2, 0, 0);
+        txtDACValue = new wxTextCtrl(pnlReadControls, wxNewId(), _("128"), wxDefaultPosition, wxSize(64, -1));
+        sizerDAC->Add(txtDACValue, 1, wxALIGN_CENTER_VERTICAL, 0);
+        btnDAC = new wxButton(pnlReadControls, wxNewId(), _("Write"), wxDefaultPosition, wxSize(64, -1));
+        sizerDAC->Add(btnDAC, 1,  wxALIGN_CENTER_VERTICAL, 0);
+        Connect(btnDAC->GetId(), wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(pnlBoardControls::OnDACWrite), NULL, this);
+        sizerAnalogRd->Add(sizerDAC, 1,  wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+    }
+
     sizerAnalogRd->Layout();
 
     if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))
@@ -432,6 +503,13 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
+     else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+    {
+        pnlCoreSDR* pnl = new pnlCoreSDR(this, wxNewId());
+        pnl->Initialize(lmsControl);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
     Layout();
     Fit();
 }
@@ -467,7 +545,7 @@ void pnlBoardControls::OnSetDACvalues(wxSpinEvent &event)
 
 void pnlBoardControls::OnUserChangedBoardType(wxCommandEvent& event)
 {
-    SetupControls(GetDeviceName((eLMS_DEV)cmbBoardSelection->GetSelection()));
+    SetupControls(GetDeviceName(board_list[cmbBoardSelection->GetSelection()]));
 }
 
 void pnlBoardControls::OnCustomRead(wxCommandEvent& event)

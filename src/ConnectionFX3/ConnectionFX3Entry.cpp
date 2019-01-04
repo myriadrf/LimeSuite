@@ -81,7 +81,7 @@ std::vector<ConnectionHandle> ConnectionFX3Entry::enumerate(const ConnectionHand
             handle.index = i;
             std::wstring ws(device.SerialNumber);
             handle.serial = std::string(ws.begin(),ws.end());
-            if (hint.serial.empty() or hint.serial == handle.serial)
+            if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
             {
                 handles.push_back(handle); //filter on serial
             }
@@ -150,7 +150,7 @@ std::vector<ConnectionHandle> ConnectionFX3Entry::enumerate(const ConnectionHand
             libusb_close(tempDev_handle);
 
             //add handle conditionally, filter by serial number
-            if (hint.serial.empty() or hint.serial == handle.serial)
+            if (hint.serial.empty() or handle.serial.find(hint.serial) != std::string::npos)
             {
                 handles.push_back(handle);
             }

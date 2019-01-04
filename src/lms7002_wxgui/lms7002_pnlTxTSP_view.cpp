@@ -394,6 +394,19 @@ void lms7002_pnlTxTSP_view::OnbtnUploadNCOClick( wxCommandEvent& event )
     UpdateGUI();// API changes nco selection
 }
 
+void lms7002_pnlTxTSP_view::OnbtnSetLPFClick( wxCommandEvent& event )
+{
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    double bw;
+    txtLPFBW->GetValue().ToDouble(&bw);
+    if (LMS_SetGFIRLPF(lmsControl, LMS_CH_TX, ch, true, bw*1e6)!=0)
+        wxMessageBox(_("GFIR configuration failed"), _("Error"));
+    UpdateGUI();// API changes nco selection
+}
+
 void lms7002_pnlTxTSP_view::UpdateNCOinputs()
 {
     assert(txtNCOinputs.size() == 16);
@@ -474,7 +487,15 @@ void lms7002_pnlTxTSP_view::UpdateGUI()
     else
         value &= ~1;
     cmbCMIX_GAIN_TXTSP->SetSelection(value);
-
+    
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    ch = (ch == 2) ? 1 : 0;
+    ch += 2*LMS7SuiteAppFrame::m_lmsSelection;
+    
+    double sr = 0;
+    LMS_GetSampleRate(lmsControl, LMS_CH_TX, ch , &sr, nullptr);
+    txtRATEVAL->SetLabel(wxString::Format("%3.3f MHz", sr/1e6));
     //check if B channel is enabled
     LMS_ReadParam(lmsControl,LMS7param(MAC),(uint16_t*)&value);
     if (value >= 2)

@@ -79,6 +79,11 @@ public:
     int ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback) override;
     
     DeviceInfo GetDeviceInfo(void)override;
+    
+    int GPIOWrite(const uint8_t *buffer, size_t bufLength) override;
+    int GPIORead(uint8_t *buffer, size_t bufLength) override;
+    int GPIODirWrite(const uint8_t *buffer, size_t bufLength) override;
+    int GPIODirRead(uint8_t *buffer, size_t bufLength) override;
 
 protected:
     int GetBuffersCount() const override;

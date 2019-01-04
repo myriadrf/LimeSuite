@@ -25,6 +25,7 @@ int main(int argc, char** argv)
     const double frequency = 500e6;  //center frequency to 500 MHz
     const double sample_rate = 5e6;    //sample rate to 5 MHz
     const double tone_freq = 1e6; //tone frequency
+    const double f_ratio = tone_freq/sample_rate;
     //Find devices
     int n;
     lms_info_str_t list[8]; //should be large enough to hold all detected devices
@@ -67,8 +68,11 @@ int main(int argc, char** argv)
     if (LMS_SetNormalizedGain(device, LMS_CH_TX, 0, 0.7) != 0)
         error();
 
+    //calibrate Tx, continue on failure
+    LMS_Calibrate(device, LMS_CH_TX, 0, sample_rate, 0);
+    
     //Streaming Setup
-
+    
     lms_stream_t tx_stream;                 //stream structure
     tx_stream.channel = 0;                  //channel number
     tx_stream.fifoSize = 256*1024;          //fifo size in samples
@@ -78,15 +82,18 @@ int main(int argc, char** argv)
     LMS_SetupStream(device, &tx_stream);
 
     //Initialize data buffers
-    const int tx_size = 1024*8;
-    float tx_buffer[2*tx_size];     //buffer to hold complex values (2*samples))
-    for (int i = 0; i <tx_size; i++) {      //generate TX tone
+    const int buffer_size = 1024*8;
+    float tx_buffer[2*buffer_size];     //buffer to hold complex values (2*samples))
+    for (int i = 0; i <buffer_size; i++) {      //generate TX tone
         const double pi = acos(-1);
-        double w = 2*pi*i*tone_freq/sample_rate;
+        double w = 2*pi*i*f_ratio;
         tx_buffer[2*i] = cos(w);
         tx_buffer[2*i+1] = sin(w);
-    }
+    }   
     cout << "Tx tone frequency: " << tone_freq/1e6 << " MHz" << endl;
+
+    const int send_cnt = int(buffer_size*f_ratio) / f_ratio; 
+    cout << "sample count per send call: " << send_cnt << std::endl;
 
     LMS_StartStream(&tx_stream);         //Start streaming
     //Streaming
@@ -95,9 +102,9 @@ int main(int argc, char** argv)
     while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
     {
         //Transmit samples
-        int ret = LMS_SendStream(&tx_stream, tx_buffer, tx_size, nullptr, 1000);
-        if (ret != tx_size)
-            cout << "error: samples sent: " << ret << "/" << tx_size << endl;
+        int ret = LMS_SendStream(&tx_stream, tx_buffer, send_cnt, nullptr, 1000);
+        if (ret != send_cnt)
+            cout << "error: samples sent: " << ret << "/" << send_cnt << endl;
         //Print data rate (once per second)
         if (chrono::high_resolution_clock::now() - t2 > chrono::seconds(1))
         {

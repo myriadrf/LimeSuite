@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jan 23 2018)
+// C++ code generated with wxFormBuilder (version Sep 24 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -6767,13 +6767,21 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	fgSizer218->Add( fgSizer220, 1, wxEXPAND, 5 );
 	
+	wxStaticBoxSizer* sbSizer138;
+	sbSizer138 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer259;
+	fgSizer259 = new wxFlexGridSizer( 2, 0, 0, 0 );
+	fgSizer259->SetFlexibleDirection( wxBOTH );
+	fgSizer259->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	wxFlexGridSizer* fgSizer135;
 	fgSizer135 = new wxFlexGridSizer( 0, 3, 0, 5 );
 	fgSizer135->SetFlexibleDirection( wxBOTH );
 	fgSizer135->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxStaticBoxSizer* sbSizer100;
-	sbSizer100 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR1") ), wxVERTICAL );
+	sbSizer100 = new wxStaticBoxSizer( new wxStaticBox( sbSizer138->GetStaticBox(), wxID_ANY, wxT("GFIR1") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer137;
 	fgSizer137 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -6810,7 +6818,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer100, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxStaticBoxSizer* sbSizer101;
-	sbSizer101 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR2") ), wxVERTICAL );
+	sbSizer101 = new wxStaticBoxSizer( new wxStaticBox( sbSizer138->GetStaticBox(), wxID_ANY, wxT("GFIR2") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer139;
 	fgSizer139 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -6847,7 +6855,7 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer101, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxStaticBoxSizer* sbSizer102;
-	sbSizer102 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR3") ), wxVERTICAL );
+	sbSizer102 = new wxStaticBoxSizer( new wxStaticBox( sbSizer138->GetStaticBox(), wxID_ANY, wxT("GFIR3") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer141;
 	fgSizer141 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -6884,7 +6892,54 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer102, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	fgSizer218->Add( fgSizer135, 1, wxALL|wxEXPAND, 5 );
+	fgSizer259->Add( fgSizer135, 1, wxALL|wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer145;
+	sbSizer145 = new wxStaticBoxSizer( new wxStaticBox( sbSizer138->GetStaticBox(), wxID_ANY, wxT("Configure GFIRs as LPF") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer1351;
+	fgSizer1351 = new wxFlexGridSizer( 0, 3, 0, 5 );
+	fgSizer1351->SetFlexibleDirection( wxBOTH );
+	fgSizer1351->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	txtBW = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtBW->Wrap( -1 );
+	fgSizer1351->Add( txtBW, 0, wxALIGN_CENTER|wxALL, 0 );
+	
+	txtLPFBW = new wxTextCtrl( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtLPFBW->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtLPFBW->SetMaxLength( 8 );
+	}
+	#else
+	txtLPFBW->SetMaxLength( 8 );
+	#endif
+	fgSizer1351->Add( txtLPFBW, 0, wxALL, 0 );
+	
+	btnSetLPF = new wxButton( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Set"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnSetLPF->SetDefault(); 
+	fgSizer1351->Add( btnSetLPF, 0, wxALL, 0 );
+	
+	txtRATE = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Sample rate:"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtRATE->Wrap( -1 );
+	fgSizer1351->Add( txtRATE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 0 );
+	
+	txtRATEVAL = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0 MHz"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtRATEVAL->Wrap( -1 );
+	fgSizer1351->Add( txtRATEVAL, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
+	
+	
+	sbSizer145->Add( fgSizer1351, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_RIGHT|wxEXPAND, 5 );
+	
+	
+	fgSizer259->Add( sbSizer145, 1, wxEXPAND, 5 );
+	
+	
+	sbSizer138->Add( fgSizer259, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer218->Add( sbSizer138, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer219;
 	fgSizer219 = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -7070,6 +7125,8 @@ pnlTxTSP_view::pnlTxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbGFIR3_L_TXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR3_N_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR3Coef->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::onbtnGFIR3Coef ), NULL, this );
+	txtLPFBW->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlTxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
+	btnSetLPF->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::OnbtnSetLPFClick ), NULL, this );
 	cmbIQCORR_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRI_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_TXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -7147,6 +7204,8 @@ pnlTxTSP_view::~pnlTxTSP_view()
 	cmbGFIR3_L_TXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR3_N_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR3Coef->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::onbtnGFIR3Coef ), NULL, this );
+	txtLPFBW->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlTxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
+	btnSetLPF->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlTxTSP_view::OnbtnSetLPFClick ), NULL, this );
 	cmbIQCORR_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRI_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_TXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlTxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -8106,13 +8165,21 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	fgSizer218->Add( fgSizer220, 1, wxEXPAND, 5 );
 	
+	wxStaticBoxSizer* sbSizer139;
+	sbSizer139 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer260;
+	fgSizer260 = new wxFlexGridSizer( 2, 0, 0, 0 );
+	fgSizer260->SetFlexibleDirection( wxBOTH );
+	fgSizer260->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
 	wxFlexGridSizer* fgSizer135;
 	fgSizer135 = new wxFlexGridSizer( 0, 3, 0, 5 );
 	fgSizer135->SetFlexibleDirection( wxBOTH );
 	fgSizer135->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	wxStaticBoxSizer* sbSizer100;
-	sbSizer100 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR1") ), wxVERTICAL );
+	sbSizer100 = new wxStaticBoxSizer( new wxStaticBox( sbSizer139->GetStaticBox(), wxID_ANY, wxT("GFIR1") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer137;
 	fgSizer137 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -8149,7 +8216,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer100, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxStaticBoxSizer* sbSizer101;
-	sbSizer101 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR2") ), wxVERTICAL );
+	sbSizer101 = new wxStaticBoxSizer( new wxStaticBox( sbSizer139->GetStaticBox(), wxID_ANY, wxT("GFIR2") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer139;
 	fgSizer139 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -8186,7 +8253,7 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer101, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxStaticBoxSizer* sbSizer102;
-	sbSizer102 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("GFIR3") ), wxVERTICAL );
+	sbSizer102 = new wxStaticBoxSizer( new wxStaticBox( sbSizer139->GetStaticBox(), wxID_ANY, wxT("GFIR3") ), wxVERTICAL );
 	
 	wxFlexGridSizer* fgSizer141;
 	fgSizer141 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -8223,10 +8290,57 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgSizer135->Add( sbSizer102, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	
-	fgSizer218->Add( fgSizer135, 1, wxALL|wxEXPAND, 5 );
+	fgSizer260->Add( fgSizer135, 1, wxALL|wxEXPAND, 5 );
+	
+	wxStaticBoxSizer* sbSizer145;
+	sbSizer145 = new wxStaticBoxSizer( new wxStaticBox( sbSizer139->GetStaticBox(), wxID_ANY, wxT("Configure GFIRs as LPF") ), wxVERTICAL );
+	
+	wxFlexGridSizer* fgSizer1351;
+	fgSizer1351 = new wxFlexGridSizer( 0, 3, 0, 5 );
+	fgSizer1351->SetFlexibleDirection( wxBOTH );
+	fgSizer1351->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	txtBW = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtBW->Wrap( -1 );
+	fgSizer1351->Add( txtBW, 0, wxALIGN_CENTER|wxALL, 0 );
+	
+	txtLPFBW = new wxTextCtrl( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
+	#ifdef __WXGTK__
+	if ( !txtLPFBW->HasFlag( wxTE_MULTILINE ) )
+	{
+	txtLPFBW->SetMaxLength( 8 );
+	}
+	#else
+	txtLPFBW->SetMaxLength( 8 );
+	#endif
+	fgSizer1351->Add( txtLPFBW, 0, wxALL, 0 );
+	
+	btnSetLPF = new wxButton( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Set"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnSetLPF->SetDefault(); 
+	fgSizer1351->Add( btnSetLPF, 0, wxALL, 0 );
+	
+	txtRate = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Sample rate"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtRate->Wrap( -1 );
+	fgSizer1351->Add( txtRate, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 0 );
+	
+	txtRateVal = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0 MHz"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtRateVal->Wrap( -1 );
+	fgSizer1351->Add( txtRateVal, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
+	
+	
+	sbSizer145->Add( fgSizer1351, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer260->Add( sbSizer145, 1, wxEXPAND, 5 );
+	
+	
+	sbSizer139->Add( fgSizer260, 1, wxEXPAND, 5 );
+	
+	
+	fgSizer218->Add( sbSizer139, 1, wxEXPAND, 5 );
 	
 	wxFlexGridSizer* fgSizer219;
-	fgSizer219 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	fgSizer219 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer219->AddGrowableCol( 0 );
 	fgSizer219->SetFlexibleDirection( wxBOTH );
 	fgSizer219->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -8364,7 +8478,6 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	this->SetSizer( fgSizer223 );
 	this->Layout();
-	fgSizer223->Fit( this );
 	
 	// Connect Events
 	chkEN_RXTSP->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -8439,6 +8552,8 @@ pnlRxTSP_view::pnlRxTSP_view( wxWindow* parent, wxWindowID id, const wxPoint& po
 	cmbGFIR3_L_RXTSP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR3_N_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR3Coef->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::onbtnGFIR3Coef ), NULL, this );
+	txtLPFBW->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlRxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
+	btnSetLPF->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnSetLPFClick ), NULL, this );
 	cmbIQCORR_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRI_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
@@ -8523,6 +8638,8 @@ pnlRxTSP_view::~pnlRxTSP_view()
 	cmbGFIR3_L_RXTSP->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGFIR3_N_RXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	btnGFIR3Coef->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::onbtnGFIR3Coef ), NULL, this );
+	txtLPFBW->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( pnlRxTSP_view::txtFCWPHOmodeAdditional_OnMouseWheel ), NULL, this );
+	btnSetLPF->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( pnlRxTSP_view::OnbtnSetLPFClick ), NULL, this );
 	cmbIQCORR_RXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRI_RXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );
 	cmbGCORRQ_RXTSP->Disconnect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( pnlRxTSP_view::ParameterChangeHandler ), NULL, this );

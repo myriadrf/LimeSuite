@@ -15,6 +15,8 @@
 #include <fstream>
 #include "Logger.h"
 #include "LMS64CProtocol.h"
+#include "lms7_device.h"
+#include "device_constants.h"
 
 using namespace lime;
 
@@ -39,6 +41,7 @@ static int printHelp(void)
     std::cout << "    --info \t\t\t\t Print module information" << std::endl;
     std::cout << "    --find[=\"module=foo,serial=bar\"] \t Discover available devices" << std::endl;
     std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
+    std::cout << "    --force \t\t\t\t Force operaton" << std::endl;
     std::cout << std::endl;
     std::cout << "  Advanced options:" << std::endl;
     std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;
@@ -154,7 +157,7 @@ static int makeDevice(void)
 /***********************************************************************
  * Program update (sync images and flash support)
  **********************************************************************/
-static int programUpdate(const std::string &argStr)
+static int programUpdate(const bool force, const std::string &argStr)
 {
     auto handles = ConnectionRegistry::findConnections(argStr);
     if(handles.size() == 0)
@@ -172,7 +175,7 @@ static int programUpdate(const std::string &argStr)
         return 0;
     };
 
-    auto status = conn->ProgramUpdate(true/*yes download*/, progCallback);
+    auto status = conn->ProgramUpdate(true/*yes download*/, force, progCallback);
 
     std::cout << std::endl;
     if(status == 0)
@@ -216,7 +219,7 @@ static int programGateware(const std::string &argStr)
         return EXIT_FAILURE;
     }
     std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+    auto device = LMS7_Device::CreateDevice(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
@@ -225,23 +228,11 @@ static int programGateware(const std::string &argStr)
         return 0;
     };
 
-    int device = LMS64CProtocol::FPGA; //Altera FPGA
-    int progMode = 1; //Bitstream to FLASH
-    auto status = conn->ProgramWrite(progData.data(), progData.size(), progMode, device, progCallback);
-
+    auto status = device->Program(program_mode::fpgaFlash, progData.data(), progData.size(), progCallback);
     std::cout << std::endl;
-    if(status == 0)
-    {
-        //boot from FLASH
-        status = conn->ProgramWrite(nullptr, 0, 2, device, nullptr);
-        if(status == 0)
-            std::cout << "FPGA boot from FLASH completed!" << std::endl;
-        else
-            std::cout << "FPGA boot from FLASH failed!"<< GetLastErrorMessage() << std::endl;
-    }
-    else
+    if(status != 0)
         std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
-    ConnectionRegistry::freeConnection(conn);
+    delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
 
@@ -273,7 +264,7 @@ static int programFirmware(const std::string &argStr)
         return EXIT_FAILURE;
     }
     std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+    auto device = LMS7_Device::CreateDevice(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
@@ -282,23 +273,11 @@ static int programFirmware(const std::string &argStr)
         return 0;
     };
 
-    int device = LMS64CProtocol::FX3; //FX3
-    int progMode = 2; //Firmware to FLASH
-    auto status = conn->ProgramWrite(progData.data(), progData.size(), progMode, device, progCallback);
-
+    auto status = device->Program(program_mode::fx3Flash, progData.data(), progData.size(), progCallback);
     std::cout << std::endl;
-    if(status == 0)
-    {
-        //Reset device
-        status = conn->ProgramWrite(nullptr, 0, 0, device, nullptr);
-        if(status == 0)
-            std::cout << "FX3 firmware uploaded, device has been reset" << std::endl;
-        else
-            std::cout << "FX3 firmware uploaded, failed to reset device" << std::endl;
-    }
-    else
+    if(status != 0)
         std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
-    ConnectionRegistry::freeConnection(conn);
+    delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
 
@@ -312,6 +291,7 @@ int main(int argc, char *argv[])
         {"info", optional_argument, 0, 'i'},
         {"find", optional_argument, 0, 'f'},
         {"make", optional_argument, 0, 'm'},
+        {"force",      no_argument, 0, 'F'},
         {"args", optional_argument, 0, 'a'},
         {"update",     no_argument, 0, 'u'},
         {"fpga", required_argument, 0, 'g'},
@@ -329,7 +309,7 @@ int main(int argc, char *argv[])
 
     std::string argStr, dir("BOTH"), chans("ALL");
     double start(0.0), stop(0.0), step(1e6), bw(30e6);
-    bool testTiming(false), calSweep(false);
+    bool testTiming(false), calSweep(false), update(false), force(false);
     int long_index = 0;
     int option = 0;
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
@@ -343,7 +323,7 @@ int main(int argc, char *argv[])
         case 'a':
             if (optarg != NULL) argStr = optarg;
             break;
-        case 'u': return programUpdate(argStr);
+        case 'u': update = true; break;
         case 'g': return programGateware(argStr);
         case 'w': return programFirmware(argStr);
         case 't': testTiming = true; break;
@@ -357,11 +337,13 @@ int main(int argc, char *argv[])
         case 'b': if (optarg != NULL) bw = std::stod(optarg); break;
         case 'd': if (optarg != NULL) dir = optarg; break;
         case 'c': if (optarg != NULL) chans = optarg; break;
+        case 'F': force = true; break;
         }
     }
 
     if (testTiming) return deviceTestTiming(argStr);
     if (calSweep) return deviceCalSweep(argStr, start, stop, step, bw, dir, chans);
+    if (update) return programUpdate(force, argStr);
 
     //unknown or unspecified options, do help...
     return printHelp();

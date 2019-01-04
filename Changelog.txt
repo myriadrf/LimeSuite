@@ -1,10 +1,49 @@
-Release 18.06.1 (pending)
+Release 18.10.1 (pending)
 ==========================
 
+LimeSuite library changes:
+- Allow filtering devices by partial serial number
+- Add GPIO control for LimeSDR-Mini
+- Add parameter to LMS_VCTCXOWrite() for saving value to non-volatile storage
+- Add parameter to LMS_VCTCXORead() for reading value from non-volatile storage
+- Make some improvements in GFIR setup
+
+LimeSuiteGUI:
+- Add GPIO controls to "Board controls" panel for LimeSDR-Mini
+- Add option to "Board controls" panel to write VCTCXO value to non-volatile storage
+
+Other changes:
+- Add Octave plugin to CMake build
+- Add IQ/DC calibration to basicTX example
+- SoapyLMS: update to soapysdr0.7 module ABI
+- LimeSDR-USB v1.4 updated to r2.19 gateware
+- LimeSDR-Mini updated to r1.28 gateware
+
+Release 18.10.0 (2018-10-04)
+==========================
+
+LimeSuite library changes:
 - Fix CalibrateTxGain() XBUF settings for 3rd party boards
 - Add interpolation/decimation support for SISODDR mode
+- Always use SISODDR mode for LimeSDR-Mini
 - Fix Rx filter calibration for 2nd channel with low bandwidth values
 - Fix index lookup for opt_gain_tbb cache (ChB out of bounds)
+- Add SXT/SXR VCO cache
+- Add FPGA register cache
+- Add connection remote (disabled by default)
+- Fix incorrect TBB gain control behaviour under certain conditions
+- Disable GFIR coefficient ordering based on oversampling when coefficient count is to high 
+- Remove late timestamp reset commands from Rx streaming loop
+
+LimeSuiteGUI:
+- Update board controls panel
+- Add LPF coefficient calculation controls for GFIRs to TxTSP and RxTSP tabs
+
+Other changes:
+- LimeSDR-USB v1.4 updated to r2.18 gateware
+- LimeSDR-Mini updated to r1.27 gateware
+- Add Tx only LMS API example
+- SoapyLMS: remove stream activity checks
 
 Release 18.06.0 (2018-06-13)
 ==========================
