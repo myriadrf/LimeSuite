@@ -22,6 +22,7 @@
 #include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
+#include "pnlLimeNetMicro.h"
 
 using namespace std;
 using namespace lime;
@@ -75,6 +76,7 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
                                                 LMS_DEV_LIMESDR_PCIE,
                                                 LMS_DEV_LIMESDR_QPCIE,
                                                 LMS_DEV_LIMESDRMINI,
+                                                LMS_DEV_LIMENET_MICRO,
                                                 LMS_DEV_LMS7002M_ULTIMATE_EVB,
                                                 LMS_DEV_LIMESDR_CORE_SDR};
 
@@ -333,9 +335,12 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
         || boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB)
-        || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+        || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
+        || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
     {
-        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) 
+         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR) 
+         || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
         else
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
@@ -503,9 +508,16 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
-     else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
     {
         pnlCoreSDR* pnl = new pnlCoreSDR(this, wxNewId());
+        pnl->Initialize(lmsControl);
+        additionalControls = pnl;
+        sizerAdditionalControls->Add(additionalControls);
+    }
+    else if (boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
+    {
+        pnlLimeNetMicro* pnl = new pnlLimeNetMicro(this, wxNewId());
         pnl->Initialize(lmsControl);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);

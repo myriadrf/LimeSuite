@@ -328,8 +328,7 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
         {
             uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(3<<8);
-            if (bom_ver == 0 || bom_ver == 3)
-                fpga->WriteRegister(0x17, value | (1<<8));
+            fpga->WriteRegister(0x17, value | (1<<8));
         }
         else if (path==LMS_PATH_LNAH)
         {
@@ -337,7 +336,7 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(3<<8);
             if (bom_ver == 0)
                 fpga->WriteRegister(0x17, value | (1<<8));
-            else if (bom_ver == 3)
+            else 
                 fpga->WriteRegister(0x17, value | (2<<8));
         }
            
@@ -352,8 +351,7 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
             uint16_t value = fpga->ReadRegister(0x17);
             value &= ~(3<<12);
             value |= 1<<12;
-            if (bom_ver == 0 || bom_ver == 3)
-                fpga->WriteRegister(0x17, value | (1<<12));
+            fpga->WriteRegister(0x17, value | (1<<12));
         }
         else if (path==LMS_PATH_TX2)
         {
@@ -361,7 +359,7 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(3<<12);
             if (bom_ver == 0)
                 fpga->WriteRegister(0x17, value | (1<<12));
-            else if (bom_ver == 3)
+            else 
                 fpga->WriteRegister(0x17, value | (2<<12));
         }
     }
