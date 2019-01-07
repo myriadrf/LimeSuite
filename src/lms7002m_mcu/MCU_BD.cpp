@@ -595,7 +595,7 @@ int MCU_BD::Program_MCU(const uint8_t* buffer, const IConnection::MCU_PROG_MODE 
     const uint32_t addrDTM = 0x0004 << 16; //data to MCU
     const uint16_t EMTPY_WRITE_BUFF = 1 << 0;
     const uint16_t PROGRAMMED = 1 << 6;
-    const uint8_t fifoLen = 1;
+    const uint8_t fifoLen = 64;
     uint32_t wrdata[fifoLen];
     uint32_t rddata = 0;
     int status;

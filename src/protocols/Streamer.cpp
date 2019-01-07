@@ -859,7 +859,6 @@ void Streamer::ReceivePacketsLoop()
             if(pkt[pktIndex].counter - prevTs != samplesInPacket && pkt[pktIndex].counter != prevTs)
             {
             	uint64_t ts_diff = pkt[pktIndex].counter - prevTs;
-            	printf("Rx ts diff %llu (%llu : %llu)\n", ts_diff, pkt[pktIndex].counter, prevTs);
                 if (ts_diff > samplesInPacket)
                 {
                 	static const complex16_t dummy[samples12InPkt] = {0};
