@@ -141,7 +141,7 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     channel.cF_offset_nco = 0;
     if (setTDD(f_Hz) != 0)
         return -1;
-    return 0;
+    return AutoRFPath(isTx, f_Hz);
 }
 
 std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned chan) const
@@ -291,8 +291,36 @@ int LMS7_LimeSDR_mini::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
 {
     int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
     if (lms_list[0]->Get_SPI_Reg_bits(0x82, 4, 1) == 0xD)
-        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0); 
+        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_RX_AFE1, 0);
     return ret;
+}
+
+int LMS7_LimeSDR_mini::AutoRFPath(bool isTx, double f_Hz)
+{
+     if (isTx)
+     {
+        if (f_Hz < 2.0e9)
+        {
+            lime::info("Set Frequency: selected TX band 2");
+            return SetPath(true, 0, LMS_PATH_TX2);
+        }
+        else
+        {
+            lime::info("Set Frequency: selected TX band 1");
+            return SetPath(true, 0, LMS_PATH_TX1);
+        }
+     }
+     else if (f_Hz < 1.7e9)
+     {
+         lime::info("Set Frequency: selected RX LNAw");
+         return SetPath(false, 0, LMS_PATH_LNAW);
+     }
+     else
+     {
+         lime::info("Set Frequency: selected RX LNAH");
+         return SetPath(false, 0, LMS_PATH_LNAH);
+     }
+     return 0;
 }
 
 LMS7_LimeNET_micro::LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj):
@@ -336,10 +364,10 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(3<<8);
             if (bom_ver == 0)
                 fpga->WriteRegister(0x17, value | (1<<8));
-            else 
+            else
                 fpga->WriteRegister(0x17, value | (2<<8));
         }
-           
+
     }
     else
     {
@@ -359,7 +387,7 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
             value &= ~(3<<12);
             if (bom_ver == 0)
                 fpga->WriteRegister(0x17, value | (1<<12));
-            else 
+            else
                 fpga->WriteRegister(0x17, value | (2<<12));
         }
     }
@@ -371,6 +399,19 @@ int LMS7_LimeNET_micro::SetPath(bool tx, unsigned chan, unsigned path)
     return {program_mode::fpgaFlash, program_mode::fpgaReset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
+
+int LMS7_LimeNET_micro::AutoRFPath(bool isTx, double f_Hz)
+{
+    if ((fpga->ReadRegister(3)>>4) == 0)
+        return 0;
+    if ((!isTx) && (f_Hz < 1.7e9))
+    {
+        lime::info("Set Frequency: selected RX LNAL");
+        return SetPath(false, 0, LMS_PATH_LNAL);
+    }
+    return LMS7_LimeSDR_mini::AutoRFPath(isTx, f_Hz);
+}
+
 
 }//namespace lime
 

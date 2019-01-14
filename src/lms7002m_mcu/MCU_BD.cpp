@@ -13,7 +13,6 @@ using namespace std;
 #include "LMS64CProtocol.h"
 #include <assert.h>
 #include <thread>
-#include <chrono>
 #include <list>
 #include "LMS7002M.h"
 #include "Logger.h"
