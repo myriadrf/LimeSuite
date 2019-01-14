@@ -925,6 +925,8 @@ double FPGA::DetectRefClk(double fx3Clk)
         else
             delta = fabs(count - clkTbl[i++]);
 
+    if (i == 0)
+        return -1;
     lime::info("Reference clock %1.2f MHz", clkTbl[i - 1] / 1e6);
     return clkTbl[i - 1];
 }
