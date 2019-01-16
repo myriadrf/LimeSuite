@@ -312,7 +312,7 @@ int LMS7_LimeSDR_mini::AutoRFPath(bool isTx, double f_Hz)
      }
      else if (f_Hz < 1.7e9)
      {
-         lime::info("Set Frequency: selected RX LNAw");
+         lime::info("Set Frequency: selected RX LNAW");
          return SetPath(false, 0, LMS_PATH_LNAW);
      }
      else
