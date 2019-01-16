@@ -307,7 +307,8 @@ enum
     LMS_PATH_LNAL = 2, ///<RX LNA_L port
     LMS_PATH_LNAW = 3, ///<RX LNA_W port
     LMS_PATH_TX1 = 1,  ///<TX port 1
-    LMS_PATH_TX2 = 2   ///<TX port 2
+    LMS_PATH_TX2 = 2,   ///<TX port 2
+    LMS_PATH_AUTO = 255, ///<Automatically select port (if supported)
 };
 
 /**

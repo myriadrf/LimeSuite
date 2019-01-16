@@ -31,6 +31,11 @@ public:
     int EnableChannel(bool dir_tx, unsigned chan, bool enabled) override;
 protected:
     virtual int AutoRFPath(bool isTx, double f_Hz);
+    bool auto_rx_path;
+    bool auto_tx_path;
+private:
+    int AutoRFPath(bool isTx);
+    virtual int SetRFSwitch(bool isTx, unsigned path);
 };
 
 class LMS7_LimeNET_micro : public LMS7_LimeSDR_mini
@@ -38,10 +43,11 @@ class LMS7_LimeNET_micro : public LMS7_LimeSDR_mini
 public:
     LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
-    int SetPath(bool tx, unsigned chan, unsigned path) override;
     std::vector<std::string> GetProgramModes() const override;
 private:
+    int SetRFSwitch(bool tx, unsigned path) override;
     int AutoRFPath(bool isTx, double f_Hz) override;
+
 };
 
 }
