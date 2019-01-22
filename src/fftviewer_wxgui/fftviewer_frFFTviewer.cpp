@@ -425,7 +425,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
     meta.waitForTimestamp = syncTx;
-    meta.flushPartialPacket = false;
+    meta.flushPartialPacket = true;
     int fftCounter = 0;
 
     while (pthis->stopProcessing.load() == false)
@@ -444,7 +444,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 meta.timestamp = ts[i];
                 meta.waitForTimestamp = syncTx;
-                LMS_SendStream(&pthis->txStreams[i], &buffers[i][0], samplesPopped[i], &meta, 1000);
+                LMS_SendStream(&pthis->txStreams[i], &buffers[i][0], samplesPopped[i]-6, &meta, 1000);
             }
 
             if(pthis->captureSamples.load())
