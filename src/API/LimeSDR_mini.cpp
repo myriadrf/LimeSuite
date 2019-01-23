@@ -157,6 +157,16 @@ std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned c
 	return {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
 }
 
+int LMS7_LimeSDR_mini::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags)
+{
+    //switch RF path to improve calibration results
+    uint16_t value = fpga->ReadRegister(0x17);
+    fpga->WriteRegister(0x17, value^(3<<8));
+    int ret = LMS7_Device::Calibrate(dir_tx, chan, bw, flags);
+    fpga->WriteRegister(0x17, value);
+    return ret;
+}
+
 int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
 {
     if (path >= GetPathNames(tx, chan).size()-1)
