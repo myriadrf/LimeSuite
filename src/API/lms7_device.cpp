@@ -130,7 +130,7 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
 
-    if (bandwidth <= 0)
+    if (enabled && bandwidth <= 0)
     {
         lime::warning("GFIR LPF cannot be set to the requested bandwidth");
         enabled = false;
