@@ -1281,9 +1281,16 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
         if (setTDD(30e6) != 0)
             return -1;
         channels[chan].cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(isTx,GetRate(isTx,chan),2)!=0)
-            return -1;
-        return 0;
+        double rf_rate;
+        double rate = GetRate(isTx, chan, &rf_rate);
+        if (channels[chan].cF_offset_nco+rate/2.0 >= rf_rate/2.0)
+        {
+            if (SetRate(isTx, rate, 2)!=0)
+                return -1;
+            return 0;
+        }
+        else
+            return SetNCOFreq(isTx, chan, 0, channels[chan].cF_offset_nco * (isTx ? -1.0 : 1.0));
     }
 
     if (channels[chan].cF_offset_nco != 0)

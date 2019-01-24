@@ -25,6 +25,7 @@ public:
     Range GetRateRange(bool dir = false, unsigned chan = 0) const override;
     Range GetFrequencyRange(bool tx) const override;
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
+    int Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags) override;
     int SetPath(bool tx, unsigned chan, unsigned path) override;
     std::vector<std::string> GetProgramModes() const override;
     int SetClockFreq(unsigned clk_id, double freq, int channel) override;

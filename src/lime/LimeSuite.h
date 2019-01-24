@@ -115,29 +115,6 @@ API_EXPORT int CALL_CONV LMS_Open(lms_device_t **device, const lms_info_str_t in
  */
 API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
 
-/**
- * Disconnect device but keep configuration cache (device is not deallocated).
- *
- * @deprecated use LMS_Close() to disconnect and close device
- *
- * @param   device  Device handle previously obtained by LMS_Open().
- *
- * @return   0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_Disconnect(lms_device_t *device);
-
-/**
- * Check if device port is opened
- *
- * @deprecated use return status of LMS_Open() as indication. 
- *
- * @param   device  Device handle previously obtained by LMS_Open().
- * @param   port    port index (ignored if device has only 1 port)
- *
- * @return   true(1) if port is open, false (0) if - closed
- */
-API_EXPORT bool CALL_CONV LMS_IsOpen(lms_device_t *device, int port);
-
 /** @} (End FN_INIT) */
 
 /**
@@ -887,10 +864,21 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
                                         uint16_t val);
 
 /**
+ * @defgroup BOARD_PARAM  Board parameter
+ *
+ * @{
+ */
+///Runtime VCTCXO DAC trim value. Does not persist over power-cycle
+#define BOARD_PARAM_DAC     0
+///The value of board temperature sensor (if present), read-only.
+#define BOARD_PARAM_TEMP    1  
+/** @} (End BOARD_PARAM) */
+
+/**
  * Read custom parameter from board
  *
  * @param device    Device handle previously obtained by LMS_Open().
- * @param id        Parameter identifier
+ * @param id        Parameter identifier (\ref BOARD_PARAM)
  * @param val       Current register value
  * @param units     [optional] measurement units of parameter if available
  *
@@ -903,7 +891,7 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
  * Write custom parameter from board
  *
  * @param device    Device handle previously obtained by LMS_Open().
- * @param id        Parameter identifier
+ * @param id        Parameter identifier (\ref BOARD_PARAM)
  * @param val       Value to write
  * @param units     [optional] measurement units of parameter if available
  *

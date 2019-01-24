@@ -128,9 +128,16 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
         if (setTDD(30e6) != 0)
             return -1;
         channel.cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(isTx,GetRate(isTx,0),2)!=0)
-            return -1;
-        return 0;
+        double rf_rate;
+        double rate = GetRate(isTx, chan, &rf_rate);
+        if (channel.cF_offset_nco+rate/2.0 >= rf_rate/2.0)
+        {
+            if (SetRate(isTx, rate, 2)!=0)
+                return -1;
+            return 0;
+        }
+        else
+            return SetNCOFreq(isTx, chan, 0, channel.cF_offset_nco * (isTx ? -1.0 : 1.0));
     }
 
     if (channel.cF_offset_nco != 0)
@@ -148,6 +155,16 @@ std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned c
         return {"NONE", "BAND1", "BAND2", "Auto"};
     else
 	return {"NONE", "LNAH", "LNAL_NC", "LNAW", "Auto"};
+}
+
+int LMS7_LimeSDR_mini::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags)
+{
+    //switch RF path to improve calibration results
+    uint16_t value = fpga->ReadRegister(0x17);
+    fpga->WriteRegister(0x17, value^(3<<8));
+    int ret = LMS7_Device::Calibrate(dir_tx, chan, bw, flags);
+    fpga->WriteRegister(0x17, value);
+    return ret;
 }
 
 int LMS7_LimeSDR_mini::SetPath(bool tx, unsigned chan, unsigned path)
