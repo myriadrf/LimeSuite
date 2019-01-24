@@ -94,6 +94,11 @@ API_EXPORT int CALL_CONV LMS_EnableChannel(lms_device_t * device, bool dir_tx, s
     }
 
     lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
+    if (chan >= lms->GetNumChannels(dir_tx))
+    {
+        lime::ReportError(EINVAL, "Invalid channel number.");
+        return -1;
+    }
 
     return lms->EnableChannel(dir_tx, chan,enabled);
 }
