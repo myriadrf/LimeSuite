@@ -82,10 +82,10 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
 
 pnlBoardControls::pnlBoardControls(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long style) :
     wxFrame(parent, id, title, pos, size, style),
-    lmsControl(nullptr), 
+    lmsControl(nullptr),
     additionalControls(nullptr),
     txtDACTitle(nullptr),
-    txtDACValue(nullptr),  
+    txtDACValue(nullptr),
     btnDAC(nullptr),
     sizerDAC(nullptr)
 {
@@ -255,12 +255,13 @@ void pnlBoardControls::OnReadAll( wxCommandEvent& event )
         evt.SetId(additionalControls->GetId());
         wxPostEvent(additionalControls, evt);
     }
+    if (txtDACValue)
     {
         uint16_t val;
         LMS_VCTCXORead(lmsControl, &val, true);
-        txtDACValue->SetValue(wxString::Format("%d", val));    
+        txtDACValue->SetValue(wxString::Format("%d", val));
     }
-    
+
     UpdatePanel();
 }
 
@@ -338,13 +339,13 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
         || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
     {
-        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) 
-         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR) 
+        if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
+         || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
          || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
         else
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
-        if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI)) 
+        if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI))
             paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
     }
     return paramList;
@@ -366,19 +367,19 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls->Destroy();
         additionalControls = nullptr;
     }
-    
+
     if(txtDACTitle)
     {
         txtDACTitle->Destroy();
         txtDACTitle = nullptr;
     }
-    
+
     if(txtDACValue)
     {
         txtDACValue->Destroy();
         txtDACValue = nullptr;
     }
-    
+
     if(btnDAC)
     {
         btnDAC->Destroy();
@@ -439,7 +440,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
             else
                 sizerAnalogRd->Add(gui->rValue, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
             sizerAnalogRd->Add(gui->units, 1, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
-        }          
+        }
     }
     if (cmbBoardSelection->GetSelection() > 2)
     {
