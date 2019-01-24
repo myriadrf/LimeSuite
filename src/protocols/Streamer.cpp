@@ -721,8 +721,9 @@ void Streamer::TransmitPacketsLoop()
                         continue;
                     }
                     payloadSize = samplesPopped * sizeof(FPGA_DataPacket::data) / maxSamplesBatch;
-                    payloadSize = (1 + (payloadSize - 1) / 16) * 16;
-                    //memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
+                    int q = packed ? 48 : 16;
+                    payloadSize = (1 + (payloadSize - 1) / q) * q;
+                    memset(&samples[ind][samplesPopped], 0, (maxSamplesBatch - samplesPopped)*sizeof(complex16_t));
                 }
                 has_samples = true;
             }
