@@ -64,6 +64,8 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         device = new LMS7_LimeSDR_PCIE(conn,obj);
     else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMENET_MICRO))
         device = new LMS7_LimeNET_micro(conn,obj);
+    else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_CORE_SDR))
+        device = new LMS7_CoreSDR(conn,obj);
     else if (info.deviceName != lime::GetDeviceName(lime::LMS_DEV_UNKNOWN))
         device = new LMS7_LimeSDR(conn,obj);
     else
