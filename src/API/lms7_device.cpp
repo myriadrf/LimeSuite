@@ -4,23 +4,20 @@
  *
  * Created on March 9, 2016, 12:54 PM
  */
+#include <cmath>
 
 #include "lms7_device.h"
 #include "qLimeSDR.h"
 #include "LimeSDR_mini.h"
+#include "LimeNET_micro.h"
 #include "LimeSDR.h"
-#include "LmsGeneric.h"
+#include "LimeSDR_PCIE.h"
+#include "LimeSDR_Core.h"
 #include "GFIR/lms_gfir.h"
 #include "IConnection.h"
-#include <cmath>
 #include "dataTypes.h"
-#include <chrono>
-#include <iostream>
-#include <fstream>
 #include "MCU_BD.h"
 #include "FPGA_common.h"
-#include "LMS64CProtocol.h"
-#include <assert.h>
 #include "ConnectionRegistry.h"
 #include "ADF4002.h"
 #include "mcu_programs.h"
