@@ -15,8 +15,11 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 ### v18.10.1
 
-- Changed LMS_VCTCXOWrite() to take 3 parameters instead of 2 (added parameter for saving value to non-volatile storage)
-- Chneged LMS_VCTCXORead() to take 3 parameters instead of 2 (added parameter for reading value from non-volatile storage)
+\li Changed LMS_VCTCXOWrite() to save value to non-volatile storage
+\li Changed LMS_VCTCXORead() to read value from non-volatile storage
+\li Added auto RF path selection option LMS_PATH_AUTO
+\li Removed LMS_Disconnect() and LMS_IsOpen() functions
+\li Added board parameter definitions (\ref BOARD_PARAM)
 
 ### v18.09.0
 
