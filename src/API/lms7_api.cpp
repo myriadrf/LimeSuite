@@ -206,7 +206,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
     unsigned char packet[64] = {0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};//packet: eeprom write 2 btes, addr 16
     packet[32] = val&0xFF;              //values start at offset=32
     packet[33] = val>>8;
-    if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)  
+    if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
         return -1;
     return ret;
 }
@@ -731,12 +731,19 @@ API_EXPORT int CALL_CONV LMS_DestroyStream(lms_device_t *device, lms_stream_t *s
 {
     if(stream == nullptr)
     {
-        lime::error("stream cannot be NULL.");
+        lime::error("Stream cannot be NULL.");
+        return -1;
+    }
+    if (stream->handle == 0)
+    {
+        lime::error("Invalid stream handle");
         return -1;
     }
 
-    lime::LMS7_Device* lms = (lime::LMS7_Device*)device;
-    return lms->DestroyStream((lime::StreamChannel*)stream->handle);
+    lime::LMS7_Device* lms =  CheckDevice(device);
+    lms->DestroyStream((lime::StreamChannel*)stream->handle);
+    stream->handle = 0;
+    return 0;
 }
 
 API_EXPORT int CALL_CONV LMS_StartStream(lms_stream_t *stream)
