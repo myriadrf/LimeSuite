@@ -184,7 +184,7 @@ static int programUpdate(const bool force, const std::string &argStr)
     }
     else
     {
-        std::cout << "Programming update failed! : " << GetLastErrorMessage() << std::endl;
+        std::cout << "Programming update failed!" << std::endl;
     }
 
     ConnectionRegistry::freeConnection(conn);
@@ -231,7 +231,7 @@ static int programGateware(const std::string &argStr)
     auto status = device->Program(program_mode::fpgaFlash, progData.data(), progData.size(), progCallback);
     std::cout << std::endl;
     if(status != 0)
-        std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
+        std::cout << "Programming failed!" << std::endl;
     delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
@@ -276,7 +276,7 @@ static int programFirmware(const std::string &argStr)
     auto status = device->Program(program_mode::fx3Flash, progData.data(), progData.size(), progCallback);
     std::cout << std::endl;
     if(status != 0)
-        std::cout << "Programming failed! : " << GetLastErrorMessage() << std::endl;
+        std::cout << "Programming failed!" << std::endl;
     delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
