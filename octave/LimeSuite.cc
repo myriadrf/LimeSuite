@@ -60,6 +60,17 @@ void PrintDeviceInfo(lms_device_t* port)
     }
 }
 
+
+static void LogHandler(int level, const char *msg)
+{
+    const char* levelText[] = {"CRITICAL: " , "ERROR: ", "WARNING: ", "INFO: ", "DEBUG: "};
+    if (level < 0)
+        level = 0;
+    else if (level >= 4)
+        return;   //do not output debug messages
+    octave_stdout << levelText[level] << msg << endl;
+}
+
 DEFUN_DLD (LimeGetDeviceList, args, nargout,
 "LIST = LimeGetDeviceList() - Returns available device list")
 {
@@ -104,10 +115,11 @@ DEV [optional] - device name to connect, obtained via LimeGetDeviceList()")
     else
         status = LMS_Open(&lmsDev, NULL, NULL);
 
+    LMS_RegisterLogHandler(LogHandler);
+
     LMS_Synchronize(lmsDev,false);
     if(status != 0)
     {
-        octave_stdout << LMS_GetLastErrorMessage() << endl;
         return octave_value(status);
     }
     PrintDeviceInfo(lmsDev);
@@ -150,7 +162,6 @@ DEFUN_DLD (LimeLoadConfig, args, nargout,
     octave_stdout << "LimeLoadConfig loading: " << filename << endl;
     if (LMS_LoadConfig(lmsDev, filename.c_str())!=0)
     {
-         octave_stdout << LMS_GetLastErrorMessage() << endl;
          return octave_value(-1);
     }
     octave_stdout << "Config loaded successfully: " << endl;
@@ -217,8 +228,7 @@ DEFUN_DLD (LimeStartStreaming, args, nargout,
             streamRx[i].dataFmt = lms_stream_t::LMS_FMT_I16;
             streamRx[i].isTx = false;
             streamRx[i].throughputVsLatency = 0.5;
-            if(LMS_SetupStream(lmsDev, &streamRx[i]) != 0)
-                octave_stdout << LMS_GetLastErrorMessage() << endl;
+            LMS_SetupStream(lmsDev, &streamRx[i]);
         }
         if (tx[i])
         {
@@ -227,8 +237,7 @@ DEFUN_DLD (LimeStartStreaming, args, nargout,
             streamTx[i].dataFmt = lms_stream_t::LMS_FMT_I16;
             streamTx[i].isTx = true;
             streamTx[i].throughputVsLatency = 0.5;
-            if(LMS_SetupStream(lmsDev, &streamTx[i]) != 0)
-                octave_stdout << LMS_GetLastErrorMessage() << endl;
+            LMS_SetupStream(lmsDev, &streamTx[i]);
         }
     }
 
@@ -238,15 +247,13 @@ DEFUN_DLD (LimeStartStreaming, args, nargout,
         {
             if (!rxbuffers)
                 rxbuffers = new complex16_t[fifoSize/2];
-            if(LMS_StartStream(&streamRx[i]) != 0)
-                octave_stdout << LMS_GetLastErrorMessage() << endl;
+            LMS_StartStream(&streamRx[i]);
         }
         if (tx[i])
         {
             if (!txbuffers)
                 txbuffers = new complex16_t[fifoSize/2];
-            if(LMS_StartStream(&streamTx[i]) != 0)
-                octave_stdout << LMS_GetLastErrorMessage() << endl;
+            LMS_StartStream(&streamTx[i]);
         }
     }
 
