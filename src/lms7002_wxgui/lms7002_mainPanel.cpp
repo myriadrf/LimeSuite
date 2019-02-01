@@ -176,7 +176,7 @@ void lms7002_mainPanel::OnLoadDefault(wxCommandEvent& event)
     int status = LMS_Init(lmsControl);
     if (status != 0)
         wxMessageBox(_("Load Default failed"), _("Warning"));
-
+    LMS_EnableChannel(lmsControl, LMS_CH_TX, 0, true); //enable TX, LMS_Init() no longer does it
     wxNotebookEvent evt;
     chkEnableMIMO->SetValue(false);
     ((LMS7_Device*)lmsControl)->SetActiveChip(cmbLmsDevice->GetSelection());

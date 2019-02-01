@@ -682,6 +682,9 @@ std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, unsigned /*chan*
 
 int LMS7_Device::SetPath(bool tx, unsigned chan, unsigned path)
 {
+    if (path >= GetPathNames(tx, chan).size())
+        return 0;
+
     lime::LMS7002M* lms = SelectChannel(chan);
 
     if (tx)
@@ -1352,6 +1355,7 @@ int LMS7_Device::Init()
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
             lms->SPI_write(i.adr, i.val, true);
+        lms->EnableChannel(true, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
@@ -1361,11 +1365,6 @@ int LMS7_Device::Init()
         lms->EnableChannel(true, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-
-        if (SetFrequency(true,2*i,1250e6)!=0)
-            return -1;
-        if (SetFrequency(false,2*i,1200e6)!=0)
-            return -1;
     }
     if (SetRate(10e6,2)!=0)
         return -1;

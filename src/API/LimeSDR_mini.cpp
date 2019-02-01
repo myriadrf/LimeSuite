@@ -79,6 +79,7 @@ int LMS7_LimeSDR_mini::Init()
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     for (auto i : initVals)
         lms->SPI_write(i.adr, i.val, true);
+    lms->EnableChannel(true, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     lms->SPI_write(0x0123, 0x000F);  //SXT
@@ -89,10 +90,6 @@ int LMS7_LimeSDR_mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-    if (SetFrequency(true,0,1250e6)!=0)
-        return -1;
-    if (SetFrequency(false,0,1200e6)!=0)
-        return -1;
     if (SetRate(15.36e6, 1)!=0)
         return -1;
 

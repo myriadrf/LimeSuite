@@ -306,7 +306,6 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_TBB), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G_TBB), enable?1:0);
-        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(PD_LPFIAMP_TBB), enable?0:1);
     }
     else
