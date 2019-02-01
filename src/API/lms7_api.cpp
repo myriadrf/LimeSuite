@@ -910,8 +910,13 @@ static void APIMsgHandler(const lime::LogLevel level, const char *message)
 
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler)
 {
-    lime::registerLogHandler(APIMsgHandler);
-    api_msg_handler = handler;
+    if (handler)
+    {
+        lime::registerLogHandler(APIMsgHandler);
+        api_msg_handler = handler;
+    }
+    else
+        lime::registerLogHandler(nullptr);
 }
 
 extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cmd, uint8_t* data, size_t *len)
