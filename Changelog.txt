@@ -1,4 +1,4 @@
-Release 18.10.1 (pending)
+Release 19.01.0 (pending)
 ==========================
 
 LimeSuite library changes:
@@ -27,8 +27,8 @@ Other changes:
 - Add Octave plugin to CMake build
 - Add IQ/DC calibration to basicTX example
 
-- LimeSDR-USB v1.4 updated to r2.19 gateware
-- LimeSDR-Mini updated to r1.28 gateware
+- LimeSDR-USB v1.4 updated to r2.20 gateware
+- LimeSDR-Mini updated to r1.29 gateware
 
 Release 18.10.0 (2018-10-04)
 ==========================
