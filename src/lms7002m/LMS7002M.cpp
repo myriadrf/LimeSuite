@@ -628,9 +628,21 @@ int LMS7002M::LoadConfig(const char* filename)
                     x0020_value = value;
                     continue;
                 }
-                addrToWrite.push_back(addr);
-                dataToWrite.push_back(value);
+
+                if (addr >= 0x5C3 && addr <= 0x5CA)          //enable analog DC correction
+                {
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value & 0x3FFF);
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value | 0x8000);
+                }
+                else
+                {
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value);
+                }
             }
+
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
