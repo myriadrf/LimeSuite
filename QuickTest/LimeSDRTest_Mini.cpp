@@ -58,6 +58,7 @@ int LimeSDRTest_Mini::RFTest()
         return -1;
     }
     device->SetGain(false, 0, 26);
+    device->EnableChannel(true, 0, true);
     device->SetTestSignal(true,0,LMS_TESTSIG_DC, 0x7000, 0x7000);
 
     UpdateStatus(LMS_TEST_INFO, "->Run Tests (TX_2 -> LNA_W):");

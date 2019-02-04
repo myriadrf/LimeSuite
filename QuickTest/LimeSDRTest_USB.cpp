@@ -27,7 +27,7 @@ int LimeSDRTest_USB::ClockNetworkTest()
         UpdateStatus(LMS_TEST_INFO, "  FAILED");
         ret = -1;
     }
-    
+
     UpdateStatus(LMS_TEST_INFO, "->ADF4002 Test");
     if (ADF4002Test() == -1)
     {
@@ -161,7 +161,7 @@ int LimeSDRTest_USB::RFTest()
         }
         return passed;
     };
-
+    UpdateStatus(LMS_TEST_INFO, "Note: The test should be run without anything connected to RF ports");
     UpdateStatus(LMS_TEST_INFO, "->Configure LMS");
     device->Init();
     if (device->SetRate(61.44e6, 0)!=0)
@@ -170,6 +170,7 @@ int LimeSDRTest_USB::RFTest()
         return -1;
     }
 
+    device->EnableChannel(true, 0, true);
     device->SetTestSignal(true, 0, LMS_TESTSIG_DC, 0x7000, 0x7000);
     device->EnableChannel(true, 1, true);
     device->EnableChannel(false, 1, true);
