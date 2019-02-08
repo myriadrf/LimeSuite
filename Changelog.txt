@@ -1,4 +1,4 @@
-Release 19.01.0 (pending)
+Release 19.01.0 (2019-01-08)
 ==========================
 
 LimeSuite library changes:
@@ -12,6 +12,8 @@ LimeSuite library changes:
 - Add auto RF path selection option (LMS_PATH_AUTO) for LMS_SetAntenna()
 - Remove LMS_Disconnect() and LMS_IsOpen() functions from API
 - Add support for sending smaller Tx packets (improve end of burst handling) 
+- Change Rx RF path set by LMS_Init() for LimeSDR-USB to LNA_L
+- Disable Tx channel in LMS_Init()
 
 LimeSuiteGUI:
 - Add GPIO controls to "Board controls" panel for LimeSDR-Mini
@@ -25,6 +27,7 @@ Other changes:
 - LimeUtil: fix LimeSDR-Mini not exiting programming mode after flashing FPGA
 - LimeQuickTest: test 1st board when multiple boards are detected (instead of exiting)
 - Add Octave plugin to CMake build
+- Add log handler to Octave plugin
 - Add IQ/DC calibration to basicTX example
 
 - LimeSDR-USB v1.4 updated to r2.20 gateware
