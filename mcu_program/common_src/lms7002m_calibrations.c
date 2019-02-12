@@ -793,9 +793,6 @@ uint8_t CalibrateTxSetup(bool extLoopback)
         }
     }
 
-    //if calibrating ch. B enable buffers
-    EnableMIMOBuffersIfNecessary();
-
     //SXT{
     Modify_SPI_Reg_bits(MAC, 2); //switch to ch. B
     Modify_SPI_Reg_bits(PD_LOCH_T2RBUF, 1);
@@ -853,6 +850,8 @@ uint8_t CalibrateTxSetup(bool extLoopback)
             Modify_SPI_Reg_bits(0x010D, MSB_LSB(4, 3), sel_band1_2_trf ^ 0x3);
         }
     }
+    //if calibrating ch. B enable buffers
+    EnableMIMOBuffersIfNecessary();
     EnableChannelPowerControls();
     return MCU_NO_ERROR;
 }
