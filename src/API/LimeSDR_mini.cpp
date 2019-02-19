@@ -318,12 +318,12 @@ int LMS7_LimeSDR_mini::AutoRFPath(bool isTx, double f_Hz)
     {
        if (f_Hz < 2.0e9)
        {
-           lime::info("Selected TX path: Band 2");
+           lime::debug("Selected TX path: Band 2");
            ret = SetPath(true, 0, LMS_PATH_TX2);
        }
        else
        {
-           lime::info("Selected TX path: Band 1");
+           lime::debug("Selected TX path: Band 1");
            ret = SetPath(true, 0, LMS_PATH_TX1);
        }
        auto_tx_path = true;
@@ -332,12 +332,12 @@ int LMS7_LimeSDR_mini::AutoRFPath(bool isTx, double f_Hz)
     {
         if (f_Hz < 1.7e9)
         {
-            lime::info("Selected RX path: LNAW");
+            lime::debug("Selected RX path: LNAW");
             ret = SetPath(false, 0, LMS_PATH_LNAW);
         }
         else
         {
-            lime::info("Selected RX path: LNAH");
+            lime::debug("Selected RX path: LNAH");
             ret = SetPath(false, 0, LMS_PATH_LNAH);
         }
         auto_rx_path = true;
