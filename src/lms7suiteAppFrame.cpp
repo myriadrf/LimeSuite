@@ -356,7 +356,7 @@ void LMS7SuiteAppFrame::OnShowFFTviewer(wxCommandEvent& event)
 
 void LMS7SuiteAppFrame::OnLmsChanged(wxCommandEvent& event)
 {
-    return;
+    m_lmsSelection = event.GetInt();
 }
 
 void LMS7SuiteAppFrame::OnADF4002Close(wxCloseEvent& event)
