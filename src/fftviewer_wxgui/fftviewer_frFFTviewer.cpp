@@ -372,7 +372,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     }
     buffers = new lime::complex16_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
-        buffers[i] = new complex16_t[fftSize+16];
+        buffers[i] = new complex16_t[fftSize];
 
     vector<complex16_t> captureBuffer[cMaxChCount];
     uint32_t samplesToCapture[cMaxChCount];
@@ -425,7 +425,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
     meta.waitForTimestamp = syncTx;
-    meta.flushPartialPacket = true;
+    meta.flushPartialPacket = false;
     int fftCounter = 0;
 
     while (pthis->stopProcessing.load() == false)
@@ -436,7 +436,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             uint64_t ts[cMaxChCount];
             for(int i=0; i<channelsCount; ++i)
             {
-                samplesPopped[i] = LMS_RecvStream(&pthis->rxStreams[i], &buffers[i][0], fftSize+16, &meta, 1000);
+                samplesPopped[i] = LMS_RecvStream(&pthis->rxStreams[i], &buffers[i][0], fftSize, &meta, 1000);
                 ts[i] = meta.timestamp + fifoSize/4;
             }
 
