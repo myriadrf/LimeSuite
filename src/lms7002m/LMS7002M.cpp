@@ -718,7 +718,17 @@ int LMS7002M::SaveConfig(const char* filename)
     this->SetActiveChannel(ChA);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
+        if (addrToRead[i] >= 0x5C3 && addrToRead[i] <= 0x5CA)
+            SPI_write(addrToRead[i], 0x4000); //perform read-back from DAC
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
+
+        //registers 0x5C3 - 0x53A return inverted value field when DAC value read-back is performed
+        if (addrToRead[i] >= 0x5C3 && addrToRead[i] <= 0x5C6 && (dataReceived[i]&0x400)) //sign bit 10
+            dataReceived[i] = 0x400 | (~dataReceived[i]&0x3FF); //magnitude bits  9:0
+        else if (addrToRead[i] >= 0x5C7 && addrToRead[i] <= 0x5CA && (dataReceived[i]&0x40))  //sign bit 6
+            dataReceived[i] = 0x40 | (~dataReceived[i]&0x3F);   //magnitude bits  5:0
+        else if (addrToRead[i] >= 0x5C7)
+            dataReceived[i] &= 0xFF00;   //do not save calibration start triggers
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
         fout << addr << "=" << value << endl;
