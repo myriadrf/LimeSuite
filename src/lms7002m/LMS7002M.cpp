@@ -1410,7 +1410,7 @@ uint16_t LMS7002M::Get_SPI_Reg_bits(const LMS7Parameter &param, bool fromChip)
 */
 uint16_t LMS7002M::Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip)
 {
-    return (SPI_read(address, fromChip) & (~(~0<<(msb+1)))) >> lsb; //shift bits to LSB
+    return (SPI_read(address, fromChip) & (~(~0u<<(msb+1)))) >> lsb; //shift bits to LSB
 }
 
 /** @brief Change given parameter value
@@ -1431,7 +1431,7 @@ int LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter &param, const uint16_t val
 int LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb, const uint8_t lsb, const uint16_t value, bool fromChip)
 {
     uint16_t spiDataReg = SPI_read(address, fromChip); //read current SPI reg data
-    uint16_t spiMask = (~(~0 << (msb - lsb + 1))) << (lsb); // creates bit mask
+    uint16_t spiMask = (~(~0u << (msb - lsb + 1))) << (lsb); // creates bit mask
     spiDataReg = (spiDataReg & (~spiMask)) | ((value << lsb) & spiMask);//clear bits
     return SPI_write(address, spiDataReg); //write modified data back to SPI reg
 }

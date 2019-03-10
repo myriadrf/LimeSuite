@@ -29,7 +29,7 @@ void SPI_wxgui::onLMSwrite( wxCommandEvent& event )
     const std::vector<wxStaticText*> wrStatus = { lblLMSwriteStatus, lblLMSwriteStatus1, lblLMSwriteStatus2, lblLMSwriteStatus3,
                                                 lblLMSwriteStatus4, lblLMSwriteStatus5, lblLMSwriteStatus6, lblLMSwriteStatus7};
     auto object = event.GetEventObject();
-    int index;
+    unsigned int index;
     for (index = 0; index < wrbtn.size(); index++)
         if (object == wrbtn[index])
             break;
@@ -63,11 +63,11 @@ void SPI_wxgui::onLMSread( wxCommandEvent& event )
     const std::vector<wxStaticText*> rdStatus = { lblLMSwriteStatus, lblLMSwriteStatus1, lblLMSwriteStatus2, lblLMSwriteStatus3,
         lblLMSwriteStatus4, lblLMSwriteStatus5, lblLMSwriteStatus6, lblLMSwriteStatus7 };
     auto object = event.GetEventObject();
-    int index;
+    unsigned int index;
     for (index = 0; index < rdbtn.size(); index++)
         if (object == rdbtn[index])
             break;
-    
+
     wxString address = rdAddr[index]->GetValue();
     long addr = 0;
     address.ToLong(&addr, 16);
@@ -101,7 +101,7 @@ void SPI_wxgui::onBoardWrite( wxCommandEvent& event )
         lblBoardwriteStatus4, lblBoardwriteStatus5, lblBoardwriteStatus6, lblBoardwriteStatus7 };
 
     auto object = event.GetEventObject();
-    int index;
+    unsigned int index;
     for (index = 0; index < wrbtn.size(); index++)
         if (object == wrbtn[index])
             break;
@@ -138,7 +138,7 @@ void SPI_wxgui::OnBoardRead( wxCommandEvent& event )
         lblBoardwriteStatus4, lblBoardwriteStatus5, lblBoardwriteStatus6, lblBoardwriteStatus7 };
 
     auto object = event.GetEventObject();
-    int index;
+    unsigned int index;
     for (index = 0; index < rdbtn.size(); index++)
         if (object == rdbtn[index])
             break;

@@ -36,7 +36,7 @@ unsigned short SPI_read (unsigned short spiAddrReg)
 
 void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data, const uint16_t spiDataReg)
 {
-    const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
+    const uint16_t spiMask = (~(~0u << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     //spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
     if(batchActive)
@@ -65,7 +65,7 @@ void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits,
 void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data)
 {
     uint16_t spiDataReg = SPI_read(SPI_reg_addr); //read current SPI reg data
-    const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
+    const uint16_t spiMask = (~(~0u << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
     if(batchActive)
@@ -93,7 +93,7 @@ void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const 
 
 uint16_t Get_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits)
 {
-    return (SPI_read(SPI_reg_addr) & (~(~0<<((bits>>4)+1)))) >> (bits&0xF); //shift bits to LSB
+    return (SPI_read(SPI_reg_addr) & (~(~0u<<((bits>>4)+1)))) >> (bits&0xF); //shift bits to LSB
 }
 
 

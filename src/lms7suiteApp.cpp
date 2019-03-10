@@ -22,9 +22,9 @@
 #include <wx/icon.h>
 #include <iostream>
 #ifndef NDEBUG
-IMPLEMENT_APP_CONSOLE(lms7suiteApp);
+IMPLEMENT_APP_CONSOLE(lms7suiteApp)
 #else
-IMPLEMENT_APP(lms7suiteApp);
+IMPLEMENT_APP(lms7suiteApp)
 #endif
 
 #include "resources/splash.h"
@@ -41,7 +41,7 @@ bool lms7suiteApp::OnInit()
     wxYield(); //linux needs this to load splash image
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
 #ifndef NDEBUG
-    wxLongLong t1 = wxGetUTCTimeMillis(); 
+    wxLongLong t1 = wxGetUTCTimeMillis();
     std::cout << "Create time " << (wxGetUTCTimeMillis() - t1).ToString() << " ms\n";
 #endif
     splash->Destroy();

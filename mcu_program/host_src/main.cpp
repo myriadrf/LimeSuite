@@ -364,8 +364,8 @@ int main(int argc, char** argv)
     }
 
     //lmsControl.Modify_SPI_Reg_bits(LMS7param(MAC), 2);
-    float crestFactor = 1;
-    uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
+    //float crestFactor = 1;
+    //uint32_t wantedRSSI = 87330 / pow(10.0, (3+crestFactor)/20);
     //RunAGC(wantedRSSI);
 
     int status = 0;

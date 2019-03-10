@@ -346,7 +346,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
         else
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
         if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI))
-            paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE)});
+            paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE), 0, 0, 65535});
     }
     return paramList;
 }

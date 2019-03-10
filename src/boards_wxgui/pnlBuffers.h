@@ -25,7 +25,7 @@ protected:
     wxCheckBox* chkIQ_SEL2_DIR;
     wxCheckBox* chkG_PWR_DWN;
     lms_device_t *lmsControl;
-    DECLARE_EVENT_TABLE();
+    DECLARE_EVENT_TABLE()
 };
 
 #endif
