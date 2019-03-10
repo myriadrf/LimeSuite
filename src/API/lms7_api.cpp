@@ -648,9 +648,11 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
     lime::LMS7_Device* lms = CheckDevice(device);
     if (!lms)
         return -1;
-    *val = lms->ReadFPGAReg(address);
-    if (*val < 0)
-        return *val;
+    int value = lms->ReadFPGAReg(address);
+    if (value < 0)
+        return value; // operation failed return error code
+    else if (val)
+        *val = value;
     return LMS_SUCCESS;
 }
 
