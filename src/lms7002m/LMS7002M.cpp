@@ -727,7 +727,7 @@ int LMS7002M::SaveConfig(const char* filename)
             dataReceived[i] = 0x400 | (~dataReceived[i]&0x3FF); //magnitude bits  9:0
         else if (addrToRead[i] >= 0x5C7 && addrToRead[i] <= 0x5CA && (dataReceived[i]&0x40))  //sign bit 6
             dataReceived[i] = 0x40 | (~dataReceived[i]&0x3F);   //magnitude bits  5:0
-        else if (addrToRead[i] >= 0x5C7)
+        else if (addrToRead[i] == 0x5C2)
             dataReceived[i] &= 0xFF00;   //do not save calibration start triggers
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
