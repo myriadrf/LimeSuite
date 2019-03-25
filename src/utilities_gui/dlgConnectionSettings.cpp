@@ -43,7 +43,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
     auto list = lime::LMS7_Device::GetDeviceList();
 
     const int selection = mListLMS7ports->GetSelection();
-    if(selection != wxNOT_FOUND && selection < list.size())
+    if(selection != wxNOT_FOUND && (size_t)selection < list.size())
     {
         if (list[selection].module == "Z_Remote")
         {

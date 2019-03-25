@@ -306,7 +306,6 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
     {
         this->Modify_SPI_Reg_bits(LMS7param(EN_DIR_TBB), 1);
         this->Modify_SPI_Reg_bits(LMS7param(EN_G_TBB), enable?1:0);
-        this->Modify_SPI_Reg_bits(LMS7param(PD_LPFH_TBB), enable?0:1);
         this->Modify_SPI_Reg_bits(LMS7param(PD_LPFIAMP_TBB), enable?0:1);
     }
     else
@@ -629,9 +628,21 @@ int LMS7002M::LoadConfig(const char* filename)
                     x0020_value = value;
                     continue;
                 }
-                addrToWrite.push_back(addr);
-                dataToWrite.push_back(value);
+
+                if (addr >= 0x5C3 && addr <= 0x5CA)          //enable analog DC correction
+                {
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value & 0x3FFF);
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value | 0x8000);
+                }
+                else
+                {
+                    addrToWrite.push_back(addr);
+                    dataToWrite.push_back(value);
+                }
             }
+
             status = SPI_write_batch(&addrToWrite[0], &dataToWrite[0], addrToWrite.size(), true);
             if (status != 0 && controlPort != nullptr)
                 return status;
@@ -707,7 +718,17 @@ int LMS7002M::SaveConfig(const char* filename)
     this->SetActiveChannel(ChA);
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
     {
+        if (addrToRead[i] >= 0x5C3 && addrToRead[i] <= 0x5CA)
+            SPI_write(addrToRead[i], 0x4000); //perform read-back from DAC
         dataReceived[i] = Get_SPI_Reg_bits(addrToRead[i], 15, 0, false);
+
+        //registers 0x5C3 - 0x53A return inverted value field when DAC value read-back is performed
+        if (addrToRead[i] >= 0x5C3 && addrToRead[i] <= 0x5C6 && (dataReceived[i]&0x400)) //sign bit 10
+            dataReceived[i] = 0x400 | (~dataReceived[i]&0x3FF); //magnitude bits  9:0
+        else if (addrToRead[i] >= 0x5C7 && addrToRead[i] <= 0x5CA && (dataReceived[i]&0x40))  //sign bit 6
+            dataReceived[i] = 0x40 | (~dataReceived[i]&0x3F);   //magnitude bits  5:0
+        else if (addrToRead[i] == 0x5C2)
+            dataReceived[i] &= 0xFF00;   //do not save calibration start triggers
         sprintf(addr, "0x%04X", addrToRead[i]);
         sprintf(value, "0x%04X", dataReceived[i]);
         fout << addr << "=" << value << endl;
@@ -1389,7 +1410,7 @@ uint16_t LMS7002M::Get_SPI_Reg_bits(const LMS7Parameter &param, bool fromChip)
 */
 uint16_t LMS7002M::Get_SPI_Reg_bits(uint16_t address, uint8_t msb, uint8_t lsb, bool fromChip)
 {
-    return (SPI_read(address, fromChip) & (~(~0<<(msb+1)))) >> lsb; //shift bits to LSB
+    return (SPI_read(address, fromChip) & (~(~0u<<(msb+1)))) >> lsb; //shift bits to LSB
 }
 
 /** @brief Change given parameter value
@@ -1410,7 +1431,7 @@ int LMS7002M::Modify_SPI_Reg_bits(const LMS7Parameter &param, const uint16_t val
 int LMS7002M::Modify_SPI_Reg_bits(const uint16_t address, const uint8_t msb, const uint8_t lsb, const uint16_t value, bool fromChip)
 {
     uint16_t spiDataReg = SPI_read(address, fromChip); //read current SPI reg data
-    uint16_t spiMask = (~(~0 << (msb - lsb + 1))) << (lsb); // creates bit mask
+    uint16_t spiMask = (~(~0u << (msb - lsb + 1))) << (lsb); // creates bit mask
     spiDataReg = (spiDataReg & (~spiMask)) | ((value << lsb) & spiMask);//clear bits
     return SPI_write(address, spiDataReg); //write modified data back to SPI reg
 }

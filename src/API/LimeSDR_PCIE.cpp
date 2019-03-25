@@ -4,25 +4,23 @@
  *
  * Created on September 18, 2016
  */
-#include "LimeSDR.h"
+#include "LimeSDR_PCIE.h"
 #include "device_constants.h"
 
 namespace lime
 {
 
-LMS7_LimeSDR::LMS7_LimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Generic(conn, obj)
+LMS7_LimeSDR_PCIE::LMS7_LimeSDR_PCIE(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Generic(conn, obj)
 {
 }
 
-std::vector<std::string> LMS7_LimeSDR::GetProgramModes() const
+std::vector<std::string> LMS7_LimeSDR_PCIE::GetProgramModes() const
 {
-    return {program_mode::autoUpdate,
-            program_mode::fpgaFlash, program_mode::fpgaReset,
-            program_mode::fx3Flash, program_mode::fx3Reset,
+    return {program_mode::fpgaFlash, program_mode::fpgaReset,
             program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
 
-int LMS7_LimeSDR::SetRate(double f_Hz, int oversample)
+int LMS7_LimeSDR_PCIE::SetRate(double f_Hz, int oversample)
 {
     bool bypass = (oversample == 1) || (oversample == 0 && f_Hz > 62e6);
 
@@ -51,15 +49,6 @@ int LMS7_LimeSDR::SetRate(double f_Hz, int oversample)
        return -1;
 
     return SetFPGAInterfaceFreq(7, 7);
-}
-
-int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const
-{
-    int ret = LMS7_Device::Program(mode, data, len, callback);
-
-    if ((mode == program_mode::fx3Flash) || (mode == program_mode::fpgaFlash))
-        connection->ProgramWrite(nullptr, 0, 0, 1, nullptr);
-    return ret;
 }
 
 }

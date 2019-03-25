@@ -78,7 +78,7 @@ void lime::log(const LogLevel level, const char *format, va_list argList)
 
 void lime::registerLogHandler(const LogHandler handler)
 {
-    logHandler = handler;
+    logHandler = handler ? handler : defaultLogHandler;
 }
 
 const char *lime::logLevelToName(const LogLevel level)

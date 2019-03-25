@@ -131,7 +131,7 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
 {
     lmsControl = dataPort;
-    
+
     if (LMS_GetNumChannels(lmsControl,LMS_CH_TX) > 2)
         cmbDevice->Show();
     else
@@ -212,14 +212,14 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 }
 
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
-{ 
+{
     LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
     LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, false);
-};
+}
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
 {
@@ -375,13 +375,13 @@ void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
 
     const uint16_t address = 0x0008;
     unsigned short regValue = 0;
-    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 1<< cmbDevice->GetSelection())!=0   
+    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 1<< cmbDevice->GetSelection())!=0
     ||  LMS_ReadFPGAReg(lmsControl, address, &regValue)!=0)
     {
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
         return;
     }
-    
+
     regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
     if (LMS_WriteFPGAReg(lmsControl, address, regValue)!=0)
         wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);

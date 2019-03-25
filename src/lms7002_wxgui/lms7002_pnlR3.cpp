@@ -479,7 +479,7 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         MCU_WaitForStatus(100);
         LMS_ReadLMSReg(lmsControl, 0x040B, &rdVal);
 
-        uint16_t mask = (~0) << (parameter.msb-parameter.lsb+1);
+        uint16_t mask = (~0u) << (parameter.msb-parameter.lsb+1);
         mask = ~mask;
         mask <<= parameter.lsb;
         rdVal &= ~mask;

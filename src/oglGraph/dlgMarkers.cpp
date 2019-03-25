@@ -146,7 +146,7 @@ void dlgMarkers::OnMarkerChange(wxCommandEvent& event)
     int markerIndex = event.GetId() - 1000;
     if (event.GetEventType() == wxEVT_COMMAND_TEXT_UPDATED)
         event.GetString().ToDouble(&freq);
-    else 
+    else
         freqs[markerIndex]->GetValue().ToDouble(&freq);
     freq *= 1000000;
     parent_graph->SetMarker(markerIndex, freq, enables[markerIndex]->IsChecked(), shows[markerIndex]->IsChecked());

@@ -1,23 +1,37 @@
-Release 18.10.1 (pending)
+Release 19.01.0 (2019-01-08)
 ==========================
 
 LimeSuite library changes:
 - Allow filtering devices by partial serial number
 - Add GPIO control for LimeSDR-Mini
-- Add parameter to LMS_VCTCXOWrite() for saving value to non-volatile storage
-- Add parameter to LMS_VCTCXORead() for reading value from non-volatile storage
+- Change LMS_VCTCXOWrite() to save value to non-volatile storage
+- Change LMS_VCTCXORead() to read value from non-volatile storage
 - Make some improvements in GFIR setup
+- Fix Tx not working when Rx is disabled on LimeSDR-Mini
+- Add initial support for LimeNET-Micro
+- Add auto RF path selection option (LMS_PATH_AUTO) for LMS_SetAntenna()
+- Remove LMS_Disconnect() and LMS_IsOpen() functions from API
+- Add support for sending smaller Tx packets (improve end of burst handling) 
+- Change Rx RF path set by LMS_Init() for LimeSDR-USB to LNA_L
+- Disable Tx channel in LMS_Init()
 
 LimeSuiteGUI:
 - Add GPIO controls to "Board controls" panel for LimeSDR-Mini
 - Add option to "Board controls" panel to write VCTCXO value to non-volatile storage
 
+SoapyLMS:
+- Update to soapysdr0.7 module ABI
+- add manual DC/IQ calibrations
+
 Other changes:
+- LimeUtil: fix LimeSDR-Mini not exiting programming mode after flashing FPGA
+- LimeQuickTest: test 1st board when multiple boards are detected (instead of exiting)
 - Add Octave plugin to CMake build
+- Add log handler to Octave plugin
 - Add IQ/DC calibration to basicTX example
-- SoapyLMS: update to soapysdr0.7 module ABI
-- LimeSDR-USB v1.4 updated to r2.19 gateware
-- LimeSDR-Mini updated to r1.28 gateware
+
+- LimeSDR-USB v1.4 updated to r2.20 gateware
+- LimeSDR-Mini updated to r1.29 gateware
 
 Release 18.10.0 (2018-10-04)
 ==========================

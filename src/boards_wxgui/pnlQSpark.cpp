@@ -310,7 +310,7 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
     controlsPtr2Registers[spinRX_GCORRQ] = Register(0x00A1, 10, 0, 2047);
     controlsPtr2Registers[spinRX_GCORRI] = Register(0x00A2, 10, 0, 2047);
     controlsPtr2Registers[spinRX_PHCORR] = Register(0x00A3, 11, 0, 0);
-      
+
     controlsPtr2Registers[chkLB_1A] = Register(0x0017, 1, 0, 2);
     controlsPtr2Registers[chkLB_1B] = Register(0x0017, 5, 4, 2);
     controlsPtr2Registers[chkLB_2A] = Register(0x0017, 9, 8, 2);
@@ -326,7 +326,7 @@ pnlQSpark::pnlQSpark(wxWindow* parent,wxWindowID id, const wxString &title, cons
 
 
     controlsPtr2Registers[cmbInsel] = Register(0x0080, 2, 2, 0);
-    
+
     Bind(READ_ALL_VALUES, &pnlQSpark::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnlQSpark::OnWriteAll, this, this->GetId());
 }
@@ -340,7 +340,7 @@ void pnlQSpark::Initialize(lms_device_t* pControl)
     txtPllFreqRxMHz->SetValue(wxString::Format("%1.3f", freqHz/1e6));
     LMS_GetSampleRate(lmsControl, LMS_CH_TX, 4, &freqHz,nullptr);
     txtPllFreqTxMHz->SetValue(wxString::Format("%1.3f", freqHz/1e6));
-    
+
 }
 
 void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
@@ -352,11 +352,11 @@ void pnlQSpark::RegisterParameterChangeHandler(wxCommandEvent& event)
     int mac = (reg.address!=0x17) && (rbChannelB->GetValue()) ? 0x2 : 0x1;
     if (LMS_WriteFPGAReg(lmsControl, 0xFFFF,  mac)!=0)
     {
-        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK); 
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
         return;
     }
 
-    unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
+    unsigned short mask = (~(~0u << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
 
     uint16_t regValue;
     LMS_ReadFPGAReg(lmsControl,reg.address,&regValue);
@@ -384,20 +384,20 @@ void pnlQSpark::OnbtnUpdateAll(wxCommandEvent& event)
     wxClassInfo* choicectr = wxClassInfo::FindClass("wxChoice");
     if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, rbChannelB->GetValue() ? 0x2 : 0x1)!= 0)
     {
-        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK); 
-        return; 
+        wxMessageBox(_("Write FPGA register failed"), _("Error"), wxICON_ERROR | wxOK);
+        return;
     }
     for (iter = controlsPtr2Registers.begin(); iter != controlsPtr2Registers.end(); ++iter)
     {
         Register reg = iter->second;
-        unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
+        unsigned short mask = (~(~0u << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
         uint16_t value;
 
         LMS_ReadFPGAReg(lmsControl,reg.address,&value);
 
         value = value & mask;
         value = value >> reg.lsb;
-        
+
         if (iter->first == chkLB_1A || iter->first == chkLB_1B || iter->first == chkLB_2A || iter->first == chkLB_2B)
             value = value == 2 ? 1 : 0;
         if (iter->first->IsKindOf(spinctr))

@@ -26,7 +26,7 @@ protected:
     void OnWriteAll(wxCommandEvent &event);
     lms_device_t* lmsControl;
     int m_rficSpiAddr;
-    DECLARE_EVENT_TABLE();
+    DECLARE_EVENT_TABLE()
 };
 
 #endif //LMS7002M_NOVENA_H

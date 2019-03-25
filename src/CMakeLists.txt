@@ -69,6 +69,9 @@ set(LIME_SUITE_SOURCES
     API/qLimeSDR.cpp
     API/LimeSDR_mini.cpp
     API/LimeSDR.cpp
+    API/LimeNET_micro.cpp
+    API/LimeSDR_PCIE.cpp
+    API/LimeSDR_Core.cpp
     FPGA_common/FPGA_common.cpp
     FPGA_common/FPGA_Mini.cpp
     FPGA_common/FPGA_Q.cpp

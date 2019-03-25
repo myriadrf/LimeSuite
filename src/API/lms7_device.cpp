@@ -4,23 +4,20 @@
  *
  * Created on March 9, 2016, 12:54 PM
  */
+#include <cmath>
 
 #include "lms7_device.h"
 #include "qLimeSDR.h"
 #include "LimeSDR_mini.h"
+#include "LimeNET_micro.h"
 #include "LimeSDR.h"
-#include "LmsGeneric.h"
+#include "LimeSDR_PCIE.h"
+#include "LimeSDR_Core.h"
 #include "GFIR/lms_gfir.h"
 #include "IConnection.h"
-#include <cmath>
 #include "dataTypes.h"
-#include <chrono>
-#include <iostream>
-#include <fstream>
 #include "MCU_BD.h"
 #include "FPGA_common.h"
-#include "LMS64CProtocol.h"
-#include <assert.h>
 #include "ConnectionRegistry.h"
 #include "ADF4002.h"
 #include "mcu_programs.h"
@@ -64,6 +61,8 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         device = new LMS7_LimeSDR_PCIE(conn,obj);
     else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMENET_MICRO))
         device = new LMS7_LimeNET_micro(conn,obj);
+    else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_CORE_SDR))
+        device = new LMS7_CoreSDR(conn,obj);
     else if (info.deviceName != lime::GetDeviceName(lime::LMS_DEV_UNKNOWN))
         device = new LMS7_LimeSDR(conn,obj);
     else
@@ -130,7 +129,7 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
 
-    if (bandwidth <= 0)
+    if (enabled && bandwidth <= 0)
     {
         lime::warning("GFIR LPF cannot be set to the requested bandwidth");
         enabled = false;
@@ -683,6 +682,9 @@ std::vector<std::string> LMS7_Device::GetPathNames(bool dir_tx, unsigned /*chan*
 
 int LMS7_Device::SetPath(bool tx, unsigned chan, unsigned path)
 {
+    if (path >= GetPathNames(tx, chan).size())
+        path = tx ? 1 : lime::LMS7002M::PATH_RFE_LNAL; //default settings: LNAL, band1
+
     lime::LMS7002M* lms = SelectChannel(chan);
 
     if (tx)
@@ -1281,9 +1283,16 @@ int LMS7_Device::SetFrequency(bool isTx, unsigned chan, double f_Hz)
         if (setTDD(30e6) != 0)
             return -1;
         channels[chan].cF_offset_nco = 30e6-f_Hz;
-        if (SetRate(isTx,GetRate(isTx,chan),2)!=0)
-            return -1;
-        return 0;
+        double rf_rate;
+        double rate = GetRate(isTx, chan, &rf_rate);
+        if (channels[chan].cF_offset_nco+rate/2.0 >= rf_rate/2.0)
+        {
+            if (SetRate(isTx, rate, 2)!=0)
+                return -1;
+            return 0;
+        }
+        else
+            return SetNCOFreq(isTx, chan, 0, channels[chan].cF_offset_nco * (isTx ? -1.0 : 1.0));
     }
 
     if (channels[chan].cF_offset_nco != 0)
@@ -1327,14 +1336,14 @@ int LMS7_Device::Init()
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
         {0x0089, 0x1078}, {0x008B, 0x218C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
         {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x0109, 0x57C1},
-        {0x010A, 0x154C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000},
-        {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000}, {0x0112, 0x000C},
-        {0x0113, 0x03C2}, {0x0114, 0x01F0}, {0x0115, 0x000D}, {0x0118, 0x418C},
-        {0x0119, 0x5292}, {0x011A, 0x3001}, {0x011C, 0x8941}, {0x011D, 0x0000},
-        {0x011E, 0x0984}, {0x0120, 0xE6B4}, {0x0121, 0x3638}, {0x0122, 0x0514},
-        {0x0123, 0x200F}, {0x0200, 0x00E1}, {0x0208, 0x017B}, {0x020B, 0x4000},
-        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
-        {0x040C, 0x00FB}
+        {0x010A, 0x154C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010D, 0x011A},
+        {0x010E, 0x0000}, {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000},
+        {0x0112, 0x000C}, {0x0113, 0x03C2}, {0x0114, 0x01F0}, {0x0115, 0x000D},
+        {0x0118, 0x418C}, {0x0119, 0x5292}, {0x011A, 0x3001}, {0x011C, 0x8941},
+        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xE6B4}, {0x0121, 0x3638},
+        {0x0122, 0x0514}, {0x0123, 0x200F}, {0x0200, 0x00E1}, {0x0208, 0x017B},
+        {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
+        {0x040B, 0x1020}, {0x040C, 0x00FB}
     };
 
     for (unsigned i = 0; i < lms_list.size(); i++)
@@ -1346,6 +1355,7 @@ int LMS7_Device::Init()
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
             lms->SPI_write(i.adr, i.val, true);
+        lms->EnableChannel(true, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
@@ -1355,11 +1365,6 @@ int LMS7_Device::Init()
         lms->EnableChannel(true, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
-
-        if (SetFrequency(true,2*i,1250e6)!=0)
-            return -1;
-        if (SetFrequency(false,2*i,1200e6)!=0)
-            return -1;
     }
     if (SetRate(10e6,2)!=0)
         return -1;

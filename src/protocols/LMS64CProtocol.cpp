@@ -786,10 +786,16 @@ int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, cons
             else
                 units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
         }
-        values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
-
-        if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
-            values[i] /= 10;
+        if((unitsIndex & 0xF0)>>4 == RAW)
+        {
+            values[i] = (uint16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
+        }
+        else
+        {
+            values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
+            if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
+                values[i] /= 10;
+        }
     }
     return 0;
 }

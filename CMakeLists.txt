@@ -93,7 +93,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 
     #default SIMD configuration uses native build flags
     #when packaging and x86, use sse3 so the binaries work across multiple x86 variants
-    set(DEFAULT_SIMD_FLAGS "native")
+    if(NOT DEFAULT_SIMD_FLAGS)
+        set(DEFAULT_SIMD_FLAGS "native")
+    endif()
     if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr" AND X86)
         set(DEFAULT_SIMD_FLAGS "SSE3")
     endif()
@@ -102,6 +104,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none native SSE3 SSE4.2 AVX AVX2) 
 
     if(${ENABLE_SIMD_FLAGS} MATCHES "native")
+        add_definitions(-march=native)
         if(X86)
             add_definitions(-mfpmath=both)
         endif()
