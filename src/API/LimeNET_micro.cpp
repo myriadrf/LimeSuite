@@ -27,7 +27,9 @@ std::vector<std::string> LMS7_LimeNET_micro::GetPathNames(bool dir_tx, unsigned 
 
 int LMS7_LimeNET_micro::SetRFSwitch(bool isTx, unsigned path)
 {
-    int bom_ver = (fpga->ReadRegister(3)>>4);
+    int reg3 = fpga->ReadRegister(3);
+    int bom_ver = reg3>>4;
+    int hw_ver = reg3 & 0xF;
     if (isTx==false)
     {
         if (path==LMS_PATH_LNAW)
@@ -37,17 +39,33 @@ int LMS7_LimeNET_micro::SetRFSwitch(bool isTx, unsigned path)
         else if (path==LMS_PATH_LNAL)
         {
             uint16_t value = fpga->ReadRegister(0x17);
-            value &= ~(3<<8);
-            fpga->WriteRegister(0x17, value | (1<<8));
+            if (hw_ver >= 3)
+            {
+                value &= ~(0x0702);
+                fpga->WriteRegister(0x17, value | 0x0502);
+            }
+            else
+            {
+                value &= ~(3<<8);
+                fpga->WriteRegister(0x17, value | (1<<8));
+            }
         }
         else if (path==LMS_PATH_LNAH)
         {
             uint16_t value = fpga->ReadRegister(0x17);
-            value &= ~(3<<8);
-            if (bom_ver == 0)
-                fpga->WriteRegister(0x17, value | (1<<8));
+            if (hw_ver >= 3)
+            {
+                value &= ~(0x0702);
+                fpga->WriteRegister(0x17, value | 0x0602);
+            }
             else
-                fpga->WriteRegister(0x17, value | (2<<8));
+            {
+                value &= ~(3<<8);
+                if (bom_ver == 0)
+                    fpga->WriteRegister(0x17, value | (1<<8));
+                else
+                    fpga->WriteRegister(0x17, value | (2<<8));
+            }
         }
     }
     else
@@ -55,17 +73,34 @@ int LMS7_LimeNET_micro::SetRFSwitch(bool isTx, unsigned path)
         if (path==LMS_PATH_TX1)
         {
             uint16_t value = fpga->ReadRegister(0x17);
-            value &= ~(3<<12);
-            fpga->WriteRegister(0x17, value | (1<<12));
+            if (hw_ver >= 3)
+            {
+                value &= ~(0x7001);
+                fpga->WriteRegister(0x17, value | 0x5000);
+            }
+            else
+            {
+                value &= ~(3<<12);
+                fpga->WriteRegister(0x17, value | (1<<12));
+            }
         }
         else if (path==LMS_PATH_TX2)
         {
             uint16_t value = fpga->ReadRegister(0x17);
-            value &= ~(3<<12);
-            if (bom_ver == 0)
-                fpga->WriteRegister(0x17, value | (1<<12));
+            if (hw_ver >= 3)
+            {
+
+                value &= ~(0x7001);
+                fpga->WriteRegister(0x17, value | 0x6000);
+            }
             else
-                fpga->WriteRegister(0x17, value | (2<<12));
+            {
+                value &= ~(3<<12);
+                if (bom_ver == 0)
+                    fpga->WriteRegister(0x17, value | (1<<12));
+                else
+                    fpga->WriteRegister(0x17, value | (2<<12));
+            }
         }
     }
     return 0;
@@ -79,7 +114,10 @@ std::vector<std::string> LMS7_LimeNET_micro::GetProgramModes() const
 
 int LMS7_LimeNET_micro::AutoRFPath(bool isTx, double f_Hz)
 {
-    if ((fpga->ReadRegister(3)>>4) == 0)
+    int reg3 = fpga->ReadRegister(3);
+    int bom_ver = reg3>>4;
+    int hw_ver = reg3 & 0xF;
+    if (hw_ver < 3 && bom_ver == 0)
         return 0;
     if ((!isTx) && (f_Hz < 1.7e9))
     {
