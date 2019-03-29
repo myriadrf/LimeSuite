@@ -15,6 +15,11 @@ namespace lime
 LMS7_LimeNET_micro::LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj):
     LMS7_LimeSDR_mini(conn, obj)
 {
+    if (lms_list[0]->GetReferenceClk_SX(false) < 0)
+    {
+        lime::info("Reference clock set to 30.72 MHz");
+        lms_list[0]->SetReferenceClk_SX(false, 30.72e6);
+    }
 }
 
 std::vector<std::string> LMS7_LimeNET_micro::GetPathNames(bool dir_tx, unsigned chan) const
