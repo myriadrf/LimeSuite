@@ -54,12 +54,12 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
     fd_control_fpga(-1),
     fd_control_dac(-1),
     int_pin(26)
-{	
+{
     pthis = this;
     //callback_logData = OnLogDataTransfer;
     if (Open(index) < 0)
         lime::error("Failed to open SPI device");
-    
+
     std::ifstream file("/proc/device-tree/model");
     if (file.good())
     {
@@ -69,7 +69,7 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
         if (str.find("Module")!=std::string::npos)
             int_pin = 12;
     }
-    
+
     wiringPiSetup();
     pinMode(int_pin, INPUT);
     pullUpDnControl(int_pin, PUD_OFF);
@@ -219,7 +219,7 @@ int ConnectionSPI::TransactSPI(const int addr, const uint32_t *writeData, uint32
         case 0x30: return this->WriteADF4002SPI(writeData, size);
     }
 
-    if (readData != nullptr && addr == 0x10) 
+    if (readData != nullptr && addr == 0x10)
         return this->ReadLMS7002MSPI(writeData, readData, size);
 
     return ReportError(ENOTSUP, "unknown spi address");
@@ -256,7 +256,7 @@ int ConnectionSPI::WriteADF4002SPI(const uint32_t *data, const size_t size)
     SetChipSelect(1);
     if (TransferSPI(fd_control_lms, &tx, &rx, 3) != 3)
         lime::error("Write DAC: SPI transfer error");
-    
+
     uint8_t readData[3];
     uint8_t writeData[3];
     int ret = 0;
@@ -433,19 +433,19 @@ int ConnectionSPI::CustomParameterWrite(const uint8_t *ids, const double *vals, 
 DeviceInfo ConnectionSPI::GetDeviceInfo(void)
 {
     DeviceInfo info;
-    info.deviceName = "LimeSDR-Mini";
+    info.deviceName = "LimeNET-Micro";
     info.protocolVersion = "0";
     info.firmwareVersion = "0";
     info.expansionName = "EXP_BOARD_UNKNOWN";
 
-    const uint32_t addrs[] = {0x0001, 0x0002, 0x0003};
-    uint32_t vals[3] = {0};
+    const uint32_t addrs[] = {0, 1, 2, 3};
+    uint32_t vals[4] = {0};
 
-    ReadRegisters(addrs, vals, 3);
-    info.gatewareVersion = std::to_string(vals[0]);
-    info.gatewareRevision = std::to_string(vals[1]);
-    info.hardwareVersion = std::to_string(vals[2]);
-    info.gatewareTargetBoard = "LimeSDR-Mini";
+    ReadRegisters(addrs, vals, 4);
+    info.gatewareTargetBoard = GetDeviceName(eLMS_DEV(vals[0]));
+    info.gatewareVersion = std::to_string(vals[1]);
+    info.gatewareRevision = std::to_string(vals[2]);
+    info.hardwareVersion = std::to_string(vals[3]&0xF) + "BOM " + std::to_string(vals[3]>>4);
     return info;
 }
 
@@ -461,7 +461,7 @@ int ConnectionSPI::DeviceReset(int ind)
 }
 
 int ConnectionSPI::ResetStreamBuffers()
-{  
+{
     return 0;
 }
 
@@ -631,7 +631,7 @@ void ConnectionSPI::StreamISR()
                                 8 };
         ioctl(pthis->fd_stream, SPI_IOC_MESSAGE(1), &tr);
     }
-   
+
     rx_timestamp = rx_packet.counter;
 
     pthis->mRxStreamLock.lock();
@@ -640,7 +640,7 @@ void ConnectionSPI::StreamISR()
         pthis->rxQueue.pop();
     pthis->rxQueue.push(rx_packet);
     pthis->mRxStreamLock.unlock();
-    
+
     {
         spi_ioc_transfer tr = { (unsigned long)&dummy_packet,
                                 (unsigned long)&rx_packet,
@@ -664,7 +664,7 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
         lime::error("Programming mode not supported");
         return -1;
     }
- 
+
     wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::ProgramISR);
     uint32_t addr = 0x7F;
     uint32_t val = 0x00;
@@ -727,7 +727,7 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
                 }
                 data_sent +=cnt;
                 break;
-            } 
+            }
         if (cnt == 0)
         {
             lime::error("timeout");
@@ -739,7 +739,7 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
             break;
         }
     }
-    
+
     wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
     return 0;
 }
