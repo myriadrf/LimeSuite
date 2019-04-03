@@ -106,12 +106,6 @@ int LMS7_LimeNET_micro::SetRFSwitch(bool isTx, unsigned path)
     return 0;
 }
 
-std::vector<std::string> LMS7_LimeNET_micro::GetProgramModes() const
-{
-    return {program_mode::fpgaFlash, program_mode::fpgaReset,
-            program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
-}
-
 int LMS7_LimeNET_micro::AutoRFPath(bool isTx, double f_Hz)
 {
     int reg3 = fpga->ReadRegister(3);

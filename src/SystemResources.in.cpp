@@ -165,7 +165,7 @@ int lime::downloadImageResource(const std::string &name)
 {
     const std::string destDir(lime::getAppDataDirectory() + "/images/@VERSION_MAJOR@.@VERSION_MINOR@");
     const std::string destFile(destDir + "/" + name);
-    const std::string sourceUrl("http://downloads.myriadrf.org/project/limesuite/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
+    const std::string sourceUrl("https://downloads.myriadrf.org/project/limesuite/@VERSION_MAJOR@.@VERSION_MINOR@/" + name);
 
     //check if the directory already exists
     struct stat s;
