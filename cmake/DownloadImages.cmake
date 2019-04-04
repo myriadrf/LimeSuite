@@ -15,7 +15,7 @@ message(STATUS "######################################################")
 set(SOURCE_URL "http://downloads.myriadrf.org/project/limesuite/${VERSION_MAJOR}.${VERSION_MINOR}")
 set(TEMP_DEST "${CMAKE_CURRENT_BINARY_DIR}/images/${VERSION_MAJOR}.${VERSION_MINOR}")
 set(INSTALL_DEST "share/LimeSuite/images/${VERSION_MAJOR}.${VERSION_MINOR}")
-set(HREF_MATCHER "href=\\\"([\\._A-Za-z_0-9-]+)\\\"")
+set(HREF_MATCHER "href=\\\"/project/limesuite/${VERSION_MAJOR}.${VERSION_MINOR}/([\\._A-Za-z_0-9-]+(.rpd|.rbf|.img))\\\"")
 
 #conditional download when file is missing
 function(DOWNLOAD_URL url file)
