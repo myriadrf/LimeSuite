@@ -119,9 +119,9 @@ void SPI_write_batch(const uint16_t *addr, const uint16_t *values, uint8_t cnt)
         if(batchActive)
         {
             bool found = false;
-            for(size_t i=0; i<bAddr.size(); ++i)
+            for(size_t j=0; j<bAddr.size(); ++j)
             {
-                if(bAddr[i] == addr[i])
+                if(bAddr[j] == addr[i])
                 {
                     found = true;
                     bData[i] = values[i];
@@ -174,6 +174,20 @@ void EndBatch()
                 bMask[i] = temp;
             }
         }
+    }
+
+    vector<uint16_t> zeroValued;
+    for(int i=0; i<bAddr.size(); ++i)
+    {
+        if(bMask[i] == 0xFFFF && bData[i] == 0x0)
+            zeroValued.push_back(i);
+    }
+    for(int i=zeroValued.size()-1; i>=0; --i)
+    {
+        bAddr.push_back(bAddr[zeroValued[i]]); // move zero valued registers to end
+        bAddr.erase(bAddr.begin()+zeroValued[i]);
+        bMask.erase(bMask.begin()+zeroValued[i]);
+        bData.erase(bData.begin()+zeroValued[i]);
     }
 
     char temp[64];
