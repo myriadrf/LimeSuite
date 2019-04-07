@@ -153,6 +153,7 @@ int BeginBatch(const char* name)
 
 void EndBatch()
 {
+    batchActive = false;
     //sort batch
     for(size_t i=0; i<bAddr.size(); ++i)
     {
