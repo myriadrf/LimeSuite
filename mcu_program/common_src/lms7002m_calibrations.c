@@ -22,8 +22,11 @@
 #include <stdio.h>
 #include <sstream>
 
+#ifdef DRAW_GNU_PLOTS
 #define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({value, rssi})
-
+#else
+#define PUSH_GMEASUREMENT_VALUES(value, rssi)
+#endif
 #include <gnuPlotPipe.h>
 GNUPlotPipe saturationPlot;
 GNUPlotPipe IQImbalancePlot;
@@ -714,15 +717,15 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     Modify_SPI_Reg_bits(DC_BYP_TXTSP, 0);
     Modify_SPI_Reg_bits(GC_BYP_TXTSP, 0);
     Modify_SPI_Reg_bits(PH_BYP_TXTSP, 0);
-    Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb , 2047);
-    Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
+    Modify_SPI_Reg_bits(GCORRI_TXTSP, 2047);
+    Modify_SPI_Reg_bits(GCORRQ_TXTSP, 2047);
     Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 0);
-    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP), 0);
-    Modify_SPI_Reg_bits(LMS7param(CMIX_GAIN_TXTSP_R3), 0);
+    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 0);
+    Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP_R3, 0);
 
     //RXTSP
     SetDefaults(SECTION_RxTSP);
-    SetDefaults(SECTION_RxNCO);
+    //SetDefaults(SECTION_RxNCO);
     Modify_SPI_Reg_bits(GFIR3_BYP_RXTSP, 0);
     Modify_SPI_Reg_bits(GFIR2_BYP_RXTSP, 1);
     Modify_SPI_Reg_bits(GFIR1_BYP_RXTSP, 1);
@@ -765,11 +768,11 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     else
         Modify_SPI_Reg_bits(PD_RX_AFE2, 0);
     {
-        ROM const uint16_t TxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x0101,0x0113,0x0200,0x0201,0x0202,0x0208};
-        ROM const uint16_t TxSetupData[] = {0x0400, 0x0001,0xF000,0x0001,0x001C,0x000C,0x07FF,0x07FF,0x0000};
-        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x003C,0x000C,0x07FF,0x07FF,0xF10B};
-        ROM const uint16_t TxSetupWrOnlyAddr[] = {0x010C,0x0112,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,0x040A,0x040C,0x0440,0x0442,0x0443, 0x0081};
-        ROM const uint16_t TxSetupWrOnlyData[] = {0x88E5,0x4032,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0000,0x0000,0x0000,0x0700,0x0000,0x0000,0x1001,0x2098,0x0020,0x0000,0x0000};
+        ROM const uint16_t TxSetupAddr[] = {0x0084, 0x0085,0x00AE,0x0101,0x0200,0x0201,0x0202,0x0208};
+        ROM const uint16_t TxSetupData[] = {0x0400, 0x0001,0xF000,0x0001,0x000C,0x07FF,0x07FF,0x0000};
+        ROM const uint16_t TxSetupMask[] = {0xF8FF, 0x0007,0xF000,0x1801,0x000C,0x07FF,0x07FF,0xF10B};
+        ROM const uint16_t TxSetupWrOnlyAddr[] = {0x010C,0x010D,0x010E,0x010F,0x0110,0x0111,0x0112,0x0113,0x0114,0x0115,0x0116,0x0117,0x0118,0x0119,0x011A,0x0400,0x0401,0x0402,0x0403,0x0407,0x040A,0x040C,0x0440, 0x0441, 0x0442, 0x0443 ,0x0409,0x0408,0x0406,0x0405,0x0404,0x0081};
+        ROM const uint16_t TxSetupWrOnlyData[] = {0x88E5,0x009E,0x2040,0x30C6,0x0994,0x0083,0x4032,0x03DF,0x008D,0x0005,0x8180,0x280C,0x218C,0x3180,0x2E02,0x0081,0x07FF,0x07FF,0x4000,0x0700,0x1001,0x2098}; // rest of values will be written as zeros
         ROM const RegisterBatch batch = {
             TxSetupAddr, TxSetupData, TxSetupMask, sizeof(TxSetupAddr)/sizeof(uint16_t),
             TxSetupWrOnlyAddr, TxSetupWrOnlyData, sizeof(TxSetupWrOnlyAddr)/sizeof(uint16_t), sizeof(TxSetupWrOnlyData)/sizeof(uint16_t)};
@@ -962,8 +965,8 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         Modify_SPI_Reg_bits(0x010C, 7 << 4 | 7, 0); //PD_LNA 0
 
     //RBB
-    Modify_SPI_Reg_bits(0x0115, MSBLSB(15, 14), 0); //Loopback switches disable
-    Modify_SPI_Reg_bits(0x0119, MSBLSB(15, 15), 0); //OSW_PGA 0
+    Modify_SPI_Reg_bits(0x0115, MSB_LSB(15, 14), 0); //Loopback switches disable
+    Modify_SPI_Reg_bits(0x0119, MSB_LSB(15, 15), 0); //OSW_PGA 0
 
     //TRF
     //reset TRF to defaults
@@ -989,23 +992,23 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     Modify_SPI_Reg_bits(ICT_IAMP_GG_FRP_TBB, 6);
 
     //XBUF
-    Modify_SPI_Reg_bits(0x0085, MSBLSB(2, 0), 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
+    Modify_SPI_Reg_bits(0x0085, MSB_LSB(2, 0), 1); //PD_XBUF_RX 0, PD_XBUF_TX 0, EN_G_XBUF 1
 
     //TXTSP
     SetDefaults(SECTION_TxTSP);
-    SetDefaults(SECTION_TxNCO);
+    //SetDefaults(SECTION_TxNCO);
     Modify_SPI_Reg_bits(TSGFCW_TXTSP, 1);
     Modify_SPI_Reg_bits(TSGMODE_TXTSP, 0x1);
     Modify_SPI_Reg_bits(INSEL_TXTSP, 1);
-    Modify_SPI_Reg_bits(0x0208, MSBLSB(6, 4), 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
+    Modify_SPI_Reg_bits(0x0208, MSB_LSB(6, 4), 0x7); //GFIR3_BYP 1, GFIR2_BYP 1, GFIR1_BYP 1
     Modify_SPI_Reg_bits(CMIX_GAIN_TXTSP, 0);
     Modify_SPI_Reg_bits(CMIX_SC_TXTSP, 1);
     Modify_SPI_Reg_bits(CMIX_BYP_TXTSP, 0);
 
     //RXTSP
     SetDefaults(SECTION_RxTSP);
-    SetDefaults(SECTION_RxNCO);
-    Modify_SPI_Reg_bits(0x040C, MSBLSB(5, 3), 0x3); //GFIR2_BYP, GFIR1_BYP
+    //SetDefaults(SECTION_RxNCO);
+    Modify_SPI_Reg_bits(0x040C, MSB_LSB(5, 3), 0x3); //GFIR2_BYP, GFIR1_BYP
     Modify_SPI_Reg_bits(HBD_OVR_RXTSP, 4);
 
     Modify_SPI_Reg_bits(AGC_MODE_RXTSP, 1);
@@ -1025,10 +1028,10 @@ uint8_t CalibrateRxSetup(bool extLoopback)
     EndBatch();
     //BIAS
     {
-        uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, MSBLSB(10, 6));
+        uint16_t rp_calib_bias = Get_SPI_Reg_bits(0x0084, MSB_LSB(10, 6));
         SetDefaults(SECTION_BIAS);
-        Modify_SPI_Reg_bits(0x0084, MSBLSB(10, 6), rp_calib_bias);
-    }*/
+        Modify_SPI_Reg_bits(0x0084, MSB_LSB(10, 6), rp_calib_bias);
+    }
 
     /*if(!extLoopback)
     {
