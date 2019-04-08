@@ -9,6 +9,7 @@ class LMS7_LimeNET_micro : public LMS7_LimeSDR_mini
 public:
     LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
+    int Init() override;
 private:
     int SetRFSwitch(bool tx, unsigned path) override;
     int AutoRFPath(bool isTx, double f_Hz) override;
