@@ -177,7 +177,8 @@ API_EXPORT int CALL_CONV LMS_Init(lms_device_t *device);
 API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t *device, bool dir_tx);
 
 /**
- * Enable or disable specified RX channel.
+ * Enable or disable specified RX or TX channel. Some API functions will fail
+ * when performed on disabled channel.
  *
  * @param[in]   device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
@@ -237,7 +238,7 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
  *
  * @note channels A and B in LMS7 chip share the same clock so ability to set
  * different frequencies for channels A and B is very limited. This function 
- * will attempt to achieve diffrent requested frequencies using NCO when 
+ * will attempt to achieve different requested frequencies using NCO when 
  * possible, however often changing frequency for one (A or B) channel will
  * result in frequency being changed for both (A and B) channels.
  *
@@ -745,7 +746,7 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
 
 
 /**
- * Enables or disable caching of calibration values.
+ * Enables or disable caching of LMS7 and FPGA register values.
  * 
  * @deprecated calibration cache has been removed from LimeSuite. Use
  * LMS_EnableCache() to enable caching of register values
@@ -923,7 +924,7 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
  * 
  * Set to positive value to enable usage of external reference clock of the
  * specified frequency. Set to 0 or negative value to disable usage of external
- * reference clock
+ * reference clock (if switching reference clock source is supported by HW)
  */ 
 #define LMS_CLOCK_EXTREF 0x0006  
 
@@ -943,9 +944,6 @@ API_EXPORT int CALL_CONV LMS_GetClockFreq(lms_device_t *dev, size_t clk_id,
 
 /**
  * Set frequency of the specified clock
- *
- * @note setting ::LMS_CLOCK_EXTREF changes clock source to external, use
- * ::LMS_VCTCXOWrite() to change back to VCTCXO
  *
  * @param   dev     Device handle previously obtained by LMS_Open().
  * @param   clk_id  Clock identifier (\ref LMS_CLOCK_ID)

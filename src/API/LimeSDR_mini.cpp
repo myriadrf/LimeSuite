@@ -294,7 +294,13 @@ LMS7_Device::Range LMS7_LimeSDR_mini::GetFrequencyRange(bool tx) const
 int LMS7_LimeSDR_mini::SetClockFreq(unsigned clk_id, double freq, int channel)
 {
     if (clk_id == LMS_CLOCK_EXTREF)
+    {
         clk_id =  LMS_CLOCK_REF;
+        if (freq <= 0)
+            lime::error("Switching between int./ext. ref. clock can only be done in HW (R59/R62)");
+        else
+            lime::warning("Using external reference clock requires hardware modification (R59/R62)");
+    }
     return LMS7_Device::SetClockFreq(clk_id, freq, channel);
 }
 
