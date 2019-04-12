@@ -18,6 +18,7 @@ public:
     LMS7_LimeSDR_PCIE(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::vector<std::string> GetProgramModes() const override;
     int SetRate(double f_Hz, int oversample) override;
+    int EnableChannel(bool dir_tx, unsigned chan, bool enabled) override;
 private:
 };
 
