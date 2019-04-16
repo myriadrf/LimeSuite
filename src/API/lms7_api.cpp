@@ -174,12 +174,12 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
                            uint8_t param_id, float_type *val, lms_name_t units)
 {
     auto conn = CheckConnection(device);
-    std::string str;
     if (conn == nullptr)
         return -1;
-
+    std::string str;
     int ret=conn->CustomParameterRead(&param_id,val,1,&str);
-    strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
+    if (units)
+        strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
     return ret;
 }
 

@@ -337,8 +337,6 @@ int main(int argc, char** argv)
     //change SPI switch to BB, just in case it was left for MCU
     lmsControl.SPI_write(0x0006, 0);
 
-    RefClk = lmsControl.GetReferenceClk_SX(false);
-
     //load initial chip config for testing
     string filename;
     /*if(tx)
@@ -353,6 +351,7 @@ int main(int argc, char** argv)
         lime::ConnectionRegistry::freeConnection(serPort);
         return -1;
     }
+    RefClk = lmsControl.GetReferenceClk_SX(false);
     lmsControl.UploadAll();
     //calibrating A channel
     //lmsControl.SetActiveChannel(lime::LMS7002M::Channel::ChB);

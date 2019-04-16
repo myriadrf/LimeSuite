@@ -51,6 +51,14 @@ int LMS7_LimeSDR_PCIE::SetRate(double f_Hz, int oversample)
     return SetFPGAInterfaceFreq(7, 7);
 }
 
+int LMS7_LimeSDR_PCIE::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
+{
+    int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
+    if (dir_tx) //always enable DAC, otherwise sample rates <2.5MHz do not work
+        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
+    return ret;
+}
+
 }
 
 

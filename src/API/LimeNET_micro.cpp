@@ -22,6 +22,53 @@ LMS7_LimeNET_micro::LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj
     }
 }
 
+int LMS7_LimeNET_micro::Init()
+{
+    struct regVal
+    {
+        uint16_t adr;
+        uint16_t val;
+    };
+
+    const std::vector<regVal> initVals = {
+        {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
+        {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x03F0},
+        {0x0089, 0x1078}, {0x008B, 0x2100}, {0x008C, 0x267B}, {0x00A1, 0x656A},
+        {0x00A6, 0x0009}, {0x00A7, 0x8A8A}, {0x00A9, 0x8000}, {0x00AC, 0x2000},
+        {0x0105, 0x0011}, {0x0108, 0x118C}, {0x0109, 0x6100}, {0x010A, 0x1F4C},
+        {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010E, 0x0000}, {0x010F, 0x3142},
+        {0x0110, 0x2B14}, {0x0111, 0x0000}, {0x0112, 0x942E}, {0x0113, 0x03C2},
+        {0x0114, 0x00D0}, {0x0117, 0x1230}, {0x0119, 0x18D2}, {0x011C, 0x8941},
+        {0x011D, 0x0000}, {0x011E, 0x0740}, {0x0120, 0xE6B4}, {0x0121, 0x3650},
+        {0x0123, 0x000F}, {0x0200, 0x00E1}, {0x0208, 0x017B}, {0x020B, 0x4000},
+        {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006}, {0x040B, 0x1020},
+        {0x040C, 0x00FB}
+    };
+
+    lime::LMS7002M* lms = lms_list[0];
+    if (lms->ResetChip() != 0)
+        return -1;
+
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+    for (auto i : initVals)
+        lms->SPI_write(i.adr, i.val, true);
+    lms->EnableChannel(true, false);
+
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+    lms->SPI_write(0x0123, 0x000F);  //SXT
+    lms->SPI_write(0x0120, 0xE6B4);  //SXT
+    lms->SPI_write(0x011C, 0x8941);  //SXT
+    lms->EnableChannel(false, false);
+    lms->EnableChannel(true, false);
+
+    lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+
+    if (SetRate(1e6, 16)!=0)
+        return -1;
+
+    return 0;
+}
+
 std::vector<std::string> LMS7_LimeNET_micro::GetPathNames(bool dir_tx, unsigned chan) const
 {
     if (dir_tx)
@@ -109,12 +156,6 @@ int LMS7_LimeNET_micro::SetRFSwitch(bool isTx, unsigned path)
         }
     }
     return 0;
-}
-
-std::vector<std::string> LMS7_LimeNET_micro::GetProgramModes() const
-{
-    return {program_mode::fpgaFlash, program_mode::fpgaReset,
-            program_mode::mcuRAM, program_mode::mcuEEPROM, program_mode::mcuReset};
 }
 
 int LMS7_LimeNET_micro::AutoRFPath(bool isTx, double f_Hz)

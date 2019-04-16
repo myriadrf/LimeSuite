@@ -62,6 +62,14 @@ int LMS7_LimeSDR::Program(const std::string& mode, const char* data, size_t len,
     return ret;
 }
 
+int LMS7_LimeSDR::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
+{
+    int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
+    if (dir_tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
+        lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
+    return ret;
+}
+
 }
 
 
