@@ -11,6 +11,7 @@ public:
     std::vector<std::string> GetPathNames(bool dir_tx, unsigned chan) const override;
     int Init() override;
 private:
+    int SetClockFreq(unsigned clk_id, double freq, int channel) override;
     int SetRFSwitch(bool tx, unsigned path) override;
     int AutoRFPath(bool isTx, double f_Hz) override;
 };
