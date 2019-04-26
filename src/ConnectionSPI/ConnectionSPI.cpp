@@ -31,20 +31,13 @@ using namespace std;
 using namespace lime;
 
 #define SPI_STREAM_SPEED_HZ 50000000
-
-static void OnLogDataTransfer(bool Tx, const unsigned char* data, const unsigned int length)
-{
-    std::stringstream ss;
-    ss << (Tx ? "Wr(" : "Rd(");
-    ss << length << "): ";
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i<length; ++i)
-        //casting to short to print as numbers
-        ss << " " << std::setw(2) << (unsigned short)data[i];
-    cout << ss.str() << endl;
-}
+#define SPI_CTRL_SPEED_HZ 1000000
 
 ConnectionSPI* ConnectionSPI::pthis = nullptr;
+char ConnectionSPI::last_flags = 0x10;  //no sync
+uint64_t ConnectionSPI::rx_timestamp = 0;
+std::atomic<bool> ConnectionSPI::program_mode(false);
+std::atomic<bool> ConnectionSPI::program_ready(false);
 /** @brief Initializes port type and object necessary to communicate to usb device.
 */
 ConnectionSPI::ConnectionSPI(const unsigned index) :
@@ -52,28 +45,31 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
     fd_stream_clocks(-1),
     fd_control_lms(-1),
     fd_control_fpga(-1),
-    fd_control_dac(-1),
     int_pin(26)
 {
     pthis = this;
-    //callback_logData = OnLogDataTransfer;
+    program_ready.store(false);
+    program_mode.store(false);
     if (Open(index) < 0)
         lime::error("Failed to open SPI device");
-
-    std::ifstream file("/proc/device-tree/model");
-    if (file.good())
+    if (index == SPIDEV)
     {
-        std::string str;
-        std::getline(file, str);
-        lime::info(str.c_str());
-        if (str.find("Module")!=std::string::npos)
-            int_pin = 12;
+        std::ifstream file("/proc/device-tree/model");
+        if (file.good())
+        {
+            std::string str;
+            std::getline(file, str);
+            lime::info(str.c_str());
+            if (str.find("Module")!=std::string::npos)
+                int_pin = 12;
+        }
+
+        wiringPiSetup();
+        pinMode(int_pin, INPUT);
+        pullUpDnControl(int_pin, PUD_OFF);
+        wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
     }
 
-    wiringPiSetup();
-    pinMode(int_pin, INPUT);
-    pullUpDnControl(int_pin, PUD_OFF);
-    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
     uint8_t id = 0;
     double val = 35487;
     CustomParameterWrite(&id, &val, 1, "");
@@ -94,39 +90,44 @@ int ConnectionSPI::Open(const unsigned index)
     const uint32_t mode = 0;
     const uint8_t bits = 8;
     const uint32_t speed_stream = SPI_STREAM_SPEED_HZ;
-    const uint32_t speed_control = 2000000;
+    const uint32_t speed_control = SPI_CTRL_SPEED_HZ;
 
-    if ((fd_stream = open("/dev/spidev0.0", O_RDWR)) != -1)
+    if (index == SPIDEV)
     {
-        if (ioctl(fd_stream, SPI_IOC_WR_MODE, &mode) < 0)
-            lime::error("Failed to set SPI write mode");
-        if (ioctl(fd_stream, SPI_IOC_RD_MODE, &mode) < 0)
-            lime::error("Failed to set SPI read mode");
-        if (ioctl(fd_stream, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (write)");
-        if (ioctl(fd_stream, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (read)");
-        if (ioctl(fd_stream, SPI_IOC_WR_MAX_SPEED_HZ, &speed_stream) < 0)
-            lime::error("Failed to set SPI write max speed");
-        if (ioctl(fd_stream, SPI_IOC_RD_MAX_SPEED_HZ, &speed_stream) < 0)
-            lime::error("Failed to set SPI read max speed");
-    }
+        if ((fd_stream = open("/dev/spidev0.0", O_RDWR)) != -1)
+        {
+            if (ioctl(fd_stream, SPI_IOC_WR_MODE, &mode) < 0)
+                lime::error("Failed to set SPI write mode");
+            if (ioctl(fd_stream, SPI_IOC_RD_MODE, &mode) < 0)
+                lime::error("Failed to set SPI read mode");
+            if (ioctl(fd_stream, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
+                lime::error("Failed to set SPI bits per word (write)");
+            if (ioctl(fd_stream, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
+                lime::error("Failed to set SPI bits per word (read)");
+            if (ioctl(fd_stream, SPI_IOC_WR_MAX_SPEED_HZ, &speed_stream) < 0)
+                lime::error("Failed to set SPI write max speed");
+            if (ioctl(fd_stream, SPI_IOC_RD_MAX_SPEED_HZ, &speed_stream) < 0)
+                lime::error("Failed to set SPI read max speed");
+        }
 
-    if ((fd_stream_clocks = open("/dev/spidev0.1", O_RDWR)) != -1)
-    {
-        if (ioctl(fd_stream_clocks, SPI_IOC_WR_MODE, &mode) < 0)
-            lime::error("Failed to set SPI write mode");
-        if (ioctl(fd_stream_clocks, SPI_IOC_RD_MODE, &mode) < 0)
-            lime::error("Failed to set SPI read mode");
-        if (ioctl(fd_stream_clocks, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (write)");
-        if (ioctl(fd_stream_clocks, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (read)");
-        if (ioctl(fd_stream_clocks, SPI_IOC_WR_MAX_SPEED_HZ, &speed_stream) < 0)
-            lime::error("Failed to set SPI write max speed");
-        if (ioctl(fd_stream_clocks, SPI_IOC_RD_MAX_SPEED_HZ, &speed_stream) < 0)
-            lime::error("Failed to set SPI read max speed");
+        if ((fd_stream_clocks = open("/dev/spidev0.1", O_RDWR)) != -1)
+        {
+            if (ioctl(fd_stream_clocks, SPI_IOC_WR_MODE, &mode) < 0)
+                lime::error("Failed to set SPI write mode");
+            if (ioctl(fd_stream_clocks, SPI_IOC_RD_MODE, &mode) < 0)
+                lime::error("Failed to set SPI read mode");
+            if (ioctl(fd_stream_clocks, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
+                lime::error("Failed to set SPI bits per word (write)");
+            if (ioctl(fd_stream_clocks, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
+                lime::error("Failed to set SPI bits per word (read)");
+            if (ioctl(fd_stream_clocks, SPI_IOC_WR_MAX_SPEED_HZ, &speed_stream) < 0)
+                lime::error("Failed to set SPI write max speed");
+            if (ioctl(fd_stream_clocks, SPI_IOC_RD_MAX_SPEED_HZ, &speed_stream) < 0)
+                lime::error("Failed to set SPI read max speed");
+        }
     }
+    else if((fd_stream = open("/dev/lime_spi", O_RDWR)) < 0)
+        lime::error("Failed to open /dev/lime_spi");
 
     if ((fd_control_fpga = open("/dev/spidev1.0", O_RDWR)) != -1)
     {
@@ -160,21 +161,6 @@ int ConnectionSPI::Open(const unsigned index)
             lime::error("Failed to set SPI read max speed");
     }
 
-    if ((fd_control_dac = open("/dev/spidev1.2", O_RDWR)) != -1)
-    {
-        if (ioctl(fd_control_dac, SPI_IOC_WR_MODE, &mode) < 0)
-            lime::error("Failed to set SPI write mode");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_MODE, &mode) < 0)
-            lime::error("Failed to set SPI read mode");
-        if (ioctl(fd_control_dac, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (write)");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_BITS_PER_WORD, &bits) < 0)
-            lime::error("Failed to set SPI bits per word (read)");
-        if (ioctl(fd_control_dac, SPI_IOC_WR_MAX_SPEED_HZ, &speed_control) < 0)
-            lime::error("Failed to set SPI write max speed");
-        if (ioctl(fd_control_dac, SPI_IOC_RD_MAX_SPEED_HZ, &speed_control) < 0)
-            lime::error("Failed to set SPI read max speed");
-    }
     return IsOpen() ? 0 : -1;
 }
 
@@ -182,16 +168,18 @@ int ConnectionSPI::Open(const unsigned index)
 */
 void ConnectionSPI::Close()
 {
-	if (fd_stream != -1)
-		close(fd_stream);
-	if (fd_stream_clocks != -1)
-		close(fd_stream_clocks);
-	if (fd_control_lms != -1)
-		close(fd_control_lms);
-	if (fd_control_fpga != -1)
-		close(fd_control_fpga);
-	if (fd_control_dac != -1)
-		close(fd_control_dac);
+    if (fd_stream != -1)
+        close(fd_stream);
+    if (fd_stream_clocks != -1)
+        close(fd_stream_clocks);
+    if (fd_control_lms != -1)
+        close(fd_control_lms);
+    if (fd_control_fpga != -1)
+        close(fd_control_fpga);
+    fd_stream = -1;
+    fd_stream_clocks = -1;
+    fd_control_lms = -1;
+    fd_control_fpga = -1;
 }
 
 /** @brief Returns connection status
@@ -199,7 +187,7 @@ void ConnectionSPI::Close()
 */
 bool ConnectionSPI::IsOpen()
 {
-    if (fd_stream < 0 || fd_stream_clocks < 0 || fd_control_lms < 0 || fd_control_fpga < 0)
+    if (fd_stream < 0 || fd_control_lms < 0 || fd_control_fpga < 0)
         return false;
     return true;
 }
@@ -230,7 +218,7 @@ int ConnectionSPI::TransferSPI(int fd, const void *tx, void *rx, uint32_t len)
     spi_ioc_transfer tr = { (unsigned long)tx,
                             (unsigned long)rx,
                             len,
-                            2000000,
+                            SPI_CTRL_SPEED_HZ,
                             0,
                             8 };
     int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
@@ -259,7 +247,6 @@ int ConnectionSPI::WriteADF4002SPI(const uint32_t *data, const size_t size)
 
     uint8_t readData[3];
     uint8_t writeData[3];
-    int ret = 0;
     for (unsigned i = 0; i < size; i++)
     {
     	writeData[0] = (data[i]>>16)&0xff;
@@ -279,7 +266,7 @@ int ConnectionSPI::WriteADF4002SPI(const uint32_t *data, const size_t size)
 /***********************************************************************
  * LMS7002M SPI access
  **********************************************************************/
-int ConnectionSPI::WriteLMS7002MSPI(const uint32_t *data, size_t size, unsigned periphID)
+int ConnectionSPI::WriteLMS7002MSPI(const uint32_t *data, size_t size, unsigned /*periphID*/)
 {
     uint32_t* readData = new uint32_t[size];
     uint8_t* writeData = new uint8_t[size*4];
@@ -420,7 +407,7 @@ int ConnectionSPI::CustomParameterWrite(const uint8_t *ids, const double *vals, 
             uint8_t  tx[3] = {0, (dac_value>>8), (dac_value&0xFF)};
             SetChipSelect(1);
             lime::info("DAC write: %d", dac_value);
-            if (TransferSPI(fd_control_dac, &tx, &rx, 3) != 3)
+            if (TransferSPI(fd_control_lms, &tx, &rx, 3) != 3)
             {
                 lime::error("Write DAC: SPI transfer error");
                 ret = -1;
@@ -445,7 +432,7 @@ DeviceInfo ConnectionSPI::GetDeviceInfo(void)
     info.gatewareTargetBoard = GetDeviceName(eLMS_DEV(vals[0]));
     info.gatewareVersion = std::to_string(vals[1]);
     info.gatewareRevision = std::to_string(vals[2]);
-    info.hardwareVersion = std::to_string(vals[3]&0xF) + "BOM " + std::to_string(vals[3]>>4);
+    info.hardwareVersion = std::to_string(vals[3]&0xF) + " BOM " + std::to_string(vals[3]>>4);
     return info;
 }
 
@@ -462,6 +449,29 @@ int ConnectionSPI::DeviceReset(int ind)
 
 int ConnectionSPI::ResetStreamBuffers()
 {
+    if (fd_stream_clocks < 0) //lime spi
+    {
+        if (fd_stream != -1)
+            close(fd_stream);
+        if((fd_stream = open("/dev/lime_spi", O_RDWR)) < 0)
+        {
+            lime::error("Failed to open /dev/lime_spi");
+            return -1;
+        }
+        return 0;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mTxStreamLock);
+        txQueue = std::queue<FPGA_DataPacket>();
+    }
+    {
+        std::lock_guard<std::mutex> lock(mRxStreamLock);
+        rxQueue = std::queue<FPGA_DataPacket>();
+    }
+    program_mode.store(false);
+    last_flags = 0x10; //no sync
+    rx_timestamp = 0;
     return 0;
 }
 
@@ -534,6 +544,8 @@ int ConnectionSPI::BeginDataReading(char* buffer, uint32_t length, int ep)
 
 bool ConnectionSPI::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
+    if (fd_stream_clocks < 0) //lime spi
+        return true;
     auto t1 = chrono::high_resolution_clock::now();
     do
     {
@@ -545,11 +557,24 @@ bool ConnectionSPI::WaitForReading(int contextHandle, unsigned int timeout_ms)
         std::this_thread::sleep_for(std::chrono::microseconds(250));
     }
     while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < timeout_ms);
-    return false;
+        return false;
 }
 
 int ConnectionSPI::FinishDataReading(char* buffer, uint32_t length, int contextHandle)
 {
+    if (fd_stream_clocks < 0) //lime spi
+    {
+        auto t1 = chrono::high_resolution_clock::now();
+        do
+        {
+            int cnt = read(fd_stream, buffer, sizeof(FPGA_DataPacket));
+            if (cnt >= 0)
+                return cnt;
+            std::this_thread::sleep_for(std::chrono::microseconds(300));
+        }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < 3000);
+        return 0;
+    }
+
     FPGA_DataPacket* packet = reinterpret_cast<FPGA_DataPacket*>(buffer);
     std::lock_guard<std::mutex> lock(mRxStreamLock);
     if (!rxQueue.empty())
@@ -563,6 +588,18 @@ int ConnectionSPI::FinishDataReading(char* buffer, uint32_t length, int contextH
 
 int ConnectionSPI::BeginDataSending(const char* buffer, uint32_t length, int ep)
 {
+    if (fd_stream_clocks < 0) //lime spi
+    {
+        auto t1 = chrono::high_resolution_clock::now();
+        do
+        {
+            int cnt = write(fd_stream, buffer, sizeof(FPGA_DataPacket));
+            if (cnt >= 0)
+                return cnt;
+            std::this_thread::sleep_for(std::chrono::microseconds(300));
+        }while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < 3000);
+        return 0;
+    }
     const FPGA_DataPacket* packet = reinterpret_cast<const FPGA_DataPacket*>(buffer);
     std::lock_guard<std::mutex> lock(mTxStreamLock);
     if (txQueue.size() < 10)
@@ -573,8 +610,11 @@ int ConnectionSPI::BeginDataSending(const char* buffer, uint32_t length, int ep)
     return 0;
 }
 
+
 bool ConnectionSPI::WaitForSending(int contextHandle, uint32_t timeout_ms)
 {
+    if (fd_stream_clocks < 0) //lime spi
+        return true;
     auto t1 = chrono::high_resolution_clock::now();
     do
     {
@@ -596,15 +636,18 @@ int ConnectionSPI::FinishDataSending(const char* buffer, uint32_t length, int co
 
 void ConnectionSPI::StreamISR()
 {
+    if (program_mode.load())
+    {
+        program_ready.store(true);
+        return;
+    }
     static const FPGA_DataPacket dummy_packet = {0};
-    static char last_flags = 0x10; // no sync by default
     FPGA_DataPacket rx_packet;
     FPGA_DataPacket tx_packet;
-    static uint64_t rx_timestamp = 1360;
     while (1)
     {
         pthis->mTxStreamLock.lock();
-        if (pthis->txQueue.empty())
+        if (pthis->txQueue.empty() || (!(tx_packet.reserved[0]&0x10) && pthis->txQueue.front().counter > rx_timestamp+12000))
         {
             pthis->mTxStreamLock.unlock();
             tx_packet = dummy_packet;
@@ -616,7 +659,7 @@ void ConnectionSPI::StreamISR()
             last_flags = tx_packet.reserved[0];
             pthis->txQueue.pop();
             pthis->mTxStreamLock.unlock();
-            if (tx_packet.counter < rx_timestamp+5*1360)
+            if (!(tx_packet.reserved[0]&0x10) && tx_packet.counter < rx_timestamp+5000)
                 continue;
         }
         break;
@@ -659,28 +702,34 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
         lime::error("Unsupported programming target");
         return -1;
     }
-    if (prog_mode != 1)
+    if ((prog_mode != 1 || fd_stream_clocks < 0) && prog_mode != 2)
     {
         lime::error("Programming mode not supported");
         return -1;
     }
 
-    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::ProgramISR);
     uint32_t addr = 0x7F;
     uint32_t val = 0x00;
     WriteRegisters(&addr, &val, 1);
     val = 0x01;
     WriteRegisters(&addr, &val, 1);
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    program_ready.store(false);
+    if (prog_mode != 2)
+    {
+        program_mode.store(true);
+        program_ready.store(false);
+    }
     val = 0x00;
     WriteRegisters(&addr, &val, 1);
     val = 0x01;
     WriteRegisters(&addr, &val, 1);
+
+    if (prog_mode == 2)
+        return 0;
+
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     static unsigned char rx_buffer[4096];
-
     const int sizeUFM = 0x8000;
     const int sizeCFM0 = 0x42000;
     const int startUFM = 0x1000;
@@ -696,9 +745,10 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
     memcpy(buffer.data() + sizeUFM, data + startCFM0, sizeCFM0);
 
     unsigned data_sent = 0;
+    int ret = 0;
     while (data_sent < buffer.size())
     {
-        int cnt = 0;
+        unsigned cnt = 0;
         auto t1 = chrono::high_resolution_clock::now();
         while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < 3000)
             if (program_ready.load())
@@ -731,22 +781,19 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
         if (cnt == 0)
         {
             lime::error("timeout");
+            ret = -1;
             break;
         }
         if(cb && cb(data_sent, buffer.size(), ""))
         {
             lime::info("aborted");
+            ret = -1;
             break;
         }
     }
-
-    wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
-    return 0;
+    program_mode.store(false);
+    return ret;
 }
 
-void ConnectionSPI::ProgramISR()
-{
-    pthis->program_ready.store(true);
-}
 
 

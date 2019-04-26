@@ -231,7 +231,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
     {
         uint8_t id = BOARD_PARAM_DAC;
         double dval;
-        if (conn->CustomParameterWrite(&id, &dval, 1, "")!=LMS_SUCCESS)
+        if (conn->CustomParameterRead(&id, &dval, 1, nullptr)!=LMS_SUCCESS)
             return -1;
         *val = dval;
     }

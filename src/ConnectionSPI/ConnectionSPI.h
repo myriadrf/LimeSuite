@@ -31,6 +31,11 @@ public:
     void Close();
     bool IsOpen();
     int GetOpenedIndex();
+    enum
+    {
+        SPIDEV = 1,
+        LIMESPI = 2
+    };
 
     int WriteLMS7002MSPI(const uint32_t *writeData, size_t size, unsigned periphID = 0) override;
     int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
@@ -65,14 +70,15 @@ private:
     int WriteADF4002SPI(const uint32_t *writeData, const size_t size);
     static int TransferSPI(int fd, const void *tx, void *rx, uint32_t len);
     static ConnectionSPI* pthis;
+    static char last_flags;
+    static uint64_t rx_timestamp;
     static void StreamISR();
-    static void ProgramISR();
-    std::atomic<bool> program_ready;
+    static std::atomic<bool> program_ready;
+    static std::atomic<bool> program_mode;
     int fd_stream;
     int fd_stream_clocks;
     int fd_control_lms;
     int fd_control_fpga;
-    int fd_control_dac;
     int dac_value;
     int int_pin;
     std::mutex mTxStreamLock;
@@ -80,6 +86,8 @@ private:
     
     std::queue<FPGA_DataPacket> rxQueue;
     std::queue<FPGA_DataPacket> txQueue;  
+    
+
 };
 
 class ConnectionSPIEntry : public ConnectionRegistryEntry
