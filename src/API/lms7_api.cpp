@@ -196,12 +196,10 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
 {
-    int ret = LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "");
-
-    auto conn = CheckConnection(device);
-    if (conn == nullptr)
+    if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "")<0)
         return -1;
 
+    auto conn = CheckConnection(device);
     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
     if (port) //can use LMS64C protocol to write eeprom value
     {
@@ -211,7 +209,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
         if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
             return -1;
     }
-    return ret;
+    return LMS_SUCCESS;
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
