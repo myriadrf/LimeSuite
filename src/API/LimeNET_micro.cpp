@@ -15,6 +15,11 @@ namespace lime
 LMS7_LimeNET_micro::LMS7_LimeNET_micro(lime::IConnection* conn, LMS7_Device *obj):
     LMS7_LimeSDR_mini(conn, obj)
 {
+    if (lms_list[0]->GetReferenceClk_SX(false) < 0)
+    {
+        lime::info("Reference clock set to 30.72 MHz");
+        lms_list[0]->SetReferenceClk_SX(false, 30.72e6);
+    }
 }
 
 int LMS7_LimeNET_micro::Init()
@@ -162,12 +167,21 @@ int LMS7_LimeNET_micro::AutoRFPath(bool isTx, double f_Hz)
         return 0;
     if ((!isTx) && (f_Hz < 1.7e9))
     {
-        lime::info("Selected RX path: LNAL");
-        int ret = SetPath(false, 0, LMS_PATH_LNAL);
+        int ret = 0;
+        if (GetPath(false, 0)!= LMS_PATH_LNAL)
+        {
+            lime::info("Selected RX path: LNAL");
+            ret = SetPath(false, 0, LMS_PATH_LNAL);
+        }
         auto_rx_path = true;
         return ret;
     }
     return LMS7_LimeSDR_mini::AutoRFPath(isTx, f_Hz);
+}
+
+int LMS7_LimeNET_micro::SetClockFreq(unsigned clk_id, double freq, int channel)
+{
+    return LMS7_Device::SetClockFreq(clk_id, freq, channel);
 }
 
 }//namespace lime
