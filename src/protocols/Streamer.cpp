@@ -608,6 +608,7 @@ int Streamer::UpdateThreads(bool stopAll)
         const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         fpga->StartStreaming();
         fpga->WriteRegisters(addr, data, 2);
+        lms->ResetLogicregisters();
     }
     else if(not needTx and not needRx)
     {
