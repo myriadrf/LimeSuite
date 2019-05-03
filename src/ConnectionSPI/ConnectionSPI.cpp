@@ -1,37 +1,26 @@
 /**
-    @file ConnectionSTREAM.cpp
+    @file ConnectionSPI.cpp
     @author Lime Microsystems
-    @brief Implementation of STREAM board connection.
+    @brief Implementation of RPi 3 SPI connection for LimeNET-Micro.
 */
 
-#include "ConnectionSPI.h"
 #include <linux/spi/spidev.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/ioctl.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <cstring>
-#include <iostream>
-#include <wiringPi.h>
-#include <FPGA_common.h>
-#include "Logger.h"
-
 #include <fstream>
-#include <thread>
-#include <chrono>
-#include <iomanip>
-#include <sstream>
+#include <wiringPi.h>
 
-#include <sys/resource.h>
+#include "Logger.h"
+#include "lime_spi.h"
+#include "ConnectionSPI.h"
+#include "SystemResources.h"
 
 using namespace std;
-
 using namespace lime;
 
 #define SPI_STREAM_SPEED_HZ 50000000
-#define SPI_CTRL_SPEED_HZ 1000000
+#define SPI_CTRL_SPEED_HZ   1000000
 
 ConnectionSPI* ConnectionSPI::pthis = nullptr;
 char ConnectionSPI::last_flags = 0x10;  //no sync
@@ -64,7 +53,7 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
                 int_pin = 12;
         }
 
-        wiringPiSetup();
+        wiringPiSetup(); 
         pinMode(int_pin, INPUT);
         pullUpDnControl(int_pin, PUD_OFF);
         wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
@@ -702,7 +691,7 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
         lime::error("Unsupported programming target");
         return -1;
     }
-    if ((prog_mode != 1 || fd_stream_clocks < 0) && prog_mode != 2)
+    if (prog_mode != 1 && prog_mode != 2)
     {
         lime::error("Programming mode not supported");
         return -1;
@@ -716,9 +705,17 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     if (prog_mode != 2)
     {
-        program_mode.store(true);
-        program_ready.store(false);
+        if (fd_stream_clocks < 0)
+        {
+            ioctl(fd_stream, IOCTL_PROGSTART, 0);
+        }
+        else
+        {
+            program_mode.store(true);
+            program_ready.store(false);
+        }
     }
+
     val = 0x00;
     WriteRegisters(&addr, &val, 1);
     val = 0x01;
@@ -748,10 +745,21 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
     int ret = 0;
     while (data_sent < buffer.size())
     {
-        unsigned cnt = 0;
+        int cnt = 0;
         auto t1 = chrono::high_resolution_clock::now();
+
         while (std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - t1).count() < 3000)
-            if (program_ready.load())
+        {
+            if (fd_stream_clocks < 0) //lime_spi
+            {
+                cnt = write(fd_stream, &buffer[data_sent], sizeof(FPGA_DataPacket));
+                std::this_thread::sleep_for(std::chrono::milliseconds(85));
+                if (cnt > 0)
+                    break;
+                cnt = 0;
+
+            }
+            else if (program_ready.load())
             {
                 cnt = buffer.size() - data_sent;
                 if (cnt > 4096)
@@ -775,15 +783,16 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
                                             8 };
                     ioctl(pthis->fd_stream_clocks, SPI_IOC_MESSAGE(1), &tr);
                 }
-                data_sent +=cnt;
                 break;
             }
-        if (cnt == 0)
+        }
+        if (cnt <= 0)
         {
             lime::error("timeout");
             ret = -1;
             break;
         }
+        data_sent +=cnt;
         if(cb && cb(data_sent, buffer.size(), ""))
         {
             lime::info("aborted");
@@ -791,8 +800,73 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
             break;
         }
     }
-    program_mode.store(false);
+
+    if (fd_stream_clocks < 0)   //lime_spi
+        ioctl(fd_stream, IOCTL_PROGSTOP, 0);
+    else
+        program_mode.store(false);
     return ret;
+}
+
+
+int ConnectionSPI::ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback)
+{
+    const int updateGW = 1;
+    const int updateGWr = 2;
+    const std::string image = "LimeNET-Micro_lms7_trx_HW_2.1_SPI.rpd";
+
+    const uint32_t addrs[] = {1, 2};
+    uint32_t vals[2] = {0};
+
+    ReadRegisters(addrs, vals, 2);
+
+    int gwVersion = vals[0];
+    int gwRevision = vals[1];
+
+    //download images when missing
+    if (download && lime::locateImageResource(image).empty())
+    {
+        const std::string msg("Downloading: " + image);
+        if (callback)
+            callback(0, 1, msg.c_str());
+        int ret = lime::downloadImageResource(image);
+        if (ret != 0)
+            return ret; //error set by download call
+        if (callback)
+            callback(1, 1, "Done!");
+    }
+
+    if (!force && gwVersion == updateGW && gwRevision == updateGWr)
+    {
+        lime::info("Existing gateware is same as update (%d.%d)", updateGW, updateGWr);
+    }
+    else        //load gateware into flash
+    {
+        if (callback)
+            callback(0, 1, image.c_str());
+        //open file
+        std::ifstream file;
+        const auto path = lime::locateImageResource(image);
+        file.open(path.c_str(), std::ios::in | std::ios::binary);
+        if (not file.good()) return lime::ReportError("Error opening %s", path.c_str());
+        //read file
+        std::streampos fileSize;
+        file.seekg(0, std::ios::end);
+        fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::vector<char> progData(fileSize, 0);
+        file.read(progData.data(), fileSize);
+
+        int device = 2; //FPGA
+        int progMode = 1; //FLASH
+        auto status = this->ProgramWrite(progData.data(), progData.size(), progMode, device, callback);
+        if (status != 0)
+            return status;
+        if (callback)
+            callback(1, 1, "Done!");
+    }
+
+    return 0;
 }
 
 
