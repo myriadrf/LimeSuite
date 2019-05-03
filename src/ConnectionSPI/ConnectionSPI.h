@@ -1,23 +1,17 @@
 /**
-    @file ConnectionSTREAM.h
+    @file ConnectionSPI.h
     @author Lime Microsystems
-    @brief Implementation of STREAM board connection.
 */
 
 #pragma once
-#include <ConnectionRegistry.h>
-#include "LMS64CProtocol.h"
-#include <vector>
-#include <string>
-#include <atomic>
-#include <memory>
-#include <thread>
-#include "dataTypes.h"
 
+#include <atomic>
 #include <mutex>
-#include <condition_variable>
-#include <chrono>
 #include <queue>
+
+#include "ConnectionRegistry.h"
+#include "LMS64CProtocol.h"
+#include "dataTypes.h"
 
 namespace lime{
 
@@ -48,6 +42,7 @@ public:
     int ResetStreamBuffers() override;
     int ProgramWrite(const char *data, size_t length, int progMode, int ind, ProgrammingCallback cb) override;
     int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
+    int ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback) override;
 protected:
     int GetBuffersCount() const override;
     int CheckStreamSize(int size) const override;
@@ -83,11 +78,8 @@ private:
     int int_pin;
     std::mutex mTxStreamLock;
     std::mutex mRxStreamLock;
-    
     std::queue<FPGA_DataPacket> rxQueue;
     std::queue<FPGA_DataPacket> txQueue;  
-    
-
 };
 
 class ConnectionSPIEntry : public ConnectionRegistryEntry
@@ -100,8 +92,6 @@ public:
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle &hint);
 
     IConnection *make(const ConnectionHandle &handle);
-
-private:
 };
 
 }
