@@ -6,6 +6,7 @@ if(ENABLE_QUICKTEST)
 		   LimeSDRTest.cpp
 		   LimeSDRTest_Mini.cpp
 		   LimeSDRTest_USB.cpp
+		   LimeNET_Micro_Test.cpp
         	   TestGUI.cpp
 		   resources/resource.rc
 		   ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c)
