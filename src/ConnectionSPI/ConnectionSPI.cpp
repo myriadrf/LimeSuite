@@ -53,7 +53,7 @@ ConnectionSPI::ConnectionSPI(const unsigned index) :
                 int_pin = 12;
         }
 
-        wiringPiSetup(); 
+        wiringPiSetup();
         pinMode(int_pin, INPUT);
         pullUpDnControl(int_pin, PUD_OFF);
         wiringPiISR(int_pin, INT_EDGE_RISING, &ConnectionSPI::StreamISR);
@@ -648,7 +648,7 @@ void ConnectionSPI::StreamISR()
             last_flags = tx_packet.reserved[0];
             pthis->txQueue.pop();
             pthis->mTxStreamLock.unlock();
-            if (!(tx_packet.reserved[0]&0x10) && tx_packet.counter < rx_timestamp+5000)
+            if (!(tx_packet.reserved[0]&0x10) && tx_packet.counter < rx_timestamp+6000)
                 continue;
         }
         break;
@@ -812,8 +812,8 @@ int ConnectionSPI::ProgramWrite(const char *data, size_t length, int prog_mode, 
 int ConnectionSPI::ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback)
 {
     const int updateGW = 1;
-    const int updateGWr = 2;
-    const std::string image = "LimeNET-Micro_lms7_trx_HW_2.1_SPI.rpd";
+    const int updateGWr = 3;
+    const std::string image = "LimeNET-Micro_lms7_trx_HW_2.1_SPI_r1.3.rpd";
 
     const uint32_t addrs[] = {1, 2};
     uint32_t vals[2] = {0};

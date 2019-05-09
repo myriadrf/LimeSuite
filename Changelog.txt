@@ -1,3 +1,20 @@
+Release 19.04.0 (2019-05-09)
+==========================
+
+LimeSuite library changes:
+- Added support for LimeNet-Micro v2.1
+- Fixed Tx ch.B calibration when Rx ch.B is disabled 
+- Added save and restore of analog DC/IQ calibration values when saving/loading INI file
+- Fixed Rx only mode not working on LimeSDR-USB with sample rate <2.5 MSps
+
+LimeSuiteGUI:
+- Updated "Board controls" panel for LimeNet-Micro
+
+Other changes
+- Added LimeNET-Micro support to LimeQuickTest
+- LimeSDR-USB v1.4 updated to r2.21 gateware
+- LimeSDR-Mini updated to r1.30 gateware
+
 Release 19.01.0 (2019-01-08)
 ==========================
 
@@ -23,7 +40,7 @@ SoapyLMS:
 - Update to soapysdr0.7 module ABI
 - add manual DC/IQ calibrations
 
-Other changes:
+v
 - LimeUtil: fix LimeSDR-Mini not exiting programming mode after flashing FPGA
 - LimeQuickTest: test 1st board when multiple boards are detected (instead of exiting)
 - Add Octave plugin to CMake build
