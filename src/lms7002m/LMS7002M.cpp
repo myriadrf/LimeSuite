@@ -2717,8 +2717,8 @@ float_type LMS7002M::GetTemperature()
     float Vptat = reg606 & 0xFF;
     Vptat *= 1.84;
     float Vdiff = Vptat-Vtemp;
-    Vdiff /= 3.9;
-    float temperature = 50.7+Vdiff;
+    Vdiff /= 1.05;
+    float temperature = 45.0+Vdiff;
     Modify_SPI_Reg_bits(LMS7_MUX_BIAS_OUT, biasMux);
     lime::debug("Vtemp 0x%04X, Vptat 0x%04X, Vdiff = %.2f, temp= %.3f", (reg606 >> 8) & 0xFF, reg606 & 0xFF, Vdiff, temperature);
     return temperature;
