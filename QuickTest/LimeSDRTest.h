@@ -50,7 +50,7 @@ protected:
     static void UpdateStatus(int event, const char* msg = nullptr);
     int InitFPGATest(unsigned test, double timeout);
     int GPIFClkTest();
-    int VCTCXOTest();
+    virtual int VCTCXOTest();
     bool RunTest(float &peakval, float &peakFreq, int ch = 0);
     static std::string RFTestInfo(const RFTestData& data, bool passed);	
     lime::LMS7_Device* device;
@@ -86,11 +86,22 @@ class LimeSDRTest_Mini : public LimeSDRTest
 class LimeSDRTest_USB : public LimeSDRTest
 {
     friend class LimeSDRTest;
-    LimeSDRTest_USB(lime::LMS7_Device* dev):LimeSDRTest(dev){};
+
     int ClockNetworkTest() override;
     int RFTest() override;
     int Si5351CTest();
+protected:
     int ADF4002Test();
+    LimeSDRTest_USB(lime::LMS7_Device* dev):LimeSDRTest(dev){}; 
+};
+
+class LimeNET_Micro_Test : public LimeSDRTest_USB
+{
+    friend class LimeSDRTest;
+    LimeNET_Micro_Test(lime::LMS7_Device* dev):LimeSDRTest_USB(dev){};
+    int ClockNetworkTest() override;
+    int VCTCXOTest() override;
+    int RFTest() override;
 };
 
 #endif /* LIMESDRTEST_H */

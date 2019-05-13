@@ -174,12 +174,12 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
                            uint8_t param_id, float_type *val, lms_name_t units)
 {
     auto conn = CheckConnection(device);
-    std::string str;
     if (conn == nullptr)
         return -1;
-
+    std::string str;
     int ret=conn->CustomParameterRead(&param_id,val,1,&str);
-    strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
+    if (units)
+        strncpy(units,str.c_str(),sizeof(lms_name_t)-1);
     return ret;
 }
 
@@ -196,19 +196,20 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
 
 API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
 {
-    int ret = LMS_WriteCustomBoardParam(device, 0, val, "");
+    if (LMS_WriteCustomBoardParam(device, BOARD_PARAM_DAC, val, "")<0)
+        return -1;
 
     auto conn = CheckConnection(device);
-    if (conn == nullptr)
-        return -1;
-
     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-    unsigned char packet[64] = {0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};//packet: eeprom write 2 btes, addr 16
-    packet[32] = val&0xFF;              //values start at offset=32
-    packet[33] = val>>8;
-    if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-        return -1;
-    return ret;
+    if (port) //can use LMS64C protocol to write eeprom value
+    {
+        unsigned char packet[64] = {0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};//packet: eeprom write 2 btes, addr 16
+        packet[32] = val&0xFF;              //values start at offset=32
+        packet[33] = val>>8;
+        if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+            return -1;
+    }
+    return LMS_SUCCESS;
 }
 
 API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
@@ -217,10 +218,21 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
     if (!conn)
         return -1;
     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
-    unsigned char packet[64] = {0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3}; //packet: eeprom read 2 bytes, addr 16
-    if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-        return -1;
-    *val = packet[32] | (packet[33]<<8); //values start at offset=32
+    if (port) //can use LMS64C protocol to read eeprom value
+    {
+        unsigned char packet[64] = {0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3}; //packet: eeprom read 2 bytes, addr 16
+        if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+            return -1;
+        *val = packet[32] | (packet[33]<<8); //values start at offset=32
+    }
+    else //fall back to reading runtime value
+    {
+        uint8_t id = BOARD_PARAM_DAC;
+        double dval;
+        if (conn->CustomParameterRead(&id, &dval, 1, nullptr)!=LMS_SUCCESS)
+            return -1;
+        *val = dval;
+    }
     return LMS_SUCCESS;
 }
 
@@ -648,9 +660,11 @@ API_EXPORT int CALL_CONV LMS_ReadFPGAReg(lms_device_t *device, uint32_t address,
     lime::LMS7_Device* lms = CheckDevice(device);
     if (!lms)
         return -1;
-    *val = lms->ReadFPGAReg(address);
-    if (*val < 0)
-        return *val;
+    int value = lms->ReadFPGAReg(address);
+    if (value < 0)
+        return value; // operation failed return error code
+    else if (val)
+        *val = value;
     return LMS_SUCCESS;
 }
 

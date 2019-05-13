@@ -67,23 +67,32 @@ LimeSDRTest* LimeSDRTest::Connect()
         return nullptr;
     }
 
-    std::string str = "->Device: ";
-    str += handles[0].serialize();
-    UpdateStatus(LMS_TEST_INFO, str.c_str());
-    if (str.find("USB 3") == std::string::npos)
-    {
-        str = "Warning: USB3 not available";
-        UpdateStatus(LMS_TEST_INFO, str.c_str());
-    }
-    UpdateStatus(LMS_TEST_LOGFILE, handles[0].serial.c_str());
-
     auto info = dev->GetInfo();
+    if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
+        || strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
+    {
+        std::string str = "->Device: ";
+        str += handles[0].serialize();
+        UpdateStatus(LMS_TEST_INFO, str.c_str());
+        if (str.find("USB 3") == std::string::npos)
+        {
+            str = "Warning: USB3 not available";
+            UpdateStatus(LMS_TEST_INFO, str.c_str());
+        }
+        UpdateStatus(LMS_TEST_LOGFILE, handles[0].serial.c_str());
+    }
+
     if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
         return new LimeSDRTest_USB(dev);
     else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
         return new LimeSDRTest_Mini(dev);
+    else if (handles[0].media.find("USB")!=std::string::npos && strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMENET_MICRO)))
+        return new LimeNET_Micro_Test(dev);
     else
+    {
+        UpdateStatus(LMS_TEST_FAIL, "Board not supported");
         return nullptr;
+    }
 
 }
 

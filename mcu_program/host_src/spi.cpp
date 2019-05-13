@@ -36,7 +36,7 @@ unsigned short SPI_read (unsigned short spiAddrReg)
 
 void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data, const uint16_t spiDataReg)
 {
-    const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
+    const uint16_t spiMask = (~(~0u << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     //spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
     if(batchActive)
@@ -65,7 +65,7 @@ void Modify_SPI_Reg_bits_WrOnly(const uint16_t SPI_reg_addr, const uint8_t bits,
 void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const uint16_t new_bits_data)
 {
     uint16_t spiDataReg = SPI_read(SPI_reg_addr); //read current SPI reg data
-    const uint16_t spiMask = (~(~0 << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
+    const uint16_t spiMask = (~(~0u << ((bits>>4)-(bits&0xF)+1))) << (bits&0xF); // creates bit mask
     spiDataReg = (spiDataReg & (~spiMask)) | ((new_bits_data << (bits&0xF)) & spiMask) ;//clear bits
 
     if(batchActive)
@@ -93,7 +93,7 @@ void Modify_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits, const 
 
 uint16_t Get_SPI_Reg_bits(const uint16_t SPI_reg_addr, const uint8_t bits)
 {
-    return (SPI_read(SPI_reg_addr) & (~(~0<<((bits>>4)+1)))) >> (bits&0xF); //shift bits to LSB
+    return (SPI_read(SPI_reg_addr) & (~(~0u<<((bits>>4)+1)))) >> (bits&0xF); //shift bits to LSB
 }
 
 
@@ -119,9 +119,9 @@ void SPI_write_batch(const uint16_t *addr, const uint16_t *values, uint8_t cnt)
         if(batchActive)
         {
             bool found = false;
-            for(size_t i=0; i<bAddr.size(); ++i)
+            for(size_t j=0; j<bAddr.size(); ++j)
             {
-                if(bAddr[i] == addr[i])
+                if(bAddr[j] == addr[i])
                 {
                     found = true;
                     bData[i] = values[i];
@@ -153,6 +153,7 @@ int BeginBatch(const char* name)
 
 void EndBatch()
 {
+    batchActive = false;
     //sort batch
     for(size_t i=0; i<bAddr.size(); ++i)
     {
@@ -174,6 +175,20 @@ void EndBatch()
                 bMask[i] = temp;
             }
         }
+    }
+
+    vector<uint16_t> zeroValued;
+    for(int i=0; i<bAddr.size(); ++i)
+    {
+        if(bMask[i] == 0xFFFF && bData[i] == 0x0)
+            zeroValued.push_back(i);
+    }
+    for(int i=zeroValued.size()-1; i>=0; --i)
+    {
+        bAddr.push_back(bAddr[zeroValued[i]]); // move zero valued registers to end
+        bAddr.erase(bAddr.begin()+zeroValued[i]);
+        bMask.erase(bMask.begin()+zeroValued[i]);
+        bData.erase(bData.begin()+zeroValued[i]);
     }
 
     char temp[64];

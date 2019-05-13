@@ -1355,14 +1355,13 @@ int LMS7_Device::Init()
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
             lms->SPI_write(i.adr, i.val, true);
-        lms->EnableChannel(true, false);
-
+        EnableChannel(true, 2*i, false);
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
             if (i.adr >= 0x100)
                 lms->SPI_write(i.adr, i.val, true);
-        lms->EnableChannel(false, false);
-        lms->EnableChannel(true, false);
+        EnableChannel(false, 2*i+1, false);
+        EnableChannel(true, 2*i+1, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     }
@@ -1561,16 +1560,19 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
 lms_dev_info_t* LMS7_Device::GetInfo()
 {
     memset(&devInfo,0,sizeof(lms_dev_info_t));
-    auto info = connection->GetDeviceInfo();
-    strncpy(devInfo.deviceName,info.deviceName.c_str(),sizeof(devInfo.deviceName)-1);
-    strncpy(devInfo.expansionName,info.expansionName.c_str(),sizeof(devInfo.expansionName)-1);
-    strncpy(devInfo.firmwareVersion,info.firmwareVersion.c_str(),sizeof(devInfo.firmwareVersion)-1);
-    strncpy(devInfo.hardwareVersion,info.hardwareVersion.c_str(),sizeof(devInfo.hardwareVersion)-1);
-    strncpy(devInfo.protocolVersion,info.protocolVersion.c_str(),sizeof(devInfo.protocolVersion)-1);
-    strncpy(devInfo.gatewareVersion, (info.gatewareVersion+"."+ info.gatewareRevision).c_str(), sizeof(devInfo.gatewareVersion) - 1);
-    strncpy(devInfo.gatewareTargetBoard,info.gatewareTargetBoard.c_str(),sizeof(devInfo.gatewareTargetBoard)-1);
-    info.boardSerialNumber = info.boardSerialNumber;
-    devInfo.boardSerialNumber = info.boardSerialNumber;
+    if (connection)
+    {
+        auto info = connection->GetDeviceInfo();
+        strncpy(devInfo.deviceName,info.deviceName.c_str(),sizeof(devInfo.deviceName)-1);
+        strncpy(devInfo.expansionName,info.expansionName.c_str(),sizeof(devInfo.expansionName)-1);
+        strncpy(devInfo.firmwareVersion,info.firmwareVersion.c_str(),sizeof(devInfo.firmwareVersion)-1);
+        strncpy(devInfo.hardwareVersion,info.hardwareVersion.c_str(),sizeof(devInfo.hardwareVersion)-1);
+        strncpy(devInfo.protocolVersion,info.protocolVersion.c_str(),sizeof(devInfo.protocolVersion)-1);
+        strncpy(devInfo.gatewareVersion, (info.gatewareVersion+"."+ info.gatewareRevision).c_str(), sizeof(devInfo.gatewareVersion) - 1);
+        strncpy(devInfo.gatewareTargetBoard,info.gatewareTargetBoard.c_str(),sizeof(devInfo.gatewareTargetBoard)-1);
+        info.boardSerialNumber = info.boardSerialNumber;
+        devInfo.boardSerialNumber = info.boardSerialNumber;
+    }
     return &devInfo;
 }
 

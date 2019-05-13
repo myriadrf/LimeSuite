@@ -223,7 +223,7 @@ std::complex<double> SoapyLMS7::getDCOffset(const int direction, const size_t ch
 
 bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) const
 {
-    return false;
+    return true;
 }
 
 void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance)
