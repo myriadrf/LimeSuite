@@ -643,7 +643,7 @@ void Streamer::TransmitPacketsLoop()
     const bool packed = dataLinkFormat == StreamConfig::FMT_INT12;
     const int epIndex = chipId;
     const uint8_t buffersCount = dataPort->GetBuffersCount();
-    const uint8_t packetsToBatch = dataPort->CheckStreamSize(rxBatchSize);
+    const uint8_t packetsToBatch = dataPort->CheckStreamSize(txBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     const uint32_t popTimeout_ms = 500;
 
