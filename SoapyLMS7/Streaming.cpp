@@ -49,7 +49,7 @@ std::vector<std::string> SoapyLMS7::getStreamFormats(const int direction, const 
 
 std::string SoapyLMS7::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
 {
-    fullScale = 2048;
+    fullScale = 32767;
     return SOAPY_SDR_CS16;
 }
 

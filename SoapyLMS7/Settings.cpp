@@ -709,6 +709,22 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(void) const
 {
     SoapySDR::ArgInfoList infos;
 
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "SAVE_CONFIG";
+        info.type = SoapySDR::ArgInfo::STRING;
+        info.description = "Save LMS settings to file";
+        infos.push_back(info);
+    }
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "LOAD_CONFIG";
+        info.type = SoapySDR::ArgInfo::STRING;
+        info.description = "Load LMS settings from file";
+        infos.push_back(info);
+    }
+
     return infos;
 }
 
@@ -820,13 +836,40 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(const int direction, const size_
     {
         SoapySDR::ArgInfo info;
         info.key = "TSP_CONST";
-        info.name = "TSP DC Level";
+        info.value = "16383";
         info.type = SoapySDR::ArgInfo::INT;
-        info.description = "Digital DC level in LMS7002M TSP chain.";
+        info.description = "Digital DC test signal level in LMS7002M TSP chain.";
         info.range = SoapySDR::Range(0, (1 << 15)-1);
         infos.push_back(info);
     }
 
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "CALIBRATE";
+        info.type = SoapySDR::ArgInfo::FLOAT;
+        info.description = " DC/IQ calibration bandwidth";
+        info.range = SoapySDR::Range(2.5e6, 120e6);
+        infos.push_back(info);
+    }
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "ENABLE_GFIR_LPF";
+        info.type = SoapySDR::ArgInfo::FLOAT;
+        info.description = "LPF bandwidth (must be set after sample rate)";
+        infos.push_back(info);
+    }
+
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "TSG_NCO";
+        info.value = "4";
+        info.description = "Enable NCO test signal";
+        info.type = SoapySDR::ArgInfo::INT;
+        info.options = {"-1", "4", "8"};
+        info.optionNames = {"OFF", "SR/4", "SR/8"};
+        infos.push_back(info);
+    }
     return infos;
 }
 
