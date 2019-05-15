@@ -58,10 +58,19 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
         lms7Device->EnableChannel(false, channel, true);
     }
 
-    //enable use of calibration value cache automatically
-    //or specify args[cacheCalibrations] == 0 to disable
-    const bool cacheEnable = args.count("cacheCalibrations") and std::stoi(args.at("cacheCalibrations")) != 0;
-    SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M calibration values caching %s", cacheEnable?"Enable":"Disable");
+    //disable use of value cache automatically
+    //or specify args[enableCache] == 1 to enable
+    bool cacheEnable = false;
+    if (args.count("cacheCalibrations"))
+    {
+        SoapySDR::logf(SOAPY_SDR_INFO, "'cacheCalibrations' setting is deprecated use 'enableCache' instead", devInfo->deviceName);
+        if (std::stoi(args.at("cacheCalibrations")))
+            cacheEnable = true;
+    }
+    else
+        cacheEnable = args.count("enableCache") && std::stoi(args.at("enableCache"))!= 0;
+
+    SoapySDR::logf(SOAPY_SDR_INFO, "LMS7002M register cache: %s", cacheEnable?"Enabled":"Disabled");
     lms7Device->EnableCache(cacheEnable);
 
     //give all RFICs a default state
