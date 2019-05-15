@@ -288,6 +288,7 @@ private:
     const std::string _moduleName;
     lime::LMS7_Device * lms7Device;
     double sampleRate;
+    int oversampling;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
 };

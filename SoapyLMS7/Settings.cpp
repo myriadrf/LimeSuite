@@ -34,7 +34,8 @@ using namespace lime;
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
     _deviceArgs(args),
     _moduleName(handle.module),
-    sampleRate(0.0)
+    sampleRate(0.0),
+    oversampling(0)   //auto
 {
     //connect
     SoapySDR::logf(SOAPY_SDR_INFO, "Make connection: '%s'", handle.ToString().c_str());
@@ -414,7 +415,7 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     sampleRate = rate;
-    lms7Device->SetRate(direction == SOAPY_SDR_TX,rate);
+    lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling);
     return;
 }
 
@@ -725,6 +726,15 @@ SoapySDR::ArgInfoList SoapyLMS7::getSettingInfo(void) const
         infos.push_back(info);
     }
 
+    {
+        SoapySDR::ArgInfo info;
+        info.key = "OVERSAMPLING";
+        info.type = SoapySDR::ArgInfo::INT;
+        info.description = "oversampling ratio (0 - auto)";
+        info.options = {"0", "1", "2", "4", "8", "16", "32"};
+        infos.push_back(info);
+    }
+
     return infos;
 }
 
@@ -818,6 +828,15 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
     else if (key == "LOAD_CONFIG")
     {
         lms7Device->LoadConfig(value.c_str());
+    }
+
+    else if (key == "OVERSAMPLING")
+    {
+        std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+        oversampling = std::stoi(value);
+        if (sampleRate > 0)
+            if (lms7Device->SetRate(sampleRate, oversampling)!= 0)
+                throw std::runtime_error(lime::GetLastErrorMessage());
     }
 
     else
