@@ -269,11 +269,12 @@ int SoapyLMS7::_readStreamAligned(
     const size_t elemSize = stream->elemSize;
     std::vector<size_t> numWritten(streamID.size(), 0);
 
-    for (size_t i = 0; i < streamID.size(); i += (numWritten[i]==numElems)?1:0)
+    for (size_t i = 0; i < streamID.size(); i += (numWritten[i]>=numElems)?1:0)
     {
         size_t &N = numWritten[i];
         const uint64_t expectedTime(requestTime + N);
-
+        if (numElems <= N)
+            continue;
         int status = streamID[i]->Read(buffs[i]+(elemSize*N), numElems-N,&md, timeoutMs);
         if (status == 0) return SOAPY_SDR_TIMEOUT;
         if (status < 0) return SOAPY_SDR_STREAM_ERROR;
