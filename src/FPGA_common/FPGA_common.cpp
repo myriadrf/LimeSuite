@@ -50,9 +50,8 @@ int FPGA::WriteRegister(uint32_t addr, uint32_t val)
 
 int FPGA::ReadRegister(uint32_t addr)
 {
-    uint32_t val = -1;
-    ReadRegisters(&addr, &val, 1);
-    return val;
+    uint32_t val;
+    return ReadRegisters(&addr, &val, 1) != 0 ? -1 : val;
 }
 
 int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt)

@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Feb 16 2016)
+// C++ code generated with wxFormBuilder (version Sep 24 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #include "wx/wxprec.h"
@@ -67,6 +67,10 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	wxMenuItem* mnuDeviceInfo;
 	mnuDeviceInfo = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Device Info") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuDeviceInfo );
+	
+	wxMenuItem* mnuAPIcalls;
+	mnuAPIcalls = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("API Calls") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuAPIcalls );
 	
 	wxMenuItem* mnuSPI;
 	mnuSPI = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("SPI") ) , wxEmptyString, wxITEM_NORMAL );
@@ -133,6 +137,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuPrograming->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
 	this->Connect( mnuFPGAcontrols->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
+	this->Connect( mnuAPIcalls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowAPICalls ) );
 	this->Connect( mnuSPI->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
 	this->Connect( mnuBoardControls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
 	this->Connect( menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
@@ -151,6 +156,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowAPICalls ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
 	this->Disconnect( idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
@@ -184,7 +190,7 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("LMS7002 Software "), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT1->Wrap( -1 );
-	ID_STATICTEXT1->SetFont( wxFont( 18, 70, 90, 90, false, wxEmptyString ) );
+	ID_STATICTEXT1->SetFont( wxFont( 18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 	
 	fgSizer4->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	

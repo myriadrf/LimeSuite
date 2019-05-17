@@ -32,9 +32,10 @@
 #include "lms7002_pnlRFE_view.h"
 #include "lms7002_pnlLimeLightPAD_view.h"
 #include "pnlBoardControls.h"
-#include <LMSBoards.h>
+#include "LMSBoards.h"
 #include <sstream>
-#include <pnlQSpark.h>
+#include "pnlQSpark.h"
+#include "pnlAPI.h"
 #include "lms7_device.h"
 
 using namespace std;
@@ -150,6 +151,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     myriad7 = nullptr;
     deviceInfo = nullptr;
     spi = nullptr;
+    api = nullptr;
     boardControlsGui = nullptr;
     lmsControl = new LMS7_Device();
 
@@ -247,6 +249,8 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         boardControlsGui->Initialize(lmsControl);
     if(programmer)
         programmer->SetConnection(lmsControl);
+    if(api)
+        api->Initialize(lmsControl);
 }
 
 
@@ -277,7 +281,6 @@ void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);
         evt.SetString(_("Connected ") + controlDev);
-        LMS_WriteParam(lmsControl, LMS7param(MAC), 1);
         wxPostEvent(this, evt);
         if (si5351gui)
             si5351gui->ModifyClocksGUI(info->deviceName);
@@ -608,6 +611,30 @@ void LMS7SuiteAppFrame::OnShowBoardControls(wxCommandEvent& event)
     }
 }
 
+void LMS7SuiteAppFrame::OnShowAPICalls( wxCommandEvent& event )
+{
+    if (api) //it's already opened
+    {
+        api->Show(true);
+        api->Iconize(false); // restore the window if minimized
+        api->SetFocus();  // focus on my window
+        api->Raise();  // bring window to front
+    }
+    else
+    {
+        api = new pnlAPI(this);
+        api->Initialize(lmsControl);
+        api->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnAPIClose), NULL, this);
+        api->Show();
+    }
+}
+
+void LMS7SuiteAppFrame::OnAPIClose(wxCloseEvent& event)
+{
+    api->Destroy();
+    api = nullptr;
+}
+
 void LMS7SuiteAppFrame::OnBoardControlsClose(wxCloseEvent& event)
 {
     boardControlsGui->Destroy();
@@ -618,5 +645,10 @@ void LMS7SuiteAppFrame::OnChangeCacheSettings(wxCommandEvent& event)
 {
     int checked = event.GetInt();
     LMS_EnableCache(lmsControl,checked);
+}
+
+void LMS7SuiteAppFrame::UpdateVisiblePanel() const
+{
+    mContent->UpdateVisiblePanel();
 }
 

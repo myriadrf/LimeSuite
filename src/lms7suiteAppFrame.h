@@ -23,6 +23,7 @@ class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
+class pnlAPI;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -55,14 +56,17 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnSPIClose(wxCloseEvent& event);
         void OnShowSPI(wxCommandEvent& event);
         void OnBoardControlsClose(wxCloseEvent& event);
+        void OnAPIClose(wxCloseEvent& event);
         void OnShowBoardControls(wxCommandEvent& event);
         void OnChangeCacheSettings(wxCommandEvent& event);
         void OnLmsChanged(wxCommandEvent& event);
+        void OnShowAPICalls( wxCommandEvent& event );
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
 	//// end generated class members
         virtual ~LMS7SuiteAppFrame();
+        void UpdateVisiblePanel() const;
         static int m_lmsSelection;
 protected:
         static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
@@ -89,6 +93,7 @@ protected:
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
+        pnlAPI* api;
 
 };
 

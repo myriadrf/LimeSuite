@@ -48,7 +48,17 @@ void lms7002_mainPanel::UpdateVisiblePanel()
 {
     wxWindow* currentPage = tabsNotebook->GetCurrentPage();
     uint16_t spisw_ctrl = 0;
-    LMS_ReadLMSReg(lmsControl, 0x0006, &spisw_ctrl);
+    if (((LMS7_Device*)lmsControl)->GetConnection())
+    {
+        if (currentPage == mTabSXR) //change active channel to A
+            LMS_WriteParam(lmsControl,LMS7param(MAC),1);
+        else if (currentPage == mTabSXT) //change active channel to B
+            LMS_WriteParam(lmsControl,LMS7param(MAC),2);
+        else
+            LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
+        LMS_ReadLMSReg(lmsControl, 0x0006, &spisw_ctrl);
+    }
+
     if(spisw_ctrl & 1) // transceiver controlled by MCU
     {
         if(currentPage != mTabMCU && currentPage != mTabTrxGain)
@@ -157,6 +167,8 @@ void lms7002_mainPanel::Initialize(lms_device_t* pControl)
         cmbLmsDevice->Show();
     else
         cmbLmsDevice->Hide();
+    rbChannelA->SetValue(true);
+    rbChannelB->SetValue(false);
     UpdateGUI();
     Layout();
 }
@@ -191,27 +203,6 @@ void lms7002_mainPanel::UpdateGUI()
     wxLongLong t1, t2;
     t1 = wxGetUTCTimeMillis();
     t2 = wxGetUTCTimeMillis();
-    uint16_t chan;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&chan);
-    if (chan == 1)
-    {
-        rbChannelA->SetValue(true);
-        rbChannelB->SetValue(false);
-    }
-    else if (chan == 2)
-    {
-        rbChannelA->SetValue(false);
-        rbChannelB->SetValue(true);
-    }
-    else
-    {
-        auto conn = ((LMS7_Device*)lmsControl)->GetConnection();
-        if (conn && conn->IsOpen())
-            LMS_WriteParam(lmsControl,LMS7param(MAC),1);
-        rbChannelA->SetValue(true);
-        rbChannelB->SetValue(false);
-    }
-
     UpdateVisiblePanel();
 }
 
@@ -253,13 +244,11 @@ void lms7002_mainPanel::OnSaveProject( wxCommandEvent& event )
 
 void lms7002_mainPanel::OnSwitchToChannelA(wxCommandEvent& event)
 {
-    LMS_WriteParam(lmsControl,LMS7param(MAC),1);
     UpdateVisiblePanel();
 }
 
 void lms7002_mainPanel::OnSwitchToChannelB(wxCommandEvent& event)
 {
-    LMS_WriteParam(lmsControl,LMS7param(MAC),2);
     UpdateVisiblePanel();
 }
 
@@ -273,19 +262,16 @@ void lms7002_mainPanel::Onnotebook_modulesPageChanged( wxNotebookEvent& event )
     }
     else if (page == mTabSXR) //change active channel to A
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
         rbChannelA->Disable();
         rbChannelB->Disable();
     }
     else if (page == mTabSXT) //change active channel to B
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),2);
         rbChannelA->Disable();
         rbChannelB->Disable();
     }
     else
     {
-        LMS_WriteParam(lmsControl,LMS7param(MAC),rbChannelA->GetValue() == 1 ? 1: 2);
         rbChannelA->Enable();
         rbChannelB->Enable();
     }
@@ -385,12 +371,6 @@ void lms7002_mainPanel::OnLmsDeviceSelect( wxCommandEvent& event )
 {
     int deviceSelection = cmbLmsDevice->GetSelection();
     ((LMS7_Device*)lmsControl)->SetActiveChip(deviceSelection);
-
-    wxNotebookPage* page = tabsNotebook->GetCurrentPage();
-    if (page == mTabSXR) //change active channel to A
-        LMS_WriteParam(lmsControl,LMS7param(MAC),1);
-    else if (page == mTabSXT) //change active channel to B
-        LMS_WriteParam(lmsControl,LMS7param(MAC),2);
 
     UpdateVisiblePanel();
     wxCommandEvent evt;

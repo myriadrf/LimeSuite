@@ -206,6 +206,7 @@ set(LMS7SUITE_GUI_SOURCES
     LMS_Programing/LMS_Programing_wxgui.cpp
     utilities_gui/dlgConnectionSettings.cpp
     utilities_gui/pnlMiniLog.cpp
+    utilities_gui/pnlAPI.cpp
     utilities_gui/SPI_wxgui.cpp
     utilities_gui/dlgFullMessageLog.cpp
     utilities_gui/dlgDeviceInfo.cpp
