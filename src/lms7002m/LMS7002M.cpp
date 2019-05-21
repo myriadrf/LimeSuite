@@ -1572,20 +1572,28 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
 
     canDeliverFrequency = false;
     int tuneScore[] = { -128, -128, -128 }; //best is closest to 0
-    for (sel_vco = 0; sel_vco < 3; ++sel_vco)
+    for (int i = 0; i < 5; i++)  //attempt tune multiple times
     {
-        Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
-        int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
-        if(status == 0)
+        for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
-            tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
-            canDeliverFrequency = true;
+            Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
+            int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
+            if(status == 0)
+            {
+                tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
+                canDeliverFrequency = true;
+            }
+            lime::debug("%s : csw=%d %s", vcoNames[sel_vco], tuneScore[sel_vco]+128, (status == 0 ? "tune ok" : "tune fail"));
         }
-        lime::debug("%s : csw=%d %s",
-                    vcoNames[sel_vco],
-                    tuneScore[sel_vco]+128,
-                    (status == 0 ? "tune ok" : "tune fail"));
+        if (canDeliverFrequency)  //tune OK
+            break;
+        auto bias = Get_SPI_Reg_bits(LMS7param(ICT_VCO));
+        if (bias == 255)
+            break;
+        bias = bias + 32 > 255 ? 255 : bias + 32; //retry with higher bias current
+        Modify_SPI_Reg_bits(LMS7param(ICT_VCO), bias);
     }
+
     if (abs(tuneScore[0]) < abs(tuneScore[1]))
     {
         if (abs(tuneScore[0]) < abs(tuneScore[2]))
