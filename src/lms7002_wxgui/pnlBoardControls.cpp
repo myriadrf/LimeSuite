@@ -301,7 +301,8 @@ void pnlBoardControls::Initialize(lms_device_t* controlPort)
     {
         SetupControls(info->deviceName);
         wxCommandEvent evt;
-        OnReadAll(evt);
+        if (strlen(info->deviceName))
+            OnReadAll(evt);
     }
 }
 
