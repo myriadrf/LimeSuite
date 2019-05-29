@@ -126,6 +126,11 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     int L;
     int div = 1;
 
+    if (tx)
+        tx_channels[ch].gfir_bw = enabled ? bandwidth : -1;
+    else
+        rx_channels[ch].gfir_bw = enabled ? bandwidth : -1;
+
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
 
@@ -159,7 +164,6 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         L = div > 8 ? 8 : div;
         div -= 1;
 
-        w *=0.95;
         w2 = w*1.1;
         if (w2 > 0.495)
         {
@@ -341,6 +345,12 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
 
         if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
+        auto gfir_bw = tx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(true, i, true, gfir_bw);
+        gfir_bw = rx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(false, i, true, gfir_bw);
     }
 
     return 0;
@@ -600,9 +610,13 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
         if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
+        auto gfir_bw = tx ? tx_channels[i].gfir_bw : rx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(tx, i, true, gfir_bw);
     }
 
-   return 0;
+
+    return 0;
 }
 
 int LMS7_Device::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
@@ -778,6 +792,11 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     unsigned int L;
     int div = 1;
     int ret = 0;
+
+    if (tx)
+        tx_channels[chan].gfir_bw = -1.0;
+    else
+        rx_channels[chan].gfir_bw = -1.0;
 
     if (count > 120)
     {
@@ -1499,10 +1518,20 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
     case LMS_CLOCK_SXR:
         if (freq <= 0)
             return lms->TuneVCO(lime::LMS7002M::VCO_SXR);
+        if (channel != -1)
+        {
+            rx_channels[channel].cF_offset_nco = 0.0;
+            rx_channels[channel].freq = freq;
+        }
         return lms->SetFrequencySX(false, freq);
     case LMS_CLOCK_SXT:
         if (freq <= 0)
             return lms->TuneVCO(lime::LMS7002M::VCO_SXT);
+        if (channel != -1)
+        {
+            tx_channels[channel].cF_offset_nco = 0.0;
+            tx_channels[channel].freq = freq;
+        }
         return lms->SetFrequencySX(true, freq);
     case LMS_CLOCK_CGEN:
     {

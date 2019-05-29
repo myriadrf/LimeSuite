@@ -101,8 +101,9 @@ protected:
     struct ChannelInfo
     {
     public:
-        ChannelInfo():lpf_bw(5e6),cF_offset_nco(0),sample_rate(30e6),freq(-1.0){}
+        ChannelInfo(): lpf_bw(0), gfir_bw(-1.0), cF_offset_nco(0), sample_rate(30e6), freq(-1.0){}
         double lpf_bw;
+        double gfir_bw;
         double cF_offset_nco;
         double sample_rate;
         double freq;
