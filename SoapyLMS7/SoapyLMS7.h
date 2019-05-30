@@ -12,8 +12,6 @@
 #include <set>
 #include "Streamer.h"
 
-static const double DEFAULT_CLOCK_RATE = 80e6;
-
 namespace lime
 {
     class LIME_API LMS7_Device;
@@ -207,11 +205,7 @@ public:
      * Clocking API
      ******************************************************************/
 
-    void setMasterClockRate(const double rate);
-
     double getMasterClockRate(void) const;
-
-    SoapySDR::RangeList getMasterClockRates(void) const;
 
     /*******************************************************************
      * Time API

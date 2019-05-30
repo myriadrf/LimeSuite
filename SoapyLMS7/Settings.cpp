@@ -20,10 +20,6 @@ using namespace lime;
 
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
-// arbitrary upper limit for CGEN automatic tune
-#define MIN_CGEN_RATE 4e6
-#define MAX_CGEN_RATE 640e6
-
 //reasonable limits when advertising the rate
 #define MIN_SAMP_RATE 1e5
 #define MAX_SAMP_RATE 65e6
@@ -74,9 +70,6 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     lms7Device->EnableCache(cacheEnable);
 
     //give all RFICs a default state
-    double defaultClockRate = DEFAULT_CLOCK_RATE;
-    if (args.count("clock")) defaultClockRate = std::stod(args.at("clock"));
-    this->setMasterClockRate(defaultClockRate);
     for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
     {
         this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
@@ -513,22 +506,10 @@ SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size
  * Clocking API
  ******************************************************************/
 
-void SoapyLMS7::setMasterClockRate(const double rate)
-{
-    lms7Device->SetClockFreq(LMS_CLOCK_CGEN,rate);
-}
-
 double SoapyLMS7::getMasterClockRate(void) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     return lms7Device->GetClockFreq(LMS_CLOCK_CGEN);;
-}
-
-SoapySDR::RangeList SoapyLMS7::getMasterClockRates(void) const
-{
-    SoapySDR::RangeList r;
-    r.push_back(SoapySDR::Range(MIN_CGEN_RATE, MAX_CGEN_RATE));
-    return r;
 }
 
 /*******************************************************************
