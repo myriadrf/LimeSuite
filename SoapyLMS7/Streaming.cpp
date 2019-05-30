@@ -198,17 +198,20 @@ int SoapyLMS7::activateStream(
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
-    if (sampleRate == 0.0)
+    if (sampleRate[SOAPY_SDR_TX] == 0.0 && sampleRate[SOAPY_SDR_RX] == 0.0)
         throw std::runtime_error("SoapyLMS7::activateStream() - the sample rate has not been configured!");
+    if (sampleRate[SOAPY_SDR_RX] <= 0.0)
+        sampleRate[SOAPY_SDR_RX] = lms7Device->GetRate(LMS_CH_RX, 0);
     //perform self calibration with current bandwidth settings
     //this is for the set-it-and-forget-it style of use case
     //where boards are configured, the stream is setup,
     //and the configuration is maintained throughout the run
     while (not _channelsToCal.empty() and not icstream->skipCal)
     {
-        auto dir  = _channelsToCal.begin()->first;
+        bool dir  = _channelsToCal.begin()->first;
         auto ch  = _channelsToCal.begin()->second;
-        lms7Device->Calibrate(dir== SOAPY_SDR_TX,ch,_actualBw.at(dir).at(ch),0);
+        auto bw = mChannels[dir].at(ch).rf_bw > 0 ? mChannels[dir].at(ch).rf_bw : sampleRate[dir];
+        lms7Device->Calibrate(dir== SOAPY_SDR_TX, ch, bw>2.5e6 ? bw : 2.5e6, 0);
         _channelsToCal.erase(_channelsToCal.begin());
     }
     //stream requests used with rx
@@ -356,7 +359,7 @@ int SoapyLMS7::readStream(
     }
 
     StreamChannel::Metadata metadata;
-    const uint64_t cmdTicks = ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0)?SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate):0;
+    const uint64_t cmdTicks = ((icstream->flags & SOAPY_SDR_HAS_TIME) != 0)?SoapySDR::timeNsToTicks(icstream->timeNs, sampleRate[SOAPY_SDR_RX]):0;
     int status = _readStreamAligned(icstream, (char * const *)buffs, numElems, cmdTicks, metadata, timeoutUs/1000);
     if (status < 0) return status;
 
@@ -403,7 +406,7 @@ int SoapyLMS7::readStream(
     flags = 0;
     if ((metadata.flags & RingFIFO::END_BURST) != 0) flags |= SOAPY_SDR_END_BURST;
     if ((metadata.flags & RingFIFO::SYNC_TIMESTAMP) != 0) flags |= SOAPY_SDR_HAS_TIME;
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate);
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate[SOAPY_SDR_RX]);
 
     //return num read or error code
     return (status >= 0) ? status : SOAPY_SDR_STREAM_ERROR;
@@ -422,7 +425,7 @@ int SoapyLMS7::writeStream(
 
     //input metadata
     StreamChannel::Metadata metadata;
-    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate);
+    metadata.timestamp = SoapySDR::timeNsToTicks(timeNs, sampleRate[SOAPY_SDR_RX]);
     metadata.flags = (flags & SOAPY_SDR_HAS_TIME) ? lime::RingFIFO::SYNC_TIMESTAMP : 0;
     metadata.flags |= (flags & SOAPY_SDR_END_BURST) ? lime::RingFIFO::END_BURST : 0;
 
@@ -484,7 +487,7 @@ int SoapyLMS7::readStreamStatus(
             std::this_thread::sleep_for(std::chrono::microseconds(1+timeoutUs/2));
     }
 
-    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate);
+    timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate[SOAPY_SDR_RX]);
     //output metadata
     flags |= SOAPY_SDR_HAS_TIME;
     return ret;

@@ -193,8 +193,6 @@ public:
      * Bandwidth API
      ******************************************************************/
 
-    std::map<int, std::map<size_t, double>> _actualBw;
-
     void setBandwidth(const int direction, const size_t channel, const double bw);
 
     double getBandwidth(const int direction, const size_t channel) const;
@@ -278,11 +276,22 @@ public:
     unsigned readGPIODir(const std::string &bank) const;
 
 private:
+    
+    struct Channel{
+        Channel():freq(-1),bw(-1),rf_bw(-1){};
+        double freq;
+        double bw;
+        double rf_bw;
+    };
+    
+    int setBBLPF(bool direction, size_t channel, double bw);
+    
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
     lime::LMS7_Device * lms7Device;
-    double sampleRate;
+    double sampleRate[2]; //sampleRate[direction]
     int oversampling;
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
+    std::vector<Channel> mChannels[2]; //mChannels[direction]
 };

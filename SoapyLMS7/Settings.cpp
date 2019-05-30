@@ -30,7 +30,7 @@ using namespace lime;
 SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &args):
     _deviceArgs(args),
     _moduleName(handle.module),
-    sampleRate(0.0),
+    sampleRate{0.0, 0.0},
     oversampling(0)   //auto
 {
     //connect
@@ -72,12 +72,11 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     //give all RFICs a default state
     for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
     {
-        this->setGain(SOAPY_SDR_RX, channel, "LNA", 0);
-        this->setGain(SOAPY_SDR_TX, channel, "PAD", 0);
-        _actualBw[SOAPY_SDR_RX][channel] = 30e6;
-        _actualBw[SOAPY_SDR_TX][channel] = 60e6;
+        this->setGain(SOAPY_SDR_RX, channel, 32);
+        this->setGain(SOAPY_SDR_TX, channel, 0);
     }
-
+    mChannels[SOAPY_SDR_RX].resize(lms7Device->GetNumChannels());
+    mChannels[SOAPY_SDR_TX].resize(lms7Device->GetNumChannels());
     _channelsToCal.clear();
 }
 
@@ -325,7 +324,14 @@ SoapySDR::ArgInfoList SoapyLMS7::getFrequencyArgsInfo(const int direction, const
 void SoapyLMS7::setFrequency(int direction, size_t channel, double frequency, const SoapySDR::Kwargs &args)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    lms7Device->SetFrequency(direction == SOAPY_SDR_TX, channel, frequency);
+    if (lms7Device->SetFrequency(direction == SOAPY_SDR_TX, channel, frequency)!=0)
+    {
+        SoapySDR::logf(SOAPY_SDR_ERROR, "setFrequency(%s, %d, %g MHz) Failed", dirName, int(channel), frequency/1e6);
+        throw std::runtime_error("SoapyLMS7::setFrequency() failed");
+    }
+    mChannels[bool(direction)].at(channel).freq = frequency;
+    if (setBBLPF(direction, channel, mChannels[direction].at(channel).bw)!= 0)
+        SoapySDR::logf(SOAPY_SDR_ERROR, "setBBLPF(%s, %d, RF, %g MHz) Failed", dirName, int(channel), mChannels[direction].at(channel).bw/1e6);
 }
 
 void SoapyLMS7::setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args)
@@ -336,7 +342,15 @@ void SoapyLMS7::setFrequency(const int direction, const size_t channel, const st
     if (name == "RF")
     {
         const auto clkId = (direction == SOAPY_SDR_TX)? LMS_CLOCK_SXT : LMS_CLOCK_SXR;
-        lms7Device->SetClockFreq(clkId, frequency, channel);
+        if (lms7Device->SetClockFreq(clkId, frequency, channel)!=0)
+        {
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setFrequency(%s, %d, RF, %g MHz) Failed", dirName, int(channel), frequency/1e6);
+            throw std::runtime_error("SoapyLMS7::setFrequency(RF) failed");
+        }
+        mChannels[bool(direction)].at(channel).freq = frequency;
+
+        if (setBBLPF(direction, channel, mChannels[direction].at(channel).bw)!= 0)
+            SoapySDR::logf(SOAPY_SDR_ERROR, "setBBLPF(%s, %d, RF, %g MHz) Failed", dirName, int(channel), mChannels[direction].at(channel).bw/1e6);
         _channelsToCal.emplace(direction, channel);
         return;
     }
@@ -416,8 +430,12 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    sampleRate = rate;
-    lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling);
+    if (lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling)!=0)
+    {
+        SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(%s, %d, %g MHz) Failed", dirName, int(channel), rate/1e6);
+        throw std::runtime_error("SoapyLMS7::setSampleRate() failed");
+    }
+    sampleRate[bool(direction)] = rate;
     return;
 }
 
@@ -442,6 +460,27 @@ SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const siz
  * Bandwidth API
  ******************************************************************/
 
+int SoapyLMS7::setBBLPF(bool direction, size_t channel, double bw)
+{
+    if (bw < 0)
+        return 0;
+    double frequency = mChannels[direction].at(channel).freq;
+    if (frequency > 0 && frequency < 30e6)
+    {
+        bw += 2*(30e6 - frequency);
+        bw = bw > 60e6 ? 60e6 : bw;
+    }
+    if (std::abs(bw-mChannels[direction].at(channel).rf_bw)>10e3)
+    {
+        SoapySDR::logf(SOAPY_SDR_DEBUG, "lms7Device->SetLPF(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
+        if (lms7Device->SetLPF(direction==SOAPY_SDR_TX, channel, true, bw) == 0)
+            mChannels[direction].at(channel).rf_bw = bw;
+        else
+            return -1;
+    }
+    return 0;
+}
+
 void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const double bw)
 {
     if (bw == 0.0) return; //special ignore value
@@ -449,40 +488,20 @@ void SoapyLMS7::setBandwidth(const int direction, const size_t channel, const do
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
     SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyLMS7::setBandwidth(%s, %d, %g MHz)", dirName, int(channel), bw/1e6);
 
-    _actualBw[direction][channel] = bw;
-
-    if (direction == SOAPY_SDR_RX)
+    if (setBBLPF(direction, channel, bw)!=0)
     {
-        if (lms7Device->SetLPF(false,channel,true,bw) != 0)
-        {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Rx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
-            throw std::runtime_error(lime::GetLastErrorMessage());
-        }
+        SoapySDR::logf(SOAPY_SDR_ERROR, "setBBLPF(%s, %d, %g MHz) Failed", dirName, int(channel), bw/1e6);
+        throw std::runtime_error("setBandwidth() failed");
     }
 
-    if (direction == SOAPY_SDR_TX)
-    {
-        if (lms7Device->SetLPF(true,channel,true,bw) != 0)
-        {
-            SoapySDR::logf(SOAPY_SDR_ERROR, "setBandwidth(Tx, %d, %g MHz) Failed - %s", int(channel), bw/1e6, lime::GetLastErrorMessage());
-            throw std::runtime_error(lime::GetLastErrorMessage());
-        }
-    }
-
+    mChannels[bool(direction)].at(channel).bw = bw;
     _channelsToCal.emplace(direction, channel);
 }
 
 double SoapyLMS7::getBandwidth(const int direction, const size_t channel) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    try
-    {
-        return _actualBw.at(direction).at(channel);
-    }
-    catch (...)
-    {
-        return 1.0;
-    }
+    return mChannels[bool(direction)].at(channel).bw;
 }
 
 SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size_t channel) const
@@ -532,7 +551,7 @@ long long SoapyLMS7::getHardwareTime(const std::string &what) const
             throw std::runtime_error("SoapyLMS7::getHardwareTime() sample rate unset");
         }
         auto ticks = lms7Device->GetHardwareTimestamp();
-        return SoapySDR::ticksToTimeNs(ticks, sampleRate);
+        return SoapySDR::ticksToTimeNs(ticks, sampleRate[SOAPY_SDR_RX]);
     }
     else
     {
@@ -548,7 +567,7 @@ void SoapyLMS7::setHardwareTime(const long long timeNs, const std::string &what)
         {
             throw std::runtime_error("SoapyLMS7::setHardwareTime() sample rate unset");
         }
-        auto ticks = SoapySDR::timeNsToTicks(timeNs, sampleRate);
+        auto ticks = SoapySDR::timeNsToTicks(timeNs, sampleRate[SOAPY_SDR_RX]);
         lms7Device->SetHardwareTimestamp(ticks);
     }
     else
@@ -824,9 +843,10 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
     {
         std::unique_lock<std::recursive_mutex> lock(_accessMutex);
         oversampling = std::stoi(value);
-        if (sampleRate > 0)
-            if (lms7Device->SetRate(sampleRate, oversampling)!= 0)
-                throw std::runtime_error(lime::GetLastErrorMessage());
+        if (sampleRate[SOAPY_SDR_RX] > 0)
+            setSampleRate(SOAPY_SDR_RX, 0, sampleRate[SOAPY_SDR_RX]);
+        if (sampleRate[SOAPY_SDR_TX] > 0)
+            setSampleRate(SOAPY_SDR_TX, 0, sampleRate[SOAPY_SDR_TX]);
     }
 
     else
