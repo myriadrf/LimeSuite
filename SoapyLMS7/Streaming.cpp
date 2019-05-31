@@ -224,6 +224,7 @@ int SoapyLMS7::activateStream(
     {
         int status = i->Start();
         if(status != 0) return SOAPY_SDR_STREAM_ERROR;
+        activeStreams.insert(i);
     }
     return 0;
 }
@@ -242,6 +243,7 @@ int SoapyLMS7::deactivateStream(
     {
         int status = i->Stop();
         if(status != 0) return SOAPY_SDR_STREAM_ERROR;
+        activeStreams.erase(i);
     }
 
     return 0;

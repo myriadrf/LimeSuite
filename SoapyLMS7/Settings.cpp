@@ -78,6 +78,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     mChannels[SOAPY_SDR_RX].resize(lms7Device->GetNumChannels());
     mChannels[SOAPY_SDR_TX].resize(lms7Device->GetNumChannels());
     _channelsToCal.clear();
+    activeStreams.clear();
 }
 
 SoapyLMS7::~SoapyLMS7(void)
@@ -432,7 +433,12 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    if (lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling)!=0)
+    for (auto stream : activeStreams)
+        stream->Stop();
+    auto ret = lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling);
+    for (auto stream : activeStreams)
+        stream->Start();
+    if (ret != 0)
     {
         SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(%s, %d, %g MHz) Failed", dirName, int(channel), rate/1e6);
         throw std::runtime_error("SoapyLMS7::setSampleRate() failed");
