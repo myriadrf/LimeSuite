@@ -461,7 +461,7 @@ int ConnectionXillybus::ReceiveData(char *buffer, int length, int epIndex, int t
        if (( hReadStream[epIndex] = open(readStreamPort[epIndex].c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK))==-1)
        {
             ReportError(errno);
-            return -1;
+            return 0;
        }
     }
 #endif
@@ -563,7 +563,7 @@ int ConnectionXillybus::SendData(const char *buffer, int length, int epIndex, in
        if ((hWriteStream[epIndex] = open(writeStreamPort[epIndex].c_str(), O_WRONLY | O_NOCTTY | O_NONBLOCK))==-1)
        {
             ReportError(errno);
-            return -1;
+            return 0;
        }
     }
 #endif

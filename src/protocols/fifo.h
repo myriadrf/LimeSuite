@@ -22,8 +22,10 @@ public:
     {
         uint32_t size;
         uint32_t itemsFilled;
+        uint32_t overflow;
+        uint32_t underflow;
     };
-    
+
     enum StreamFlags
     {
         SYNC_TIMESTAMP = 1,
@@ -38,6 +40,10 @@ public:
         BufferInfo stats;
         stats.size = mBufferSize*mBuffer->maxSamplesInPacket;
         stats.itemsFilled = mElementsFilled*mBuffer->maxSamplesInPacket;
+        stats.overflow = mOverflow;
+        stats.underflow = mUnderflow;
+        mOverflow = 0;
+        mUnderflow = 0;
         return stats;
     }
 
@@ -71,18 +77,19 @@ public:
         {
             if (mElementsFilled >= mBufferSize) //buffer might be full, wait for free slots
             {
-                auto t2 = std::chrono::high_resolution_clock::now();
-                if(t2-t1 >= std::chrono::milliseconds(timeout_ms))
-                    return samplesTaken;
                 if(flags & OVERWRITE_OLD)
                 {
                     int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;
                     mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
                     mElementsFilled -= dropElements;
+                    mOverflow++;
                 }
                 else  //there is no space, wait on CV to give pop_samples the thread context
                 {
-                    hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms));
+                    auto elapsed = std::chrono::high_resolution_clock::now()-t1;
+                    if(elapsed >= std::chrono::milliseconds(timeout_ms))
+                        return samplesTaken;
+                    hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms)-elapsed);
                 }
             }
             else
@@ -128,10 +135,11 @@ public:
         {
             while (mElementsFilled == 0) //buffer might be empty, wait for packets
             {
-                if (timeout_ms == 0)
+                if ((timeout_ms==0) || (hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout))
+                {
+                    mUnderflow++;
                     return samplesFilled;
-                if (hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
-                    return samplesFilled;
+                }
             }
             if(samplesFilled == 0 && timestamp != nullptr)
                 *timestamp = mBuffer[mHead].timestamp + mBuffer[mHead].first;
@@ -174,6 +182,8 @@ public:
         mHead = 0;
         mTail = 0;
         mElementsFilled = 0;
+        mOverflow = 0;
+        mUnderflow = 0;
     }
 
 protected:
@@ -182,6 +192,8 @@ protected:
     uint32_t mHead;
     uint32_t mTail;
     uint32_t mElementsFilled;
+    uint32_t mOverflow;
+    uint32_t mUnderflow;
     std::mutex lock;
     std::condition_variable hasItems;
 };

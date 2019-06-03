@@ -112,8 +112,6 @@ public:
     int Stop();
     StreamConfig config;
     Streamer* mStreamer;
-    unsigned overflow;
-    unsigned underflow;
     unsigned pktLost;
     bool mActive;
     bool used;

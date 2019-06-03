@@ -12,14 +12,12 @@ namespace lime
 {
 
 StreamChannel::StreamChannel(Streamer* streamer) :
-    mActive(false)
+    mActive(false),
+    mStreamer(streamer),
+    pktLost(0),
+    fifo(nullptr),
+    used(false)
 {
-    mStreamer = streamer;
-    overflow = 0;
-    underflow = 0;
-    pktLost = 0;
-    fifo = nullptr;
-    used = false;
 }
 
 StreamChannel::~StreamChannel()
@@ -32,8 +30,6 @@ void StreamChannel::Setup(StreamConfig conf)
 {
     used = true;
     config = conf;
-    overflow = 0;
-    underflow = 0;
     pktLost = 0;
     if (config.bufferLength == 0) //default size
         config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
@@ -110,11 +106,9 @@ StreamChannel::Info StreamChannel::GetInfo()
     stats.fifoItemsCount = info.itemsFilled;
     stats.active = mActive;
     stats.droppedPackets = pktLost;
-    stats.overrun = overflow;
-    stats.underrun = underflow;
+    stats.overrun = info.overflow;
+    stats.underrun = info.underflow;
     pktLost = 0;
-    overflow = 0;
-    underflow = 0;
     if(config.isTx)
     {
         stats.timestamp = mStreamer->txLastTimestamp.load(std::memory_order_relaxed);
@@ -142,8 +136,6 @@ int StreamChannel::Start()
 {
     mActive = true;
     fifo->Clear();
-    overflow = 0;
-    underflow = 0;
     pktLost = 0;
     return mStreamer->UpdateThreads();
 }
@@ -676,15 +668,7 @@ void Streamer::TransmitPacketsLoop()
             if (dataPort->WaitForSending(handles[bi], 1000) == true)
             {
                 unsigned bytesSent = dataPort->FinishDataSending(&buffers[bi*bufferSize], bytesToSend[bi], handles[bi]);
-
-                if (bytesSent != bytesToSend[bi])
-                {
-                    for (auto &value : mTxStreams)
-                        if (value.used && value.mActive)
-                            value.overflow++;
-                }
-                else
-                    totalBytesSent += bytesSent;
+                totalBytesSent += bytesSent;
                 bufferUsed[bi] = false;
             }
             else
@@ -715,12 +699,8 @@ void Streamer::TransmitPacketsLoop()
                 int samplesPopped = mTxStreams[ch].Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    if ((!end_burst) && !(meta.flags & RingFIFO::END_BURST))
-                    {
-                        mTxStreams[ch].underflow++;
-                        lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
+                    if (!(meta.flags & RingFIFO::END_BURST))
                         continue;
-                    }
                     payloadSize = samplesPopped * sizeof(FPGA_DataPacket::data) / maxSamplesBatch;
                     int q = packed ? 48 : 16;
                     payloadSize = (1 + (payloadSize - 1) / q) * q;
@@ -827,10 +807,6 @@ void Streamer::ReceivePacketsLoop()
             {
                 bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
                 totalBytesReceived += bytesReceived;
-                if (bytesReceived != int32_t(bufferSize)) //data should come in full sized packets
-                    for(auto &value: mRxStreams)
-                        if (value.used && value.mActive)
-                            value.underflow++;
             }
             else
             {
@@ -849,7 +825,7 @@ void Streamer::ReceivePacketsLoop()
                     --resetFlagsDelay;
                 else
                 {
-                    lime::warning("L");
+                    lime::debug("L");
                     resetFlagsDelay = buffersCount*2;
                 }
                 for(auto &value: mTxStreams)
@@ -880,9 +856,7 @@ void Streamer::ReceivePacketsLoop()
                 StreamChannel::Metadata meta;
                 meta.timestamp = pkt[pktIndex].counter;
                 meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
-                int samplesPushed = mRxStreams[ch].Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
-                if(samplesPushed != samplesCount)
-                    mRxStreams[ch].overflow++;
+                mRxStreams[ch].Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
             }
         }
         // Re-submit this request to keep the queue full
