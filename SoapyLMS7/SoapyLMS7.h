@@ -294,5 +294,5 @@ private:
     std::set<std::pair<int, size_t>> _channelsToCal;
     mutable std::recursive_mutex _accessMutex;
     std::vector<Channel> mChannels[2]; //mChannels[direction]
-    std::set<lime::StreamChannel*> activeStreams;
+    std::set<SoapySDR::Stream *> activeStreams;
 };

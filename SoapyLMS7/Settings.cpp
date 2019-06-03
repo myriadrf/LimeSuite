@@ -433,11 +433,14 @@ SoapySDR::RangeList SoapyLMS7::getFrequencyRange(const int direction, const size
 void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const double rate)
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
-    for (auto stream : activeStreams)
-        stream->Stop();
+    auto streams = activeStreams;
+    for (auto s : streams)
+        deactivateStream(s);
+
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "setSampleRate(%s, %d, %g MHz)", dirName, int(channel), rate/1e6);
     auto ret = lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling);
-    for (auto stream : activeStreams)
-        stream->Start();
+    for (auto s : streams)
+        activateStream(s);
     if (ret != 0)
     {
         SoapySDR::logf(SOAPY_SDR_ERROR, "setSampleRate(%s, %d, %g MHz) Failed", dirName, int(channel), rate/1e6);
@@ -518,7 +521,9 @@ SoapySDR::RangeList SoapyLMS7::getBandwidthRange(const int direction, const size
 
     if (direction == SOAPY_SDR_RX)
     {
-        bws.push_back(SoapySDR::Range(1.4e6, 130e6));
+        lms_range_t range;
+        LMS_GetLPFBWRange(lms7Device, LMS_CH_RX, &range);
+        bws.push_back(SoapySDR::Range(range.min, range.max));
     }
     if (direction == SOAPY_SDR_TX)
     {
