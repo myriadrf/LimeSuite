@@ -482,10 +482,10 @@ int SoapyLMS7::readStreamStatus(
         if (seconds.count()> (double)timeoutUs/1e6)
             return SOAPY_SDR_TIMEOUT;
         //sleep to avoid high CPU load
-        if (timeoutUs >= 2000)
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (timeoutUs >= 1000000)
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         else
-            std::this_thread::sleep_for(std::chrono::microseconds(1+timeoutUs/2));
+            std::this_thread::sleep_for(std::chrono::microseconds(timeoutUs));
     }
 
     timeNs = SoapySDR::ticksToTimeNs(metadata.timestamp, sampleRate[SOAPY_SDR_RX]);
