@@ -276,10 +276,11 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
             float fn = (cFreq[c] + bw[c]/2) * 1e6;
             float sum = 0;
             int bins = 0;
+            const int lmsch = mFFTpanel->series[0]->visible ? 0 : 1;
             for (int i = 0; i<fftSize; ++i)
                 if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
                 {
-                    sum += streamData.fftBins[0][i];
+                    sum += streamData.fftBins[lmsch][i];
                     ++bins;
                 }
             chPwr[c] = sum;
