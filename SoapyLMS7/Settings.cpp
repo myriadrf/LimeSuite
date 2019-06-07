@@ -439,6 +439,17 @@ void SoapyLMS7::setSampleRate(const int direction, const size_t channel, const d
 
     SoapySDR::logf(SOAPY_SDR_DEBUG, "setSampleRate(%s, %d, %g MHz)", dirName, int(channel), rate/1e6);
     auto ret = lms7Device->SetRate(direction == SOAPY_SDR_TX, rate, oversampling);
+
+    //if bandwidth is not explicitly selected set it to sample rate
+    if (mChannels[bool(direction)].at(channel).bw < 0)
+    {
+        lms_range_t range;
+        LMS_GetLPFBWRange(lms7Device, direction == SOAPY_SDR_TX, &range);
+        double bw = rate < range.min ? range.min : rate;
+        bw = bw < range.max ? bw : range.max;
+        setBBLPF(direction, channel, bw);
+    }
+
     for (auto s : streams)
         activateStream(s);
     if (ret != 0)
