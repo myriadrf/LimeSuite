@@ -17,6 +17,7 @@ LimeStartStreaming(fifoSize,"tx0"); % start TX to channel 0
 for i=1:100
     LimeTransmitSamples(src,0); % send samples to TX channel 0
 end
+LimeGetStreamStatus()     %must run at least 1s to get data rate (B/s)
 sleep(1);
 LimeStopStreaming();    % stop streaming
 

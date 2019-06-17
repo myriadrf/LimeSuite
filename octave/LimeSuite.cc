@@ -1,6 +1,6 @@
 #include <octave/oct.h>
 #include <octave/Cell.h>
-
+#include <octave/ov-struct.h>
 #include <vector>
 #include <string>
 
@@ -457,6 +457,41 @@ DEFUN_DLD (LimeLoopWFMStop, args, ,
         LMS_EnableTxWFM(lmsDev, 0, false);
     WFMrunning = false;
     return octave_value ();
+}
+
+DEFUN_DLD (LimeGetStreamStatus, args, nargout,
+"LimeGetStreamStatus() - Get Stream Status")
+{
+    if(lmsDev == NULL)
+    {
+        octave_stdout << "LimeSuite not initialized" << endl;
+        return octave_value(-1);
+    }
+
+    octave_scalar_map st;
+    lms_stream_status_t status;
+    for (int i = 0; i < maxChCnt; i++)
+    {
+        if ((streamRx[i].handle) && (LMS_GetStreamStatus(&streamRx[i], &status) == 0))
+        {
+            st.assign("fifo_size", status.fifoSize);
+            st.assign("rx_data_rate", status.linkRate);
+            std::string ch = std::string("rx") + char('0'+i);
+            st.assign(ch+"_fifo_filled", status.fifoFilledCount);
+            st.assign(ch+"_fifo_overruns", status.overrun);
+            st.assign(ch+"_lost_packets", status.droppedPackets);
+        }
+        if ((streamTx[i].handle)&& (LMS_GetStreamStatus(&streamTx[i], &status) == 0))
+        {
+            st.assign("fifo_size", status.fifoSize);
+            st.assign("tx_data_rate", status.linkRate);
+            std::string ch = std::string("tx") + char('0'+i);
+            st.assign(ch+"_fifo_filled", status.fifoFilledCount);
+            st.assign(ch+"_fifo_underrun", status.underrun);
+        }
+    }
+
+    return octave_value (st);
 }
 
 void FreeResources()
