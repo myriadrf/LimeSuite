@@ -33,13 +33,7 @@ void StreamChannel::Setup(StreamConfig conf)
     pktLost = 0;
     if (config.bufferLength == 0) //default size
         config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
-    else
-    {
-        size_t fifoSize = 64;
-        while(fifoSize < conf.bufferLength/SamplesPacket::maxSamplesInPacket)
-            fifoSize <<= 1;
-        this->config.bufferLength = fifoSize*SamplesPacket::maxSamplesInPacket;
-    }
+
     if (fifo)
         delete fifo;
     fifo = new RingFIFO(config.bufferLength);
@@ -776,7 +770,8 @@ void Streamer::ReceivePacketsLoop()
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
     std::vector<int> handles(buffersCount, 0);
     std::vector<char>buffers(buffersCount*bufferSize, 0);
-    std::vector<StreamChannel::Frame> chFrames;
+    std::vector<SamplesPacket> chFrames;
+
     try
     {
         chFrames.resize(chCount);
@@ -853,10 +848,9 @@ void Streamer::ReceivePacketsLoop()
                 if (mRxStreams[ch].used==false || mRxStreams[ch].mActive==false)
                     continue;
                 const int ind = chCount == maxChannelCount ? ch : 0;
-                StreamChannel::Metadata meta;
-                meta.timestamp = pkt[pktIndex].counter;
-                meta.flags = RingFIFO::OVERWRITE_OLD | RingFIFO::SYNC_TIMESTAMP;
-                mRxStreams[ch].Write((const void*)chFrames[ind].samples, samplesCount, &meta, 100);
+                chFrames[ind].timestamp = pkt[pktIndex].counter;
+                chFrames[ind].last = samplesCount;
+                mRxStreams[ch].fifo->push_packet(chFrames[ind]);
             }
         }
         // Re-submit this request to keep the queue full

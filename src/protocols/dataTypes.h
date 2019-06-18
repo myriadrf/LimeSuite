@@ -20,7 +20,7 @@ struct complex16_t
 };
 
 const int samples12InPkt = 1360;
-const int samples16InPkt = 1020; 
+const int samples16InPkt = 1020;
 
 class SamplesPacket
 {
@@ -29,7 +29,7 @@ public:
     uint64_t timestamp; //timestamp of the packet
     uint16_t first; //index of first unused sample in samples
     uint16_t last; //end index of samples
-    complex16_t samples[maxSamplesInPacket];
+    complex16_t* samples;
     uint32_t flags;
 
     SamplesPacket()
@@ -38,7 +38,13 @@ public:
         first = 0;
         last = 0;
         flags = 0;
+        samples = new complex16_t[maxSamplesInPacket];
     }
+    ~SamplesPacket()
+    {
+        delete [] samples;
+    }
+
 };
 
 }// namespace lime

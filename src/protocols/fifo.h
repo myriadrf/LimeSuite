@@ -30,7 +30,6 @@ public:
     {
         SYNC_TIMESTAMP = 1,
         END_BURST = 2,
-        OVERWRITE_OLD = 4,
     };
 
     //! @brief Returns information about FIFO size and fullness
@@ -59,6 +58,28 @@ public:
         delete []mBuffer;
     };
 
+    void push_packet(SamplesPacket &packet)
+    {
+        std::unique_lock<std::mutex> lck(lock);
+
+        if (mElementsFilled >= mBufferSize) //buffer might be full, wait for free slots
+        {
+                mHead = (mHead + 1) % mBufferSize;//advance to next one
+                mElementsFilled--;
+                mOverflow++;
+        }
+
+        mBuffer[mTail].timestamp = packet.timestamp;
+        mBuffer[mTail].last = packet.last;
+        mBuffer[mTail].first = 0;
+        std::swap(mBuffer[mTail].samples, packet.samples);
+        mTail  = (mTail + 1) % mBufferSize;//advance to next one
+        ++mElementsFilled;
+
+        lck.unlock();
+        hasItems.notify_one();
+    }
+
     /** @brief inserts samples to FIFO, operation is thread-safe
     @param buffer pointers to arrays containing samples data of each channel
     @param samplesCount number of samples to insert from each buffer channel
@@ -77,20 +98,10 @@ public:
         {
             if (mElementsFilled >= mBufferSize) //buffer might be full, wait for free slots
             {
-                if(flags & OVERWRITE_OLD)
-                {
-                    int dropElements = 1+(samplesCount-samplesTaken)/SamplesPacket::maxSamplesInPacket;
-                    mHead = (mHead + dropElements) & (mBufferSize - 1);//advance to next one
-                    mElementsFilled -= dropElements;
-                    mOverflow++;
-                }
-                else  //there is no space, wait on CV to give pop_samples the thread context
-                {
-                    auto elapsed = std::chrono::high_resolution_clock::now()-t1;
-                    if(elapsed >= std::chrono::milliseconds(timeout_ms))
-                        return samplesTaken;
-                    hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms)-elapsed);
-                }
+                auto elapsed = std::chrono::high_resolution_clock::now()-t1;
+                if(elapsed >= std::chrono::milliseconds(timeout_ms))
+                    return samplesTaken;
+                hasItems.wait_for(lck, std::chrono::milliseconds(timeout_ms)-elapsed);
             }
             else
             {
@@ -106,8 +117,8 @@ public:
                 memcpy(mBuffer[mTail].samples,&buffer[samplesTaken],cnt*sizeof(complex16_t));
                 samplesTaken+=cnt;
                 mBuffer[mTail].last = cnt;
-                mBuffer[mTail++].first = 0;
-                mTail  &= (mBufferSize - 1);//advance to next one
+                mBuffer[mTail].first = 0;
+                mTail = (mTail+1) % mBufferSize;//advance to next one
                 ++mElementsFilled;
             }
         }
@@ -159,7 +170,7 @@ public:
 
                 if (cntbuf == cnt) //packet depleated
                 {
-                    mHead = (mHead + 1) & (mBufferSize - 1);//advance to next one
+                    mHead = (mHead + 1) % mBufferSize;//advance to next one
                     --mElementsFilled;
                 }
                 else
@@ -196,66 +207,6 @@ protected:
     uint32_t mUnderflow;
     std::mutex lock;
     std::condition_variable hasItems;
-};
-
-//https://www.justsoftwaresolutions.co.uk/threading/implementing-a-thread-safe-queue-using-condition-variables.html
-template <typename T>
-class ConcurrentQueue
-{
-private:
-    std::queue<T> mQueue;
-    std::mutex mMutex;
-    std::condition_variable mCond;
-public:
-    void push(T const& data)
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        mQueue.push(data);
-        lock.unlock();
-        mCond.notify_one();
-    }
-
-    bool empty() const
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        return mQueue.empty();
-    }
-
-    bool try_pop(T& popped_value)
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        if(mQueue.empty())
-        {
-            return false;
-        }
-        popped_value=mQueue.front();
-        mQueue.pop();
-        return true;
-    }
-
-    void wait_and_pop(T& popped_value)
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        while(mQueue.empty())
-        {
-            mCond.wait(lock);
-        }
-        popped_value=mQueue.front();
-        mQueue.pop();
-    }
-
-    bool wait_and_pop(T& popped_value, const int timeout_ms)
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        while(mQueue.empty())
-        {
-            if (mCond.wait_for(lock, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout)
-                return false;
-        }
-        popped_value=mQueue.front();
-        mQueue.pop();
-        return true;
-    }
 };
 
 }
