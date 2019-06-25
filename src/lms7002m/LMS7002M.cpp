@@ -1126,9 +1126,10 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         }
     }
     //VCO frequency selection according to F_CLKH
-    uint8_t iHdiv_high = (2.94e9/2 / freq_Hz)-1;
-    uint8_t iHdiv_low = (1.93e9/2 / freq_Hz);
-    uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    uint16_t iHdiv_high =(gCGEN_VCO_frequencies[1]/2 / freq_Hz)-1;
+    uint16_t iHdiv_low = (gCGEN_VCO_frequencies[0]/2 / freq_Hz);
+    uint16_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    iHdiv = iHdiv > 255 ? 255 : iHdiv;
     dFvco = 2 * (iHdiv+1) * freq_Hz;
     if (dFvco <= gCGEN_VCO_frequencies[0] || dFvco >= gCGEN_VCO_frequencies[1])
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
