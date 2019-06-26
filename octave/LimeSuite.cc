@@ -398,7 +398,7 @@ CH parameter is optional, valid values are 0 and 1")
 
 
 DEFUN_DLD (LimeTransceiveSamples, args, ,
-"RXSIGNAL = LimeTransceiveSamples( TXSIGNAL, CH, RXOFFSET) - transmit TXSIGNAL and receive RXSIGNAL (same length as TXSIGNAL).\n\
+"RXSIGNAL = LimeTransceiveSamples( TXSIGNAL, RXOFFSET, CH) - transmit TXSIGNAL and receive RXSIGNAL (same length as TXSIGNAL).\n\
  RXOFFSET [optional] - number of samples to skip at the beginning of receive (default 0)\n\
  CH [optional] - channel to use for transmit and receive, valid values are 0 and 1 (default 0)")
 {

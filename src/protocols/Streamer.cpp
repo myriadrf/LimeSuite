@@ -12,11 +12,11 @@ namespace lime
 {
 
 StreamChannel::StreamChannel(Streamer* streamer) :
-    mActive(false),
     mStreamer(streamer),
     pktLost(0),
-    fifo(nullptr),
-    used(false)
+    mActive(false),
+    used(false),
+    fifo(nullptr)
 {
 }
 
@@ -31,12 +31,11 @@ void StreamChannel::Setup(StreamConfig conf)
     used = true;
     config = conf;
     pktLost = 0;
-    if (config.bufferLength == 0) //default size
-        config.bufferLength = 1024*8*SamplesPacket::maxSamplesInPacket;
-
-    if (fifo)
-        delete fifo;
-    fifo = new RingFIFO(config.bufferLength);
+    int bufferLength = config.bufferLength == 0 ? 1024*4*1024 : config.bufferLength;
+    int pktSize = config.format != StreamConfig::FMT_INT12 ? samples16InPkt : samples12InPkt;
+    if (!fifo)
+        fifo = new RingFIFO();
+    fifo->Resize(pktSize, bufferLength/pktSize);
 }
 
 void StreamChannel::Close()
@@ -59,13 +58,13 @@ int StreamChannel::Write(const void* samples, const uint32_t count, const Metada
         for(size_t i=0; i<2*count; ++i)
             samplesShort[i] = samplesFloat[i]*32767.0f;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
-        pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
+        pushed = fifo->push_samples(ptr, count, meta->timestamp, timeout_ms, meta->flags);
         delete[] samplesShort;
     }
     else
     {
         const complex16_t* ptr = (const complex16_t*)samples;
-        pushed = fifo->push_samples(ptr, count, 1, meta->timestamp, timeout_ms, meta->flags);
+        pushed = fifo->push_samples(ptr, count, meta->timestamp, timeout_ms, meta->flags);
     }
     return pushed;
 }
@@ -79,15 +78,16 @@ int StreamChannel::Read(void* samples, const uint32_t count, Metadata* meta, con
         complex16_t* ptr = (complex16_t*)samples;
         int16_t* samplesShort = (int16_t*)samples;
         float* samplesFloat = (float*)samples;
-        popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
+        popped = fifo->pop_samples(ptr, count, &meta->timestamp, timeout_ms);
         for(int i=2*popped-1; i>=0; --i)
             samplesFloat[i] = (float)samplesShort[i]/32767.0f;
     }
     else
     {
         complex16_t* ptr = (complex16_t*)samples;
-        popped = fifo->pop_samples(ptr, count, 1, &meta->timestamp, timeout_ms, &meta->flags);
+        popped = fifo->pop_samples(ptr, count, &meta->timestamp, timeout_ms);
     }
+    meta->flags |= RingFIFO::SYNC_TIMESTAMP;
     return popped;
 }
 
@@ -201,6 +201,24 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
             rxBatchSize = batch;
 
     return config.isTx ? &mTxStreams[ch] : &mRxStreams[ch]; //success
+}
+
+void Streamer::ResizeChannelBuffers()
+{
+    int pktSize = samples12InPkt/streamSize;
+    for(auto& i : mRxStreams)
+        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+           pktSize = samples16InPkt/streamSize;
+    for(auto& i : mTxStreams)
+        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+            pktSize = samples16InPkt/streamSize;
+
+    for(auto& i : mRxStreams)
+        if(i.used && i.fifo)
+            i.fifo->Resize(pktSize);
+    for(auto& i : mTxStreams)
+        if(i.used && i.fifo)
+            i.fifo->Resize(pktSize);
 }
 
 int Streamer::GetStreamSize(bool tx)
@@ -541,6 +559,7 @@ int Streamer::UpdateThreads(bool stopAll)
     //configure FPGA on first start, or disable FPGA when not streaming
     if((needTx || needRx) && (!txThread.joinable()) && (!rxThread.joinable()))
     {
+        ResizeChannelBuffers();
         fpga->WriteRegister(0xFFFF, 1 << chipId);
         if (mRxStreams[0].used && mRxStreams[1].used)
             AlignRxRF(true);
@@ -568,13 +587,6 @@ int Streamer::UpdateThreads(bool stopAll)
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
-
-        for(auto &i : mRxStreams)
-            if (i.used)
-                i.config.linkFormat = dataLinkFormat;
-        for(auto &i : mTxStreams)
-            if (i.used)
-                i.config.linkFormat = dataLinkFormat;
 
         const uint16_t smpl_width = dataLinkFormat == StreamConfig::FMT_INT12 ? 2 : 0;
         uint16_t mode = 0x0100;
@@ -631,24 +643,16 @@ void Streamer::TransmitPacketsLoop()
     const uint8_t buffersCount = dataPort->GetBuffersCount();
     const uint8_t packetsToBatch = dataPort->CheckStreamSize(txBatchSize);
     const uint32_t bufferSize = packetsToBatch*sizeof(FPGA_DataPacket);
-    const uint32_t popTimeout_ms = 500;
 
     const int maxSamplesBatch = (packed ? samples12InPkt:samples16InPkt)/chCount;
     std::vector<int> handles(buffersCount, 0);
     std::vector<bool> bufferUsed(buffersCount, 0);
     std::vector<uint32_t> bytesToSend(buffersCount, 0);
-    std::vector<complex16_t> samples[maxChannelCount];
     std::vector<char> buffers;
-    try
-    {
-        for(int i=0; i<chCount; ++i)
-            samples[i].resize(maxSamplesBatch);
-        buffers.resize(buffersCount*bufferSize, 0);
-    }
-    catch (const std::bad_alloc& ex) //not enough memory for buffers
-    {
-        return lime::error("Error allocating Tx buffers, not enough memory");
-    }
+    buffers.resize(buffersCount*bufferSize, 0);
+    std::vector<SamplesPacket> packets;
+    for (int i = 0; i<maxChannelCount; ++i)
+        packets.emplace_back(maxSamplesBatch);
 
     long totalBytesSent = 0;
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -679,7 +683,6 @@ void Streamer::TransmitPacketsLoop()
         {
             bool has_samples = false;
             int payloadSize = sizeof(FPGA_DataPacket::data);
-            StreamChannel::Metadata meta = {0, 0};
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
                 if (!mTxStreams[ch].used)
@@ -687,18 +690,19 @@ void Streamer::TransmitPacketsLoop()
                 const int ind = chCount == maxChannelCount ? ch : 0;
                 if (mTxStreams[ch].mActive==false)
                 {
-                    memset(&samples[ind][0],0,maxSamplesBatch*sizeof(complex16_t));
+                    memset(packets[ind].samples,0,maxSamplesBatch*sizeof(complex16_t));
                     continue;
                 }
-                int samplesPopped = mTxStreams[ch].Read(samples[ind].data(), maxSamplesBatch, &meta, popTimeout_ms);
+                mTxStreams[ch].fifo->pop_packet(packets[ind]);
+                int samplesPopped = packets[ind].last;
                 if (samplesPopped != maxSamplesBatch)
                 {
-                    if (!(meta.flags & RingFIFO::END_BURST))
+                    if (!(packets[ind].flags & RingFIFO::END_BURST))
                         continue;
                     payloadSize = samplesPopped * sizeof(FPGA_DataPacket::data) / maxSamplesBatch;
                     int q = packed ? 48 : 16;
                     payloadSize = (1 + (payloadSize - 1) / q) * q;
-                    memset(&samples[ind][samplesPopped], 0, (maxSamplesBatch - samplesPopped)*sizeof(complex16_t));
+                    memset(&packets[ind].samples[samplesPopped], 0, (maxSamplesBatch - samplesPopped)*sizeof(complex16_t));
                 }
                 has_samples = true;
             }
@@ -706,17 +710,17 @@ void Streamer::TransmitPacketsLoop()
             if (!has_samples)
                 break;
 
-            end_burst = (meta.flags & RingFIFO::END_BURST);
-            pkt[i].counter = meta.timestamp;
+            end_burst = (packets[0].flags & RingFIFO::END_BURST);
+            pkt[i].counter = packets[0].timestamp;
             pkt[i].reserved[0] = 0;
             //by default ignore timestamps
-            const int ignoreTimestamp = !(meta.flags & RingFIFO::SYNC_TIMESTAMP);
+            const int ignoreTimestamp = !(packets[0].flags & RingFIFO::SYNC_TIMESTAMP);
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
             pkt[i].reserved[1] = payloadSize & 0xFF;
             pkt[i].reserved[2] = (payloadSize >> 8) & 0xFF;
             std::vector<complex16_t*> src(chCount);
             for(uint8_t c=0; c<chCount; ++c)
-                src[c] = (samples[c].data());
+                src[c] = (packets[c].samples);
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             FPGA::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
             bytesToSend[bi] += 16+payloadSize;
@@ -772,15 +776,8 @@ void Streamer::ReceivePacketsLoop()
     std::vector<char>buffers(buffersCount*bufferSize, 0);
     std::vector<SamplesPacket> chFrames;
 
-    try
-    {
-        chFrames.resize(chCount);
-    }
-    catch (const std::bad_alloc &ex)
-    {
-        lime::error("Error allocating Rx buffers, not enough memory");
-        return;
-    }
+    for (int i = 0; i<maxChannelCount; ++i)
+        chFrames.emplace_back(samplesInPacket);
 
     for (int i = 0; i<buffersCount; ++i)
         handles[i] = dataPort->BeginDataReading(&buffers[i*bufferSize], bufferSize, epIndex);

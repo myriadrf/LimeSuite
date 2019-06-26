@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <utility>
 
 namespace lime{
 
@@ -25,26 +26,42 @@ const int samples16InPkt = 1020;
 class SamplesPacket
 {
 public:
-    static const int16_t maxSamplesInPacket = samples12InPkt; //total number of samples in all channels combined
     uint64_t timestamp; //timestamp of the packet
-    uint16_t first; //index of first unused sample in samples
-    uint16_t last; //end index of samples
-    complex16_t* samples;
+    uint32_t last; //end index of samples
     uint32_t flags;
+    complex16_t* samples;
 
-    SamplesPacket()
+    SamplesPacket(int size = 0):
+        timestamp(0),
+        last(0),
+        flags(0),
+        samples(size ? new complex16_t[size]: nullptr)  {};
+
+    SamplesPacket (SamplesPacket&& pkt)
     {
-        timestamp = 0;
-        first = 0;
-        last = 0;
-        flags = 0;
-        samples = new complex16_t[maxSamplesInPacket];
+        timestamp = pkt.timestamp;
+        last = pkt.last;
+        flags = pkt.flags;
+        samples = pkt.samples;
+        pkt.samples = nullptr;
+    };
+
+    SamplesPacket& operator=(SamplesPacket&& pkt)
+    {
+        timestamp = pkt.timestamp;
+        last = pkt.last;
+        flags = pkt.flags;
+        std::swap(samples, pkt.samples);
+        return *this;
     }
     ~SamplesPacket()
     {
-        delete [] samples;
-    }
+        if (samples)
+            delete [] samples;
+    };
 
+    SamplesPacket (const SamplesPacket&) = delete;
+    SamplesPacket& operator=(const SamplesPacket&) = delete;
 };
 
 }// namespace lime

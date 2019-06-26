@@ -145,6 +145,7 @@ public:
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
 private:
+    void ResizeChannelBuffers();
     void AlignRxTSP();
     void AlignRxRF(bool restoreValues);
     void AlignQuadrature(bool restoreValues);
