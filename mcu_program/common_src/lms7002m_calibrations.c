@@ -785,6 +785,7 @@ uint8_t CalibrateTxSetup(bool extLoopback)
     //SXR
     Modify_SPI_Reg_bits(MAC, 1); //switch to ch. A
     SetDefaultsSX();
+    Modify_SPI_Reg_bits(ICT_VCO, 255);
     {
         const float_type SXRfreq = GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - calibrationSXOffset_Hz;
         //SX VCO is powered up in SetFrequencySX/Tune
@@ -1081,6 +1082,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         //in TDD do nothing
         Modify_SPI_Reg_bits(MAC, 1);
         SetDefaultsSX();
+        Modify_SPI_Reg_bits(ICT_VCO, 255);
         status = SetFrequencySX(LMS7002M_Rx, GetFrequencySX(LMS7002M_Tx) - bandwidthRF/ calibUserBwDivider - 9e6);
     }
     else
@@ -1096,6 +1098,7 @@ uint8_t CalibrateRxSetup(bool extLoopback)
         //SXT
         Modify_SPI_Reg_bits(MAC, 2);
         SetDefaultsSX();
+        Modify_SPI_Reg_bits(ICT_VCO, 255);
         status = SetFrequencySX(LMS7002M_Tx, SXRfreqHz + bandwidthRF/ calibUserBwDivider + 9e6);
     }
     SPI_write(0x0020, x0020val);
