@@ -683,7 +683,7 @@ int LMS7002M::LoadConfig(const char* filename)
     return 0;
 }
 
-int LMS7002M:: ResetLogicregisters()
+int LMS7002M::ResetLogicregisters()
 {
     auto x0020_value = SPI_read(0x0020); //reset logic registers
     SPI_write(0x0020, x0020_value & 0x55FF);
@@ -2509,7 +2509,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
+        status = Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
     }
     else
     {
@@ -2519,7 +2519,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
+        status = Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
     }
 
     if (Get_SPI_Reg_bits(LMS7param(TX_MUX)) == 0)
@@ -2529,7 +2529,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
 
-    return ResetLogicregisters();
+    return status;
 }
 
 float_type LMS7002M::GetSampleRate(bool tx, Channel ch)

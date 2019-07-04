@@ -479,12 +479,6 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
     if (!lms)
         return -1;
 
-    if (lms->ReadLMSReg(0x2F) == 0x3840)
-    {
-        lime::error("Calibration not supported");
-        return -1;
-    }
-
     return lms->Calibrate(dir_tx, chan, bw, flags);
 }
 

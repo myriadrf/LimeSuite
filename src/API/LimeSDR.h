@@ -20,6 +20,7 @@ public:
     std::vector<std::string> GetProgramModes() const override;
     int Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const override;
     int EnableChannel(bool dir_tx, unsigned chan, bool enabled) override;
+    int Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags) override;
 };
 
 }

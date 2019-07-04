@@ -6,6 +6,7 @@
  */
 #include "LimeSDR.h"
 #include "device_constants.h"
+#include "FPGA_common.h"
 
 namespace lime
 {
@@ -67,6 +68,16 @@ int LMS7_LimeSDR::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
     int ret = LMS7_Device::EnableChannel(dir_tx, chan, enabled);
     if (dir_tx) //always enable DAC1, otherwise sample rates <2.5MHz do not work
         lms_list[0]->Modify_SPI_Reg_bits(LMS7_PD_TX_AFE1, 0);
+    return ret;
+}
+
+int LMS7_LimeSDR::Calibrate(bool dir_tx, unsigned chan, double bw, unsigned flags)
+{
+    //switch RF path (may improve things in some configurations)
+    uint16_t value = fpga->ReadRegister(0x17);
+    fpga->WriteRegister(0x17, (value & (~0x77)) | 0x11);
+    int ret = LMS7_Device::Calibrate(dir_tx, chan, bw, flags);
+    fpga->WriteRegister(0x17, value);
     return ret;
 }
 
