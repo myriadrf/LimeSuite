@@ -975,7 +975,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
     }
 
     int g_iamp = (float_type)opt_gain_tbb[ind]*pow(10.0,gain/20.0)+0.4;
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp<1 ? 1 :g_iamp , true);
 
     return 0;
 }
