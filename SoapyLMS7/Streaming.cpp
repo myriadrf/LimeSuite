@@ -421,6 +421,8 @@ int SoapyLMS7::writeStream(
     const long long timeNs,
     const long timeoutUs)
 {
+    if ((flags & SOAPY_SDR_HAS_TIME) && (timeNs <= 0))
+        return SOAPY_SDR_TIME_ERROR;
     auto icstream = (IConnectionStream *)stream;
     const auto &streamID = icstream->streamID;
 
