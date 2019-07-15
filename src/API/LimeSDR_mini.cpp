@@ -141,8 +141,9 @@ int LMS7_LimeSDR_mini::SetFrequency(bool isTx, unsigned chan, double f_Hz)
     channel.cF_offset_nco = 0;
     if (setTDD(f_Hz) != 0)
         return -1;
-
-    return AutoRFPath(isTx, f_Hz);
+    if ((isTx && auto_tx_path) || (!isTx && auto_rx_path))
+        return AutoRFPath(isTx, f_Hz);
+    return 0;
 }
 
 std::vector<std::string> LMS7_LimeSDR_mini::GetPathNames(bool dir_tx, unsigned chan) const
