@@ -121,7 +121,7 @@ API_EXPORT int CALL_CONV LMS_Close(lms_device_t *device);
  * @defgroup FN_HIGH_LVL    High-level control functions
  *
  * The functions in this section provide the ability to easily configure the
- * device for operation. They modify multiple internal device settings. 
+ * device for operation. They modify multiple internal device settings.
  *
  * @{
  */
@@ -237,8 +237,8 @@ API_EXPORT int CALL_CONV LMS_GetSampleRateRange(lms_device_t *device, bool dir_t
  * Set RF center frequency in Hz.
  *
  * @note channels A and B in LMS7 chip share the same clock so ability to set
- * different frequencies for channels A and B is very limited. This function 
- * will attempt to achieve different requested frequencies using NCO when 
+ * different frequencies for channels A and B is very limited. This function
+ * will attempt to achieve different requested frequencies using NCO when
  * possible, however often changing frequency for one (A or B) channel will
  * result in frequency being changed for both (A and B) channels.
  *
@@ -747,10 +747,10 @@ API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
 
 /**
  * Enables or disable caching of LMS7 and FPGA register values.
- * 
+ *
  * @deprecated calibration cache has been removed from LimeSuite. Use
  * LMS_EnableCache() to enable caching of register values
- * 
+ *
  * @param   dev         Device handle previously obtained by LMS_Open().
  * @param   enable      true to enable cache
  *
@@ -760,7 +760,7 @@ API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
 
 /**
  * Enables or disable caching of LMS7 and FPGA register values.
- * 
+ *
  * @param   dev         Device handle previously obtained by LMS_Open().
  * @param   enable      true to enable cache
  *
@@ -776,9 +776,9 @@ API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t *dev, bool enable);
 /**
  * @defgroup FN_LOW_LVL    Low-Level control functions
  * The functions in this section provide a low access to device such as modifying
- * device internal register or clock frequency. Low-Level functions can be used 
+ * device internal register or clock frequency. Low-Level functions can be used
  * to configure device entirely, however a more practical use is to fine-tune
- * device settings after configuring it with /ref FN_HIGH_LVL.    
+ * device settings after configuring it with /ref FN_HIGH_LVL.
  * @{
  */
 
@@ -872,7 +872,7 @@ API_EXPORT int CALL_CONV LMS_WriteFPGAReg(lms_device_t *device, uint32_t address
 ///Runtime VCTCXO DAC trim value. Does not persist over power-cycle
 #define BOARD_PARAM_DAC     0
 ///The value of board temperature sensor (if present), read-only.
-#define BOARD_PARAM_TEMP    1  
+#define BOARD_PARAM_TEMP    1
 /** @} (End BOARD_PARAM) */
 
 /**
@@ -891,10 +891,10 @@ API_EXPORT int CALL_CONV LMS_ReadCustomBoardParam(lms_device_t *device,
 /**
  * Write custom parameter from board
  *
- * @param device    Device handle previously obtained by LMS_Open().
- * @param id        Parameter identifier (\ref BOARD_PARAM)
- * @param val       Value to write
- * @param units     [optional] measurement units of parameter if available
+ * @param       device    Device handle previously obtained by LMS_Open().
+ * @param       id        Parameter identifier (\ref BOARD_PARAM)
+ * @param[out]  val       Value to write
+ * @param[out]  units     [optional] measurement units of parameter if available
  *
  * @return  0 on success, (-1) on failure
  */
@@ -908,25 +908,25 @@ API_EXPORT int CALL_CONV LMS_WriteCustomBoardParam(lms_device_t *device,
  * @{
  */
 ///Chip reference clock
-#define LMS_CLOCK_REF    0x0000  
+#define LMS_CLOCK_REF    0x0000
 ///RX LO clock
-#define LMS_CLOCK_SXR    0x0001  
+#define LMS_CLOCK_SXR    0x0001
 ///TX LO clock
-#define LMS_CLOCK_SXT    0x0002 
+#define LMS_CLOCK_SXT    0x0002
 ///CGEN clock
-#define LMS_CLOCK_CGEN   0x0003  
+#define LMS_CLOCK_CGEN   0x0003
 ///RXTSP reference clock (read-only)
-#define LMS_CLOCK_RXTSP  0x0004 
+#define LMS_CLOCK_RXTSP  0x0004
 ///TXTSP reference clock (read-only)
-#define LMS_CLOCK_TXTSP  0x0005 
-/** 
+#define LMS_CLOCK_TXTSP  0x0005
+/**
  * @brief External reference clock (write-only)
- * 
+ *
  * Set to positive value to enable usage of external reference clock of the
  * specified frequency. Set to 0 or negative value to disable usage of external
  * reference clock (if switching reference clock source is supported by HW)
- */ 
-#define LMS_CLOCK_EXTREF 0x0006  
+ */
+#define LMS_CLOCK_EXTREF 0x0006
 
 /** @} (End LMS_CLOCK_ID) */
 
@@ -962,7 +962,7 @@ API_EXPORT int CALL_CONV LMS_SetClockFreq(lms_device_t *dev, size_t clk_id,
  * @note calling this functions switches clock source to VCTCXO
  *
  * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   val         Value to write to VCTCXO trim DAC 
+ * @param   val         Value to write to VCTCXO trim DAC
  *
  * @return 0 on success, (-1) on failure
  */
@@ -970,7 +970,7 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * dev, uint16_t val);
 
 /**
  * Read VCTCXO trim DAC value from non-volatile storage. Returned value is value
- * that is loaded on power-on and may different from current runtime value. 
+ * that is loaded on power-on and may different from current runtime value.
  *
  * @param[in]   dev     Device handle previously obtained by LMS_Open().
  * @param[out]  val     VCTCXO trim DAC value
@@ -1098,19 +1098,19 @@ typedef struct
     bool active;
     ///Number of samples in FIFO buffer
     uint32_t fifoFilledCount;
-    ///Size of FIFO buffer
+    ///Size (in samples) of FIFO buffer
     uint32_t fifoSize;
-    ///FIFO underrun count
+    ///FIFO underrun count since last call to LMS_GetStreamStatus()
     uint32_t underrun;
-    ///FIFO overrun count
+    ///FIFO overrun count since last call to LMS_GetStreamStatus()
     uint32_t overrun;
-    ///Number of dropped packets by HW
+    ///Number of dropped packets by HW since last call to LMS_GetStreamStatus()
     uint32_t droppedPackets;
     ///Currently not used
     float_type sampleRate;
-    ///Combined data rate of all stream of the same direction (TX or RX)
+    ///Data transfer rate from board per direction per LMS chip.
     float_type linkRate;
-    ///Current HW timestamp
+    ///The most recently received Rx timestamp, or the last timestamp submitted to Tx.
     uint64_t timestamp;
 
 } lms_stream_status_t;
@@ -1227,10 +1227,10 @@ API_EXPORT int CALL_CONV LMS_EnableTxWFM(lms_device_t *device, unsigned chan, bo
 
 /**
  * Get the list of supported programming modes.
- * 
+ *
  * @param device        Device handle previously obtained by LMS_Open().
  * @param[out]  list    list of programming modes (can be NULL).
- * 
+ *
  * @return      number of modes in the list, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_GetProgramModes(lms_device_t *device, lms_name_t *list);
@@ -1250,12 +1250,12 @@ typedef bool (*lms_prog_callback_t)(int bsent, int btotal, const char* progressM
  * @param device    Device handle previously obtained by LMS_Open().
  * @param data      Pointer to memory containing firmware/bitsteam image
  * @param size      Size of firmware/bitsteam image in bytes.
- * @param mode      programming mode, use LMS_GetProgramModes to get list of modes 
+ * @param mode      programming mode, use LMS_GetProgramModes to get list of modes
  * @param callback  callback function for monitoring progress
  *
  * @return          0 on success, (-1) on failure
  */
-API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data, 
+API_EXPORT int CALL_CONV LMS_Program(lms_device_t *device, const char *data,
                 size_t size, const lms_name_t mode, lms_prog_callback_t callback);
 
 /**Device information structure*/
@@ -1291,7 +1291,7 @@ API_EXPORT const char* LMS_GetLibraryVersion();
 
 /**
  * Get the error message detailing why the last error occurred.
- * 
+ *
  * @deprecated use LMS_RegisterLogHandler() to obtain error messages
  *
  * @return last error message.
@@ -1304,27 +1304,27 @@ API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
  * @{
  */
 ///An error message . An operation did not complete successfully.
-#define LMS_LOG_ERROR    1  
+#define LMS_LOG_ERROR    1
 ///A warning message. An operation completed with an unexpected result.
-#define LMS_LOG_WARNING  2  
+#define LMS_LOG_WARNING  2
 ///An informational message, usually denoting the successful completion of an operation
-#define LMS_LOG_INFO     3  
+#define LMS_LOG_INFO     3
  ///A debugging message.
-#define LMS_LOG_DEBUG    4 
+#define LMS_LOG_DEBUG    4
 /** @} (End LMS_LOG_LEVEL) */
 
 /**
  * Callback function for redirecting API messages
- * 
+ *
  * @param lvl   \ref LMS_LOG_LEVEL.
  * @param msg   string containing log message text.
  */
  typedef void (*LMS_LogHandler)(int lvl, const char *msg);
- 
+
 /*!
  * Register a new system log handler. Should be called to replace the default
  * stdio handler.
- * 
+ *
  * @param handler   function for handling API messages
  */
 API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler);
