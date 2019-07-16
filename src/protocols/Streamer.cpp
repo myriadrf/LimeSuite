@@ -389,10 +389,6 @@ double Streamer::GetPhaseOffset(int bin)
 
 void Streamer::AlignRxRF(bool restoreValues)
 {
-    uint32_t addr = 0, val =0;
-    fpga->ReadRegisters(&addr,&val,1);
-    if (val!= LMS_DEV_LIMESDR && val != LMS_DEV_LIMESDR_PCIE)
-        return;
     uint32_t reg20 = lms->SPI_read(0x20);
     auto regBackup = lms->BackupRegisterMap();
     lms->SPI_write(0x20, 0xFFFF);
@@ -561,7 +557,8 @@ int Streamer::UpdateThreads(bool stopAll)
     {
         ResizeChannelBuffers();
         fpga->WriteRegister(0xFFFF, 1 << chipId);
-        if (mRxStreams[0].used && mRxStreams[1].used)
+        bool align = (mRxStreams[0].used && mRxStreams[1].used && (mRxStreams[0].config.align | mRxStreams[1].config.align));
+        if (align)
             AlignRxRF(true);
         //enable FPGA streaming
         fpga->StopStreaming();
@@ -606,7 +603,8 @@ int Streamer::UpdateThreads(bool stopAll)
         const uint32_t data[] = {reg9 | (5 << 1), reg9 & ~(5 << 1)};
         fpga->StartStreaming();
         fpga->WriteRegisters(addr, data, 2);
-        lms->ResetLogicregisters();
+        if (!align)
+            lms->ResetLogicregisters();
     }
     else if(not needTx and not needRx)
     {

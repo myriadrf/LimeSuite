@@ -716,6 +716,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     config.bufferLength = stream->fifoSize;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
+    config.align = stream->flags;
     switch(stream->dataFmt)
     {
         case lms_stream_t::LMS_FMT_F32:

@@ -37,7 +37,7 @@ struct LIME_API StreamConfig
     bool isTx;
 
     uint8_t channelID;
-
+    bool align;
     float performanceLatency;
 
     //! Possible stream data formats

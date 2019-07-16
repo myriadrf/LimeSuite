@@ -1057,6 +1057,17 @@ typedef struct
 
 }lms_stream_meta_t;
 
+
+
+/**
+ * @defgroup STREAM_OPTION_FLAGS  Additional streaming options
+ *
+ * @{
+ */
+///Attempt to align channel phases in MIMO mode (supported only for Rx channels)
+#define LMS_ALIGN_CH_PHASE 0x0001
+/** @} (End STREAM_OPTION_FLAGS) */
+
 /**Stream structure*/
 typedef struct
 {
@@ -1069,7 +1080,10 @@ typedef struct
     bool isTx;
 
     //! Channel number. Starts at 0.
-    uint32_t channel;
+    uint16_t channel;
+
+    //! Additional stream configuration flags  (\ref STREAM_OPTION_FLAGS)
+    uint16_t flags;
 
     //! FIFO size (in samples) used by stream.
     uint32_t fifoSize;

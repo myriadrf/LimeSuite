@@ -113,6 +113,7 @@ int main(int argc, char** argv)
         rx_streams[i].throughputVsLatency = 0.5; //some middle ground
         rx_streams[i].isTx = false; //RX channel
         rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+        rx_streams[i].flags = 0;
         if (LMS_SetupStream(device, &rx_streams[i]) != 0)
             error();
         tx_streams[i].channel = i; //channel number
@@ -120,6 +121,7 @@ int main(int argc, char** argv)
         tx_streams[i].throughputVsLatency = 0.5; //some middle ground
         tx_streams[i].isTx = true; //TX channel
         tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+        tx_streams[i].flags = 0;
         if (LMS_SetupStream(device, &tx_streams[i]) != 0)
             error();
     }

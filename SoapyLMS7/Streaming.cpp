@@ -84,13 +84,24 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
         argInfos.push_back(info);
     }
 
-    //link format
+    //skip calibrations
     {
         SoapySDR::ArgInfo info;
         info.value = "false";
         info.key = "skipCal";
         info.name = "Skip Calibration";
         info.description = "Skip automatic activation calibration.";
+        info.type = SoapySDR::ArgInfo::BOOL;
+        argInfos.push_back(info);
+    }
+
+    //align phase of Rx channels
+    {
+        SoapySDR::ArgInfo info;
+        info.value = "false";
+        info.key = "alignPhase";
+        info.name = "align phase";
+        info.description = "Attempt to align phase of Rx channels.";
         info.type = SoapySDR::ArgInfo::BOOL;
         argInfos.push_back(info);
     }
@@ -116,6 +127,7 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     stream->skipCal = args.count("skipCal") != 0 and args.at("skipCal") == "true";
 
     StreamConfig config;
+    config.align = args.count("alignPhase") != 0 and args.at("alignPhase") == "true";
     config.isTx = (direction == SOAPY_SDR_TX);
     config.performanceLatency = 0.5;
     config.bufferLength = 0; //auto
