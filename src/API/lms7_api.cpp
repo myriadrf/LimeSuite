@@ -1,3 +1,17 @@
+//milans 190610
+//#include "limeRFE.h"
+#include "limeRFE_constants.h"
+/*
+struct boardState
+{
+	unsigned char channelID;
+	unsigned char attValue;
+	unsigned char notchOnOff;
+	unsigned char selTX2TXRX;
+	unsigned char mode;
+};
+*/
+
 #include "IConnection.h"
 #include "ConnectionRegistry.h"
 #include "lime/LimeSuite.h"
@@ -9,6 +23,7 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Streamer.h"
+
 
 using namespace std;
 
@@ -955,4 +970,187 @@ extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cm
     }
 
     return LMS_SUCCESS;
+}
+
+//milans 190610
+/****************************************************************************
+*
+*   LimeRFE API Functions
+*
+*****************************************************************************/
+extern "C" API_EXPORT int CALL_CONV LIMERFE_Open(const char* serialport, int baudrate) {
+	int fd = 0;
+
+	fd = serialport_init(serialport, baudrate);
+	if (fd == -1)
+		return fd;
+
+	int result = Cmd_Hello(fd);
+	if (result == 1)
+		fd = LIMERFE_HELLO_ATTEMPTS_EXCEEDED;
+
+	return fd;
+}
+
+extern "C" API_EXPORT void CALL_CONV LIMERFE_Close(int fd) {
+
+	serialport_close(fd);
+
+}
+
+//extern "C" API_EXPORT void CALL_CONV LIMERFE_GetInfo(int fd, unsigned char* cinfo) {
+extern "C" API_EXPORT void CALL_CONV LIMERFE_GetInfo(int commType, lms_device_t *dev, int i2Caddress, int fd, unsigned char* cinfo) {
+	
+	boardInfo info;
+//	info = Cmd_GetInfo(fd);
+	info = Cmd_GetInfo(commType, dev, i2Caddress, fd);
+	cinfo[0] = info.fw_ver;
+	cinfo[1] = info.hw_ver;
+	cinfo[2] = info.status1;
+	cinfo[3] = info.status2;
+}
+
+extern "C" API_EXPORT int LIMERFE_ReadConfig(const char *filename, boardState *state) {
+	int result = 0;
+
+	result = ReadConfig(filename, state);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_SaveConfig(const char *filename, boardState state) {
+	int result = 0;
+
+	result = SaveConfig(filename, state);
+
+	return result;
+}
+
+//extern "C" API_EXPORT int LIMERFE_ReadBoardConfigFull(int fd, boardState *state) {
+extern "C" API_EXPORT int LIMERFE_ReadBoardConfigFull(int commType, lms_device_t *dev, int i2Caddress, int fd, boardState *state) {
+	int result = 0;
+
+	result = Cmd_GetConfigFull(commType, dev, i2Caddress, fd, state);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_I2C_Master(int fd, int isMaster) {
+	int result = 0;
+
+	result = Cmd_I2C_Master(fd, isMaster);
+
+	return result;
+}
+
+//extern "C" API_EXPORT int LIMERFE_LoadConfig(int fd, const char *filename) {
+extern "C" API_EXPORT int LIMERFE_LoadConfig(int commType, lms_device_t *dev, int i2Caddress, int fd, const char *filename) {
+
+	int result = 0;
+
+	result = Cmd_LoadConfig(commType, dev, i2Caddress, fd, filename);
+
+	return result;
+}
+
+//extern "C" API_EXPORT int LIMERFE_Reset(int fd) {
+extern "C" API_EXPORT int LIMERFE_Reset(int commType, lms_device_t *dev, int i2Caddress, int fd) {
+	int result = 0;
+
+	result = Cmd_Reset(commType, dev, i2Caddress, fd);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_ConfigureFull(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode, int selTX2TXRX, int notch, int attenuation){
+	int result = 0;
+
+//	result = Cmd_ConfigureFull(fd, channelID, selTX2TXRX, notch, attenuation);
+//	result = Cmd_ConfigureFull(commType, dev, i2Caddress, fd, channelID, selTX2TXRX, notch, attenuation);
+	result = Cmd_ConfigureFull(commType, dev, i2Caddress, fd, channelID, mode, selTX2TXRX, notch, attenuation);
+//	result = Cmd_Configure(commType, dev, i2Caddress, fd, channelID, selTX2TXRX, notch, attenuation);
+
+//ovdi!!!
+//TEST TEST TEST TEST TEST
+//	result = I2C_Cmd_LEDonOff(dev, i2Caddress, 1);
+//	result = I2C_Cmd_LEDonOff(commType, dev, i2Caddress, fd, 1);
+//	result = Cmd_LEDonOff(commType, dev, i2Caddress, fd, 1);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_ModeFull(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode) {
+	int result = 0;
+
+//	result = Cmd_ModeFull(fd, channelID, mode);
+	result = Cmd_ModeFull(commType, dev, i2Caddress, fd, channelID, mode);
+//	result = Cmd_Mode(commType, dev, i2Caddress, fd, mode);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_Configure(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode, int selTX2TXRX, int notch, int attenuation) {
+	int result = 0;
+
+	result = Cmd_Configure(commType, dev, i2Caddress, fd, channelID, mode, selTX2TXRX, notch, attenuation);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_Mode(int commType, lms_device_t *dev, int i2Caddress, int fd, int mode) {
+	int result = 0;
+
+	result = Cmd_Mode(commType, dev, i2Caddress, fd, mode);
+
+	return result;
+}
+
+//extern "C" API_EXPORT int LIMERFE_ReadADC(int fd, int adcID, int* value) {
+extern "C" API_EXPORT int LIMERFE_ReadADC(int commType, lms_device_t *dev, int i2Caddress, int fd, int adcID, int* value) {
+	int result = 0;
+
+//	result = Cmd_ReadADC(fd, adcID, value);
+	result = Cmd_ReadADC(commType, dev, i2Caddress, fd, adcID, value);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_LEDonOff(int commType, lms_device_t *dev, int i2Caddress, int fd, int onOff) {
+	int result = 0;
+
+	result = Cmd_LEDonOff(commType, dev, i2Caddress, fd, onOff);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_Cmd(int commType, lms_device_t *dev, int i2Caddress, int fd, unsigned char* buffer) {
+	int result = 0;
+
+	result = Cmd_Cmd(commType, dev, i2Caddress, fd, buffer);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_ConfGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int direction) {
+	int result = 0;
+
+	result = Cmd_ConfGPIO45(commType, dev, i2Caddress, fd, gpioNum, direction);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_SetGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int val) {
+	int result = 0;
+
+	result = Cmd_SetGPIO45(commType, dev, i2Caddress, fd, gpioNum, val);
+
+	return result;
+}
+
+extern "C" API_EXPORT int LIMERFE_GetGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int * val) {
+	int result = 0;
+
+	result = Cmd_GetGPIO45(commType, dev, i2Caddress, fd, gpioNum, val);
+
+	return result;
 }

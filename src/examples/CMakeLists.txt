@@ -34,5 +34,14 @@ add_executable(basicTX basicTX.cpp)
 set_target_properties(basicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(basicTX LimeSuite)
 
+add_executable(limeRFE_GPIO_test limeRFE_GPIO_test.cpp)
+set_target_properties(limeRFE_GPIO_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(limeRFE_GPIO_test LimeSuite)
 
+add_executable(limeRFE_USB_example limeRFE_USB_example.cpp)
+set_target_properties(limeRFE_USB_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(limeRFE_USB_example LimeSuite)
 
+add_executable(limeRFE_I2C_example limeRFE_I2C_example.cpp)
+set_target_properties(limeRFE_I2C_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(limeRFE_I2C_example LimeSuite)

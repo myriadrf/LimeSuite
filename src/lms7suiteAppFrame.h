@@ -24,6 +24,8 @@ class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
 class pnlAPI;
+//milans 190610
+class limeRFE;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -61,6 +63,9 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnChangeCacheSettings(wxCommandEvent& event);
         void OnLmsChanged(wxCommandEvent& event);
         void OnShowAPICalls( wxCommandEvent& event );
+		//milans 190610
+		void OnShowLimeRFE(wxCommandEvent& event);
+		void OnLimeRFEClose(wxCloseEvent& event);
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
@@ -94,7 +99,8 @@ protected:
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
         pnlAPI* api;
-
+//milans 190610
+		limeRFE* limeRFEwin;
 };
 
 
