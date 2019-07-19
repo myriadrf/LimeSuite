@@ -14,13 +14,13 @@
 #include <iostream>
 #include <getopt.h>
 
+#ifdef QUICKTEST_GUI
 #ifdef NDEBUG
 #ifdef _MSC_VER
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 #endif
 #endif
 
-#ifdef QUICKTEST_GUI
 static Fl_Button** buttons;
 static Fl_Window* popup = nullptr;
 static Fl_Multiline_Output* out;
