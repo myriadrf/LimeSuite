@@ -1057,21 +1057,19 @@ typedef struct
 
 }lms_stream_meta_t;
 
-
-
 /**
- * @defgroup STREAM_OPTION_FLAGS  Additional streaming options
+ * @defgroup STREAM_CH_FLAGS  Additional streaming options
  *
  * @{
  */
 ///Attempt to align channel phases in MIMO mode (supported only for Rx channels)
-#define LMS_ALIGN_CH_PHASE 0x0001
-/** @} (End STREAM_OPTION_FLAGS) */
+#define LMS_ALIGN_CH_PHASE (1<<16)
+/** @} (End STREAM_CH_FLAGS) */
 
 /**Stream structure*/
 typedef struct
 {
-    /**
+    /** @brief
      * Stream handle. Should not be modified manually.
      * Assigned by LMS_SetupStream().*/
     size_t handle;
@@ -1079,16 +1077,15 @@ typedef struct
     //! Indicates whether stream is TX (true) or RX (false)
     bool isTx;
 
-    //! Channel number. Starts at 0.
-    uint16_t channel;
-
-    //! Additional stream configuration flags  (\ref STREAM_OPTION_FLAGS)
-    uint16_t flags;
+    /** @brief
+     * Channel number, starts at 0.
+     * Can be combined with additional flags  (\ref STREAM_CH_FLAGS)*/
+    uint32_t channel;
 
     //! FIFO size (in samples) used by stream.
     uint32_t fifoSize;
 
-    /**
+    /** @brief
      * Parameter for controlling configuration bias toward low latency or high
      * data throughput range [0,1.0].
      * 0 - lowest latency, usually results in lower throughput
