@@ -281,11 +281,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buff
     return conn ? conn->GPIODirWrite(buffer,len) : -1;
 }
 
-API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
-{
-    return LMS_EnableCache(dev, enable);
-}
-
 API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t *dev, bool enable)
 {
     lime::LMS7_Device* lms = CheckDevice(dev);

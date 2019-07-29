@@ -743,21 +743,6 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx,
 API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
                                     size_t chan, lms_gfir_t filt, bool enabled);
 
-
-
-/**
- * Enables or disable caching of LMS7 and FPGA register values.
- *
- * @deprecated calibration cache has been removed from LimeSuite. Use
- * LMS_EnableCache() to enable caching of register values
- *
- * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   enable      true to enable cache
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
-
 /**
  * Enables or disable caching of LMS7 and FPGA register values.
  *
