@@ -39,7 +39,6 @@ extern "C" {
 #endif
 
 #if defined _WIN32 || defined __CYGWIN__
-#   include <windows.h>
 #   define CALL_CONV __cdecl
 #   ifdef __GNUC__
 #       define API_EXPORT __attribute__ ((dllexport))
@@ -1045,6 +1044,8 @@ typedef struct
 /**
  * @defgroup STREAM_CH_FLAGS  Additional streaming options
  *
+ * @brief These can be combined with lms_stream_t::channel to
+ * enable additional streaming options.
  * @{
  */
 ///Attempt to align channel phases in MIMO mode (supported only for Rx channels)
@@ -1096,15 +1097,15 @@ typedef struct
     uint32_t fifoFilledCount;
     ///Size (in samples) of FIFO buffer
     uint32_t fifoSize;
-    ///FIFO underrun count since last call to LMS_GetStreamStatus()
+    ///FIFO underrun count since the last call to LMS_GetStreamStatus()
     uint32_t underrun;
-    ///FIFO overrun count since last call to LMS_GetStreamStatus()
+    ///FIFO overrun count since the last call to LMS_GetStreamStatus()
     uint32_t overrun;
-    ///Number of dropped packets by HW since last call to LMS_GetStreamStatus()
+    ///Number of dropped packets by HW since the last call to LMS_GetStreamStatus()
     uint32_t droppedPackets;
     ///Currently not used
     float_type sampleRate;
-    ///Data transfer rate from board per direction per LMS chip.
+    ///Data transfer rate (B/s) over the last 1 s per direction per LMS chip.
     float_type linkRate;
     ///The most recently received Rx timestamp, or the last timestamp submitted to Tx.
     uint64_t timestamp;
