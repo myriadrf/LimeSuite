@@ -1300,6 +1300,8 @@ API_EXPORT const char * CALL_CONV LMS_GetLastErrorMessage(void);
  *
  * @{
  */
+///A critical error. The application might not be able to continue running successfully.
+#define LMS_LOG_CRITICAL 0
 ///An error message . An operation did not complete successfully.
 #define LMS_LOG_ERROR    1
 ///A warning message. An operation completed with an unexpected result.
