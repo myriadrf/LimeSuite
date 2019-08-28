@@ -444,7 +444,11 @@ int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
     FT_STATUS ftStatus = FT_OK;
     ftStatus = FT_ReadPipe(mFTHandle, streamRdEp, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
     if (ftStatus != FT_IO_PENDING)
+    {
+        lime::error("ERROR BEGIN DATA READING %d", ftStatus);
+        contexts[i].used = false;
         return -1;
+    }
 #else
     libusb_transfer *tr = contexts[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, streamRdEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
@@ -589,7 +593,11 @@ int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int e
     FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
 	ftStatus = FT_WritePipe(mFTHandle, streamWrEp, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
 	if (ftStatus != FT_IO_PENDING)
-		return -1;
+    {
+        lime::error("ERROR BEGIN DATA SENDING %d", ftStatus);
+        contexts[i].used = false;
+        return -1;
+    }
 #else
     libusb_transfer *tr = contextsToSend[i].transfer;
     contextsToSend[i].done = false;
