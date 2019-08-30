@@ -26,6 +26,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     Si5351C/Si5351C.h
     FPGA_common/FPGA_common.h
     API/lms7_device.h
+    limeRFE/limeRFE.h
 )
 
 include(FeatureSummary)
@@ -76,8 +77,8 @@ set(LIME_SUITE_SOURCES
     FPGA_common/FPGA_Mini.cpp
     FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
-    #milans 190610    
-    limeRFE/limeRFE_cmd.cpp    
+    limeRFE/limeRFE_cmd.cpp
+    limeRFE/limeRFE_api.cpp
 )
 
 set(LIME_SUITE_INCLUDES
@@ -97,11 +98,9 @@ set(LIME_SUITE_INCLUDES
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
-#milans 190610
-#    limeRFE/external/cpp-feather-ini-parser    
+    limeRFE
 )
 
-#milans 190610
 if(MSVC)
     list(APPEND LIME_SUITE_SOURCES limeRFE/external/termiWin/termiWin.c)
     list(APPEND LIME_SUITE_INCLUDES limeRFE/external/termiWin)    
@@ -245,13 +244,12 @@ set(LMS7SUITE_GUI_SOURCES
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
     boards_wxgui/pnlGPIO.cpp
-#milans 190610    
     limeRFE/limeRFE_gui.cpp
-    limeRFE/limeRFE.cpp
-    limeRFE/limeRFE_cmd.cpp    
+    limeRFE/limeRFE_wxgui.cpp
+    limeRFE/limeRFE_cmd.cpp
+    limeRFE/limeRFE_api.cpp
 )
 
-#milans 190610
 if(MSVC)
     list(APPEND LMS7SUITE_GUI_SOURCES limeRFE/external/termiWin/termiWin.c)
 endif()
@@ -272,7 +270,6 @@ if (ENABLE_GUI)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
-#milans 190610    
     include_directories(limeRFE)
     
     include(${wxWidgets_USE_FILE})
@@ -283,8 +280,6 @@ if (ENABLE_GUI)
     add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
     set_target_properties(LimeSuiteGUI PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-#milans 190611
-#    set_target_properties(LimeSuiteGUI PROPERTIES DEFINE_SYMBOL "WIN32_LEAN_AND_MEAN")
     target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
         
     target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})

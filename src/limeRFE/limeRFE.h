@@ -1,274 +1,286 @@
+/**
+* @file limeRFE/limeRFE.h
+*
+* @brief LimeRFE API functions
+*
+* Copyright (C) 2016 Lime Microsystems
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #ifndef __limeRFE__
 #define __limeRFE__
 
-#include "limeRFE_constants.h"
-#include "limeRFE_gui.h"
-//#include "lime/LimeSuite.h"
+#include "LimeSuite.h"
 
-//#include "INI.h"
-#include <iostream>
-#include <fstream>
-//using namespace std;
-//#include <string.h>
+///LimeRFE I2C address
+#define RFE_I2C_ADDRESS       0x51
 
-#include <stdio.h>
+///LimeRFE Channel IDs
+#define RFE_CID_WB_1000 0
+#define RFE_CID_WB_4000 1
+#define RFE_CID_HAM_0030 2
+#define RFE_CID_HAM_0145 3
+#define RFE_CID_HAM_0435 4
+#define RFE_CID_HAM_1280 5
+#define RFE_CID_HAM_2400 6
+#define RFE_CID_HAM_3500 7
+#define RFE_CID_CELL_BAND01 8
+#define RFE_CID_CELL_BAND02 9
+#define RFE_CID_CELL_BAND03 10
+#define RFE_CID_CELL_BAND07 11
+#define RFE_CID_CELL_BAND38 12
+#define RFE_CID_COUNT 13
 
-#include <stdlib.h>
-//#include <fcntl.h>    // File control definitions
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
+///LimeRFE Ports
+#define RFE_PORT_1	1	///<Connector J3 - 'TX/RX'
+#define RFE_PORT_2	2	///<Connector J4 - 'TX'
+#define RFE_PORT_3	3	///<Connector J5 - '30 MHz TX/RX'
 
-#include <vector>
+///LimeRFE convenience constants for notch on/off control
+#define RFE_NOTCH_OFF 0
+#define RFE_NOTCH_ON 1
 
-//#include <math.h>
+///LimeRFE Modes
+#define RFE_MODE_RX 0     ///<RX - Enabled; TX - Disabled
+#define RFE_MODE_TX 1     ///<RX - Disabled; TX - Enabled
+#define RFE_MODE_NONE 2   ///<RX - Disabled; TX - Disabled
+#define RFE_MODE_TXRX 3   ///<RX - Enabled; TX - Enabled
 
-/*
-#ifdef _MSC_VER
-#include <tchar.h>
+///LimeRFE ADC constants
+#define RFE_ADC1 0        ///<ADC #1, this ADC value is proportional to output power in dB.
+#define RFE_ADC2 1        ///<ADC #2, this ADC value is proportional to reflection coefficient in dB.
+#define RFE_ADC_VREF 5.0  ///<ADC referent voltage
+#define RFE_ADC_BITS 10   ///<ADC resolution
 
-#define O_NOCTTY 0
-#define	IXANY		0x00000800	// any char will restart after stop
+///LimeRFE error codes
+#define RFE_SUCCESS	0
+#define RFE_ERROR_COMM_SYNC -4	///<Error synchronizing communication
+#define RFE_ERROR_GPIO_PIN	-3	///<Non-configurable GPIO pin specified. Only pins 4 and 5 are configurable.
+#define RFE_ERROR_CONF_FILE	-2	///<Problem with .ini configuration file
+#define RFE_ERROR_COMM	-1	///<Communication error
+#define RFE_ERROR_TX_CONN	1	///<Wrong TX connector - not possible to route TX of the selecrted channel to the specified port
+#define RFE_ERROR_RX_CONN	2	///<Wrong RX connector - not possible to route RX of the selecrted channel to the specified port
+#define RFE_ERROR_RXTX_SAME_CONN	3	///<Mode TXRX not allowed - when the same port is selected for RX and TX, it is not allowed to use mode RX & TX
+#define RFE_ERROR_CELL_WRONG_MODE	4	///<Wrong mode for cellular channel - Cellular FDD bands (1, 2, 3, and 7) are only allowed mode RX & TX, while TDD band 38 is allowed only RX or TX mode
+#define RFE_ERROR_CELL_TX_NOT_EQUAL_RX	5	///<Cellular channels must be the same both for RX and TX
+
+///LimeRFE configurable GPIO pins
+#define RFE_GPIO4 4
+#define RFE_GPIO5 5
+
+///LimeRFE configurable GPIO pins direction
+#define RFE_GPIO_DIR_OUT	0	///<Output
+#define RFE_GPIO_DIR_IN		1	///<Input
+
+///LimeRFE SWR subsystem enable
+#define RFE_SWR_DISABLE	0	///<Disable
+#define RFE_SWR_ENABLE	1	///<Enable
+
+///LimeRFE SWR subsystem source
+#define RFE_SWR_SRC_EXT		0	///<External - SWR signals are supplied to the connectors J18 for forward and J17 for forward signal. To be supplied from the external coupler.
+#define RFE_SWR_SRC_CELL	1	///<Cellular - Power Meter signal is provided internally from the cellular TX amplifier outputs.
+
+///LimeRFE board configuration parameters
+struct rfe_boardState
+{
+	unsigned char channelIDRX;	///<RX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 – 146 MHz) HAM channel.
+	unsigned char channelIDTX;	///<TX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 – 146 MHz) HAM channel.If - 1 then the same channel as for RX is used.
+	unsigned char selPortRX;	///<RX port (convenience constants defined in limeRFE.h).
+	unsigned char selPortTX;	///<TX port (convenience constants defined in limeRFE.h).
+	unsigned char mode;	///<Operation mode (defined in limeRFE.h). Not all modes all applicable to all congfigurations.HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode.Cellular TDD band 38 can not be in RFE_MODE_TXRX.
+	unsigned char notchOnOff;	///<Specifies whether the notch filter is applied or not (convenience constants defined in limeRFE.h).
+	unsigned char attValue;	///<Specifies the attenuation in the RX path. Attenuation [dB] = 2 * attenuation.
+	unsigned char enableSWR;	///<Enable SWR subsystem. (convenience constants defined in limeRFE.h).
+	unsigned char sourceSWR;	///<SWR subsystem source. (convenience constants defined in limeRFE.h).
+};
+
+#ifdef __cplusplus
 extern "C" {
-	//	#include "termiWin/termiWin.h"
-#define TERMIWIN_DONOTREDEFINE
-#include "termiWin.h"
-}
-#endif // WIN
+#endif
 
-#ifdef __unix__
-#include <unistd.h>
-#include <termios.h>  // POSIX terminal control definitions
-#include <sys/ioctl.h>
-#include <getopt.h>
+#if defined _WIN32 || defined __CYGWIN__
+#   define CALL_CONV __cdecl
+#   ifdef __GNUC__
+#       define API_EXPORT __attribute__ ((dllexport))
+#   else
+#       define API_EXPORT __declspec(dllexport)
+#   endif
+#elif defined _DOXYGEN_ONLY_
+	/** Marks an API routine to be made visible to the dynamic loader.
+	*  This is OS and/or compiler-specific. */
+#   define API_EXPORT
+	/** Specifies calling convention, if necessary.
+	*  This is OS and/or compiler-specific. */
+#   define CALL_CONV
+#else
+#   define API_EXPORT __attribute__ ((visibility ("default")))
+#   define CALL_CONV
+#endif
 
-//tchar.h
-typedef char TCHAR;
-
-#endif // LINUX
-
-#define LIMERFE_I2C 0
-#define LIMERFE_USB 1 
-
-#define LIMERFE_BUFFER_SIZE 16
-
-//test
-#define LIMERFE_CMD_LED_ONOFF     0xFF
-
-#define GPIO_SCL 6
-#define GPIO_SDA 7
-
-#define LIMERFE_I2C_FSCL 100E3 //Approx. SCL frequency - ???
-
-#define LIMERFE_I2C_ADDRESS       0x51
-
-#define LIMERFE_CMD_HELLO         0x00
-
-// CTRL
-#define LIMERFE_CMD_MODE                    0xd1  
-#define LIMERFE_CMD_CONFIG                  0xd2  // CMD + CHANNELID + RXTX + NOTCH + ATTENUATION + MODE
-#define LIMERFE_CMD_MODE_FULL               0xd3  // CMD + MODE
-#define LIMERFE_CMD_CONFIG_FULL             0xd4  // CMD + chain bytes + MCU STATE byte
-
-#define LIMERFE_CMD_READ_ADC1               0xa1  // returns ADC1 value
-#define LIMERFE_CMD_READ_ADC2               0xa2  // returns ADC2 value
-#define LIMERFE_CMD_READ_TEMP               0xa3  // returns temperature
-
-// General CTRL
-#define LIMERFE_CMD_GET_INFO                0xe1
-#define LIMERFE_CMD_RESET                   0xe2
-#define LIMERFE_CMD_GET_CONFIG              0xe3
-#define LIMERFE_CMD_GET_CONFIG_FULL         0xe4
-#define LIMERFE_CMD_I2C_MASTER              0xe5
-
-#define LIMERFE_DISABLE 0
-#define LIMERFE_ENABLE  1
-
-#define LIMERFE_OFF 0
-#define LIMERFE_ON  1
-
-#define LIMERFE_MAX_HELLO_ATTEMPTS 50
-
-#define LIMERFE_HELLO_ATTEMPTS_EXCEEDED -10
-
-#define LIMERFE_TIME_BETWEEN_HELLO_MS 200
-
-#define LIMERFE_TYPE_INDEX_WB 0
-#define LIMERFE_TYPE_INDEX_HAM 1
-#define LIMERFE_TYPE_INDEX_CELL 2
-
-#define LIMERFE_CHANNEL_INDEX_WB_1000 0
-#define LIMERFE_CHANNEL_INDEX_WB_4000 1
-#define LIMERFE_CHANNEL_INDEX_WB_COUNT 2
-
-#define LIMERFE_CHANNEL_INDEX_HAM_0030 0
-#define LIMERFE_CHANNEL_INDEX_HAM_0145 1
-#define LIMERFE_CHANNEL_INDEX_HAM_0435 2
-#define LIMERFE_CHANNEL_INDEX_HAM_1280 3
-#define LIMERFE_CHANNEL_INDEX_HAM_2400 4
-#define LIMERFE_CHANNEL_INDEX_HAM_3500 5
-#define LIMERFE_CHANNEL_INDEX_HAM_COUNT 6
-
-#define LIMERFE_CHANNEL_INDEX_CELL_BAND01 0
-#define LIMERFE_CHANNEL_INDEX_CELL_BAND02 1
-#define LIMERFE_CHANNEL_INDEX_CELL_BAND03 2
-#define LIMERFE_CHANNEL_INDEX_CELL_BAND07 3
-#define LIMERFE_CHANNEL_INDEX_CELL_BAND38 4
-#define LIMERFE_CHANNEL_INDEX_CELL_COUNT 5
-
-#define LIMERFE_CID_WB_1000 0
-#define LIMERFE_CID_WB_4000 1
-#define LIMERFE_CID_HAM_0030 2
-#define LIMERFE_CID_HAM_0145 3
-#define LIMERFE_CID_HAM_0435 4
-#define LIMERFE_CID_HAM_1280 5
-#define LIMERFE_CID_HAM_2400 6
-#define LIMERFE_CID_HAM_3500 7
-#define LIMERFE_CID_CELL_BAND01 8
-#define LIMERFE_CID_CELL_BAND02 9
-#define LIMERFE_CID_CELL_BAND03 10
-#define LIMERFE_CID_CELL_BAND07 11
-#define LIMERFE_CID_CELL_BAND38 12
-#define LIMERFE_CID_COUNT 13
-
-#define LIMERFE_TX2TXRX_INDEX_TX 0
-#define LIMERFE_TX2TXRX_INDEX_TXRX 1
-#define LIMERFE_TX2TXRX_INDEX_COUNT 2
-#define LIMERFE_TX2TXRX_INDEX_DEFAULT 1
-
-#define LIMERFE_TXRX_VALUE_RX 0
-#define LIMERFE_TXRX_VALUE_TX 1
-
-#define LIMERFE_NOTCH_VALUE_OFF 0
-#define LIMERFE_NOTCH_VALUE_ON 1
-#define LIMERFE_NOTCH_DEFAULT 0
-
-#define LIMERFE_NOTCH_BIT_OFF 1
-#define LIMERFE_NOTCH_BIT_ON 0
-
-#define LIMERFE_NOTCH_BYTE 8
-#define LIMERFE_NOTCH_BIT 0
-#define LIMERFE_ATTEN_BYTE 12
-#define LIMERFE_ATTEN_BIT 0 //LSB bit - Attenuation is 3-bit value
-#define LIMERFE_TX2TXRX_BYTE 11
-#define LIMERFE_TX2TXRX_BIT 5
-
-#define LIMERFE_MODE_RX 0
-#define LIMERFE_MODE_TX 1
-#define LIMERFE_MODE_NONE 2
-#define LIMERFE_MODE_TXRX 3
-
-#define LIMERFE_MCU_BYTE_PA_EN_BIT 0
-#define LIMERFE_MCU_BYTE_LNA_EN_BIT 1
-#define LIMERFE_MCU_BYTE_TXRX0_BIT 2
-#define LIMERFE_MCU_BYTE_TXRX1_BIT 3
-#define LIMERFE_MCU_BYTE_RELAY_BIT 4
-
-#define LIMERFE_ADC1 0
-#define LIMERFE_ADC2 1
-#define LIMERFE_ADC_VREF	5.0
-
-#define LIMERFE_COM_SUCCESS	0
-#define LIMERFE_COM_ERROR	1
-
-typedef struct
-{
-	unsigned char status1;
-	unsigned char status2;
-	unsigned char fw_ver;
-	unsigned char hw_ver;
-} boardInfo;
-
-struct boardState
-{
-	unsigned char channelID;
-	unsigned char attValue;
-	unsigned char notchOnOff;
-	unsigned char selTX2TXRX;
-	unsigned char mode;
-	unsigned char i2Caddress;
-};
+/****************************************************************************
+*   LimeRFE API Functions
+*****************************************************************************/
+/**
+* @defgroup RFE_API    LimeRFE API Functions
+*
+* @{
 */
-class limeRFE : public limeRFE_view
-{
-	protected:
-		lms_device_t *lmsControl;
+/**
+*This functions opens port to LimeRFE in case of USB communication.
+*In case of I2C communication via LimeSDR, this function is not needed.
+*
+* @param serialport  Serial port name, e.g. “COM3”
+* @param baudrate    Baudrate, e.g. 9600. Should match the value in firmware, by default 9600.
+*
+* @return            Positive number on success, (-1) on failure
+*/
+API_EXPORT int CALL_CONV RFE_Open(const char* serialport, int baudrate = 9600);
 
-		// Handlers for AppFrame events.
-		void OnbtnOpenPort(wxCommandEvent& event);
-		void OnbtnClosePort(wxCommandEvent& event);
-		void AddMssg(const char* mssg);
-		void ReadPorts();
-		void OnbtnRefreshPorts(wxCommandEvent& event);
-		void OnbtnReset(wxCommandEvent& event);
-		void OnbtnOpen(wxCommandEvent& event);
-		void OnbtnSave(wxCommandEvent& event);
-		boardState GUI2State();
-		void State2GUI(boardState state);
-		void OnbtnBoard2GUI(wxCommandEvent& event);
+/**
+*This function closes the port previously opened with RFE_Open.
+*
+* @param fd          Port file handle previously obtained from invoking RFE_Open.
+*
+* @return            None
+*/
+API_EXPORT void CALL_CONV RFE_Close(int fd);
 
-		void OncbI2CMaster(wxCommandEvent& event);
+/**
+*This function gets the firmware and hardware version, as well as 2 status bytes (reserved for future use).
+*
+* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param cinfo       Board info: cinfo[0] – Firmware version; cinfo[1] – Hardware version; cinfo[2] – Status (reserved for future use); cinfo[3] – Status (reserved for future use)
+*
+* @return             0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_GetInfo(lms_device_t *dev, int fd, unsigned char* cinfo);
 
-		void OncType(wxCommandEvent& event);
-		void SetChannelsChoices();
+/**
+*This function loads LimeRFE configuration from an .ini file, and configures the board accordingly.
+*
+* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param filename    Full path to .ini configuration file
+*
+* @return            0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_LoadConfig(lms_device_t *dev, int fd, const char *filename);
 
-		void OncChannel(wxCommandEvent& event);
-		void SetConfigurationOptions();
-		int GetChannelID();
-		int GetChannelIndexes(int channelID, int* typeIndex, int* channelIndex);
+/**
+*This function Resets the board.
+*
+* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+*
+* @return            0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_Reset(lms_device_t *dev, int fd);
 
-		int lastSelection[3] = { 0, 0, 0 };
+/**
+*This function configures the LimeRFE board.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param channelIDRX   RX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 – 146 MHz) HAM channel.
+* @param channelIDTX   TX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 – 146 MHz) HAM channel. If -1 then the same channel as for RX is used.
+* @param portRX        RX port (convenience constants defined in limeRFE.h).
+* @param portTX        TX port (convenience constants defined in limeRFE.h).
+* @param mode          Operation mode (defined in limeRFE.h). Not all modes all applicable to all congfigurations. HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode. Cellular TDD band 38 can not be in RFE_MODE_TXRX.
+* @param notch         Specifies whether the notch filter is applied or not (convenience constants defined in limeRFE.h).
+* @param attenuation   Specifies the attenuation in the RX path. Attenuation [dB] = 2 * attenuation.
+* @param enableSWR     Enable SWR subsystem. (convenience constants defined in limeRFE.h).
+* @param sourceSWR     SWR subsystem source. (convenience constants defined in limeRFE.h).
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX = -1, int portRX = 0, int portTX = 0, int mode = 0, int notch = 0, int attenuation = 0, int enableSWR = 0, int sourceSWR = 0);
 
-		int lastTX2TXRXSelection = 0;
+/**
+*This function configures the LimeRFE board. It's functionality is identical to RFE_Configure, with different arguments.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param state         Structure containing configuration parameters.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int RFE_ConfigureState(lms_device_t *dev, int fd, rfe_boardState state);
 
-		void OncTX2TXRX(wxCommandEvent& event);
+/**
+*This function sets the LimeRFE mode (receive, transmit, both, or none)
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param mode          Operation mode (convenience constants defined in limeRFE.h). Not all modes all applicable to all congfigurations. HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode. Cellular TDD band 38 can not be in RFE_MODE_TXRX.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_Mode(lms_device_t *dev, int fd, int mode);
 
-		void OntbtnTXRX(wxCommandEvent& event);
-		void SetModeLabel();
+/**
+*This function reads the value of the speficied ADC.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param adcID         Specifies which ADC is to be read (convenience constants defined in limeRFE.h).
+* @param value         ADC value.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_ReadADC(lms_device_t *dev, int fd, int adcID, int* value);
 
-		void OnbtnConfigure(wxCommandEvent& event);
+/**
+*This function configures GPIO pin. Only pins 4 and 5 are configurable.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
+* @param direction     GPIO pin direction (convenience constants defined in limeRFE.h). 0 - Output; 1 - Input.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_ConfGPIO(lms_device_t *dev, int fd, int gpioNum, int direction);
 
-		bool configured;
-		int configuredChannelID;
-		int configredTX2TXRX;
-		int configuredNotch;
-		int configuredAttenuation;
+/**
+*This function sets the GPIO pin value. GPIO pin should have been previously configured as output using RFE_ConfGPIO function.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
+* @param val           GPIO pin value.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_SetGPIO(lms_device_t *dev, int fd, int gpioNum, int val);
 
-		int activeMode;
+/**
+*This function reads the GPIO pin value. GPIO pin should have been previously configured as input using RFE_ConfGPIO function.
+*
+* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
+* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
+* @param val           GPIO pin value.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_GetGPIO(lms_device_t *dev, int fd, int gpioNum, int * val);
 
-		void UpdateRFEForm();
+/** @} (End RFE_API) */
 
-		void OncbNotch(wxCommandEvent& event);
-		void OncAttenuation(wxCommandEvent& event);
-
-		void OnbtnReadADC(wxCommandEvent& event);
-
-		void OntbtnTXRXEN(wxCommandEvent& event);
-
-		void OnrbI2CrbUSB(wxCommandEvent& event);
-
-		void OnrbSWRsource(wxCommandEvent& event);
-
-		void OnbtnCalibrate(wxCommandEvent& event);
-
-		int CalculatePowerAndGamma(int adc1, int adc2, double * pin_dBm, double * gamma_dB);
-
-		unsigned char GetI2CAddress();
-		int GetCommType();
-
-		int fd; //Port handle
-
-		double powerCellCalCorr;
-		double powerCalCorr;
-		double gammaCalCorr;
-
-	public:
-		/** Constructor */
-		limeRFE( wxWindow* parent );
-	//// end generated class members
-        limeRFE(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-        void Initialize(lms_device_t* lms);
-};
-
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 #endif // __limeRFE__

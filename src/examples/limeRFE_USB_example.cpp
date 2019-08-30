@@ -9,7 +9,7 @@
 #include <thread>
 #include <stdio.h>
 
-#include "limeRFE_constants.h"
+#include "limeRFE.h"
 
 int openPort(char* portName);
 void closePort(int fd);
@@ -25,9 +25,9 @@ int main(int argc, char** argv)
 	}
 
 	//Open port
-	int fd = LIMERFE_Open(argv[1], 9600);
+	int fd = RFE_Open(argv[1], 9600);
 
-	if (fd == LIMERFE_HELLO_ATTEMPTS_EXCEEDED) {
+	if (fd == RFE_ERROR_COMM_SYNC) {
 		std::cout << "Error synchronizing board" << std::endl;
 		return -1;
 	}
@@ -42,21 +42,23 @@ int main(int argc, char** argv)
 	}
 
 	//Configure LimeRFE to use channel HAM 2m channel in receive mode.
-	//Transmit output is routed to TX output. Notch is off. Attenuation is 0.
-	LIMERFE_Configure(LIMERFE_USB, NULL, 0, fd, LIMERFE_CID_HAM_0145, LIMERFE_MODE_RX, LIMERFE_TX2TXRX_INDEX_TX, LIMERFE_NOTCH_VALUE_OFF, 0);
+	//Transmit output is routed to TX/RX output. Notch is off. Attenuation is 0.
+	RFE_Configure(NULL, fd, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0);
+	//or simpler (by using default arguments)
+	//RFE_Configure(NULL, fd, RFE_CID_HAM_0145);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Change mode to transmit
-	LIMERFE_Mode(LIMERFE_USB, NULL, 0, fd, LIMERFE_MODE_TX);
+	RFE_Mode(NULL, fd, RFE_MODE_TX);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Reset LimeRFE
-	LIMERFE_Reset(LIMERFE_USB, NULL, 0, fd);
+	RFE_Reset(NULL, fd);
 
 	//Close port
-	LIMERFE_Close(fd);
+	RFE_Close(fd);
 
 	return 0;
 }

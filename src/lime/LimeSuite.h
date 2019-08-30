@@ -1344,33 +1344,6 @@ API_EXPORT void LMS_RegisterLogHandler(LMS_LogHandler handler);
 
 /** @} (End FN_VERSION) */
 
-//milans 190610
-/****************************************************************************
-*
-*   LimeRFE API Functions
-*
-*****************************************************************************/
-API_EXPORT int CALL_CONV LIMERFE_Open(const char* serialport, int baudrate);
-API_EXPORT void CALL_CONV LIMERFE_Close(int fd);
-API_EXPORT void CALL_CONV LIMERFE_GetInfo(int commType, lms_device_t *dev, int i2Caddress, int fd, unsigned char* cinfo);
-API_EXPORT int CALL_CONV LIMERFE_ReadConfig(const char *filename, struct boardState *state);
-API_EXPORT int CALL_CONV LIMERFE_SaveConfig(const char *filename, struct boardState state);
-API_EXPORT int CALL_CONV LIMERFE_ReadBoardConfigFull(int commType, lms_device_t *dev, int i2Caddress, int fd, struct boardState *state);
-API_EXPORT int CALL_CONV LIMERFE_I2C_Master(int fd, int isMaster);// Turn board into I2C master - for testing only!
-API_EXPORT int CALL_CONV LIMERFE_LoadConfig(int commType, lms_device_t *dev, int i2Caddress, int fd, const char *filename);
-API_EXPORT int CALL_CONV LIMERFE_Reset(int commType, lms_device_t *dev, int i2Caddress, int fd);
-API_EXPORT int CALL_CONV LIMERFE_ConfigureFull(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode, int selTX2TXRX = 0, int notch = 0, int attenuation = 0);
-API_EXPORT int CALL_CONV LIMERFE_ModeFull(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode);
-API_EXPORT int CALL_CONV LIMERFE_Configure(int commType, lms_device_t *dev, int i2Caddress, int fd, int channelID, int mode, int selTX2TXRX = 0, int notch = 0, int attenuation = 0);
-API_EXPORT int CALL_CONV LIMERFE_Mode(int commType, lms_device_t *dev, int i2Caddress, int fd, int mode);
-API_EXPORT int CALL_CONV LIMERFE_ReadADC(int commType, lms_device_t *dev, int i2Caddress, int fd, int adcID, int* value);
-API_EXPORT int CALL_CONV LIMERFE_LEDonOff(int commType, lms_device_t *dev, int i2Caddress, int fd, int onOff);
-API_EXPORT int CALL_CONV LIMERFE_LEDonOff(int commType, lms_device_t *dev, int i2Caddress, int fd, int onOff);
-API_EXPORT int CALL_CONV LIMERFE_Cmd(int commType, lms_device_t *dev, int i2Caddress, int fd, unsigned char* buffer);
-API_EXPORT int CALL_CONV LIMERFE_ConfGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int direction);
-API_EXPORT int CALL_CONV LIMERFE_SetGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int val);
-API_EXPORT int CALL_CONV LIMERFE_GetGPIO45(int commType, lms_device_t *dev, int i2Caddress, int fd, int gpioNum, int * val);
-
 #ifdef __cplusplus
 } //extern "C"
 #endif

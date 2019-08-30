@@ -1,8 +1,7 @@
-Release 19.05.0 (2019-07-03)
+Release 19.05.0 (2019-08-19)
 ==========================
 
-milans
-Including LimeRFE support
+- Including LimeRFE support
 
 Release 19.04.0 (2019-05-09)
 ==========================

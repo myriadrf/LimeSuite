@@ -485,17 +485,12 @@ int openSerial(char* portname, int opt) {
 	else {
 		com.port = calloc(1, sizeof(char) * 5);
 	}
-	//milans 190612
-//	strncat(com.port, portname, 4);
 	strncat(com.port, portname, strlen(portname));
 
 	switch (opt) {
 
 	case O_RDWR:
-		//milans 190211
-//	    com.hComm = CreateFile(com.port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 		com.hComm = CreateFileA(com.port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-//		com.hComm = CreateFileA("\\\\.\\COM10", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 		break;
 
 	case O_RDONLY:
@@ -529,8 +524,8 @@ HANDLE getHandle() {
 	return com.hComm;
 }
 
-//milans - Added function to disable DTR, because in Windows each time the port opens the Arduino is reset
-int milans_setDTR(int val) {
+//Function to disable DTR, because in Windows each time the port opens the Arduino is reset
+int setDTR(int val) {
 	SerialParams.fDtrControl = val;
 	return 0;
 }

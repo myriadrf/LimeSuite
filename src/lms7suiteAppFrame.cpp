@@ -37,8 +37,7 @@
 #include "pnlQSpark.h"
 #include "pnlAPI.h"
 #include "lms7_device.h"
-//milans 190610
-#include "limeRFE.h"
+#include "limeRFE_wxgui.h"
 
 using namespace std;
 using namespace lime;
@@ -156,7 +155,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     api = nullptr;
     boardControlsGui = nullptr;
 
-//milans 190610
 	limeRFEwin = nullptr;
 
     lmsControl = new LMS7_Device();
@@ -257,6 +255,8 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         programmer->SetConnection(lmsControl);
     if(api)
         api->Initialize(lmsControl);
+	if (limeRFEwin)
+		api->Initialize(limeRFEwin);
 }
 
 
@@ -658,7 +658,6 @@ void LMS7SuiteAppFrame::UpdateVisiblePanel() const
     mContent->UpdateVisiblePanel();
 }
 
-//milans 190610
 void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
 	if (limeRFEwin) //it's already opened
 	{
@@ -669,9 +668,8 @@ void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
 	}
 	else
 	{
-		limeRFEwin = new limeRFE(this, wxNewId(), _("LimeRFE Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+		limeRFEwin = new limeRFE_wxgui(this, wxNewId(), _("LimeRFE Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 		limeRFEwin->Initialize(lmsControl);
-//		limeRFE->UpdatePanel();
 		limeRFEwin->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnLimeRFEClose), NULL, this);
 		limeRFEwin->Show();
 	}

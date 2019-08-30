@@ -180,13 +180,11 @@ int writeToSerial(int fd, char* buffer, int count);
 int openSerial(char* portname, int opt);
 int closeSerial(int fd);
 
-//milans - Added function to disable DTR, because in Windows each time the port opens the Arduino is reset
-int milans_setDTR(int val);
+//Function to disable DTR, because in Windows each time the port opens the Arduino is reset
+int setDTR(int val);
 
 //get Handle out of the COM structure
 HANDLE getHandle();
-
-
 
 #endif
 
