@@ -94,6 +94,7 @@ set(LIME_SUITE_INCLUDES
     LTEpackets
     FPGA_common
     lms7002m_mcu
+    limeRFE
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     HPM7
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
@@ -272,8 +273,6 @@ if (ENABLE_GUI)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
-#milans 190610    
-    include_directories(limeRFE)
     
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
