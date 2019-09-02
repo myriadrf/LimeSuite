@@ -936,9 +936,9 @@ int i2c_read_buffer(lms_device_t* lms, unsigned char* c, int size) {
 	i2c_tx(lms, addressByteR);	// I2C address with R/W bit set
 
 	int i;
-	for (i = 0; i < RFE_BUFFER_SIZE; i++) {
+	for (i = 0; i < size; i++) {
 		char ack = 1;
-		if (i == (RFE_BUFFER_SIZE - 1))
+		if (i == (size - 1))
 			ack = 0;
 		c[i] = i2c_rx(lms, ack);
 	}
