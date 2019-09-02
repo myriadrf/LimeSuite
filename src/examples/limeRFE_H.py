@@ -21,11 +21,6 @@ MODE_TX = 1
 MODE_NONE = 2
 MODE_TXRX = 3
 
-I2C = 0
-USB = 1 
-
-I2C_ADDRESS = 0x51
-
 PORT_1 = 1
 PORT_2 = 2
 PORT_3 = 3
