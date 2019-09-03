@@ -742,21 +742,6 @@ API_EXPORT int CALL_CONV LMS_GetGFIRCoeff(lms_device_t * device, bool dir_tx,
 API_EXPORT int CALL_CONV LMS_SetGFIR(lms_device_t * device, bool dir_tx,
                                     size_t chan, lms_gfir_t filt, bool enabled);
 
-
-
-/**
- * Enables or disable caching of LMS7 and FPGA register values.
- *
- * @deprecated calibration cache has been removed from LimeSuite. Use
- * LMS_EnableCache() to enable caching of register values
- *
- * @param   dev         Device handle previously obtained by LMS_Open().
- * @param   enable      true to enable cache
- *
- * @return 0 on success, (-1) on failure
- */
-API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable);
-
 /**
  * Enables or disable caching of LMS7 and FPGA register values.
  *
@@ -1056,21 +1041,21 @@ typedef struct
 
 }lms_stream_meta_t;
 
-
-
 /**
- * @defgroup STREAM_OPTION_FLAGS  Additional streaming options
+ * @defgroup STREAM_CH_FLAGS  Additional streaming options
  *
+ * @brief These can be combined with lms_stream_t::channel to
+ * enable additional streaming options.
  * @{
  */
 ///Attempt to align channel phases in MIMO mode (supported only for Rx channels)
-#define LMS_ALIGN_CH_PHASE 0x0001
-/** @} (End STREAM_OPTION_FLAGS) */
+#define LMS_ALIGN_CH_PHASE (1<<16)
+/** @} (End STREAM_CH_FLAGS) */
 
 /**Stream structure*/
 typedef struct
 {
-    /**
+    /** @brief
      * Stream handle. Should not be modified manually.
      * Assigned by LMS_SetupStream().*/
     size_t handle;
@@ -1078,16 +1063,15 @@ typedef struct
     //! Indicates whether stream is TX (true) or RX (false)
     bool isTx;
 
-    //! Channel number. Starts at 0.
-    uint16_t channel;
-
-    //! Additional stream configuration flags  (\ref STREAM_OPTION_FLAGS)
-    uint16_t flags;
+    /** @brief
+     * Channel number, starts at 0.
+     * Can be combined with additional flags  (\ref STREAM_CH_FLAGS)*/
+    uint32_t channel;
 
     //! FIFO size (in samples) used by stream.
     uint32_t fifoSize;
 
-    /**
+    /** @brief
      * Parameter for controlling configuration bias toward low latency or high
      * data throughput range [0,1.0].
      * 0 - lowest latency, usually results in lower throughput
@@ -1113,15 +1097,15 @@ typedef struct
     uint32_t fifoFilledCount;
     ///Size (in samples) of FIFO buffer
     uint32_t fifoSize;
-    ///FIFO underrun count since last call to LMS_GetStreamStatus()
+    ///FIFO underrun count since the last call to LMS_GetStreamStatus()
     uint32_t underrun;
-    ///FIFO overrun count since last call to LMS_GetStreamStatus()
+    ///FIFO overrun count since the last call to LMS_GetStreamStatus()
     uint32_t overrun;
-    ///Number of dropped packets by HW since last call to LMS_GetStreamStatus()
+    ///Number of dropped packets by HW since the last call to LMS_GetStreamStatus()
     uint32_t droppedPackets;
     ///Currently not used
     float_type sampleRate;
-    ///Data transfer rate from board per direction per LMS chip.
+    ///Data transfer rate (B/s) over the last 1 s per direction per LMS chip.
     float_type linkRate;
     ///The most recently received Rx timestamp, or the last timestamp submitted to Tx.
     uint64_t timestamp;

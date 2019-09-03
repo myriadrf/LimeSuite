@@ -1,7 +1,40 @@
-Release 19.05.0 (2019-08-19)
+Release 19.04.1 (pending)
 ==========================
 
+LimeSuite library changes:
 - Including LimeRFE support
+- Update CGEN calculation to allow lower CGEN values
+- Configure RF switches (when possible) to avoid transmission during calibration
+- Automatically reconfigure GFIR LPF after sample rate change
+- Remove LMS_EnableCalibCache function from LimeSuite.h
+- Improve PLL locking in calibration procedures
+- Fix Tx transfer size being set to Rx transfer size
+- Fix RF path being auto-set after it was selected explicitly for LimeSDR-Mini
+- Add option to perform Rx phase alignment instead of of always running it
+- Improve SXT/SXR tune by automatically retrying with higher bias current setting
+- Update FIFO buffers to use memory more efficiently
+
+SoapyLMS:
+- Add oversampling setting
+- Set bandwidth to sample rate if bandwidth is not explicitly set
+- Fix possible segfault when 2 Rx cahnnels are used
+- Pause streaming when changing sample rate
+- Return time error when negative timestmp is used
+- Automatically use wide enough bandwidth setting for RF frequencies bellow 30 MHz
+- Remove master clock setting
+- Add setting descriptions
+
+LimeSuiteGUI:
+- Add panel for LMS API function testing
+- fix channel measurement in FFTviewer for Ch.B in MIMO mode
+
+Octave plugin:
+- Add LimeGetStreamStatus function
+- Add LimeTransceiveSamples function
+- Update antenna selection after loading ini file
+
+Other changes:
+- Fix LimeQuickTest not outputing to windows command line
 
 Release 19.04.0 (2019-05-09)
 ==========================

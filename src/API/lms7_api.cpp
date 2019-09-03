@@ -281,11 +281,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buff
     return conn ? conn->GPIODirWrite(buffer,len) : -1;
 }
 
-API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
-{
-    return LMS_EnableCache(dev, enable);
-}
-
 API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t *dev, bool enable)
 {
     lime::LMS7_Device* lms = CheckDevice(dev);
@@ -716,7 +711,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     config.bufferLength = stream->fifoSize;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
-    config.align = stream->flags;
+    config.align = stream->channel & LMS_ALIGN_CH_PHASE;
     switch(stream->dataFmt)
     {
         case lms_stream_t::LMS_FMT_F32:

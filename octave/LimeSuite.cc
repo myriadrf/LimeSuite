@@ -164,6 +164,19 @@ DEFUN_DLD (LimeLoadConfig, args, nargout,
     {
          return octave_value(-1);
     }
+
+    int chCnt = LMS_GetNumChannels(lmsDev, LMS_CH_RX);
+    chCnt = chCnt > maxChCnt ? maxChCnt : chCnt;
+    for(int ch=0; ch< chCnt; ++ch) //set antenna to update RF switches
+    {
+        int ant = LMS_GetAntenna(lmsDev, LMS_CH_RX, ch);
+        if(ant < 0 || LMS_SetAntenna(lmsDev, LMS_CH_RX, ch, ant) < 0)
+             octave_stdout << "Error setting Rx antenna for ch: " << ch << endl;
+        ant = LMS_GetAntenna(lmsDev, LMS_CH_TX, ch);
+        if(ant < 0 || LMS_SetAntenna(lmsDev, LMS_CH_TX, ch, ant) < 0)
+             octave_stdout << "Error setting Tx antenna for ch: " << ch << endl;
+    }
+
     octave_stdout << "Config loaded successfully: " << endl;
 
     return octave_value(0);

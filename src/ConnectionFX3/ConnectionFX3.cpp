@@ -493,10 +493,10 @@ int ConnectionFX3::BeginDataReading(char *buffer, uint32_t length, int ep)
 }
 
 /**
-	@brief Waits for asynchronous data reception
-	@param contextHandle handle of which context data to wait
-	@param timeout_ms number of miliseconds to wait
-	@return 1-data received, 0-data not received
+@brief Waits for asynchronous data reception
+@param contextHandle handle of which context data to wait
+@param timeout_ms number of miliseconds to wait
+@return  true - wait finished, false - still waiting for transfer to complete
 */
 bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
@@ -520,8 +520,7 @@ bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
     return contexts[contextHandle].done.load() == true;
     #endif
     }
-    else
-        return 0;
+    return true;  //there is nothing to wait for (signal wait finished)
 }
 
 /**
@@ -628,14 +627,14 @@ int ConnectionFX3::BeginDataSending(const char *buffer, uint32_t length, int ep)
 }
 
 /**
-	@brief Waits for asynchronous data sending
-	@param contextHandle handle of which context data to wait
-	@param timeout_ms number of miliseconds to wait
-	@return 1-data received, 0-data not received
+@brief Waits for asynchronous data sending
+@param contextHandle handle of which context data to wait
+@param timeout_ms number of miliseconds to wait
+@return true - wait finished, false - still waiting for transfer to complete
 */
 bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
-    if( contextsToSend[contextHandle].used == true )
+    if(contextHandle >= 0 && contextsToSend[contextHandle].used == true )
     {
 #   ifndef __unix__
 	int status = 0;
@@ -655,7 +654,7 @@ bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	return contextsToSend[contextHandle].done == true;
 #   endif
     }
-    return 0;
+    return true;  //there is nothing to wait for (signal wait finished)
 }
 
 /**
@@ -667,7 +666,7 @@ bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 */
 int ConnectionFX3::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
-    if( contextsToSend[contextHandle].used == true)
+    if(contextHandle >= 0 && contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
         long len = length;

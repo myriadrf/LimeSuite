@@ -444,7 +444,11 @@ int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
     FT_STATUS ftStatus = FT_OK;
     ftStatus = FT_ReadPipe(mFTHandle, streamRdEp, (unsigned char*)buffer, length, &ulActual, &contexts[i].inOvLap);
     if (ftStatus != FT_IO_PENDING)
+    {
+        lime::error("ERROR BEGIN DATA READING %d", ftStatus);
+        contexts[i].used = false;
         return -1;
+    }
 #else
     libusb_transfer *tr = contexts[i].transfer;
     libusb_fill_bulk_transfer(tr, dev_handle, streamRdEp, (unsigned char*)buffer, length, callback_libusbtransfer, &contexts[i], 0);
@@ -465,7 +469,7 @@ int ConnectionFT601::BeginDataReading(char *buffer, uint32_t length, int ep)
 @brief Waits for asynchronous data reception
 @param contextHandle handle of which context data to wait
 @param timeout_ms number of miliseconds to wait
-@return 1-data received, 0-data not received
+@return true - wait finished, false - still waiting for transfer to complete
 */
 bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
 {
@@ -489,7 +493,7 @@ bool ConnectionFT601::WaitForReading(int contextHandle, unsigned int timeout_ms)
         return contexts[contextHandle].done.load() == true;
 #endif
     }
-    return 0;
+    return true;  //there is nothing to wait for (signal wait finished)
 }
 
 /**
@@ -589,7 +593,11 @@ int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int e
     FT_InitializeOverlapped(mFTHandle, &contextsToSend[i].inOvLap);
 	ftStatus = FT_WritePipe(mFTHandle, streamWrEp, (unsigned char*)buffer, length, &ulActualBytesSend, &contextsToSend[i].inOvLap);
 	if (ftStatus != FT_IO_PENDING)
-		return -1;
+    {
+        lime::error("ERROR BEGIN DATA SENDING %d", ftStatus);
+        contexts[i].used = false;
+        return -1;
+    }
 #else
     libusb_transfer *tr = contextsToSend[i].transfer;
     contextsToSend[i].done = false;
@@ -610,11 +618,11 @@ int ConnectionFT601::BeginDataSending(const char *buffer, uint32_t length, int e
 @brief Waits for asynchronous data sending
 @param contextHandle handle of which context data to wait
 @param timeout_ms number of miliseconds to wait
-@return 1-data received, 0-data not received
+@return true - wait finished, false - still waiting for transfer to complete
 */
 bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
 {
-    if(contextsToSend[contextHandle].used == true)
+    if(contextHandle >= 0 && contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
         DWORD dwRet = WaitForSingleObject(contextsToSend[contextHandle].inOvLap.hEvent, timeout_ms);
@@ -633,7 +641,7 @@ bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
         return contextsToSend[contextHandle].done == true;
 #endif
     }
-    return 0;
+    return true; //there is nothing to wait for (signal wait finished)
 }
 
 /**
@@ -645,7 +653,7 @@ bool ConnectionFT601::WaitForSending(int contextHandle, unsigned int timeout_ms)
 */
 int ConnectionFT601::FinishDataSending(const char *buffer, uint32_t length, int contextHandle)
 {
-    if(contextsToSend[contextHandle].used == true)
+    if(contextHandle >= 0 && contextsToSend[contextHandle].used == true)
     {
 #ifndef __unix__
         ULONG ulActualBytesTransferred ;
