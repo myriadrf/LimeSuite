@@ -349,6 +349,8 @@ void limeRFE_wxgui::OnbtnBoard2GUI(wxCommandEvent& event) {
 	Cmd_GetConfig(lms, this->fd, &state);
 
 	State2GUI(state);
+
+	configuredState = state;
 }
 
 void limeRFE_wxgui::OncTypeRX(wxCommandEvent& event) {
@@ -631,12 +633,10 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 	if (typeTX == RFE_TYPE_INDEX_CELL) {
 		cPortTX->AppendString(RFE_PORT_1_NAME);
 		portTXvals[0] = RFE_PORT_1;
-//		lastPortTXSelection = 0;
 	}
 	else if (selChannelIDTX == RFE_CID_HAM_0030){
 		cPortTX->AppendString(RFE_PORT_3_NAME);
 		portTXvals[0] = RFE_PORT_3;
-//		lastPortTXSelection = 0;
 	}
 	else {
 		cPortTX->AppendString(RFE_PORT_1_NAME);
@@ -973,6 +973,15 @@ void limeRFE_wxgui::OntbtnRXEN(wxCommandEvent& event) {
 	if ((selPortTX == selPortRX) & tbtnRXValue & tbtnTXValue)
 		tbtnTX->SetValue(false);
 
+	// If cellular band38 then mode None is not allowed
+	int channelIDRTX = GetChannelID(RFE_CHANNEL_TX);
+	if (channelIDRTX == RFE_CID_CELL_BAND38) {
+		if ((!tbtnRXValue) && (!tbtnTXValue)) {
+			tbtnRX->SetValue(true);
+			return;
+		}
+	}
+
 	OntbtnTXRXEN(event);
 }
 void limeRFE_wxgui::OntbtnTXEN(wxCommandEvent& event) {
@@ -986,6 +995,15 @@ void limeRFE_wxgui::OntbtnTXEN(wxCommandEvent& event) {
 
 	if ((selPortTX == selPortRX) & tbtnRXValue & tbtnTXValue)
 		tbtnRX->SetValue(false);
+
+	// If cellular band38 then mode None is not allowed
+	int channelIDRTX = GetChannelID(RFE_CHANNEL_TX);
+	if (channelIDRTX == RFE_CID_CELL_BAND38) {
+		if ((!tbtnRXValue) && (!tbtnTXValue)) {
+			tbtnTX->SetValue(true);
+			return;
+		}
+	}
 
 	OntbtnTXRXEN(event);
 }
@@ -1003,8 +1021,6 @@ void limeRFE_wxgui::OntbtnTXRXEN(wxCommandEvent& event) {
 	if ((tbtnRXValue == 1) && (tbtnTXValue == 1))
 		mode = RFE_MODE_TXRX;
 
-	activeMode = mode;
-
 	int commType = GetCommType();
 	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
 	int result = RFE_Mode(lms, fd, mode);
@@ -1012,6 +1028,8 @@ void limeRFE_wxgui::OntbtnTXRXEN(wxCommandEvent& event) {
 		PrintError(result);
 		return;
 	}
+
+	activeMode = mode;
 
 	SetModeLabel();
 }
