@@ -329,7 +329,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     }
     int N(0), M(0);
     double bestDeviation = 1e9;
-    double Fvco;
     for(auto it : availableVCOs)
     {
         if(it.second == bestScore)
@@ -352,7 +351,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if(deviation <= bestDeviation)
             {
                 bestDeviation = deviation;
-                Fvco = it.first;
                 M = Mtemp;
                 N = Ntemp;
             }
@@ -361,7 +359,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
-    Fvco = inputFreq*M/N; //actual VCO freq
+    double Fvco = inputFreq*M/N; //actual VCO freq
     lime::debug("M=%i, N=%i, Fvco=%.3f MHz", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
