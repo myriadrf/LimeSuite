@@ -27,7 +27,7 @@
 using namespace std;
 using namespace lime;
 
-static wxString power2unitsString(char powerx3)
+static wxString power2unitsString(int powerx3)
 {
     switch (powerx3)
     {
