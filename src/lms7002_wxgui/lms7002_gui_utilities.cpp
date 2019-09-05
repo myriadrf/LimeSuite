@@ -70,7 +70,6 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
                 wxString str;
                 str = wxString::Format(_("radiogroup value(%i) is out of range [0-%u]"), value, box->GetCount() - 1);
                 //wxMessageBox(str, "WARNING!");
-                value = 0;
                 continue;
             }
             box->SetSelection(value);
