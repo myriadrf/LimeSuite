@@ -320,7 +320,7 @@ int main(int argc, char** argv)
 #else
     int gui = 1;
 #endif
-    static struct option long_options[] = {
+    struct option long_options[] = {
         {"gui", no_argument, &gui, 1},
         {"no-gui", no_argument, &gui, 0},
         {0, 0, 0, 0}
