@@ -810,23 +810,18 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     }
     lime::LMS7002M* lms = SelectChannel(chan);
 
-    double interface_Hz;
     int ratio;
 
     if (tx)
     {
         ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
         ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
-    if (ratio == 7)
-        interface_Hz /= 2;
-    else
+    if (ratio != 7)
         div = (2<<(ratio));
 
     if ((div > 8) || (count == 120) || (count == 40 && filt != LMS_GFIR3))
