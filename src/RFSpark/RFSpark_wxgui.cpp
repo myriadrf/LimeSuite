@@ -26,47 +26,6 @@ const long RFSpark_wxgui::ID_CMBSELECTADC = wxNewId();
 BEGIN_EVENT_TABLE(RFSpark_wxgui, wxPanel)
 END_EVENT_TABLE()
 
-wxString power2unitsString(char powerx3)
-{
-	switch (powerx3)
-	{
-	case -8:
-		return "y";
-	case -7:
-		return "z";
-	case -6:
-		return "a";
-	case -5:
-		return "f";
-	case -4:
-		return "p";
-	case -3:
-		return "n";
-	case -2:
-		return "u";
-	case -1:
-		return "m";
-	case 0:
-		return "";
-	case 1:
-		return "k";
-	case 2:
-		return "M";
-	case 3:
-		return "G";
-	case 4:
-		return "T";
-	case 5:
-		return "P";
-	case 6:
-		return "E";
-	case 7:
-		return "Y";
-	default:
-		return "";
-	}
-}
-
 RFSpark_wxgui::RFSpark_wxgui(wxWindow* parent,wxWindowID id, const wxString& title, const wxPoint& pos,const wxSize& size, long style)
 {
     lmsControl = nullptr;
