@@ -383,7 +383,6 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
         packetLen = pkt.outBuffer.size() > ProtocolNovena::pktLength ? ProtocolNovena::pktLength : pkt.outBuffer.size();
         break;
     default:
-        packetLen = 0;
         return ReportError("Unknown protocol type %d", int(protocol));
     }
     int outLen = 0;
