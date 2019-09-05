@@ -458,15 +458,12 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
             {
                 availableFrequenciesPLLA.insert( pair<unsigned long, int> (*it, 0) );
             }
-            clk6satisfied = true;
-            clk7satisfied = true;
         }
         else //if clocks 6 and 7 can't share pll, assign pllA to clk6 and pllB to clk7
         {
             if(!clk6satisfied)
             {
                 clocks[6].pllSource = 0;
-                clk6satisfied = true;
                 pllAused = true;
                 for (set<unsigned long>::iterator it6=clk6freqs.begin(); it6!=clk6freqs.end(); ++it6)
                 {
@@ -476,7 +473,6 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
             if(!clk7satisfied)
             {
                 clocks[7].pllSource = 1;
-                clk7satisfied = true;
                 pllBused = true;
                 for (set<unsigned long>::iterator it7=clk7freqs.begin(); it7!=clk7freqs.end(); ++it7)
                 {
