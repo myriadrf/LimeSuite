@@ -668,7 +668,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     {
         sprintf(progressMsg, "Programming failed! Target device not supported");
         if(callback)
-            abortProgramming = callback(bytesSent, length, progressMsg);
+            callback(bytesSent, length, progressMsg);
         return ReportError(ENOTSUP, progressMsg);
     }
 
@@ -726,7 +726,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
         {
             sprintf(progressMsg, "Programming failed! %s", status2string(status));
             if(callback)
-                abortProgramming = callback(bytesSent, length, progressMsg);
+                callback(bytesSent, length, progressMsg);
             return ReportError(EPROTO, progressMsg);
         }
         if(needsData == false) //only one packet is needed to initiate bitstream from flash
