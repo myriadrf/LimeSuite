@@ -557,10 +557,9 @@ int ConnectionFX3::FinishDataReading(char *buffer, uint32_t length, int contextH
 */
 void ConnectionFX3::AbortReading(int ep)
 {
-    ep = 0x81;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
-        if (InEndPt[i] && InEndPt[i]->Address == ep)
+        if (InEndPt[i] && InEndPt[i]->Address == 0x81)
 	        InEndPt[i]->Abort();
 #else
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
@@ -690,10 +689,9 @@ int ConnectionFX3::FinishDataSending(const char *buffer, uint32_t length, int co
 */
 void ConnectionFX3::AbortSending(int ep)
 {
-    ep = 0x01;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
-        if (OutEndPt[i] && OutEndPt[i]->Address == ep)
+        if (OutEndPt[i] && OutEndPt[i]->Address == 0x01)
             OutEndPt[i]->Abort();
 #else
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)
