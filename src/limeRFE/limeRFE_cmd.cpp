@@ -151,14 +151,13 @@ void serialport_close(int fd) {
 }
 
 int write_buffer(lms_device_t *dev, int fd, unsigned char* data, int size) {
-	int result = 0;
-	if (dev != NULL) {
-		result = i2c_write_buffer(dev, data, size);
+	if (fd >= 0) {  //prioritize direct connection
+            return write_buffer_fd(fd, data, size);
 	}
-	else {
-		result = write_buffer_fd(fd, data, size);
+	else if (dev != NULL){
+            return i2c_write_buffer(dev, data, size);
 	}
-	return result;
+	return -1; //error: both dev and fd are invalid
 }
 
 int write_buffer_fd(int fd, unsigned char* c, int size)
@@ -175,14 +174,13 @@ int write_buffer_fd(int fd, unsigned char* c, int size)
 
 int read_buffer(lms_device_t * dev, int fd, unsigned char * data, int size)
 {
-	int len;
-	if (dev != NULL) {
-		len = i2c_read_buffer(dev, data, size);
+	if (fd >= 0) { //prioritize direct connection
+            return read_buffer_fd(fd, data, size);
 	}
-	else {
-		len = read_buffer_fd(fd, data, size);
+	else if(dev != NULL){
+            return i2c_read_buffer(dev, data, size);
 	}
-	return len;
+	return -1; //error: both dev and fd are invalid
 }
 
 int read_buffer_fd(int fd, unsigned char * data, int size)
