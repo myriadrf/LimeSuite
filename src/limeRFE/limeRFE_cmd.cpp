@@ -1,5 +1,6 @@
 #include "limeRFE_constants.h"
 #include "INI.h"
+#include <chrono>
 
 /*********************************************************************************************
 * USB Communication
@@ -61,11 +62,7 @@ int serialport_write(int fd, const char* str, int len)
 {
 	int n;
 	char* cstr = (char*)str;
-	my_write(fd, cstr, len);
-	return len;
-	for (n = 0; n<len; n++)
-		my_write(fd, &cstr[n], 1);
-	return len;
+	return my_write(fd, cstr, len);
 }
 
 
@@ -185,11 +182,18 @@ int read_buffer(lms_device_t * dev, int fd, unsigned char * data, int size)
 
 int read_buffer_fd(int fd, unsigned char * data, int size)
 {
-	memset(data, 0, size);
-	int len;
-
-	len = serialport_read(fd, (char*)data, size);
-	return len;
+    memset(data, 0, size);
+    int received = 0;
+    auto t1 = std::chrono::high_resolution_clock::now();
+    do
+    {
+        int count = serialport_read(fd, (char*)data+received, size - received);
+        if (count > 0)
+            received += count;
+        if (received >= size)
+            break;
+    }while (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t1).count() < 1.0); //timeout
+    return received;
 }
 
 
@@ -204,7 +208,7 @@ int Cmd_GetInfo(lms_device_t *dev, int fd, boardInfo* info) {
 	if (write_buffer(dev, fd, buf, RFE_BUFFER_SIZE) != 0)
 		return RFE_ERROR_COMM;
 	len = read_buffer(dev, fd, buf, RFE_BUFFER_SIZE);
-	if (len == -1)
+	if (len != RFE_BUFFER_SIZE)
 		return(RFE_ERROR_COMM);
 
 	info->fw_ver = buf[1];     // FW_VER
@@ -912,7 +916,7 @@ int i2c_write_buffer(lms_device_t* lms, unsigned char* c, int size) {
 	unsigned char addressByteR = addressByte | 1;
 
 	if(i2c_start(lms) != 0) // send start sequence
-		return -1;	
+		return -1;
 	i2c_tx(lms, addressByteW);	// I2C address with R/W bit clear
 
 	for (int i = 0; i < size; i++) {
