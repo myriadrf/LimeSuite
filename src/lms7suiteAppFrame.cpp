@@ -255,8 +255,8 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         programmer->SetConnection(lmsControl);
     if(api)
         api->Initialize(lmsControl);
-	if (limeRFEwin)
-		api->Initialize(limeRFEwin);
+    if (limeRFEwin)
+        limeRFEwin->Initialize(lmsControl);
 }
 
 
