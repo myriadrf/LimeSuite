@@ -92,18 +92,18 @@
 #define RFE_SWR_SRC_CELL	1	///<Cellular - Power Meter signal is provided internally from the cellular TX amplifier outputs.
 
 ///LimeRFE board configuration parameters
-struct rfe_boardState
+typedef struct
 {
-	unsigned char channelIDRX;	///<RX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 – 146 MHz) HAM channel.
-	unsigned char channelIDTX;	///<TX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 – 146 MHz) HAM channel.If - 1 then the same channel as for RX is used.
-	unsigned char selPortRX;	///<RX port (convenience constants defined in limeRFE.h).
-	unsigned char selPortTX;	///<TX port (convenience constants defined in limeRFE.h).
-	unsigned char mode;	///<Operation mode (defined in limeRFE.h). Not all modes all applicable to all congfigurations.HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode.Cellular TDD band 38 can not be in RFE_MODE_TXRX.
-	unsigned char notchOnOff;	///<Specifies whether the notch filter is applied or not (convenience constants defined in limeRFE.h).
-	unsigned char attValue;	///<Specifies the attenuation in the RX path. Attenuation [dB] = 2 * attenuation.
-	unsigned char enableSWR;	///<Enable SWR subsystem. (convenience constants defined in limeRFE.h).
-	unsigned char sourceSWR;	///<SWR subsystem source. (convenience constants defined in limeRFE.h).
-};
+	char channelIDRX;	///<RX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 - 146 MHz) HAM channel.
+	char channelIDTX;	///<TX channel ID (convenience constants defined in limeRFE.h).For example constant RFE_CID_HAM_0145 identifies 2m(144 - 146 MHz) HAM channel.If - 1 then the same channel as for RX is used.
+	char selPortRX;	///<RX port (convenience constants defined in limeRFE.h).
+	char selPortTX;	///<TX port (convenience constants defined in limeRFE.h).
+	char mode;	///<Operation mode (defined in limeRFE.h). Not all modes all applicable to all congfigurations.HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode.Cellular TDD band 38 can not be in RFE_MODE_TXRX.
+	char notchOnOff;	///<Specifies whether the notch filter is applied or not (convenience constants defined in limeRFE.h).
+	char attValue;	///<Specifies the attenuation in the RX path. Attenuation [dB] = 2 * attenuation.
+	char enableSWR;	///<Enable SWR subsystem. (convenience constants defined in limeRFE.h).
+	char sourceSWR;	///<SWR subsystem source. (convenience constants defined in limeRFE.h).
+} rfe_boardState;
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,12 +140,12 @@ extern "C" {
 *This functions opens port to LimeRFE in case of USB communication.
 *In case of I2C communication via LimeSDR, this function is not needed.
 *
-* @param serialport  Serial port name, e.g. “COM3”
+* @param serialport  Serial port name, e.g. ï¿½COM3ï¿½
 * @param baudrate    Baudrate, e.g. 9600. Should match the value in firmware, by default 9600.
 *
 * @return            Positive number on success, (-1) on failure
 */
-API_EXPORT int CALL_CONV RFE_Open(const char* serialport, int baudrate = 9600);
+API_EXPORT int CALL_CONV RFE_Open(const char* serialport, int baudrate);
 
 /**
 *This function closes the port previously opened with RFE_Open.
@@ -161,7 +161,7 @@ API_EXPORT void CALL_CONV RFE_Close(int fd);
 *
 * @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
 * @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
-* @param cinfo       Board info: cinfo[0] – Firmware version; cinfo[1] – Hardware version; cinfo[2] – Status (reserved for future use); cinfo[3] – Status (reserved for future use)
+* @param cinfo       Board info: cinfo[0] - Firmware version; cinfo[1] - Hardware version; cinfo[2] - Status (reserved for future use); cinfo[3] - Status (reserved for future use)
 *
 * @return             0 on success, other on failure (see LimeRFE error codes)
 */
@@ -193,8 +193,8 @@ API_EXPORT int CALL_CONV RFE_Reset(lms_device_t *dev, int fd);
 *
 * @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
 * @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
-* @param channelIDRX   RX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 – 146 MHz) HAM channel.
-* @param channelIDTX   TX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 – 146 MHz) HAM channel. If -1 then the same channel as for RX is used.
+* @param channelIDRX   RX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 - 146 MHz) HAM channel.
+* @param channelIDTX   TX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 - 146 MHz) HAM channel. If -1 then the same channel as for RX is used.
 * @param portRX        RX port (convenience constants defined in limeRFE.h).
 * @param portTX        TX port (convenience constants defined in limeRFE.h).
 * @param mode          Operation mode (defined in limeRFE.h). Not all modes all applicable to all congfigurations. HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode. Cellular TDD band 38 can not be in RFE_MODE_TXRX.
@@ -205,7 +205,7 @@ API_EXPORT int CALL_CONV RFE_Reset(lms_device_t *dev, int fd);
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX = -1, int portRX = 0, int portTX = 0, int mode = 0, int notch = 0, int attenuation = 0, int enableSWR = 0, int sourceSWR = 0);
+API_EXPORT int CALL_CONV RFE_Configure(lms_device_t *dev, char fd, char channelIDRX, char channelIDTX, char portRX, char portTX, char mode, char notch, char attenuation, char enableSWR, char sourceSWR);
 
 /**
 *This function configures the LimeRFE board. It's functionality is identical to RFE_Configure, with different arguments.

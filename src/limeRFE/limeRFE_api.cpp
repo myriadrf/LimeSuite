@@ -55,7 +55,7 @@ extern "C" API_EXPORT int RFE_Reset(lms_device_t *dev, int fd) {
 	return result;
 }
 
-extern "C" API_EXPORT int RFE_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX, int portRX, int portTX, int mode, int notch, int attenuation, int enableSWR, int sourceSWR) {
+extern "C" API_EXPORT int RFE_Configure(lms_device_t *dev, char fd, char channelIDRX, char channelIDTX, char portRX, char portTX, char mode, char notch, char attenuation, char enableSWR, char sourceSWR) {
 	int result = 0;
 
 	result = Cmd_Configure(dev, fd, channelIDRX, channelIDTX, portRX, portTX, mode, notch, attenuation, enableSWR, sourceSWR);

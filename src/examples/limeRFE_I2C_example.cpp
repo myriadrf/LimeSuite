@@ -25,6 +25,7 @@ int main(int argc, char** argv)
 {
 	//Find devices
 	int n;
+        int fd = -1;
 	lms_info_str_t list[8]; //should be large enough to hold all detected devices
 	if ((n = LMS_GetDeviceList(list)) < 0) //NULL can be passed to only get number of devices
 		error();
@@ -38,26 +39,26 @@ int main(int argc, char** argv)
 		error();
 
 	unsigned char cinfo[4];
-	RFE_GetInfo(device, 0, cinfo);
+	RFE_GetInfo(device, fd, cinfo);
 
 	printf("LimeRFE Firmware version: %d\n", cinfo[0]);
 	printf("LimeRFE Hardware version: 0x%x\n", cinfo[1]);
 
 	//Configure LimeRFE to use channel HAM 2m channel in receive mode.
 	//Transmit output is routed to TX/RX output. Notch is off. Attenuation is 0.
-	RFE_Configure(device, 0, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0);
+	RFE_Configure(device, fd, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0, 0, 0);
 	//or simpler (by using default arguments)
 	//RFE_Configure(device, 0, RFE_CID_HAM_0145);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Change mode to transmit
-	RFE_Mode(device, 0, RFE_MODE_TX);
+	RFE_Mode(device, fd, RFE_MODE_TX);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Reset LimeRFE
-	RFE_Reset(device, 0);
+	RFE_Reset(device, fd);
 
 	return 0;
 }

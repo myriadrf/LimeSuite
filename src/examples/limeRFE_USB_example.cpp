@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
 	//Configure LimeRFE to use channel HAM 2m channel in receive mode.
 	//Transmit output is routed to TX/RX output. Notch is off. Attenuation is 0.
-	RFE_Configure(NULL, fd, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0);
+	RFE_Configure(NULL, fd, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0, 0, 0);
 	//or simpler (by using default arguments)
 	//RFE_Configure(NULL, fd, RFE_CID_HAM_0145);
 
