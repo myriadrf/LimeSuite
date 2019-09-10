@@ -427,6 +427,12 @@ int Cmd_ConfigureFull(lms_device_t *dev, int fd, int channelID, int mode, int se
 	return result;
 }
 
+
+int Cmd_ConfigureState(lms_device_t* dev, int fd, rfe_boardState state)
+{
+    return Cmd_Configure(dev, fd, state.channelIDRX, state.channelIDTX, state.selPortRX, state.selPortTX, state.mode, state.notchOnOff, state.attValue, state.enableSWR, state.sourceSWR);
+}
+
 int Cmd_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX, int selPortRX, int selPortTX, int mode, int notch, int attenuation, int enableSWR, int sourceSWR) {
 
 	int result = 0;

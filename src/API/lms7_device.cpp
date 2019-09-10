@@ -70,7 +70,7 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
     return device;
 }
 
-LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0),fpga(nullptr)
+LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0),fpga(nullptr), limeRFE(nullptr)
 {
     if (obj != nullptr)
     {
@@ -1842,6 +1842,15 @@ int LMS7_Device::MCU_AGCStop()
     mcu->RunProcedure(0);
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
     return 0;
+}
+
+RFE_Device* LMS7_Device::GetLimeRFE() const
+{
+    return limeRFE;
+}
+void LMS7_Device::SetLimeRFE(RFE_Device* dev)
+{
+    limeRFE = dev;
 }
 
 }//namespace lime

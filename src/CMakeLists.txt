@@ -79,6 +79,7 @@ set(LIME_SUITE_SOURCES
     windowFunction.cpp
     limeRFE/limeRFE_cmd.cpp
     limeRFE/limeRFE_api.cpp
+    limeRFE/RFE_Device.cpp
 )
 
 set(LIME_SUITE_INCLUDES
@@ -247,7 +248,6 @@ set(LMS7SUITE_GUI_SOURCES
     limeRFE/limeRFE_gui.cpp
     limeRFE/limeRFE_wxgui.cpp
     limeRFE/limeRFE_cmd.cpp
-    limeRFE/limeRFE_api.cpp
 )
 
 if(MSVC)

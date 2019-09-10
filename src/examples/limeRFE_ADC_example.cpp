@@ -26,20 +26,14 @@ int main(int argc, char** argv)
 	}
 
 	//Open port
-	int fd = RFE_Open(argv[1], 9600);
+	rfe_dev_t* rfe = RFE_Open(argv[1], nullptr);
 
-	if (fd == RFE_ERROR_COMM_SYNC) {
-		std::cout << "Error synchronizing board" << std::endl;
-		return -1;
-	}
-	if (fd == -1) {
-		std::cout << "Error initializing serial port" << std::endl;
+	if (rfe == nullptr) {
+		std::cout << "Open device failed" << std::endl;
 		return -1;
 	}
 	else {
-		char msg[200];
-		sprintf(msg, "Port opened; fd = %d", fd);
-		std::cout << msg << std::endl;
+		std::cout << "Port opened" << std::endl;
 	}
 
 	//This example uses RFE_ConfigureState API function. It is possible to use RFE_Configure API function, as illustrated in other LimeRFE examples.
@@ -47,7 +41,7 @@ int main(int argc, char** argv)
 	//Configure LimeRFE to use channel HAM 2m channel in TX mode.
 	//RX and TX port is J3.
 	//Notch is off. Attenuation is 0.
-	//SWR is enabled. SWR source is external (signals from the external coupler are provided, FWD to J18, and REV to J17). 
+	//SWR is enabled. SWR source is external (signals from the external coupler are provided, FWD to J18, and REV to J17).
 
 	rfe_boardState state;
 	state.channelIDRX = RFE_CID_HAM_0145;
@@ -60,7 +54,7 @@ int main(int argc, char** argv)
 	state.enableSWR = RFE_SWR_ENABLE;
 	state.sourceSWR = RFE_SWR_SRC_EXT;
 
-	RFE_ConfigureState(NULL, fd, state);
+	RFE_ConfigureState(rfe, state);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
@@ -69,8 +63,8 @@ int main(int argc, char** argv)
 	double intercept, slope, k, correction, additionalCorrection, rlCorrection, pin_dBm, rl_dB;
 
 	//Read ADC values
-	RFE_ReadADC(NULL, fd, RFE_ADC1, &adc1);
-	RFE_ReadADC(NULL, fd, RFE_ADC2, &adc2);
+	RFE_ReadADC(rfe, RFE_ADC1, &adc1);
+	RFE_ReadADC(rfe, RFE_ADC2, &adc2);
 
 	//ADC voltage
 	vADC1 = RFE_ADC_VREF * (adc1 / pow(2.0, RFE_ADC_BITS));
@@ -96,7 +90,7 @@ int main(int argc, char** argv)
 	//Configure LimeRFE to use cellular Band 1.
 	//RX and TX port is J3.
 	//Notch is off. Attenuation is 0.
-	//SWR is enabled. SWR source is internal (signals from the internal coupler from the outputs of the cellular TX amplifier are provided). 
+	//SWR is enabled. SWR source is internal (signals from the internal coupler from the outputs of the cellular TX amplifier are provided).
 
 	state.channelIDRX = RFE_CID_CELL_BAND01;
 	state.channelIDTX = RFE_CID_CELL_BAND01;
@@ -108,13 +102,13 @@ int main(int argc, char** argv)
 	state.enableSWR = RFE_SWR_ENABLE;
 	state.sourceSWR = RFE_SWR_SRC_CELL;
 
-	RFE_ConfigureState(NULL, fd, state);
+	RFE_ConfigureState(rfe, state);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Read ADC values
-	RFE_ReadADC(NULL, fd, RFE_ADC1, &adc1);
-	RFE_ReadADC(NULL, fd, RFE_ADC2, &adc2);
+	RFE_ReadADC(rfe, RFE_ADC1, &adc1);
+	RFE_ReadADC(rfe, RFE_ADC2, &adc2);
 
 	//ADC voltage
 	vADC1 = RFE_ADC_VREF * (adc1 / pow(2.0, RFE_ADC_BITS));
@@ -132,10 +126,10 @@ int main(int argc, char** argv)
 	printf("Power: %f dBm\n", pin_dBm);
 
 	//Reset LimeRFE
-	RFE_Reset(NULL, fd);
+	RFE_Reset(rfe);
 
 	//Close port
-	RFE_Close(fd);
+	RFE_Close(rfe);
 
 	return 0;
 }

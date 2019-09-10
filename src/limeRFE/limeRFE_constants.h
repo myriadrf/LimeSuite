@@ -34,7 +34,7 @@ typedef char TCHAR;
 #endif // LINUX
 
 #define RFE_I2C 0
-#define RFE_USB 1 
+#define RFE_USB 1
 
 #define RFE_BUFFER_SIZE 16
 #define RFE_BUFFER_SIZE_MODE 2
@@ -50,7 +50,7 @@ typedef char TCHAR;
 #define RFE_CMD_HELLO         0x00
 
 // CTRL
-#define RFE_CMD_MODE                    0xd1  
+#define RFE_CMD_MODE                    0xd1
 #define RFE_CMD_CONFIG                  0xd2
 #define RFE_CMD_MODE_FULL               0xd3
 #define RFE_CMD_CONFIG_FULL             0xd4
@@ -178,6 +178,7 @@ extern "C" {
 	int Cmd_LoadConfig(lms_device_t *dev, int fd, const char *filename);
 	int Cmd_Reset(lms_device_t *dev, int fd);
 	int Cmd_ConfigureFull(lms_device_t *dev, int fd, int channelID, int mode, int selPortTX = 0, int notch = 0, int attenuation = 0);
+        int Cmd_ConfigureState(lms_device_t* dev, int fd, rfe_boardState state);
 	int Cmd_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX = -1, int selPortRX = 0, int selPortTX = 0, int mode = 0, int notch = 0, int attenuation = 0, int enableSWR = 0, int sourceSWR = 0);
 	int Cmd_ModeFull(lms_device_t *dev, int fd, int channelID, int mode);
 	int Cmd_Mode(lms_device_t *dev, int fd, int mode);

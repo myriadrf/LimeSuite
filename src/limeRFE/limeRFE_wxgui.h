@@ -102,7 +102,7 @@ class limeRFE_wxgui : public limeRFE_view
 
 		int GetCommType();
 
-		int fd; //Port handle
+		rfe_dev_t* rfe; //Port handle
 
 		double powerCellCalCorr;
 		double powerCalCorr;

@@ -25,40 +25,34 @@ int main(int argc, char** argv)
 	}
 
 	//Open port
-	int fd = RFE_Open(argv[1], 9600);
+        rfe_dev_t* rfe = RFE_Open(argv[1], nullptr);
 
-	if (fd == RFE_ERROR_COMM_SYNC) {
-		std::cout << "Error synchronizing board" << std::endl;
-		return -1;
-	}
-	if (fd == -1) {
-		std::cout << "Error initializing serial port" << std::endl;
+	if (rfe == nullptr) {
+		std::cout << "Error: failed to open device" << std::endl;
 		return -1;
 	}
 	else {
-		char msg[200];
-		sprintf(msg, "Port opened; fd = %d", fd);
-		std::cout << msg << std::endl;
+		std::cout << "Port opened" << std::endl;
 	}
 
 	//Configure LimeRFE to use channel HAM 2m channel in receive mode.
 	//Transmit output is routed to TX/RX output. Notch is off. Attenuation is 0.
-	RFE_Configure(NULL, fd, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0, 0, 0);
+	RFE_Configure(rfe, RFE_CID_HAM_0145, RFE_CID_HAM_0145, RFE_PORT_1, RFE_PORT_1, RFE_MODE_RX, RFE_NOTCH_OFF, 0, 0, 0);
 	//or simpler (by using default arguments)
 	//RFE_Configure(NULL, fd, RFE_CID_HAM_0145);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Change mode to transmit
-	RFE_Mode(NULL, fd, RFE_MODE_TX);
+	RFE_Mode(rfe, RFE_MODE_TX);
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	//Reset LimeRFE
-	RFE_Reset(NULL, fd);
+	RFE_Reset(rfe);
 
 	//Close port
-	RFE_Close(fd);
+	RFE_Close(rfe);
 
 	return 0;
 }

@@ -41,6 +41,7 @@
 #define RFE_CID_CELL_BAND07 11
 #define RFE_CID_CELL_BAND38 12
 #define RFE_CID_COUNT 13
+#define RFE_CID_AUTO (-2)
 
 ///LimeRFE Ports
 #define RFE_PORT_1	1	///<Connector J3 - 'TX/RX'
@@ -128,6 +129,8 @@ extern "C" {
 #   define CALL_CONV
 #endif
 
+
+typedef void rfe_dev_t;
 /****************************************************************************
 *   LimeRFE API Functions
 *****************************************************************************/
@@ -137,62 +140,57 @@ extern "C" {
 * @{
 */
 /**
-*This functions opens port to LimeRFE in case of USB communication.
-*In case of I2C communication via LimeSDR, this function is not needed.
+*This functions opens LimeRFE device. Connection can be direct via USB or through SDR board.
 *
-* @param serialport  Serial port name, e.g. �COM3�
-* @param baudrate    Baudrate, e.g. 9600. Should match the value in firmware, by default 9600.
+* @param serialport  Serial port name, (e.g. COM3) for control via USB. NULL if LimeRFE is controlled via SDR.
+* @param dev         LimeSDR device obtained by invoking LMS_Open. May be NULL if direct USB connection is used.
 *
 * @return            Positive number on success, (-1) on failure
 */
-API_EXPORT int CALL_CONV RFE_Open(const char* serialport, int baudrate);
+API_EXPORT rfe_dev_t* CALL_CONV RFE_Open(const char* serialport, lms_device_t *dev);
 
 /**
-*This function closes the port previously opened with RFE_Open.
+*This function closes the device previously opened with RFE_Open.
 *
-* @param fd          Port file handle previously obtained from invoking RFE_Open.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 *
 * @return            None
 */
-API_EXPORT void CALL_CONV RFE_Close(int fd);
+API_EXPORT void CALL_CONV RFE_Close(rfe_dev_t* rfe);
 
 /**
 *This function gets the firmware and hardware version, as well as 2 status bytes (reserved for future use).
 *
-* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 * @param cinfo       Board info: cinfo[0] - Firmware version; cinfo[1] - Hardware version; cinfo[2] - Status (reserved for future use); cinfo[3] - Status (reserved for future use)
 *
 * @return             0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_GetInfo(lms_device_t *dev, int fd, unsigned char* cinfo);
+API_EXPORT int CALL_CONV RFE_GetInfo(rfe_dev_t* rfe, unsigned char* cinfo);
 
 /**
 *This function loads LimeRFE configuration from an .ini file, and configures the board accordingly.
 *
-* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 * @param filename    Full path to .ini configuration file
 *
 * @return            0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_LoadConfig(lms_device_t *dev, int fd, const char *filename);
+API_EXPORT int CALL_CONV RFE_LoadConfig(rfe_dev_t* rfe, const char *filename);
 
 /**
 *This function Resets the board.
 *
-* @param dev         LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd          Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 *
 * @return            0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_Reset(lms_device_t *dev, int fd);
+API_EXPORT int CALL_CONV RFE_Reset(rfe_dev_t* rfe);
 
 /**
 *This function configures the LimeRFE board.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 * @param channelIDRX   RX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 - 146 MHz) HAM channel.
 * @param channelIDTX   TX channel to be acitvated (convenience constants defined in limeRFE.h). For example constant RFE_CID_HAM_0145 identifies 2m (144 - 146 MHz) HAM channel. If -1 then the same channel as for RX is used.
 * @param portRX        RX port (convenience constants defined in limeRFE.h).
@@ -205,77 +203,86 @@ API_EXPORT int CALL_CONV RFE_Reset(lms_device_t *dev, int fd);
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_Configure(lms_device_t *dev, char fd, char channelIDRX, char channelIDTX, char portRX, char portTX, char mode, char notch, char attenuation, char enableSWR, char sourceSWR);
+API_EXPORT int CALL_CONV RFE_Configure(rfe_dev_t* rfe, char channelIDRX, char channelIDTX, char portRX, char portTX, char mode, char notch, char attenuation, char enableSWR, char sourceSWR);
 
 /**
 *This function configures the LimeRFE board. It's functionality is identical to RFE_Configure, with different arguments.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe           handle previously obtained from invoking RFE_Open.
 * @param state         Structure containing configuration parameters.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int RFE_ConfigureState(lms_device_t *dev, int fd, rfe_boardState state);
+API_EXPORT int RFE_ConfigureState(rfe_dev_t* rfe, rfe_boardState state);
 
 /**
 *This function sets the LimeRFE mode (receive, transmit, both, or none)
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe           handle previously obtained from invoking RFE_Open.
 * @param mode          Operation mode (convenience constants defined in limeRFE.h). Not all modes all applicable to all congfigurations. HAM channels using same port for RX and TX are not allowed RFE_MODE_TXRX mode. Cellular FDD bands 1, 2, 3, and 7 are always in RFE_MODE_TXRX mode. Cellular TDD band 38 can not be in RFE_MODE_TXRX.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_Mode(lms_device_t *dev, int fd, int mode);
+API_EXPORT int CALL_CONV RFE_Mode(rfe_dev_t* rfe, int mode);
 
 /**
 *This function reads the value of the speficied ADC.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 * @param adcID         Specifies which ADC is to be read (convenience constants defined in limeRFE.h).
 * @param value         ADC value.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_ReadADC(lms_device_t *dev, int fd, int adcID, int* value);
+API_EXPORT int CALL_CONV RFE_ReadADC(rfe_dev_t* rfe, int adcID, int* value);
 
 /**
 *This function configures GPIO pin. Only pins 4 and 5 are configurable.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe         handle previously obtained from invoking RFE_Open.
 * @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
 * @param direction     GPIO pin direction (convenience constants defined in limeRFE.h). 0 - Output; 1 - Input.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_ConfGPIO(lms_device_t *dev, int fd, int gpioNum, int direction);
+API_EXPORT int CALL_CONV RFE_ConfGPIO(rfe_dev_t* rfe, int gpioNum, int direction);
 
 /**
 *This function sets the GPIO pin value. GPIO pin should have been previously configured as output using RFE_ConfGPIO function.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe           handle previously obtained from invoking RFE_Open.
 * @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
 * @param val           GPIO pin value.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_SetGPIO(lms_device_t *dev, int fd, int gpioNum, int val);
+API_EXPORT int CALL_CONV RFE_SetGPIO(rfe_dev_t* rfe, int gpioNum, int val);
 
 /**
 *This function reads the GPIO pin value. GPIO pin should have been previously configured as input using RFE_ConfGPIO function.
 *
-* @param dev           LimeSDR device obtained by invoking LMS_Open. In case of direct USB communication this value should be NULL.
-* @param fd            Port file handle previously obtained from invoking RFE_Open. Used only in case of direct USB communication.
+* @param rfe           handle previously obtained from invoking RFE_Open.
 * @param gpioNum       GPIO pin number. Only pins 4 and 5 are configurable.
 * @param val           GPIO pin value.
 *
 * @return              0 on success, other on failure (see LimeRFE error codes)
 */
-API_EXPORT int CALL_CONV RFE_GetGPIO(lms_device_t *dev, int fd, int gpioNum, int * val);
+API_EXPORT int CALL_CONV RFE_GetGPIO(rfe_dev_t* rfe, int gpioNum, int * val);
+
+/**
+* Links LimeRFE Rx and Tx to specific SDR boards channels for automatic band
+* selection and RF switching purposes. By default channel 0 is used, so this
+* function is only needed if different channel is going to be used.
+*
+* @param rfe        handle previously obtained from invoking RFE_Open.
+* @param rxChan     Rx channel index
+* @param txChan     Tx channels index
+*
+* @return            0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_AssignSDRChannels(rfe_dev_t* rfe, int rxChan, int txChan);
+
+
 
 /** @} (End RFE_API) */
 

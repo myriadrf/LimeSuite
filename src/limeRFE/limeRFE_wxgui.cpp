@@ -11,6 +11,7 @@
 #include "limeRFE_wxgui.h"
 #include "limeRFE.h"
 #include "lms7suiteAppFrame.h"
+#include "RFE_Device.h"
 
 limeRFE_wxgui::limeRFE_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
@@ -18,7 +19,7 @@ limeRFE_view(parent, id, title, pos, size)
 {
     lmsControl = nullptr;
 
-	this->fd = -1;
+	rfe = nullptr;
 
 	lastPortRXSelection = 1;
 	lastPortTXSelection = 1;
@@ -61,43 +62,35 @@ void limeRFE_wxgui::Initialize(lms_device_t* lms)
 }
 
 void limeRFE_wxgui::OnbtnOpenPort(wxCommandEvent& event) {
-	if (this->fd != -1) {
+	if (rfe) {
 		AddMssg("Port already opened.");
 		return;
 	}
-
-	int baudrate = 9600;
-
 	wxString PortName = cmbbPorts->GetValue();
 
-	this->fd = RFE_Open(PortName.mb_str(), baudrate);
+        if (GetCommType() == RFE_USB)
+            rfe = RFE_Open(PortName.mb_str(), lmsControl);
+        else
+            rfe = RFE_Open(nullptr, lmsControl);
 
-	if (this->fd == RFE_ERROR_COMM_SYNC) {
-		PrintError(this->fd);
-		return;
-	}
-
-	if (this->fd == -1) {
+	if (rfe == nullptr) {
 		AddMssg("Error initializing serial port");
 		return;
 	}
 	else {
 		char msg[200];
-		sprintf(msg, "Port opened; fd = %d", this->fd);
+		sprintf(msg, "Port opened;");
 		AddMssg(msg);
 	}
 
 	unsigned char cinfo[4];
 
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	
-	int result = RFE_GetInfo(lms, fd, cinfo);
+	int result = RFE_GetInfo(rfe, cinfo);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
 	}
-	
+
 	boardInfo info;
 
 	info.fw_ver = cinfo[0];
@@ -115,8 +108,9 @@ void limeRFE_wxgui::OnbtnOpenPort(wxCommandEvent& event) {
 }
 
 void limeRFE_wxgui::OnbtnClosePort(wxCommandEvent& event) {
-	RFE_Close(this->fd);
-	this->fd = -1;
+
+	RFE_Close(rfe);
+	rfe = nullptr;
 	AddMssg("Port closed");
 	configured = false;
 	UpdateRFEForm();
@@ -195,10 +189,8 @@ void limeRFE_wxgui::OnbtnRefreshPorts(wxCommandEvent& event) {
 }
 
 void limeRFE_wxgui::OnbtnReset(wxCommandEvent& event) {
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	
-	int result = RFE_Reset(lms, this->fd);
+
+	int result = RFE_Reset(rfe);
 
 	if (result != RFE_SUCCESS){
 		PrintError(result);
@@ -213,10 +205,7 @@ void limeRFE_wxgui::OnbtnOpen(wxCommandEvent& event){
 	if (dlg.ShowModal() == wxID_CANCEL)
 		return;
 
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-
-	int result = RFE_LoadConfig(lms, fd, dlg.GetPath().To8BitData());
+	int result = RFE_LoadConfig(rfe, dlg.GetPath().To8BitData());
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
@@ -226,7 +215,7 @@ void limeRFE_wxgui::OnbtnOpen(wxCommandEvent& event){
 
 	rfe_boardState state;
 	guiState stateGUI;
-	int status = ReadConfig(dlg.GetPath().To8BitData(), &state, &stateGUI);
+	int status =ReadConfig(dlg.GetPath().To8BitData(), &state, &stateGUI);
 
 	powerCellCalCorr = stateGUI.powerCellCorr;
 	powerCalCorr = stateGUI.powerCorr;
@@ -300,9 +289,6 @@ void limeRFE_wxgui::GUI2State(rfe_boardState* state) {
 	int selPortRX = portRXvals[selPortRXindex];
 	int notch = cbNotch->GetValue();
 	int attenuation = cAttenuation->GetSelection();
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	int type = cTypeRX->GetSelection();
 	int enableSWR = (cbEnableSWR->GetValue()) ? 1 : 0;
 	int sourceSWR = rbSWRsource->GetSelection();
 
@@ -344,9 +330,8 @@ void limeRFE_wxgui::setTXRXBtns() {
 
 void limeRFE_wxgui::OnbtnBoard2GUI(wxCommandEvent& event) {
 	rfe_boardState state;
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	Cmd_GetConfig(lms, this->fd, &state);
+        auto* dev = static_cast<RFE_Device*>(rfe);
+	Cmd_GetConfig(dev->sdrDevice, dev->portFd, &state);
 
 	State2GUI(state);
 
@@ -368,16 +353,14 @@ void limeRFE_wxgui::OncTypeTX(wxCommandEvent& event) {
 }
 
 void limeRFE_wxgui::OnbtnCalibrate(wxCommandEvent& event) {
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
 
 	int adc1, adc2, result;
-	result = RFE_ReadADC(lms, fd, RFE_ADC1, &adc1);
+	result = RFE_ReadADC(rfe, RFE_ADC1, &adc1);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
 	}
-	result = RFE_ReadADC(lms, fd, RFE_ADC2, &adc2);
+	result = RFE_ReadADC(rfe, RFE_ADC2, &adc2);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
@@ -433,7 +416,6 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	SetChannelsTypesTXRX(RFE_CHANNEL_TX);
 
 	int typeRX = cTypeRX->GetSelection();
-	int typeTX = cTypeTX->GetSelection();
 
 	if (typeRX == RFE_TYPE_INDEX_CELL) {
 		cbTXasRX->SetValue(true);
@@ -454,7 +436,6 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	btnConfigure->Enable(!configured);
 
 	int channelRX = GetChannelID(RFE_CHANNEL_RX);
-	int channelTX = GetChannelID(RFE_CHANNEL_TX);
 
 	pnlTXRXMode->Hide();
 	pnlTXRXModeEN->Hide();
@@ -485,8 +466,8 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	bool isI2C = (rbI2C->GetValue() == 1);
 	cmbbPorts->Enable(!isI2C);
 	btnRefreshPorts->Enable(!isI2C);
-	btnOpenPort->Enable(!isI2C);
-	btnClosePort->Enable(!isI2C);
+	//btnOpenPort->Enable(!isI2C);
+	//btnClosePort->Enable(!isI2C);
 
 	if (rbSWRsource->GetSelection() == 1) { //Cellular
 		pnlADC2->Hide();
@@ -579,6 +560,8 @@ void limeRFE_wxgui::SetChannelsChoicesTXRX(int channelTXRX) {
 			if (i == RFE_CHANNEL_INDEX_HAM_2400) cChannelTXRX->AppendString("2300-2450 MHz (13 cm)");
 			if (i == RFE_CHANNEL_INDEX_HAM_3500) cChannelTXRX->AppendString("3300-3500 MHz");
 		}
+                if (strlen(LMS_GetDeviceInfo(lmsControl)->deviceName))
+                    cChannelTXRX->AppendString("Auto");
 	}
 
 	if (type == 2) { // Cellular
@@ -591,8 +574,6 @@ void limeRFE_wxgui::SetChannelsChoicesTXRX(int channelTXRX) {
 			if (i == RFE_CHANNEL_INDEX_CELL_BAND38) cChannelTXRX->AppendString("Band 38");
 		}
 	}
-
-	int count = cChannelTXRX->GetCount();
 
 	cChannelTXRX->SetSelection(lastSelectionTXRX[type]);
 }
@@ -613,7 +594,6 @@ void limeRFE_wxgui::OncChannelTX(wxCommandEvent& event) {
 
 void limeRFE_wxgui::SetConfigurationOptions() {
 	int selChannelIDRX = GetChannelID(RFE_CHANNEL_RX);
-	int typeRX = cTypeRX->GetSelection();
 	int selChannelIDTX = GetChannelID(RFE_CHANNEL_TX);
 	int typeTX = cTypeTX->GetSelection();
 
@@ -638,6 +618,14 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 		cPortTX->AppendString(RFE_PORT_3_NAME);
 		portTXvals[0] = RFE_PORT_3;
 	}
+        else if (selChannelIDTX == RFE_CID_AUTO){
+		cPortTX->AppendString(RFE_PORT_1_NAME);
+		portTXvals[0] = RFE_PORT_1;
+		cPortTX->AppendString(RFE_PORT_2_NAME);
+		portTXvals[1] = RFE_PORT_2;
+                cPortTX->AppendString(RFE_PORT_3_NAME);
+		portTXvals[2] = RFE_PORT_3;
+	}
 	else {
 		cPortTX->AppendString(RFE_PORT_1_NAME);
 		portTXvals[0] = RFE_PORT_1;
@@ -651,7 +639,8 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 	if ((selChannelIDRX == RFE_CID_HAM_0030) ||  //HAM Low channels
 	         (selChannelIDRX == RFE_CID_HAM_0145) ||
 		     (selChannelIDRX == RFE_CID_HAM_0435) ||
-		     (selChannelIDRX == RFE_CID_WB_1000))
+		     (selChannelIDRX == RFE_CID_WB_1000) ||
+                     (selChannelIDRX == RFE_CID_AUTO))
 	{
 		cPortRX->AppendString(RFE_PORT_1_NAME);
 		portRXvals[0] = RFE_PORT_1;
@@ -725,6 +714,7 @@ int limeRFE_wxgui::GetChannelID(int channelTXRX) {
 		case RFE_CHANNEL_INDEX_HAM_1280: selChannelID = RFE_CID_HAM_1280; break;
 		case RFE_CHANNEL_INDEX_HAM_2400: selChannelID = RFE_CID_HAM_2400; break;
 		case RFE_CHANNEL_INDEX_HAM_3500: selChannelID = RFE_CID_HAM_3500; break;
+                default: selChannelID = RFE_CID_AUTO;
 		} break;
 	case RFE_TYPE_INDEX_CELL:
 		switch (channel) {
@@ -782,9 +772,7 @@ void limeRFE_wxgui::OntbtnTXRX(wxCommandEvent& event) {
 
 	activeMode = mode;
 
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	int result = RFE_Mode(lms, fd, mode);
+	RFE_Mode(rfe, mode);
 
 	activeMode = mode;
 
@@ -806,8 +794,6 @@ void limeRFE_wxgui::SetModeLabel() {
 }
 
 void limeRFE_wxgui::OnbtnConfigure(wxCommandEvent& event) {
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
 	int type = cTypeRX->GetSelection();
 
 	rfe_boardState newState;
@@ -818,7 +804,7 @@ void limeRFE_wxgui::OnbtnConfigure(wxCommandEvent& event) {
 		newState.mode = RFE_MODE_TXRX;
 	}
 
-	int result = RFE_Configure(lms, fd, newState.channelIDRX, newState.channelIDTX, newState.selPortRX, newState.selPortTX, newState.mode, newState.notchOnOff, newState.attValue, newState.enableSWR, newState.sourceSWR);
+	int result = RFE_Configure(rfe, newState.channelIDRX, newState.channelIDTX, newState.selPortRX, newState.selPortTX, newState.mode, newState.notchOnOff, newState.attValue, newState.enableSWR, newState.sourceSWR);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
@@ -866,7 +852,7 @@ void limeRFE_wxgui::PrintError(int errorCode) {
 		AddMssg("ERROR: Communication synchronization error.");
 		break;
 
-		
+
 	default:
 		AddMssg("Error: Unknown error.");
 	}
@@ -889,15 +875,13 @@ void limeRFE_wxgui::OncbTXasRX(wxCommandEvent& event) {
 
 void limeRFE_wxgui::OnbtnReadADC(wxCommandEvent& event) {
 	int adc1, adc2, result;
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
 
-	result = RFE_ReadADC(lms, fd, RFE_ADC1, &adc1);
+	result = RFE_ReadADC(rfe, RFE_ADC1, &adc1);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
 	}
-	result = RFE_ReadADC(lms, fd, RFE_ADC2, &adc2);
+	result = RFE_ReadADC(rfe, RFE_ADC2, &adc2);
 	if (result != RFE_SUCCESS){
 		PrintError(result);
 		return;
@@ -1021,9 +1005,7 @@ void limeRFE_wxgui::OntbtnTXRXEN(wxCommandEvent& event) {
 	if ((tbtnRXValue == 1) && (tbtnTXValue == 1))
 		mode = RFE_MODE_TXRX;
 
-	int commType = GetCommType();
-	lms_device_t* lms = (commType == RFE_USB) ? NULL : lmsControl;
-	int result = RFE_Mode(lms, fd, mode);
+	int result = RFE_Mode(rfe, mode);
 	if (result != RFE_SUCCESS) {
 		PrintError(result);
 		return;
