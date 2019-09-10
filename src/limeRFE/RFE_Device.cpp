@@ -62,8 +62,6 @@ RFE_Device::RFE_Device(lms_device_t *dev, int fd):
     portFd(fd),
     rxChannel(0),
     txChannel(0),
-    txFrequency(-1),
-    rxFrequency(-1),
     boardState{0},
     autoRx(true),
     autoTx(true)
@@ -125,10 +123,6 @@ int RFE_Device::SetFrequency(bool dirTx, int ch, float freq)
 {
     if ((dirTx && ch != txChannel) || (!dirTx && ch != rxChannel))
         return 0;
-    if (dirTx)
-        txFrequency = freq;
-    else
-        rxFrequency = freq;
 
     if (!autoRx && !autoTx)
         return 0;
@@ -149,10 +143,10 @@ void RFE_Device::AutoFreq(rfe_boardState& state)
         autoRx = true;
         if (sdrDevice)
         {
-            if (rxFrequency < 0)
-                LMS_GetLOFrequency(sdrDevice, LMS_CH_RX, rxChannel, &rxFrequency);
-            if (rxFrequency > 0)
-                state.channelIDRX = RxPortCheck(state.selPortRX,FreqToBand(rxFrequency));
+            double freq = -1;
+            LMS_GetLOFrequency(sdrDevice, LMS_CH_RX, rxChannel, &freq);
+            if (freq > 0)
+                state.channelIDRX = RxPortCheck(state.selPortRX,FreqToBand(freq));
         }
         else
             state.channelIDRX = RFE_CID_WB_4000;
@@ -165,10 +159,10 @@ void RFE_Device::AutoFreq(rfe_boardState& state)
         autoTx = true;
         if (sdrDevice)
         {
-            if (txFrequency < 0)
-                LMS_GetLOFrequency(sdrDevice, LMS_CH_TX, txChannel, &txFrequency);
-            if (txFrequency > 0)
-                state.channelIDTX = TxPortCheck(state.selPortTX,FreqToBand(txFrequency));
+            double freq = -1;
+            LMS_GetLOFrequency(sdrDevice, LMS_CH_TX, txChannel, &freq);
+            if (freq > 0)
+                state.channelIDTX = TxPortCheck(state.selPortTX,FreqToBand(freq));
         }
         else
             state.channelIDTX = RFE_CID_WB_4000;

@@ -29,8 +29,6 @@ public:
 private:
     int rxChannel;
     int txChannel;
-    double txFrequency;
-    double rxFrequency;
     rfe_boardState boardState;
     bool autoRx;
     bool autoTx;
