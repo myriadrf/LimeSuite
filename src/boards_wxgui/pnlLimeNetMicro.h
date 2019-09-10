@@ -6,6 +6,7 @@
 class wxChoice;
 class wxStaticText;
 class wxFlexGridSizer;
+class pnlGPIO;
 
 class pnlLimeNetMicro : public wxPanel
 {
@@ -20,6 +21,7 @@ public:
 
 protected:
     wxFlexGridSizer* mainSizer;
+    pnlGPIO* pnl_gpio;
     wxChoice* cmbRxPath;
     wxChoice* cmbTxPath;
     lms_device_t *lmsControl;
