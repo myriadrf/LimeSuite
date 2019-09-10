@@ -8,6 +8,7 @@
 #include <wx/msgdlg.h>
 #include <vector>
 #include "lms7suiteEvents.h"
+#include "pnlGPIO.h"
 
 using namespace std;
 
@@ -50,6 +51,9 @@ pnlLimeNetMicro::pnlLimeNetMicro(wxWindow* parent,wxWindowID id, const wxPoint& 
     lbSizer->Add(cmbTxPath, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
     mainSizer->Add(lbSizer, 1, wxEXPAND | wxALL, 5);
+
+    pnl_gpio = new pnlGPIO(this, wxNewId());
+    mainSizer->Add(pnl_gpio, 1, wxEXPAND | wxALL, 5);
     Bind(READ_ALL_VALUES, &pnlLimeNetMicro::OnReadAll, this, this->GetId());
     Bind(WRITE_ALL_VALUES, &pnlLimeNetMicro::OnLoopbackChange, this, this->GetId());
 }
@@ -85,6 +89,7 @@ void pnlLimeNetMicro::Initialize(lms_device_t* pControl)
             }
         }
     }
+    pnl_gpio->Initialize(lmsControl);
     mainSizer->Fit(this);
     mainSizer->SetSizeHints(this);
     Layout();
@@ -183,6 +188,7 @@ void pnlLimeNetMicro::UpdatePanel()
         cmbRxPath->SetSelection((value >> 9) & 0x1);
         cmbTxPath->SetSelection((value >> 13) & 0x1);
     }
+    pnl_gpio->UpdatePanel();
 }
 
 void pnlLimeNetMicro::OnReadAll(wxCommandEvent &event)
@@ -193,4 +199,6 @@ void pnlLimeNetMicro::OnReadAll(wxCommandEvent &event)
 void pnlLimeNetMicro::OnWriteAll(wxCommandEvent &event)
 {
     OnLoopbackChange(event);
+    pnl_gpio->OnUsrGPIODirChange(event);
+    pnl_gpio->OnUsrGPIOChange(event);
 }
