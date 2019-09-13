@@ -33,6 +33,13 @@ typedef char TCHAR;
 
 #endif // LINUX
 
+typedef struct RFE_COM {
+#ifndef __unix__
+	HANDLE hComm;
+#endif
+	int fd;
+} RFE_COM;
+
 #define RFE_I2C 0
 #define RFE_USB 1
 
@@ -156,42 +163,32 @@ struct guiState
 extern "C" {
 #endif
 
-	int write_buffer_fd(int fd, unsigned char* c, int size);
-	int read_buffer_fd(int fd, unsigned char * data, int size);
-	int write_buffer(lms_device_t *dev, int fd, unsigned char* data, int size);
-	int read_buffer(lms_device_t *dev, int fd, unsigned char * data, int size);
-	int my_read(int fd, char* buffer, int count);
-	int my_write(int fd, char* buffer, int count);
-	int my_select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struct timeval* timeout);
-	int my_open(char* portname, int opt);
-	int my_close(int fd);
-	int serialport_write(int fd, const char* str, int len);
-	int serialport_read(int fd, char* buff, int len);
-	int serialport_init(const char* serialport, int baud);
-	void serialport_close(int fd);
-	int Cmd_GetInfo(lms_device_t *dev, int fd, boardInfo* info);
-	int Cmd_GetConfigFull(lms_device_t *dev, int fd, rfe_boardState *state);
-	int Cmd_GetConfig(lms_device_t *dev, int fd, rfe_boardState *state);
-	int Cmd_Hello(int fd);
+	int write_buffer_fd(RFE_COM com, unsigned char* c, int size);
+	int read_buffer_fd(RFE_COM com, unsigned char * data, int size);
+	int write_buffer(lms_device_t *dev, RFE_COM com, unsigned char* data, int size);
+	int read_buffer(lms_device_t *dev, RFE_COM com, unsigned char * data, int size);
+	int my_read(RFE_COM com, char* buffer, int count);
+	int my_write(RFE_COM com, char* buffer, int count);
+	int serialport_write(RFE_COM com, const char* str, int len);
+	int serialport_read(RFE_COM com, char* buff, int len);
+	int serialport_init(const char* serialport, int baud, RFE_COM* com);
+	int serialport_close(RFE_COM com);
+	int Cmd_GetInfo(lms_device_t *dev, RFE_COM com, boardInfo* info);
+	int Cmd_GetConfig(lms_device_t *dev, RFE_COM com, rfe_boardState *state);
+	int Cmd_Hello(RFE_COM com);
+	int Cmd_LoadConfig(lms_device_t *dev, RFE_COM com, const char *filename);
+	int Cmd_Reset(lms_device_t *dev, RFE_COM com);
+	int Cmd_ConfigureState(lms_device_t* dev, RFE_COM com, rfe_boardState state);
+	int Cmd_Configure(lms_device_t *dev, RFE_COM com, int channelIDRX, int channelIDTX = -1, int selPortRX = 0, int selPortTX = 0, int mode = 0, int notch = 0, int attenuation = 0, int enableSWR = 0, int sourceSWR = 0);
+	int Cmd_Mode(lms_device_t *dev, RFE_COM com, int mode);
+	int Cmd_ReadADC(lms_device_t *dev, RFE_COM com, int adcID, int* value);
+	int Cmd_Cmd(lms_device_t *dev, RFE_COM com, unsigned char* buf);
+	int Cmd_ConfGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int direction);
+	int Cmd_SetGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int val);
+	int Cmd_GetGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int * val);
+
 	int ReadConfig(const char *filename, rfe_boardState *stateBoard, guiState *stateGUI);
 	int SaveConfig(const char *filename, rfe_boardState state, guiState stateGUI);
-	int Cmd_LoadConfig(lms_device_t *dev, int fd, const char *filename);
-	int Cmd_Reset(lms_device_t *dev, int fd);
-	int Cmd_ConfigureFull(lms_device_t *dev, int fd, int channelID, int mode, int selPortTX = 0, int notch = 0, int attenuation = 0);
-        int Cmd_ConfigureState(lms_device_t* dev, int fd, rfe_boardState state);
-	int Cmd_Configure(lms_device_t *dev, int fd, int channelIDRX, int channelIDTX = -1, int selPortRX = 0, int selPortTX = 0, int mode = 0, int notch = 0, int attenuation = 0, int enableSWR = 0, int sourceSWR = 0);
-	int Cmd_ModeFull(lms_device_t *dev, int fd, int channelID, int mode);
-	int Cmd_Mode(lms_device_t *dev, int fd, int mode);
-
-	void getDefaultConfigurations(unsigned char** bytes);
-	void getDefaultConfiguration(int channelID, unsigned char* bytes);
-	int getDefaultMode(int channelID, int mode, unsigned char* mcu_byte);
-
-	int Cmd_ReadADC(lms_device_t *dev, int fd, int adcID, int* value);
-	int Cmd_Cmd(lms_device_t *dev, int fd, unsigned char* buf);
-	int Cmd_ConfGPIO(lms_device_t *dev, int fd, int gpioNum, int direction);
-	int Cmd_SetGPIO(lms_device_t *dev, int fd, int gpioNum, int val);
-	int Cmd_GetGPIO(lms_device_t *dev, int fd, int gpioNum, int * val);
 
 /************************************************************************
 * I2C Functions

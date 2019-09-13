@@ -17,11 +17,12 @@
 *   You should have received a copy of the GNU General Public License
 *   along with termiWin.  If not, see <http://www.gnu.org/licenses/>.
 *
+*   Modified by Lime Microsystems (www.limemicro.com)
+*
 */
 
 #ifndef TERMIWIN_H_
 #define TERMIWIN_H_
-#endif
 
 #ifdef _WIN32
 
@@ -129,18 +130,6 @@
 #define TCSADRAIN 1
 #define TCSAFLUSH 2
 
-/*TCFLUSH options*/
-#define TCIFLUSH 0
-#define TCOFLUSH 1
-#define TCIOFLUSH 2
-
-/*TCFLOW optons*/
-
-#define TCOOFF 0
-#define TCOON 1
-#define TCIOFF 2
-#define TCION 3
-
 //typdef
 typedef unsigned tcflag_t; /*This is an unsigned integer type used to represent the various bit masks for terminal flags.*/
 typedef unsigned cc_t; /*This is an unsigned integer type used to represent characters associated with various terminal control functions.*/
@@ -159,35 +148,23 @@ typedef struct termios
 
 //Serial configuration functions
 
-int tcgetattr(int fd, struct termios *termios_p);
-int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
-int tcsendbreak(int fd, int duration);
-int tcdrain(int fd);
-int tcflush(int fd, int queue_selector);
-int tcflow(int fd, int action);
-void cfmakeraw(struct termios *termios_p);
-speed_t cfgetispeed(const struct termios *termios_p);
-speed_t cfgetospeed(const struct termios *termios_p);
+int tcgetattr(HANDLE hComm, struct termios *termios_p);
+int tcsetattr(HANDLE hComm, int optional_actions, const struct termios *termios_p);
 int cfsetispeed(struct termios *termios_p, speed_t speed);
 int cfsetospeed(struct termios *termios_p, speed_t speed);
-int cfsetspeed(struct termios * termios_p, speed_t speed);
 
-//Write/Read/Open/Close/Select Functions
-
-int selectSerial(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-int readFromSerial(int fd, char* buffer, int count);
-int writeToSerial(int fd, char* buffer, int count);
-int openSerial(char* portname, int opt);
-int closeSerial(int fd);
+int readFromSerial(HANDLE hComm, char* buffer, int count);
+int writeToSerial(HANDLE hComm, char* buffer, int count);
+HANDLE openSerial(char* portname, int opt);
+int closeSerial(HANDLE hComm);
 
 //Function to disable DTR, because in Windows each time the port opens the Arduino is reset
 int setDTR(int val);
-
-//get Handle out of the COM structure
-HANDLE getHandle();
 
 #endif
 
 #ifndef _WIN32
 #pragma message("-Warning: termiWin requires a Windows system!")
 #endif
+
+#endif //TERMIWIN_H_

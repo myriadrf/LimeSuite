@@ -17,20 +17,15 @@
 *   You should have received a copy of the GNU General Public License
 *   along with termiWin.  If not, see <http://www.gnu.org/licenses/>.
 *
+*   Modified by Lime Microsystems (www.limemicro.com)
+*
 */
 
-#include "termiWin.h"
+#include "TermiWin.h"
 #include <fcntl.h>
 #include <stdlib.h>
 
-typedef struct COM {
-	HANDLE hComm;
-	int fd; //Actually it's completely useless
-	char* port;
-} COM;
-
 DCB SerialParams = { 0 }; //Initializing DCB structure
-struct COM com;
 COMMTIMEOUTS timeouts = { 0 }; //Initializing COMMTIMEOUTS structure
 
 //LOCAL functions
@@ -164,19 +159,17 @@ int getControlOptions(tcflag_t flag) {
 
 //LIBFUNCTIONS
 
-int tcgetattr(int fd, struct termios* termios_p) {
+int tcgetattr(HANDLE hComm, struct termios* termios_p) {
 
-	if (fd != com.fd) return -1;
 	int ret = 0;
 
-	ret = GetCommState(com.hComm, &SerialParams);
+	ret = GetCommState(hComm, &SerialParams);
 
 	return 0;
 }
 
-int tcsetattr(int fd, int optional_actions, const struct termios* termios_p) {
+int tcsetattr(HANDLE hComm, int optional_actions, const struct termios* termios_p) {
 
-	if (fd != com.fd) return -1;
 	int ret = 0;
 
 	//Store flags into local variables
@@ -302,117 +295,17 @@ int tcsetattr(int fd, int optional_actions, const struct termios* termios_p) {
 		timeouts.WriteTotalTimeoutMultiplier = termios_p->c_cc[VTIME] * 100; // in milliseconds
 	}
 
-	SetCommTimeouts(com.hComm, &timeouts);
+	SetCommTimeouts(hComm, &timeouts);
 
 	/*****************************************
 		EOF
 		*****************************************/
 
-	ret = SetCommState(com.hComm, &SerialParams);
+	ret = SetCommState(hComm, &SerialParams);
 	if (ret != 0)
 		return 0;
 	else
 		return -1;
-}
-
-int tcsendbreak(int fd, int duration) {
-
-	if (fd != com.fd) return -1;
-
-	int ret = 0;
-	ret = TransmitCommChar(com.hComm, '\x00');
-	if (ret != 0)
-		return 0;
-	else
-		return -1;
-}
-
-int tcdrain(int fd) {
-
-	if (fd != com.fd) return -1;
-	return FlushFileBuffers(com.hComm);
-}
-
-int tcflush(int fd, int queue_selector) {
-
-	if (fd != com.fd) return -1;
-	int rc = 0;
-
-	switch (queue_selector) {
-
-	case TCIFLUSH:
-		rc = PurgeComm(com.hComm, PURGE_RXCLEAR);
-		break;
-
-	case TCOFLUSH:
-		rc = PurgeComm(com.hComm, PURGE_TXCLEAR);
-		break;
-
-	case TCIOFLUSH:
-		rc = PurgeComm(com.hComm, PURGE_RXCLEAR);
-		rc *= PurgeComm(com.hComm, PURGE_TXCLEAR);
-		break;
-
-	default:
-		rc = 0;
-		break;
-	}
-
-	if (rc != 0)
-		return 0;
-	else
-		return -1;
-}
-
-int tcflow(int fd, int action) {
-
-	if (fd != com.fd) return -1;
-	int rc = 0;
-
-	switch (action) {
-
-	case TCOOFF:
-		rc = PurgeComm(com.hComm, PURGE_TXABORT);
-		break;
-
-	case TCOON:
-		rc = ClearCommBreak(com.hComm);
-		break;
-
-	case TCIOFF:
-		rc = PurgeComm(com.hComm, PURGE_RXABORT);
-		break;
-
-	case TCION:
-		rc = ClearCommBreak(com.hComm);
-		break;
-
-	default:
-		rc = 0;
-		break;
-	}
-
-	if (rc != 0)
-		return 0;
-	else
-		return -1;
-}
-
-void cfmakeraw(struct termios* termios_p) {
-
-	SerialParams.ByteSize = 8;
-	SerialParams.StopBits = ONESTOPBIT;
-	SerialParams.Parity = NOPARITY;
-}
-
-speed_t cfgetispeed(const struct termios* termios_p) {
-
-	return SerialParams.BaudRate;
-}
-
-speed_t cfgetospeed(const struct termios* termios_p) {
-
-	return SerialParams.BaudRate;
 }
 
 int cfsetispeed(struct termios* termios_p, speed_t speed) {
@@ -421,36 +314,17 @@ int cfsetispeed(struct termios* termios_p, speed_t speed) {
 }
 
 int cfsetospeed(struct termios* termios_p, speed_t speed) {
-
 	SerialParams.BaudRate = speed;
 	return 0;
 }
 
-int cfsetspeed(struct termios* termios_p, speed_t speed) {
-
-	SerialParams.BaudRate = speed;
-	return 0;
-}
-
-int selectSerial(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struct timeval* timeout) {
-
-	SetCommMask(com.hComm, EV_RXCHAR);
-	DWORD dwEventMask;
-	WaitCommEvent(com.hComm, &dwEventMask, NULL);
-
-	if (dwEventMask == EV_RXCHAR)
-		return com.fd;
-	else
-		return -1;
-}
-
-int readFromSerial(int fd, char* buffer, int count) {
-
-	if (fd != com.fd) return -1;
+int readFromSerial(HANDLE hComm, char* buffer, int count) {
 	int rc = 0;
 	int ret;
 
-	ret = ReadFile(com.hComm, buffer, count, &rc, NULL);
+	DWORD rc_dw = 0;
+	ret = ReadFile(hComm, buffer, count, &rc_dw, NULL);
+	rc = rc_dw;
 
 	if (ret == 0)
 		return -1;
@@ -458,13 +332,13 @@ int readFromSerial(int fd, char* buffer, int count) {
 		return rc;
 }
 
-int writeToSerial(int fd, char* buffer, int count) {
-
-	if (fd != com.fd) return -1;
+int writeToSerial(HANDLE hComm, char* buffer, int count) {
 	int rc = 0;
 	int ret;
 
-	ret = WriteFile(com.hComm, buffer, count, &rc, NULL);
+	DWORD rc_dw = 0;
+	ret = WriteFile(hComm, buffer, count, &rc_dw, NULL);
+	rc = rc_dw;
 
 	if (ret == 0)
 		return -1;
@@ -472,56 +346,50 @@ int writeToSerial(int fd, char* buffer, int count) {
 		return rc;
 }
 
-int openSerial(char* portname, int opt) {
+HANDLE openSerial(char* portname, int opt) {
+	HANDLE hComm;
+	char* port;
 
 	if (strlen(portname) < 4) return -1;
 
 	//COMxx
 	if (strlen(portname) > 4) {
-		com.port = calloc(1, sizeof(char) * strlen("\\\\.\\COM10") + 1);
-		strncat(com.port, "\\\\.\\", strlen("\\\\.\\"));
+		port = (char*)calloc(1, sizeof(char) * strlen("\\\\.\\COM10") + 1);
+		strncat(port, "\\\\.\\", strlen("\\\\.\\"));
 	}
 	//COMx
 	else {
-		com.port = calloc(1, sizeof(char) * 5);
+		port = (char*)calloc(1, sizeof(char) * 5);
 	}
-	strncat(com.port, portname, strlen(portname));
+	strncat(port, portname, strlen(portname));
+
+	wchar_t wport[20];
+	mbstowcs(wport, port, strlen(port) + 1);//Plus null
 
 	switch (opt) {
 
 	case O_RDWR:
-		com.hComm = CreateFileA(com.port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+		hComm = CreateFile(wport, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 		break;
 
 	case O_RDONLY:
-		com.hComm = CreateFile(com.port, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+		hComm = CreateFile(wport, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 		break;
 
 	case O_WRONLY:
-		com.hComm = CreateFile(com.port, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+		hComm = CreateFile(wport, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 		break;
 	}
 
-	if (com.hComm == INVALID_HANDLE_VALUE) {
-		return -1;
-	}
-	com.fd = atoi(portname + 3); // COMx and COMxx
-	SerialParams.DCBlength = sizeof(SerialParams);
-	return com.fd;
+	return hComm;
 }
 
-int closeSerial(int fd) {
-
-	int ret = CloseHandle(com.hComm);
+int closeSerial(HANDLE hComm) {
+	int ret = CloseHandle(hComm);
 	if (ret != 0)
 		return 0;
 	else
 		return -1;
-}
-
-//Returns hComm from the COM structure
-HANDLE getHandle() {
-	return com.hComm;
 }
 
 //Function to disable DTR, because in Windows each time the port opens the Arduino is reset

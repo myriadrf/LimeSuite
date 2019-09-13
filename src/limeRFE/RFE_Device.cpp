@@ -57,9 +57,9 @@ int RxPortCheck(int port, int band)
 }
 }
 
-RFE_Device::RFE_Device(lms_device_t *dev, int fd):
+RFE_Device::RFE_Device(lms_device_t *dev, RFE_COM com) :
     sdrDevice(dev),
-    portFd(fd),
+    com(com),
     rxChannel(0),
     txChannel(0),
     boardState{0},
@@ -69,7 +69,7 @@ RFE_Device::RFE_Device(lms_device_t *dev, int fd):
     auto lmsDev = static_cast<lime::LMS7_Device*>(dev);
     if (lmsDev && lmsDev->GetConnection())
         lmsDev->SetLimeRFE(this);
-    Cmd_GetConfig(dev, fd, &boardState);
+    Cmd_GetConfig(dev, com, &boardState);
 }
 
 RFE_Device::~RFE_Device()
@@ -98,23 +98,23 @@ void RFE_Device::OnCalibrate(int ch, bool en)
                         boardState.channelIDRX = RFE_CID_HAM_0145;
                         boardState.channelIDTX = RFE_CID_HAM_0145;
                         boardState.mode = RFE_MODE_NONE;
-                        Cmd_ConfigureState(sdrDevice, portFd, boardState);
+						Cmd_ConfigureState(sdrDevice, com, boardState);
                         boardState.channelIDRX = band;
                         boardState.channelIDTX = band;
                         boardState.mode = mode;
                     }
                     else
-                        Cmd_ConfigureState(sdrDevice, portFd, boardState);
+                        Cmd_ConfigureState(sdrDevice, com, boardState);
                     return;
                 }
 
             if (!en)
             {
-                Cmd_Mode(sdrDevice, portFd, RFE_MODE_NONE);
+                Cmd_Mode(sdrDevice, com, RFE_MODE_NONE);
                 boardState.mode = mode;
             }
             else
-                Cmd_Mode(sdrDevice, portFd, mode);
+				Cmd_Mode(sdrDevice, com, mode);
         }
     }
 }
@@ -132,7 +132,7 @@ int RFE_Device::SetFrequency(bool dirTx, int ch, float freq)
     else if (!dirTx && autoRx)
         boardState.channelIDRX = RxPortCheck(boardState.selPortRX,FreqToBand(freq));
 
-    return Cmd_ConfigureState(sdrDevice, portFd, boardState);
+	return Cmd_ConfigureState(sdrDevice, com, boardState);
 }
 
 void RFE_Device::AutoFreq(rfe_boardState& state)
@@ -186,7 +186,7 @@ void RFE_Device::UpdateState(int mode)
 void RFE_Device::UpdateState()
 {
     if (sdrDevice)
-        Cmd_GetConfig(sdrDevice, portFd, &boardState);
+        Cmd_GetConfig(sdrDevice, com, &boardState);
 }
 
 void RFE_Device::SetChannels(int rx, int tx)

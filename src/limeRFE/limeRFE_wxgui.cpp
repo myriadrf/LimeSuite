@@ -250,11 +250,11 @@ void limeRFE_wxgui::State2GUI(rfe_boardState state) {
 	int resultRX = GetChannelIndexes(stateChannelIDRX, &typeIndexRX, &channelIndexRX);
 	int resultTX = GetChannelIndexes(stateChannelIDTX, &typeIndexTX, &channelIndexTX);
 	if (resultRX != 0) {
-		AddMssg("Error: Configuration channel RX not found.");
+		AddMssg("ERROR: Configuration channel RX not found.");
 		return;
 	}
 	if (resultTX != 0) {
-		AddMssg("Error: Configuration channel TX not found.");
+		AddMssg("ERROR: Configuration channel TX not found.");
 		return;
 	}
 
@@ -330,8 +330,12 @@ void limeRFE_wxgui::setTXRXBtns() {
 
 void limeRFE_wxgui::OnbtnBoard2GUI(wxCommandEvent& event) {
 	rfe_boardState state;
-        auto* dev = static_cast<RFE_Device*>(rfe);
-	Cmd_GetConfig(dev->sdrDevice, dev->portFd, &state);
+	auto* dev = static_cast<RFE_Device*>(rfe);
+	int result = Cmd_GetConfig(dev->sdrDevice, dev->com, &state);
+	if (result != RFE_SUCCESS) {
+		PrintError(result);
+		return;
+	}
 
 	State2GUI(state);
 

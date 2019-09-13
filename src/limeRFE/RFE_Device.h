@@ -8,12 +8,12 @@
 #ifndef RFE_DEVICE_H
 #define RFE_DEVICE_H
 
-#include "limeRFE.h"
+#include "limeRFE_constants.h"
 
 
 class RFE_Device {
 public:
-    RFE_Device(lms_device_t *d, int fd);
+    RFE_Device(lms_device_t *d, RFE_COM com);
     RFE_Device(const RFE_Device&) = delete;
     RFE_Device& operator=(const RFE_Device&) = delete;
     ~RFE_Device();
@@ -25,7 +25,7 @@ public:
     void UpdateState();
     void SetChannels(int rx, int tx);
     lms_device_t *sdrDevice;
-    int portFd;
+	struct RFE_COM com;
 private:
     int rxChannel;
     int txChannel;
