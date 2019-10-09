@@ -191,8 +191,6 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             bulkCtrlAvailable = true;
             break;
         }
-    isConnected = true;
-    return 0;
 #else
     const auto splitPos = vidpid.find(":");
     const auto vid = std::stoi(vidpid.substr(0, splitPos), nullptr, 16);
@@ -265,6 +263,7 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             }
     }
     libusb_free_config_descriptor(descriptor);
+#endif
     isConnected = true;
     if(bulkCtrlAvailable)
     {
@@ -275,7 +274,6 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             lime::error("Failed to reset USB bulk endpoints");
     }
     return 0;
-#endif
 }
 /**	@brief Closes communication to device.
 */
