@@ -370,6 +370,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         localDataResults.samplesI[i].resize(fftSize, 0);
         localDataResults.samplesQ[i].resize(fftSize, 0);
         localDataResults.fftBins[i].resize(fftSize, 0);
+        pthis->streamData.samplesI[i].resize(fftSize);
+        pthis->streamData.samplesQ[i].resize(fftSize);
+        pthis->streamData.fftBins[i].resize(fftSize);
     }
     buffers = new lime::complex16_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
