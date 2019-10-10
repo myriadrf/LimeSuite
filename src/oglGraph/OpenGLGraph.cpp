@@ -521,7 +521,7 @@ void OpenGLGraph::CalculateGrid()
         const float cWidth = 15; //~double actual width
         float absx1 = std::fabs(settings.visibleArea.x1);
         float absx2 = std::fabs(settings.visibleArea.x2);
-        int valLen = 3 + std::fabs(std::log10(absx1 > absx2 ? absx2 : absx2)); //some extra spacing for separation between values, and for decimal point  
+        int valLen = 3 + std::fabs(std::log10(absx1 > absx2 ? absx2 : absx2)); //some extra spacing for separation between values, and for decimal point
         int tmpLines = 1+settings.dataViewWidth / (valLen * cWidth);
         float divisor = 1; // current grid spacing
         int xlines = settings.gridXlines > tmpLines ? tmpLines : settings.gridXlines;
@@ -545,7 +545,7 @@ void OpenGLGraph::CalculateGrid()
     interval = settings.visibleArea.y2 - settings.visibleArea.y1; // span of y axis
     if (settings.gridYlines > 0)
     {
-        int tmpLines = settings.dataViewHeight / (2 * settings.gridValuesHeight); //2x to be safe in double scaling steps
+        int tmpLines = 1+settings.dataViewHeight / (2 * settings.gridValuesHeight); //2x to be safe in double scaling steps
         float divisor = 1; // current grid spacing
         int ylines = settings.gridYlines > tmpLines ? tmpLines : settings.gridYlines;
         settings.gridYprec = 0;
