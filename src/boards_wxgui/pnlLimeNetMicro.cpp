@@ -67,8 +67,6 @@ void pnlLimeNetMicro::Initialize(lms_device_t* pControl)
     cmbTxPath->Clear();
     cmbTxPath->Append(wxString(_("Band 1 TX")));
     cmbTxPath->Append(wxString(_("Band 2 TX")));
-    uint16_t addr = 3;
-    uint16_t value = 0;
     if (pControl)
     {
         uint16_t reg3 = 0;
