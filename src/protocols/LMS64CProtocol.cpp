@@ -441,28 +441,25 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     {
         for(int i=0; i<outLen; i+=packetLen)
         {
-            int bytesToSend = packetLen;
             if (callback_logData)
-                callback_logData(true, &outBuffer[outBufPos], bytesToSend);
-            if( Write(&outBuffer[outBufPos], bytesToSend) )
+                callback_logData(true, &outBuffer[outBufPos], packetLen);
+            int written = Write(&outBuffer[outBufPos], packetLen);
+            if(written != packetLen)
             {
-                outBufPos += packetLen;
-                long readLen = packetLen;
-                int bread = Read(&inBuffer[inDataPos], readLen);
-                if(bread != readLen && protocol != LMS_PROTOCOL_NOVENA)
-                {
-                    status = ReportError(EIO, "Read(%d bytes) failed", (int)readLen);
-                    break;
-                }
-                if (callback_logData)
-                    callback_logData(false, &inBuffer[inDataPos], bread);
-                inDataPos += bread;
-            }
-            else
-            {
-                status = ReportError(EIO, "Write(%d bytes) failed", (int)bytesToSend);
+                status = lime::error("TransferPacket: Write failed (ret=%d)", written);
                 break;
             }
+            outBufPos += packetLen;
+            long readLen = packetLen;
+            int bread = Read(&inBuffer[inDataPos], readLen);
+            if(bread != readLen)
+            {
+                status = lime::error("TransferPacket: Read failed (ret=%d)", bread);
+                break;
+            }
+            if (callback_logData)
+                callback_logData(false, &inBuffer[inDataPos], bread);
+            inDataPos += bread;
         }
         ParsePacket(pkt, inBuffer, inDataPos, protocol);
     }
