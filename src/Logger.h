@@ -29,7 +29,7 @@ enum LogLevel
 static inline void critical(const char *format, ...);
 
 //! Log an error message with formatting
-static inline void error(const char *format, ...);
+static inline int error(const char *format, ...);
 
 //! Log a warning message with formatting
 static inline void warning(const char *format, ...);
@@ -83,12 +83,13 @@ static inline void lime::critical(const char *format, ...)
     va_end(args);
 }
 
-static inline void lime::error(const char *format, ...)
+static inline int lime::error(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
     lime::log(lime::LOG_LEVEL_ERROR, format, args);
     va_end(args);
+    return -1;
 }
 
 static inline void lime::warning(const char *format, ...)
