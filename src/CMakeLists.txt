@@ -207,7 +207,7 @@ set(LMS7SUITE_GUI_SOURCES
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    RFSpark/RFSpark_wxgui.cpp
+    boards_wxgui/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
     lms7suiteApp.cpp
