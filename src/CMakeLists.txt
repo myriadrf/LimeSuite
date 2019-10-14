@@ -195,7 +195,6 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/CoefficientFileParser.cpp
     lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
     lms7002_wxgui/lms7002_mainPanel.cpp
-    lms7002_wxgui/pnlBoardControls.cpp
     lms7002_wxgui/dlgViewSFR.cpp
     lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp
     lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp
@@ -225,6 +224,7 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
+    boards_wxgui/pnlBoardControls.cpp
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
     boards_wxgui/pnlUltimateEVB.cpp
