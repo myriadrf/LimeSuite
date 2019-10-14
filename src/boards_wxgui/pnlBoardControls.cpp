@@ -13,7 +13,6 @@
 #include "pnlCoreSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
-#include "lms7002m_novena_wxgui.h"
 #include "RFSpark_wxgui.h"
  #include "pnlQSpark.h"
 #include <IConnection.h>
@@ -485,13 +484,6 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
          || boardID == GetDeviceName(LMS_DEV_EVB7V2))
     {
         pnlBuffers* pnl = new pnlBuffers(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if (boardID == GetDeviceName(LMS_DEV_NOVENA))
-    {
-        LMS7002M_Novena_wxgui* pnl = new LMS7002M_Novena_wxgui(this, wxNewId());
         pnl->Initialize(lmsControl);
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);

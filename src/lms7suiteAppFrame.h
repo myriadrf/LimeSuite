@@ -17,9 +17,7 @@ class fftviewer_frFFTviewer;
 class ADF4002_wxgui;
 class Si5351C_wxgui;
 class LMS_Programing_wxgui;
-class HPM7_wxgui;
 class FPGAcontrols_wxgui;
-class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
@@ -45,12 +43,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowSi5351C(wxCommandEvent& event);
         void OnProgramingClose(wxCloseEvent& event);
         void OnShowPrograming(wxCommandEvent& event);
-        void OnHPM7Close(wxCloseEvent& event);
-        void OnShowHPM7(wxCommandEvent& event);
         void OnFPGAcontrolsClose(wxCloseEvent& event);
         void OnShowFPGAcontrols(wxCommandEvent& event);
-        void OnMyriad7Close(wxCloseEvent& event);
-        void OnShowMyriad7(wxCommandEvent& event);
         void OnDeviceInfoClose(wxCloseEvent& event);
         void OnShowDeviceInfo(wxCommandEvent& event);
         void OnSPIClose(wxCloseEvent& event);
@@ -87,9 +81,7 @@ protected:
         Si5351C_wxgui* si5351gui;
 
         LMS_Programing_wxgui* programmer;
-        HPM7_wxgui* hpm7;
         FPGAcontrols_wxgui* fpgaControls;
-        Myriad7_wxgui* myriad7;
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;

@@ -6,7 +6,6 @@
 #cmakedefine ENABLE_EVB7COM
 #cmakedefine ENABLE_FX3
 #cmakedefine ENABLE_STREAM_UNITE
-#cmakedefine ENABLE_NOVENARF7
 #cmakedefine ENABLE_FTDI
 #cmakedefine ENABLE_PCIE_XILLYBUS
 #cmakedefine ENABLE_REMOTE
@@ -37,10 +36,6 @@ void __loadAllConnections(void)
 
     #ifdef ENABLE_FTDI
     __loadConnectionFT601Entry();
-    #endif
-
-    #ifdef ENABLE_NOVENARF7
-    __loadConnectionNovenaRF7Entry();
     #endif
 
     #ifdef ENABLE_PCIE_XILLYBUS

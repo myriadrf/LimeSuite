@@ -54,7 +54,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
     lms7002m/LMS7002M_BaseCalibrations.cpp
-    lms7002m/goert.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
@@ -89,11 +88,9 @@ set(LIME_SUITE_INCLUDES
     ADF4002
     Si5351C
     lms7002m
-    LTEpackets
     FPGA_common
     lms7002m_mcu
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
-    HPM7
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
 )
 
@@ -145,7 +142,6 @@ endif()
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-#include(ConnectionNovenaRF7/CMakeLists.txt)	#No longer supported
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionRemote/CMakeLists.txt)
@@ -211,16 +207,13 @@ set(LMS7SUITE_GUI_SOURCES
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    boards_wxgui/lms7002m_novena_wxgui.cpp
     RFSpark/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
     lms7suiteApp.cpp
     FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp
-    HPM7/HPM7_wxgui.cpp
     dlgAbout.cpp
     numericSlider/numericSlider.cpp
-    myriad7/myriad7_wxgui.cpp
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
@@ -249,7 +242,6 @@ if (ENABLE_GUI)
     include_directories(RFSpark)
     include_directories(FPGAcontrols_wxgui)
     include_directories(numericSlider)
-    include_directories(myriad7)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
