@@ -903,7 +903,7 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 double FPGA::DetectRefClk(double fx3Clk)
 {
     const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
+    const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
     if (WriteRegisters(addr, vals, 2) != 0)
