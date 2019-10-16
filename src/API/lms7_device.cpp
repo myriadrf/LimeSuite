@@ -1788,6 +1788,8 @@ lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
 {
     if (config.channelID >= GetNumChannels())
         return nullptr;
+    if (!connection)
+        return nullptr;
     return mStreamers[config.channelID/2]->SetupStream(config);
 }
 

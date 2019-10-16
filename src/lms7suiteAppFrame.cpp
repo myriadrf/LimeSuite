@@ -51,8 +51,6 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         if (fftviewer)
             fftviewer->SetNyquistFrequency();
     }
-    else if (event.GetEventType() == SAMPLE_POS_CHANGED)
-        this->mContent->mTabLimeLight->UpdateGUI();
 }
 
 void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char *message)
@@ -111,9 +109,6 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
@@ -144,7 +139,6 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
     wxCloseEvent evt;
     OnFFTviewerClose(evt);
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Disconnect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     LMS_Close(lmsControl);
 }
 

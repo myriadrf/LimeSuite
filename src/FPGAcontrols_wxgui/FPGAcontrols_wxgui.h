@@ -8,43 +8,38 @@
 #include <wx/frame.h>
 #include <wx/timer.h>
 #include <wx/wx.h>
-class wxGauge;
 class wxStaticText;
 class wxBitmapButton;
-class wxFlexGridSizer;
 class wxButton;
 class wxStaticBoxSizer;
 class wxToggleButton;
 class wxCheckBox;
 
 #include "lime/LimeSuite.h"
+#include "dataTypes.h"
 #include <vector>
-#include <map>
+#include <atomic>
+#include <thread>
 
 
 class FPGAcontrols_wxgui: public wxFrame
 {
-	public:
+public:
         FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
         virtual void Initialize(lms_device_t* dataPort);
         virtual ~FPGAcontrols_wxgui();
-
+private:
         int UploadFile(const wxString &filename);
         int UploadFile(std::vector<int16_t> isamples, std::vector<int16_t> qsamples);
         wxButton* btnPlayWFM;
         wxButton* btnStopWFM;
-        wxStaticText* lblProgressPercent;
-        wxGauge* progressBar;
         wxBitmapButton* btnOpenWFM;
         wxToggleButton* btnLoadOnetone;
         wxStaticText* txtFilename;
+        wxStaticText* statusText;
         wxToggleButton* btnLoadCustom;
         wxToggleButton* btnLoadWCDMA;
-        wxStaticText* txtDataRate;
-        wxCheckBox* chkDigitalLoopbackEnable;
         wxCheckBox* chkMIMO;
-
-	protected:
         static const long ID_BUTTON6;
         static const long ID_BUTTON7;
         static const long ID_BUTTON8;
@@ -54,10 +49,8 @@ class FPGAcontrols_wxgui: public wxFrame
         static const long ID_GAUGE1;
         static const long ID_BUTTON3;
         static const long ID_BUTTON4;
-        static const long ID_STREAMING_TIMER;
-
-	private:
         wxChoice* cmbDevice;
+        wxChoice* mode;
         void OnbtnUploadClick(wxCommandEvent& event);
         void OnbtnOpenFileClick(wxCommandEvent& event);
         void OnbtnMifClick(wxCommandEvent& event);
@@ -67,10 +60,11 @@ class FPGAcontrols_wxgui: public wxFrame
         void OnbtnLoadOnetoneClick(wxCommandEvent& event);
         void OnbtnLoadWCDMAClick(wxCommandEvent& event);
         void OnbtnLoadCustomClick(wxCommandEvent& event);
-        void OnChkDigitalLoopbackEnableClick(wxCommandEvent& event);
-	protected:
+        void OnModeChanged(wxCommandEvent& event);
+        void OnStatus(wxCommandEvent& event);
+        std::atomic<bool> terminateStream;
         lms_device_t* lmsControl;
-        wxTimer* mStreamingTimer;
+        std::thread txThread;
         DECLARE_EVENT_TABLE()
 };
 

@@ -18,8 +18,6 @@
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h>
 #include "wx/checkbox.h"
-
-#include "dataTypes.h"
 #include "FPGAcontrols_wxgui.h"
 #include <vector>
 #include <fstream>
@@ -28,8 +26,10 @@
 #include <wx/filename.h>
 #include <iostream>
 #include "WFM_wcdma.h"
+#include "Logger.h"
 
-using namespace std;
+using std::vector;
+using lime::complex16_t;
 
 const long FPGAcontrols_wxgui::ID_BUTTON6 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON7 = wxNewId();
@@ -37,22 +37,18 @@ const long FPGAcontrols_wxgui::ID_BUTTON8 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BITMAPBUTTON1 = wxNewId();
 const long FPGAcontrols_wxgui::ID_STATICTEXT2 = wxNewId();
 const long FPGAcontrols_wxgui::ID_STATICTEXT5 = wxNewId();
-const long FPGAcontrols_wxgui::ID_GAUGE1 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON3 = wxNewId();
 const long FPGAcontrols_wxgui::ID_BUTTON4 = wxNewId();
-//*)
-const long FPGAcontrols_wxgui::ID_STREAMING_TIMER = wxNewId();
+
+wxDEFINE_EVENT(UPDATE_STATUS, wxCommandEvent);
 
 BEGIN_EVENT_TABLE(FPGAcontrols_wxgui, wxFrame)
 END_EVENT_TABLE()
 
-FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles)
+FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxString &title, const wxPoint& pos,const wxSize& size, long styles) :
+    terminateStream(true),
+    lmsControl(nullptr)
 {
-    lmsControl = nullptr;
-    mStreamingTimer = new wxTimer(this, ID_STREAMING_TIMER);
-
-    wxFlexGridSizer* FlexGridSizer10;
-    wxFlexGridSizer* FlexGridSizer3;
     wxFlexGridSizer* FlexGridSizer2;
     wxStaticBoxSizer* StaticBoxSizer3;
     wxFlexGridSizer* FlexGridSizer8;
@@ -71,42 +67,32 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     cmbDevice->Append(_T("ADC/DAC"));
     cmbDevice->SetSelection(0);
     FlexGridSizer1->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-    wxStaticBoxSizer* digitalInterfaceGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Digital Interface"));
-    chkDigitalLoopbackEnable = new wxCheckBox(this, wxNewId(), _("Digital Loopback enable"));
-    digitalInterfaceGroup->Add(chkDigitalLoopbackEnable, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
-    Connect(chkDigitalLoopbackEnable->GetId(), wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick);
-    FlexGridSizer1->Add(digitalInterfaceGroup, 1, wxALIGN_LEFT | wxALIGN_TOP | wxLEFT, 5);
+    mode = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE"));
+
+    FlexGridSizer1->Add(mode, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
     StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));
     FlexGridSizer6 = new wxFlexGridSizer(0, 1, 5, 0);
     FlexGridSizer6->AddGrowableCol(0);
-    FlexGridSizer8 = new wxFlexGridSizer(0, 3, 0, 5);
+    FlexGridSizer8 = new wxFlexGridSizer(0, 5, 0, 5);
     btnLoadOnetone = new wxToggleButton(this, ID_BUTTON6, _T("Onetone"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON6"));
     btnLoadOnetone->SetToolTip(_T("Loads single tone waveform"));
     FlexGridSizer8->Add(btnLoadOnetone, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     btnLoadWCDMA = new wxToggleButton(this, ID_BUTTON7, _T("W-CDMA"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON7"));
     btnLoadWCDMA->SetToolTip(_T("Loads WCDMA waveform"));
     FlexGridSizer8->Add(btnLoadWCDMA, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-    chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
-    FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
-    FlexGridSizer6->Add(FlexGridSizer8, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-    FlexGridSizer10 = new wxFlexGridSizer(0, 3, 0, 5);
-    FlexGridSizer10->AddGrowableCol(2);
     btnLoadCustom = new wxToggleButton(this, ID_BUTTON8, _T("Custom"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON8"));
     btnLoadCustom->SetToolTip(_T("Loads user selected custom file"));
-    FlexGridSizer10->Add(btnLoadCustom, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer8->Add(btnLoadCustom, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     btnOpenWFM = new wxBitmapButton(this, ID_BITMAPBUTTON1, wxArtProvider::GetBitmap(wxART_MAKE_ART_ID_FROM_STR(_T("wxART_FILE_OPEN")),wxART_BUTTON), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW, wxDefaultValidator, _T("ID_BITMAPBUTTON1"));
-    FlexGridSizer10->Add(btnOpenWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
+    btnOpenWFM->SetToolTip("The file should contain interleaved 16bit I + 16bit Q sample values (IQIQIQ....)");
+    FlexGridSizer8->Add(btnOpenWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     txtFilename = new wxStaticText(this, ID_STATICTEXT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
-    FlexGridSizer10->Add(txtFilename, 1, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer6->Add(FlexGridSizer10, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
-    FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 0);
-    FlexGridSizer3->AddGrowableCol(1);
-    lblProgressPercent = new wxStaticText(this, ID_STATICTEXT5, _T("0 %"), wxDefaultPosition, wxSize(32,-1), 0, _T("ID_STATICTEXT5"));
-    FlexGridSizer3->Add(lblProgressPercent, 1, wxLEFT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
-    progressBar = new wxGauge(this, ID_GAUGE1, 100, wxDefaultPosition, wxSize(-1,10), 0, wxDefaultValidator, _T("ID_GAUGE1"));
-    FlexGridSizer3->Add(progressBar, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer6->Add(FlexGridSizer3, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer8->Add(txtFilename, 1, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+    chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
+    FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
+    FlexGridSizer6->Add(FlexGridSizer8, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
+
     FlexGridSizer2 = new wxFlexGridSizer(0, 3, 0, 5);
     btnPlayWFM = new wxButton(this, ID_BUTTON3, _T("Play >"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON3"));
     FlexGridSizer2->Add(btnPlayWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
@@ -116,10 +102,15 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
 
+    statusText = new wxStaticText(this, ID_STATICTEXT5, _T(""), wxDefaultPosition, wxSize(-1,-1), 0, _T("ID_STATICTEXT5"));
+    FlexGridSizer1->Add(statusText, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+
     SetSizer(FlexGridSizer1);
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
 
+    Bind(UPDATE_STATUS, &FPGAcontrols_wxgui::OnStatus, this);
+    mode->Connect(wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler(FPGAcontrols_wxgui::OnModeChanged), NULL, this);
     Connect(ID_BUTTON6, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadOnetoneClick);
     Connect(ID_BUTTON7, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadWCDMAClick);
     Connect(ID_BUTTON8, wxEVT_TOGGLEBUTTON, (wxObjectEventFunction)&FPGAcontrols_wxgui::OnbtnLoadCustomClick);
@@ -131,17 +122,28 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
 void FPGAcontrols_wxgui::Initialize(lms_device_t* dataPort)
 {
     lmsControl = dataPort;
-
-    if (LMS_GetNumChannels(lmsControl,LMS_CH_TX) > 2)
+    int numCh = LMS_GetNumChannels(lmsControl,LMS_CH_TX);
+    if ( numCh > 2)
         cmbDevice->Show();
     else
         cmbDevice->Hide();
+
+    mode->Clear();
+    mode->SetSelection(mode->Append(_T("Stream Mode")));
+    if (numCh != 1)
+        mode->SetSelection(mode->Append(_T("WFM Mode")));
+    wxCommandEvent evt;
+    OnModeChanged(evt);
     Layout();
 }
 
 FPGAcontrols_wxgui::~FPGAcontrols_wxgui()
 {
-    wxCommandEvent evt;
+    if (txThread.joinable())
+    {
+        terminateStream.store(true, std::memory_order_relaxed);
+        txThread.join();
+    }
 }
 
 /** @brief Reads WFM file and outputs iq sample pairs
@@ -164,7 +166,7 @@ int ReadWFM(const wxString filename, std::vector<int16_t> &iSamples, std::vector
     if( fpin.IsOpened() == false)
     {
 #ifndef NDEBUG
-        cout << _("WFM reading: Input file can not be opened (") << filename << _(")\n");
+        lime::debug("WFM reading: Input file can not be opened (%s)", filename);
 #endif
         return -1;
     }
@@ -214,11 +216,23 @@ void FPGAcontrols_wxgui::OnbtnOpenFileClick(wxCommandEvent& event)
 void FPGAcontrols_wxgui::OnbtnPlayWFMClick(wxCommandEvent& event)
 {
     LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
+    btnPlayWFM->Enable(false);
+    btnStopWFM->Enable(true);
+    statusText->SetLabel("Status: Running");
 }
 
 void FPGAcontrols_wxgui::OnbtnStopWFMClick(wxCommandEvent& event)
 {
+    if (txThread.joinable())
+    {
+        terminateStream.store(true, std::memory_order_relaxed);
+        txThread.join();
+    }
     LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, false);
+    statusText->SetLabel("Status: Stopped");
+    if (mode->GetSelection())
+        btnPlayWFM->Enable(true);
+    btnStopWFM->Enable(false);
 }
 
 int FPGAcontrols_wxgui::UploadFile(const wxString &filename)
@@ -253,19 +267,14 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
     }
-
-    progressBar->SetRange(isamples.size());
-    progressBar->SetValue(0);
-
+    statusText->SetLabel("Status: Loading...");
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
     const uint8_t chCount = 2;
     bool MIMO = chkMIMO->IsChecked();
 
-    lime::complex16_t* src[chCount];
-    for(int i=0; i<chCount; ++i)
-        src[i] = new lime::complex16_t[isamples.size()];
+    vector<vector<complex16_t>> buffers(chCount,vector<complex16_t>(isamples.size()));
 
     for(size_t i=0; i<isamples.size(); ++i)
     {
@@ -273,29 +282,70 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         {
             if(c == 1 && !MIMO)
             {
-                src[c][i].i = 0;
-                src[c][i].q = 0;
+                buffers[c][i].i = 0;
+                buffers[c][i].q = 0;
             }
             else
             {
-                src[c][i].i = isamples[i];
-                src[c][i].q = qsamples[i];
+                buffers[c][i].i = isamples[i];
+                buffers[c][i].q = qsamples[i];
             }
         }
     }
 
-    int status = LMS_UploadWFM(lmsControl, (const void**)src, 2+cmbDevice->GetSelection()*2, isamples.size(), 1);
+    void* src[chCount];
+    for (int i = 0; i < chCount; i++)
+        src[i] = buffers[i].data();
 
-    progressBar->SetValue(progressBar->GetRange());
-    lblProgressPercent->SetLabelText(_("100%"));
+    int status = 0;
 
-    LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
+    auto StreamPlayer = [this](const vector<complex16_t> buffer) {
+        wxCommandEvent* evt = new wxCommandEvent(UPDATE_STATUS);
+        constexpr unsigned fifoSize = 4*1024*1024;
+        const unsigned send_cnt = buffer.size() > fifoSize/2 ? fifoSize/2 : buffer.size();
+        lms_stream_t tx_stream = {0, true, uint32_t(cmbDevice->GetSelection()*2), fifoSize, 0.5, lms_stream_t::LMS_FMT_I16};
+        if (LMS_SetupStream(lmsControl, &tx_stream)!= 0)
+            return;
+        LMS_StartStream(&tx_stream);
+        int ind = 0;
+        evt->SetString("Status: Running");
+        this->QueueEvent(evt);
+        while (!terminateStream.load(std::memory_order_relaxed)){
+            int cnt = (send_cnt > buffer.size()- ind) ? buffer.size()- ind : send_cnt;
+            int ret = LMS_SendStream(&tx_stream, &buffer[ind], cnt, nullptr, 1000);
+            if (ret <= 0)
+                break;
+            ind = (ind + ret)% buffer.size();
+        }
+        LMS_StopStream(&tx_stream);
+        LMS_DestroyStream(lmsControl, &tx_stream);
+        evt = new wxCommandEvent(UPDATE_STATUS);
+        evt->SetString("Status: Stopped");
+        this->QueueEvent(evt);
+    };
 
-    btnPlayWFM->Enable(true);
+    if (mode->GetSelection())
+    {
+        status = LMS_UploadWFM(lmsControl, (const void**)src, 2+cmbDevice->GetSelection()*2, isamples.size(), 1);
+        LMS_EnableTxWFM(lmsControl, cmbDevice->GetSelection()*2, true);
+        statusText->SetLabel("Status: Running");
+    }
+    else
+    {
+        if (txThread.joinable())
+        {
+            terminateStream.store(true, std::memory_order_relaxed);
+            txThread.join();
+        }
+        terminateStream.store(false, std::memory_order_relaxed);
+        txThread = std::thread(StreamPlayer, std::move(buffers[0]));
+    }
+    btnPlayWFM->Enable(false);
     btnStopWFM->Enable(true);
 
     if (status != 0)
     {
+        statusText->SetLabel("Status: Failure");
         wxMessageBox(_("Failed to upload WFM file"), _("Error"));
         return -3;
     }
@@ -365,24 +415,38 @@ void FPGAcontrols_wxgui::OnbtnLoadCustomClick(wxCommandEvent& event)
     }
 }
 
-void FPGAcontrols_wxgui::OnChkDigitalLoopbackEnableClick(wxCommandEvent& event)
+void FPGAcontrols_wxgui::OnModeChanged(wxCommandEvent& event)
 {
-    if(!lmsControl)
+    if (mode->GetSelection())
     {
-        wxMessageBox(_("FPGA controls: Connection not initialized"), _("ERROR"));
-        return;
+        uint16_t regAddr = 0x000D;
+        uint16_t regValue = 0;
+        LMS_WriteFPGAReg(lmsControl, 0xFFFF, 1<<(cmbDevice->GetSelection()));
+        LMS_ReadFPGAReg(lmsControl, regAddr, &regValue);
+        if (regValue&2)
+        {
+            btnPlayWFM->Enable(false);
+            btnStopWFM->Enable(true);
+            statusText->SetLabel("Status: Running");
+        }
+        else
+        {
+            btnPlayWFM->Enable(true);
+            btnStopWFM->Enable(false);
+            statusText->SetLabel("Status: Stopped");
+        }
+        chkMIMO->Enable(true);
     }
-
-    const uint16_t address = 0x0008;
-    unsigned short regValue = 0;
-    if (LMS_WriteFPGAReg(lmsControl, 0xFFFF, 1<< cmbDevice->GetSelection())!=0
-    ||  LMS_ReadFPGAReg(lmsControl, address, &regValue)!=0)
+    else
     {
-        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
-        return;
+        btnPlayWFM->Enable(false);
+        chkMIMO->Enable(false);
+        btnStopWFM->Enable(txThread.joinable());
+        statusText->SetLabel(txThread.joinable() ? "Status: Running" : "Status: Stopped");
     }
+}
 
-    regValue = (regValue & ~(1<<10)) | chkDigitalLoopbackEnable->IsChecked() << 10;
-    if (LMS_WriteFPGAReg(lmsControl, address, regValue)!=0)
-        wxMessageBox(_("Failed to write SPI"), _("Error"), wxICON_ERROR);
+void FPGAcontrols_wxgui::OnStatus(wxCommandEvent& event)
+{
+    statusText->SetLabel(event.GetString());
 }
