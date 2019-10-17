@@ -248,6 +248,7 @@ int LMS7_LimeSDR_mini::SetRate(double f_Hz, int oversample)
      double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
      if (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, 0) != 0)
         return -1;
+     lms->ResetLogicregisters();
      return 0;
 }
 

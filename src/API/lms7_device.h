@@ -67,7 +67,7 @@ public:
     double GetClockFreq(unsigned clk_id, int channel = -1) const;
     virtual int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
     lms_dev_info_t* GetInfo();
-    int Synchronize(bool toChip) const;
+    int Synchronize(bool toChip);
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
     int EnableCache(bool enable);
     double GetChipTemperature(int ind = -1) const;
