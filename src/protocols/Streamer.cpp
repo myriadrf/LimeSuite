@@ -178,12 +178,24 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
         return nullptr;
     }
 
-    if ((!mTxStreams[ch].used) && (!mRxStreams[ch].used) && (txThread.joinable() || rxThread.joinable()))
+    if (txThread.joinable() || rxThread.joinable())
     {
-        lime::warning("Stopping data stream to set up a new stream");
-        UpdateThreads(true);
+        if ((!mTxStreams[ch].used) && (!mRxStreams[ch].used))
+        {
+            lime::warning("Stopping data stream to set up a new stream");
+            UpdateThreads(true);
+        }
+        if (config.format != dataLinkFormat)
+        {
+            if (dataLinkFormat == StreamConfig::FMT_INT12)
+            {
+                lime::error("Stream setup failed: stream is already running with incompatible sample format");
+                return nullptr;
+            }
+            else if (config.format == StreamConfig::FMT_INT12)
+                lime::warning("Stream setup: sample format set to 16bit");
+        }
     }
-
 
     if(config.isTx)
         mTxStreams[ch].Setup(config);

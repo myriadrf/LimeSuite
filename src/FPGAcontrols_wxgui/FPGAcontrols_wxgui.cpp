@@ -267,7 +267,6 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         wxMessageBox(_("Device not connected"), _("Error"));
         return -2;
     }
-    statusText->SetLabel("Status: Loading...");
     btnPlayWFM->Enable(false);
     btnStopWFM->Enable(false);
 
@@ -305,7 +304,12 @@ int FPGAcontrols_wxgui::UploadFile(std::vector<int16_t> isamples, std::vector<in
         const unsigned send_cnt = buffer.size() > fifoSize/2 ? fifoSize/2 : buffer.size();
         lms_stream_t tx_stream = {0, true, uint32_t(cmbDevice->GetSelection()*2), fifoSize, 0.5, lms_stream_t::LMS_FMT_I16};
         if (LMS_SetupStream(lmsControl, &tx_stream)!= 0)
+        {
+            evt = new wxCommandEvent(UPDATE_STATUS);
+            evt->SetString("Status: Failure");
+            this->QueueEvent(evt);
             return;
+        }
         LMS_StartStream(&tx_stream);
         int ind = 0;
         evt->SetString("Status: Running");

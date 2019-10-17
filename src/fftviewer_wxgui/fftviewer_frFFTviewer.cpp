@@ -645,10 +645,7 @@ void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
     int val = event.GetInt();
     int max = val == 1 ? 32800 : 2050;
     if (val != cmbFmt->GetSelection())
-    {
-        lime::warning("Sample format set to %dbit", val == 1 ? 16 : 12);
         cmbFmt->SetSelection(val);
-    }
     mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);
     mConstelationPanel->SetInitialDisplayArea(-max, max, -max, max);
 }
