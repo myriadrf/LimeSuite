@@ -25,6 +25,7 @@ SoapyLMS:
 
 LimeSuiteGUI:
 - Add panel for LMS API function testing
+- Add option to play WFM file from software
 - fix channel measurement in FFTviewer for Ch.B in MIMO mode
 
 Octave plugin:
