@@ -1655,8 +1655,12 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
     lime::LMS7002M* lms = lms_list.at(ind == -1 ? lms_chip_id : ind);
     if (lms->LoadConfig(filename)==0)
     {
+        //tune PLLs as saved VCO settings may not work
+        lms->SetFrequencySX(false, lms->GetFrequencySX(false));
+        lms->SetFrequencySX(true, lms->GetFrequencySX(true));
+        lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
         lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-       return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
+        return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
     }
     return -1;
 }
