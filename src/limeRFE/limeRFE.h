@@ -27,6 +27,7 @@
 #define RFE_I2C_ADDRESS       0x51
 
 ///LimeRFE Channel IDs
+/*
 #define RFE_CID_WB_1000 0
 #define RFE_CID_WB_4000 1
 #define RFE_CID_HAM_0030 2
@@ -42,6 +43,26 @@
 #define RFE_CID_CELL_BAND38 12
 #define RFE_CID_COUNT 13
 #define RFE_CID_AUTO (-2)
+*/
+
+#define RFE_CID_WB_1000       1
+#define RFE_CID_WB_4000       2
+#define RFE_CID_HAM_0030      3
+#define RFE_CID_HAM_0070      4
+#define RFE_CID_HAM_0145      5
+#define RFE_CID_HAM_0220      6
+#define RFE_CID_HAM_0435      7
+#define RFE_CID_HAM_0920      8
+#define RFE_CID_HAM_1280      9
+#define RFE_CID_HAM_2400      10
+#define RFE_CID_HAM_3500      11
+#define RFE_CID_CELL_BAND01   12
+#define RFE_CID_CELL_BAND02   13
+#define RFE_CID_CELL_BAND03   14
+#define RFE_CID_CELL_BAND07   15
+#define RFE_CID_CELL_BAND38   16
+#define RFE_CID_AUTO          (-2)
+#define RFE_CID_NOT_SELECTED  100
 
 ///LimeRFE Ports
 #define RFE_PORT_1	1	///<Connector J3 - 'TX/RX'
@@ -75,6 +96,7 @@
 #define RFE_ERROR_RXTX_SAME_CONN	3	///<Mode TXRX not allowed - when the same port is selected for RX and TX, it is not allowed to use mode RX & TX
 #define RFE_ERROR_CELL_WRONG_MODE	4	///<Wrong mode for cellular channel - Cellular FDD bands (1, 2, 3, and 7) are only allowed mode RX & TX, while TDD band 38 is allowed only RX or TX mode
 #define RFE_ERROR_CELL_TX_NOT_EQUAL_RX	5	///<Cellular channels must be the same both for RX and TX
+#define RFE_ERROR_WRONG_CHANNEL_CODE	6	///<Requested channel code is wrong
 
 ///LimeRFE configurable GPIO pins
 #define RFE_GPIO4 4
@@ -282,7 +304,15 @@ API_EXPORT int CALL_CONV RFE_GetGPIO(rfe_dev_t* rfe, int gpioNum, int * val);
 */
 API_EXPORT int CALL_CONV RFE_AssignSDRChannels(rfe_dev_t* rfe, int rxChan, int txChan);
 
-
+/**
+*This function enables/disables the Lime_RFE fan.
+*
+* @param rfe           handle previously obtained from invoking RFE_Open.
+* @param enable        fan state: 0 - disable; 1 - enable.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int CALL_CONV RFE_Fan(rfe_dev_t* rfe, int enable);
 
 /** @} (End RFE_API) */
 

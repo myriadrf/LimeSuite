@@ -558,8 +558,11 @@ void limeRFE_wxgui::SetChannelsChoicesTXRX(int channelTXRX) {
 		cChannelTXRX->Clear();
 		for (int i = 0; i < RFE_CHANNEL_INDEX_HAM_COUNT; i++) {
 			if (i == RFE_CHANNEL_INDEX_HAM_0030) cChannelTXRX->AppendString("30 MHz (HF)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0070) cChannelTXRX->AppendString("50-70 MHz (6 & 4 m)");
 			if (i == RFE_CHANNEL_INDEX_HAM_0145) cChannelTXRX->AppendString("144-146 MHz (2 m)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0220) cChannelTXRX->AppendString("220-225 MHz (1.25 m)");
 			if (i == RFE_CHANNEL_INDEX_HAM_0435) cChannelTXRX->AppendString("430-440 MHz (70 cm)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0920) cChannelTXRX->AppendString("902-928 MHz (33 cm)");
 			if (i == RFE_CHANNEL_INDEX_HAM_1280) cChannelTXRX->AppendString("1240-1325 MHz (23 cm)");
 			if (i == RFE_CHANNEL_INDEX_HAM_2400) cChannelTXRX->AppendString("2300-2450 MHz (13 cm)");
 			if (i == RFE_CHANNEL_INDEX_HAM_3500) cChannelTXRX->AppendString("3300-3500 MHz");
@@ -602,7 +605,9 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 	int typeTX = cTypeTX->GetSelection();
 
 	if ((selChannelIDRX == RFE_CID_HAM_0030) ||
+		(selChannelIDRX == RFE_CID_HAM_0070) ||
 		(selChannelIDRX == RFE_CID_HAM_0145) ||
+		(selChannelIDRX == RFE_CID_HAM_0220) ||
 		(selChannelIDRX == RFE_CID_HAM_0435) ||
 		(selChannelIDRX == RFE_CID_WB_1000)) {
 		cbNotch->Show();
@@ -618,7 +623,8 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 		cPortTX->AppendString(RFE_PORT_1_NAME);
 		portTXvals[0] = RFE_PORT_1;
 	}
-	else if (selChannelIDTX == RFE_CID_HAM_0030){
+	else if ((selChannelIDTX == RFE_CID_HAM_0030) || 
+		     (selChannelIDTX == RFE_CID_HAM_0070)) {
 		cPortTX->AppendString(RFE_PORT_3_NAME);
 		portTXvals[0] = RFE_PORT_3;
 	}
@@ -641,7 +647,9 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 	cPortRX->Clear();
 	for (int y = 0; y < 10; y++) portRXvals[y] = 0;
 	if ((selChannelIDRX == RFE_CID_HAM_0030) ||  //HAM Low channels
+        (selChannelIDRX == RFE_CID_HAM_0070) ||
 	         (selChannelIDRX == RFE_CID_HAM_0145) ||
+		(selChannelIDRX == RFE_CID_HAM_0220) ||
 		     (selChannelIDRX == RFE_CID_HAM_0435) ||
 		     (selChannelIDRX == RFE_CID_WB_1000) ||
                      (selChannelIDRX == RFE_CID_AUTO))
@@ -713,8 +721,11 @@ int limeRFE_wxgui::GetChannelID(int channelTXRX) {
 	case RFE_TYPE_INDEX_HAM:
 		switch (channel) {
 		case RFE_CHANNEL_INDEX_HAM_0030: selChannelID = RFE_CID_HAM_0030; break;
+		case RFE_CHANNEL_INDEX_HAM_0070: selChannelID = RFE_CID_HAM_0070; break;
 		case RFE_CHANNEL_INDEX_HAM_0145: selChannelID = RFE_CID_HAM_0145; break;
+		case RFE_CHANNEL_INDEX_HAM_0220: selChannelID = RFE_CID_HAM_0220; break;
 		case RFE_CHANNEL_INDEX_HAM_0435: selChannelID = RFE_CID_HAM_0435; break;
+		case RFE_CHANNEL_INDEX_HAM_0920: selChannelID = RFE_CID_HAM_0920; break;
 		case RFE_CHANNEL_INDEX_HAM_1280: selChannelID = RFE_CID_HAM_1280; break;
 		case RFE_CHANNEL_INDEX_HAM_2400: selChannelID = RFE_CID_HAM_2400; break;
 		case RFE_CHANNEL_INDEX_HAM_3500: selChannelID = RFE_CID_HAM_3500; break;
@@ -738,8 +749,11 @@ int limeRFE_wxgui::GetChannelIndexes(int channelID, int* typeIndex, int* channel
 	case RFE_CID_WB_1000: *typeIndex = RFE_TYPE_INDEX_WB; *channelIndex = RFE_CHANNEL_INDEX_WB_1000; break;
 	case RFE_CID_WB_4000: *typeIndex = RFE_TYPE_INDEX_WB; *channelIndex = RFE_CHANNEL_INDEX_WB_4000; break;
 	case RFE_CID_HAM_0030: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0030; break;
+	case RFE_CID_HAM_0070: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0070; break;
 	case RFE_CID_HAM_0145: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0145; break;
+	case RFE_CID_HAM_0220: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0220; break;
 	case RFE_CID_HAM_0435: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0435; break;
+	case RFE_CID_HAM_0920: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_0920; break;
 	case RFE_CID_HAM_1280: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_1280; break;
 	case RFE_CID_HAM_2400: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_2400; break;
 	case RFE_CID_HAM_3500: *typeIndex = RFE_TYPE_INDEX_HAM; *channelIndex = RFE_CHANNEL_INDEX_HAM_3500; break;
@@ -845,6 +859,9 @@ void limeRFE_wxgui::PrintError(int errorCode) {
 		break;
 	case RFE_ERROR_CELL_TX_NOT_EQUAL_RX:
 		AddMssg("ERROR: For cellular channels RX and TX channels must be the same.");
+		break;
+	case RFE_ERROR_WRONG_CHANNEL_CODE:
+		AddMssg("ERROR: Wrong channel code.");
 		break;
 	case RFE_ERROR_CONF_FILE:
 		AddMssg("ERROR: Problem with .ini configuration file.");

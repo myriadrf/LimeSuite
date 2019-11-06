@@ -70,6 +70,8 @@ typedef struct RFE_COM {
 #define RFE_CMD_SETGPIO45               0xb2
 #define RFE_CMD_GETGPIO45               0xb3
 
+#define RFE_CMD_FAN                     0xc1
+
 // General CTRL
 #define RFE_CMD_GET_INFO                0xe1
 #define RFE_CMD_RESET                   0xe2
@@ -97,12 +99,15 @@ typedef struct RFE_COM {
 #define RFE_CHANNEL_INDEX_WB_COUNT 2
 
 #define RFE_CHANNEL_INDEX_HAM_0030 0
-#define RFE_CHANNEL_INDEX_HAM_0145 1
-#define RFE_CHANNEL_INDEX_HAM_0435 2
-#define RFE_CHANNEL_INDEX_HAM_1280 3
-#define RFE_CHANNEL_INDEX_HAM_2400 4
-#define RFE_CHANNEL_INDEX_HAM_3500 5
-#define RFE_CHANNEL_INDEX_HAM_COUNT 6
+#define RFE_CHANNEL_INDEX_HAM_0070 1
+#define RFE_CHANNEL_INDEX_HAM_0145 2
+#define RFE_CHANNEL_INDEX_HAM_0220 3
+#define RFE_CHANNEL_INDEX_HAM_0435 4
+#define RFE_CHANNEL_INDEX_HAM_0920 5
+#define RFE_CHANNEL_INDEX_HAM_1280 6
+#define RFE_CHANNEL_INDEX_HAM_2400 7
+#define RFE_CHANNEL_INDEX_HAM_3500 8
+#define RFE_CHANNEL_INDEX_HAM_COUNT 9
 
 #define RFE_CHANNEL_INDEX_CELL_BAND01 0
 #define RFE_CHANNEL_INDEX_CELL_BAND02 1
@@ -186,6 +191,7 @@ extern "C" {
 	int Cmd_ConfGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int direction);
 	int Cmd_SetGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int val);
 	int Cmd_GetGPIO(lms_device_t *dev, RFE_COM com, int gpioNum, int * val);
+	int Cmd_Fan(lms_device_t *dev, RFE_COM com, int enable);
 
 	int ReadConfig(const char *filename, rfe_boardState *stateBoard, guiState *stateGUI);
 	int SaveConfig(const char *filename, rfe_boardState state, guiState stateGUI);

@@ -22,8 +22,11 @@ int FreqToBand(float freq)
     static constexpr struct {int band; float min; float max;} ranges[] =
     {
             {RFE_CID_HAM_0030, 0, 30e6},
+			{RFE_CID_HAM_0070, 50e6, 70e6},
             {RFE_CID_HAM_0145, 140e6, 150e6},
+			{RFE_CID_HAM_0220, 220e6, 225e6},
             {RFE_CID_HAM_0435, 400e6, 450e6},
+			{RFE_CID_HAM_0920, 902e6, 928e6},
             {RFE_CID_HAM_1280, 1220e6, 1420e6},
             {RFE_CID_HAM_2400, 2.3e9, 2.5e9},
             {RFE_CID_HAM_3500, 3.3e9, 3.7e9},
@@ -39,19 +42,23 @@ int FreqToBand(float freq)
 
 int TxPortCheck(int port, int band)
 {
-    if (port == RFE_PORT_3)
-    {
-        printf("tx port 3\n");
-        return RFE_CID_HAM_0030;
-    }
-    if (band == RFE_CID_HAM_0030)
-        return RFE_CID_WB_1000;
+	if (port == RFE_PORT_3)
+	{
+		printf("tx port 3\n");
+		if(band == RFE_CID_HAM_0070)
+			return RFE_CID_HAM_0070;
+		return RFE_CID_HAM_0030;
+	}
+	if ((band == RFE_CID_HAM_0030) ||
+		(band == RFE_CID_HAM_0070))
+		return RFE_CID_WB_1000;
+
     return band;
 }
 
 int RxPortCheck(int port, int band)
 {
-    if (port == RFE_PORT_3 && band != RFE_CID_HAM_0030 && band != RFE_CID_HAM_0145 && band != RFE_CID_HAM_0435)
+    if (port == RFE_PORT_3 && band != RFE_CID_HAM_0030 && band != RFE_CID_HAM_0070 && band != RFE_CID_HAM_0145 && band != RFE_CID_HAM_0220 && band != RFE_CID_HAM_0435)
         return RFE_CID_WB_1000;
     return band;
 }

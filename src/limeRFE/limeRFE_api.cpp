@@ -165,3 +165,11 @@ API_EXPORT int CALL_CONV RFE_AssignSDRChannels(rfe_dev_t* rfe, int rx, int tx)
     auto* dev = static_cast<RFE_Device*>(rfe);
     dev->SetChannels(rx, tx);
 }
+
+extern "C" API_EXPORT int RFE_Fan(rfe_dev_t* rfe, int enable) {
+	if (!rfe)
+		return -1;
+	auto* dev = static_cast<RFE_Device*>(rfe);
+
+	return Cmd_Fan(dev->sdrDevice, dev->com, enable);
+}

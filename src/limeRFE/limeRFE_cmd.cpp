@@ -706,3 +706,25 @@ int i2c_read_buffer(lms_device_t* lms, unsigned char* c, int size) {
 	i2c_stop(lms);	// send stop sequence
 	return i;
 }
+
+int Cmd_Fan(lms_device_t *dev, RFE_COM com, int enable) {
+	int result = 0;
+
+	unsigned char buf[RFE_BUFFER_SIZE_MODE];
+	int len;
+
+	memset(buf, 0, RFE_BUFFER_SIZE_MODE);
+
+	buf[0] = RFE_CMD_FAN;
+
+	buf[1] = enable;
+
+	if (write_buffer(dev, com, buf, RFE_BUFFER_SIZE_MODE) != 0)
+		return RFE_ERROR_COMM;
+	len = read_buffer(dev, com, buf, RFE_BUFFER_SIZE_MODE);
+	if (len == -1)
+		return(RFE_ERROR_COMM);
+
+	result = buf[1]; // buf[0] is the command, buf[1] is the result
+	return result;
+}
