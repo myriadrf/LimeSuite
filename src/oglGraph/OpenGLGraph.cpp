@@ -176,8 +176,8 @@ void OpenGLGraph::Resize(int w, int h)
 {
   if(w <= 0 || h <=0 )
     return;
-  settings.windowWidth = w;
-  settings.windowHeight = h;
+  settings.windowWidth = w * GetContentScaleFactor();
+  settings.windowHeight = h * GetContentScaleFactor();
   settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
   if(settings.dataViewHeight <= 0)
     settings.dataViewHeight = 1;
