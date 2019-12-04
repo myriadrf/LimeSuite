@@ -390,6 +390,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
         outBufPos += packetLen;
         long readLen = packetLen;
         int bread = Read(&inBuffer[inDataPos], readLen);
+        if(bread < 0) bread = Read(&inBuffer[inDataPos], readLen);
         if(bread != readLen)
         {
             status = lime::error("TransferPacket: Read failed (ret=%d)", bread);
@@ -399,7 +400,7 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
             callback_logData(false, &inBuffer[inDataPos], bread);
         inDataPos += bread;
     }
-    ParsePacket(pkt, inBuffer, inDataPos);
+    if (status == 0) ParsePacket(pkt, inBuffer, inDataPos);
 
     delete[] outBuffer;
     delete[] inBuffer;

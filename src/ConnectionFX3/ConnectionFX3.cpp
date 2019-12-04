@@ -351,8 +351,11 @@ int ConnectionFX3::Write(const unsigned char *buffer, const int length, int time
     {
         bulkCtrlInProgress = true;
         int actual = 0;
-        libusb_bulk_transfer(dev_handle, ctrlBulkOutAddr, wbuffer, length, &actual, timeout_ms);
-        len = actual;
+        int r = libusb_bulk_transfer(dev_handle, ctrlBulkOutAddr, wbuffer, length, &actual, timeout_ms);
+        if (r < 0)
+            len = r;
+        else
+            len = actual;
     }
     else
         len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR,CTR_W_REQCODE ,CTR_W_VALUE, CTR_W_INDEX, wbuffer, length, timeout_ms);
@@ -389,9 +392,13 @@ int ConnectionFX3::Read(unsigned char *buffer, const int length, int timeout_ms)
     if(bulkCtrlAvailable && bulkCtrlInProgress)
     {
         int actual = 0;
-        libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
-        len = actual;
-        bulkCtrlInProgress = false;
+        int r = libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        if (r < 0)
+            len = r;
+        else {
+            len = actual;
+            bulkCtrlInProgress = false;
+        }
     }
     else
         len = libusb_control_transfer(dev_handle, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN ,CTR_R_REQCODE ,CTR_R_VALUE, CTR_R_INDEX, buffer, len, timeout_ms);
