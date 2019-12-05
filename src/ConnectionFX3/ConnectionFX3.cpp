@@ -389,7 +389,11 @@ int ConnectionFX3::Read(unsigned char *buffer, const int length, int timeout_ms)
     if(bulkCtrlAvailable && bulkCtrlInProgress)
     {
         int actual = 0;
-        libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        int r = libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        if (r == LIBUSB_ERROR_TIMEOUT) {
+            /* fix a bug in the kernel with AMD chipsets -- see myriadrf/LimeSuite#287 */
+            libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        }
         len = actual;
         bulkCtrlInProgress = false;
     }
