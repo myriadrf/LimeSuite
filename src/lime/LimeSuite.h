@@ -1195,9 +1195,11 @@ API_EXPORT int CALL_CONV LMS_SendStream(lms_stream_t *stream,
  * Uploads waveform to on board memory for later use
  * @param device        Device handle previously obtained by LMS_Open().
  * @param samples       multiple channel samples data
- * @param chCount       number of waveform channels
- * @param sample_count  number of samples in each channel
- * @param format        waveform data format
+ * @param chCount       number of waveform channels (1 or 2).
+ * @param sample_count  number of samples in each channel. Must be multiple of 4
+ * @param format        waveform data format: 0 - int16 [-2048, 2047],
+ *                                            1 - int16 [-32768, 32767]
+ *                                            2 - float [-1.0, 1.0]
  * @return              0 on success, (-1) on failure
  */
 API_EXPORT int CALL_CONV LMS_UploadWFM(lms_device_t *device, const void **samples,
