@@ -238,6 +238,16 @@ API_EXPORT int CALL_CONV RFE_Configure(rfe_dev_t* rfe, char channelIDRX, char ch
 API_EXPORT int RFE_ConfigureState(rfe_dev_t* rfe, rfe_boardState state);
 
 /**
+*This function gets the state of the LimeRFE board. It's functionality is identical to Cmd_GetConfig internal command
+*
+* @param rfe           handle previously obtained from invoking RFE_Open.
+* @param state         Pointer to structure where configuration parameters are returned.
+*
+* @return              0 on success, other on failure (see LimeRFE error codes)
+*/
+API_EXPORT int RFE_GetState(rfe_dev_t* rfe, rfe_boardState *state);
+
+/**
 *This function sets the LimeRFE mode (receive, transmit, both, or none)
 *
 * @param rfe           handle previously obtained from invoking RFE_Open.
