@@ -112,6 +112,19 @@ extern "C" API_EXPORT int RFE_ConfigureState(rfe_dev_t* rfe, rfe_boardState stat
 	return result;
 }
 
+extern "C" API_EXPORT int RFE_GetState(rfe_dev_t* rfe, rfe_boardState *state)
+{
+    int result = 0;
+
+        if (!rfe)
+            return -1;
+        auto* dev = static_cast<RFE_Device*>(rfe);
+
+    result = Cmd_GetConfig(dev->sdrDevice, dev->com, state);
+
+    return result;
+}
+
 extern "C" API_EXPORT int RFE_Mode(rfe_dev_t* rfe, int mode) {
 	int result = 0;
 
