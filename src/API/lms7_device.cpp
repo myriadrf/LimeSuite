@@ -1663,9 +1663,12 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
         if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO)))
             lms->SetFrequencySX(true, lms->GetFrequencySX(true));
         if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO_CGEN)))
+        {
             lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
-        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-        return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+            return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
+        }
+        return 0;
     }
     return -1;
 }
