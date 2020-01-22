@@ -14,6 +14,8 @@
 #include "Streamer.h"
 #include "IConnection.h"
 
+class RFE_Device;
+
 namespace lime
 {
 class LIME_API LMS7_Device
@@ -96,6 +98,9 @@ public:
     int MCU_AGCStart(uint32_t wantedRSSI);
     int MCU_AGCStop();
 
+    RFE_Device* GetLimeRFE() const;
+    void SetLimeRFE(RFE_Device* dev);
+
 protected:
 
     struct ChannelInfo
@@ -117,6 +122,7 @@ protected:
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;
     lime::FPGA* fpga;
+    RFE_Device* limeRFE;
 };
 
 }

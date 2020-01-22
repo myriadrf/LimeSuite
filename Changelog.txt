@@ -2,6 +2,7 @@ Release 19.04.1 (pending)
 ==========================
 
 LimeSuite library changes:
+- Including LimeRFE support
 - Update CGEN calculation to allow lower CGEN values
 - Configure RF switches (when possible) to avoid transmission during calibration
 - Automatically reconfigure GFIR LPF after sample rate change
@@ -35,7 +36,6 @@ Octave plugin:
 
 Other changes:
 - Fix LimeQuickTest not outputing to windows command line
-
 
 Release 19.04.0 (2019-05-09)
 ==========================

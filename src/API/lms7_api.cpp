@@ -9,6 +9,7 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Streamer.h"
+#include "../limeRFE/RFE_Device.h"
 
 using namespace std;
 
@@ -311,7 +312,11 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type frequency)
 {
     lime::LMS7_Device* lms = CheckDevice(device, chan);
-    return lms ? lms->SetFrequency(dir_tx, chan,frequency) : -1;
+    int ret = lms ? lms->SetFrequency(dir_tx, chan,frequency) : -1;
+    auto rfe = lms->GetLimeRFE();
+    if (rfe && ret == 0)
+        rfe->SetFrequency(dir_tx, chan, frequency);
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
@@ -473,8 +478,13 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
     lime::LMS7_Device* lms = CheckDevice(device, chan);
     if (!lms)
         return -1;
-
-    return lms->Calibrate(dir_tx, chan, bw, flags);
+    auto rfe = lms->GetLimeRFE();
+    if (rfe)
+        rfe->OnCalibrate(chan, false);
+    int ret = lms->Calibrate(dir_tx, chan, bw, flags);
+    if (rfe)
+        rfe->OnCalibrate(chan, true);
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)

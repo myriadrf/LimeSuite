@@ -32,6 +32,7 @@
 #include <sstream>
 #include "pnlAPI.h"
 #include "lms7_device.h"
+#include "limeRFE_wxgui.h"
 
 using namespace std;
 using namespace lime;
@@ -104,6 +105,9 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     spi = nullptr;
     api = nullptr;
     boardControlsGui = nullptr;
+
+	limeRFEwin = nullptr;
+
     lmsControl = new LMS7_Device();
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
@@ -194,6 +198,8 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         programmer->SetConnection(lmsControl);
     if(api)
         api->Initialize(lmsControl);
+    if (limeRFEwin)
+        limeRFEwin->Initialize(lmsControl);
 }
 
 
@@ -548,3 +554,25 @@ void LMS7SuiteAppFrame::UpdateVisiblePanel() const
     mContent->UpdateVisiblePanel();
 }
 
+void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
+	if (limeRFEwin) //it's already opened
+	{
+		limeRFEwin->Show(true);
+		limeRFEwin->Iconize(false); // restore the window if minimized
+		limeRFEwin->SetFocus();  // focus on my window
+		limeRFEwin->Raise();  // bring window to front
+	}
+	else
+	{
+		limeRFEwin = new limeRFE_wxgui(this, wxNewId(), _("LimeRFE Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+		limeRFEwin->Initialize(lmsControl);
+		limeRFEwin->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnLimeRFEClose), NULL, this);
+		limeRFEwin->Show();
+	}
+}
+
+void LMS7SuiteAppFrame::OnLimeRFEClose(wxCloseEvent& event)
+{
+	limeRFEwin->Destroy();
+	limeRFEwin = nullptr;
+}

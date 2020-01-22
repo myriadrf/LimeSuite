@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 24 2018)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO *NOT* EDIT THIS FILE!
+// PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __LMS7SUITEAPP_GUI_H__
@@ -74,6 +74,7 @@ class AppFrame_view : public wxFrame
 		virtual void OnShowAPICalls( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSPI( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowBoardControls( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowLimeRFE( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		
 	
