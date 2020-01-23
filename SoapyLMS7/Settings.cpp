@@ -937,7 +937,8 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
     if (key == "TSP_CONST")
     {
         const auto ampl = std::stoi(value);
-        lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_DC, ampl, 0);
+        lms7Device->SetTestSignal(isTx, channel, LMS_TESTSIG_DC, ampl, ampl);
+        mChannels[direction].at(channel).tst_dc = ampl;
     }
 
     else if (key == "CALIBRATE_TX" or (isTx and key == "CALIBRATE"))
@@ -947,6 +948,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         if (lms7Device->Calibrate(true, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
         _channelsToCal.erase(std::make_pair(direction, channel));
+        mChannels[direction].at(channel).cal_bw = bw;
     }
 
     else if (key == "CALIBRATE_RX" or (not isTx and key == "CALIBRATE"))
@@ -956,6 +958,7 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         if (lms7Device->Calibrate(false, channel, bw, 0)!=0)
             throw std::runtime_error(lime::GetLastErrorMessage());
         _channelsToCal.erase(std::make_pair(direction, channel));
+        mChannels[direction].at(channel).cal_bw = bw;
     }
 
     else if (key == "ENABLE_GFIR_LPF")
@@ -963,12 +966,14 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
         double bw = std::stof(value);
         SoapySDR::logf(SOAPY_SDR_INFO, "Configurate GFIR LPF %f", bw);
         lms7Device->ConfigureGFIR(isTx, channel, true, bw);
+        mChannels[direction].at(channel).gfir_bw = bw;
     }
 
     else if  (key == "DISABLE_GFIR_LPF")
     {
         SoapySDR::logf(SOAPY_SDR_INFO, "Disable GFIR LPF");
         lms7Device->ConfigureGFIR(isTx, channel, false, 0.0);
+        mChannels[direction].at(channel).gfir_bw = -1;
     }
 
     else if (key == "TSG_NCO")
@@ -1003,12 +1008,31 @@ void SoapyLMS7::writeSetting(const int direction, const size_t channel, const st
 
 std::string SoapyLMS7::readSetting(const std::string &key) const
 {
+    if (key == "SAVE_CONFIG" || key == "LOAD_CONFIG")
+        return "";
+    if (key == "OVERSAMPLING")
+        return std::to_string(oversampling);
     return readSetting(SOAPY_SDR_TX, 0, key);
 }
 
 std::string SoapyLMS7::readSetting(const int direction, const size_t channel, const std::string &key) const
 {
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
+    if (key == "TSG_NCO")
+    {
+        switch (lms7Device->GetTestSignal(direction == SOAPY_SDR_TX, channel))
+        {
+            case LMS_TESTSIG_NCODIV4F: return "4";
+            case LMS_TESTSIG_NCODIV8F: return "8";
+            default: return "-1";
+        }
+    }
+    if (key == "ENABLE_GFIR_LPF")
+        return std::to_string(mChannels[direction].at(channel).gfir_bw);
+    if (key == "CALIBRATE")
+        return std::to_string(mChannels[direction].at(channel).cal_bw);
+    if (key == "TSP_CONST")
+        return std::to_string(mChannels[direction].at(channel).tst_dc);
     int val = lms7Device->ReadParam(key,channel);
     if ( val !=-1)
         return std::to_string(val);

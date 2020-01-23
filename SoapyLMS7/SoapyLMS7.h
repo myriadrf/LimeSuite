@@ -131,7 +131,7 @@ public:
     std::complex<double> getDCOffset(const int direction, const size_t channel) const;
 
     bool hasIQBalance(const int direction, const size_t channel) const;
-    
+
     void setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance);
 
     std::complex<double> getIQBalance(const int direction, const size_t channel) const;
@@ -143,7 +143,7 @@ public:
     std::vector<std::string> listGains(const int direction, const size_t channel) const;
 
     void setGain(const int direction, const size_t channel, const double value) override;
-    
+
     double getGain(const int direction, const size_t channel) const;
 
     void setGain(const int direction, const size_t channel, const std::string &name, const double value);
@@ -165,7 +165,7 @@ public:
     void setFrequency(const int direction, const size_t channel, const std::string &name, const double frequency, const SoapySDR::Kwargs &args = SoapySDR::Kwargs());
 
     double getFrequency(const int direction, const size_t channel, const std::string &name) const;
-    
+
     double getFrequency(const int direction, const size_t channel) const override;
 
     std::vector<std::string> listFrequencies(const int direction, const size_t channel) const;
@@ -256,9 +256,9 @@ public:
     SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const;
 
     void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value);
-    
+
     std::string readSetting(const std::string &key) const;
-    
+
     std::string readSetting(const int direction, const size_t channel, const std::string &key) const;
 
     /*******************************************************************
@@ -276,16 +276,19 @@ public:
     unsigned readGPIODir(const std::string &bank) const;
 
 private:
-    
+
     struct Channel{
-        Channel():freq(-1),bw(-1),rf_bw(-1){};
+        Channel():freq(-1),bw(-1),rf_bw(-1),cal_bw(-1),gfir_bw(-1),tst_dc(0){};
         double freq;
         double bw;
         double rf_bw;
+        double cal_bw;
+        double gfir_bw;
+        int tst_dc;
     };
-    
+
     int setBBLPF(bool direction, size_t channel, double bw);
-    
+
     const SoapySDR::Kwargs _deviceArgs; //!< stash of constructor arguments
     const std::string _moduleName;
     lime::LMS7_Device * lms7Device;

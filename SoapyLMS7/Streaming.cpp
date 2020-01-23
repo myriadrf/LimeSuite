@@ -223,7 +223,9 @@ int SoapyLMS7::activateStream(
         bool dir  = _channelsToCal.begin()->first;
         auto ch  = _channelsToCal.begin()->second;
         auto bw = mChannels[dir].at(ch).rf_bw > 0 ? mChannels[dir].at(ch).rf_bw : sampleRate[dir];
-        lms7Device->Calibrate(dir== SOAPY_SDR_TX, ch, bw>2.5e6 ? bw : 2.5e6, 0);
+        bw = bw>2.5e6 ? bw : 2.5e6;
+        lms7Device->Calibrate(dir== SOAPY_SDR_TX, ch, bw, 0);
+        mChannels[dir].at(ch).cal_bw = bw;
         _channelsToCal.erase(_channelsToCal.begin());
     }
     //stream requests used with rx
