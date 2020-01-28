@@ -13,13 +13,14 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
-### v19.04.1
+### v20.01.0
 
 \li Remove LMS_EnableCalibCache() function
 \li Fixed \ref lms_stream_t::throughputVsLatency setting not working for Tx streams
 \li Added automatic reconfiguration of GFIR when sample rate is changed after calling LMS_SetGFIRLPF()
 \li Added \ref LMS_ALIGN_CH_PHASE option to run Rx phase alignment for MIMO configuration
 \li Fixed RF path being auto-set after it was explicitly selected for LimeSDR-Mini
+\li Added log level definition \ref LMS_LOG_CRITICAL
 
 ### v19.04.0
 

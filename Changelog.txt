@@ -1,4 +1,4 @@
-Release 19.04.1 (pending)
+Release 20.01.0 (pending)
 ==========================
 
 LimeSuite library changes:
@@ -23,6 +23,7 @@ SoapyLMS:
 - Automatically use wide enough bandwidth setting for RF frequencies bellow 30 MHz
 - Remove master clock setting
 - Add setting descriptions
+- Implement read for setting advertised by getSettingInfo()
 
 LimeSuiteGUI:
 - Add panel for LMS API function testing
