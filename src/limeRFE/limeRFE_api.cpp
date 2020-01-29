@@ -14,10 +14,10 @@ extern "C" API_EXPORT rfe_dev_t* CALL_CONV RFE_Open(const char* serialport, lms_
     if (dev == nullptr && serialport == nullptr)
         return nullptr;
 
-	int result;
+    int result;
 
-	RFE_COM com;
-	com.fd = -1;
+    RFE_COM com;
+    com.fd = -1;
 #ifndef __unix__
 	com.hComm = 0;
 #endif
@@ -177,6 +177,7 @@ API_EXPORT int CALL_CONV RFE_AssignSDRChannels(rfe_dev_t* rfe, int rx, int tx)
         return -1;
     auto* dev = static_cast<RFE_Device*>(rfe);
     dev->SetChannels(rx, tx);
+    return 0;
 }
 
 extern "C" API_EXPORT int RFE_Fan(rfe_dev_t* rfe, int enable) {

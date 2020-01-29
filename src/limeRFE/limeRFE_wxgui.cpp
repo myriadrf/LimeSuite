@@ -215,7 +215,7 @@ void limeRFE_wxgui::OnbtnOpen(wxCommandEvent& event){
 
 	rfe_boardState state;
 	guiState stateGUI;
-	int status =ReadConfig(dlg.GetPath().To8BitData(), &state, &stateGUI);
+	ReadConfig(dlg.GetPath().To8BitData(), &state, &stateGUI);
 
 	powerCellCalCorr = stateGUI.powerCellCorr;
 	powerCalCorr = stateGUI.powerCorr;
@@ -521,7 +521,7 @@ void limeRFE_wxgui::SetChannelsTypesTXRX(int channelTXRX) {
 			if (i == RFE_TYPE_INDEX_CELL) cTypeTXRX->AppendString("Cellular");
 	}
 
-	if (cTypeTXRX->GetCount() < (*lastTypeSelectionTXRX + 1))
+	if (cTypeTXRX->GetCount() < unsigned(*lastTypeSelectionTXRX + 1))
 		*lastTypeSelectionTXRX = 0;
 
 	cTypeTXRX->SetSelection(*lastTypeSelectionTXRX);
@@ -623,7 +623,7 @@ void limeRFE_wxgui::SetConfigurationOptions() {
 		cPortTX->AppendString(RFE_PORT_1_NAME);
 		portTXvals[0] = RFE_PORT_1;
 	}
-	else if ((selChannelIDTX == RFE_CID_HAM_0030) || 
+	else if ((selChannelIDTX == RFE_CID_HAM_0030) ||
 		     (selChannelIDTX == RFE_CID_HAM_0070)) {
 		cPortTX->AppendString(RFE_PORT_3_NAME);
 		portTXvals[0] = RFE_PORT_3;

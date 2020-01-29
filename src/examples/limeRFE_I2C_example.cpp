@@ -25,7 +25,6 @@ int main(int argc, char** argv)
 {
 	//Find devices
 	int n;
-        int fd = -1;
 	lms_info_str_t list[8]; //should be large enough to hold all detected devices
 	if ((n = LMS_GetDeviceList(list)) < 0) //NULL can be passed to only get number of devices
 		error();
