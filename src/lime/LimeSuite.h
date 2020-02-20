@@ -1284,7 +1284,7 @@ API_EXPORT const lms_dev_info_t* CALL_CONV LMS_GetDeviceInfo(lms_device_t *devic
 /**
 * @brief Returns API library version
 */
-API_EXPORT const char* LMS_GetLibraryVersion();
+API_EXPORT const char* LMS_GetLibraryVersion(void);
 
 /**
  * Get the error message detailing why the last error occurred.
