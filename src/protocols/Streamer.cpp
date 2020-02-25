@@ -33,6 +33,8 @@ void StreamChannel::Setup(StreamConfig conf)
     pktLost = 0;
     int bufferLength = config.bufferLength == 0 ? 1024*4*1024 : config.bufferLength;
     int pktSize = config.format != StreamConfig::FMT_INT12 ? samples16InPkt : samples12InPkt;
+    if (bufferLength < 4*pktSize)  //set FIFO to at least 4 packets
+        bufferLength = 4*pktSize;
     if (!fifo)
         fifo = new RingFIFO();
     fifo->Resize(pktSize, bufferLength/pktSize);
