@@ -21,14 +21,13 @@
 #include <wx/settings.h>
 #include <wx/radiobut.h>
 #include <wx/sizer.h>
-#include <wx/panel.h>
 #include <wx/statbox.h>
+#include <wx/panel.h>
 #include <wx/combobox.h>
 #include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/stattext.h>
 #include <wx/checkbox.h>
-#include <wx/radiobox.h>
 #include <wx/tglbtn.h>
 #include <wx/textctrl.h>
 #include <wx/frame.h>
@@ -46,15 +45,16 @@ class limeRFE_view : public wxFrame
 	protected:
 		wxMenuBar* mbar;
 		wxMenu* mFile;
-		wxMenu* mView;
 		wxPanel* pnlMain;
-		wxPanel* pnlComm;
+		wxPanel* m_panel15;
 		wxRadioButton* rbI2C;
 		wxRadioButton* rbUSB;
+		wxPanel* m_panel161;
 		wxComboBox* cmbbPorts;
 		wxButton* btnRefreshPorts;
 		wxButton* btnOpenPort;
 		wxButton* btnClosePort;
+		wxPanel* m_panel172;
 		wxButton* btnOpen;
 		wxButton* btnSave;
 		wxButton* btnReset;
@@ -76,7 +76,8 @@ class limeRFE_view : public wxFrame
 		wxChoice* cPortTX;
 		wxPanel* pnlSWR;
 		wxCheckBox* cbEnableSWR;
-		wxRadioBox* rbSWRsource;
+		wxRadioButton* rbSWRext;
+		wxRadioButton* rbSWRcell;
 		wxPanel* pnlTXRX;
 		wxToggleButton* tbtnTXRX;
 		wxPanel* pnlTXRXEN;
@@ -94,24 +95,26 @@ class limeRFE_view : public wxFrame
 		wxPanel* pnlADC1;
 		wxStaticText* m_staticText13;
 		wxStaticText* txtADC1;
+		wxStaticText* txtADC1_V;
+		wxStaticText* m_staticText27;
 		wxStaticText* m_staticText10;
 		wxStaticText* txtPFWD_dBm;
 		wxStaticText* m_staticText12;
 		wxStaticText* txtPFWD_W;
 		wxStaticText* m_staticText16;
-		wxStaticText* m_staticText1022;
 		wxStaticText* m_staticText102;
 		wxTextCtrl* tcPowerCalibrate;
 		wxStaticText* m_staticText122;
 		wxPanel* pnlADC2;
 		wxStaticText* m_staticText131;
 		wxStaticText* txtADC2;
+		wxStaticText* txtADC2_V;
+		wxStaticText* m_staticText29;
 		wxStaticText* m_staticText101;
 		wxStaticText* txtRL_dB;
 		wxStaticText* m_staticText121;
 		wxStaticText* m_staticText31;
 		wxStaticText* txtSWR;
-		wxStaticText* m_staticText10221;
 		wxStaticText* m_staticText1021;
 		wxTextCtrl* tcRLCalibrate;
 		wxStaticText* m_staticText1221;
@@ -119,7 +122,6 @@ class limeRFE_view : public wxFrame
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnmiPowerMeter( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnrbI2CrbUSB( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnRefreshPorts( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnOpenPort( wxCommandEvent& event ) { event.Skip(); }
@@ -139,7 +141,8 @@ class limeRFE_view : public wxFrame
 		virtual void OncChannelTX( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OncPortTX( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OncbEnableSWR( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnrbSWRsource( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnrbSWRext( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnrbSWRcell( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OntbtnTXRX( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OntbtnRXEN( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OntbtnTXEN( wxCommandEvent& event ) { event.Skip(); }
@@ -149,7 +152,6 @@ class limeRFE_view : public wxFrame
 		
 	
 	public:
-		wxMenuItem* miPowerMeter;
 		
 		limeRFE_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("LimeRFE Control"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxCLOSE_BOX|wxMINIMIZE_BOX|wxSYSTEM_MENU|wxTAB_TRAVERSAL );
 		

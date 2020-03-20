@@ -11,7 +11,15 @@ int my_read(RFE_COM com, char* buffer, int count) {
 #ifdef __unix__
 	result = read(com.fd, buffer, count);
 #else
-	result = readFromSerial(com.hComm, buffer, count);
+	int rc = 0;
+	int ret;
+
+	DWORD rc_dw = 0;
+	ret = ReadFile(com.hComm, buffer, count, &rc_dw, NULL);
+	rc = rc_dw;
+
+	result = (ret == 0)? -1 : rc;
+
 #endif // LINUX
 	return result;
 }
@@ -21,7 +29,15 @@ int my_write(RFE_COM com, char* buffer, int count) {
 #ifdef __unix__
 	result = write(com.fd, buffer, count);
 #else
-	result = writeToSerial(com.hComm, buffer, count);
+	int rc = 0;
+	int ret;
+
+	DWORD rc_dw = 0;
+	ret = WriteFile(com.hComm, buffer, count, &rc_dw, NULL);
+	rc = rc_dw;
+
+	result = (ret == 0)? -1 : rc;
+
 #endif // LINUX
 	return result;
 }
@@ -47,40 +63,22 @@ int serialport_read(RFE_COM com, char* buff, int len)
 int serialport_init(const char* serialport, int baud, RFE_COM* com)
 {
 
-	struct termios toptions;
-
 	char* cserialport = (char*)serialport;
 
 	int result = 0;
 #ifdef __unix__
+
+	struct termios toptions;
+
 	int fd = open(cserialport, O_RDWR | O_NOCTTY);
 	if (fd == -1)
-		result = -1;
-#else
-	HANDLE hComm = openSerial(cserialport, O_RDWR | O_NOCTTY);
-	if (hComm == INVALID_HANDLE_VALUE) {
-		result = -1;
-	}
-#endif // LINUX
-
-	if (result == -1) {
-		perror("init_serialport: Unable to open port ");
 		return -1;
-	}
 
-#ifdef __unix__
 	com->fd = fd;
-#else
-	com->hComm = hComm;
-	com->fd = 0; //Set to a value greater than -1, so the direct USB connection can be checked by if(com.fd >= 0)
-#endif // LINUX
 
 	int res;
-#ifdef __unix__
+
 	res = tcgetattr(com->fd, &toptions);
-#else
-	res = tcgetattr(com->hComm, &toptions);
-#endif // LINUX
 
 	if (res < 0) {
 		perror("init_serialport: Couldn't get term attributes");
@@ -107,12 +105,6 @@ int serialport_init(const char* serialport, int baud, RFE_COM* com)
 	cfsetispeed(&toptions, brate);
 	cfsetospeed(&toptions, brate);
 
-#ifdef _MSC_VER
-	//If DTR is not disabled, each time the port is opened, the Arduino uP is reset
-	//If DTR is disabled, then uP is reset only the first time the port is opened after plugging USB
-	setDTR(DTR_CONTROL_DISABLE);
-#endif // Windows
-
 	// 8N1
 	toptions.c_cflag &= ~PARENB;
 	toptions.c_cflag &= ~CSTOPB;
@@ -128,16 +120,71 @@ int serialport_init(const char* serialport, int baud, RFE_COM* com)
 	toptions.c_cc[VMIN] = 0;
 	toptions.c_cc[VTIME] = 20;
 
-#ifdef __unix__
 	res = tcsetattr(com->fd, TCSANOW, &toptions);
-#else
-	res = tcsetattr(com->hComm, TCSANOW, &toptions);
-#endif // LINUX
 
 	if (res < 0) {
 		perror("init_serialport: Couldn't set term attributes");
 		return -1;
 	}
+
+#else
+	HANDLE hComm;
+	char* port;
+
+	if (strlen(serialport) < 4) return -1;
+
+	//COMxx
+	if (strlen(serialport) > 4) {
+		port = (char*)calloc(1, sizeof(char) * strlen("\\\\.\\COM10") + 1);
+		strncat(port, "\\\\.\\", strlen("\\\\.\\"));
+	}
+	//COMx
+	else {
+		port = (char*)calloc(1, sizeof(char) * 5);
+	}
+	strncat(port, serialport, strlen(serialport));
+
+	wchar_t wport[20];
+	mbstowcs(wport, port, strlen(port) + 1);//Plus null
+
+	hComm = CreateFile(wport, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+
+	if (hComm == INVALID_HANDLE_VALUE) {
+		result = -1;
+	}
+
+	DCB dcbSerialParams = { 0 }; // Initializing DCB structure
+	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+	//	After that retrieve the current settings of the serial port using the GetCommState() function.
+	bool status = GetCommState(hComm, &dcbSerialParams);
+
+	//	and set the values for Baud rate, Byte size, Number of start / Stop bits etc.
+	dcbSerialParams.BaudRate = CBR_9600;	// Setting BaudRate = 9600
+	dcbSerialParams.ByteSize = 8;			// Setting ByteSize = 8
+	dcbSerialParams.StopBits = ONESTOPBIT;	// Setting StopBits = 1
+	dcbSerialParams.Parity = NOPARITY;      // Setting Parity = None
+
+	dcbSerialParams.fDtrControl = DTR_CONTROL_DISABLE;  //Disable DTR, because in Windows each time the port opens the Arduino is reset
+	SetCommState(hComm, &dcbSerialParams);
+
+	// Set timeouts
+	COMMTIMEOUTS timeouts = { 0 };
+	timeouts.ReadIntervalTimeout = 50; // in milliseconds
+	timeouts.ReadTotalTimeoutConstant = 50; // in milliseconds
+	timeouts.ReadTotalTimeoutMultiplier = 10; // in milliseconds
+	timeouts.WriteTotalTimeoutConstant = 50; // in milliseconds
+	timeouts.WriteTotalTimeoutMultiplier = 10; // in milliseconds
+
+	if (!SetCommTimeouts(hComm, &timeouts)) {
+		return -1;
+	}
+
+	com->hComm = hComm;
+	com->fd = 0; //Set to a value greater than -1, so the direct USB connection can be checked by if(com.fd >= 0)
+
+#endif // LINUX
+
 	return 0;
 }
 
@@ -146,7 +193,9 @@ int serialport_close(RFE_COM com) {
 #ifdef __unix__
 	result = close(com.fd);
 #else
-	result = closeSerial(com.hComm);
+	int ret = CloseHandle(com.hComm); // Closing the Serial Port
+	result = (ret != 0)? 0 : -1;
+
 #endif // LINUX
 	return result;
 }
@@ -330,8 +379,14 @@ int Cmd_Hello(RFE_COM com) {
 
 	while (!connected && (attempts < RFE_MAX_HELLO_ATTEMPTS)) {
 		write_buffer_fd(com, buf, 1);
-		mySleep(200);
+		mySleep(RFE_TIME_BETWEEN_HELLO_MS);
+#ifdef __unix__
 		len = read_buffer_fd(com, buf, 1);
+#else
+		DWORD dwlen;
+		ReadFile(com.hComm, buf, 1, &dwlen, NULL);
+		len = dwlen;
+#endif
 		if ((len == 1) && (buf[0] == RFE_CMD_HELLO))
 			connected = true;
 		attempts++;

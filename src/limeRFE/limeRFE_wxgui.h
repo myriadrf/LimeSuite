@@ -90,7 +90,8 @@ class limeRFE_wxgui : public limeRFE_view
 
 		void OnrbI2CrbUSB(wxCommandEvent& event);
 
-		void OnrbSWRsource(wxCommandEvent& event);
+		void OnrbSWRext(wxCommandEvent& event);
+		void OnrbSWRcell(wxCommandEvent& event);
 
 		void OnbtnCalibrate(wxCommandEvent& event);
 
@@ -109,6 +110,8 @@ class limeRFE_wxgui : public limeRFE_view
 		double rlCalCorr;
 
 		void PrintError(int errorCode);
+
+		void FindChannelChoices(int type, wxArrayString* channelItems);
 
 	public:
 		/** Constructor */

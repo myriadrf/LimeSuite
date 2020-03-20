@@ -45,6 +45,7 @@ class AppFrame_view : public wxFrame
 		enum
 		{
 			idMenuQuit = 1000,
+			ID_MENUITEM_LIMERFE,
 			idMenuAbout
 		};
 		

@@ -202,3 +202,8 @@ void RFE_Device::SetChannels(int rx, int tx)
     txChannel = tx;
 }
 
+rfe_boardState RFE_Device::GetState()
+{
+	rfe_boardState state = boardState;
+	return state;
+}

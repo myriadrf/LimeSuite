@@ -26,6 +26,7 @@ public:
     void SetChannels(int rx, int tx);
     lms_device_t *sdrDevice;
 	struct RFE_COM com;
+	rfe_boardState GetState();
 private:
     int rxChannel;
     int txChannel;
