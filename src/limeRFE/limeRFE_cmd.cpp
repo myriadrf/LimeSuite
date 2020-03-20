@@ -780,6 +780,6 @@ int Cmd_Fan(lms_device_t *dev, RFE_COM com, int enable) {
 	if (len == -1)
 		return(RFE_ERROR_COMM);
 
-	result = buf[1]; // buf[0] is the command, buf[1] is the result
+//	result = buf[1]; // buf[0] is the command, buf[1] is the result
 	return result;
 }
