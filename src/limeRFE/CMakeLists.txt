@@ -32,7 +32,7 @@ include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_LIMERFE "Enable LimeRFE support" ON "ENABLE_LIBRARY" OFF)
 add_feature_info(LimeRFE ENABLE_LIMERFE "LimeRFE support")
 
-if(ENABLE_LIMERFE)
+if(ENABLE_LIMERFE AND ENABLE_GUI)
     target_compile_definitions(LimeSuiteGUI PUBLIC "LIMERFE")
 endif()
 
@@ -43,5 +43,7 @@ endif()
 ########################################################################
 ## Add to library
 ########################################################################
-target_sources(LimeSuiteGUI PRIVATE ${LIMERFE_GUI_SOURCES})
+if(ENABLE_GUI)
+    target_sources(LimeSuiteGUI PRIVATE ${LIMERFE_GUI_SOURCES})
+endif()
 target_sources(LimeSuite PRIVATE ${LIMERFE_SOURCES})
