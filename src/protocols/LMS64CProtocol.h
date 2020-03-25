@@ -58,14 +58,6 @@ public:
         CONNECTION_TYPES_COUNT //used only for memory allocation
     };
 
-    enum eLMS_PROTOCOL
-    {
-        LMS_PROTOCOL_UNDEFINED = 0,
-        LMS_PROTOCOL_DIGIC,
-        LMS_PROTOCOL_LMS64C,
-        LMS_PROTOCOL_NOVENA,
-    };
-
     struct GenericPacket
     {
         GenericPacket()
@@ -82,18 +74,6 @@ public:
         std::vector<unsigned char> inBuffer;
     };
 
-    struct ProtocolDIGIC
-    {
-        static const int pktLength = 64;
-        static const int maxDataLength = 60;
-        ProtocolDIGIC() : cmd(0), i2cAddr(0), blockCount(0) {};
-        unsigned char cmd;
-        unsigned char i2cAddr;
-        unsigned char blockCount;
-        unsigned char reserved;
-        unsigned char data[maxDataLength];
-    };
-
     struct ProtocolLMS64C
     {
         static const int pktLength = 64;
@@ -107,17 +87,6 @@ public:
         unsigned char blockCount;
         unsigned char periphID;
         unsigned char reserved[4];
-        unsigned char data[maxDataLength];
-    };
-
-    struct ProtocolNovena
-    {
-        static const int pktLength = 128;
-        static const int maxDataLength = 128;
-        ProtocolNovena() :cmd(0),status(0) {};
-        unsigned char cmd;
-        unsigned char status;
-        unsigned char blockCount;
         unsigned char data[maxDataLength];
     };
 
@@ -201,8 +170,8 @@ private:
     int WriteADF4002SPI(const uint32_t *writeData, const size_t size);
     int ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
 
-    unsigned char* PreparePacket(const GenericPacket &pkt, int &length, const eLMS_PROTOCOL protocol);
-    int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol);
+    unsigned char* PreparePacket(const GenericPacket &pkt, int &length);
+    int ParsePacket(GenericPacket &pkt, const unsigned char* buffer, const int length);
     std::mutex mControlPortLock;
     double _cachedRefClockRate;
 };

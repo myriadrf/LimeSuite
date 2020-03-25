@@ -44,7 +44,6 @@ int my_write(RFE_COM com, char* buffer, int count) {
 
 int serialport_write(RFE_COM com, const char* str, int len)
 {
-	int n;
 	char* cstr = (char*)str;
 	return my_write(com, cstr, len);
 }
@@ -727,7 +726,6 @@ int i2c_write_buffer(lms_device_t* lms, unsigned char* c, int size) {
 	unsigned char addressI2C = RFE_I2C_ADDRESS;
 	unsigned char addressByte = addressI2C << 1;
 	unsigned char addressByteW = addressByte & ~1;
-	unsigned char addressByteR = addressByte | 1;
 
 	if(i2c_start(lms) != 0) // send start sequence
 		return -1;
@@ -745,7 +743,6 @@ int i2c_write_buffer(lms_device_t* lms, unsigned char* c, int size) {
 int i2c_read_buffer(lms_device_t* lms, unsigned char* c, int size) {
 	unsigned char addressI2C = RFE_I2C_ADDRESS;
 	unsigned char addressByte = addressI2C << 1;
-	unsigned char addressByteW = addressByte & ~1;
 	unsigned char addressByteR = addressByte | 1;
 
 	i2c_start(lms);	// send a restart sequence

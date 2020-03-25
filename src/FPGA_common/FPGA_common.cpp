@@ -329,7 +329,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     }
     int N(0), M(0);
     double bestDeviation = 1e9;
-    double Fvco;
     for(auto it : availableVCOs)
     {
         if(it.second == bestScore)
@@ -352,7 +351,6 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if(deviation <= bestDeviation)
             {
                 bestDeviation = deviation;
-                Fvco = it.first;
                 M = Mtemp;
                 N = Ntemp;
             }
@@ -361,7 +359,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
-    Fvco = inputFreq*M/N; //actual VCO freq
+    double Fvco = inputFreq*M/N; //actual VCO freq
     lime::debug("M=%i, N=%i, Fvco=%.3f MHz", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
@@ -905,7 +903,7 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 double FPGA::DetectRefClk(double fx3Clk)
 {
     const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
+    const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
     if (WriteRegisters(addr, vals, 2) != 0)

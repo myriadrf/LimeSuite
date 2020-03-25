@@ -185,6 +185,7 @@ public:
             {
                 mUnderflow++;
                 packet.last = 0;
+                packet.flags = 0;
                 return;
             }
 

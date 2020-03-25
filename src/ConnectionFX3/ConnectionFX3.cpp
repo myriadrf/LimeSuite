@@ -191,8 +191,6 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             bulkCtrlAvailable = true;
             break;
         }
-    isConnected = true;
-    return 0;
 #else
     const auto splitPos = vidpid.find(":");
     const auto vid = std::stoi(vidpid.substr(0, splitPos), nullptr, 16);
@@ -265,6 +263,7 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             }
     }
     libusb_free_config_descriptor(descriptor);
+#endif
     isConnected = true;
     if(bulkCtrlAvailable)
     {
@@ -275,7 +274,6 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
             lime::error("Failed to reset USB bulk endpoints");
     }
     return 0;
-#endif
 }
 /**	@brief Closes communication to device.
 */
@@ -391,7 +389,11 @@ int ConnectionFX3::Read(unsigned char *buffer, const int length, int timeout_ms)
     if(bulkCtrlAvailable && bulkCtrlInProgress)
     {
         int actual = 0;
-        libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        int r = libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        if (r == LIBUSB_ERROR_TIMEOUT) {
+            /* fix a bug in the kernel with AMD chipsets -- see myriadrf/LimeSuite#287 */
+            libusb_bulk_transfer(dev_handle, ctrlBulkInAddr, buffer, len, &actual, timeout_ms);
+        }
         len = actual;
         bulkCtrlInProgress = false;
     }
@@ -557,10 +559,9 @@ int ConnectionFX3::FinishDataReading(char *buffer, uint32_t length, int contextH
 */
 void ConnectionFX3::AbortReading(int ep)
 {
-    ep = 0x81;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
-        if (InEndPt[i] && InEndPt[i]->Address == ep)
+        if (InEndPt[i] && InEndPt[i]->Address == 0x81)
 	        InEndPt[i]->Abort();
 #else
     for(int i=0; i<USB_MAX_CONTEXTS; ++i)
@@ -690,10 +691,9 @@ int ConnectionFX3::FinishDataSending(const char *buffer, uint32_t length, int co
 */
 void ConnectionFX3::AbortSending(int ep)
 {
-    ep = 0x01;
 #ifndef __unix__
     for (int i = 0; i < MAX_EP_CNT; i++)
-        if (OutEndPt[i] && OutEndPt[i]->Address == ep)
+        if (OutEndPt[i] && OutEndPt[i]->Address == 0x01)
             OutEndPt[i]->Abort();
 #else
     for (int i = 0; i<USB_MAX_CONTEXTS; ++i)

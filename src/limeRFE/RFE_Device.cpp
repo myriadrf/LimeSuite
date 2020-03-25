@@ -139,7 +139,7 @@ int RFE_Device::SetFrequency(bool dirTx, int ch, float freq)
     else if (!dirTx && autoRx)
         boardState.channelIDRX = RxPortCheck(boardState.selPortRX,FreqToBand(freq));
 
-	return Cmd_ConfigureState(sdrDevice, com, boardState);
+    return Cmd_ConfigureState(sdrDevice, com, boardState);
 }
 
 void RFE_Device::AutoFreq(rfe_boardState& state)

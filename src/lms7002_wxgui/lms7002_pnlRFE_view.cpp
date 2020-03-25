@@ -231,13 +231,5 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         LMS_WriteParam(lmsControl,parameter,valToSend);
         return;
     }
-    else if(event.GetEventObject() == cmbSEL_PATH_RFE)
-    {
-        wxCommandEvent evt;
-        evt.SetEventType(LMS7_RXPATH_CHANGED);
-        evt.SetEventObject(this);
-        evt.SetInt(event.GetInt());
-        wxPostEvent(this, evt);
-    }
     LMS_WriteParam(lmsControl,parameter,value);
 }
