@@ -507,9 +507,9 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	rbSWRcell->Enable(cbEnableSWR->GetValue());
 
 	if (configuredState.enableSWR == 1)
-		pnlPowerMeter->Show();
+		pnlPowerMeter->Enable();
 	else
-		pnlPowerMeter->Hide();
+		pnlPowerMeter->Disable();
 
 	GetSizer()->Layout();
 	this->Fit();
