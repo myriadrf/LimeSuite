@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Dec 21 2016)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -397,7 +397,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	fgSizer262->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	tbtnTXRX = new wxToggleButton( sbSizer11->GetStaticBox(), wxID_ANY, wxT("TX/RX"), wxDefaultPosition, wxSize( 140,80 ), 0 );
-	tbtnTXRX->SetFont( wxFont( 16, 70, 90, 92, false, wxEmptyString ) );
+	tbtnTXRX->SetFont( wxFont( 16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 	
 	fgSizer262->Add( tbtnTXRX, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	
@@ -431,13 +431,13 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	tbtnRX = new wxToggleButton( sbSizer111->GetStaticBox(), wxID_ANY, wxT("RX"), wxDefaultPosition, wxSize( 140,35 ), 0 );
 	tbtnRX->SetValue( true ); 
-	tbtnRX->SetFont( wxFont( 16, 70, 90, 92, false, wxEmptyString ) );
+	tbtnRX->SetFont( wxFont( 16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 	
 	fgSizer291->Add( tbtnRX, 0, wxALL, 5 );
 	
 	tbtnTX = new wxToggleButton( sbSizer111->GetStaticBox(), wxID_ANY, wxT("TX"), wxDefaultPosition, wxSize( 140,35 ), 0 );
 	tbtnTX->SetValue( true ); 
-	tbtnTX->SetFont( wxFont( 16, 70, 90, 92, false, wxEmptyString ) );
+	tbtnTX->SetFont( wxFont( 16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 	
 	fgSizer291->Add( tbtnTX, 0, wxALL, 5 );
 	
@@ -467,7 +467,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	txtTXRX = new wxStaticText( sbsMode->GetStaticBox(), wxID_ANY, wxT("RX"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtTXRX->Wrap( -1 );
-	txtTXRX->SetFont( wxFont( 16, 70, 90, 92, false, wxEmptyString ) );
+	txtTXRX->SetFont( wxFont( 16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 	
 	sbsMode->Add( txtTXRX, 0, wxLEFT, 5 );
 	
@@ -483,7 +483,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	txtTXRXEN = new wxStaticText( sbsMode1->GetStaticBox(), wxID_ANY, wxT("RX"), wxDefaultPosition, wxDefaultSize, 0 );
 	txtTXRXEN->Wrap( -1 );
-	txtTXRXEN->SetFont( wxFont( 16, 70, 90, 92, false, wxEmptyString ) );
+	txtTXRXEN->SetFont( wxFont( 16, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 	
 	sbsMode1->Add( txtTXRXEN, 0, wxLEFT, 5 );
 	
@@ -724,7 +724,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	fgSizer2->Add( fgSizer301, 1, wxEXPAND, 5 );
 	
-	txtMessageField = new wxTextCtrl( pnlMain, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
+	txtMessageField = new wxTextCtrl( pnlMain, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY );
 	txtMessageField->SetMinSize( wxSize( -1,100 ) );
 	
 	fgSizer2->Add( txtMessageField, 0, wxEXPAND, 5 );
