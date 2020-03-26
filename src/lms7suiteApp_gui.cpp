@@ -81,7 +81,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuModules->Append( mnuBoardControls );
 	
 	wxMenuItem* mnuLimeRFE;
-	mnuLimeRFE = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("LimeRFE") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuLimeRFE = new wxMenuItem( mnuModules, ID_MENUITEM_LIMERFE, wxString( wxT("LimeRFE") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuLimeRFE );
 	
 	mbar->Append( mnuModules, wxT("Modules") ); 
@@ -164,7 +164,7 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowAPICalls ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowLimeRFE ) );
+	this->Disconnect( ID_MENUITEM_LIMERFE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowLimeRFE ) );
 	this->Disconnect( idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
 	
 }

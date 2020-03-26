@@ -13,6 +13,8 @@
 #include "lms7suiteAppFrame.h"
 #include "RFE_Device.h"
 
+#include <chrono>
+
 limeRFE_wxgui::limeRFE_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, const wxPoint& pos, const wxSize& size, long styles)
 :
 limeRFE_view(parent, id, title, pos, size)
@@ -51,8 +53,6 @@ limeRFE_view(parent, id, title, pos, size)
 	cbTXasRX->SetValue(true);
 	SetChannelsTypesTXRX(RFE_CHANNEL_RX);
 
-	pnlSWR->Hide();
-
 	UpdateRFEForm();
 }
 
@@ -62,10 +62,12 @@ void limeRFE_wxgui::Initialize(lms_device_t* lms)
 }
 
 void limeRFE_wxgui::OnbtnOpenPort(wxCommandEvent& event) {
+
 	if (rfe) {
 		AddMssg("Port already opened.");
 		return;
 	}
+
 	wxString PortName = cmbbPorts->GetValue();
 
         if (GetCommType() == RFE_USB)
@@ -76,11 +78,6 @@ void limeRFE_wxgui::OnbtnOpenPort(wxCommandEvent& event) {
 	if (rfe == nullptr) {
 		AddMssg("Error initializing serial port");
 		return;
-	}
-	else {
-		char msg[200];
-		sprintf(msg, "Port opened;");
-		AddMssg(msg);
 	}
 
 	unsigned char cinfo[4];
@@ -95,8 +92,19 @@ void limeRFE_wxgui::OnbtnOpenPort(wxCommandEvent& event) {
 
 	info.fw_ver = cinfo[0];
 	info.hw_ver = cinfo[1];
-	info.status1 = cinfo[3];
+	info.status1 = cinfo[2];
 	info.status2 = cinfo[3];
+
+	if (((info.fw_ver == 255) && (info.hw_ver == 0xff)) ||
+		((info.fw_ver == 0) && (info.hw_ver == 0x00))) {
+		AddMssg("Error initializing serial port");
+		AddMssg("Please check the connection between the SDR and LimeRFE");
+		RFE_Close(rfe);
+		rfe = nullptr;
+		return;
+	}
+
+	AddMssg("Port opened");
 
 	char msg[200];
 	sprintf(msg, "Firmware version: %d", (int)info.fw_ver);
@@ -268,7 +276,9 @@ void limeRFE_wxgui::State2GUI(rfe_boardState state) {
 	lastPortRXSelection = state.selPortRX;
 	lastPortTXSelection = state.selPortTX;
 	cbEnableSWR->SetValue(state.enableSWR == 1);
-	rbSWRsource->SetSelection(state.sourceSWR);
+	rbSWRext->SetValue(state.sourceSWR == 0);
+	rbSWRcell->SetValue(state.sourceSWR == 1);
+
 	UpdateRFEForm();
 
 	cAttenuation->SetSelection(state.attValue);
@@ -290,7 +300,7 @@ void limeRFE_wxgui::GUI2State(rfe_boardState* state) {
 	int notch = cbNotch->GetValue();
 	int attenuation = cAttenuation->GetSelection();
 	int enableSWR = (cbEnableSWR->GetValue()) ? 1 : 0;
-	int sourceSWR = rbSWRsource->GetSelection();
+	int sourceSWR = rbSWRcell->GetValue();
 
 	state->channelIDRX = channelIDRX;
 	state->channelIDTX = channelIDTX;
@@ -337,9 +347,9 @@ void limeRFE_wxgui::OnbtnBoard2GUI(wxCommandEvent& event) {
 		return;
 	}
 
-	State2GUI(state);
-
 	configuredState = state;
+
+	State2GUI(state);
 }
 
 void limeRFE_wxgui::OncTypeRX(wxCommandEvent& event) {
@@ -384,7 +394,7 @@ void limeRFE_wxgui::OnbtnCalibrate(wxCommandEvent& event) {
 		return;
 	}
 
-	if (rbSWRsource->GetSelection() == 1) { //Cellular
+	if (rbSWRcell->GetValue() == 1) { //Cellular
 		powerCellCalCorr = calpower - pin_dBm + powerCellCalCorr;
 		sprintf(msg, "Power correction = %f dBm", powerCellCalCorr);
 		AddMssg(msg);
@@ -410,7 +420,16 @@ void limeRFE_wxgui::OnrbI2CrbUSB(wxCommandEvent& event) {
 	UpdateRFEForm();
 }
 
-void limeRFE_wxgui::OnrbSWRsource(wxCommandEvent& event) {
+void limeRFE_wxgui::OnrbSWRext(wxCommandEvent& event) {
+	rbSWRext->SetValue(true);
+	rbSWRcell->SetValue(false);
+	configured = false;
+	UpdateRFEForm();
+}
+
+void limeRFE_wxgui::OnrbSWRcell(wxCommandEvent& event) {
+	rbSWRext->SetValue(false);
+	rbSWRcell->SetValue(true);
 	configured = false;
 	UpdateRFEForm();
 }
@@ -473,10 +492,10 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	//btnOpenPort->Enable(!isI2C);
 	//btnClosePort->Enable(!isI2C);
 
-	if (rbSWRsource->GetSelection() == 1) { //Cellular
+	if (configuredState.sourceSWR == 1) { //Cellular
 		pnlADC2->Hide();
 	}
-	if (rbSWRsource->GetSelection() == 0) { //External
+	if (configuredState.sourceSWR == 0) { //External
 		pnlADC2->Show();
 	}
 
@@ -484,12 +503,13 @@ void limeRFE_wxgui::UpdateRFEForm() {
 	cTypeTX->Enable(!txasrx);
 	cChannelTX->Enable(!txasrx);
 
-	rbSWRsource->Enable(cbEnableSWR->GetValue());
+	rbSWRext->Enable(cbEnableSWR->GetValue());
+	rbSWRcell->Enable(cbEnableSWR->GetValue());
 
-	if(miPowerMeter->IsChecked() & cbEnableSWR->GetValue() & configured)
-		pnlPowerMeter->Show();
+	if (configuredState.enableSWR == 1)
+		pnlPowerMeter->Enable();
 	else
-		pnlPowerMeter->Hide();
+		pnlPowerMeter->Disable();
 
 	GetSizer()->Layout();
 	this->Fit();
@@ -546,43 +566,49 @@ void limeRFE_wxgui::SetChannelsChoicesTXRX(int channelTXRX) {
 
 	int type = cTypeTXRX->GetSelection();
 
+	wxArrayString channelItems;
+	FindChannelChoices(type, &channelItems);
+	cChannelTXRX->Clear();
+	cChannelTXRX->Append(channelItems);
+	cChannelTXRX->SetSelection(lastSelectionTXRX[type]);
+}
+
+void limeRFE_wxgui::FindChannelChoices(int type, wxArrayString* channelItems) {
 	if (type == 0) { // Wideband
-		cChannelTXRX->Clear();
+		channelItems->Clear();
 		for (int i = 0; i < RFE_CHANNEL_INDEX_WB_COUNT; i++) {
-			if (i == RFE_CHANNEL_INDEX_WB_1000) cChannelTXRX->AppendString("1 - 1000 MHz");
-			if (i == RFE_CHANNEL_INDEX_WB_4000) cChannelTXRX->AppendString("1000 - 4000 MHz");
+			if (i == RFE_CHANNEL_INDEX_WB_1000) channelItems->Add("1 - 1000 MHz");
+			if (i == RFE_CHANNEL_INDEX_WB_4000) channelItems->Add("1000 - 4000 MHz");
 		}
 	}
 
 	if (type == 1) { // HAM
-		cChannelTXRX->Clear();
+		channelItems->Clear();
 		for (int i = 0; i < RFE_CHANNEL_INDEX_HAM_COUNT; i++) {
-			if (i == RFE_CHANNEL_INDEX_HAM_0030) cChannelTXRX->AppendString("30 MHz (HF)");
-			if (i == RFE_CHANNEL_INDEX_HAM_0070) cChannelTXRX->AppendString("50-70 MHz (6 & 4 m)");
-			if (i == RFE_CHANNEL_INDEX_HAM_0145) cChannelTXRX->AppendString("144-146 MHz (2 m)");
-			if (i == RFE_CHANNEL_INDEX_HAM_0220) cChannelTXRX->AppendString("220-225 MHz (1.25 m)");
-			if (i == RFE_CHANNEL_INDEX_HAM_0435) cChannelTXRX->AppendString("430-440 MHz (70 cm)");
-			if (i == RFE_CHANNEL_INDEX_HAM_0920) cChannelTXRX->AppendString("902-928 MHz (33 cm)");
-			if (i == RFE_CHANNEL_INDEX_HAM_1280) cChannelTXRX->AppendString("1240-1325 MHz (23 cm)");
-			if (i == RFE_CHANNEL_INDEX_HAM_2400) cChannelTXRX->AppendString("2300-2450 MHz (13 cm)");
-			if (i == RFE_CHANNEL_INDEX_HAM_3500) cChannelTXRX->AppendString("3300-3500 MHz");
+			if (i == RFE_CHANNEL_INDEX_HAM_0030) channelItems->Add("30 MHz (HF)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0070) channelItems->Add("50-70 MHz (6 & 4 m)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0145) channelItems->Add("144-146 MHz (2 m)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0220) channelItems->Add("220-225 MHz (1.25 m)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0435) channelItems->Add("430-440 MHz (70 cm)");
+			if (i == RFE_CHANNEL_INDEX_HAM_0920) channelItems->Add("902-928 MHz (33 cm)");
+			if (i == RFE_CHANNEL_INDEX_HAM_1280) channelItems->Add("1240-1325 MHz (23 cm)");
+			if (i == RFE_CHANNEL_INDEX_HAM_2400) channelItems->Add("2300-2450 MHz (13 cm)");
+			if (i == RFE_CHANNEL_INDEX_HAM_3500) channelItems->Add("3300-3500 MHz");
 		}
-                if (strlen(LMS_GetDeviceInfo(lmsControl)->deviceName))
-                    cChannelTXRX->AppendString("Auto");
+		if (strlen(LMS_GetDeviceInfo(lmsControl)->deviceName))
+			channelItems->Add("Auto");
 	}
 
 	if (type == 2) { // Cellular
-		cChannelTXRX->Clear();
+		channelItems->Clear();
 		for (int i = 0; i < RFE_CHANNEL_INDEX_CELL_COUNT; i++) {
-			if (i == RFE_CHANNEL_INDEX_CELL_BAND01) cChannelTXRX->AppendString("Band 1");
-			if (i == RFE_CHANNEL_INDEX_CELL_BAND02) cChannelTXRX->AppendString("Band 2/PCS-1900");
-			if (i == RFE_CHANNEL_INDEX_CELL_BAND03) cChannelTXRX->AppendString("Band 3/DCS-1800");
-			if (i == RFE_CHANNEL_INDEX_CELL_BAND07) cChannelTXRX->AppendString("Band 7");
-			if (i == RFE_CHANNEL_INDEX_CELL_BAND38) cChannelTXRX->AppendString("Band 38");
+			if (i == RFE_CHANNEL_INDEX_CELL_BAND01) channelItems->Add("Band 1");
+			if (i == RFE_CHANNEL_INDEX_CELL_BAND02) channelItems->Add("Band 2/PCS-1900");
+			if (i == RFE_CHANNEL_INDEX_CELL_BAND03) channelItems->Add("Band 3/DCS-1800");
+			if (i == RFE_CHANNEL_INDEX_CELL_BAND07) channelItems->Add("Band 7");
+			if (i == RFE_CHANNEL_INDEX_CELL_BAND38) channelItems->Add("Band 38");
 		}
 	}
-
-	cChannelTXRX->SetSelection(lastSelectionTXRX[type]);
 }
 
 void limeRFE_wxgui::OncChannelRX(wxCommandEvent& event) {
@@ -827,6 +853,30 @@ void limeRFE_wxgui::OnbtnConfigure(wxCommandEvent& event) {
 		PrintError(result);
 		return;
 	}
+
+	auto* dev = static_cast<RFE_Device*>(rfe);
+	rfe_boardState state = dev->GetState();
+	int getChannelResult;
+	int rxTypeIndex;
+	int rxChannelIndex;
+	getChannelResult = GetChannelIndexes(state.channelIDRX, &rxTypeIndex, &rxChannelIndex);
+	int txTypeIndex;
+	int txChannelIndex;
+	getChannelResult = GetChannelIndexes(state.channelIDTX, &txTypeIndex, &txChannelIndex);
+
+	wxArrayString channelItems;
+	wxString wxRXTypeDescription = cTypeRX->GetString(rxTypeIndex);
+	FindChannelChoices(rxTypeIndex, &channelItems);
+	wxString wxRXChannelDescription = channelItems.Item(rxChannelIndex);
+//	wxString wxRXChannelDescription = cChannelRX->GetString(rxChannelIndex);
+	wxString wxTXTypeDescription = cTypeTX->GetString(txTypeIndex);
+	FindChannelChoices(txTypeIndex, &channelItems);
+	wxString wxTXChannelDescription = channelItems.Item(txChannelIndex);
+//	wxString wxTXChannelDescription = cChannelTX->GetString(txChannelIndex);
+
+	AddMssg(wxString("RX - Type: ") + wxRXTypeDescription + wxString("; Channel: ") + wxRXChannelDescription + wxString(";"));
+	AddMssg(wxString("TX - Type: ") + wxTXTypeDescription + wxString("; Channel: ") + wxTXChannelDescription + wxString(";"));
+
 	activeMode = newState.mode;
 
 	setTXRXBtns();
@@ -911,8 +961,10 @@ void limeRFE_wxgui::OnbtnReadADC(wxCommandEvent& event) {
 	double vADC1 = RFE_ADC_VREF * (adc1 / 1024.0);
 	double vADC2 = RFE_ADC_VREF * (adc2 / 1024.0);
 
-	txtADC1->SetLabel(wxString::Format(wxT("%i (%.2f V)"), adc1, vADC1));
-	txtADC2->SetLabel(wxString::Format(wxT("%i (%.2f V)"), adc2, vADC2));
+	txtADC1->SetLabel(wxString::Format(wxT("%i"), adc1));
+	txtADC1_V->SetLabel(wxString::Format(wxT("%.2f"), vADC1));
+	txtADC2->SetLabel(wxString::Format(wxT("%i"), adc2));
+	txtADC2_V->SetLabel(wxString::Format(wxT("%.2f"), vADC2));
 
 	double pin_dBm, pin_W;
 
@@ -943,7 +995,7 @@ int limeRFE_wxgui::CalculatePowerAndGamma(int adc1, int adc2, double * pin_dBm, 
 
 	double intercept, slope, k, correction, calCorr;
 
-	if (rbSWRsource->GetSelection() == 1) { //Cellular
+	if (rbSWRcell->GetValue() == 1) { //Cellular
 		intercept = -89; // f = 2140 MHz from ADL5513 datasheet
 		slope = 21E-3;
 		k = 2;
@@ -951,7 +1003,7 @@ int limeRFE_wxgui::CalculatePowerAndGamma(int adc1, int adc2, double * pin_dBm, 
 		calCorr = powerCellCalCorr;
 	}
 
-	if (rbSWRsource->GetSelection() == 0) { //External
+	if (rbSWRext->GetValue() == 1) { //External
 		intercept = -87; // f = 100 MHz from ADL5513 datasheet
 		slope = 21E-3;
 		k = 2;
@@ -1053,17 +1105,6 @@ void limeRFE_wxgui::OnQuit(wxCommandEvent& event) {
 	parentFrame = (LMS7SuiteAppFrame*)this->GetParent();
 	wxCloseEvent closeEvent;
 	parentFrame->OnLimeRFEClose(closeEvent);
-}
-
-void limeRFE_wxgui::OnmiPowerMeter(wxCommandEvent& event) {
-	bool checked = miPowerMeter->IsChecked();
-	if (checked) {
-		pnlSWR->Show();
-	}
-	else {
-		pnlSWR->Hide();
-	}
-	UpdateRFEForm();
 }
 
 void limeRFE_wxgui::OncbEnableSWR(wxCommandEvent& event) {

@@ -76,9 +76,6 @@ set(LIME_SUITE_SOURCES
     FPGA_common/FPGA_Mini.cpp
     FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
-    limeRFE/limeRFE_cmd.cpp
-    limeRFE/limeRFE_api.cpp
-    limeRFE/RFE_Device.cpp
 )
 
 set(LIME_SUITE_INCLUDES
@@ -98,11 +95,6 @@ set(LIME_SUITE_INCLUDES
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
     limeRFE
 )
-
-if(MSVC)
-    list(APPEND LIME_SUITE_SOURCES limeRFE/external/termiWin/termiWin.c)
-    list(APPEND LIME_SUITE_INCLUDES limeRFE/external/termiWin)    
-endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
@@ -238,14 +230,7 @@ set(LMS7SUITE_GUI_SOURCES
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
     boards_wxgui/pnlGPIO.cpp
-    limeRFE/limeRFE_gui.cpp
-    limeRFE/limeRFE_wxgui.cpp
-    limeRFE/limeRFE_cmd.cpp
 )
-
-if(MSVC)
-    list(APPEND LMS7SUITE_GUI_SOURCES limeRFE/external/termiWin/termiWin.c)
-endif()
 
 include(FeatureSummary)
 include(CMakeDependentOption)
@@ -316,3 +301,8 @@ add_subdirectory(utilities)
 # examples
 #########################################################################
 add_subdirectory(examples)
+
+#########################################################################
+# LimeRFE
+#########################################################################
+add_subdirectory(limeRFE)

@@ -15,11 +15,7 @@ using namespace std;
 #define O_NOCTTY 0
 #define	IXANY		0x00000800	/* any char will restart after stop */
 
-extern "C" {
-	//	#include "termiWin/termiWin.h"
-#define TERMIWIN_DONOTREDEFINE
-#include "termiWin.h"
-}
+#include <winsock2.h>
 #endif // WIN
 
 #ifdef __unix__
@@ -85,7 +81,7 @@ typedef struct RFE_COM {
 #define RFE_OFF 0
 #define RFE_ON  1
 
-#define RFE_MAX_HELLO_ATTEMPTS 50
+#define RFE_MAX_HELLO_ATTEMPTS 10
 
 #define RFE_TIME_BETWEEN_HELLO_MS 200
 

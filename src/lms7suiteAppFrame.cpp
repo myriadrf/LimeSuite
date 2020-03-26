@@ -136,6 +136,10 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
     Bind(LMS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::OnLmsChanged), this);
+
+#ifndef LIMERFE
+	mnuModules->Delete(ID_MENUITEM_LIMERFE);
+#endif
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -198,10 +202,12 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         programmer->SetConnection(lmsControl);
     if(api)
         api->Initialize(lmsControl);
+
+#ifdef LIMERFE
     if (limeRFEwin)
         limeRFEwin->Initialize(lmsControl);
+#endif
 }
-
 
 void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
@@ -555,6 +561,8 @@ void LMS7SuiteAppFrame::UpdateVisiblePanel() const
 }
 
 void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
+
+#ifdef LIMERFE
 	if (limeRFEwin) //it's already opened
 	{
 		limeRFEwin->Show(true);
@@ -569,6 +577,7 @@ void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
 		limeRFEwin->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnLimeRFEClose), NULL, this);
 		limeRFEwin->Show();
 	}
+#endif
 }
 
 void LMS7SuiteAppFrame::OnLimeRFEClose(wxCloseEvent& event)

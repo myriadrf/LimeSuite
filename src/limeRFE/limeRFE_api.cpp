@@ -26,9 +26,8 @@ extern "C" API_EXPORT rfe_dev_t* CALL_CONV RFE_Open(const char* serialport, lms_
         result = serialport_init(serialport, SERIAL_BAUDRATE, &com);
         if (result == -1)
             return nullptr;
-
-		int result = Cmd_Hello(com);
-        if (result == 1) {
+		result = Cmd_Hello(com);
+        if (result == RFE_ERROR_COMM) {
             return nullptr;
         }
     }

@@ -313,9 +313,12 @@ API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, s
 {
     lime::LMS7_Device* lms = CheckDevice(device, chan);
     int ret = lms ? lms->SetFrequency(dir_tx, chan,frequency) : -1;
+
+#ifdef LIMERFE
     auto rfe = lms->GetLimeRFE();
     if (rfe && ret == 0)
         rfe->SetFrequency(dir_tx, chan, frequency);
+#endif
     return ret;
 }
 
@@ -478,12 +481,18 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
     lime::LMS7_Device* lms = CheckDevice(device, chan);
     if (!lms)
         return -1;
+
+#ifdef LIMERFE
     auto rfe = lms->GetLimeRFE();
     if (rfe)
         rfe->OnCalibrate(chan, false);
+#endif
     int ret = lms->Calibrate(dir_tx, chan, bw, flags);
+
+#ifdef LIMERFE
     if (rfe)
         rfe->OnCalibrate(chan, true);
+#endif
     return ret;
 }
 
