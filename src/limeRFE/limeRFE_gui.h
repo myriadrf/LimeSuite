@@ -118,7 +118,10 @@ class limeRFE_view : public wxFrame
 		wxStaticText* m_staticText1021;
 		wxTextCtrl* tcRLCalibrate;
 		wxStaticText* m_staticText1221;
+		wxPanel* m_panel173;
 		wxTextCtrl* txtMessageField;
+		wxPanel* m_panel18;
+		wxButton* btnClearMessages;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
@@ -149,6 +152,7 @@ class limeRFE_view : public wxFrame
 		virtual void OnbtnConfigure( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrate( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnClearMessages( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
