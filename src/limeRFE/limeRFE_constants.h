@@ -201,7 +201,7 @@ extern "C" {
 	int i2c_getVal(lms_device_t* lms, int bitGPIO);
 	int i2c_start(lms_device_t* lms);
 	int i2c_stop(lms_device_t* lms);
-	unsigned char i2c_rx(lms_device_t* lms, char ack);
+	int i2c_rx(lms_device_t* lms, char ack, unsigned char* d);
 	int i2c_tx(lms_device_t* lms, unsigned char d);
 	int i2c_write_buffer(lms_device_t* lms, unsigned char* c, int size);
 	int i2c_read_buffer(lms_device_t* lms, unsigned char* c, int size);

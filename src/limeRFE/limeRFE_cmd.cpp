@@ -677,18 +677,24 @@ int i2c_stop(lms_device_t* lms)
 	return 0;
 }
 
-unsigned char i2c_rx(lms_device_t* lms, char ack)
+int i2c_rx(lms_device_t* lms, char ack, unsigned char* d)
 {
-	char x, d = 0;
+	char x = 0;
 
 	i2c_setVal(lms, GPIO_SDA, 1);
 	for (x = 0; x<8; x++) {
-		d <<= 1;
+		(*d) <<= 1;
+
+		int attempt = 0;
 		do {
 			i2c_setVal(lms, GPIO_SCL, 1);
+			attempt++;
+			if (attempt > 100) { // Is this limit OK?
+				return RFE_ERROR_COMM;
+			}
 		} while (i2c_getVal(lms, GPIO_SCL) == 0);    // wait for any SCL clock stretching
 		i2c_dly();
-		if (i2c_getVal(lms, GPIO_SDA)) d |= 1;
+		if (i2c_getVal(lms, GPIO_SDA)) (*d) |= 1;
 		i2c_setVal(lms, GPIO_SCL, 0);
 	}
 	if (ack) i2c_setVal(lms, GPIO_SDA, 0);
@@ -697,7 +703,8 @@ unsigned char i2c_rx(lms_device_t* lms, char ack)
 	i2c_dly();             // send (N)ACK bit
 	i2c_setVal(lms, GPIO_SCL, 0);
 	i2c_setVal(lms, GPIO_SDA, 1);
-	return d;
+//	return d;
+	return RFE_SUCCESS;
 }
 
 int i2c_tx(lms_device_t* lms, unsigned char d)
@@ -753,7 +760,9 @@ int i2c_read_buffer(lms_device_t* lms, unsigned char* c, int size) {
 		char ack = 1;
 		if (i == (size - 1))
 			ack = 0;
-		c[i] = i2c_rx(lms, ack);
+		int res = i2c_rx(lms, ack, &(c[i]));
+		if (res != RFE_SUCCESS)
+			return RFE_ERROR_COMM;
 	}
 	i2c_stop(lms);	// send stop sequence
 	return i;
