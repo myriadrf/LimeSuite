@@ -1111,3 +1111,7 @@ void limeRFE_wxgui::OncbEnableSWR(wxCommandEvent& event) {
 	configured = false;
 	UpdateRFEForm();
 }
+
+void limeRFE_wxgui::OnbtnClearMessages(wxCommandEvent& event) {
+	txtMessageField->Clear();
+}

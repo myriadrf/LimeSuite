@@ -113,6 +113,8 @@ class limeRFE_wxgui : public limeRFE_view
 
 		void FindChannelChoices(int type, wxArrayString* channelItems);
 
+		void OnbtnClearMessages(wxCommandEvent& event);
+
 	public:
 		/** Constructor */
 		limeRFE_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);

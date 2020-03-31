@@ -197,14 +197,6 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	bSizer7->Fit( m_panel172 );
 	fgSizer2->Add( m_panel172, 1, wxALL|wxEXPAND, 2 );
 	
-	wxFlexGridSizer* fgSizer11;
-	fgSizer11 = new wxFlexGridSizer( 0, 3, 0, 0 );
-	fgSizer11->SetFlexibleDirection( wxBOTH );
-	fgSizer11->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	
-	fgSizer2->Add( fgSizer11, 1, wxEXPAND, 5 );
-	
 	wxFlexGridSizer* fgSizer1;
 	fgSizer1 = new wxFlexGridSizer( 0, 0, 0, 0 );
 	fgSizer1->SetFlexibleDirection( wxBOTH );
@@ -716,18 +708,36 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	fgSizer2->Add( fgSizer1, 0, wxEXPAND, 2 );
 	
-	wxFlexGridSizer* fgSizer301;
-	fgSizer301 = new wxFlexGridSizer( 1, 1, 0, 0 );
-	fgSizer301->SetFlexibleDirection( wxBOTH );
-	fgSizer301->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	m_panel173 = new wxPanel( pnlMain, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER|wxTAB_TRAVERSAL );
+	wxFlexGridSizer* fgSizer17;
+	fgSizer17 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer17->AddGrowableCol( 0 );
+	fgSizer17->SetFlexibleDirection( wxBOTH );
+	fgSizer17->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	
-	fgSizer2->Add( fgSizer301, 1, wxEXPAND, 5 );
-	
-	txtMessageField = new wxTextCtrl( pnlMain, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY );
+	txtMessageField = new wxTextCtrl( m_panel173, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY );
 	txtMessageField->SetMinSize( wxSize( -1,100 ) );
 	
-	fgSizer2->Add( txtMessageField, 0, wxEXPAND, 5 );
+	fgSizer17->Add( txtMessageField, 0, wxEXPAND, 5 );
+	
+	m_panel18 = new wxPanel( m_panel173, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer24;
+	bSizer24 = new wxBoxSizer( wxVERTICAL );
+	
+	btnClearMessages = new wxButton( m_panel18, wxID_ANY, wxT("Clear"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer24->Add( btnClearMessages, 0, 0, 5 );
+	
+	
+	m_panel18->SetSizer( bSizer24 );
+	m_panel18->Layout();
+	bSizer24->Fit( m_panel18 );
+	fgSizer17->Add( m_panel18, 0, wxEXPAND, 5 );
+	
+	
+	m_panel173->SetSizer( fgSizer17 );
+	m_panel173->Layout();
+	fgSizer17->Fit( m_panel173 );
+	fgSizer2->Add( m_panel173, 1, wxEXPAND, 5 );
 	
 	
 	pnlMain->SetSizer( fgSizer2 );
@@ -772,6 +782,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	btnConfigure->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnConfigure ), NULL, this );
 	btnReadADC->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnReadADC ), NULL, this );
 	btnCalibrate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnCalibrate ), NULL, this );
+	btnClearMessages->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnClearMessages ), NULL, this );
 }
 
 limeRFE_view::~limeRFE_view()
@@ -806,5 +817,6 @@ limeRFE_view::~limeRFE_view()
 	btnConfigure->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnConfigure ), NULL, this );
 	btnReadADC->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnReadADC ), NULL, this );
 	btnCalibrate->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnCalibrate ), NULL, this );
+	btnClearMessages->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( limeRFE_view::OnbtnClearMessages ), NULL, this );
 	
 }
