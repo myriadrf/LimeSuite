@@ -237,7 +237,7 @@ bool SoapyLMS7::hasIQBalance(const int /*direction*/, const size_t /*channel*/) 
 void SoapyLMS7::setIQBalance(const int direction, const size_t channel, const std::complex<double> &balance)
 {
     const auto lmsDir = (direction == SOAPY_SDR_TX)?LMS7002M::Tx:LMS7002M::Rx;
-    double gain = std::abs(balance); if (gain == 0) gain = 1.0;
+    double gain = std::abs(balance);
     double gainI = 1.0; if (gain < 1.0) gainI = gain/1.0;
     double gainQ = 1.0; if (gain > 1.0) gainQ = 1.0/gain;
     std::unique_lock<std::recursive_mutex> lock(_accessMutex);
