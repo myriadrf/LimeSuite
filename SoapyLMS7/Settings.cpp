@@ -20,9 +20,12 @@ using namespace lime;
 
 #define dirName ((direction == SOAPY_SDR_RX)?"Rx":"Tx")
 
-//reasonable limits when advertising the rate
-#define MIN_SAMP_RATE 1e5
-#define MAX_SAMP_RATE 65e6
+//reasonable fallback limits when advertising the rate
+#define MIN_FALLBACK_SAMP_RATE 1e5
+#define MAX_FALLBACK_SAMP_RATE 65e6
+
+//reasonable step between sample rates
+#define STEP_SAMP_RATE 5e5
 
 /*******************************************************************
  * Constructor/destructor
@@ -470,12 +473,46 @@ double SoapyLMS7::getSampleRate(const int direction, const size_t channel) const
 
 std::vector<double> SoapyLMS7::listSampleRates(const int direction, const size_t channel) const
 {
-    return {MIN_SAMP_RATE, MAX_SAMP_RATE};
+    std::vector<double> rates;
+
+    lms_range_t range;
+    if (LMS_GetSampleRateRange(lms7Device, direction == SOAPY_SDR_RX, &range))
+    {
+        SoapySDR::log(SOAPY_SDR_ERROR, "LMS_GetSampleRate() failed, using fallback values.");
+
+        range.min = MIN_FALLBACK_SAMP_RATE;
+        range.max = MAX_FALLBACK_SAMP_RATE;
+        range.step = 0;
+    }
+
+    //if default step is less than the minimum allowed by the device just use the latter
+    double step = std::max(STEP_SAMP_RATE, range.step);
+
+    //insert range.min if its not a step factor
+    if (std::fmod(range.min, step))
+        rates.push_back(range.min);
+
+    //round the first rate to step factor to get nicer sample rates
+    for (auto rate = std::ceil(range.min / step) * step; rate < range.max; rate += step)
+        rates.push_back(rate);
+
+    rates.push_back(range.max);
+
+    return rates;
 }
 
 SoapySDR::RangeList SoapyLMS7::getSampleRateRange(const int direction, const size_t channel) const
 {
-    return { SoapySDR::Range(MIN_SAMP_RATE, MAX_SAMP_RATE) };
+    lms_range_t range;
+
+    if (LMS_GetSampleRateRange(lms7Device, direction == SOAPY_SDR_RX, &range))
+    {
+        SoapySDR::log(SOAPY_SDR_ERROR, "LMS_GetSampleRate() failed, using fallback values.");
+
+        return { SoapySDR::Range(MIN_FALLBACK_SAMP_RATE, MAX_FALLBACK_SAMP_RATE) };
+    }
+
+    return { SoapySDR::Range(range.min, range.max) };
 }
 
 /*******************************************************************
