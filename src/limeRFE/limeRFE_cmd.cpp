@@ -143,10 +143,16 @@ int serialport_init(const char* serialport, int baud, RFE_COM* com)
 	}
 	strncat(port, serialport, strlen(serialport));
 
+#ifdef _UNICODE
 	wchar_t wport[20];
 	mbstowcs(wport, port, strlen(port) + 1);//Plus null
 
-	hComm = CreateFile(wport, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	hComm = CreateFileW(wport, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+#else
+	hComm = CreateFileA(port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+#endif
+	
+	free(port);
 
 	if (hComm == INVALID_HANDLE_VALUE) {
 		result = -1;
