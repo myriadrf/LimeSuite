@@ -132,9 +132,9 @@ int serialport_init(const char* serialport, int baud, RFE_COM* com)
 
 	if (strlen(serialport) < 4) return -1;
 
-	//COMxx
+	//COMxx/COMxxx
 	if (strlen(serialport) > 4) {
-		port = (char*)calloc(1, sizeof(char) * strlen("\\\\.\\COM10") + 1);
+		port = (char*)calloc(1, sizeof(char) * strlen("\\\\.\\COM100") + 1);
 		strncat(port, "\\\\.\\", strlen("\\\\.\\"));
 	}
 	//COMx
