@@ -225,6 +225,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
 {
     const uint16_t macBck = SPI_read(0x0020);
     bool canDeliverFrequency;
+    uint8_t valICT = 255;
     Modify_SPI_Reg_bits(MAC, tx?2:1);
     //find required VCO frequency
     {
@@ -254,6 +255,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     }
 
     canDeliverFrequency = false;
+    for(;;)
     {
         uint8_t sel_vco, bestVCO, bestCSW;
         uint8_t bestScore = 255;// best is closest to 0
@@ -275,6 +277,11 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
         }
         Modify_SPI_Reg_bits(SEL_VCO, bestVCO);
         Modify_SPI_Reg_bits(CSW_VCO, bestCSW);
+
+        if(canDeliverFrequency || valICT == 45)
+            break;
+        
+        Modify_SPI_Reg_bits(ICT_VCO, valICT -= 70);
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
