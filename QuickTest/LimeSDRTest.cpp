@@ -73,6 +73,9 @@ LimeSDRTest* LimeSDRTest::Connect()
     {
         std::string str = "->Device: ";
         str += handles[0].serialize();
+        str += ", HW=" + std::string(info->hardwareVersion);
+        str += ", GW=" + std::string(info->gatewareVersion);
+
         UpdateStatus(LMS_TEST_INFO, str.c_str());
         if (str.find("USB 3") == std::string::npos)
         {
@@ -80,6 +83,9 @@ LimeSDRTest* LimeSDRTest::Connect()
             UpdateStatus(LMS_TEST_INFO, str.c_str());
         }
         UpdateStatus(LMS_TEST_LOGFILE, handles[0].serial.c_str());
+        
+        str = "Chip temperature: " + std::to_string(int(dev->GetChipTemperature())) + " C";
+        UpdateStatus(LMS_TEST_INFO, str.c_str());
     }
 
     if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR)))
