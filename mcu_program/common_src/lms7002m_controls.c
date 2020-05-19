@@ -341,7 +341,7 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
 #ifndef __cplusplus
-    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~300us
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0009/12)*RefClk); // ~900us
 #endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);
