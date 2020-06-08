@@ -694,13 +694,12 @@ void Streamer::TransmitPacketsLoop()
                 continue;
             }
         }
-        bytesToSend[bi] = 0;
+
         FPGA_DataPacket* pkt = reinterpret_cast<FPGA_DataPacket*>(&buffers[bi*bufferSize]);
         int i=0;
         do
         {
             bool has_samples = false;
-            int payloadSize = sizeof(FPGA_DataPacket::data);
             StreamChannel::Metadata meta = {0, 0};
             for(int ch=0; ch<maxChannelCount; ++ch)
             {
@@ -721,10 +720,7 @@ void Streamer::TransmitPacketsLoop()
                         lime::warning("popping from TX, samples popped %i/%i", samplesPopped, maxSamplesBatch);
                         continue;
                     }
-                    payloadSize = samplesPopped * sizeof(FPGA_DataPacket::data) / maxSamplesBatch;
-                    int q = packed ? 48 : 16;
-                    payloadSize = (1 + (payloadSize - 1) / q) * q;
-                    memset(&samples[ind][samplesPopped], 0, (maxSamplesBatch - samplesPopped)*sizeof(complex16_t));
+                    memset(&samples[ind][samplesPopped],0,(maxSamplesBatch-samplesPopped)*sizeof(complex16_t));
                 }
                 has_samples = true;
             }
@@ -738,14 +734,13 @@ void Streamer::TransmitPacketsLoop()
             //by default ignore timestamps
             const int ignoreTimestamp = !(meta.flags & RingFIFO::SYNC_TIMESTAMP);
             pkt[i].reserved[0] |= ((int)ignoreTimestamp << 4); //ignore timestamp
-            pkt[i].reserved[1] = payloadSize & 0xFF;
-            pkt[i].reserved[2] = (payloadSize >> 8) & 0xFF;
+
             std::vector<complex16_t*> src(chCount);
             for(uint8_t c=0; c<chCount; ++c)
                 src[c] = (samples[c].data());
             uint8_t* const dataStart = (uint8_t*)pkt[i].data;
             FPGA::Samples2FPGAPacketPayload(src.data(), maxSamplesBatch, chCount==2, packed, dataStart);
-            bytesToSend[bi] += 16+payloadSize;
+
         }while(++i<packetsToBatch && end_burst == false);
 
         if(terminateTx.load(std::memory_order_relaxed) == true) //early termination
@@ -753,6 +748,7 @@ void Streamer::TransmitPacketsLoop()
 
         if (i)
         {
+            bytesToSend[bi] = i*sizeof(FPGA_DataPacket);
             handles[bi] = dataPort->BeginDataSending(&buffers[bi*bufferSize], bytesToSend[bi], epIndex);
             txLastTimestamp.store(pkt[i-1].counter+maxSamplesBatch-1, std::memory_order_relaxed); //timestamp of the last sample that was sent to HW
             bufferUsed[bi] = true;
@@ -769,7 +765,7 @@ void Streamer::TransmitPacketsLoop()
             totalBytesSent = 0;
             t1 = t2;
 #ifndef NDEBUG
-            lime::log(LOG_LEVEL_DEBUG, "Tx: %.3f MB/s\n", dataRate / 1000000.0);
+            printf("Tx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
         }
     }
@@ -897,7 +893,7 @@ void Streamer::ReceivePacketsLoop()
             //total number of bytes sent per second
             double dataRate = 1000.0*totalBytesReceived / timePeriod;
 #ifndef NDEBUG
-            lime::log(LOG_LEVEL_DEBUG, "Rx: %.3f MB/s\n", dataRate / 1000000.0);
+            printf("Rx: %.3f MB/s\n", dataRate / 1000000.0);
 #endif
             totalBytesReceived = 0;
             rxDataRate_Bps.store((uint32_t)dataRate, std::memory_order_relaxed);

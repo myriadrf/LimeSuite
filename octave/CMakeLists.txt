@@ -12,7 +12,7 @@ endif()
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_OCTAVE "Enable LimeSuite library plugin for Octave" ON "ENABLE_LIBRARY;OCTAVE_CONFIG_EXECUTABLE;OCTAVE_MKOCTFILE_EXECUTABLE" OFF)
+cmake_dependent_option(ENABLE_OCTAVE "Enable LimeSuite library plugin for Octave" OFF "ENABLE_LIBRARY;OCTAVE_CONFIG_EXECUTABLE;OCTAVE_MKOCTFILE_EXECUTABLE" OFF)
 add_feature_info(LimeSuiteOctave ENABLE_OCTAVE "LimeSuite Octave integration")
 
 if (NOT ENABLE_OCTAVE)

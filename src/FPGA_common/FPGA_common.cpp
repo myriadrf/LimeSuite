@@ -388,17 +388,17 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         int chigh = clow + C % 2;
         if(i < 8)
         {
-            if(not clocks[i].bypass && C != 1)
-                c7_c0_odds_byps &= ~(1 << (i*2)); //enable output
-            c7_c0_odds_byps |= (C % 2) << (i*2+1); //odd bit
+            if((!clocks[i].bypass) && C != 1)
+                c7_c0_odds_byps &= ~(1 << (clocks[i].index*2)); //enable output
+            c7_c0_odds_byps |= (C % 2) << (clocks[i].index*2+1); //odd bit
         }
         else
         {
-            if(not clocks[i].bypass && C != 1)
-                c15_c8_odds_byps &= ~(1 << ((i-8)*2)); //enable output
-            c15_c8_odds_byps |= (C % 2) << ((i-8)*2+1); //odd bit
+            if((!clocks[i].bypass) && C != 1)
+                c15_c8_odds_byps &= ~(1 << ((clocks[i].index-8)*2)); //enable output
+            c15_c8_odds_byps |= (C % 2) << ((clocks[i].index-8)*2+1); //odd bit
         }
-        addrs.push_back(0x002E + i); values.push_back(chigh << 8 | clow);
+        addrs.push_back(0x002E + clocks[i].index); values.push_back(chigh << 8 | clow);
         clocks[i].rd_actualFrequency = (inputFreq * M / N) / (chigh + clow);
     }
     addrs.push_back(0x0027); values.push_back(c7_c0_odds_byps);

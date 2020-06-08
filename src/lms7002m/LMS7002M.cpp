@@ -574,7 +574,7 @@ int LMS7002M::LoadConfigLegacyFile(const char* filename)
 */
 int LMS7002M::LoadConfig(const char* filename)
 {
-	ifstream f(filename);
+    ifstream f(filename);
     if (f.good() == false) //file not found
     {
         f.close();
