@@ -7,7 +7,7 @@
 extern "C"
 {
 #endif
-
+extern void MCU_ext2_int();
 extern void MCU_RunProcedure(uint8_t id);
 extern uint8_t MCU_WaitForStatus(uint16_t timeout_ms);
 extern uint8_t MCU_UploadProgram(const uint8_t* binImage, const uint16_t len);

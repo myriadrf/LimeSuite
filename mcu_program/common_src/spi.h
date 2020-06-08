@@ -4,6 +4,9 @@
 #include "typedefs.h"
 
 #ifdef __cplusplus
+#include "IConnection.h"
+void MCU_SetSerPort(lime::IConnection* connection);
+
 extern "C"
 {
 #endif

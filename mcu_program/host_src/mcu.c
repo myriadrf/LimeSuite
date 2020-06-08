@@ -6,11 +6,97 @@
     #include <stdio.h>
     #include <thread>
     #include <chrono>
+
+    #include "spi.h"
+    #include "lms7002m_calibrations.h"
+    #include "lms7002m_filters.h"
+    #include "LMS7002M_parameters_compact.h"
+    #include "lms7002m_controls.h"
 using namespace std;
+static uint8_t P1 = 0;
+
+extern float_type RefClk;
+extern float_type bandwidthRF;
+extern uint8_t extLoopbackPair;
+
+#define INPUT_COUNT 3
+static uint8_t sInputRegs[INPUT_COUNT];
+
+enum
+{
+    MCU_WORKING = 0xFF,
+    MCU_IDLE = 0x00,
+};
+
+void UpdateFreq(bool refClk)
+{
+    const float freq = 1e6*(sInputRegs[0] + ((((uint16_t)sInputRegs[1] << 8) | sInputRegs[2]) / 1000.0)); //integer part MHz
+    if(refClk)
+        RefClk = freq;
+    else
+        bandwidthRF = freq;
+    P1 = MCU_IDLE;
+}
+
+void MCU_ext2_int()
+{
+    uint8_t i;
+    P1 = MCU_WORKING;
+    for(i=INPUT_COUNT-1; i>0; --i)
+        sInputRegs[i] = sInputRegs[i-1];
+    sInputRegs[0] = SPI_read(0x00);
+    P1 = MCU_IDLE;
+}
+
 #endif
 
 void MCU_RunProcedure(uint8_t id)
 {
+#ifdef __cplusplus
+    switch(id)
+    {
+    case 0:
+        P1 = MCU_IDLE;
+        break;
+    case 1: //CalibrateTx
+        P1 = MCU_IDLE | CalibrateTx(false);
+        break;
+    case 2: //CalibrateRx
+        P1 = MCU_IDLE | CalibrateRx(false, false);
+        break;
+    case 3:
+        UpdateFreq(0);
+        //UpdateBW();
+        break;
+    case 4: //update ref clk
+        //UpdateReferenceClock();
+        UpdateFreq(1);
+        break;
+    case 5:
+        P1 = TuneRxFilter(bandwidthRF);
+        break;
+    case 6:
+        P1 = TuneTxFilter(bandwidthRF);
+        break;
+
+    case 9:
+        extLoopbackPair = sInputRegs[0];
+        P1 = MCU_IDLE;
+        break;
+
+    case 17: //CalibrateTx
+        P1 = MCU_IDLE | CalibrateTx(true);
+        break;
+    case 18: //CalibrateRx
+        P1 = MCU_IDLE | CalibrateRx(true, false);
+        break;
+    case 255: //return program ID
+        P1 = 0x05;
+        break;
+    default:
+        P1 = 255; //error
+    }
+#else
     const uint16_t x0002reg = SPI_read(0x0002) & 0xFF;
     const uint16_t interupt6 = 0x0008;
     const uint16_t addrs[5] = {0x0006, 0x0, 0x0002, 0x0002, 0x0002};
@@ -22,10 +108,14 @@ void MCU_RunProcedure(uint8_t id)
         (uint16_t)(x0002reg & ~interupt6)};
     SPI_write_batch(addrs, values, 5);
     SPI_read(0x0002);
+#endif
 }
 
 uint8_t MCU_WaitForStatus(uint16_t timeout_ms)
 {
+#ifdef __cplusplus
+    return P1;
+#else
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     unsigned short value = 0;
@@ -39,6 +129,7 @@ uint8_t MCU_WaitForStatus(uint16_t timeout_ms)
     }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
     SPI_write(0x0006, 0); //return SPI control to PC
     return value & 0x7F;
+#endif
 }
 
 uint8_t MCU_SetParameter(MCU_Parameter param, float value)
@@ -56,8 +147,12 @@ uint8_t MCU_SetParameter(MCU_Parameter param, float value)
         for(uint8_t i = 0; i < 3; ++i)
         {
             SPI_write(0, inputRegs[2-i]);
+#ifdef LMS_MCU_EMULATION
+            MCU_ext2_int();
+#else
             SPI_write(0x0002, x0002reg | interupt7);
             SPI_write(0x0002, x0002reg & ~interupt7);
+#endif
             int status = MCU_WaitForStatus(10);
             if(status != 0)
                 printf("MCU error status 0x%02X\n", status);
@@ -71,8 +166,12 @@ uint8_t MCU_SetParameter(MCU_Parameter param, float value)
     {
         uint8_t intVal = (int)value;
         SPI_write(0, intVal);
+#ifdef LMS_MCU_EMULATION
+        MCU_ext2_int();
+#else
         SPI_write(0x0002, x0002reg | interupt7);
         SPI_write(0x0002, x0002reg & ~interupt7);
+#endif
         int status = MCU_WaitForStatus(10);
         if(status != 0)
             printf("MCU error status 0x%02X\n", status);

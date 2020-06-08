@@ -322,6 +322,7 @@ int main(int argc, char** argv)
         serPort = lime::ConnectionRegistry::makeConnection(cachedHandles.at(0));
     if(serPort == nullptr)
         return 0;
+    MCU_SetSerPort(serPort);
     if (serPort != nullptr && !serPort->IsOpen())
     {
         delete serPort;

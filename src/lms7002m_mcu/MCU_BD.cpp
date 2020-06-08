@@ -17,6 +17,11 @@ using namespace std;
 #include "LMS7002M.h"
 #include "Logger.h"
 
+#ifdef LMS_MCU_EMULATION
+#include "../mcu_program/host_src/mcu.h"
+#include "../mcu_program/common_src/spi.h"
+#endif
+
 using namespace lime;
 
 MCU_BD::MCU_BD()
@@ -54,6 +59,9 @@ MCU_BD::~MCU_BD()
 void MCU_BD::Initialize(IConnection* pSerPort, unsigned chipID, unsigned size)
 {
     m_serPort = pSerPort;
+#ifdef LMS_MCU_EMULATION
+    MCU_SetSerPort(m_serPort);
+#endif
     mChipID = chipID;
     if (size > 0)
         byte_array_size = size;
@@ -1001,6 +1009,9 @@ std::string MCU_BD::GetProgramFilename() const
 */
 void MCU_BD::RunProcedure(uint8_t id)
 {
+#ifdef LMS_MCU_EMULATION
+    MCU_RunProcedure(id);
+#else
     mSPI_write(0x0006, 1);
     mSPI_write(0x0000, id);
     uint8_t x0002reg = mSPI_read(0x0002);
@@ -1011,6 +1022,7 @@ void MCU_BD::RunProcedure(uint8_t id)
     //MCU seems to be stuck at this point until any SPI operation is performed
     mSPI_read(0x0002); //random spi action
     std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif
 }
 
 
@@ -1019,6 +1031,9 @@ void MCU_BD::RunProcedure(uint8_t id)
 */
 int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 {
+#ifdef LMS_MCU_EMULATION
+    return MCU_WaitForStatus(timeout_ms);
+#else
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     unsigned short value = 0;
@@ -1034,10 +1049,17 @@ int MCU_BD::WaitForMCU(uint32_t timeout_ms)
     //if((value & 0x7f) != 0)
     lime::debug("MCU algorithm time: %li ms", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
     return value & 0x7F;
+#endif
 }
 
 void MCU_BD::SetParameter(MCU_Parameter param, float value)
 {
+#ifdef LMS_MCU_EMULATION
+    ::MCU_Parameter cparam;
+    assert(sizeof(cparam) == sizeof(param));
+    memcpy(&cparam, &param, sizeof(::MCU_Parameter)); // to shut up -fPermissive
+    MCU_SetParameter(cparam, value);
+#else
     const uint8_t x0002reg = mSPI_read(0x0002);
     const uint8_t interupt7 = 0x04;
     if(param==MCU_REF_CLK || param == MCU_BW)
@@ -1074,6 +1096,7 @@ void MCU_BD::SetParameter(MCU_Parameter param, float value)
     }
     if(WaitForMCU(100) != 0)
         lime::debug("Failed to set MCU parameter");
+#endif
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted

@@ -306,3 +306,9 @@ add_subdirectory(examples)
 # LimeRFE
 #########################################################################
 add_subdirectory(limeRFE)
+
+if(ENABLE_MCU_EMULATION)
+    add_definitions(-DLMS_MCU_EMULATION )
+    include_directories(${PROJECT_SOURCE_DIR}/mcu_program/host_src ${PROJECT_SOURCE_DIR}/mcu_program/common_src)
+    target_link_libraries(LimeSuite MCU_Emulation)
+endif(ENABLE_MCU_EMULATION)

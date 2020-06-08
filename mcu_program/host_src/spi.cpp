@@ -2,7 +2,12 @@
 #include "IConnection.h"
 #include <ciso646>
 
-extern lime::IConnection* serPort;
+static lime::IConnection* serPort;
+
+void MCU_SetSerPort(lime::IConnection* connection)
+{
+    serPort = connection;
+}
 
 bool batchActive = false;
 #include <vector>

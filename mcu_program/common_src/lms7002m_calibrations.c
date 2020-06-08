@@ -14,7 +14,6 @@
 #ifdef __cplusplus
 #include <cstdlib>
 #define VERBOSE 1
-#define DRAW_GNU_PLOTS
 
 #include <thread>
 #include <vector>
@@ -22,7 +21,7 @@
 #include <stdio.h>
 #include <sstream>
 
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
 #define PUSH_GMEASUREMENT_VALUES(value, rssi) gMeasurements.push_back({value, rssi})
 #else
 #define PUSH_GMEASUREMENT_VALUES(value, rssi)
@@ -173,7 +172,7 @@ int CheckSaturationTxRx(bool extLoopback)
     uint8_t g_pga;
     uint8_t g_rfe;
     uint16_t rssi;
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     int index = 0;
     GNUPlotPipe &gp = saturationPlot;
     gp.write("set yrange [:0]\n");
@@ -226,10 +225,10 @@ int CheckSaturationTxRx(bool extLoopback)
         rssi = GetRSSI();
         PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
     }
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
 
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
     {
@@ -248,10 +247,10 @@ int CheckSaturationTxRx(bool extLoopback)
         PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
     }
     }
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     DrawMeasurement(gp, gMeasurements);
     gp.flush();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
 #if VERBOSE
     printf("adjusted PGA: %2i, %s: %2i, %3.2f dbFS\n", Get_SPI_Reg_bits(G_PGA_RBB), (extLoopback ? "LNA":"RXLOOPB"), g_rfe, ChipRSSI_2_dBFS(rssi));
 #endif
@@ -471,11 +470,11 @@ void CalibrateRxDCAuto()
 
 void CalibrateTxDCAuto()
 {
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     GNUPlotPipe &gp = txDCPlot;
     std::vector<MeasurementsVector> data;
     gMeasurements.clear();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
     BinSearchParam iparams;
     BinSearchParam qparams;
     const uint8_t ch = Get_SPI_Reg_bits(MAC);
@@ -525,15 +524,15 @@ void CalibrateTxDCAuto()
         qparams.maxValue = clamp(qparams.result+offset[i], -1024, 1023);
 
         TxDcBinarySearch(&iparams);
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
         data.push_back(gMeasurements);
         gMeasurements.clear();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
         TxDcBinarySearch(&qparams);
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
         data.push_back(gMeasurements);
         gMeasurements.clear();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
 #if VERBOSE
     {
         int16_t dci = ReadAnalogDC(iparams.param.address);
@@ -545,7 +544,7 @@ void CalibrateTxDCAuto()
     }
     }
 
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     gp.writef("set title 'TxDC search'\n");
     gp.write("set xlabel 'offset'\n");
     gp.write("set ylabel 'RSSI dBFS'\n");
@@ -564,7 +563,7 @@ void CalibrateTxDCAuto()
         SortMeasurements(i);
         DrawMeasurement(gp, i);
     }
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
 
     //Modify_SPI_Reg_bits(GCORRI_TXTSP.address, GCORRI_TXTSP.msblsb, 2047);
     //Modify_SPI_Reg_bits(GCORRQ_TXTSP.address, GCORRQ_TXTSP.msblsb, 2047);
@@ -572,10 +571,10 @@ void CalibrateTxDCAuto()
 
 void CalibrateIQImbalance(bool tx)
 {
-#if defined(VERBOSE) || defined(DRAW_GNU_PLOTS)
+#if defined(VERBOSE) || defined(DRAW_MCU_GNU_PLOTS)
     const char *dirName = tx ? "Tx" : "Rx";
 #endif
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     GNUPlotPipe &gp = IQImbalancePlot;
     std::vector<MeasurementsVector> data;
     gMeasurements.clear();
@@ -588,7 +587,7 @@ void CalibrateIQImbalance(bool tx)
 '-' w l t '#1 gain',\
 '-' w l t '#2 phase'\
 \n");
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
     uint16_t gcorriAddress;
     uint16_t gcorrqAddress;
     BinSearchParam argsPhase;
@@ -614,7 +613,7 @@ void CalibrateIQImbalance(bool tx)
 #if VERBOSE
     printf("#0 %s IQCORR: %i, %3.1f dBFS\n", dirName, argsPhase.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     SortMeasurements(gMeasurements);
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
@@ -644,7 +643,7 @@ void CalibrateIQImbalance(bool tx)
     const char* chName = (argsGain.param.address == gcorriAddress ? "I" : "Q");
     printf("#1 %s GAIN_%s: %i, %3.1f dBFS\n", dirName, chName, argsGain.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     SortMeasurements(gMeasurements);
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
@@ -656,7 +655,7 @@ void CalibrateIQImbalance(bool tx)
 #if VERBOSE
     printf("#2 %s IQCORR: %i, %3.1f dBFS\n", dirName, argsPhase.result, ChipRSSI_2_dBFS(GetRSSI()));
 #endif // VERBOSE
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     SortMeasurements(gMeasurements);
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
@@ -1125,7 +1124,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     ROM const uint16_t target_rssi = 0x07000; //0x0B000 = -3 dBFS
     uint16_t rssi;
     uint8_t cg_iamp = (uint8_t)Get_SPI_Reg_bits(CG_IAMP_TBB);
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     int index = 0;
     GNUPlotPipe &gp = saturationPlot;
     gp.write("set yrange [:0]\n");
@@ -1184,10 +1183,10 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
             PUSH_GMEASUREMENT_VALUES(++index, ChipRSSI_2_dBFS(rssi));
         }
     }
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
-#endif // DRAW_GNU_PLOTS
+#endif // DRAW_MCU_GNU_PLOTS
 
     PUSH_GMEASUREMENT_VALUES(index, ChipRSSI_2_dBFS(rssi));
     while(rssi < 0x01000)
@@ -1215,7 +1214,7 @@ uint8_t CheckSaturationRx(const float_type bandwidth_Hz, bool extLoopback)
     else
         printf("Adjusted gains: G_RXLOOPB: %2i, CG_IAMP: %2i | %2.3f dbFS\n", Get_SPI_Reg_bits(G_RXLOOPB_RFE), Get_SPI_Reg_bits(CG_IAMP_TBB), ChipRSSI_2_dBFS(rssi));
 #endif
-#ifdef DRAW_GNU_PLOTS
+#ifdef DRAW_MCU_GNU_PLOTS
     DrawMeasurement(gp, gMeasurements);
     gMeasurements.clear();
     gp.writef("%i %f\n%i %f\ne\n", 0, ChipRSSI_2_dBFS(target_rssi), index, ChipRSSI_2_dBFS(target_rssi));
