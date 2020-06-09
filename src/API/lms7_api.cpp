@@ -9,6 +9,7 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "Streamer.h"
+#include "../limeRFE/RFE_Device.h"
 
 using namespace std;
 
@@ -281,11 +282,6 @@ API_EXPORT int CALL_CONV LMS_GPIODirWrite(lms_device_t *dev, const uint8_t* buff
     return conn ? conn->GPIODirWrite(buffer,len) : -1;
 }
 
-API_EXPORT int CALL_CONV LMS_EnableCalibCache(lms_device_t *dev, bool enable)
-{
-    return LMS_EnableCache(dev, enable);
-}
-
 API_EXPORT int CALL_CONV LMS_EnableCache(lms_device_t *dev, bool enable)
 {
     lime::LMS7_Device* lms = CheckDevice(dev);
@@ -316,7 +312,14 @@ API_EXPORT int CALL_CONV LMS_GetNumChannels(lms_device_t * device, bool dir_tx)
 API_EXPORT int CALL_CONV LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type frequency)
 {
     lime::LMS7_Device* lms = CheckDevice(device, chan);
-    return lms ? lms->SetFrequency(dir_tx, chan,frequency) : -1;
+    int ret = lms ? lms->SetFrequency(dir_tx, chan,frequency) : -1;
+
+#ifdef LIMERFE
+    auto rfe = lms->GetLimeRFE();
+    if (rfe && ret == 0)
+        rfe->SetFrequency(dir_tx, chan, frequency);
+#endif
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
@@ -479,13 +482,18 @@ API_EXPORT int CALL_CONV LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t
     if (!lms)
         return -1;
 
-    if (lms->ReadLMSReg(0x2F) == 0x3840)
-    {
-        lime::error("Calibration not supported");
-        return -1;
-    }
+#ifdef LIMERFE
+    auto rfe = lms->GetLimeRFE();
+    if (rfe)
+        rfe->OnCalibrate(chan, false);
+#endif
+    int ret = lms->Calibrate(dir_tx, chan, bw, flags);
 
-    return lms->Calibrate(dir_tx, chan, bw, flags);
+#ifdef LIMERFE
+    if (rfe)
+        rfe->OnCalibrate(chan, true);
+#endif
+    return ret;
 }
 
 API_EXPORT int CALL_CONV LMS_LoadConfig(lms_device_t *device, const char *filename)
@@ -722,6 +730,7 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     config.bufferLength = stream->fifoSize;
     config.channelID = stream->channel;
     config.performanceLatency = stream->throughputVsLatency;
+    config.align = stream->channel & LMS_ALIGN_CH_PHASE;
     switch(stream->dataFmt)
     {
         case lms_stream_t::LMS_FMT_F32:

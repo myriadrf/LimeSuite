@@ -1,6 +1,6 @@
 #include <octave/oct.h>
 #include <octave/Cell.h>
-
+#include <octave/ov-struct.h>
 #include <vector>
 #include <string>
 
@@ -164,6 +164,19 @@ DEFUN_DLD (LimeLoadConfig, args, nargout,
     {
          return octave_value(-1);
     }
+
+    int chCnt = LMS_GetNumChannels(lmsDev, LMS_CH_RX);
+    chCnt = chCnt > maxChCnt ? maxChCnt : chCnt;
+    for(int ch=0; ch< chCnt; ++ch) //set antenna to update RF switches
+    {
+        int ant = LMS_GetAntenna(lmsDev, LMS_CH_RX, ch);
+        if(ant < 0 || LMS_SetAntenna(lmsDev, LMS_CH_RX, ch, ant) < 0)
+             octave_stdout << "Error setting Rx antenna for ch: " << ch << endl;
+        ant = LMS_GetAntenna(lmsDev, LMS_CH_TX, ch);
+        if(ant < 0 || LMS_SetAntenna(lmsDev, LMS_CH_TX, ch, ant) < 0)
+             octave_stdout << "Error setting Tx antenna for ch: " << ch << endl;
+    }
+
     octave_stdout << "Config loaded successfully: " << endl;
 
     return octave_value(0);
@@ -268,7 +281,6 @@ DEFUN_DLD (LimeStopStreaming, args, nargout,
         octave_stdout << "LimeSuite not initialized" << endl;
         return octave_value(-1);
     }
-    int nargin = args.length();
     octave_stdout << "StopStreaming" << endl;
     StopStream();
     return octave_value_list();
@@ -281,10 +293,10 @@ CH parameter is optional, valid values are 0 and 1")
     if (!rxbuffers)
     {
         octave_stdout << "Rx streaming not initialized" << endl;
-        return octave_value(-1);
+        return octave_value_list();;
     }
 
-    int nargin = args.length ();
+    int nargin = args.length();
     if (nargin != 2 && nargin != 1)
     {
         print_usage ();
@@ -295,11 +307,11 @@ CH parameter is optional, valid values are 0 and 1")
     unsigned chIndex;
     if (nargin == 2)
     {
-        chIndex = args(1).int_value ();
+        chIndex = args(1).int_value();
         if (chIndex >= maxChCnt)
         {
             octave_stdout << "Invalid channel number" << endl;
-            return octave_value(-1);
+            return octave_value_list();;
         }
     }
     else
@@ -348,12 +360,12 @@ CH parameter is optional, valid values are 0 and 1")
         return octave_value(-1);
     }
 
-    int nargin = args.length ();
+    int nargin = args.length();
     int check=0;
     if (nargin != 2 && nargin != 1)
     {
         print_usage ();
-        return octave_value_list ();
+        return octave_value(-1);
     }
 
     int chIndex = 0;
@@ -395,6 +407,100 @@ CH parameter is optional, valid values are 0 and 1")
     samplesWrite = LMS_SendStream(&streamTx[chIndex], (const void*)txbuffers, samplesCount, &meta, timeout_ms);
 
     return octave_value (samplesWrite);
+}
+
+
+DEFUN_DLD (LimeTransceiveSamples, args, ,
+"RXSIGNAL = LimeTransceiveSamples( TXSIGNAL, RXOFFSET, CH) - transmit TXSIGNAL and receive RXSIGNAL (same length as TXSIGNAL).\n\
+ RXOFFSET [optional] - number of samples to skip at the beginning of receive (default 0)\n\
+ CH [optional] - channel to use for transmit and receive, valid values are 0 and 1 (default 0)")
+{
+    if (!rxbuffers)
+    {
+        octave_stdout << "Rx streaming not initialized" << endl;
+        return octave_value_list();
+    }
+    if (!txbuffers)
+    {
+        octave_stdout << "Tx streaming not initialized" << endl;
+        return octave_value_list();
+    }
+
+    int nargin = args.length ();
+    if (nargin == 0 || nargin > 3)
+    {
+        print_usage ();
+        return octave_value_list();
+    }
+
+    unsigned chIndex = 0;
+    if (nargin == 3)
+    {
+        chIndex = args(2).int_value ();
+        if ((chIndex >= maxChCnt) || (streamRx[chIndex].handle == 0) || (streamTx[chIndex].handle == 0))
+        {
+            octave_stdout << "Invalid channel" << endl;
+            return octave_value_list();
+        }
+    }
+
+    //transmit part
+    const int timeout_ms = 1000;
+    lms_stream_meta_t meta = {0, false, false};
+    ComplexRowVector    iqdataTx=args(0).complex_row_vector_value();
+    dim_vector          iqdataSize=iqdataTx.dims();
+    const int samplesCount = iqdataSize(0) > iqdataSize(1) ? iqdataSize(0) : iqdataSize(1);
+
+    for(int i=0; i < samplesCount; ++i)
+    {
+        octave_value    iqdatum = scaleFactor*iqdataTx(i);
+        Complex iqdatum2 = iqdatum.complex_value();
+        short i_sample = iqdatum2.real(); //
+        short q_sample = iqdatum2.imag(); //
+        txbuffers[i].i = i_sample;
+        txbuffers[i].q = q_sample;
+    }
+    const int samplesWrite = LMS_SendStream(&streamTx[chIndex], (const void*)txbuffers, samplesCount, &meta, timeout_ms);
+    if (samplesWrite != samplesCount)
+        octave_stdout << "Error transmitting samples: send " << samplesWrite +"/" +samplesCount << endl;
+
+    //Receive part
+    int offset = nargin > 1 ? args(1).int_value() : 0;
+    if (offset < 0)
+    {
+        octave_stdout << "Invalid RXOFFSET value" << endl;
+        offset = 0;
+    }
+    Complex val=Complex(0.0,0.0);
+    ComplexRowVector iqdataRx( samplesCount, val ); // index 0 to N-1
+
+    int samplesCollected = 0;
+    int retries = 5;
+    while(samplesCollected < samplesCount && retries--)
+    {
+        int samplesToRead = 0;
+        if(samplesCount-samplesCollected > streamRx[chIndex].fifoSize/2)
+            samplesToRead = streamRx[chIndex].fifoSize/2;
+        else
+            samplesToRead = samplesCount-samplesCollected;
+        int samplesRead = LMS_RecvStream(&streamRx[chIndex], (void*)rxbuffers, samplesToRead, &meta, timeout_ms);
+        if (samplesRead < 0)
+        {
+            octave_stdout << "Error reading samples" << endl;
+            return octave_value(-1);
+        }
+
+        if (offset >= samplesRead)
+        {
+            offset -= samplesRead;
+            continue;
+        }
+
+        for(int i=offset; i<samplesRead; ++i)
+            iqdataRx(samplesCollected++)=Complex(rxbuffers[i].i/scaleFactor,rxbuffers[i].q/scaleFactor);
+        offset = 0;
+    }
+    return octave_value(iqdataRx);
 }
 
 DEFUN_DLD (LimeLoopWFMStart, args, ,
@@ -457,6 +563,41 @@ DEFUN_DLD (LimeLoopWFMStop, args, ,
         LMS_EnableTxWFM(lmsDev, 0, false);
     WFMrunning = false;
     return octave_value ();
+}
+
+DEFUN_DLD (LimeGetStreamStatus, args, nargout,
+"LimeGetStreamStatus() - Get Stream Status")
+{
+    if(lmsDev == NULL)
+    {
+        octave_stdout << "LimeSuite not initialized" << endl;
+        return octave_value(-1);
+    }
+
+    octave_scalar_map st;
+    lms_stream_status_t status;
+    for (int i = 0; i < maxChCnt; i++)
+    {
+        if ((streamRx[i].handle) && (LMS_GetStreamStatus(&streamRx[i], &status) == 0))
+        {
+            st.assign("fifo_size", status.fifoSize);
+            st.assign("rx_data_rate", status.linkRate);
+            std::string ch = std::string("rx") + char('0'+i);
+            st.assign(ch+"_fifo_filled", status.fifoFilledCount);
+            st.assign(ch+"_fifo_overruns", status.overrun);
+            st.assign(ch+"_lost_packets", status.droppedPackets);
+        }
+        if ((streamTx[i].handle)&& (LMS_GetStreamStatus(&streamTx[i], &status) == 0))
+        {
+            st.assign("fifo_size", status.fifoSize);
+            st.assign("tx_data_rate", status.linkRate);
+            std::string ch = std::string("tx") + char('0'+i);
+            st.assign(ch+"_fifo_filled", status.fifoFilledCount);
+            st.assign(ch+"_fifo_underrun", status.underrun);
+        }
+    }
+
+    return octave_value (st);
 }
 
 void FreeResources()

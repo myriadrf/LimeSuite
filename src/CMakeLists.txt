@@ -26,6 +26,7 @@ set(LIME_SUITE_PUBLIC_HEADERS
     Si5351C/Si5351C.h
     FPGA_common/FPGA_common.h
     API/lms7_device.h
+    limeRFE/limeRFE.h
 )
 
 include(FeatureSummary)
@@ -54,7 +55,6 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
     lms7002m/LMS7002M_BaseCalibrations.cpp
-    lms7002m/goert.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
     lms7002m/LMS7002M_gainCalibrations.cpp
@@ -89,12 +89,11 @@ set(LIME_SUITE_INCLUDES
     ADF4002
     Si5351C
     lms7002m
-    LTEpackets
     FPGA_common
     lms7002m_mcu
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
-    HPM7
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
+    limeRFE
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
@@ -145,7 +144,6 @@ endif()
 include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-#include(ConnectionNovenaRF7/CMakeLists.txt)	#No longer supported
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionRemote/CMakeLists.txt)
@@ -195,7 +193,6 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/CoefficientFileParser.cpp
     lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
     lms7002_wxgui/lms7002_mainPanel.cpp
-    lms7002_wxgui/pnlBoardControls.cpp
     lms7002_wxgui/dlgViewSFR.cpp
     lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp
     lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp
@@ -212,19 +209,17 @@ set(LMS7SUITE_GUI_SOURCES
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    boards_wxgui/lms7002m_novena_wxgui.cpp
-    RFSpark/RFSpark_wxgui.cpp
+    boards_wxgui/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
     lms7suiteApp.cpp
     FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp
-    HPM7/HPM7_wxgui.cpp
     dlgAbout.cpp
     numericSlider/numericSlider.cpp
-    myriad7/myriad7_wxgui.cpp
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
+    boards_wxgui/pnlBoardControls.cpp
     boards_wxgui/pnlQSpark.cpp
     boards_wxgui/pnluLimeSDR.cpp
     boards_wxgui/pnlUltimateEVB.cpp
@@ -249,10 +244,11 @@ if (ENABLE_GUI)
     include_directories(RFSpark)
     include_directories(FPGAcontrols_wxgui)
     include_directories(numericSlider)
-    include_directories(myriad7)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
+    include_directories(limeRFE)
+    
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
 
@@ -261,6 +257,8 @@ if (ENABLE_GUI)
     add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
     set_target_properties(LimeSuiteGUI PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
+    target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
+        
     target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
@@ -303,3 +301,8 @@ add_subdirectory(utilities)
 # examples
 #########################################################################
 add_subdirectory(examples)
+
+#########################################################################
+# LimeRFE
+#########################################################################
+add_subdirectory(limeRFE)

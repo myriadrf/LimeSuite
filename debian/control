@@ -16,7 +16,7 @@ Homepage: https://myriadrf.org/projects/lime-suite/
 Vcs-Git: https://github.com/myriadrf/LimeSuite.git
 Vcs-Browser: https://github.com/myriadrf/LimeSuite.git
 
-Package: liblimesuite19.04-1
+Package: liblimesuite20.01-1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -30,7 +30,7 @@ Package: liblimesuite-dev
 Section: libdevel
 Architecture: any
 Depends:
-    liblimesuite19.04-1 (= ${binary:Version}),
+    liblimesuite20.01-1 (= ${binary:Version}),
     ${misc:Depends}
 Description: Lime Suite - development files
  Lime Suite application software.
@@ -39,7 +39,7 @@ Package: limesuite
 Section: comm
 Architecture: any
 Depends:
-    liblimesuite19.04-1 (= ${binary:Version}),
+    liblimesuite20.01-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends},
     xdg-utils
@@ -59,7 +59,7 @@ Section: comm
 Architecture: any
 Multi-Arch: same
 Depends:
-    liblimesuite19.04-1 (= ${binary:Version}),
+    liblimesuite20.01-1 (= ${binary:Version}),
     ${shlibs:Depends},
     ${misc:Depends}
 Description: Lime Suite - SoapySDR bindings
@@ -73,7 +73,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, udev
 Description: Lime Suite - USB rules for udev
  Lime Suite application software.
 
-Package: limesuite-images19.04
+Package: limesuite-images20.01
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -87,7 +87,7 @@ Package: limesuite-images
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}, limesuite-images19.04
+Depends: ${shlibs:Depends}, ${misc:Depends}, limesuite-images20.01
 Description: Lime Suite - Install firmware and gateware images
  Lime Suite application software.
  .

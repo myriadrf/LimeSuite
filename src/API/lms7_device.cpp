@@ -70,7 +70,7 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
     return device;
 }
 
-LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0),fpga(nullptr)
+LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0),fpga(nullptr), limeRFE(nullptr)
 {
     if (obj != nullptr)
     {
@@ -126,6 +126,11 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
     int L;
     int div = 1;
 
+    if (tx)
+        tx_channels[ch].gfir_bw = enabled ? bandwidth : -1;
+    else
+        rx_channels[ch].gfir_bw = enabled ? bandwidth : -1;
+
     bandwidth /= 1e6;
     lime::LMS7002M* lms = SelectChannel(ch);
 
@@ -159,7 +164,6 @@ int LMS7_Device::ConfigureGFIR(bool tx, unsigned ch, bool enabled, double bandwi
         L = div > 8 ? 8 : div;
         div -= 1;
 
-        w *=0.95;
         w2 = w*1.1;
         if (w2 > 0.495)
         {
@@ -341,6 +345,12 @@ int LMS7_Device::SetRate(double f_Hz, int oversample)
 
         if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
+        auto gfir_bw = tx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(true, i, true, gfir_bw);
+        gfir_bw = rx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(false, i, true, gfir_bw);
     }
 
     return 0;
@@ -600,9 +610,13 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 
         if (tx_channels[i].cF_offset_nco != 0)
            SetNCOFreq(true, i, 0, -tx_channels[i].cF_offset_nco);
+        auto gfir_bw = tx ? tx_channels[i].gfir_bw : rx_channels[i].gfir_bw;
+        if (gfir_bw > 0)
+            ConfigureGFIR(tx, i, true, gfir_bw);
     }
 
-   return 0;
+
+    return 0;
 }
 
 int LMS7_Device::SetRate(unsigned ch, double rxRate, double txRate, unsigned oversample)
@@ -636,9 +650,13 @@ int LMS7_Device::SetFPGAInterfaceFreq(int interp, int dec, double txPhase, doubl
     }
 
     if (std::fabs(rxPhase) > 360 || std::fabs(txPhase) > 360)
-        return fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, lms_chip_id);
-    else
-        return fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase, rxPhase, lms_chip_id);
+    {
+        if (fpga->SetInterfaceFreq(fpgaTxPLL, fpgaRxPLL, lms_chip_id) != 0)
+            return -1;
+    }
+    else if (fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, txPhase, rxPhase, lms_chip_id) != 0)
+        return -1;
+    return lms->ResetLogicregisters();
 }
 
 double LMS7_Device::GetRate(bool tx, unsigned chan, double *rf_rate_Hz) const
@@ -779,6 +797,11 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     int div = 1;
     int ret = 0;
 
+    if (tx)
+        tx_channels[chan].gfir_bw = -1.0;
+    else
+        rx_channels[chan].gfir_bw = -1.0;
+
     if (count > 120)
     {
         lime::ReportError(ERANGE, "Max number of coefficients for GFIR3 is 120 and for GFIR1(2) - 40");
@@ -791,23 +814,18 @@ int LMS7_Device::SetGFIRCoef(bool tx, unsigned chan, lms_gfir_t filt, const doub
     }
     lime::LMS7002M* lms = SelectChannel(chan);
 
-    double interface_Hz;
     int ratio;
 
     if (tx)
     {
         ratio = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
     }
     else
     {
         ratio = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        interface_Hz = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
     }
 
-    if (ratio == 7)
-        interface_Hz /= 2;
-    else
+    if (ratio != 7)
         div = (2<<(ratio));
 
     if ((div > 8) || (count == 120) || (count == 40 && filt != LMS_GFIR3))
@@ -1340,7 +1358,7 @@ int LMS7_Device::Init()
         {0x010E, 0x0000}, {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000},
         {0x0112, 0x000C}, {0x0113, 0x03C2}, {0x0114, 0x01F0}, {0x0115, 0x000D},
         {0x0118, 0x418C}, {0x0119, 0x5292}, {0x011A, 0x3001}, {0x011C, 0x8941},
-        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xE680}, {0x0121, 0x3638},
+        {0x011D, 0x0000}, {0x011E, 0x0984}, {0x0120, 0xE6C0}, {0x0121, 0x3638},
         {0x0122, 0x0514}, {0x0123, 0x200F}, {0x0200, 0x00E1}, {0x0208, 0x017B},
         {0x020B, 0x4000}, {0x020C, 0x8000}, {0x0400, 0x8081}, {0x0404, 0x0006},
         {0x040B, 0x1020}, {0x040C, 0x00FB}
@@ -1499,10 +1517,20 @@ int LMS7_Device::SetClockFreq(unsigned clk_id, double freq, int channel)
     case LMS_CLOCK_SXR:
         if (freq <= 0)
             return lms->TuneVCO(lime::LMS7002M::VCO_SXR);
+        if (channel != -1)
+        {
+            rx_channels[channel].cF_offset_nco = 0.0;
+            rx_channels[channel].freq = freq;
+        }
         return lms->SetFrequencySX(false, freq);
     case LMS_CLOCK_SXT:
         if (freq <= 0)
             return lms->TuneVCO(lime::LMS7002M::VCO_SXT);
+        if (channel != -1)
+        {
+            tx_channels[channel].cF_offset_nco = 0.0;
+            tx_channels[channel].freq = freq;
+        }
         return lms->SetFrequencySX(true, freq);
     case LMS_CLOCK_CGEN:
     {
@@ -1576,35 +1604,29 @@ lms_dev_info_t* LMS7_Device::GetInfo()
     return &devInfo;
 }
 
-int LMS7_Device::Synchronize(bool toChip) const
+int LMS7_Device::Synchronize(bool toChip)
 {
+    int ret=0;
     for (unsigned i = 0; i < lms_list.size(); i++)
     {
         lime::LMS7002M* lms = lms_list[i];
-        int ret=0;
         if (toChip)
         {
             if (lms->UploadAll()==0)
             {
+                int tmp = lms_chip_id;
+                lms_chip_id = i;
                 lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-                int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-                int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-                double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-                if (interp != 7)
-                    fpgaTxPLL /= pow(2.0, interp);
-                double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-                if (decim != 7)
-                    fpgaRxPLL /= pow(2.0, decim);
-                lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-                ret = fpga ? fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, i) : 0;
+                ret = SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
+                lms_chip_id = tmp;
             }
         }
         else
             ret = lms->DownloadAll();
         if (ret != 0)
-            return ret;
+            break;
     }
-    return 0;
+    return ret;
 }
 
 int LMS7_Device::SetLogCallback(void(*func)(const char* cstr, const unsigned int type))
@@ -1633,17 +1655,20 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
     lime::LMS7002M* lms = lms_list.at(ind == -1 ? lms_chip_id : ind);
     if (lms->LoadConfig(filename)==0)
     {
-        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
-        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
-        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
-        double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
-        if (interp != 7)
-            fpgaTxPLL /= pow(2.0, interp);
-        double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
-        if (decim != 7)
-            fpgaRxPLL /= pow(2.0, decim);
-        lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
-        return fpga ?fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, lms_chip_id) : 0;
+        //tune PLLs as saved VCO settings may not work
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+        if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            lms->SetFrequencySX(false, lms->GetFrequencySX(false));
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
+        if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO)))
+            lms->SetFrequencySX(true, lms->GetFrequencySX(true));
+        if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO_CGEN)))
+        {
+            lms->TuneVCO(lime::LMS7002M::VCO_CGEN);
+            lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+            return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
+        }
+        return 0;
     }
     return -1;
 }
@@ -1764,6 +1789,8 @@ lime::StreamChannel* LMS7_Device::SetupStream(const lime::StreamConfig &config)
 {
     if (config.channelID >= GetNumChannels())
         return nullptr;
+    if (!connection)
+        return nullptr;
     return mStreamers[config.channelID/2]->SetupStream(config);
 }
 
@@ -1813,6 +1840,15 @@ int LMS7_Device::MCU_AGCStop()
     mcu->RunProcedure(0);
     lms_list.at(lms_chip_id)->Modify_SPI_Reg_bits(0x0006, 0, 0, 0);
     return 0;
+}
+
+RFE_Device* LMS7_Device::GetLimeRFE() const
+{
+    return limeRFE;
+}
+void LMS7_Device::SetLimeRFE(RFE_Device* dev)
+{
+    limeRFE = dev;
 }
 
 }//namespace lime

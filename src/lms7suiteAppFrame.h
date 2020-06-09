@@ -17,13 +17,12 @@ class fftviewer_frFFTviewer;
 class ADF4002_wxgui;
 class Si5351C_wxgui;
 class LMS_Programing_wxgui;
-class HPM7_wxgui;
 class FPGAcontrols_wxgui;
-class Myriad7_wxgui;
 class dlgDeviceInfo;
 class SPI_wxgui;
 class pnlBoardControls;
 class pnlAPI;
+class limeRFE_wxgui;
 
 /** Implementing AppFrame */
 class LMS7SuiteAppFrame : public AppFrame_view
@@ -45,12 +44,8 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnShowSi5351C(wxCommandEvent& event);
         void OnProgramingClose(wxCloseEvent& event);
         void OnShowPrograming(wxCommandEvent& event);
-        void OnHPM7Close(wxCloseEvent& event);
-        void OnShowHPM7(wxCommandEvent& event);
         void OnFPGAcontrolsClose(wxCloseEvent& event);
         void OnShowFPGAcontrols(wxCommandEvent& event);
-        void OnMyriad7Close(wxCloseEvent& event);
-        void OnShowMyriad7(wxCommandEvent& event);
         void OnDeviceInfoClose(wxCloseEvent& event);
         void OnShowDeviceInfo(wxCommandEvent& event);
         void OnSPIClose(wxCloseEvent& event);
@@ -61,6 +56,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         void OnChangeCacheSettings(wxCommandEvent& event);
         void OnLmsChanged(wxCommandEvent& event);
         void OnShowAPICalls( wxCommandEvent& event );
+		void OnShowLimeRFE(wxCommandEvent& event);
     public:
 		/** Constructor */
         LMS7SuiteAppFrame( wxWindow* parent );
@@ -68,6 +64,7 @@ class LMS7SuiteAppFrame : public AppFrame_view
         virtual ~LMS7SuiteAppFrame();
         void UpdateVisiblePanel() const;
         static int m_lmsSelection;
+		void OnLimeRFEClose(wxCloseEvent& event);
 protected:
         static void OnGlobalLogEvent(const lime::LogLevel level, const char *message);
         static void OnLogEvent(const char* text, unsigned int type);
@@ -87,14 +84,12 @@ protected:
         Si5351C_wxgui* si5351gui;
 
         LMS_Programing_wxgui* programmer;
-        HPM7_wxgui* hpm7;
         FPGAcontrols_wxgui* fpgaControls;
-        Myriad7_wxgui* myriad7;
         dlgDeviceInfo* deviceInfo;
         SPI_wxgui* spi;
         pnlBoardControls* boardControlsGui;
         pnlAPI* api;
-
+		limeRFE_wxgui* limeRFEwin;
 };
 
 

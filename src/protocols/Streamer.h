@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   Streamer.h
  * Author: ignas
  *
@@ -20,7 +20,7 @@
 
 namespace lime
 {
-   
+
 class IConnection;
 class FPGA;
 class Streamer;
@@ -37,7 +37,7 @@ struct LIME_API StreamConfig
     bool isTx;
 
     uint8_t channelID;
-
+    bool align;
     float performanceLatency;
 
     //! Possible stream data formats
@@ -68,22 +68,15 @@ struct LIME_API StreamConfig
     StreamDataFormat linkFormat;
 };
 
-class LIME_API StreamChannel 
+class LIME_API StreamChannel
 {
 public:
-    struct Frame
-    {
-        uint64_t timestamp;
-        static const uint16_t samplesCount = samples12InPkt;
-        complex16_t samples[samplesCount];
-    };
-    
     struct Metadata
     {
         uint64_t timestamp;
         uint32_t flags;
     };
-    
+
     struct Info
     {
         int fifoSize;
@@ -95,11 +88,10 @@ public:
         int droppedPackets;
         uint64_t timestamp;
     };
-    
+
     StreamChannel(Streamer* streamer);
     ~StreamChannel();
-    
-    
+
     void Setup(StreamConfig conf);
     void Close();
     int Read(void* samples, const uint32_t count, Metadata* meta, const int32_t timeout_ms = 100);
@@ -112,16 +104,14 @@ public:
     int Stop();
     StreamConfig config;
     Streamer* mStreamer;
-    unsigned overflow;
-    unsigned underflow;
     unsigned pktLost;
     bool mActive;
     bool used;
-       
+    RingFIFO* fifo;
 protected:
-    RingFIFO* fifo;  
+
 };
-    
+
 class Streamer
 {
 public:
@@ -155,6 +145,7 @@ public:
     void ReceivePacketsLoop();
     void TransmitPacketsLoop();
 private:
+    void ResizeChannelBuffers();
     void AlignRxTSP();
     void AlignRxRF(bool restoreValues);
     void AlignQuadrature(bool restoreValues);

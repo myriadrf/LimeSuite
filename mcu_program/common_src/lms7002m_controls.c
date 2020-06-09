@@ -225,6 +225,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
 {
     const uint16_t macBck = SPI_read(0x0020);
     bool canDeliverFrequency;
+    uint8_t valICT = 255;
     Modify_SPI_Reg_bits(MAC, tx?2:1);
     //find required VCO frequency
     {
@@ -254,6 +255,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
     }
 
     canDeliverFrequency = false;
+    for(;;)
     {
         uint8_t sel_vco, bestVCO, bestCSW;
         uint8_t bestScore = 255;// best is closest to 0
@@ -275,6 +277,11 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
         }
         Modify_SPI_Reg_bits(SEL_VCO, bestVCO);
         Modify_SPI_Reg_bits(CSW_VCO, bestCSW);
+
+        if(canDeliverFrequency || valICT == 45)
+            break;
+        
+        Modify_SPI_Reg_bits(ICT_VCO, valICT -= 70);
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
@@ -334,7 +341,7 @@ uint8_t TuneVCO(bool SX) // 0-cgen, 1-SXR, 2-SXT
         Modify_SPI_Reg_bits(0x0086, MSB_LSB(2, 1), 0); //activate VCO and comparator
     }
 #ifndef __cplusplus
-    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0003/12)*RefClk); // ~300us
+    gComparatorDelayCounter = 0xFFFF - (uint16_t)((0.0009/12)*RefClk); // ~900us
 #endif
     //check if lock is within VCO range
     Modify_SPI_Reg_bits(addrCSW_VCO, msblsb, 0);

@@ -7,18 +7,17 @@
 
 #ifndef LIMESDR_PCIE_H
 #define	LIMESDR_PCIE_H
-#include "LmsGeneric.h"
+#include "LimeSDR.h"
 
 namespace lime
 {
 
-class LMS7_LimeSDR_PCIE : public LMS7_Generic
+class LMS7_LimeSDR_PCIE : public LMS7_LimeSDR
 {
 public:
     LMS7_LimeSDR_PCIE(lime::IConnection* conn, LMS7_Device *obj = nullptr);
     std::vector<std::string> GetProgramModes() const override;
-    int SetRate(double f_Hz, int oversample) override;
-    int EnableChannel(bool dir_tx, unsigned chan, bool enabled) override;
+    int Program(const std::string& mode, const char* data, size_t len, lime::IConnection::ProgrammingCallback callback) const override;
 private:
 };
 

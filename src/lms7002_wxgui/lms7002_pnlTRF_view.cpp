@@ -127,11 +127,6 @@ void lms7002_pnlTRF_view::OnBandChange( wxCommandEvent& event )
         LMS_WriteParam(lmsControl,LMS7param(SEL_BAND1_TRF),false);
         LMS_WriteParam(lmsControl,LMS7param(SEL_BAND2_TRF),false);
     }
-    wxCommandEvent evt;
-    evt.SetEventType(LMS7_TXBAND_CHANGED);
-    evt.SetEventObject(this);
-    evt.SetInt(event.GetInt());
-    wxPostEvent(this, evt);
 }
 
 void lms7002_pnlTRF_view::UpdateGUI()

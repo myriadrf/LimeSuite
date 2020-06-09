@@ -193,7 +193,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         bandwidth_Hz = TrxCalib_RF_LimitLow;
     }
     else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
-    {    
+    {
         lime::warning("Calibrating Tx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
         bandwidth_Hz = TrxCalib_RF_LimitHigh;
     }
@@ -242,7 +242,7 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
     mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
 
     {
-        BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
+       //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
             status = SetExtLoopback(controlPort, ch, true, true);
@@ -293,7 +293,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         bandwidth_Hz = TrxCalib_RF_LimitLow;
     }
     else if (bandwidth_Hz > TrxCalib_RF_LimitHigh)
-    {    
+    {
         lime::warning("Calibrating Rx for %g MHz (requested %g MHz [out of range])", TrxCalib_RF_LimitHigh/1e6, bandwidth_Hz/1e6);
         bandwidth_Hz = TrxCalib_RF_LimitHigh;
     }
@@ -351,7 +351,7 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     mcuControl->SetParameter(MCU_BD::MCU_BW, bandwidth_Hz);
 
     {
-        BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
+        //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
             status = SetExtLoopback(controlPort, ch, true, false);

@@ -14,6 +14,8 @@
 #include "Streamer.h"
 #include "IConnection.h"
 
+class RFE_Device;
+
 namespace lime
 {
 class LIME_API LMS7_Device
@@ -67,7 +69,7 @@ public:
     double GetClockFreq(unsigned clk_id, int channel = -1) const;
     virtual int SetClockFreq(unsigned clk_id, double freq, int channel = -1);
     lms_dev_info_t* GetInfo();
-    int Synchronize(bool toChip) const;
+    int Synchronize(bool toChip);
     int SetLogCallback(void(*func)(const char* cstr, const unsigned int type));
     int EnableCache(bool enable);
     double GetChipTemperature(int ind = -1) const;
@@ -96,13 +98,17 @@ public:
     int MCU_AGCStart(uint32_t wantedRSSI);
     int MCU_AGCStop();
 
+    RFE_Device* GetLimeRFE() const;
+    void SetLimeRFE(RFE_Device* dev);
+
 protected:
 
     struct ChannelInfo
     {
     public:
-        ChannelInfo():lpf_bw(5e6),cF_offset_nco(0),sample_rate(30e6),freq(-1.0){}
+        ChannelInfo(): lpf_bw(0), gfir_bw(-1.0), cF_offset_nco(0), sample_rate(30e6), freq(-1.0){}
         double lpf_bw;
+        double gfir_bw;
         double cF_offset_nco;
         double sample_rate;
         double freq;
@@ -116,6 +122,7 @@ protected:
     unsigned lms_chip_id;
     std::vector<lime::Streamer*> mStreamers;
     lime::FPGA* fpga;
+    RFE_Device* limeRFE;
 };
 
 }

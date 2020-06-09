@@ -11,6 +11,7 @@
 #include <fstream>
 #include "lms7suiteEvents.h"
 #include "lms7_device.h"
+#include "Logger.h"
 
 using namespace std;
 using namespace lime;
@@ -276,10 +277,11 @@ void fftviewer_frFFTviewer::OnUpdatePlots(wxThreadEvent& event)
             float fn = (cFreq[c] + bw[c]/2) * 1e6;
             float sum = 0;
             int bins = 0;
+            const int lmsch = mFFTpanel->series[0]->visible ? 0 : 1;
             for (int i = 0; i<fftSize; ++i)
                 if (f0 <= fftFreqAxis[i] && fftFreqAxis[i] <= fn)
                 {
-                    sum += streamData.fftBins[0][i];
+                    sum += streamData.fftBins[lmsch][i];
                     ++bins;
                 }
             chPwr[c] = sum;
@@ -369,6 +371,9 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         localDataResults.samplesI[i].resize(fftSize, 0);
         localDataResults.samplesQ[i].resize(fftSize, 0);
         localDataResults.fftBins[i].resize(fftSize, 0);
+        pthis->streamData.samplesI[i].resize(fftSize);
+        pthis->streamData.samplesQ[i].resize(fftSize);
+        pthis->streamData.fftBins[i].resize(fftSize);
     }
     buffers = new lime::complex16_t*[channelsCount];
     for (int i = 0; i < channelsCount; ++i)
@@ -418,9 +423,14 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
         if(runTx)
             LMS_StartStream(&pthis->txStreams[i]);
     }
-    wxCommandEvent evt;
-    evt.SetEventType(SAMPLE_POS_CHANGED);
-    wxPostEvent(pthis->GetParent(), evt);
+
+    uint16_t regVal = 0;
+    if (LMS_ReadFPGAReg(pthis->lmsControl, 0x0008, &regVal) == 0)
+    {
+        wxCommandEvent* e = new wxCommandEvent(wxEVT_COMMAND_CHOICE_SELECTED);
+        e->SetInt((regVal&2) ? 0 : 1);
+        wxQueueEvent(pthis->cmbFmt, e);
+    }
 
     pthis->mStreamRunning.store(true);
     lms_stream_meta_t meta;
@@ -632,7 +642,10 @@ void fftviewer_frFFTviewer::OnStreamChange(wxCommandEvent& event)
 
 void fftviewer_frFFTviewer::OnFmtChange(wxCommandEvent& event)
 {
-    int max = event.GetInt() == 1 ? 32800 : 2050;
+    int val = event.GetInt();
+    int max = val == 1 ? 32800 : 2050;
+    if (val != cmbFmt->GetSelection())
+        cmbFmt->SetSelection(val);
     mTimeDomainPanel->SetInitialDisplayArea(0, 1024, -max, max);
     mConstelationPanel->SetInitialDisplayArea(-max, max, -max, max);
 }

@@ -207,6 +207,13 @@ void pnlAPI::OnRun( wxCommandEvent& event )
         LMS_SetSampleRate(lmsControl, freq*1e6, 32>>setRateOv->GetSelection());
         lmsAppFrame->UpdateVisiblePanel();
     }
+    else if (obj == runButtons[btnSetRateDir])
+    {
+        double freq = 0;
+        setRateDirRate->GetValue().ToDouble(&freq);
+        LMS_SetSampleRateDir(lmsControl, setRateDirDir->GetSelection(), freq*1e6, 32>>setRateDirOv->GetSelection());
+        lmsAppFrame->UpdateVisiblePanel();
+    }
     else if (obj == runButtons[btnSetAnt])
     {
         double freq = 0;

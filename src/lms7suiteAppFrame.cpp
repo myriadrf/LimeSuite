@@ -19,11 +19,7 @@
 #include "Si5351C_wxgui.h"
 #include "LMS_Programing_wxgui.h"
 #include "pnlMiniLog.h"
-#include "RFSpark_wxgui.h"
-#include "HPM7_wxgui.h"
 #include "FPGAcontrols_wxgui.h"
-#include "myriad7_wxgui.h"
-#include "lms7002m_novena_wxgui.h"
 #include "SPI_wxgui.h"
 #include <wx/string.h>
 #include "dlgDeviceInfo.h"
@@ -34,9 +30,9 @@
 #include "pnlBoardControls.h"
 #include "LMSBoards.h"
 #include <sstream>
-#include "pnlQSpark.h"
 #include "pnlAPI.h"
 #include "lms7_device.h"
+#include "limeRFE_wxgui.h"
 
 using namespace std;
 using namespace lime;
@@ -56,48 +52,6 @@ void LMS7SuiteAppFrame::HandleLMSevent(wxCommandEvent& event)
         if (fftviewer)
             fftviewer->SetNyquistFrequency();
     }
-    else if (event.GetEventType() == SAMPLE_POS_CHANGED)
-        this->mContent->mTabLimeLight->UpdateGUI();
-/*
-    //in case of Novena board, need to update GPIO
-    if (lms7controlPort && lms7controlPort->GetDeviceInfo().deviceName != GetDeviceName(LMS_DEV_NOVENA) &&
-        (event.GetEventType() == LMS7_TXBAND_CHANGED || event.GetEventType() == LMS7_RXPATH_CHANGED))
-    {
-        //update external band-selection to match
-        lmsControl->UpdateExternalBandSelect();
-        if (novenaGui)
-            novenaGui->UpdatePanel();
-    }
-
-    if (event.GetEventType() == LMS7_TXBAND_CHANGED)
-    {
-        const wxObject* eventSource = event.GetEventObject();
-        const int bandIndex = event.GetInt();
-        //update HPM7 if changes were made outside of it
-        if (lms7controlPort && lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
-            hpm7->SelectBand(bandIndex);
-        if (lms7controlPort && eventSource == hpm7)
-        {
-            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF), bandIndex == 0);
-            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF), bandIndex == 1);
-            mContent->mTabTRF->UpdateGUI();
-        }
-    }
-
-    if (event.GetEventType() == LMS7_RXPATH_CHANGED)
-    {
-        const wxObject* eventSource = event.GetEventObject();
-        const int pathIndex = event.GetInt();
-        //update HPM7 if changes were made outside of it
-        if (lms7controlPort && lms7controlPort->GetDeviceInfo().expansionName == GetExpansionBoardName(EXP_BOARD_HPM7) && eventSource != hpm7)
-            hpm7->SelectRxPath(pathIndex);
-        if (lms7controlPort && eventSource == hpm7)
-        {
-            lmsControl->Modify_SPI_Reg_bits(LMS7param(SEL_PATH_RFE), pathIndex);
-            mContent->mTabRFE->UpdateGUI();
-        }
-    }
- */
 }
 
 void LMS7SuiteAppFrame::OnGlobalLogEvent(const lime::LogLevel level, const char *message)
@@ -146,21 +100,19 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     fftviewer = nullptr;
     adfGUI = nullptr;
     si5351gui = nullptr;
-    hpm7 = nullptr;
     fpgaControls = nullptr;
-    myriad7 = nullptr;
     deviceInfo = nullptr;
     spi = nullptr;
     api = nullptr;
     boardControlsGui = nullptr;
+
+	limeRFEwin = nullptr;
+
     lmsControl = new LMS7_Device();
 
     lime::registerLogHandler(&LMS7SuiteAppFrame::OnGlobalLogEvent);
 
     Connect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(LMS7_TXBAND_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Connect(LMS7_RXPATH_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     mMiniLog = new pnlMiniLog(this, wxNewId());
     Connect(LOG_MESSAGE, wxCommandEventHandler(LMS7SuiteAppFrame::OnLogMessage), 0, this);
 
@@ -184,6 +136,10 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     const int statusWidths[] = {-1, -3, -3};
     statusBar->SetStatusWidths(3, statusWidths);
     Bind(LMS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::OnLmsChanged), this);
+
+#ifndef LIMERFE
+	mnuModules->Delete(ID_MENUITEM_LIMERFE);
+#endif
 }
 
 LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
@@ -191,7 +147,6 @@ LMS7SuiteAppFrame::~LMS7SuiteAppFrame()
     wxCloseEvent evt;
     OnFFTviewerClose(evt);
     Disconnect(CGEN_FREQUENCY_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
-    Disconnect(SAMPLE_POS_CHANGED, wxCommandEventHandler(LMS7SuiteAppFrame::HandleLMSevent), NULL, this);
     LMS_Close(lmsControl);
 }
 
@@ -235,12 +190,8 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         fftviewer->Initialize(lmsControl);
     if(adfGUI)
         adfGUI->Initialize(lmsControl);
-    if(hpm7)
-        hpm7->Initialize(lmsControl);
     if(fpgaControls)
         fpgaControls->Initialize(lmsControl);
-    if(myriad7)
-        myriad7->Initialize(lmsControl);
     if(deviceInfo)
         deviceInfo->Initialize(lmsControl);
     if(spi)
@@ -251,8 +202,12 @@ void LMS7SuiteAppFrame::UpdateConnections(lms_device_t* lms7controlPort)
         programmer->SetConnection(lmsControl);
     if(api)
         api->Initialize(lmsControl);
-}
 
+#ifdef LIMERFE
+    if (limeRFEwin)
+        limeRFEwin->Initialize(lmsControl);
+#endif
+}
 
 void LMS7SuiteAppFrame::OnControlBoardConnect(wxCommandEvent& event)
 {
@@ -442,30 +397,6 @@ void LMS7SuiteAppFrame::OnLogMessage(wxCommandEvent &event)
         mMiniLog->HandleMessage(event);
 }
 
-
-void LMS7SuiteAppFrame::OnHPM7Close(wxCloseEvent& event)
-{
-    hpm7->Destroy();
-    hpm7 = nullptr;
-}
-void LMS7SuiteAppFrame::OnShowHPM7(wxCommandEvent& event)
-{
-    if (hpm7) //it's already opened
-    {
-        hpm7->Show(true);
-        hpm7->Iconize(false); // restore the window if minimized
-        hpm7->SetFocus();  // focus on my window
-        hpm7->Raise();  // bring window to front
-    }
-    else
-    {
-        hpm7 = new HPM7_wxgui(this, wxNewId(), _("HPM7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        hpm7->Initialize(lmsControl);
-        hpm7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnHPM7Close), NULL, this);
-        hpm7->Show();
-    }
-}
-
 void LMS7SuiteAppFrame::OnFPGAcontrolsClose(wxCloseEvent& event)
 {
     fpgaControls->Destroy();
@@ -486,29 +417,6 @@ void LMS7SuiteAppFrame::OnShowFPGAcontrols(wxCommandEvent& event)
         fpgaControls->Initialize(lmsControl);
         fpgaControls->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnFPGAcontrolsClose), NULL, this);
         fpgaControls->Show();
-    }
-}
-
-void LMS7SuiteAppFrame::OnMyriad7Close(wxCloseEvent& event)
-{
-    myriad7->Destroy();
-    myriad7 = nullptr;
-}
-void LMS7SuiteAppFrame::OnShowMyriad7(wxCommandEvent& event)
-{
-    if (myriad7) //it's already opened
-    {
-        myriad7->Show(true);
-        myriad7->Iconize(false); // restore the window if minimized
-        myriad7->SetFocus();  // focus on my window
-        myriad7->Raise();  // bring window to front
-    }
-    else
-    {
-        myriad7 = new Myriad7_wxgui(this, wxNewId(), _("Myriad7"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-        myriad7->Initialize(lmsControl);
-        myriad7->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnMyriad7Close), NULL, this);
-        myriad7->Show();
     }
 }
 
@@ -652,3 +560,28 @@ void LMS7SuiteAppFrame::UpdateVisiblePanel() const
     mContent->UpdateVisiblePanel();
 }
 
+void LMS7SuiteAppFrame::OnShowLimeRFE(wxCommandEvent& event) {
+
+#ifdef LIMERFE
+	if (limeRFEwin) //it's already opened
+	{
+		limeRFEwin->Show(true);
+		limeRFEwin->Iconize(false); // restore the window if minimized
+		limeRFEwin->SetFocus();  // focus on my window
+		limeRFEwin->Raise();  // bring window to front
+	}
+	else
+	{
+		limeRFEwin = new limeRFE_wxgui(this, wxNewId(), _("LimeRFE Controls"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+		limeRFEwin->Initialize(lmsControl);
+		limeRFEwin->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(LMS7SuiteAppFrame::OnLimeRFEClose), NULL, this);
+		limeRFEwin->Show();
+	}
+#endif
+}
+
+void LMS7SuiteAppFrame::OnLimeRFEClose(wxCloseEvent& event)
+{
+	limeRFEwin->Destroy();
+	limeRFEwin = nullptr;
+}

@@ -176,8 +176,8 @@ void OpenGLGraph::Resize(int w, int h)
 {
   if(w <= 0 || h <=0 )
     return;
-  settings.windowWidth = w;
-  settings.windowHeight = h;
+  settings.windowWidth = w * GetContentScaleFactor();
+  settings.windowHeight = h * GetContentScaleFactor();
   settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
   if(settings.dataViewHeight <= 0)
     settings.dataViewHeight = 1;
@@ -332,13 +332,12 @@ void OpenGLGraph::ZoomRect( int x1, int x2, int y1, int y2)
 */
 void OpenGLGraph::Pan( float dx, float dy)
 {
-	float deltaX = (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
-	float deltaY = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
-	settings.visibleArea.x1 += dx * deltaX;
-	settings.visibleArea.x2 += dx * deltaX;
-	settings.visibleArea.y1 += dy * deltaY;
-	settings.visibleArea.y2 += dy * deltaY;
-	SettingsChanged();
+	float deltaX = dx * (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
+	float deltaY = dy * (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
+    SetDisplayArea( settings.visibleArea.x1 + deltaX,
+                    settings.visibleArea.x2 + deltaX,
+                    settings.visibleArea.y1 + deltaY,
+                    settings.visibleArea.y2 + deltaY);
 #ifdef OGL_REDRAW_ENABLED
     Refresh();
 #endif
@@ -500,136 +499,69 @@ void OpenGLGraph::DrawStaticElements()
 */
 void OpenGLGraph::CalculateGrid()
 {
-    if(settings.staticGrid)
+    if (settings.staticGrid)
     {
         settings.gridXlines = 10;
         settings.gridYlines = 10;
         //settings.gridXprec = 1;
         //settings.gridYprec = 1;
         settings.gridXstart = settings.visibleArea.x1;
-        settings.gridXspacing = (settings.visibleArea.x2 - settings.visibleArea.x1)/settings.gridXlines;
+        settings.gridXspacing = (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.gridXlines;
         settings.gridYstart = settings.visibleArea.y1;
-        settings.gridYspacing = (settings.visibleArea.y2 - settings.visibleArea.y1)/settings.gridYlines;
+        settings.gridYspacing = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.gridYlines;
 
         return;
     }
-	// find the widest number of x axis values
-	float widerNumber = settings.gridXstart < settings.gridXstart+settings.gridXlines*settings.gridXspacing ?
-						 settings.gridXstart+settings.gridXlines*settings.gridXspacing :
-						 settings.gridXstart;
+    const int mult[11] = { 1, 1, 2, 2, 4, 5, 5, 5, 5, 5, 5 };
 
+    float interval = settings.visibleArea.x2 - settings.visibleArea.x1; // span of x axis
+    if (settings.gridXlines > 0)
+    {
+        //estimate text width
+        const float cWidth = 15; //~double actual width
+        float absx1 = std::fabs(settings.visibleArea.x1);
+        float absx2 = std::fabs(settings.visibleArea.x2);
+        int valLen = 3 + std::fabs(std::log10(absx1 > absx2 ? absx2 : absx2)); //some extra spacing for separation between values, and for decimal point
+        int tmpLines = 1+settings.dataViewWidth / (valLen * cWidth);
+        float divisor = 1; // current grid spacing
+        int xlines = settings.gridXlines > tmpLines ? tmpLines : settings.gridXlines;
+        settings.gridXprec = 0;
+        //determine if grid spacing needs to be decreased
+        while (interval / divisor < xlines)
+        {
+            divisor /= 10;
+            settings.gridXprec++;
+            tmpLines = settings.dataViewWidth / (++valLen * cWidth);
+            xlines = xlines > tmpLines ? tmpLines : xlines;
+        }
+        while (interval / divisor > 10 * xlines)
+            divisor *= 10;
+        settings.gridXspacing = divisor * mult[int(0.5f + interval / xlines / divisor)];
+        settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
+    }
+    else
+        settings.gridXspacing = interval;
 
-	//set values printing format
-	char format[10];
-
-	sprintf(format, "%%.%if %%s", settings.gridXprec);
-
-	char ctemp[32];
-	int tw=0, th=0;
-	float fonth = 10;
-	sprintf(ctemp, format, widerNumber, settings.xUnits.c_str());
-	m_font->getTextSize(ctemp, tw, th, fonth);
-	int nmbWidth = tw;
-	float pixelXvalue =(settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
-	float nmbSpan = nmbWidth*pixelXvalue;
-
-	int xlines = settings.gridXlines;  // guide of how many grid lines to use
-	float interval = settings.visibleArea.x2 - settings.visibleArea.x1; // span of x axis
-	float intervalPart = interval / xlines; // span of grid spacing
-	float divisor = 1; // current grid spacing
-
-	int divs[2] = { 2, 5 };  // divisors used for changing grid spacing
-	int curDiv = 0; //currently used divisor
-
-	settings.gridXprec = 0;
-
-	//determine if grid spacing needs to be decreased
-	if( intervalPart > 1 )
-	{
-		while( interval / divisor > xlines && divisor < nmbSpan)
-		{
-			divisor *= 10;
-		}
-		settings.gridXspacing = divisor;
-		nmbSpan *= 2;
-		while( settings.gridXspacing/divs[curDiv] > nmbSpan)
-		{
-			settings.gridXspacing /= divs[curDiv];
-			curDiv = (curDiv + 1) & 0x1;
-		}
-		if(settings.gridXspacing < 1.0)
-			++settings.gridXprec;
-		settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
-	}
-	else
-	{
-		while( interval / divisor < xlines && divisor > nmbSpan)
-		{
-			divisor /= 10;
-			++settings.gridXprec;
-		}
-		++settings.gridXprec;
-		settings.gridXspacing = divisor;
-		nmbSpan *= 2;
-		while( settings.gridXspacing*divs[curDiv] < nmbSpan)
-		{
-			settings.gridXspacing *= divs[curDiv];
-			curDiv = (curDiv + 1) & 0x1;
-		}
-		if(settings.gridXspacing > interval )
-			settings.gridXspacing = interval/2;
-		settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
-	}
-
-	// Y axis
-	int nmbHeight = settings.gridValuesHeight;
-	float pixelYvalue = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
-	nmbSpan = nmbHeight*pixelYvalue;
-
-	int ylines = settings.gridYlines;
-	interval = settings.visibleArea.y2 - settings.visibleArea.y1;
-	intervalPart = interval / ylines;
-	divisor = 1;
-
-	curDiv = 0;
-
-	settings.gridYprec = 0;
-
-	if( intervalPart > 1 )
-	{
-		while( interval / divisor > ylines && divisor < nmbSpan)
-		{
-			divisor *= 10;
-		}
-		settings.gridYspacing = divisor;
-		nmbSpan *= 2;
-		while( settings.gridYspacing/divs[curDiv] > nmbSpan)
-		{
-			settings.gridYspacing /= divs[curDiv];
-			curDiv = (curDiv + 1) & 0x1;
-		}
-		if(settings.gridYspacing < 1.0)
-			++settings.gridYprec;
-		settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
-	}
-	else
-	{
-		while( interval / divisor < ylines && divisor > nmbSpan)
-		{
-			divisor /= 10;
-			++settings.gridYprec;
-		}
-		++settings.gridYprec;
-		settings.gridYspacing = divisor;
-		nmbSpan *= 2;
-		while( settings.gridYspacing*divs[curDiv] < nmbSpan)
-		{
-			settings.gridYspacing *= divs[curDiv];
-			curDiv = (curDiv + 1) & 0x1;
-		}
-		settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
-	}
-	SettingsChanged();
+    interval = settings.visibleArea.y2 - settings.visibleArea.y1; // span of y axis
+    if (settings.gridYlines > 0)
+    {
+        int tmpLines = 1+settings.dataViewHeight / (2 * settings.gridValuesHeight); //2x to be safe in double scaling steps
+        float divisor = 1; // current grid spacing
+        int ylines = settings.gridYlines > tmpLines ? tmpLines : settings.gridYlines;
+        settings.gridYprec = 0;
+        while (interval / divisor < ylines)
+        {
+            divisor /= 10;
+            settings.gridYprec++;
+        }
+        while (interval / divisor > 10 * ylines)
+            divisor *= 10;
+        settings.gridYspacing = divisor * mult[int(0.5f + interval / ylines / divisor)];
+        settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
+    }
+    else
+        settings.gridYspacing = interval;
+    SettingsChanged();
 }
 
 /**

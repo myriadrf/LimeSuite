@@ -683,7 +683,7 @@ int LMS7002M::LoadConfig(const char* filename)
     return 0;
 }
 
-int LMS7002M:: ResetLogicregisters()
+int LMS7002M::ResetLogicregisters()
 {
     auto x0020_value = SPI_read(0x0020); //reset logic registers
     SPI_write(0x0020, x0020_value & 0x55FF);
@@ -975,7 +975,7 @@ int LMS7002M::SetTBBIAMP_dB(const float_type gain)
     }
 
     int g_iamp = (float_type)opt_gain_tbb[ind]*pow(10.0,gain/20.0)+0.4;
-    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp, true);
+    Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),g_iamp > 63 ? 63 : g_iamp<1 ? 1 :g_iamp , true);
 
     return 0;
 }
@@ -1126,9 +1126,10 @@ int LMS7002M::SetFrequencyCGEN(const float_type freq_Hz, const bool retainNCOfre
         }
     }
     //VCO frequency selection according to F_CLKH
-    uint8_t iHdiv_high = (2.94e9/2 / freq_Hz)-1;
-    uint8_t iHdiv_low = (1.93e9/2 / freq_Hz);
-    uint8_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    uint16_t iHdiv_high =(gCGEN_VCO_frequencies[1]/2 / freq_Hz)-1;
+    uint16_t iHdiv_low = (gCGEN_VCO_frequencies[0]/2 / freq_Hz);
+    uint16_t iHdiv = (iHdiv_low + iHdiv_high)/2;
+    iHdiv = iHdiv > 255 ? 255 : iHdiv;
     dFvco = 2 * (iHdiv+1) * freq_Hz;
     if (dFvco <= gCGEN_VCO_frequencies[0] || dFvco >= gCGEN_VCO_frequencies[1])
         return ReportError(ERANGE, "SetFrequencyCGEN(%g MHz) - cannot deliver requested frequency", freq_Hz / 1e6);
@@ -2508,7 +2509,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
     {
         Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), false);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
+        status = Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), (mclk1src & 1) | 0x2);
     }
     else
     {
@@ -2518,7 +2519,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         else
             Modify_SPI_Reg_bits(LMS7param(TXTSPCLKA_DIV), 0);
         Modify_SPI_Reg_bits(LMS7param(TXDIVEN), true);
-        Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
+        status = Modify_SPI_Reg_bits(LMS7param(MCLK1SRC), mclk1src & 1);
     }
 
     if (Get_SPI_Reg_bits(LMS7param(TX_MUX)) == 0)
@@ -2528,7 +2529,7 @@ int LMS7002M::SetInterfaceFrequency(float_type cgen_freq_Hz, const uint8_t inter
         Modify_SPI_Reg_bits(LMS7param(TXWRCLK_MUX), 0);
     }
 
-    return ResetLogicregisters();
+    return status;
 }
 
 float_type LMS7002M::GetSampleRate(bool tx, Channel ch)
