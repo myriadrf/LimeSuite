@@ -50,8 +50,11 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 
     lms7Device->Init();
 
+    //skip adc/dac channel
+    channelCount = lms7Device->GetNumChannels()==5?4:lms7Device->GetNumChannels();
+
     //enable all channels
-    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+    for (size_t channel = 0; channel < channelCount; channel++)
     {
         lms7Device->EnableChannel(true, channel, true);
         lms7Device->EnableChannel(false, channel, true);
@@ -73,13 +76,13 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
     lms7Device->EnableCache(cacheEnable);
 
     //give all RFICs a default state
-    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+    for (size_t channel = 0; channel < channelCount; channel++)
     {
         this->setGain(SOAPY_SDR_RX, channel, 32);
         this->setGain(SOAPY_SDR_TX, channel, 0);
     }
-    mChannels[SOAPY_SDR_RX].resize(lms7Device->GetNumChannels());
-    mChannels[SOAPY_SDR_TX].resize(lms7Device->GetNumChannels());
+    mChannels[SOAPY_SDR_RX].resize(channelCount);
+    mChannels[SOAPY_SDR_TX].resize(channelCount);
     _channelsToCal.clear();
     activeStreams.clear();
 }
@@ -87,7 +90,7 @@ SoapyLMS7::SoapyLMS7(const ConnectionHandle &handle, const SoapySDR::Kwargs &arg
 SoapyLMS7::~SoapyLMS7(void)
 {
     //power down all channels
-    for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+    for (size_t channel = 0; channel < channelCount; channel++)
     {
         lms7Device->EnableChannel(true, channel, false);
         lms7Device->EnableChannel(false, channel, false);
@@ -132,7 +135,7 @@ SoapySDR::Kwargs SoapyLMS7::getHardwareInfo(void) const
 
 size_t SoapyLMS7::getNumChannels(const int /*direction*/) const
 {
-    return lms7Device->GetNumChannels();
+    return channelCount;
 }
 
 bool SoapyLMS7::getFullDuplex(const int /*direction*/, const size_t /*channel*/) const
@@ -730,7 +733,7 @@ std::vector<std::string> SoapyLMS7::listRegisterInterfaces(void) const
 {
     std::vector<std::string> ifaces;
     ifaces.push_back("BBIC");
-    for (size_t i = 0; i < lms7Device->GetNumChannels()/2; i++)
+    for (size_t i = 0; i < channelCount/2; i++)
     {
         ifaces.push_back("RFIC" + std::to_string(i));
     }
@@ -814,7 +817,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 {
     if (key == "RXTSP_CONST")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "TSP_CONST", value);
         }
@@ -822,7 +825,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "TXTSP_CONST")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "TSP_CONST", value);
         }
@@ -830,7 +833,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_TX")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "CALIBRATE_TX", value);
         }
@@ -838,7 +841,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "CALIBRATE_RX")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "CALIBRATE_RX", value);
         }
@@ -846,7 +849,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "ENABLE_RX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "ENABLE_GFIR_LPF", value);
         }
@@ -854,7 +857,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "ENABLE_TX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "ENABLE_GFIR_LPF", value);
         }
@@ -862,7 +865,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "DISABLE_RX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "DISABLE_GFIR_LPF", value);
         }
@@ -870,7 +873,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "DISABLE_TX_GFIR_LPF")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "DISABLE_GFIR_LPF", value);
         }
@@ -878,7 +881,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "RXTSG_NCO")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, "TSG_NCO", value);
         }
@@ -886,7 +889,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else if (key == "TXTSG_NCO")
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_TX, channel, "TSG_NCO", value);
         }
@@ -915,7 +918,7 @@ void SoapyLMS7::writeSetting(const std::string &key, const std::string &value)
 
     else
     {
-        for (size_t channel = 0; channel < lms7Device->GetNumChannels(); channel++)
+        for (size_t channel = 0; channel < channelCount; channel++)
         {
             this->writeSetting(SOAPY_SDR_RX, channel, key, value);
         }

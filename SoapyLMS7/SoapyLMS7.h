@@ -298,4 +298,5 @@ private:
     mutable std::recursive_mutex _accessMutex;
     std::vector<Channel> mChannels[2]; //mChannels[direction]
     std::set<SoapySDR::Stream *> activeStreams;
+    unsigned channelCount;
 };
