@@ -598,7 +598,7 @@ int LMS7_Device::SetRate(bool tx, double f_Hz, unsigned oversample)
 	    || (lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1) != 0)
 	    || (lms->SetInterfaceFrequency(cgen, interpolation, decimation) != 0))
 	  return -1;
-
+         lms_chip_id = i;
          if (SetFPGAInterfaceFreq(interpolation, decimation)!=0)
              return -1;
       }
