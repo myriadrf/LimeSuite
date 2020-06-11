@@ -5,6 +5,7 @@
 */
 
 #include "lime/LimeSuite.h"
+#include <ConnectionRegistry.h>
 #include <iostream>
 #include <cstdlib>
 #include <cstddef>
@@ -41,10 +42,22 @@ int deviceCalSweep(
         std::cerr << "Unknown directions --dir=" << dirStr << std::endl;
         return EXIT_FAILURE;
     }
-
+    
     //open the device
     lms_device_t *device(nullptr);
-    if (LMS_Open(&device, argStr.empty()?nullptr:argStr.c_str(), nullptr) != 0)
+  
+    lime::ConnectionHandle hint(argStr);
+    auto handles = lime::ConnectionRegistry::findConnections(hint);
+
+    if(handles.size() == 0)
+    {
+        std::cerr << "No available device!" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
+
+    if (LMS_Open(&device, handles[0].serialize().c_str(), nullptr) != 0)
     {
         std::cerr << "Failed to open" << std::endl;
         return EXIT_FAILURE;

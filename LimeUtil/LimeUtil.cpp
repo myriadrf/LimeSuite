@@ -100,7 +100,7 @@ static int printInfo(void)
 static int findDevices(void)
 {
     std::string argStr;
-    if (optarg != NULL) argStr = optarg;
+    if (optarg != NULL) argStr = "none," + std::string(optarg);
     ConnectionHandle hint(argStr);
 
     auto handles = ConnectionRegistry::findConnections(hint);
@@ -118,11 +118,11 @@ static int findDevices(void)
  **********************************************************************/
 static int makeDevice(void)
 {
-    std::string argStr;
-    if (optarg != NULL) argStr = optarg;
+    std::string argStr = "none,";
+    if (optarg != NULL) argStr += optarg;
     ConnectionHandle handle(argStr);
 
-    std::cout << "Make device " << argStr << std::endl;
+    std::cout << "Make device " << argStr.substr(5) << std::endl;
     auto conn = ConnectionRegistry::makeConnection(handle);
     if (conn == nullptr)
     {
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
         case 'f': return findDevices();
         case 'm': return makeDevice();
         case 'a':
-            if (optarg != NULL) argStr = optarg;
+            if (optarg != NULL) argStr = "none," + std::string(optarg);
             break;
         case 'u': update = true; break;
         case 'g': return programGateware(argStr);
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
         case 't': testTiming = true; break;
         case 'l':
             calSweep = true;
-            if (optarg != NULL) argStr = optarg;
+            if (optarg != NULL) argStr = "none," + std::string(optarg);
             break;
         case 's': if (optarg != NULL) start = std::stod(optarg); break;
         case 'p': if (optarg != NULL) stop = std::stod(optarg); break;
