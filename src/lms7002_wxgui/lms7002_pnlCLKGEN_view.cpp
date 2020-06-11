@@ -274,10 +274,10 @@ void lms7002_pnlCLKGEN_view::UpdateGUI()
     LMS_ReadParam(lmsControl,LMS7param(FRAC_SDM_CGEN_MSB),&value);
     int fracValue = value << 16;
     LMS_ReadParam(lmsControl,LMS7param(FRAC_SDM_CGEN_LSB),&value);
-    fracValue |= 0;
+    fracValue |= value;
     lblFRAC_SDM_CGEN->SetLabel(wxString::Format("%i", fracValue));
     LMS_ReadParam(lmsControl,LMS7param(DIV_OUTCH_CGEN),&value);
-    lblDivider->SetLabel(wxString::Format("2^%i", value+1));
+    lblDivider->SetLabel(wxString::Format("2*%i", value+1));
 }
 
 void lms7002_pnlCLKGEN_view::UpdateInterfaceFrequencies()
