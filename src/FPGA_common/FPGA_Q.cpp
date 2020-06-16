@@ -27,25 +27,34 @@ int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase,
     }
 
     const int pll_ind = (channel == 1) ? 2 : 0;
+    if ((txRate_Hz >= 5e6) && (rxRate_Hz >= 5e6))
+    {
+        clocks[0].index = 0;
+        clocks[0].outFrequency = rxRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = rxRate_Hz;
+        clocks[1].phaseShift_deg = rxPhase;
+        if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
+            return -1;
 
-    clocks[0].index = 0;
-    clocks[0].outFrequency = rxRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = rxRate_Hz;
-    clocks[1].phaseShift_deg = rxPhase;
-    if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
-        return -1;
-
-    clocks[0].index = 0;
-    clocks[0].outFrequency = txRate_Hz;
-    clocks[1].index = 1;
-    clocks[1].outFrequency = txRate_Hz;
-    clocks[1].phaseShift_deg = txPhase;
-    clocks[2].index = 2;
-    clocks[2].outFrequency = 2*txRate_Hz;
-    clocks[2].bypass = false;
-    if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 3)!=0)
-        return -1;
+        clocks[0].index = 0;
+        clocks[0].outFrequency = txRate_Hz;
+        clocks[1].index = 1;
+        clocks[1].outFrequency = txRate_Hz;
+        clocks[1].phaseShift_deg = txPhase;
+        clocks[2].index = 2;
+        clocks[2].outFrequency = 2*txRate_Hz;
+        clocks[2].bypass = false;
+        if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 3)!=0)
+            return -1;
+    }
+    else
+    {
+        if(SetDirectClocking(pll_ind) != 0)
+            return -1;
+        if(SetDirectClocking(pll_ind + 1) != 0)
+            return -1;
+    }
 
     return 0;
 }
@@ -77,7 +86,7 @@ int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     bool phaseSearch = false;
     //if (!(mStreamers.size() > channel && (mStreamers[channel]->rxRunning || mStreamers[channel]->txRunning)))
-    if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
+    //if(rxRate_Hz >= 5e6 && txRate_Hz >= 5e6)
     {
         uint32_t addr[3] = {0, 1, 2};
         uint32_t vals[3];
@@ -86,10 +95,15 @@ int FPGA_Q::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         if ((vals[0]==0xE && vals[1]>0x20E)||(vals[0]==0xF && vals[1]>0x206)||(vals[0]==0x10 && vals[1]>0x102)||vals[0]==0x17)
             phaseSearch = true;
     }
-
+    
     if (!phaseSearch)
         return SetInterfaceFreq(txRate_Hz, rxRate_Hz, txPhC1 + txPhC2 * txRate_Hz, rxPhC1 + rxPhC2 * rxRate_Hz, channel);
 
+    if(rxRate_Hz < 5e6 && txRate_Hz < 5e6)
+    {
+        rxRate_Hz = 5e6;
+        txRate_Hz = 5e6;
+    }
     std::vector<uint32_t> dataRdA;
     std::vector<uint32_t> dataRdB;
     std::vector<uint32_t> dataWr;

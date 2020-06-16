@@ -454,7 +454,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             {
                 meta.timestamp = ts[i];
                 meta.waitForTimestamp = syncTx;
-                LMS_SendStream(&pthis->txStreams[i], &buffers[i][0], samplesPopped[i]/2, &meta, 1000);
+                LMS_SendStream(&pthis->txStreams[i], &buffers[i][0], samplesPopped[i], &meta, 1000);
             }
 
             if(pthis->captureSamples.load())
