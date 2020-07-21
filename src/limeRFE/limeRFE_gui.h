@@ -1,12 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Dec 21 2016)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef __LIMERFE_GUI_H__
-#define __LIMERFE_GUI_H__
+#pragma once
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
@@ -34,17 +33,19 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
+#define rx_channel_pnl 1000
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class limeRFE_view
 ///////////////////////////////////////////////////////////////////////////////
-class limeRFE_view : public wxFrame 
+class limeRFE_view : public wxFrame
 {
 	private:
-	
+
 	protected:
 		wxMenuBar* mbar;
 		wxMenu* mFile;
+		wxMenu* m_menu7;
 		wxPanel* pnlMain;
 		wxPanel* m_panel15;
 		wxRadioButton* rbI2C;
@@ -122,7 +123,7 @@ class limeRFE_view : public wxFrame
 		wxTextCtrl* txtMessageField;
 		wxPanel* m_panel18;
 		wxButton* btnClearMessages;
-		
+
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnrbI2CrbUSB( wxCommandEvent& event ) { event.Skip(); }
@@ -153,14 +154,13 @@ class limeRFE_view : public wxFrame
 		virtual void OnbtnReadADC( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrate( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnClearMessages( wxCommandEvent& event ) { event.Skip(); }
-		
-	
+
+
 	public:
-		
+
 		limeRFE_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("LimeRFE Control"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxCLOSE_BOX|wxMINIMIZE_BOX|wxSYSTEM_MENU|wxTAB_TRAVERSAL );
-		
+
 		~limeRFE_view();
-	
+
 };
 
-#endif //__LIMERFE_GUI_H__
