@@ -1,4 +1,36 @@
-Release 20.01.0 (pending)
+Release 20.07.0 (pending)
+==========================
+
+LimeSuite library changes:
+- Changed LimeSDR-Mini SXR default values to match SXT
+- Fix for lms chip id not changing when setting interface frequency
+- Improve SXT/SXR tune in MCU calibrations
+- Set stream FIFO size to be at least 4 packets
+- Increased availble COM port values for LimeRFE board
+- Added unicode check when LimeRFE COM port is being opened
+
+LimeSuiteGUI:
+- Fixed display of CLKGEN values
+- Changed numeric slider settings for better fit on some distributions
+- Changed power meter to always be visible in LimeRFE panel
+- Changed LimeRFE panel's info to be read only
+- Added clear button to LimeRFE info panel
+- Fixed GUI freezing when opening LimeRFE board through SDR connection with flipped cable
+- Fixed fitting and display issues for LimeRFE board panel on Ubuntu 20.04
+
+SoapyLMS:
+- Return actual supported sample rates instead of returning static limits
+
+Octave:
+- Fixed warnings when loading LimeSuite library
+
+Other changes:
+- Updated CMake so that LimeRFE module is optional
+- Added HW, GW version and temperature information to QuickTest output
+- Fixed LimeUtil loading wrong device with optional arguments
+- Updated wxgtk3.0 library name in debian/control
+
+Release 20.01.0 (2020-01-28)
 ==========================
 
 LimeSuite library changes:

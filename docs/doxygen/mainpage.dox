@@ -13,6 +13,13 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
+### v20.07.0
+
+\li Fix for lms chip id not changing when setting interface frequency
+\li Set stream FIFO size to be at least 4 packets
+\li Increased availble COM port values for LimeRFE board
+\li Added unicode check when LimeRFE COM port is being opened
+
 ### v20.01.0
 
 \li Remove LMS_EnableCalibCache() function
