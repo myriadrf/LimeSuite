@@ -108,8 +108,14 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     list(APPEND LIME_SUITE_LIBRARIES -pthread)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
+include(CheckAtomic)
+if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB OR NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
+    list(APPEND LIME_SUITE_LIBRARIES atomic)
+endif()
+
 include(FeatureSummary)
 include(CMakeDependentOption)
+
 option(ENABLE_LIBRARY "Enable build library" ON)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
@@ -120,6 +126,7 @@ if (ENABLE_LIBRARY)
     set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_LIBVER})
     set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
     target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
+
     if(BUILD_SHARED_LIBS)
         target_compile_definitions(LimeSuite PUBLIC "LIME_DLL")
     endif()
