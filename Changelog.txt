@@ -1,4 +1,16 @@
-Release 20.07.0 (pending)
+Release 20.07.2 (2020-08-05)
+==========================
+
+- Updated CMake to automatically include atomic library when needed
+- Updated CMake to include required thread libraries on different systems
+- Added missing changelog entries and version information
+
+Release 20.07.1 (2020-07-30)
+==========================
+
+- Fixed dkpg build failures for Debian/Ubuntu systems
+
+Release 20.07.0 (2020-07-29)
 ==========================
 
 LimeSuite library changes:
