@@ -582,6 +582,7 @@ void fftviewer_frFFTviewer::StreamingLoop(fftviewer_frFFTviewer* pthis, const un
             }
             fout << endl;
         }
+        fout.close();
     }
 
     kiss_fft_free(m_fftCalcPlan);
