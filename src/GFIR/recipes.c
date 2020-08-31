@@ -207,7 +207,7 @@ double **a,*d;
 			vv[imax]=vv[j];
 		}
 		indx[j]=imax;
-		if (!a[j][j]) {
+		if(fpclassify(a[j][j]) == FP_ZERO) {
 			a[j][j]=TINY;
 		} 
 		if (j!=n) {

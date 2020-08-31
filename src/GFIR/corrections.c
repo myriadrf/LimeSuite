@@ -29,7 +29,7 @@
 double InvSinc(x)
 double x;
 {
-	if(x == 0.0) return(1.0);
+	if(fpclassify(x) == FP_ZERO) return(1.0);
 	return(fabs((M_PI*x)/(sin(M_PI*x) + DELTA)));
 }
 
@@ -42,7 +42,7 @@ double x, k, x0;
 	double xin;
 
 	xin = (x+x0)/k;
-	if(xin == 0.0) return(1.0);
+	if(fpclassify(xin) == FP_ZERO) return(1.0);
 	return(fabs((M_PI*xin)/(sin(M_PI*xin) + DELTA)));
 }
 

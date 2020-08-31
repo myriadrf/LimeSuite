@@ -139,8 +139,8 @@ int **xpx, **xmx, **x, n, cprec;
 		h = 	(1.0+1.0/4.0)*(double)ixpx/(double)(1<<cprec) +
 			(1.0-1.0/4.0)*(double)ixmx/(double)(1<<cprec) + 
 			(double)ix/(double)(1<<cprec);
-
-		if ((h != 0.0) && (i<(n+1)/2) ) {
+		
+		if ((fpclassify(h) != FP_ZERO) && (i<(n+1)/2) ) {
 			printf("h(%2d) = %11lg = ", i, h);
 			if( ixpx ) {
 				printf("(1+1/4)x(");
@@ -183,7 +183,7 @@ int **xpx, **xmx, **x, n, cprec;
 			}
 
 			printf("\n");
-		} else if (h != 0) {
+		} else if (fpclassify(h) != FP_ZERO) {
 			printf("h(%2d) = %11lg = %2d x h(%2d)\n", 
 				i, h, symmetry, n-1-i);
 		} else {
