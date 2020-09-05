@@ -25,6 +25,7 @@ class limeRFE_wxgui : public limeRFE_view
 		void OnbtnOpenPort(wxCommandEvent& event);
 		void OnbtnClosePort(wxCommandEvent& event);
 		void AddMssg(const char* mssg);
+		void AddMssg(const wxString& mssg);
 		void ReadPorts();
 		void OnbtnRefreshPorts(wxCommandEvent& event);
 		void OnbtnReset(wxCommandEvent& event);
