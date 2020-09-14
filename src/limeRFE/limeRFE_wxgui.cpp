@@ -126,7 +126,10 @@ void limeRFE_wxgui::OnbtnClosePort(wxCommandEvent& event) {
 
 void limeRFE_wxgui::AddMssg(const char* mssg) {
 	wxString s(mssg, wxConvUTF8);
+	AddMssg(s);
+}
 
+void limeRFE_wxgui::AddMssg(const wxString& mssg) {
 	time_t rawtime;
 	struct tm * timeinfo;
 	char buffer[80];
@@ -134,7 +137,7 @@ void limeRFE_wxgui::AddMssg(const char* mssg) {
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	strftime(buffer, 80, "%H:%M:%S", timeinfo);
-	wxString line(wxString::Format("[%s] %s", buffer, s));
+	wxString line(wxString::Format("[%s] %s", buffer, mssg));
 
 	txtMessageField->AppendText(line + _("\n"));
 }
