@@ -6,6 +6,7 @@
 
 #include "ConnectionFX3.h"
 #include "Logger.h"
+#include "threadHelper.h"
 
 using namespace lime;
 
@@ -43,6 +44,7 @@ ConnectionFX3Entry::ConnectionFX3Entry(void):
 #endif
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&ConnectionFX3Entry::handle_libusb_events, this);
+    SetOSThreadPriority(ThreadPriority::ABOVE_NORMAL, ThreadPolicy::REALTIME, &mUSBProcessingThread);
 #endif
 }
 

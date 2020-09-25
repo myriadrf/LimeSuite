@@ -15,6 +15,7 @@
 #include <chrono>
 #include "LMS64CProtocol.h"
 #include "Logger.h"
+#include "threadHelper.h"
 
 namespace lime
 {
@@ -67,6 +68,7 @@ void LMS64CProtocol::InitRemote()
     }
 
     remoteThread = std::thread(&LMS64CProtocol::ProcessConnections, this);
+    SetOSThreadPriority(ThreadPriority::LOW, ThreadPolicy::DEFAULT, &remoteThread);
     if(not remoteThread.joinable())
     {
         lime::log(LOG_LEVEL_ERROR, "RemoteControl: Error creating listening thread\n");

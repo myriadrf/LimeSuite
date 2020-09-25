@@ -76,6 +76,7 @@ set(LIME_SUITE_SOURCES
     FPGA_common/FPGA_Mini.cpp
     FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
+    threadHelper/threadHelper.cpp
 )
 
 set(LIME_SUITE_INCLUDES
@@ -94,6 +95,7 @@ set(LIME_SUITE_INCLUDES
     ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
     ${PROJECT_SOURCE_DIR}/external/kissFFT/
     limeRFE
+    threadHelper
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
