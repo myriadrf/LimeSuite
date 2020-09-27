@@ -69,7 +69,7 @@ int main(int argc, char** argv)
         error();
     if (LMS_SetLOFrequency(device, LMS_CH_RX, 1, 1e9) != 0)
         error();
-    //Set TX center frequency to 1 GHz
+    //Set TX center frequency to 1.2 GHz
     //Automatically selects antenna port
     if (LMS_SetLOFrequency(device, LMS_CH_TX, 0, 1.2e9) != 0)
         error();
