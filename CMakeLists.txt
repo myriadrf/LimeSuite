@@ -91,6 +91,14 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-fvisibility=hidden)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
 
+    #disable gcc caller-saves flag for O2-O3
+    #workaround fix for gcc 9.3+
+    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.3)
+            add_compile_options(-fno-caller-saves)
+        endif()
+    endif()
+
     #default SIMD configuration uses native build flags
     #when packaging and x86, use sse3 so the binaries work across multiple x86 variants
     if(NOT DEFAULT_SIMD_FLAGS)
