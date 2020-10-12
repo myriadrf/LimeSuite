@@ -32,7 +32,7 @@ void StreamChannel::Setup(StreamConfig conf)
     config = conf;
     pktLost = 0;
     int bufferLength = config.bufferLength == 0 ? 1024*4*1024 : config.bufferLength;
-    int pktSize = config.format != StreamConfig::FMT_INT12 ? samples16InPkt : samples12InPkt;
+    int pktSize = config.linkFormat != StreamConfig::FMT_INT12 ? samples16InPkt : samples12InPkt;
     if (bufferLength < 4*pktSize)  //set FIFO to at least 4 packets
         bufferLength = 4*pktSize;
     if (!fifo)
@@ -57,11 +57,26 @@ int StreamChannel::Write(const void* samples, const uint32_t count, const Metada
     {
         const float* samplesFloat = (const float*)samples;
         int16_t* samplesShort = new int16_t[2*count];
+        const float maxValue = config.linkFormat == StreamConfig::FMT_INT12 ? 2047.0f : 32767.0f;
         for(size_t i=0; i<2*count; ++i)
-            samplesShort[i] = samplesFloat[i]*32767.0f;
+            samplesShort[i] = samplesFloat[i]*maxValue;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
         pushed = fifo->push_samples(ptr, count, meta ? meta->timestamp : 0, timeout_ms, meta ? meta->flags : 0);
         delete[] samplesShort;
+    }
+    else if(config.format != config.linkFormat)
+    {
+        int16_t* samplesShort = (int16_t*)samples;
+        int16_t* samplesConverted = new int16_t[2*count];
+        if(config.format == StreamConfig::FMT_INT16)
+            for(size_t i=0; i<2*count; ++i)
+                samplesConverted[i] = samplesShort[i] >> 4;
+        else
+            for(size_t i=0; i<2*count; ++i)
+                samplesConverted[i] = samplesShort[i] << 4;
+        const complex16_t* ptr = (const complex16_t*)samplesConverted;
+        pushed = fifo->push_samples(ptr, count, meta ? meta->timestamp : 0, timeout_ms, meta ? meta->flags : 0);
+        delete[] samplesConverted;
     }
     else
     {
@@ -80,9 +95,23 @@ int StreamChannel::Read(void* samples, const uint32_t count, Metadata* meta, con
         complex16_t* ptr = (complex16_t*)samples;
         int16_t* samplesShort = (int16_t*)samples;
         float* samplesFloat = (float*)samples;
+        const float maxValue = config.linkFormat == StreamConfig::FMT_INT12 ? 2047.0f : 32767.0f;
         popped = fifo->pop_samples(ptr, count, meta ? &meta->timestamp : nullptr, timeout_ms);
         for(int i=2*popped-1; i>=0; --i)
-            samplesFloat[i] = (float)samplesShort[i]/32767.0f;
+            samplesFloat[i] = (float)samplesShort[i]/maxValue;
+    }
+    else if(config.format != config.linkFormat)
+    {
+        complex16_t* ptr = (complex16_t*)samples;
+        int16_t* samplesShort = (int16_t*)samples;
+        int16_t* samplesConverted = (int16_t*)samples;
+        popped = fifo->pop_samples(ptr, count, meta ? &meta->timestamp : nullptr, timeout_ms);
+        if(config.format == StreamConfig::FMT_INT16)
+            for(int i=2*popped-1; i>=0; --i)
+                samplesConverted[i] = samplesShort[i] << 4;
+        else
+            for(int i=2*popped-1; i>=0; --i)
+                samplesConverted[i] = samplesShort[i] >> 4;
     }
     else
     {
@@ -90,9 +119,8 @@ int StreamChannel::Read(void* samples, const uint32_t count, Metadata* meta, con
         popped = fifo->pop_samples(ptr, count, meta ? &meta->timestamp : nullptr, timeout_ms);
     }
     if(meta)
-    {
         meta->flags |= RingFIFO::SYNC_TIMESTAMP;
-    }
+
     return popped;
 }
 
@@ -190,15 +218,11 @@ StreamChannel* Streamer::SetupStream(const StreamConfig& config)
             lime::warning("Stopping data stream to set up a new stream");
             UpdateThreads(true);
         }
-        if (config.format != dataLinkFormat)
+
+        if(config.linkFormat != dataLinkFormat)
         {
-            if (dataLinkFormat == StreamConfig::FMT_INT12)
-            {
-                lime::error("Stream setup failed: stream is already running with incompatible sample format");
-                return nullptr;
-            }
-            else if (config.format == StreamConfig::FMT_INT12)
-                lime::warning("Stream setup: sample format set to 16bit");
+            lime::error("Stream setup failed: stream is already running with incompatible link format");
+            return nullptr;
         }
     }
 
@@ -224,10 +248,10 @@ void Streamer::ResizeChannelBuffers()
 {
     int pktSize = samples12InPkt/streamSize;
     for(auto& i : mRxStreams)
-        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+        if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
            pktSize = samples16InPkt/streamSize;
     for(auto& i : mTxStreams)
-        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+        if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
             pktSize = samples16InPkt/streamSize;
 
     for(auto& i : mRxStreams)
@@ -242,11 +266,11 @@ int Streamer::GetStreamSize(bool tx)
 {
     int batchSize = (tx ? txBatchSize : rxBatchSize)/streamSize;
     for(auto &i : mRxStreams)
-        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+        if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
 
     for(auto &i : mTxStreams)
-        if(i.used && i.config.format != StreamConfig::FMT_INT12)
+        if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
             return samples16InPkt*batchSize;
 
     return samples12InPkt*batchSize;
@@ -589,14 +613,14 @@ int Streamer::UpdateThreads(bool stopAll)
         //by default use 12 bit compressed, adjust link format for stream
 
         for(auto &i : mRxStreams)
-            if(i.used && i.config.format != StreamConfig::FMT_INT12)
+            if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
             {
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;
             }
 
         for(auto &i : mTxStreams)
-            if(i.used && i.config.format != StreamConfig::FMT_INT12)
+            if(i.used && i.config.linkFormat != StreamConfig::FMT_INT12)
             {
                 dataLinkFormat = StreamConfig::FMT_INT16;
                 break;

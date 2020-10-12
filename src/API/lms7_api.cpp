@@ -735,16 +735,32 @@ API_EXPORT int CALL_CONV LMS_SetupStream(lms_device_t *device, lms_stream_t *str
     {
         case lms_stream_t::LMS_FMT_F32:
             config.format = lime::StreamConfig::FMT_FLOAT32;
+            config.linkFormat = lime::StreamConfig::FMT_INT16;
             break;
         case lms_stream_t::LMS_FMT_I16:
             config.format = lime::StreamConfig::FMT_INT16;
+            config.linkFormat = lime::StreamConfig::FMT_INT16;
             break;
         case lms_stream_t::LMS_FMT_I12:
             config.format = lime::StreamConfig::FMT_INT12;
+            config.linkFormat = lime::StreamConfig::FMT_INT12;
             break;
         default:
             config.format = lime::StreamConfig::FMT_FLOAT32;
+            config.linkFormat = lime::StreamConfig::FMT_INT16;
     }
+
+    switch (stream->linkFmt)
+    {
+    case lms_stream_t::LMS_LINK_FMT_I16:
+        config.linkFormat = lime::StreamConfig::FMT_INT16;
+        break;
+    case lms_stream_t::LMS_LINK_FMT_I12:
+        config.linkFormat = lime::StreamConfig::FMT_INT12;
+    case lms_stream_t::LMS_LINK_FMT_DEFAULT: // do nothing
+        break;
+    }
+
     config.isTx = stream->isTx;
     stream->handle = size_t(lms->SetupStream(config));
     return stream->handle == 0 ? -1 : 0;

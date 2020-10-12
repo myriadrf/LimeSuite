@@ -137,10 +137,22 @@ SoapySDR::Stream *SoapyLMS7::setupStream(
     for(size_t i=0; i<channelIDs.size(); ++i)
     {
         config.channelID = channelIDs[i];
+
         if (format == SOAPY_SDR_CF32) config.format = StreamConfig::FMT_FLOAT32;
         else if (format == SOAPY_SDR_CS16) config.format = StreamConfig::FMT_INT16;
         else if (format == SOAPY_SDR_CS12) config.format = StreamConfig::FMT_INT12;
-        else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported format");
+        else throw std::runtime_error("SoapyLMS7::setupStream(format="+format+") unsupported stream format");
+
+        config.linkFormat = config.format == StreamConfig::FMT_FLOAT32 ? StreamConfig::FMT_INT16 : config.format;
+
+        // optional link format
+        if(args.count("linkFormat"))
+        {
+            auto linkFormat = args.at("linkFormat");
+            if(linkFormat == SOAPY_SDR_CS16) config.linkFormat = StreamConfig::FMT_INT16;
+            else if(linkFormat == SOAPY_SDR_CS12) config.linkFormat = StreamConfig::FMT_INT12;
+            else throw std::runtime_error("SoapyLMS7::setupStream(linkFormat="+linkFormat+") unsupported link format");
+        }
 
         //optional buffer length if specified (from device args)
         const auto devArgsBufferLength = _deviceArgs.find(config.isTx?"txBufferLength":"rxBufferLength");

@@ -1086,6 +1086,15 @@ typedef struct
         LMS_FMT_I16,      ///<16-bit integers
         LMS_FMT_I12       ///<12-bit integers stored in 16-bit variables
     }dataFmt;
+
+    //! Data link format
+    enum
+    {
+        LMS_LINK_FMT_DEFAULT=0, ///<12-bit integers stored in 16-bit variables 
+                                /// when dataFmt=LMS_FMT_I12, 16-bit otherwise
+        LMS_LINK_FMT_I16,       ///<16-bit integers
+        LMS_LINK_FMT_I12        ///<12-bit integers
+    }linkFmt;
 }lms_stream_t;
 
 /**Streaming status structure*/
