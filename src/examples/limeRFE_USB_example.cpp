@@ -1,5 +1,5 @@
 /**
-@file   limeRFE_I2C_example.cpp
+@file   limeRFE_USB_example.cpp
 @author Lime Microsystems (www.limemicro.com)
 @brief  LimeRFE example with I2C communication via LimeSDR
 */
