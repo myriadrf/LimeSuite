@@ -60,13 +60,13 @@ int StreamChannel::Write(const void* samples, const uint32_t count, const Metada
         for(size_t i=0; i<2*count; ++i)
             samplesShort[i] = samplesFloat[i]*32767.0f;
         const complex16_t* ptr = (const complex16_t*)samplesShort ;
-        pushed = fifo->push_samples(ptr, count, meta->timestamp, timeout_ms, meta->flags);
+        pushed = fifo->push_samples(ptr, count, meta ? meta->timestamp : 0, timeout_ms, meta ? meta->flags : 0);
         delete[] samplesShort;
     }
     else
     {
         const complex16_t* ptr = (const complex16_t*)samples;
-        pushed = fifo->push_samples(ptr, count, meta->timestamp, timeout_ms, meta->flags);
+        pushed = fifo->push_samples(ptr, count, meta ? meta->timestamp : 0, timeout_ms, meta ? meta->flags : 0);
     }
     return pushed;
 }
