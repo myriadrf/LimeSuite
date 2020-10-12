@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include "LMS64CProtocol.h"
 #include "LimeSDRTest.h"
+#include "VersionInfo.h"
 #include <thread>
 #include "kiss_fft.h"
 #include "FPGA_Mini.h"
@@ -84,7 +85,7 @@ LimeSDRTest* LimeSDRTest::Connect()
         }
         UpdateStatus(LMS_TEST_LOGFILE, handles[0].serial.c_str());
         
-        str = "Chip temperature: " + std::to_string(int(dev->GetChipTemperature())) + " C";
+        str = " Chip temperature: " + std::to_string(int(dev->GetChipTemperature())) + " C";
         UpdateStatus(LMS_TEST_INFO, str.c_str());
     }
 
@@ -483,6 +484,7 @@ int LimeSDRTest::RunTests(TestCallback cb, bool nonblock)
     std::string str = "[ TESTING STARTED ]\n->Start time: ";
     std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     str += std::ctime(&time);
+    str += "->LimeSuite version: " + lime::GetLibraryVersion() + "\n";
     UpdateStatus(LMS_TEST_INFO, str.c_str());
 
     auto testObj = Connect();
