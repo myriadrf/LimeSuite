@@ -277,6 +277,18 @@ message(STATUS "Lime Suite version: ${LIME_SUITE_VERSION}")
 message(STATUS "ABI/so version: ${LIME_SUITE_SOVER}")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadImages.cmake)
 
+#########################################################################
+# Gain warning
+#########################################################################
+message(STATUS "")
+message(STATUS "########################################################")
+message(STATUS "##                     WARNING                        ##")
+message(STATUS "########################################################")
+message(STATUS "## Gain API maximum and default values have been      ##")
+message(STATUS "## changed. Tx ouput may be up to 18 dB higher than   ##")
+message(STATUS "## previously using same gain value                   ##") 
+message(STATUS "########################################################")
+
 ########################################################################
 # uninstall target
 ########################################################################
