@@ -15,6 +15,27 @@ LMS7_CoreSDR::LMS7_CoreSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_Lim
 {
 }
 
+int LMS7_CoreSDR::Init()
+{
+    struct regVal
+    {
+        uint16_t adr;
+        uint16_t val;
+    };
+
+    const std::vector<regVal> fpgaInitVals = { 
+        {0x0010, 0x0001}, {0x0011, 0x0001}, {0x0013, 0x2E6F}, {0x0018, 0x0000},
+        {0x0017, 0x0000},{0x00CC, 0x0000}, {0x00CD, 0x0000}    
+    };
+
+    int ret = 0;
+
+    for(auto i : fpgaInitVals)
+        ret |= fpga->WriteRegister(i.adr, i.val);
+        
+    return ret |= LMS7_Device::Init();
+}
+
 std::vector<std::string> LMS7_CoreSDR::GetProgramModes() const
 {
     return {program_mode::fpgaFlash, program_mode::fpgaReset,

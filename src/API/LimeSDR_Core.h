@@ -16,6 +16,7 @@ class LMS7_CoreSDR : public LMS7_LimeSDR
 {
 public:
     LMS7_CoreSDR(lime::IConnection* conn, LMS7_Device *obj = nullptr);
+    int Init() override;
     std::vector<std::string> GetProgramModes() const override;
     int SetPath(bool tx, unsigned chan, unsigned path) override;
 };
