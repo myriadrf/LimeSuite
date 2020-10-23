@@ -45,7 +45,7 @@ ConnectionFT601Entry::ConnectionFT601Entry(void):
 #endif
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&ConnectionFT601Entry::handle_libusb_events, this);
-    SetOSThreadPriority(ThreadPriority::ABOVE_NORMAL, ThreadPolicy::REALTIME, &mUSBProcessingThread);
+    SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &mUSBProcessingThread);
 #endif
 }
 
