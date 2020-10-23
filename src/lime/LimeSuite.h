@@ -135,7 +135,7 @@ typedef char lms_name_t[16];
 typedef struct
 {
     float_type min;     ///<Minimum allowed value
-    float_type max;     ///<Minimum allowed value
+    float_type max;     ///<Maximum allowed value
     float_type step;    ///<Minimum value step
 }lms_range_t;
 
