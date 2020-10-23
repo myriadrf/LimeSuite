@@ -1369,7 +1369,7 @@ int LMS7_Device::Init()
         lime::LMS7002M* lms = lms_list[i];
         if (lms->ResetChip() != 0)
             return -1;
-
+       
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
             lms->SPI_write(i.adr, i.val, true);
@@ -1382,7 +1382,13 @@ int LMS7_Device::Init()
         EnableChannel(true, 2*i+1, false);
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
+
+        if(SetFrequency(true,0,GetFrequency(true,0))!=0)
+            return -1;
+        if(SetFrequency(false,0,GetFrequency(false,0))!=0)
+            return -1;
     }
+
     if (SetRate(10e6,2)!=0)
         return -1;
     return 0;

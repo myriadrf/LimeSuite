@@ -63,6 +63,18 @@ int LMS7_LimeNET_micro::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
+    bool auto_path[2] = {auto_tx_path,auto_rx_path};
+    auto_tx_path = false;
+    auto_rx_path = false;
+    
+    if(SetFrequency(true, 0, GetFrequency(true, 0))!=0)
+        return -1;
+    if(SetFrequency(false, 0, GetFrequency(false, 0))!=0)
+        return -1;
+
+    auto_tx_path = auto_path[0];
+    auto_rx_path = auto_path[1];
+    
     if (SetRate(1e6, 16)!=0)
         return -1;
 
