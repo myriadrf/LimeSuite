@@ -175,6 +175,7 @@ int lime::SetOSCurrentThreadPriority(ThreadPriority priority, ThreadPolicy /*pol
         lime::debug("SetThreadPriority: Failed to set priority(%d)", win_priority);
         return -1;
     }
+    return 0;
 }
 #else
 
