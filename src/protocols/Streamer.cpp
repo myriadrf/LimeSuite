@@ -7,6 +7,7 @@
 #include "IConnection.h"
 #include <complex>
 #include "LMSBoards.h"
+#include "threadHelper.h"
 
 namespace lime
 {
@@ -660,6 +661,7 @@ int Streamer::UpdateThreads(bool stopAll)
         terminateRx.store(false, std::memory_order_relaxed);
         auto RxLoopFunction = std::bind(&Streamer::ReceivePacketsLoop, this);
         rxThread = std::thread(RxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &rxThread);
     }
     if(needTx && (!txThread.joinable()))
     {
@@ -668,6 +670,7 @@ int Streamer::UpdateThreads(bool stopAll)
         terminateTx.store(false, std::memory_order_relaxed);
         auto TxLoopFunction = std::bind(&Streamer::TransmitPacketsLoop, this);
         txThread = std::thread(TxLoopFunction);
+        SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &txThread);
     }
     return 0;
 }

@@ -6,6 +6,7 @@
 
 #include "ConnectionFT601.h"
 #include "Logger.h"
+#include "threadHelper.h"
 using namespace lime;
 
 #ifdef __unix__
@@ -44,6 +45,7 @@ ConnectionFT601Entry::ConnectionFT601Entry(void):
 #endif
     mProcessUSBEvents.store(true);
     mUSBProcessingThread = std::thread(&ConnectionFT601Entry::handle_libusb_events, this);
+    SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &mUSBProcessingThread);
 #endif
 }
 
