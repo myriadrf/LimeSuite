@@ -1383,9 +1383,9 @@ int LMS7_Device::Init()
 
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 
-        if(SetFrequency(true,0,GetFrequency(true,0))!=0)
+        if(SetFrequency(true,2*i,GetFrequency(true,2*i))!=0)
             return -1;
-        if(SetFrequency(false,0,GetFrequency(false,0))!=0)
+        if(SetFrequency(false,2*i,GetFrequency(false,2*i))!=0)
             return -1;
     }
 
