@@ -2,7 +2,7 @@
 ## Create lime-suite project
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERNAL FORCE)
 project("LimeSuite")
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
@@ -10,7 +10,10 @@ option(BUILD_SHARED_LIBS "Build the shared library" ON)
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-cmake_policy(SET CMP0015 OLD)
+if(POLICY CMP0015)
+    cmake_policy(SET CMP0015 NEW)
+endif()
+
 if(${CMAKE_MAJOR_VERSION} GREATER 2)
     cmake_policy(SET CMP0043 NEW)
 endif()
