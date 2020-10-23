@@ -223,14 +223,14 @@ float_type GetFrequencySX(const bool Tx)
 
 uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
 {
+    int16_t tuneScore[3] = {255, 255, 255}; // best is closest to 0
     const uint16_t macBck = SPI_read(0x0020);
-    bool canDeliverFrequency;
-    uint8_t valICT = 255;
+    bool canDeliverFrequency = false;
+
     Modify_SPI_Reg_bits(MAC, tx?2:1);
     //find required VCO frequency
     {
         float_type VCOfreq;
-        uint32_t fractionalPart;
         float_type temp;
         {
             uint8_t div_loch;
@@ -243,6 +243,7 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
             Modify_SPI_Reg_bits(DIV_LOCH, div_loch-1);
         }
         {
+            uint32_t fractionalPart;
             const uint8_t enDiv2 = (VCOfreq > 5500e6) ? 1 : 0;
             Modify_SPI_Reg_bits(EN_DIV2_DIVPROG, enDiv2); //EN_DIV2_DIVPROG
             temp = VCOfreq / (RefClk * (1 + enDiv2));
@@ -253,35 +254,33 @@ uint8_t SetFrequencySX(const bool tx, const float_type freq_Hz)
             SPI_write(0x011D, fractionalPart & 0xFFFF); //FRAC_SDM[15:0]
         }
     }
-
-    canDeliverFrequency = false;
-    for(;;)
+    while(1)
     {
-        uint8_t sel_vco, bestVCO, bestCSW;
-        uint8_t bestScore = 255;// best is closest to 0
+        uint8_t sel_vco;
+        uint8_t bestvco = 0;
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
             Modify_SPI_Reg_bits(SEL_VCO, sel_vco);
             if( TuneVCO(1) == MCU_NO_ERROR)
             {
-                const uint8_t csw = Get_SPI_Reg_bits(CSW_VCO);
-                const uint8_t score = abs(csw - 128);
-                if(score < bestScore)
-                {
-                    bestScore = score;
-                    bestVCO = sel_vco;
-                    bestCSW = csw;
-                }
+                tuneScore[sel_vco] = Get_SPI_Reg_bits(CSW_VCO)-128;
                 canDeliverFrequency = true;
             }
+            if(abs(tuneScore[sel_vco]) < abs(tuneScore[bestvco]))
+                bestvco = sel_vco;
         }
-        Modify_SPI_Reg_bits(SEL_VCO, bestVCO);
-        Modify_SPI_Reg_bits(CSW_VCO, bestCSW);
-
-        if(canDeliverFrequency || valICT == 45)
+        if(canDeliverFrequency)
+        {
+            Modify_SPI_Reg_bits(SEL_VCO, bestvco);
+            Modify_SPI_Reg_bits(CSW_VCO, tuneScore[bestvco] + 128);
             break;
-        
-        Modify_SPI_Reg_bits(ICT_VCO, valICT -= 70);
+        }
+        {
+            uint16_t bias = Get_SPI_Reg_bits(ICT_VCO);
+            if(bias == 255)
+                break;
+            Modify_SPI_Reg_bits(ICT_VCO, bias + 32 > 255 ? 255 : bias + 32);
+        }
     }
     SPI_write(0x0020, macBck);
     if (canDeliverFrequency == false)
