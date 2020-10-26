@@ -14,6 +14,10 @@ if(POLICY CMP0015)
     cmake_policy(SET CMP0015 NEW)
 endif()
 
+if(POLICY CMP0077)
+    cmake_policy(SET CMP0077 OLD)
+endif()
+
 if(${CMAKE_MAJOR_VERSION} GREATER 2)
     cmake_policy(SET CMP0043 NEW)
 endif()
