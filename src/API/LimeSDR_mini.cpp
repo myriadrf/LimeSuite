@@ -79,6 +79,10 @@ int LMS7_LimeSDR_mini::Init()
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
     for (auto i : initVals)
         lms->SPI_write(i.adr, i.val, true);
+
+    if(lms->CalibrateTxGain(0,nullptr) != 0)
+        return -1;
+
     lms->EnableChannel(true, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
