@@ -1013,6 +1013,10 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     {
         if (lms->SetTRFPAD_dB(value)!=0)
             return -1;
+        if(value <= 0)
+            return lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),1);
+        if(lms->GetTBBIAMP_dB() < 0.0) 
+            return lms->CalibrateTxGain(0,nullptr);
     }
     else
     {
@@ -1022,7 +1026,7 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
             value = maxGain-1;
         else if (value < 0)
             value = 0;
-        unsigned lna = 0, pga = 0;
+        unsigned lna = 0, pga = 0, tia = 2;
 
         //LNA table
         const unsigned lnaTbl[maxGain] = {
@@ -1042,9 +1046,12 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
         lna = lnaTbl[int(value+0.5)];
         pga = pgaTbl[int(value+0.5)];
 
+        if(value <= 0) tia = 1;
+
         int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16; //from datasheet
 
         if ((lms->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1)!=0)
+          ||(lms->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia)!=0)
           ||(lms->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga)!=0)
           ||(lms->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB),rcc_ctl_pga_rbb)!=0))
             return -1;
