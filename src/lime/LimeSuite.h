@@ -371,10 +371,9 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
- * @param   gain        Desired gain, range [0, 52] for TX, [0, 61] for RX
+ * @param   gain        Desired gain, range [0, 73]
  * @return  0 on success, (-1) on failure
  */
-
 API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
                                         size_t chan, unsigned gain);
 

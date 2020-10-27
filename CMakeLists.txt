@@ -6,6 +6,7 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL
 project("LimeSuite")
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
+option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -158,6 +159,10 @@ if (APPLE)
    add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
 endif(APPLE)
 
+if (ENABLE_NEW_GAIN_BEHAVIOUR)
+    add_definitions(-DNEW_GAIN_BEHAVIOUR)
+endif()
+
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
 ########################################################################
@@ -276,18 +281,6 @@ message(STATUS "Build timestamp: ${BUILD_TIMESTAMP}")
 message(STATUS "Lime Suite version: ${LIME_SUITE_VERSION}")
 message(STATUS "ABI/so version: ${LIME_SUITE_SOVER}")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadImages.cmake)
-
-#########################################################################
-# Gain warning
-#########################################################################
-message(STATUS "")
-message(STATUS "########################################################")
-message(STATUS "##                     WARNING                        ##")
-message(STATUS "########################################################")
-message(STATUS "## Gain API maximum and default values have been      ##")
-message(STATUS "## changed. Tx ouput may be up to 18 dB higher than   ##")
-message(STATUS "## previously using same gain value                   ##") 
-message(STATUS "########################################################")
 
 ########################################################################
 # uninstall target

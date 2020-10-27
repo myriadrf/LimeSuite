@@ -1013,21 +1013,31 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     {
         if (lms->SetTRFPAD_dB(value)!=0)
             return -1;
+#ifdef NEW_GAIN_BEHAVIOUR
         if(value <= 0)
             return lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),1);
         if(lms->GetTBBIAMP_dB() < 0.0) 
             return lms->CalibrateTxGain(0,nullptr);
+#else
+        value -= lms->GetTRFPAD_dB();
+        if (lms->SetTBBIAMP_dB(value)!=0)
+            return -1;
+#endif
     }
     else
     {
+#ifdef NEW_GAIN_BEHAVIOUR
         const int maxGain = 62; // gain table size
+#else
+        cons int maxGain = 74;
+#endif
         value += 12;           //pga offset
         if (value >= maxGain) //do not exceed gain table index
             value = maxGain-1;
         else if (value < 0)
             value = 0;
-        unsigned lna = 0, pga = 0, tia = 2;
-
+        unsigned lna = 0, pga = 0, tia = 0;
+#ifdef NEW_GAIN_BEHAVIOUR
         //LNA table
         const unsigned lnaTbl[maxGain] = {
             0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
@@ -1042,16 +1052,39 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
             5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
             18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
         };
-
+#else
+        //LNA table
+        const unsigned lnaTbl[maxGain] = {
+            0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+            5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+            11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+            14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+            14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+        };
+        //PGA table
+        const unsigned pgaTbl[maxGain] = {
+            0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+            1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+            5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 4,  5,  6,  7,  8,
+            9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+            22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+        };
+#endif
         lna = lnaTbl[int(value+0.5)];
         pga = pgaTbl[int(value+0.5)];
 
-        if(value <= 0) tia = 1;
+#ifdef NEW_GAIN_BEHAVIOUR
+        if(value > 0) tia = 1;
+#else
+        //TIA table
+        if (value > 51) tia = 2;
+        else if (value > 42) tia = 1;
+#endif
 
         int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16; //from datasheet
 
         if ((lms->Modify_SPI_Reg_bits(LMS7param(G_LNA_RFE),lna+1)!=0)
-          ||(lms->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia)!=0)
+          ||(lms->Modify_SPI_Reg_bits(LMS7param(G_TIA_RFE),tia+1)!=0)
           ||(lms->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),pga)!=0)
           ||(lms->Modify_SPI_Reg_bits(LMS7param(RCC_CTL_PGA_RBB),rcc_ctl_pga_rbb)!=0))
             return -1;
@@ -1077,10 +1110,18 @@ double LMS7_Device::GetGain(bool dir_tx, unsigned chan, const std::string &name)
         return lms->GetTBBIAMP_dB();
     else if (name == "LB_PAD")
         return lms->GetTRFLoopbackPAD_dB();
+
+#ifdef NEW_GAIN_BEHAVIOUR
     if (dir_tx)
         return lms->GetTRFPAD_dB();
     else
         return lms->GetRFELNA_dB() + lms->GetRBBPGA_dB();
+#else
+    if (dir_tx)
+        return lms->GetTRFPAD_dB() + lms->GetTBBIAMP_dB();
+    else
+        return lms->GetRFELNA_dB() + lms->GetRFETIA_dB() + lms->GetRBBPGA_dB();
+#endif
 }
 
 LMS7_Device::Range LMS7_Device::GetGainRange(bool isTx, unsigned chan, const std::string &name) const
@@ -1092,7 +1133,11 @@ LMS7_Device::Range LMS7_Device::GetGainRange(bool isTx, unsigned chan, const std
     if (name == "PAD") return Range(0.0, 52.0);
     if (name == "IAMP") return Range(-12.0, 12.0);
     if (name == "LB_PAD") return Range(-4.3, 0.0);
+#ifdef NEW_GAIN_BEHAVIOUR
     if (name == "") return Range(isTx ? 0.0 : -12.0, isTx ? 52.0 : 49.0);
+#else
+    if (name == "") return Range(-12.0, isTx ? 64.0 : 61.0);
+#endif
     return Range();
 }
 

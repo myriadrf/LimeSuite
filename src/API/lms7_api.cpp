@@ -451,7 +451,11 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
                                                 size_t chan,unsigned gain)
 {
     lime::LMS7_Device* lms = CheckDevice(device, chan);
+#ifdef NEW_GAIN_BEHAVIOUR
     return lms ? lms->SetGain(dir_tx,chan,dir_tx ? gain : double(gain-12.0f)) : -1;
+#else
+    return lms ? lms->SetGain(dir_tx,chan,int(gain-12)) : -1;
+#endif
 }
 
 API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan,float_type *gain)
@@ -471,11 +475,12 @@ API_EXPORT int CALL_CONV LMS_GetGaindB(lms_device_t *device, bool dir_tx, size_t
     lime::LMS7_Device* lms = CheckDevice(device, chan);
     if (!lms)
         return -1;
-
-    if(dir_tx)
-        *gain = lms->GetGain(dir_tx, chan) + 0.5;
-    else
-        *gain = lms->GetGain(dir_tx,chan)+12+0.5;
+#ifdef NEW_GAIN_BEHAVIOUR
+    if(dir_tx) *gain = lms->GetGain(dir_tx, chan) + 0.5;
+    else *gain = lms->GetGain(dir_tx,chan)+12+0.5;
+#else
+    *gain = lms->GetGain(dir_tx,chan)+12+0.5;    
+#endif        
     return LMS_SUCCESS;
 }
 
