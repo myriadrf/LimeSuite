@@ -6,6 +6,7 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERN
 project("LimeSuite")
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
+option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -164,6 +165,10 @@ endif(MSVC)
 if (APPLE)
    add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
 endif(APPLE)
+
+if (ENABLE_NEW_GAIN_BEHAVIOUR)
+    add_definitions(-DNEW_GAIN_BEHAVIOUR)
+endif()
 
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling

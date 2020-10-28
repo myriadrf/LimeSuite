@@ -1013,19 +1013,46 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
     {
         if (lms->SetTRFPAD_dB(value)!=0)
             return -1;
+#ifdef NEW_GAIN_BEHAVIOUR
+        if(value <= 0)
+            return lms->Modify_SPI_Reg_bits(LMS7param(CG_IAMP_TBB),1);
+        if(lms->GetTBBIAMP_dB() < 0.0) 
+            return lms->CalibrateTxGain(0,nullptr);
+#else
         value -= lms->GetTRFPAD_dB();
         if (lms->SetTBBIAMP_dB(value)!=0)
             return -1;
+#endif
     }
     else
     {
-        const int maxGain = 74; //gain table size
+#ifdef NEW_GAIN_BEHAVIOUR
+        const int maxGain = 62; // gain table size
+#else
+        const int maxGain = 74;
+#endif
         value += 12;           //pga offset
         if (value >= maxGain) //do not exceed gain table index
             value = maxGain-1;
         else if (value < 0)
             value = 0;
-        unsigned lna = 0, tia = 0, pga = 0;
+        unsigned lna = 0, pga = 0, tia = 0;
+#ifdef NEW_GAIN_BEHAVIOUR
+        //LNA table
+        const unsigned lnaTbl[maxGain] = {
+            0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
+            5,  5,  6,  6,  6,  7,  7,  7,  8,  9,  10, 11, 11, 11, 11, 11,
+            11, 11, 11, 11, 11, 11, 11, 11, 12, 13, 14, 14, 14, 14, 14, 14,
+            14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14
+        };
+        //PGA table
+        const unsigned pgaTbl[maxGain] = {
+            0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,  1,  2,  0,
+            1,  2,  0,  1,  2,  0,  1,  2,  0,  0,  0,  0,  1,  2,  3,  4,
+            5,  6,  7,  8,  9,  10, 11, 12, 12, 12, 12, 13, 14, 15, 16, 17,
+            18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+        };
+#else
         //LNA table
         const unsigned lnaTbl[maxGain] = {
             0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
@@ -1042,13 +1069,17 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
             9,  10, 11, 12, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
             22, 23, 24, 25, 26, 27, 28, 29, 30, 31
         };
+#endif
+        lna = lnaTbl[int(value+0.5)];
+        pga = pgaTbl[int(value+0.5)];
 
+#ifdef NEW_GAIN_BEHAVIOUR
+        if(value > 0) tia = 1;
+#else
         //TIA table
         if (value > 51) tia = 2;
         else if (value > 42) tia = 1;
-
-        lna = lnaTbl[int(value+0.5)];
-        pga = pgaTbl[int(value+0.5)];
+#endif
 
         int rcc_ctl_pga_rbb = (430*(pow(0.65,((double)pga/10)))-110.35)/20.4516+16; //from datasheet
 
@@ -1079,10 +1110,18 @@ double LMS7_Device::GetGain(bool dir_tx, unsigned chan, const std::string &name)
         return lms->GetTBBIAMP_dB();
     else if (name == "LB_PAD")
         return lms->GetTRFLoopbackPAD_dB();
+
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (dir_tx)
+        return lms->GetTRFPAD_dB();
+    else
+        return lms->GetRFELNA_dB() + lms->GetRBBPGA_dB();
+#else
     if (dir_tx)
         return lms->GetTRFPAD_dB() + lms->GetTBBIAMP_dB();
     else
         return lms->GetRFELNA_dB() + lms->GetRFETIA_dB() + lms->GetRBBPGA_dB();
+#endif
 }
 
 LMS7_Device::Range LMS7_Device::GetGainRange(bool isTx, unsigned chan, const std::string &name) const
@@ -1094,7 +1133,11 @@ LMS7_Device::Range LMS7_Device::GetGainRange(bool isTx, unsigned chan, const std
     if (name == "PAD") return Range(0.0, 52.0);
     if (name == "IAMP") return Range(-12.0, 12.0);
     if (name == "LB_PAD") return Range(-4.3, 0.0);
+#ifdef NEW_GAIN_BEHAVIOUR
+    if (name == "") return Range(isTx ? 0.0 : -12.0, isTx ? 52.0 : 49.0);
+#else
     if (name == "") return Range(-12.0, isTx ? 64.0 : 61.0);
+#endif
     return Range();
 }
 
@@ -1353,8 +1396,8 @@ int LMS7_Device::Init()
         {0x0022, 0x0FFF}, {0x0023, 0x5550}, {0x002B, 0x0038}, {0x002C, 0x0000},
         {0x002D, 0x0641}, {0x0086, 0x4101}, {0x0087, 0x5555}, {0x0088, 0x0525},
         {0x0089, 0x1078}, {0x008B, 0x218C}, {0x008C, 0x267B}, {0x00A6, 0x000F},
-        {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x318C}, {0x0109, 0x57C1},
-        {0x010A, 0x1F4C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010D, 0x011A},
+        {0x00A9, 0x8000}, {0x00AC, 0x2000}, {0x0108, 0x218C}, {0x0109, 0x57C1},
+        {0x010A, 0x154C}, {0x010B, 0x0001}, {0x010C, 0x8865}, {0x010D, 0x011A},
         {0x010E, 0x0000}, {0x010F, 0x3142}, {0x0110, 0x2B14}, {0x0111, 0x0000},
         {0x0112, 0x000C}, {0x0113, 0x03C2}, {0x0114, 0x01F0}, {0x0115, 0x000D},
         {0x0118, 0x418C}, {0x0119, 0x5292}, {0x011A, 0x3001}, {0x011C, 0x8941},
@@ -1373,11 +1416,19 @@ int LMS7_Device::Init()
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         for (auto i : initVals)
             lms->SPI_write(i.adr, i.val, true);
+        
+        if(lms->CalibrateTxGain(0,nullptr) != 0)
+            return -1;
+
         EnableChannel(true, 2*i, false);
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
         for (auto i : initVals)
             if (i.adr >= 0x100)
                 lms->SPI_write(i.adr, i.val, true);
+
+        if(lms->CalibrateTxGain(0,nullptr) != 0)
+            return -1;
+
         EnableChannel(false, 2*i+1, false);
         EnableChannel(true, 2*i+1, false);
 
