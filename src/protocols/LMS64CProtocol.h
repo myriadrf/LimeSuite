@@ -24,27 +24,27 @@ class LIME_API LMS64CProtocol : public virtual IConnection
 public:
     LMS64CProtocol(void);
 
-    virtual ~LMS64CProtocol(void);
+    ~LMS64CProtocol(void) override;
 
-    virtual DeviceInfo GetDeviceInfo(void);
+    DeviceInfo GetDeviceInfo(void) override;
 
     //! DeviceReset implemented by LMS64C
     int DeviceReset(int ind=0);
 
     //! TransactSPI implemented by LMS64C
-    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)override;
+    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
 
     //! WriteI2C implemented by LMS64C
-    int WriteI2C(const int addr, const std::string &data);
+    int WriteI2C(const int addr, const std::string &data) override;
 
     //! ReadI2C implemented by LMS64C
-    int ReadI2C(const int addr, const size_t numBytes, std::string &data);
+    int ReadI2C(const int addr, const size_t numBytes, std::string &data) override;
 
     //! WriteRegisters (BRDSPI) implemented by LMS64C
-    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size);
+    int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size) override;
 
     //! ReadRegisters (BRDSPI) implemented by LMS64C
-    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
+    int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size) override;
 
     /// Supported connection types.
     enum eConnectionType
@@ -141,15 +141,15 @@ public:
         PROGRAM_WRITE_TARGET_COUNT
     };
 
-    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr);
+    int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr) override;
 
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) override;
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
+    int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) override;
+    int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
 
-    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
-    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
+    int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+    int GPIORead(uint8_t *buffer, const size_t bufLength) override;
+    int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
+    int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
 
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
     int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
