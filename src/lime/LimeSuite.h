@@ -350,6 +350,10 @@ API_EXPORT int CALL_CONV LMS_GetAntennaBW(lms_device_t *dev, bool dir_tx,
  * @note actual gain depends on LO frequency and analog LPF configuration and
  * resulting output signal level may be different when those values are changed
  *
+ * @attention Gain functionality will be changed in the future. IAMP 
+ * and TIA gain elements won't configured via this function. To enable new 
+ * behaviour, turn on ENABLE_NEW_GAIN_BEHAVIOUR CMake option. 
+ * 
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
@@ -368,6 +372,10 @@ API_EXPORT int CALL_CONV LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx
  * @note actual gain depends on LO frequency and analog LPF configuration and
  * resulting output signal levle may be different when those values are changed
  *
+ * @attention Gain functionality and range will be changed in the future. IAMP 
+ * and TIA gain elements won't configured via this function. To enable new 
+ * behaviour, turn on ENABLE_NEW_GAIN_BEHAVIOUR CMake option.
+ * 
  * @param   device      Device handle previously obtained by LMS_Open().
  * @param   dir_tx      Select RX or TX
  * @param   chan        Channel index
@@ -383,6 +391,10 @@ API_EXPORT int CALL_CONV LMS_SetGaindB(lms_device_t *device, bool dir_tx,
  * @note actual gain depends on LO frequency and analog LPF configuration and
  * resulting output signal level may be different when those values are changed
  *
+ * @attention Gain functionality will be changed in the future. IAMP and TIA gain 
+ * element values won't be obtained via this function. To enable new 
+ * behaviour, turn on ENABLE_NEW_GAIN_BEHAVIOUR CMake option.
+ * 
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index
@@ -398,6 +410,10 @@ API_EXPORT int CALL_CONV LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx
  * @note actual gain depends on LO frequency and analog LPF configuration and
  * resulting output signal level may be different when those values are changed
  *
+ * @attention Gain functionality and range will be changed in the future. IAMP 
+ * and TIA gain element values won't be obtained via this function. To enable new 
+ * behaviour, turn on ENABLE_NEW_GAIN_BEHAVIOUR CMake option.
+ * 
  * @param       device      Device handle previously obtained by LMS_Open().
  * @param       dir_tx      Select RX or TX
  * @param       chan        Channel index

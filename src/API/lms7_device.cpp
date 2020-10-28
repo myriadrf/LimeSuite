@@ -1029,7 +1029,7 @@ int LMS7_Device::SetGain(bool dir_tx, unsigned chan, double value, const std::st
 #ifdef NEW_GAIN_BEHAVIOUR
         const int maxGain = 62; // gain table size
 #else
-        cons int maxGain = 74;
+        const int maxGain = 74;
 #endif
         value += 12;           //pga offset
         if (value >= maxGain) //do not exceed gain table index
