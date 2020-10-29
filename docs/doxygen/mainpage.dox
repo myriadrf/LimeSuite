@@ -13,6 +13,14 @@ LMS API is a set of C functions that are exported by LimeSuite library. Its main
 
 /*! \page page_changelog Changelog
 
+### v20.10.0
+
+\li Fixed GFIR floating point comparison
+\li Fixed null pointer dereferences in StreamChannel::Write() and StreamChannel::Read() functions
+\li Changed USB processing, FIFO and remote thread priorities
+\li Added \ref lms_stream_t::linkFmt options to set data link format
+\li Added optional LMS_SetGaindB(), LMS_SetNormalizedGain(), LMS_GetGaindB(), LMS_GetNormalizedGain() functionality
+
 ### v20.07.0
 
 \li Fix for lms chip id not changing when setting interface frequency
