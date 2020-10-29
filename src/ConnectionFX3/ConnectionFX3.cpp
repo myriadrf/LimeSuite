@@ -509,17 +509,9 @@ bool ConnectionFX3::WaitForReading(int contextHandle, unsigned int timeout_ms)
     status = contexts[contextHandle].EndPt->WaitForXfer(contexts[contextHandle].inOvLap, timeout_ms);
 	return status;
     #else
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = t1;
-
+    //blocking not to waste CPU
     std::unique_lock<std::mutex> lck(contexts[contextHandle].transferLock);
-    while(contexts[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
-    {
-        //blocking not to waste CPU
-        contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
-        t2 = chrono::high_resolution_clock::now();
-    }
-    return contexts[contextHandle].done.load() == true;
+    return contexts[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms), [&](){return contexts[contextHandle].done.load();});
     #endif
     }
     return true;  //there is nothing to wait for (signal wait finished)
@@ -642,17 +634,9 @@ bool ConnectionFX3::WaitForSending(int contextHandle, unsigned int timeout_ms)
 	status = contextsToSend[contextHandle].EndPt->WaitForXfer(contextsToSend[contextHandle].inOvLap, timeout_ms);
 	return status;
 #   else
-    auto t1 = chrono::high_resolution_clock::now();
-    auto t2 = t1;
-
+    //blocking not to waste CPU
     std::unique_lock<std::mutex> lck(contextsToSend[contextHandle].transferLock);
-    while(contextsToSend[contextHandle].done.load() == false && std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
-    {
-        //blocking not to waste CPU
-        contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms));
-        t2 = chrono::high_resolution_clock::now();
-    }
-	return contextsToSend[contextHandle].done == true;
+    return contextsToSend[contextHandle].cv.wait_for(lck, chrono::milliseconds(timeout_ms), [&](){return contextsToSend[contextHandle].done.load();});
 #   endif
     }
     return true;  //there is nothing to wait for (signal wait finished)
