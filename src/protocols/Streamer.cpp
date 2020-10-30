@@ -182,6 +182,7 @@ Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : mRxStreams(2, this), mTxSt
     dataPort = f->GetConnection();
     mTimestampOffset = 0;
     rxLastTimestamp.store(0, std::memory_order_relaxed);
+    rxLastHosttime.store(0, std::memory_order_relaxed);
     terminateRx.store(false, std::memory_order_relaxed);
     terminateTx.store(false, std::memory_order_relaxed);
     rxDataRate_Bps.store(0, std::memory_order_relaxed);
@@ -297,6 +298,13 @@ uint64_t Streamer::GetHardwareTimestamp(void)
 void Streamer::SetHardwareTimestamp(const uint64_t now)
 {
     mTimestampOffset = now - rxLastTimestamp.load(std::memory_order_relaxed);
+}
+
+void Streamer::GetRelativeTimestamp(uint64_t &hw_time, host_time_t &host_time) const
+{
+    std::lock_guard<std::mutex> l (rtlock);
+    hw_time = rxLastTimestamp.load(std::memory_order_relaxed);
+    host_time = rxLastHosttime.load(std::memory_order_relaxed);
 }
 
 void Streamer::RstRxIQGen()
@@ -835,11 +843,12 @@ void Streamer::ReceivePacketsLoop()
     while (terminateRx.load(std::memory_order_relaxed) == false)
     {
         int32_t bytesReceived = 0;
+        host_time_t ht;
         if(handles[bi] >= 0)
         {
             if (dataPort->WaitForReading(handles[bi], 1000) == true)
             {
-                bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi]);
+                bytesReceived = dataPort->FinishDataReading(&buffers[bi*bufferSize], bufferSize, handles[bi], &ht);
                 totalBytesReceived += bytesReceived;
             }
             else
@@ -875,7 +884,10 @@ void Streamer::ReceivePacketsLoop()
                         value.pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
+            std::unique_lock<std::mutex> l (rtlock);
             rxLastTimestamp.store(prevTs, std::memory_order_relaxed);
+            rxLastHosttime.store(ht, std::memory_order_relaxed);
+            l.unlock();
             //parse samples
             std::vector<complex16_t*> dest(chCount);
             for(uint8_t c=0; c<chCount; ++c)

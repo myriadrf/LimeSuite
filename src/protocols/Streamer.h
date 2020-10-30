@@ -27,6 +27,11 @@ class Streamer;
 class LMS7002M;
 
 /*!
+ * Type alias redefinition. Must be aligned with the IConnection.h.
+ */
+using host_time_t = uint64_t;
+
+/*!
  * The stream config structure is used with the SetupStream() API.
  */
 struct LIME_API StreamConfig
@@ -123,6 +128,7 @@ public:
 
     uint64_t GetHardwareTimestamp(void);
     void SetHardwareTimestamp(const uint64_t now);
+    void GetRelativeTimestamp(uint64_t &, host_time_t &) const;
     int UpdateThreads(bool stopAll = false);
 
     std::atomic<uint32_t> rxDataRate_Bps;
@@ -137,6 +143,8 @@ public:
     std::vector<StreamChannel> mTxStreams;
     std::atomic<uint64_t> rxLastTimestamp;
     std::atomic<uint64_t> txLastTimestamp;
+    std::atomic<host_time_t> rxLastHosttime;
+    mutable std::mutex rtlock;
     uint64_t mTimestampOffset;
     int streamSize;
     unsigned txBatchSize;
