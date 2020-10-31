@@ -141,7 +141,16 @@ class RelativeTimestamp
 public:
     void Set(uint64_t hw, host_time_t host)
     {
-        std::lock_guard<Spin> l(lock);
+        std::unique_lock<Spin> l(lock, std::try_to_lock);
+        if (!l.owns_lock()) {
+            // Optimized exit. It's OK to not have the latest information, so to avoid waiting skip the update.
+            if (++skip < skip_limit)
+                return;
+            // Prevent thread starvation. If we've skipped the update a lot of times, we should wait this time.
+            l.lock();
+        }
+
+        skip = 0;
         hwstamp = hw;
         hoststamp = host;
     }
@@ -156,6 +165,8 @@ public:
 private:
     uint64_t hwstamp {0};
     host_time_t hoststamp {0};
+    const int skip_limit {3};
+    int skip {skip_limit};
     mutable Spin lock;
 };
 
