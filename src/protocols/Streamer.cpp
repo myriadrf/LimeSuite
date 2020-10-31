@@ -302,7 +302,7 @@ void Streamer::SetHardwareTimestamp(const uint64_t now)
 
 void Streamer::GetRelativeTimestamp(uint64_t &hw_time, host_time_t &host_time) const
 {
-    std::lock_guard<std::mutex> l (rtlock);
+    std::lock_guard<Spin> l (rtlock);
     hw_time = rxLastTimestamp.load(std::memory_order_relaxed);
     host_time = rxLastHosttime.load(std::memory_order_relaxed);
 }
@@ -884,7 +884,7 @@ void Streamer::ReceivePacketsLoop()
                         value.pktLost += packetLoss;
             }
             prevTs = pkt[pktIndex].counter;
-            std::unique_lock<std::mutex> l (rtlock);
+            std::unique_lock<Spin> l (rtlock);
             rxLastTimestamp.store(prevTs, std::memory_order_relaxed);
             rxLastHosttime.store(ht, std::memory_order_relaxed);
             l.unlock();

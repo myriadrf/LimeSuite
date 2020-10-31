@@ -117,6 +117,22 @@ protected:
 
 };
 
+/*!
+ * A trivial implementation of the Spinlock which satisfies the Lockable concept requirements.
+ */
+class Spin
+{
+public:
+    Spin() = default;
+    Spin(const Spin&) = delete;
+    Spin& operator= (const Spin&) = delete;
+    void lock() {while (spin.test_and_set(std::memory_order_acquire));}
+    bool try_lock() {return !spin.test_and_set(std::memory_order_acquire);}
+    void unlock() {spin.clear(std::memory_order_release);}
+private:
+    std::atomic_flag spin {ATOMIC_FLAG_INIT};
+};
+
 class Streamer
 {
 public:
@@ -144,7 +160,7 @@ public:
     std::atomic<uint64_t> rxLastTimestamp;
     std::atomic<uint64_t> txLastTimestamp;
     std::atomic<host_time_t> rxLastHosttime;
-    mutable std::mutex rtlock;
+    mutable Spin rtlock;
     uint64_t mTimestampOffset;
     int streamSize;
     unsigned txBatchSize;
