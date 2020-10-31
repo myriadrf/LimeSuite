@@ -133,6 +133,32 @@ private:
     std::atomic_flag spin {ATOMIC_FLAG_INIT};
 };
 
+/*!
+ * The class encapsulates all the necessary logic for collection and providing a relative timestamps.
+ */
+class RelativeTimestamp
+{
+public:
+    void Set(uint64_t hw, host_time_t host)
+    {
+        std::lock_guard<Spin> l(lock);
+        hwstamp = hw;
+        hoststamp = host;
+    }
+
+    void Get(uint64_t &hw, host_time_t &host) const
+    {
+        std::lock_guard<Spin> l(lock);
+        hw = hwstamp;
+        host = hoststamp;
+    }
+
+private:
+    uint64_t hwstamp {0};
+    host_time_t hoststamp {0};
+    mutable Spin lock;
+};
+
 class Streamer
 {
 public:
@@ -159,8 +185,7 @@ public:
     std::vector<StreamChannel> mTxStreams;
     std::atomic<uint64_t> rxLastTimestamp;
     std::atomic<uint64_t> txLastTimestamp;
-    std::atomic<host_time_t> rxLastHosttime;
-    mutable Spin rtlock;
+    RelativeTimestamp relTimestamp;
     uint64_t mTimestampOffset;
     int streamSize;
     unsigned txBatchSize;
