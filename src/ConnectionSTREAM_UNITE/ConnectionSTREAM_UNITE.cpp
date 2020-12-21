@@ -5,7 +5,6 @@
 */
 
 #include "ConnectionSTREAM_UNITE.h"
-#include "ErrorReporting.h"
 using namespace std;
 namespace lime
 {
