@@ -166,7 +166,7 @@ int ReadWFM(const wxString filename, std::vector<int16_t> &iSamples, std::vector
     if( fpin.IsOpened() == false)
     {
 #ifndef NDEBUG
-        lime::debug("WFM reading: Input file can not be opened (%s)", filename);
+        lime::debug("WFM reading: Input file can not be opened (%s)", filename.mb_str().data());
 #endif
         return -1;
     }
