@@ -16,7 +16,7 @@ static ConnectionSTREAM_UNITEEntry STREAM_UNITEEntry;
 }
 
 ConnectionSTREAM_UNITEEntry::ConnectionSTREAM_UNITEEntry(void):
-    ConnectionFX3Entry("STREAM+UNITE")
+    ConnectionFX3Entry()
 {
 
 }
