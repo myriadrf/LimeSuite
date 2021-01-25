@@ -49,7 +49,7 @@ static int printHelp(void)
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << "    --timing          \t\t\t Time interfaces and operations" << std::endl;
-    std::cout << "    --FX3reset        \t\t\t FX3 USB controller reset" << std::endl;
+    std::cout << "    --FX3reset[=\"module=foo,serial=bar\"] \t\t\t FX3 USB controller reset" << std::endl;
     std::cout << std::endl;
     std::cout << "  Calibrations sweep:" << std::endl;
     std::cout << "    --cal[=\"module=foo,serial=bar\"]  \t Calibrate device, optional device args..." << std::endl;
