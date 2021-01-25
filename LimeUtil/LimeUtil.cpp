@@ -41,7 +41,7 @@ static int printHelp(void)
     std::cout << "    --info \t\t\t\t Print module information" << std::endl;
     std::cout << "    --find[=\"module=foo,serial=bar\"] \t Discover available devices" << std::endl;
     std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
-    std::cout << "    --force \t\t\t\t Force operaton" << std::endl;
+    std::cout << "    --force \t\t\t\t Force operation" << std::endl;
     std::cout << std::endl;
     std::cout << "  Advanced options:" << std::endl;
     std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;
@@ -49,6 +49,7 @@ static int printHelp(void)
     std::cout << "    --fpga=\"filename\" \t\t\t Program FPGA gateware to flash" << std::endl;
     std::cout << "    --fw=\"filename\"   \t\t\t Program FX3  firmware to flash" << std::endl;
     std::cout << "    --timing          \t\t\t Time interfaces and operations" << std::endl;
+    std::cout << "    --FX3reset        \t\t\t FX3 USB controller reset" << std::endl;
     std::cout << std::endl;
     std::cout << "  Calibrations sweep:" << std::endl;
     std::cout << "    --cal[=\"module=foo,serial=bar\"]  \t Calibrate device, optional device args..." << std::endl;
@@ -152,6 +153,37 @@ static int makeDevice(void)
     std::cout << "OK" << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
+}
+
+/***********************************************************************
+ * FX3 reset
+ **********************************************************************/
+static int FX3Reset()
+{
+    std::string argStr = "none,";
+    if (optarg != NULL) argStr += optarg;
+    auto handles = ConnectionRegistry::findConnections(argStr);
+    if(handles.size() == 0)
+    {
+        std::cout << "No devices found" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
+    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+    auto status = conn->ProgramWrite(nullptr, 0, 0, 1, nullptr);
+
+    std::cout << std::endl;
+    if(status == 0)
+    {
+        std::cout << "FX3 reset complete!" << std::endl;
+    }
+    else
+    {
+        std::cout << "FX3 reset failed!" << std::endl;
+    }
+
+    ConnectionRegistry::freeConnection(conn);
+    return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
 }
 
 /***********************************************************************
@@ -297,6 +329,7 @@ int main(int argc, char *argv[])
         {"fpga", required_argument, 0, 'g'},
         {"fw",   required_argument, 0, 'w'},
         {"timing",     no_argument, 0, 't'},
+        {"FX3reset", optional_argument, 0, 'r'},
         {"cal",     optional_argument, 0, 'l'},
         {"start",   required_argument, 0, 's'},
         {"stop",    required_argument, 0, 'p'},
@@ -327,6 +360,7 @@ int main(int argc, char *argv[])
         case 'g': return programGateware(argStr);
         case 'w': return programFirmware(argStr);
         case 't': testTiming = true; break;
+        case 'r': return FX3Reset();
         case 'l':
             calSweep = true;
             if (optarg != NULL) argStr = "none," + std::string(optarg);
