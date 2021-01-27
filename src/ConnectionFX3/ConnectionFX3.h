@@ -157,6 +157,7 @@ protected:
 class ConnectionFX3Entry : public ConnectionRegistryEntry
 {
 public:
+    ConnectionFX3Entry(const char* connectionName);
     ConnectionFX3Entry(void);
     virtual ~ConnectionFX3Entry(void);
     std::vector<ConnectionHandle> enumerate(const ConnectionHandle& hint);

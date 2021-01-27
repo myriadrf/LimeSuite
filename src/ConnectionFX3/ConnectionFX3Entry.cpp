@@ -30,6 +30,24 @@ void __loadConnectionFX3Entry(void) //TODO fixme replace with LoadLibrary/dlopen
 static ConnectionFX3Entry FX3Entry;
 }
 
+ConnectionFX3Entry::ConnectionFX3Entry(const char* connectionName):
+    ConnectionRegistryEntry(connectionName)
+{
+#ifdef __unix__
+    int r = libusb_init(&ctx); //initialize the library for the session we just declared
+    if(r < 0)
+        lime::error("Init Error %i", r); //there was an error
+#if LIBUSBX_API_VERSION < 0x01000106
+    libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
+#else
+    libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, 3); //set verbosity level to 3, as suggested in the documentation
+#endif
+    mProcessUSBEvents.store(true);
+    mUSBProcessingThread = std::thread(&ConnectionFX3Entry::handle_libusb_events, this);
+    SetOSThreadPriority(ThreadPriority::NORMAL, ThreadPolicy::REALTIME, &mUSBProcessingThread);
+#endif
+}
+
 ConnectionFX3Entry::ConnectionFX3Entry(void):
     ConnectionRegistryEntry("FX3")
 {

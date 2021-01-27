@@ -31,7 +31,7 @@ set(CONNECTION_STREAM_UNITE_SOURCES
 ########################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_STREAM_UNITE "Enable STREAM+UNITE" ON "ENABLE_LIBRARY;ENABLE_EVB7COM;ENABLE_STREAM" OFF)
+cmake_dependent_option(ENABLE_STREAM_UNITE "Enable STREAM+UNITE" ON "ENABLE_LIBRARY;ENABLE_EVB7COM;ENABLE_FX3" OFF)
 add_feature_info(ConnectionSTREAM_UNITE ENABLE_STREAM_UNITE "STREAM+UNITE Connection support")
 if (NOT ENABLE_STREAM_UNITE)
     return()
