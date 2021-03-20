@@ -3,11 +3,6 @@
 #include <vector>
 #include <iostream>
 
-#if !(defined(max)) && _MSC_VER
-	// VC fix
-	#define max __max
-#endif
-
 using namespace std;
 
 class MemBlock
@@ -450,7 +445,7 @@ public:
 		m_top = 0;
 		for (vi = m_chunks.begin(); vi < m_chunks.end(); vi++)
 		{
-			m_top = max(m_top, vi->m_startAddress + vi->m_bytes.size() - 1);
+			m_top = max<unsigned long>(m_top, vi->m_startAddress + vi->m_bytes.size() - 1);
 		}
 	}
 
