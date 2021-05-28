@@ -15,8 +15,6 @@ class wxTextCtrl;
 class wxChoice;
 class wxRadioButton;
 
-
-
 class pnlQSpark : public wxPanel
 {
 public:
@@ -40,58 +38,95 @@ public:
     wxCheckBox* chkAT_2B;
 
     wxPanel* mPanelStreamPLL;
+    wxPanel* mPanelPACtrl;
     wxTextCtrl* txtPllFreqRxMHz;
     wxStaticText* lblRealFreqTx;
     wxStaticText* lblRealFreqRx;
     wxTextCtrl* txtPllFreqTxMHz;
-    wxTextCtrl* txtPhaseOffsetDeg;
     wxButton* btnConfigurePLL;
-
-    wxCheckBox* chkEN_TXTSP;
-    wxCheckBox* chkEN_RXTSP;
-    wxCheckBox* chkRX_DCCORR_BYP;
-    wxCheckBox* chkRX_PHCORR_BYP;
-    wxCheckBox* chkRX_GCORR_BYP;
-    wxCheckBox* chkTX_DCCORR_BYP;
-    wxCheckBox* chkTX_PHCORR_BYP;
-    wxCheckBox* chkTX_GCORR_BYP;
-    wxSpinCtrl* spinTX_DCCORRI;
-    wxSpinCtrl* spinTX_DCCORRQ;
-    wxSpinCtrl* spinTX_GCORRQ;
-    wxSpinCtrl* spinTX_GCORRI;
-    wxSpinCtrl* spinTX_PHCORR;
-    wxSpinCtrl* spinRX_GCORRQ;
-    wxSpinCtrl* spinRX_GCORRI;
-    wxSpinCtrl* spinRX_PHCORR;
-    wxChoice* cmbInsel;
+ 
+    wxButton* btnUpdateAll;
+    wxButton* btnLoadSettings;
+    wxButton* btnSaveSettings;
+    wxButton*  setFIR1;
+    wxButton*  setFIR2;    
+    wxChoice* cmbPAsrc;
     wxRadioButton* rbChannelA;
     wxRadioButton* rbChannelB;
+  
+	// reg 0x45
+    wxCheckBox * chkSLEEP_CFR;
+    wxCheckBox * chkBYPASS_CFR;
+	wxCheckBox * chkODD_CFR;
+    wxCheckBox * chkBYPASSGAIN_CFR;
+	wxCheckBox * chkSLEEP_FIR;
+	wxCheckBox * chkBYPASS_FIR;
+	wxCheckBox * chkODD_FIR;
+	wxCheckBox * chkDEL_HB;
+    wxChoice * cmbINTER_CFR;
+	wxCheckBox * chkSLEEP_CFR_chB;
+	wxCheckBox * chkBYPASS_CFR_chB;
+	wxCheckBox * chkODD_CFR_chB;
+    wxCheckBox * chkBYPASSGAIN_CFR_chB;
+	wxCheckBox * chkSLEEP_FIR_chB;
+	wxCheckBox * chkBYPASS_FIR_chB;
+	wxCheckBox * chkODD_FIR_chB;
+	wxCheckBox * chkDEL_HB_chB; 
+    wxChoice* cmbINTER_CFR_chB; 
 
-    wxTextCtrl* txtNcoFreq;
+	wxCheckBox * chkPA;
+	wxCheckBox * chkPA_chB;
+    wxCheckBox * chkDCDC;
+    wxCheckBox * chkDCDC_chB;
+
+    wxCheckBox * chkResetN;
+
+    wxSpinCtrlDouble * thresholdSpin; 
+    wxSpinCtrlDouble * thresholdGain;    
+    wxSpinCtrlDouble * thresholdSpin_chB;   
+    wxSpinCtrlDouble * thresholdGain_chB;  
+
+	wxSpinCtrl * spinCFR_ORDER;
+	wxSpinCtrl * spinCFR_ORDER_chB;
+
+    void OnThresholdChanged(wxCommandEvent& event);
+    void OnGainChanged(wxCommandEvent& event);
+    void OnOrderChanged(wxCommandEvent& event);
+    void OnInterpolationChanged(wxCommandEvent &event);
 
     static const long ID_BUTTON_UPDATEALL;
     static const long ID_VCXOCV;
 
-    void OnbtnUpdateAll(wxCommandEvent& event);
-    void OnNcoFrequencyChanged(wxCommandEvent& event);
+    void OnbtnUpdateAll(wxCommandEvent& event);  	
+    void LoadQSparkSettings(wxCommandEvent& event);
+    void SaveQSparkSettings(wxCommandEvent& event);
+   
+    int chA;
+
 protected:
     void OnConfigurePLL(wxCommandEvent &event);
     void OnReadAll(wxCommandEvent &event);
     void OnWriteAll(wxCommandEvent &event);
     void OnSwitchToChannelA(wxCommandEvent& event);
     void OnSwitchToChannelB(wxCommandEvent& event);
+    int SPI_write(lms_device_t * lmsControl, uint16_t address, uint16_t data);
+    void UpdateHannCoeff(lms_device_t * lmsControl, uint16_t Filt_N, int chA, int interpolation);
+    void onbtnFIRCoefA( wxCommandEvent& event );
+    void onbtnFIRCoefB( wxCommandEvent& event );
+    void onbtnFIRCoef(int ch, int interpolation);
 
-    struct Register
-    {
+    struct Register {
         Register();
-        Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue);
+        Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement);
         unsigned short address;
         unsigned char msb;
         unsigned char lsb;
         unsigned short defaultValue;
+        unsigned short twocomplement; 
     };
     std::map<wxObject*, Register> controlsPtr2Registers;
     void RegisterParameterChangeHandler(wxCommandEvent& event);
+    void SetRegValue(Register reg, uint16_t newValue);
 
 protected:
     lms_device_t *lmsControl;

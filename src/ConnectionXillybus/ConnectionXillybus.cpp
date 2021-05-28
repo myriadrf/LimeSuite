@@ -673,3 +673,20 @@ int ConnectionXillybus::FinishDataSending(const char* buffer, uint32_t length, i
 {
     return contextHandle;
 }
+
+int ConnectionXillybus::ReadDPDBuffer(char* buffer, unsigned length)
+{	
+
+	    WriteRegister(0x0040, length / 20);  // lenght
+        uint16_t interface_cfg_0041;
+        ReadRegister(0x0041, interface_cfg_0041);
+	    interface_cfg_0041 = (interface_cfg_0041 & ~0x1); // reset lsb
+        WriteRegister(0x0041, interface_cfg_0041);
+        ReadRegister(0x0041, interface_cfg_0041);
+	    interface_cfg_0041 = (interface_cfg_0041 |  0x1); // set lsb
+        WriteRegister(0x0041, interface_cfg_0041);
+
+	    int totalBytesReaded = ReceiveData(buffer, length, 2, 1000);
+	    return totalBytesReaded;
+
+}

@@ -1712,6 +1712,7 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
     lime::LMS7002M* lms = lms_list.at(ind == -1 ? lms_chip_id : ind);
     if (lms->LoadConfig(filename)==0)
     {
+        /*
         //tune PLLs as saved VCO settings may not work
         lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
         if (!lms->Get_SPI_Reg_bits(LMS7param(PD_VCO)))
@@ -1726,6 +1727,23 @@ int LMS7_Device::LoadConfig(const char *filename, int ind)
             return SetFPGAInterfaceFreq(-1, -1, -1000, -1000);
         }
         return 0;
+        */
+
+        // modified by B.J.
+        lms->Modify_SPI_Reg_bits(LMS7param(MAC),1,true);
+        int interp = lms->Get_SPI_Reg_bits(LMS7param(HBI_OVR_TXTSP));
+        int decim = lms->Get_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP));
+        double fpgaTxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Tx);
+        if (interp != 7)
+            fpgaTxPLL /= pow(2.0, interp);
+        double fpgaRxPLL = lms->GetReferenceClk_TSP(lime::LMS7002M::Rx);
+        if (decim != 7)
+            fpgaRxPLL /= pow(2.0, decim);
+        lms->SetInterfaceFrequency(lms->GetFrequencyCGEN(), interp, decim);
+        return fpga ?fpga->SetInterfaceFreq(fpgaTxPLL,fpgaRxPLL, lms_chip_id) : 0;
+        // end modified by B.J.
+
+
     }
     return -1;
 }

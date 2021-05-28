@@ -11,6 +11,8 @@
 #include <algorithm>
 using namespace std;
 
+
+
 namespace lime
 {
 
@@ -50,8 +52,9 @@ int FPGA::WriteRegister(uint32_t addr, uint32_t val)
 
 int FPGA::ReadRegister(uint32_t addr)
 {
-    uint32_t val;
-    return ReadRegisters(&addr, &val, 1) != 0 ? -1 : val;
+    uint32_t val = -1;
+    ReadRegisters(&addr, &val, 1);
+    return val;
 }
 
 int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt)
@@ -329,6 +332,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     }
     int N(0), M(0);
     double bestDeviation = 1e9;
+    double Fvco;
     for(auto it : availableVCOs)
     {
         if(it.second == bestScore)
@@ -351,6 +355,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if(deviation <= bestDeviation)
             {
                 bestDeviation = deviation;
+                Fvco = it.first;
                 M = Mtemp;
                 N = Ntemp;
             }
@@ -359,7 +364,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
 
     int mlow = M / 2;
     int mhigh = mlow + M % 2;
-    double Fvco = inputFreq*M/N; //actual VCO freq
+    Fvco = inputFreq*M/N; //actual VCO freq
     lime::debug("M=%i, N=%i, Fvco=%.3f MHz", M, N, Fvco / 1e6);
     if(Fvco < vcoLimits_Hz[0] || Fvco > vcoLimits_Hz[1])
         return ReportError(ERANGE, "SetPllFrequency: VCO(%g MHz) out of range [%g:%g] MHz", Fvco/1e6, vcoLimits_Hz[0]/1e6, vcoLimits_Hz[1]/1e6);
@@ -386,17 +391,17 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         int chigh = clow + C % 2;
         if(i < 8)
         {
-            if(not clocks[i].bypass && C != 1)
-                c7_c0_odds_byps &= ~(1 << (i*2)); //enable output
-            c7_c0_odds_byps |= (C % 2) << (i*2+1); //odd bit
+            if((!clocks[i].bypass) && C != 1)
+                c7_c0_odds_byps &= ~(1 << (clocks[i].index*2)); //enable output
+            c7_c0_odds_byps |= (C % 2) << (clocks[i].index*2+1); //odd bit
         }
         else
         {
-            if(not clocks[i].bypass && C != 1)
-                c15_c8_odds_byps &= ~(1 << ((i-8)*2)); //enable output
-            c15_c8_odds_byps |= (C % 2) << ((i-8)*2+1); //odd bit
+            if((!clocks[i].bypass) && C != 1)
+                c15_c8_odds_byps &= ~(1 << ((clocks[i].index-8)*2)); //enable output
+            c15_c8_odds_byps |= (C % 2) << ((clocks[i].index-8)*2+1); //odd bit
         }
-        addrs.push_back(0x002E + i); values.push_back(chigh << 8 | clow);
+        addrs.push_back(0x002E + clocks[i].index); values.push_back(chigh << 8 | clow);
         clocks[i].rd_actualFrequency = (inputFreq * M / N) / (chigh + clow);
     }
     addrs.push_back(0x0027); values.push_back(c7_c0_odds_byps);
@@ -471,7 +476,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
             if (!done && t2 - t1 > timeout)
                 lime::error("SetPllFrequency: timeout, busy bit is still 1");
             if (error)
-                lime::warning("SetPllFrequency: error configuring phase");
+                lime::error("SetPllFrequency: error configuring phase");
             addrs.push_back(0x0023); values.push_back(reg23val & ~PHCFG_START);
             if (WriteRegisters(addrs.data(), values.data(), values.size()) != 0)
                 lime::error("SetPllFrequency: configure FPGA PLL, failed to write registers");
@@ -489,6 +494,7 @@ int FPGA::SetDirectClocking(int clockIndex)
         return ReportError(ENODEV, "SetDirectClocking: device not connected");
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
+    uint16_t drct_clk_ctrl_0006 = ReadRegister(0x0006);
     vector<uint32_t> addres;
     vector<uint32_t> values;
     //enable direct clocking
@@ -795,27 +801,15 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
     }
 
-    bool phaseSearchSuccess = false;
     lime::FPGA::FPGA_PLL_clock clocks[2];
-
-    for (int i = 0; i < 10; i++)    //attempt phase search 10 times
+    clocks[0].index = 1;
+    clocks[0].outFrequency = bypassRx ? 2*rxRate_Hz : rxRate_Hz;
+    clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
+    clocks[0].findPhase = true;
+    clocks[1] = clocks[0];
+    if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)!=0)
     {
-    	clocks[0].index = 1;
-    	clocks[0].outFrequency = bypassRx ? 2*rxRate_Hz : rxRate_Hz;
-    	clocks[0].phaseShift_deg = rxPhC1 + rxPhC2 * rxRate_Hz;
-    	clocks[0].findPhase = true;
-    	clocks[1] = clocks[0];
-    	if (SetPllFrequency(pll_ind+1, rxRate_Hz, clocks, 2)==0)
-	{
-	    phaseSearchSuccess = true;
-	    break;
-	}
-    }
-
-    if (!phaseSearchSuccess)
-    {
-	lime::error("LML RX phase search FAIL");
-	status = -1;
+        status = -1;
         clocks[0].index = 0;
         clocks[0].phaseShift_deg = 0;
         clocks[0].findPhase = false;
@@ -836,25 +830,14 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
     }
 
-    phaseSearchSuccess = false;
-    for (int i = 0; i < 10; i++)  //attempt phase search 10 times
+    clocks[0].index = 1;
+    clocks[0].outFrequency = bypassTx ? 2*txRate_Hz:txRate_Hz;
+    clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
+    clocks[0].findPhase = true;
+    clocks[1] = clocks[0];
+    WriteRegister(0x000A, 0x0200);
+    if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)!=0)
     {
-	 clocks[0].index = 1;
-	 clocks[0].outFrequency = bypassTx ? 2*txRate_Hz:txRate_Hz;
-	 clocks[0].phaseShift_deg = txPhC1 + txPhC2 * txRate_Hz;
-	 clocks[0].findPhase = true;
-	 clocks[1] = clocks[0];
-	 WriteRegister(0x000A, 0x0200);
-   	 if (SetPllFrequency(pll_ind, txRate_Hz, clocks, 2)==0)
-	 {
-	     phaseSearchSuccess = true;
-	     break;
-	 }
-    }
-
-    if (!phaseSearchSuccess)
-    {
-        lime::error("LML TX phase search FAIL");
         status = -1;
         clocks[0].index = 0;
         clocks[0].phaseShift_deg = 0;
@@ -903,7 +886,7 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 double FPGA::DetectRefClk(double fx3Clk)
 {
     const double fx3Cnt = 16777210;         //fixed fx3 counter in FPGA
-    const double clkTbl[] = { 10e6, 30.72e6, 38.4e6, 40e6, 52e6 };
+    const double clkTbl[] = { 30.72e6, 38.4e6, 40e6, 52e6 };
     const uint32_t addr[] = { 0x61, 0x63 };
     const uint32_t vals[] = { 0x0, 0x0 };
     if (WriteRegisters(addr, vals, 2) != 0)
@@ -944,8 +927,6 @@ double FPGA::DetectRefClk(double fx3Clk)
         else
             delta = fabs(count - clkTbl[i++]);
 
-    if (i == 0)
-        return -1;
     lime::info("Reference clock %1.2f MHz", clkTbl[i - 1] / 1e6);
     return clkTbl[i - 1];
 }

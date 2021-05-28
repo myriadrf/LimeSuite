@@ -994,3 +994,295 @@ extern "C" API_EXPORT int CALL_CONV LMS_TransferLMS64C(lms_device_t *dev, int cm
 
     return LMS_SUCCESS;
 }
+
+API_EXPORT int CALL_CONV SPI_write(lms_device_t *lmsControl, uint16_t address, uint16_t data)
+{
+
+    int ret = 0;
+    if (LMS_WriteFPGAReg(lmsControl, address, data) != 0)
+        ret = -1;
+    return ret;
+}
+
+struct Register
+{
+    Register();
+    Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement);
+    unsigned short address;
+    unsigned char msb;
+    unsigned char lsb;
+    unsigned short defaultValue;
+    unsigned short twocomplement;
+};
+
+Register::Register()
+    : address(0), msb(0), lsb(0), defaultValue(0)
+{
+}
+
+Register::Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement)
+    : address(address), msb(msb), lsb(lsb), defaultValue(defaultValue), twocomplement(twocomplement)
+{
+}
+
+API_EXPORT void CALL_CONV SetRegValue(lms_device_t *lmsControl, Register reg, uint16_t newValue)
+{
+
+    unsigned short mask = (~(~0 << (reg.msb - reg.lsb + 1))) << reg.lsb; // creates bit mask
+
+    uint16_t regValue;
+    LMS_ReadFPGAReg(lmsControl, reg.address, &regValue); // read bit content
+    regValue &= ~mask;
+    regValue |= (newValue << reg.lsb) & mask;
+    LMS_WriteFPGAReg(lmsControl, reg.address, regValue);
+}
+
+API_EXPORT void CALL_CONV UpdateHannCoeff(lms_device_t *lmsControl, uint16_t Filt_N, int chAA, int interpolation)
+{
+    Register reg, reg2, reg3, reg4;
+    uint16_t msb, lsb = 0;
+    uint16_t data = 0;
+    uint16_t addr = 0;
+    uint16_t i = 0;
+    uint16_t j = 0;
+    uint16_t offset = 0;
+    uint16_t w[60];
+
+    uint16_t maddressf0 = 0x07;
+    uint16_t maddressf1 = 0x08;
+
+    uint16_t NN = 3;
+    uint16_t MaxFilt_N = 40;
+
+    if (interpolation > 1)
+        interpolation = 1; //limit
+    else if (interpolation < 0)
+        interpolation = 0; //limit
+
+    if (interpolation == 2)
+    {
+        NN = 0;
+        MaxFilt_N = 10;
+    }
+    else if (interpolation == 1)
+    {
+        NN = 1;
+        MaxFilt_N = 20;
+    }
+    else
+    {
+        NN = 3;
+        MaxFilt_N = 40;
+    }
+
+    if (Filt_N > MaxFilt_N)
+        Filt_N = MaxFilt_N;
+
+    for (i = 0; i < Filt_N; i++)
+        w[i] = (uint16_t)(32768.0 * 0.25 * (1.0 - cos(2.0 * M_PI * i / (Filt_N - 1))));
+
+    if (chAA == 1)
+        reg = Register(0x0045, 0, 0, 0, 0); // chkSLEEP_CFR
+    else
+        reg = Register(0x0045, 8, 8, 0, 0); // chkSLEEP_CFR_chB
+
+    if (chAA == 1)
+        reg2 = Register(0x0045, 2, 2, 0, 0); //chkODD_CFR
+    else
+        reg2 = Register(0x0045, 10, 10, 0, 0); //  chkODD_CFR_chB
+
+    if (chAA == 1)
+        reg4 = Register(0x0045, 7, 7, 0, 0); //chkDEL_HB
+    else
+        reg4 = Register(0x0045, 15, 15, 0, 0); //chkDEL_HB_chB
+
+    reg3 = Register(0x0041, 11, 11, 0, 0); //chkResetN
+
+    SetRegValue(lmsControl, reg, 1);  // sleep <= '1';
+    
+    SetRegValue(lmsControl, reg3, 0); // reset_n <= '0';
+    SetRegValue(lmsControl, reg3, 1); // reset_n <= '0';
+
+    msb = lsb = 0;
+    data = 0;
+    i = 0;
+    while (i < MaxFilt_N) //40
+    {                     // reset all
+        addr = (2 << 15) + (maddressf0 << 6) + (msb << 2) + lsb;
+        SPI_write(lmsControl, addr, data);
+        addr = (2 << 15) + (maddressf1 << 6) + (msb << 2) + lsb;
+        SPI_write(lmsControl, addr, data);
+        if (lsb >= NN) // 3
+        {
+            lsb = 0;
+            msb++;
+        }
+        else
+            lsb++;
+        i++;
+    }
+
+    msb = lsb = 0;
+    i = j = 0;
+    offset = 0;
+    while (i <= (uint16_t)((Filt_N / 2) - 1))
+    {
+        addr = (2 << 15) + (maddressf1 << 6) + (msb << 2) + lsb;
+        if (j >= offset)
+            data = w[(uint16_t)((Filt_N + 1) / 2 + i)];
+        else
+            data = 0;
+        SPI_write(lmsControl, addr, data);
+        if (lsb >= NN) // 3
+        {
+            lsb = 0;
+            msb++;
+        }
+        else
+            lsb++;
+
+        if (j >= offset)
+            i++;
+        j++;
+    }
+
+    msb = lsb = 0;
+    i = j = 0;
+    offset = (MaxFilt_N / 2) - ((uint16_t)((Filt_N + 1) / 2));
+    while (i < Filt_N)
+    {
+        addr = (2 << 15) + (maddressf0 << 6) + (msb << 2) + lsb;
+
+        if (j >= offset)
+            data = w[i];
+        else
+            data = 0;
+
+        SPI_write(lmsControl, addr, data);
+        if (lsb >= NN) // 3
+        {
+            lsb = 0;
+            msb++;
+        }
+        else
+            lsb++;
+
+        if (j >= offset)
+            i++;
+        j++;
+    }
+
+    if ((Filt_N % 2) == 1)
+        SetRegValue(lmsControl, reg2, 1); // odd
+    else
+        SetRegValue(lmsControl, reg2, 0); // even
+
+    if (interpolation == 1)
+        SetRegValue(lmsControl, reg4, 1);
+    else
+        SetRegValue(lmsControl, reg4, 0);
+
+    SetRegValue(lmsControl, reg, 0); // sleep <= '0';
+
+    // software reset
+    SetRegValue(lmsControl, reg3, 0); // reset_n <= '0';
+    SetRegValue(lmsControl, reg3, 1); // reset_n <= '1';
+}
+
+#include "INI.h"
+API_EXPORT int LoadQSparkSettings(lms_device_t *device, const char *filename)
+{
+    //Register reg3;
+    uint16_t regValue = 0;
+
+    if (device == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device cannot be NULL.");
+        return -1;
+    }
+    lime::LMS7_Device *lms = (lime::LMS7_Device *)device;
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        lime::ReportError(EINVAL, "Device not connected");
+        return -1;
+    }
+
+    typedef INI<string, string, string> ini_t;
+    ini_t parser(filename, true);
+    if (parser.select("LimeSDR_QPCIe"))
+    {
+        vector<uint32_t> addrToWrite;
+        vector<uint32_t> dataToWrite;
+        ini_t::sectionsit_t section = parser.sections.find("LimeSDR_QPCIe");
+
+        {
+            double FreqRxMHz = parser.get<string, double>("FreqRxMHz", 0.0);
+            double FreqTxMHz = parser.get<string, double>("FreqTxMHz", 0.0);
+
+            Register reg1, reg2;
+            reg1 = Register(0x004B, 15, 0, 0, 0); // dummy, txtPllFreqTxMHz
+            reg2 = Register(0x004C, 15, 0, 0, 0); // dummy, txtPllFreqRxMHz
+
+            // save to FPGA dummy value
+            if ((FreqTxMHz > 5.0) && (FreqTxMHz < 200.0))
+                SetRegValue(device, reg1, (uint16_t)(FreqTxMHz * 100.0));
+            if ((FreqRxMHz > 5.0) && (FreqRxMHz < 200.0))
+                SetRegValue(device, reg2, (uint16_t)(FreqRxMHz * 100.0));
+        }
+
+        for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
+        {
+            uint16_t addr;
+            uint16_t value;
+            if (sscanf(pairs->first.c_str(), "Reg_1:%x", &addr) != 1)
+                continue;
+            if (sscanf(pairs->second.c_str(), "%d", &value) != 1)
+                continue;
+            addrToWrite.push_back(addr);
+            dataToWrite.push_back(value);
+            if ((addr >= 0x240) && (addr < 0x268))
+            {
+                addrToWrite.push_back(addr + 0x040);
+                dataToWrite.push_back(value);
+            }
+        }
+        if (conn->WriteRegister(0xFFFF, 1) != 0)
+            return -1;
+        if (conn->WriteRegisters(&addrToWrite[0], &dataToWrite[0], addrToWrite.size()) != 0)
+            return -1;
+        addrToWrite.clear();
+        dataToWrite.clear();
+
+        int CFR_N_chA = parser.get<string, int>("CFR_N_chA", 19);
+        int CFR_INT_chA = parser.get<string, int>("CFR_INT_chA", 1);
+        UpdateHannCoeff(device, CFR_N_chA, 1, CFR_INT_chA);
+
+        for (ini_t::keysit_t pairs = section->second->begin(); pairs != section->second->end(); pairs++)
+        {
+            uint16_t addr;
+            uint16_t value;
+            if (sscanf(pairs->first.c_str(), "Reg_2:%x", &addr) != 1)
+                continue;
+            if (sscanf(pairs->second.c_str(), "%d", &value) != 1)
+                continue;
+            addrToWrite.push_back(addr);
+            dataToWrite.push_back(value);
+            if ((addr >= 0x240) && (addr < 0x268))
+            {
+                addrToWrite.push_back(addr + 0x040);
+                dataToWrite.push_back(value);
+            }
+        }
+        if (conn->WriteRegister(0xFFFF, 2) != 0)
+            return -1;
+        if (conn->WriteRegisters(&addrToWrite[0], &dataToWrite[0], addrToWrite.size()) != 0)
+            return -1;
+
+        int CFR_N_chB = parser.get<string, int>("CFR_N_chB", 19);
+        int CFR_INT_chB = parser.get<string, int>("CFR_INT_chB", 1);
+        UpdateHannCoeff(device, CFR_N_chB, 0, CFR_INT_chB);
+        return 0;
+    }
+    return -1;
+}

@@ -36,6 +36,8 @@ public:
 
     int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
     int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
+
+    int ReadDPDBuffer(char* buffer, unsigned length) override;
 #ifdef __unix__
     int TransferPacket(GenericPacket &pkt) override;
     int ProgramWrite(const char *data_src, const size_t length, const int prog_mode, const int device, ProgrammingCallback callback)override;
