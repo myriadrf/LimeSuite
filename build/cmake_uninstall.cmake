@@ -1,8 +1,8 @@
-if(NOT EXISTS "/home/srdjan/Work/LimeSuite/dpd_test2/build/install_manifest.txt")
-  message(FATAL_ERROR "Cannot find install manifest: /home/srdjan/Work/LimeSuite/dpd_test2/build/install_manifest.txt")
-endif(NOT EXISTS "/home/srdjan/Work/LimeSuite/dpd_test2/build/install_manifest.txt")
+if(NOT EXISTS "/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/build/install_manifest.txt")
+  message(FATAL_ERROR "Cannot find install manifest: /home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/build/install_manifest.txt")
+endif(NOT EXISTS "/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/build/install_manifest.txt")
 
-file(READ "/home/srdjan/Work/LimeSuite/dpd_test2/build/install_manifest.txt" files)
+file(READ "/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
   message(STATUS "Uninstalling $ENV{DESTDIR}${file}")

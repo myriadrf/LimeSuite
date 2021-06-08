@@ -19,13 +19,13 @@
 #include <wx/statbox.h>
 #include <wx/frame.h>
 #include <wx/spinctrl.h>
-
+#include "lime/LimeSuite.h"
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <LMSBoards.h>
 
 namespace lime{
-class IConnection;
 }
 
 class pnlBoardControls : public wxFrame
@@ -34,72 +34,54 @@ class pnlBoardControls : public wxFrame
         struct ADC_DAC
         {
             std::string name;
-            int16_t value;
+            bool writable;
+            double value;
             uint8_t channel;
             std::string units;
             int8_t powerOf10;
-            int16_t minValue;
-            int16_t maxValue;
+            int minValue;
+            int maxValue;
         };
 
-        class ADC_GUI
+        class Param_GUI
         {
         public:
-            ADC_GUI() : channel(nullptr), title(nullptr), units(nullptr),
-                powerOf10(nullptr), value(nullptr){};
-            ~ADC_GUI()
+            Param_GUI() : title(nullptr), units(nullptr),
+                powerOf10(nullptr), rValue(nullptr),wValue(nullptr){};
+            ~Param_GUI()
             {
-                if (channel)
-                    channel->Destroy();
                 if (title)
                     title->Destroy();
                 if (units)
                     units->Destroy();
                 if (powerOf10)
                     powerOf10->Destroy();
-                if (value)
-                    value->Destroy();
+                if (rValue)
+                    rValue->Destroy();
+                if (wValue)
+                    wValue->Destroy();
             }
-            wxStaticText* channel;
             wxStaticText* title;
             wxStaticText* units;
             wxStaticText* powerOf10;
-            wxStaticText* value;
-        };
-
-        class DAC_GUI
-        {
-        public:
-            DAC_GUI() : channel(nullptr), title(nullptr), units(nullptr), value(nullptr){};
-            ~DAC_GUI()
-            {
-                if (channel)
-                    channel->Destroy();
-                if (title)
-                    title->Destroy();
-                if (units)
-                    units->Destroy();
-                if (value)
-                    value->Destroy();
-            }
-            wxStaticText* channel;
-            wxStaticText* title;
-            wxStaticText* units;
-            wxSpinCtrl* value;
+            wxStaticText* rValue;
+            wxSpinCtrl* wValue;
         };
 
         pnlBoardControls(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
         ~pnlBoardControls();
 
         void UpdatePanel();
-        void Initialize(lime::IConnection* controlPort);
-        lime::IConnection* serPort;
+        void Initialize(lms_device_t* controlPort);
+        lms_device_t* lmsControl;
 
         void SetupControls(const std::string &boardID);
         void OnSetDACvalues(wxSpinEvent &event);
         void OnSetDACvaluesENTER(wxCommandEvent &event);
+        static std::vector<ADC_DAC> mParameters;
 	protected:
         wxPanel* pnlCustomControls;
+        wxPanel* pnlReadControls;
         wxSpinCtrl *spinCustomChannelRd;
         wxStaticText *txtCustomValueRd;
         wxStaticText *txtCustomUnitsRd;
@@ -114,25 +96,25 @@ class pnlBoardControls : public wxFrame
         void OnCustomWrite(wxCommandEvent& event);
 
         wxFlexGridSizer* sizerAnalogRd;
-        wxFlexGridSizer* sizerAnalogWr;
 
-        std::vector<ADC_DAC> getBoardADCs(const std::string &boardID);
-        std::vector<ADC_DAC> getBoardDACs(const std::string &boardID);
+        wxFlexGridSizer* sizerAdditionalControls;
+        wxPanel* additionalControls;
+
+        std::vector<ADC_DAC> getBoardParams(const std::string &boardID);
 
         void OnUserChangedBoardType(wxCommandEvent& event);
-		void OnReadAll( wxCommandEvent& event );
-		void OnWriteAll( wxCommandEvent& event );
+        void OnReadAll( wxCommandEvent& event );
+        void OnWriteAll( wxCommandEvent& event );
 
-		wxButton* btnReadAll;
-		wxButton* btnWriteAll;
-		wxStaticText* m_staticText349;
-		wxChoice* cmbBoardSelection;
+        wxButton* btnReadAll;
+        wxButton* btnWriteAll;
+        wxStaticText* m_staticText349;
+        wxChoice* cmbBoardSelection;
 
-        std::vector<ADC_DAC> mADCparameters;
-        std::vector<ADC_DAC> mDACparameters;
 
-        std::vector<ADC_GUI*> mADC_GUI_widgets;
-        std::vector<DAC_GUI*> mDAC_GUI_widgets;
+
+        std::vector<Param_GUI*> mGUI_widgets;
+        static const std::vector<lime::eLMS_DEV> board_list;
 };
 
 #endif // __pnlAnalog_view__

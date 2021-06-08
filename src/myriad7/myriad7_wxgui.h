@@ -6,20 +6,17 @@
 #define MYRIAD7_WXGUI_H
 
 #include <wx/frame.h>
+#include "lime/LimeSuite.h"
 class wxComboBox;
 class wxStaticText;
 class wxFlexGridSizer;
-
-namespace lime{
-class IConnection;
-}
 
 class Myriad7_wxgui: public wxFrame
 {
 	public:
 
 		Myriad7_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, long styles = 0);
-		void Initialize(lime::IConnection* serPort);
+		void Initialize(lms_device_t* serPort);
 		virtual ~Myriad7_wxgui();
 		virtual void UpdatePanel();
 
@@ -35,7 +32,7 @@ class Myriad7_wxgui: public wxFrame
 
         void ParameterChangeHandler(wxCommandEvent& event);
 	protected:
-        lime::IConnection* serPort;
+        lms_device_t* lmsControl;
 		DECLARE_EVENT_TABLE()
 };
 

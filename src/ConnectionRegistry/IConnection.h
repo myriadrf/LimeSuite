@@ -7,7 +7,8 @@
 #ifndef ICONNECTION_H
 #define ICONNECTION_H
 
-#include <ConnectionHandle.h>
+#include "LimeSuiteConfig.h"
+#include "ConnectionHandle.h"
 #include <string>
 #include <vector>
 #include <cstring> //memset
@@ -24,9 +25,9 @@ namespace lime{
  * and slave addresses or I2C addresses for commonly supported ICs.
  * A -1 for an address number indicates that it is not available.
  */
-struct DeviceInfo
+struct LIME_API DeviceInfo
 {
-    DeviceInfo(void);
+    DeviceInfo(void){};
 
     //! The displayable name for the device
     std::string deviceName;
@@ -39,6 +40,13 @@ struct DeviceInfo
     //! The firmware version as a string
     std::string firmwareVersion;
 
+    //! Gateware version as a string
+    std::string gatewareVersion;
+    //! Gateware revision as a string
+    std::string gatewareRevision;
+    //! Which board should use this gateware
+    std::string gatewareTargetBoard;
+
     //! The hardware version as a string
     std::string hardwareVersion;
 
@@ -46,108 +54,7 @@ struct DeviceInfo
     std::string protocolVersion;
 
     //! A unique board serial number
-    uint32_t boardSerialNumber;
-
-    /*!
-     * The SPI address numbers used to access each LMS7002M.
-     * This index will be used in the spi access functions.
-     */
-    std::vector<int> addrsLMS7002M;
-
-    /*!
-     * The I2C address number used to access the Si5351
-     * found on some development boards. -1 when not present.
-     */
-    int addrSi5351;
-
-    /*!
-     * The SPI address number used to access the ADF4002
-     * found on some development boards. -1 when not present.
-     */
-    int addrADF4002;
-};
-
-/*!
- * The Stream metadata structure is used with the streaming API to exchange
- * extra data associated with the stream such as timestamps and burst info.
- */
-struct StreamMetadata
-{
-    StreamMetadata(void);
-
-    /*!
-     * The timestamp in clock units
-     * Set to 0 when the timestamp is not applicable.
-     * See GetHardwareTimestampRate() for tick rate.
-     */
-    uint64_t timestamp;
-
-    //! True to indicate that the timestamp is valid
-    bool hasTimestamp;
-
-    /*!
-     * True to indicate the end of a stream buffer.
-     * When false, subsequent calls continue the stream.
-     */
-    bool endOfBurst;
-
-    /*!
-     * True to indicate that the timestamp was late.
-     * Used in stream status reporting.
-     */
-    bool lateTimestamp;
-
-    /*!
-     * True to indicate that a packet was dropped
-     * perhaps in a receiver overflow event.
-     */
-    bool packetDropped;
-};
-
-/*!
- * The stream config structure is used with the SetupStream() API.
- */
-struct StreamConfig
-{
-    StreamConfig(void);
-
-    //! True for transmit stream, false for receive
-    bool isTx;
-
-    /*!
-     * A list of channels to use.
-     *  - Example ChA on RFIC0: [0]
-     *  - Example MIMO on RFIC0: [0, 1]
-     *  - Example MIMO on RFIC1: [2, 3]
-     */
-    std::vector<size_t> channels;
-
-    //! Possible stream data formats
-    enum StreamDataFormat
-    {
-        STREAM_12_BIT_IN_16,
-        STREAM_12_BIT_COMPRESSED,
-        STREAM_COMPLEX_FLOAT32,
-    };
-
-    /*!
-     * The buffer length is a size in samples
-     * that used for allocating internal buffers.
-     * Default: 0, meaning automatic selection
-     */
-    size_t bufferLength;
-
-    //! The format of the samples in Read/WriteStream().
-    StreamDataFormat format;
-
-    /*!
-     * The format of samples over the wire.
-     * This is not the format presented to the API caller.
-     * Choosing a compressed format can decrease link use
-     * at the expense of additional processing on the PC
-     * Default: STREAM_12_BIT_IN_16
-     */
-    StreamDataFormat linkFormat;
+    uint64_t boardSerialNumber;
 };
 
 /*!
@@ -157,17 +64,9 @@ struct StreamConfig
  * Device developers will implement a custom IConnection for their hardware
  * as an abstraction for streaming and low-level SPI and configuration access.
  */
-class IConnection
+class LIME_API IConnection
 {
 public:
-    /*!
-     * Callback from programming processes
-     * @param bsent number of bytes transferred
-     * @param btotal total number of bytes to send
-     * @param progressMsg string describing current progress state
-     * @return 0-continue programming, 1-abort operation
-     */
-    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
 
     //! IConnection constructor
     IConnection(void);
@@ -192,6 +91,11 @@ public:
      * or for making device-specific decisions.
      */
     virtual DeviceInfo GetDeviceInfo(void);
+ 
+    virtual int ReadDPDBuffer(char* buffer, unsigned length) { return 0; };
+    virtual int ReadDPDBuffer2(char* buffer, unsigned length) { return 0; };
+    virtual int ReadDPDBuffer3(char* buffer, unsigned length) { return 0; };
+
 
     /***********************************************************************
      * Serial API
@@ -213,6 +117,9 @@ public:
      * @return the transaction success state
      */
     virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
+
+    virtual int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0)=0;
+    virtual int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0)=0;
 
     /*!
      * Write to an available I2C slave.
@@ -244,196 +151,46 @@ public:
      * Typically this will reset the RFIC using a GPIO,
      * and possibly other ICs located on the device.
      */
-    virtual int DeviceReset(void);
-
-    /*!
-     * Called by the LMS7002M driver after potential band-selection changes.
-     * Implementations may have additional external bands to switch via GPIO.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     * @param trfBand the transmit frontend band selection: 1 or 2
-     * @param rfePath the receive frontend path selection: LMS7002M::PathRFE
-     */
-    virtual void UpdateExternalBandSelect(const size_t channel, const int trfBand, const int rfePath);
-
-    /*!
-     * Called by the LMS7002M driver after TSP/DIQ rate changes.
-     * Implementations may use these rate updates to configure
-     * internal parameters or perhaps PLL circuitry in a FPGA.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     * @param txRate the baseband transmit data rate in Hz (BBIC to RFIC)
-     * @param rxRate the baseband receive data rate in Hz (RFIC to BBIC)
-     */
-    virtual void UpdateExternalDataRate(const size_t channel, const double txRate, const double rxRate);
-
-    /*!
-     * Called by the LMS7002M driver before the board begins self-calibration.
-     * Implementations should perform the necessary steps to power down
-     * external amplifiers and disable any BBIC interfaces which
-     * may be affected by the change in BBIC interface clock rate.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     */
-    virtual void EnterSelfCalibration(const size_t channel);
-
-    /*!
-     * Called by the LMS7002M driver after the board completes self-calibration.
-     * Implementations should restore the board to the pre-calibration state.
-     * @param channel the channel index number (Ex: 0 and 1 for RFIC0)
-     */
-    virtual void ExitSelfCalibration(const size_t channel);
-
-    /***********************************************************************
-     * Reference clocks API
-     **********************************************************************/
-
-    /*!
-     * Query the frequency of the reference clock.
-     * Some implementations have a fixed reference,
-     * some have a programmable synthesizer like Si5351C.
-     * @return the reference clock rate in Hz
-     */
-    virtual double GetReferenceClockRate(void);
-
-    /*!
-     * Set the programmable reference clock rate.
-     * Some implementations use the programmable Si5351C.
-     * @param rate the clock rate in Hz
-     */
-    virtual void SetReferenceClockRate(const double rate);
-
-    /*!
-     * Query the TX frequency of the reference clock.
-     * Some boards will use a separate tx reference, otherwise
-     * this call simply forwards to GetReferenceClockRate()
-     * @return the reference clock rate in Hz
-     */
-    virtual double GetTxReferenceClockRate(void);
-
-    /*!
-     * Set the programmable TX reference clock rate.
-     * Some boards will use a separate tx reference, otherwise
-     * this call simply forwards to SetReferenceClockRate()
-     * @param rate the clock rate in Hz
-     */
-    virtual void SetTxReferenceClockRate(const double rate);
-
-    /***********************************************************************
-     * Timestamp API
-     **********************************************************************/
-
-    /*!
-     * Get the current timestamp in clock units.
-     */
-    virtual uint64_t GetHardwareTimestamp(void);
-
-    /*!
-     * Set the current timestamp in clock units.
-     */
-    virtual void SetHardwareTimestamp(const uint64_t now);
-
-    /*!
-     * Get the rate of the current timestamp in ticks per second.
-     * This call may be used often and should return a cached value.
-     */
-    virtual double GetHardwareTimestampRate(void);
+    virtual int DeviceReset(int ind=0);
 
     /***********************************************************************
      * Stream API
      **********************************************************************/
 
-    /*!
-     * Setup a stream with a request configuration.
-     * SetupStream() either sets a valid stream ID
-     * to be used with the other stream API calls,
-     * or a helpful error message when setup fails.
-     *
-     * SetupStream() may fail for a variety of reasons
-     * such as invalid channel, format, or buffer configurations,
-     * the stream is already open, or streaming not supported.
-     *
-     * @param [out] streamID the configured stream identifier
-     * @param config the requested stream configuration
-     * @return an error message or empty string on success
-     */
-    virtual std::string SetupStream(size_t &streamID, const StreamConfig &config);
-
-    /*!
-     * Close an open stream give the stream ID.
-     * This invalidates the stream ID
-     * @param streamID the configured stream identifier
-     */
-    virtual void CloseStream(const size_t streamID);
-
-    /*!
-     * Get the transfer size per buffer in samples.
-     * Use the stream size buffers when possible
-     * with the ReadStream()/WriteStream() API
-     * to match up with the link transfer size.
-     * Consider this an optimization.
-     * @param streamID the configured stream identifier
-     * @return the transfer size per buffer in samples
-     */
-    virtual size_t GetStreamSize(const size_t streamID);
-
-    /*!
-     * Control streaming activation, bursts, and timing.
-     * While SetupStream() sets up and allocates resources,
-     * ControlStream() is resonsible for dis/enabling the
-     * stream and providing advanced burst and timing controls.
-     *
-     * - Use enable to activate/deactivate the stream.
-     * - Use the metadata's optional timestamp to control stream time
-     * - Use the metadata's end of burst to request stream bursts
-     * - Without end of burst, the burstSize affects continuous streaming
-     *
-     * @param streamID the stream index number
-     * @param enable true to enable streaming, false to halt streaming
-     * @param burstSize the burst size when metadata has end of burst
-     * @param metadata time and burst options
-     * @return true for success, otherwise false
-     */
-    virtual bool ControlStream(const size_t streamID, const bool enable, const size_t burstSize = 0, const StreamMetadata &metadata = StreamMetadata());
-
-    /*!
-     * Read blocking data from the stream into the specified buffer.
-     *
-     * @param streamID the RX stream index number
-     * @param buffs an array of buffers pointers
-     * @param length the number of samples per buffer
-     * @param timeout_ms the timeout in milliseconds
-     * @param [out] metadata optional stream metadata
-     * @return the number of samples read or error code
-     */
-    virtual int ReadStream(const size_t streamID, void * const *buffs, const size_t length, const long timeout_ms, StreamMetadata &metadata);
-
-    /*!
-     * Write blocking data into the stream from the specified buffer.
-     *
-     * - The metadata timestamp corresponds to the start of the buffer.
-     * - The end of burst only applies when all bytes have been written.
-     *
-     * @param streamID the TX stream stream number
-     * @param buffs an array of buffers pointers
-     * @param length the number of samples per buffer
-     * @param timeout_ms the timeout in milliseconds
-     * @param metadata optional stream metadata
-     * @return the number of samples written or error code
-     */
-    virtual int WriteStream(const size_t streamID, const void * const *buffs, const size_t length, const long timeout_ms, const StreamMetadata &metadata);
-
-    /*!
-     * Read reported stream status events such as
-     * overflow, underflow, late transmit, end of burst.
-     *
-     * @param streamID the RX stream index number
-     * @param timeout_ms the timeout in milliseconds
-     * @param [out] metadata stream status metadata
-     * @return 0 on success, -1 for timeout no data
-     */
-    virtual int ReadStreamStatus(const size_t streamID, const long timeout_ms, StreamMetadata &metadata);
-
+    /**	@brief Read raw stream data from device streaming port
+    @param buffer       read buffer pointer
+    @param length       number of bytes to read
+    @param epIndex      endpoint identifier?
+    @param timeout_ms   timeout in milliseconds
+    */
+    virtual int ResetStreamBuffers();
+    virtual int GetBuffersCount()const;
+    virtual int CheckStreamSize(int size)const;
+    virtual int ReceiveData(char* buffer, int length, int epIndex, int timeout = 100);
+    virtual int SendData(const char* buffer, int length, int epIndex, int timeout = 100);
+    
+    virtual int BeginDataSending(const char* buffer, uint32_t length, int ep);
+    virtual bool WaitForSending(int contextHandle, uint32_t timeout_ms);
+    virtual int FinishDataSending(const char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortSending(int ep){};
+    
+    virtual int BeginDataReading(char* buffer, uint32_t length, int ep);
+    virtual bool WaitForReading(int contextHandle, unsigned int timeout_ms);
+    virtual int FinishDataReading(char* buffer, uint32_t length, int contextHandle);
+    virtual void AbortReading(int ep){};
+    
     /***********************************************************************
      * Programming API
      **********************************************************************/
+
+    /*!
+     * Callback from programming processes
+     * @param bsent number of bytes transferred
+     * @param btotal total number of bytes to send
+     * @param progressMsg string describing current progress state
+     * @return 0-continue programming, 1-abort operation
+     */
+    typedef std::function<bool(int bsent, int btotal, const char* progressMsg)> ProgrammingCallback;
 
     /** @brief Uploads program to selected device
         @param buffer binary program data
@@ -448,32 +205,74 @@ public:
     */
     virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0);
 
-    /**	@brief Reads current program from selected device
-        @param destination buffer for binary program data
-        @param length buffer length to read
-        @param index target device number
+    enum MCU_PROG_MODE
+    {
+        RESET = 0,
+        EEPROM_AND_SRAM,
+        SRAM,
+        BOOT_SRAM_FROM_EEPROM
+    };
+    /** @brief Uploads program to MCU
+        @param buffer binary program data
+        @param length buffer length
+        @param mode MCU programing mode RESET, EEPROM_AND_SRAM, SRAM, BOOT_SRAM_FROM_EEPROM
         @param callback callback for progress reporting or early termination
-        @return the operation success state
+        @return 0-success
+
+        This could be a quite long operation, use callback to get progress info or to terminate early
     */
-    virtual int ProgramRead(char *buffer, const size_t length, const int index, ProgrammingCallback callback = 0);
+    virtual int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback = 0);
+
+    /*!
+     * Download up-to-date images files and flash the board when applicable.
+     *
+     * Program update is an implementation specific function that may handle
+     * several different use cases depending upon what options are applicable:
+     *
+     * - If a board relies on certain firmware and gateware images,
+     *   these images will be downloaded if not present on the system.
+     *
+     * - If the board has a programmable flash for firmware and gateware,
+     *   then up-to-date images will be written to the flash on the board.
+     *
+     * @param download true to enable downloading missing images
+     * @param force true to flash even if new image is the same or older version
+     * @param callback callback for progress reporting or early termination
+     * @return 0-success
+     */
+    virtual int ProgramUpdate(const bool download = true, const bool force = true, ProgrammingCallback callback = 0);
 
     /***********************************************************************
      * GPIO API
      **********************************************************************/
 
     /**	@brief Writes GPIO values to device
-    @param source buffer for GPIO values LSB first, each bit sets GPIO state
+    @param buffer for source of GPIO values LSB first, each bit sets GPIO state
     @param bufLength buffer length
     @return the operation success state
     */
     virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength);
 
     /**	@brief Reads GPIO values from device
-    @param destination buffer for GPIO values LSB first, each bit represent GPIO state
+    @param buffer destination for GPIO values LSB first, each bit represent GPIO state
     @param bufLength buffer length to read
     @return the operation success state
     */
     virtual int GPIORead(uint8_t *buffer, const size_t bufLength);
+
+    /**	@brief Write GPIO direction control values to device.
+    @param buffer with GPIO direction configuration (0 input, 1 output)
+    @param bufLength buffer length
+    @return the operation success state
+    */
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength);
+
+    /**	@brief Read GPIO direction configuration from device
+    @param buffer to put GPIO direction configuration (0 input, 1 output)
+    @param bufLength buffer length to read
+    @return the operation success state
+    */
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength);
 
     /***********************************************************************
      * Register API
@@ -517,7 +316,7 @@ public:
 	@param units (optional) when not null specifies value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units);
 
     /** @brief Returns value of custom on board control
 	@param ids indexes of controls to read
@@ -526,31 +325,13 @@ public:
 	@param units (optional) when not null returns value units (e.g V, A, Ohm, C... )
 	@return the operation success state
     */
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
-
-    /***********************************************************************
-     * !!! Below is the old IConnection Streaming API
-     * It remains here to enable compiling until its replaced
-     **********************************************************************/
-
-	virtual int BeginDataReading(char *buffer, long length){ return -1; };
-	virtual int WaitForReading(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataReading(char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortReading(){};
-    virtual int ReadDataBlocking(char *buffer, long &length, int timeout_ms){ return 0; }
-
-	virtual int BeginDataSending(const char *buffer, long length){ return -1; };
-	virtual int WaitForSending(int contextHandle, unsigned int timeout_ms){ return 0;};
-	virtual int FinishDataSending(const char *buffer, long &length, int contextHandle){ return 0;}
-	virtual void AbortSending(){};
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units);
 
     /** @brief Sets callback function which gets called each time data is sent or received
     */
     void SetDataLogCallback(std::function<void(bool, const unsigned char*, const unsigned int)> callback);
-
 protected:
     std::function<void(bool, const unsigned char*, const unsigned int)> callback_logData;
-    bool mSystemBigEndian;
 
 private:
     friend class ConnectionRegistry;
@@ -565,7 +346,6 @@ int IConnection::ReadRegister(const uint32_t addr, ReadType &data)
     data = ReadType(data32);
     return st;
 }
-
 }
 #endif
 

@@ -16,17 +16,14 @@ class wxComboBox;
 class wxCheckBox;
 
 #include <vector>
-
-namespace lime{
-class LMS64CProtocol;
-class IConnection;
-}
+#include "lime/LimeSuite.h"
+#include "LMS64CProtocol.h"
 
 class HPM7_wxgui : public wxFrame
 {
 public:
     HPM7_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long styles = 0);
-    virtual void Initialize(lime::IConnection* serPort);
+    virtual void Initialize(lms_device_t* serPort);
     virtual ~HPM7_wxgui();
     void SelectBand(unsigned int i);
     void SelectRxPath(unsigned int i);
@@ -41,16 +38,16 @@ protected:
     std::vector<wxCheckBox*> chkEB;
     std::vector<wxCheckBox*> chkTP;
     std::vector<wxComboBox*> cmbSSC1;
-    std::vector<wxComboBox*> cmbSSC2;    
+    std::vector<wxComboBox*> cmbSSC2;
     wxButton* btnUpdateAll;
     wxComboBox* cmbDAC_A;
     wxComboBox* cmbDAC_B;
 
-private:    
+private:
     void DownloadAll(wxCommandEvent& event);
     void OnGPIOchange(wxCommandEvent& event);
-    void OnTunerSSC1change(wxCommandEvent& event);    
-    void OnTunerSSC2change(wxCommandEvent& event);    
+    void OnTunerSSC1change(wxCommandEvent& event);
+    void OnTunerSSC2change(wxCommandEvent& event);
     void OnDACchange(wxCommandEvent& event);
     std::vector<long> chEBids;
     std::vector<long> chTPids;

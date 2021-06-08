@@ -19,6 +19,7 @@
 #include "lms7suiteAppFrame.h"
 #include <wx/time.h>
 #include <wx/splash.h>
+#include <wx/icon.h>
 #include <iostream>
 #ifndef NDEBUG
 IMPLEMENT_APP_CONSOLE(lms7suiteApp);
@@ -26,7 +27,8 @@ IMPLEMENT_APP_CONSOLE(lms7suiteApp);
 IMPLEMENT_APP(lms7suiteApp);
 #endif
 
-#include "splash_image.h"
+#include "resources/splash.h"
+#include "resources/LMS_ICO.xpm"
 
 bool lms7suiteApp::OnInit()
 {
@@ -37,12 +39,13 @@ bool lms7suiteApp::OnInit()
         6000, NULL, -1, wxDefaultPosition, wxDefaultSize,
         wxSIMPLE_BORDER | wxSTAY_ON_TOP);
     wxYield(); //linux needs this to load splash image
-    wxLongLong t1 = wxGetUTCTimeMillis();
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
 #ifndef NDEBUG
+    wxLongLong t1 = wxGetUTCTimeMillis(); 
     std::cout << "Create time " << (wxGetUTCTimeMillis() - t1).ToString() << " ms\n";
 #endif
     splash->Destroy();
+    frame->SetIcon(wxICON(LMS_ICO));
     frame->Show();
     return true;
 }

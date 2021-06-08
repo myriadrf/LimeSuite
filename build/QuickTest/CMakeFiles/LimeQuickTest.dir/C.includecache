@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/external/kissFFT/_kiss_fft_guts.h
+kiss_fft.h
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/external/kissFFT/kiss_fft.h
+limits.h
+-
+alloca.h
+-
+
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/external/kissFFT/kiss_fft.c
+_kiss_fft_guts.h
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/external/kissFFT/_kiss_fft_guts.h
+
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/external/kissFFT/kiss_fft.h
+stdlib.h
+-
+stdio.h
+-
+math.h
+-
+string.h
+-
+xmmintrin.h
+-
+sys/types.h
+-
+

@@ -4,10 +4,11 @@
 @brief	panel for configuring ADF4002
 */
 
-#include "ADF4002.h"
 #include "ADF4002_wxgui.h"
-#include "IConnection.h"
+#include "ADF4002.h"
+#include "lms7_device.h"
 
+#include <vector>
 #include <wx/msgdlg.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -417,18 +418,21 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     //*)
 }
 
-void ADF4002_wxgui::Initialize(ADF4002* pModule, IConnection* pSerPort)
+void ADF4002_wxgui::Initialize(lms_device_t* pSerPort)
 {
-    m_pModule = pModule;
-    serPort = pSerPort;
-    if (serPort != nullptr)
+    m_pModule = new lime::ADF4002();
+    lmsControl = pSerPort;
+    if (lmsControl != nullptr)
     {
-        m_adf4002SpiAddr = serPort->GetDeviceInfo().addrADF4002;
+        double refclk;
+        LMS_GetClockFreq(lmsControl, LMS_CLOCK_REF, &refclk);
+        txtFvco->SetValue(wxString::Format("%f", refclk/1e6));
     }
 }
 
 ADF4002_wxgui::~ADF4002_wxgui()
 {
+    delete m_pModule;
 }
 
 void ADF4002_wxgui::SetGuiDefaults()
@@ -469,6 +473,12 @@ void ADF4002_wxgui::SetGuiDefaults()
 
 void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 {
+    auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
+    if (conn == nullptr)
+    {
+        wxMessageBox(_("Device not connected"), _("Error"));
+        return;
+    }
     //reference counter latch
     int ldp = cmbLDP->GetSelection();
     int abw = cmbABW->GetSelection();
@@ -531,14 +541,20 @@ void ADF4002_wxgui::OnbtnCalcSendClick(wxCommandEvent& event)
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = conn->TransactSPI(0x30, dataWr.data(), nullptr, 4);
     if (status != 0)
         wxMessageBox(_("ADF configuration failed"), _("Error"));
 }
 
 void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 {
-    //reference counter latch
+    auto conn =  ((LMS7_Device*)lmsControl)->GetConnection();
+    if (conn == nullptr)
+    {
+        wxMessageBox(_("Device not connected"), _("Error"));
+        return;
+    }
+ //reference counter latch
     int ldp = cmbLDP->GetSelection();
     int abw = cmbABW->GetSelection();
     int rCount = spinRCnt->GetValue();
@@ -594,7 +610,7 @@ void ADF4002_wxgui::OnbtnUploadClick(wxCommandEvent& event)
 
     int status;
 // ADF4002 needs to be writen 4 values of 24 bits
-    status = serPort->TransactSPI(m_adf4002SpiAddr, dataWr.data(), nullptr, 4);
+    status = conn->TransactSPI(0x30, dataWr.data(), nullptr, 4);
     if (status != 0)
-        wxMessageBox(_("ADF configuration failed"), _("Error"));
+wxMessageBox(_("ADF configuration failed"), _("Error"));
 }

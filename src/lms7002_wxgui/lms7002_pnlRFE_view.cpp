@@ -1,6 +1,4 @@
 #include "lms7002_pnlRFE_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 #include <wx/msgdlg.h>
 #include <map>
 #include <vector>
@@ -8,12 +6,13 @@
 #include "lms7002_gui_utilities.h"
 #include "numericSlider.h"
 #include "lms7suiteEvents.h"
+#include "LMS7002M_parameters.h"
 
 using namespace lime;
 using namespace LMS7002_WXGUI;
 
-indexValueMap g_lna_rfe_IndexValuePairs;
-indexValueMap g_tia_rfe_IndexValuePairs;
+static indexValueMap g_lna_rfe_IndexValuePairs;
+static indexValueMap g_tia_rfe_IndexValuePairs;
 
 lms7002_pnlRFE_view::lms7002_pnlRFE_view( wxWindow* parent )
     : pnlRFE_view(parent), lmsControl(nullptr)
@@ -25,41 +24,41 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     : pnlRFE_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
     //ids for updating from chip
-	wndId2Enum[cmbCAP_RXMXO_RFE] = CAP_RXMXO_RFE;
-    wndId2Enum[cmbCCOMP_TIA_RFE] = CCOMP_TIA_RFE;
-    wndId2Enum[cmbCFB_TIA_RFE] = CFB_TIA_RFE;
-    wndId2Enum[cmbCGSIN_LNA_RFE] = CGSIN_LNA_RFE;
-    wndId2Enum[cmbDCOFFI_RFE] = DCOFFI_RFE;
-    wndId2Enum[cmbDCOFFQ_RFE] = DCOFFQ_RFE;
-    wndId2Enum[chkEN_DCOFF_RXFE_RFE] = EN_DCOFF_RXFE_RFE;
-    wndId2Enum[chkEN_G_RFE] = EN_G_RFE;
-    wndId2Enum[chkEN_INSHSW_LB1_RFE] = EN_INSHSW_LB1_RFE;
-    wndId2Enum[chkEN_INSHSW_LB2_RFE] = EN_INSHSW_LB2_RFE;
-    wndId2Enum[chkEN_INSHSW_L_RFE] = EN_INSHSW_L_RFE;
-    wndId2Enum[chkEN_INSHSW_W_RFE] = EN_INSHSW_W_RFE;
-    wndId2Enum[chkEN_NEXTRX_RFE] = EN_NEXTRX_RFE;
-    wndId2Enum[cmbG_LNA_RFE] = G_LNA_RFE;
-    wndId2Enum[cmbG_RXLOOPB_RFE] = G_RXLOOPB_RFE;
-    wndId2Enum[cmbG_TIA_RFE] = G_TIA_RFE;
-    wndId2Enum[cmbICT_LNACMO_RFE] = ICT_LNACMO_RFE;
-    wndId2Enum[cmbICT_LNA_RFE] = ICT_LNA_RFE;
-    wndId2Enum[cmbICT_LODC_RFE] = ICT_LODC_RFE;
-    wndId2Enum[cmbICT_LOOPB_RFE] = ICT_LOOPB_RFE;
-    wndId2Enum[cmbICT_TIAMAIN_RFE] = ICT_TIAMAIN_RFE;
-    wndId2Enum[cmbICT_TIAOUT_RFE] = ICT_TIAOUT_RFE;
-    wndId2Enum[chkPD_LNA_RFE] = PD_LNA_RFE;
-    wndId2Enum[chkPD_MXLOBUF_RFE] = PD_MXLOBUF_RFE;
-    wndId2Enum[chkPD_QGEN_RFE] = PD_QGEN_RFE;
-    wndId2Enum[chkPD_RLOOPB_1_RFE] = PD_RLOOPB_1_RFE;
-    wndId2Enum[chkPD_RLOOPB_2_RFE] = PD_RLOOPB_2_RFE;
-    wndId2Enum[chkPD_RSSI_RFE] = PD_RSSI_RFE;
-    wndId2Enum[chkPD_TIA_RFE] = PD_TIA_RFE;
-    wndId2Enum[cmbRCOMP_TIA_RFE] = RCOMP_TIA_RFE;
-    wndId2Enum[cmbRFB_TIA_RFE] = RFB_TIA_RFE;
-    wndId2Enum[cmbSEL_PATH_RFE] = SEL_PATH_RFE;
-    wndId2Enum[cmbCDC_I_RFE] = CDC_I_RFE;
-    wndId2Enum[cmbCDC_Q_RFE] = CDC_Q_RFE;
-    wndId2Enum[chkEN_DIR_RFE] = EN_DIR_RFE;
+	wndId2Enum[cmbCAP_RXMXO_RFE] = LMS7param(CAP_RXMXO_RFE);
+    wndId2Enum[cmbCCOMP_TIA_RFE] = LMS7param(CCOMP_TIA_RFE);
+    wndId2Enum[cmbCFB_TIA_RFE] = LMS7param(CFB_TIA_RFE);
+    wndId2Enum[cmbCGSIN_LNA_RFE] = LMS7param(CGSIN_LNA_RFE);
+    wndId2Enum[cmbDCOFFI_RFE] = LMS7param(DCOFFI_RFE);
+    wndId2Enum[cmbDCOFFQ_RFE] = LMS7param(DCOFFQ_RFE);
+    wndId2Enum[chkEN_DCOFF_RXFE_RFE] = LMS7param(EN_DCOFF_RXFE_RFE);
+    wndId2Enum[chkEN_G_RFE] = LMS7param(EN_G_RFE);
+    wndId2Enum[chkEN_INSHSW_LB1_RFE] = LMS7param(EN_INSHSW_LB1_RFE);
+    wndId2Enum[chkEN_INSHSW_LB2_RFE] = LMS7param(EN_INSHSW_LB2_RFE);
+    wndId2Enum[chkEN_INSHSW_L_RFE] = LMS7param(EN_INSHSW_L_RFE);
+    wndId2Enum[chkEN_INSHSW_W_RFE] = LMS7param(EN_INSHSW_W_RFE);
+    wndId2Enum[chkEN_NEXTRX_RFE] = LMS7param(EN_NEXTRX_RFE);
+    wndId2Enum[cmbG_LNA_RFE] = LMS7param(G_LNA_RFE);
+    wndId2Enum[cmbG_RXLOOPB_RFE] = LMS7param(G_RXLOOPB_RFE);
+    wndId2Enum[cmbG_TIA_RFE] = LMS7param(G_TIA_RFE);
+    wndId2Enum[cmbICT_LNACMO_RFE] = LMS7param(ICT_LNACMO_RFE);
+    wndId2Enum[cmbICT_LNA_RFE] = LMS7param(ICT_LNA_RFE);
+    wndId2Enum[cmbICT_LODC_RFE] = LMS7param(ICT_LODC_RFE);
+    wndId2Enum[cmbICT_LOOPB_RFE] = LMS7param(ICT_LOOPB_RFE);
+    wndId2Enum[cmbICT_TIAMAIN_RFE] = LMS7param(ICT_TIAMAIN_RFE);
+    wndId2Enum[cmbICT_TIAOUT_RFE] = LMS7param(ICT_TIAOUT_RFE);
+    wndId2Enum[chkPD_LNA_RFE] = LMS7param(PD_LNA_RFE);
+    wndId2Enum[chkPD_MXLOBUF_RFE] = LMS7param(PD_MXLOBUF_RFE);
+    wndId2Enum[chkPD_QGEN_RFE] = LMS7param(PD_QGEN_RFE);
+    wndId2Enum[chkPD_RLOOPB_1_RFE] = LMS7param(PD_RLOOPB_1_RFE);
+    wndId2Enum[chkPD_RLOOPB_2_RFE] = LMS7param(PD_RLOOPB_2_RFE);
+    wndId2Enum[chkPD_RSSI_RFE] = LMS7param(PD_RSSI_RFE);
+    wndId2Enum[chkPD_TIA_RFE] = LMS7param(PD_TIA_RFE);
+    wndId2Enum[cmbRCOMP_TIA_RFE] = LMS7param(RCOMP_TIA_RFE);
+    wndId2Enum[cmbRFB_TIA_RFE] = LMS7param(RFB_TIA_RFE);
+    wndId2Enum[cmbSEL_PATH_RFE] = LMS7param(SEL_PATH_RFE);
+    wndId2Enum[cmbCDC_I_RFE] = LMS7param(CDC_I_RFE);
+    wndId2Enum[cmbCDC_Q_RFE] = LMS7param(CDC_Q_RFE);
+    wndId2Enum[chkEN_DIR_RFE] = LMS7param(EN_DIR_RFE);
 
     wxArrayString temp;
     temp.clear();
@@ -151,7 +150,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlRFE_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlRFE_view::Initialize(lms_device_t* pControl)
 {
 	lmsControl = pControl;
 	assert(lmsControl != nullptr);
@@ -160,29 +159,36 @@ void lms7002_pnlRFE_view::Initialize(LMS7002M* pControl)
 void lms7002_pnlRFE_view::UpdateGUI()
 {
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    int value = lmsControl->Get_SPI_Reg_bits(G_LNA_RFE);
+
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(G_LNA_RFE),&value);
     cmbG_LNA_RFE->SetSelection( value2index(value, g_lna_rfe_IndexValuePairs));
 
-    value = lmsControl->Get_SPI_Reg_bits(G_TIA_RFE);
+    LMS_ReadParam(lmsControl,LMS7param(G_TIA_RFE),&value);
     cmbG_TIA_RFE->SetSelection( value2index(value, g_tia_rfe_IndexValuePairs));
 
-    value = lmsControl->Get_SPI_Reg_bits(DCOFFI_RFE);
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFI_RFE),&value);
     int16_t dcvalue = value & 0x3F;
     if((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFI_RFE->SetValue(dcvalue);
-    value = lmsControl->Get_SPI_Reg_bits(DCOFFQ_RFE);
+    LMS_ReadParam(lmsControl,LMS7param(DCOFFQ_RFE),&value);
     dcvalue = value & 0x3F;
     if((value & 0x40) != 0)
         dcvalue *= -1;
     cmbDCOFFQ_RFE->SetValue(dcvalue);
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
-    {
-        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
-            wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
-    }
+    uint16_t macBck;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&macBck);
+    if (macBck >= 2)
+        chkEN_NEXTRX_RFE->Hide();
+    else
+        chkEN_NEXTRX_RFE->Show();
+
+    LMS_ReadParam(lmsControl,LMS7param(TRX_GAIN_SRC),&value);
+    cmbG_LNA_RFE->Enable(!value);
+    cmbG_TIA_RFE->Enable(!value);
 }
 
 void lms7002_pnlRFE_view::ParameterChangeHandler(wxSpinEvent& event)
@@ -222,11 +228,10 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         if (value < 0)
             valToSend |= 0x40;
         valToSend |= labs(value);
-        lmsControl->Modify_SPI_Reg_bits(parameter, valToSend);
+        LMS_WriteParam(lmsControl,parameter,valToSend);
         return;
     }
-
-    if(parameter == SEL_PATH_RFE)
+    else if(event.GetEventObject() == cmbSEL_PATH_RFE)
     {
         wxCommandEvent evt;
         evt.SetEventType(LMS7_RXPATH_CHANGED);
@@ -234,25 +239,5 @@ void lms7002_pnlRFE_view::ParameterChangeHandler( wxCommandEvent& event )
         evt.SetInt(event.GetInt());
         wxPostEvent(this, evt);
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, value);
-}
-
-void lms7002_pnlRFE_view::OnbtnTuneTIA(wxCommandEvent& event)
-{
-    double input1;
-    txtTIA_BW_MHz->GetValue().ToDouble(&input1);
-    int status = lmsControl->TuneRxFilter(LMS7002M::RxFilter::RX_TIA, input1*1e6);
-    if (status != 0)
-    {
-        wxMessageBox(wxString(_("TIA tune: ")) + wxString::From8BitData(GetLastErrorMessage()), _("Error"));
-    }
-    else
-    {
-        wxMessageBox(_("Rx TIA calibration finished"), _("INFO"));
-        wxCommandEvent evt;
-        evt.SetEventType(LOG_MESSAGE);
-        evt.SetString(_("Rx TIA calibrated"));
-        wxPostEvent(this, evt);
-    }
-    UpdateGUI();
+    LMS_WriteParam(lmsControl,parameter,value);
 }

@@ -1,0 +1,806 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="100">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="build">
+        <df name="bin">
+          <df name="hexfiles">
+          </df>
+          <df name="lms7suite_wfm">
+          </df>
+          <df name="Release">
+            <df name="lms7suite_mcu">
+            </df>
+          </df>
+        </df>
+        <df name="CMakeFiles">
+          <df name="3.10.2">
+            <df name="CompilerIdC">
+              <df name="tmp">
+              </df>
+              <in>CMakeCCompilerId.c</in>
+            </df>
+            <df name="CompilerIdCXX">
+              <df name="tmp">
+              </df>
+              <in>CMakeCXXCompilerId.cpp</in>
+            </df>
+          </df>
+          <df name="3.5.2">
+            <df name="CompilerIdC">
+              <in>CMakeCCompilerId.c</in>
+            </df>
+            <df name="CompilerIdCXX">
+              <in>CMakeCXXCompilerId.cpp</in>
+            </df>
+          </df>
+          <df name="CMakeTmp">
+          </df>
+          <df name="doc.dir">
+          </df>
+          <df name="uninstall.dir">
+          </df>
+          <in>feature_tests.c</in>
+          <in>feature_tests.cxx</in>
+        </df>
+        <df name="Desktop">
+          <df name="CMakeFiles">
+          </df>
+        </df>
+        <df name="LimeUtil">
+          <df name="CMakeFiles">
+            <df name="LimeUtil.dir">
+            </df>
+          </df>
+        </df>
+        <df name="mcu_program">
+          <df name="CMakeFiles">
+            <df name="MCU_TestBench.dir">
+              <df name="common_src">
+              </df>
+              <df name="host_src">
+              </df>
+            </df>
+          </df>
+          <df name="oldfiles">
+          </df>
+        </df>
+        <df name="octave">
+          <df name="CMakeFiles">
+          </df>
+        </df>
+        <df name="QuickTest">
+          <df name="CMakeFiles">
+            <df name="LimeQuickTest.dir">
+              <df name="__">
+                <df name="external">
+                  <df name="kissFFT">
+                  </df>
+                </df>
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="SoapyLMS7">
+          <df name="CMakeFiles">
+            <df name="LMS7Support.dir">
+            </df>
+          </df>
+          <in>Version.cpp</in>
+        </df>
+        <df name="src">
+          <df name="CMakeFiles">
+            <df name="boardEmulator.dir">
+            </df>
+            <df name="LimeSuite.dir">
+              <df name="__">
+                <df name="external">
+                  <df name="kissFFT">
+                  </df>
+                </df>
+              </df>
+              <df name="ADF4002">
+              </df>
+              <df name="API">
+              </df>
+              <df name="ConnectionFTDI">
+              </df>
+              <df name="ConnectionFX3">
+              </df>
+              <df name="ConnectionRegistry">
+              </df>
+              <df name="ConnectionXillybus">
+              </df>
+              <df name="FPGA_common">
+              </df>
+              <df name="GFIR">
+              </df>
+              <df name="lms7002m">
+              </df>
+              <df name="lms7002m_mcu">
+              </df>
+              <df name="protocols">
+              </df>
+              <df name="Si5351C">
+              </df>
+            </df>
+            <df name="LimeSuiteGUI.dir">
+              <df name="__">
+                <df name="external">
+                  <df name="kissFFT">
+                  </df>
+                </df>
+              </df>
+              <df name="ADF4002">
+              </df>
+              <df name="boards_wxgui">
+              </df>
+              <df name="DPDTest">
+              </df>
+              <df name="fftviewer_wxgui">
+              </df>
+              <df name="FPGAcontrols_wxgui">
+              </df>
+              <df name="HPM7">
+              </df>
+              <df name="lms7002_wxgui">
+              </df>
+              <df name="lms7suiteEvents">
+              </df>
+              <df name="LMS_Programing">
+              </df>
+              <df name="myriad7">
+              </df>
+              <df name="numericSlider">
+              </df>
+              <df name="RFSpark">
+              </df>
+              <df name="Si5351C">
+              </df>
+              <df name="utilities_gui">
+              </df>
+            </df>
+          </df>
+          <df name="examples">
+            <df name="CMakeFiles">
+              <df name="basicRX.dir">
+              </df>
+              <df name="basicTX.dir">
+              </df>
+              <df name="dualRXTX.dir">
+              </df>
+              <df name="gpio_example.dir">
+              </df>
+              <df name="singleRX.dir">
+              </df>
+            </df>
+          </df>
+          <df name="GFIR">
+            <df name="CMakeFiles">
+            </df>
+          </df>
+          <df name="oglGraph">
+            <df name="CMakeFiles">
+              <df name="oglGraph.dir">
+                <df name="glew">
+                </df>
+              </df>
+            </df>
+          </df>
+          <df name="utilities">
+            <df name="CMakeFiles">
+            </df>
+          </df>
+          <in>BuiltinConnections.cpp</in>
+          <in>SystemResources.cpp</in>
+          <in>VersionInfo.cpp</in>
+        </df>
+      </df>
+      <df name="cmake">
+        <df name="Modules">
+        </df>
+      </df>
+      <df name="CMakeFiles">
+        <df name="3.5.2">
+          <df name="CompilerIdC">
+            <in>CMakeCCompilerId.c</in>
+          </df>
+          <df name="CompilerIdCXX">
+            <in>CMakeCXXCompilerId.cpp</in>
+          </df>
+        </df>
+        <df name="CMakeTmp">
+        </df>
+        <df name="uninstall.dir">
+        </df>
+        <in>feature_tests.c</in>
+        <in>feature_tests.cxx</in>
+      </df>
+      <df name="debian">
+        <df name="source">
+        </df>
+      </df>
+      <df name="Desktop">
+        <df name="CMakeFiles">
+        </df>
+      </df>
+      <df name="docs">
+        <df name="doxygen">
+        </df>
+        <df name="LMS_API_Documentation">
+          <df name="search">
+          </df>
+        </df>
+      </df>
+      <df name="external">
+        <df name="cpp-feather-ini-parser">
+          <df name="example">
+            <in>example.cpp</in>
+          </df>
+          <in>INI.h</in>
+        </df>
+        <df name="kissFFT">
+          <in>_kiss_fft_guts.h</in>
+          <in>kiss_fft.c</in>
+          <in>kiss_fft.h</in>
+        </df>
+        <df name="msvc">
+          <in>getopt.h</in>
+        </df>
+      </df>
+      <df name="LimeUtil">
+        <df name="CMakeFiles">
+          <df name="LimeUtil.dir">
+          </df>
+        </df>
+        <in>LimeUtil.cpp</in>
+        <in>LimeUtilCalSweep.cpp</in>
+        <in>LimeUtilTiming.cpp</in>
+      </df>
+      <df name="mcu_program">
+        <df name="CMakeFiles">
+        </df>
+        <df name="common_src">
+          <df name="oldfiles">
+            <in>lms7002m_agc.c</in>
+            <in>lms7002m_calibrations.c</in>
+          </df>
+          <in>LMS7002M_parameters_compact.h</in>
+          <in>lms7002m_agc.c</in>
+          <in>lms7002m_calibrations.c</in>
+          <in>lms7002m_calibrations.h</in>
+          <in>lms7002m_controls.c</in>
+          <in>lms7002m_controls.h</in>
+          <in>lms7002m_filters.c</in>
+          <in>lms7002m_filters.h</in>
+          <in>mcu_defines.h</in>
+          <in>spi.h</in>
+          <in>typedefs.h</in>
+        </df>
+        <df name="host_src">
+          <df name="oldfiles">
+            <in>main.cpp</in>
+            <in>spi.cpp</in>
+          </df>
+          <in>main.cpp</in>
+          <in>main2.cpp</in>
+          <in>mcu.c</in>
+          <in>mcu.h</in>
+          <in>mcuHexBin.cpp</in>
+          <in>mcuHexBin.h</in>
+          <in>mcu_dc_iq_calibration.cpp</in>
+          <in>spi.cpp</in>
+        </df>
+        <df name="mcu_src">
+          <in>LMS7002_REGx51.h</in>
+          <in>main.c</in>
+          <in>spi.c</in>
+        </df>
+      </df>
+      <df name="octave">
+        <df name="CMakeFiles">
+        </df>
+        <in>LimeSuite.cc</in>
+        <in>LoadLimeSuite.m</in>
+        <in>rx.m</in>
+        <in>rx_2ch.m</in>
+        <in>tx.m</in>
+        <in>wfm.m</in>
+      </df>
+      <df name="QuickTest">
+        <df name="CMakeFiles">
+          <df name="LimeQuickTest.dir">
+            <df name="__">
+              <df name="external">
+                <df name="kissFFT">
+                </df>
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="resources">
+        </df>
+        <in>LimeSDRTest.cpp</in>
+        <in>LimeSDRTest.h</in>
+        <in>LimeSDRTest_Mini.cpp</in>
+        <in>LimeSDRTest_USB.cpp</in>
+        <in>TestGUI.cpp</in>
+      </df>
+      <df name="SoapyLMS7">
+        <df name="__pycache__">
+        </df>
+        <df name="CMakeFiles">
+          <df name="LMS7Support.dir">
+          </df>
+        </df>
+        <in>Registration.cpp</in>
+        <in>Settings.cpp</in>
+        <in>SoapyLMS7.h</in>
+        <in>Streaming.cpp</in>
+      </df>
+      <df name="src">
+        <df name="ADF4002">
+          <in>ADF4002.cpp</in>
+          <in>ADF4002.h</in>
+          <in>ADF4002_wxgui.cpp</in>
+          <in>ADF4002_wxgui.h</in>
+        </df>
+        <df name="API">
+          <df name="old">
+            <in>lms7_api.cpp</in>
+          </df>
+          <in>LimeSDR.cpp</in>
+          <in>LimeSDR.h</in>
+          <in>LimeSDR_mini.cpp</in>
+          <in>LimeSDR_mini.h</in>
+          <in>LmsGeneric.cpp</in>
+          <in>LmsGeneric.h</in>
+          <in>device_constants.h</in>
+          <in>lms7_api.cpp</in>
+          <in>lms7_device.cpp</in>
+          <in>lms7_device.h</in>
+          <in>lms7_device_faulty.cpp</in>
+          <in>qLimeSDR.cpp</in>
+          <in>qLimeSDR.h</in>
+        </df>
+        <df name="boards_wxgui">
+          <df name="old">
+            <in>pnlQSpark.cpp</in>
+            <in>pnlQSpark.h</in>
+          </df>
+          <in>iniParser.h</in>
+          <in>lms7002m_novena_wxgui.cpp</in>
+          <in>lms7002m_novena_wxgui.h</in>
+          <in>pnlBuffers.cpp</in>
+          <in>pnlBuffers.h</in>
+          <in>pnlCoreSDR.cpp</in>
+          <in>pnlCoreSDR.h</in>
+          <in>pnlLimeSDR.cpp</in>
+          <in>pnlLimeSDR.h</in>
+          <in>pnlQSpark.cpp</in>
+          <in>pnlQSpark.h</in>
+          <in>pnlUltimateEVB.cpp</in>
+          <in>pnlUltimateEVB.h</in>
+          <in>pnluLimeSDR.cpp</in>
+          <in>pnluLimeSDR.h</in>
+        </df>
+        <df name="commandmode">
+          <df name="old">
+            <in>CFRcomm.cpp</in>
+            <in>CFRcomm.h</in>
+            <in>DPDTest1.cpp</in>
+            <in>DPDcomm.cpp</in>
+            <in>DPDcomm.h</in>
+            <in>DPDcontrol.cpp</in>
+            <in>DPDexample1.cpp</in>
+            <in>example.cpp</in>
+          </df>
+          <in>CFRcomm.cpp</in>
+          <in>CFRcomm.h</in>
+          <in>DPDcomm.cpp</in>
+          <in>DPDcomm.h</in>
+          <in>DPDcontrol.cpp</in>
+          <in>T800.cpp</in>
+          <in>T800.h</in>
+          <in>iniParser.h</in>
+          <in>nrc.cpp</in>
+          <in>nrc.h</in>
+          <in>qadpd.cpp</in>
+          <in>qadpd.h</in>
+        </df>
+        <df name="ConnectionEVB7COM">
+          <in>ConnectionEVB7COM.cpp</in>
+          <in>ConnectionEVB7COM.h</in>
+          <in>ConnectionEVB7COMEntry.cpp</in>
+        </df>
+        <df name="ConnectionFTDI">
+          <df name="FTD3XXLibrary">
+            <df name="Win32">
+              <df name="Static">
+              </df>
+            </df>
+            <df name="x64">
+              <df name="Static">
+              </df>
+            </df>
+            <in>FTD3XX.h</in>
+          </df>
+          <in>ConnectionFT601.cpp</in>
+          <in>ConnectionFT601.h</in>
+          <in>ConnectionFT601Entry.cpp</in>
+        </df>
+        <df name="ConnectionFX3">
+          <in>ConnectionFX3.cpp</in>
+          <in>ConnectionFX3.h</in>
+          <in>ConnectionFX3Entry.cpp</in>
+        </df>
+        <df name="ConnectionNovenaRF7">
+          <in>ConnectionNovenaRF7.cpp</in>
+          <in>ConnectionNovenaRF7.h</in>
+          <in>ConnectionNovenaRF7Entry.cpp</in>
+          <in>ConnectionNovenaRF7_streaming.cpp</in>
+          <in>StreamChannel.cpp</in>
+        </df>
+        <df name="ConnectionRegistry">
+          <in>BuiltinConnections.in.cpp</in>
+          <in>ConnectionHandle.cpp</in>
+          <in>ConnectionHandle.h</in>
+          <in>ConnectionRegistry.cpp</in>
+          <in>ConnectionRegistry.h</in>
+          <in>IConnection.cpp</in>
+          <in>IConnection.h</in>
+        </df>
+        <df name="ConnectionRemote">
+          <in>ConnectionRemote.cpp</in>
+          <in>ConnectionRemote.h</in>
+          <in>ConnectionRemoteEntry.cpp</in>
+          <in>LMS64CProtocol_remote.cpp</in>
+        </df>
+        <df name="ConnectionSTREAM_UNITE">
+          <in>ConnectionSTREAM_UNITE.cpp</in>
+          <in>ConnectionSTREAM_UNITE.h</in>
+          <in>ConnectionSTREAM_UNITEEntry.cpp</in>
+        </df>
+        <df name="ConnectionXillybus">
+          <df name="old">
+            <in>ConnectionXillybus.cpp</in>
+            <in>ConnectionXillybus.h</in>
+          </df>
+          <in>ConnectionXillybus.cpp</in>
+          <in>ConnectionXillybus.h</in>
+          <in>ConnectionXillybusEntry.cpp</in>
+        </df>
+        <df name="DPDTest">
+          <df name="lib_T800">
+            <df name="old">
+              <in>qadpd.cpp</in>
+              <in>qadpd.h</in>
+            </df>
+            <in>T800.cpp</in>
+            <in>T800.h</in>
+            <in>nrc.cpp</in>
+            <in>nrc.h</in>
+          </df>
+          <in>DPDTest.cpp</in>
+          <in>DPDTest.h</in>
+          <in>T800.cpp</in>
+          <in>T800.h</in>
+          <in>dlgADPDControls.cpp</in>
+          <in>dlgADPDControls.h</in>
+          <in>hb1.h</in>
+          <in>hb2.h</in>
+          <in>iniParser.h</in>
+          <in>nrc.cpp</in>
+          <in>nrc.h</in>
+          <in>qadpd.cpp</in>
+          <in>qadpd.h</in>
+        </df>
+        <df name="examples">
+          <df name="CMakeFiles">
+            <df name="basicRX.dir">
+            </df>
+            <df name="basicTX.dir">
+            </df>
+            <df name="dualRXTX.dir">
+            </df>
+            <df name="gpio_example.dir">
+            </df>
+            <df name="singleRX.dir">
+            </df>
+          </df>
+          <in>basicRX.cpp</in>
+          <in>basicTX.cpp</in>
+          <in>dualRXTX.cpp</in>
+          <in>gpio_example.cpp</in>
+          <in>singleRX.cpp</in>
+        </df>
+        <df name="fftviewer_wxgui">
+          <in>fftviewer_frFFTviewer.cpp</in>
+          <in>fftviewer_frFFTviewer.h</in>
+          <in>fftviewer_wxgui.cpp</in>
+          <in>fftviewer_wxgui.h</in>
+        </df>
+        <df name="FPGA_common">
+          <in>FPGA_Mini.cpp</in>
+          <in>FPGA_Mini.h</in>
+          <in>FPGA_Q.cpp</in>
+          <in>FPGA_Q.h</in>
+          <in>FPGA_common.cpp</in>
+          <in>FPGA_common.h</in>
+        </df>
+        <df name="FPGAcontrols_wxgui">
+          <in>FPGAcontrols_wxgui.cpp</in>
+          <in>FPGAcontrols_wxgui.h</in>
+          <in>WFM_wcdma.h</in>
+        </df>
+        <df name="GFIR">
+          <df name="CMakeFiles">
+          </df>
+          <in>corrections.c</in>
+          <in>dfilter.h</in>
+          <in>gfir_lms.c</in>
+          <in>lms.c</in>
+          <in>lms.h</in>
+          <in>lms_gfir.h</in>
+          <in>recipes.c</in>
+          <in>recipes.h</in>
+          <in>rounding.c</in>
+          <in>rounding.h</in>
+        </df>
+        <df name="GPS_wxgui">
+          <in>GPS_wxgui.cpp</in>
+          <in>GPS_wxgui.h</in>
+        </df>
+        <df name="HPM7">
+          <in>HPM7_wxgui.cpp</in>
+          <in>HPM7_wxgui.h</in>
+        </df>
+        <df name="lime">
+          <in>LMS7002M_parameters.h</in>
+          <in>LimeSuite.h</in>
+        </df>
+        <df name="lms7002_wxgui">
+          <in>CoefficientFileParser.cpp</in>
+          <in>CoefficientFileParser.h</in>
+          <in>dlgViewIRAM.cpp</in>
+          <in>dlgViewIRAM.h</in>
+          <in>dlgViewSFR.cpp</in>
+          <in>dlgViewSFR.h</in>
+          <in>lms7002_dlgGFIR_Coefficients.cpp</in>
+          <in>lms7002_dlgGFIR_Coefficients.h</in>
+          <in>lms7002_dlgVCOfrequencies.cpp</in>
+          <in>lms7002_dlgVCOfrequencies.h</in>
+          <in>lms7002_gui_utilities.cpp</in>
+          <in>lms7002_gui_utilities.h</in>
+          <in>lms7002_mainPanel.cpp</in>
+          <in>lms7002_mainPanel.h</in>
+          <in>lms7002_pnlAFE_view.cpp</in>
+          <in>lms7002_pnlAFE_view.h</in>
+          <in>lms7002_pnlBIAS_view.cpp</in>
+          <in>lms7002_pnlBIAS_view.h</in>
+          <in>lms7002_pnlBIST_view.cpp</in>
+          <in>lms7002_pnlBIST_view.h</in>
+          <in>lms7002_pnlCDS_view.cpp</in>
+          <in>lms7002_pnlCDS_view.h</in>
+          <in>lms7002_pnlCLKGEN_view.cpp</in>
+          <in>lms7002_pnlCLKGEN_view.h</in>
+          <in>lms7002_pnlCalibrations_view.cpp</in>
+          <in>lms7002_pnlCalibrations_view.h</in>
+          <in>lms7002_pnlGains_view.cpp</in>
+          <in>lms7002_pnlGains_view.h</in>
+          <in>lms7002_pnlLDO_view.cpp</in>
+          <in>lms7002_pnlLDO_view.h</in>
+          <in>lms7002_pnlLimeLightPAD_view.cpp</in>
+          <in>lms7002_pnlLimeLightPAD_view.h</in>
+          <in>lms7002_pnlMCU_BD_view.cpp</in>
+          <in>lms7002_pnlMCU_BD_view.h</in>
+          <in>lms7002_pnlR3.cpp</in>
+          <in>lms7002_pnlR3.h</in>
+          <in>lms7002_pnlRBB_view.cpp</in>
+          <in>lms7002_pnlRBB_view.h</in>
+          <in>lms7002_pnlRFE_view.cpp</in>
+          <in>lms7002_pnlRFE_view.h</in>
+          <in>lms7002_pnlRxTSP_view.cpp</in>
+          <in>lms7002_pnlRxTSP_view.h</in>
+          <in>lms7002_pnlSX_view.cpp</in>
+          <in>lms7002_pnlSX_view.h</in>
+          <in>lms7002_pnlTBB_view.cpp</in>
+          <in>lms7002_pnlTBB_view.h</in>
+          <in>lms7002_pnlTRF_view.cpp</in>
+          <in>lms7002_pnlTRF_view.h</in>
+          <in>lms7002_pnlTxTSP_view.cpp</in>
+          <in>lms7002_pnlTxTSP_view.h</in>
+          <in>lms7002_pnlXBUF_view.cpp</in>
+          <in>lms7002_pnlXBUF_view.h</in>
+          <in>lms7002_wxgui.cpp</in>
+          <in>lms7002_wxgui.h</in>
+          <in>pnlBoardControls.cpp</in>
+          <in>pnlBoardControls.h</in>
+        </df>
+        <df name="lms7002m">
+          <df name="oldfiles">
+            <in>mcu_dc_iq_calibration.cpp</in>
+            <in>mcu_dc_iq_calibration1.cpp</in>
+            <in>mcu_programs.h</in>
+            <in>mcu_programs1.h</in>
+          </df>
+          <in>LMS7002M.cpp</in>
+          <in>LMS7002M.h</in>
+          <in>LMS7002M_BaseCalibrations.cpp</in>
+          <in>LMS7002M_RegistersMap.cpp</in>
+          <in>LMS7002M_RegistersMap.h</in>
+          <in>LMS7002M_RxTxCalibrations.cpp</in>
+          <in>LMS7002M_filtersCalibration.cpp</in>
+          <in>LMS7002M_gainCalibrations.cpp</in>
+          <in>LMS7002M_parameters.cpp</in>
+          <in>goert.cpp</in>
+          <in>goertzel.h</in>
+          <in>mcu_dc_iq_calibration.cpp</in>
+          <in>mcu_programs.h</in>
+        </df>
+        <df name="lms7002m_mcu">
+          <in>MCU_BD.cpp</in>
+          <in>MCU_BD.h</in>
+          <in>MCU_File.h</in>
+        </df>
+        <df name="lms7suiteEvents">
+          <in>lms7suiteEvents.cpp</in>
+          <in>lms7suiteEvents.h</in>
+        </df>
+        <df name="LMS_Programing">
+          <in>LMS_Programing_wxgui.cpp</in>
+          <in>LMS_Programing_wxgui.h</in>
+        </df>
+        <df name="myriad7">
+          <in>myriad7_wxgui.cpp</in>
+          <in>myriad7_wxgui.h</in>
+        </df>
+        <df name="numericSlider">
+          <in>numericSlider.cpp</in>
+          <in>numericSlider.h</in>
+        </df>
+        <df name="oglGraph">
+          <df name="CMakeFiles">
+            <df name="oglGraph.dir">
+              <df name="glew">
+              </df>
+            </df>
+          </df>
+          <df name="glew">
+            <df name="GL">
+              <in>glew.h</in>
+              <in>glxew.h</in>
+              <in>wglew.h</in>
+            </df>
+            <in>glew.c</in>
+          </df>
+          <in>GLFont.cpp</in>
+          <in>GLFont.h</in>
+          <in>GLGlyph.h</in>
+          <in>OpenGLGraph.cpp</in>
+          <in>OpenGLGraph.h</in>
+          <in>StaticFontHeader.h</in>
+          <in>dlgMarkers.cpp</in>
+          <in>dlgMarkers.h</in>
+        </df>
+        <df name="protocols">
+          <in>ADCUnits.h</in>
+          <in>ConnectionImages.cpp</in>
+          <in>LMS64CCommands.h</in>
+          <in>LMS64CProtocol.cpp</in>
+          <in>LMS64CProtocol.h</in>
+          <in>LMSBoards.h</in>
+          <in>Streamer.cpp</in>
+          <in>Streamer.h</in>
+          <in>dataTypes.h</in>
+          <in>fifo.h</in>
+        </df>
+        <df name="resources">
+          <in>LMS_ICO.xpm</in>
+          <in>splash.h</in>
+        </df>
+        <df name="RFSpark">
+          <in>RFSpark_wxgui.cpp</in>
+          <in>RFSpark_wxgui.h</in>
+        </df>
+        <df name="Si5351C">
+          <in>Si5351C.cpp</in>
+          <in>Si5351C.h</in>
+          <in>Si5351C_wxgui.cpp</in>
+          <in>Si5351C_wxgui.h</in>
+        </df>
+        <df name="utilities">
+          <df name="CMakeFiles">
+          </df>
+          <in>pll_sweep.cpp</in>
+        </df>
+        <df name="utilities_gui">
+          <in>SPI_wxgui.cpp</in>
+          <in>SPI_wxgui.h</in>
+          <in>dlgConnectionSettings.cpp</in>
+          <in>dlgConnectionSettings.h</in>
+          <in>dlgDeviceInfo.cpp</in>
+          <in>dlgDeviceInfo.h</in>
+          <in>dlgFullMessageLog.cpp</in>
+          <in>dlgFullMessageLog.h</in>
+          <in>pnlMiniLog.cpp</in>
+          <in>pnlMiniLog.h</in>
+          <in>utilities_gui.cpp</in>
+          <in>utilities_gui.h</in>
+        </df>
+        <in>BuiltinConnections.cpp</in>
+        <in>LimeSuiteConfig.h</in>
+        <in>Logger.cpp</in>
+        <in>Logger.h</in>
+        <in>SystemResources.cpp</in>
+        <in>SystemResources.h</in>
+        <in>SystemResources.in.cpp</in>
+        <in>VersionInfo.cpp</in>
+        <in>VersionInfo.h</in>
+        <in>VersionInfo.in.cpp</in>
+        <in>boardEmulator.cpp</in>
+        <in>dlgAbout.cpp</in>
+        <in>dlgAbout.h</in>
+        <in>gnuPlotPipe.h</in>
+        <in>lms7suiteApp.cpp</in>
+        <in>lms7suiteApp.h</in>
+        <in>lms7suiteAppFrame.cpp</in>
+        <in>lms7suiteAppFrame.h</in>
+        <in>lms7suiteApp_gui.cpp</in>
+        <in>lms7suiteApp_gui.h</in>
+        <in>windowFunction.cpp</in>
+        <in>windowFunction.h</in>
+      </df>
+      <df name="udev-rules">
+      </df>
+    </df>
+  </logicalFolder>
+  <projectmakefile>build/Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <platform>2</platform>
+      </toolsSet>
+      <compile>
+        <compiledirpicklist>
+          <compiledirpicklistitem>.</compiledirpicklistitem>
+          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
+        </compiledirpicklist>
+        <compiledir>${AUTO_FOLDER}</compiledir>
+        <compilecommandpicklist>
+          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
+          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
+        </compilecommandpicklist>
+        <compilecommand>${AUTO_COMPILE}</compilecommand>
+      </compile>
+      <dbx_gdbdebugger version="1">
+        <gdb_pathmaps>
+        </gdb_pathmaps>
+        <gdb_interceptlist>
+          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
+        </gdb_interceptlist>
+        <gdb_options>
+          <DebugOptions>
+          </DebugOptions>
+        </gdb_options>
+        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
+      </dbx_gdbdebugger>
+      <nativedebugger version="1">
+        <engine>gdb</engine>
+      </nativedebugger>
+      <runprofile version="9">
+        <runcommandpicklist>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+        </runcommandpicklist>
+        <runcommand>"${OUTPUT_PATH}"</runcommand>
+        <rundir>build</rundir>
+        <buildfirst>false</buildfirst>
+        <terminal-type>0</terminal-type>
+        <remove-instrumentation>0</remove-instrumentation>
+        <environment>
+        </environment>
+      </runprofile>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -4,10 +4,8 @@
 @brief	dialog for various controls for ADPD related plots
 */
 #include "dlgADPDControls.h"
-
 #include <wx/intl.h>
 #include <wx/string.h>
-
 #include <wx/button.h>
 
 BEGIN_EVENT_TABLE(dlgADPDControls,wxDialog)
@@ -16,8 +14,6 @@ BEGIN_EVENT_TABLE(dlgADPDControls,wxDialog)
 END_EVENT_TABLE()
 
 dlgADPDControls::dlgADPDControls(wxWindow* parent, int value,
-//int m_iCenterFreqRatioPlot, int m_iFreqSpanRatioPlot,
-//double m_dCenterFreqRatioPlot, double m_dFreqSpanRatioPlot, 
 int m_iYaxisTopPlot, int m_iYaxisBottomPlot, int m_iXaxisLeftPlot, int m_iXaxisRightPlot,
 wxWindowID id, const wxPoint& pos, const wxSize& size)
 {
@@ -47,18 +43,12 @@ const long dlgADPDControls::ID_FFTXP = wxNewId();
 const long dlgADPDControls::ID_FFTYP = wxNewId();
 const long dlgADPDControls::ID_FFTX = wxNewId();
 const long dlgADPDControls::ID_FFTY = wxNewId();
-//const long dlgADPDControls::ID_STATICTEXT_ADPD0 = wxNewId();
-//const long dlgADPDControls::ID_STATICTEXT10 = wxNewId();
-//const long dlgADPDControls::ID_TEXTCTRL3 = wxNewId();
 const long dlgADPDControls::ID_BUTTON3 = wxNewId();
 const long dlgADPDControls::ID_BUTTON4 = wxNewId();
-//const long dlgADPDControls::ID_STATICTEXT11 = wxNewId();
-//const long dlgADPDControls::ID_TEXTCTRL4 = wxNewId();
 const long dlgADPDControls::ID_STATICTEXT18 = wxNewId();
 const long dlgADPDControls::ID_TEXTCTRL6 = wxNewId();
 const long dlgADPDControls::ID_STATICTEXT19 = wxNewId();
 const long dlgADPDControls::ID_TEXTCTRL5 = wxNewId();
-
 const long dlgADPDControls::ID_STATICTEXT_X1 = wxNewId();
 const long dlgADPDControls::ID_STATICTEXT_X2 = wxNewId();
 const long dlgADPDControls::ID_TEXTCTRL_X1 = wxNewId();
@@ -66,15 +56,12 @@ const long dlgADPDControls::ID_TEXTCTRL_X2 = wxNewId();
 
 void dlgADPDControls::BuildContent(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size)
 {
-	Create(parent, id, _T("Plot options"), wxDefaultPosition, wxSize(350, 500), wxDEFAULT_DIALOG_STYLE | wxCLOSE_BOX, _T("Plot options"));
-	//SetClientSize(wxDefaultSize);
+	Create(parent, id, _T("Plot options"), wxDefaultPosition, wxSize(300,450), wxDEFAULT_DIALOG_STYLE | wxCLOSE_BOX, _T("Plot options"));
 	Move(wxDefaultPosition);
-	SetMinSize(wxSize(300,500));
+	SetMinSize(wxSize(300,450));
 	
 	m_controlsSizer = new wxFlexGridSizer(0, 1, 0, 0);
 	m_controlsSizer->AddGrowableCol(0);
-    //m_controlsSizer->AddGrowableCol(0);
-    //m_controlsSizer->AddGrowableRow(0);
 	SetSizer(m_controlsSizer);
 
 	StaticBox_main = new wxStaticBoxSizer(wxVERTICAL, this, _T("Plot type"));
@@ -84,39 +71,37 @@ void dlgADPDControls::BuildContent(wxWindow* parent,wxWindowID id,const wxPoint&
 	m_controlsSizer->Add(StaticBox_main, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 
 	StaticBox_td = new wxStaticBoxSizer(wxVERTICAL,this, _T("Time domain options"));
-	Sizer_td = new wxFlexGridSizer(0, 6, 0, 0);
+	Sizer_td = new wxFlexGridSizer(0, 4, 0, 0);
 	Sizer_td->AddGrowableCol(0);
 	StaticBox_td->Add(Sizer_td);
 
 	FlexGridSizer_x = new wxFlexGridSizer(0, 4, 0, 0);
 	FlexGridSizer_x->AddGrowableCol(0);
-	StaticBox_td->Add(FlexGridSizer_x); // , 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	StaticBox_td->Add(FlexGridSizer_x); 
 	m_controlsSizer->Add(StaticBox_td, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 
-
-	//StaticBox_IQ = new wxStaticBoxSizer(wxVERTICAL, this, _T("I versus Q "));
 	Sizer_IQ = new wxFlexGridSizer(0, 4, 0, 0);
 	Sizer_IQ->AddGrowableCol(0);
-	//StaticBox_IQ->Add(Sizer_IQ);
+
 	m_controlsSizer->Add(Sizer_IQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 
-	StaticBox_fft = new wxStaticBoxSizer(wxVERTICAL, this, _T(""));
-	Sizer_fft = new wxFlexGridSizer(0, 4, 0, 0);
-	Sizer_fft->AddGrowableCol(0);
-	StaticBox_fft->Add(Sizer_fft);
+	//StaticBox_fft = new wxStaticBoxSizer(wxVERTICAL, this, _T(""));
+	//Sizer_fft = new wxFlexGridSizer(0, 2, 0, 0);
+	//Sizer_fft->AddGrowableCol(0);
+	//StaticBox_fft->Add(Sizer_fft);
 		
 	createControls();
 	m_controlsSizer->Add(StaticBoxSizer5, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 
 	cancelButton = new wxButton(this, wxID_ANY, "Cancel");
 	okButton = new wxButton(this, wxID_ANY, "OK");
-	StaticText17 = new wxStaticText(this, wxID_ANY, _T("          "));
+	//StaticText17 = new wxStaticText(this, wxID_ANY, _T(""));
 
-	Sizer_OC = new wxFlexGridSizer(0, 3, 0, 0);
-	Sizer_OC->AddGrowableCol(0);
-	Sizer_OC->AddGrowableRow(0);
+	Sizer_OC = new wxFlexGridSizer(0, 2, 0, 0);
+	//Sizer_OC->AddGrowableCol(0);
+	//Sizer_OC->AddGrowableRow(0);
 	Sizer_OC->Add(okButton, 0, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 10);
-	Sizer_OC->Add(StaticText17, 0, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 10);
+	//Sizer_OC->Add(StaticText17, 0, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 10);
 	Sizer_OC->Add(cancelButton, 0, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 10);
 	m_controlsSizer->Add(Sizer_OC, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 10);
 
@@ -131,7 +116,6 @@ void dlgADPDControls::onCancel(wxCommandEvent& WXUNUSED(pEvent))    {
 
 void dlgADPDControls::onOk(wxCommandEvent& WXUNUSED(pEvent))    {
 	
-
 	long templ=0;
 	txtYaxisTop->GetValue().ToLong(&templ);
 	m_iYaxisTop = (int)templ;
@@ -259,37 +243,38 @@ void dlgADPDControls::createControls()
 	Sizer_td->Add(td_ypI, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_xI, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_yI, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
-	Sizer_td->Add(td_uI, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
-	Sizer_td->Add(td_error, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	
 	Sizer_td->Add(td_xpQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_ypQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_xQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_yQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	
+	
+	Sizer_td->Add(td_uI, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	Sizer_td->Add(td_error, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	Sizer_td->Add(new wxStaticText(this, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 2);
+	Sizer_td->Add(new wxStaticText(this, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 2);
+	
 	Sizer_td->Add(td_uQ, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
 	Sizer_td->Add(td_phase_error, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	Sizer_td->Add(new wxStaticText(this, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 2);
+	Sizer_td->Add(new wxStaticText(this, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 2);
 
-	///////////////////////////////////
-
-	//StaticBoxSizer_x = new wxStaticBoxSizer(wxVERTICAL, this, _T("Time domain options"));
-	wxString temps;
-	
+	wxString temps;	
 	
 	StaticText_x1 = new wxStaticText(this, ID_STATICTEXT_X1, _T("min X:"), wxDefaultPosition, wxDefaultSize, 0, _T(" ID_STATICTEXT_X1"));
-	FlexGridSizer_x->Add(StaticText_x1, 1, wxALL | wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 5);
+	FlexGridSizer_x->Add(StaticText_x1, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 5);
 	txtXaxisLeft = new wxTextCtrl(this, ID_TEXTCTRL_X1, _T("0"), wxDefaultPosition, wxSize(48, -1), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL_X1"));
 	temps.Printf(_T("%d"), m_iXaxisLeft);
 	txtXaxisLeft->SetValue(temps);
 	FlexGridSizer_x->Add(txtXaxisLeft, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);
 	
 	StaticText_x2 = new wxStaticText(this, ID_STATICTEXT_X2, _T("max X:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_X2"));
-	FlexGridSizer_x->Add(StaticText_x2, 1, wxALL | wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 5);
-	txtXaxisRight = new wxTextCtrl(this, ID_TEXTCTRL_X2, _T("20479"), wxDefaultPosition, wxSize(48, -1), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL_X2"));
+	FlexGridSizer_x->Add(StaticText_x2, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 5);
+	txtXaxisRight = new wxTextCtrl(this, ID_TEXTCTRL_X2, _T("8191"), wxDefaultPosition, wxSize(48, -1), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL_X2"));
 	temps.Printf(_T("%d"), m_iXaxisRight);
 	txtXaxisRight->SetValue(temps);
 	FlexGridSizer_x->Add(txtXaxisRight, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);
-
-	//StaticBoxSizer_x->Add(FlexGridSizer_x, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 5);
-	//////////////////////////////
 
 	wxString __wxValue[4] = { _("xp"), _("yp"), _("x"), _("y")};
 	IvsQ = new wxRadioBox(this, ID_IVSQ, _("I versus Q options"), wxDefaultPosition, wxDefaultSize, 4, __wxValue, 0, wxHORIZONTAL, wxDefaultValidator, "IvsQ");
@@ -301,16 +286,13 @@ void dlgADPDControls::createControls()
 	else  IvsQ->SetSelection(3); 
 	Sizer_IQ->Add(IvsQ, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
 	Connect(ID_IVSQ, wxEVT_COMMAND_RADIOBOX_SELECTED, (wxObjectEventFunction)& dlgADPDControls::onParamChange);
-
-	//StaticText_ADPD0 = new wxStaticText(this, ID_STATICTEXT_ADPD0, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD0"));
-	//Sizer_fft->Add(StaticText_ADPD0, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
 	
 	fft_xp = new wxCheckBox(this, ID_FFTXP, "xp", wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, "xp");
 	if (m_iPlotOpt == 2) fft_xp->Enable(true);
 	else fft_xp->Enable(false);
 	if ((m_iValue & 0x10000) == 0x10000) fft_xp->SetValue(true);  // bit 16
 	else fft_xp->SetValue(false);
-	Sizer_fft->Add(fft_xp, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+	//Sizer_fft->Add(fft_xp, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
 	Connect(ID_FFTXP, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)& dlgADPDControls::onParamChange);
 
 	fft_yp = new wxCheckBox(this, ID_FFTYP, "yp", wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, "yp");
@@ -318,7 +300,7 @@ void dlgADPDControls::createControls()
 	else fft_yp->Enable(false);
 	if ((m_iValue & 0x20000) == 0x20000) fft_yp->SetValue(true);  // bit 17
 	else fft_yp->SetValue(false);
-	Sizer_fft->Add(fft_yp, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+	//Sizer_fft->Add(fft_yp, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
 	Connect(ID_FFTYP, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)& dlgADPDControls::onParamChange);
 
 	fft_x = new wxCheckBox(this, ID_FFTX, "x", wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, "x");
@@ -326,7 +308,7 @@ void dlgADPDControls::createControls()
 	else fft_x->Enable(false);
 	if ((m_iValue & 0x40000) == 0x40000) fft_x->SetValue(true);  // bit 18
 	else fft_x->SetValue(false);
-	Sizer_fft->Add(fft_x, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+	//Sizer_fft->Add(fft_x, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
 	Connect(ID_FFTX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)& dlgADPDControls::onParamChange);
 
 	fft_y = new wxCheckBox(this, ID_FFTY, "y", wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, "y");
@@ -334,33 +316,35 @@ void dlgADPDControls::createControls()
 	else fft_y->Enable(false);
 	if ((m_iValue & 0x80000) == 0x80000) fft_y->SetValue(true);  // bit 19
 	else fft_y->SetValue(false);
-	Sizer_fft->Add(fft_y, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+	//Sizer_fft->Add(fft_y, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
 	Connect(ID_FFTY, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)& dlgADPDControls::onParamChange);
 
 	StaticBoxSizer5 = new wxStaticBoxSizer(wxVERTICAL, this, _T("FFT plot setup"));
 	FlexGridSizer9 = new wxFlexGridSizer(0, 2, 0, 0);
 	FlexGridSizer9->AddGrowableCol(0);
-
-	FlexGridSizer16 = new wxFlexGridSizer(0, 2, 0, 0);
-	FlexGridSizer16->AddGrowableCol(0);
-	StaticText15 = new wxStaticText(this, ID_STATICTEXT18, _T("max Y:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT18"));
-	FlexGridSizer16->Add(StaticText15, 1, wxALL | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	
+    FlexGridSizer16 = new wxFlexGridSizer(0, 4, 0, 0);
+	FlexGridSizer16->Add(fft_xp, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);	
+	FlexGridSizer16->Add(fft_yp, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);	
+	FlexGridSizer16->Add(fft_x, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);	
+	FlexGridSizer16->Add(fft_y, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL, 2);
+	
+	StaticText15 = new wxStaticText(this, 1, _T("max Y:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT18"));
+	FlexGridSizer16->Add(StaticText15, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL , 2);
 	txtYaxisTop = new wxTextCtrl(this, ID_TEXTCTRL6, _T("0"), wxDefaultPosition, wxSize(48, -1), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL6"));	
 	temps.Printf(_T("%d"), m_iYaxisTop);
 	txtYaxisTop->SetValue(temps);
-
-	FlexGridSizer16->Add(txtYaxisTop, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	FlexGridSizer16->Add(txtYaxisTop, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL , 2);
+	
 	StaticText16 = new wxStaticText(this, ID_STATICTEXT19, _T("min Y:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT19"));
-	FlexGridSizer16->Add(StaticText16, 1, wxALL | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	FlexGridSizer16->Add(StaticText16, 1,  wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL , 2);
 	txtYaxisBottom = new wxTextCtrl(this, ID_TEXTCTRL5, _T("-100"), wxDefaultPosition, wxSize(48, -1), wxTE_PROCESS_ENTER, wxDefaultValidator, _T("ID_TEXTCTRL5"));
 	temps.Printf(_T("%d"), m_iYaxisBottom);
 	txtYaxisBottom->SetValue(temps);
-	FlexGridSizer16->Add(txtYaxisBottom, 1, wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 2);
+	FlexGridSizer16->Add(txtYaxisBottom, 1, wxALIGN_LEFT | wxALIGN_BOTTOM | wxEXPAND | wxALL , 2);
 	
-	//FlexGridSizer9->Add(FlexGridSizer17, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 10);
-	FlexGridSizer9->Add(FlexGridSizer16, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 5);
-	FlexGridSizer9->Add(StaticBox_fft, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 5);
 	StaticBoxSizer5->Add(FlexGridSizer9, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 5);
+	StaticBoxSizer5->Add(FlexGridSizer16, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxEXPAND | wxALL, 5);
 
 	onEnableDisable();
 }
@@ -423,7 +407,6 @@ void dlgADPDControls::onEnableDisable()
 		if (td_phase_error->IsChecked()) m_iValue |= 0x02000;  // bit 13
 		else m_iValue &= 0xFDFFF;
 
-		
 		StaticText15->Enable(false);
 		txtYaxisTop->Enable(false);
 		StaticText16->Enable(false);
@@ -452,7 +435,7 @@ void dlgADPDControls::onEnableDisable()
 		m_iValue &= 0xF3FFF;  // reset
 		m_iValue |= (temp<<14);
 
-		StaticText15->Enable(false);
+	    StaticText15->Enable(false);
 		txtYaxisTop->Enable(false);
 		StaticText16->Enable(false);
 		txtYaxisBottom->Enable(false);
@@ -486,7 +469,6 @@ void dlgADPDControls::onEnableDisable()
 		if (fft_y->IsChecked()) m_iValue |= 0x80000;  // bit 19
 		else m_iValue &= 0x7FFFF;
 
-		
 		StaticText15->Enable(true);
 		txtYaxisTop->Enable(true);
 		StaticText16->Enable(true);

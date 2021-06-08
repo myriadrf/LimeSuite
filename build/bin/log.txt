@@ -1,0 +1,7 @@
+train ind: 5 
+train ind: 0 
+train ind: 0 
+train ind: 0 
+train ind: 0 
+train ind: 0 
+train ind: 0 

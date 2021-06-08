@@ -9,6 +9,7 @@
 #include <mutex>
 #include <LMS64CCommands.h>
 #include <LMSBoards.h>
+#include <thread>
 
 namespace lime{
 
@@ -18,20 +19,20 @@ namespace lime{
  * configuration and spi access over the LMS64C Protocol.
  * Connections using LMS64C may inherit from LMS64C.
  */
-class LMS64CProtocol : public virtual IConnection
+class LIME_API LMS64CProtocol : public virtual IConnection
 {
 public:
     LMS64CProtocol(void);
 
     virtual ~LMS64CProtocol(void);
 
-    DeviceInfo GetDeviceInfo(void);
+    virtual DeviceInfo GetDeviceInfo(void);
 
     //! DeviceReset implemented by LMS64C
-    int DeviceReset(void);
+    int DeviceReset(int ind=0);
 
     //! TransactSPI implemented by LMS64C
-    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size);
+    int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size)override;
 
     //! WriteI2C implemented by LMS64C
     int WriteI2C(const int addr, const std::string &data);
@@ -45,14 +46,6 @@ public:
     //! ReadRegisters (BRDSPI) implemented by LMS64C
     int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size);
 
-    //! Get the last-set reference clock rate
-    double GetReferenceClockRate(void);
-
-    /*!
-     * Set the reference using the Si5351C when available
-     */
-    void SetReferenceClockRate(const double rate);
-
     /// Supported connection types.
     enum eConnectionType
     {
@@ -60,6 +53,7 @@ public:
         COM_PORT = 0,
         USB_PORT = 1,
         SPI_PORT = 2,
+        PCIE_PORT = 3,
         //insert new types here
         CONNECTION_TYPES_COUNT //used only for memory allocation
     };
@@ -78,10 +72,12 @@ public:
         {
             cmd = CMD_GET_INFO;
             status = STATUS_UNDEFINED;
+            periphID = 0;
         }
 
         eCMD_LMS cmd;
         eCMD_STATUS status;
+        unsigned periphID;
         std::vector<unsigned char> outBuffer;
         std::vector<unsigned char> inBuffer;
     };
@@ -104,12 +100,13 @@ public:
         static const int maxDataLength = 56;
         ProtocolLMS64C() :cmd(0),status(STATUS_UNDEFINED),blockCount(0)
         {
-            memset(reserved, 0, 5);
+             memset(reserved, 0, 4);
         };
         unsigned char cmd;
         unsigned char status;
         unsigned char blockCount;
-        unsigned char reserved[5];
+        unsigned char periphID;
+        unsigned char reserved[4];
         unsigned char data[maxDataLength];
     };
 
@@ -131,7 +128,7 @@ public:
      * Some implementations will cast to LMS64CProtocol
      * and directly use the TransferPacket() API call.
      */
-    int TransferPacket(GenericPacket &pkt);
+    virtual int TransferPacket(GenericPacket &pkt);
 
     struct LMSinfo
     {
@@ -140,19 +137,31 @@ public:
         int firmware;
         int hardware;
         int protocol;
-        uint32_t boardSerialNumber;
+        uint64_t boardSerialNumber;
     };
 
     LMSinfo GetInfo();
+
+    struct FPGAinfo
+    {
+        int boardID;
+        int gatewareVersion;
+        int gatewareRevision;
+        int hwVersion;
+    };
+
+    FPGAinfo GetFPGAInfo();
+    void VersionCheck();
+    int ProgramUpdate(const bool download, const bool force, IConnection::ProgrammingCallback callback) override;
 
     //! implement in base class
     virtual eConnectionType GetType(void) = 0;
 
     //! virtual write function to be implemented by the base class
-    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 0) = 0;
+    virtual int Write(const unsigned char *buffer, int length, int timeout_ms = 100) = 0;
 
     //! virtual read function to be implemented by the base class
-    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 0) = 0;
+    virtual int Read(unsigned char *buffer, int length, int timeout_ms = 100) = 0;
 
     enum ProgramWriteTarget
     {
@@ -163,16 +172,29 @@ public:
         PROGRAM_WRITE_TARGET_COUNT
     };
 
-    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = 0);
+    virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int device, ProgrammingCallback callback = nullptr);
 
-    virtual int CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units);
-    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units);
+    virtual int CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units) override;
+    virtual int CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units) override;
 
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
+
+    int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
+    int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
+    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
+protected:
+#ifdef REMOTE_CONTROL
+    void InitRemote();
+    void CloseRemote();
+    void ProcessConnections();
+    bool remoteOpen;
+    int socketFd;
+    std::thread remoteThread;
+#endif
 private:
-
-    int WriteLMS7002MSPI(const uint32_t *writeData, const size_t size);
-    int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size);
-
     int WriteSi5351I2C(const std::string &data);
     int ReadSi5351I2C(const size_t numBytes, std::string &data);
 

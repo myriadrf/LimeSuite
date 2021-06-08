@@ -1,0 +1,1 @@
+/usr/bin/c++   -fvisibility-inlines-hidden -pthread -O3 -DNDEBUG  -rdynamic CMakeFiles/boardEmulator.dir/boardEmulator.cpp.o  -o boardEmulator  -L/usr/local/lib -Wl,-rpath,/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/build/src:/usr/local/lib libLimeSuite.so.18.10.0 -pthread -lusb-1.0 

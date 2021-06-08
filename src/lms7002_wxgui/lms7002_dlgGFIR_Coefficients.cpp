@@ -16,7 +16,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile( wxCommandEvent& event )
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
 
-    int cbuf[200];
+    float cbuf[200];
     int iVal = Parser::getcoeffs((const char*)dlg.GetPath().ToStdString().c_str(), cbuf, 200);
 
     switch (iVal)
@@ -43,7 +43,7 @@ void lms7002_dlgGFIR_Coefficients::OnLoadFromFile( wxCommandEvent& event )
     gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue());
     for (int i = 0; i<iVal; ++i)
     {
-        gridCoef->SetCellValue(i, 0, wxString::Format("%i", cbuf[i]));
+        gridCoef->SetCellValue(i, 0, wxString::Format("%f", cbuf[i]));
     }
 }
 
@@ -52,13 +52,13 @@ void lms7002_dlgGFIR_Coefficients::OnSaveToFile( wxCommandEvent& event )
     wxFileDialog dlg(this, _("Save coefficients file"), "", "", "FIR Coeffs (*.fir)|*.fir", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    int coefficients[200];
+    float coefficients[200];
     memset(coefficients, 0, sizeof(unsigned short) * 200);
-    long ltemp;
+    double ltemp;
     for (int i = 0; i<spinCoefCount->GetValue(); ++i)
     {
         ltemp = 0;
-        gridCoef->GetCellValue(i, 0).ToLong(&ltemp);
+        gridCoef->GetCellValue(i, 0).ToDouble(&ltemp);
         coefficients[i] = ltemp;
     }
     Parser::saveToFile((const char*)dlg.GetPath().ToStdString().c_str(), coefficients, spinCoefCount->GetValue());
@@ -83,25 +83,25 @@ void lms7002_dlgGFIR_Coefficients::OnspinCoefCountChange(wxSpinEvent& event)
         gridCoef->GetTable()->AppendRows(spinCoefCount->GetValue() - gridCoef->GetTable()->GetRowsCount());
 }
 
-void lms7002_dlgGFIR_Coefficients::SetCoefficients(const std::vector<short> &coefficients)
-{   
+void lms7002_dlgGFIR_Coefficients::SetCoefficients(const std::vector<double> &coefficients)
+{
     spinCoefCount->SetValue(coefficients.size());
     if (gridCoef->GetTable()->GetRowsCount() > 0)
         gridCoef->GetTable()->DeleteRows(0, gridCoef->GetTable()->GetRowsCount());
     gridCoef->GetTable()->AppendRows(coefficients.size());
     for (unsigned i = 0; i<coefficients.size(); ++i)
-        gridCoef->SetCellValue(i, 0, wxString::Format("%i", coefficients[i]));
+        gridCoef->SetCellValue(i, 0, wxString::Format("%.6f", coefficients[i]));
 }
 
-std::vector<short> lms7002_dlgGFIR_Coefficients::GetCoefficients()
+std::vector<double> lms7002_dlgGFIR_Coefficients::GetCoefficients()
 {
-    std::vector<short> coefficients;
+    std::vector<double> coefficients;
     coefficients.resize(spinCoefCount->GetValue(), 0);
     for (int i = 0; i<spinCoefCount->GetValue(); ++i)
     {
-        long ltemp = 0;
-        gridCoef->GetCellValue(i, 0).ToLong(&ltemp);
-        coefficients[i] = ltemp;
+        double dtemp = 0;
+        gridCoef->GetCellValue(i, 0).ToDouble(&dtemp);
+        coefficients[i] = dtemp;
     }
     return coefficients;
 }

@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/srdjan/Work2/BBC/LimeSuite/src/examples/gpio_example.cpp
+lime/LimeSuite.h
+-
+iostream
+-
+chrono
+-
+thread
+-
+
+src/lime/LMS7002M_parameters.h
+stdint.h
+-
+
+src/lime/LimeSuite.h
+stdint.h
+-
+stdlib.h
+-
+LMS7002M_parameters.h
+src/lime/LMS7002M_parameters.h
+stdbool.h
+-
+windows.h
+-
+

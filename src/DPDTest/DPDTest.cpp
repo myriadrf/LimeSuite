@@ -1,21 +1,18 @@
 #include "DPDTest.h"
-
+#include <wx/timer.h>
 #include <vector>
-//#include "lmsComms.h"
-#include "IConnection.h"
-#include "LMS64CProtocol.h"
-
-#include "OpenGLGraph.h"
+#include "../oglGraph/OpenGLGraph.h"
 #include "kiss_fft.h"
 #include "iniParser.h"
-//#include "math.h"
+#include "../DPDTest/dlgADPDControls.h"
 
-#include "dlgADPDControls.h";
+#include "hb1.h"
+#include "hb2.h"
+#include "lms7_device.h"
 
 using namespace lime;
 using namespace std;
 
-//// BORKO START
 const long DPDTest::ID_NOTEBOOK1 = wxNewId();
 const long DPDTest::ID_ADPD_TAB_SPECTRUM = wxNewId();
 const long DPDTest::ID_ADPD_SPLITTERWINDOW1 = wxNewId();
@@ -37,19 +34,18 @@ const long DPDTest::ID_STATICTEXT_ADPD4 = wxNewId();
 const long DPDTest::ID_STATICTEXT_ADPD5 = wxNewId();
 const long DPDTest::ID_STATICTEXT_ADPD6 = wxNewId();
 const long DPDTest::ID_STATICTEXT_ADPD7 = wxNewId();
-//const long DPDTest::ID_STATICTEXT_ADPD8 = wxNewId();
-//const long DPDTest::ID_STATICTEXT_ADPD9 = wxNewId();
+const long DPDTest::ID_STATICTEXT_ADPD8 = wxNewId();
+const long DPDTest::ID_STATICTEXT_ADPD9 = wxNewId();
 const long DPDTest::ID_STATICTEXT_ADPD10 = wxNewId();
-
 const long DPDTest::ID_STATICTEXT_ADPD11 = wxNewId();
-
+const long DPDTest::ID_STATICTEXT_ADPD13 = wxNewId();
+const long DPDTest::ID_STATICTEXT_ADPD19 = wxNewId();
 const long DPDTest::ID_BUTTON_CAPTURE = wxNewId();
 const long DPDTest::ID_SPINCTRL_ADPD_N = wxNewId();
 const long DPDTest::ID_SPINCTRL_ADPD_M = wxNewId();
+
 const long DPDTest::ID_TEXTCTRL_ADPD1 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_ADPD2 = wxNewId();
-//const long DPDTest::ID_TEXTCTRL_ADPD3 = wxNewId();
-//const long DPDTest::ID_TEXTCTRL_ADPD4 = wxNewId();
 const long DPDTest::ID_SPINCTRL_ADPD_DELAY = wxNewId();
 const long DPDTest::ID_CHECKBOX_PLOT1 = wxNewId();
 const long DPDTest::ID_BUTTON_PLOT1 = wxNewId();
@@ -62,2772 +58,4256 @@ const long DPDTest::ID_BUTTON_PLOT4 = wxNewId();
 const long DPDTest::ID_BUTTON_TRAIN = wxNewId();
 const long DPDTest::ID_BUTTON_START = wxNewId();
 const long DPDTest::ID_BUTTON_END = wxNewId();
+const long DPDTest::ID_BUTTON_CAL = wxNewId();
+const long DPDTest::ID_BUTTON_CAL2 = wxNewId();
 const long DPDTest::ID_BUTTON_SEND = wxNewId();
-const long DPDTest::ID_BUTTON_RTS = wxNewId();
-//const long DPDTest::ID_CHECKBOX_YPFPGA = wxNewId();
-//const long DPDTest::ID_STATICTEXT_1 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_FFTSAMPLES = wxNewId();
 const long DPDTest::ID_BUTTON_CALFFT = wxNewId();
-
 const long DPDTest::ID_STATICTEXT_12 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_12 = wxNewId();
 const long DPDTest::ID_COMBOBOX_WINDOW = wxNewId();
 const long DPDTest::ID_STATICTEXT_2 = wxNewId();
-const long DPDTest::ID_TEXTCTRL_NUM = wxNewId();
 const long DPDTest::ID_BUTTON_TIMER = wxNewId();
-
 const long DPDTest::ID_CHECKBOX_TRAIN = wxNewId();
 const long DPDTest::ID_TRAINMODE = wxNewId();
-
 const long DPDTest::ID_STATICTEXT_FFT1 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_FFT1 = wxNewId();
 const long DPDTest::ID_STATICTEXT_FFT2 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_FFT2 = wxNewId();
 const long DPDTest::ID_STATICTEXT_FFT3 = wxNewId();
 const long DPDTest::ID_TEXTCTRL_FFT3 = wxNewId();
+const long DPDTest::ID_BUTTON_SAVE = wxNewId();
+const long DPDTest::ID_BUTTON_READ = wxNewId();
+const long DPDTest::ID_READING_FINISHED_EVENT = wxNewId();
+const long DPDTest::ID_CHECKBOX_EXTDACS = wxNewId();
 
-
-wxBEGIN_EVENT_TABLE(DPDTest , wxFrame)
+wxBEGIN_EVENT_TABLE(DPDTest, wxFrame)
     EVT_TIMER(TIMER_ID, DPDTest::OnTimer)
-wxEND_EVENT_TABLE()
+        wxEND_EVENT_TABLE()
 
 #define AVERAGE 1
 #define NOAVERAGE 0
 
-const char *config_filename = "QADPDconfig.ini";
+            const char *config_filename = "QADPDconfig.ini";
 
-//// BORKO END
-//////////////
+DPDTest::~DPDTest()
+{
 
-
-
-DPDTest::~DPDTest(){
-
-	Qadpd->release_memory();
-	Qadpd->finish();
-
-	Button_START->Enable(true);
-	Button_TRAIN->Enable(false);
-	Button_END->Enable(false);
-	Button_SEND->Enable(false);
-	spin_ADPD_N->Enable(true);
-	spin_ADPD_M->Enable(true);
-	spin_ADPD_Delay->Enable(true);
-	m_ADPD_txtGain->Enable(true);
-	m_ADPD_txtLambda->Enable(true);
-	//m_ADPD_txtAm->Enable(true);
-	//m_ADPD_txtSkip->Enable(true);
-	m_ADPD_txtTrain->Enable(true);
-	TrainMode->Enable(false);
-	btnCapture->Enable(false);
-	Button_TRAIN->Enable(false);
-	Button_SEND->Enable(false);
-	Button_TIMER->Enable(false);
-	Button_RTS->Enable(false);
-	m_ADPD_Num->Enable(false);
-	CheckBox_Train->Enable(false);
-	timer_enabled = false;
-	m_timer->Stop();    // stop
-	ind = 0;
-
+    Button_START->Enable(true);
+    Button_TRAIN->Enable(false);
+    Button_END->Enable(false);
+    Button_SEND->Enable(false);
+    spin_ADPD_N->Enable(true);
+    spin_ADPD_M->Enable(true);
+    spin_ADPD_Delay->Enable(true);
+    m_ADPD_txtGain->Enable(true);
+    m_ADPD_txtLambda->Enable(true);
+    m_ADPD_txtTrain->Enable(true);
+    TrainMode->Enable(false);
+    btnCapture->Enable(false);
+    Button_TRAIN->Enable(false);
+    Button_SEND->Enable(false);
+    Button_TIMER->Enable(false);
+    Button_READ->Enable(false);
+    Button_SAVE->Enable(false);
+    CheckBox_Train->Enable(false);
+    timer_enabled = false;
+    Button_CAL->Enable(false);
+    Button_CAL2->Enable(false);
+    m_timer->Stop();
+    ind = 0;
+    offset = 0;
+    if (m_iThread == 1)
+        mWorkerThread.join();
+    m_iThread = 0;
 };
 
-DPDTest::DPDTest( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
-, mDataPort(nullptr)
-//, m_timer(this, TIMER_ID)
+DPDTest::DPDTest(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos, const wxSize &size, long style) : wxFrame(parent, id, title, pos, size, style), lmsControl(nullptr)
 {
-    
-	//range = 4.0;
-	range = 16.0;
-	ind = 0;
-	m_timer = new wxTimer(this, TIMER_ID);
-	m_bTrain = true;
 
-	m_iWindowFunc = 0;
-	windowFcoefs = NULL;
-
-	xp_samples=NULL;
-	yp_samples=NULL;
-	x_samples=NULL;
-	y_samples = NULL;
-
-	xp1_samples = NULL;
-	yp1_samples = NULL;
-	x1_samples = NULL;
-	y1_samples = NULL;
-
-	u_samples = NULL;
-	error_samples = NULL;
-	xp_fft=NULL;
-	yp_fft=NULL;
-	x_fft=NULL;
-	y_fft = NULL;
-
-	samplesReceived = 0;
-	m_iValuePlot1=0;
-	m_iValuePlot2=0;
-	m_iValuePlot3=0;
-	m_iValuePlot4=0;
-
-	m_iYaxisTopPlot1=0;
-	m_iYaxisBottomPlot1=-120;
-        m_iCenterFreqRatioPlot1=0;
-	m_iFreqSpanRatioPlot1=0;
-	m_dCenterFreqRatioPlot1=0.0;
-	m_dFreqSpanRatioPlot1=0.0;
-	m_iXaxisLeftPlot1 = 0;
-	m_iXaxisRightPlot1 = 1000;
-	
-	m_iYaxisTopPlot2 = 0;
-	m_iYaxisBottomPlot2 = -120;
-	m_iCenterFreqRatioPlot2 = 0;
-	m_iFreqSpanRatioPlot2 = 0;
-	m_dCenterFreqRatioPlot2 = 0.0;
-	m_dFreqSpanRatioPlot2 = 0.0;
-	m_iXaxisLeftPlot2=0;
-	m_iXaxisRightPlot2=1000;
-	
-	m_iYaxisTopPlot3 = 0;
-	m_iYaxisBottomPlot3 = -120;
-	m_iCenterFreqRatioPlot3 = 0;
-	m_iFreqSpanRatioPlot3 = 0;
-	m_dCenterFreqRatioPlot3 = 0.0;
-	m_dFreqSpanRatioPlot3 = 0.0;
-	m_iXaxisLeftPlot3 = 0;
-	m_iXaxisRightPlot3 = 1000;
-	
-	m_iYaxisTopPlot4 = 0;
-	m_iYaxisBottomPlot4 = -120;
-	m_iCenterFreqRatioPlot4 = 0;
-	m_iFreqSpanRatioPlot4 = 0;
-	m_dCenterFreqRatioPlot4 = 0.0;
-	m_dFreqSpanRatioPlot4 = 0.0;
-	m_iXaxisLeftPlot4 = 0;
-	m_iXaxisRightPlot4 = 1000;
-
-	mNyquist_MHz = 1;
-    this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-	this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE));
-
+    offset = 0;
+    m_iThread = 0;
+    chA = 1;
+    range = 16.0;
+    updatedCoeff = 0;
+    ind = 0;
+    m_timer = new wxTimer(this, TIMER_ID);
+    m_bTrain = true;
+    m_iWindowFunc = 0;
+    windowFcoefs = NULL;
+    xp_samples = NULL;
+    yp_samples = NULL;
+    x_samples = NULL;
+    y_samples = NULL;
+    xp1_samples = NULL;
+    yp1_samples = NULL;
+    x1_samples = NULL;
+    y1_samples = NULL;
+    u_samples = NULL;
+    error_samples = NULL;
+    xp_fft = NULL;
+    yp_fft = NULL;
+    x_fft = NULL;
+    y_fft = NULL;
+    samplesReceived = 0;
+    m_iValuePlot1 = 0;
+    m_iValuePlot2 = 0;
+    m_iValuePlot3 = 0;
+    m_iValuePlot4 = 0;
+    m_iYaxisTopPlot1 = 0;
+    m_iYaxisBottomPlot1 = -120;
+    m_iCenterFreqRatioPlot1 = 0;
+    m_iFreqSpanRatioPlot1 = 0;
+    m_dCenterFreqRatioPlot1 = 0.0;
+    m_dFreqSpanRatioPlot1 = 0.0;
+    m_iXaxisLeftPlot1 = 0;
+    m_iXaxisRightPlot1 = 1000;
+    m_iYaxisTopPlot2 = 0;
+    m_iYaxisBottomPlot2 = -120;
+    m_iCenterFreqRatioPlot2 = 0;
+    m_iFreqSpanRatioPlot2 = 0;
+    m_dCenterFreqRatioPlot2 = 0.0;
+    m_dFreqSpanRatioPlot2 = 0.0;
+    m_iXaxisLeftPlot2 = 0;
+    m_iXaxisRightPlot2 = 1000;
+    m_iYaxisTopPlot3 = 0;
+    m_iYaxisBottomPlot3 = -120;
+    m_iCenterFreqRatioPlot3 = 0;
+    m_iFreqSpanRatioPlot3 = 0;
+    m_dCenterFreqRatioPlot3 = 0.0;
+    m_dFreqSpanRatioPlot3 = 0.0;
+    m_iXaxisLeftPlot3 = 0;
+    m_iXaxisRightPlot3 = 1000;
+    m_iYaxisTopPlot4 = 0;
+    m_iYaxisBottomPlot4 = -120;
+    m_iCenterFreqRatioPlot4 = 0;
+    m_iFreqSpanRatioPlot4 = 0;
+    m_dCenterFreqRatioPlot4 = 0.0;
+    m_dFreqSpanRatioPlot4 = 0.0;
+    m_iXaxisLeftPlot4 = 0;
+    m_iXaxisRightPlot4 = 1000;
+    mLmsNyquist_MHz = 1;
+    this->SetSizeHints(wxDefaultSize, wxDefaultSize);
+    this->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 
 #ifndef __unix__
     SetIcon(wxIcon(_("aaaaAPPicon")));
 #endif
 
-	FlexGridSizer1 = new wxFlexGridSizer(0, 1, 0, 0);
-	FlexGridSizer1->AddGrowableCol(0);
-	FlexGridSizer1->AddGrowableRow(0);
+    FlexGridSizer1 = new wxFlexGridSizer(0, 1, 0, 0);
+    FlexGridSizer1->AddGrowableCol(0);
+    FlexGridSizer1->AddGrowableRow(0);
 
-	m_MainTabs = new wxNotebook(this, ID_NOTEBOOK1, wxDefaultPosition, wxDefaultSize, 0, _T("ID_NOTEBOOK1"));
-	m_ADPD_tabSpectrum = new wxPanel(m_MainTabs, ID_ADPD_TAB_SPECTRUM, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_ADPD_TAB_SPECTRUM"));
-	m_ADPD_spectrumSizer = new wxFlexGridSizer(0, 2, 0, 0);
-	m_ADPD_spectrumSizer->AddGrowableCol(0);
-	m_ADPD_spectrumSizer->AddGrowableRow(0);
+    m_MainTabs = new wxNotebook(this, ID_NOTEBOOK1, wxDefaultPosition, wxDefaultSize, 0, _T("ID_NOTEBOOK1"));
+    m_ADPD_tabSpectrum = new wxPanel(m_MainTabs, ID_ADPD_TAB_SPECTRUM, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_ADPD_TAB_SPECTRUM"));
+    m_ADPD_spectrumSizer = new wxFlexGridSizer(0, 2, 0, 0);
+    m_ADPD_spectrumSizer->AddGrowableCol(0);
+    m_ADPD_spectrumSizer->AddGrowableRow(0);
 
-	m_ADPD_tabSpectrum->SetSizer(m_ADPD_spectrumSizer);
-	m_ADPD_spectrumSizer->Fit(m_ADPD_tabSpectrum);
-	m_ADPD_spectrumSizer->SetSizeHints(m_ADPD_tabSpectrum);
+    m_ADPD_tabSpectrum->SetSizer(m_ADPD_spectrumSizer);
+    m_ADPD_spectrumSizer->Fit(m_ADPD_tabSpectrum);
+    m_ADPD_spectrumSizer->SetSizeHints(m_ADPD_tabSpectrum);
 
-	m_ADPD_plotSizer = new wxFlexGridSizer(0, 1, 5, 5);
-	m_ADPD_plotSizer->AddGrowableCol(0);
-	m_ADPD_plotSizer->AddGrowableRow(0);
+    m_ADPD_plotSizer = new wxFlexGridSizer(0, 1, 5, 5);
+    m_ADPD_plotSizer->AddGrowableCol(0);
+    m_ADPD_plotSizer->AddGrowableRow(0);
 
-	m_ADPD_controlsSizer = new wxFlexGridSizer(0, 1, 0, 0);
-	m_ADPD_controlsSizer->AddGrowableCol(0);
+    m_ADPD_controlsSizer = new wxFlexGridSizer(0, 1, 0, 0);
+    m_ADPD_controlsSizer->AddGrowableCol(0);
 
-	m_ADPD_spectrumSizer->Add(m_ADPD_plotSizer, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	m_ADPD_spectrumSizer->Add(m_ADPD_controlsSizer, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_ADPD_spectrumSizer->Add(m_ADPD_plotSizer, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_ADPD_spectrumSizer->Add(m_ADPD_controlsSizer, 1, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-	m_ADPD_plotSplitter = new wxSplitterWindow(m_ADPD_tabSpectrum, ID_ADPD_SPLITTERWINDOW1, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW1"));
-	m_ADPD_plotSplitter->SetMinSize(wxSize(100, 100));
-	m_ADPD_plotSplitter->SetMinimumPaneSize(100);
-	m_ADPD_plotSplitter->SetSashGravity(0.5);
-	m_ADPD_plotSizer->Add(m_ADPD_plotSplitter, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_ADPD_plotSplitter = new wxSplitterWindow(m_ADPD_tabSpectrum, ID_ADPD_SPLITTERWINDOW1, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW1"));
+    m_ADPD_plotSplitter->SetMinSize(wxSize(100, 100));
+    m_ADPD_plotSplitter->SetMinimumPaneSize(100);
+    m_ADPD_plotSplitter->SetSashGravity(0.5);
+    m_ADPD_plotSizer->Add(m_ADPD_plotSplitter, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
 
-	m_ADPD_plotSplitter_up = new wxSplitterWindow(m_ADPD_plotSplitter, ID_ADPD_SPLITTERWINDOW2, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW2"));
-	m_ADPD_plotSplitter_up->SetMinSize(wxSize(100, 100));
-	m_ADPD_plotSplitter_up->SetMinimumPaneSize(100);
-	m_ADPD_plotSplitter_up->SetSashGravity(0.5);
-	m_ADPD_plotSplitter_up->Fit();
+    m_ADPD_plotSplitter_up = new wxSplitterWindow(m_ADPD_plotSplitter, ID_ADPD_SPLITTERWINDOW2, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW2"));
+    m_ADPD_plotSplitter_up->SetMinSize(wxSize(100, 100));
+    m_ADPD_plotSplitter_up->SetMinimumPaneSize(100);
+    m_ADPD_plotSplitter_up->SetSashGravity(0.5);
+    m_ADPD_plotSplitter_up->Fit();
 
-	m_ADPD_plotSplitter_down = new wxSplitterWindow(m_ADPD_plotSplitter, ID_ADPD_SPLITTERWINDOW3, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW3"));
-	m_ADPD_plotSplitter_down->SetMinSize(wxSize(100, 100));
-	m_ADPD_plotSplitter_down->SetMinimumPaneSize(100);
-	m_ADPD_plotSplitter_down->SetSashGravity(0.5);
-	m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-	m_ADPD_plotSplitter_down->Fit();
+    m_ADPD_plotSplitter_down = new wxSplitterWindow(m_ADPD_plotSplitter, ID_ADPD_SPLITTERWINDOW3, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE | wxFULL_REPAINT_ON_RESIZE, _T("ID_ADPD_SPLITTERWINDOW3"));
+    m_ADPD_plotSplitter_down->SetMinSize(wxSize(100, 100));
+    m_ADPD_plotSplitter_down->SetMinimumPaneSize(100);
+    m_ADPD_plotSplitter_down->SetSashGravity(0.5);
+    m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+    m_ADPD_plotSplitter_down->Fit();
 
-	int GLCanvasAttributes_ADPD0[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0 };
-	Panel_ADPD0 = new wxPanel(m_ADPD_plotSplitter_up, ID_PANEL_ADPD0, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD0"));
-	Panel_ADPD0->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-	m_plot_ADPD0 = new OpenGLGraph(Panel_ADPD0, ID_GLCANVAS_ADPD0, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD0"), GLCanvasAttributes_ADPD0);
-	m_plot_ADPD0->SetMinSize(wxSize(225, 150));
-	m_plot_ADPD0->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
+    int GLCanvasAttributes_ADPD0[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0};
+    Panel_ADPD0 = new wxPanel(m_ADPD_plotSplitter_up, ID_PANEL_ADPD0, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD0"));
+    Panel_ADPD0->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
+    m_plot_ADPD0 = new OpenGLGraph(Panel_ADPD0, ID_GLCANVAS_ADPD0, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD0"), GLCanvasAttributes_ADPD0);
+    m_plot_ADPD0->SetMinSize(wxSize(225, 150));
+    m_plot_ADPD0->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
 
-	m_plot_ADPD0_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
-	m_plot_ADPD0_Sizer->Add(m_plot_ADPD0, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	m_plot_ADPD0_Sizer->AddGrowableCol(0);
-	m_plot_ADPD0_Sizer->AddGrowableRow(0);
-	Panel_ADPD0->SetSizer(m_plot_ADPD0_Sizer);
+    m_plot_ADPD0_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
+    m_plot_ADPD0_Sizer->Add(m_plot_ADPD0, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_plot_ADPD0_Sizer->AddGrowableCol(0);
+    m_plot_ADPD0_Sizer->AddGrowableRow(0);
+    Panel_ADPD0->SetSizer(m_plot_ADPD0_Sizer);
 
-	int GLCanvasAttributes_ADPD1[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0 };
-	Panel_ADPD1 = new wxPanel(m_ADPD_plotSplitter_down, ID_PANEL_ADPD1, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD1"));
-	Panel_ADPD1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-	m_plot_ADPD1 = new OpenGLGraph(Panel_ADPD1, ID_GLCANVAS_ADPD1, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD1"), GLCanvasAttributes_ADPD1);
-	m_plot_ADPD1->SetMinSize(wxSize(225, 150));
-	m_plot_ADPD1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
+    int GLCanvasAttributes_ADPD1[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0};
+    Panel_ADPD1 = new wxPanel(m_ADPD_plotSplitter_down, ID_PANEL_ADPD1, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD1"));
+    Panel_ADPD1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
+    m_plot_ADPD1 = new OpenGLGraph(Panel_ADPD1, ID_GLCANVAS_ADPD1, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD1"), GLCanvasAttributes_ADPD1);
+    m_plot_ADPD1->SetMinSize(wxSize(225, 150));
+    m_plot_ADPD1->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
 
-	m_plot_ADPD1_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
-	m_plot_ADPD1_Sizer->Add(m_plot_ADPD1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	m_plot_ADPD1_Sizer->AddGrowableCol(0);
-	m_plot_ADPD1_Sizer->AddGrowableRow(0);
-	Panel_ADPD1->SetSizer(m_plot_ADPD1_Sizer);
+    m_plot_ADPD1_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
+    m_plot_ADPD1_Sizer->Add(m_plot_ADPD1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_plot_ADPD1_Sizer->AddGrowableCol(0);
+    m_plot_ADPD1_Sizer->AddGrowableRow(0);
+    Panel_ADPD1->SetSizer(m_plot_ADPD1_Sizer);
 
-	int GLCanvasAttributes_ADPD2[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0 };
-	Panel_ADPD2 = new wxPanel(m_ADPD_plotSplitter_up, ID_PANEL_ADPD2, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD2"));
-	Panel_ADPD2->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-	m_plot_ADPD2 = new OpenGLGraph(Panel_ADPD2, ID_GLCANVAS_ADPD2, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD2"), GLCanvasAttributes_ADPD2);
-	m_plot_ADPD2->SetMinSize(wxSize(225, 150));
-	m_plot_ADPD2->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
+    int GLCanvasAttributes_ADPD2[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0};
+    Panel_ADPD2 = new wxPanel(m_ADPD_plotSplitter_up, ID_PANEL_ADPD2, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD2"));
+    Panel_ADPD2->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
+    m_plot_ADPD2 = new OpenGLGraph(Panel_ADPD2, ID_GLCANVAS_ADPD2, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD2"), GLCanvasAttributes_ADPD2);
+    m_plot_ADPD2->SetMinSize(wxSize(225, 150));
+    m_plot_ADPD2->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
 
-	m_plot_ADPD2_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
-	m_plot_ADPD2_Sizer->Add(m_plot_ADPD2, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	m_plot_ADPD2_Sizer->AddGrowableCol(0);
-	m_plot_ADPD2_Sizer->AddGrowableRow(0);
-	Panel_ADPD2->SetSizer(m_plot_ADPD2_Sizer);
+    m_plot_ADPD2_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
+    m_plot_ADPD2_Sizer->Add(m_plot_ADPD2, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    m_plot_ADPD2_Sizer->AddGrowableCol(0);
+    m_plot_ADPD2_Sizer->AddGrowableRow(0);
+    Panel_ADPD2->SetSizer(m_plot_ADPD2_Sizer);
 
-	int GLCanvasAttributes_ADPD3[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0 };
-	Panel_ADPD3 = new wxPanel(m_ADPD_plotSplitter_down, ID_PANEL_ADPD3, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD3"));
-	Panel_ADPD3->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-	m_plot_ADPD3 = new OpenGLGraph(Panel_ADPD3, ID_GLCANVAS_ADPD3, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD3"), GLCanvasAttributes_ADPD3);
-	m_plot_ADPD3->SetMinSize(wxSize(225, 150));
-	m_plot_ADPD3->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
+    int GLCanvasAttributes_ADPD3[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, WX_GL_STENCIL_SIZE, 0, 0, 0};
+    Panel_ADPD3 = new wxPanel(m_ADPD_plotSplitter_down, ID_PANEL_ADPD3, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, _T("ID_PANEL_ADPD3"));
+    Panel_ADPD3->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
+    m_plot_ADPD3 = new OpenGLGraph(Panel_ADPD3, ID_GLCANVAS_ADPD3, wxDefaultPosition, wxDefaultSize, 0, _T("ID_GLCANVAS_ADPD3"), GLCanvasAttributes_ADPD3);
+    m_plot_ADPD3->SetMinSize(wxSize(225, 150));
+    m_plot_ADPD3->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_INFOBK));
 
-	m_plot_ADPD3_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
-	m_plot_ADPD3_Sizer->Add(m_plot_ADPD3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	Panel_ADPD3->SetSizer(m_plot_ADPD3_Sizer);
-	Panel_ADPD3->Fit();
-	m_plot_ADPD3_Sizer->AddGrowableCol(0);
-	m_plot_ADPD3_Sizer->AddGrowableRow(0);
+    m_plot_ADPD3_Sizer = new wxFlexGridSizer(0, 1, 0, 0);
+    m_plot_ADPD3_Sizer->Add(m_plot_ADPD3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    Panel_ADPD3->SetSizer(m_plot_ADPD3_Sizer);
+    Panel_ADPD3->Fit();
+    m_plot_ADPD3_Sizer->AddGrowableCol(0);
+    m_plot_ADPD3_Sizer->AddGrowableRow(0);
 
-	m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-	m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+    m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+    m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
 
-	StaticBox_PLOT1 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T(""));
-	Sizer_PLOT1 = new wxFlexGridSizer(0, 3, 0, 0);
-	Sizer_PLOT1 -> AddGrowableCol(0);
-	StaticBox_PLOT1->Add(Sizer_PLOT1);
+    wxStaticBoxSizer *chBox = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T(""));
+    wxFlexGridSizer *chSizer = new wxFlexGridSizer(6, 0, 0, 0);
+    wxFlexGridSizer *chSelect = new wxFlexGridSizer(0, 3, 0, 0);
 
-	CheckBox_PLOT1 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT1, _T("Plot 1"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT1"));
-	CheckBox_PLOT1->SetValue(true);
-	Sizer_PLOT1->Add(CheckBox_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_CHECKBOX_PLOT1, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    rbChannelA = new wxRadioButton(m_ADPD_tabSpectrum, wxNewId(), wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0);
+    rbChannelA->SetValue(true);
+    rbChannelA->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler(DPDTest::OnSwitchToChannelA), NULL, this);
+    chSelect->Add(rbChannelA, 0, wxEXPAND, 5);
 
-	Button_PLOT1 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT1, _T("Setup"), wxDefaultPosition, wxSize(40, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT1"));
-	Sizer_PLOT1->Add(Button_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_BUTTON_PLOT1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot1ControlsClick);
+    rbChannelB = new wxRadioButton(m_ADPD_tabSpectrum, wxNewId(), wxT("B CHANNEL"), wxDefaultPosition, wxDefaultSize, 0);
+    rbChannelB->SetValue(false);
+    chSelect->Add(rbChannelB, 0, wxEXPAND, 5);
+    rbChannelB->Connect(wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler(DPDTest::OnSwitchToChannelB), NULL, this);
 
-	StaticText_PLOT1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD4, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD4"));
-	Sizer_PLOT1->Add(StaticText_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    CheckBox_ExtDACs = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_EXTDACS, _T("Ext. ADC/DACs"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_EXTDACS"));
+    CheckBox_ExtDACs->SetValue(false);
+    CheckBox_ExtDACs->Disable();
+    chSelect->Add(CheckBox_ExtDACs, 0, wxEXPAND, 5);
+    Connect(ID_CHECKBOX_EXTDACS, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangeExtDACs);
 
+    chSizer->Add(chSelect, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+    chBox->Add(chSizer, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP | wxALL, 5);
+    m_ADPD_controlsSizer->Add(chBox, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+
+    StaticBox_PLOT1 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("Plot setup"));
+    Sizer_PLOT1 = new wxFlexGridSizer(0, 4, 0, 0);
+    Sizer_PLOT1->AddGrowableCol(1);
+    StaticBox_PLOT1->Add(Sizer_PLOT1);
+
+    CheckBox_PLOT1 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT1, _T("Plot 1"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT1"));
+    CheckBox_PLOT1->SetValue(true);
+    Connect(ID_CHECKBOX_PLOT1, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+
+    Button_PLOT1 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT1, _T("Setup"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT1"));
+    Connect(ID_BUTTON_PLOT1, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot1ControlsClick);
+
+    StaticText_PLOT1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD4, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD4"));
     m_ADPD_controlsSizer->Add(StaticBox_PLOT1);
 
-    /////////////////////////////////////////////////////////////////
-	StaticBox_PLOT2 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T(""));
-	Sizer_PLOT2 = new wxFlexGridSizer(0, 3, 0, 0);
-	Sizer_PLOT2->AddGrowableCol(0);
-	StaticBox_PLOT2->Add(Sizer_PLOT2);
+    CheckBox_PLOT2 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT2, _T("Plot 2"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT2"));
+    CheckBox_PLOT2->SetValue(true);
 
-	CheckBox_PLOT2 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT2, _T("Plot 2"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT2"));
-	CheckBox_PLOT2->SetValue(true);
-	Sizer_PLOT2->Add(CheckBox_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_CHECKBOX_PLOT2, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    Connect(ID_CHECKBOX_PLOT2, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    Button_PLOT2 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT2, _T("Setup"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT2"));
+    Connect(ID_BUTTON_PLOT2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot2ControlsClick);
 
-	Button_PLOT2 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT2, _T("Setup"), wxDefaultPosition, wxSize(40, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT2"));
-	Sizer_PLOT2->Add(Button_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_BUTTON_PLOT2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot2ControlsClick);
+    StaticText_PLOT2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD5, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD5"));
 
-	StaticText_PLOT2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD5, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD5"));
-	Sizer_PLOT2->Add(StaticText_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    CheckBox_PLOT3 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT3, _T("Plot 3"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT3"));
+    CheckBox_PLOT3->SetValue(true);
+    Connect(ID_CHECKBOX_PLOT3, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    Button_PLOT3 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT3, _T("Setup"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT3"));
 
-	m_ADPD_controlsSizer->Add(StaticBox_PLOT2);
-	
-	//////////////////////////////////////////////
-	StaticBox_PLOT3 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T(""));
-	Sizer_PLOT3 = new wxFlexGridSizer(0, 3, 0, 0);
-	Sizer_PLOT3->AddGrowableCol(0);
-	StaticBox_PLOT3->Add(Sizer_PLOT3);
+    Connect(ID_BUTTON_PLOT3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot3ControlsClick);
 
-	CheckBox_PLOT3 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT3, _T("Plot 3"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT3"));
-	CheckBox_PLOT3->SetValue(true);
-	Sizer_PLOT3->Add(CheckBox_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_CHECKBOX_PLOT3, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    StaticText_PLOT3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD6, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD6"));
+    CheckBox_PLOT4 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT4, _T("Plot 4"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT4"));
+    CheckBox_PLOT4->SetValue(true);
+    Connect(ID_CHECKBOX_PLOT4, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
 
-	Button_PLOT3 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT3, _T("Setup"), wxDefaultPosition, wxSize(40, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT3"));
-	Sizer_PLOT3->Add(Button_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_BUTTON_PLOT3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot3ControlsClick);
+    Button_PLOT4 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT4, _T("Setup"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT4"));
+    Connect(ID_BUTTON_PLOT4, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot4ControlsClick);
 
-	StaticText_PLOT3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD6, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD6"));
-	Sizer_PLOT3->Add(StaticText_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_controlsSizer->Add(StaticBox_PLOT3);
-	
-	//////////////////////////////////////////////
-	StaticBox_PLOT4 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T(""));
-	Sizer_PLOT4 = new wxFlexGridSizer(0, 3, 0, 0);
-	Sizer_PLOT4->AddGrowableCol(0);
-	StaticBox_PLOT4->Add(Sizer_PLOT4);
+    StaticText_PLOT4 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD7, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD7"));
+    Sizer_PLOT1->Add(CheckBox_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(Button_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(CheckBox_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(Button_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	CheckBox_PLOT4 = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_PLOT4, _T("Plot 4"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_PLOT4"));
-	CheckBox_PLOT4->SetValue(true);
-	Sizer_PLOT4->Add(CheckBox_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_CHECKBOX_PLOT4, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnChangePlotVisibility);
+    Sizer_PLOT1->Add(StaticText_PLOT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(new wxStaticText(m_ADPD_tabSpectrum, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 5);
+    Sizer_PLOT1->Add(StaticText_PLOT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(new wxStaticText(m_ADPD_tabSpectrum, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 5);
 
-	Button_PLOT4 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_PLOT4, _T("Setup"), wxDefaultPosition, wxSize(40, -1), 0, wxDefaultValidator, _T("ID_BUTTON_PLOT4"));
-	Sizer_PLOT4->Add(Button_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	Connect(ID_BUTTON_PLOT4, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnPlot4ControlsClick);
+    Sizer_PLOT1->Add(CheckBox_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(Button_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(CheckBox_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(Button_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_PLOT4 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD7, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD7"));
-	Sizer_PLOT4->Add(StaticText_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-    m_ADPD_controlsSizer->Add(StaticBox_PLOT4);
+    Sizer_PLOT1->Add(StaticText_PLOT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(new wxStaticText(m_ADPD_tabSpectrum, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 5);
+    Sizer_PLOT1->Add(StaticText_PLOT4, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Sizer_PLOT1->Add(new wxStaticText(m_ADPD_tabSpectrum, wxID_ANY, _("")), 1, wxALIGN_LEFT | wxEXPAND, 5);
 
-	
-	StaticBoxSizerADPD3 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("FFT setup"));
-	m_ADPD_controlsSizer3 = new wxFlexGridSizer(0, 2, 0, 0);
-	m_ADPD_controlsSizer3->AddGrowableCol(0);
-	StaticBoxSizerADPD3->Add(m_ADPD_controlsSizer3);
+    StaticBoxSizerADPD3 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("FFT setup"));
+    m_ADPD_controlsSizer3 = new wxFlexGridSizer(0, 2, 0, 0);
+    m_ADPD_controlsSizer3->AddGrowableCol(0);
+    StaticBoxSizerADPD3->Add(m_ADPD_controlsSizer3);
 
-	StaticText_2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_2, _T("FFT window:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_2"));
-	m_ADPD_controlsSizer3->Add(StaticText_2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	cmbWindowFunction = new wxComboBox(m_ADPD_tabSpectrum, ID_COMBOBOX_WINDOW, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX_WINDOW"));
-	cmbWindowFunction->SetSelection(cmbWindowFunction->Append(_T("No window")));
-	cmbWindowFunction->Append(_T("Blackman-Harris"));
-	cmbWindowFunction->Append(_T("Hamming"));
-	cmbWindowFunction->Append(_T("Hanning"));
-	Connect(ID_COMBOBOX_WINDOW, wxEVT_COMMAND_COMBOBOX_SELECTED, (wxObjectEventFunction)&DPDTest::OncmbWindowFunctionSelected);
-	m_ADPD_controlsSizer3->Add(cmbWindowFunction, 1, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_2, _T("FFT window:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_2"));
+    m_ADPD_controlsSizer3->Add(StaticText_2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    cmbWindowFunction = new wxComboBox(m_ADPD_tabSpectrum, ID_COMBOBOX_WINDOW, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX_WINDOW"));
+    cmbWindowFunction->SetSelection(cmbWindowFunction->Append(_T("No window")));
+    cmbWindowFunction->Append(_T("B.-Harris"));
+    cmbWindowFunction->Append(_T("Hamming"));
+    cmbWindowFunction->Append(_T("Hanning"));
+    Connect(ID_COMBOBOX_WINDOW, wxEVT_COMMAND_COMBOBOX_SELECTED, (wxObjectEventFunction)&DPDTest::OncmbWindowFunctionSelected);
+    m_ADPD_controlsSizer3->Add(cmbWindowFunction, 1, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_FFT1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT1, _T("FFT samples=2**k, k:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT1"));
-	m_ADPD_controlsSizer3->Add(StaticText_FFT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_txtFFT1 = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT1, _T("14"), wxDefaultPosition, wxSize(60, -1), 0, 10, 14, 2, _T("ID_TEXTCTRL_FFT1"));
-	m_ADPD_txtFFT1->SetValue(_T("14"));
-	m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_FFT1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT1, _T("Samples=2**k, k:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT1"));
+    m_ADPD_controlsSizer3->Add(StaticText_FFT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtFFT1 = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT1, _T("14"), wxDefaultPosition, wxSize(60, -1), 0, 10, 14, 2, _T("ID_TEXTCTRL_FFT1"));
+    m_ADPD_txtFFT1->SetValue(_T("14"));
+    m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_FFT2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT2, _T("Average=2**rb, rb:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT2"));
-	m_ADPD_controlsSizer3->Add(StaticText_FFT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_txtFFT2 = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT1, _T("3"), wxDefaultPosition, wxSize(60, -1), 0, 0, 6, 2, _T("ID_TEXTCTRL_FFT2"));
-	m_ADPD_txtFFT2->SetValue(_T("3"));
-	m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_FFT2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT2, _T("Ave=2**rb, rb:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT2"));
+    m_ADPD_controlsSizer3->Add(StaticText_FFT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtFFT2 = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT1, _T("3"), wxDefaultPosition, wxSize(60, -1), 0, 0, 6, 2, _T("ID_TEXTCTRL_FFT2"));
+    m_ADPD_txtFFT2->SetValue(_T("3"));
+    m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_FFT3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT3, _T("ADC/DAC Clock[MHz]"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT3"));
-	m_ADPD_controlsSizer3->Add(StaticText_FFT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_txtFFT3 = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT3, _T("20.000"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_FFT3"));
-	m_ADPD_txtFFT3->SetExtraStyle(m_ADPD_txtFFT3->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-	m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-		
-	m_ADPD_controlsSizer_X = new wxFlexGridSizer(0, 2, 0, 0);
-	
-	m_ADPD_controlsSizer->Add(StaticBoxSizerADPD3);
+    StaticText_FFT3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_FFT3, _T("Clock[MHz]"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_FFT3"));
+    m_ADPD_controlsSizer3->Add(StaticText_FFT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtFFT3 = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_FFT3, _T("20.000"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_FFT3"));
+    m_ADPD_txtFFT3->SetExtraStyle(m_ADPD_txtFFT3->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
+    m_ADPD_controlsSizer3->Add(m_ADPD_txtFFT3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticBoxSizerADPD1 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("QADPD settings"));
+    m_ADPD_controlsSizer_Y = new wxFlexGridSizer(0, 2, 0, 0);
+    m_ADPD_controlsSizer_X = new wxFlexGridSizer(0, 2, 0, 0);
 
-	m_ADPD_controlsSizer2 = new wxFlexGridSizer(0, 2, 0, 0);
-	m_ADPD_controlsSizer2->AddGrowableCol(0);
-	StaticBoxSizerADPD1->Add(m_ADPD_controlsSizer2);
+    StaticBoxSizerADPD1 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("QADPD setup"));
 
-	m_ADPD_controlsSizer_X->Add(StaticBoxSizerADPD1);
+    m_ADPD_controlsSizer2 = new wxFlexGridSizer(0, 2, 0, 0);
+    m_ADPD_controlsSizer2->AddGrowableCol(0);
+    StaticBoxSizerADPD1->Add(m_ADPD_controlsSizer2);
 
+    StaticText_ADPD0 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD0, _T("N (mem.):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD0"));
+    m_ADPD_controlsSizer2->Add(StaticText_ADPD0, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_ADPD0 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD0, _T("N (memory):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD0"));
-	m_ADPD_controlsSizer2->Add(StaticText_ADPD0, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    spin_ADPD_N = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_N, _T("2"), wxDefaultPosition, wxSize(60, -1), 0, 0, 4, 2, _T("ID_SPINCTRL_ADPD_N"));
+    spin_ADPD_N->SetValue(_T("2"));
+    m_ADPD_controlsSizer2->Add(spin_ADPD_N, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	spin_ADPD_N = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_N, _T("2"), wxDefaultPosition, wxSize(60, -1), 0, 0, 5, 2, _T("ID_SPINCTRL_ADPD_N"));
-	spin_ADPD_N->SetValue(_T("2"));
-	m_ADPD_controlsSizer2->Add(spin_ADPD_N, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_ADPD1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD1, _T("M (nonl.):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD1"));
+    m_ADPD_controlsSizer2->Add(StaticText_ADPD1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_ADPD1 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD1, _T("M (nonl.):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD1"));
-	m_ADPD_controlsSizer2->Add(StaticText_ADPD1, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    spin_ADPD_M = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_M, _T("2"), wxDefaultPosition, wxSize(60, -1), 0, 0, 3, 2, _T("ID_SPINCTRL_ADPD_M")); //
+    spin_ADPD_M->SetValue(_T("2"));
+    m_ADPD_controlsSizer2->Add(spin_ADPD_M, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	spin_ADPD_M = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_M, _T("2"), wxDefaultPosition, wxSize(60, -1), 0, 0, 3, 2, _T("ID_SPINCTRL_ADPD_N"));
-	spin_ADPD_M->SetValue(_T("2"));
-	m_ADPD_controlsSizer2->Add(spin_ADPD_M, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_ADPD3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD3, _T("Lambda:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD3"));
+    m_ADPD_controlsSizer2->Add(StaticText_ADPD3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtLambda = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_ADPD2, _T("0.998"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_ADPD2"));
+    m_ADPD_txtLambda->SetExtraStyle(m_ADPD_txtLambda->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
+    m_ADPD_controlsSizer2->Add(m_ADPD_txtLambda, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_ADPD6 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD10, _T("ND (delay):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD10"));
-	m_ADPD_controlsSizer2->Add(StaticText_ADPD6, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	spin_ADPD_Delay = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_DELAY, _T("0"), wxDefaultPosition, wxSize(60, -1), 0, 0, 200, 2, _T("ID_SPINCTRL_ADPD_DELAY"));
-	spin_ADPD_Delay->SetValue(_T("0"));
-	m_ADPD_controlsSizer2->Add(spin_ADPD_Delay, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    StaticText_12 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_12, _T("Train cyc.:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_12"));
+    m_ADPD_controlsSizer2->Add(StaticText_12, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtTrain = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_12, _T("1"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_12"));
+    m_ADPD_txtTrain->SetExtraStyle(m_ADPD_txtTrain->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
+    m_ADPD_controlsSizer2->Add(m_ADPD_txtTrain, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_ADPD2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD2, _T("Gain:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD2"));
-	m_ADPD_controlsSizer2->Add(StaticText_ADPD2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-	m_ADPD_txtGain = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_ADPD1, _T("1.000"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_ADPD1"));
-	m_ADPD_txtGain->SetExtraStyle(m_ADPD_txtGain->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-	m_ADPD_controlsSizer2->Add(m_ADPD_txtGain, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
+    StaticText_11 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD11, _T("ND (delay):"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD11"));
+    m_ADPD_controlsSizer2->Add(StaticText_11, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_ADPD3 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD3, _T("Lambda:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD3"));
-	m_ADPD_controlsSizer2->Add(StaticText_ADPD3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_txtLambda = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_ADPD2, _T("0.998"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_ADPD2"));
-	m_ADPD_txtLambda->SetExtraStyle(m_ADPD_txtLambda->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-	m_ADPD_controlsSizer2->Add(m_ADPD_txtLambda, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    spin_ADPD_Delay = new wxSpinCtrl(m_ADPD_tabSpectrum, ID_SPINCTRL_ADPD_DELAY, _T("0"), wxDefaultPosition, wxSize(60, -1), 0, 0, 2000, 2, _T("ID_SPINCTRL_ADPD_DELAY"));
+    spin_ADPD_Delay->SetValue(_T("0"));
+    m_ADPD_controlsSizer2->Add(spin_ADPD_Delay, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
+    StaticText_ADPD6 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD10, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD10"));
+    m_ADPD_controlsSizer2->Add(StaticText_ADPD6, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_12 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_12, _T("Train cycles:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_12"));
-	m_ADPD_controlsSizer2->Add(StaticText_12, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	m_ADPD_txtTrain = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_12, _T("1"), wxDefaultPosition, wxSize(60, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_12"));
-	m_ADPD_txtTrain->SetExtraStyle(m_ADPD_txtTrain->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-	m_ADPD_controlsSizer2->Add(m_ADPD_txtTrain, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Button_CAL = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_CAL, _T("Calibrate"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_CAL"));
+    m_ADPD_controlsSizer2->Add(Button_CAL, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Connect(ID_BUTTON_CAL, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnCalibrate);
 
+    StaticText_13 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD13, _T("Gain:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD13"));
+    m_ADPD_controlsSizer2->Add(StaticText_13, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
 
-	StaticText_11 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD11, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD11"));
-    //m_ADPD_controlsSizer2->Add(StaticText_11, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_txtGain = new wxSpinCtrlDouble(m_ADPD_tabSpectrum, wxNewId(), _("1.0"), wxDefaultPosition, wxSize(100, -1), 0, 0.3, 6.0, 1.0, 0.01);
+    m_ADPD_controlsSizer2->Add(m_ADPD_txtGain, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
 
+    Connect(m_ADPD_txtGain->GetId(), wxEVT_SPINCTRLDOUBLE, wxCommandEventHandler(DPDTest::OnGainChanged), NULL, this);
 
-	StaticBoxSizerADPD5 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("Train QADPD"));
-	m_ADPD_controlsSizer5 = new wxFlexGridSizer(0, 1, 0, 0);
-	m_ADPD_controlsSizer5->AddGrowableCol(0);
-	//m_ADPD_controlsSizer5->AddGrowableRow(0);
-	StaticBoxSizerADPD5->Add(m_ADPD_controlsSizer5);
+    StaticText_ADPD2 = new wxStaticText(m_ADPD_tabSpectrum, ID_STATICTEXT_ADPD2, _T(""), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT_ADPD2"));
+    m_ADPD_controlsSizer2->Add(StaticText_ADPD2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
 
-	Button_START = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_START, _T("Start"), wxDefaultPosition, wxSize(80, -1), 0, wxDefaultValidator, _T("ID_BUTTON_START"));
-	m_ADPD_controlsSizer5->Add(Button_START, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_START, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnStartClick);
+    Button_CAL2 = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_CAL2, _T("Calibrate"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_CAL2"));
+    m_ADPD_controlsSizer2->Add(Button_CAL2, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Connect(ID_BUTTON_CAL2, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnCalibrate2);
 
-	Button_END = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_END, _T("End"), wxDefaultPosition, wxSize(80, -1), 0, wxDefaultValidator, _T("ID_BUTTON_END"));
-	m_ADPD_controlsSizer5->Add(Button_END, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_END, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnEndClick);
+    StaticBoxSizerADPD5 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("Train QADPD"));
+    m_ADPD_controlsSizer5 = new wxFlexGridSizer(0, 1, 0, 0);
+    m_ADPD_controlsSizer5->AddGrowableCol(0);
+    StaticBoxSizerADPD5->Add(m_ADPD_controlsSizer5);
 
-	wxString __wxValue[2] = { _("One step"), _("Continuous") };
-	TrainMode = new wxRadioBox(m_ADPD_tabSpectrum, ID_TRAINMODE, _T(""), wxDefaultPosition, wxDefaultSize, 2, __wxValue, 0, wxVERTICAL, wxDefaultValidator, "");
-	Connect(ID_TRAINMODE, wxEVT_COMMAND_RADIOBOX_SELECTED, (wxObjectEventFunction)& DPDTest::onTrainMode);
+    Button_START = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_START, _T("Start"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_START"));
+    m_ADPD_controlsSizer5->Add(Button_START, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_START, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnStartClick);
 
-	m_ADPD_controlsSizer5->Add(TrainMode, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
-	TrainMode->Enable(true);	
-	TrainMode->SetSelection(0);
-	//onEnableDisable();
+    Button_END = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_END, _T("End"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_END"));
+    m_ADPD_controlsSizer5->Add(Button_END, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_END, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnEndClick);
 
-	StaticBoxSizerADPD6 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("One step"));
-	m_ADPD_controlsSizer6 = new wxFlexGridSizer(0, 3, 0, 0);
-	m_ADPD_controlsSizer6->AddGrowableCol(0);
-	m_ADPD_controlsSizer6->AddGrowableRow(0);
-	StaticBoxSizerADPD6->Add(m_ADPD_controlsSizer6);
+    wxString __wxValue[2] = {_("One step"), _("Continuous")};
+    TrainMode = new wxRadioBox(m_ADPD_tabSpectrum, ID_TRAINMODE, _T(""), wxDefaultPosition, wxDefaultSize, 2, __wxValue, 0, wxVERTICAL, wxDefaultValidator, "");
+    Connect(ID_TRAINMODE, wxEVT_COMMAND_RADIOBOX_SELECTED, (wxObjectEventFunction)&DPDTest::onTrainMode);
 
+    m_ADPD_controlsSizer5->Add(TrainMode, 1, wxALIGN_LEFT | wxALIGN_TOP, 5);
+    TrainMode->Enable(true);
+    TrainMode->SetSelection(0);
 
-	btnCapture = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_CAPTURE, _T("Read"), wxDefaultPosition, wxSize(70, 20), 0, wxDefaultValidator, _T("ID_BUTTON_CAPTURE"));
-	m_ADPD_controlsSizer6->Add(btnCapture, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_CAPTURE, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnCaptureClicked);
+    StaticBoxSizerADPD6 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("One step commands"));
+    m_ADPD_controlsSizer6 = new wxFlexGridSizer(0, 1, 0, 0);
+    m_ADPD_controlsSizer6->AddGrowableCol(0);
+    m_ADPD_controlsSizer6->AddGrowableRow(0);
+    StaticBoxSizerADPD6->Add(m_ADPD_controlsSizer6);
 
-	Button_TRAIN = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_TRAIN, _T("Train"), wxDefaultPosition, wxSize(70, 20), 0, wxDefaultValidator, _T("ID_BUTTON_TRAIN"));
-	m_ADPD_controlsSizer6->Add(Button_TRAIN, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_TRAIN, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTrainClick);
+    btnCapture = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_CAPTURE, _T("Read"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_CAPTURE"));
+    m_ADPD_controlsSizer6->Add(btnCapture, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_CAPTURE, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnCaptureClicked);
 
-	Button_SEND = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_SEND, _T("Send coeff."), wxDefaultPosition, wxSize(70, -1), 0, wxDefaultValidator, _T("ID_BUTTON_SEND"));
-	m_ADPD_controlsSizer6->Add(Button_SEND, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_SEND, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnSendClick);
+    Button_TRAIN = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_TRAIN, _T("Train"), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_TRAIN"));
+    m_ADPD_controlsSizer6->Add(Button_TRAIN, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_TRAIN, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTrainClick);
 
-	Button_TIMER = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_TIMER, _T("Reset coeff."), wxDefaultPosition, wxSize(70, -1), 0, wxDefaultValidator, _T("ID_BUTTON_TIMER"));
-	m_ADPD_controlsSizer6->Add(Button_TIMER, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_TIMER, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTimerClick);
+    Button_SEND = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_SEND, _T("Send coeff."), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_SEND"));
+    m_ADPD_controlsSizer6->Add(Button_SEND, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_SEND, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnSendClick);
 
-	Button_RTS = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_RTS, _T("Read, train"), wxDefaultPosition, wxSize(70, -1), 0, wxDefaultValidator, _T("ID_BUTTON_RTS"));
-	m_ADPD_controlsSizer6->Add(Button_RTS, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
-	Connect(ID_BUTTON_RTS, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnRTSClick);
+    Button_TIMER = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_TIMER, _T("Reset coeff."), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_TIMER"));
+    m_ADPD_controlsSizer6->Add(Button_TIMER, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_TIMER, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTimerClick);
 
-	m_ADPD_Num = new wxTextCtrl(m_ADPD_tabSpectrum, ID_TEXTCTRL_NUM, _T("1"), wxDefaultPosition, wxSize(70, -1), 0, wxDefaultValidator, _T("ID_TEXTCTRL_NUM"));
-	m_ADPD_Num->SetExtraStyle(m_ADPD_Num->GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-	m_ADPD_controlsSizer6->Add(m_ADPD_Num, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    Button_READ = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_READ, _T("Read coeff."), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_READ"));
+    m_ADPD_controlsSizer6->Add(Button_READ, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_READ, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnReadClick);
 
-	StaticBoxSizerADPD7 = new wxStaticBoxSizer(wxVERTICAL, m_ADPD_tabSpectrum, _T("Continuous"));
-	m_ADPD_controlsSizer7 = new wxFlexGridSizer(0, 2, 0, 0);
-	m_ADPD_controlsSizer7->AddGrowableCol(0);
-	m_ADPD_controlsSizer7->AddGrowableRow(0);
-	StaticBoxSizerADPD7->Add(m_ADPD_controlsSizer7);
+    Button_SAVE = new wxButton(m_ADPD_tabSpectrum, ID_BUTTON_SAVE, _T("Save coeff."), wxDefaultPosition, wxSize(100, -1), 0, wxDefaultValidator, _T("ID_BUTTON_SAVE"));
+    m_ADPD_controlsSizer6->Add(Button_SAVE, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
+    Connect(ID_BUTTON_SAVE, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnSaveClick);
 
-	CheckBox_Train = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_TRAIN, _T("Train"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_TRAIN"));
-	CheckBox_Train->SetValue(true);
-	Connect(ID_CHECKBOX_TRAIN, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTrain);
+    CheckBox_Train = new wxCheckBox(m_ADPD_tabSpectrum, ID_CHECKBOX_TRAIN, _T("Cont.train"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX_TRAIN"));
+    CheckBox_Train->SetValue(true);
+    Connect(ID_CHECKBOX_TRAIN, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&DPDTest::OnbtnTrain);
 
-	m_ADPD_controlsSizer7->Add(CheckBox_Train, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_controlsSizer5->Add(CheckBox_Train, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
+    m_ADPD_controlsSizer_Y->Add(StaticBoxSizerADPD5);
+    m_ADPD_controlsSizer_Y->Add(StaticBoxSizerADPD3);
 
-	//m_ADPD_controlsSizer5->Add(CheckBox_Train, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 2);
-	
-	// menjano
-	m_ADPD_controlsSizer_X->Add(StaticBoxSizerADPD5);
-	//m_ADPD_controlsSizer->Add(StaticBoxSizerADPD5);
+    m_ADPD_controlsSizer_X->Add(StaticBoxSizerADPD6);
+    m_ADPD_controlsSizer_X->Add(StaticBoxSizerADPD1);
 
-	m_ADPD_controlsSizer->Add(m_ADPD_controlsSizer_X);
-	m_ADPD_controlsSizer->Add(StaticBoxSizerADPD6);
-	m_ADPD_controlsSizer5->Add(StaticBoxSizerADPD7);
+    m_ADPD_controlsSizer->Add(m_ADPD_controlsSizer_Y);
+    m_ADPD_controlsSizer->Add(m_ADPD_controlsSizer_X);
 
-	FlexGridSizer1->Add(m_MainTabs, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
-	SetSizer(FlexGridSizer1);
-	FlexGridSizer1->Fit(this);
-	FlexGridSizer1->SetSizeHints(this);
-	SetSize(800, 600);
+    FlexGridSizer1->Add(m_MainTabs, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    SetSizer(FlexGridSizer1);
+    FlexGridSizer1->Fit(this);
+    FlexGridSizer1->SetSizeHints(this);
+    SetSize(800, 600);
 
-	m_MainTabs->AddPage(m_ADPD_tabSpectrum, _T(""), false);
+    m_MainTabs->AddPage(m_ADPD_tabSpectrum, _T(""), false);
 
-	m_plot_ADPD0->settings.useVBO = true;
-	m_plot_ADPD0->settings.title = "Plot 1";
-	m_plot_ADPD0->settings.markersEnabled = true;
-	m_plot_ADPD0->settings.marginLeft = 40;
-	m_plot_ADPD0->settings.staticGrid = true;
-	m_plot_ADPD0->AddSerie(new cDataSerie());
-	m_plot_ADPD0->AddSerie(new cDataSerie());
-	m_plot_ADPD0->AddSerie(new cDataSerie());
-	m_plot_ADPD0->AddSerie(new cDataSerie());
+    m_plot_ADPD0->settings.useVBO = true;
+    m_plot_ADPD0->settings.title = "Plot 1";
+    m_plot_ADPD0->settings.markersEnabled = true;
+    m_plot_ADPD0->settings.marginLeft = 40;
+    m_plot_ADPD0->settings.staticGrid = true;
+    m_plot_ADPD0->AddSerie(new cDataSerie());
+    m_plot_ADPD0->AddSerie(new cDataSerie());
+    m_plot_ADPD0->AddSerie(new cDataSerie());
+    m_plot_ADPD0->AddSerie(new cDataSerie());
 
-	m_plot_ADPD1->settings.title = "Plot 2";
-	m_plot_ADPD1->settings.markersEnabled = true;
-	m_plot_ADPD1->settings.marginLeft = 40;
-	m_plot_ADPD1->settings.staticGrid = true;
-	m_plot_ADPD1->AddSerie(new cDataSerie());
-	m_plot_ADPD1->AddSerie(new cDataSerie());
-	m_plot_ADPD1->AddSerie(new cDataSerie());
-	m_plot_ADPD1->AddSerie(new cDataSerie());
+    m_plot_ADPD1->settings.title = "Plot 2";
+    m_plot_ADPD1->settings.markersEnabled = true;
+    m_plot_ADPD1->settings.marginLeft = 40;
+    m_plot_ADPD1->settings.staticGrid = true;
+    m_plot_ADPD1->AddSerie(new cDataSerie());
+    m_plot_ADPD1->AddSerie(new cDataSerie());
+    m_plot_ADPD1->AddSerie(new cDataSerie());
+    m_plot_ADPD1->AddSerie(new cDataSerie());
 
+    m_plot_ADPD2->settings.title = "Plot 3";
+    m_plot_ADPD2->settings.markersEnabled = true;
+    m_plot_ADPD2->settings.marginLeft = 40;
+    m_plot_ADPD2->settings.staticGrid = true;
+    m_plot_ADPD2->AddSerie(new cDataSerie());
+    m_plot_ADPD2->AddSerie(new cDataSerie());
+    m_plot_ADPD2->AddSerie(new cDataSerie());
+    m_plot_ADPD2->AddSerie(new cDataSerie());
 
-	m_plot_ADPD2->settings.title = "Plot 3";
-	m_plot_ADPD2->settings.markersEnabled = true;
-	m_plot_ADPD2->settings.marginLeft = 40;
-	m_plot_ADPD2->settings.staticGrid = true;
-	m_plot_ADPD2->AddSerie(new cDataSerie());
-	m_plot_ADPD2->AddSerie(new cDataSerie());
-	m_plot_ADPD2->AddSerie(new cDataSerie());
-	m_plot_ADPD2->AddSerie(new cDataSerie());
+    m_plot_ADPD3->settings.title = "Plot 4";
+    m_plot_ADPD3->settings.markersEnabled = true;
+    m_plot_ADPD3->settings.marginLeft = 40;
+    m_plot_ADPD3->settings.staticGrid = true;
+    m_plot_ADPD3->AddSerie(new cDataSerie());
+    m_plot_ADPD3->AddSerie(new cDataSerie());
+    m_plot_ADPD3->AddSerie(new cDataSerie());
+    m_plot_ADPD3->AddSerie(new cDataSerie());
 
-
-	m_plot_ADPD3->settings.title = "Plot 4";
-	m_plot_ADPD3->settings.markersEnabled = true;
-	m_plot_ADPD3->settings.marginLeft = 40;
-	m_plot_ADPD3->settings.staticGrid = true;
-	m_plot_ADPD3->AddSerie(new cDataSerie());
-	m_plot_ADPD3->AddSerie(new cDataSerie());
-	m_plot_ADPD3->AddSerie(new cDataSerie());
-	m_plot_ADPD3->AddSerie(new cDataSerie());
-
-	//// BORKO END
-	///////////////////////////////////    
-	
-	wxFlexGridSizer* sizerPlots;
-    sizerPlots = new wxFlexGridSizer( 4, 2, 0, 0 );
+    wxFlexGridSizer *sizerPlots;
+    sizerPlots = new wxFlexGridSizer(4, 2, 0, 0);
     sizerPlots->AddGrowableCol(0);
     sizerPlots->AddGrowableCol(1);
     sizerPlots->AddGrowableRow(0);
     sizerPlots->AddGrowableRow(1);
     sizerPlots->AddGrowableRow(2);
-   
-	samplesReceived = 20480;
-	
-	
-	xp_samples = new kiss_fft_cpx[samplesReceived];
-	yp_samples = new kiss_fft_cpx[samplesReceived];
-	x_samples = new kiss_fft_cpx[samplesReceived];
-	y_samples = new kiss_fft_cpx[samplesReceived];
-	xp1_samples = new kiss_fft_cpx[samplesReceived];
-	yp1_samples = new kiss_fft_cpx[samplesReceived];
-	x1_samples = new kiss_fft_cpx[samplesReceived];
-	y1_samples = new kiss_fft_cpx[samplesReceived];
 
-	u_samples = new kiss_fft_cpx[samplesReceived];
-	error_samples = new kiss_fft_cpx[samplesReceived];
-	xp_fft = new kiss_fft_cpx[samplesReceived];
-	yp_fft = new kiss_fft_cpx[samplesReceived];
-	x_fft = new kiss_fft_cpx[samplesReceived];
-	y_fft = new kiss_fft_cpx[samplesReceived];
+    xp_samples = new kiss_fft_cpx[32768];
+    yp_samples = new kiss_fft_cpx[32768];
+    x_samples = new kiss_fft_cpx[32768];
+    y_samples = new kiss_fft_cpx[32768];
+    xp1_samples = new kiss_fft_cpx[32768];
+    yp1_samples = new kiss_fft_cpx[32768];
+    x1_samples = new kiss_fft_cpx[32768];
+    y1_samples = new kiss_fft_cpx[32768];
+    u_samples = new kiss_fft_cpx[32768];
+    error_samples = new kiss_fft_cpx[32768];
+    xp_fft = new kiss_fft_cpx[32768];
+    yp_fft = new kiss_fft_cpx[32768];
+    x_fft = new kiss_fft_cpx[32768];
+    y_fft = new kiss_fft_cpx[32768];
 
-	for (int i = 0; i < 20480; i++) {
-		xp_samples[i].i = 0;
-		xp_samples[i].r = 0;
-		yp_samples[i].i = 0;
-		yp_samples[i].r = 0;
-		x_samples[i].i = 0;
-		x_samples[i].r = 0;
-		y_samples[i].i = 0;
-		y_samples[i].r = 0;
-		////////////////////
-		xp1_samples[i].i = 0;
-		xp1_samples[i].r = 0;
-		yp1_samples[i].i = 0;
-		yp1_samples[i].r = 0;
-		x1_samples[i].i = 0;
-		x1_samples[i].r = 0;
-		y1_samples[i].i = 0;
-		y1_samples[i].r = 0;
-		//////////////
-		u_samples[i].i = 0;
-		u_samples[i].r = 0;
-		error_samples[i].i = 0;
-		error_samples[i].r = 0;
-		xp_fft[i].i = 0;
-		xp_fft[i].r = 0;
-		yp_fft[i].i = 0;
-		yp_fft[i].r = 0;
-		x_fft[i].i = 0;
-		x_fft[i].r = 0;
-		y_fft[i].i = 0;
-		y_fft[i].r = 0;
-	}
+    for (int i = 0; i < 32768; i++)
+    {
+        xp_samples[i].i = 0;
+        xp_samples[i].r = 0;
+        yp_samples[i].i = 0;
+        yp_samples[i].r = 0;
 
-	
+        x_samples[i].i = 0;
+        x_samples[i].r = 0;
+        y_samples[i].i = 0;
+        y_samples[i].r = 0;
 
-	QADPD_N=2;
-	QADPD_M=2;
-	QADPD_ND=0;
-	QADPD_AM=14; // bilo je 12
-	QADPD_SKIP=0;
-	QADPD_GAIN=1.0;
-	QADPD_LAMBDA=0.998;
-	QADPD_YPFPGA = true;
-	QADPD_FFTSAMPLES = 16384;
-	QADPD_SPAN = 20.0;
-	mNyquist_MHz = QADPD_SPAN/2.0;
-	QADPD_UPDATE=1;
-	OpenConfig();
-	Qadpd = new qadpd(QADPD_N, QADPD_M, QADPD_ND);
-	
-	Button_START->Enable(true);
-	Button_TRAIN->Enable(false);
-	Button_END->Enable(false);
-	Button_SEND->Enable(false);
+        xp1_samples[i].i = 0;
+        xp1_samples[i].r = 0;
+        yp1_samples[i].i = 0;
+        yp1_samples[i].r = 0;
 
-	spin_ADPD_N->Enable(true);
-	spin_ADPD_M->Enable(true);
-	spin_ADPD_Delay->Enable(true);
-	m_ADPD_txtGain->Enable(true);
-	m_ADPD_txtLambda->Enable(true);
-	//m_ADPD_txtAm->Enable(true);
-	//m_ADPD_txtSkip->Enable(true);
-	m_ADPD_txtTrain->Enable(true);
-	TrainMode->Enable(false);
-	//CheckBox_YPFPGA->Enable(true);
-	//btnCalculateFFT->Enable(false);
-	btnCapture->Enable(false);
-	Button_TIMER->Enable(false);
-	timer_enabled = false;
+        x1_samples[i].i = 0;
+        x1_samples[i].r = 0;
+        y1_samples[i].i = 0;
+        y1_samples[i].r = 0;
 
-	Button_RTS->Enable(false);
-	m_ADPD_Num->Enable(false);
-	CheckBox_Train->Enable(false);
-	//m_timer->Stop();
+        u_samples[i].i = 0;
+        u_samples[i].r = 0;
+        error_samples[i].i = 0;
+        error_samples[i].r = 0;
 
-	
+        xp_fft[i].i = 0;
+        xp_fft[i].r = 0;
+        yp_fft[i].i = 0;
+        yp_fft[i].r = 0;
+
+        x_fft[i].i = 0;
+        x_fft[i].r = 0;
+        y_fft[i].i = 0;
+        y_fft[i].r = 0;
+    }
+    QADPD_N = 2;
+    QADPD_M = 2;
+    QADPD_ND = 0;
+    QADPD_AM = 14;
+    QADPD_SKIP = 0;
+    QADPD_GAIN = 1.0;
+    QADPD_LAMBDA = 0.998;
+    QADPD_YPFPGA = true;
+    QADPD_FFTSAMPLES = 16384;
+    QADPD_SPAN = 20.0;
+    QADPD_UPDATE = 1;
+    OpenConfig();
+
+    Qadpd = new qadpd(QADPD_N, QADPD_M, QADPD_ND);
+    Qadpd->enlog = true;
+
+    Button_START->Enable(true);
+    Button_TRAIN->Enable(false);
+    Button_END->Enable(false);
+    Button_SEND->Enable(false);
+
+    spin_ADPD_N->Enable(true);
+    spin_ADPD_M->Enable(true);
+    spin_ADPD_Delay->Enable(true);
+    m_ADPD_txtGain->Enable(true);
+    m_ADPD_txtLambda->Enable(true);
+
+    m_ADPD_txtTrain->Enable(true);
+    TrainMode->Enable(false);
+
+    btnCapture->Enable(false);
+    Button_TIMER->Enable(false);
+    Button_READ->Enable(true);
+    Button_SAVE->Enable(false);
+    timer_enabled = false;
+
+    rbChannelA->Enable(true);
+    rbChannelB->Enable(true);
+
+    CheckBox_Train->Enable(false);
+    Button_CAL->Enable(true);
+    Button_CAL2->Enable(true);
+
+    samplesReceived = 4 * 8192;
+    chA = 1;
+    SelectSource(chA);
+    OpenConfig();
+
+    for (int i = 0; i <= 8; i++)
+    {
+        for (int j = 0; j <= 3; j++)
+        {
+            coeffa_chA[i][j] = 0.0;
+            coeffb_chA[i][j] = 0.0;
+            coeffa_chB[i][j] = 0.0;
+            coeffb_chB[i][j] = 0.0;
+        }
+    }
+
+    Connect(ID_READING_FINISHED_EVENT, wxEVT_COMMAND_THREAD, (wxObjectEventFunction)&DPDTest::OnReadingFinished);
+    fname = "log.txt";
 }
 
-void DPDTest::OncmbWindowFunctionSelected(wxCommandEvent& event)
+void DPDTest::OncmbWindowFunctionSelected(wxCommandEvent &event)
 {
-	m_iWindowFunc=cmbWindowFunction->GetSelection();
-	SaveConfig();
+    m_iWindowFunc = cmbWindowFunction->GetSelection();
+    SaveConfig();
 }
 
-
-void DPDTest::OnCenterSpanChange(OpenGLGraph * plot, int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
-	int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot)
+void DPDTest::OnCenterSpanChange(OpenGLGraph *plot, int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
+                                 int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot)
 {
-	double dFreq = m_dCenterFreqRatioPlot* (pow(10.0, 3* (m_iCenterFreqRatioPlot+1)));
-	double dSpan = m_dFreqSpanRatioPlot*  (pow(10.0, 3 * (m_iFreqSpanRatioPlot + 1)));
-	plot->ZoomX(dFreq, dSpan);
+    double dFreq = m_dCenterFreqRatioPlot * (pow(10.0, 3 * (m_iCenterFreqRatioPlot + 1)));
+    double dSpan = m_dFreqSpanRatioPlot * (pow(10.0, 3 * (m_iFreqSpanRatioPlot + 1)));
+    plot->ZoomX(dFreq, dSpan);
 }
 
-void DPDTest::OnYaxisChange(OpenGLGraph * plot, int m_iYaxisTopPlot, int  m_iYaxisBottomPlot)
+void DPDTest::OnYaxisChange(OpenGLGraph *plot, int m_iYaxisTopPlot, int m_iYaxisBottomPlot)
 {
-	plot->ZoomY((m_iYaxisTopPlot + m_iYaxisBottomPlot) / 2, abs(m_iYaxisTopPlot - m_iYaxisBottomPlot));
+    plot->ZoomY((m_iYaxisTopPlot + m_iYaxisBottomPlot) / 2, abs(m_iYaxisTopPlot - m_iYaxisBottomPlot));
 }
 
+void DPDTest::OpenConfig()
+{
+    //load gui configuration from file
 
+    iniParser m_options;
+    std::string temps;
+    std::string temps_CHA;
+    std::string temps_CHB;
+    int tempi_CHA;
+    int tempi_CHB;
 
-void DPDTest::OpenConfig() {
-	//load gui configuration from file
-	
-	iniParser m_options;
-	std::string temps;
-	double tempd;
-	m_options.Open(config_filename);
-	m_options.SelectSection("QADPD");
+    double tempd;
+    m_options.Open(config_filename);
+    m_options.SelectSection("QADPD");
 
-	m_iValuePlot1 = m_options.Get("ValuePlot1", 0);
-	m_iYaxisTopPlot1 = m_options.Get("YaxisTopPlot1", 0);
-	m_iYaxisBottomPlot1 = m_options.Get("YaxisBottomPlot1", -100);
-	m_iCenterFreqRatioPlot1 = m_options.Get("iCenterFreqRatioPlot1", 0);
-	m_iFreqSpanRatioPlot1 = m_options.Get("iFreqSpanRatioPlot1", 0);
-	temps = m_options.Get("dCenterFreqRatioPlot1", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dCenterFreqRatioPlot1 = tempd;
-	temps = m_options.Get("dFreqSpanRatioPlot1", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dFreqSpanRatioPlot1 = tempd;
-	m_iXaxisLeftPlot1 = m_options.Get("XaxisLeftPlot1", 0);
-	m_iXaxisRightPlot1 = m_options.Get("XaxisRightPlot1", 1000);
+    m_iValuePlot1 = m_options.Get("ValuePlot1", 0);
+    m_iYaxisTopPlot1 = m_options.Get("YaxisTopPlot1", 0);
+    m_iYaxisBottomPlot1 = m_options.Get("YaxisBottomPlot1", -100);
+    m_iCenterFreqRatioPlot1 = m_options.Get("iCenterFreqRatioPlot1", 0);
+    m_iFreqSpanRatioPlot1 = m_options.Get("iFreqSpanRatioPlot1", 0);
+    temps = m_options.Get("dCenterFreqRatioPlot1", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dCenterFreqRatioPlot1 = tempd;
+    temps = m_options.Get("dFreqSpanRatioPlot1", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dFreqSpanRatioPlot1 = tempd;
+    m_iXaxisLeftPlot1 = m_options.Get("XaxisLeftPlot1", 0);
+    m_iXaxisRightPlot1 = m_options.Get("XaxisRightPlot1", 1000);
 
+    m_iValuePlot2 = m_options.Get("ValuePlot2", 0);
+    m_iYaxisTopPlot2 = m_options.Get("YaxisTopPlot2", 0);
+    m_iYaxisBottomPlot2 = m_options.Get("YaxisBottomPlot2", -100);
+    m_iCenterFreqRatioPlot2 = m_options.Get("iCenterFreqRatioPlot2", 0);
+    m_iFreqSpanRatioPlot2 = m_options.Get("iFreqSpanRatioPlot2", 0);
+    temps = m_options.Get("dCenterFreqRatioPlot2", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dCenterFreqRatioPlot2 = tempd;
+    temps = m_options.Get("dFreqSpanRatioPlot2", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dFreqSpanRatioPlot2 = tempd;
+    m_iXaxisLeftPlot2 = m_options.Get("XaxisLeftPlot2", 0);
+    m_iXaxisRightPlot2 = m_options.Get("XaxisRightPlot2", 1000);
 
-	m_iValuePlot2 = m_options.Get("ValuePlot2", 0);
-	m_iYaxisTopPlot2 = m_options.Get("YaxisTopPlot2", 0);
-	m_iYaxisBottomPlot2 = m_options.Get("YaxisBottomPlot2", -100);
-	m_iCenterFreqRatioPlot2 = m_options.Get("iCenterFreqRatioPlot2", 0);
-	m_iFreqSpanRatioPlot2 = m_options.Get("iFreqSpanRatioPlot2", 0);
-	temps = m_options.Get("dCenterFreqRatioPlot2", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dCenterFreqRatioPlot2 = tempd;
-	temps = m_options.Get("dFreqSpanRatioPlot2", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dFreqSpanRatioPlot2 = tempd;
-	m_iXaxisLeftPlot2 = m_options.Get("XaxisLeftPlot2", 0);
-	m_iXaxisRightPlot2 = m_options.Get("XaxisRightPlot2", 1000);
+    m_iValuePlot3 = m_options.Get("ValuePlot3", 0);
+    m_iYaxisTopPlot3 = m_options.Get("YaxisTopPlot3", 0);
+    m_iYaxisBottomPlot3 = m_options.Get("YaxisBottomPlot3", -100);
+    m_iCenterFreqRatioPlot3 = m_options.Get("iCenterFreqRatioPlot3", 0);
+    m_iFreqSpanRatioPlot3 = m_options.Get("iFreqSpanRatioPlot3", 0);
+    temps = m_options.Get("dCenterFreqRatioPlot3", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dCenterFreqRatioPlot3 = tempd;
+    temps = m_options.Get("dFreqSpanRatioPlot3", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dFreqSpanRatioPlot3 = tempd;
+    m_iXaxisLeftPlot3 = m_options.Get("XaxisLeftPlot3", 0);
+    m_iXaxisRightPlot3 = m_options.Get("XaxisRightPlot3", 1000);
 
-	m_iValuePlot3 = m_options.Get("ValuePlot3", 0);
-	m_iYaxisTopPlot3 = m_options.Get("YaxisTopPlot3", 0);
-	m_iYaxisBottomPlot3 = m_options.Get("YaxisBottomPlot3", -100);
-	m_iCenterFreqRatioPlot3 = m_options.Get("iCenterFreqRatioPlot3", 0);
-	m_iFreqSpanRatioPlot3 = m_options.Get("iFreqSpanRatioPlot3", 0);
-	temps = m_options.Get("dCenterFreqRatioPlot3", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dCenterFreqRatioPlot3 = tempd;
-	temps = m_options.Get("dFreqSpanRatioPlot3", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dFreqSpanRatioPlot3 = tempd;
-	m_iXaxisLeftPlot3 = m_options.Get("XaxisLeftPlot3", 0);
-	m_iXaxisRightPlot3 = m_options.Get("XaxisRightPlot3", 1000);
+    m_iValuePlot4 = m_options.Get("ValuePlot4", 0);
+    m_iYaxisTopPlot4 = m_options.Get("YaxisTopPlot4", 0);
+    m_iYaxisBottomPlot4 = m_options.Get("YaxisBottomPlot4", -100);
+    m_iCenterFreqRatioPlot4 = m_options.Get("iCenterFreqRatioPlot4", 0);
+    m_iFreqSpanRatioPlot4 = m_options.Get("iFreqSpanRatioPlot4", 0);
+    temps = m_options.Get("dCenterFreqRatioPlot4", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dCenterFreqRatioPlot4 = tempd;
+    temps = m_options.Get("dFreqSpanRatioPlot4", "0.0");
+    ((wxString)temps).ToDouble(&tempd);
+    m_dFreqSpanRatioPlot4 = tempd;
+    m_iXaxisLeftPlot4 = m_options.Get("XaxisLeftPlot4", 0);
+    m_iXaxisRightPlot4 = m_options.Get("XaxisRightPlot4", 1000);
 
-	m_iValuePlot4 = m_options.Get("ValuePlot4", 0);
-	m_iYaxisTopPlot4 = m_options.Get("YaxisTopPlot4", 0);
-	m_iYaxisBottomPlot4 = m_options.Get("YaxisBottomPlot4", -100);
-	m_iCenterFreqRatioPlot4 = m_options.Get("iCenterFreqRatioPlot4", 0);
-	m_iFreqSpanRatioPlot4 = m_options.Get("iFreqSpanRatioPlot4", 0);
-	temps = m_options.Get("dCenterFreqRatioPlot4", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dCenterFreqRatioPlot4 = tempd;
-	temps = m_options.Get("dFreqSpanRatioPlot4", "0.0");
-	((wxString)temps).ToDouble(&tempd);
-	m_dFreqSpanRatioPlot4 = tempd;
-	m_iXaxisLeftPlot4 = m_options.Get("XaxisLeftPlot4", 0);
-	m_iXaxisRightPlot4 = m_options.Get("XaxisRightPlot4", 1000);
+    tempi_CHA = m_options.Get("QADPD_CHA_N", 2);
+    tempi_CHB = m_options.Get("QADPD_CHB_N", 2);
 
-	QADPD_N = m_options.Get("QADPD_N", 2); spin_ADPD_N->SetValue(QADPD_N);
-	QADPD_M = m_options.Get("QADPD_M", 2); spin_ADPD_M->SetValue(QADPD_M);
-	//QADPD_AM = m_options.Get("QADPD_AM", 18); m_ADPD_txtAm->SetValue(QADPD_AM);
-	QADPD_AM = 14; // bilo je 12
-	QADPD_ND = m_options.Get("QADPD_ND", 0); spin_ADPD_Delay->SetValue(QADPD_ND);
-	QADPD_SKIP = m_options.Get("QADPD_SKIP", 0);
-	QADPD_UPDATE = m_options.Get("QADPD_UPDATE", 1);
+    if (chA == 1)
+        QADPD_N = tempi_CHA;
+    else
+        QADPD_N = tempi_CHB;
+    spin_ADPD_N->SetValue(QADPD_N);
 
-	wxString temps1;
-	temps1.Printf(_T("%d"), QADPD_SKIP);
-	//m_ADPD_txtSkip->SetValue(temps1);
+    tempi_CHA = m_options.Get("QADPD_CHA_M", 2);
+    tempi_CHB = m_options.Get("QADPD_CHB_M", 2);
 
-	temps1.Printf(_T("%d"), QADPD_UPDATE);
-	m_ADPD_txtTrain->SetValue(temps1);
+    if (chA == 1)
+        QADPD_M = tempi_CHA;
+    else
+        QADPD_M = tempi_CHB;
+    spin_ADPD_M->SetValue(QADPD_M);
 
-	if (m_options.Get("QADPD_YPFPGA", 1) == 1) {
-		QADPD_YPFPGA = true; 
-		//CheckBox_YPFPGA->SetValue(true);
-	}
-	else {
-		QADPD_YPFPGA = false; 
-		//CheckBox_YPFPGA->SetValue(false);
-	}
+    QADPD_AM = 14; // bilo je 12
 
-	QADPD_YPFPGA = true;
+    tempi_CHA = m_options.Get("QADPD_CHA_ND", 0);
+    tempi_CHB = m_options.Get("QADPD_CHB_ND", 0);
+    if (chA == 1)
+        QADPD_ND = tempi_CHA;
+    else
+        QADPD_ND = tempi_CHB;
+    spin_ADPD_Delay->SetValue(QADPD_ND);
 
-	temps = m_options.Get("QADPD_GAIN", "1.000");
-	m_ADPD_txtGain->SetValue(temps);
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_GAIN = tempd;
+    QADPD_SKIP = m_options.Get("QADPD_SKIP", 0);
+    QADPD_UPDATE = m_options.Get("QADPD_UPDATE", 1);
 
-	temps = m_options.Get("QADPD_LAMBDA", "0.998");
-	m_ADPD_txtLambda->SetValue(temps);
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_LAMBDA = tempd;
+    wxString temps1;
+    temps1.Printf(_T("%d"), QADPD_SKIP);
+    temps1.Printf(_T("%d"), QADPD_UPDATE);
+    m_ADPD_txtTrain->SetValue(temps1);
 
-	int tempi = 0;
-	tempi= m_options.Get("Plots", 15);
-	if ((tempi & 0x01) == 0x01) CheckBox_PLOT1->SetValue(true);
-	else CheckBox_PLOT1->SetValue(false);
-	if ((tempi & 0x02) == 0x02) CheckBox_PLOT2->SetValue(true);
-	else CheckBox_PLOT2->SetValue(false);
-	if ((tempi & 0x04) == 0x04) CheckBox_PLOT3->SetValue(true);
-	else CheckBox_PLOT3->SetValue(false);
-	if ((tempi & 0x08) == 0x08) CheckBox_PLOT4->SetValue(true);
-	else CheckBox_PLOT4->SetValue(false);
+    if (m_options.Get("QADPD_YPFPGA", 1) == 1)
+        QADPD_YPFPGA = true;
+    else
+        QADPD_YPFPGA = false;
+    QADPD_YPFPGA = true;
 
-	
-	QADPD_FFT1 = m_options.Get("QADPD_FFT1", 14);
-	QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
-	//QADPD_FFTSAMPLES = 16384;
+    temps_CHA = m_options.Get("QADPD_CHA_GAIN", "1.000");
+    temps_CHB = m_options.Get("QADPD_CHB_GAIN", "1.000");
+    if (chA == 1)
+        temps = temps_CHA;
+    else
+        temps = temps_CHB;
+    m_ADPD_txtGain->SetValue(temps);
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_GAIN = tempd;
 
-	temps1.Printf(_T("%d"), QADPD_FFT1);
-	m_ADPD_txtFFT1->SetValue(temps1);
+    temps_CHA = m_options.Get("QADPD_CHA_LAMBDA", "0.998");
+    temps_CHB = m_options.Get("QADPD_CHB_LAMBDA", "0.998");
+    if (chA == 1)
+        temps = temps_CHA;
+    else
+        temps = temps_CHB;
+    m_ADPD_txtLambda->SetValue(temps);
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_LAMBDA = tempd;
 
-	QADPD_FFT2 = m_options.Get("QADPD_FFT2", 3);	
-	temps1.Printf(_T("%d"), QADPD_FFT2);
-	m_ADPD_txtFFT2->SetValue(temps1);
+    int tempi = 0;
+    tempi = m_options.Get("Plots", 15);
+    if ((tempi & 0x01) == 0x01)
+        CheckBox_PLOT1->SetValue(true);
+    else
+        CheckBox_PLOT1->SetValue(false);
+    if ((tempi & 0x02) == 0x02)
+        CheckBox_PLOT2->SetValue(true);
+    else
+        CheckBox_PLOT2->SetValue(false);
+    if ((tempi & 0x04) == 0x04)
+        CheckBox_PLOT3->SetValue(true);
+    else
+        CheckBox_PLOT3->SetValue(false);
+    if ((tempi & 0x08) == 0x08)
+        CheckBox_PLOT4->SetValue(true);
+    else
+        CheckBox_PLOT4->SetValue(false);
 
-	temps = m_options.Get("QADPD_FFT3", "20.0");
-	m_ADPD_txtFFT3->SetValue(temps);
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_SPAN = tempd;
-	mNyquist_MHz = QADPD_SPAN/2.0;
+    QADPD_FFT1 = m_options.Get("QADPD_FFT1", 14);
+    QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
+    temps1.Printf(_T("%d"), QADPD_FFT1);
+    m_ADPD_txtFFT1->SetValue(temps1);
 
+    QADPD_FFT2 = m_options.Get("QADPD_FFT2", 3);
+    temps1.Printf(_T("%d"), QADPD_FFT2);
+    m_ADPD_txtFFT2->SetValue(temps1);
 
-	m_iWindowFunc = m_options.Get("QADPD_WINDOWFUNC", 0);
-	cmbWindowFunction->SetSelection(m_iWindowFunc);
-
-	OnChangePlot();
-
-
+    temps = m_options.Get("QADPD_FFT3", "20.0");
+    m_ADPD_txtFFT3->SetValue(temps);
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
+    m_iWindowFunc = m_options.Get("QADPD_WINDOWFUNC", 0);
+    cmbWindowFunction->SetSelection(m_iWindowFunc);
+    OnChangePlot();
 }
 
 void DPDTest::SaveConfig()
 {
-	
-	wxString temps;
-	iniParser m_options;
-	m_options.Open(config_filename);
-	//save all gui settings to file
 
-	m_options.SelectSection("QADPD");
-	m_options.Set("ValuePlot1", m_iValuePlot1);
-	m_options.Set("YaxisTopPlot1", m_iYaxisTopPlot1);
-	m_options.Set("YaxisBottomPlot1", m_iYaxisBottomPlot1);
-	m_options.Set("iCenterFreqRatioPlot1", m_iCenterFreqRatioPlot1);
-	m_options.Set("iFreqSpanRatioPlot1", m_iFreqSpanRatioPlot1);
-	temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot1);
-	m_options.Set("dCenterFreqRatioPlot1", temps.ToAscii());
-	temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot1);
-	m_options.Set("dFreqSpanRatioPlot1", temps.ToAscii());
-	m_options.Set("XaxisLeftPlot1", m_iXaxisLeftPlot1);
-	m_options.Set("XaxisRightPlot1", m_iXaxisRightPlot1);
+    wxString temps;
+    iniParser m_options;
+    m_options.Open(config_filename);
 
-	m_options.Set("ValuePlot2", m_iValuePlot2);
-	m_options.Set("YaxisTopPlot2", m_iYaxisTopPlot2);
-	m_options.Set("YaxisBottomPlot2", m_iYaxisBottomPlot2);
-	m_options.Set("iCenterFreqRatioPlot2", m_iCenterFreqRatioPlot2);
-	m_options.Set("iFreqSpanRatioPlot2", m_iFreqSpanRatioPlot2);
-	temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot2);
-	m_options.Set("dCenterFreqRatioPlot2", temps.ToAscii());
-	temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot2);
-	m_options.Set("dFreqSpanRatioPlot2", temps.ToAscii());
-	m_options.Set("XaxisLeftPlot2", m_iXaxisLeftPlot2);
-	m_options.Set("XaxisRightPlot2", m_iXaxisRightPlot2);
+    m_options.SelectSection("QADPD");
+    m_options.Set("ValuePlot1", m_iValuePlot1);
+    m_options.Set("YaxisTopPlot1", m_iYaxisTopPlot1);
+    m_options.Set("YaxisBottomPlot1", m_iYaxisBottomPlot1);
+    m_options.Set("iCenterFreqRatioPlot1", m_iCenterFreqRatioPlot1);
+    m_options.Set("iFreqSpanRatioPlot1", m_iFreqSpanRatioPlot1);
+    temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot1);
+    m_options.Set("dCenterFreqRatioPlot1", temps.ToAscii());
+    temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot1);
+    m_options.Set("dFreqSpanRatioPlot1", temps.ToAscii());
+    m_options.Set("XaxisLeftPlot1", m_iXaxisLeftPlot1);
+    m_options.Set("XaxisRightPlot1", m_iXaxisRightPlot1);
 
-	m_options.Set("ValuePlot3", m_iValuePlot3);
-	m_options.Set("YaxisTopPlot3", m_iYaxisTopPlot3);
-	m_options.Set("YaxisBottomPlot3", m_iYaxisBottomPlot3);
-	m_options.Set("iCenterFreqRatioPlot3", m_iCenterFreqRatioPlot3);
-	m_options.Set("iFreqSpanRatioPlot3", m_iFreqSpanRatioPlot3);
-	temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot3);
-	m_options.Set("dCenterFreqRatioPlot3", temps.ToAscii());
-	temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot3);
-	m_options.Set("dFreqSpanRatioPlot3", temps.ToAscii());
-	m_options.Set("XaxisLeftPlot3", m_iXaxisLeftPlot3);
-	m_options.Set("XaxisRightPlot3", m_iXaxisRightPlot3);
+    m_options.Set("ValuePlot2", m_iValuePlot2);
+    m_options.Set("YaxisTopPlot2", m_iYaxisTopPlot2);
+    m_options.Set("YaxisBottomPlot2", m_iYaxisBottomPlot2);
+    m_options.Set("iCenterFreqRatioPlot2", m_iCenterFreqRatioPlot2);
+    m_options.Set("iFreqSpanRatioPlot2", m_iFreqSpanRatioPlot2);
+    temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot2);
+    m_options.Set("dCenterFreqRatioPlot2", temps.ToAscii());
+    temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot2);
+    m_options.Set("dFreqSpanRatioPlot2", temps.ToAscii());
+    m_options.Set("XaxisLeftPlot2", m_iXaxisLeftPlot2);
+    m_options.Set("XaxisRightPlot2", m_iXaxisRightPlot2);
 
-	m_options.Set("ValuePlot4", m_iValuePlot4);
-	m_options.Set("YaxisTopPlot4", m_iYaxisTopPlot4);
-	m_options.Set("YaxisBottomPlot4", m_iYaxisBottomPlot4);
-	m_options.Set("iCenterFreqRatioPlot4", m_iCenterFreqRatioPlot4);
-	m_options.Set("iFreqSpanRatioPlot4", m_iFreqSpanRatioPlot4);
-	temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot4);
-	m_options.Set("dCenterFreqRatioPlot4", temps.ToAscii());
-	temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot4);
-	m_options.Set("dFreqSpanRatioPlot4", temps.ToAscii());
-	m_options.Set("XaxisLeftPlot4", m_iXaxisLeftPlot4);
-	m_options.Set("XaxisRightPlot4", m_iXaxisRightPlot4);
+    m_options.Set("ValuePlot3", m_iValuePlot3);
+    m_options.Set("YaxisTopPlot3", m_iYaxisTopPlot3);
+    m_options.Set("YaxisBottomPlot3", m_iYaxisBottomPlot3);
+    m_options.Set("iCenterFreqRatioPlot3", m_iCenterFreqRatioPlot3);
+    m_options.Set("iFreqSpanRatioPlot3", m_iFreqSpanRatioPlot3);
+    temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot3);
+    m_options.Set("dCenterFreqRatioPlot3", temps.ToAscii());
+    temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot3);
+    m_options.Set("dFreqSpanRatioPlot3", temps.ToAscii());
+    m_options.Set("XaxisLeftPlot3", m_iXaxisLeftPlot3);
+    m_options.Set("XaxisRightPlot3", m_iXaxisRightPlot3);
 
-	long temp;
-	double tempd;
-	QADPD_N = spin_ADPD_N->GetValue();
-	QADPD_M = spin_ADPD_M->GetValue();
-	QADPD_ND = spin_ADPD_Delay->GetValue();
-	QADPD_AM = 14; // bilo je 12 // m_ADPD_txtAm->GetValue(); 
+    m_options.Set("ValuePlot4", m_iValuePlot4);
+    m_options.Set("YaxisTopPlot4", m_iYaxisTopPlot4);
+    m_options.Set("YaxisBottomPlot4", m_iYaxisBottomPlot4);
+    m_options.Set("iCenterFreqRatioPlot4", m_iCenterFreqRatioPlot4);
+    m_options.Set("iFreqSpanRatioPlot4", m_iFreqSpanRatioPlot4);
+    temps.Printf(_T("%9.4f"), m_dCenterFreqRatioPlot4);
+    m_options.Set("dCenterFreqRatioPlot4", temps.ToAscii());
+    temps.Printf(_T("%9.4f"), m_dFreqSpanRatioPlot4);
+    m_options.Set("dFreqSpanRatioPlot4", temps.ToAscii());
+    m_options.Set("XaxisLeftPlot4", m_iXaxisLeftPlot4);
+    m_options.Set("XaxisRightPlot4", m_iXaxisRightPlot4);
 
-	QADPD_SKIP = 0;
+    long temp;
+    double tempd;
+    QADPD_N = spin_ADPD_N->GetValue();
+    QADPD_M = spin_ADPD_M->GetValue();
+    QADPD_ND = spin_ADPD_Delay->GetValue();
+    QADPD_AM = 14;
+    QADPD_SKIP = 100;
+    m_ADPD_txtTrain->GetValue().ToLong(&temp);
+    if ((temp >= 0) && (temp <= 32768))
+        QADPD_UPDATE = (int)temp;
+    else
+    {
+        QADPD_UPDATE = 1;
+        m_ADPD_txtTrain->SetValue("1");
+    }
 
-	m_ADPD_txtTrain->GetValue().ToLong(&temp);
-	if ((temp >= 0) && (temp <= 20480)) QADPD_UPDATE = (int)temp;
-	else {
-		QADPD_UPDATE = 1;
-		m_ADPD_txtTrain->SetValue("1");
-	}
+    tempd = m_ADPD_txtGain->GetValue();
+    QADPD_GAIN = tempd;
 
-	m_ADPD_txtGain->GetValue().ToDouble(&tempd);
-	QADPD_GAIN = tempd; // 1.0
+    m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
+    QADPD_LAMBDA = tempd;
 
-	m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
-	QADPD_LAMBDA = tempd;
+    QADPD_YPFPGA = true;
 
-	QADPD_YPFPGA = true; // CheckBox_YPFPGA->IsChecked();
+    if (chA == 1)
+        m_options.Set("QADPD_CHA_N", QADPD_N);
+    else
+        m_options.Set("QADPD_CHB_N", QADPD_N);
+    if (chA == 1)
+        m_options.Set("QADPD_CHA_M", QADPD_M);
+    else
+        m_options.Set("QADPD_CHB_M", QADPD_M);
+    m_options.Set("QADPD_AM", QADPD_AM);
+    m_options.Set("QADPD_SKIP", QADPD_SKIP);
+    m_options.Set("QADPD_UPDATE", QADPD_UPDATE);
 
-	m_options.Set("QADPD_N", QADPD_N);
-	m_options.Set("QADPD_M", QADPD_M);
-	m_options.Set("QADPD_AM", QADPD_AM);
-	m_options.Set("QADPD_SKIP", QADPD_SKIP);
-	m_options.Set("QADPD_UPDATE", QADPD_UPDATE);
+    if (chA == 1)
+        m_options.Set("QADPD_CHA_ND", QADPD_ND);
+    else
+        m_options.Set("QADPD_CHB_ND", QADPD_ND);
 
-	m_options.Set("QADPD_ND", QADPD_ND);
-	if (QADPD_YPFPGA == true) m_options.Set("QADPD_YPFPGA", 1);
-	else m_options.Set("QADPD_YPFPGA", 0);
-	temps.Printf(_T("%9.4f"), QADPD_GAIN);
-	m_options.Set("QADPD_GAIN", temps.ToAscii());
-	temps.Printf(_T("%9.4f"), QADPD_LAMBDA);
-	m_options.Set("QADPD_LAMBDA", temps.ToAscii());
-	
-	int tempi = 0;
-	if (CheckBox_PLOT1->IsChecked()) tempi += 1;
-	if (CheckBox_PLOT2->IsChecked()) tempi += 2;
-	if (CheckBox_PLOT3->IsChecked()) tempi += 4;
-	if (CheckBox_PLOT4->IsChecked()) tempi += 8;
-	m_options.Set("Plots", tempi);
+    if (QADPD_YPFPGA == true)
+        m_options.Set("QADPD_YPFPGA", 1);
+    else
+        m_options.Set("QADPD_YPFPGA", 0);
 
-	temp=m_ADPD_txtFFT1->GetValue();
-	QADPD_FFT1 = (int)temp;
-	m_options.Set("QADPD_FFT1", QADPD_FFT1);
-	QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
-	//QADPD_FFTSAMPLES = 16384;
+    temps.Printf(_T("%9.4f"), QADPD_GAIN);
+    if (chA == 1)
+        m_options.Set("QADPD_CHA_GAIN", temps.ToAscii());
+    else
+        m_options.Set("QADPD_CHB_GAIN", temps.ToAscii());
 
-	temp=m_ADPD_txtFFT2->GetValue();
-	QADPD_FFT2 = (int)temp;
-	m_options.Set("QADPD_FFT2", QADPD_FFT2);
+    temps.Printf(_T("%13.8f"), QADPD_LAMBDA);
+    if (chA == 1)
+        m_options.Set("QADPD_CHA_LAMBDA", temps.ToAscii());
+    else
+        m_options.Set("QADPD_CHB_LAMBDA", temps.ToAscii());
 
-	temps.Printf(_T("%9.4f"), QADPD_SPAN);
-	m_options.Set("QADPD_FFT3", temps.ToAscii());
+    int tempi = 0;
+    if (CheckBox_PLOT1->IsChecked())
+        tempi += 1;
+    if (CheckBox_PLOT2->IsChecked())
+        tempi += 2;
+    if (CheckBox_PLOT3->IsChecked())
+        tempi += 4;
+    if (CheckBox_PLOT4->IsChecked())
+        tempi += 8;
+    m_options.Set("Plots", tempi);
 
-	m_iWindowFunc = cmbWindowFunction->GetSelection();
-	m_options.Set("QADPD_WINDOWFUNC", m_iWindowFunc);
+    temp = m_ADPD_txtFFT1->GetValue();
+    QADPD_FFT1 = (int)temp;
+    m_options.Set("QADPD_FFT1", QADPD_FFT1);
+    QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
 
-	m_options.Save(config_filename);
+    temp = m_ADPD_txtFFT2->GetValue();
+    QADPD_FFT2 = (int)temp;
+    m_options.Set("QADPD_FFT2", QADPD_FFT2);
+
+    temps.Printf(_T("%9.4f"), QADPD_SPAN);
+    m_options.Set("QADPD_FFT3", temps.ToAscii());
+
+    m_iWindowFunc = cmbWindowFunction->GetSelection();
+    m_options.Set("QADPD_WINDOWFUNC", m_iWindowFunc);
+    m_options.Save(config_filename);
 }
 
-
-void DPDTest::OnChangePlotVisibility(wxCommandEvent& event)
+void DPDTest::OnbtnReadClick(wxCommandEvent &event)
 {
-	OnChangePlot();
-	SaveConfig();
+    read_coef();
+    update_coef();
+}
+
+void DPDTest::OnbtnSaveClick(wxCommandEvent &event)
+{
+    save_coef();
+}
+
+void DPDTest::save_coef()
+{
+
+    int i = 0;
+    int j = 0;
+
+    wxString temps;
+    iniParser m_options;
+    m_options.Open(config_filename);
+    m_options.SelectSection("QADPD");
+
+    for (i = 0; i <= 4; i++)
+    {
+        for (j = 0; j <= 3; j++)
+        {
+
+            if (chA == 1)
+            {
+                temps.Printf(_T("%10.6f"), coeffa_chA[i][j]);
+                m_options.Set(wxString::Format("coeffa_chA_%0d_%0d", i, j), temps.ToAscii());
+
+                temps.Printf(_T("%10.6f"), coeffb_chA[i][j]);
+                m_options.Set(wxString::Format("coeffb_chA_%0d_%0d", i, j), temps.ToAscii());
+            }
+            else
+            {
+                temps.Printf(_T("%10.6f"), coeffa_chB[i][j]);
+                m_options.Set(wxString::Format("coeffa_chB_%0d_%0d", i, j), temps.ToAscii());
+
+                temps.Printf(_T("%10.6f"), coeffb_chB[i][j]);
+                m_options.Set(wxString::Format("coeffb_chB_%0d_%0d", i, j), temps.ToAscii());
+            }
+        }
+    }
+
+    m_options.Save(config_filename);
+}
+
+void DPDTest::read_coef()
+{
+
+    int i = 0;
+    int j = 0;
+
+    wxString temps;
+    iniParser m_options;
+
+    double tempd;
+    m_options.Open(config_filename);
+    m_options.SelectSection("QADPD");
+
+    for (i = 0; i <= 4; i++)
+    {
+        for (j = 0; j <= 3; j++)
+        {
+
+            if (chA == 1)
+            {
+                temps = m_options.Get(wxString::Format("coeffa_chA_%0d_%0d", i, j), "0.000");
+                ((wxString)temps).ToDouble(&tempd);
+                coeffa_chA[i][j] = tempd;
+                temps = m_options.Get(wxString::Format("coeffb_chA_%0d_%0d", i, j), "0.000");
+                ((wxString)temps).ToDouble(&tempd);
+                coeffb_chA[i][j] = tempd;
+            }
+            else
+            {
+                temps = m_options.Get(wxString::Format("coeffa_chB_%0d_%0d", i, j), "0.000");
+                ((wxString)temps).ToDouble(&tempd);
+                coeffa_chB[i][j] = tempd;
+
+                temps = m_options.Get(wxString::Format("coeffb_chB_%0d_%0d", i, j), "0.000");
+                ((wxString)temps).ToDouble(&tempd);
+                coeffb_chB[i][j] = tempd;
+            }
+        }
+    }
+}
+
+void DPDTest::OnChangePlotVisibility(wxCommandEvent &event)
+{
+    OnChangePlot();
+    SaveConfig();
 }
 
 void DPDTest::OnChangePlot()
 {
-	bool m_cPlot1 = CheckBox_PLOT1->IsChecked();
-	bool m_cPlot2 = CheckBox_PLOT2->IsChecked();
-	bool m_cPlot3 = CheckBox_PLOT3->IsChecked();
-	bool m_cPlot4 = CheckBox_PLOT4->IsChecked();
+    bool m_cPlot1 = CheckBox_PLOT1->IsChecked();
+    bool m_cPlot2 = CheckBox_PLOT2->IsChecked();
+    bool m_cPlot3 = CheckBox_PLOT3->IsChecked();
+    bool m_cPlot4 = CheckBox_PLOT4->IsChecked();
 
-	int temp = 0;
-	if (m_cPlot1 == true) {
-		temp = temp + 1;
-		Panel_ADPD0->Show(true);
-		Panel_ADPD0->Show(true);
-		Panel_ADPD0->Enable(true);
-		Panel_ADPD0->Enable(true);
-	}
-	else{
-		Panel_ADPD0->Show(false);
-		Panel_ADPD0->Show(false);
-		Panel_ADPD0->Enable(false);
-		Panel_ADPD0->Enable(false);
-	}
+    int temp = 0;
+    if (m_cPlot1 == true)
+    {
+        temp = temp + 1;
+        Panel_ADPD0->Show(true);
+        Panel_ADPD0->Show(true);
+        Panel_ADPD0->Enable(true);
+        Panel_ADPD0->Enable(true);
+    }
+    else
+    {
+        Panel_ADPD0->Show(false);
+        Panel_ADPD0->Show(false);
+        Panel_ADPD0->Enable(false);
+        Panel_ADPD0->Enable(false);
+    }
 
-	if (m_cPlot2 == true) {
-		temp = temp + 2;
-		Panel_ADPD1->Show(true);
-		Panel_ADPD1->Show(true);
-		Panel_ADPD1->Enable(true);
-		Panel_ADPD1->Enable(true);		
-	}
-	else {
-		Panel_ADPD1->Show(false);
-		Panel_ADPD1->Show(false);
-		Panel_ADPD1->Enable(false);
-		Panel_ADPD1->Enable(false);
-	}
+    if (m_cPlot2 == true)
+    {
+        temp = temp + 2;
+        Panel_ADPD1->Show(true);
+        Panel_ADPD1->Show(true);
+        Panel_ADPD1->Enable(true);
+        Panel_ADPD1->Enable(true);
+    }
+    else
+    {
+        Panel_ADPD1->Show(false);
+        Panel_ADPD1->Show(false);
+        Panel_ADPD1->Enable(false);
+        Panel_ADPD1->Enable(false);
+    }
 
-	if (m_cPlot3 == true) {
-		temp = temp + 4;
-		Panel_ADPD2->Show(true);
-		Panel_ADPD2->Show(true);
-		Panel_ADPD2->Enable(true);
-		Panel_ADPD2->Enable(true);
-	}
-	else {
-		Panel_ADPD2->Show(false);
-		Panel_ADPD2->Show(false);
-		Panel_ADPD2->Enable(false);
-		Panel_ADPD2->Enable(false);
-	}
-	if (m_cPlot4 == true) {
-		temp = temp + 8;
-		Panel_ADPD3->Show(true);
-		Panel_ADPD3->Show(true);
-		Panel_ADPD3->Enable(true);
-		Panel_ADPD3->Enable(true);
-	}
-	else {
-		Panel_ADPD3->Show(false);
-		Panel_ADPD3->Show(false);
-		Panel_ADPD3->Enable(false);
-		Panel_ADPD3->Enable(false);
-	}
+    if (m_cPlot3 == true)
+    {
+        temp = temp + 4;
+        Panel_ADPD2->Show(true);
+        Panel_ADPD2->Show(true);
+        Panel_ADPD2->Enable(true);
+        Panel_ADPD2->Enable(true);
+    }
+    else
+    {
+        Panel_ADPD2->Show(false);
+        Panel_ADPD2->Show(false);
+        Panel_ADPD2->Enable(false);
+        Panel_ADPD2->Enable(false);
+    }
+    if (m_cPlot4 == true)
+    {
+        temp = temp + 8;
+        Panel_ADPD3->Show(true);
+        Panel_ADPD3->Show(true);
+        Panel_ADPD3->Enable(true);
+        Panel_ADPD3->Enable(true);
+    }
+    else
+    {
+        Panel_ADPD3->Show(false);
+        Panel_ADPD3->Show(false);
+        Panel_ADPD3->Enable(false);
+        Panel_ADPD3->Enable(false);
+    }
 
-	m_ADPD_plotSplitter_up->Unsplit();
-	m_ADPD_plotSplitter_down->Unsplit();
-	m_ADPD_plotSplitter->Unsplit();
+    m_ADPD_plotSplitter_up->Unsplit();
+    m_ADPD_plotSplitter_down->Unsplit();
+    m_ADPD_plotSplitter->Unsplit();
 
-	switch (temp) {
-	case 0: //Panel_ADPD0
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		CheckBox_PLOT1->SetValue(true);
-		break;
-	case 1: // Panel_ADPD0
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 2:  //Panel_ADPD2
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();		
-		break;
-	case 3:  //Panel_ADPD0, Panel_ADPD2
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 4:  //Panel_ADPD1
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 5:   //Panel_ADPD0, Panel_ADPD1
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		//m_ADPD_plotSplitter_up->Unsplit();
-		//m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 6:  //Panel_ADPD2, Panel_ADPD1
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 7:  //Panel_ADPD0, Panel_ADPD2, Panel_ADPD1
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		//m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 8: 
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 9:  //Panel_ADPD0, Panel_ADPD3
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 10: //Panel_ADPD2, Panel_ADPD3 
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		//m_ADPD_plotSplitter_up->Unsplit();
-		//m_ADPD_plotSplitter_down->Unsplit();
-		m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 11:  //Panel_ADPD0, Panel_ADPD2, Panel_ADPD3
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-	    m_ADPD_plotSplitter_up->Unsplit();
-		//m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-	
-		break;
-	case 12: //Panel_ADPD1, Panel_ADPD3
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 13: //Panel_ADPD0, Panel_ADPD1, Panel_ADPD3
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
-		//m_ADPD_plotSplitter_up->Unsplit();
-		m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 14: //Panel_ADPD1, Panel_ADPD2, Panel_ADPD3
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
-		m_ADPD_plotSplitter_up->Unsplit();
-		//m_ADPD_plotSplitter_down->Unsplit();
-		//m_ADPD_plotSplitter->Unsplit();
-		break;
-	case 15:		
-		m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
-		m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
-		m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3); 
-		break;
-	}
-
+    switch (temp)
+    {
+    case 0: //Panel_ADPD0
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        m_ADPD_plotSplitter->Unsplit();
+        CheckBox_PLOT1->SetValue(true);
+        break;
+    case 1: // Panel_ADPD0
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 2: //Panel_ADPD2
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 3: //Panel_ADPD0, Panel_ADPD2
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        //m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 4: //Panel_ADPD1
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 5: //Panel_ADPD0, Panel_ADPD1
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 6: //Panel_ADPD2, Panel_ADPD1
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        break;
+    case 7: //Panel_ADPD0, Panel_ADPD2, Panel_ADPD1
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_down->Unsplit();
+        break;
+    case 8:
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 9: //Panel_ADPD0, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        break;
+    case 10: //Panel_ADPD2, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_down, m_ADPD_plotSplitter_up);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter->Unsplit();
+        break;
+    case 11: //Panel_ADPD0, Panel_ADPD2, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        break;
+    case 12: //Panel_ADPD1, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter_up->Unsplit();
+        m_ADPD_plotSplitter_down->Unsplit();
+        break;
+    case 13: //Panel_ADPD0, Panel_ADPD1, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD3, Panel_ADPD1);
+        m_ADPD_plotSplitter_down->Unsplit();
+        break;
+    case 14: //Panel_ADPD1, Panel_ADPD2, Panel_ADPD3
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD2, Panel_ADPD0);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        m_ADPD_plotSplitter_up->Unsplit();
+        break;
+    case 15:
+        m_ADPD_plotSplitter->SplitHorizontally(m_ADPD_plotSplitter_up, m_ADPD_plotSplitter_down);
+        m_ADPD_plotSplitter_up->SplitVertically(Panel_ADPD0, Panel_ADPD2);
+        m_ADPD_plotSplitter_down->SplitVertically(Panel_ADPD1, Panel_ADPD3);
+        break;
+    }
 }
 
 void DPDTest::onTrainMode(wxCommandEvent &evt)
 {
-	onEnableDisable();
+    onEnableDisable();
 }
 
-
-void DPDTest::onEnableDisable() {
-
-	int temp = 0;
-
-	temp = TrainMode->GetSelection(); 
-
-	if (temp == 0) { 
-		// One step
-		btnCapture->Enable(true);
-		Button_TRAIN->Enable(true);
-		Button_SEND->Enable(true);
-		Button_TIMER->Enable(true);		
-		Button_RTS->Enable(true);
-		m_ADPD_Num->Enable(true);
-		//CheckBox_Train->Enable(false);
-		timer_enabled = false;
-		m_timer->Stop();    // stop
-
-	}
-	else {  
-		// Continous
-		btnCapture->Enable(false);
-		Button_TRAIN->Enable(false);
-		Button_SEND->Enable(false);
-		Button_TIMER->Enable(false);
-		Button_RTS->Enable(false);
-		m_ADPD_Num->Enable(false);
-		//CheckBox_Train->Enable(true);
-		timer_enabled = true;
-		m_timer->Start(1000);    // 1 second interval
-	}
-
-
-}
-
-void DPDTest::OnbtnStartClick(wxCommandEvent& event)
-{
-	long temp = 0;
-	double tempd = 0.0;
-
-	CreateArrays();
-
-	QADPD_N = spin_ADPD_N->GetValue();
-	QADPD_M = spin_ADPD_M->GetValue();
-	QADPD_ND = spin_ADPD_Delay->GetValue();	
-	QADPD_AM = 14; //bilo je 12
-
-	wxString temps;
-	temps = m_ADPD_txtFFT3->GetValue();
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_SPAN = tempd;
-	mNyquist_MHz = QADPD_SPAN/2.0;
-	QADPD_SKIP = 0;
-
-
-	temp = 0;
-	m_ADPD_txtTrain->GetValue().ToLong(&temp);
-	if ((temp >= 0) && (temp <= 20480)) QADPD_UPDATE = (int)temp;
-	else {
-		QADPD_UPDATE = 1;
-		m_ADPD_txtTrain->SetValue("1");
-	}
-
-    m_ADPD_txtGain->GetValue().ToDouble(&tempd);
-	QADPD_GAIN = tempd;// 1.0; // tempd;
-
-	m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
-	QADPD_LAMBDA = tempd;
-	QADPD_YPFPGA = true; // CheckBox_YPFPGA->IsChecked();
-
-	SaveConfig();
-	Qadpd->init(QADPD_N, QADPD_M, QADPD_ND, 1.0, QADPD_LAMBDA, (1 << (QADPD_AM - 1)), QADPD_SKIP);
-		
-	Button_START->Enable(false);
-	Button_TRAIN->Enable(true);
-	Button_END->Enable(true);
-	Button_SEND->Enable(true);
-	spin_ADPD_N->Enable(false);
-	spin_ADPD_M->Enable(false);
-	spin_ADPD_Delay->Enable(false);
-	m_ADPD_txtGain->Enable(false);
-	m_ADPD_txtLambda->Enable(false);
-	//m_ADPD_txtAm->Enable(false);
-	//m_ADPD_txtSkip->Enable(false);
-	m_ADPD_txtTrain->Enable(false);
-	TrainMode->Enable(true);
-	CheckBox_Train->Enable(true);
-	onEnableDisable();
-	//timer_enabled = false;
-	//m_timer->Start(1000);    // 1 second interval
-	//send_coef();	
-	
-}
-
-int DPDTest::train(){
-
-	int	samplesCount = samplesReceived;
-
-
-	ind = prepare_train();
-	//ind = 0;
-	if ((ind > 3) || (ind < -3)) ind = 0;
-
-
-
-	Qadpd->skiping = QADPD_N + QADPD_ND + 1;
-	Qadpd->skiping += 100;
-	QADPD_YPFPGA = true;
-
-	Qadpd->updating = QADPD_UPDATE;
-	//ind = 0;
-	int i = 3;
-	while ((Qadpd->skiping >= 0) && (i < samplesCount - 3)){
-		//if ((abs(xp_samples[i].r/Qadpd->am)>0.5) || (abs(xp_samples[i].i/Qadpd->am)>0.5))  Qadpd->skiping = QADPD_N + QADPD_ND + 10;
-
-		Qadpd->always(xp_samples[i].r, xp_samples[i].i, x_samples[i+ind].r, x_samples[i+ind].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		i++;
-	}
-	
-	
-	int temp = 0;
-	temp=Qadpd->update_coeff(range);
-	return temp;
-
-
-}
-
-
-
-void DPDTest::OnbtnTrainClick(wxCommandEvent& event)
-{
-	train();
-	run_QADPD();
-
-}
-
-void DPDTest::OnbtnEndClick(wxCommandEvent& event)
-{
-	Qadpd->release_memory();
-	Qadpd->finish();
-
-	Button_START->Enable(true);
-	Button_TRAIN->Enable(false);
-	Button_END->Enable(false);
-	Button_SEND->Enable(false);
-	spin_ADPD_N->Enable(true);
-	spin_ADPD_M->Enable(true);
-	spin_ADPD_Delay->Enable(true);
-	m_ADPD_txtGain->Enable(true);
-	m_ADPD_txtLambda->Enable(true);
-	//m_ADPD_txtAm->Enable(true);
-	//m_ADPD_txtSkip->Enable(true);
-	m_ADPD_txtTrain->Enable(true);
-	TrainMode->Enable(false);
-	btnCapture->Enable(false);
-	Button_TRAIN->Enable(false);
-	Button_SEND->Enable(false);
-	Button_TIMER->Enable(false);
-	Button_RTS->Enable(false);
-	m_ADPD_Num->Enable(false);
-	CheckBox_Train->Enable(false);
-	timer_enabled = false;
-	m_timer->Stop();    // stop
-}
-
-
-
-
-void DPDTest::send_coef(){
-
-	// adpd config  addresa 18
-	// adpd data  adresa  22 
-
-	// opseg brojeva je od[-16 do 16 - lsb]
-	// 0x0800 = 0000 1000 0000 0000  predstavlja jedinicu
-
-	// double am = 8192.0/4;  // skaliranje
-
-	double am = 8192.0 * 4.0 / range;  // skaliranje, za [-16, 16] = 8192/4; za [-4, 4] = 8192
-	int temp = 0;
-
-	SPI_write(mDataPort, 0x0012, 0x0000); //spi_ctrl <= x"0000";
-	SPI_write(mDataPort, 0x0016, 0x0000); //spi_data <= x"0000";
-
-	double a1, b1 = 0.0;
-
-	short tempsh = 0;
-	short tempsh2 = 0;
-	double eps = 0.002;
-
-	int i = 0;
-	int j = 0;
-	int LIM = 0;
-	int LIM2 = 1;
-
-	int temp_i = 0;
-
-
-	for (i = 0; i <= 5; i++)  // bilo je 3
-		for (j = 0; j <= 3; j++){
-
-			if ((i <= QADPD_N) && (j <= QADPD_M)) {
-
-
-				a1 = Qadpd->a[i][j];
-				b1 = Qadpd->b[i][j];
-
-				if (a1 > range) {
-					a1 = (range - eps);
-					Qadpd->a[i][j] = a1;
-				}
-				if (a1 < (-range)) {
-					a1 = (-range + eps);
-					Qadpd->a[i][j] = a1;
-				}
-				if (b1 > range) {
-					b1 = range - eps;
-					Qadpd->b[i][j] = b1;
-				}
-				if (b1 < (-range)) {
-					b1 = (-range + eps);
-					Qadpd->b[i][j] = b1;
-				}
-
-			}
-			else  {
-				a1 = 0.0;
-				b1 = 0.0;
-			}
-
-		
-			temp_i = (int)(am * a1 * 4.0 + 0.5);
-			tempsh = (short)(temp_i >> 2);
-			tempsh2 = (short)((temp_i & 0x0003) << 8);
-			temp = 0x3000 + tempsh2 + i * 16 + j;
-
-
-			for (int k = 0; k <= LIM; k++)  SPI_write(mDataPort, 0x0016, tempsh); 
-			for (int k = 0; k <= LIM2 * 100; k++);
-
-
-			for (int k = 0; k <= LIM; k++) SPI_write(mDataPort, 0x0012, temp); //spi_ctrl <= x"30"& conv_std_logic_vector(i, 4)& conv_std_logic_vector(j, 4);
-			for (int k = 0; k <= LIM2 * 100; k++);
-
-			//SPI_write(mDataPort, 0x0016, 0x0000); //spi_data <= a(i)(j);
-			for (int k = 0; k <= LIM; k++) SPI_write(mDataPort, 0x0012, 0x0000); //spi_ctrl <= x"0000";
-			for (int k = 0; k <= LIM2 * 100; k++);
-
-			//tempsh = (short)(am*b1);
-			//temp = 0xC000 + i * 16 + j;		
-			temp_i = (int)(am * b1 * 4.0 + 0.5);
-			tempsh = (short)(temp_i >> 2);
-			tempsh2 = (short)((temp_i & 0x0003) << 8);
-			temp = 0xC000 + tempsh2 + i * 16 + j;
-
-			for (int k = 0; k <= LIM; k++) SPI_write(mDataPort, 0x0016, tempsh); //spi_data <= b(i)(j);
-			for (int k = 0; k <= LIM2 * 100; k++);
-			//
-			for (int k = 0; k <= LIM; k++) SPI_write(mDataPort, 0x0012, temp); //spi_ctrl <= x"C0"& conv_std_logic_vector(i, 4)& conv_std_logic_vector(j, 4);
-			for (int k = 0; k <= LIM2 * 100; k++);
-
-			//SPI_write(mDataPort, 0x0016, 0x0000); //spi_data <= a(i)(j);
-			for (int k = 0; k <= LIM; k++)  SPI_write(mDataPort, 0x0012, 0x0000); //spi_ctrl <= x"0000";
-			for (int k = 0; k <= LIM2 * 100; k++);
-
-		}
-
-
-
-	for (int k = 0; k <= LIM; k++)  SPI_write(mDataPort, 0x0012, 0xF000); //spi_ctrl <= x"F000";
-	for (int k = 0; k <= LIM2 * 100; k++);
-	for (int k = 0; k <= LIM; k++)  SPI_write(mDataPort, 0x0012, 0x0000); //spi_ctrl <= x"F000";
-	for (int k = 0; k <= LIM2 * 100; k++);
-	for (int k = 0; k <= LIM; k++)  SPI_write(mDataPort, 0x0016, 0x0000); //spi_ctrl <= x"0000";
-	for (int k = 0; k <= LIM2 * 100; k++);
-
-}
-
-
-
-
-void DPDTest::OnbtnSendClick(wxCommandEvent& event)
+void DPDTest::onEnableDisable()
 {
 
-	if (mDataPort->IsOpen() == false)
-	{
-		wxMessageBox("Not connected");
-		return;
-	}
-	else send_coef();
+    int temp = 0;
+
+    temp = TrainMode->GetSelection();
+
+    if (temp == 0)
+    {
+
+        btnCapture->Enable(true);
+        Button_TRAIN->Enable(true);
+        Button_SEND->Enable(true);
+        Button_TIMER->Enable(true);
+        Button_READ->Enable(false);
+        Button_SAVE->Enable(false);
+        timer_enabled = false;
+        m_timer->Stop();
+        Button_END->Enable(true);
+    }
+    else
+    {
+        btnCapture->Enable(false);
+        Button_TRAIN->Enable(false);
+        Button_SEND->Enable(false);
+        Button_TIMER->Enable(false);
+        Button_READ->Enable(false);
+        Button_SAVE->Enable(false);
+        Button_END->Enable(false);
+        timer_enabled = true;
+
+        if (m_iThread == 0)
+        {
+            threadReadData();
+            m_iThread = 1;
+        }
+
+        m_timer->Start(3000);
+    }
 }
 
-void DPDTest::OnbtnRTSClick(wxCommandEvent& event)
+double DPDTest::CalculateGainCorr(double p1, double p2, double g1, double g2, double p)
 {
 
-	
-	long temp = 0;
-
-	int k = 0;
-	m_ADPD_Num->GetValue().ToLong(&temp);
-	
-	if ((temp >= 1) && (temp <= 100)) k = (int)temp;
-	else {
-	  k  = 1;
-	  m_ADPD_Num->SetValue("1");
-	}
-
-	for (int i = 0; i < k; i++) {
-
-		readdata_qspark();
-		temp=train();
-		if (temp>=0) send_coef();
-
-	}
-
-	run_QADPD();
-
+    double g = 0.0;
+    if (p < p1)
+        g = g1;
+    else if (p > p2)
+        g = g2;
+    else
+    {
+        g = g1 + (g2 - g1) / (p2 - p1) * (p - p1);
+    }
+    return g;
 }
 
-
-
-void DPDTest::OnbtnPlot1ControlsClick(wxCommandEvent& event)
-{	
-	int m_iPlotType = 0;
-	wxString str;
-	str = _T("");
-	dlgADPDControls	* m_ADPDControls = new dlgADPDControls(this, m_iValuePlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
-    //,m_iCenterFreqRatioPlot1, m_iFreqSpanRatioPlot1, m_dCenterFreqRatioPlot1, m_dFreqSpanRatioPlot1, );
-
-	if (m_ADPDControls->ShowModal() == wxID_OK) {
-		m_iValuePlot1 = m_ADPDControls->m_iValue;
-		m_iXaxisLeftPlot1 = m_ADPDControls->m_iXaxisLeft;
-		m_iXaxisRightPlot1 = m_ADPDControls->m_iXaxisRight;
-		m_iYaxisTopPlot1 = m_ADPDControls->m_iYaxisTop;
-		m_iYaxisBottomPlot1 = m_ADPDControls->m_iYaxisBottom;
-	}
-	OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
-		m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
-	SaveConfig();
-}
-
-void DPDTest::OnPlot(int m_iValue, OpenGLGraph * plot, wxStaticText *text, 
-	int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
-	int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot, 
-	int m_iYaxisTopPlot, int  m_iYaxisBottomPlot, int rb, int m_iXaxisLeftPlot, int m_iXaxisRightPlot) {
-
-	
-	int m_iPlotType = 0;
-	if ((m_iValue & 0x00003) == 0x00000) m_iPlotType = 0;
-	else if ((m_iValue & 0x00003) == 0x00001) m_iPlotType = 1;
-	else if ((m_iValue & 0x00003) == 0x00002) m_iPlotType = 2;
-	changePlotType(plot, m_iPlotType, m_iXaxisLeftPlot, m_iXaxisRightPlot);
-	wxString str;
-	str = _T("");
-	if (rb == 0) str = _T("1 - ");
-	else if (rb == 1) str = _T("2 - ");
-	else if (rb == 2) str = _T("3 - ");
-	else if (rb == 3) str = _T("4 - ");
-
-	//for (int j = 0; j < 4; j++) plot->RemoveSeries(j);
-
-	wxString str2;
-	if (m_iPlotType == 0) str2 = PlotTimeDomain(plot, m_iValue, m_iXaxisLeftPlot, m_iXaxisRightPlot);
-	if (m_iPlotType == 1) str2 = PlotIQ(plot, m_iValue);
-	if (m_iPlotType == 2) str2 = PlotFFT(plot, m_iValue, m_iCenterFreqRatioPlot, m_dCenterFreqRatioPlot,
-		m_iFreqSpanRatioPlot, m_dFreqSpanRatioPlot,	m_iYaxisTopPlot, m_iYaxisBottomPlot);
-	text->SetLabel(str2);
-	plot->settings.title = str+str2;	
-}
-
-void DPDTest::OnbtnPlot2ControlsClick(wxCommandEvent& event)
+double DPDTest::CalculateSignalPower(int Size, double *a, double *b, double Am)
 {
-	int m_iPlotType = 0;
-	wxString str;
-	str = _T("");
-	dlgADPDControls	* m_ADPDControls = new dlgADPDControls(this, m_iValuePlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
-	// m_iCenterFreqRatioPlot2,	m_iFreqSpanRatioPlot2, m_dCenterFreqRatioPlot2, m_dFreqSpanRatioPlot2, );
 
-	if (m_ADPDControls->ShowModal() == wxID_OK) {
-		m_iValuePlot2 = m_ADPDControls->m_iValue;
-		m_iXaxisLeftPlot2 = m_ADPDControls->m_iXaxisLeft;
-		m_iXaxisRightPlot2 = m_ADPDControls->m_iXaxisRight;
-		m_iYaxisTopPlot2 = m_ADPDControls->m_iYaxisTop;
-		m_iYaxisBottomPlot2 = m_ADPDControls->m_iYaxisBottom;
-	}
-	OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
-		m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
-	SaveConfig();
+    int offset = 100;
+    int i = 0;
+    double sum = 0;
+
+    if (Size <= 0)
+        return 0;
+
+    for (i = offset; i < Size; i++)
+        sum = sum + (a[i] * a[i] + b[i] * b[i]) / (Am * Am);
+    sum = sum / Size;
+    return sum;
 }
 
-void DPDTest::OnbtnPlot3ControlsClick(wxCommandEvent& event)
+void DPDTest::CalibrateND(int Size, double *a, double *b, int *pND)
 {
-	int m_iPlotType = 0;
-	wxString str;
-	str = _T("");
-	dlgADPDControls	* m_ADPDControls = new dlgADPDControls(this, m_iValuePlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
-	//  m_iCenterFreqRatioPlot3, m_iFreqSpanRatioPlot3, m_dCenterFreqRatioPlot3, m_dFreqSpanRatioPlot3);
 
-	if (m_ADPDControls->ShowModal() == wxID_OK) {
-		m_iValuePlot3 = m_ADPDControls->m_iValue;
-		m_iXaxisLeftPlot3 = m_ADPDControls->m_iXaxisLeft;
-		m_iXaxisRightPlot3 = m_ADPDControls->m_iXaxisRight;
-		m_iYaxisTopPlot3 = m_ADPDControls->m_iYaxisTop;
-		m_iYaxisBottomPlot3 = m_ADPDControls->m_iYaxisBottom;
-	}
-	
-	OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
-		m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
-	SaveConfig();
+    int ND_limit = 0;
+    int offset = 0;
+    int size = 0;
 
+    int j = 0;
+    int ND = 0;
+    int iND = 0;
+
+    double corr = 0.0;
+    double max_corr = 0.0;
+
+    if (Size <= 0)
+        return;
+
+    ND_limit = 300;
+    offset = 200;
+    size = Size - ND_limit;
+
+    for (iND = 0; iND <= ND_limit; iND++)
+    {
+        corr = 0.0;
+        for (j = offset; j < size; j++)
+            corr = corr + abs(a[j] * b[j - iND]);
+        if (corr > max_corr)
+        {
+            max_corr = corr;
+            ND = iND;
+        }
+    }
+
+    *pND = ND;
 }
 
-void DPDTest::OnbtnPlot4ControlsClick(wxCommandEvent& event)
+void DPDTest::OnbtnCalibrate(wxCommandEvent &event)
 {
-	int m_iPlotType = 0;
-	wxString str;
-	str = _T("");
-	dlgADPDControls	* m_ADPDControls = new dlgADPDControls(this, m_iValuePlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
-	 // m_iCenterFreqRatioPlot4, m_iFreqSpanRatioPlot4, m_dCenterFreqRatioPlot4, m_dFreqSpanRatioPlot4);
 
-	if (m_ADPDControls->ShowModal() == wxID_OK) {
-		m_iValuePlot4 = m_ADPDControls->m_iValue;
-		m_iXaxisLeftPlot4 = m_ADPDControls->m_iXaxisLeft;
-		m_iXaxisRightPlot4 = m_ADPDControls->m_iXaxisRight;
+    long temp = 0;
+    double tempd = 0.0;
+    int i = 0;
 
-		m_iYaxisTopPlot4 = m_ADPDControls->m_iYaxisTop;
-		m_iYaxisBottomPlot4 = m_ADPDControls->m_iYaxisBottom;
-	}
-	OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
-		m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
-	SaveConfig();
+    double *a = new double[32768];
+    double *b = new double[32768];
+    double *c = new double[32768];
+    double *d = new double[32768];
+
+    for (i = 0; i < 32768; i++)
+    {
+        a[i] = b[i] = c[i] = d[i] = 0.0;
+    }
+
+    int nd = 0;
+    double pow_u = 0;
+    double pow_y = 0;
+    double gain = 1.000;
+    double gainCorr = 1.0;
+    TrainMode->SetSelection(0);
+    CreateArrays();
+
+    QADPD_N = spin_ADPD_N->GetValue();
+    QADPD_M = spin_ADPD_M->GetValue();
+    QADPD_AM = 14;
+
+    wxString temps;
+    temps = m_ADPD_txtFFT3->GetValue();
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
+    QADPD_SKIP = 100;
+
+    temp = 0;
+    m_ADPD_txtTrain->GetValue().ToLong(&temp);
+    if ((temp >= 0) && (temp <= 32768))
+        QADPD_UPDATE = (int)temp;
+    else
+    {
+        QADPD_UPDATE = 1;
+        m_ADPD_txtTrain->SetValue("1");
+    }
+
+    QADPD_ND = 10;
+    QADPD_GAIN = 1.0;
+    temps.Printf(_T("%9.4f"), QADPD_GAIN);
+    m_ADPD_txtGain->SetValue(temps);
+
+    m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
+    QADPD_LAMBDA = tempd;
+    QADPD_YPFPGA = true;
+
+    Qadpd->init(QADPD_N, QADPD_M, 10, 1.0, QADPD_LAMBDA, (1 << (QADPD_AM - 1)), QADPD_SKIP);
+
+    Qadpd->reset_coeff();
+    send_coef();
+
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    readdata_qspark2();
+
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    run_QADPD();
+
+    for (int i = 0; i < samplesReceived; i++)
+    {
+        a[i] = (double)y_samples[i].r;
+        b[i] = (double)u_samples[i].r;
+        c[i] = (double)y_samples[i].i;
+        d[i] = (double)u_samples[i].i;
+    }
+
+    CalibrateND(samplesReceived, a, b, &nd);
+
+    nd++;
+
+    std::cout << "Calibration: ND=" << nd + 10 << std::endl;
+    QADPD_ND = nd + 10;
+    spin_ADPD_Delay->SetValue(QADPD_ND);
+    SaveConfig();
+
+    delete[] a;
+    delete[] b;
+    delete[] c;
+    delete[] d;
 }
 
-//DPDTest::~DPDTest()
-//{   
-//}
+int DPDTest::openstream_qspark()
+{ //(wxCommandEvent& event), {
 
-//void DPDTest::Initialize(LMScomms* dataPort)
-void DPDTest::Initialize(lime::IConnection* dataPort)
+    if (LMS_EnableChannel(lmsControl, LMS_CH_RX, 0, true) != 0)
+        ;
+    lms_stream_t streamId;                        //stream structure
+    streamId.channel = 0;                         //channel number
+    streamId.fifoSize = 1024 * 1024;              //fifo size in samples
+    streamId.throughputVsLatency = 1.0;           //optimize for max throughput
+    streamId.isTx = false;                        //RX channel
+    streamId.dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+    if (LMS_SetupStream(lmsControl, &streamId) != 0)
+        ;
+    LMS_StartStream(&streamId);
+    return 0;
+}
+
+int DPDTest::closestream_qspark()
+{ //(wxCommandEvent& event), {
+
+    if (LMS_EnableChannel(lmsControl, LMS_CH_RX, 0, true) != 0)
+        ;
+    lms_stream_t streamId;                        //stream structure
+    streamId.channel = 0;                         //channel number
+    streamId.fifoSize = 1024 * 1024;              //fifo size in samples
+    streamId.throughputVsLatency = 1.0;           //optimize for max throughput
+    streamId.isTx = false;                        //RX channel
+    streamId.dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+    LMS_StopStream(&streamId);                    //stream is stopped but can be started again with LMS_StartStream()
+    LMS_DestroyStream(lmsControl, &streamId);     //stream is deallocated and can no longer be used
+    return 0;
+}
+
+int DPDTest::readstream_qspark(char *buffer, int bytesToRead)
+{ //(wxCommandEvent& event), {
+
+    if (LMS_EnableChannel(lmsControl, LMS_CH_RX, 0, true) != 0)
+        ;
+    //Initialize stream
+    lms_stream_t streamId;                        //stream structure
+    streamId.channel = 0;                         //channel number
+    streamId.fifoSize = 1024 * 1024;              //fifo size in samples
+    streamId.throughputVsLatency = 1.0;           //optimize for max throughput
+    streamId.isTx = false;                        //RX channel
+    streamId.dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+    if (LMS_SetupStream(lmsControl, &streamId) != 0)
+        ;
+    LMS_StartStream(&streamId);
+    int samplesRead = LMS_RecvStream(&streamId, buffer, bytesToRead, NULL, 1000);
+    LMS_StopStream(&streamId);                //stream is stopped but can be started again with LMS_StartStream()
+    LMS_DestroyStream(lmsControl, &streamId); //stream is deallocated and can no longer be used
+    return samplesRead;
+}
+
+int DPDTest::readdata_qspark() //(wxCommandEvent& event)
 {
-    mDataPort = dataPort;
+
+    int status = 0;
+    const int bytesToRead = 20 * 8192 * 2;
+    unsigned char *buffer = new unsigned char[bytesToRead];
+    memset(buffer, 0, bytesToRead);
+
+    auto conn = ((LMS7_Device *)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
+    {
+        wxMessageBox(_("DPDviewer: Connection not initialized"), _("ERROR"));
+        return 0;
+    }
+    else
+    {
+
+        int bytesReceived = 0;
+        bytesReceived = ((LMS7_Device *)lmsControl)->GetConnection()->ReadDPDBuffer((char *)buffer, bytesToRead);
+        if (bytesReceived == bytesToRead)
+        {
+            int samplesReceived = bytesReceived / 20; //one sample, 4 bytes * 3 channels
+
+            int16_t value;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i]) & 0xFF;
+                value |= (buffer[4 * i + 1] << 8) & 0xFF00;
+                value >>= 2;
+
+                if (chA == 1)
+                {
+                    xp_samples[i].r = value;
+                    xp1_samples[i].r = value;
+                }
+
+                value = (buffer[4 * i + 2]) & 0xFF;
+                value |= (buffer[4 * i + 3] << 8) & 0xFF00;
+                value >>= 2;
+
+                if (chA == 1)
+                {
+                    xp_samples[i].i = value;
+                    xp1_samples[i].i = value;
+                }
+            }
+
+            unsigned offset = bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    yp_samples[i].r = value;
+                    yp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    yp_samples[i].i = value;
+                    yp1_samples[i].i = value;
+                }
+            }
+
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                x_samples[i].r = (int)(QADPD_GAIN * value);
+                x1_samples[i].r = x_samples[i].r;
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                x_samples[i].i = (int)(QADPD_GAIN * value);
+                x1_samples[i].i = x_samples[i].i;
+            }
+
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    xp_samples[i].r = value;
+                    xp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    xp_samples[i].i = value;
+                    xp1_samples[i].i = value;
+                }
+            }
+
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    yp_samples[i].r = value;
+                    yp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    yp_samples[i].i = value;
+                    yp1_samples[i].i = value;
+                }
+            }
+
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                y_samples[i].r = 0;
+                y_samples[i].i = 0;
+                y1_samples[i].r = 0;
+                y1_samples[i].i = 0;
+                error_samples[i].r = 0;
+                error_samples[i].i = 0;
+                u_samples[i].r = 0;
+                u_samples[i].i = 0;
+            }
+        }
+        else
+            std::cout << "DPD received samples " << bytesReceived << "/" << bytesToRead << std::endl;
+    }
+
+    samplesReceived = 2 * 8192;
+    QADPD_SKIP = 0;
+    delete buffer;
+    buffer = NULL;
+    if (status == -1)
+        m_iThread = -1;
+    wxCommandEvent evt;
+    evt.SetEventObject(this);
+    evt.SetId(ID_READING_FINISHED_EVENT);
+    evt.SetEventType(wxEVT_COMMAND_THREAD);
+    evt.SetString(status == 0 ? _("Reading Completed!") : _("Reading failed!\n"));
+    wxPostEvent(this, evt);
+    return status;
 }
 
+int DPDTest::readdata_qspark2()
+{
 
-void DPDTest::changePlotType(OpenGLGraph * graph, int plotType, int  m_iXaxisLeftPlot, int m_iXaxisRightPlot) {
-	
-	graph->ResetConstraints();
-	graph->DeletePendingEvents();
+    int status = 0;
+    const int bytesToRead = 20 * 8192 * 2;
+    unsigned char *buffer = new unsigned char[bytesToRead];
+    memset(buffer, 0, bytesToRead);
+
+    auto conn = ((LMS7_Device *)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
+    {
+        wxMessageBox(_("DPDviewer: Connection not initialized"), _("ERROR"));
+        return 0;
+    }
+    else
+    {
+        int bytesReceived = 0;
+        bytesReceived = ((LMS7_Device *)lmsControl)->GetConnection()->ReadDPDBuffer((char *)buffer, bytesToRead);
+        if (bytesReceived == bytesToRead)
+        {
+            int samplesReceived = bytesReceived / 20;
+            int16_t value;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i]) & 0xFF;
+                value |= (buffer[4 * i + 1] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    xp_samples[i].r = value;
+                    xp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2]) & 0xFF;
+                value |= (buffer[4 * i + 3] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    xp_samples[i].i = value;
+                    xp1_samples[i].i = value;
+                }
+            }
+
+            unsigned offset = bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    yp_samples[i].r = value;
+                    yp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA == 1)
+                {
+                    yp_samples[i].i = value;
+                    yp1_samples[i].i = value;
+                }
+            }
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                x_samples[i].r = (int)(QADPD_GAIN * value);
+                x1_samples[i].r = x_samples[i].r;
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                x_samples[i].i = (int)(QADPD_GAIN * value);
+                x1_samples[i].i = x_samples[i].i;
+            }
+
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    xp_samples[i].r = value;
+                    xp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+
+                if (chA != 1)
+                {
+                    xp_samples[i].i = value;
+                    xp1_samples[i].i = value;
+                }
+            }
+            offset += bytesReceived / 5;
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                value = (buffer[4 * i + offset]) & 0xFF;
+                value |= (buffer[4 * i + 1 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    yp_samples[i].r = value;
+                    yp1_samples[i].r = value;
+                }
+                value = (buffer[4 * i + 2 + offset]) & 0xFF;
+                value |= (buffer[4 * i + 3 + offset] << 8) & 0xFF00;
+                value >>= 2;
+                if (chA != 1)
+                {
+                    yp_samples[i].i = value;
+                    yp1_samples[i].i = value;
+                }
+            }
+
+            for (int i = 0; i < samplesReceived; i++)
+            {
+                y_samples[i].r = 0;
+                y_samples[i].i = 0;
+                y1_samples[i].r = 0;
+                y1_samples[i].i = 0;
+                error_samples[i].r = 0;
+                error_samples[i].i = 0;
+                u_samples[i].r = 0;
+                u_samples[i].i = 0;
+            }
+        }
+        else
+            std::cout << "DPD received samples " << bytesReceived << "/" << bytesToRead << std::endl;
+    }
+
+    samplesReceived = 2 * 8192;
+    QADPD_SKIP = 0;
+    delete buffer;
+    buffer = NULL;
+    return status;
+}
+
+void DPDTest::OnbtnCalibrate2(wxCommandEvent &event)
+{
+    long temp = 0;
+    double tempd = 0.0;
+    int i = 0;
+
+    double *a = new double[32768];
+    double *b = new double[32768];
+    double *c = new double[32768];
+    double *d = new double[32768];
+
+    int nd = 0;
+
+    double pow_u = 0;
+    double pow_y = 0;
+    double gain = 1.000;
+    double gainCorr = 1.0;
+
+    CreateArrays();
+    TrainMode->SetSelection(0);
+
+    QADPD_N = spin_ADPD_N->GetValue();
+    QADPD_M = spin_ADPD_M->GetValue();
+    QADPD_AM = 14;
+
+    wxString temps;
+    temps = m_ADPD_txtFFT3->GetValue();
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
+
+    mLmsNyquist_MHz = QADPD_SPAN / 2.0;
+    QADPD_SKIP = 100;
+
+    temp = 0;
+    m_ADPD_txtTrain->GetValue().ToLong(&temp);
+    if ((temp >= 0) && (temp <= 32768))
+        QADPD_UPDATE = (int)temp;
+    else
+    {
+        QADPD_UPDATE = 1;
+        m_ADPD_txtTrain->SetValue("1");
+    }
+
+    QADPD_ND = 10;
+    QADPD_GAIN = 1.0;
+    temps.Printf(_T("%9.4f"), QADPD_GAIN);
+    m_ADPD_txtGain->SetValue(temps);
+
+    m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
+    QADPD_LAMBDA = tempd;
+    QADPD_YPFPGA = true;
+    SaveConfig();
+
+    Qadpd->init(QADPD_N, QADPD_M, 10, 1.0, QADPD_LAMBDA, (1 << (QADPD_AM - 1)), QADPD_SKIP);
+
+    Qadpd->reset_coeff();
+    send_coef();
+    readdata_qspark2();
+    run_QADPD();
+
+    for (i = 0; i < samplesReceived; i++)
+    {
+        a[i] = (double)y_samples[i].r;
+        b[i] = (double)u_samples[i].r;
+        c[i] = (double)y_samples[i].i;
+        d[i] = (double)u_samples[i].i;
+    }
+
+    pow_y = CalculateSignalPower(samplesReceived, a, c, (1 << (QADPD_AM - 1)));
+    pow_u = CalculateSignalPower(samplesReceived, b, d, (1 << (QADPD_AM - 1)));
+    std::cout << "power of the input signal:" << pow_u << std::endl;
+
+    gainCorr = CalculateGainCorr(0.03, 0.08, 1.0, 1.0, pow_u); // was 1.1
+    gain = sqrt(pow_u / pow_y) * gainCorr;
+
+    std::cout << "gainCorr=" << gainCorr << ", gain=" << gain << std::endl;
+    temps.Printf(_T("gainCorr= %9.4f; gain= %9.4f"), gainCorr, gain);
+    if ((gain > 6.0) || (gain < 0.333))
+    {
+        gain = 1.0;
+        std::cout << "Gain cannot be calculated, set to default 1.0" << std::endl;
+    }
+    else
+        std::cout << "Calibration: Gain=" << gain << std::endl;
+
+    QADPD_GAIN = gain;
+    temps.Printf(_T("%9.4f"), QADPD_GAIN);
+    m_ADPD_txtGain->SetValue(temps);
+    SaveConfig();
+
+    delete[] a;
+    delete[] b;
+    delete[] c;
+    delete[] d;
+}
+
+void DPDTest::OnbtnStartClick(wxCommandEvent &event)
+{
+    long temp = 0;
+    double tempd = 0.0;
+
+    CreateArrays();
+
+    QADPD_N = spin_ADPD_N->GetValue();
+    QADPD_M = spin_ADPD_M->GetValue();
+    QADPD_ND = spin_ADPD_Delay->GetValue();
+    QADPD_AM = 14;
+
+    wxString temps;
+    temps = m_ADPD_txtFFT3->GetValue();
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
+    mLmsNyquist_MHz = QADPD_SPAN / 2.0;
+
+    QADPD_SKIP = 100;
+    temp = 0;
+    m_ADPD_txtTrain->GetValue().ToLong(&temp);
+    if ((temp >= 0) && (temp <= 32768))
+        QADPD_UPDATE = (int)temp;
+    else
+    {
+        QADPD_UPDATE = 1;
+        m_ADPD_txtTrain->SetValue("1");
+    }
+
+    m_ADPD_txtGain->GetValue();
+    QADPD_GAIN = tempd;
+    m_ADPD_txtLambda->GetValue().ToDouble(&tempd);
+    QADPD_LAMBDA = tempd;
+    QADPD_YPFPGA = true;
+    SaveConfig();
+    Qadpd->init(QADPD_N, QADPD_M, QADPD_ND, 1.0, QADPD_LAMBDA, (1 << (QADPD_AM - 1)), QADPD_SKIP);
+
+    Button_START->Enable(false);
+    Button_TRAIN->Enable(true);
+    Button_END->Enable(true);
+    Button_SEND->Enable(true);
+    spin_ADPD_N->Enable(false);
+    spin_ADPD_M->Enable(false);
+    spin_ADPD_Delay->Enable(false);
+    m_ADPD_txtGain->Enable(true);
+    m_ADPD_txtLambda->Enable(false);
+    m_ADPD_txtTrain->Enable(false);
+    TrainMode->Enable(true);
+    CheckBox_Train->Enable(true);
+    Button_CAL->Enable(false);
+    Button_CAL2->Enable(false);
+    rbChannelA->Enable(false);
+    rbChannelB->Enable(false);
+    onEnableDisable();
+    fp = fopen(fname.c_str(), "w");
+}
+
+int DPDTest::train()
+{
+
+    int samplesCount = samplesReceived;
+    ind = 0;
+    ind = prepare_train();
+    fprintf(fp, "train ind: %d \n", ind);
+    if ((ind >= 4) || (ind <= -4))
+        ind = 0;
+    Qadpd->skiping = QADPD_N + QADPD_ND + 1;
+    Qadpd->skiping += 100;
+
+    QADPD_YPFPGA = true;
+    Qadpd->updating = QADPD_UPDATE;
+    //Qadpd->reset_matrix();
+    int i = 6;
+    int check = 0;
+    double eps = 1e-3;
+
+    int tempi, tempr;
+    int am = 1 << (QADPD_AM - 1);
+
+    ind = 0;
+
+    while ((Qadpd->skiping >= 0) && (i < samplesCount - 6))
+    {
+
+        check = 3;
+        if (check > 0)
+            Qadpd->always(xp_samples[i].r, xp_samples[i].i, x_samples[i + ind].r,
+                          x_samples[i + ind].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
+        i++;
+    }
+    int temp = 0;
+    return temp;
+}
+
+void DPDTest::OnbtnTrainClick(wxCommandEvent &event)
+{
+    int temp = 0;
+    train();
+    temp = Qadpd->update_coeff(range);
+    run_QADPD();
+}
+
+void DPDTest::OnbtnEndClick(wxCommandEvent &event)
+{
+
+    if (m_iThread == 1)
+        mWorkerThread.join();
+    else if (m_iThread == 0)
+    {
+        SaveConfig();
+        Qadpd->release_memory();
+    }
+
+    Button_START->Enable(true);
+    Button_TRAIN->Enable(false);
+    Button_END->Enable(false);
+    Button_SEND->Enable(false);
+    spin_ADPD_N->Enable(true);
+    spin_ADPD_M->Enable(true);
+    spin_ADPD_Delay->Enable(true);
+    m_ADPD_txtGain->Enable(true);
+    m_ADPD_txtLambda->Enable(true);
+    m_ADPD_txtTrain->Enable(true);
+    TrainMode->Enable(false);
+    btnCapture->Enable(false);
+    Button_TRAIN->Enable(false);
+    Button_SEND->Enable(false);
+    Button_TIMER->Enable(false);
+    Button_READ->Enable(true);
+
+    if (updatedCoeff == 1)
+        Button_SAVE->Enable(true);
+    else
+        Button_SAVE->Enable(false);
+
+    CheckBox_Train->Enable(false);
+    timer_enabled = false;
+    m_timer->Stop();
+    Button_CAL->Enable(true);
+    Button_CAL2->Enable(true);
+    rbChannelA->Enable(true);
+    rbChannelB->Enable(true);
+    fclose(fp);
+}
+
+void DPDTest::send_coef()
+{
+
+    range = 16.0;
+    double am = 32768.0 / range;
+    int temp = 0;
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0x0000);
+    else
+        SPI_write(lmsControl, 0x0003, 0x0000);
+    SPI_write(lmsControl, 0x0004, 0x0000);
+
+    double a1, b1, c1, d1 = 0.0;
+    double oi1, oq1 = 0.0;
+
+    short tempsh = 0;
+    short tempsh2 = 0;
+    double eps = 0.002;
+
+    int i = 0;
+    int j = 0;
+    int LIM2 = 1;
+    int temp_i = 0;
+
+    double K = 0.0; //
+
+    for (i = 0; i <= 4; i++)
+    {
+        for (j = 0; j <= 3; j++) //
+        {
+
+            K = (double)pow(2, j);
+
+            if ((i <= QADPD_N) && (j <= QADPD_M))
+            {
+                a1 = Qadpd->a[i][j];
+                b1 = Qadpd->b[i][j];              
+
+                if (a1 >= range * K)
+                {
+                    a1 = (range * K - eps);
+                    Qadpd->a[i][j] = a1;
+                }
+                if (a1 <= (-range * K))
+                {
+                    a1 = (-range * K + eps);
+                    Qadpd->a[i][j] = a1;
+                }
+                if (b1 >= range * K)
+                {
+                    b1 = range * K - eps;
+                    Qadpd->b[i][j] = b1;
+                }
+                if (b1 <= (-range * K))
+                {
+                    b1 = (-range * K + eps);
+                    Qadpd->b[i][j] = b1;
+                }
+            }
+            else
+            {
+                a1 = 0.0;
+                b1 = 0.0;
+            }
+
+            if (chA == 1)
+            {
+                coeffa_chA[i][j] = a1;
+                coeffb_chA[i][j] = b1;
+            }
+            else
+            {
+                coeffa_chB[i][j] = a1;
+                coeffb_chB[i][j] = b1;
+            }
+
+            temp_i = (int)(am * a1 * 4.0 / K + 0.5); //
+            tempsh = (short)(temp_i >> 2);
+            tempsh2 = (short)((temp_i & 0x0003) << 8);
+
+            //WATCH
+            temp = 0x1000 + tempsh2 + i * 16 + j;
+            SPI_write(lmsControl, 0x0004, tempsh);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, temp);
+            else
+                SPI_write(lmsControl, 0x0003, temp);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ;
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, 0x0000);
+            else
+                SPI_write(lmsControl, 0x0003, 0x0000);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+
+            temp_i = (int)(am * b1 * 4.0 / K + 0.5); //
+            tempsh = (short)(temp_i >> 2);
+            tempsh2 = (short)((temp_i & 0x0003) << 8);
+
+            temp = 0x2000 + tempsh2 + i * 16 + j;
+            SPI_write(lmsControl, 0x0004, tempsh);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; //delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, temp);
+            else
+                SPI_write(lmsControl, 0x0003, temp);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; //delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, 0x0000);
+            else
+                SPI_write(lmsControl, 0x0003, 0x0000);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+        }         // for (j = 0; j <= 3; j++)
+
+    } // for (i = 0; i <= 6; i++)
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0xF000);
+    else
+        SPI_write(lmsControl, 0x0003, 0xF000);
+
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ;
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0x0000);
+    else
+        SPI_write(lmsControl, 0x0003, 0x0000);
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ;
+
+    SPI_write(lmsControl, 0x0004, 0x0000);
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ;
+
+    updatedCoeff = 1;
+}
+
+void DPDTest::update_coef()
+{
+
+    range = 16.0;
+    double am = 32768.0 / range;
+    int temp = 0;
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0x0000);
+    else
+        SPI_write(lmsControl, 0x0003, 0x0000);
+    SPI_write(lmsControl, 0x0004, 0x0000);
+
+    double a1, b1, c1, d1 = 0.0;
+    double oi1, oq1 = 0.0;
+
+    short tempsh = 0;
+    short tempsh2 = 0;
+    double eps = 0.002;
+    int i = 0;
+    int j = 0;
+    int LIM2 = 1;
+    int temp_i = 0;
+
+    double K = 0.0; //
+
+    for (i = 0; i <= 4; i++)
+    {
+        for (j = 0; j <= 3; j++) //
+        {
+
+            K = (double)pow(2, j);
+
+            if (chA == 1)
+            {
+                a1 = coeffa_chA[i][j];
+                b1 = coeffb_chA[i][j];
+            }
+            else
+            {
+                a1 = coeffa_chB[i][j];
+                b1 = coeffb_chB[i][j];
+            }
+
+            temp_i = (int)(am * a1 * 4.0 / K + 0.5); //
+            tempsh = (short)(temp_i >> 2);
+            tempsh2 = (short)((temp_i & 0x0003) << 8);
+
+            //watch
+            temp = 0x1000 + tempsh2 + i * 16 + j;
+
+            SPI_write(lmsControl, 0x0004, tempsh);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, temp);
+            else
+                SPI_write(lmsControl, 0x0003, temp);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ;
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, 0x0000);
+            else
+                SPI_write(lmsControl, 0x0003, 0x0000);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+
+            temp_i = (int)(am * b1 * 4.0 / K + 0.5); //
+            tempsh = (short)(temp_i >> 2);
+            tempsh2 = (short)((temp_i & 0x0003) << 8);
+
+            //watch
+            temp = 0x2000 + tempsh2 + i * 16 + j;
+
+            SPI_write(lmsControl, 0x0004, tempsh);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; //delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, temp);
+            else
+                SPI_write(lmsControl, 0x0003, temp);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; //delay
+
+            if (chA == 1)
+                SPI_write(lmsControl, 0x0002, 0x0000);
+            else
+                SPI_write(lmsControl, 0x0003, 0x0000);
+            for (int k = 0; k <= LIM2 * 100; k++)
+                ; // delay
+        }         // for (j = 0; j <= 3; j++)
+    }
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0xF000);
+    else
+        SPI_write(lmsControl, 0x0003, 0xF000);
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ; // delay
+
+    if (chA == 1)
+        SPI_write(lmsControl, 0x0002, 0x0000);
+    else
+        SPI_write(lmsControl, 0x0003, 0x0000);
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ; // delay
+
+    SPI_write(lmsControl, 0x0004, 0x0000);
+    for (int k = 0; k <= LIM2 * 100; k++)
+        ; // delay
+}
+
+void DPDTest::OnbtnSendClick(wxCommandEvent &event)
+{
+
+    auto conn = ((LMS7_Device *)lmsControl)->GetConnection();
+    if (!conn || !conn->IsOpen())
+    {
+        wxMessageBox(_("DPDviewer: Connection not initialized"), _("ERROR"));
+        return;
+    }
+    else
+        send_coef();
+}
+
+void DPDTest::OnbtnPlot1ControlsClick(wxCommandEvent &event)
+{
+    wxString str;
+    str = _T("");
+    dlgADPDControls *m_ADPDControls = new dlgADPDControls(this, m_iValuePlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
+
+    if (m_ADPDControls->ShowModal() == wxID_OK)
+    {
+        m_iValuePlot1 = m_ADPDControls->m_iValue;
+        m_iXaxisLeftPlot1 = m_ADPDControls->m_iXaxisLeft;
+        m_iXaxisRightPlot1 = m_ADPDControls->m_iXaxisRight;
+        m_iYaxisTopPlot1 = m_ADPDControls->m_iYaxisTop;
+        m_iYaxisBottomPlot1 = m_ADPDControls->m_iYaxisBottom;
+    }
+    OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
+           m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
+    SaveConfig();
+}
+
+void DPDTest::OnPlot(int m_iValue, OpenGLGraph *plot, wxStaticText *text,
+                     int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
+                     int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot,
+                     int m_iYaxisTopPlot, int m_iYaxisBottomPlot, int rb, int m_iXaxisLeftPlot, int m_iXaxisRightPlot)
+{
+
+    int m_iPlotType = 0;
+    if ((m_iValue & 0x00003) == 0x00000)
+        m_iPlotType = 0;
+    else if ((m_iValue & 0x00003) == 0x00001)
+        m_iPlotType = 1;
+    else if ((m_iValue & 0x00003) == 0x00002)
+        m_iPlotType = 2;
+    changePlotType(plot, m_iPlotType, m_iXaxisLeftPlot, m_iXaxisRightPlot);
+    wxString str;
+    str = _T("");
+    if (rb == 0)
+        str = _T("1 - ");
+    else if (rb == 1)
+        str = _T("2 - ");
+    else if (rb == 2)
+        str = _T("3 - ");
+    else if (rb == 3)
+        str = _T("4 - ");
+
+    wxString str2;
+    if (m_iPlotType == 0)
+        str2 = PlotTimeDomain(plot, m_iValue, m_iXaxisLeftPlot, m_iXaxisRightPlot);
+    if (m_iPlotType == 1)
+        str2 = PlotIQ(plot, m_iValue);
+    if (m_iPlotType == 2)
+        str2 = PlotFFT(plot, m_iValue, m_iCenterFreqRatioPlot, m_dCenterFreqRatioPlot,
+                       m_iFreqSpanRatioPlot, m_dFreqSpanRatioPlot, m_iYaxisTopPlot, m_iYaxisBottomPlot);
+    text->SetLabel(str2);
+    plot->settings.title = str + str2;
+}
+
+void DPDTest::OnbtnPlot2ControlsClick(wxCommandEvent &event)
+{
+    wxString str;
+    str = _T("");
+    dlgADPDControls *m_ADPDControls = new dlgADPDControls(this, m_iValuePlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
+
+    if (m_ADPDControls->ShowModal() == wxID_OK)
+    {
+        m_iValuePlot2 = m_ADPDControls->m_iValue;
+        m_iXaxisLeftPlot2 = m_ADPDControls->m_iXaxisLeft;
+        m_iXaxisRightPlot2 = m_ADPDControls->m_iXaxisRight;
+        m_iYaxisTopPlot2 = m_ADPDControls->m_iYaxisTop;
+        m_iYaxisBottomPlot2 = m_ADPDControls->m_iYaxisBottom;
+    }
+    OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
+           m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
+    SaveConfig();
+}
+
+void DPDTest::OnbtnPlot3ControlsClick(wxCommandEvent &event)
+{
+    wxString str;
+    str = _T("");
+    dlgADPDControls *m_ADPDControls = new dlgADPDControls(this, m_iValuePlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
+
+    if (m_ADPDControls->ShowModal() == wxID_OK)
+    {
+        m_iValuePlot3 = m_ADPDControls->m_iValue;
+        m_iXaxisLeftPlot3 = m_ADPDControls->m_iXaxisLeft;
+        m_iXaxisRightPlot3 = m_ADPDControls->m_iXaxisRight;
+        m_iYaxisTopPlot3 = m_ADPDControls->m_iYaxisTop;
+        m_iYaxisBottomPlot3 = m_ADPDControls->m_iYaxisBottom;
+    }
+
+    OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
+           m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
+    SaveConfig();
+}
+
+void DPDTest::OnbtnPlot4ControlsClick(wxCommandEvent &event)
+{
+    wxString str;
+    str = _T("");
+    dlgADPDControls *m_ADPDControls = new dlgADPDControls(this, m_iValuePlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
+
+    if (m_ADPDControls->ShowModal() == wxID_OK)
+    {
+        m_iValuePlot4 = m_ADPDControls->m_iValue;
+        m_iXaxisLeftPlot4 = m_ADPDControls->m_iXaxisLeft;
+        m_iXaxisRightPlot4 = m_ADPDControls->m_iXaxisRight;
+        m_iYaxisTopPlot4 = m_ADPDControls->m_iYaxisTop;
+        m_iYaxisBottomPlot4 = m_ADPDControls->m_iYaxisBottom;
+    }
+    OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
+           m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
+    SaveConfig();
+}
+
+void DPDTest::Initialize(lms_device_t *dataPort)
+{
+    lmsControl = dataPort;
+}
+
+void DPDTest::changePlotType(OpenGLGraph *graph, int plotType, int m_iXaxisLeftPlot, int m_iXaxisRightPlot)
+{
+
+    graph->ResetConstraints();
+    graph->DeletePendingEvents();
     graph->DeleteRelatedConstraints();
-	
-	//for (int j = 0; j < 4; j++) graph->RemoveSeries(j);
 
-	switch (plotType) {
-	case 0: // Time domain
-		graph->settings.markersEnabled = false;
-		graph->settings.useVBO = true;
-		graph->SetInitialDisplayArea(m_iXaxisLeftPlot, m_iXaxisRightPlot, -8192, 8192);
-		graph->SetDrawingMode(GLG_LINE);
-		graph->series[0]->color = 0xFF0000FF;
-		graph->series[1]->color = 0x00AF00FF;
-		graph->series[2]->color = 0x0000FFFF;
-		graph->series[3]->color = 0x2F2F2FFF;		
-		graph->settings.gridXlines = 15;
-		graph->settings.marginTop = 0;
-		graph->settings.marginLeft = 50;
-		graph->settings.fontSize = 5;
-		graph->settings.titleXaxis = "n";
-		graph->settings.titleYaxis = "";
-		graph->settings.xUnits = "";
-		graph->settings.gridXprec = 1;
-		graph->settings.staticGrid = false;
-		break;
-	case 1: // I versors Q
-		graph->settings.useVBO = true;
-		graph->series[0]->color = 0xFF0000FF;
-		graph->series[1]->color = 0x00AF00FF;
-		graph->series[2]->color = 0x0000FFFF;
-		graph->series[3]->color = 0x2F2F2FFF;
-		graph->SetInitialDisplayArea(-8192, 8192, -8192, 8192);
-		graph->SetDrawingMode(GLG_POINTS);
-		graph->settings.titleXaxis = "I";
-		graph->settings.titleYaxis = "Q";
-		graph->settings.gridXlines = 8;
-		graph->settings.gridYlines = 8;
-		graph->settings.marginTop = 0;
-		graph->settings.marginLeft = 50;
-		graph->settings.markersEnabled = false;
-		graph->settings.staticGrid = false;
-		graph->settings.gridXprec = 1;
-		graph->settings.fontSize = 5;
-		break;
-	case 2: // FFT
-		graph->settings.useVBO = true;
-		graph->series[0]->color = 0xFF0000FF;
-		graph->series[1]->color = 0x00AF00FF;
-		graph->series[2]->color = 0x0000FFFF;
-		graph->series[3]->color = 0x2F2F2FFF;
-		graph->SetDrawingMode(GLG_LINE);
-		graph->settings.gridXlines = 15;
-		graph->SetInitialDisplayArea(-mNyquist_MHz * 1000000, mNyquist_MHz * 1000000, -100, 0);
-		//graph->SetInitialDisplayArea(-16000000, 16000000, -100, 0);
-		graph->settings.titleXaxis = "f(MHz)";
-		graph->settings.titleYaxis = "Ampl.";
-		graph->settings.xUnits = "";
-		graph->settings.gridXprec = 1;
-		//graph->settings.yUnits = "dB";
-		graph->settings.markersEnabled = true;
-		graph->settings.marginTop = 0;
-		graph->settings.marginLeft = 50;
-		graph->settings.staticGrid = true;
-		graph->settings.fontSize = 5;
-		break;
-	default:  break;
-	}
+    switch (plotType)
+    {
+    case 0: // Time domain
+        graph->settings.markersEnabled = false;
+        graph->settings.useVBO = true;
+        graph->SetInitialDisplayArea(m_iXaxisLeftPlot, m_iXaxisRightPlot, -8192, 8192);
+        graph->SetDrawingMode(GLG_LINE);
+        graph->series[0]->color = 0xFF0000FF;
+        graph->series[1]->color = 0x00AF00FF;
+        graph->series[2]->color = 0x0000FFFF;
+        graph->series[3]->color = 0x2F2F2FFF;
+        graph->settings.gridXlines = 15;
+        graph->settings.marginTop = 0;
+        graph->settings.marginLeft = 50;
+        graph->settings.fontSize = 5;
+        graph->settings.titleXaxis = "n";
+        graph->settings.titleYaxis = "";
+        graph->settings.xUnits = "";
+        graph->settings.gridXprec = 1;
+        graph->settings.staticGrid = false;
+        break;
+    case 1: // I versors Q
+        graph->settings.useVBO = true;
+        graph->series[0]->color = 0xFF0000FF;
+        graph->series[1]->color = 0x00AF00FF;
+        graph->series[2]->color = 0x0000FFFF;
+        graph->series[3]->color = 0x2F2F2FFF;
+        graph->SetInitialDisplayArea(-8192, 8192, -8192, 8192);
+        graph->SetDrawingMode(GLG_POINTS);
+        graph->settings.titleXaxis = "I";
+        graph->settings.titleYaxis = "Q";
+        graph->settings.gridXlines = 8;
+        graph->settings.gridYlines = 8;
+        graph->settings.marginTop = 0;
+        graph->settings.marginLeft = 50;
+        graph->settings.markersEnabled = false;
+        graph->settings.staticGrid = false;
+        graph->settings.gridXprec = 1;
+        graph->settings.fontSize = 5;
+        break;
+    case 2: // FFT
+        graph->settings.useVBO = true;
+        graph->series[0]->color = 0xFF0000FF;
+        graph->series[1]->color = 0x00AF00FF;
+        graph->series[2]->color = 0x0000FFFF;
+        graph->series[3]->color = 0x2F2F2FFF;
+        graph->SetDrawingMode(GLG_LINE);
+        graph->settings.gridXlines = 15;
+        graph->SetInitialDisplayArea(-mLmsNyquist_MHz * 1000000, mLmsNyquist_MHz * 1000000, -100, 0);
+        graph->settings.titleXaxis = "f(MHz)";
+        graph->settings.titleYaxis = "Ampl.";
+        graph->settings.xUnits = "";
+        graph->settings.gridXprec = 1;
+        //graph->settings.yUnits = "dB";
+        graph->settings.markersEnabled = true;
+        graph->settings.marginTop = 0;
+        graph->settings.marginLeft = 50;
+        graph->settings.staticGrid = true;
+        graph->settings.fontSize = 5;
+        break;
+    default:
+        break;
+    }
 }
 
-int DPDTest::prepare_train(){
-
-	//Qadpd->start();
-
-	double error_nd_m3 = 0.0;
-	double error_nd_m2 = 0.0;
-	double error_nd_m1 = 0.0;
-	double error_nd_p0 = 0.0;
-	double error_nd_p1 = 0.0;
-	double error_nd_p2 = 0.0;
-	double error_nd_p3 = 0.0;
-
-	int SKIP = 100;
-	int LIMIT = 2000;	
-
-	int counter_e = 0;
-
-	// treba da smanji ND za 3
-	counter_e = 0;
-	for (int i = 0; i < samplesReceived - 3; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i + 3].r, x_samples[i + 3].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_p3 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	// treba da smanji ND za 2
-	counter_e = 0;
-	for (int i = 0; i < samplesReceived - 2; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i + 2].r, x_samples[i + 2].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_p2 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	// treba da smanji ND za 1
-	counter_e = 0;
-	for (int i = 0; i < samplesReceived - 1; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i + 1].r, x_samples[i + 1].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_p1 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	// ND ostaje isto
-	counter_e = 0;
-	for (int i = 0; i < samplesReceived; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i].r, x_samples[i].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_p0 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	// ND se povecava za 1
-	counter_e = 0;
-	for (int i = 1; i < samplesReceived; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i - 1].r, x_samples[i - 1].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_m1 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	// ND se povecava za 2
-	counter_e = 0;
-	for (int i = 2; i < samplesReceived; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i - 2].r, x_samples[i - 2].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_m2 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-	
-	// ND se povecava za 3
-	counter_e = 0;
-	for (int i = 3; i < samplesReceived; i++) {
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i - 3].r, x_samples[i - 3].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-		if ((i > SKIP) && (counter_e<LIMIT)) { error_nd_m3 += Qadpd->err; counter_e++; }
-		if (counter_e >= LIMIT) i = samplesReceived;
-	}
-
-	int ind = 0;
-	double minim = 0.0;
-
-	if (error_nd_p3 < error_nd_p2) {
-		ind = 3;
-		minim = error_nd_p3;
-	}
-	else {
-		ind = 2;
-		minim = error_nd_p2;
-	}
-	
-	if (minim > error_nd_p1) {
-		ind = 1;
-		minim = error_nd_p1;
-	}
-
-	if (minim > error_nd_p0) {
-		ind = 0;
-		minim = error_nd_p0;
-	}
-
-	if (minim > error_nd_m1) {
-		ind = -1;
-		minim = error_nd_m1;
-	}
-
-	if (minim > error_nd_m2) {
-		ind = -2;
-		minim = error_nd_m2;
-	}
-
-	if (minim > error_nd_m3) {
-		ind = -3;
-		minim = error_nd_m3;
-	}
-	return (ind);
-}
-	
-
-
-void DPDTest::run_QADPD(){
-
-	Qadpd->start();
-	Qadpd->prepare();
-
-	for (int i = 3; i < samplesReceived-3; i++) {
-		
-		Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i+ind].r, x_samples[i+ind].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
-
-		y_samples[i].r = Qadpd->yI;
-		y_samples[i].i = Qadpd->yQ;
-
-		y1_samples[i].r = Qadpd->yI;
-		y1_samples[i].i = Qadpd->yQ;
-		u_samples[i].r = Qadpd->uI;
-		u_samples[i].i = Qadpd->uQ;
-		// Predistorter errors
-		error_samples[i].r = Qadpd->uI - Qadpd->yI; // Qadpd->err;
-		error_samples[i].i = Qadpd->uQ - Qadpd->yQ; // Qadpd->perr;
-
-		if (QADPD_YPFPGA == false) {
-		}
-	}
-
-	Qadpd->finish();
-
-	//  FFT promeni ovo
-	long temp;
-	double tempd = 0.0;
-	wxString temps;
-	QADPD_FFT1= m_ADPD_txtFFT1->GetValue();
-	QADPD_FFT2 = m_ADPD_txtFFT2->GetValue();
-	
-	temps = m_ADPD_txtFFT3->GetValue();
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_SPAN = tempd;
-	mNyquist_MHz = QADPD_SPAN/2.0;
-
-	QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
-	//QADPD_FFTSAMPLES = 16384;
-
-	wxString temps1;
-
-	kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(QADPD_FFTSAMPLES, 0, 0, 0);
-
-	//calculate  FFT
-
-	m_iWindowFunc = cmbWindowFunction->GetSelection();
-	GenerateWindowCoefficients(m_iWindowFunc, QADPD_FFTSAMPLES);
-
-	if (m_iWindowFunc > 0) //apply window function if it's selected
-	{
-		int index = 0;
-		while (index<QADPD_FFTSAMPLES)
-		{
-			xp1_samples[index].r = xp_samples[index].r * windowFcoefs[index];
-			xp1_samples[index].i = xp_samples[index].i * windowFcoefs[index];
-
-			yp1_samples[index].r = yp_samples[index].r * windowFcoefs[index];
-			yp1_samples[index].i = yp_samples[index].i * windowFcoefs[index];
-
-			x1_samples[index].r = x_samples[index].r * windowFcoefs[index];
-			x1_samples[index].i = x_samples[index].i * windowFcoefs[index];
-
-			y1_samples[index].r = y_samples[index].r * windowFcoefs[index];
-			y1_samples[index].i = y_samples[index].i * windowFcoefs[index];
-			++index;
-		}
-	}
-
-	
-	kiss_fft(m_fftCalcPlan, xp1_samples, xp_fft);
-	kiss_fft(m_fftCalcPlan, yp1_samples, yp_fft);
-	kiss_fft(m_fftCalcPlan, x1_samples, x_fft);
-	kiss_fft(m_fftCalcPlan, y1_samples, y_fft);
-
-	//free allocated memory
-	kiss_fft_free(m_fftCalcPlan);
-
-	OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
-		m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
-	OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
-		m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
-	OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
-		m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
-	OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
-		m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
-
-}
-
-//void DPDTest::OnbtnCalculateFFT(wxCommandEvent& event){	
-//
-//	run_QADPD();
-//
-//}
-
-void DPDTest::OnbtnCaptureClicked(wxCommandEvent& event)
+void DPDTest::InterpolationByTwo(int numSamples, double *x, int filtN, double *filtH, double filtG, double *y)
 {
-	// Borko 11.09.2016
-	// readdata();
-	readdata_qspark();
-	run_QADPD();
+
+    double *x1 = new double[numSamples * 2];
+    double *lout = new double[filtN - 1];
+
+    double iy = 0.0;
+
+    int i = 0;
+    int j = 0;
+
+    for (j = 0; j < filtN - 1; j++)
+        lout[j] = 0.0;
+
+    for (i = 0; i < numSamples; i++)
+    {
+        x1[2 * i] = x[i];
+        x1[2 * i + 1] = 0.0;
+    }
+
+    for (i = 0; i < 2 * numSamples; i++)
+    {
+
+        iy = lout[0] + x1[i] * filtH[0];
+        iy *= filtG;
+
+        for (j = 0; j < filtN - 2; j++)
+            lout[j] = lout[j + 1] + x1[i] * filtH[j + 1];
+        lout[filtN - 2] = x1[i] * filtH[filtN - 1];
+
+        y[i] = iy;
+    }
+
+    if (lout)
+        delete[] lout;
+    if (x1)
+        delete[] x1;
 }
 
-void DPDTest::OnbtnTimerClick(wxCommandEvent& event){
-
-	// reset coeficients
-	Qadpd->reset_coeff();
-	send_coef();
-}
-
-void DPDTest::OnbtnTrain(wxCommandEvent &evt) {
-
-	if (CheckBox_Train->IsChecked() == true){
-		m_bTrain = true;
-	}
-	else{
-		m_bTrain = false;
-	}
-
-	
-}
-
-
-void DPDTest::OnTimer(wxTimerEvent& event)
+void DPDTest::InterpolationByFour(int numSamples, double *xi, double *xq, double *yi, double *yq)
 {
-	// do whatever you want to do every second here
 
-	int temp = 0;
+    double *x1 = new double[numSamples * 2];
+    double *x2 = new double[numSamples * 4];
+    double *x3 = new double[numSamples * 2];
+    double *x4 = new double[numSamples * 4];
+    int i = 0;
 
-	if (timer_enabled==true) {
-		
-		// readdata();
-		readdata_qspark();
-		if (m_bTrain == true) {
-			temp=train();
-			if (temp>=0) send_coef();
-		}
-		run_QADPD();
-	}
+    InterpolationByTwo(numSamples, xi, hb1_n, hb1_h, 2.0, x1);
+    InterpolationByTwo(2 * numSamples, x1, hb2_n, hb2_h, 2.0, x2);
+    InterpolationByTwo(numSamples, xq, hb1_n, hb1_h, 2.0, x3);
+    InterpolationByTwo(2 * numSamples, x3, hb2_n, hb2_h, 2.0, x4);
+
+    for (i = 0; i < 4 * numSamples; i++)
+    {
+        yi[i] = x2[i];
+        yq[i] = x4[i];
+    }
+
+    if (x4)
+        delete[] x4;
+    if (x3)
+        delete[] x3;
+    if (x2)
+        delete[] x2;
+    if (x1)
+        delete[] x1;
 }
 
-void DPDTest::CreateArrays(){
-
-	if (xp_samples != NULL) delete[] xp_samples;
-	if (yp_samples != NULL)	delete[] yp_samples;
-	if (x_samples != NULL)	delete[] x_samples;
-	if (y_samples != NULL)	delete[] y_samples;
-
-	if (xp1_samples != NULL) delete[] xp1_samples;
-	if (yp1_samples != NULL)	delete[] yp1_samples;
-	if (x1_samples != NULL)	delete[] x1_samples;
-	if (y1_samples != NULL)	delete[] y1_samples;
-
-	if (u_samples != NULL)	delete[] u_samples;
-	if (error_samples != NULL)	delete[] error_samples;
-	if (xp_fft != NULL)	delete[] xp_fft;
-	if (yp_fft != NULL)	delete[] yp_fft;
-	if (x_fft != NULL)	delete[] x_fft;
-	if (y_fft != NULL)	delete[] y_fft;
-
-	int samplesReceived = 20480;
-
-	xp_samples = new kiss_fft_cpx[samplesReceived];
-	yp_samples = new kiss_fft_cpx[samplesReceived];
-	x_samples = new kiss_fft_cpx[samplesReceived];
-	y_samples = new kiss_fft_cpx[samplesReceived];
-
-	xp1_samples = new kiss_fft_cpx[samplesReceived];
-	yp1_samples = new kiss_fft_cpx[samplesReceived];
-	x1_samples = new kiss_fft_cpx[samplesReceived];
-	y1_samples = new kiss_fft_cpx[samplesReceived];
-
-	u_samples = new kiss_fft_cpx[samplesReceived];
-	error_samples = new kiss_fft_cpx[samplesReceived];
-	xp_fft = new kiss_fft_cpx[samplesReceived];
-	yp_fft = new kiss_fft_cpx[samplesReceived];
-	x_fft = new kiss_fft_cpx[samplesReceived];
-	y_fft = new kiss_fft_cpx[samplesReceived];
-
-	for (int i = 0; i < 20480; i++) {
-		xp_samples[i].i = 0;
-		xp_samples[i].r = 0;
-		yp_samples[i].i = 0;
-		yp_samples[i].r = 0;
-		x_samples[i].i = 0;
-		x_samples[i].r = 0;
-		y_samples[i].i = 0;
-		y_samples[i].r = 0;
-		////////////////////
-		xp1_samples[i].i = 0;
-		xp1_samples[i].r = 0;
-		yp1_samples[i].i = 0;
-		yp1_samples[i].r = 0;
-		x1_samples[i].i = 0;
-		x1_samples[i].r = 0;
-		y1_samples[i].i = 0;
-		y1_samples[i].r = 0;
-		//////////////
-		u_samples[i].i = 0;
-		u_samples[i].r = 0;
-		error_samples[i].i = 0;
-		error_samples[i].r = 0;
-		xp_fft[i].i = 0;
-		xp_fft[i].r = 0;
-		yp_fft[i].i = 0;
-		yp_fft[i].r = 0;
-		x_fft[i].i = 0;
-		x_fft[i].r = 0;
-		y_fft[i].i = 0;
-		y_fft[i].r = 0;
-	}
-
-}
-
-static int ReadBitStream(const uint8_t* buffer, long offset, const uint8_t bitCount, bool toSigned = false)
+void DPDTest::prepare_train2()
 {
-	const int srcBitCount = 8;
-	int result = 0;
-	int bitsCollected = 0;
-	const uint8_t* src = buffer + (offset / srcBitCount) * 1;
-	offset = offset % srcBitCount;
-	const int bytesNeeded = bitCount / srcBitCount + (bitCount % srcBitCount != 0);
 
-	while (bitsCollected < bitCount)
-	{
-		for (int b = srcBitCount - 1 - offset; b >= 0 && bitsCollected < bitCount; --b)
-		{
-			int bit = ((*src) & (1 << b)) > 0;
-			result <<= 1;
-			result |= bit;
-			offset = 0;
-			++bitsCollected;
-		}
-		offset = 0;
-		++src;
-	}
-	if (toSigned && (result & (1 << (bitCount - 1))))
-	{
-		result <<= 32 - bitCount;
-		result >>= 32 - bitCount;
-	}
-	return result;
+    double l = 0.0;
+    double *xi = new double[16384];
+    double *xq = new double[16384];
+    double *x_interpolated_r = new double[4 * 16384];
+    double *x_interpolated_i = new double[4 * 16384];
+    double *ypi = new double[16384];
+    double *ypq = new double[16384];
+    double *yp_interpolated_r = new double[4 * 16384];
+    double *yp_interpolated_i = new double[4 * 16384];
+
+    int i = 0;
+    // initialization
+    for (i = 0; i < samplesReceived; i++)
+    {
+        if ((i >= 5) && (i < samplesReceived - 5))
+        {
+            xi[i] = x_samples[i + ind].r;
+            xq[i] = x_samples[i + ind].i;
+            ypi[i] = yp_samples[i].r;
+            ypq[i] = yp_samples[i].i;
+        }
+        else
+        {
+            xi[i] = 0.0;
+            xq[i] = 0.0;
+            ypi[i] = 0.0;
+            ypq[i] = 0.0;
+        }
+    }
+
+    InterpolationByFour(16384, xi, xq, x_interpolated_r, x_interpolated_i);
+    InterpolationByFour(16384, ypi, ypq, yp_interpolated_r, yp_interpolated_i);
+
+    kiss_fft_cpx *xp;
+    kiss_fft_cpx *yp;
+    xp = xp_samples;
+    yp = yp_samples;
+    int SKIP = 300;
+    int LIMIT = samplesReceived - 100;
+    int counter_e = 0;
+    double error = 0.0;
+    double minim = 0.0;
+    int ind2 = 0;
+    int k = 0;
+
+    for (k = -5; k <= 5; k++)
+    { // -5, -4, -3, -2, -1, 0 (orig.), 1, 2, 3, 4, 5
+        error = 0.0;
+        counter_e = 0;
+        Qadpd->prepare();
+        for (i = 1; i < samplesReceived - 11; i++)
+        {
+            Qadpd->oeval(xp[i].r, xp[i].i, x_interpolated_r[4 * i + 37 + k], x_interpolated_i[4 * i + 37 + k],
+                         yp_interpolated_r[4 * i + 37], yp_interpolated_i[4 * i + 37], QADPD_YPFPGA);
+            if ((i > SKIP) && (counter_e < LIMIT))
+            {
+                error += Qadpd->err;
+                counter_e++;
+            }
+            if (counter_e >= LIMIT)
+                i = samplesReceived; // end loop
+        }
+        if (k == -5)
+        {
+            ind2 = -5;
+            minim = error;
+        }
+        else if (error < minim)
+        {
+            ind2 = k;
+            minim = error;
+        }
+    }
+
+    fprintf(fp, "train ind2: %d \n", ind2);
+
+    for (i = 0; i < samplesReceived - 10; i++)
+    {
+        xi[i] = x_interpolated_r[4 * i + 37 + ind];
+        xq[i] = x_interpolated_i[4 * i + 37 + ind];
+    }
+
+    for (i = 0; i < samplesReceived - 11; i++)
+    {
+        x_samples[i].r = x_interpolated_r[4 * i + 37 + ind2];
+        x_samples[i].i = x_interpolated_i[4 * i + 37 + ind2];
+        yp_samples[i].r = yp_interpolated_r[4 * i + 37];
+        yp_samples[i].i = yp_interpolated_i[4 * i + 37];
+    }
+
+    // remove data
+    if (xi)
+        delete[] xi;
+    if (xq)
+        delete[] xq;
+    if (x_interpolated_r)
+        delete[] x_interpolated_r;
+    if (x_interpolated_i)
+        delete[] x_interpolated_i;
+    if (ypi)
+        delete[] ypi;
+    if (ypq)
+        delete[] ypq;
+    if (yp_interpolated_r)
+        delete[] yp_interpolated_r;
+    if (yp_interpolated_i)
+        delete[] yp_interpolated_i;
 }
 
-void DPDTest::readdata_qspark() //(wxCommandEvent& event)
+int DPDTest::prepare_train()
 {
-	if (mDataPort == nullptr)
-	{
-		wxMessageBox("Not connected");
-		return;
-	}
-	//long samplesToRead = 20480;
-	long samplesToRead = 16384;
-	//txtSamplesCount->GetValue().ToLong(&samplesToRead);
 
-	const int bitsInSample = 14;
-	const int bytesToRead = (samplesToRead * 6 * bitsInSample / 8.0 + 0.5);
+    double error_nd_m5 = 0.0;
+    double error_nd_m4 = 0.0;
+    double error_nd_m3 = 0.0;
+    double error_nd_m2 = 0.0;
+    double error_nd_m1 = 0.0;
+    double error_nd_p0 = 0.0;
+    double error_nd_p1 = 0.0;
+    double error_nd_p2 = 0.0;
+    double error_nd_p3 = 0.0;
+    double error_nd_p4 = 0.0;
+    double error_nd_p5 = 0.0;
 
-	mDataPort->WriteRegister(0x0040, samplesToRead);
+    int SKIP = 300;
+    int LIMIT = samplesReceived - 100;
 
-	unsigned char *buffer = new unsigned char[bytesToRead];
-	memset(buffer, 0, bytesToRead);
+    int counter_e = 0;
 
-	//switch off Rx/Tx
-	uint16_t interface_ctrl_000A;
-	mDataPort->ReadRegister(0x000A, interface_ctrl_000A);
-	mDataPort->WriteRegister(0x000A, interface_ctrl_000A & ~0x1);
+    double xpr = 0.0;
+    double xpi = 0.0;
 
-	//enable MIMO mode, 12 bit compressed values
-	uint16_t smpl_width; // 0-16 bit, 1-14 bit, 2-12 bit
-	if (bitsInSample == 12)
-		smpl_width = 2;
-	else if (bitsInSample == 14)
-		smpl_width = 1;
-	else if (bitsInSample == 16)
-		smpl_width = 0;
-	else
-		smpl_width = 2;
-	mDataPort->WriteRegister(0x0007, 1);
+    double ypr = 0.0;
+    double ypi = 0.0;
 
-	uint16_t interface_cfg_0008;
-	mDataPort->ReadRegister(0x0008, interface_cfg_0008);
-	interface_cfg_0008 = (interface_cfg_0008 & ~0x3) | smpl_width;
-	mDataPort->WriteRegister(0x0008, interface_cfg_0008);
+    kiss_fft_cpx *xp;
+    kiss_fft_cpx *yp;
+    xp = xp_samples;
+    yp = yp_samples;
 
-	//Reset USB FIFO
-	{
-		LMS64CProtocol* port = dynamic_cast<LMS64CProtocol *>(mDataPort);
-		LMS64CProtocol::GenericPacket ctrPkt;
-		ctrPkt.cmd = CMD_USB_FIFO_RST;
-		ctrPkt.outBuffer.push_back(0x01);
-		port->TransferPacket(ctrPkt);
-		ctrPkt.outBuffer[0] = 0x00;
-		port->TransferPacket(ctrPkt);
-	}
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived - 5; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i + 5].r, x_samples[i + 5].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p5 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-	//switch on Rx
-	interface_ctrl_000A;
-	mDataPort->ReadRegister(0x000A, interface_ctrl_000A);
-	mDataPort->WriteRegister(0x000A, interface_ctrl_000A | 0x1);
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived - 4; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i + 4].r, x_samples[i + 4].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p4 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-	mDataPort->WriteRegister(0x0041, 0x0); //0x1-burst, 0x3-continuos
-	mDataPort->WriteRegister(0x0041, 0x1); //0x1-burst, 0x3-continuos
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived - 3; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i + 3].r, x_samples[i + 3].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p3 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-	int handle = mDataPort->BeginDataReading((char*)buffer, bytesToRead);
-	if (mDataPort->WaitForReading(handle, 1000) != 1)
-	{
-		wxMessageBox("Failed to receive data");
-	}
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived - 2; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i + 2].r, x_samples[i + 2].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p2 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-	long btr = bytesToRead;
-	int bytesReceived = mDataPort->FinishDataReading((char*)buffer, btr, handle);
-	uint8_t temp;
-	for (int i = 0; i < bytesToRead / 2; ++i)
-	{
-		temp = buffer[bytesToRead - 1 - i];
-		buffer[bytesToRead - 1 - i] = buffer[i];
-		buffer[i] = temp;
-	}
-	if (bytesReceived > 0)
-	{
-		int samplesReceived = samplesToRead;
-		int index = samplesToRead - 1;
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived - 1; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i + 1].r, x_samples[i + 1].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p1 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-		long bitOffset = 0;
-		bitOffset = bytesToRead * 8 - samplesToRead * 6 * bitsInSample;
-		//extract x samples
-		for (int i = 0; i < samplesToRead; ++i)
-		{
-		
-			x_samples[index].i = (int) (QADPD_GAIN*ReadBitStream(buffer, bitOffset, bitsInSample, true));
-			x1_samples[index].i = x_samples[index].i;
-			bitOffset += bitsInSample;
-			
-			x_samples[index].r = (int)(QADPD_GAIN*ReadBitStream(buffer, bitOffset, bitsInSample, true));
-			x1_samples[index].r = x_samples[index].r;
-			bitOffset += bitsInSample;
+    counter_e = 0;
+    for (int i = 0; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i].r, x_samples[i].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_p0 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-			y_samples[index].r = 0;  
-			y1_samples[index].r = 0;  
-			error_samples[index].r = 0; 
-			u_samples[index].r = 0; 
+    counter_e = 0;
+    for (int i = 1; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i - 1].r, x_samples[i - 1].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_m1 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-			y_samples[index].i = 0; 
-			y1_samples[index].i = 0; 
-			error_samples[index].i = 0;  			
-			u_samples[index].i = 0;
+    counter_e = 0;
+    for (int i = 2; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i - 2].r, x_samples[i - 2].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_m2 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-			--index;
-		}
+    counter_e = 0;
+    for (int i = 3; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i - 3].r, x_samples[i - 3].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_m3 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-		index = samplesToRead - 1;
-		for (int i = 0; i < samplesToRead; ++i)
-		{
-			//yp i
-			yp_samples[index].i = ReadBitStream(buffer, bitOffset, bitsInSample, true);
-			
-			yp1_samples[index].i = yp_samples[index].i;	
-			bitOffset += bitsInSample;
+    counter_e = 0;
+    for (int i = 4; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i - 4].r, x_samples[i - 4].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_m4 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-			//yp q
-			yp_samples[index].r = ReadBitStream(buffer, bitOffset, bitsInSample, true);
-			
-			yp1_samples[index].r = yp_samples[index].r;	
-			bitOffset += bitsInSample;
+    counter_e = 0;
+    for (int i = 5; i < samplesReceived; i++)
+    {
+        Qadpd->oeval(xp[i].r, xp[i].i, x_samples[i - 5].r, x_samples[i - 5].i, yp[i].r, yp[i].i, QADPD_YPFPGA);
+        if ((i > SKIP) && (counter_e < LIMIT))
+        {
+            error_nd_m5 += Qadpd->err;
+            counter_e++;
+        }
+        if (counter_e >= LIMIT)
+            i = samplesReceived;
+    }
 
-			//xp i
-			xp_samples[index].i = ReadBitStream(buffer, bitOffset, bitsInSample, true);
-			
-			xp1_samples[index].i = xp_samples[index].i;	
-			bitOffset += bitsInSample;
-			//xp q
-			xp_samples[index].r = ReadBitStream(buffer, bitOffset, bitsInSample, true);
-			
-			xp1_samples[index].r = xp_samples[index].r;	
-			bitOffset += bitsInSample;
-			--index;
-		}
+    int ind = 0;
+    double minim = 0.0;
 
-		
-	}
-	delete buffer;
-	buffer = NULL;
+    if (error_nd_p5 < error_nd_p4)
+    {
+        ind = 5;
+        minim = error_nd_p5;
+    }
+    else
+    {
+        ind = 4;
+        minim = error_nd_p4;
+    }
 
-	// bilo je i ovo
-	QADPD_SKIP = 0;
+    if (minim > error_nd_p3)
+    {
+        ind = 3;
+        minim = error_nd_p3;
+    }
+    if (minim > error_nd_p2)
+    {
+        ind = 2;
+        minim = error_nd_p2;
+    }
 
+    if (minim > error_nd_p1)
+    {
+        ind = 1;
+        minim = error_nd_p1;
+    }
+
+    if (minim > error_nd_p0)
+    {
+        ind = 0;
+        minim = error_nd_p0;
+    }
+
+    if (minim > error_nd_m1)
+    {
+        ind = -1;
+        minim = error_nd_m1;
+    }
+
+    if (minim > error_nd_m2)
+    {
+        ind = -2;
+        minim = error_nd_m2;
+    }
+
+    if (minim > error_nd_m3)
+    {
+        ind = -3;
+        minim = error_nd_m3;
+    }
+
+    if (minim > error_nd_m4)
+    {
+        ind = -4;
+        minim = error_nd_m4;
+    }
+
+    if (minim > error_nd_m5)
+    {
+        ind = -5;
+        minim = error_nd_m5;
+    }
+    return (ind);
 }
 
-
-
-int DPDTest::SPI_write(lime::IConnection* dataPort, uint16_t address, uint16_t data) //  LMScomms
+void DPDTest::run_QADPD()
 {
-	
-	
-	uint16_t maddress = 2 * 32; // offset
-	uint16_t tempa = address + maddress;
-	int ret = 0;
-	ret=dataPort->WriteRegister(tempa, data);
-	return ret;
-	
+
+    Qadpd->start();
+    Qadpd->prepare();
+    for (int i = 3; i < samplesReceived - 3; i++)
+    {
+
+        Qadpd->oeval(xp_samples[i].r, xp_samples[i].i, x_samples[i + ind].r,
+                     x_samples[i + ind].i, yp_samples[i].r, yp_samples[i].i, QADPD_YPFPGA);
+
+        y_samples[i].r = Qadpd->yI;
+        y_samples[i].i = Qadpd->yQ;
+        y1_samples[i].r = Qadpd->yI;
+        y1_samples[i].i = Qadpd->yQ;
+        u_samples[i].r = Qadpd->uI;
+        u_samples[i].i = Qadpd->uQ;
+        error_samples[i].r = Qadpd->uI - Qadpd->yI;
+        error_samples[i].i = Qadpd->uQ - Qadpd->yQ;
+        if (QADPD_YPFPGA == false)
+        {
+        }
+    }
+
+    Qadpd->finish();
+
+    double tempd = 0.0;
+    wxString temps;
+    QADPD_FFT1 = m_ADPD_txtFFT1->GetValue();
+    QADPD_FFT2 = m_ADPD_txtFFT2->GetValue();
+
+    temps = m_ADPD_txtFFT3->GetValue();
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
+    QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
+    wxString temps1;
+    kiss_fft_cfg m_fftCalcPlan = kiss_fft_alloc(QADPD_FFTSAMPLES, 0, 0, 0);
+
+    m_iWindowFunc = cmbWindowFunction->GetSelection();
+    GenerateWindowCoefficients(m_iWindowFunc, QADPD_FFTSAMPLES);
+
+    if (m_iWindowFunc > 0) //apply window function if it's selected
+    {
+        int index = 0;
+        while (index < QADPD_FFTSAMPLES)
+        {
+            xp1_samples[index].r = xp_samples[index].r * windowFcoefs[index];
+            xp1_samples[index].i = xp_samples[index].i * windowFcoefs[index];
+
+            yp1_samples[index].r = yp_samples[index].r * windowFcoefs[index];
+            yp1_samples[index].i = yp_samples[index].i * windowFcoefs[index];
+
+            x1_samples[index].r = x_samples[index].r * windowFcoefs[index];
+            x1_samples[index].i = x_samples[index].i * windowFcoefs[index];
+
+            y1_samples[index].r = y_samples[index].r * windowFcoefs[index];
+            y1_samples[index].i = y_samples[index].i * windowFcoefs[index];
+            ++index;
+        }
+    }
+
+    kiss_fft(m_fftCalcPlan, xp1_samples, xp_fft);
+    kiss_fft(m_fftCalcPlan, yp1_samples, yp_fft);
+    kiss_fft(m_fftCalcPlan, x1_samples, x_fft);
+    kiss_fft(m_fftCalcPlan, y1_samples, y_fft);
+    kiss_fft_free(m_fftCalcPlan);
+    OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
+           m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
+    OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
+           m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
+    OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
+           m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
+    OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
+           m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
 }
 
+void DPDTest::OnbtnCaptureClicked(wxCommandEvent &event)
+{
+    readdata_qspark2();
+    run_QADPD();
+}
+
+void DPDTest::OnbtnTimerClick(wxCommandEvent &event)
+{
+    Qadpd->reset_coeff();
+    send_coef();
+}
+
+void DPDTest::OnbtnTrain(wxCommandEvent &evt)
+{
+
+    if (CheckBox_Train->IsChecked() == true)
+        m_bTrain = true;
+    else
+        m_bTrain = false;
+}
+
+void DPDTest::OnTimer(wxTimerEvent &event)
+{
+    int temp = 0;
+
+    if (timer_enabled == true)
+    {
+        if (m_iThread == 0)
+        {
+            threadReadData();
+            m_iThread = 1;
+        }
+    }
+}
+
+void DPDTest::CreateArrays()
+{
+
+    if (xp_samples != NULL)
+        delete[] xp_samples;
+    if (yp_samples != NULL)
+        delete[] yp_samples;
+
+    if (x_samples != NULL)
+        delete[] x_samples;
+    if (y_samples != NULL)
+        delete[] y_samples;
+
+    if (xp1_samples != NULL)
+        delete[] xp1_samples;
+    if (yp1_samples != NULL)
+        delete[] yp1_samples;
+
+    if (x1_samples != NULL)
+        delete[] x1_samples;
+    if (y1_samples != NULL)
+        delete[] y1_samples;
+
+    if (u_samples != NULL)
+        delete[] u_samples;
+    if (error_samples != NULL)
+        delete[] error_samples;
+
+    if (xp_fft != NULL)
+        delete[] xp_fft;
+    if (yp_fft != NULL)
+        delete[] yp_fft;
+
+    if (x_fft != NULL)
+        delete[] x_fft;
+    if (y_fft != NULL)
+        delete[] y_fft;
+
+    int samplesReceived = 32768;
+
+    xp_samples = new kiss_fft_cpx[samplesReceived];
+    yp_samples = new kiss_fft_cpx[samplesReceived];
+
+    x_samples = new kiss_fft_cpx[samplesReceived];
+    y_samples = new kiss_fft_cpx[samplesReceived];
+
+    xp1_samples = new kiss_fft_cpx[samplesReceived];
+    yp1_samples = new kiss_fft_cpx[samplesReceived];
+
+    x1_samples = new kiss_fft_cpx[samplesReceived];
+    y1_samples = new kiss_fft_cpx[samplesReceived];
+
+    u_samples = new kiss_fft_cpx[samplesReceived];
+    error_samples = new kiss_fft_cpx[samplesReceived];
+
+    xp_fft = new kiss_fft_cpx[samplesReceived];
+    yp_fft = new kiss_fft_cpx[samplesReceived];
+    x_fft = new kiss_fft_cpx[samplesReceived];
+    y_fft = new kiss_fft_cpx[samplesReceived];
+
+    for (int i = 0; i < 32768; i++)
+    {
+
+        xp_samples[i].i = 0;
+        xp_samples[i].r = 0;
+        yp_samples[i].i = 0;
+        yp_samples[i].r = 0;
+
+        x_samples[i].i = 0;
+        x_samples[i].r = 0;
+        y_samples[i].i = 0;
+        y_samples[i].r = 0;
+
+        xp1_samples[i].i = 0;
+        xp1_samples[i].r = 0;
+        yp1_samples[i].i = 0;
+        yp1_samples[i].r = 0;
+
+        x1_samples[i].i = 0;
+        x1_samples[i].r = 0;
+        y1_samples[i].i = 0;
+        y1_samples[i].r = 0;
+
+        u_samples[i].i = 0;
+        u_samples[i].r = 0;
+
+        error_samples[i].i = 0;
+        error_samples[i].r = 0;
+
+        xp_fft[i].i = 0;
+        xp_fft[i].r = 0;
+        yp_fft[i].i = 0;
+        yp_fft[i].r = 0;
+
+        x_fft[i].i = 0;
+        x_fft[i].r = 0;
+        y_fft[i].i = 0;
+        y_fft[i].r = 0;
+    }
+}
+
+void DPDTest::SaveWfm()
+{
+
+    int i, q, k, j;
+    std::string fname;
+    FILE *fp;
+
+    int Limit = 307200;
+
+    fname = "xp.wfm";
+    fp = fopen(fname.c_str(), "w");
+    j = 0;
+    k = 0;
+    while (j < Limit)
+    {
+        i = (int)(xp_samples[k].r * 4.0);
+        q = (int)(xp_samples[k].i * 4.0);
+        fprintf(fp, "%c%c%c%c", 0xFF & (i >> 8), 0xFF & (i), 0xFF & (q >> 8), 0xFF & (q));
+        if (k >= 16383)
+            k = 0;
+        else
+            k++;
+        j++;
+    }
+    fclose(fp);
+
+    fname = "yp.wfm";
+    fp = fopen(fname.c_str(), "w");
+    j = 0;
+    k = 0;
+    while (j < Limit)
+    {
+        i = (int)(yp_samples[k].r * 4.0);
+        q = (int)(yp_samples[k].i * 4.0);
+        fprintf(fp, "%c%c%c%c", 0xFF & (i >> 8), 0xFF & (i), 0xFF & (q >> 8), 0xFF & (q));
+        if (k >= 16383)
+            k = 0;
+        else
+            k++;
+        j++;
+    }
+    fclose(fp);
+
+    fname = "x.wfm";
+    fp = fopen(fname.c_str(), "w");
+    j = 0;
+    k = 0;
+    while (j < Limit)
+    {
+        i = (int)(x_samples[k].r * 4.0);
+        q = (int)(x_samples[k].i * 4.0);
+        fprintf(fp, "%c%c%c%c", 0xFF & (i >> 8), 0xFF & (i), 0xFF & (q >> 8), 0xFF & (q));
+        if (k >= 16383)
+            k = 0;
+        else
+            k++;
+        j++;
+    }
+    fclose(fp);
+}
+
+int DPDTest::LMS_ReadFPGARegs(lms_device_t *device, uint32_t *address, uint16_t *data, int num)
+{
+
+    int i = 0;
+    uint32_t vals[100];
+    uint32_t ret;
+
+    for (i = 0; i < num; i++)
+        data[i] = 0; // ini
+
+    if (device == nullptr)
+    {
+        return -1;
+    }
+    LMS7_Device *lms = (LMS7_Device *)device;
+
+    auto conn = lms->GetConnection();
+    if (conn == nullptr)
+    {
+        return -1;
+    }
+
+    ret = conn->ReadRegisters(address, vals, num);
+    if (ret != LMS_SUCCESS)
+        return ret;
+
+    for (i = 0; i < num; i++)
+        data[i] = vals[i];
+    return LMS_SUCCESS;
+}
+
+void DPDTest::threadReadData()
+{
+    mWorkerThread = std::thread(&DPDTest::readdata_qspark, this);
+}
+
+void DPDTest::OnReadingFinished(wxCommandEvent &event)
+{
+
+    double *a = new double[32768];
+    double *b = new double[32768];
+    double *c = new double[32768];
+    double *d = new double[32768];
+
+    for (int i = 0; i < 32768; i++)
+    {
+        a[i] = b[i] = c[i] = d[i] = 0.0;
+    }
+
+    int nd = 0;
+    double pow_u = 0;
+    double pow_uy = 0;
+
+    int temp = 0;
+    mWorkerThread.join();
+    if (m_iThread >= 0)
+        m_iThread = 0;
+
+    temp = train();
+    temp = Qadpd->update_coeff(range);
+    run_QADPD();
+    for (int i = 0; i < samplesReceived; i++)
+    {
+        a[i] = (double)y_samples[i].r - u_samples[i].r;
+        b[i] = (double)u_samples[i].r;
+        c[i] = (double)y_samples[i].i - u_samples[i].i;
+        d[i] = (double)u_samples[i].i;
+    }
+
+    pow_u = CalculateSignalPower(samplesReceived, b, d, (1 << (QADPD_AM - 1)));
+    pow_uy = CalculateSignalPower(samplesReceived, a, c, (1 << (QADPD_AM - 1)));
+
+    if (m_bTrain == true)
+    {
+        if (pow_u >= 0.03)
+            send_coef();
+    }
+}
+
+#if 1
+int DPDTest::readdata()
+{
+
+    int i = 0;
+    int j = 0;
+    int16_t value1 = 0;
+    uint16_t value2 = 0;
+    int status = 0;
+
+    uint32_t addr[128];
+    uint16_t data[128];
+
+    for (i = 0; i <= 3; i++)
+    {
+        for (j = 0; j <= 31; j++)
+        {
+            addr[4 * i + j] = (10 + i) * 32 + j;
+            data[4 * i + j] = 0;
+        }
+    }
+
+    if (!LMS_IsOpen(lmsControl, 1))
+    {
+        wxMessageBox("Not connected");
+        status = -1;
+    }
+    else
+    {
+
+        int numPac = 128;
+        int samplesReceived1 = 1024;
+
+        int k = numPac / 8;
+
+        SPI_write(lmsControl, 10, 0);
+        SPI_write(lmsControl, 9, 1);
+        SPI_write(lmsControl, 9, 0);
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+        for (i = 0; i < samplesReceived1; i++)
+        { // 1024
+
+            SPI_write(lmsControl, 10, i);
+            std::this_thread::sleep_for(std::chrono::microseconds(10));
+
+            status = LMS_ReadFPGARegs(lmsControl, addr, data, numPac);
+
+            if (status == -1)
+                i = samplesReceived1;
+            else
+            {
+                for (j = 0; j < k; j++)
+                { // 0..15
+
+                    value1 = data[8 * j + 0] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    xp_samples[k * i + j].r = value1;
+                    xp1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 1] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    xp_samples[k * i + j].i = value1;
+                    xp1_samples[k * i + j].i = value1;
+
+                    value1 = data[8 * j + 2] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    yp_samples[k * i + j].r = value1;
+                    yp1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 3] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    yp_samples[k * i + j].i = value1;
+                    yp1_samples[k * i + j].i = value1;
+
+                    value1 = data[8 * j + 4] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    x_samples[k * i + j].r = (int)(QADPD_GAIN * value1);
+                    x1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 5] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    x_samples[k * i + j].i = (int)(QADPD_GAIN * value1);
+                    x1_samples[k * i + j].i = value1;
+                }
+            }
+        }
+
+        samplesReceived = 16384;
+        QADPD_SKIP = 100;
+
+        for (int i = 0; i < samplesReceived; i++)
+        {
+            y_samples[i].r = 0;
+            y_samples[i].i = 0;
+            y1_samples[i].r = 0;
+            y1_samples[i].i = 0;
+            error_samples[i].r = 0;
+            error_samples[i].i = 0;
+            u_samples[i].r = 0;
+            u_samples[i].i = 0;
+        }
+    }
+
+    if (status == -1)
+        m_iThread = -1;
+
+    wxCommandEvent evt;
+    evt.SetEventObject(this);
+    evt.SetId(ID_READING_FINISHED_EVENT);
+    evt.SetEventType(wxEVT_COMMAND_THREAD);
+    evt.SetString(status == 0 ? _("Reading Completed!") : _("Reading failed!\n"));
+    wxPostEvent(this, evt);
+    return status;
+}
+#endif
+
+#if 1
+
+int DPDTest::readdata2()
+{
+
+    int i = 0;
+    int j = 0;
+    int16_t value1 = 0;
+    uint16_t value2 = 0;
+    int status = 0;
+    int numPac = 128;
+
+    uint32_t addr[128];
+    uint16_t data[128];
+
+    for (i = 0; i <= 3; i++)
+    {
+        for (j = 0; j <= 31; j++)
+        {
+            addr[4 * i + j] = (10 + i) * 32 + j;
+            data[4 * i + j] = 0;
+        }
+    }
+
+    if (!LMS_IsOpen(lmsControl, 1))
+    {
+        wxMessageBox("Not connected");
+        status = -1;
+    }
+    else
+    {
+
+        int samplesReceived1 = 1024;
+        int k = numPac / 8;
+
+        SPI_write(lmsControl, 10, 0);
+        SPI_write(lmsControl, 9, 1);
+        SPI_write(lmsControl, 9, 0);
+
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+        for (i = 0; i < samplesReceived1; i++)
+        {
+
+            SPI_write(lmsControl, 10, i);
+            status = LMS_ReadFPGARegs(lmsControl, addr, data, numPac);
+
+            if (status == -1)
+                i = samplesReceived1;
+            else
+            {
+                for (j = 0; j < k; j++)
+                {
+
+                    value1 = data[8 * j + 0] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    xp_samples[k * i + j].r = value1;
+                    xp1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 1] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    xp_samples[k * i + j].i = value1;
+                    xp1_samples[k * i + j].i = value1;
+
+                    value1 = data[8 * j + 2] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    yp_samples[k * i + j].r = value1;
+                    yp1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 3] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    yp_samples[k * i + j].i = value1;
+                    yp1_samples[k * i + j].i = value1;
+
+                    value1 = data[8 * j + 4] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    x_samples[k * i + j].r = (int)(QADPD_GAIN * value1);
+                    x1_samples[k * i + j].r = value1;
+
+                    value1 = data[8 * j + 5] & 0xFFFF;
+                    value1 = value1 >> 2;
+                    x_samples[k * i + j].i = (int)(QADPD_GAIN * value1);
+                    x1_samples[k * i + j].i = value1;
+                }
+            }
+        }
+
+        samplesReceived = 2 * 8192;
+        QADPD_SKIP = 100;
+
+        for (int i = 0; i < samplesReceived; i++)
+        {
+            y_samples[i].r = 0;
+            y_samples[i].i = 0;
+            y1_samples[i].r = 0;
+            y1_samples[i].i = 0;
+            error_samples[i].r = 0;
+            error_samples[i].i = 0;
+            u_samples[i].r = 0;
+            u_samples[i].i = 0;
+        }
+    }
+    return status;
+}
+#endif
+
+int DPDTest::SPI_write(lms_device_t *lmsControl, uint16_t address, uint16_t data)
+{
+
+    // LLLLLLLLHL
+    // 0b00000000010 00000
+    uint16_t maddress = 64;
+    uint16_t tempa = address + maddress;
+    int ret = 0;
+    if (LMS_WriteFPGAReg(lmsControl, tempa, data) != 0)
+        ret = -1;
+    return ret;
+}
+
+int DPDTest::SPI_read(lms_device_t *lmsControl, uint16_t address, uint16_t *data)
+{
+
+    // LLLLLLLLHL
+    // 0b00000000010 00000
+    uint16_t maddress = 64;
+    uint16_t tempa = address + maddress;
+    int ret = 0;
+
+    uint16_t regValue = 0x0000;
+    LMS_ReadFPGAReg(lmsControl, tempa, &regValue);
+    *data = regValue;
+    return ret;
+}
+
+int DPDTest::SelectSource(int CHA) //  LMScomms
+{
+
+    int ret = 0;
+    uint16_t maddress = 0x0041; // adresa registra
+    uint16_t regValue = 0x0000;
+    uint16_t mask = 0x0000;
+    int lsb = 4;
+    int msb = 6;
+    uint16_t code = 0x0000;
+
+    LMS_ReadFPGAReg(lmsControl, maddress, &regValue);
+    mask = (~(~0 << (msb - lsb + 1))) << lsb;
+    regValue &= ~mask;
+    if (CHA == 1)
+        code = 1; // select CHA
+    else
+        code = 3;                     // select CHB
+    regValue |= (code << lsb) & mask; // promena u skladu sa podesavanjima GUI
+
+    if (LMS_WriteFPGAReg(lmsControl, maddress, regValue) != 0)
+        ret = -1;
+    return ret;
+}
 
 void DPDTest::SetNyquist(float Nyquist_MHz)
 {
-    mNyquist_MHz = Nyquist_MHz;
-	OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
-		m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
-	OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
-		m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
-	OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
-		m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
-	OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
-		m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
+
+    double mLmsNyquist_MHz1;
+    if (LMS_GetSampleRate(lmsControl, LMS_CH_TX, 0, &mLmsNyquist_MHz1, nullptr) != 0)
+        mLmsNyquist_MHz1 = 1;
+    else
+        mLmsNyquist_MHz1 /= 1e6;
+
+    mLmsNyquist_MHz = (float)mLmsNyquist_MHz1;
+    double ADCNyquistMHz;
+    if (LMS_GetSampleRate(lmsControl, LMS_CH_RX, 4, &ADCNyquistMHz, nullptr) != 0)
+        ADCNyquistMHz = 1;
+    //mLmsNyquist_MHz = Nyquist_MHz;
+    QADPD_SPAN = 2 * mLmsNyquist_MHz; // Nyquist_MHz;
+
+    wxString temps;
+    temps.Printf(_T("%9.4f"), QADPD_SPAN);
+
+    m_ADPD_txtFFT3->SetValue(temps);
+    OnPlot(m_iValuePlot1, m_plot_ADPD0, StaticText_PLOT1, m_iCenterFreqRatioPlot1, m_dCenterFreqRatioPlot1,
+           m_iFreqSpanRatioPlot1, m_dFreqSpanRatioPlot1, m_iYaxisTopPlot1, m_iYaxisBottomPlot1, 0, m_iXaxisLeftPlot1, m_iXaxisRightPlot1);
+    OnPlot(m_iValuePlot2, m_plot_ADPD1, StaticText_PLOT2, m_iCenterFreqRatioPlot2, m_dCenterFreqRatioPlot2,
+           m_iFreqSpanRatioPlot2, m_dFreqSpanRatioPlot2, m_iYaxisTopPlot2, m_iYaxisBottomPlot2, 1, m_iXaxisLeftPlot2, m_iXaxisRightPlot2);
+    OnPlot(m_iValuePlot3, m_plot_ADPD2, StaticText_PLOT3, m_iCenterFreqRatioPlot3, m_dCenterFreqRatioPlot3,
+           m_iFreqSpanRatioPlot3, m_dFreqSpanRatioPlot3, m_iYaxisTopPlot3, m_iYaxisBottomPlot3, 2, m_iXaxisLeftPlot3, m_iXaxisRightPlot3);
+    OnPlot(m_iValuePlot4, m_plot_ADPD3, StaticText_PLOT4, m_iCenterFreqRatioPlot4, m_dCenterFreqRatioPlot4,
+           m_iFreqSpanRatioPlot4, m_dFreqSpanRatioPlot4, m_iYaxisTopPlot4, m_iYaxisBottomPlot4, 3, m_iXaxisLeftPlot4, m_iXaxisRightPlot4);
 }
 
-/** @brief Normalizes the fft output and displays results in given graph
-*/
-wxString DPDTest::PlotFFT(OpenGLGraph* plot, int m_iValue, int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
-	int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot, int m_iYaxisTopPlot, int  m_iYaxisBottomPlot) //, const float nyquist_MHz)
+wxString DPDTest::PlotFFT(OpenGLGraph *plot, int m_iValue, int m_iCenterFreqRatioPlot, double m_dCenterFreqRatioPlot,
+                          int m_iFreqSpanRatioPlot, double m_dFreqSpanRatioPlot, int m_iYaxisTopPlot, int m_iYaxisBottomPlot) //, const float nyquist_MHz)
 {
-    
-	int plots = 0;
-	wxString str;
-	str = _T("FFT: ");
 
-	wxString temps;
-	double tempd = 0.0;
+    int plots = 0;
+    wxString str;
+    str = _T("FFT: ");
+    wxString temps;
+    double tempd = 0.0;
 
-	temps = m_ADPD_txtFFT3->GetValue();
-	((wxString)temps).ToDouble(&tempd);
-	QADPD_SPAN = tempd;
-	mNyquist_MHz = QADPD_SPAN/2.0;
+    temps = m_ADPD_txtFFT3->GetValue();
+    ((wxString)temps).ToDouble(&tempd);
+    QADPD_SPAN = tempd;
 
-	QADPD_FFT1 = m_ADPD_txtFFT1->GetValue();
-	QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
-	//QADPD_FFTSAMPLES = 16384;
-	int	samplesCount = QADPD_FFTSAMPLES;
-	//int	samplesCount = samplesReceived;
+    QADPD_FFT1 = m_ADPD_txtFFT1->GetValue();
+    QADPD_FFTSAMPLES = pow(2, QADPD_FFT1);
+    int samplesCount = QADPD_FFTSAMPLES;
 
-	float nyquist_MHz = mNyquist_MHz;
-	vector<float> freqAxis; //frequency domain x axis
+    float nyquist_MHz = mLmsNyquist_MHz;
+    vector<float> freqAxis;
     freqAxis.resize(samplesCount, 0);
     for (int i = 0; i < samplesCount; ++i)
-        freqAxis[i] = 1e6*(-nyquist_MHz + 2 * (i + 1)*nyquist_MHz / samplesCount);
+        freqAxis[i] = 1e6 * (-nyquist_MHz + 2 * (i + 1) * nyquist_MHz / samplesCount);
 
     kiss_fft_cpx *normalizedFFToutput = new kiss_fft_cpx[samplesCount];
-	vector<float> outputs;
-	outputs.resize(samplesCount, 0);
+    vector<float> outputs;
+    outputs.resize(samplesCount, 0);
 
-	vector <float> zeroes;
-	zeroes.resize(samplesCount, 0);
-	for (int i = 0; i < samplesCount; ++i) zeroes[i] = 100.0;
+    vector<float> zeroes;
+    zeroes.resize(samplesCount, 0);
+    for (int i = 0; i < samplesCount; ++i)
+        zeroes[i] = 100.0;
 
-	int output_index = 0;
+    int output_index = 0;
 
-	double max = 0.0;
-	double temp = 0.0;
-	
-	QADPD_FFT2 = m_ADPD_txtFFT2->GetValue();
-	int Rb = pow(2, QADPD_FFT2);
-	//Rb = 8;
+    double max = 0.0;
+    double temp = 0.0;
 
-	if (((m_iValue & 0x10000) == 0x10000) && (plots < 4)) {  // bit 16, xp
+    QADPD_FFT2 = m_ADPD_txtFFT2->GetValue();
+    int Rb = pow(2, QADPD_FFT2);
+    //Rb = 8;
 
-		for (int i = 0; i < samplesCount; ++i) // normalize FFT results
-		{
-			normalizedFFToutput[i].r = xp_fft[i].r / samplesCount;
-			normalizedFFToutput[i].i = xp_fft[i].i / samplesCount;
+    if (((m_iValue & 0x10000) == 0x10000) && (plots < 4))
+    { // bit 16, xp
 
-			normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
-			normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
-		}
-		output_index = 0;
-		//shift fft negative frequencies for plotting, draw xp frequency domain
+        for (int i = 0; i < samplesCount; ++i) // normalize FFT results
+        {
+            normalizedFFToutput[i].r = xp_fft[i].r / samplesCount;
+            normalizedFFToutput[i].i = xp_fft[i].i / samplesCount;
+
+            normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
+            normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
+        }
+        output_index = 0;
 
 #ifdef NOAVERAGE
-		for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
-	    for (int i = 0; i < samplesCount / 2 + 1; ++i)
-	    	outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = 0; i < samplesCount / 2 + 1; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
 #endif
-#ifdef AVERAGE		
-		for (int i = samplesCount / (2*Rb); i < (samplesCount/Rb); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {				
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++) 
-				outputs[i*Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
-		}
+#ifdef AVERAGE
+        for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
+        }
 
-		for (int i = 0; i < (samplesCount / (2*Rb)); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
-		}
-#endif	
+        for (int i = 0; i < (samplesCount / (2 * Rb)); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
+        }
+#endif
 
-		for (int s = 0; s < samplesCount; ++s) //convert to dbFS
-			outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
-		plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
-		if (plots == 0) str += _T("xp");
-		else str += _T(", xp");
-		plots++;
-	}
+        for (int s = 0; s < samplesCount; ++s) //convert to dbFS
+            outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
+        plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
+        if (plots == 0)
+            str += _T("xp");
+        else
+            str += _T(", xp");
+        plots++;
+    }
 
-	if (((m_iValue & 0x20000) == 0x20000) && (plots < 4)) {  // bit 17, yp
+    if (((m_iValue & 0x20000) == 0x20000) && (plots < 4))
+    { // bit 17, yp
 
-		for (int i = 0; i < samplesCount; ++i) // normalize FFT results
-		{
-			normalizedFFToutput[i].r = yp_fft[i].r / samplesCount;
-			normalizedFFToutput[i].i = yp_fft[i].i / samplesCount;
-			normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
-			normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
-		}
-		output_index = 0;
-		//shift fft negative frequencies for plotting, draw xp frequency domain	
+        for (int i = 0; i < samplesCount; ++i) // normalize FFT results
+        {
+            normalizedFFToutput[i].r = yp_fft[i].r / samplesCount;
+            normalizedFFToutput[i].i = yp_fft[i].i / samplesCount;
+            normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
+            normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
+        }
+        output_index = 0;
+        //shift fft negative frequencies for plotting, draw xp frequency domain
 #ifdef NOAVERAGE
-		for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
-		for (int i = 0; i < samplesCount / 2 + 1; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = 0; i < samplesCount / 2 + 1; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
 #endif
 #ifdef AVERAGE
-		for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
-		}
+        for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
+        }
 
-		for (int i = 0; i < (samplesCount / (2 * Rb)); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
-		}
+        for (int i = 0; i < (samplesCount / (2 * Rb)); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
+        }
 #endif
 
-		for (int s = 0; s < samplesCount; ++s) //convert to dbFS
-			outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266  : -300);//69.2369
+        for (int s = 0; s < samplesCount; ++s)                                          //convert to dbFS
+            outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300); //69.2369
 
-		plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
-		if (plots == 0) str += _T("yp");
-		else str += _T(", yp");
-		plots++;
-	}
+        plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
+        if (plots == 0)
+            str += _T("yp");
+        else
+            str += _T(", yp");
+        plots++;
+    }
 
-	if (((m_iValue & 0x40000) == 0x40000) && (plots < 4)) {  // bit 18, x
+    if (((m_iValue & 0x40000) == 0x40000) && (plots < 4))
+    { // bit 18, x
 
-		for (int i = 0; i < samplesCount; ++i) // normalize FFT results
-		{
-			normalizedFFToutput[i].r = x_fft[i].r / samplesCount;
-			normalizedFFToutput[i].i = x_fft[i].i / samplesCount;
+        for (int i = 0; i < samplesCount; ++i) // normalize FFT results
+        {
+            normalizedFFToutput[i].r = x_fft[i].r / samplesCount;
+            normalizedFFToutput[i].i = x_fft[i].i / samplesCount;
 
-			normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
-			normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
-		}
-		output_index = 0;
-		//shift fft negative frequencies for plotting, draw xp frequency domain	
-#ifdef NOAVERAGE		
-			
-		for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
-		for (int i = 0; i < samplesCount / 2 + 1; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
-#endif		
-#ifdef AVERAGE	
-		for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
-		}
-		for (int i = 0; i < (samplesCount / (2 * Rb)); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
-		}
-#endif
+            normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
+            normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
+        }
+        output_index = 0;
+        //shift fft negative frequencies for plotting, draw xp frequency domain
+#ifdef NOAVERAGE
 
-		for (int s = 0; s < samplesCount; ++s) //convert to dbFS
-			outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
-		plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
-		if (plots == 0) str += _T("x");
-		else str += _T(", x");
-		plots++;
-	}
-
-	if (((m_iValue & 0x80000) == 0x80000) && (plots < 4)) {  // bit 19, y
-
-		for (int i = 0; i < samplesCount; ++i) // normalize FFT results
-		{
-			normalizedFFToutput[i].r = y_fft[i].r / samplesCount;
-			normalizedFFToutput[i].i = y_fft[i].i / samplesCount;
-
-			normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
-			normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
-		}
-		output_index = 0;
-		//shift fft negative frequencies for plotting, draw xp frequency domain
-#ifdef NOAVERAGE		
-		for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
-		for (int i = 0; i < samplesCount / 2 + 1; ++i)
-			outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = 0; i < samplesCount / 2 + 1; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
 #endif
 #ifdef AVERAGE
-		
-		for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
-		}
-
-		for (int i = 0; i < (samplesCount / (2 * Rb)); ++i) {
-			max = 0.0;
-			temp = 0.0;
-			for (int k = 0; k < Rb; k++) {
-				temp += (normalizedFFToutput[i*Rb + k].r * normalizedFFToutput[i*Rb + k].r + normalizedFFToutput[i*Rb + k].i * normalizedFFToutput[i*Rb + k].i);
-				//if (temp>max) max = temp;
-			}
-			for (int k = 0; k< Rb; k++)
-				outputs[i*Rb + k + (samplesCount / 2)] = sqrt(temp/Rb);		
-		}
+        for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
+        }
+        for (int i = 0; i < (samplesCount / (2 * Rb)); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
+        }
 #endif
-		for (int s = 0; s < samplesCount; ++s) //convert to dbFS
-			outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
-		plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
-		if (plots == 0) str += _T("y");
-		else str += _T(", y");
-		plots++;
-	}	
 
-	for (int k = plots; k < 4; k++)  plot->series[k]->AssignValues(&freqAxis[0], &zeroes[0], zeroes.size());
+        for (int s = 0; s < samplesCount; ++s) //convert to dbFS
+            outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
+        plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
+        if (plots == 0)
+            str += _T("x");
+        else
+            str += _T(", x");
+        plots++;
+    }
 
-	plot->Refresh();
-	plot->SetInitialDisplayArea(-nyquist_MHz * 1000000, nyquist_MHz * 1000000, m_iYaxisBottomPlot, m_iYaxisTopPlot);
+    if (((m_iValue & 0x80000) == 0x80000) && (plots < 4))
+    { // bit 19, y
 
-	// proveri ovo
-	//OnYaxisChange(plot, m_iYaxisTopPlot, m_iYaxisBottomPlot);
-	//OnCenterSpanChange(plot, m_iCenterFreqRatioPlot, m_dCenterFreqRatioPlot,
-	//	m_iFreqSpanRatioPlot, m_dFreqSpanRatioPlot);
+        for (int i = 0; i < samplesCount; ++i) // normalize FFT results
+        {
+            normalizedFFToutput[i].r = y_fft[i].r / samplesCount;
+            normalizedFFToutput[i].i = y_fft[i].i / samplesCount;
 
-	
+            normalizedFFToutput[i].r *= mAmplitudeCorrectionCoef;
+            normalizedFFToutput[i].i *= mAmplitudeCorrectionCoef;
+        }
+        output_index = 0;
+        //shift fft negative frequencies for plotting, draw xp frequency domain
+#ifdef NOAVERAGE
+        for (int i = samplesCount / 2 + 1; i < samplesCount; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+        for (int i = 0; i < samplesCount / 2 + 1; ++i)
+            outputs[output_index++] = sqrt(normalizedFFToutput[i].r * normalizedFFToutput[i].r + normalizedFFToutput[i].i * normalizedFFToutput[i].i);
+#endif
+#ifdef AVERAGE
 
-    delete normalizedFFToutput;
-	return str;
-}
+        for (int i = samplesCount / (2 * Rb); i < (samplesCount / Rb); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k - (samplesCount / 2)] = sqrt(temp / Rb);
+        }
 
-wxString DPDTest::PlotIQ(OpenGLGraph* plot, int m_iValue)
-{
+        for (int i = 0; i < (samplesCount / (2 * Rb)); ++i)
+        {
+            max = 0.0;
+            temp = 0.0;
+            for (int k = 0; k < Rb; k++)
+            {
+                temp += (normalizedFFToutput[i * Rb + k].r * normalizedFFToutput[i * Rb + k].r + normalizedFFToutput[i * Rb + k].i * normalizedFFToutput[i * Rb + k].i);
+                //if (temp>max) max = temp;
+            }
+            for (int k = 0; k < Rb; k++)
+                outputs[i * Rb + k + (samplesCount / 2)] = sqrt(temp / Rb);
+        }
+#endif
+        for (int s = 0; s < samplesCount; ++s) //convert to dbFS
+            outputs[s] = (outputs[s] != 0 ? (20 * log10(outputs[s])) - 66.2266 : -300);
+        plot->series[plots]->AssignValues(&freqAxis[0], &outputs[0], outputs.size());
+        if (plots == 0)
+            str += _T("y");
+        else
+            str += _T(", y");
+        plots++;
+    }
 
-	kiss_fft_cpx * samples;
-	int	samplesCount = samplesReceived;
-	
-	vector<float> xaxis; //time domain x axis
-	xaxis.resize(samplesCount, 0);
-	vector<float> tempBuffer; //temporary buffer to pass samples for plotting
-	tempBuffer.resize(samplesCount, 0);
-
-	vector <float> zeroes;
-	zeroes.resize(samplesCount, 0);
-	for (int i = 0; i < samplesCount; ++i) zeroes[i] = 9000.0;
-
-	//vector <float> zeroes;
-	//zeroes.resize(samplesCount, 0);
-	//for (int i = 0; i < samplesCount; ++i) zeroes[i] = 10000.0;
-
-	int plots = 0;
-	wxString str;
-	str = _T("IQ: ");
-
-	// bits 15-14: xp, yp, x, y
-	if ((m_iValue & 0x0C000) == 0x00000) {
-		samples = xp_samples; 
-		str += _T("xp");
-	}
-	else if ((m_iValue & 0x0C000) == 0x04000) {
-		samples = yp_samples;
-		str += _T("yp");
-	}
-	else if ((m_iValue & 0x0C000) == 0x08000) {
-		samples = x_samples;
-		str += _T("x");
-	}
-	else {
-		samples = y_samples;
-		str += _T("y");
-	}
-
-	for (int i = 0; i < samplesCount; ++i) {
-		xaxis[i] = samples[i].r;
-		tempBuffer[i] = samples[i].i;
-	}
-		
-	plot->series[0]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-
-	plots = 1;
-	for (int k = plots; k < 4; k++)  plot->series[k]->AssignValues(&xaxis[0], &zeroes[0], zeroes.size());
-
-	plot->Refresh();
-	return str;
-	
-}
-
-wxString DPDTest::PlotTimeDomain(OpenGLGraph* plot, int m_iValue, int m_iXaxisLeftPlot, int m_iXaxisRightPlot) //, const kiss_fft_cpx* samples, const int samplesCount)
-{
-
-	kiss_fft_cpx* samples;
-
-	int	samplesCount = samplesReceived;
-	vector<float> xaxis; //time domain x axis
-	xaxis.resize(samplesCount, 0);	
-	//xaxis.reserve(samplesCount);
-	for (int i = 0; i < samplesCount; ++i)
-		xaxis[i] = i;
-
-	vector<float> tempBuffer; //temporary buffer to pass samples for plotting
-	tempBuffer.resize(samplesCount, 0);
-	//tempBuffer.reserve(samplesCount);
-
-	vector <float> zeroes;
-	zeroes.resize(samplesCount, 0);
-	for (int i = 0; i < samplesCount; ++i) zeroes[i] = 10000.0;
-	
-
-
-	int plots = 0;
-	wxString str;
-	str = _T("Time: ");
-
-    //draw xp, yp time domain
-
-	if (((m_iValue & 0x00004) == 0x00004)&&(plots<4)) {
-		
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = xp_samples;  // bit 2  - xp_I
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = xp_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots==0) str+= _T("xp_I");
-		else str += _T(", xp_I");
-		plots++;	
-	}
-
-	if (((m_iValue & 0x00008) == 0x00008) && (plots<4)) {
-		///plot->series[plots]->Clear();
-		///plot->series[plots]->~cDataSerie();
-		//samples = xp_samples;  // bit 3  - xp_Q
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = xp_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str+= _T("xp_Q");
-		else str += _T(", xp_Q");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00010) == 0x00010) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = yp_samples;  // bit 4  - yp_I
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = yp_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str+= _T("yp_I");
-		else str += _T(", yp_I");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00020) == 0x00020) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = yp_samples;  // bit 5  - yp_Q
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = yp_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("yp_Q");
-		else str += _T(", yp_Q");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00040) == 0x00040) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = x_samples;  // bit 6  - x_I
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = x_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("x_I");
-		else str += _T(", x_I");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00080) == 0x00080) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = x_samples;  // bit 7  - x_Q
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = x_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("x_Q");
-		else str += _T(", x_Q");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00100) == 0x00100) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = y_samples;  // bit 8  - y_I
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = y_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("y_I");
-		else str += _T(", y_I");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00200) == 0x00200) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = y_samples;  // bit 9  - y_Q
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = y_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("y_Q");
-		else str += _T(", y_Q");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00400) == 0x00400) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = u_samples;  // bit 10  - u_I
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = u_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("u_I");
-		else str += _T(", u_I");
-		plots++;
-	}
-
-	if (((m_iValue & 0x00800) == 0x00800) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = u_samples;  // bit 11  - U_Q
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = u_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("u_Q");
-		else str += _T(", u_Q");
-		plots++;
-	}
-
-	if (((m_iValue & 0x01000) == 0x01000) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = error_samples;  // bit 12  - error
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = error_samples[i].r;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("u_I-y_I");
-		else str += _T(", u_I-y_I");
-		plots++;
-	}
-
-	if (((m_iValue & 0x02000) == 0x02000) && (plots<4)) {
-		//plot->series[plots]->Clear();
-		//plot->series[plots]->~cDataSerie();
-		//samples = error_samples;  // bit 13  - phase_error
-		tempBuffer.empty();
-		for (int i = 0; i < samplesCount; ++i)
-			tempBuffer[i] = error_samples[i].i;
-		plot->series[plots]->AssignValues(&xaxis[0], (float*)&tempBuffer[0], xaxis.size());
-		if (plots == 0) str += _T("u_Q-y_Q");
-		else str += _T(", u_Q-y_Q");
-		plots++;
-	}    
-    
-
-	
-	//tempBuffer.empty();
-	//tempBuffer.~vector();
-
-	//xaxis.empty();
-	//xaxis.~vector();
-
-	//delete tempBuffer;
-	//delete xaxis;
-
-	for (int k = plots; k < 4; k++)  plot->series[k]->AssignValues(&xaxis[0], &zeroes[0], zeroes.size());
+    for (int k = plots; k < 4; k++)
+        plot->series[k]->AssignValues(&freqAxis[0], &zeroes[0], zeroes.size());
 
     plot->Refresh();
-	return str;
+    plot->SetInitialDisplayArea(-nyquist_MHz * 1000000, nyquist_MHz * 1000000, m_iYaxisBottomPlot, m_iYaxisTopPlot);
+
+    delete normalizedFFToutput;
+    return str;
 }
 
-/* @brief Calculates selected window function coefficients
-@param func window function index
-@param fftsize number of samples for FFT calculations
-*/
+wxString DPDTest::PlotIQ(OpenGLGraph *plot, int m_iValue)
+{
+
+    kiss_fft_cpx *samples;
+    int samplesCount = samplesReceived;
+
+    vector<float> xaxis; //time domain x axis
+    xaxis.resize(samplesCount, 0);
+    vector<float> tempBuffer; //temporary buffer to pass samples for plotting
+    tempBuffer.resize(samplesCount, 0);
+
+    vector<float> zeroes;
+    zeroes.resize(samplesCount, 0);
+    for (int i = 0; i < samplesCount; ++i)
+        zeroes[i] = 9000.0;
+    int plots = 0;
+    wxString str;
+    str = _T("IQ: ");
+
+    // bits 15-14: xp, yp, x, y
+    if ((m_iValue & 0x0C000) == 0x00000)
+    {
+
+        samples = xp_samples;
+        str += _T("xp");
+    }
+    else if ((m_iValue & 0x0C000) == 0x04000)
+    {
+
+        samples = yp_samples;
+        str += _T("yp");
+    }
+    else if ((m_iValue & 0x0C000) == 0x08000)
+    {
+        samples = x_samples;
+        str += _T("x");
+    }
+    else
+    {
+        samples = y_samples;
+        str += _T("y");
+    }
+
+    for (int i = 0; i < samplesCount; ++i)
+    {
+        xaxis[i] = samples[i].r;
+        tempBuffer[i] = samples[i].i;
+    }
+
+    plot->series[0]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+
+    plots = 1;
+    for (int k = plots; k < 4; k++)
+        plot->series[k]->AssignValues(&xaxis[0], &zeroes[0], zeroes.size());
+
+    plot->Refresh();
+    return str;
+}
+
+wxString DPDTest::PlotTimeDomain(OpenGLGraph *plot, int m_iValue, int m_iXaxisLeftPlot, int m_iXaxisRightPlot) //, const kiss_fft_cpx* samples, const int samplesCount)
+{
+
+    int samplesCount = samplesReceived;
+    vector<float> xaxis; //time domain x axis
+    xaxis.resize(samplesCount, 0);
+
+    for (int i = 0; i < samplesCount; ++i)
+        xaxis[i] = i;
+
+    vector<float> tempBuffer; //temporary buffer to pass samples for plotting
+    tempBuffer.resize(samplesCount, 0);
+
+    vector<float> zeroes;
+    zeroes.resize(samplesCount, 0);
+    for (int i = 0; i < samplesCount; ++i)
+        zeroes[i] = 10000.0;
+
+    int plots = 0;
+    wxString str;
+    str = _T("Time: ");
+
+    if (((m_iValue & 0x00004) == 0x00004) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = xp_samples[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("xp_I");
+        else
+            str += _T(", xp_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00008) == 0x00008) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            //if (chA==1)
+            tempBuffer[i] = xp_samples[i].i;
+        //else  tempBuffer[i] = xp_samples_chB[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("xp_Q");
+        else
+            str += _T(", xp_Q");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00010) == 0x00010) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            //if (chA==1)
+            tempBuffer[i] = yp_samples[i].r;
+        //else tempBuffer[i] = yp_samples_chB[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("yp_I");
+        else
+            str += _T(", yp_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00020) == 0x00020) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            //if (chA==1)
+            tempBuffer[i] = yp_samples[i].i;
+        //else  tempBuffer[i] = yp_samples_chB[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("yp_Q");
+        else
+            str += _T(", yp_Q");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00040) == 0x00040) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = x_samples[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("x_I");
+        else
+            str += _T(", x_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00080) == 0x00080) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = x_samples[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("x_Q");
+        else
+            str += _T(", x_Q");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00100) == 0x00100) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = y_samples[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("y_I");
+        else
+            str += _T(", y_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00200) == 0x00200) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = y_samples[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("y_Q");
+        else
+            str += _T(", y_Q");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00400) == 0x00400) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = u_samples[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("u_I");
+        else
+            str += _T(", u_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x00800) == 0x00800) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = u_samples[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("u_Q");
+        else
+            str += _T(", u_Q");
+        plots++;
+    }
+
+    if (((m_iValue & 0x01000) == 0x01000) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = error_samples[i].r;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("u_I-y_I");
+        else
+            str += _T(", u_I-y_I");
+        plots++;
+    }
+
+    if (((m_iValue & 0x02000) == 0x02000) && (plots < 4))
+    {
+        tempBuffer.empty();
+        for (int i = 0; i < samplesCount; ++i)
+            tempBuffer[i] = error_samples[i].i;
+        plot->series[plots]->AssignValues(&xaxis[0], (float *)&tempBuffer[0], xaxis.size());
+        if (plots == 0)
+            str += _T("u_Q-y_Q");
+        else
+            str += _T(", u_Q-y_Q");
+        plots++;
+    }
+
+    for (int k = plots; k < 4; k++)
+        plot->series[k]->AssignValues(&xaxis[0], &zeroes[0], zeroes.size());
+
+    plot->Refresh();
+    return str;
+}
+
 void DPDTest::GenerateWindowCoefficients(int func, int fftsize)
 {
-	if (windowFcoefs)
-		delete[]windowFcoefs;
+    if (windowFcoefs)
+        delete[] windowFcoefs;
 
-	windowFcoefs = new float[fftsize];
-	float a0 = 0.35875;
-	float a1 = 0.48829;
-	float a2 = 0.14128;
-	float a3 = 0.01168;
-	float a4 = 1;
-	int N = fftsize;
-	float PI = 3.14159265359;
-	switch (func)
-	{
-	case 0:
-		mAmplitudeCorrectionCoef = 1;
-		break;
-	case 1: //blackman-harris		
-		for (int i = 0; i<N; ++i)
-		{
-			windowFcoefs[i] = a0 - a1*cos((2 * PI*i) / (N - 1)) + a2*cos((4 * PI*i) / (N - 1)) - a3*cos((6 * PI*i) / (N - 1));
-			mAmplitudeCorrectionCoef += windowFcoefs[i];
-		}
-		mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
-		break;
-	case 2: //hamming
-		mAmplitudeCorrectionCoef = 0;
-		a0 = 0.54;
-		for (int i = 0; i<N; ++i)
-		{
-			windowFcoefs[i] = a0 - (1 - a0)*cos((2 * PI*i) / (N));
-			mAmplitudeCorrectionCoef += windowFcoefs[i];
-		}
-		mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
-		break;
-	case 3: //hanning
-		mAmplitudeCorrectionCoef = 0;
-		for (int i = 0; i<N; ++i)
-		{
-			windowFcoefs[i] = 0.5 *(1 - cos((2 * PI*i) / (N)));
-			mAmplitudeCorrectionCoef += windowFcoefs[i];
-		}
-		mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
-		break;
-	default:
-		mAmplitudeCorrectionCoef = 1;
-	}
-	//m_windowFunction = func;
+    windowFcoefs = new float[fftsize];
+    float a0 = 0.35875;
+    float a1 = 0.48829;
+    float a2 = 0.14128;
+    float a3 = 0.01168;
+    //float a4 = 1;
+    int N = fftsize;
+    float PI = 3.14159265359;
+    switch (func)
+    {
+    case 0:
+        mAmplitudeCorrectionCoef = 1;
+        break;
+    case 1: //blackman-harris
+        for (int i = 0; i < N; ++i)
+        {
+            windowFcoefs[i] = a0 - a1 * cos((2 * PI * i) / (N - 1)) + a2 * cos((4 * PI * i) / (N - 1)) - a3 * cos((6 * PI * i) / (N - 1));
+            mAmplitudeCorrectionCoef += windowFcoefs[i];
+        }
+        mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
+        break;
+    case 2: //hamming
+        mAmplitudeCorrectionCoef = 0;
+        a0 = 0.54;
+        for (int i = 0; i < N; ++i)
+        {
+            windowFcoefs[i] = a0 - (1 - a0) * cos((2 * PI * i) / (N));
+            mAmplitudeCorrectionCoef += windowFcoefs[i];
+        }
+        mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
+        break;
+    case 3: //hanning
+        mAmplitudeCorrectionCoef = 0;
+        for (int i = 0; i < N; ++i)
+        {
+            windowFcoefs[i] = 0.5 * (1 - cos((2 * PI * i) / (N)));
+            mAmplitudeCorrectionCoef += windowFcoefs[i];
+        }
+        mAmplitudeCorrectionCoef = 1.0 / (mAmplitudeCorrectionCoef / N);
+        break;
+    default:
+        mAmplitudeCorrectionCoef = 1;
+    }
+    //m_windowFunction = func;
+}
+
+void DPDTest::OnSwitchToChannelA(wxCommandEvent &event)
+{
+    chA = 1;
+    SelectSource(chA);
+    OpenConfig();
+    updatedCoeff = 0;
+    Button_SAVE->Enable(false);
+}
+
+void DPDTest::OnChangeExtDACs(wxCommandEvent &event)
+{
+
+    uint16_t code = 0x0000;
+
+    if (CheckBox_ExtDACs->IsChecked())
+        code = 1;
+    else
+        code = 0;
+    int ret = 0;
+    uint16_t maddress = 0x004F; // adresa registra umesto 0x0041
+    uint16_t regValue = 0x0000;
+    uint16_t mask = 0x0000;
+
+    int lsb = 7;
+    int msb = 7;
+}
+
+void DPDTest::OnSwitchToChannelB(wxCommandEvent &event)
+{
+    chA = 0;
+    SelectSource(chA);
+    OpenConfig();
+    updatedCoeff = 0;
+    Button_SAVE->Enable(false);
+}
+
+void DPDTest::OnGainChanged(wxCommandEvent &event)
+{
+
+    double gain = 1.0;
+    gain = m_ADPD_txtGain->GetValue();
+    if ((gain >= 0.3) && (gain <= 3.0))
+        QADPD_GAIN = gain;
+}
+
+void DPDTest::CheckDiscontinuity()
+{
+
+    int i = 0;
+    int Ampl = 8192;
+
+    for (i = 1; i < samplesReceived; i++)
+    {
+        if ((x_samples[i - 1].r > (Ampl * 0.8)) && (x_samples[i].r <= 0))
+            x_samples[i].r = Ampl - 1;
+        if ((x_samples[i - 1].i > (Ampl * 0.8)) && (x_samples[i].i <= 0))
+            x_samples[i].i = Ampl - 1;
+        if ((x_samples[i - 1].r < (-Ampl * 0.8)) && (x_samples[i].r >= 0))
+            x_samples[i].r = (-Ampl + 1);
+        if ((x_samples[i - 1].i < (-Ampl * 0.8)) && (x_samples[i].i >= 0))
+            x_samples[i].i = (-Ampl + 1);
+    }
 }

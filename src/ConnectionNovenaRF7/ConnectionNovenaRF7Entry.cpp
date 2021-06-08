@@ -106,6 +106,6 @@ IConnection *ConnectionNovenaRF7Entry::make(const ConnectionHandle &handle)
 {
     auto conn = new ConnectionNovenaRF7();
     if (conn->Open(handle.addr.c_str()) != 0)
-        std::cerr << GetLastErrorMessage() << std::endl;
+        std::cerr << "Failed to popen device" << std::endl;
     return conn;
 }

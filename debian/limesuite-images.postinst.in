@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+DEST_DIR="/usr/share/LimeSuite/images/@RELEASE_NUM@"
+SOURCE_URL="http://downloads.myriadrf.org/project/limesuite/@RELEASE_NUM@/"
+
+if [ "$1" = "configure" ]; then
+	echo "Downloading ${SOURCE_URL} -> ${DEST_DIR}"
+
+	DOWNLOAD_TMP=$(mktemp --directory)
+	wget \
+		--recursive --level=1 \
+		--no-host-directories \
+		--no-directories \
+		--no-parent \
+		--reject="index.html*" \
+		--directory-prefix="${DOWNLOAD_TMP}" \
+		"${SOURCE_URL}"
+
+	#cleanup and error out when wget fails
+	if [ $? -ne 0 ]; then
+		echo "Download failed!"
+		rm --force --recursive "${DOWNLOAD_TMP}"
+		exit 1
+	fi
+
+	#successful download, move tmp to destination
+	echo "Moving images to ${DEST_DIR}"
+	mv "${DOWNLOAD_TMP}" "${DEST_DIR}"
+
+	#fix permissions since this was a temp dir
+	chmod ug+rwx "${DEST_DIR}"
+	chmod o+rx "${DEST_DIR}"
+fi
+
+#DEBHELPER#

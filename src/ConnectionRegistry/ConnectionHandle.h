@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "LimeSuiteConfig.h"
 #include <string>
 
 namespace lime{
@@ -19,11 +20,14 @@ namespace lime{
  * Each default field (empty string, -1 index) will be ignored
  * by the connection registry entry discovery implementation.
  */
-class ConnectionHandle
+class LIME_API ConnectionHandle
 {
 public:
 
     ConnectionHandle(void);
+
+    //! Create from serialized string with key=value pairs
+    ConnectionHandle(const std::string &args);
 
     /*!
      * The name of the IConnection support module.

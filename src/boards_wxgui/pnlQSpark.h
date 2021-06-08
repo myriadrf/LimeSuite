@@ -4,6 +4,7 @@
 #include <map>
 #include <wx/frame.h>
 #include <wx/panel.h>
+#include "lime/LimeSuite.h"
 class wxStaticText;
 class wxFlexGridSizer;
 class wxButton;
@@ -12,122 +13,123 @@ class wxComboBox;
 class wxCheckBox;
 class wxTextCtrl;
 class wxChoice;
-class wxSpinCtrlDouble;
+class wxRadioButton;
 
-#include "lms7suiteAppFrame.h";
-
-namespace lime
-{
-class IConnection;
-}
-
-class pnlQSpark : public wxFrame
+class pnlQSpark : public wxPanel
 {
 public:
-
-	LMS7SuiteAppFrame * parent;
-	pnlQSpark(LMS7SuiteAppFrame * parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
-    void Initialize(lime::IConnection *pControl);
+    pnlQSpark(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
+    void Initialize(lms_device_t *pControl);
     virtual ~pnlQSpark();
-    virtual void UpdatePanel();
-
-    wxButton* btnUpdateAll;
-	wxButton* btnLoadSettings;
-	wxButton* btnSaveSettings;
 
     wxComboBox* cmbVCXOcontrolVoltage;
+    
+    wxCheckBox* chkLB_1A;
+    wxCheckBox* chkLB_1B;
+    wxCheckBox* chkLB_2A;
+    wxCheckBox* chkLB_2B;
+    wxCheckBox* chkSH_1A;
+    wxCheckBox* chkSH_1B;
+    wxCheckBox* chkSH_2A;
+    wxCheckBox* chkSH_2B;
+    wxCheckBox* chkAT_1A;
+    wxCheckBox* chkAT_1B;
+    wxCheckBox* chkAT_2A;
+    wxCheckBox* chkAT_2B;
 
     wxPanel* mPanelStreamPLL;
+    wxPanel* mPanelPACtrl;
     wxTextCtrl* txtPllFreqRxMHz;
     wxStaticText* lblRealFreqTx;
     wxStaticText* lblRealFreqRx;
     wxTextCtrl* txtPllFreqTxMHz;
-    wxTextCtrl* txtPhaseOffsetDeg;
     wxButton* btnConfigurePLL;
+ 
+    wxButton* btnUpdateAll;
+    wxButton* btnLoadSettings;
+    wxButton* btnSaveSettings;
+    wxButton*  setFIR1;
+    wxButton*  setFIR2;    
+    wxChoice* cmbPAsrc;
+    wxRadioButton* rbChannelA;
+    wxRadioButton* rbChannelB;
+  
+	// reg 0x45
+    wxCheckBox * chkSLEEP_CFR;
+    wxCheckBox * chkBYPASS_CFR;
+	wxCheckBox * chkODD_CFR;
+    wxCheckBox * chkBYPASSGAIN_CFR;
+	wxCheckBox * chkSLEEP_FIR;
+	wxCheckBox * chkBYPASS_FIR;
+	wxCheckBox * chkODD_FIR;
+	wxCheckBox * chkDEL_HB;
+    wxChoice * cmbINTER_CFR;
+	wxCheckBox * chkSLEEP_CFR_chB;
+	wxCheckBox * chkBYPASS_CFR_chB;
+	wxCheckBox * chkODD_CFR_chB;
+    wxCheckBox * chkBYPASSGAIN_CFR_chB;
+	wxCheckBox * chkSLEEP_FIR_chB;
+	wxCheckBox * chkBYPASS_FIR_chB;
+	wxCheckBox * chkODD_FIR_chB;
+	wxCheckBox * chkDEL_HB_chB; 
+    wxChoice* cmbINTER_CFR_chB; 
 
-    wxCheckBox* chkEN_TXTSP;
-    wxCheckBox* chkEN_RXTSP;
-    wxCheckBox* chkRX_DCCORR_BYP;
-    wxCheckBox* chkRX_PHCORR_BYP;
-    wxCheckBox* chkRX_GCORR_BYP;
-    wxCheckBox* chkTX_DCCORR_BYP;
-    wxCheckBox* chkTX_PHCORR_BYP;
-	wxCheckBox* chkTX_INVSINC_BYP;
-	wxCheckBox* chkTX_INTERPOLATION_BYP;
-	wxCheckBox* chkRX_DECIMATION_BYP;
+	wxCheckBox * chkPA;
+	wxCheckBox * chkPA_chB;
+    wxCheckBox * chkDCDC;
+    wxCheckBox * chkDCDC_chB;
 
+    wxCheckBox * chkResetN;
 
-    wxCheckBox* chkTX_GCORR_BYP;
-    wxSpinCtrl* spinTX_DCCORRI;
-    wxSpinCtrl* spinTX_DCCORRQ;
-    wxSpinCtrl* spinTX_GCORRQ;
-    wxSpinCtrl* spinTX_GCORRI;
-    wxSpinCtrl* spinTX_PHCORR;
-    wxSpinCtrl* spinRX_GCORRQ;
-    wxSpinCtrl* spinRX_GCORRI;
-    wxSpinCtrl* spinRX_PHCORR;
-    wxChoice* cmbInsel;
+    wxSpinCtrlDouble * thresholdSpin; 
+    wxSpinCtrlDouble * thresholdGain;    
+    wxSpinCtrlDouble * thresholdSpin_chB;   
+    wxSpinCtrlDouble * thresholdGain_chB;  
 
-	wxStaticText * txtRX_PHCORR;
-	wxStaticText * txtTX_PHCORR;
-	wxStaticText * txtTX_GCORR;
-	wxStaticText * txtRX_GCORR;
+	wxSpinCtrl * spinCFR_ORDER;
+	wxSpinCtrl * spinCFR_ORDER_chB;
 
-	wxStaticText * txt1;
-	wxStaticText * txt2;
-	wxStaticText * txt3;
-	wxStaticText * txt4;
-
-
-	wxChoice* cmbPa1Sw;
-	wxChoice* cmbPa2Sw;
-	wxChoice* cmbPa1Mo;
-	wxChoice* cmbPa2Mo;
-	wxChoice* cmbRf;
-
-    wxTextCtrl* txtNcoFreq;
-
-	wxSpinCtrlDouble * txtVccPa1;
-	wxSpinCtrlDouble * txtVccPa2;
-
-	wxStaticText* lblPa1;
-	wxStaticText* lblPa2;
+    void OnThresholdChanged(wxCommandEvent& event);
+    void OnGainChanged(wxCommandEvent& event);
+    void OnOrderChanged(wxCommandEvent& event);
+    void OnInterpolationChanged(wxCommandEvent &event);
 
     static const long ID_BUTTON_UPDATEALL;
     static const long ID_VCXOCV;
 
-    void OnbtnUpdateAll(wxCommandEvent& event);
-    void OnNcoFrequencyChanged(wxCommandEvent& event);
-	
-	void OnVccPa1Changed(wxCommandEvent& event);
-	void OnVccPa2Changed(wxCommandEvent& event);	
-	void LoadQSparkSettings(wxCommandEvent& event);
-	void SaveQSparkSettings(wxCommandEvent& event);
-	void VccPaChanged(wxSpinCtrlDouble * ctrl, wxStaticText * txt, int pa);
+    void OnbtnUpdateAll(wxCommandEvent& event);  	
+    void LoadQSparkSettings(wxCommandEvent& event);
+    void SaveQSparkSettings(wxCommandEvent& event);
+   
+    int chA;
 
 protected:
-    
-	void OnConfigurePLL(wxCommandEvent &event);
-	void VoltageSetup(double vccPa_V, unsigned char addr, int * pValue);
-	void UpdateDegrees();
-	
+    void OnConfigurePLL(wxCommandEvent &event);
+    void OnReadAll(wxCommandEvent &event);
+    void OnWriteAll(wxCommandEvent &event);
+    void OnSwitchToChannelA(wxCommandEvent& event);
+    void OnSwitchToChannelB(wxCommandEvent& event);
+    int SPI_write(lms_device_t * lmsControl, uint16_t address, uint16_t data);
+    void UpdateHannCoeff(lms_device_t * lmsControl, uint16_t Filt_N, int chA, int interpolation);
+    void onbtnFIRCoefA( wxCommandEvent& event );
+    void onbtnFIRCoefB( wxCommandEvent& event );
+    void onbtnFIRCoef(int ch, int interpolation);
 
-
-    struct Register
-    {
+    struct Register {
         Register();
-		Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement);
+        Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement);
         unsigned short address;
         unsigned char msb;
         unsigned char lsb;
         unsigned short defaultValue;
-		unsigned short twocomplement;
+        unsigned short twocomplement; 
     };
     std::map<wxObject*, Register> controlsPtr2Registers;
     void RegisterParameterChangeHandler(wxCommandEvent& event);
+    void SetRegValue(Register reg, uint16_t newValue);
 
 protected:
-    lime::IConnection *m_serPort;
+    lms_device_t *lmsControl;
     DECLARE_EVENT_TABLE()
 };
 

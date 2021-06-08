@@ -4,7 +4,6 @@
 @brief 	panel for interacting with HPM7 board
 */
 
-#include "ErrorReporting.h"
 #include "HPM7_wxgui.h"
 #include "lms7suiteEvents.h"
 
@@ -17,9 +16,9 @@
 #include <wx/checkbox.h>
 #include <wx/msgdlg.h>
 #include <vector>
-#include "LMS64CProtocol.h"
+#include "LMS64CCommands.h"
+#include "lms7_device.h"
 
-using namespace lime;
 
 BEGIN_EVENT_TABLE(HPM7_wxgui, wxFrame)
 
@@ -151,9 +150,10 @@ HPM7_wxgui::HPM7_wxgui(wxWindow* parent, wxWindowID id, const wxString &title, c
     Layout();
 }
 
-void HPM7_wxgui::Initialize(IConnection* serPort)
+void HPM7_wxgui::Initialize(lms_device_t* dev)
 {
-	m_serPort = dynamic_cast<LMS64CProtocol *>(serPort);
+    lime::LMS7_Device* lms = (lime::LMS7_Device*)dev;
+    m_serPort = dynamic_cast<lime::LMS64CProtocol *>(lms->GetConnection());
 }
 
 HPM7_wxgui::~HPM7_wxgui()
@@ -169,19 +169,18 @@ void HPM7_wxgui::OnTunerSSC1change(wxCommandEvent& event)
         return;
     }
 
-    int tunerIndex = 0;
+    unsigned tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < cmbSSC1.size(); ++tunerIndex)
         if (event.GetId() == cmbSSC1[tunerIndex]->GetId())
             break;
     if (tunerIndex >= cmbSSC1.size())
         return;
 
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::CMD_MYRIAD_WR;
     pkt.outBuffer.push_back( 0x20 + tunerIndex * 2 );
     pkt.outBuffer.push_back( event.GetInt() );
-    if (m_serPort->TransferPacket(pkt) != 0)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
@@ -191,7 +190,7 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-    int tunerIndex = 0;
+    unsigned tunerIndex = 0;
     for (tunerIndex = 0; tunerIndex < tunerIds.size(); ++tunerIndex)
         if (event.GetId() == tunerIds[tunerIndex])
             break;
@@ -199,22 +198,19 @@ void HPM7_wxgui::OnTunerSSC2change(wxCommandEvent& event)
     if (tunerIndex >= tunerIds.size())
         return;
 
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
-    unsigned char address = (0x21 + tunerIndex * 2);
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::CMD_MYRIAD_WR;
     pkt.outBuffer.push_back(0x21 + tunerIndex*2);
     unsigned char value = chkEB[tunerIndex]->GetValue() << 5;
     value |= chkTP[tunerIndex]->GetValue() << 4;
     value |= (cmbSSC2[tunerIndex]->GetSelection() & 0xF);
     pkt.outBuffer.push_back(value);
-
-    if (m_serPort->TransferPacket(pkt) != 0)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::OnGPIOchange(wxCommandEvent& event)
 {
-    if (UploadGPIO() == false)
+    if (UploadGPIO() != 0)
         return;
 
     wxCommandEvent evt;
@@ -240,8 +236,8 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_RD;
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::CMD_MYRIAD_RD;
     pkt.outBuffer.push_back(0x10);
     for (int i = 0; i < 12; ++i)
         pkt.outBuffer.push_back(0x20 + i);
@@ -250,7 +246,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
     if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Failed to read board parameters"));
         return;
     }
 
@@ -261,7 +257,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
     cmbPAdriver->SetSelection((pkt.inBuffer[1] >> 4) & 0x1);
 
     int index = 3;
-    for (int i = 0; i < chkEB.size(); ++i)
+    for (unsigned i = 0; i < chkEB.size(); ++i)
     {
         cmbSSC1[i]->SetSelection(pkt.inBuffer[index] & 0x1F);
         index+=2;
@@ -273,7 +269,7 @@ void HPM7_wxgui::DownloadAll(wxCommandEvent& event)
 
     cmbDAC_A->SetSelection(pkt.inBuffer[index]);
     index += 2;
-    cmbDAC_B->SetSelection(pkt.inBuffer[index]);
+cmbDAC_B->SetSelection(pkt.inBuffer[index]);
 }
 
 void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
@@ -283,8 +279,8 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
         wxMessageBox(_("Board not connected"), _("Warning"));
         return;
     }
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::CMD_MYRIAD_WR;
 
     if (event.GetEventObject() == cmbDAC_A)
     {
@@ -296,8 +292,7 @@ void HPM7_wxgui::OnDACchange(wxCommandEvent& event)
         pkt.outBuffer.push_back(0x31);
         pkt.outBuffer.push_back(cmbDAC_B->GetSelection());
     }
-    if (m_serPort->TransferPacket(pkt) != 0)
-        wxMessageBox(_("Board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+    m_serPort->TransferPacket(pkt);
 }
 
 void HPM7_wxgui::SelectBand(unsigned int i)
@@ -322,8 +317,8 @@ bool HPM7_wxgui::UploadGPIO()
         return false;
     }
 
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_MYRIAD_WR;
+    lime::LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = lime::CMD_MYRIAD_WR;
     pkt.outBuffer.push_back(0x10);
     unsigned char value = 0;
     int activePath = cmbActivePath->GetSelection();
@@ -340,9 +335,8 @@ bool HPM7_wxgui::UploadGPIO()
     pkt.outBuffer.push_back(value);
     if (m_serPort->TransferPacket(pkt) != 0)
     {
-        wxMessageBox(_("Uploading HPM7 GPIO, board response: ") + wxString::From8BitData(GetLastErrorMessage()), _("Warning"));
+        wxMessageBox(_("Uploading HPM7 GPIO failed"), _("Warning"));
         return false;
     }
-    return true;
-
+return true;
 }

@@ -98,8 +98,8 @@ class dlgADPDControls: public wxDialog
 		wxFlexGridSizer* Sizer_td;
 		wxStaticBoxSizer* StaticBox_IQ;
 		wxFlexGridSizer* Sizer_IQ;
-		wxStaticBoxSizer* StaticBox_fft;
-		wxFlexGridSizer* Sizer_fft;
+		//wxStaticBoxSizer* StaticBox_fft;
+		//wxFlexGridSizer* Sizer_fft;
 		wxFlexGridSizer* m_controlsSizer;
 		wxStaticText* StaticText_ADPD0;
 

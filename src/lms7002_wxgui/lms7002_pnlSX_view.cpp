@@ -1,6 +1,4 @@
 #include "lms7002_pnlSX_view.h"
-#include "LMS7002M.h"
-#include "ErrorReporting.h"
 
 #include <wx/textdlg.h>
 #include <wx/valnum.h>
@@ -11,49 +9,73 @@
 #include "lms7002_gui_utilities.h"
 #include "lms7suiteEvents.h"
 #include "lms7002_dlgVCOfrequencies.h"
+#include <string>
+#include "lms7_device.h"
+#include "Logger.h"
+using namespace std;
 using namespace lime;
+
+static bool showRefClkSpurCancelation = true;
 
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
     : pnlSX_view(parent, id, pos, size, style), lmsControl(nullptr)
 {
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("PLL LPF zero resistor:")), 1, wxEXPAND, 0);
+    cmbRZ_CTRL = new wxComboBox(this, wxID_ANY);
+    cmbRZ_CTRL->Append(_("Rzero = 20 kOhm"));
+    cmbRZ_CTRL->Append(_("Rzero = 8 kOhm"));
+    cmbRZ_CTRL->Append(_("Rzero = 4 kOhm"));
+    cmbRZ_CTRL->Append(_("LPF resistors are in bypass mode (<100 Ohm)"));
+    cmbRZ_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
+    wndId2Enum[cmbRZ_CTRL] = LMS7_RZ_CTRL;
+    sizerR3->Add(cmbRZ_CTRL);
+
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxEXPAND, 0);
+    cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
+    cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.18V"));
+    cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.1V"));
+    cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, 0, 5);
+    wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_SX;
+
     //ids for updating from chip
-    wndId2Enum[chkBYPLDO_VCO] = BYPLDO_VCO;
-    wndId2Enum[cmbCP2_PLL] = CP2_PLL;
-    wndId2Enum[cmbCP3_PLL] = CP3_PLL;
-    wndId2Enum[ctrCSW_VCO] = CSW_VCO;
-    wndId2Enum[chkCURLIM_VCO] = CURLIM_VCO;
-    wndId2Enum[cmbCZ] = CZ;
-    wndId2Enum[ctrDIV_LOCH] = DIV_LOCH;
-    wndId2Enum[chkEN_COARSEPLL] = EN_COARSEPLL;
-    wndId2Enum[chkEN_DIV2_DIVPROGenabled] = EN_DIV2_DIVPROG;
-    wndId2Enum[chkEN_G] = EN_G;
-    wndId2Enum[chkEN_INTONLY_SDM] = EN_INTONLY_SDM;
-    wndId2Enum[chkEN_SDM_CLK] = EN_SDM_CLK;
-    wndId2Enum[cmbICT_VCO] = ICT_VCO;
-    wndId2Enum[cmbIOFFSET_CP] = IOFFSET_CP;
-    wndId2Enum[cmbIPULSE_CP] = IPULSE_CP;
-    wndId2Enum[chkPD_CP] = PD_CP;
-    wndId2Enum[chkPD_FDIV] = PD_FDIV;
-    wndId2Enum[chkPD_LOCH_T2RBUF] = PD_LOCH_T2RBUF;
-    wndId2Enum[chkPD_SDM] = PD_SDM;
-    wndId2Enum[chkPD_VCO] = PD_VCO;
-    wndId2Enum[chkPD_VCO_COMP] = PD_VCO_COMP;
-    wndId2Enum[ctrPW_DIV2_LOCH] = PW_DIV2_LOCH;
-    wndId2Enum[ctrPW_DIV4_LOCH] = PW_DIV4_LOCH;
-    wndId2Enum[chkRESET_N] = RESET_N;
-    wndId2Enum[chkREVPH_PFD] = REVPH_PFD;
-    wndId2Enum[chkREV_SDMCLK] = REV_SDMCLK;
-    wndId2Enum[cmbRSEL_LDO_VCO] = RSEL_LDO_VCO;
-    wndId2Enum[cmbSEL_SDMCLK] = SEL_SDMCLK;
-    wndId2Enum[rgrSEL_VCO] = SEL_VCO;
-    wndId2Enum[chkSPDUP_VCO] = SPDUP_VCO;
-    wndId2Enum[chkSX_DITHER_EN] = SX_DITHER_EN;
-    wndId2Enum[cmbTST_SX] = TST_SX;
-    wndId2Enum[cmbVDIV_VCO] = VDIV_VCO;
-    wndId2Enum[chkPD_FBDIV] = PD_FBDIV;
-    wndId2Enum[chkEN_DIR_SXRSXT] = EN_DIR_SXRSXT;
-    wndId2Enum[lblINT_SDM] = INT_SDM;
-    wndId2Enum[lblEN_DIV2_DIVPROG] = EN_DIV2_DIVPROG;
+    wndId2Enum[chkBYPLDO_VCO] = LMS7param(BYPLDO_VCO);
+    wndId2Enum[cmbCP2_PLL] = LMS7param(CP2_PLL);
+    wndId2Enum[cmbCP3_PLL] = LMS7param(CP3_PLL);
+    wndId2Enum[ctrCSW_VCO] = LMS7param(CSW_VCO);
+    wndId2Enum[chkCURLIM_VCO] = LMS7param(CURLIM_VCO);
+    wndId2Enum[cmbCZ] = LMS7param(CZ);
+    wndId2Enum[ctrDIV_LOCH] = LMS7param(DIV_LOCH);
+    wndId2Enum[chkEN_COARSEPLL] = LMS7param(EN_COARSEPLL);
+    wndId2Enum[chkEN_DIV2_DIVPROGenabled] = LMS7param(EN_DIV2_DIVPROG);
+    wndId2Enum[chkEN_G] = LMS7param(EN_G);
+    wndId2Enum[chkEN_INTONLY_SDM] = LMS7param(EN_INTONLY_SDM);
+    wndId2Enum[chkEN_SDM_CLK] = LMS7param(EN_SDM_CLK);
+    wndId2Enum[cmbICT_VCO] = LMS7param(ICT_VCO);
+    wndId2Enum[cmbIOFFSET_CP] = LMS7param(IOFFSET_CP);
+    wndId2Enum[cmbIPULSE_CP] = LMS7param(IPULSE_CP);
+    wndId2Enum[chkPD_CP] = LMS7param(PD_CP);
+    wndId2Enum[chkPD_FDIV] = LMS7param(PD_FDIV);
+    wndId2Enum[chkPD_LOCH_T2RBUF] = LMS7param(PD_LOCH_T2RBUF);
+    wndId2Enum[chkPD_SDM] = LMS7param(PD_SDM);
+    wndId2Enum[chkPD_VCO] = LMS7param(PD_VCO);
+    wndId2Enum[chkPD_VCO_COMP] = LMS7param(PD_VCO_COMP);
+    wndId2Enum[ctrPW_DIV2_LOCH] = LMS7param(PW_DIV2_LOCH);
+    wndId2Enum[ctrPW_DIV4_LOCH] = LMS7param(PW_DIV4_LOCH);
+    wndId2Enum[chkRESET_N] = LMS7param(RESET_N);
+    wndId2Enum[chkREVPH_PFD] = LMS7param(REVPH_PFD);
+    wndId2Enum[chkREV_SDMCLK] = LMS7param(REV_SDMCLK);
+    wndId2Enum[cmbRSEL_LDO_VCO] = LMS7param(RSEL_LDO_VCO);
+    wndId2Enum[cmbSEL_SDMCLK] = LMS7param(SEL_SDMCLK);
+    wndId2Enum[rgrSEL_VCO] = LMS7param(SEL_VCO);
+    wndId2Enum[chkSPDUP_VCO] = LMS7param(SPDUP_VCO);
+    wndId2Enum[chkSX_DITHER_EN] = LMS7param(SX_DITHER_EN);
+    wndId2Enum[cmbTST_SX] = LMS7param(TST_SX);
+    wndId2Enum[cmbVDIV_VCO] = LMS7param(VDIV_VCO);
+    wndId2Enum[chkPD_FBDIV] = LMS7param(PD_FBDIV);
+    wndId2Enum[chkEN_DIR_SXRSXT] = LMS7param(EN_DIR_SXRSXT);
+    wndId2Enum[lblINT_SDM] = LMS7param(INT_SDM);
+    wndId2Enum[lblEN_DIV2_DIVPROG] = LMS7param(EN_DIV2_DIVPROG);
 
     char ctemp[80];
     wxArrayString temp;
@@ -379,10 +401,17 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     sprintf(ctemp, "%.4f V", 0.3436); temp.push_back(ctemp);
     cmbVDIV_VCO->Set(temp);
 
+    txtRefSpurBW->SetValue(_("5"));
+
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
+    if(showRefClkSpurCancelation)
+    {
+        pnlRefClkSpur->Show();
+        showRefClkSpurCancelation = false;
+    }
 }
 
-void lms7002_pnlSX_view::Initialize(LMS7002M* pControl)
+void lms7002_pnlSX_view::Initialize(lms_device_t* pControl)
 {
     lmsControl = pControl;
     assert(lmsControl != nullptr);
@@ -410,9 +439,9 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
-    lmsControl->Modify_SPI_Reg_bits(parameter, event.GetInt());
+    LMS_WriteParam(lmsControl,parameter,event.GetInt());
 
-    if (parameter == CSW_VCO) //for convenience refresh comparator values
+    if(event.GetEventObject() == ctrCSW_VCO) //for convenience refresh comparator values
     {
         wxCommandEvent evt;
         OnbtnReadComparators(evt);
@@ -422,15 +451,16 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
 void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
 {
     assert(lmsControl != nullptr);
-    int value;
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPHO, true);
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(VCO_CMPHO),&value);
+
     lblVCO_CMPHO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 1)
         lblVCO_CMPHO->SetBackgroundColour(*wxGREEN);
     else
         lblVCO_CMPHO->SetBackgroundColour(*wxRED);
 
-    value = lmsControl->Get_SPI_Reg_bits(VCO_CMPLO, true);
+    LMS_ReadParam(lmsControl,LMS7param(VCO_CMPLO),&value);
     lblVCO_CMPLO->SetLabel(wxString::Format(_("%i"), value));
     if (value == 0)
         lblVCO_CMPLO->SetBackgroundColour(*wxGREEN);
@@ -444,9 +474,12 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter reference clock, MHz"), _("Reference clock"));
     double refClkMHz;
     dlg->SetTextValidator(wxFILTER_NUMERIC);
-    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
-    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
-    dlg->SetValue(wxString::Format(_("%f"), lmsControl->GetReferenceClk_SX(isTx)/1e6));
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    const auto isTx = (ch == 2)? true : false;
+    double freq;
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    dlg->SetValue(wxString::Format(_("%f"), freq/1e6));
     if (dlg->ShowModal() == wxID_OK)
     {
         dlg->GetValue().ToDouble(&refClkMHz);
@@ -454,18 +487,13 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
         {
             double currentFreq_MHz;
             txtFrequency->GetValue().ToDouble(&currentFreq_MHz);
-            lmsControl->SetReferenceClk_SX(isTx, refClkMHz * 1e6);
-            int status = lmsControl->SetFrequencySX(isTx, currentFreq_MHz * 1e6);
+            LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,refClkMHz * 1e6);
+            int status = LMS_SetClockFreq(lmsControl, isTx ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,currentFreq_MHz * 1e6);
             if (status != 0)
-                wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
+                wxMessageBox(_("Set SX frequency failed"));
             UpdateGUI();
         }
     }
-}
-
-void lms7002_pnlSX_view::OnDIV2PrescalerChange( wxCommandEvent& event )
-{
-// TODO: Implement OnDIV2PrescalerChange
 }
 
 void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
@@ -473,22 +501,31 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     assert(lmsControl != nullptr);
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
-    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    const auto isTx = (ch == 2)? true : false;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
-    lmsControl->SetReferenceClk_SX(isTx, RefClkMHz * 1e6);
+    LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,RefClkMHz * 1e6);
+
+    double BWMHz;
+    txtRefSpurBW->GetValue().ToDouble(&BWMHz);
     int status;
-    status = lmsControl->SetFrequencySX(isTx, freqMHz * 1e6);
+    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    if(chkEnableRefSpurCancelation->IsChecked())
+        status = lms->SetFrequencySXWithSpurCancelation(isTx,freqMHz * 1e6, BWMHz*1e6);
+    else
+        status = lms->SetFrequencySX(isTx,freqMHz * 1e6);
+
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Set frequency SX: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(_("Set SX frequency failed"));
     else
     {
         wxCommandEvent evt;
         evt.SetEventType(LOG_MESSAGE);
-        const auto channel = lmsControl->GetActiveChannel(false);
+        evt.SetInt(lime::LOG_LEVEL_INFO);
         wxString msg;
-        if (channel == LMS7002M::ChSXR)
+        if (ch == 1)
             msg = _("SXR");
         else
             msg = _("SXT");
@@ -502,10 +539,11 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
 void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
-    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
-    int status = lmsControl->TuneVCO((ch == LMS7002M::ChSXT)? LMS7002M::VCO_SXT : LMS7002M::VCO_SXR);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    int status = LMS_SetClockFreq(lmsControl,ch == 2 ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,-1); //Tune
     if (status != 0)
-        wxMessageBox(wxString::Format(_("Tune: %s"), wxString::From8BitData(GetLastErrorMessage())));
+        wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
 }
 
@@ -514,26 +552,54 @@ void lms7002_pnlSX_view::UpdateGUI()
     assert(lmsControl != nullptr);
 
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    const LMS7002M::Channel ch = lmsControl->GetActiveChannel();
-    const auto isTx = (ch == LMS7002M::ChSXT)? LMS7002M::Tx : LMS7002M::Rx;
-    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), lmsControl->GetReferenceClk_SX(isTx) / 1e6));
-    double freq = lmsControl->GetFrequencySX(isTx);
+    uint16_t ch;
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    const auto isTx = (ch == 2)? true : false;
+    double freq;
+    LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
+    lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
+    LMS_GetClockFreq(lmsControl,isTx ? LMS_CLOCK_SXT: LMS_CLOCK_SXR,&freq);
     lblRealOutFrequency->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
+    if(chkEnableRefSpurCancelation->IsChecked())
+    {
+        uint16_t downconvert = 0;
+        LMS_ReadParam(lmsControl, LMS7param(CMIX_SC_RXTSP), &downconvert);
+        double* freqNCO = new double[16];
+        double PHO;
+        LMS_GetNCOFrequency(lmsControl, false, 0, freqNCO, &PHO);
+        if(downconvert)
+            freq += freqNCO[15];
+        else
+            freq -= freqNCO[15];
+        delete[] freqNCO;
+    }
     txtFrequency->SetValue(wxString::Format(_("%.3f"), freq / 1e6));
-    lblDivider->SetLabel(wxString::Format("2^%i", lmsControl->Get_SPI_Reg_bits(DIV_LOCH)));
+    uint16_t div;
+    LMS_ReadParam(lmsControl,LMS7param(DIV_LOCH),&div);
+    lblDivider->SetLabel(wxString::Format("2^%i", div));
 
-    int fracValue = (lmsControl->Get_SPI_Reg_bits(FRAC_SDM_MSB, false) << 16) | lmsControl->Get_SPI_Reg_bits(FRAC_SDM_LSB, false);
+    uint16_t value;
+    LMS_ReadParam(lmsControl,LMS7param(FRAC_SDM_MSB),&value);
+    int fracValue = value << 16;
+    LMS_ReadParam(lmsControl,LMS7param(FRAC_SDM_LSB),&value);
+    fracValue |= value;
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
     //check if B channel is enabled
-    if (lmsControl->GetActiveChannel() >= LMS7002M::ChB)
+    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
+    if (ch >= 2)
     {
-        if (lmsControl->Get_SPI_Reg_bits(MIMO_SISO) != 0)
+        LMS_ReadParam(lmsControl,LMS7param(MIMO_SISO),&ch);
+        if (ch != 0)
         {
             wxMessageBox(_("MIMO channel B is disabled"), _("Warning"));
             return;
         }
     }
+    if(ch == 1)
+        chkPD_LOCH_T2RBUF->Hide();
+    else
+        chkPD_LOCH_T2RBUF->Show();
 
     wxCommandEvent evt;
     OnbtnReadComparators(evt);
@@ -544,4 +610,27 @@ void lms7002_pnlSX_view::OnShowVCOclicked(wxCommandEvent& event)
     lms7002_dlgVCOfrequencies* dlg = new lms7002_dlgVCOfrequencies(this, lmsControl);
     dlg->ShowModal();
     dlg->Destroy();
+}
+
+void lms7002_pnlSX_view::OnEnableRefSpurCancelation(wxCommandEvent& event)
+{
+    txtRefSpurBW->Enable(chkEnableRefSpurCancelation->IsChecked());
+    uint16_t ch = 0;
+    LMS_ReadParam(lmsControl, LMS7param(MAC), &ch);
+    for(int i=0; i<2; ++i)
+    {
+        LMS_WriteParam(lmsControl, LMS7param(MAC), i+1);
+        LMS_WriteParam(lmsControl, LMS7param(CMIX_GAIN_RXTSP), 1);
+        LMS_WriteParam(lmsControl, LMS7param(CMIX_BYP_RXTSP), 0);
+        if(chkEnableRefSpurCancelation->IsChecked())
+        {
+            LMS_WriteParam(lmsControl, LMS7param(SEL_RX), 15);
+        }
+        else
+        {
+            LMS_WriteParam(lmsControl, LMS7param(SEL_RX), 14);
+        }
+    }
+    LMS_WriteParam(lmsControl, LMS7param(MAC), ch);
+    UpdateGUI();
 }

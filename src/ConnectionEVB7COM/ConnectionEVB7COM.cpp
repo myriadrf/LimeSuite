@@ -5,7 +5,7 @@
 */
 
 #include "ConnectionEVB7COM.h"
-#include "ErrorReporting.h"
+#include "Logger.h"
 
 #include "string.h"
 #ifdef __unix__
@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <stdio.h>
+#include "Logger.h"
 #endif // LINUX
 
 static const int COM_RETRY_INTERVAL = 20; //ms
@@ -38,8 +39,7 @@ ConnectionEVB7COM::ConnectionEVB7COM(const char *comName, int baudrate)
     if (this->Open(comName, baudrate) != 0)
     {
         this->Close();
-
-        fprintf(stderr, "ConnectionEVB7COM(%s, %d) - %s", comName, baudrate, GetLastErrorMessage());
+        lime::error("Failed to open COM port");
     }
 }
 
@@ -82,10 +82,8 @@ int ConnectionEVB7COM::Open(const char *comName, int baudrate)
 {
 
 	if (strlen(comName) == 0) return ReportError("empty comm name");
-
-	int errorCode = 0;
-
 #ifndef __unix__
+    int errorCode = 0;
 	// Initialize Overlap structures
 	m_osROverlap.Internal = 0;
 	m_osROverlap.InternalHigh = 0;
@@ -182,8 +180,6 @@ int ConnectionEVB7COM::Open(const char *comName, int baudrate)
     hComm = open(comName, O_RDWR | O_NOCTTY | O_SYNC);
     if(hComm < 0)
     {
-//        printf("%s",strerror(errno));
-//        MessageLog::getInstance()->write("Connection manager: failed opening COM port\n", LOG_ERROR);
         return ReportError("failed opening COM port");
     }
 
@@ -267,6 +263,8 @@ int ConnectionEVB7COM::Write(const unsigned char *buffer, int length, int timeou
 #endif
     if(bytesWriten == length)
         status = true;
+    if(status == false);
+        ReportError(EIO, "Failed to write data");
 
 	return bytesWriten;
 }

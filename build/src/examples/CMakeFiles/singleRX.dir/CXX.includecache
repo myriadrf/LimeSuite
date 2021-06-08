@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../src/gnuPlotPipe.h
+stdio.h
+-
+cstdio
+-
+stdarg.h
+-
+
+../src/lime/LMS7002M_parameters.h
+stdint.h
+-
+
+../src/lime/LimeSuite.h
+stdint.h
+-
+stdlib.h
+-
+LMS7002M_parameters.h
+../src/lime/LMS7002M_parameters.h
+stdbool.h
+-
+windows.h
+-
+
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/src/examples/singleRX.cpp
+lime/LimeSuite.h
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/src/examples/lime/LimeSuite.h
+iostream
+-
+chrono
+-
+gnuPlotPipe.h
+/home/borko/Work/LimeNET_ADPD2/Software/LimeSuite/src/examples/gnuPlotPipe.h
+

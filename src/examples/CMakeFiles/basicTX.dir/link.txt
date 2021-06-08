@@ -1,0 +1,1 @@
+/usr/bin/g++    -fvisibility-inlines-hidden -pthread -g3 -gdwarf-2   CMakeFiles/basicTX.dir/basicTX.cpp.o  -o ../../bin/basicTX  -L/usr/local/lib -rdynamic ../libLimeSuite.so.18.10.0 -pthread -lusb-1.0 -Wl,-rpath,/home/srdjan/Work2/BBC/LimeSuite/src:/usr/local/lib 

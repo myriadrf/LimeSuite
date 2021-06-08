@@ -1,0 +1,127 @@
+limesuite (18.10.0-1) unstable; urgency=low
+
+  * Release 18.10.0 (2018-10-04)
+
+ -- Lime Microsystems <info@limemicro.com> Thu, 04 Oct 2018 13:00:00 +0300
+
+limesuite (18.06.0-1) unstable; urgency=low
+
+  * Release 18.06.0 (2018-06-13)
+
+ -- Lime Microsystems <info@limemicro.com>  Wed, 13 Jun 2018 15:00:00 +0300
+
+limesuite (18.04.1-1) unstable; urgency=low
+
+  * Release 18.04.1 (2018-04-19)
+
+ -- Lime Microsystems <info@limemicro.com>  Thu, 19 Apr 2018 10:00:00 +0300
+
+limesuite (18.04.0-1) unstable; urgency=low
+
+  * Release 18.04.0 (2018-04-06)
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 06 Apr 2018 14:30:00 +0300
+
+
+limesuite (18.03.0-1) unstable; urgency=low
+
+  * Release 18.03.0 (2018-03-28)
+
+ -- Lime Microsystems <info@limemicro.com>  Wed, 28 Mar 2018 12:30:00 +0300
+
+
+limesuite (17.12.0-1) unstable; urgency=low
+
+  * Release 17.12.0 (2017-12-04)
+
+ -- Lime Microsystems <info@limemicro.com>  Mon, 04 Dec 2017 12:50:00 +0300
+
+limesuite (17.10.0-1) unstable; urgency=low
+
+  * Release 17.10.0 (2017-10-19)
+
+ -- Lime Microsystems <info@limemicro.com>  Thu, 19 Oct 2017 10:53:31 +0300
+
+limesuite (17.09.1-1) unstable; urgency=low
+
+  * Release 17.09.1 (2017-09-21)
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 01 Sep 2017 15:43:31 +0300
+
+limesuite (17.09.0-1) unstable; urgency=low
+
+  * Release 17.09.0 (2017-09-01)
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 01 Sep 2017 13:03:31 +0300
+
+limesuite (17.06.0-1) unstable; urgency=low
+
+  * Release 17.06.0 (2017-06-20)
+
+ -- Lime Microsystems <info@limemicro.com>  Tue, 20 Jun 2017 20:51:09 -0500
+
+limesuite (17.02.2-1) unstable; urgency=low
+
+  * Release 17.02.2 (2017-04-30)
+  * Switch to SoapySDR module ABI 0.6
+
+ -- Lime Microsystems <info@limemicro.com>  Sun, 30 Apr 2017 00:10:38 -0700
+
+limesuite (17.02.1-1) unstable; urgency=low
+
+  * Release 17.02.1 (2017-03-11)
+  * Fix debian packaging for 17.02 ABI
+
+ -- Lime Microsystems <info@limemicro.com>  Sat, 11 Mar 2017 15:36:30 -0800
+
+limesuite (17.02.0-1) unstable; urgency=low
+
+  * Release 17.02.0 (2017-03-07)
+
+ -- Lime Microsystems <info@limemicro.com>  Tue, 07 Mar 2017 12:57:30 -0800
+
+limesuite (17.01.1-1) unstable; urgency=low
+
+  * Release 17.01.1 (2017-02-03)
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 03 Feb 2017 19:20:52 -0800
+
+limesuite (17.01.0-1) unstable; urgency=low
+
+  * Release 17.01.0 (2017-01-22)
+
+ -- Lime Microsystems <info@limemicro.com>  Sun, 22 Jan 2017 13:06:52 -0800
+
+limesuite (16.12.1-1) unstable; urgency=low
+
+  * Release 16.12.1 (2017-01-22)
+
+ -- Lime Microsystems <info@limemicro.com>  Sun, 22 Jan 2017 10:50:11 -0800
+
+limesuite (16.12.0-1) unstable; urgency=low
+
+  * updated debian packaging for 16.12.0 release
+
+ -- Lime Microsystems <info@limemicro.com>  Fri, 30 Dec 2016 00:36:51 -0800
+
+limesuite (16.8.1.819) unstable; urgency=low
+
+  * updated debian packaging for latest version.h
+  * set standards version to 3.9.7
+  * update ABI version to 16.8-1
+  * disable CMAKE_INSTALL_RPATH
+
+ -- Lime Microsystems <info@limemicro.com>  Thu, 25 Aug 2016 11:41:35 -0700
+
+limesuite (16.6.6.818) unstable; urgency=low
+
+  * updated debian packaging for latest version.h
+
+ -- Lime Microsystems <info@limemicro.com>  Sun, 26 Jun 2016 09:24:35 -0700
+
+
+limesuite (16.5.12.816) unstable; urgency=low
+
+  * debian packaging work for lime suite
+
+ -- Lime Microsystems <info@limemicro.com>  Wed, 18 May 2016 18:18:06 -0700

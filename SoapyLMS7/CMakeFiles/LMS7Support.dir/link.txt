@@ -1,0 +1,1 @@
+/usr/bin/g++  -fPIC  -fvisibility-inlines-hidden -fvisibility-inlines-hidden -g3 -gdwarf-2  -Wl,--no-undefined -shared  -o libLMS7Support.so CMakeFiles/LMS7Support.dir/Registration.cpp.o CMakeFiles/LMS7Support.dir/Settings.cpp.o CMakeFiles/LMS7Support.dir/Streaming.cpp.o ../src/libLimeSuite.so.18.10.0 -lSoapySDR -pthread -lusb-1.0 -Wl,-rpath,/home/srdjan/Work2/BBC/LimeSuite/src: 

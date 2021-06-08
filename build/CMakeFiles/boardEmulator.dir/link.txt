@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++0x -pthread   CMakeFiles/boardEmulator.dir/boardEmulator.cpp.o  -o boardEmulator  -L/usr/local/lib -rdynamic 

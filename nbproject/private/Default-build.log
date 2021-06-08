@@ -1,0 +1,235 @@
+Scanning dependencies of target LimeSuite
+[  0%] Building CXX object src/CMakeFiles/LimeSuite.dir/Logger.cpp.o
+[  1%] Building CXX object src/CMakeFiles/LimeSuite.dir/ADF4002/ADF4002.cpp.o
+[  2%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m_mcu/MCU_BD.cpp.o
+[  2%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionRegistry/IConnection.cpp.o
+Scanning dependencies of target oglGraph
+[  2%] Building CXX object src/oglGraph/CMakeFiles/oglGraph.dir/dlgMarkers.cpp.o
+[  3%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionRegistry/ConnectionHandle.cpp.o
+[  4%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionRegistry/ConnectionRegistry.cpp.o
+[  4%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_RegistersMap.cpp.o
+[  5%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_parameters.cpp.o
+[  6%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M.cpp.o
+[  7%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_RxTxCalibrations.cpp.o
+[  7%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_BaseCalibrations.cpp.o
+[  8%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/goert.cpp.o
+[  9%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/mcu_dc_iq_calibration.cpp.o
+[  9%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_filtersCalibration.cpp.o
+[ 10%] Building CXX object src/CMakeFiles/LimeSuite.dir/lms7002m/LMS7002M_gainCalibrations.cpp.o
+[ 11%] Building CXX object src/CMakeFiles/LimeSuite.dir/protocols/LMS64CProtocol.cpp.o
+[ 12%] Building CXX object src/CMakeFiles/LimeSuite.dir/protocols/Streamer.cpp.o
+[ 12%] Building CXX object src/CMakeFiles/LimeSuite.dir/protocols/ConnectionImages.cpp.o
+[ 13%] Building CXX object src/oglGraph/CMakeFiles/oglGraph.dir/GLFont.cpp.o
+[ 14%] Building CXX object src/oglGraph/CMakeFiles/oglGraph.dir/OpenGLGraph.cpp.o
+[ 14%] Building C object src/oglGraph/CMakeFiles/oglGraph.dir/glew/glew.c.o
+[ 15%] Building CXX object src/CMakeFiles/LimeSuite.dir/Si5351C/Si5351C.cpp.o
+[ 16%] Building C object src/CMakeFiles/LimeSuite.dir/__/external/kissFFT/kiss_fft.c.o
+[ 16%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/lms7_api.cpp.o
+[ 17%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/lms7_device.cpp.o
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/API/lms7_api.cpp: In function ‘int LoadQSparkSettings(lms_device_t*, const char*)’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/API/lms7_api.cpp:1609:54: warning: format ‘%x’ expects argument of type ‘unsigned int*’, but argument 3 has type ‘uint16_t* {aka short unsigned int*}’ [-Wformat=]
+    if (sscanf(pairs->first.c_str(), "Reg_1:%x", &addr) != 1)
+                                                      ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/API/lms7_api.cpp:1611:50: warning: format ‘%d’ expects argument of type ‘int*’, but argument 3 has type ‘uint16_t* {aka short unsigned int*}’ [-Wformat=]
+    if (sscanf(pairs->second.c_str(), "%d", &value) != 1)
+                                                  ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/API/lms7_api.cpp:1632:54: warning: format ‘%x’ expects argument of type ‘unsigned int*’, but argument 3 has type ‘uint16_t* {aka short unsigned int*}’ [-Wformat=]
+    if (sscanf(pairs->first.c_str(), "Reg_2:%x", &addr) != 1)
+                                                      ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/API/lms7_api.cpp:1634:50: warning: format ‘%d’ expects argument of type ‘int*’, but argument 3 has type ‘uint16_t* {aka short unsigned int*}’ [-Wformat=]
+    if (sscanf(pairs->second.c_str(), "%d", &value) != 1)
+                                                  ^
+[ 18%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/LmsGeneric.cpp.o
+[ 18%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/qLimeSDR.cpp.o
+[ 19%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/LimeSDR_mini.cpp.o
+[ 20%] Building CXX object src/CMakeFiles/LimeSuite.dir/API/LimeSDR.cpp.o
+[ 21%] Building CXX object src/CMakeFiles/LimeSuite.dir/FPGA_common/FPGA_common.cpp.o
+[ 21%] Building CXX object src/CMakeFiles/LimeSuite.dir/FPGA_common/FPGA_Mini.cpp.o
+[ 22%] Building CXX object src/CMakeFiles/LimeSuite.dir/FPGA_common/FPGA_Q.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/LimeSuite.dir/windowFunction.cpp.o
+[ 23%] Building CXX object src/CMakeFiles/LimeSuite.dir/VersionInfo.cpp.o
+[ 24%] Building CXX object src/CMakeFiles/LimeSuite.dir/SystemResources.cpp.o
+[ 25%] Building C object src/CMakeFiles/LimeSuite.dir/GFIR/corrections.c.o
+[ 26%] Building C object src/CMakeFiles/LimeSuite.dir/GFIR/lms.c.o
+[ 26%] Building C object src/CMakeFiles/LimeSuite.dir/GFIR/gfir_lms.c.o
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/build/src/SystemResources.cpp: In function ‘int lime::downloadImageResource(const string&)’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/build/src/SystemResources.cpp:188:38: warning: ignoring return value of ‘int system(const char*)’, declared with attribute warn_unused_result [-Wunused-result]
+         std::system(mkdirCmd.c_str());
+                                      ^
+[ 27%] Linking CXX static library liboglGraph.a
+[ 28%] Building C object src/CMakeFiles/LimeSuite.dir/GFIR/recipes.c.o
+[ 28%] Built target oglGraph
+[ 29%] Building C object src/CMakeFiles/LimeSuite.dir/GFIR/rounding.c.o
+[ 29%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionFX3/ConnectionFX3Entry.cpp.o
+[ 30%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionFX3/ConnectionFX3.cpp.o
+[ 31%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionFTDI/ConnectionFT601.cpp.o
+[ 31%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionFTDI/ConnectionFT601Entry.cpp.o
+[ 32%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionXillybus/ConnectionXillybusEntry.cpp.o
+[ 33%] Building CXX object src/CMakeFiles/LimeSuite.dir/ConnectionXillybus/ConnectionXillybus.cpp.o
+[ 34%] Building CXX object src/CMakeFiles/LimeSuite.dir/BuiltinConnections.cpp.o
+[ 34%] Linking CXX shared library libLimeSuite.so
+[ 34%] Built target LimeSuite
+Scanning dependencies of target boardEmulator
+Scanning dependencies of target singleRX
+Scanning dependencies of target basicRX
+Scanning dependencies of target gpio_example
+[ 34%] Building CXX object src/CMakeFiles/boardEmulator.dir/boardEmulator.cpp.o
+[ 35%] Building CXX object src/examples/CMakeFiles/singleRX.dir/singleRX.cpp.o
+[ 36%] Building CXX object src/examples/CMakeFiles/gpio_example.dir/gpio_example.cpp.o
+[ 37%] Building CXX object src/examples/CMakeFiles/basicRX.dir/basicRX.cpp.o
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/boardEmulator.cpp: In function ‘int main(int, char**)’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/boardEmulator.cpp:52:21: warning: ignoring return value of ‘int system(const char*)’, declared with attribute warn_unused_result [-Wunused-result]
+  system(linkCommand);
+                     ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/boardEmulator.cpp:111:21: warning: ignoring return value of ‘int system(const char*)’, declared with attribute warn_unused_result [-Wunused-result]
+  system(linkCommand);
+                     ^
+[ 37%] Linking CXX executable ../../bin/basicRX
+[ 38%] Linking CXX executable ../../bin/gpio_example
+[ 39%] Linking CXX executable ../../bin/singleRX
+[ 39%] Built target basicRX
+Scanning dependencies of target basicTX
+[ 40%] Linking CXX executable boardEmulator
+[ 41%] Building CXX object src/examples/CMakeFiles/basicTX.dir/basicTX.cpp.o
+[ 41%] Built target singleRX
+Scanning dependencies of target dualRXTX
+[ 41%] Building CXX object src/examples/CMakeFiles/dualRXTX.dir/dualRXTX.cpp.o
+[ 41%] Built target gpio_example
+[ 41%] Built target boardEmulator
+[ 42%] Building CXX object LimeUtil/CMakeFiles/LimeUtil.dir/LimeUtil.cpp.o
+[ 43%] Building CXX object QuickTest/CMakeFiles/LimeQuickTest.dir/LimeSDRTest.cpp.o
+[ 44%] Linking CXX executable ../../bin/basicTX
+[ 45%] Linking CXX executable ../../bin/dualRXTX
+[ 45%] Built target basicTX
+[ 45%] Built target dualRXTX
+[ 45%] Building CXX object SoapyLMS7/CMakeFiles/LMS7Support.dir/Registration.cpp.o
+[ 45%] Building CXX object LimeUtil/CMakeFiles/LimeUtil.dir/LimeUtilTiming.cpp.o
+[ 46%] Building CXX object LimeUtil/CMakeFiles/LimeUtil.dir/LimeUtilCalSweep.cpp.o
+[ 47%] Building LimeSuite Octave plugin
+[ 48%] Building CXX object QuickTest/CMakeFiles/LimeQuickTest.dir/LimeSDRTest_Mini.cpp.o
+Scanning dependencies of target LimeSuiteGUI
+[ 49%] Building CXX object SoapyLMS7/CMakeFiles/LMS7Support.dir/Settings.cpp.o
+[ 50%] Linking CXX executable LimeUtil
+[ 51%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/ADF4002/ADF4002_wxgui.cpp.o
+[ 51%] Built target LimeUtil
+[ 51%] Building CXX object QuickTest/CMakeFiles/LimeQuickTest.dir/LimeSDRTest_USB.cpp.o
+[ 52%] Building CXX object QuickTest/CMakeFiles/LimeQuickTest.dir/TestGUI.cpp.o
+[ 53%] Building C object QuickTest/CMakeFiles/LimeQuickTest.dir/__/external/kissFFT/kiss_fft.c.o
+[ 54%] Building CXX object SoapyLMS7/CMakeFiles/LMS7Support.dir/Streaming.cpp.o
+[ 55%] Linking CXX executable LimeQuickTest
+[ 55%] Built target LimeQuickTest
+[ 56%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlXBUF_view.cpp.o
+[ 56%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_wxgui.cpp.o
+[ 56%] Linking CXX shared module libLMS7Support.so
+[ 56%] Built target LimeSuiteOctave
+[ 57%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlRFE_view.cpp.o
+[ 57%] Built target LMS7Support
+[ 57%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlTRF_view.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlCalibrations_view.cpp.o
+[ 59%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlCDS_view.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlBIST_view.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlLimeLightPAD_view.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/dlgViewIRAM.cpp.o
+[ 62%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_gui_utilities.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlSX_view.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlTBB_view.cpp.o
+[ 64%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_dlgVCOfrequencies.cpp.o
+[ 65%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlRBB_view.cpp.o
+[ 66%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlLDO_view.cpp.o
+[ 66%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlAFE_view.cpp.o
+[ 67%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlGains_view.cpp.o
+[ 68%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/CoefficientFileParser.cpp.o
+[ 68%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlRxTSP_view.cpp.o
+[ 69%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_mainPanel.cpp.o
+[ 70%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/pnlBoardControls.cpp.o
+[ 70%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/dlgViewSFR.cpp.o
+[ 71%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp.o
+[ 72%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp.o
+[ 73%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlBIAS_view.cpp.o
+[ 73%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp.o
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp: In member function ‘void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick(wxCommandEvent&)’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:253:41: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         fscanf(inFile, "%d", &test_code);
+                                         ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:257:44: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d ", &address);
+                                            ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:258:43: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d\n", &value);
+                                           ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:264:45: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d", &test_code);
+                                             ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp: In member function ‘virtual void lms7002_pnlMCU_BD_view::OnbtnRunTestClick(wxCommandEvent&)’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:535:41: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         fscanf(inFile, "%d", &test_code);
+                                         ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:538:44: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d ", &address);
+                                            ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:539:43: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d\n", &value);
+                                           ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp:545:45: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+             fscanf(inFile, "%d", &test_code);
+                                             ^
+[ 74%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlTxTSP_view.cpp.o
+[ 75%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7002_wxgui/lms7002_pnlR3.cpp.o
+[ 75%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/LMS_Programing/LMS_Programing_wxgui.cpp.o
+[ 76%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/dlgConnectionSettings.cpp.o
+[ 77%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/pnlMiniLog.cpp.o
+[ 77%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/SPI_wxgui.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/dlgFullMessageLog.cpp.o
+[ 79%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/dlgDeviceInfo.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/utilities_gui/utilities_gui.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7suiteAppFrame.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/lms7002m_novena_wxgui.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/RFSpark/RFSpark_wxgui.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/Si5351C/Si5351C_wxgui.cpp.o
+[ 83%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7suiteApp_gui.cpp.o
+[ 84%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7suiteApp.cpp.o
+[ 85%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp.o
+[ 85%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/HPM7/HPM7_wxgui.cpp.o
+[ 86%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/dlgAbout.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/numericSlider/numericSlider.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/myriad7/myriad7_wxgui.cpp.o
+[ 88%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/fftviewer_wxgui/fftviewer_wxgui.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/fftviewer_wxgui/fftviewer_frFFTviewer.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/lms7suiteEvents/lms7suiteEvents.cpp.o
+[ 90%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnlQSpark.cpp.o
+[ 91%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnluLimeSDR.cpp.o
+[ 92%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnlUltimateEVB.cpp.o
+[ 92%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnlBuffers.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnlCoreSDR.cpp.o
+[ 94%] Building C object src/CMakeFiles/LimeSuiteGUI.dir/__/external/kissFFT/kiss_fft.c.o
+[ 94%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/windowFunction.cpp.o
+[ 95%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/boards_wxgui/pnlLimeSDR.cpp.o
+[ 96%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/DPDTest/DPDTest.cpp.o
+[ 96%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/DPDTest/dlgADPDControls.cpp.o
+[ 97%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/DPDTest/nrc.cpp.o
+[ 98%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/DPDTest/qadpd.cpp.o
+[100%] Building CXX object src/CMakeFiles/LimeSuiteGUI.dir/DPDTest/T800.cpp.o
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/qadpd.cpp:14:0: warning: "M_PI" redefined
+ #define M_PI 3.14159265359
+ ^
+In file included from /home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/nrc.h:15:0,
+                 from /home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/qadpd.cpp:8:
+/usr/include/math.h:418:0: note: this is the location of the previous definition
+ # define M_PI  3.14159265358979323846 /* pi */
+ ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp: In member function ‘int DPDTest::readdata()’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp:3676:47: warning: iteration 100u invokes undefined behavior [-Waggressive-loop-optimizations]
+     for (i = 0; i < num; i++) data[i] = vals[i];
+                                               ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp:3676:19: note: containing loop
+     for (i = 0; i < num; i++) data[i] = vals[i];
+                   ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp: In member function ‘int DPDTest::readdata2()’:
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp:3676:47: warning: iteration 100u invokes undefined behavior [-Waggressive-loop-optimizations]
+     for (i = 0; i < num; i++) data[i] = vals[i];
+                                               ^
+/home/limelt/LimeSDR_QPCIe_project_20190325/Software/LimeSuite/src/DPDTest/DPDTest.cpp:3676:19: note: containing loop
+     for (i = 0; i < num; i++) data[i] = vals[i];
+                   ^
+[100%] Linking CXX executable ../bin/LimeSuiteGUI
+[100%] Built target LimeSuiteGUI

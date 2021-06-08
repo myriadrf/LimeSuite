@@ -1,0 +1,3142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="100">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="build">
+        <df name="src">
+          <in>BuiltinConnections.cpp</in>
+          <in>SystemResources.cpp</in>
+          <in>VersionInfo.cpp</in>
+        </df>
+      </df>
+      <df name="external">
+        <df name="kissFFT">
+          <in>kiss_fft.c</in>
+        </df>
+      </df>
+      <df name="LimeUtil">
+        <in>LimeUtil.cpp</in>
+        <in>LimeUtilCalSweep.cpp</in>
+        <in>LimeUtilTiming.cpp</in>
+      </df>
+      <df name="octave">
+        <in>LimeSuite.cc</in>
+      </df>
+      <df name="QuickTest">
+        <in>LimeSDRTest.cpp</in>
+        <in>LimeSDRTest_Mini.cpp</in>
+        <in>LimeSDRTest_USB.cpp</in>
+        <in>TestGUI.cpp</in>
+      </df>
+      <df name="SoapyLMS7">
+        <in>Registration.cpp</in>
+        <in>Settings.cpp</in>
+        <in>Streaming.cpp</in>
+      </df>
+      <df name="src">
+        <df name="ADF4002">
+          <in>ADF4002.cpp</in>
+          <in>ADF4002_wxgui.cpp</in>
+        </df>
+        <df name="API">
+          <in>LimeSDR.cpp</in>
+          <in>LimeSDR_mini.cpp</in>
+          <in>LmsGeneric.cpp</in>
+          <in>lms7_api.cpp</in>
+          <in>lms7_device.cpp</in>
+          <in>qLimeSDR.cpp</in>
+        </df>
+        <df name="boards_wxgui">
+          <in>lms7002m_novena_wxgui.cpp</in>
+          <in>pnlBuffers.cpp</in>
+          <in>pnlCoreSDR.cpp</in>
+          <in>pnlLimeSDR.cpp</in>
+          <in>pnlQSpark.cpp</in>
+          <in>pnlUltimateEVB.cpp</in>
+          <in>pnluLimeSDR.cpp</in>
+        </df>
+        <df name="ConnectionFTDI">
+          <in>ConnectionFT601.cpp</in>
+          <in>ConnectionFT601Entry.cpp</in>
+        </df>
+        <df name="ConnectionFX3">
+          <in>ConnectionFX3.cpp</in>
+          <in>ConnectionFX3Entry.cpp</in>
+        </df>
+        <df name="ConnectionRegistry">
+          <in>ConnectionHandle.cpp</in>
+          <in>ConnectionRegistry.cpp</in>
+          <in>IConnection.cpp</in>
+        </df>
+        <df name="ConnectionXillybus">
+          <in>ConnectionXillybus.cpp</in>
+          <in>ConnectionXillybusEntry.cpp</in>
+        </df>
+        <df name="DPDTest">
+          <in>DPDTest.cpp</in>
+          <in>T800.cpp</in>
+          <in>dlgADPDControls.cpp</in>
+          <in>nrc.cpp</in>
+          <in>qadpd.cpp</in>
+        </df>
+        <df name="examples">
+          <in>basicRX.cpp</in>
+          <in>basicTX.cpp</in>
+          <in>dualRXTX.cpp</in>
+          <in>gpio_example.cpp</in>
+          <in>singleRX.cpp</in>
+        </df>
+        <df name="fftviewer_wxgui">
+          <in>fftviewer_frFFTviewer.cpp</in>
+          <in>fftviewer_wxgui.cpp</in>
+        </df>
+        <df name="FPGA_common">
+          <in>FPGA_Mini.cpp</in>
+          <in>FPGA_Q.cpp</in>
+          <in>FPGA_common.cpp</in>
+        </df>
+        <df name="FPGAcontrols_wxgui">
+          <in>FPGAcontrols_wxgui.cpp</in>
+        </df>
+        <df name="GFIR">
+          <in>corrections.c</in>
+          <in>gfir_lms.c</in>
+          <in>lms.c</in>
+          <in>recipes.c</in>
+          <in>rounding.c</in>
+        </df>
+        <df name="HPM7">
+          <in>HPM7_wxgui.cpp</in>
+        </df>
+        <df name="lms7002_wxgui">
+          <in>CoefficientFileParser.cpp</in>
+          <in>dlgViewIRAM.cpp</in>
+          <in>dlgViewSFR.cpp</in>
+          <in>lms7002_dlgGFIR_Coefficients.cpp</in>
+          <in>lms7002_dlgVCOfrequencies.cpp</in>
+          <in>lms7002_gui_utilities.cpp</in>
+          <in>lms7002_mainPanel.cpp</in>
+          <in>lms7002_pnlAFE_view.cpp</in>
+          <in>lms7002_pnlBIAS_view.cpp</in>
+          <in>lms7002_pnlBIST_view.cpp</in>
+          <in>lms7002_pnlCDS_view.cpp</in>
+          <in>lms7002_pnlCLKGEN_view.cpp</in>
+          <in>lms7002_pnlCalibrations_view.cpp</in>
+          <in>lms7002_pnlGains_view.cpp</in>
+          <in>lms7002_pnlLDO_view.cpp</in>
+          <in>lms7002_pnlLimeLightPAD_view.cpp</in>
+          <in>lms7002_pnlMCU_BD_view.cpp</in>
+          <in>lms7002_pnlR3.cpp</in>
+          <in>lms7002_pnlRBB_view.cpp</in>
+          <in>lms7002_pnlRFE_view.cpp</in>
+          <in>lms7002_pnlRxTSP_view.cpp</in>
+          <in>lms7002_pnlSX_view.cpp</in>
+          <in>lms7002_pnlTBB_view.cpp</in>
+          <in>lms7002_pnlTRF_view.cpp</in>
+          <in>lms7002_pnlTxTSP_view.cpp</in>
+          <in>lms7002_pnlXBUF_view.cpp</in>
+          <in>lms7002_wxgui.cpp</in>
+          <in>pnlBoardControls.cpp</in>
+        </df>
+        <df name="lms7002m">
+          <in>LMS7002M.cpp</in>
+          <in>LMS7002M_BaseCalibrations.cpp</in>
+          <in>LMS7002M_RegistersMap.cpp</in>
+          <in>LMS7002M_RxTxCalibrations.cpp</in>
+          <in>LMS7002M_filtersCalibration.cpp</in>
+          <in>LMS7002M_gainCalibrations.cpp</in>
+          <in>LMS7002M_parameters.cpp</in>
+          <in>goert.cpp</in>
+          <in>mcu_dc_iq_calibration.cpp</in>
+        </df>
+        <df name="lms7002m_mcu">
+          <in>MCU_BD.cpp</in>
+        </df>
+        <df name="lms7suiteEvents">
+          <in>lms7suiteEvents.cpp</in>
+        </df>
+        <df name="LMS_Programing">
+          <in>LMS_Programing_wxgui.cpp</in>
+        </df>
+        <df name="myriad7">
+          <in>myriad7_wxgui.cpp</in>
+        </df>
+        <df name="numericSlider">
+          <in>numericSlider.cpp</in>
+        </df>
+        <df name="oglGraph">
+          <df name="glew">
+            <in>glew.c</in>
+          </df>
+          <in>GLFont.cpp</in>
+          <in>OpenGLGraph.cpp</in>
+          <in>dlgMarkers.cpp</in>
+        </df>
+        <df name="protocols">
+          <in>ConnectionImages.cpp</in>
+          <in>LMS64CProtocol.cpp</in>
+          <in>Streamer.cpp</in>
+        </df>
+        <df name="RFSpark">
+          <in>RFSpark_wxgui.cpp</in>
+        </df>
+        <df name="Si5351C">
+          <in>Si5351C.cpp</in>
+          <in>Si5351C_wxgui.cpp</in>
+        </df>
+        <df name="utilities_gui">
+          <in>SPI_wxgui.cpp</in>
+          <in>dlgConnectionSettings.cpp</in>
+          <in>dlgDeviceInfo.cpp</in>
+          <in>dlgFullMessageLog.cpp</in>
+          <in>pnlMiniLog.cpp</in>
+          <in>utilities_gui.cpp</in>
+        </df>
+        <in>Logger.cpp</in>
+        <in>boardEmulator.cpp</in>
+        <in>dlgAbout.cpp</in>
+        <in>lms7suiteApp.cpp</in>
+        <in>lms7suiteAppFrame.cpp</in>
+        <in>lms7suiteApp_gui.cpp</in>
+        <in>windowFunction.cpp</in>
+      </df>
+    </df>
+    <logicalFolder name="LimeSuite"
+                   displayName="LimeSuite"
+                   projectFiles="true"
+                   root="../../LimeSuite">
+      <logicalFolder name="external" displayName="external" projectFiles="true">
+        <logicalFolder name="kissFFT" displayName="kissFFT" projectFiles="true">
+          <itemPath>../../LimeSuite/external/kissFFT/_kiss_fft_guts.h</itemPath>
+          <itemPath>../../LimeSuite/external/kissFFT/kiss_fft.c</itemPath>
+          <itemPath>../../LimeSuite/external/kissFFT/kiss_fft.h</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="LimeUtil" displayName="LimeUtil" projectFiles="true">
+        <itemPath>../../LimeSuite/LimeUtil/LimeUtil.cpp</itemPath>
+        <itemPath>../../LimeSuite/LimeUtil/LimeUtilCalSweep.cpp</itemPath>
+        <itemPath>../../LimeSuite/LimeUtil/LimeUtilTiming.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="QuickTest" displayName="QuickTest" projectFiles="true">
+        <itemPath>../../LimeSuite/QuickTest/LimeSDRTest.cpp</itemPath>
+        <itemPath>../../LimeSuite/QuickTest/LimeSDRTest.h</itemPath>
+        <itemPath>../../LimeSuite/QuickTest/LimeSDRTest_Mini.cpp</itemPath>
+        <itemPath>../../LimeSuite/QuickTest/LimeSDRTest_USB.cpp</itemPath>
+        <itemPath>../../LimeSuite/QuickTest/TestGUI.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="SoapyLMS7" displayName="SoapyLMS7" projectFiles="true">
+        <itemPath>../../LimeSuite/SoapyLMS7/Registration.cpp</itemPath>
+        <itemPath>../../LimeSuite/SoapyLMS7/Settings.cpp</itemPath>
+        <itemPath>../../LimeSuite/SoapyLMS7/SoapyLMS7.h</itemPath>
+        <itemPath>../../LimeSuite/SoapyLMS7/Streaming.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="src" displayName="src" projectFiles="true">
+        <logicalFolder name="examples" displayName="examples" projectFiles="true">
+          <itemPath>../../LimeSuite/src/examples/basicRX.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/examples/basicTX.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/examples/dualRXTX.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/examples/gpio_example.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/examples/singleRX.cpp</itemPath>
+        </logicalFolder>
+        <logicalFolder name="oglGraph" displayName="oglGraph" projectFiles="true">
+          <logicalFolder name="glew" displayName="glew" projectFiles="true">
+            <itemPath>../../LimeSuite/src/oglGraph/glew/glew.c</itemPath>
+          </logicalFolder>
+          <itemPath>../../LimeSuite/src/oglGraph/GLFont.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/GLFont.h</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/OpenGLGraph.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/OpenGLGraph.h</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/StaticFontHeader.h</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/dlgMarkers.cpp</itemPath>
+          <itemPath>../../LimeSuite/src/oglGraph/dlgMarkers.h</itemPath>
+        </logicalFolder>
+        <itemPath>../../LimeSuite/src/LimeSuiteConfig.h</itemPath>
+        <itemPath>../../LimeSuite/src/Logger.h</itemPath>
+        <itemPath>../../LimeSuite/src/SystemResources.h</itemPath>
+        <itemPath>../../LimeSuite/src/VersionInfo.h</itemPath>
+        <itemPath>../../LimeSuite/src/gnuPlotPipe.h</itemPath>
+      </logicalFolder>
+    </logicalFolder>
+    <logicalFolder name="src"
+                   displayName="src"
+                   projectFiles="true"
+                   root="../../LimeSuite/src">
+      <logicalFolder name="ADF4002" displayName="ADF4002" projectFiles="true">
+        <itemPath>../../LimeSuite/src/ADF4002/ADF4002.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="API" displayName="API" projectFiles="true">
+        <itemPath>../../LimeSuite/src/API/lms7_device.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="ConnectionRegistry"
+                     displayName="ConnectionRegistry"
+                     projectFiles="true">
+        <itemPath>../../LimeSuite/src/ConnectionRegistry/ConnectionHandle.h</itemPath>
+        <itemPath>../../LimeSuite/src/ConnectionRegistry/ConnectionRegistry.h</itemPath>
+        <itemPath>../../LimeSuite/src/ConnectionRegistry/IConnection.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="FPGA_common" displayName="FPGA_common" projectFiles="true">
+        <itemPath>../../LimeSuite/src/FPGA_common/FPGA_Mini.h</itemPath>
+        <itemPath>../../LimeSuite/src/FPGA_common/FPGA_common.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="lime" displayName="lime" projectFiles="true">
+        <itemPath>../../LimeSuite/src/lime/LMS7002M_parameters.h</itemPath>
+        <itemPath>../../LimeSuite/src/lime/LimeSuite.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="lms7002m" displayName="lms7002m" projectFiles="true">
+        <itemPath>../../LimeSuite/src/lms7002m/LMS7002M.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="oglGraph" displayName="oglGraph" projectFiles="true">
+        <logicalFolder name="glew" displayName="glew" projectFiles="true">
+          <logicalFolder name="GL" displayName="GL" projectFiles="true">
+            <itemPath>../../LimeSuite/src/oglGraph/glew/GL/glew.h</itemPath>
+            <itemPath>../../LimeSuite/src/oglGraph/glew/GL/glxew.h</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="protocols" displayName="protocols" projectFiles="true">
+        <itemPath>../../LimeSuite/src/protocols/LMS64CCommands.h</itemPath>
+        <itemPath>../../LimeSuite/src/protocols/LMS64CProtocol.h</itemPath>
+        <itemPath>../../LimeSuite/src/protocols/LMSBoards.h</itemPath>
+        <itemPath>../../LimeSuite/src/protocols/Streamer.h</itemPath>
+        <itemPath>../../LimeSuite/src/protocols/dataTypes.h</itemPath>
+        <itemPath>../../LimeSuite/src/protocols/fifo.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Si5351C" displayName="Si5351C" projectFiles="true">
+        <itemPath>../../LimeSuite/src/Si5351C/Si5351C.h</itemPath>
+      </logicalFolder>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>CMakeLists.txt</itemPath>
+      <itemPath>build/Makefile</itemPath>
+      <itemPath>nbproject/private/launcher.properties</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>build/Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <flagsDictionary>
+        <element flagsID="0" commonFlags="-O3 -fPIC -march=native -std=gnu++11"/>
+        <element flagsID="1" commonFlags="-O3 -march=native -std=gnu++11"/>
+        <element flagsID="2" commonFlags="-fPIC -fopenmp -O2 -fstack-protector-strong"/>
+        <element flagsID="3" commonFlags="-fPIC -march=native -Wpedantic -std=gnu++11"/>
+        <element flagsID="4" commonFlags="-g -fPIC -march=native"/>
+        <element flagsID="5" commonFlags="-g -march=native"/>
+        <element flagsID="6" commonFlags="-march=native -Wpedantic -std=gnu++11"/>
+        <element flagsID="7"
+                 commonFlags="-march=skylake -msse3 -mssse3 -mcx16 -maes -mpclmul -mpopcnt -mabm -mfma -mbmi -mbmi2 -mavx -mavx2 -msse4.2 -msse4.1 -mlzcnt -mrtm -mrdrnd -mf16c -mfsgsbase -mrdseed -mprfchw -madx -mxsave -mxsaveopt -mclflushopt -mxsavec -mxsaves -mtune=skylake -fstack-protector-strong"/>
+        <element flagsID="8"
+                 commonFlags="-march=skylake -msse3 -mssse3 -mcx16 -maes -mpclmul -mpopcnt -mabm -mfma -mbmi -mbmi2 -mavx -mavx2 -msse4.2 -msse4.1 -mlzcnt -mrtm -mrdrnd -mf16c -mfsgsbase -mrdseed -mprfchw -madx -mxsave -mxsaveopt -mclflushopt -mxsavec -mxsaves -mtune=skylake -std=gnu++11 -fPIC -fstack-protector-strong"/>
+        <element flagsID="9"
+                 commonFlags="-march=skylake -msse3 -mssse3 -mcx16 -maes -mpclmul -mpopcnt -mabm -mfma -mbmi -mbmi2 -mavx -mavx2 -msse4.2 -msse4.1 -mlzcnt -mrtm -mrdrnd -mf16c -mfsgsbase -mrdseed -mprfchw -madx -mxsave -mxsaveopt -mclflushopt -mxsavec -mxsaves -mtune=skylake -std=gnu++11 -fstack-protector-strong"/>
+      </flagsDictionary>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>build</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile -j5</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath>build/bin/LimeSuiteGUI</executablePath>
+        </makeTool>
+        <preBuild>
+          <preBuildCommandWorkingDir>build</preBuildCommandWorkingDir>
+          <preBuildCommand>${CMAKE} -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=${IDE_CC} -DCMAKE_CXX_COMPILER=${IDE_CXX} -DCMAKE_C_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_CXX_FLAGS_DEBUG="-g3 -gdwarf-2" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..</preBuildCommand>
+        </preBuild>
+      </makefileType>
+      <item path="../../LimeSuite/LimeUtil/LimeUtil.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/LimeUtil</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/LimeUtil/LimeUtilCalSweep.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/LimeUtil</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/LimeUtil/LimeUtilTiming.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/LimeUtil</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/QuickTest/LimeSDRTest.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/QuickTest</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/external/kissFFT</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/src/FPGA_common</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/QuickTest/LimeSDRTest_Mini.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/QuickTest</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/external/kissFFT</pElem>
+            <pElem>../../LimeSuite/src/FPGA_common</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/QuickTest/LimeSDRTest_USB.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/QuickTest</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/src/Si5351C</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/external/kissFFT</pElem>
+            <pElem>../../LimeSuite/src/FPGA_common</pElem>
+            <pElem>../../LimeSuite/src/ADF4002</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/QuickTest/TestGUI.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/QuickTest</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/SoapyLMS7/Registration.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="8">
+          <incDir>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/SoapyLMS7</pElem>
+            <pElem>/usr/include/SoapySDR</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/SoapyLMS7/Settings.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="8">
+          <incDir>
+            <pElem>/usr/include/SoapySDR</pElem>
+            <pElem>../../LimeSuite/SoapyLMS7</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/SoapyLMS7/Streaming.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="8">
+          <incDir>
+            <pElem>../../LimeSuite/src/protocols</pElem>
+            <pElem>/usr/include/SoapySDR</pElem>
+            <pElem>../../LimeSuite/SoapyLMS7</pElem>
+            <pElem>../../LimeSuite/src/ConnectionRegistry</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/API</pElem>
+            <pElem>../../LimeSuite/src/lms7002m</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/external/kissFFT/kiss_fft.c"
+            ex="false"
+            tool="0"
+            flavor2="3">
+        <cTool flags="7">
+        </cTool>
+      </item>
+      <item path="../../LimeSuite/src/examples/basicRX.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/examples</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/examples/basicTX.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/examples</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/examples/dualRXTX.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/examples</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/examples/gpio_example.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/examples</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+            <pElem>../../LimeSuite/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/examples/singleRX.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src</pElem>
+            <pElem>../../LimeSuite/src/examples</pElem>
+            <pElem>../../LimeSuite/src/lime</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/oglGraph/GLFont.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>../../LimeSuite/src/oglGraph</pElem>
+            <pElem>../../LimeSuite/src/oglGraph/glew/GL</pElem>
+            <pElem>/usr/include/GL</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/oglGraph/OpenGLGraph.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>/usr/local/include/wx-3.0/wx</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/generic</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/gtk</pElem>
+            <pElem>../../LimeSuite/src/oglGraph</pElem>
+            <pElem>../../LimeSuite/src/oglGraph/glew/GL</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/meta</pElem>
+            <pElem>/usr/include/GL</pElem>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0/wx</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/unix</pElem>
+            <pElem>/usr/local/include/wx-3.0</pElem>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/oglGraph/dlgMarkers.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="9">
+          <incDir>
+            <pElem>/usr/local/include/wx-3.0/wx</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/generic</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/gtk</pElem>
+            <pElem>../../LimeSuite/src/oglGraph</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/meta</pElem>
+            <pElem>../../LimeSuite/src/oglGraph/glew/GL</pElem>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0/wx</pElem>
+            <pElem>/usr/local/include/wx-3.0/wx/unix</pElem>
+            <pElem>/usr/include/GL</pElem>
+            <pElem>/usr/local/include/wx-3.0</pElem>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../../LimeSuite/src/oglGraph/glew/glew.c"
+            ex="false"
+            tool="0"
+            flavor2="3">
+        <cTool flags="7">
+        </cTool>
+      </item>
+      <item path="LimeUtil/LimeUtil.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="LimeUtil/LimeUtilCalSweep.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="LimeUtil/LimeUtilTiming.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="QuickTest/LimeSDRTest.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="QuickTest/LimeSDRTest_Mini.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="QuickTest/LimeSDRTest_USB.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="QuickTest/TestGUI.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="SoapyLMS7/Registration.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="SoapyLMS7/Settings.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="SoapyLMS7/Streaming.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="build/src/BuiltinConnections.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="build/src/SystemResources.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="build/src/VersionInfo.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="external/kissFFT/kiss_fft.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="5">
+        </cTool>
+      </item>
+      <folder path="0">
+        <cTool>
+          <preprocessorList>
+            <Elem>WXUSINGDLL</Elem>
+            <Elem>_FILE_OFFSET_BITS=64</Elem>
+            <Elem>__WXGTK__</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+      <folder path="0/LimeUtil">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>build/LimeUtil</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/QuickTest">
+        <ccTool>
+          <incDir>
+            <pElem>/usr/lib/fltk</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>build/QuickTest</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>QUICKTEST_GUI</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/SoapyLMS7">
+        <ccTool>
+          <incDir>
+            <pElem>/usr/local/include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>build/SoapyLMS7</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LMS7Support_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/build">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+            <Elem>WXUSINGDLL</Elem>
+            <Elem>_FILE_OFFSET_BITS=64</Elem>
+            <Elem>__WXGTK__</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/external">
+        <cTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+      <folder path="0/octave">
+        <ccTool>
+          <incDir>
+            <pElem>/usr/include/octave-4.0.0</pElem>
+            <pElem>/usr/include/octave-4.0.0/octave</pElem>
+            <pElem>/usr/include/hdf5/serial</pElem>
+            <pElem>/usr/include/mpi</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>build/octave</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>_FORTIFY_SOURCE=2</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src">
+        <ccTool>
+          <preprocessorList>
+            <Elem>WXUSINGDLL</Elem>
+            <Elem>_FILE_OFFSET_BITS=64</Elem>
+            <Elem>__WXGTK__</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ADF4002">
+        <ccTool>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/API">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ConnectionFTDI">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ConnectionFX3">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ConnectionRegistry">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ConnectionXillybus">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/DPDTest">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/FPGA_common">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/FPGAcontrols_wxgui">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/GFIR">
+        <cTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+      <folder path="0/src/HPM7">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/LMS_Programing">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/RFSpark">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/Si5351C">
+        <ccTool>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/boards_wxgui">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/examples">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>build/src/examples</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>USE_GNU_PLOT</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/fftviewer_wxgui">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/lms7002_wxgui">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/lms7002m">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/lms7002m_mcu">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/lms7suiteEvents">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/myriad7">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/numericSlider">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/oglGraph">
+        <cTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/oglGraph/glew</pElem>
+            <pElem>src/oglGraph/glew/GL</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src/oglGraph</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>GLEW_STATIC</Elem>
+          </preprocessorList>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/oglGraph/glew</pElem>
+            <pElem>src/oglGraph/glew/GL</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src/oglGraph</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>GLEW_STATIC</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/protocols">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/utilities_gui">
+        <ccTool>
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="LimeSuite/SoapyLMS7">
+        <ccTool>
+          <preprocessorList>
+            <Elem>LIME_DLL=1</Elem>
+            <Elem>LMS7Support_EXPORTS=1</Elem>
+            <Elem>__ABM__=1</Elem>
+            <Elem>__ADX__=1</Elem>
+            <Elem>__AES__=1</Elem>
+            <Elem>__AVX2__=1</Elem>
+            <Elem>__AVX__=1</Elem>
+            <Elem>__BIGGEST_ALIGNMENT__=32</Elem>
+            <Elem>__BMI2__=1</Elem>
+            <Elem>__BMI__=1</Elem>
+            <Elem>__CLFLUSHOPT__=1</Elem>
+            <Elem>__F16C__=1</Elem>
+            <Elem>__FLT_EVAL_METHOD__=-1</Elem>
+            <Elem>__FMA__=1</Elem>
+            <Elem>__FP_FAST_FMA=1</Elem>
+            <Elem>__FP_FAST_FMAF=1</Elem>
+            <Elem>__FSGSBASE__=1</Elem>
+            <Elem>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16=1</Elem>
+            <Elem>__LZCNT__=1</Elem>
+            <Elem>__PCLMUL__=1</Elem>
+            <Elem>__POPCNT__=1</Elem>
+            <Elem>__PRFCHW__=1</Elem>
+            <Elem>__RDRND__=1</Elem>
+            <Elem>__RDSEED__=1</Elem>
+            <Elem>__REGISTER_PREFIX__=</Elem>
+            <Elem>__RTM__=1</Elem>
+            <Elem>__SSE3__=1</Elem>
+            <Elem>__SSE4_1__=1</Elem>
+            <Elem>__SSE4_2__=1</Elem>
+            <Elem>__SSSE3__=1</Elem>
+            <Elem>__USER_LABEL_PREFIX__=</Elem>
+            <Elem>__XSAVEC__=1</Elem>
+            <Elem>__XSAVEOPT__=1</Elem>
+            <Elem>__XSAVES__=1</Elem>
+            <Elem>__XSAVE__=1</Elem>
+            <Elem>__core_avx2=1</Elem>
+            <Elem>__core_avx2__=1</Elem>
+            <Elem>__cplusplus=201103L</Elem>
+            <Elem>__cpp_constexpr=200704</Elem>
+            <Elem>__haswell=1</Elem>
+            <Elem>__haswell__=1</Elem>
+            <Elem>__tune_core_avx2__=1</Elem>
+            <Elem>__tune_haswell__=1</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="LimeSuite/external">
+        <cTool>
+          <incDir>
+            <pElem>../../LimeSuite/external/kissFFT</pElem>
+            <pElem>../../LimeSuite/QuickTest</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="LimeSuite/src">
+        <cTool>
+          <incDir>
+            <pElem>../../LimeSuite/src/oglGraph/glew</pElem>
+            <pElem>../../LimeSuite/src/oglGraph/glew/GL</pElem>
+            <pElem>/usr/include/GL</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <item path="octave/LimeSuite.cc" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/ADF4002/ADF4002.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/ADF4002/ADF4002_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/API/LimeSDR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/API/LimeSDR_mini.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/API/LmsGeneric.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/API/lms7_api.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/API/lms7_device.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/API/qLimeSDR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionFTDI/ConnectionFT601.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionFTDI/ConnectionFT601Entry.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionFX3/ConnectionFX3.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionFX3/ConnectionFX3Entry.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionRegistry/ConnectionHandle.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionRegistry/ConnectionRegistry.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionRegistry/IConnection.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionXillybus/ConnectionXillybus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/ConnectionXillybus/ConnectionXillybusEntry.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/DPDTest/DPDTest.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/DPDTest/T800.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/DPDTest/dlgADPDControls.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/DPDTest/nrc.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/DPDTest/qadpd.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/FPGA_common/FPGA_Mini.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/FPGA_common/FPGA_Q.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="0">
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/FPGA_common/FPGA_common.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/GFIR/corrections.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="4">
+        </cTool>
+      </item>
+      <item path="src/GFIR/gfir_lms.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="4">
+        </cTool>
+      </item>
+      <item path="src/GFIR/lms.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="4">
+        </cTool>
+      </item>
+      <item path="src/GFIR/recipes.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="4">
+        </cTool>
+      </item>
+      <item path="src/GFIR/rounding.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="4">
+        </cTool>
+      </item>
+      <item path="src/HPM7/HPM7_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/LMS_Programing/LMS_Programing_wxgui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/Logger.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/RFSpark/RFSpark_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/Si5351C/Si5351C.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/Si5351C/Si5351C_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boardEmulator.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/lms7002m_novena_wxgui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnlBuffers.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnlCoreSDR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnlLimeSDR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnlQSpark.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/local/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnlUltimateEVB.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/boards_wxgui/pnluLimeSDR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/dlgAbout.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/examples/basicRX.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/examples/basicTX.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/examples/dualRXTX.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/examples/gpio_example.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/examples/singleRX.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/fftviewer_wxgui/fftviewer_frFFTviewer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/fftviewer_wxgui/fftviewer_wxgui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/CoefficientFileParser.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/dlgViewIRAM.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/dlgViewSFR.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_dlgVCOfrequencies.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_gui_utilities.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_mainPanel.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlAFE_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlBIAS_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlBIST_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlCDS_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlCalibrations_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlGains_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlLDO_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlLimeLightPAD_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlR3.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlRBB_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlRFE_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlRxTSP_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlSX_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlTBB_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlTRF_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlTxTSP_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_pnlXBUF_view.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/lms7002_wxgui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002_wxgui/pnlBoardControls.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_BaseCalibrations.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_RegistersMap.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_RxTxCalibrations.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/local/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>NDEBUG</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_filtersCalibration.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_gainCalibrations.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/LMS7002M_parameters.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/goert.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m/mcu_dc_iq_calibration.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/lms7002m_mcu/MCU_BD.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/lms7suiteApp.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/lms7suiteAppFrame.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/lms7suiteApp_gui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/lms7suiteEvents/lms7suiteEvents.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/myriad7/myriad7_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/numericSlider/numericSlider.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/oglGraph/GLFont.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/oglGraph/OpenGLGraph.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/oglGraph/dlgMarkers.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/oglGraph/glew/glew.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="5">
+        </cTool>
+      </item>
+      <item path="src/protocols/ConnectionImages.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/protocols/LMS64CProtocol.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/protocols/Streamer.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/SPI_wxgui.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/dlgConnectionSettings.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/dlgDeviceInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/dlgFullMessageLog.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/pnlMiniLog.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/utilities_gui/utilities_gui.cpp"
+            ex="false"
+            tool="1"
+            flavor2="8">
+        <ccTool flags="6">
+        </ccTool>
+      </item>
+      <item path="src/windowFunction.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="6">
+          <incDir>
+            <pElem>src/lms7002_wxgui</pElem>
+            <pElem>src/LMS_Programing</pElem>
+            <pElem>src/utilities_gui</pElem>
+            <pElem>src/RFSpark</pElem>
+            <pElem>src/FPGAcontrols_wxgui</pElem>
+            <pElem>src/numericSlider</pElem>
+            <pElem>src/myriad7</pElem>
+            <pElem>src/fftviewer_wxgui</pElem>
+            <pElem>src/lms7suiteEvents</pElem>
+            <pElem>src/boards_wxgui</pElem>
+            <pElem>/usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-3.0</pElem>
+            <pElem>/usr/include/wx-3.0</pElem>
+            <pElem>src/DPDTest</pElem>
+            <pElem>src</pElem>
+            <pElem>src/API</pElem>
+            <pElem>src/lime</pElem>
+            <pElem>src/GFIR</pElem>
+            <pElem>src/protocols</pElem>
+            <pElem>src/ConnectionRegistry</pElem>
+            <pElem>src/lms7002m_mcu</pElem>
+            <pElem>src/ADF4002</pElem>
+            <pElem>src/Si5351C</pElem>
+            <pElem>src/lms7002m</pElem>
+            <pElem>src/LTEpackets</pElem>
+            <pElem>src/FPGA_common</pElem>
+            <pElem>external/cpp-feather-ini-parser</pElem>
+            <pElem>src/HPM7</pElem>
+            <pElem>external/kissFFT</pElem>
+            <pElem>/usr/include/libusb-1.0</pElem>
+            <pElem>src/oglGraph</pElem>
+            <pElem>build/src</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>LIME_DLL</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

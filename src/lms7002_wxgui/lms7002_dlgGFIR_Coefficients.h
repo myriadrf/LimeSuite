@@ -26,8 +26,8 @@ class lms7002_dlgGFIR_Coefficients : public dlgGFIR_Coefficients
 		/** Constructor */
 		lms7002_dlgGFIR_Coefficients( wxWindow* parent );
 	//// end generated class members
-        void SetCoefficients(const std::vector<short> &coefficients);
-        std::vector<short> GetCoefficients();
+        void SetCoefficients(const std::vector<double> &coefficients);
+        std::vector<double> GetCoefficients();
 	
 };
 
