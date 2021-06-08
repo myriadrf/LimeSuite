@@ -11,10 +11,10 @@ namespace Parser
 {
 	bool IsBlank(char);
 	bool IsDigit(char);
-	int getValue(FILE *, float *);
-	int getcoeffs(const char *, float *, int);
-	int getcoeffs2(const char *, float *, float *, int);
-	void saveToFile(const char *, const float *, int);
+	int getint(FILE *, int *);
+	int getcoeffs(const char *, int *, int);
+	int getcoeffs2(const char *, int *, int *, int);
+	void saveToFile(const char *, const int *, int);
 }
 
 #endif // COEFFICIENT_FILE_PARSER_H

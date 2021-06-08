@@ -7,11 +7,9 @@
 #ifndef ADF_MODULE_H
 #define ADF_MODULE_H
 
-#include "LimeSuiteConfig.h"
-
 namespace lime{
 
-class LIME_API ADF4002
+class ADF4002
 {
 public:
     ADF4002();

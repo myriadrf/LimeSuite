@@ -24,8 +24,8 @@ NumericSlider::NumericSlider(
 		int min,
 		int max,
 		int initial,
-		const wxString &name
-	)
+		const wxString &name 
+	) 	
 {
     Create(parent, id, pos, size, style);
 
@@ -33,7 +33,7 @@ NumericSlider::NumericSlider(
     mainSizer = new wxFlexGridSizer(0, 2, 0, 0);
     mainSizer->AddGrowableCol(0);
     mainSizer->AddGrowableRow(0);
-    mainSizer->SetFlexibleDirection(wxBOTH);
+    mainSizer->SetFlexibleDirection(wxBOTH);    
 
     mScroll = new wxScrollBar(this, wxNewId(), wxDefaultPosition, wxDefaultSize, wxSB_HORIZONTAL);
     mScroll->SetMinSize(wxSize(128, -1));
@@ -43,12 +43,12 @@ NumericSlider::NumericSlider(
         sliderStep = 1;
     mScroll->SetScrollbar(initial, 1, max - min + 1, sliderStep);
     mScroll->Connect(wxEVT_SCROLL_CHANGED, wxScrollEventHandler(NumericSlider::OnScrollChange), NULL, this);
-
+    
     mSpinner = new wxSpinCtrl(this, wxNewId(), wxEmptyString, wxDefaultPosition, wxSize(-1, -1), wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, min, max, initial);
-    mSpinner->SetMinSize(wxSize(112, -1));
+    mSpinner->SetMinSize(wxSize(96, -1));
     mainSizer->Add(mSpinner, 0, wxEXPAND |wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 0);
     mSpinner->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(NumericSlider::OnSpinnerChange), NULL, this);
-    mSpinner->Connect(wxEVT_TEXT_ENTER, wxSpinEventHandler(NumericSlider::OnSpinnerChangeEnter), NULL, this);
+    mSpinner->Connect(wxEVT_TEXT_ENTER, wxSpinEventHandler(NumericSlider::OnSpinnerChange), NULL, this);
 
     mScroll->SetThumbPosition(mSpinner->GetValue() - mSpinner->GetMin());
 
@@ -62,19 +62,6 @@ NumericSlider::~NumericSlider()
 
 }
 
-void NumericSlider::OnSpinnerChangeEnter(wxSpinEvent &event)
-{
-    wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
-    evt.SetId(this->GetId());
-    std::string test = event.GetString().ToStdString();
-    long value = 0;
-    event.GetString().ToLong(&value);
-    evt.SetInt(value);
-    evt.SetEventObject(this);
-    mScroll->SetThumbPosition(event.GetInt() - mSpinner->GetMin());
-    wxPostEvent(this, evt);
-}
-
 void NumericSlider::OnSpinnerChange(wxSpinEvent &event)
 {
     wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
@@ -86,9 +73,9 @@ void NumericSlider::OnSpinnerChange(wxSpinEvent &event)
 }
 
 void NumericSlider::OnScrollChange(wxScrollEvent &event)
-{
+{   
     wxCommandEvent evt(wxEVT_COMMAND_SPINCTRL_UPDATED);
-    evt.SetId(this->GetId());
+    evt.SetId(this->GetId());    
     evt.SetEventObject(this);
     mSpinner->SetValue(event.GetInt() + mSpinner->GetMin());
     evt.SetInt(event.GetInt() + mSpinner->GetMin());

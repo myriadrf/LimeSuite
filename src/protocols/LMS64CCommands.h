@@ -45,8 +45,6 @@ enum eCMD_LMS
     CMD_PE636040_WR = 0x41,
     CMD_PE636040_RD = 0x42,
 
-    CMD_GPIO_DIR_WR = 0x4F,
-    CMD_GPIO_DIR_RD = 0x50,
     CMD_GPIO_WR = 0x51,
     CMD_GPIO_RD = 0x52,
 
@@ -67,8 +65,7 @@ enum eCMD_LMS
     CMD_MYRIAD_RST = 0x80,
     CMD_MYRIAD_WR = 0x81,
     CMD_MYRIAD_RD = 0x82,
-    CMD_MEMORY_WR = 0x8C,
-    CMD_MEMORY_RD = 0x8D
+    CMD_MEMORY_WR = 0x8C
 };
 
 enum eCMD_STATUS

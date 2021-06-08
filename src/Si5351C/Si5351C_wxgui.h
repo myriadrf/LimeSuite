@@ -14,14 +14,17 @@
 #include <wx/button.h>
 #include <wx/radiobox.h>
 #include <string>
-#include "lime/LimeSuite.h"
+
+namespace lime{
+class Si5351C;
+}
 
 class Si5351C_wxgui: public wxFrame
 {
 public:
 
     Si5351C_wxgui(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = _(""), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int styles = wxDEFAULT_FRAME_STYLE, wxString idname = "");
-    void Initialize(lms_device_t* pModule);
+    void Initialize(lime::Si5351C* pModule);
     virtual ~Si5351C_wxgui();
     void ModifyClocksGUI(const std::string &board);
 
@@ -124,6 +127,7 @@ protected:
     //*)
 
 private:
+    lime::Si5351C *m_pModule;
     //(*Handlers(Si5351C_wxgui)
     void OnbtnLoadFileClick(wxCommandEvent& event);
     void OnbtnConfigureClockClick(wxCommandEvent& event);
@@ -131,9 +135,6 @@ private:
     void OnButton1Click(wxCommandEvent& event);
     void OnbtnReadStatusClick(wxCommandEvent& event);
     void OnbtnClearStatusClick(wxCommandEvent& event);
-    bool LoadRegValuesFromFile(std::string FName);
-    unsigned char m_newConfiguration[255];
-    lms_device_t* lmsControl;
     //*)
 
 protected:

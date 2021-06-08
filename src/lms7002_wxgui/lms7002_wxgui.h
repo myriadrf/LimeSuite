@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Sep 24 2018)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO *NOT* EDIT THIS FILE!
+// PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __LMS7002_WXGUI_H__
@@ -14,10 +14,10 @@ class NumericSlider;
 class lms7002_pnlAFE_view;
 class lms7002_pnlBIAS_view;
 class lms7002_pnlBIST_view;
+class lms7002_pnlBuffers_view;
 class lms7002_pnlCDS_view;
 class lms7002_pnlCLKGEN_view;
 class lms7002_pnlCalibrations_view;
-class lms7002_pnlGains_view;
 class lms7002_pnlLDO_view;
 class lms7002_pnlLimeLightPAD_view;
 class lms7002_pnlRBB_view;
@@ -35,20 +35,20 @@ class lms7002_pnlXBUF_view;
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/combobox.h>
 #include <wx/radiobut.h>
-#include <wx/checkbox.h>
 #include <wx/sizer.h>
-#include <wx/stattext.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/notebook.h>
+#include <wx/checkbox.h>
 #include <wx/statbox.h>
+#include <wx/stattext.h>
+#include <wx/combobox.h>
 #include <wx/spinctrl.h>
-#include <wx/radiobox.h>
 #include <wx/textctrl.h>
+#include <wx/radiobox.h>
 #include <wx/choice.h>
 #include <wx/gauge.h>
 #include <wx/grid.h>
@@ -66,8 +66,7 @@ class mainPanel : public wxPanel
 	protected:
 		enum
 		{
-			ID_G_LNA_RFE = 2048,
-			ID_BTN_CH_A,
+			ID_BTN_CH_A = 2048,
 			ID_BTN_CH_B,
 			ID_BTN_CHIP_TO_GUI,
 			ID_BTN_RESET_CHIP,
@@ -89,35 +88,28 @@ class mainPanel : public wxPanel
 			ID_TAB_RXTSP,
 			ID_TAB_CDS,
 			ID_TAB_BIST,
-			ID_TAB_GAINS
+			ID_TAB_BUFFERS
 		};
 		
+		wxButton* ID_BUTTON1;
 		wxButton* ID_BUTTON2;
 		wxButton* ID_BUTTON3;
-		wxComboBox* cmbLmsDevice;
 		wxRadioButton* rbChannelA;
 		wxRadioButton* rbChannelB;
-		wxCheckBox* chkEnableMIMO;
 		wxButton* btnDownloadAll;
 		wxButton* btnUploadAll;
 		wxButton* btnResetChip;
-		wxButton* btnLoadDefault;
-		wxStaticText* txtTemperature;
-		wxButton* btnReadTemperature;
 		wxNotebook* tabsNotebook;
 		
 		// Virtual event handlers, overide them in your derived class
+		virtual void OnNewProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOpenProject( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveProject( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnLmsDeviceSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelA( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSwitchToChannelB( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnEnableMIMOchecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDownloadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUploadAll( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnResetChip( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnLoadDefault( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnReadTemperature( wxCommandEvent& event ) { event.Skip(); }
 		virtual void Onnotebook_modulesPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		
 	
@@ -139,10 +131,36 @@ class mainPanel : public wxPanel
 		lms7002_pnlRxTSP_view* mTabRxTSP;
 		lms7002_pnlCDS_view* mTabCDS;
 		lms7002_pnlBIST_view* mTabBIST;
-		lms7002_pnlGains_view* mTabTrxGain;
+		lms7002_pnlBuffers_view* mTabBuffers;
 		
 		mainPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~mainPanel();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class pnlBuffers_view
+///////////////////////////////////////////////////////////////////////////////
+class pnlBuffers_view : public wxPanel 
+{
+	private:
+	
+	protected:
+		wxCheckBox* chkDIO_DIR_CTRL1;
+		wxCheckBox* chkDIO_DIR_CTRL2;
+		wxCheckBox* chkDIO_BUFF_OE;
+		wxCheckBox* chkIQ_SEL1_DIR;
+		wxCheckBox* chkIQ_SEL2_DIR;
+		wxCheckBox* chkG_PWR_DWN;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnGPIOchanged( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		pnlBuffers_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
+		~pnlBuffers_view();
 	
 };
 
@@ -186,6 +204,8 @@ class pnlRFE_view : public wxPanel
 			ID_G_LNA_RFE,
 			ID_G_RXLOOPB_RFE,
 			ID_G_TIA_RFE,
+			ID_TXT_TIA_BW_MHZ,
+			ID_BTN_TUNE_TIA,
 			ID_ICT_LOOPB_RFE,
 			ID_ICT_TIAMAIN_RFE,
 			ID_ICT_TIAOUT_RFE,
@@ -238,6 +258,9 @@ class pnlRFE_view : public wxPanel
 		wxComboBox* cmbG_RXLOOPB_RFE;
 		wxStaticText* ID_STATICTEXT18;
 		wxComboBox* cmbG_TIA_RFE;
+		wxStaticText* m_staticText311;
+		wxTextCtrl* txtTIA_BW_MHz;
+		wxButton* btnTuneTIA;
 		wxStaticText* ID_STATICTEXT9;
 		wxComboBox* cmbICT_LOOPB_RFE;
 		wxStaticText* ID_STATICTEXT10;
@@ -252,6 +275,7 @@ class pnlRFE_view : public wxPanel
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnbtnTuneTIA( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -284,7 +308,9 @@ class pnlRBB_view : public wxPanel
 			ID_R_CTL_LPF_RBB,
 			ID_C_CTL_LPFH_RBB,
 			ID_C_CTL_LPFL_RBB,
+			ID_FILTER_SELECTION,
 			ID_TXT_LOWBW,
+			ID_TXT_HIGHBW,
 			ID_BTN_TUNE_FILTER,
 			ID_RCC_CTL_LPFH_RBB,
 			ID_RCC_CTL_LPFL_RBB,
@@ -315,8 +341,11 @@ class pnlRBB_view : public wxPanel
 		NumericSlider* cmbC_CTL_LPFH_RBB;
 		wxStaticText* ID_STATICTEXT6;
 		NumericSlider* cmbC_CTL_LPFL_RBB;
+		wxRadioBox* rgrFilterSelection;
 		wxStaticText* m_staticText309;
 		wxTextCtrl* txtLowBW_MHz;
+		wxStaticText* m_staticText310;
+		wxTextCtrl* txtHighBW_MHz;
 		wxButton* btnTuneFilter;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbRCC_CTL_LPFH_RBB;
@@ -465,7 +494,9 @@ class pnlTBB_view : public wxPanel
 			ID_RCAL_LPFLAD_TBB,
 			ID_RCAL_LPFS5_TBB,
 			ID_CCAL_LPFLAD_TBB,
-			ID_BTN_TUNE_FILTER
+			ID_FILTER_SELECTION,
+			ID_BTN_TUNE_FILTER,
+			ID_BTN_TUNE_FILTER_TEST
 		};
 		
 		wxCheckBox* chkPD_LPFH_TBB;
@@ -475,7 +506,6 @@ class pnlTBB_view : public wxPanel
 		wxCheckBox* chkEN_G_TBB;
 		wxCheckBox* chkEN_DIR_TBB;
 		wxCheckBox* chkBYPLADDER_TBB;
-		wxCheckBox* chkR5_LPF_BYP_TBB;
 		wxStaticText* ID_STATICTEXT1;
 		wxComboBox* cmbLOOPB_TBB;
 		wxStaticText* ID_STATICTEXT5;
@@ -506,16 +536,25 @@ class pnlTBB_view : public wxPanel
 		NumericSlider* cmbRCAL_LPFS5_TBB;
 		wxStaticText* ID_STATICTEXT14;
 		NumericSlider* cmbCCAL_LPFLAD_TBB;
+		wxRadioBox* rgrFilterSelection;
 		wxStaticText* lblFilterInputName;
 		wxTextCtrl* txtFilterFrequency;
+		wxStaticText* m_staticText310;
+		wxTextCtrl* txtFilterFrequency2;
 		wxButton* btnTuneFilter;
-		wxButton* btnTuneTxGain;
+		wxRadioBox* rgrFilterSelectionTest;
+		wxStaticText* lblTxFiltersBWname1;
+		wxTextCtrl* txtLadderFrequency;
+		wxStaticText* m_staticText3101;
+		wxTextCtrl* txtRealpoleFrequency;
+		wxButton* btnTuneFilterTest;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
+		virtual void OnFilterSelectionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneFilter( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnTuneTxGain( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnbtnTuneFilterTest( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -600,11 +639,9 @@ class pnlBIAS_view : public wxPanel
 		wxComboBox* cmbMUX_BIAS_OUT;
 		wxStaticText* ID_STATICTEXT2;
 		wxComboBox* cmbRP_CALIB_BIAS;
-		wxButton* btnCalibrateRP_BIAS;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnCalibrateRP_BIAS( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -646,14 +683,13 @@ class pnlLDO_view : public wxPanel
 			ID_PD_LDO_DIGIp2,
 			ID_EN_LDO_TXBUF,
 			ID_EN_LDO_RXBUF,
-			ID_EN_LDO_TPAD,
-			ID_EN_LDO_TLOB,
-			ID_PD_LDO_SPIBUF,
-			ID_RDIV_TXBUF,
 			ID_EN_LDO_AFE,
+			ID_PD_LDO_SPIBUF,
 			ID_EN_LDO_TBB,
 			ID_EN_LDO_RBB,
 			ID_EN_LDO_TIA12,
+			ID_EN_LDO_TPAD,
+			ID_EN_LDO_TLOB,
 			ID_EN_LDO_DIG,
 			ID_SPDUP_LDO_TBB,
 			ID_SPDUP_LDO_TIA12,
@@ -713,6 +749,7 @@ class pnlLDO_view : public wxPanel
 			ID_EN_LOADIMP_LDO_DIGIp1,
 			ID_RDIV_VCOSXR,
 			ID_RDIV_VCOSXT,
+			ID_RDIV_TXBUF,
 			ID_RDIV_VCOGN,
 			ID_RDIV_TLOB,
 			ID_RDIV_TPAD,
@@ -764,15 +801,13 @@ class pnlLDO_view : public wxPanel
 		wxCheckBox* chkPD_LDO_DIGIp2;
 		wxCheckBox* chkEN_LDO_TXBUF;
 		wxCheckBox* chkEN_LDO_RXBUF;
-		wxCheckBox* chkEN_LDO_TPAD;
-		wxCheckBox* chkEN_LDO_TLOB;
-		wxCheckBox* chkPD_LDO_SPIBUF;
-		wxStaticText* m_staticText349;
-		wxComboBox* cmbISINK_SPIBUFF;
 		wxCheckBox* chkEN_LDO_AFE;
+		wxCheckBox* chkPD_LDO_SPIBUF;
 		wxCheckBox* chkEN_LDO_TBB;
 		wxCheckBox* chkEN_LDO_RBB;
 		wxCheckBox* chkEN_LDO_TIA12;
+		wxCheckBox* chkEN_LDO_TPAD;
+		wxCheckBox* chkEN_LDO_TLOB;
 		wxCheckBox* chkEN_LDO_DIG;
 		wxCheckBox* chkSPDUP_LDO_TBB;
 		wxCheckBox* chkSPDUP_LDO_TIA12;
@@ -894,7 +929,7 @@ class pnlLDO_view : public wxPanel
 	
 	public:
 		
-		pnlLDO_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1180,550 ), long style = wxTAB_TRAVERSAL ); 
+		pnlLDO_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~pnlLDO_view();
 	
 };
@@ -976,8 +1011,6 @@ class pnlCLKGEN_view : public wxPanel
 			ID_CZ_CGEN,
 			ID_EN_ADCCLKH_CLKGN,
 			ID_CLKH_OV_CLKL_CGEN,
-			ID_GFIR1_N_TXTSP,
-			ID_AUTO_PHASE,
 			ID_INT_SDM_CGEN,
 			ID_FRAC_SDM_CGEN,
 			ID_VCO_CMPHO_CGEN,
@@ -1028,9 +1061,6 @@ class pnlCLKGEN_view : public wxPanel
 		wxTextCtrl* txtFrequency;
 		wxComboBox* cmbCLKH_OV_CLKL_CGEN;
 		wxTextCtrl* txtFrequencyCLKL;
-		wxStaticText* ID_STATICTEXT101;
-		wxStaticText* ID_STATICTEXT102;
-		wxCheckBox* chkAutoPhase;
 		wxButton* btnCalculate;
 		wxButton* btnTune;
 		wxStaticText* ID_STATICTEXT7;
@@ -1062,12 +1092,9 @@ class pnlCLKGEN_view : public wxPanel
 		NumericSlider* cmbIOFFSET_CP_CGEN;
 		wxStaticText* ID_STATICTEXT17;
 		NumericSlider* cmbIPULSE_CP_CGEN;
-		wxFlexGridSizer* sizerR3;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onbtnCalculateClick( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnAutoPhase( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnCalculateClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnTuneClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
@@ -1077,8 +1104,6 @@ class pnlCLKGEN_view : public wxPanel
 		
 	
 	public:
-		wxSpinCtrl* rxPhase;
-		wxSpinCtrl* txPhase;
 		
 		pnlCLKGEN_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~pnlCLKGEN_view();
@@ -1175,11 +1200,6 @@ class pnlSX_view : public wxPanel
 		wxButton* btnCalculate;
 		wxButton* btnTune;
 		wxButton* ID_BUTTON5;
-		wxPanel* pnlRefClkSpur;
-		wxStaticBoxSizer* RefClkSpurSizer;
-		wxCheckBox* chkEnableRefSpurCancelation;
-		wxStaticText* m_staticText359;
-		wxTextCtrl* txtRefSpurBW;
 		wxStaticText* ID_STATICTEXT2;
 		wxStaticText* lblINT_SDM;
 		wxStaticText* ID_STATICTEXT21;
@@ -1212,7 +1232,6 @@ class pnlSX_view : public wxPanel
 		wxComboBox* cmbRSEL_LDO_VCO;
 		wxStaticText* ID_STATICTEXT12;
 		wxComboBox* cmbIOFFSET_CP;
-		wxFlexGridSizer* sizerR3;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
@@ -1220,7 +1239,6 @@ class pnlSX_view : public wxPanel
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalculateClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnTuneClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnEnableRefSpurCancelation( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnChangeRefClkClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnReadComparators( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowVCOclicked( wxCommandEvent& event ) { event.Skip(); }
@@ -1316,16 +1334,14 @@ class pnlLimeLightPAD_view : public wxPanel
 			ID_RXWRCLK_MUX,
 			ID_MCLK2SRC,
 			ID_MCLK1SRC,
-			ID_TXDIVEN,
 			ID_TXTSPCLKA_DIV,
-			ID_RXDIVEN,
 			ID_RXTSPCLKA_DIV,
-			ID_MCLK1DLY,
-			ID_MCLK2DLY,
+			ID_TXDIVEN,
+			ID_RXDIVEN,
 			ID_FCLK1_INV,
 			ID_FCLK2_INV,
-			ID_FCLK1DLY,
-			ID_FCLK2DLY,
+			ID_MCLK1DLY,
+			ID_MCLK2DLY,
 			ID_LML1_TX_PST,
 			ID_LML1_TX_PRE,
 			ID_LML1_RX_PST,
@@ -1386,10 +1402,6 @@ class pnlLimeLightPAD_view : public wxPanel
 		wxRadioBox* rgrLML_MODE2;
 		wxRadioBox* rgrLML_TXNRXIQ1;
 		wxRadioBox* rgrLML_TXNRXIQ2;
-		wxCheckBox* chkLML1_TRXIQPULSE;
-		wxCheckBox* chkLML2_TRXIQPULSE;
-		wxCheckBox* chkLML1_SISODDR;
-		wxCheckBox* chkLML2_SISODDR;
 		wxRadioBox* rgrSDA_DS;
 		wxRadioBox* rgrSCL_DS;
 		wxRadioBox* rgrSDIO_DS;
@@ -1450,26 +1462,18 @@ class pnlLimeLightPAD_view : public wxPanel
 		wxComboBox* cmbMCLK2SRC;
 		wxStaticText* ID_STATICTEXT30;
 		wxComboBox* cmbMCLK1SRC;
-		wxCheckBox* chkTXDIVEN;
+		wxStaticText* ID_STATICTEXT31;
 		wxSpinCtrl* cmbTXTSPCLKA_DIV;
-		wxCheckBox* chkRXDIVEN;
+		wxStaticText* ID_STATICTEXT32;
 		wxSpinCtrl* cmbRXTSPCLKA_DIV;
+		wxCheckBox* chkTXDIVEN;
+		wxCheckBox* chkRXDIVEN;
+		wxCheckBox* chkFCLK1_INV;
+		wxCheckBox* chkFCLK2_INV;
 		wxStaticText* ID_STATICTEXT37;
 		wxSpinCtrl* cmbMCLK1DLY;
 		wxStaticText* ID_STATICTEXT39;
 		wxSpinCtrl* cmbMCLK2DLY;
-		wxCheckBox* chkFCLK1_INV;
-		wxCheckBox* chkFCLK2_INV;
-		wxCheckBox* chkMCLK1_INV;
-		wxCheckBox* chkMCLK2_INV;
-		wxStaticText* ID_STATICTEXT301;
-		wxComboBox* cmbFCLK1_DLY;
-		wxStaticText* ID_STATICTEXT302;
-		wxComboBox* cmbFCLK2_DLY;
-		wxStaticText* ID_STATICTEXT303;
-		wxComboBox* cmbMCLK1_DLY;
-		wxStaticText* ID_STATICTEXT304;
-		wxComboBox* cmbMCLK2_DLY;
 		wxStaticText* ID_STATICTEXT17;
 		wxSpinCtrl* cmbLML1_TX_PST;
 		wxStaticText* ID_STATICTEXT18;
@@ -1573,8 +1577,8 @@ class pnlTxTSP_view : public wxPanel
 		wxStaticText* lblBSIGQ_TXTSP;
 		wxButton* btnReadBIST;
 		wxFlexGridSizer* sizerNCOgrid;
-		wxStaticText* tableTitleCol1;
-		wxStaticText* tableTitleCol2;
+		wxStaticText* ID_STATICTEXT18;
+		wxStaticText* ID_STATICTEXT20;
 		wxRadioButton* rgrSEL0;
 		wxTextCtrl* txtFCWPHO0;
 		wxStaticText* txtAnglePHO0;
@@ -1660,11 +1664,6 @@ class pnlTxTSP_view : public wxPanel
 		wxStaticText* ID_STATICTEXT15;
 		wxSpinCtrl* cmbGFIR3_N_TXTSP;
 		wxButton* btnGFIR3Coef;
-		wxStaticText* txtBW;
-		wxTextCtrl* txtLPFBW;
-		wxButton* btnSetLPF;
-		wxStaticText* txtRATE;
-		wxStaticText* txtRATEVAL;
 		NumericSlider* cmbIQCORR_TXTSP;
 		wxStaticText* ID_STATICTEXT16;
 		wxStaticText* txtPhaseAlpha;
@@ -1684,14 +1683,12 @@ class pnlTxTSP_view : public wxPanel
 		virtual void OnNCOSelectionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void PHOinputChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnUploadNCOClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void txtFCWPHOmodeAdditional_OnMouseWheel( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCIClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCQClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR1Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR2Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR3Coef( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnSetLPFClick( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -1728,7 +1725,6 @@ class pnlRxTSP_view : public wxPanel
 			ID_TSGMODE_RXTSP,
 			ID_INSEL_RXTSP,
 			ID_TSGFC_RXTSP,
-			ID_DCCORR_AVG,
 			ID_DC_REG_RXTSP,
 			ID_CMIX_SC_RXTSP,
 			ID_CMIX_GAIN_RXTSP,
@@ -1750,7 +1746,6 @@ class pnlRxTSP_view : public wxPanel
 		
 		wxCheckBox* chkEN_RXTSP;
 		wxCheckBox* chkDC_BYP_RXTSP;
-		wxCheckBox* chkDC_LOOP_RXTSP;
 		wxCheckBox* chkGC_BYP_RXTSP;
 		wxCheckBox* chkPH_BYP_RXTSP;
 		wxCheckBox* chkCMIX_BYP_RXTSP;
@@ -1774,11 +1769,10 @@ class pnlRxTSP_view : public wxPanel
 		wxStaticText* lblADCQ;
 		wxStaticText* ID_STATICTEXT51;
 		wxStaticText* lblRSSI;
-		wxCheckBox* chkCAPSEL_ADC_RXTSP;
 		wxButton* ID_BUTTON1;
 		wxFlexGridSizer* sizerNCOgrid;
-		wxStaticText* tableTitleCol1;
-		wxStaticText* tableTitleCol2;
+		wxStaticText* ID_STATICTEXT18;
+		wxStaticText* ID_STATICTEXT20;
 		wxRadioButton* rgrSEL0;
 		wxTextCtrl* txtFCWPHO0;
 		wxStaticText* txtAnglePHO0;
@@ -1840,7 +1834,6 @@ class pnlRxTSP_view : public wxPanel
 		wxRadioBox* rgrTSGMODE_RXTSP;
 		wxRadioBox* rgrINSEL_RXTSP;
 		wxRadioBox* rgrTSGFC_RXTSP;
-		wxComboBox* cmbDCCORR_AVG;
 		wxStaticText* ID_STATICTEXT23;
 		wxTextCtrl* txtDC_REG_RXTSP;
 		wxButton* btnLoadDCI;
@@ -1850,8 +1843,6 @@ class pnlRxTSP_view : public wxPanel
 		wxComboBox* cmbCMIX_GAIN_RXTSP;
 		wxStaticText* ID_STATICTEXT7;
 		wxComboBox* cmbHBD_OVR_RXTSP;
-		wxStaticText* ID_STATICTEXT72;
-		wxComboBox* cmbHBD_DLY;
 		wxStaticText* ID_STATICTEXT10;
 		wxComboBox* cmbGFIR1_L_RXTSP;
 		wxStaticText* ID_STATICTEXT11;
@@ -1867,11 +1858,6 @@ class pnlRxTSP_view : public wxPanel
 		wxStaticText* ID_STATICTEXT15;
 		wxSpinCtrl* cmbGFIR3_N_RXTSP;
 		wxButton* btnGFIR3Coef;
-		wxStaticText* txtBW;
-		wxTextCtrl* txtLPFBW;
-		wxButton* btnSetLPF;
-		wxStaticText* txtRate;
-		wxStaticText* txtRateVal;
 		NumericSlider* cmbIQCORR_RXTSP;
 		wxStaticText* ID_STATICTEXT16;
 		wxStaticText* txtPhaseAlpha;
@@ -1896,19 +1882,17 @@ class pnlRxTSP_view : public wxPanel
 		virtual void OnNCOSelectionChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void PHOinputChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnUploadNCOClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void txtFCWPHOmodeAdditional_OnMouseWheel( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCIClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnLoadDCQClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR1Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR2Coef( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onbtnGFIR3Coef( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnbtnSetLPFClick( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		pnlRxTSP_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1145,536 ), long style = wxTAB_TRAVERSAL ); 
+		pnlRxTSP_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL ); 
 		~pnlRxTSP_view();
 	
 };
@@ -2130,7 +2114,6 @@ class pnlCalibrations_view : public wxPanel
 			ID_DCOFFI_RFE,
 			ID_DCOFFQ_RFE,
 			ID_EN_DCOFF_RXFE_RFE,
-			ID_DCMODE,
 			ID_GCORRI_TXTSP,
 			ID_GCORRQ_TXTSP,
 			ID_IQCORR_TXTSP,
@@ -2151,7 +2134,6 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* ID_STATICTEXT7;
 		NumericSlider* cmbDCOFFQ_RFE;
 		wxCheckBox* chkEN_DCOFF_RXFE_RFE;
-		wxCheckBox* chkDCMODE;
 		wxButton* btnCalibrateRx;
 		wxStaticText* ID_STATICTEXT5;
 		NumericSlider* cmbGCORRI_TXTSP;
@@ -2171,8 +2153,7 @@ class pnlCalibrations_view : public wxPanel
 		wxStaticText* lblCGENrefClk;
 		wxStaticText* m_staticText372;
 		wxTextCtrl* txtCalibrationBW;
-		wxRadioBox* rgrCalibrationMethod;
-		wxStaticText* lblCalibrationNote;
+		wxCheckBox* chkUseExtLoopback;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
@@ -2180,58 +2161,12 @@ class pnlCalibrations_view : public wxPanel
 		virtual void OnbtnCalibrateRx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateTx( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnbtnCalibrateAll( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnCalibrationMethodChange( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
 		pnlCalibrations_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
 		~pnlCalibrations_view();
-	
-};
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class pnlGains_view
-///////////////////////////////////////////////////////////////////////////////
-class pnlGains_view : public wxPanel 
-{
-	private:
-	
-	protected:
-		enum
-		{
-			ID_EN_NEXTRX_RFE = 2048,
-			ID_G_LNA_RFE,
-			ID_G_TIA_RFE,
-			ID_G_PGA_RBB,
-			ID_C_CTL_PGA_RBB,
-			ID_LOSS_LIN_TXPAD_TRF,
-			ID_LOSS_MAIN_TXPAD_TRF,
-			ID_CG_IAMP_TBB
-		};
-		
-		wxCheckBox* chkTRX_GAIN_SRC;
-		wxComboBox* cmbG_LNA_RFE;
-		wxComboBox* cmbG_TIA_RFE;
-		wxComboBox* cmbG_PGA_RBB;
-		NumericSlider* cmbC_CTL_PGA_RBB;
-		wxComboBox* cmbLOSS_LIN_TXPAD_TRF;
-		wxComboBox* cmbLOSS_MAIN_TXPAD_TRF;
-		NumericSlider* cmbCG_IAMP_TBB;
-		wxCheckBox* chkAGC;
-		wxStaticText* m_staticText360;
-		wxTextCtrl* txtCrestFactor;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void ParameterChangeHandler( wxCommandEvent& event ) { event.Skip(); }
-		virtual void ParameterChangeHandler( wxSpinEvent& event ) { event.Skip(); }
-		virtual void OnAGCStateChange( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		
-		pnlGains_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
-		~pnlGains_view();
 	
 };
 

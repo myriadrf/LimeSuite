@@ -14,8 +14,6 @@ using namespace std;
 #include <assert.h>
 #include <thread>
 #include <list>
-#include "LMS7002M.h"
-#include "Logger.h"
 
 using namespace lime;
 
@@ -27,21 +25,18 @@ MCU_BD::MCU_BD()
     stepsTotal = 0;
     stepsDone = 0;
     aborted = false;
-    callback = nullptr;
-    mChipID =0;
     //ctor
     int i=0;
     m_serPort=NULL;
     //default value,
     //must be verified during program exploatation
     m_iLoopTries=20;
-    byte_array_size = cMaxFWSize;
     // array initiallization
     for (i=0; i<=255; i++){
 			m_SFR[i]=0x00;
 			m_IRAM[i]=0x00;
 	}
-	for (i=0; i<byte_array_size; i++){
+	for (i=0; i<8192; i++){
 	    byte_array[i]=0x00;
     };
 }
@@ -51,12 +46,9 @@ MCU_BD::~MCU_BD()
     //dtor
 }
 
-void MCU_BD::Initialize(IConnection* pSerPort, unsigned chipID, unsigned size)
+void MCU_BD::Initialize(IConnection* pSerPort)
 {
-    m_serPort = pSerPort;
-    mChipID = chipID;
-    if (size > 0)
-        byte_array_size = size;
+    m_serPort = dynamic_cast<LMS64CProtocol *>(pSerPort);
 }
 
 /** @brief Read program code from file into memory
@@ -79,14 +71,14 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         mLoadedProgramFilename = inFileName;
         try
         {
-            inFile.ReadHex(byte_array_size-1);
+            inFile.ReadHex(8191);
         }
         catch (...)
         {
             return -1;
         }
 
-        for (i=0; i<byte_array_size; i++)
+        for (i=0; i<8192; i++)
         {
             find_byte=inFile.GetByte(i, ch);
             if (find_byte==true)
@@ -103,8 +95,8 @@ int MCU_BD:: GetProgramCode(const char* inFileName, bool bin)
         if (fin.good() == false)
             return -1;
         mLoadedProgramFilename = inFileName;
-        memset(byte_array, 0, byte_array_size);
-        for(int i=0; i<byte_array_size && !fin.eof(); ++i)
+        memset(byte_array, 0, 8192);
+        for(int i=0; i<8192 && !fin.eof(); ++i)
         {
             inByte = 0;
             fin.read(&inByte, 1);
@@ -118,24 +110,32 @@ void MCU_BD:: mSPI_write(
             unsigned short addr_reg,  // takes 16 bit address
             unsigned short data_reg)  // takes 16 bit value
 {
-    if(m_serPort == nullptr)
-        return;
-    uint32_t wrdata = (1 << 31) | addr_reg << 16 | data_reg;
-    m_serPort->WriteLMS7002MSPI(&wrdata, 1, mChipID);
+    assert(m_serPort != nullptr);
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_LMS7002_WR;
+    pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
+    pkt.outBuffer.push_back(addr_reg & 0xFF);
+    pkt.outBuffer.push_back((data_reg >> 8) & 0xFF);
+    pkt.outBuffer.push_back(data_reg & 0xFF);
+    if (m_serPort->IsOpen() == true)
+        m_serPort->TransferPacket(pkt);
 }
 
 
 unsigned short MCU_BD:: mSPI_read(
             unsigned short addr_reg)  // takes 16 bit address
 {// returns 16 bit value
-    if(m_serPort == nullptr)
-        return 0;
-    uint32_t wrdata = addr_reg << 16;
-    uint32_t rddata = 0;
-    if(m_serPort->ReadLMS7002MSPI(&wrdata, &rddata, 1, mChipID)!=0)
-        return 0;
-
-    return rddata & 0xFFFF;
+    assert(m_serPort != nullptr);
+    if (m_serPort->IsOpen()==true)
+    {
+        LMS64CProtocol::GenericPacket pkt;
+        pkt.cmd = CMD_LMS7002_RD;
+        pkt.outBuffer.push_back((addr_reg >> 8) & 0xFF);
+        pkt.outBuffer.push_back(addr_reg & 0xFF);
+        if (m_serPort->TransferPacket(pkt) == 0)
+            return pkt.inBuffer[2] * 256 | pkt.inBuffer[3];
+    }
+    return 0x0000;
 }
 
 int MCU_BD::WaitUntilWritten(){
@@ -566,100 +566,160 @@ void MCU_BD::Wait_CLK_Cycles(int delay)
 */
 int MCU_BD::Program_MCU(int m_iMode1, int m_iMode0)
 {
-    IConnection::MCU_PROG_MODE mode;
-    switch(m_iMode1 << 1 | m_iMode0)
+    bool success = true;
+	unsigned short tempi=0x0000;
+	unsigned short tempi2=0x0000;
+	int CntEnd=0;
+	int i=0;
+    int countDown=m_iLoopTries;
+    int m_iExt2=0;
+
+	if ((m_iMode1==0)&&(m_iMode0==0)) return 0;
+    // MCU is in reset state
+    // the programming mode should be selected first
+
+	tempi2=0x0000;  // was 0x0000
+	if (m_iExt2==1)  tempi2=tempi2|0x0004;
+	if (m_iMode1==1) tempi2=tempi2|0x0002;
+	if (m_iMode0==1) tempi2=tempi2|0x0001;
+
+
+	tempi=0x0000;  // was 0x0000
+	if (m_iExt2==1)  tempi=tempi|0x0004;
+	if (m_iMode1==1) tempi=tempi|0x0002;
+	if (m_iMode0==1) tempi=tempi|0x0001;
+
+	//mSPI_write(0x8002, tempi);
+	// REG2 write
+	// selects programming mode
+    CntEnd=0;
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
+
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
+
+    stepsTotal.store(8192);
+    stepsDone.store(0);
+    aborted.store(false);
+
+	while  (CntEnd<8192)
     {
-    case 0: mode = IConnection::MCU_PROG_MODE::RESET; break;
-    case 1: mode = IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM; break;
-    case 2: mode = IConnection::MCU_PROG_MODE::SRAM; break;
-    case 3: mode = IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM; break;
-    default: mode = IConnection::MCU_PROG_MODE::RESET; break;
+        pkt.outBuffer.clear();
+        pkt.outBuffer.push_back(tempi);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (i=0; i<32; i++)
+        {
+            pkt.outBuffer.push_back(byte_array[CntEnd + i]);
+        }
+
+        m_serPort->TransferPacket(pkt);
+        status = pkt.status;
+        stepsDone.store(stepsDone.load() + 32);
+#ifndef NDEBUG
+        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
+#endif
+
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
+            success = false;
+            aborted.store(true);
+            break;
+        }
+
+        if((m_iMode0 == 1) && (m_iMode1 == 1)) // if boot mode , send only first packet
+        {
+            stepsDone.store(1);
+            stepsTotal.store(1);
+            break;
+        }
+
+        CntEnd+=32;
+        countDown=m_iLoopTries;
+	};
+
+#ifndef NDEBUG
+    printf("\nMCU programming Finished\n");
+#endif
+    if (success)
+    {
+        Log("PROGRAMMING MCU SUCCESS\n");
+        return 0;
     }
-    return Program_MCU(byte_array,mode);
+    else
+        return -1;
 }
 
-int MCU_BD::Program_MCU(const uint8_t* buffer, const IConnection::MCU_PROG_MODE mode)
+int MCU_BD::Program_MCU(const uint8_t* binArray, const MCU_BD::MEMORY_MODE mode)
 {
-    if(!m_serPort)
-        return ReportError(ENOLINK, "Device not connected");
+    bool success = true;
+    unsigned short tempi=0x0000;
 
-    if (byte_array_size <= 8192)
-        return m_serPort->ProgramMCU(buffer, byte_array_size, mode, callback);
-#ifndef NDEBUG
-    auto timeStart = std::chrono::high_resolution_clock::now();
-#endif
-    const auto timeout = std::chrono::milliseconds(100);
-    const uint32_t controlAddr = 0x0002 << 16;
-    const uint32_t statusReg = 0x0003 << 16;
-    const uint32_t addrDTM = 0x0004 << 16; //data to MCU
-    const uint16_t EMTPY_WRITE_BUFF = 1 << 0;
-    const uint16_t PROGRAMMED = 1 << 6;
-    const uint8_t fifoLen = 64;
-    uint32_t wrdata[fifoLen];
-    uint32_t rddata = 0;
-    int status;
-    bool abort = false;
-        //reset MCU, set mode
-    wrdata[0] = (1 << 31) | controlAddr | 0;
-    wrdata[1] = (1 << 31) | controlAddr | (mode & 0x3);
-    if((status = m_serPort->WriteLMS7002MSPI(wrdata, 2, mChipID))!=0)
-        return status;
+    if (mode == MEMORY_MODE::RESET)
+        return -1;
+    // MCU is in reset state
+    // the programming mode should be selected first
 
-    if(callback)
-        abort = callback(0, byte_array_size, "");
-
-    for(uint16_t i=0; i<byte_array_size && !abort; i+=fifoLen)
+    switch(mode)
     {
-        //wait till EMPTY_WRITE_BUFF = 1
-        bool fifoEmpty = false;
-        wrdata[0] = statusReg;
-        auto t1 = std::chrono::high_resolution_clock::now();
-        auto t2 = t1;
-        do{
-            if((status = m_serPort->ReadLMS7002MSPI(wrdata, &rddata, 1, mChipID))!=0)
-                return status;
-            fifoEmpty = rddata & EMTPY_WRITE_BUFF;
-            t2 = std::chrono::high_resolution_clock::now();
-        }while( (!fifoEmpty) && (t2-t1)<timeout);
+    case EEPROM_AND_SRAM: tempi=0x0001; break;
+    case SRAM: tempi=0x0002; break;
+    case SRAM_FROM_EEPROM: tempi=0x0003; break;
+    default: tempi = 0;
+    }
 
-        if(!fifoEmpty)
-            return ReportError(ETIMEDOUT, "MCU FIFO full");
+    int packetNumber = 0;
+    int status = STATUS_UNDEFINED;
 
-        //write 32 bytes into FIFO
-        for(uint8_t j=0; j<fifoLen; ++j)
-            wrdata[j] = (1 << 31) | addrDTM | buffer[i+j];
+    LMS64CProtocol::GenericPacket pkt;
+    pkt.cmd = CMD_PROG_MCU;
 
-        if((status = m_serPort->WriteLMS7002MSPI(wrdata,fifoLen, mChipID))!=0)
-            return status;
-        if(callback)
-            abort = callback(i+fifoLen, byte_array_size, "");
+    stepsTotal.store(8192);
+    stepsDone.store(0);
+    aborted.store(false);
+
+    for(int16_t CntEnd=0; CntEnd<8192; CntEnd+=32)
+    {
+        pkt.outBuffer.clear();
+        pkt.outBuffer.push_back(tempi);
+        pkt.outBuffer.push_back(packetNumber++);
+        for (uint8_t i=0; i<32; i++)
+            pkt.outBuffer.push_back(binArray[CntEnd + i]);
+
+        m_serPort->TransferPacket(pkt);
+        status = pkt.status;
+        stepsDone.store(stepsDone.load() + 32);
 #ifndef NDEBUG
-        printf("MCU programming : %4i/%4li\r", i+fifoLen, long(byte_array_size));
+        printf("MCU programming : %4i/%4i\r", stepsDone.load(), stepsTotal.load());
 #endif
-    };
-    if(abort)
-        return ReportError(-1, "operation aborted by user");
+        if(status != STATUS_COMPLETED_CMD)
+        {
+            stringstream ss;
+            ss << "Programing MCU: status : not completed, block " << packetNumber << endl;
+            success = false;
+            aborted.store(true);
+            break;
+        }
 
-    //wait until programmed flag
-    wrdata[0] = statusReg;
-    bool programmed = false;
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto t2 = t1;
-    do{
-        if((status = m_serPort->ReadLMS7002MSPI(wrdata, &rddata, 1, mChipID))!=0)
-            return status;
-        programmed = rddata & PROGRAMMED;
-        t2 = std::chrono::high_resolution_clock::now();
-    }while( (!programmed) && (t2-t1)<timeout);
+        if(mode == SRAM_FROM_EEPROM) // if boot mode , send only first packet
+        {
+            stepsDone.store(1);
+            stepsTotal.store(1);
+            break;
+        }
+	};
 #ifndef NDEBUG
-    auto timeEnd = std::chrono::high_resolution_clock::now();
-    printf("\nMCU Programming finished, %li ms\n",
-            std::chrono::duration_cast<std::chrono::milliseconds>
-            (timeEnd-timeStart).count());
+    printf("\nMCU programming Finished\n");
 #endif
-    if(!programmed)
-        return ReportError(ETIMEDOUT, "MCU not programmed");
-    return 0;
+    if (success)
+    {
+        Log("PROGRAMMING MCU SUCCESS\n");
+        return 0;
+    }
+    else
+        return -1;
 }
 
 void MCU_BD::Reset_MCU()
@@ -676,6 +736,7 @@ int MCU_BD::RunProductionTest_MCU()
     unsigned short tempi = 0x0080;  // was 0x0000
     int m_iMode1_ = 0;
     int m_iMode0_ = 0;
+    int m_iExt2 = 0;
 
     if (m_bLoadedProd == 0)
     {
@@ -820,8 +881,6 @@ int MCU_BD::RunProductionTest_MCU()
 
     //Baseband gets back the control over SPI switch
     mSPI_write(0x0006, 0x0000); //REG6 write
-
-    return 0;
 }
 
 void MCU_BD::RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug) {
@@ -970,6 +1029,11 @@ int MCU_BD::RunInstr_MCU(unsigned short * pPCVAL)
 	return retval;
 }
 
+void MCU_BD::Log(const char* msg)
+{
+    printf("%s", msg);
+}
+
 /** @brief Returns information about programming or reading data progress
 */
 MCU_BD::ProgressInfo MCU_BD::GetProgressInfo() const
@@ -999,100 +1063,54 @@ std::string MCU_BD::GetProgramFilename() const
 
 /** @brief Starts algorithm in MCU
 */
-void MCU_BD::RunProcedure(uint8_t id)
+void MCU_BD::CallMCU(int data)
 {
-    mSPI_write(0x0006, 1);
-    mSPI_write(0x0000, id);
-    uint8_t x0002reg = mSPI_read(0x0002);
-    const uint8_t interupt6 = 0x08;
-    mSPI_write(0x0002, x0002reg & ~interupt6);
-    mSPI_write(0x0002, x0002reg | interupt6);
-    mSPI_write(0x0002, x0002reg & ~interupt6);
-    //MCU seems to be stuck at this point until any SPI operation is performed
-    mSPI_read(0x0002); //random spi action
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    mSPI_write(0, 0);
+    if (data != 0)
+        mSPI_write(0x0006, 1);
+    else
+        mSPI_write(0x0006, 0);
+    mSPI_write(0, data);
 }
-
 
 /** @brief Waits for MCU to finish executing program
 @return 0 success, 255 idle, 244 running, else algorithm status
 */
 int MCU_BD::WaitForMCU(uint32_t timeout_ms)
 {
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto t2 = t1;
+    auto t1 = chrono::high_resolution_clock::now();
+    auto t2 = chrono::high_resolution_clock::now();
     unsigned short value = 0;
-    std::this_thread::sleep_for(std::chrono::microseconds(50));
-    do {
+
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        t2 = chrono::high_resolution_clock::now();
         value = mSPI_read(0x0001) & 0xFF;
-        if (value != 0xFF) //working
+
+        if (value == 0xFF) //working
+            continue;
+        else //finished
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        t2 = std::chrono::high_resolution_clock::now();
-    }while (std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() < timeout_ms);
+    }
     mSPI_write(0x0006, 0); //return SPI control to PC
-    //if((value & 0x7f) != 0)
-    lime::debug("MCU algorithm time: %li ms", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
-    return value & 0x7F;
-}
-
-void MCU_BD::SetParameter(MCU_Parameter param, float value)
-{
-    const uint8_t x0002reg = mSPI_read(0x0002);
-    const uint8_t interupt7 = 0x04;
-    if(param==MCU_REF_CLK || param == MCU_BW)
-    {
-        uint8_t inputRegs[3];
-        value /= 1e6;
-        inputRegs[0] = (uint8_t)value; //frequency integer part
-
-        uint16_t fracPart = value * 1000.0 - inputRegs[0]*1000.0;
-        inputRegs[1] = (fracPart >> 8) & 0xFF;
-        inputRegs[2] = fracPart & 0xFF;
-        for(uint8_t i = 0; i < 3; ++i)
-        {
-            mSPI_write(0, inputRegs[2-i]);
-            mSPI_write(0x0002, x0002reg | interupt7);
-            mSPI_write(0x0002, x0002reg & ~interupt7);
-            this_thread::sleep_for(chrono::microseconds(5));
-        }
-    }
-    if(param==MCU_REF_CLK)
-        RunProcedure(4);
-    if(param == MCU_BW)
-        RunProcedure(3);
-    if(param == MCU_EXT_LOOPBACK_PAIR)
-    {
-        uint8_t intVal = (int)value;
-        mSPI_write(0, intVal);
-        mSPI_write(0x0002, x0002reg | interupt7);
-        mSPI_write(0x0002, x0002reg & ~interupt7);
-        int status = WaitForMCU(10);
-        if(status != 0)
-            lime::debug("MCU error status 0x%02X\n", status);
-        RunProcedure(9);
-    }
-    if(WaitForMCU(100) != 0)
-        lime::debug("Failed to set MCU parameter");
+    std::printf("MCU algorithm time: %li ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+    return value;
 }
 
 /** @brief Switches MCU into debug mode, MCU program execution is halted
     @param mode MCU memory initialization mode
     @return Operation status
 */
-MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, IConnection::MCU_PROG_MODE mode)
+MCU_BD::OperationStatus MCU_BD::SetDebugMode(bool enabled, MEMORY_MODE mode)
 {
     uint8_t regValue = 0;
     switch (mode)
     {
-    case IConnection::MCU_PROG_MODE::RESET:
-        break;
-    case IConnection::MCU_PROG_MODE::EEPROM_AND_SRAM:
-        regValue |= 0x01; break;
-    case IConnection::MCU_PROG_MODE::SRAM:
-        regValue |= 0x02; break;
-    case IConnection::MCU_PROG_MODE::BOOT_SRAM_FROM_EEPROM:
-        regValue |= 0x03; break;
+    case RESET: break;
+    case EEPROM_AND_SRAM: regValue |= 0x01; break;
+    case SRAM: regValue |= 0x02; break;
+    case SRAM_FROM_EEPROM: regValue |= 0x03; break;
     }
     if (enabled)
         regValue |= 0xC0;
@@ -1139,36 +1157,7 @@ MCU_BD::OperationStatus MCU_BD::writeIRAM(const uint8_t *addr, const uint8_t* va
 
 uint8_t MCU_BD::ReadMCUProgramID()
 {
-    RunProcedure(255);
+    CallMCU(255);
     auto statusMcu = WaitForMCU(10);
     return statusMcu & 0x7F;
-}
-
-static const char* MCU_ErrorMessages[] =
-{
-"No error",
-"Generic error",
-"CGEN tune failed",
-"SXR tune failed",
-"SXT tune failed",
-"Loopback signal weak: not connected/insufficient gain?",
-"Invalid Rx path",
-"Invalid Tx band",
-"Rx LPF bandwidth out of range",
-"Rx invalid TIA gain",
-"Tx LPF bandwidth out of range",
-"Procedure is disabled",
-"Rx R_CTL_LPF range limit reached",
-"Rx CFB_TIA_RFE range limit reached",
-"Tx RCAL_LPF range limit reached,"
-};
-
-const char* MCU_BD::MCUStatusMessage(const uint8_t code)
-{
-    static_assert(MCU_ERROR_CODES_COUNT == sizeof(MCU_ErrorMessages)/sizeof(char*), "MCU errors enum/string count mismatch");
-    if(code == 255)
-        return "MCU not programmed/procedure still in progress";
-    if(code >= MCU_ERROR_CODES_COUNT)
-        return "Error code undefined";
-    return MCU_ErrorMessages[code];
 }

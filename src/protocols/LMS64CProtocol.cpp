@@ -4,7 +4,7 @@
     @brief Implementation of LMS64C protocol.
 */
 
-#include "Logger.h"
+#include "ErrorReporting.h"
 #include "LMS64CProtocol.h"
 #include "Si5351C.h"
 #include <chrono>
@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 #include <ADCUnits.h>
-#include <sstream>
 using namespace lime;
 
 //! CMD_LMS7002_RST options
@@ -24,17 +23,17 @@ const int LMS_RST_PULSE = 2;
 
 //! arbitrary spi constants used to dispatch calls
 #define LMS7002M_SPI_INDEX 0x10
+#define Si5351_I2C_ADDR 0x20
 #define ADF4002_SPI_INDEX 0x30
 
 static int convertStatus(const int &status, const LMS64CProtocol::GenericPacket &pkt)
 {
-    if (status != 0) return -1;
+    if (status != 0) return ReportError(EIO, GetLastErrorMessage());
     switch (pkt.status)
     {
     case STATUS_COMPLETED_CMD: return 0;
     case STATUS_UNKNOWN_CMD:
-        return ReportError(EPROTONOSUPPORT, "Command not supported");
-    default: break;
+        return ReportError(EPROTONOSUPPORT, "unknown lms64c protocol command");
     }
     return ReportError(EPROTO, status2string(pkt.status));
 }
@@ -43,21 +42,14 @@ LMS64CProtocol::LMS64CProtocol(void)
 {
     //set a sane-default for the rate
     _cachedRefClockRate = 61.44e6/2;
-#ifdef REMOTE_CONTROL
-    InitRemote();
-#endif
-
 }
 
 LMS64CProtocol::~LMS64CProtocol(void)
 {
-#ifdef REMOTE_CONTROL
-    CloseRemote();
-#endif
     return;
 }
 
-int LMS64CProtocol::DeviceReset(int ind)
+int LMS64CProtocol::DeviceReset(void)
 {
     if (not this->IsOpen())
     {
@@ -66,7 +58,6 @@ int LMS64CProtocol::DeviceReset(int ind)
 
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RST;
-    pkt.periphID = ind;
     pkt.outBuffer.push_back (LMS_RST_PULSE);
     int status = this->TransferPacket(pkt);
 
@@ -108,7 +99,13 @@ int LMS64CProtocol::WriteI2C(const int addr, const std::string &data)
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-    return this->WriteSi5351I2C(data);
+
+    switch(addr)
+    {
+    case Si5351_I2C_ADDR: return this->WriteSi5351I2C(data);
+    }
+
+    return ReportError(ENOTSUP, "unknown i2c address");
 }
 
 int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &data)
@@ -117,17 +114,38 @@ int LMS64CProtocol::ReadI2C(const int addr, const size_t numBytes, std::string &
     {
         return ReportError(ENOTCONN, "connection is not open");
     }
-    return this->ReadSi5351I2C(numBytes, data);
+
+    switch(addr)
+    {
+    case Si5351_I2C_ADDR: return this->ReadSi5351I2C(numBytes, data);
+    }
+
+    return ReportError(ENOTSUP, "unknown i2c address");
+}
+
+double LMS64CProtocol::GetReferenceClockRate(void)
+{
+    return _cachedRefClockRate;
+}
+
+void LMS64CProtocol::SetReferenceClockRate(const double rate)
+{
+    Si5351C pll;
+    pll.Initialize(this);
+
+    //TODO set the PLL freq
+
+    //stash the actual reference
+    _cachedRefClockRate = rate;
 }
 
 /***********************************************************************
  * LMS7002M SPI access
  **********************************************************************/
-int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, size_t size, unsigned periphID)
+int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, const size_t size)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_WR;
-    pkt.periphID = periphID;
     for (size_t i = 0; i < size; ++i)
     {
         uint16_t addr = (writeData[i] >> 16) & 0x7fff;
@@ -143,11 +161,10 @@ int LMS64CProtocol::WriteLMS7002MSPI(const uint32_t *writeData, size_t size, uns
     return convertStatus(status, pkt);
 }
 
-int LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID)
+int LMS64CProtocol::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
     GenericPacket pkt;
     pkt.cmd = CMD_LMS7002_RD;
-    pkt.periphID = periphID;
     for (size_t i = 0; i < size; ++i)
     {
         uint16_t addr = (writeData[i] >> 16) & 0x7fff;
@@ -227,7 +244,8 @@ int LMS64CProtocol::WriteADF4002SPI(const uint32_t *writeData, const size_t size
 
 int LMS64CProtocol::ReadADF4002SPI(const uint32_t *writeData, uint32_t *readData, const size_t size)
 {
-    ReportError(ENOTSUP, "ReadADF4002SPI not supported");
+    //TODO
+    ReportError(ENOTSUP);
     return -1;
 }
 
@@ -286,14 +304,10 @@ DeviceInfo LMS64CProtocol::GetDeviceInfo(void)
     devInfo.firmwareVersion = std::to_string(int(lmsInfo.firmware));
     devInfo.hardwareVersion = std::to_string(int(lmsInfo.hardware));
     devInfo.protocolVersion = std::to_string(int(lmsInfo.protocol));
+    devInfo.addrsLMS7002M.push_back(LMS7002M_SPI_INDEX);
+    devInfo.addrSi5351 = Si5351_I2C_ADDR;
+    devInfo.addrADF4002 = ADF4002_SPI_INDEX;
     devInfo.boardSerialNumber = lmsInfo.boardSerialNumber;
-
-    FPGAinfo gatewareInfo = this->GetFPGAInfo();
-    devInfo.gatewareTargetBoard = GetDeviceName(eLMS_DEV(gatewareInfo.boardID));
-    devInfo.gatewareVersion = std::to_string(int(gatewareInfo.gatewareVersion));
-    devInfo.gatewareRevision = std::to_string(int(gatewareInfo.gatewareRevision));
-    devInfo.hardwareVersion = std::to_string(int(gatewareInfo.hwVersion));
-
     return devInfo;
 }
 
@@ -318,43 +332,10 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
         info.protocol = pkt.inBuffer[2];
         info.hardware = pkt.inBuffer[3];
         info.expansion = pkt.inBuffer[4] < EXP_BOARD_COUNT ? (eEXP_BOARD)pkt.inBuffer[4] : EXP_BOARD_UNKNOWN;
-        info.boardSerialNumber = 0;
-        for (int i = 10; i < 18; i++)
-        {
-	        info.boardSerialNumber <<= 8;
-	        info.boardSerialNumber |= pkt.inBuffer[i];
-        }
+        info.boardSerialNumber = (pkt.inBuffer[5] << 24) | (pkt.inBuffer[6] << 16) | (pkt.inBuffer[7] << 8) | pkt.inBuffer[8];
     }
     return info;
 }
-
-/** @brief Returns information from FPGA gateware
-*/
-LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
-{
-    FPGAinfo info;
-    info.boardID = 0;
-    info.gatewareVersion = 0;
-    info.gatewareRevision = 0;
-    GenericPacket pkt;
-    pkt.cmd = CMD_BRDSPI_RD;
-    const uint16_t addrs[] = {0x0000, 0x0001, 0x0002, 0x0003};
-    for (size_t i = 0; i < 4; ++i)
-    {
-        pkt.outBuffer.push_back(addrs[i] >> 8);
-        pkt.outBuffer.push_back(addrs[i] & 0xFF);
-    }
-    int status = this->TransferPacket(pkt);
-    if (status == 0 && pkt.inBuffer.size() >= sizeof(addrs)*2)
-    {
-        info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
-        info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
-        info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
-        info.hwVersion = pkt.inBuffer[15]&0x7F;
-    }
-    return info;
-}
-
 
 /** @brief Transfers data between packet and connected device
     @param pkt packet containing output data and to receive incomming data
@@ -366,43 +347,113 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     int status = 0;
     if(IsOpen() == false) ReportError(ENOTCONN, "connection is not open");
 
-    const int packetLen = ProtocolLMS64C::pktLength;
+    int packetLen;
+    eLMS_PROTOCOL protocol = LMS_PROTOCOL_UNDEFINED;
+    if(this->GetType() == SPI_PORT)
+        protocol = LMS_PROTOCOL_NOVENA;
+    else
+        protocol = LMS_PROTOCOL_LMS64C;
+    switch(protocol)
+    {
+    case LMS_PROTOCOL_UNDEFINED:
+        return ReportError("protocol type undefined");
+    case LMS_PROTOCOL_LMS64C:
+        packetLen = ProtocolLMS64C::pktLength;
+        break;
+    case LMS_PROTOCOL_NOVENA:
+        packetLen = pkt.outBuffer.size() > ProtocolNovena::pktLength ? ProtocolNovena::pktLength : pkt.outBuffer.size();
+        break;
+    default:
+        packetLen = 0;
+        return ReportError("Unknown protocol type %d", int(protocol));
+    }
     int outLen = 0;
-    unsigned char* outBuffer = PreparePacket(pkt, outLen);
+    unsigned char* outBuffer = NULL;
+    outBuffer = PreparePacket(pkt, outLen, protocol);
     unsigned char* inBuffer = new unsigned char[outLen];
     memset(inBuffer, 0, outLen);
 
     int outBufPos = 0;
     int inDataPos = 0;
     if(outLen == 0)
-        outLen = 1;
-
-    for(int i=0; i<outLen; i+=packetLen)
     {
-        if (callback_logData)
-            callback_logData(true, &outBuffer[outBufPos], packetLen);
-        int written = Write(&outBuffer[outBufPos], packetLen);
-        if(written != packetLen)
-        {
-            status = lime::error("TransferPacket: Write failed (ret=%d)", written);
-            break;
-        }
-        outBufPos += packetLen;
-        int bread = Read(&inBuffer[inDataPos], packetLen);
-        if(bread != packetLen)
-        {
-            status = lime::error("TransferPacket: Read failed (ret=%d)", bread);
-            break;
-        }
-        if (callback_logData)
-            callback_logData(false, &inBuffer[inDataPos], bread);
-        inDataPos += bread;
+        //printf("packet outlen = 0\n");
+        outLen = 1;
     }
-    ParsePacket(pkt, inBuffer, inDataPos);
 
-    delete[] outBuffer;
-    delete[] inBuffer;
-    return convertStatus(status, pkt);
+    if(protocol == LMS_PROTOCOL_NOVENA)
+    {
+        bool transferData = true; //some commands are fake, so don't need transferring
+        if(pkt.cmd == CMD_GET_INFO)
+        {
+            //spi does not have GET INFO, fake it to inform what device it is
+            pkt.status = STATUS_COMPLETED_CMD;
+            pkt.inBuffer.clear();
+            pkt.inBuffer.resize(64, 0);
+            pkt.inBuffer[0] = 0; //firmware
+            pkt.inBuffer[1] = LMS_DEV_NOVENA; //device
+            pkt.inBuffer[2] = 0; //protocol
+            pkt.inBuffer[3] = 0; //hardware
+            pkt.inBuffer[4] = EXP_BOARD_UNSUPPORTED; //expansion
+            transferData = false;
+        }
+
+        if(transferData)
+        {
+            if (callback_logData)
+                callback_logData(true, outBuffer, outLen);
+            int bytesWritten = Write(outBuffer, outLen);
+            if( bytesWritten == outLen)
+            {
+                if(pkt.cmd == CMD_LMS7002_RD)
+                {
+                    inDataPos = Read(&inBuffer[inDataPos], outLen);
+                    if(inDataPos != outLen)
+                        status = ReportError("Read(%d bytes) got %d", (int)outLen, (int)inDataPos);
+                    else
+                    {
+                        if (callback_logData)
+                            callback_logData(false, inBuffer, inDataPos);
+                    }
+                }
+                ParsePacket(pkt, inBuffer, inDataPos, protocol);
+            }
+            else
+                status = ReportError("Write(%d bytes) got %d", (int)outLen, (int)bytesWritten);
+        }
+    }
+    else
+    {
+        for(int i=0; i<outLen; i+=packetLen)
+        {
+            int bytesToSend = packetLen;
+            if (callback_logData)
+                callback_logData(true, &outBuffer[outBufPos], bytesToSend);
+            if( Write(&outBuffer[outBufPos], bytesToSend) )
+            {
+                outBufPos += packetLen;
+                long readLen = packetLen;
+                int bread = Read(&inBuffer[inDataPos], readLen);
+                if(bread != readLen && protocol != LMS_PROTOCOL_NOVENA)
+                {
+                    status = ReportError("Read(%d bytes) failed", (int)readLen);
+                    break;
+                }
+                if (callback_logData)
+                    callback_logData(false, &inBuffer[inDataPos], bread);
+                inDataPos += bread;
+            }
+            else
+            {
+                status = ReportError("Write(%d bytes) failed", (int)bytesToSend);
+                break;
+            }
+        }
+        ParsePacket(pkt, inBuffer, inDataPos, protocol);
+    }
+    delete outBuffer;
+    delete inBuffer;
+    return status;
 }
 
 /** @brief Takes generic packet and converts to specific protocol buffer
@@ -411,76 +462,106 @@ int LMS64CProtocol::TransferPacket(GenericPacket& pkt)
     @param protocol which protocol to use for data
     @return pointer to data buffer, must be manually deleted after use
 */
-unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& length)
+unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& length, const eLMS_PROTOCOL protocol)
 {
     unsigned char* buffer = NULL;
+    if(protocol == LMS_PROTOCOL_UNDEFINED)
+        return NULL;
 
-    ProtocolLMS64C packet;
-    int maxDataLength = packet.maxDataLength;
-    packet.cmd = pkt.cmd;
-    packet.status = pkt.status;
-    packet.periphID = pkt.periphID;
-    int byteBlockRatio = 1; //block ratio - how many bytes in one block
-    switch( packet.cmd )
+    if(protocol == LMS_PROTOCOL_LMS64C)
     {
-    case CMD_PROG_MCU:
-    case CMD_GET_INFO:
-    case CMD_SI5351_RD:
-    case CMD_SI5356_RD:
-        byteBlockRatio = 1;
-        break;
-    case CMD_SI5351_WR:
-    case CMD_SI5356_WR:
-        byteBlockRatio = 2;
-        break;
-    case CMD_LMS7002_RD:
-    case CMD_BRDSPI_RD:
-    case CMD_BRDSPI8_RD:
-        byteBlockRatio = 2;
-        break;
-    case CMD_ADF4002_WR:
-        byteBlockRatio = 3;
-        break;
-    case CMD_LMS7002_WR:
-    case CMD_BRDSPI_WR:
-    case CMD_ANALOG_VAL_WR:
-        byteBlockRatio = 4;
-        break;
-    default:
-        byteBlockRatio = 1;
-    }
-    if (packet.cmd == CMD_LMS7002_RD || packet.cmd == CMD_BRDSPI_RD)
-        maxDataLength = maxDataLength/2;
-    if (packet.cmd == CMD_ANALOG_VAL_RD)
-        maxDataLength = maxDataLength / 4;
-    int blockCount = pkt.outBuffer.size()/byteBlockRatio;
-    int bufLen = blockCount/(maxDataLength/byteBlockRatio)
-                +(blockCount%(maxDataLength/byteBlockRatio)!=0);
-    bufLen *= packet.pktLength;
-    if(bufLen == 0)
-        bufLen = packet.pktLength;
-    buffer = new unsigned char[bufLen];
-    memset(buffer, 0, bufLen);
-    unsigned int srcPos = 0;
-    for(int j=0; j*packet.pktLength<bufLen; ++j)
-    {
-        int pktPos = j*packet.pktLength;
-        buffer[pktPos] = packet.cmd;
-        buffer[pktPos+1] = packet.status;
-        buffer[pktPos + 3] = packet.periphID;
-        if(blockCount > (maxDataLength/byteBlockRatio))
+        ProtocolLMS64C packet;
+        int maxDataLength = packet.maxDataLength;
+        packet.cmd = pkt.cmd;
+        packet.status = pkt.status;
+        int byteBlockRatio = 1; //block ratio - how many bytes in one block
+        switch( packet.cmd )
         {
-            buffer[pktPos+2] = maxDataLength/byteBlockRatio;
-            blockCount -= buffer[pktPos+2];
+        case CMD_PROG_MCU:
+        case CMD_GET_INFO:
+        case CMD_SI5351_RD:
+        case CMD_SI5356_RD:
+            byteBlockRatio = 1;
+            break;
+        case CMD_SI5351_WR:
+        case CMD_SI5356_WR:
+            byteBlockRatio = 2;
+            break;
+        case CMD_LMS7002_RD:
+        case CMD_BRDSPI_RD:
+        case CMD_BRDSPI8_RD:
+            byteBlockRatio = 2;
+            break;
+        case CMD_ADF4002_WR:
+            byteBlockRatio = 3;
+            break;
+        case CMD_LMS7002_WR:
+        case CMD_BRDSPI_WR:
+        case CMD_ANALOG_VAL_WR:
+            byteBlockRatio = 4;
+            break;
+        default:
+            byteBlockRatio = 1;
+        }
+        if (packet.cmd == CMD_LMS7002_RD || packet.cmd == CMD_BRDSPI_RD)
+            maxDataLength = maxDataLength/2;
+        if (packet.cmd == CMD_ANALOG_VAL_RD)
+            maxDataLength = maxDataLength / 4;
+        int blockCount = pkt.outBuffer.size()/byteBlockRatio;
+        int bufLen = blockCount/(maxDataLength/byteBlockRatio)
+                    +(blockCount%(maxDataLength/byteBlockRatio)!=0);
+        bufLen *= packet.pktLength;
+        if(bufLen == 0)
+            bufLen = packet.pktLength;
+        buffer = new unsigned char[bufLen];
+        memset(buffer, 0, bufLen);
+        int srcPos = 0;
+        for(int j=0; j*packet.pktLength<bufLen; ++j)
+        {
+            int pktPos = j*packet.pktLength;
+            buffer[pktPos] = packet.cmd;
+            buffer[pktPos+1] = packet.status;
+            if(blockCount > (maxDataLength/byteBlockRatio))
+            {
+                buffer[pktPos+2] = maxDataLength/byteBlockRatio;
+                blockCount -= buffer[pktPos+2];
+            }
+            else
+                buffer[pktPos+2] = blockCount;
+            memcpy(&buffer[pktPos+3], packet.reserved, sizeof(packet.reserved));
+            int bytesToPack = (maxDataLength/byteBlockRatio)*byteBlockRatio;
+            for (int k = 0; k<bytesToPack && srcPos < pkt.outBuffer.size(); ++srcPos, ++k)
+                buffer[pktPos + 8 + k] = pkt.outBuffer[srcPos];
+        }
+        length = bufLen;
+    }
+    else if(protocol == LMS_PROTOCOL_NOVENA)
+    {
+        if(pkt.cmd == CMD_LMS7002_RST)
+        {
+            buffer = new unsigned char[8];
+            buffer[0] = 0x88;
+            buffer[1] = 0x06;
+            buffer[2] = 0x00;
+            buffer[3] = 0x18;
+            buffer[4] = 0x88;
+            buffer[5] = 0x06;
+            buffer[6] = 0x00;
+            buffer[7] = 0x38;
+            length = 8;
         }
         else
-            buffer[pktPos+2] = blockCount;
-        memcpy(&buffer[pktPos+4], packet.reserved, sizeof(packet.reserved));
-        int bytesToPack = (maxDataLength/byteBlockRatio)*byteBlockRatio;
-        for (int k = 0; k<bytesToPack && srcPos < pkt.outBuffer.size(); ++srcPos, ++k)
-            buffer[pktPos + 8 + k] = pkt.outBuffer[srcPos];
+        {
+            buffer = new unsigned char[pkt.outBuffer.size()];
+            memcpy(buffer, &pkt.outBuffer[0], pkt.outBuffer.size());
+            if (pkt.cmd == CMD_LMS7002_WR)
+            {
+                for(int i=0; i<pkt.outBuffer.size(); i+=4)
+                    buffer[i] |= 0x80;
+            }
+            length = pkt.outBuffer.size();
+        }
     }
-    length = bufLen;
     return buffer;
 }
 
@@ -491,17 +572,38 @@ unsigned char* LMS64CProtocol::PreparePacket(const GenericPacket& pkt, int& leng
     @param protocol which protocol to use for data parsing
     @return 1:success, 0:failure
 */
-int LMS64CProtocol::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const int length)
+int LMS64CProtocol::ParsePacket(GenericPacket& pkt, const unsigned char* buffer, const int length, const eLMS_PROTOCOL protocol)
 {
-    ProtocolLMS64C packet;
-    int inBufPos = 0;
-    pkt.inBuffer.resize(packet.maxDataLength*(length / packet.pktLength + (length % packet.pktLength)), 0);
-    for(int i=0; i<length; i+=packet.pktLength)
+    if(protocol == LMS_PROTOCOL_UNDEFINED)
+        return -1;
+
+    if(protocol == LMS_PROTOCOL_LMS64C)
     {
-        pkt.cmd = (eCMD_LMS)buffer[i];
-        pkt.status = (eCMD_STATUS)buffer[i+1];
-        memcpy(&pkt.inBuffer[inBufPos], &buffer[i+8], packet.maxDataLength);
-        inBufPos += packet.maxDataLength;
+        ProtocolLMS64C packet;
+        int inBufPos = 0;
+        pkt.inBuffer.resize(packet.maxDataLength*(length / packet.pktLength + (length % packet.pktLength)), 0);
+        for(int i=0; i<length; i+=packet.pktLength)
+        {
+            pkt.cmd = (eCMD_LMS)buffer[i];
+            pkt.status = (eCMD_STATUS)buffer[i+1];
+            memcpy(&pkt.inBuffer[inBufPos], &buffer[i+8], packet.maxDataLength);
+            inBufPos += packet.maxDataLength;
+        }
+    }
+    else if(protocol == LMS_PROTOCOL_NOVENA)
+    {
+        pkt.cmd = CMD_LMS7002_RD;
+        pkt.status = STATUS_COMPLETED_CMD;
+        pkt.inBuffer.clear();
+        for(int i=0; i<length; i+=2)
+        {
+            //reading from spi returns only registers values
+            //fill addresses as zeros to match generic format of address, value pairs
+            pkt.inBuffer.push_back(0); //should be address msb
+            pkt.inBuffer.push_back(0); //should be address lsb
+            pkt.inBuffer.push_back(buffer[i]);
+            pkt.inBuffer.push_back(buffer[i+1]);
+        }
     }
     return 1;
 }
@@ -511,10 +613,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
 #endif
-    //erasing FLASH can take up to 3 seconds before reply is received
-    const int progTimeout_ms = 5000;
     char progressMsg[128];
-    sprintf(progressMsg, "in progress...");
     bool abortProgramming = false;
     int bytesSent = 0;
 
@@ -548,8 +647,8 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     {
         sprintf(progressMsg, "Programming failed! Target device not supported");
         if(callback)
-            callback(bytesSent, length, progressMsg);
-        return ReportError(ENOTSUP, progressMsg);
+            abortProgramming = callback(bytesSent, length, progressMsg);
+        return ReportError(progressMsg);
     }
 
     unsigned char ctrbuf[64];
@@ -590,13 +689,13 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
         {
             if(callback)
                 callback(bytesSent, length, "Programming failed! Write operation failed");
-            return ReportError(EIO, "Programming failed! Write operation failed");
+            return ReportError("Programming failed! Write operation failed");
         }
-        if(Read(inbuf, sizeof(inbuf), progTimeout_ms) != sizeof(ctrbuf))
+        if(Read(inbuf, sizeof(inbuf)) != sizeof(ctrbuf))
         {
             if(callback)
                 callback(bytesSent, length, "Programming failed! Read operation failed");
-            return ReportError(EIO, "Programming failed! Read operation failed");
+            return ReportError("Programming failed! Read operation failed");
         }
         data_left -= data_cnt;
         status = inbuf[1];
@@ -606,20 +705,30 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
         {
             sprintf(progressMsg, "Programming failed! %s", status2string(status));
             if(callback)
-                callback(bytesSent, length, progressMsg);
-            return ReportError(EPROTO, progressMsg);
+                abortProgramming = callback(bytesSent, length, progressMsg);
+#ifndef NDEBUG
+            printf("\n%s\n", progressMsg);
+#endif
+            return ReportError(EPROTO);
         }
         if(needsData == false) //only one packet is needed to initiate bitstream from flash
         {
             bytesSent = length;
             break;
         }
+        sprintf(progressMsg, "programing: %6i/%i", portionNumber, portionsCount - 1);
         if(callback)
             abortProgramming = callback(bytesSent, length, progressMsg);
+#ifndef NDEBUG
+        printf("%s\r", progressMsg);
+#endif
     }
     if (abortProgramming == true)
     {
         sprintf(progressMsg, "programming: aborted by user");
+#ifndef NDEBUG
+        printf("\n%s\n", progressMsg);
+#endif
         if(callback)
             callback(bytesSent, length, progressMsg);
         return ReportError(ECONNABORTED, "user aborted programming");
@@ -630,180 +739,57 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
 #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
 	if ((device == 2 && prog_mode == 2) == false)
-	    lime::log(LOG_LEVEL_INFO, "Programming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+        printf("\nProgramming finished, %li bytes sent! %li ms\n", length, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
 	else
-        lime::log(LOG_LEVEL_INFO, "FPGA configuring initiated\n");
+		printf("\nFPGA configuring initiated\n");
 #endif
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const size_t count, std::string* units)
+int LMS64CProtocol::CustomParameterRead(const uint8_t *ids, double *values, const int count, std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_RD;
 
-    for (size_t i=0; i<count; ++i)
+    for (int i=0; i<count; ++i)
         pkt.outBuffer.push_back(ids[i]);
 
     int status = this->TransferPacket(pkt);
-    if (status != 0) return status;
+    if (status != 0) return convertStatus(status, pkt);
 
     assert(pkt.inBuffer.size() >= 4 * count);
 
-    for (size_t i = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i)
     {
-        int unitsIndex = pkt.inBuffer[i * 4 + 1];
+        int unitsIndex = (pkt.inBuffer[i * 4 + 1] & 0xF0) >> 4;
         if(units)
-        {
-
-            if (unitsIndex&0x0F)
-            {
-                const char adc_units_prefix[] = {
-                    ' ', 'k', 'M', 'G', 'T', 'P', 'E', 'Z',
-                    'y', 'z', 'a', 'f', 'p', 'n', 'u', 'm'};
-                units[i] = adc_units_prefix[unitsIndex&0x0F]+adcUnits2string((unitsIndex & 0xF0)>>4);
-            }
-            else
-                units[i] += adcUnits2string((unitsIndex & 0xF0)>>4);
-        }
-        if((unitsIndex & 0xF0)>>4 == RAW)
-        {
-            values[i] = (uint16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
-        }
-        else
-        {
-            values[i] = (int16_t)(pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3]);
-            if((unitsIndex & 0xF0)>>4 == TEMPERATURE)
-                values[i] /= 10;
-        }
+            units[i] = adcUnits2string(unitsIndex);
+        values[i] = pkt.inBuffer[i * 4 + 2] << 8 | pkt.inBuffer[i * 4 + 3];
+        int powerOf10 = pkt.inBuffer[i * 4 + 1] & 0x0F;
+        values[i] *= pow(10, powerOf10);
+        if(unitsIndex == TEMPERATURE)
+            values[i] /= 10;
     }
     return 0;
 }
 
-int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const size_t count, const std::string& units)
+int LMS64CProtocol::CustomParameterWrite(const uint8_t *ids, const double *values, const int count, const std::string* units)
 {
     LMS64CProtocol::GenericPacket pkt;
     pkt.cmd = CMD_ANALOG_VAL_WR;
 
-    for (size_t i = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i)
     {
         pkt.outBuffer.push_back(ids[i]);
         int powerOf10 = 0;
-        if(values[i] > 65535.0 && (units != ""))
-            powerOf10 = log10(values[i]/65.536)/3;
-        if (values[i] < 65.536 && (units != ""))
-            powerOf10 = log10(values[i]/65535.0) / 3;
+        if(values[i] != 0)
+            powerOf10 = log10(values[i])/3;
         int unitsId = 0; // need to convert given units to their enum
         pkt.outBuffer.push_back(unitsId << 4 | powerOf10);
         int value = values[i] / pow(10, 3*powerOf10);
         pkt.outBuffer.push_back(value >> 8);
         pkt.outBuffer.push_back(value & 0xFF);
     }
-    return TransferPacket(pkt);
+    int status = this->TransferPacket(pkt);
+    return convertStatus(status, pkt);
 }
-
-int LMS64CProtocol::GPIOWrite(const uint8_t *buffer, const size_t bufLength)
-{
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_WR;
-    for (size_t i=0; i<bufLength; ++i)
-        pkt.outBuffer.push_back(buffer[i]);
-    return TransferPacket(pkt);
-}
-
-int LMS64CProtocol::GPIORead(uint8_t *buffer, const size_t bufLength)
-{
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_RD;
-    int status = TransferPacket(pkt);
-    if(status != 0)
-        return status;
-
-    for (size_t i=0; i<bufLength; ++i)
-        buffer[i] = pkt.inBuffer[i];
-    return status;
-}
-
-int LMS64CProtocol::GPIODirWrite(const uint8_t *buffer, const size_t bufLength)
-{
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_DIR_WR;
-    for (size_t i=0; i<bufLength; ++i)
-        pkt.outBuffer.push_back(buffer[i]);
-    return TransferPacket(pkt);
-}
-
-int LMS64CProtocol::GPIODirRead(uint8_t *buffer, const size_t bufLength)
-{
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_GPIO_DIR_RD;
-    int status = TransferPacket(pkt);
-    if(status != 0)
-        return convertStatus(status, pkt);
-
-    for (size_t i=0; i<bufLength; ++i)
-        buffer[i] = pkt.inBuffer[i];
-    return status;
-}
-
-int LMS64CProtocol::ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback)
-{
-#ifndef NDEBUG
-    auto timeStart = std::chrono::high_resolution_clock::now();
-#endif
-    const uint8_t fifoLen = 32;
-    bool success = true;
-    bool terminate = false;
-
-    int packetNumber = 0;
-    int status = STATUS_UNDEFINED;
-
-    LMS64CProtocol::GenericPacket pkt;
-    pkt.cmd = CMD_PROG_MCU;
-
-    if (callback)
-        terminate = callback(0, length,"");
-
-    for(uint16_t CntEnd=0; CntEnd<length && !terminate; CntEnd+=32)
-    {
-        pkt.outBuffer.clear();
-        pkt.outBuffer.reserve(fifoLen+2);
-        pkt.outBuffer.push_back(mode);
-        pkt.outBuffer.push_back(packetNumber++);
-        for (uint8_t i=0; i<fifoLen; i++)
-            pkt.outBuffer.push_back(buffer[CntEnd + i]);
-
-        TransferPacket(pkt);
-        status = pkt.status;
-        if (callback)
-            terminate = callback(CntEnd+fifoLen,length,"");
-#ifndef NDEBUG
-        lime::log(LOG_LEVEL_INFO, "MCU programming : %4i/%4li\r", CntEnd+fifoLen, long(length));
-#endif
-        if(status != STATUS_COMPLETED_CMD)
-        {
-            std::stringstream ss;
-            ss << "Programming MCU: status : not completed, block " << packetNumber << std::endl;
-            success = false;
-            break;
-        }
-
-        if(mode == 3) // if boot mode , send only first packet
-        {
-            if (callback)
-                callback(1, 1, "");
-            break;
-        }
-	};
-#ifndef NDEBUG
-    auto timeEnd = std::chrono::high_resolution_clock::now();
-    lime::log(LOG_LEVEL_INFO, "\nMCU Programming finished, %li ms\n",
-            std::chrono::duration_cast<std::chrono::milliseconds>
-            (timeEnd-timeStart).count());
-#endif
-    return success ? 0 : -1;
-}
-
-/**	@brief Reads chip version information form LMS7 chip.
-*/
-

@@ -1,9 +1,0 @@
-build/**
-mcu_program/*.lst
-mcu_program/*.obj
-mcu_program/*.MAP
-mcu_program/*.ORC
-mcu_program/*.plg
-mcu_program/*.uvopt
-mcu_program/*.uvproj
-docs/LMS_API_Documentation/*

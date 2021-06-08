@@ -6,18 +6,20 @@
 
 #include "Si5351C.h"
 #include "IConnection.h"
-#include "Logger.h"
 #include <math.h>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <set>
 #include <map>
-#include <cstring>
-#include <cassert>
-#include <ciso646> // alternative operators for visual c++: not, and, or...
-
+#include <string.h>
+#include <assert.h>
+#include <iostream>
+#include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 using namespace lime;
+
+#define Log(msg, type) cout << (msg) << endl;
 
 /// Splits float into fraction integers A + B/C
 void realToFrac(const float real, int &A, int &B, int &C)
@@ -296,18 +298,18 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    if (!device || device->IsOpen() == false)
+	if (!device && device->IsOpen() == false)
         return FAILED;
 
     std::string outBuffer;
     //Disable outputs
 	outBuffer.push_back(3);
-    outBuffer.push_back(uint8_t(0xFF));
+    outBuffer.push_back(0xFF);
 	//Power down all output drivers
 	for(int i=0; i<8; ++i)
     {
         outBuffer.push_back(16 + i);
-        outBuffer.push_back(uint8_t(0x84));
+        outBuffer.push_back(0x84);
     }
 	//write new configuration
 	for (int i = 15; i <= 92; ++i)
@@ -321,8 +323,8 @@ Si5351C::Status Si5351C::UploadConfiguration()
         outBuffer.push_back(m_newConfiguration[i]);
 	}
 	//apply soft reset
-    outBuffer.push_back(uint8_t(177));
-    outBuffer.push_back(uint8_t(0xAC));
+    outBuffer.push_back(177);
+    outBuffer.push_back(0xAC);
     //Enabe desired outputs
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);
@@ -341,9 +343,9 @@ Si5351C::Status Si5351C::UploadConfiguration()
 */
 void Si5351C::Initialize(IConnection *mng)
 {
-    device = mng;
-    if (device != nullptr and device->IsOpen())
-        addrSi5351 = 0x20;
+	device = mng;
+	if (device != nullptr and device->IsOpen())
+		addrSi5351 = mng->GetDeviceInfo().addrSi5351;
 }
 
 /**
@@ -359,7 +361,7 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
     char line[len];
 
     int addr;
-    unsigned int value;
+    int value;
 
     while(!fin.eof())
     {
@@ -374,7 +376,7 @@ bool Si5351C::LoadRegValuesFromFile(string FName)
 
     fin.close();
 	return false;
-}
+};
 
 /** @brief Calculates multisynth dividers and VCO frequencies
     @param clocks output clocks configuration
@@ -458,12 +460,15 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
             {
                 availableFrequenciesPLLA.insert( pair<unsigned long, int> (*it, 0) );
             }
+            clk6satisfied = true;
+            clk7satisfied = true;
         }
         else //if clocks 6 and 7 can't share pll, assign pllA to clk6 and pllB to clk7
         {
             if(!clk6satisfied)
             {
                 clocks[6].pllSource = 0;
+                clk6satisfied = true;
                 pllAused = true;
                 for (set<unsigned long>::iterator it6=clk6freqs.begin(); it6!=clk6freqs.end(); ++it6)
                 {
@@ -473,6 +478,7 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
             if(!clk7satisfied)
             {
                 clocks[7].pllSource = 1;
+                clk7satisfied = true;
                 pllBused = true;
                 for (set<unsigned long>::iterator it7=clk7freqs.begin(); it7!=clk7freqs.end(); ++it7)
                 {
@@ -498,7 +504,7 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
         }
     }
 
-    int bestScore = 0; //score shows how many outputs have integer dividers
+    unsigned int bestScore = 0; //score shows how many outputs have integer dividers
     //calculate scores for all available frequencies
     unsigned long bestVCOA = 0;
     for (map<unsigned long, int>::iterator it=availableFrequenciesPLLA.begin(); it!=availableFrequenciesPLLA.end(); ++it)
@@ -622,6 +628,7 @@ void Si5351C::FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned l
 Si5351C::Status Si5351C::ConfigureClocks()
 {
     FindVCO(CLK, PLL, 600000000, 900000000);
+    stringstream ss;
     int addr;
     m_newConfiguration[3] = 0;
     for(int i=0; i<8; ++i)
@@ -643,15 +650,22 @@ Si5351C::Status Si5351C::ConfigureClocks()
         m_newConfiguration[16+i] |= 3;
 
         addr = 42+i*8;
-        int DivA, DivB, DivC;
-        realToFrac(CLK[i].multisynthDivider, DivA, DivB, DivC);
+        ss.clear();
+        ss.str( string() );
+        ss << "CLK" << i << " fOut = " << CLK[i].outputFreqHz/1000000.0 << " MHz";
+        int DivA;
+        int DivB;
+        int DivC;
 
-        lime::info("CLK%d fOut = %g MHz  Multisynth Divider %d %d/%d  R divider = %d source = %s",
-            i, CLK[i].outputFreqHz/1000000.0, DivA, DivB, DivC, CLK[i].outputDivider, (CLK[i].pllSource == 0 ? "PLLA" : "PLLB"));
+        realToFrac(CLK[i].multisynthDivider, DivA, DivB, DivC);
+        ss << "  Multisynth Divider " << DivA << " " << DivB << "/" << DivC;
+        ss << "  R divider = " << CLK[i].outputDivider << " source = " << (CLK[i].pllSource == 0 ? "PLLA" : "PLLB");
+
+        Log(ss.str(), LOG_INFO);
 
         if( CLK[i].multisynthDivider < 8 || 900 < CLK[i].multisynthDivider)
         {
-            lime::error("Si5351C - Output multisynth divider is outside [8;900] interval.");
+            Log("Si5351C - Output multisynth divider is outside [8;900] interval.\n", LOG_ERROR);
             return FAILED;
         }
 
@@ -680,7 +694,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
             }
             else if( CLK[i].outputFreqHz <= 160000000) // AVAILABLE ONLY ON 0-5 MULTISYNTHS
             {
-                lime::error("Si5351C - clock configuring for more than 150 MHz not implemented");
+                Log("Si5351C - clock configuring for more than 150 MHz not implemented\n", LOG_ERROR);
                 return FAILED;
             }
         }
@@ -693,7 +707,7 @@ Si5351C::Status Si5351C::ConfigureClocks()
                     m_newConfiguration[90] = DivA;
                     if(DivA%2 != 0)
                     {
-                        lime::error("Si5351C - CLK6 multisynth divider is not even integer");
+                        Log("Si5351C - CLK6 multisynth divider is not even integer\n", LOG_ERROR);
                         return FAILED;
                     }
                 }
@@ -702,14 +716,14 @@ Si5351C::Status Si5351C::ConfigureClocks()
                     m_newConfiguration[91] = DivA;
                     if(DivA%2 != 0)
                     {
-                        lime::error("Si5351C - CLK7 multisynth divider is not even integer");
+                        Log("Si5351C - CLK7 multisynth divider is not even integer\n", LOG_ERROR);
                         return FAILED;
                     }
                 }
             }
             else if( CLK[i].outputFreqHz <= 160000000) // AVAILABLE ONLY ON 0-5 MULTISYNTHS
             {
-                lime::error("Si5351C - clock configuring for more than 150 MHz not implemented");
+                Log("Si5351C - clock configuring for more than 150 MHz not implemented\n", LOG_ERROR);
                 return FAILED;
             }
         }
@@ -725,14 +739,17 @@ Si5351C::Status Si5351C::ConfigureClocks()
         addr = 26+i*8;
         if(PLL[i].feedbackDivider < 15 || PLL[i].feedbackDivider > 90)
         {
-            lime::error("Si5351C - VCO frequency divider out of range [15:90].");
+            Log("Si5351C - VCO frequency divider out of range [15:90].\n", LOG_ERROR);
             return FAILED;
         }
         if( PLL[i].VCO_Hz < 600000000 || PLL[i].VCO_Hz > 900000000)
         {
-            lime::error("Si5351C - Can't calculate valid VCO frequency.");
+            Log("Si5351C - Can't calculate valid VCO frequency.\n", LOG_ERROR);
             return FAILED;
         }
+        ss.clear();
+        ss.str(string());
+        ss << "Si5351C : VCO" << (i==0 ? "A" : "B") << " = " << PLL[i].VCO_Hz/1000000.0 << " MHz";
 
         //calculate MSNx_P1, MSNx_P2, MSNx_P3
         int MSNx_P1;
@@ -743,8 +760,8 @@ Si5351C::Status Si5351C::ConfigureClocks()
         int DivB;
         int DivC;
         realToFrac(PLL[i].feedbackDivider, DivA, DivB, DivC);
-        lime::info("Si5351C: VCO%s = %g MHz  Feedback Divider %d %d/%d",
-            (i==0 ? "A" : "B"), PLL[i].VCO_Hz/1000000.0, DivA, DivB, DivC);
+        ss << "  Feedback Divider " << DivA << " " << DivB << "/" << DivC << endl;
+        Log(ss.str(), LOG_INFO);
 
         MSNx_P1 = 128 * DivA + floor(128 * ( (float)DivB/DivC)) - 512;
         MSNx_P2 = 128 * DivB - DivC * floor( 128 * DivB/DivC );
@@ -778,7 +795,9 @@ void Si5351C::SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled, bo
     {
         if(fOut_Hz < 8000 || fOut_Hz > 160000000)
         {
-            lime::error("Si5351C - CLK%d output frequency must be between 8kHz and 160MHz. fOut_MHz = %g", (int)id, fOut_Hz/1000000.0);
+            stringstream ss;
+            ss << "Si5351C - CLK" << (int)id << " output frequency must be between 8kHz and 160MHz. fOut_MHz = " << fOut_Hz/1000000.0 << endl;
+            Log(ss.str(), LOG_ERROR);
             return;
         }
         CLK[id].powered = enabled;

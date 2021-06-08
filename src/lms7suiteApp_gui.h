@@ -24,7 +24,6 @@ class lms7002_mainPanel;
 #include <wx/statusbr.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
-#include <wx/scrolwin.h>
 #include <wx/frame.h>
 #include <wx/statbmp.h>
 #include <wx/stattext.h>
@@ -45,7 +44,6 @@ class AppFrame_view : public wxFrame
 		enum
 		{
 			idMenuQuit = 1000,
-			ID_MENUITEM_LIMERFE,
 			idMenuAbout
 		};
 		
@@ -56,8 +54,6 @@ class AppFrame_view : public wxFrame
 		wxMenu* mnuModules;
 		wxMenu* helpMenu;
 		wxStatusBar* statusBar;
-		wxBoxSizer* bSizer6;
-		wxScrolledWindow* m_scrolledWindow1;
 		wxFlexGridSizer* contentSizer;
 		lms7002_mainPanel* mContent;
 		
@@ -70,18 +66,22 @@ class AppFrame_view : public wxFrame
 		virtual void OnShowADF4002( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSi5351C( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowPrograming( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowRFSpark( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowHPM7( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFPGAcontrols( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowMyriad7( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowDeviceInfo( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowAPICalls( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowSPI( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowNovena( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowBoardControls( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowLimeRFE( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowQSpark( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowDPDTest( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		AppFrame_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Lime Suite GUI"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		AppFrame_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("LMS7002 GUI"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~AppFrame_view();
 	
@@ -98,6 +98,7 @@ class dlgAbout_view : public wxDialog
 		wxStaticBitmap* imgLogo;
 		wxStaticText* ID_STATICTEXT1;
 		wxStaticText* txtVersion;
+		wxStaticText* txtDescription;
 		wxStaticText* ID_STATICTEXT4;
 		wxStaticText* ID_STATICTEXT5;
 		wxHyperlinkCtrl* ID_HYPERLINKCTRL1;

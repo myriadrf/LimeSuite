@@ -35,7 +35,6 @@ public:
 
    virtual void SetToolTip(const wxString &tipString);
 protected:
-    void OnSpinnerChangeEnter(wxSpinEvent &event);
     void OnSpinnerChange(wxSpinEvent &event);
     void OnScrollChange(wxScrollEvent &event);
     wxSpinCtrl* mSpinner;

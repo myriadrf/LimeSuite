@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <string>
-#include "LimeSuiteConfig.h"
+
 //---------------------------------------------------------------------------
 namespace lime{
 
@@ -45,7 +45,7 @@ struct Si5351_PLL
 };
 
 class IConnection;
-class LIME_API Si5351C
+class Si5351C
 {
 public:
     enum Status

@@ -4,10 +4,10 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-struct LMS7Parameter;
+
 namespace lime{
 
-
+struct LMS7Parameter;
 
 class LMS7002M_RegistersMap
 {

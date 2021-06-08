@@ -26,13 +26,6 @@ using namespace std;
 const unsigned int OpenGLGraph::mMarkerColors[] = {0x000000FF, 0x0000FFFF, 0xFF0000FF, 0xFF7F00FF, 0x007FFFFF, 0xFF00FFFF, 0x007F00FF, 0x00007FFF, 0x7F0000FF, 0x00FF00FF};
 const long markers_timer_id = wxNewId();
 
-const int OpenGLGraph::GLCanvasAttributes[8] = {
-    WX_GL_RGBA,
-    WX_GL_DOUBLEBUFFER,
-    WX_GL_DEPTH_SIZE, 16,
-    WX_GL_STENCIL_SIZE, 0,
-    0, 0 } ;
-
 GLG_settings::GLG_settings() :
 	title(""), titleXaxis(""), titleYaxis(""),
 	xUnits(""), yUnits(""),
@@ -60,12 +53,10 @@ GLG_settings::GLG_settings() :
 OpenGLGraph::OpenGLGraph(wxWindow* parent,  wxWindowID id = -1,
                     const wxPoint& pos = wxDefaultPosition,
                     const wxSize& size = wxDefaultSize,
-                    long style=0, const wxString& name,
-                    const int* args)
+                    long style=0, const wxString& name="GLCanvas",
+                    int* args = 0)
     : wxGLCanvas(parent, id, args, pos, size, wxNO_FULL_REPAINT_ON_RESIZE),
-oglOk(true),
-initialDisplayArea(-100, 100, -100, 100),
-m_MouseCoord(0, 0, 0, 0)
+initialDisplayArea(-100, 100, -100, 100), m_MouseCoord(0, 0, 0, 0), oglOk(true)
 {
     m_font = NULL;
     m_glContext = new wxGLContext(this);
@@ -89,7 +80,7 @@ m_MouseCoord(0, 0, 0, 0)
     wxMenuItem *chkbox = m_popmenu.FindItem(OGLG_LOCKASPECT);
     chkbox->Check(settings.lock_aspect);
     m_popmenu.Append( OGLG_HELP_MOUSE, _("Show mouse commands..."), _("Show help about the mouse commands."));
-    for(size_t i=0; i<m_maxMarkers; ++i)
+    for(int i=0; i<m_maxMarkers; ++i)
     {
         markers.push_back(OGLMarker());
         markers[i].color = mMarkerColors[i];
@@ -98,7 +89,7 @@ m_MouseCoord(0, 0, 0, 0)
 
     mMarkersDlg = new dlgMarkers(this);
     mMarkersDlg->parent_graph = this;
-    for(size_t i=0; i<m_maxMarkers; ++i)
+    for(int i=0; i<m_maxMarkers; ++i)
         mMarkersDlg->AddMarker(i);
     mMarkersDlg->AddDeltas();
 
@@ -115,12 +106,10 @@ m_MouseCoord(0, 0, 0, 0)
 
 OpenGLGraph::~OpenGLGraph()
 {
-  if(m_timer->IsRunning()) {
-      m_timer->Stop();
-  }
-  if(m_font) {
-    delete m_font;
-  }
+    if(m_timer->IsRunning())
+        m_timer->Stop();
+	if(m_font)
+        delete m_font;
 }
 
 bool OpenGLGraph::Initialize(int width, int height)
@@ -174,17 +163,17 @@ bool OpenGLGraph::Initialize(int width, int height)
 */
 void OpenGLGraph::Resize(int w, int h)
 {
-  if(w <= 0 || h <=0 )
-    return;
-  settings.windowWidth = w * GetContentScaleFactor();
-  settings.windowHeight = h * GetContentScaleFactor();
-  settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
-  if(settings.dataViewHeight <= 0)
-    settings.dataViewHeight = 1;
-  settings.dataViewWidth = settings.windowWidth-settings.marginLeft-settings.marginRight;
-  if(settings.dataViewWidth <= 0)
-    settings.dataViewWidth = 1;
-  SettingsChanged();
+    if(w <= 0 || h <=0 )
+        return;
+	settings.windowWidth = w;
+	settings.windowHeight = h;
+	settings.dataViewHeight = settings.windowHeight-settings.marginTop-settings.marginBottom;
+	if(settings.dataViewHeight <= 0)
+        settings.dataViewHeight = 1;
+	settings.dataViewWidth = settings.windowWidth-settings.marginLeft-settings.marginRight;
+	if(settings.dataViewWidth <= 0)
+        settings.dataViewWidth = 1;
+	SettingsChanged();
 }
 
 /**
@@ -228,12 +217,12 @@ void OpenGLGraph::SetInitialDisplayArea(float minx, float maxx, float miny, floa
 */
 void OpenGLGraph::SetDisplayArea(float minx, float maxx, float miny, float maxy)
 {
-  if((minx == maxx) || (miny == maxy))
-    return;
-  settings.visibleArea.set(minx, maxx, miny, maxy);
-  SettingsChanged();
+    if((minx == maxx) || (miny == maxy))
+        return;
+	settings.visibleArea.set(minx, maxx, miny, maxy);
+	SettingsChanged();
 #ifdef OGL_REDRAW_ENABLED
-  Refresh();
+    Refresh();
 #endif
 }
 
@@ -332,12 +321,13 @@ void OpenGLGraph::ZoomRect( int x1, int x2, int y1, int y2)
 */
 void OpenGLGraph::Pan( float dx, float dy)
 {
-	float deltaX = dx * (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
-	float deltaY = dy * (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
-    SetDisplayArea( settings.visibleArea.x1 + deltaX,
-                    settings.visibleArea.x2 + deltaX,
-                    settings.visibleArea.y1 + deltaY,
-                    settings.visibleArea.y2 + deltaY);
+	float deltaX = (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
+	float deltaY = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
+	settings.visibleArea.x1 += dx * deltaX;
+	settings.visibleArea.x2 += dx * deltaX;
+	settings.visibleArea.y1 += dy * deltaY;
+	settings.visibleArea.y2 += dy * deltaY;
+	SettingsChanged();
 #ifdef OGL_REDRAW_ENABLED
     Refresh();
 #endif
@@ -411,9 +401,9 @@ void OpenGLGraph::DrawStaticElements()
 
 	char format[10];
 	if(settings.staticGrid)
-          sprintf(format, "%%.3f %%s");
-	else
-          sprintf(format, "%%.%if %%s", settings.gridXprec);
+        sprintf(format, "%%.3f %%s");
+    else
+        sprintf(format, "%%.%if %%s", settings.gridXprec);
 
 	float numbersH = 16;
 	// X axis grid lines
@@ -499,69 +489,136 @@ void OpenGLGraph::DrawStaticElements()
 */
 void OpenGLGraph::CalculateGrid()
 {
-    if (settings.staticGrid)
+    if(settings.staticGrid)
     {
         settings.gridXlines = 10;
         settings.gridYlines = 10;
         //settings.gridXprec = 1;
         //settings.gridYprec = 1;
         settings.gridXstart = settings.visibleArea.x1;
-        settings.gridXspacing = (settings.visibleArea.x2 - settings.visibleArea.x1) / settings.gridXlines;
+        settings.gridXspacing = (settings.visibleArea.x2 - settings.visibleArea.x1)/settings.gridXlines;
         settings.gridYstart = settings.visibleArea.y1;
-        settings.gridYspacing = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.gridYlines;
+        settings.gridYspacing = (settings.visibleArea.y2 - settings.visibleArea.y1)/settings.gridYlines;
 
         return;
     }
-    const int mult[11] = { 1, 1, 2, 2, 4, 5, 5, 5, 5, 5, 5 };
+	// find the widest number of x axis values
+	float widerNumber = settings.gridXstart < settings.gridXstart+settings.gridXlines*settings.gridXspacing ?
+						 settings.gridXstart+settings.gridXlines*settings.gridXspacing :
+						 settings.gridXstart;
 
-    float interval = settings.visibleArea.x2 - settings.visibleArea.x1; // span of x axis
-    if (settings.gridXlines > 0)
-    {
-        //estimate text width
-        const float cWidth = 15; //~double actual width
-        float absx1 = std::fabs(settings.visibleArea.x1);
-        float absx2 = std::fabs(settings.visibleArea.x2);
-        int valLen = 3 + std::fabs(std::log10(absx1 > absx2 ? absx2 : absx2)); //some extra spacing for separation between values, and for decimal point
-        int tmpLines = 1+settings.dataViewWidth / (valLen * cWidth);
-        float divisor = 1; // current grid spacing
-        int xlines = settings.gridXlines > tmpLines ? tmpLines : settings.gridXlines;
-        settings.gridXprec = 0;
-        //determine if grid spacing needs to be decreased
-        while (interval / divisor < xlines)
-        {
-            divisor /= 10;
-            settings.gridXprec++;
-            tmpLines = settings.dataViewWidth / (++valLen * cWidth);
-            xlines = xlines > tmpLines ? tmpLines : xlines;
-        }
-        while (interval / divisor > 10 * xlines)
-            divisor *= 10;
-        settings.gridXspacing = divisor * mult[int(0.5f + interval / xlines / divisor)];
-        settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
-    }
-    else
-        settings.gridXspacing = interval;
 
-    interval = settings.visibleArea.y2 - settings.visibleArea.y1; // span of y axis
-    if (settings.gridYlines > 0)
-    {
-        int tmpLines = 1+settings.dataViewHeight / (2 * settings.gridValuesHeight); //2x to be safe in double scaling steps
-        float divisor = 1; // current grid spacing
-        int ylines = settings.gridYlines > tmpLines ? tmpLines : settings.gridYlines;
-        settings.gridYprec = 0;
-        while (interval / divisor < ylines)
-        {
-            divisor /= 10;
-            settings.gridYprec++;
-        }
-        while (interval / divisor > 10 * ylines)
-            divisor *= 10;
-        settings.gridYspacing = divisor * mult[int(0.5f + interval / ylines / divisor)];
-        settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
-    }
-    else
-        settings.gridYspacing = interval;
-    SettingsChanged();
+	//set values printing format
+	char format[10];
+
+	sprintf(format, "%%.%if %%s", settings.gridXprec);
+
+	char ctemp[32];
+	int tw=0, th=0;
+	float fonth = 10;
+	sprintf(ctemp, format, widerNumber, settings.xUnits.c_str());
+	m_font->getTextSize(ctemp, tw, th, fonth);
+	int nmbWidth = tw;
+	float pixelXvalue =(settings.visibleArea.x2 - settings.visibleArea.x1) / settings.dataViewWidth;
+	float nmbSpan = nmbWidth*pixelXvalue;
+
+	int xlines = settings.gridXlines;  // guide of how many grid lines to use
+	float interval = settings.visibleArea.x2 - settings.visibleArea.x1; // span of x axis
+	float intervalPart = interval / xlines; // span of grid spacing
+	float divisor = 1; // current grid spacing
+
+	int divs[2] = { 2, 5 };  // divisors used for changing grid spacing
+	int curDiv = 0; //currently used divisor
+
+	settings.gridXprec = 0;
+
+	//determine if grid spacing needs to be decreased
+	if( intervalPart > 1 )
+	{
+		while( interval / divisor > xlines && divisor < nmbSpan)
+		{
+			divisor *= 10;
+		}
+		settings.gridXspacing = divisor;
+		nmbSpan *= 2;
+		while( settings.gridXspacing/divs[curDiv] > nmbSpan)
+		{
+			settings.gridXspacing /= divs[curDiv];
+			curDiv = (curDiv + 1) & 0x1;
+		}
+		if(settings.gridXspacing < 1.0)
+			++settings.gridXprec;
+		settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
+	}
+	else
+	{
+		while( interval / divisor < xlines && divisor > nmbSpan)
+		{
+			divisor /= 10;
+			++settings.gridXprec;
+		}
+		++settings.gridXprec;
+		settings.gridXspacing = divisor;
+		nmbSpan *= 2;
+		while( settings.gridXspacing*divs[curDiv] < nmbSpan)
+		{
+			settings.gridXspacing *= divs[curDiv];
+			curDiv = (curDiv + 1) & 0x1;
+		}
+		if(settings.gridXspacing > interval )
+			settings.gridXspacing = interval/2;
+		settings.gridXstart = (int)(settings.visibleArea.x1 / settings.gridXspacing) * settings.gridXspacing;
+	}
+
+	// Y axis
+	int nmbHeight = settings.gridValuesHeight;
+	float pixelYvalue = (settings.visibleArea.y2 - settings.visibleArea.y1) / settings.dataViewHeight;
+	nmbSpan = nmbHeight*pixelYvalue;
+
+	int ylines = settings.gridYlines;
+	interval = settings.visibleArea.y2 - settings.visibleArea.y1;
+	intervalPart = interval / ylines;
+	divisor = 1;
+
+	curDiv = 0;
+
+	settings.gridYprec = 0;
+
+	if( intervalPart > 1 )
+	{
+		while( interval / divisor > ylines && divisor < nmbSpan)
+		{
+			divisor *= 10;
+		}
+		settings.gridYspacing = divisor;
+		nmbSpan *= 2;
+		while( settings.gridYspacing/divs[curDiv] > nmbSpan)
+		{
+			settings.gridYspacing /= divs[curDiv];
+			curDiv = (curDiv + 1) & 0x1;
+		}
+		if(settings.gridYspacing < 1.0)
+			++settings.gridYprec;
+		settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
+	}
+	else
+	{
+		while( interval / divisor < ylines && divisor > nmbSpan)
+		{
+			divisor /= 10;
+			++settings.gridYprec;
+		}
+		++settings.gridYprec;
+		settings.gridYspacing = divisor;
+		nmbSpan *= 2;
+		while( settings.gridYspacing*divs[curDiv] < nmbSpan)
+		{
+			settings.gridYspacing *= divs[curDiv];
+			curDiv = (curDiv + 1) & 0x1;
+		}
+		settings.gridYstart = (int)(settings.visibleArea.y1 / settings.gridYspacing) * settings.gridYspacing;
+	}
+	SettingsChanged();
 }
 
 /**
@@ -690,7 +747,7 @@ void OpenGLGraph::Draw()
 	switchToWindowView();
 	int fontSz = 16;
 	unsigned int clrs[] {0xFF000000, 0x0000FF00, 0x00FF0000};
-	for(size_t i=0; i<info_msg_toDisplay.size(); ++i)
+	for(int i=0; i<info_msg_toDisplay.size(); ++i)
     {
         glRenderText(settings.marginLeft, settings.marginBottom+i*20+fontSz, 0, fontSz, clrs[i], "%s", info_msg_toDisplay[i].c_str());
     }
@@ -769,7 +826,7 @@ GLvoid OpenGLGraph::glRenderText(float posx, float posy, float angle, float scal
 	//if font has been loaded
 	glEnable(GL_TEXTURE_2D);
 	if(m_font != NULL)
-            m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
+		m_font->render_textWorldSpace(text, 0, 0, scale, rgba);
 
 	glPopMatrix();
     glDisable(GL_TEXTURE_2D);
@@ -1058,7 +1115,7 @@ int OpenGLGraph::AddMarker(int posX)
     if(series[0]->size > 0)
     {
         OGLMarker *mark = NULL;
-        for(size_t i=0; i<markers.size(); ++i)
+        for(int i=0; i<markers.size(); ++i)
             if(markers[i].used == false)
             {
                 mark = &markers[i];
@@ -1114,7 +1171,7 @@ int OpenGLGraph::AddMarkerAtValue(float xValue)
     if(series[0]->size > 0)
     {
         OGLMarker *mark = NULL;
-        for(size_t i=0; i<markers.size(); ++i)
+        for(int i=0; i<markers.size(); ++i)
             if(markers[i].used == false)
             {
                 mark = &markers[i];
@@ -1151,7 +1208,6 @@ int OpenGLGraph::AddMarkerAtValue(float xValue)
         mark->posX = series[0]->values[mark->dataValueIndex];
         mark->posY = series[0]->values[mark->dataValueIndex+1];
         mark->color = mMarkerColors[markers.size()];
-        mMarkersDlg->refreshMarkFreq = true;
         return mark->id;
     }
 	return -1;
@@ -1173,7 +1229,7 @@ void OpenGLGraph::RemoveMarker()
 
 void OpenGLGraph::RemoveMarker(int id)
 {
-    for(size_t i=0; i<markers.size(); ++i)
+    for(int i=0; i<markers.size(); ++i)
     {
         if(markers[i].id == id)
         {
@@ -1189,8 +1245,8 @@ void OpenGLGraph::RemoveMarker(int id)
 */
 void OpenGLGraph::DrawMarkers()
 {
-        if(series.size() <= 0)
-            return;
+    if(series.size() <= 0)
+        return;
 
 	if(settings.markersEnabled && series[0]->size > 0 && series[0] != NULL)
 	{
@@ -1204,35 +1260,28 @@ void OpenGLGraph::DrawMarkers()
 		for(unsigned i=0; i<markers.size(); ++i)
 		{
 		    if(markers[i].used == false)
-                        continue;
-                    for(unsigned int j=0; j<series.size(); j++)
-                    {
-                        if(series[j]->size > 0 && series[j]->visible)
-                        {
-                            markers[i].posY = series[j]->values[markers[i].dataValueIndex+1];
-                            // X axis grid lines
-                            posY = settings.marginBottom + ((series[j]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
-                            posX = settings.marginLeft + ((markers[i].posX-settings.visibleArea.x1)/pixelXvalue);
-                            markers[i].iposX = posX;
-                            markers[i].iposY = posY;
-                            markers[i].size = 10;
-
-                            if(posX >= settings.marginLeft && posX <= settings.windowWidth-settings.marginRight)
-                            {
-                                markers[i].color = mMarkerColors[i];
-                                    glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
-                                    if( posY >= settings.marginBottom && posY <= settings.windowHeight-settings.marginTop)
-                                    {
-                                            glVertex3f( posX, posY, 10);
-                                            glVertex3f( posX+markers[i].size, posY+markers[i].size, 10);
-                                            glVertex3f( posX-markers[i].size, posY+markers[i].size, 10);
-                                    }
-                                    glVertex3f( posX, settings.marginBottom+markers[i].size, 10);
-                                    glVertex3f( posX-markers[i].size, settings.marginBottom, 10);
-                                    glVertex3f( posX+markers[i].size, settings.marginBottom, 10);
-                            }
-                        }
-                    }
+                continue;
+			markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
+			// X axis grid lines
+			posY = settings.marginBottom + ((series[0]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
+			posX = settings.marginLeft + ((markers[i].posX-settings.visibleArea.x1)/pixelXvalue);
+			markers[i].iposX = posX;
+			markers[i].iposY = posY;
+			markers[i].size = 10;
+			if(posX >= settings.marginLeft && posX <= settings.windowWidth-settings.marginRight)
+			{
+			    markers[i].color = mMarkerColors[i];
+				glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
+				if( posY >= settings.marginBottom && posY <= settings.windowHeight-settings.marginTop)
+				{
+					glVertex3f( posX, posY, 10);
+					glVertex3f( posX+markers[i].size, posY+markers[i].size, 10);
+					glVertex3f( posX-markers[i].size, posY+markers[i].size, 10);
+				}
+				glVertex3f( posX, settings.marginBottom+markers[i].size, 10);
+				glVertex3f( posX-markers[i].size, settings.marginBottom, 10);
+				glVertex3f( posX+markers[i].size, settings.marginBottom, 10);
+			}
 		}
 		glEnd();
 		glFlush();
@@ -1244,22 +1293,17 @@ void OpenGLGraph::DrawMarkers()
 		for(unsigned i=0; i<markers.size(); ++i)
 		{
 		    if(markers[i].used == false)
-                        continue;
-                    glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
-                    int cnt = sprintf(text, "M%i: % .3f MHz ", i, series[0]->values[markers[i].dataValueIndex]/1000000);
-
-                    for(unsigned int j=0; j<series.size(); j++)
-                        if(series[j]->size > 0 && series[j]->visible)
-                            cnt += sprintf(text+cnt, "/ Ch %c: %#+3.1f dBFS ", 65+j, series[j]->values[markers[i].dataValueIndex+1]);
-
-                    markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
-                    posX = settings.marginLeft;
-                    posY = settings.windowHeight-settings.marginTop - hpos;
-                    //glPrint(posX, posY, 0, textScale, "%s", text);
-                    if(markers[i].show == false)
-                        continue;
-                    hpos += textScale*m_font->lineHeight();
-		    glRenderText(posX, posY, 0, textScale*m_font->lineHeight(), markers[i].color.getColor4b(), "%s", text);
+                continue;
+			glColor4f(markers[i].color.red, markers[i].color.green, markers[i].color.blue, markers[i].color.alpha);
+			sprintf(text, "M%i: % .3f MHz / %#+3.1f dBFS", i, series[0]->values[markers[i].dataValueIndex]/1000000, series[0]->values[markers[i].dataValueIndex+1]);
+			markers[i].posY = series[0]->values[markers[i].dataValueIndex+1];
+			posX = settings.marginLeft;
+			posY = settings.windowHeight-settings.marginTop - hpos;
+			//glPrint(posX, posY, 0, textScale, "%s", text);
+			if(markers[i].show == false)
+                continue;
+            hpos += textScale*m_font->lineHeight();
+			glRenderText(posX, posY, 0, textScale*m_font->lineHeight(), markers[i].color.getColor4b(), "%s", text);
 		}
 	}
 }
@@ -1278,26 +1322,12 @@ int OpenGLGraph::clickedOnMarker(int X, int Y)
             continue;
 		if( X > markers[i].iposX-markers[i].size &&  X < markers[i].iposX+markers[i].size )
 		{
-			if(Y > settings.marginBottom && Y < settings.marginBottom+markers[i].size)
+			if( (Y > settings.marginBottom && Y < settings.marginBottom+markers[i].size) ||
+				(Y > markers[i].iposY && Y < markers[i].iposY+markers[i].size) )
 			{
 				printf("selected %i marker\n", i);
-                                return i;
-                        }
-
-                        for(unsigned int j=0; j<series.size(); j++)
-                        {
-                            if(series[j]->size > 0 && series[j]->visible)
-                            {
-                              float pixelYvalue = (settings.visibleArea.y2 - settings.visibleArea.y1)/  settings.dataViewHeight;
-                              int posY = settings.marginBottom + ((series[j]->values[markers[i].dataValueIndex+1]-settings.visibleArea.y1)/pixelYvalue);
-                              if(Y > posY && Y < posY+markers[i].size)
-                              {
-                                printf("selected %i marker\n", i);
-                                return i;
-                              }
-                            }
-                        }
-
+                return i;
+            }
 		}
 	}
 	return -1;
@@ -1367,7 +1397,6 @@ void OpenGLGraph::MoveMarker(int markerID, int posX)
 		markers[markerID].iposX = posX;
 		markers[markerID].iposY = posY;
 	}
-    mMarkersDlg->refreshMarkFreq = true;
 	#ifdef OGL_REDRAW_ENABLED
         Refresh();
 	#endif
@@ -1383,7 +1412,7 @@ void OpenGLGraph::ChangeMarker(int markerID, float xValue)
 	if(series[0]->size > 0 && markerID >= 0)
 	{
 	    OGLMarker* mark = NULL;
-        for(size_t i=0; i<markers.size(); ++i)
+        for(int i=0; i<markers.size(); ++i)
             if(markers[i].id == markerID)
                 mark = &markers[i];
         if(mark == NULL)
@@ -1524,7 +1553,6 @@ void OpenGLGraph::onShowMarkersMenu(wxCommandEvent& event)
     if(m_timer->IsRunning() == false)
         m_timer->Start(500);
     mMarkersDlg->Show();
-    mMarkersDlg->refreshMarkFreq = true;;
 }
 
 void OpenGLGraph::onLockAspect(wxCommandEvent& event)
@@ -1554,7 +1582,6 @@ void OpenGLGraph::onSearchPeak(wxCommandEvent& event)
 {
     SearchPeak();
     Refresh();
-    mMarkersDlg->refreshMarkFreq = true;;
 }
 
 void OpenGLGraph::onReset(wxCommandEvent& event)
@@ -1566,49 +1593,24 @@ void OpenGLGraph::onReset(wxCommandEvent& event)
 bool OpenGLGraph::SearchPeak()
 {
     bool found = false;
-    double maxValue(0.0);
-    unsigned maxPos(0);
-    //Init max value
-    for(unsigned int i=0; i<series.size(); i++)
+    //check if series have any data to mark
+    if(series[0]->size > 0)
     {
-        if(series[i]->size > 0 && series[i]->visible)
+        unsigned int maxPos = 1;
+        for(unsigned i=0; i<series[0]->size; ++i)
         {
-            maxValue = series[i]->values[1];
-            found = true;
-            break;
+            if(series[0]->values[maxPos] < series[0]->values[2*i+1])
+                maxPos = 2*i+1;
         }
-    }
-    //Find max position
-    for(unsigned int i=0; i<series.size(); i++)
-    {
-        if(series[i]->size > 0 && series[i]->visible)
-        {
-            for(unsigned j=0; j<series[i]->size; ++j)
-            {
-                if(maxValue < series[i]->values[2*j+1])
-                {
-                    maxValue = series[i]->values[2*j+1];
-                    maxPos = 2*j+1;
-                }
-            }
-        }
-    }
-
-    //Mark max position
-    for(unsigned int i=0; i<series.size(); i++)
-    {
-        if(series[i]->size > 0 && series[i]->visible)
-        {
-            AddMarkerAtValue(series[i]->values[maxPos-1]);
-            break;
-        }
+        AddMarkerAtValue(series[0]->values[maxPos-1]);
+        found = true;
     }
     return found;
 }
 
 void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 {
-    if(id >=0 && id < (int)markers.size())
+    if(id >=0 && id < markers.size())
     {
         ChangeMarker(id, xValue);
         markers[id].used = enabled;
@@ -1618,7 +1620,7 @@ void OpenGLGraph::SetMarker(int id, float xValue, bool enabled, bool show)
 
 void OpenGLGraph::GetMarker(int id, float &xValue, float &yValue, bool &enabled, bool &show)
 {
-    if(id >=0 && id < (int)markers.size())
+    if(id >=0 && id < markers.size())
     {
         xValue = markers[id].posX;
         yValue = markers[id].posY;
@@ -1635,7 +1637,7 @@ void OpenGLGraph::OnTimer(wxTimerEvent& event)
 
 void OpenGLGraph::UpdateInfoDisplay()
 {
-    for(size_t i=0; i<info_msg.size(); ++i)
+    for(int i=0; i<info_msg.size(); ++i)
     {
         info_msg_toDisplay[i] = info_msg[i];
     }

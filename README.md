@@ -1,33 +1,24 @@
-# Lime Suite
+This is software to control Lime Microsystems EVB7 and Stream boards.
 
-Lime Suite is a collection of software supporting several hardware platforms 
-based on the LMS7002M transceiver RFIC, such as LimeSDR family. It contains the
-following components:
-* **LimeSuite library** that provides C-style API;
-* **LimeSuiteGUI** application for accessing low-level chip and board settings, displaying FFT, updating firmware and more;
-* **SoapyLMS** plugin for LimeSDR support in SoapySDR;
-* **LimeUtil** command line tool for listing LimeSDR devices and updating firmware;
-* **LimeQuickTest** application to run some basic tests;
-* **LimeSuite API examples** (basicRX, basicTX, singleRX, dualRXTX, gpio_example);
-* **Octave plugin** (provides some basic functionality only);
+This repository uses cpp-feather-ini-parser as submodule, execute this command
+to download it's source code:
+	git submodule update --init --recursive
 
-## Build Status
+Detailed instructions how to compile this software is given in:
+	docs/lms7suite_compilation_guide.doc
 
-- Travis: [![Travis Build Status](https://travis-ci.org/myriadrf/LimeSuite.svg?branch=master)](https://travis-ci.org/myriadrf/LimeSuite)
-- AppVeyor: [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/stwfarvq0j01qyaq)](https://ci.appveyor.com/project/myriadrf/limesuite)
+Source code is is grouped into modules by functionality in ./src directory.
 
-## Documentation
+The main library is LMS7002M it is designed to configure LMS7002M transceiver and
+perform data transfering operations to boards. Basic functionality is documented
+in ./docs/lms7api.pdf file.
 
-Find build and install instructions for Lime Suite on the wiki:
+LTEpackets module is designed to experiment with receiving, processing and 
+transmitting samples.
 
-* http://wiki.myriadrf.org/Lime_Suite
-
-Information about LimeSDR boards:
-
-* https://wiki.myriadrf.org/LimeSDR
-
-## Help and support
-
-The discourse forum is a good way to find help and discuss topics:
-
-* https://discourse.myriadrf.org/
+Windows binaries can be found in build/bin/Release directory
+	
+NOTICE for Linux users:
+	To be able to use USB or COM devices, lms7suite might need to be executed with
+	administrative privileges. Or the USB and COM device permissions have to be changed
+	to allow non-root users to acces them.

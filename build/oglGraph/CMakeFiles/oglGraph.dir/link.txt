@@ -1,0 +1,2 @@
+/usr/bin/ar qc liboglGraph.a  CMakeFiles/oglGraph.dir/dlgMarkers.cpp.o CMakeFiles/oglGraph.dir/GLFont.cpp.o CMakeFiles/oglGraph.dir/OpenGLGraph.cpp.o CMakeFiles/oglGraph.dir/glew/glew.c.o
+/usr/bin/ranlib liboglGraph.a

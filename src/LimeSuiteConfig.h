@@ -24,6 +24,7 @@
 // Now we use the generic helper definitions above to define LIME_API and LIME_LOCAL.
 // LIME_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
 // LIME_LOCAL is used for non-api symbols.
+
 #ifdef LIME_DLL // defined if LIME is compiled as a DLL
   #ifdef LIME_DLL_EXPORTS // defined if we are building the LIME DLL (instead of using it)
     #define LIME_API LIME_HELPER_DLL_EXPORT

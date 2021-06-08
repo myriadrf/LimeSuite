@@ -1,55 +1,51 @@
 #include "lms7002_dlgVCOfrequencies.h"
+#include "LMS7002M.h"
 #include <wx/filedlg.h>
 #include <vector>
 #include <fstream>
-#include "lms7_device.h"
 
 using namespace std;
 using namespace lime;
 
-lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , lms_device_t* plmsControl)
+lms7002_dlgVCOfrequencies::lms7002_dlgVCOfrequencies( wxWindow* parent , LMS7002M* plmsControl)
 :
 dlgVCOfrequencies( parent )
 {
     lmsControl = plmsControl;
-    double multiplier = 0.000000001;
-    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
-
-    txtVCOL_low->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[0][0] * multiplier));
-    txtVCOL_high->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[0][1] * multiplier));
-    txtVCOM_low->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[1][0] * multiplier));
-    txtVCOM_high->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[1][1] * multiplier));
-    txtVCOH_low->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[2][0] * multiplier));
-    txtVCOH_high->SetValue(wxString::Format(_("%.3f"), lms->gVCO_frequency_table[2][1] * multiplier));
-    txtVCOCGEN_low->SetValue(wxString::Format(_("%.3f"), lms->gCGEN_VCO_frequencies[0] * multiplier));
-    txtVCOCGEN_high->SetValue(wxString::Format(_("%.3f"), lms->gCGEN_VCO_frequencies[1] * multiplier));
+    double multiplier = 0.001;
+    txtVCOL_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[0][0] * multiplier));
+    txtVCOL_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[0][1] * multiplier));
+    txtVCOM_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[1][0] * multiplier));
+    txtVCOM_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[1][1] * multiplier));
+    txtVCOH_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[2][0] * multiplier));
+    txtVCOH_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gVCO_frequency_table[2][1] * multiplier));
+    txtVCOCGEN_low->SetLabel(wxString::Format(_("%.3f"), lmsControl->gCGEN_VCO_frequencies[0] * multiplier));
+    txtVCOCGEN_high->SetLabel(wxString::Format(_("%.3f"), lmsControl->gCGEN_VCO_frequencies[1] * multiplier));
 }
 
 void lms7002_dlgVCOfrequencies::OnBtnOkClick( wxCommandEvent& event )
 {
-    double multiplier = 1e9;
-    double value;
-    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    double freq;
+    double multiplier = 1000;
+    txtVCOL_low->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[0][0] = freq * multiplier;
+    txtVCOL_high->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[0][1] = freq * multiplier;
 
-    txtVCOL_low->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[0][0]=value*multiplier;
-    txtVCOL_high->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[0][1]=value*multiplier;
+    txtVCOM_low->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[1][0] = freq * multiplier;
+    txtVCOM_high->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[1][1] = freq * multiplier;
 
-    txtVCOM_low->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[1][0]=value*multiplier;
-    txtVCOM_high->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[1][1]=value*multiplier;
+    txtVCOH_low->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[2][0] = freq * multiplier;
+    txtVCOH_high->GetValue().ToDouble(&freq);
+    lmsControl->gVCO_frequency_table[2][1] = freq * multiplier;
 
-    txtVCOH_low->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[2][0]=value*multiplier;
-    txtVCOH_high->GetValue().ToDouble(&value);
-    lms->gVCO_frequency_table[2][1]=value*multiplier;
-
-    txtVCOCGEN_low->GetValue().ToDouble(&value);
-    lms->gCGEN_VCO_frequencies[0] = value*multiplier;
-    txtVCOCGEN_high->GetValue().ToDouble(&value);
-    lms->gCGEN_VCO_frequencies[1] = value*multiplier;
+    txtVCOCGEN_low->GetValue().ToDouble(&freq);
+    lmsControl->gCGEN_VCO_frequencies[0] = freq * multiplier;
+    txtVCOCGEN_high->GetValue().ToDouble(&freq);
+    lmsControl->gCGEN_VCO_frequencies[1] = freq * multiplier;
 
     EndModal(wxID_OK);
 }

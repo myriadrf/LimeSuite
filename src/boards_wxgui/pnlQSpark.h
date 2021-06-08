@@ -4,7 +4,6 @@
 #include <map>
 #include <wx/frame.h>
 #include <wx/panel.h>
-#include "lime/LimeSuite.h"
 class wxStaticText;
 class wxFlexGridSizer;
 class wxButton;
@@ -13,31 +12,30 @@ class wxComboBox;
 class wxCheckBox;
 class wxTextCtrl;
 class wxChoice;
-class wxRadioButton;
+class wxSpinCtrlDouble;
 
+#include "lms7suiteAppFrame.h";
 
+namespace lime
+{
+class IConnection;
+}
 
-class pnlQSpark : public wxPanel
+class pnlQSpark : public wxFrame
 {
 public:
-    pnlQSpark(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
-    void Initialize(lms_device_t *pControl);
+
+	LMS7SuiteAppFrame * parent;
+	pnlQSpark(LMS7SuiteAppFrame * parent, wxWindowID id = wxID_ANY, const wxString &title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, wxString name = "");
+    void Initialize(lime::IConnection *pControl);
     virtual ~pnlQSpark();
+    virtual void UpdatePanel();
+
+    wxButton* btnUpdateAll;
+	wxButton* btnLoadSettings;
+	wxButton* btnSaveSettings;
 
     wxComboBox* cmbVCXOcontrolVoltage;
-    
-    wxCheckBox* chkLB_1A;
-    wxCheckBox* chkLB_1B;
-    wxCheckBox* chkLB_2A;
-    wxCheckBox* chkLB_2B;
-    wxCheckBox* chkSH_1A;
-    wxCheckBox* chkSH_1B;
-    wxCheckBox* chkSH_2A;
-    wxCheckBox* chkSH_2B;
-    wxCheckBox* chkAT_1A;
-    wxCheckBox* chkAT_1B;
-    wxCheckBox* chkAT_2A;
-    wxCheckBox* chkAT_2B;
 
     wxPanel* mPanelStreamPLL;
     wxTextCtrl* txtPllFreqRxMHz;
@@ -54,6 +52,11 @@ public:
     wxCheckBox* chkRX_GCORR_BYP;
     wxCheckBox* chkTX_DCCORR_BYP;
     wxCheckBox* chkTX_PHCORR_BYP;
+	wxCheckBox* chkTX_INVSINC_BYP;
+	wxCheckBox* chkTX_INTERPOLATION_BYP;
+	wxCheckBox* chkRX_DECIMATION_BYP;
+
+
     wxCheckBox* chkTX_GCORR_BYP;
     wxSpinCtrl* spinTX_DCCORRI;
     wxSpinCtrl* spinTX_DCCORRQ;
@@ -64,37 +67,67 @@ public:
     wxSpinCtrl* spinRX_GCORRI;
     wxSpinCtrl* spinRX_PHCORR;
     wxChoice* cmbInsel;
-    wxRadioButton* rbChannelA;
-    wxRadioButton* rbChannelB;
+
+	wxStaticText * txtRX_PHCORR;
+	wxStaticText * txtTX_PHCORR;
+	wxStaticText * txtTX_GCORR;
+	wxStaticText * txtRX_GCORR;
+
+	wxStaticText * txt1;
+	wxStaticText * txt2;
+	wxStaticText * txt3;
+	wxStaticText * txt4;
+
+
+	wxChoice* cmbPa1Sw;
+	wxChoice* cmbPa2Sw;
+	wxChoice* cmbPa1Mo;
+	wxChoice* cmbPa2Mo;
+	wxChoice* cmbRf;
 
     wxTextCtrl* txtNcoFreq;
+
+	wxSpinCtrlDouble * txtVccPa1;
+	wxSpinCtrlDouble * txtVccPa2;
+
+	wxStaticText* lblPa1;
+	wxStaticText* lblPa2;
 
     static const long ID_BUTTON_UPDATEALL;
     static const long ID_VCXOCV;
 
     void OnbtnUpdateAll(wxCommandEvent& event);
     void OnNcoFrequencyChanged(wxCommandEvent& event);
+	
+	void OnVccPa1Changed(wxCommandEvent& event);
+	void OnVccPa2Changed(wxCommandEvent& event);	
+	void LoadQSparkSettings(wxCommandEvent& event);
+	void SaveQSparkSettings(wxCommandEvent& event);
+	void VccPaChanged(wxSpinCtrlDouble * ctrl, wxStaticText * txt, int pa);
+
 protected:
-    void OnConfigurePLL(wxCommandEvent &event);
-    void OnReadAll(wxCommandEvent &event);
-    void OnWriteAll(wxCommandEvent &event);
-    void OnSwitchToChannelA(wxCommandEvent& event);
-    void OnSwitchToChannelB(wxCommandEvent& event);
+    
+	void OnConfigurePLL(wxCommandEvent &event);
+	void VoltageSetup(double vccPa_V, unsigned char addr, int * pValue);
+	void UpdateDegrees();
+	
+
 
     struct Register
     {
         Register();
-        Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue);
+		Register(unsigned short address, unsigned char msb, unsigned char lsb, unsigned short defaultValue, unsigned short twocomplement);
         unsigned short address;
         unsigned char msb;
         unsigned char lsb;
         unsigned short defaultValue;
+		unsigned short twocomplement;
     };
     std::map<wxObject*, Register> controlsPtr2Registers;
     void RegisterParameterChangeHandler(wxCommandEvent& event);
 
 protected:
-    lms_device_t *lmsControl;
+    lime::IConnection *m_serPort;
     DECLARE_EVENT_TABLE()
 };
 

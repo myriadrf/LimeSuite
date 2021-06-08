@@ -26,6 +26,19 @@ static std::mutex &registryMutex(void)
 
 static std::map<std::string, ConnectionRegistryEntry *> registryEntries;
 
+struct SharedConnection
+{
+    SharedConnection(void):
+        numInstances(0),
+        connection(nullptr)
+    {
+        return;
+    }
+    size_t numInstances;
+    IConnection *connection;
+};
+
+static std::map<std::string, std::shared_ptr<SharedConnection>> connectionCache;
 
 /*******************************************************************
  * Registry implementation
@@ -38,9 +51,6 @@ std::vector<ConnectionHandle> ConnectionRegistry::findConnections(const Connecti
     std::vector<ConnectionHandle> results;
     for (const auto &entry : registryEntries)
     {
-        //filter by module name when specified
-        if (not hint.module.empty() and hint.module != entry.first) continue;
-
         for (auto handle : entry.second->enumerate(hint))
         {
             //insert the module name, which can be filtered on in makeConnection()
@@ -69,8 +79,31 @@ IConnection *ConnectionRegistry::makeConnection(const ConnectionHandle &handle)
         auto realHandle = r.front(); //just pick the first
         realHandle.module = entry.first;
 
-        return entry.second->make(realHandle);
+        //check the cache
+        auto &sharedConnection = connectionCache[realHandle.serialize()];
+        if (not sharedConnection)
+        {
+            //cache entry is empty, make a new connection
+            sharedConnection.reset(new SharedConnection());
+            try
+            {
+                sharedConnection->connection = entry.second->make(realHandle);
+                if (sharedConnection->connection != nullptr)
+                {
+                    sharedConnection->connection->_handle = realHandle;
+                }
+            }
+            catch (...)
+            {
+                //factory failed, erase entry and re-throw
+                connectionCache.erase(realHandle.serialize());
+                throw;
+            }
+        }
 
+        //return from cache, increment ref count
+        sharedConnection->numInstances++;
+        return sharedConnection->connection;
     }
 
     return nullptr;
@@ -83,19 +116,18 @@ void ConnectionRegistry::freeConnection(IConnection *conn)
 
     std::lock_guard<std::mutex> lock(registryMutex());
 
-    delete conn;
-}
-
-std::vector<std::string> ConnectionRegistry::moduleNames(void)
-{
-    __loadAllConnections();
-    std::vector<std::string> names;
-    std::lock_guard<std::mutex> lock(registryMutex());
-    for (const auto &entry : registryEntries)
+    for (auto &cacheEntry : connectionCache)
     {
-        names.push_back(entry.first);
+        if (not cacheEntry.second) continue;
+        if (cacheEntry.second->connection != conn) continue;
+        cacheEntry.second->numInstances--;
+        if (cacheEntry.second->numInstances != 0) continue;
+        delete cacheEntry.second->connection;
+        cacheEntry.second.reset();
     }
-    return names;
+
+    //we never actually clear out the cache entries when they are empty
+    //we can do it here, but they should never really grow indefinitely
 }
 
 /*******************************************************************

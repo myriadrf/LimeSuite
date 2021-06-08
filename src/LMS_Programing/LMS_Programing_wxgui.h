@@ -16,13 +16,16 @@ class wxChoice;
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "lime/LimeSuite.h"
+namespace lime{
+class IConnection;
+class LMS_Programing;
+}
 
 class LMS_Programing_wxgui : public wxFrame
 {
 public:
     LMS_Programing_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY,const wxString& title =_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int style=0, wxString name = wxEmptyString);
-    virtual void SetConnection(lms_device_t* port);
+    virtual void SetConnection(lime::IConnection* port);
     virtual ~LMS_Programing_wxgui();
 
 protected:
@@ -33,19 +36,18 @@ protected:
     wxStaticText* lblFilename;
     wxStaticText* StaticText1;
     wxStaticText* StaticText3;
+    wxChoice* cmbProgMode;
     wxButton* btnStartStop;
     wxButton* btnOpen;
-    bool btnOpenEnb;
 
     void DoProgramming();
-    static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
-    static bool test(int bsent, int btotal, const char* progressMsg);
+    bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     std::vector<char> mProgramData;
-    lms_device_t* lmsControl;
+    lime::IConnection* serPort;
     std::atomic<bool> mProgrammingInProgress;
     std::atomic<bool> mAbortProgramming;
     std::thread mWorkerThread;
-    static LMS_Programing_wxgui* obj_ptr;
+
     static const long ID_PROGRAMING_FINISHED_EVENT;
     static const long ID_PROGRAMING_STATUS_EVENT;
     static const long ID_BUTTON1;

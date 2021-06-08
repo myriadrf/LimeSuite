@@ -224,5 +224,4 @@ int ProcessLMS64C(const uint8_t *input, uint8_t *output)
 		memcpy(output, input, hs);
 		output[1] = STATUS_UNKNOWN_CMD;
 	}
-	return 0;
 }

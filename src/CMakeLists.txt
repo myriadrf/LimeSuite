@@ -1,32 +1,77 @@
 ########################################################################
+## Create lime-suite project
+########################################################################
+cmake_minimum_required(VERSION 3.1.3)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
+project("lms7suite")
+
+#include modules for finding CyAPI
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+cmake_policy(SET CMP0015 OLD)
+if(${CMAKE_MAJOR_VERSION} GREATER 2)
+    cmake_policy(SET CMP0043 NEW)
+endif()
+
+#version numbers built into shared library
+#todo version number, example could be date, standard major.minor.patch
+#todo abi compatibility, could be version, date, incrementing number
+#maybe parse version.h for info?
+set(LIME_SUITE_VERSION 0.0.0)
+set(LIME_SUITE_ABI 1)
+
+########################################################################
+## compiler flags
+########################################################################
+
+#gcc c++11 enable flags
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+endif()
+
+#visual studio compiler flags
+if (MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
+    set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
+endif(MSVC)
+
+#enable c++11 extensions for OSX
+if (APPLE)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wc++11-extensions")
+   add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
+endif(APPLE)
+
+########################################################################
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
-    lime/LimeSuite.h
-    VersionInfo.h
-    Logger.h
-    SystemResources.h
+    ErrorReporting.h
     LimeSuiteConfig.h
     ADF4002/ADF4002.h
+    version.h
     lms7002m_mcu/MCU_BD.h
     lms7002m_mcu/MCU_File.h
     ConnectionRegistry/IConnection.h
     ConnectionRegistry/ConnectionHandle.h
     ConnectionRegistry/ConnectionRegistry.h
+    lms7002m_novena/StreamerNovena.h
     lms7002m/LMS7002M.h
+    lms7002m/CalibrationCache.h
+    lms7002m/cpp-feather-ini-parser/INI.h
     lms7002m/LMS7002M_RegistersMap.h
-    lime/LMS7002M_parameters.h
-    protocols/Streamer.h
+    lms7002m/LMS7002M_parameters.h
     protocols/ADCUnits.h
     protocols/LMS64CCommands.h
     protocols/LMS64CProtocol.h
     protocols/LMSBoards.h
-    protocols/dataTypes.h
-    protocols/fifo.h
+    LTEpackets/dataTypes.h
+    LTEpackets/fifo.h
+    LTEpackets/StreamerLTE.h
     Si5351C/Si5351C.h
+    LMS_StreamBoard/LMS_StreamBoard.h
+    LMS_StreamBoard/LMS_StreamBoard_FIFO.h
     FPGA_common/FPGA_common.h
-    API/lms7_device.h
-    limeRFE/limeRFE.h
 )
 
 include(FeatureSummary)
@@ -43,96 +88,77 @@ endif()
 ########################################################################
 ## lime suite library
 ########################################################################
+if(WIN32)
+add_subdirectory(sqlite-3.12)
+include_directories(sqlite-3.12)
+set (SQLITE3_LIBRARY sqlite3_static)
+else()
+find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
+find_library(SQLITE3_LIBRARY sqlite3)
+if(NOT SQLITE3_INCLUDE_DIR)
+    message(SEND_ERROR "Failed to find sqlite3.h, please install libsqlite3-dev")
+else()
+    include_directories(${SQLITE3_INCLUDE_DIR})
+endif()
+if(NOT SQLITE3_LIBRARY)
+    message(SEND_ERROR "Failed to find the sqlite3 library, please install libsqlite3-dev")
+endif()
+
+message(STATUS "SQLITE3")
+
+message(STATUS ${SQLITE3_INCLUDE_DIR})
+message(STATUS ${SQLITE3_LIBRARY})
+endif()
+
 set(LIME_SUITE_SOURCES
-    Logger.cpp
+    ErrorReporting.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
     ConnectionRegistry/IConnection.cpp
     ConnectionRegistry/ConnectionHandle.cpp
     ConnectionRegistry/ConnectionRegistry.cpp
+    lms7002m_novena/StreamerNovena.cpp
     lms7002m/LMS7002M_RegistersMap.cpp
     lms7002m/LMS7002M_parameters.cpp
     lms7002m/LMS7002M.cpp
     lms7002m/LMS7002M_RxTxCalibrations.cpp
-    lms7002m/LMS7002M_BaseCalibrations.cpp
     lms7002m/mcu_dc_iq_calibration.cpp
+    lms7002m/CalibrationCache.cpp
     lms7002m/LMS7002M_filtersCalibration.cpp
-    lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
-    protocols/Streamer.cpp
-    protocols/ConnectionImages.cpp
+    LTEpackets/StreamerLTE.cpp
     Si5351C/Si5351C.cpp
-    ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
-    API/lms7_api.cpp
-    API/lms7_device.cpp
-    API/LmsGeneric.cpp
-    API/qLimeSDR.cpp
-    API/LimeSDR_mini.cpp
-    API/LimeSDR.cpp
-    API/LimeNET_micro.cpp
-    API/LimeSDR_PCIE.cpp
-    API/LimeSDR_Core.cpp
+    LMS_StreamBoard/LMS_StreamBoard.cpp
+    kissFFT/kiss_fft.c
     FPGA_common/FPGA_common.cpp
-    FPGA_common/FPGA_Mini.cpp
-    FPGA_common/FPGA_Q.cpp
-    windowFunction.cpp
-    threadHelper/threadHelper.cpp
 )
 
-set(LIME_SUITE_INCLUDES
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    API
-    lime
-    GFIR
-    protocols
-    ConnectionRegistry
-    lms7002m_mcu
-    ADF4002
-    Si5351C
-    lms7002m
-    FPGA_common
-    lms7002m_mcu
-    ${PROJECT_SOURCE_DIR}/external/cpp-feather-ini-parser
-    ${PROJECT_SOURCE_DIR}/external/kissFFT/
-    limeRFE
-    threadHelper
-)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.in.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp @ONLY)
-list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.cpp)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/SystemResources.in.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/SystemResources.cpp @ONLY)
-list(APPEND LIME_SUITE_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/SystemResources.cpp)
-
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package(Threads REQUIRED)
-list(APPEND LIME_SUITE_LIBRARIES Threads::Threads)
-
-include(CheckAtomic)
-if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB OR NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
-    list(APPEND LIME_SUITE_LIBRARIES atomic)
-endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(ADF4002)
+include_directories(lms7002m_mcu)
+include_directories(ConnectionRegistry)
+include_directories(lms7002m_novena)
+include_directories(lms7002m)
+include_directories(lms7002m/cpp-feather-ini-parser)
+include_directories(HPM7)
+include_directories(protocols)
+include_directories(LTEpackets)
+include_directories(Si5351C)
+include_directories(LMS_StreamBoard)
+include_directories(kissFFT)
+include_directories(FPGA_common)
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-
-option(ENABLE_LIBRARY "Enable build library" ON)
+cmake_dependent_option(ENABLE_LIBRARY "Enable build library" ON "TRUE" OFF)
 add_feature_info(LimeSuiteLibrary ENABLE_LIBRARY "The lime suite library")
 if (ENABLE_LIBRARY)
     add_library(LimeSuite ${LIME_SUITE_SOURCES})
-    target_link_libraries(LimeSuite ${LIME_SUITE_LIBRARIES})
+    target_link_libraries(LimeSuite ${SQLITE3_LIBRARY})
     set_property(TARGET LimeSuite PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-    set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_SOVER})
-    set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_LIBVER})
-    set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL_EXPORTS")
-    target_include_directories(LimeSuite PUBLIC ${LIME_SUITE_INCLUDES})
-
-    if(BUILD_SHARED_LIBS)
-        target_compile_definitions(LimeSuite PUBLIC "LIME_DLL")
-    endif()
+    set_target_properties(LimeSuite PROPERTIES SOVERSION ${LIME_SUITE_ABI})
+    set_target_properties(LimeSuite PROPERTIES VERSION ${LIME_SUITE_VERSION})
+    set_target_properties(LimeSuite PROPERTIES DEFINE_SYMBOL "LIME_DLL")
 
     install(TARGETS LimeSuite
         LIBRARY DESTINATION lib${LIB_SUFFIX} # .so file
@@ -140,11 +166,6 @@ if (ENABLE_LIBRARY)
         RUNTIME DESTINATION bin              # .dll file
     )
 
-	if (MSVC)
-		set_target_properties(LimeSuite PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-	endif(MSVC)
-
-    add_subdirectory(GFIR)
     set(LIME_SUITE_LIBS LimeSuite)
 endif()
 
@@ -152,19 +173,15 @@ endif()
 ## Supported connections
 ########################################################################
 include(ConnectionEVB7COM/CMakeLists.txt)
-include(ConnectionFX3/CMakeLists.txt)
-include(ConnectionSTREAM_UNITE/CMakeLists.txt)
-include(ConnectionFTDI/CMakeLists.txt)
-include(ConnectionXillybus/CMakeLists.txt)
-include(ConnectionRemote/CMakeLists.txt)
-include(ConnectionSPI/CMakeLists.txt)
+include(ConnectionSTREAM/CMakeLists.txt)
+include(ConnectionNovenaRF7/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp
 )
 
-target_sources(LimeSuite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
+target_sources(LimeSuite PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/BuiltinConnections.cpp)
 
 ########################################################################
 ## wx widgets dependency
@@ -179,10 +196,11 @@ message(STATUS "wxWidgets_INCLUDE_DIRS: ${wxWidgets_INCLUDE_DIRS}")
 message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 
 ########################################################################
-## LimeSuite GUI app
+## lms7suite gui app
 ########################################################################
 set(LMS7SUITE_GUI_SOURCES
     ADF4002/ADF4002_wxgui.cpp
+    lms7002_wxgui/lms7002_pnlBuffers_view.cpp
     lms7002_wxgui/lms7002_pnlXBUF_view.cpp
     lms7002_wxgui/lms7002_wxgui.cpp
     lms7002_wxgui/lms7002_pnlRFE_view.cpp
@@ -199,120 +217,150 @@ set(LMS7SUITE_GUI_SOURCES
     lms7002_wxgui/lms7002_pnlRBB_view.cpp
     lms7002_wxgui/lms7002_pnlLDO_view.cpp
     lms7002_wxgui/lms7002_pnlAFE_view.cpp
-    lms7002_wxgui/lms7002_pnlGains_view.cpp
     lms7002_wxgui/CoefficientFileParser.cpp
     lms7002_wxgui/lms7002_pnlRxTSP_view.cpp
     lms7002_wxgui/lms7002_mainPanel.cpp
+    lms7002_wxgui/pnlBoardControls.cpp
     lms7002_wxgui/dlgViewSFR.cpp
     lms7002_wxgui/lms7002_pnlCLKGEN_view.cpp
     lms7002_wxgui/lms7002_pnlMCU_BD_view.cpp
     lms7002_wxgui/lms7002_pnlBIAS_view.cpp
     lms7002_wxgui/lms7002_dlgGFIR_Coefficients.cpp
     lms7002_wxgui/lms7002_pnlTxTSP_view.cpp
-    lms7002_wxgui/lms7002_pnlR3.cpp
     LMS_Programing/LMS_Programing_wxgui.cpp
     utilities_gui/dlgConnectionSettings.cpp
     utilities_gui/pnlMiniLog.cpp
-    utilities_gui/pnlAPI.cpp
     utilities_gui/SPI_wxgui.cpp
     utilities_gui/dlgFullMessageLog.cpp
     utilities_gui/dlgDeviceInfo.cpp
     utilities_gui/utilities_gui.cpp
     lms7suiteAppFrame.cpp
-    boards_wxgui/RFSpark_wxgui.cpp
+    lms7002m_novena/lms7002m_novena_wxgui.cpp
+    RFSpark/RFSpark_wxgui.cpp
     Si5351C/Si5351C_wxgui.cpp
     lms7suiteApp_gui.cpp
     lms7suiteApp.cpp
     FPGAcontrols_wxgui/FPGAcontrols_wxgui.cpp
+    HPM7/HPM7_wxgui.cpp
     dlgAbout.cpp
     numericSlider/numericSlider.cpp
+    myriad7/myriad7_wxgui.cpp
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
-    boards_wxgui/pnlBoardControls.cpp
+    DPDTest/DPDTest.cpp
+    DPDTest/dlgADPDControls.cpp 
+    DPDTest/qadpd.cpp
+    DPDTest/nrc.cpp
     boards_wxgui/pnlQSpark.cpp
-    boards_wxgui/pnluLimeSDR.cpp
-    boards_wxgui/pnlUltimateEVB.cpp
-    boards_wxgui/pnlBuffers.cpp
-    boards_wxgui/pnlCoreSDR.cpp
-    boards_wxgui/pnlLimeNetMicro.cpp
-    ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
-    windowFunction.cpp
-    boards_wxgui/pnlLimeSDR.cpp
-    boards_wxgui/pnlGPIO.cpp
 )
 
 include(FeatureSummary)
 include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_GUI "Enable build GUI" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
-add_feature_info(LimeSuiteGUI ENABLE_GUI "GUI Application for LimeSuite")
-if (ENABLE_GUI)
-
+cmake_dependent_option(ENABLE_LMS7_GUI "Enable build lms7suite" ON "ENABLE_LIBRARY;wxWidgets_FOUND" OFF)
+add_feature_info(LimeSuiteGUILMS7 ENABLE_LMS7_GUI "GUI Application for LMS7")
+if (ENABLE_LMS7_GUI)
+    
     include_directories(lms7002_wxgui)
     include_directories(LMS_Programing)
     include_directories(utilities_gui)
     include_directories(RFSpark)
     include_directories(FPGAcontrols_wxgui)
     include_directories(numericSlider)
+    include_directories(myriad7)
     include_directories(fftviewer_wxgui)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
-    include_directories(limeRFE)
-    
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
+    include_directories(DPDtest)
 
     set(BINARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
-    add_executable(LimeSuiteGUI ${LMS7SUITE_GUI_SOURCES} resources/resource.rc)
-    set_target_properties(LimeSuiteGUI PROPERTIES
+    add_executable(lms7suite ${LMS7SUITE_GUI_SOURCES} resource.rc)
+    set_target_properties(lms7suite PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
-    target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
-        
-    target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})
+    target_link_libraries(lms7suite ${LIME_SUITE_LIBS} oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)
-        set_property(TARGET LimeSuiteGUI APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
+        set_property(TARGET lms7suite APPEND PROPERTY LINK_FLAGS /SUBSYSTEM:WINDOWS)
     endif(MSVC)
 
-    install(TARGETS LimeSuiteGUI DESTINATION bin)
+    install(TARGETS lms7suite DESTINATION bin)
 
 endif()
 
 ########################################################################
-# Build pkg config file
+## update version.h
 ########################################################################
-if (ENABLE_HEADERS AND ENABLE_LIBRARY)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/LimeSuite.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/LimeSuite.pc
-@ONLY)
+set(AUTO_UPDATE_VERSION OFF CACHE BOOL "Uses python script to increment version")
+if(AUTO_UPDATE_VERSION)
+	add_custom_target(updateVersion ALL COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/auto_version.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+	add_dependencies(lms7suite updateVersion)
+endif()
 
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/LimeSuite.pc
-    DESTINATION lib${LIB_SUFFIX}/pkgconfig
-)
-endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
+########################################################################
+# Lime Util -- command line utility for quick testing connections
+########################################################################
+add_executable(LimeUtil LimeUtil.cpp)
+target_link_libraries(LimeUtil ${LIME_SUITE_LIBS})
 
 ########################################################################
 # boardEmulator -- creates serial port and imitates board communications
 ########################################################################
 if(UNIX)
     add_executable(boardEmulator boardEmulator.cpp)
-    target_link_libraries(boardEmulator LimeSuite)
+endif()
+
+########################################################################
+## SoapySDR bindings for LMS7 RFIC driver
+########################################################################
+add_subdirectory(SoapyLMS7)
+
+########################################################################
+## udev rules for linux usb
+########################################################################
+if (DEFINED UDEV_RULES_PATH)
+    install(
+        FILES ${CMAKE_CURRENT_SOURCE_DIR}/../udev-rules/64-limesuite.rules
+        DESTINATION ${UDEV_RULES_PATH})
 endif()
 
 #########################################################################
-# utilities
+# summary
 #########################################################################
-add_subdirectory(utilities)
+include(FeatureSummary)
+message(STATUS "")
+message(STATUS "######################################################")
+message(STATUS "## ${PROJECT_NAME} enabled features")
+message(STATUS "######################################################")
+feature_summary(WHAT ENABLED_FEATURES)
+message(STATUS "######################################################")
+message(STATUS "## ${PROJECT_NAME} disabled features")
+message(STATUS "######################################################")
+feature_summary(WHAT DISABLED_FEATURES)
+message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Lime Suite Version: ${LIME_SUITE_VERSION}")
+message(STATUS "Lime Suite ABI: ${LIME_SUITE_ABI}")
 
 #########################################################################
-# examples
+# tests
 #########################################################################
-add_subdirectory(examples)
+set(BUILD_TESTS OFF CACHE BOOL "Download gtest and build test application")
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
-#########################################################################
-# LimeRFE
-#########################################################################
-add_subdirectory(limeRFE)
+########################################################################
+# uninstall target
+########################################################################
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+#only add uninstall target if this is the top project
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()

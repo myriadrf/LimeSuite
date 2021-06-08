@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-
-if [ "$1" = "configure" ]; then
-	/usr/share/Lime/Desktop/install
-fi
-
-#DEBHELPER#

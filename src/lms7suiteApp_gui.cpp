@@ -38,7 +38,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuConnectionSettings = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("ConnectionSettings") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuOptions->Append( mnuConnectionSettings );
 	
-	mnuCacheValues = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("Use cache ") ) , wxEmptyString, wxITEM_CHECK );
+	mnuCacheValues = new wxMenuItem( mnuOptions, wxID_ANY, wxString( wxT("Cache calibration values") ) , wxEmptyString, wxITEM_CHECK );
 	mnuOptions->Append( mnuCacheValues );
 	
 	mbar->Append( mnuOptions, wxT("Options") ); 
@@ -57,32 +57,48 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	mnuModules->Append( mnuSi5351C );
 	
 	wxMenuItem* mnuPrograming;
-	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programming") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuPrograming = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Programing") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuPrograming );
+	
+	wxMenuItem* mnuRFSpark;
+	mnuRFSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("RF-ESpark") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuRFSpark );
+	
+	wxMenuItem* mnuHPM7;
+	mnuHPM7 = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("HPM7") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuHPM7 );
 	
 	wxMenuItem* mnuFPGAcontrols;
 	mnuFPGAcontrols = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("FPGA controls") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuFPGAcontrols );
 	
+	wxMenuItem* mnuMyriad7;
+	mnuMyriad7 = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Myriad7") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuMyriad7 );
+	
 	wxMenuItem* mnuDeviceInfo;
 	mnuDeviceInfo = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Device Info") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuDeviceInfo );
-	
-	wxMenuItem* mnuAPIcalls;
-	mnuAPIcalls = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("API Calls") ) , wxEmptyString, wxITEM_NORMAL );
-	mnuModules->Append( mnuAPIcalls );
 	
 	wxMenuItem* mnuSPI;
 	mnuSPI = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("SPI") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuSPI );
 	
+	wxMenuItem* mnuNovena;
+	mnuNovena = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Novena") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuNovena );
+	
 	wxMenuItem* mnuBoardControls;
 	mnuBoardControls = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("Board controls") ) , wxEmptyString, wxITEM_NORMAL );
 	mnuModules->Append( mnuBoardControls );
 	
-	wxMenuItem* mnuLimeRFE;
-	mnuLimeRFE = new wxMenuItem( mnuModules, ID_MENUITEM_LIMERFE, wxString( wxT("LimeRFE") ) , wxEmptyString, wxITEM_NORMAL );
-	mnuModules->Append( mnuLimeRFE );
+	wxMenuItem* mnuQSpark;
+	mnuQSpark = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("QSpark") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuQSpark );
+	
+	wxMenuItem* mnuDPDTest;
+	mnuDPDTest = new wxMenuItem( mnuModules, wxID_ANY, wxString( wxT("DPD test") ) , wxEmptyString, wxITEM_NORMAL );
+	mnuModules->Append( mnuDPDTest );
 	
 	mbar->Append( mnuModules, wxT("Modules") ); 
 	
@@ -96,39 +112,19 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->SetMenuBar( mbar );
 	
 	statusBar = this->CreateStatusBar( 3, wxST_SIZEGRIP, wxID_ANY );
-	wxFlexGridSizer* fgSizer8;
-	fgSizer8 = new wxFlexGridSizer( 2, 0, 0, 0 );
-	fgSizer8->AddGrowableCol( 0 );
-	fgSizer8->AddGrowableRow( 0 );
-	fgSizer8->AddGrowableRow( 1 );
-	fgSizer8->SetFlexibleDirection( wxBOTH );
-	fgSizer8->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-	
-	bSizer6 = new wxBoxSizer( wxVERTICAL );
-	
-	m_scrolledWindow1 = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxSize( 1180,665 ), wxHSCROLL|wxVSCROLL );
-	m_scrolledWindow1->SetScrollRate( 5, 5 );
 	contentSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
 	contentSizer->AddGrowableCol( 0 );
 	contentSizer->AddGrowableRow( 0 );
 	contentSizer->SetFlexibleDirection( wxBOTH );
 	contentSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	mContent = new lms7002_mainPanel( m_scrolledWindow1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	mContent = new lms7002_mainPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	contentSizer->Add( mContent, 1, wxEXPAND, 5 );
 	
 	
-	m_scrolledWindow1->SetSizer( contentSizer );
-	m_scrolledWindow1->Layout();
-	bSizer6->Add( m_scrolledWindow1, 4, wxALIGN_BOTTOM|wxBOTTOM|wxEXPAND, 5 );
-	
-	
-	fgSizer8->Add( bSizer6, 1, wxEXPAND, 5 );
-	
-	
-	this->SetSizer( fgSizer8 );
+	this->SetSizer( contentSizer );
 	this->Layout();
-	fgSizer8->Fit( this );
+	contentSizer->Fit( this );
 	
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( AppFrame_view::OnClose ) );
@@ -139,12 +135,16 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Connect( mnuADF4002->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Connect( mnuSi5351C->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Connect( mnuPrograming->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
+	this->Connect( mnuRFSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
+	this->Connect( mnuHPM7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Connect( mnuFPGAcontrols->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
+	this->Connect( mnuMyriad7->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Connect( mnuDeviceInfo->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
-	this->Connect( mnuAPIcalls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowAPICalls ) );
 	this->Connect( mnuSPI->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
+	this->Connect( mnuNovena->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 	this->Connect( mnuBoardControls->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
-	this->Connect( mnuLimeRFE->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowLimeRFE ) );
+	this->Connect( mnuQSpark->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
+	this->Connect( mnuDPDTest->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDPDTest ) );
 	this->Connect( menuHelpAbout->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
 }
 
@@ -159,12 +159,16 @@ AppFrame_view::~AppFrame_view()
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowADF4002 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSi5351C ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowPrograming ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowRFSpark ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowHPM7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowFPGAcontrols ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowMyriad7 ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDeviceInfo ) );
-	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowAPICalls ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowSPI ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowNovena ) );
 	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowBoardControls ) );
-	this->Disconnect( ID_MENUITEM_LIMERFE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowLimeRFE ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowQSpark ) );
+	this->Disconnect( wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnShowDPDTest ) );
 	this->Disconnect( idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( AppFrame_view::OnAbout ) );
 	
 }
@@ -209,6 +213,10 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	
 	fgSizer2->Add( fgSizer3, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	txtDescription = new wxStaticText( this, wxID_ANY, wxT("Software Description"), wxDefaultPosition, wxDefaultSize, 0 );
+	txtDescription->Wrap( -1 );
+	fgSizer2->Add( txtDescription, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	wxFlexGridSizer* fgSizer5;
 	fgSizer5 = new wxFlexGridSizer( 0, 3, 0, 50 );

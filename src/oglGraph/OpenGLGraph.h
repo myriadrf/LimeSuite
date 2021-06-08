@@ -282,9 +282,7 @@ class OpenGLGraph : public wxGLCanvas
 {
 friend class dlgMarkers;
 public:
-    static const int GLCanvasAttributes[8];
-
-	OpenGLGraph(wxWindow* parent,  wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name = wxEmptyString, const int* args = GLCanvasAttributes);
+	OpenGLGraph(wxWindow* parent,  wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name, int* args);
 	virtual ~OpenGLGraph();
 
 	bool Initialize(int width, int height);

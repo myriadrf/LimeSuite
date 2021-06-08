@@ -2,44 +2,33 @@
 ## Create lime-suite project
 ########################################################################
 cmake_minimum_required(VERSION 3.1.3)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING INTERNAL FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE TYPE INTERNAL FORCE)
 project("LimeSuite")
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
-option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
 
 #include modules for finding CyAPI
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-if(POLICY CMP0015)
-    cmake_policy(SET CMP0015 NEW)
-endif()
-
-if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 OLD)
-endif()
-
+cmake_policy(SET CMP0015 OLD)
 if(${CMAKE_MAJOR_VERSION} GREATER 2)
     cmake_policy(SET CMP0043 NEW)
 endif()
 
-list(FIND CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}" index)
-if (${index} EQUAL -1)
+if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 ########################################################################
-# Gather version information from the changelog
-# LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor
+# gather version information
 ########################################################################
-file(READ "${PROJECT_SOURCE_DIR}/Changelog.txt" changelog_txt)
-string(REGEX MATCH "Release ([0-9]+)\\.([0-9]+)\\.([0-9]+) \\(" CHANGELOG_MATCH "${changelog_txt}")
-if(NOT CHANGELOG_MATCH)
-    message(FATAL_ERROR "Failed to extract version number from Changelog.txt")
-endif(NOT CHANGELOG_MATCH)
-set(VERSION_MAJOR "${CMAKE_MATCH_1}")
-set(VERSION_MINOR "${CMAKE_MATCH_2}")
-set(VERSION_PATCH "${CMAKE_MATCH_3}")
+# The version of this library: major, minor, and patch
+# Manually increment these numbers when creating releases.
+# LIME_SUITE_API_VERSION in VersionInfo.h reflects the major/minor,
+# and must be set manually when non-patch releases are created.
+set(VERSION_MAJOR 16)
+set(VERSION_MINOR 12)
+set(VERSION_PATCH 0)
 
 # the ABI compatibility number should be incremented when the ABI changes
 # the format is to use the same major and minor, but to have an incrementing
@@ -62,26 +51,12 @@ set(LIME_SUITE_LIBVER "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(LIME_SUITE_VERSION "${LIME_SUITE_LIBVER}-${LIME_SUITE_EXTVER}")
 string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d")
 
-#LIME_SUITE_ROOT is compiled into the library to locate the install base.
-#By default, the LIME_SUITE_ROOT is set to the CMAKE_INSTALL_PREFIX.
-#However users may overload this by specifying -DLIME_SUITE_ROOT=<path>.
-set(LIME_SUITE_ROOT "${CMAKE_INSTALL_PREFIX}" CACHE PATH
-    "Installation root for lime::getLimeSuiteRoot()")
-file(TO_CMAKE_PATH "${LIME_SUITE_ROOT}" LIME_SUITE_ROOT)
-
 ########################################################################
 ## compiler flags
 ########################################################################
 
 #C++11 is a required language feature for this project
 set(CMAKE_CXX_STANDARD 11)
-
-#is this processor x86? set variable X86
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*|amd64.*|AMD64.*")
-    set(X86 TRUE)
-else()
-    set(X86 FALSE)
-endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 
@@ -90,56 +65,12 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
     endif()
 
-    #enable warnings in Debug configurations
-    if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
-    	add_compile_options(-Wall -Wpedantic)
-    endif()
+    #common warnings enabled
+    add_compile_options(-Wall)
 
     #symbols are only exported from libraries/modules explicitly
     add_compile_options(-fvisibility=hidden)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden")
-
-    #disable gcc caller-saves flag for O2-O3 optimizations
-    #workaround fix for gcc 9.3+
-    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.3 OR 
-            CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 9.9)
-            add_compile_options(-fno-caller-saves)
-        endif()
-    endif()
-
-    #default SIMD configuration uses native build flags
-    #when packaging and x86, use sse3 so the binaries work across multiple x86 variants
-    if(NOT DEFAULT_SIMD_FLAGS)
-        set(DEFAULT_SIMD_FLAGS "native")
-    endif()
-    if ("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr" AND X86)
-        set(DEFAULT_SIMD_FLAGS "SSE3")
-    endif()
-
-    SET(ENABLE_SIMD_FLAGS "${DEFAULT_SIMD_FLAGS}" CACHE STRING "Set compiler SIMD flags")
-    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none native SSE3 SSE4.2 AVX AVX2) 
-
-    if(${ENABLE_SIMD_FLAGS} MATCHES "native")
-        add_definitions(-march=native)
-        if(X86)
-            add_definitions(-mfpmath=both)
-        endif()
-        message(STATUS "Enabling native optimizations")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "AVX2")
-        add_definitions(-mmmx -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mavx -mfma -mavx2 -mfpmath=both)
-        message(STATUS "Enabling AVX2 instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "AVX")
-        add_definitions(-mmmx -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mavx -mfpmath=both)
-        message(STATUS "Enabling AVX instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "SSE4.2")
-        add_definitions(-mmmx -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mfpmath=both)
-        message(STATUS "Enabling SSE4.2 instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "SSE3")
-        add_definitions(-mmmx -msse -msse2 -msse3 -mfpmath=both)
-        message(STATUS "Enabling SSE3 instructions")
-    endif()
-
 endif()
 
 if (MSVC)
@@ -147,29 +78,11 @@ if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set( MSVC_MULTITHREAD_COMPILE_FLAGS "/MP")
     set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MSVC_MULTITHREAD_COMPILE_FLAGS}" )
-
-    SET(ENABLE_SIMD_FLAGS "SSE2" CACHE STRING "Set compiler SIMD flags")
-    SET_PROPERTY(CACHE ENABLE_SIMD_FLAGS PROPERTY STRINGS none SSE2 AVX AVX2) 
-
-    if(${ENABLE_SIMD_FLAGS} MATCHES "AVX2")
-        add_definitions(/arch:AVX2)
-        message(STATUS "Enabling AVX2 instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "AVX")
-        add_definitions(/arch:AVX)
-        message(STATUS "Enabling AVX instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "SSE2")
-        add_definitions(/arch:SSE2)
-        message(STATUS "Enabling SSE2 instructions")
-    endif()
 endif(MSVC)
 
 if (APPLE)
    add_definitions(-D__unix__=1) #we use this for unix detection, but clang does not define it
 endif(APPLE)
-
-if (ENABLE_NEW_GAIN_BEHAVIOUR)
-    add_definitions(-DNEW_GAIN_BEHAVIOUR)
-endif()
 
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
@@ -199,12 +112,29 @@ if(APPLE)
 endif()
 
 ########################################################################
+## sqlite dependency
+########################################################################
+if(WIN32)
+    add_subdirectory(external/sqlite-3.12)
+    set(SQLITE3_FOUND TRUE)
+    set(SQLITE3_INCLUDE_DIRS)
+    set(SQLITE3_LIBRARIES sqlite3_static)
+else()
+    find_package(SQLite3)
+    if (NOT SQLITE3_FOUND)
+        message(SEND_ERROR "Failed to find sqlite3 devel, please install libsqlite3-dev")
+    endif()
+
+    message(STATUS "SQLITE3: ${SQLITE3_FOUND}")
+    message(STATUS "SQLITE3_INCLUDE_DIRS: ${SQLITE3_INCLUDE_DIRS}")
+    message(STATUS "SQLITE3_LIBRARIES: ${SQLITE3_LIBRARIES}")
+endif()
+
+########################################################################
 ## lime suite build
 ########################################################################
 add_subdirectory(src)
 add_subdirectory(mcu_program)
-add_subdirectory(LimeUtil)
-add_subdirectory(QuickTest)
 
 ########################################################################
 ## SoapySDR bindings for LMS7 RFIC driver
@@ -221,55 +151,9 @@ if (DEFINED UDEV_RULES_PATH)
 endif()
 
 ########################################################################
-## Doxygen
-########################################################################
-find_package(Doxygen QUIET)
-include(FeatureSummary)
-include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_API_DOXYGEN "Enable LMS API Doxygen documentation" OFF "DOXYGEN_FOUND" OFF)
-add_feature_info(LimeSuiteDocAPI ENABLE_API_DOXYGEN "LMS API Doxygen documentation")
-if (ENABLE_API_DOXYGEN)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/DoxyfileAPI.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
-  add_custom_target(docAPI ALL
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating LMS API documentation with Doxygen" VERBATIM
-    )
-endif()
-
-if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-  add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating documentation with Doxygen" VERBATIM
-    )
-endif()
-
-########################################################################
-# CMake Project config files
-########################################################################
-if (ENABLE_HEADERS AND ENABLE_LIBRARY)
-    configure_file(
-        ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuiteConfigVersion.in.cmake
-        ${PROJECT_BINARY_DIR}/LimeSuiteConfigVersion.cmake
-    @ONLY)
-
-    install(FILES
-        ${PROJECT_SOURCE_DIR}/cmake/Modules/LimeSuiteConfig.cmake
-        ${PROJECT_BINARY_DIR}/LimeSuiteConfigVersion.cmake
-        DESTINATION lib${LIB_SUFFIX}/cmake/${PROJECT_NAME})
-endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
-
-########################################################################
 ## freedesktop environment integration
 ########################################################################
 add_subdirectory(Desktop)
-
-########################################################################
-## Octave plugin integration
-########################################################################
-add_subdirectory(octave)
 
 #########################################################################
 # summary
@@ -288,7 +172,6 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build timestamp: ${BUILD_TIMESTAMP}")
 message(STATUS "Lime Suite version: ${LIME_SUITE_VERSION}")
 message(STATUS "ABI/so version: ${LIME_SUITE_SOVER}")
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadImages.cmake)
 
 ########################################################################
 # uninstall target
@@ -303,5 +186,4 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
-
 
