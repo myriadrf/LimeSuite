@@ -210,6 +210,11 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
         return EXIT_FAILURE;
     }
 
+    uint16_t adfLocked = 0;
+    conn->ReadRegister(0x00c8, adfLocked);
+    adfLocked = adfLocked >> 1;
+    std::cout << "  ADF4002 Lock State: " << adfLocked << std::endl << std::flush;
+
     std::cout << "  Free connection... " << std::flush;
     ConnectionRegistry::freeConnection(conn);
     std::cout << "OK" << std::endl;
