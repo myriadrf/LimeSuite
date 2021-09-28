@@ -17,6 +17,9 @@
 #include "LMS64CProtocol.h"
 #include "lms7_device.h"
 #include "device_constants.h"
+#include "ADF4002.h"
+#include <vector>
+#include <stdint.h>
 
 using namespace lime;
 
@@ -59,6 +62,11 @@ static int printHelp(void)
     std::cout << "    --bw[=bandwidth, default=30MHz]    \t Desired calibration bandwidth(Hz)" << std::endl;
     std::cout << "    --dir[=direction, default=BOTH]    \t Calibration direction, RX, TX, BOTH" << std::endl;
     std::cout << "    --chans[=channels, default=ALL]    \t Calibration channels, 0, 1, ALL" << std::endl;
+    std::cout << std::endl;
+    std::cout << "  External reference clock:" << std::endl;
+    std::cout << "    --refclk[=\"module=foo,serial=bar\"] \t Enable external reference clock" << std::endl;
+    std::cout << "    --fref[=freq]                \t Reference frequency (Hz)" << std::endl;
+    std::cout << "    --fvco[=freq]                \t VCO frequency (Hz)" << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }
@@ -147,6 +155,60 @@ static int makeDevice(void)
     std::cout << "  Gateware revision: " << info.gatewareRevision << std::endl;
     std::cout << "  Gateware target: " << info.gatewareTargetBoard << std::endl;
     std::cout << "  Serial number: " << std::hex << "0x" << info.boardSerialNumber << std::dec << std::endl;
+
+    std::cout << "  Free connection... " << std::flush;
+    ConnectionRegistry::freeConnection(conn);
+    std::cout << "OK" << std::endl;
+    std::cout << std::endl;
+    return EXIT_SUCCESS;
+}
+
+/***********************************************************************
+ * enable external reference clock  10MHz / 30.720MHz
+ **********************************************************************/
+static int enableExtRefClk(const std::string &argStr, const double fref, const double fvco)
+{
+    lime::ADF4002* m_pModule;
+    m_pModule = new lime::ADF4002();
+
+    ConnectionHandle handle(argStr);
+
+    std::cout << "Enable external reference clock on device " << std::endl;
+    auto conn = ConnectionRegistry::makeConnection(handle);
+    if (conn == nullptr)
+    {
+        std::cout << "No available device!" << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (not conn->IsOpen())
+    {
+        std::cout << "Connection not open!" << std::endl;
+        ConnectionRegistry::freeConnection(conn);
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "  Setting fRef: " << fref/1e6 << "MHz, fVco: " << fvco/1e6 << "MHz..." << std::endl << std::flush;
+    int rCount = 125;
+    int nCount = 384;
+    unsigned char data[12];
+
+    m_pModule->SetDefaults();
+    m_pModule->SetFrefFvco(fref, fvco, rCount, nCount);
+    m_pModule->GetConfig(data);
+
+    std::vector<uint32_t> dataWr;
+    for(int i=0; i<12; i+=3)
+        dataWr.push_back((uint32_t)data[i] << 16 | (uint32_t)data[i+1] << 8 | data[i+2]);
+
+    int status;
+    // ADF4002 needs to be writen 4 values of 24 bits
+    status = conn->TransactSPI(0x30, dataWr.data(), nullptr, 4);
+    if (status != 0)
+    {
+        std::cout << "Transaction failed!" << std::endl;
+        ConnectionRegistry::freeConnection(conn);
+        return EXIT_FAILURE;
+    }
 
     std::cout << "  Free connection... " << std::flush;
     ConnectionRegistry::freeConnection(conn);
@@ -337,12 +399,15 @@ int main(int argc, char *argv[])
         {"bw",      required_argument, 0, 'b'},
         {"dir",     required_argument, 0, 'd'},
         {"chans",   required_argument, 0, 'c'},
+        {"refclk", optional_argument, 0, 'E'},
+        {"fref",    optional_argument, 0, 'R'},
+        {"fvco",    optional_argument, 0, 'V'},
         {0, 0, 0,  0}
     };
 
     std::string argStr, dir("BOTH"), chans("ALL");
-    double start(0.0), stop(0.0), step(1e6), bw(30e6);
-    bool testTiming(false), calSweep(false), update(false), force(false);
+    double start(0.0), stop(0.0), step(1e6), bw(30e6), fref(10.0e6), fvco(30.720e6);
+    bool testTiming(false), calSweep(false), extRef(false), update(false), force(false);
     int long_index = 0;
     int option = 0;
     while ((option = getopt_long_only(argc, argv, "", long_options, &long_index)) != -1)
@@ -372,11 +437,18 @@ int main(int argc, char *argv[])
         case 'd': if (optarg != NULL) dir = optarg; break;
         case 'c': if (optarg != NULL) chans = optarg; break;
         case 'F': force = true; break;
+        case 'E':
+            extRef = true;
+            if (optarg != NULL) argStr = "none," + std::string(optarg);
+            break;
+        case 'R': if (optarg != NULL) fref = std::stod(optarg); break;
+        case 'V': if (optarg != NULL) fvco = std::stod(optarg); break;
         }
     }
 
     if (testTiming) return deviceTestTiming(argStr);
     if (calSweep) return deviceCalSweep(argStr, start, stop, step, bw, dir, chans);
+    if (extRef) return enableExtRefClk(argStr, fref, fvco);
     if (update) return programUpdate(force, argStr);
 
     //unknown or unspecified options, do help...
