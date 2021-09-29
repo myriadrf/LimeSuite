@@ -164,8 +164,10 @@ static int makeDevice(void)
 }
 
 /***********************************************************************
- * enable external reference clock  10MHz / 30.720MHz
+ * Enable external reference clock 
  **********************************************************************/
+#define ADF4002_SPI_INDEX 0x30
+#define PERIPH_INPUT_RD_0 0xc8
 static int enableExtRefClk(const std::string &argStr, const double fref, const double fvco)
 {
     lime::ADF4002* m_pModule;
@@ -187,7 +189,7 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
         return EXIT_FAILURE;
     }
 
-    std::cout << "  Setting fRef: " << fref/1e6 << "MHz, fVco: " << fvco/1e6 << "MHz..." << std::endl << std::flush;
+    std::cout << "  Setting fRef: " << fref/1e6 << "MHz, fVco: " << fvco/1e6 << "MHz..." << std::endl;
     int rCount = 125;
     int nCount = 384;
     unsigned char data[12];
@@ -202,7 +204,7 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
 
     int status;
     // ADF4002 needs to be writen 4 values of 24 bits
-    status = conn->TransactSPI(0x30, dataWr.data(), nullptr, 4);
+    status = conn->TransactSPI(ADF4002_SPI_INDEX, dataWr.data(), nullptr, 4);
     if (status != 0)
     {
         std::cout << "Transaction failed!" << std::endl;
@@ -211,9 +213,16 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
     }
 
     uint16_t adfLocked = 0;
-    conn->ReadRegister(0x00c8, adfLocked);
-    adfLocked = adfLocked >> 1;
-    std::cout << "  ADF4002 Lock State: " << adfLocked << std::endl << std::flush;
+    status = conn->ReadRegister(PERIPH_INPUT_RD_0, adfLocked); 
+    if (status != 0)
+    {
+        std::cout << "ReadRegister failed!" << std::endl;
+        ConnectionRegistry::freeConnection(conn);
+        return EXIT_FAILURE;
+    }
+    // Bit 2 is the lock state
+    adfLocked = (adfLocked & 0x02) >> 1;
+    std::cout << "  ADF4002 Lock State: " << adfLocked << std::endl;
 
     std::cout << "  Free connection... " << std::flush;
     ConnectionRegistry::freeConnection(conn);
