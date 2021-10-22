@@ -540,7 +540,7 @@ int LMS64CProtocol::ProgramWrite(const char *data_src, const size_t length, cons
     int portionNumber;
     int status = 0;
     eCMD_LMS cmd;
-    if(device != FPGA)
+    if(device == HPM || device == FX3)
         cmd = CMD_MEMORY_WR;
     else if(device == FPGA)
         cmd = CMD_ALTERA_FPGA_GW_WR;
