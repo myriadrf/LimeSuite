@@ -7,3 +7,6 @@ mcu_program/*.plg
 mcu_program/*.uvopt
 mcu_program/*.uvproj
 docs/LMS_API_Documentation/*
+docs/sphinx/_build
+docs/sphinx/venv
+docs/sphinx/doxyoutput
