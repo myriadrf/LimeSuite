@@ -14,6 +14,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import textwrap
 
 # -- Project information -----------------------------------------------------
 
@@ -64,7 +65,12 @@ exhale_args = {
     # TIP: if using the sphinx-bootstrap-theme, you need
     # "treeViewIsBootstrap": True,
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin":    "INPUT = ../../src"
+    "exhaleDoxygenStdin":    "INPUT = ../../src",
+    "exhaleDoxygenStdin": textwrap.dedent('''
+        INPUT = ../../src
+        EXCLUDE = ../../src/resources ../../src/ConnectionFTDI/FTD3XXLibrary
+    ''')
+    # "verboseBuild": True
 }
 
 # Add any paths that contain templates here, relative to this directory.
