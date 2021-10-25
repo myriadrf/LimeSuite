@@ -156,8 +156,11 @@ include(ConnectionFX3/CMakeLists.txt)
 include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
-include(ConnectionRemote/CMakeLists.txt)
 include(ConnectionSPI/CMakeLists.txt)
+
+## Remote connection is not safe or efficient, it should not be in releases (github #263)
+## it's only for debugging purposes when USB device cannot be used by multiple applications simultaneously.
+#include(ConnectionRemote/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp
@@ -258,7 +261,7 @@ if (ENABLE_GUI)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
     include_directories(limeRFE)
-    
+
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)
 
@@ -268,7 +271,7 @@ if (ENABLE_GUI)
     set_target_properties(LimeSuiteGUI PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BINARY_OUTPUT_DIR})
     target_compile_definitions(LimeSuiteGUI PRIVATE WIN32_LEAN_AND_MEAN)
-        
+
     target_link_libraries(LimeSuiteGUI LimeSuite oglGraph ${wxWidgets_LIBRARIES})
 
     if (MSVC)

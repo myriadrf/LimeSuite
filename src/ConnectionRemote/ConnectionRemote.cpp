@@ -4,6 +4,11 @@
     @brief Implementation of EVB7 connection of serial COM port.
 */
 
+// On some systems USB device can only be used by single application at a time.
+// Remote connection is ONLY for debugging purposes to allow to forward communications
+// from external application to inspect and adjust board configuration at runtime.
+// It may cause performance issues (github #263)
+
 #include "ConnectionRemote.h"
 #include <string>
 #include "string.h"

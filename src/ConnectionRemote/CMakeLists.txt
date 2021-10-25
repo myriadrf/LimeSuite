@@ -16,10 +16,11 @@ set(CONNECTION_REMOTE_SOURCES
 include(FeatureSummary)
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_REMOTE "Enable Remote connection" OFF "ENABLE_LIBRARY" OFF)
-add_feature_info(ConnectionRemote ENABLE_REMOTE "Remote Connection support for testing")
+add_feature_info(ConnectionRemote ENABLE_REMOTE "DO NOT ENABLE. Feature is for internal development debugging only")
 if (NOT ENABLE_REMOTE)
     return()
 endif()
+message(WARNING "ENABLE_REMOTE is only for internal debugging purposes, do not use for releases")
 
 target_compile_definitions(LimeSuite PRIVATE -DREMOTE_CONTROL)
 ########################################################################
