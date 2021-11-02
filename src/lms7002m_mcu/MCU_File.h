@@ -2,11 +2,7 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
-
-#if !(defined(max)) && _MSC_VER
-	// VC fix
-	#define max __max
-#endif
+#include <algorithm>
 
 using namespace std;
 
@@ -526,7 +522,7 @@ public:
 
 	FILE *Handle() { return m_file; };
 	vector<MemBlock>	m_chunks;
-	unsigned long		m_top;
+	size_t	m_top;
 private:
 	FILE				*m_file;
 };
