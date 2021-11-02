@@ -1,0 +1,65 @@
+name: CMake
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  INSTALL_PREFIX: ${{github.workspace}}/deps
+  SOAPY_SDR_BRANCH: master
+  WIN_WXWIDGETS_LIBS_DIR: ${{github.workspace}}\deps\wxWidgets\lib\vc140_dll
+  
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -qq libusb-1.0-0-dev libwxbase3.0-dev libwxgtk3.0-gtk3-dev liboctave-dev
+      
+    - name: Install osx dependencies
+      if: matrix.os == 'macos-latest'
+      run: brew install libusb wxmac
+      
+    - name: Download windows dependencies
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir ${{github.workspace}}\deps
+        curl -o ${{github.workspace}}\deps\FX3SDK.zip -L https://downloads.myriadrf.org/project/limesuite/appveyor/FX3SDK.zip
+        7z x ${{github.workspace}}\deps\FX3SDK.zip -o${{github.workspace}}\deps\FX3SDK
+        curl -o ${{github.workspace}}\deps\wxWidgets-3.1.0-headers.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxWidgets-3.1.0-headers.7z
+        7z x ${{github.workspace}}\deps\wxWidgets-3.1.0-headers.7z -o${{github.workspace}}\deps\wxWidgets
+        curl -o ${{github.workspace}}\deps\wxMSW-3.1.0_Dev.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxMSW-3.1.0_vc140_Dev.7z
+        7z x ${{github.workspace}}\deps\wxMSW-3.1.0_Dev.7z -o${{github.workspace}}\deps\wxWidgets
+      
+    - name: install SoapySDR from source
+      run: |
+        git clone https://github.com/pothosware/SoapySDR.git
+        cd SoapySDR
+        git checkout ${{env.SOAPY_SDR_BRANCH}}
+        mkdir build && cd build
+        cmake ../ -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_APPS=OFF -DENABLE_TESTS=OFF -DENABLE_PYTHON=OFF -DENABLE_PYTHON3=OFF 
+        cmake --build .
+        cmake --build . --target install
+        
+    - name: Configure CMake (windows)
+      if: matrix.os == 'windows-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_PREFIX_PATH='${{env.INSTALL_PREFIX}};${{env.WIN_WXWIDGETS_LIBS_DIR}}' -DwxWidgets_LIB_DIR=${{env.WIN_WXWIDGETS_LIBS_DIR}} -DwxWidgets_ROOT_DIR=${{github.workspace}}\deps\wxWidgets -DFX3_SDK_PATH=${{github.workspace}}\deps\FX3SDK
+      
+    - name: Configure CMake (linux)
+      if: matrix.os != 'windows-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DENABLE_EVB7COM=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
