@@ -47,6 +47,7 @@ set(LIME_SUITE_SOURCES
     Logger.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
+    lms7002m_mcu/MCU_File.cpp
     ConnectionRegistry/IConnection.cpp
     ConnectionRegistry/ConnectionHandle.cpp
     ConnectionRegistry/ConnectionRegistry.cpp
