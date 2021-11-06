@@ -1,6 +1,8 @@
 #ifndef MCU_FILE_H
 #define MCU_FILE_H
 
+#include "LimeSuiteConfig.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -13,7 +15,7 @@ public:
     std::vector<unsigned char> m_bytes;
 };
 
-class MCU_File
+class LIME_API MCU_File
 {
 public:
     explicit MCU_File(const char *fileName, const char *mode);
