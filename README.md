@@ -12,8 +12,7 @@ following components:
 * **Octave plugin** (provides some basic functionality only);
 
 ## Build Status
-- GitHub: ![example workflow](https://github.com/myriadrf/LimeSuite/actions/workflows/cmake.yml/badge.svg)
-- AppVeyor: [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/stwfarvq0j01qyaq)](https://ci.appveyor.com/project/myriadrf/limesuite)
+- GitHub: ![Cross platform build status](https://github.com/myriadrf/LimeSuite/actions/workflows/cmake.yml/badge.svg)
 
 ## Documentation
 
