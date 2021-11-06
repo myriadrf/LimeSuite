@@ -10,9 +10,7 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
   CMAKE_BUILD_PARALLEL_LEVEL: 2
-  INSTALL_PREFIX: ${{github.workspace}}/deps
   SOAPY_SDR_BRANCH: master
-  WIN_WXWIDGETS_LIBS_DIR: ${{github.workspace}}/deps/wxWidgets/lib/vc14x_dll
   
 jobs:
   build:
@@ -40,7 +38,7 @@ jobs:
         7z x ${{github.workspace}}/deps/FX3SDK.zip -o${{github.workspace}}/deps/FX3SDK
         curl -o ${{github.workspace}}/deps/wxWidgets-headers.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxWidgets-3.1.5-headers.7z
         7z x ${{github.workspace}}/deps/wxWidgets-headers.7z -o${{github.workspace}}/deps/wxWidgets
-        curl -o ${{github.workspace}}/deps/wxWidgets.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxMSW-3.1.5_vc14x_Dev.7z
+        curl -o ${{github.workspace}}/deps/wxWidgets.7z -L https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxMSW-3.1.5_vc14x_x64_Dev.7z
         7z x ${{github.workspace}}/deps/wxWidgets.7z -o${{github.workspace}}/deps/wxWidgets
       
     - name: install SoapySDR from source
@@ -55,11 +53,11 @@ jobs:
         
     - name: Configure CMake (windows)
       if: matrix.os == 'windows-latest'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_PREFIX_PATH=${{env.INSTALL_PREFIX}} -DwxWidgets_LIB_DIR=${{env.WIN_WXWIDGETS_LIBS_DIR}} -DWX_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DwxWidgets_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
       
     - name: Configure CMake (linux)
       if: matrix.os != 'windows-latest'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} -DENABLE_EVB7COM=ON
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
