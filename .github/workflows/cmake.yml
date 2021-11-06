@@ -55,7 +55,7 @@ jobs:
         
     - name: Configure CMake (windows)
       if: matrix.os == 'windows-latest'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_PREFIX_PATH=${{env.INSTALL_PREFIX}} -DwxWidgets_LIB_DIR=${{env.WIN_WXWIDGETS_LIBS_DIR}} -DwxWidgets_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_EVB7COM=ON -DCMAKE_PREFIX_PATH=${{env.INSTALL_PREFIX}} -DwxWidgets_LIB_DIR=${{env.WIN_WXWIDGETS_LIBS_DIR}} -DWX_ROOT_DIR=${{github.workspace}}/deps/wxWidgets -DFX3_SDK_PATH=${{github.workspace}}/deps/FX3SDK
       
     - name: Configure CMake (linux)
       if: matrix.os != 'windows-latest'
