@@ -9,7 +9,7 @@ option(BUILD_SHARED_LIBS "Build the shared library" ON)
 option(ENABLE_NEW_GAIN_BEHAVIOUR "Enable new gain functionality" OFF)
 
 #include modules for finding CyAPI
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 if(POLICY CMP0015)
     cmake_policy(SET CMP0015 NEW)
