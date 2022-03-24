@@ -69,6 +69,17 @@ SoapySDR::ArgInfoList SoapyLMS7::getStreamArgsInfo(const int direction, const si
         argInfos.push_back(info);
     }
 
+    //latency
+    {
+        SoapySDR::ArgInfo info;
+        info.value = "0.5";
+        info.key = "latency";
+        info.name = "Latency";
+        info.description = "Latency vs. performance";
+        info.type = SoapySDR::ArgInfo::FLOAT;
+        argInfos.push_back(info);
+    }
+
     //link format
     {
         SoapySDR::ArgInfo info;
