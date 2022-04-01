@@ -53,7 +53,7 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         return nullptr;
     }
     auto info = conn->GetDeviceInfo();
-    if (info.deviceName ==  lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
+    if (info.deviceName ==  lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI) || info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2))
         device = new LMS7_LimeSDR_mini(conn,obj);
     else if (info.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE))
         device = new LMS7_qLimeSDR(conn,obj);

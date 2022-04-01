@@ -55,6 +55,8 @@ static uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
         loopPair = 1 << 2 | 0x1; // band2 -> LNAH
     else if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
         loopPair = activeBand << 2 | activeLNA;
+    else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2))
+        loopPair = activeBand << 2 | activeLNA;
     return loopPair;
 }
 
@@ -114,7 +116,7 @@ static int SetExtLoopback(IConnection* port, uint8_t ch, bool enable, bool tx)
         value |= enable << (shiftCount+1); //EN_Attenuator
         value |= !enable << (shiftCount+2); //EN_Shunt
     }
-    else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
+    else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI) || devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2))
     {
         //EN_Shunt
         value &= ~(1 << 2);

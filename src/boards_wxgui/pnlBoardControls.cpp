@@ -75,6 +75,7 @@ const std::vector<eLMS_DEV> pnlBoardControls::board_list = {LMS_DEV_UNKNOWN,
                                                 LMS_DEV_LIMESDR_PCIE,
                                                 LMS_DEV_LIMESDR_QPCIE,
                                                 LMS_DEV_LIMESDRMINI,
+                                                LMS_DEV_LIMESDRMINI_V2,
                                                 LMS_DEV_LIMENET_MICRO,
                                                 LMS_DEV_LMS7002M_ULTIMATE_EVB,
                                                 LMS_DEV_LIMESDR_CORE_SDR};
@@ -332,6 +333,7 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
     std::vector<ADC_DAC> paramList;
     if(boardID == GetDeviceName(LMS_DEV_LIMESDR)
         || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI)
+        || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_PCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE)
         || boardID == GetDeviceName(LMS_DEV_LIMESDR_USB_SP)
@@ -343,10 +345,13 @@ std::vector<pnlBoardControls::ADC_DAC> pnlBoardControls::getBoardParams(const st
          || boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR)
          || boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 65535 });
+        else if (boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
+            paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 1023 });
         else
             paramList.push_back(ADC_DAC{ "VCTCXO DAC (runtime)", true, 0, 0, adcUnits2string(RAW), 0, 0, 255 });
         if (boardID != GetDeviceName(LMS_DEV_LIMESDRMINI))
             paramList.push_back(ADC_DAC{"Board Temperature", false, 0, 1, adcUnits2string(TEMPERATURE), 0, 0, 65535});
+
     }
     return paramList;
 }
@@ -457,7 +462,7 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
 
     sizerAnalogRd->Layout();
 
-    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI))
+    if(boardID == GetDeviceName(LMS_DEV_LIMESDRMINI) || boardID == GetDeviceName(LMS_DEV_LIMESDRMINI_V2))
     {
         pnluLimeSDR* pnl = new pnluLimeSDR(this, wxNewId());
         pnl->Initialize(lmsControl);
