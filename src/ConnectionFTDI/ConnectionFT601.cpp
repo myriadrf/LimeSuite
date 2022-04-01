@@ -731,6 +731,8 @@ int ConnectionFT601::ResetStreamBuffers()
 
 int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_mode, int device, ProgrammingCallback callback)
 {
+    int ret;
+
     if (device != LMS64CProtocol::FPGA)
     {
         lime::error("Unsupported programming target");
@@ -744,27 +746,40 @@ int ConnectionFT601::ProgramWrite(const char *data_src, size_t length, int prog_
 
     if (prog_mode == 2)
         return LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
-    if (GetFPGAInfo().gatewareVersion != 0)
+
+    FPGAinfo fpgainfo = GetFPGAInfo();
+
+    if (fpgainfo.hwVersion < 3)
     {
+        // LimeSDR-Mini v1.X
+        if (fpgainfo.gatewareVersion != 0)
+        {
+            LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        }
+        const int sizeUFM = 0x8000;
+        const int sizeCFM0 = 0x42000;
+        const int startUFM = 0x1000;
+        const int startCFM0 = 0x4B000;
+
+        if (length != startCFM0 + sizeCFM0)
+        {
+            lime::error("Invalid image file");
+            return -1;
+        }
+        std::vector<char> buffer(sizeUFM + sizeCFM0);
+        memcpy(buffer.data(), data_src + startUFM, sizeUFM);
+        memcpy(buffer.data() + sizeUFM, data_src + startCFM0, sizeCFM0);
+
+        ret = LMS64CProtocol::ProgramWrite(buffer.data(), buffer.size(), prog_mode, device, callback);
         LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
-    const int sizeUFM = 0x8000;
-    const int sizeCFM0 = 0x42000;
-    const int startUFM = 0x1000;
-    const int startCFM0 = 0x4B000;
-
-    if (length != startCFM0 + sizeCFM0)
+    else
     {
-        lime::error("Invalid image file");
-        return -1;
+        // LimeSDR-Mini v2.X
+        ret = LMS64CProtocol::ProgramWrite(data_src, length, prog_mode, device, callback);
+        LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
     }
-    std::vector<char> buffer(sizeUFM + sizeCFM0);
-    memcpy(buffer.data(), data_src + startUFM, sizeUFM);
-    memcpy(buffer.data() + sizeUFM, data_src + startCFM0, sizeCFM0);
-
-    int ret = LMS64CProtocol::ProgramWrite(buffer.data(), buffer.size(), prog_mode,  device, callback);
-    LMS64CProtocol::ProgramWrite(nullptr, 0, 2, 2, nullptr);
 
     return ret;
 }
