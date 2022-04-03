@@ -188,7 +188,6 @@ message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 set(LMS7SUITE_GUI_SOURCES
     ADF4002/ADF4002_wxgui.cpp
     lms7002_wxgui/lms7002_pnlXBUF_view.cpp
-    lms7002_wxgui/lms7002_wxgui.cpp
     lms7002_wxgui/lms7002_pnlRFE_view.cpp
     lms7002_wxgui/lms7002_pnlCalibrations_view.cpp
     lms7002_wxgui/lms7002_pnlTRF_view.cpp

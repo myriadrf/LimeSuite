@@ -120,7 +120,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	m_scrolledWindow1->SetSizer( contentSizer );
 	m_scrolledWindow1->Layout();
-	bSizer6->Add( m_scrolledWindow1, 4, wxALIGN_BOTTOM|wxBOTTOM|wxEXPAND, 5 );
+	bSizer6->Add( m_scrolledWindow1, 4, wxEXPAND, 5 );
 	
 	
 	fgSizer8->Add( bSizer6, 1, wxEXPAND, 5 );

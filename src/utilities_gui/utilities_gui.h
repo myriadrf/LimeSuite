@@ -58,35 +58,6 @@ class dlgConnectionSettings_view : public wxDialog
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class pnlMiniLog_view
-///////////////////////////////////////////////////////////////////////////////
-class pnlMiniLog_view : public wxPanel 
-{
-	private:
-	
-	protected:
-		wxTextCtrl* txtMessageField;
-		wxButton* btnClear;
-		wxButton* btnFullLog;
-		wxChoice* choiceLogLvl;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void OnUpdateGUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void OnBtnClearClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowFullLog( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnLogDataClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onLogLvlChange( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		wxCheckBox* chkLogData;
-		
-		pnlMiniLog_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL ); 
-		~pnlMiniLog_view();
-	
-};
-
-///////////////////////////////////////////////////////////////////////////////
 /// Class dlgFullMessageLog_view
 ///////////////////////////////////////////////////////////////////////////////
 class dlgFullMessageLog_view : public wxDialog 
