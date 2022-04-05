@@ -71,7 +71,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     cmbISEL_DAC_AFE = new wxComboBox( this, ID_ISEL_DAC_AFE, wxEmptyString, wxDefaultPosition, wxSize( 162,-1 ), 0, NULL, 0 ); 
     cmbISEL_DAC_AFE->SetToolTip( wxT("Controls the peak current of the DAC output current") );
     
-    fgSizer63->Add( cmbISEL_DAC_AFE, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer63->Add( cmbISEL_DAC_AFE, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT2 = new wxStaticText( this, wxID_ANY, wxT("MUX input of ADC ch. 1"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT2->Wrap( -1 );
@@ -80,7 +80,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     cmbMUX_AFE_1 = new wxComboBox( this, ID_MUX_AFE_1, wxEmptyString, wxDefaultPosition, wxSize( 315,-1 ), 0, NULL, 0 ); 
     cmbMUX_AFE_1->SetToolTip( wxT("Controls the MUX at the input of the ADC channel 1") );
     
-    fgSizer63->Add( cmbMUX_AFE_1, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer63->Add( cmbMUX_AFE_1, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT3 = new wxStaticText( this, wxID_ANY, wxT("MUX input of ADC ch. 2"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT3->Wrap( -1 );
@@ -89,7 +89,7 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     cmbMUX_AFE_2 = new wxComboBox( this, ID_MUX_AFE_2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbMUX_AFE_2->SetToolTip( wxT("Controls the MUX at the input of the ADC channel 2") );
     
-    fgSizer63->Add( cmbMUX_AFE_2, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer63->Add( cmbMUX_AFE_2, 0, wxEXPAND, 0 );
     
     
     fgSizer63->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -100,10 +100,10 @@ lms7002_pnlAFE_view::lms7002_pnlAFE_view( wxWindow* parent, wxWindowID id, const
     rgrMODE_INTERLEAVE_AFE->SetSelection( 1 );
     rgrMODE_INTERLEAVE_AFE->SetToolTip( wxT("time interleaves the two ADCs into one ADC") );
     
-    fgSizer63->Add( rgrMODE_INTERLEAVE_AFE, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer63->Add( rgrMODE_INTERLEAVE_AFE, 0, wxALL|wxALIGN_LEFT|wxALIGN_TOP, 0 );
     
     
-    fgSizer62->Add( fgSizer63, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer62->Add( fgSizer63, 0, wxALL|wxALIGN_LEFT|wxALIGN_TOP, 0 );
     
     
     this->SetSizer( fgSizer62 );

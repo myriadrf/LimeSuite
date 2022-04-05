@@ -76,7 +76,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer47->Add( chkEN_LDO_VCOGN, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer47, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer47, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer48;
     sbSizer48 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("RX RF") ), wxVERTICAL );
@@ -102,7 +102,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer48->Add( chkEN_LDO_TIA14, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer48, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer48, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer49;
     sbSizer49 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("SX TX") ), wxVERTICAL );
@@ -128,7 +128,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer49->Add( chkEN_LDO_VCOSXT, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer49, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer49, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer50;
     sbSizer50 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("SX RX") ), wxVERTICAL );
@@ -154,7 +154,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer50->Add( chkEN_LDO_VCOSXR, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer50, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer50, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer51;
     sbSizer51 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Digital Blocks") ), wxVERTICAL );
@@ -170,7 +170,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer51->Add( chkPD_LDO_DIGIp2, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer51, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer51, 1, wxALIGN_TOP, 5 );
     
     wxStaticBoxSizer* sbSizer52;
     sbSizer52 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("XBUF") ), wxVERTICAL );
@@ -186,7 +186,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer52->Add( chkEN_LDO_RXBUF, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer52, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer52, 1, wxALIGN_TOP, 5 );
     
     wxStaticBoxSizer* sbSizer58;
     sbSizer58 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Tx RF") ), wxVERTICAL );
@@ -202,7 +202,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer58->Add( chkEN_LDO_TLOB, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer58, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer70->Add( sbSizer58, 1, wxALIGN_TOP, 5 );
     
     wxStaticBoxSizer* sbSizer54;
     sbSizer54 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("SPI Buffer to analog blocks") ), wxVERTICAL );
@@ -210,7 +210,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     chkPD_LDO_SPIBUF = new wxCheckBox( sbSizer54->GetStaticBox(), ID_PD_LDO_SPIBUF, wxT("PD_LDO_SPIBUF"), wxDefaultPosition, wxDefaultSize, 0 );
     chkPD_LDO_SPIBUF->SetToolTip( wxT("Enables the LDO") );
     
-    sbSizer54->Add( chkPD_LDO_SPIBUF, 0, flags, 0 );
+    sbSizer54->Add( chkPD_LDO_SPIBUF, 0, wxEXPAND, 0 );
     
     wxFlexGridSizer* fgSizer251;
     fgSizer251 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -231,7 +231,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     cmbISINK_SPIBUFF->Append( wxT("500 Ohm") );
     cmbISINK_SPIBUFF->Append( wxT("476 Ohm") );
     cmbISINK_SPIBUFF->Append( wxT("10 kOhm") );
-    fgSizer251->Add( cmbISINK_SPIBUFF, 0, flags, 0 );
+    fgSizer251->Add( cmbISINK_SPIBUFF, 0, wxEXPAND, 0 );
     
     
     sbSizer54->Add( fgSizer251, 1, wxEXPAND, 5 );
@@ -248,7 +248,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer53->Add( chkEN_LDO_AFE, 0, flags, 0 );
     
     
-    fgSizer70->Add( sbSizer53, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer70->Add( sbSizer53, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_TOP, 0 );
     
     wxStaticBoxSizer* sbSizer55;
     sbSizer55 = new wxStaticBoxSizer( new wxStaticBox( sbSizer46->GetStaticBox(), wxID_ANY, wxT("Tx BB") ), wxVERTICAL );
@@ -256,7 +256,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     chkEN_LDO_TBB = new wxCheckBox( sbSizer55->GetStaticBox(), ID_EN_LDO_TBB, wxT("EN_LDO_TBB"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_LDO_TBB->SetToolTip( wxT("Enables the LDO") );
     
-    sbSizer55->Add( chkEN_LDO_TBB, 0, flags, 0 );
+    sbSizer55->Add( chkEN_LDO_TBB, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_TOP, 0 );
     
     
     fgSizer70->Add( sbSizer55, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -267,7 +267,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     chkEN_LDO_RBB = new wxCheckBox( sbSizer56->GetStaticBox(), ID_EN_LDO_RBB, wxT("EN_LDO_RBB"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_LDO_RBB->SetToolTip( wxT("Enables the LDO") );
     
-    sbSizer56->Add( chkEN_LDO_RBB, 0, flags, 0 );
+    sbSizer56->Add( chkEN_LDO_RBB, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_TOP, 0 );
     
     
     fgSizer70->Add( sbSizer56, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -278,7 +278,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     chkEN_LDO_TIA12 = new wxCheckBox( sbSizer57->GetStaticBox(), ID_EN_LDO_TIA12, wxT("EN_LDO_TIA12"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_LDO_TIA12->SetToolTip( wxT("Enables the LDO") );
     
-    sbSizer57->Add( chkEN_LDO_TIA12, 0, flags, 0 );
+    sbSizer57->Add( chkEN_LDO_TIA12, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_TOP, 0 );
     
     
     fgSizer70->Add( sbSizer57, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -289,7 +289,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     chkEN_LDO_DIG = new wxCheckBox( sbSizer59->GetStaticBox(), ID_EN_LDO_DIG, wxT("EN_LDO_DIG"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_LDO_DIG->SetToolTip( wxT("Enables the LDO") );
     
-    sbSizer59->Add( chkEN_LDO_DIG, 0, flags, 0 );
+    sbSizer59->Add( chkEN_LDO_DIG, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_TOP, 0 );
     
     
     fgSizer70->Add( sbSizer59, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -457,7 +457,7 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     sbSizer61->Add( fgSizer72, 0, flags, 0 );
     
     
-    fgSizer255->Add( sbSizer61, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer255->Add( sbSizer61, 1, wxLEFT|wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer62;
     sbSizer62 = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL3, wxID_ANY, wxT("Bias") ), wxVERTICAL );
@@ -608,10 +608,10 @@ lms7002_pnlLDO_view::lms7002_pnlLDO_view( wxWindow* parent, wxWindowID id, const
     fgSizer73->Add( chkEN_LOADIMP_LDO_DIGIp1, 0, flags, 0 );
     
     
-    sbSizer62->Add( fgSizer73, 0, flags, 0 );
+    sbSizer62->Add( fgSizer73, 0, wxEXPAND, 0 );
     
     
-    fgSizer255->Add( sbSizer62, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer255->Add( sbSizer62, 1, wxLEFT|wxEXPAND, 5 );
     
     
     fgSizer69->Add( fgSizer255, 1, wxEXPAND, 5 );
