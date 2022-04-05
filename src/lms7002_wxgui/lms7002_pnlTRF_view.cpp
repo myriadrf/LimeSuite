@@ -88,7 +88,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbLOADR_PDET_TRF->Append( wxEmptyString );
     cmbLOADR_PDET_TRF->SetToolTip( wxT("Controls the resistive load of the Power detector") );
     
-    fgSizer36->Add( cmbLOADR_PDET_TRF, 0, flags, 0 );
+    fgSizer36->Add( cmbLOADR_PDET_TRF, 0, wxEXPAND, 0 );
     
     
     sbSizerPowerDetector->Add( fgSizer36, 0, flags, 0 );
@@ -112,7 +112,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LIN_TXPAD_TRF = new wxComboBox( sbSizerBiasCurrent->GetStaticBox(), ID_ICT_LIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LIN_TXPAD_TRF->SetToolTip( wxT("Control the bias current of the linearization section of the TXPAD") );
     
-    fgSizer37->Add( cmbICT_LIN_TXPAD_TRF, 0, flags, 0 );
+    fgSizer37->Add( cmbICT_LIN_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT13 = new wxStaticText( sbSizerBiasCurrent->GetStaticBox(), wxID_ANY, wxT("Main gm section"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT13->Wrap( -1 );
@@ -121,7 +121,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbICT_MAIN_TXPAD_TRF = new wxComboBox( sbSizerBiasCurrent->GetStaticBox(), ID_ICT_MAIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_MAIN_TXPAD_TRF->SetToolTip( wxT("Control the bias current of the main gm section of the TXPAD") );
     
-    fgSizer37->Add( cmbICT_MAIN_TXPAD_TRF, 0, flags, 0 );
+    fgSizer37->Add( cmbICT_MAIN_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     
     sbSizerBiasCurrent->Add( fgSizer37, 0, flags, 0 );
@@ -140,14 +140,14 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     
     ID_STATICTEXT14 = new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("I channel:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT14->Wrap( -1 );
-    fgSizer39->Add( ID_STATICTEXT14, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer39->Add( ID_STATICTEXT14, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_I_TRF = new wxComboBox( sbSizerTrimDuty->GetStaticBox(), ID_CDC_I_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     fgSizer39->Add( cmbCDC_I_TRF, 1, wxEXPAND, 5 );
     
     ID_STATICTEXT15 = new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("Q channel:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT15->Wrap( -1 );
-    fgSizer39->Add( ID_STATICTEXT15, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer39->Add( ID_STATICTEXT15, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_Q_TRF = new wxComboBox( sbSizerTrimDuty->GetStaticBox(), ID_CDC_Q_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     fgSizer39->Add( cmbCDC_Q_TRF, 1, wxEXPAND, 5 );
@@ -204,7 +204,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbEN_LOWBWLOMX_TMX_TRF->Append( wxT("Low band -bias resistor 30K") );
     cmbEN_LOWBWLOMX_TMX_TRF->SetToolTip( wxT("Controls the high pass pole frequency of the RC biasing the gate of the mixer switches") );
     
-    fgSizer34->Add( cmbEN_LOWBWLOMX_TMX_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbEN_LOWBWLOMX_TMX_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT3 = new wxStaticText( this, wxID_ANY, wxT("TXPAD power detector preamplifier gain"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT3->Wrap( -1 );
@@ -213,7 +213,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbEN_AMPHF_PDET_TRF = new wxComboBox( this, ID_EN_AMPHF_PDET_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbEN_AMPHF_PDET_TRF->SetToolTip( wxT("Enables the TXPAD power detector preamplifier") );
     
-    fgSizer34->Add( cmbEN_AMPHF_PDET_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbEN_AMPHF_PDET_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT4 = new wxStaticText( this, wxID_ANY, wxT("Switched capacitor at TXPAD output"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT4->Wrap( -1 );
@@ -222,7 +222,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbF_TXPAD_TRF = new wxComboBox( this, ID_F_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbF_TXPAD_TRF->SetToolTip( wxT("Controls the switched capacitor at the TXPAD output. Is used for fine tuning of the TXPAD output") );
     
-    fgSizer34->Add( cmbF_TXPAD_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbF_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT5 = new wxStaticText( this, wxID_ANY, wxT("Loss of the loopback path at the TX side"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT5->Wrap( -1 );
@@ -235,7 +235,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbL_LOOPB_TXPAD_TRF->Append( wxT("24 dB") );
     cmbL_LOOPB_TXPAD_TRF->SetToolTip( wxT("Controls the loss of the of the loopback path at the TX side") );
     
-    fgSizer34->Add( cmbL_LOOPB_TXPAD_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbL_LOOPB_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT6 = new wxStaticText( this, wxID_ANY, wxT("TXPAD linearizing part gain"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT6->Wrap( -1 );
@@ -244,7 +244,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbLOSS_LIN_TXPAD_TRF = new wxComboBox( this, ID_LOSS_LIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbLOSS_LIN_TXPAD_TRF->SetToolTip( wxT("Controls the gain of the linearizing part of of the TXPAD") );
     
-    fgSizer34->Add( cmbLOSS_LIN_TXPAD_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbLOSS_LIN_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT7 = new wxStaticText( this, wxID_ANY, wxT("TXPAD gain control"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT7->Wrap( -1 );
@@ -253,7 +253,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbLOSS_MAIN_TXPAD_TRF = new wxComboBox( this, ID_LOSS_MAIN_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbLOSS_MAIN_TXPAD_TRF->SetToolTip( wxT("Controls the gain  output power of the TXPAD") );
     
-    fgSizer34->Add( cmbLOSS_MAIN_TXPAD_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbLOSS_MAIN_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT8 = new wxStaticText( this, wxID_ANY, wxT("Bias voltage at gate of TXPAD cascade"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT8->Wrap( -1 );
@@ -262,7 +262,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbVGCAS_TXPAD_TRF = new wxComboBox( this, ID_VGCAS_TXPAD_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbVGCAS_TXPAD_TRF->SetToolTip( wxT("Controls the bias voltage at the gate of TXPAD cascade") );
     
-    fgSizer34->Add( cmbVGCAS_TXPAD_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbVGCAS_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT9 = new wxStaticText( this, wxID_ANY, wxT("Bias at gate of mixer NMOS"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT9->Wrap( -1 );
@@ -271,7 +271,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbLOBIASN_TXM_TRF = new wxComboBox( this, ID_LOBIASN_TXM_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbLOBIASN_TXM_TRF->SetToolTip( wxT("Controls the bias at the gate of the mixer NMOS") );
     
-    fgSizer34->Add( cmbLOBIASN_TXM_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbLOBIASN_TXM_TRF, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT10 = new wxStaticText( this, wxID_ANY, wxT("Bias at gate of mixer PMOS"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT10->Wrap( -1 );
@@ -280,10 +280,10 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     cmbLOBIASP_TXX_TRF = new wxComboBox( this, ID_LOBIASP_TXX_TRF, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbLOBIASP_TXX_TRF->SetToolTip( wxT("Controls the bias at the gate of the mixer PMOS") );
     
-    fgSizer34->Add( cmbLOBIASP_TXX_TRF, 0, flags, 0 );
+    fgSizer34->Add( cmbLOBIASP_TXX_TRF, 0, wxEXPAND, 0 );
     
     
-    fgSizer33->Add( fgSizer34, 0, flags, 0 );
+    fgSizer33->Add( fgSizer34, 0, 0, 0 );
     
     
     this->SetSizer( fgSizer33 );
