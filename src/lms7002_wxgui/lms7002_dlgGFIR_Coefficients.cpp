@@ -34,7 +34,7 @@ lms7002_dlgGFIR_Coefficients::lms7002_dlgGFIR_Coefficients( wxWindow* parent, wx
     ID_STATICTEXT3->Wrap( -1 );
     fgSizer237->Add( ID_STATICTEXT3, 1, wxLEFT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
-    spinCoefCount = new wxSpinCtrl( this, wxID_ANY, wxT("40"), wxDefaultPosition, wxSize( 64,-1 ), wxSP_ARROW_KEYS, 0, 120, 40 );
+    spinCoefCount = new wxSpinCtrl( this, wxID_ANY, wxT("40"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 120, 40 );
     fgSizer237->Add( spinCoefCount, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
     
@@ -73,10 +73,10 @@ lms7002_dlgGFIR_Coefficients::lms7002_dlgGFIR_Coefficients( wxWindow* parent, wx
     gridCoef->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
     gridCoef->SetMinSize( wxSize( 100,200 ) );
     
-    fgSizer238->Add( gridCoef, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer238->Add( gridCoef, 1, wxEXPAND, 5 );
     
     
-    fgSizer235->Add( fgSizer238, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer235->Add( fgSizer238, 1, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer239;
     fgSizer239 = new wxFlexGridSizer( 0, 3, 0, 0 );
