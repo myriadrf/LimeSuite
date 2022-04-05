@@ -10,288 +10,180 @@ using namespace lime;
 lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     : wxPanel(parent, id, pos, size, style), lmsControl(nullptr)
 {
-    const int flags = 0;
-    wxFlexGridSizer* fgSizer309;
-    fgSizer309 = new wxFlexGridSizer( 0, 3, 5, 5 );
-    fgSizer309->AddGrowableCol( 0 );
-    fgSizer309->AddGrowableCol( 1 );
-    fgSizer309->SetFlexibleDirection( wxBOTH );
-    fgSizer309->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    wxStaticBoxSizer* sbSizer159;
-    sbSizer159 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Receiver") ), wxVERTICAL );
-    
-    wxStaticBoxSizer* sbSizer971;
-    sbSizer971 = new wxStaticBoxSizer( new wxStaticBox( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Gain Corrector") ), wxVERTICAL );
-    
-    wxFlexGridSizer* fgSizer1311;
-    fgSizer1311 = new wxFlexGridSizer( 0, 2, 0, 5 );
-    fgSizer1311->AddGrowableCol( 1 );
-    fgSizer1311->SetFlexibleDirection( wxBOTH );
-    fgSizer1311->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT51 = new wxStaticText( sbSizer971->GetStaticBox(), wxID_ANY, wxT("I:"));
-    ID_STATICTEXT51->Wrap( -1 );
-    fgSizer1311->Add( ID_STATICTEXT51, 0, flags, 0 );
-    
-    cmbGCORRI_RXTSP = new NumericSlider( sbSizer971->GetStaticBox(), ID_GCORRI_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRI_RXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer1311->Add( cmbGCORRI_RXTSP);
-    
-    ID_STATICTEXT41 = new wxStaticText( sbSizer971->GetStaticBox(), wxID_ANY, wxT("Q:"));
-    ID_STATICTEXT41->Wrap( -1 );
-    fgSizer1311->Add( ID_STATICTEXT41, 0, flags, 0 );
-    
-    cmbGCORRQ_RXTSP = new NumericSlider( sbSizer971->GetStaticBox(), ID_GCORRQ_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRQ_RXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer1311->Add( cmbGCORRQ_RXTSP);
-    
-    ID_BUTTON101 = new wxButton( sbSizer971->GetStaticBox(), wxID_ANY, wxT("Calibrate"));
-    ID_BUTTON101->SetDefault(); 
-    ID_BUTTON101->Hide();
-    
-    fgSizer1311->Add( ID_BUTTON101, 1, flags, 5 );
-    
-    
-    sbSizer971->Add( fgSizer1311, 0, flags, 0 );
-    
-    
-    sbSizer159->Add( sbSizer971);
-    
-    wxStaticBoxSizer* sbSizer961;
-    sbSizer961 = new wxStaticBoxSizer( new wxStaticBox( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Phase Corr") ), wxVERTICAL );
-    
-    cmbIQCORR_RXTSP = new NumericSlider( sbSizer961->GetStaticBox(), ID_IQCORR_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -2048, 2047, 0 );
-    cmbIQCORR_RXTSP->SetMinSize( wxSize( 200,-1 ) );
-    
-    sbSizer961->Add( cmbIQCORR_RXTSP);
-    
-    wxFlexGridSizer* fgSizer1301;
-    fgSizer1301 = new wxFlexGridSizer( 0, 3, 0, 0 );
-    fgSizer1301->SetFlexibleDirection( wxBOTH );
-    fgSizer1301->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT161 = new wxStaticText( sbSizer961->GetStaticBox(), wxID_ANY, wxT("Alpha (Deg):"));
-    ID_STATICTEXT161->Wrap( -1 );
-    fgSizer1301->Add( ID_STATICTEXT161, 1, flags, 5 );
-    
-    txtPhaseAlpha1 = new wxStaticText( sbSizer961->GetStaticBox(), wxID_ANY, wxT("0"));
-    txtPhaseAlpha1->Wrap( -1 );
-    fgSizer1301->Add( txtPhaseAlpha1, 1, flags, 5 );
-    
-    
-    sbSizer961->Add( fgSizer1301, 1, flags, 5 );
-    
-    
-    sbSizer159->Add( sbSizer961);
-    
-    wxStaticBoxSizer* sbSizerDC;
-    sbSizerDC = new wxStaticBoxSizer( new wxStaticBox( sbSizer159->GetStaticBox(), wxID_ANY, wxT("DC") ), wxVERTICAL );
-    
-    wxFlexGridSizer* fgSizer45;
-    fgSizer45 = new wxFlexGridSizer( 0, 2, 0, 5 );
-    fgSizer45->AddGrowableCol( 1 );
-    fgSizer45->SetFlexibleDirection( wxBOTH );
-    fgSizer45->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT6 = new wxStaticText( sbSizerDC->GetStaticBox(), wxID_ANY, wxT("Offset I:"));
-    ID_STATICTEXT6->Wrap( -1 );
-    fgSizer45->Add( ID_STATICTEXT6, 0, flags, 0 );
-    
-    cmbDCOFFI_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFI_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
-    fgSizer45->Add( cmbDCOFFI_RFE);
-    
-    ID_STATICTEXT7 = new wxStaticText( sbSizerDC->GetStaticBox(), wxID_ANY, wxT("Offset Q:"));
-    ID_STATICTEXT7->Wrap( -1 );
-    fgSizer45->Add( ID_STATICTEXT7, 0, flags, 0 );
-    
-    cmbDCOFFQ_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFQ_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
-    fgSizer45->Add( cmbDCOFFQ_RFE);
-    
-    
-    sbSizerDC->Add( fgSizer45, 0, flags, 0 );
-    
-    chkEN_DCOFF_RXFE_RFE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_EN_DCOFF_RXFE_RFE, wxT("Enable DC offset"));
-    chkEN_DCOFF_RXFE_RFE->SetToolTip( wxT("Enables the DCOFFSET block for the RXFE") );
-    
-    sbSizerDC->Add( chkEN_DCOFF_RXFE_RFE, 0, flags, 0 );
-    
-    chkDCMODE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_DCMODE, wxT("Automatic DC calibration mode"));
-    sbSizerDC->Add( chkDCMODE, 0, flags, 0 );
-    
-    
-    sbSizer159->Add( sbSizerDC);
-    
-    wxFlexGridSizer* fgSizer247;
-    fgSizer247 = new wxFlexGridSizer( 0, 2, 0, 0 );
-    fgSizer247->SetFlexibleDirection( wxBOTH );
-    fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    btnCalibrateRx = new wxButton( sbSizer159->GetStaticBox(), wxID_ANY, wxT("Calibrate RX"));
-    fgSizer247->Add( btnCalibrateRx, 0, wxALL, 5 );
-    
-    
-    sbSizer159->Add( fgSizer247, 1, flags, 5 );
-    
-    
-    fgSizer309->Add( sbSizer159, 1, flags, 5 );
-    
-    wxStaticBoxSizer* sbSizer148;
-    sbSizer148 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Transmitter") ), wxVERTICAL );
-    
-    wxStaticBoxSizer* sbSizer97;
-    sbSizer97 = new wxStaticBoxSizer( new wxStaticBox( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Gain Corrector") ), wxVERTICAL );
-    
-    wxFlexGridSizer* fgSizer131;
-    fgSizer131 = new wxFlexGridSizer( 0, 2, 0, 5 );
-    fgSizer131->AddGrowableCol( 1 );
-    fgSizer131->SetFlexibleDirection( wxBOTH );
-    fgSizer131->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT5 = new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("I:"));
-    ID_STATICTEXT5->Wrap( -1 );
-    fgSizer131->Add( ID_STATICTEXT5, 0, flags, 0 );
-    
-    cmbGCORRI_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer131->Add( cmbGCORRI_TXTSP);
-    
-    ID_STATICTEXT4 = new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("Q:"));
-    ID_STATICTEXT4->Wrap( -1 );
-    fgSizer131->Add( ID_STATICTEXT4, 0, flags, 0 );
-    
-    cmbGCORRQ_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer131->Add( cmbGCORRQ_TXTSP);
-    
-    ID_BUTTON10 = new wxButton( sbSizer97->GetStaticBox(), wxID_ANY, wxT("Calibrate"));
-    ID_BUTTON10->SetDefault(); 
-    ID_BUTTON10->Hide();
-    
-    fgSizer131->Add( ID_BUTTON10, 1, flags, 5 );
-    
-    
-    sbSizer97->Add( fgSizer131, 0, flags, 0 );
-    
-    
-    sbSizer148->Add( sbSizer97);
-    
-    wxStaticBoxSizer* sbSizer96;
-    sbSizer96 = new wxStaticBoxSizer( new wxStaticBox( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Phase Corr") ), wxVERTICAL );
-    
-    cmbIQCORR_TXTSP = new NumericSlider( sbSizer96->GetStaticBox(), ID_IQCORR_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -2048, 2047, 0 );
-    cmbIQCORR_TXTSP->SetMinSize( wxSize( 200,-1 ) );
-    
-    sbSizer96->Add( cmbIQCORR_TXTSP);
-    
-    wxFlexGridSizer* fgSizer130;
-    fgSizer130 = new wxFlexGridSizer( 0, 3, 0, 0 );
-    fgSizer130->SetFlexibleDirection( wxBOTH );
-    fgSizer130->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT16 = new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("Alpha (Deg):"));
-    ID_STATICTEXT16->Wrap( -1 );
-    fgSizer130->Add( ID_STATICTEXT16, 1, flags, 5 );
-    
-    txtPhaseAlpha = new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("0"));
-    txtPhaseAlpha->Wrap( -1 );
-    fgSizer130->Add( txtPhaseAlpha, 1, flags, 5 );
-    
-    
-    sbSizer96->Add( fgSizer130, 1, flags, 5 );
-    
-    
-    sbSizer148->Add( sbSizer96);
-    
-    wxStaticBoxSizer* sbSizer95;
-    sbSizer95 = new wxStaticBoxSizer( new wxStaticBox( sbSizer148->GetStaticBox(), wxID_ANY, wxT("DC Corrector") ), wxVERTICAL );
-    
-    wxFlexGridSizer* fgSizer129;
-    fgSizer129 = new wxFlexGridSizer( 0, 2, 0, 5 );
-    fgSizer129->AddGrowableCol( 1 );
-    fgSizer129->SetFlexibleDirection( wxBOTH );
-    fgSizer129->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    ID_STATICTEXT8 = new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("I:"));
-    ID_STATICTEXT8->Wrap( -1 );
-    fgSizer129->Add( ID_STATICTEXT8, 0, flags, 0 );
-    
-    cmbDCCORRI_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
-    cmbDCCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer129->Add( cmbDCCORRI_TXTSP);
-    
-    ID_STATICTEXT9 = new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("Q:"));
-    ID_STATICTEXT9->Wrap( -1 );
-    fgSizer129->Add( ID_STATICTEXT9, 0, flags, 0 );
-    
-    cmbDCCORRQ_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
-    cmbDCCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
-    
-    fgSizer129->Add( cmbDCCORRQ_TXTSP);
-    
-    
-    sbSizer95->Add( fgSizer129, 1, flags, 0 );
-    
-    
-    sbSizer148->Add( sbSizer95);
-    
-    wxFlexGridSizer* fgSizer248;
-    fgSizer248 = new wxFlexGridSizer( 0, 2, 0, 0 );
-    fgSizer248->SetFlexibleDirection( wxBOTH );
-    fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    btnCalibrateTx = new wxButton( sbSizer148->GetStaticBox(), wxID_ANY, wxT("Calibrate TX"));
-    fgSizer248->Add( btnCalibrateTx, 0, wxALL, 5 );
-    
-    
-    sbSizer148->Add( fgSizer248, 1, flags, 5 );
-    
-    
-    fgSizer309->Add( sbSizer148, 1, flags, 5 );
-    
-    wxStaticBoxSizer* sbSizer165;
-    sbSizer165 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Full calibration") ), wxVERTICAL );
-    
-    btnCalibrateAll = new wxButton( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibrate All"));
-    sbSizer165->Add( btnCalibrateAll, 0, wxALL, 5 );
+    const int textFlags = wxALIGN_LEFT|wxLEFT|wxALIGN_CENTER_VERTICAL;
+    const int margins = 5;
+    wxFlexGridSizer* mainSizer;
+    mainSizer = new wxFlexGridSizer( 0, 3, margins, margins);
+    mainSizer->AddGrowableCol( 0 );
+    mainSizer->AddGrowableCol( 1 );
+    mainSizer->SetFlexibleDirection( wxHORIZONTAL );
+    mainSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    wxStaticBoxSizer* sbReceiverSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Receiver") ), wxVERTICAL );
+    {
+        wxStaticBoxSizer* sbSizer971 = new wxStaticBoxSizer( new wxStaticBox( sbReceiverSizer->GetStaticBox(), wxID_ANY, wxT("Gain Corrector") ), wxVERTICAL );
+        
+        wxFlexGridSizer* fgSizer1311 = new wxFlexGridSizer( 0, 2, 0, margins);
+        fgSizer1311->AddGrowableCol( 1 );
+        fgSizer1311->SetFlexibleDirection( wxHORIZONTAL );
+        fgSizer1311->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+        
+        fgSizer1311->Add( new wxStaticText( sbSizer971->GetStaticBox(), wxID_ANY, wxT("I:")), 0, textFlags, margins);
+        cmbGCORRI_RXTSP = new NumericSlider( sbSizer971->GetStaticBox(), ID_GCORRI_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
+        //cmbGCORRI_RXTSP->SetMinSize( wxSize( 48,-1 ) );
+        fgSizer1311->Add( cmbGCORRI_RXTSP, 0, wxEXPAND|wxRIGHT, margins);
+        
+        fgSizer1311->Add( new wxStaticText( sbSizer971->GetStaticBox(), wxID_ANY, wxT("Q:")), 0, textFlags, margins);
+        cmbGCORRQ_RXTSP = new NumericSlider( sbSizer971->GetStaticBox(), ID_GCORRQ_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
+        //cmbGCORRQ_RXTSP->SetMinSize( wxSize( 48,-1 ) );
+        
+        fgSizer1311->Add( cmbGCORRQ_RXTSP, 0, wxEXPAND|wxRIGHT, margins);
+        sbSizer971->Add( fgSizer1311, 0, wxEXPAND, 0 );
+        sbReceiverSizer->Add( sbSizer971, 0, wxEXPAND|wxALL, margins);
+    }
+    {
+        wxStaticBoxSizer* sbSizer961 = new wxStaticBoxSizer( new wxStaticBox( sbReceiverSizer->GetStaticBox(), wxID_ANY, wxT("Phase Corr") ), wxVERTICAL );
+        cmbIQCORR_RXTSP = new NumericSlider( sbSizer961->GetStaticBox(), ID_IQCORR_RXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -2048, 2047, 0 );
+        //cmbIQCORR_RXTSP->SetMinSize( wxSize( 200,-1 ) );    
+        sbSizer961->Add( cmbIQCORR_RXTSP, 0, wxEXPAND|wxALL, margins);
+        wxBoxSizer* fgSizer1301 = new wxBoxSizer(wxHORIZONTAL);
+        fgSizer1301->Add( new wxStaticText( sbSizer961->GetStaticBox(), wxID_ANY, wxT("Alpha (Deg):")), 0, textFlags, margins );
+        txtRxPhaseAlpha = new wxStaticText( sbSizer961->GetStaticBox(), wxID_ANY, wxT("0"));
+        fgSizer1301->Add( txtRxPhaseAlpha, 0, textFlags, margins);
+        sbSizer961->Add( fgSizer1301, 0, wxALL, margins);
+        sbReceiverSizer->Add( sbSizer961, 0, wxEXPAND|wxALL, margins);
+    }
+     
+    {
+        wxStaticBoxSizer* sbSizerDC = new wxStaticBoxSizer( new wxStaticBox( sbReceiverSizer->GetStaticBox(), wxID_ANY, wxT("DC") ), wxVERTICAL );
+        
+        wxFlexGridSizer* fgSizer45 = new wxFlexGridSizer( 0, 2, 0, margins);
+        fgSizer45->AddGrowableCol( 1 );
+        fgSizer45->SetFlexibleDirection( wxBOTH );
+        fgSizer45->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+        
+        fgSizer45->Add( new wxStaticText( sbSizerDC->GetStaticBox(), wxID_ANY, wxT("Offset I:")), 0, textFlags, margins);
+        cmbDCOFFI_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFI_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
+        fgSizer45->Add( cmbDCOFFI_RFE, 0, wxEXPAND|wxRIGHT, margins);
+        
+        fgSizer45->Add( new wxStaticText( sbSizerDC->GetStaticBox(), wxID_ANY, wxT("Offset Q:")), 0, textFlags, margins);
+        cmbDCOFFQ_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFQ_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
+        fgSizer45->Add( cmbDCOFFQ_RFE, 0, wxEXPAND|wxRIGHT, margins);
+        
+        sbSizerDC->Add( fgSizer45, 0, wxEXPAND, 0);
+        
+        chkEN_DCOFF_RXFE_RFE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_EN_DCOFF_RXFE_RFE, wxT("Enable DC offset"));
+        chkEN_DCOFF_RXFE_RFE->SetToolTip( wxT("Enables the DCOFFSET block for the RXFE") );
+        
+        sbSizerDC->Add(chkEN_DCOFF_RXFE_RFE);
+        chkDCMODE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_DCMODE, wxT("Automatic DC calibration mode"));
+        sbSizerDC->Add(chkDCMODE);
+        sbReceiverSizer->Add( sbSizerDC, 0, wxEXPAND|wxALL, margins);
+    }
+    
+    btnCalibrateRx = new wxButton( sbReceiverSizer->GetStaticBox(), wxID_ANY, wxT("Calibrate RX"));
+    sbReceiverSizer->Add( btnCalibrateRx, 0, wxALL|wxALIGN_LEFT, margins);
+    
+    
+    mainSizer->Add( sbReceiverSizer, 1, wxLEFT|wxEXPAND, margins);
+    
+    wxStaticBoxSizer* sbTransmitterSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Transmitter") ), wxVERTICAL );
+    {
+        wxStaticBoxSizer* sbSizer97 = new wxStaticBoxSizer( new wxStaticBox( sbTransmitterSizer->GetStaticBox(), wxID_ANY, wxT("Gain Corrector") ), wxVERTICAL );
+        
+        wxFlexGridSizer* fgSizer131;
+        fgSizer131 = new wxFlexGridSizer( 0, 2, 0, 0);
+        fgSizer131->AddGrowableCol( 1 );
+        fgSizer131->SetFlexibleDirection( wxBOTH );
+        fgSizer131->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+        
+        fgSizer131->Add( new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("I:")), 0, textFlags, margins);
+        
+        cmbGCORRI_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
+        //cmbGCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );        
+        fgSizer131->Add( cmbGCORRI_TXTSP, 0, wxEXPAND|wxRIGHT, margins);
+
+        fgSizer131->Add( new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("Q:")), 0, textFlags, margins);
+        cmbGCORRQ_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
+        //cmbGCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+        fgSizer131->Add( cmbGCORRQ_TXTSP, 0, wxEXPAND|wxRIGHT, margins);
+        
+        sbSizer97->Add( fgSizer131, 0, wxEXPAND, 0);
+        sbTransmitterSizer->Add( sbSizer97, 0, wxEXPAND|wxALL, margins);
+    }
+    
+    {
+        wxStaticBoxSizer* sbSizer96 = new wxStaticBoxSizer( new wxStaticBox( sbTransmitterSizer->GetStaticBox(), wxID_ANY, wxT("Phase Corr") ), wxVERTICAL );
+        
+        cmbIQCORR_TXTSP = new NumericSlider( sbSizer96->GetStaticBox(), ID_IQCORR_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -2048, 2047, 0 );
+        //cmbIQCORR_TXTSP->SetMinSize( wxSize( 200,-1 ) );
+        
+        sbSizer96->Add( cmbIQCORR_TXTSP, 0, wxEXPAND|wxALL, margins);
+        wxFlexGridSizer* fgSizer130 = new wxFlexGridSizer( 0, 3, 0, 0 );
+        fgSizer130->SetFlexibleDirection( wxBOTH );
+        fgSizer130->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+        fgSizer130->Add( new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("Alpha (Deg):")), 0, textFlags, margins );
+        txtPhaseAlpha = new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("0"));
+        fgSizer130->Add( txtPhaseAlpha, 0, textFlags, margins );
+        sbSizer96->Add( fgSizer130, 0, wxALL, margins );
+        sbTransmitterSizer->Add( sbSizer96, 0, wxEXPAND|wxALL, margins);
+    }
+    
+    {
+        wxStaticBoxSizer* sbSizer95 = new wxStaticBoxSizer( new wxStaticBox( sbTransmitterSizer->GetStaticBox(), wxID_ANY, wxT("DC Corrector") ), wxVERTICAL );
+        
+        wxFlexGridSizer* fgSizer129;
+        fgSizer129 = new wxFlexGridSizer( 0, 2, 0, margins);
+        fgSizer129->AddGrowableCol( 1 );
+        fgSizer129->SetFlexibleDirection( wxHORIZONTAL );
+        fgSizer129->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+        
+        fgSizer129->Add( new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("I:")), 0, textFlags, margins);
+        
+        cmbDCCORRI_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
+        //cmbDCCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );        
+        fgSizer129->Add( cmbDCCORRI_TXTSP, 0, wxEXPAND|wxRIGHT, margins);
+
+        fgSizer129->Add( new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("Q:")), 0, textFlags, margins);
+        cmbDCCORRQ_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
+        //cmbDCCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+        fgSizer129->Add( cmbDCCORRQ_TXTSP, 0, wxEXPAND|wxRIGHT, margins);
+        
+        sbSizer95->Add( fgSizer129, 0, wxEXPAND, margins);
+        sbTransmitterSizer->Add( sbSizer95, 0, wxEXPAND|wxALL, margins);
+    }
+    
+
+    btnCalibrateTx = new wxButton( sbTransmitterSizer->GetStaticBox(), wxID_ANY, wxT("Calibrate TX"));
+    sbTransmitterSizer->Add( btnCalibrateTx, 0, wxALL|wxALIGN_LEFT, margins);
+    
+    
+    mainSizer->Add( sbTransmitterSizer, 1, wxEXPAND, margins);
+    
+    wxStaticBoxSizer* fullCalibrationSizer;
+    fullCalibrationSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Full calibration") ), wxVERTICAL );
+    
+    btnCalibrateAll = new wxButton( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("Calibrate All"));
+    fullCalibrationSizer->Add( btnCalibrateAll, 0, wxALL, margins);
     
     wxFlexGridSizer* fgSizer328;
     fgSizer328 = new wxFlexGridSizer( 0, 2, 0, 0 );
     fgSizer328->SetFlexibleDirection( wxBOTH );
     fgSizer328->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    m_staticText431 = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxT("CGEN Ref. Clk (MHz):"));
-    m_staticText431->Wrap( -1 );
-    fgSizer328->Add( m_staticText431, 0, wxALL, 5 );
+    fgSizer328->Add( new wxStaticText( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("CGEN Ref. Clk (MHz):")), 0, textFlags, margins);
     
-    lblCGENrefClk = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxT("???"));
-    lblCGENrefClk->Wrap( -1 );
-    fgSizer328->Add( lblCGENrefClk, 0, wxALL, 5 );
+    lblCGENrefClk = new wxStaticText( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("???"));
+    fgSizer328->Add( lblCGENrefClk, 0, textFlags, margins);
     
-    m_staticText372 = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration bandwidth (MHz):"));
-    m_staticText372->Wrap( -1 );
-    fgSizer328->Add( m_staticText372, 0, wxALL, 5 );
+    fgSizer328->Add( new wxStaticText( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("Calibration bandwidth (MHz):")), 0, textFlags, margins);
+    txtCalibrationBW = new wxTextCtrl( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("5"));
     
-    txtCalibrationBW = new wxTextCtrl( sbSizer165->GetStaticBox(), wxID_ANY, wxT("5"));
-    #ifdef __WXGTK__
-    if ( !txtCalibrationBW->HasFlag( wxTE_MULTILINE ) )
-    {
-    txtCalibrationBW->SetMaxLength( 10 );
-    }
-    #else
-    txtCalibrationBW->SetMaxLength( 10 );
-    #endif
     txtCalibrationBW->SetMinSize( wxSize( 50,-1 ) );
     
-    fgSizer328->Add( txtCalibrationBW, 0, 0, 5 );
+    fgSizer328->Add( txtCalibrationBW, 0, wxEXPAND, margins);
     
-    
-    sbSizer165->Add( fgSizer328, 1, flags, 5 );
+    fullCalibrationSizer->Add( fgSizer328, 0, wxRIGHT, margins);
     
     wxFlexGridSizer* fgSizer246;
     fgSizer246 = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -300,24 +192,24 @@ lms7002_pnlCalibrations_view::lms7002_pnlCalibrations_view(wxWindow* parent, wxW
     
     wxString rgrCalibrationMethodChoices[] = { wxT("Chip internal"), wxT("On board external") };
     int rgrCalibrationMethodNChoices = sizeof( rgrCalibrationMethodChoices ) / sizeof( wxString );
-    rgrCalibrationMethod = new wxRadioBox( sbSizer165->GetStaticBox(), wxID_ANY, wxT("Calibration loopback:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
+    rgrCalibrationMethod = new wxRadioBox( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxT("Calibration loopback:"), wxDefaultPosition, wxDefaultSize, rgrCalibrationMethodNChoices, rgrCalibrationMethodChoices, 1, wxRA_SPECIFY_COLS );
     rgrCalibrationMethod->SetSelection( 0 );
-    fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, 5 );
+    fgSizer246->Add( rgrCalibrationMethod, 0, wxALL, margins);
     
-    lblCalibrationNote = new wxStaticText( sbSizer165->GetStaticBox(), wxID_ANY, wxEmptyString);
+    lblCalibrationNote = new wxStaticText( fullCalibrationSizer->GetStaticBox(), wxID_ANY, wxEmptyString);
     lblCalibrationNote->Wrap( -1 );
-    fgSizer246->Add( lblCalibrationNote, 0, wxALL, 5 );
+    fgSizer246->Add( lblCalibrationNote, 0, wxALL, margins);
     
     
-    sbSizer165->Add( fgSizer246, 0, 0, 5 );
+    fullCalibrationSizer->Add( fgSizer246, 0, 0, margins);
     
     
-    fgSizer309->Add( sbSizer165, 0, 0, 5 );
+    mainSizer->Add( fullCalibrationSizer, 1, wxRIGHT, margins);
     
     
-    this->SetSizer( fgSizer309 );
+    this->SetSizer( mainSizer );
     this->Layout();
-    fgSizer309->Fit( this );
+    mainSizer->Fit( this );
     
     // Connect Events
     cmbGCORRI_RXTSP->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlCalibrations_view::ParameterChangeHandler ), NULL, this );
@@ -490,6 +382,16 @@ void lms7002_pnlCalibrations_view::ParameterChangeHandler(wxCommandEvent& event)
         value |= abs(event.GetInt()) & 0x3F;
         LMS_WriteParam(lmsControl,parameter,value);
     }
+    else if(event.GetEventObject() == cmbIQCORR_TXTSP)
+    {
+        float angle = atan(event.GetInt() / 2048.0) * 180 / 3.141596;
+        txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
+    }
+    else if(event.GetEventObject() == cmbIQCORR_RXTSP)
+    {
+        float angle = atan(event.GetInt() / 2048.0) * 180 / 3.141596;
+        txtRxPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
+    }
     else
         LMS_WriteParam(lmsControl,parameter,event.GetInt());
 }
@@ -503,12 +405,16 @@ void lms7002_pnlCalibrations_view::UpdateGUI()
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_RXTSP->SetValue(value);
+    float angle = atan(value / 2048.0) * 180 / 3.141596;
+    txtRxPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
 
     LMS_ReadParam(lmsControl,LMS7param(IQCORR_TXTSP),(uint16_t*)&value);
     bitsToShift = (15 - LMS7param(IQCORR_TXTSP).msb - LMS7param(IQCORR_TXTSP).lsb);
     value = value << bitsToShift;
     value = value >> bitsToShift;
     cmbIQCORR_TXTSP->SetValue(value);
+    angle = atan(value / 2048.0) * 180 / 3.141596;
+    txtPhaseAlpha->SetLabel(wxString::Format("%.3f", angle));
 
     LMS_ReadParam(lmsControl,LMS7param(DCOFFI_RFE),(uint16_t*)&value);
     int16_t dcvalue = value & 0x3F;

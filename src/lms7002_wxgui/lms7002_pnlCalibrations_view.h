@@ -48,7 +48,7 @@ protected:
 		wxButton* ID_BUTTON101;
 		NumericSlider* cmbIQCORR_RXTSP;
 		wxStaticText* ID_STATICTEXT161;
-		wxStaticText* txtPhaseAlpha1;
+		wxStaticText* txtRxPhaseAlpha;
 		wxStaticText* ID_STATICTEXT6;
 		NumericSlider* cmbDCOFFI_RFE;
 		wxStaticText* ID_STATICTEXT7;
