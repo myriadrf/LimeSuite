@@ -166,7 +166,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     mTabTrxGain = new lms7002_pnlGains_view( tabsNotebook, ID_TAB_GAINS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     tabsNotebook->AddPage( mTabTrxGain, wxT("TRX Gain"), false );
     
-    fgSizer298->Add( tabsNotebook, 0, 0, 5 );
+    
     
     // Connect Events
     ID_BUTTON2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnOpenProject ), NULL, this );
@@ -187,7 +187,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 
     mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
     tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
-
+    fgSizer298->Add( tabsNotebook, 0, wxEXPAND, 5 );
     this->SetSizer( fgSizer298 );
     this->Layout();
 }
@@ -280,7 +280,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
         mTabR3->UpdateGUI();
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
-    cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
+    //cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
 #endif
 }
 
