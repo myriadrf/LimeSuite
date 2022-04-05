@@ -195,7 +195,7 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("LMS7002 Software "), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT1->Wrap( -1 );
-	ID_STATICTEXT1->SetFont( wxFont( 18, 70, 90, 90, false, wxEmptyString ) );
+	ID_STATICTEXT1->SetFont( ID_STATICTEXT1->GetFont().Scale(2) );
 	
 	fgSizer4->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	
