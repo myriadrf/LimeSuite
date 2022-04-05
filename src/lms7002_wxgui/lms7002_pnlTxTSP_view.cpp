@@ -87,7 +87,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     sbSizer103->Add( fgSizer145, 0, 0, 0 );
     
     
-    fgSizer216->Add( sbSizer103, 1, 0, 5 );
+    fgSizer216->Add( sbSizer103, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer104;
     sbSizer104 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("BIST") ), wxVERTICAL );
@@ -128,11 +128,11 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer146->Add( lblBSIGQ_TXTSP, 0, flags, 0 );
     
     
-    sbSizer104->Add( fgSizer146, 0, flags, 0 );
+    sbSizer104->Add( fgSizer146, 0, wxEXPAND, 0 );
     
     btnReadBIST = new wxButton( sbSizer104->GetStaticBox(), wxID_ANY, wxT("Read BIST"), wxDefaultPosition, wxDefaultSize, 0 );
     btnReadBIST->SetDefault(); 
-    sbSizer104->Add( btnReadBIST, 1, flags, 5 );
+    sbSizer104->Add( btnReadBIST, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
     fgSizer216->Add( sbSizer104, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -628,7 +628,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     lblFCWPHOmodeName = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("FCW (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
     lblFCWPHOmodeName->Wrap( -1 );
-    fgSizer229->Add( lblFCWPHOmodeName, 0, flags, 5 );
+    fgSizer229->Add( lblFCWPHOmodeName, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     txtFCWPHOmodeAdditional = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -652,7 +652,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT25 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Bits to dither:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT25->Wrap( -1 );
-    fgSizer153->Add( ID_STATICTEXT25, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer153->Add( ID_STATICTEXT25, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbDTHBIT_TX = new wxComboBox( sbSizer106->GetStaticBox(), ID_DTHBIT_TX, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
     cmbDTHBIT_TX->SetToolTip( wxT("NCO bits to dither") );
@@ -663,18 +663,13 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer228->Add( fgSizer153, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     wxStaticBoxSizer* sbSizer105;
-    sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxHORIZONTAL );
-    
-    wxFlexGridSizer* fgSizer147;
-    fgSizer147 = new wxFlexGridSizer( 0, 1, 5, 0 );
-    fgSizer147->SetFlexibleDirection( wxBOTH );
-    fgSizer147->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxVERTICAL );
     
     chkTSGSWAPIQ_TXTSP = new wxCheckBox( sbSizer105->GetStaticBox(), ID_TSGSWAPIQ_TXTSP, wxT("Swap I and Q\n signal sources from TSG"), wxDefaultPosition, wxDefaultSize, 0 );
     chkTSGSWAPIQ_TXTSP->SetValue(true); 
     chkTSGSWAPIQ_TXTSP->SetToolTip( wxT("Swap signals at test signal generator's output") );
     
-    fgSizer147->Add( chkTSGSWAPIQ_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizer105->Add( chkTSGSWAPIQ_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     wxFlexGridSizer* fgSizer148;
     fgSizer148 = new wxFlexGridSizer( 0, 2, 5, 5 );
@@ -687,7 +682,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     rgrTSGFCW_TXTSP->SetSelection( 0 );
     rgrTSGFCW_TXTSP->SetToolTip( wxT("Set frequency of TSG's NCO") );
     
-    fgSizer148->Add( rgrTSGFCW_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer148->Add( rgrTSGFCW_TXTSP, 1, wxEXPAND, 5 );
     
     wxString rgrTSGMODE_TXTSPChoices[] = { wxT("NCO"), wxT("DC source") };
     int rgrTSGMODE_TXTSPNChoices = sizeof( rgrTSGMODE_TXTSPChoices ) / sizeof( wxString );
@@ -695,7 +690,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     rgrTSGMODE_TXTSP->SetSelection( 0 );
     rgrTSGMODE_TXTSP->SetToolTip( wxT("Test signal generator mode") );
     
-    fgSizer148->Add( rgrTSGMODE_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer148->Add( rgrTSGMODE_TXTSP, 1, wxEXPAND, 5 );
     
     wxString rgrINSEL_TXTSPChoices[] = { wxT("LML output"), wxT("Test signal") };
     int rgrINSEL_TXTSPNChoices = sizeof( rgrINSEL_TXTSPChoices ) / sizeof( wxString );
@@ -703,7 +698,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     rgrINSEL_TXTSP->SetSelection( 0 );
     rgrINSEL_TXTSP->SetToolTip( wxT("Input source of TxTSP") );
     
-    fgSizer148->Add( rgrINSEL_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer148->Add( rgrINSEL_TXTSP, 1, wxEXPAND, 5 );
     
     wxString rgrTSGFC_TXTSPChoices[] = { wxT("-6 dB"), wxT("Full scale") };
     int rgrTSGFC_TXTSPNChoices = sizeof( rgrTSGFC_TXTSPChoices ) / sizeof( wxString );
@@ -711,13 +706,9 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     rgrTSGFC_TXTSP->SetSelection( 0 );
     rgrTSGFC_TXTSP->SetToolTip( wxT("TSG full scale control") );
     
-    fgSizer148->Add( rgrTSGFC_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer148->Add( rgrTSGFC_TXTSP, 1, wxEXPAND, 5 );
     
-    
-    fgSizer147->Add( fgSizer148, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
-    
-    
-    sbSizer105->Add( fgSizer147, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizer105->Add( fgSizer148, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     
     fgSizer228->Add( sbSizer105, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -742,6 +733,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     wxFlexGridSizer* fgSizer220;
     fgSizer220 = new wxFlexGridSizer( 0, 3, 0, 5 );
     fgSizer220->AddGrowableCol( 1 );
+    fgSizer220->AddGrowableCol( 2 );
     fgSizer220->SetFlexibleDirection( wxBOTH );
     fgSizer220->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
@@ -757,21 +749,21 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT23 = new wxStaticText( this, wxID_ANY, wxT("DC_REG:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT23->Wrap( -1 );
-    fgSizer150->Add( ID_STATICTEXT23, 1, flags, 5 );
+    fgSizer150->Add( ID_STATICTEXT23, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     txtDC_REG_TXTSP = new wxTextCtrl( this, ID_DC_REG_TXTSP, wxT("ffff"), wxDefaultPosition, wxSize( 40,-1 ), 0 );
-    fgSizer150->Add( txtDC_REG_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer150->Add( txtDC_REG_TXTSP, 1, wxEXPAND, 5 );
     
     
     fgSizer149->Add( fgSizer150, 1, flags, 5 );
     
     btnLoadDCI = new wxButton( this, wxID_ANY, wxT("Load to DC I"), wxDefaultPosition, wxDefaultSize, 0 );
     btnLoadDCI->SetDefault(); 
-    fgSizer149->Add( btnLoadDCI, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer149->Add( btnLoadDCI, 1, wxEXPAND, 5 );
     
     btnLoadDCQ = new wxButton( this, wxID_ANY, wxT("Load to DC Q"), wxDefaultPosition, wxDefaultSize, 0 );
     btnLoadDCQ->SetDefault(); 
-    fgSizer149->Add( btnLoadDCQ, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer149->Add( btnLoadDCQ, 1, wxEXPAND, 5 );
     
     
     fgSizer220->Add( fgSizer149, 1, wxEXPAND, 5 );
@@ -785,10 +777,10 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer132->SetFlexibleDirection( wxBOTH );
     fgSizer132->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    cmbCMIX_SC_TXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_SC_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 100,-1 ), 0, NULL, 0 );
+    cmbCMIX_SC_TXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_SC_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbCMIX_SC_TXTSP->Append( wxT("Upconvert") );
     cmbCMIX_SC_TXTSP->Append( wxT("Downconvert") );
-    fgSizer132->Add( cmbCMIX_SC_TXTSP, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer132->Add( cmbCMIX_SC_TXTSP, 1, wxEXPAND|wxALL, 5 );
     
     wxFlexGridSizer* fgSizer133;
     fgSizer133 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -798,7 +790,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT24 = new wxStaticText( sbSizer98->GetStaticBox(), wxID_ANY, wxT("Gain:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT24->Wrap( -1 );
-    fgSizer133->Add( ID_STATICTEXT24, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer133->Add( ID_STATICTEXT24, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCMIX_GAIN_TXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_GAIN_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbCMIX_GAIN_TXTSP->Append( wxT("-6 dB") );
@@ -808,13 +800,13 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     cmbCMIX_GAIN_TXTSP->Append( wxT("+6 dB") );
     cmbCMIX_GAIN_TXTSP->SetToolTip( wxT("Gain of CMIX output") );
     
-    fgSizer133->Add( cmbCMIX_GAIN_TXTSP, 1, wxALIGN_CENTER_HORIZONTAL|flags|wxLEFT, 5 );
+    fgSizer133->Add( cmbCMIX_GAIN_TXTSP, 1, wxEXPAND|wxLEFT, 5 );
     
     
-    fgSizer132->Add( fgSizer133, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer132->Add( fgSizer133, 1, wxEXPAND, 5 );
     
     
-    sbSizer98->Add( fgSizer132, 1, flags, 5 );
+    sbSizer98->Add( fgSizer132, 1, wxEXPAND, 5 );
     
     
     fgSizer220->Add( sbSizer98, 1, wxEXPAND, 5 );
@@ -822,26 +814,16 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     wxStaticBoxSizer* sbSizer99;
     sbSizer99 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Interpolation") ), wxVERTICAL );
     
-    wxFlexGridSizer* fgSizer134;
-    fgSizer134 = new wxFlexGridSizer( 0, 1, 0, 0 );
-    fgSizer134->AddGrowableCol( 0 );
-    fgSizer134->SetFlexibleDirection( wxBOTH );
-    fgSizer134->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
     ID_STATICTEXT7 = new wxStaticText( sbSizer99->GetStaticBox(), wxID_ANY, wxT("HBI ratio:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT7->Wrap( -1 );
-    fgSizer134->Add( ID_STATICTEXT7, 0, wxALL|flags, 5 );
+    sbSizer99->Add( ID_STATICTEXT7, 0, wxALL, 5 );
     
     cmbHBI_OVR_TXTSP = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBI_OVR_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 64,-1 ), 0, NULL, 0 ); 
     cmbHBI_OVR_TXTSP->SetToolTip( wxT("HBI interpolation ratio") );
     
-    fgSizer134->Add( cmbHBI_OVR_TXTSP, 0, flags, 0 );
+    sbSizer99->Add( cmbHBI_OVR_TXTSP, 0, wxEXPAND, 0 );
     
-    
-    sbSizer99->Add( fgSizer134, 1, flags, 0 );
-    
-    
-    fgSizer220->Add( sbSizer99, 1, wxALIGN_LEFT, 5 );
+    fgSizer220->Add( sbSizer99, 1, wxEXPAND, 5 );
     
     
     fgSizer218->Add( fgSizer220, 1, wxEXPAND, 5 );
@@ -870,28 +852,28 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT10 = new wxStaticText( sbSizer100->GetStaticBox(), wxID_ANY, wxT("Length:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT10->Wrap( -1 );
-    fgSizer137->Add( ID_STATICTEXT10, 0, flags, 0 );
+    fgSizer137->Add( ID_STATICTEXT10, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR1_L_TXTSP = new wxComboBox( sbSizer100->GetStaticBox(), ID_GFIR1_L_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
+    cmbGFIR1_L_TXTSP = new wxComboBox( sbSizer100->GetStaticBox(), ID_GFIR1_L_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbGFIR1_L_TXTSP->SetToolTip( wxT("Parameter l of GFIR1 (l = roundUp(CoeffN/5)-1). Unsigned integer") );
     
-    fgSizer137->Add( cmbGFIR1_L_TXTSP, 0, flags, 0 );
+    fgSizer137->Add( cmbGFIR1_L_TXTSP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT11 = new wxStaticText( sbSizer100->GetStaticBox(), wxID_ANY, wxT("Clk ratio:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT11->Wrap( -1 );
-    fgSizer137->Add( ID_STATICTEXT11, 0, flags, 0 );
+    fgSizer137->Add( ID_STATICTEXT11, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR1_N_TXTSP = new wxSpinCtrl( sbSizer100->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 255, 255 );
-    cmbGFIR1_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    cmbGFIR1_N_TXTSP = new wxSpinCtrl( sbSizer100->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 255 );
+    //cmbGFIR1_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer137->Add( cmbGFIR1_N_TXTSP, 0, wxEXPAND, 5 );
     
     
-    sbSizer100->Add( fgSizer137, 0, flags, 0 );
+    sbSizer100->Add( fgSizer137, 0, wxEXPAND, 0 );
     
     btnGFIR1Coef = new wxButton( sbSizer100->GetStaticBox(), wxID_ANY, wxT("Coefficients"), wxDefaultPosition, wxDefaultSize, 0 );
     btnGFIR1Coef->SetDefault(); 
-    sbSizer100->Add( btnGFIR1Coef, 0, flags|wxALIGN_CENTER_HORIZONTAL, 5 );
+    sbSizer100->Add( btnGFIR1Coef, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
     fgSizer135->Add( sbSizer100, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
@@ -907,31 +889,31 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT12 = new wxStaticText( sbSizer101->GetStaticBox(), wxID_ANY, wxT("Length:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT12->Wrap( -1 );
-    fgSizer139->Add( ID_STATICTEXT12, 0, flags, 0 );
+    fgSizer139->Add( ID_STATICTEXT12, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR2_L_TXTSP = new wxComboBox( sbSizer101->GetStaticBox(), ID_GFIR2_L_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
+    cmbGFIR2_L_TXTSP = new wxComboBox( sbSizer101->GetStaticBox(), ID_GFIR2_L_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbGFIR2_L_TXTSP->SetToolTip( wxT("Parameter l of GFIR2 (l = roundUp(CoeffN/5)-1). Unsigned integer") );
     
-    fgSizer139->Add( cmbGFIR2_L_TXTSP, 0, flags, 0 );
+    fgSizer139->Add( cmbGFIR2_L_TXTSP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT13 = new wxStaticText( sbSizer101->GetStaticBox(), wxID_ANY, wxT("Clk ratio:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT13->Wrap( -1 );
-    fgSizer139->Add( ID_STATICTEXT13, 0, flags, 0 );
+    fgSizer139->Add( ID_STATICTEXT13, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR2_N_TXTSP = new wxSpinCtrl( sbSizer101->GetStaticBox(), ID_GFIR2_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 255, 255 );
-    cmbGFIR2_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    cmbGFIR2_N_TXTSP = new wxSpinCtrl( sbSizer101->GetStaticBox(), ID_GFIR2_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 255 );
+    //cmbGFIR2_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer139->Add( cmbGFIR2_N_TXTSP, 0, wxEXPAND, 5 );
     
     
-    sbSizer101->Add( fgSizer139, 0, flags, 0 );
+    sbSizer101->Add( fgSizer139, 0, wxEXPAND, 0 );
     
     btnGFIR2Coef = new wxButton( sbSizer101->GetStaticBox(), wxID_ANY, wxT("Coefficients"), wxDefaultPosition, wxDefaultSize, 0 );
     btnGFIR2Coef->SetDefault(); 
-    sbSizer101->Add( btnGFIR2Coef, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    sbSizer101->Add( btnGFIR2Coef, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
-    fgSizer135->Add( sbSizer101, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer135->Add( sbSizer101, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer102;
     sbSizer102 = new wxStaticBoxSizer( new wxStaticBox( sbSizer138->GetStaticBox(), wxID_ANY, wxT("GFIR3") ), wxVERTICAL );
@@ -944,31 +926,31 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT14 = new wxStaticText( sbSizer102->GetStaticBox(), wxID_ANY, wxT("Length:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT14->Wrap( -1 );
-    fgSizer141->Add( ID_STATICTEXT14, 0, flags, 0 );
+    fgSizer141->Add( ID_STATICTEXT14, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR3_L_TXTSP = new wxComboBox( sbSizer102->GetStaticBox(), ID_GFIR3_L_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
+    cmbGFIR3_L_TXTSP = new wxComboBox( sbSizer102->GetStaticBox(), ID_GFIR3_L_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbGFIR3_L_TXTSP->SetToolTip( wxT("Parameter l of GFIR3 (l = roundUp(CoeffN/5)-1). Unsigned integer") );
     
-    fgSizer141->Add( cmbGFIR3_L_TXTSP, 0, flags, 0 );
+    fgSizer141->Add( cmbGFIR3_L_TXTSP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT15 = new wxStaticText( sbSizer102->GetStaticBox(), wxID_ANY, wxT("Clk ratio:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT15->Wrap( -1 );
-    fgSizer141->Add( ID_STATICTEXT15, 0, flags, 0 );
+    fgSizer141->Add( ID_STATICTEXT15, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbGFIR3_N_TXTSP = new wxSpinCtrl( sbSizer102->GetStaticBox(), ID_GFIR3_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 255, 255 );
-    cmbGFIR3_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    cmbGFIR3_N_TXTSP = new wxSpinCtrl( sbSizer102->GetStaticBox(), ID_GFIR3_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 255 );
+    //cmbGFIR3_N_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer141->Add( cmbGFIR3_N_TXTSP, 0, wxEXPAND, 5 );
     
     
-    sbSizer102->Add( fgSizer141, 0, flags, 0 );
+    sbSizer102->Add( fgSizer141, 0, wxEXPAND, 0 );
     
     btnGFIR3Coef = new wxButton( sbSizer102->GetStaticBox(), wxID_ANY, wxT("Coefficients"), wxDefaultPosition, wxDefaultSize, 0 );
     btnGFIR3Coef->SetDefault(); 
-    sbSizer102->Add( btnGFIR3Coef, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    sbSizer102->Add( btnGFIR3Coef, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
-    fgSizer135->Add( sbSizer102, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer135->Add( sbSizer102, 1, wxEXPAND, 5 );
     
     
     fgSizer259->Add( fgSizer135, 1, wxALL|wxEXPAND, 5 );
@@ -983,7 +965,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtBW = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
     txtBW->Wrap( -1 );
-    fgSizer1351->Add( txtBW, 0, wxALIGN_CENTER|wxALL, 0 );
+    fgSizer1351->Add( txtBW, 0, wxALIGN_CENTER_VERTICAL|wxALL, 0 );
     
     txtLPFBW = new wxTextCtrl( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -994,19 +976,19 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     #else
     txtLPFBW->SetMaxLength( 8 );
     #endif
-    fgSizer1351->Add( txtLPFBW, 0, wxALL, 0 );
+    fgSizer1351->Add( txtLPFBW, 0, wxALL|wxALIGN_CENTER_VERTICAL, 0 );
     
     btnSetLPF = new wxButton( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Set"), wxDefaultPosition, wxDefaultSize, 0 );
     btnSetLPF->SetDefault(); 
-    fgSizer1351->Add( btnSetLPF, 0, wxALL, 0 );
+    fgSizer1351->Add( btnSetLPF, 0, wxALL|wxALIGN_CENTER_VERTICAL, 0 );
     
     txtRATE = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("Sample rate:"), wxDefaultPosition, wxDefaultSize, 0 );
     txtRATE->Wrap( -1 );
-    fgSizer1351->Add( txtRATE, 0, flags|wxALIGN_RIGHT|wxALL, 0 );
+    fgSizer1351->Add( txtRATE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 0 );
     
     txtRATEVAL = new wxStaticText( sbSizer145->GetStaticBox(), wxID_ANY, wxT("0 MHz"), wxDefaultPosition, wxDefaultSize, 0 );
     txtRATEVAL->Wrap( -1 );
-    fgSizer1351->Add( txtRATEVAL, 0, flags|wxALIGN_LEFT|wxALL, 5 );
+    fgSizer1351->Add( txtRATEVAL, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
     
     
     sbSizer145->Add( fgSizer1351, 1, wxEXPAND, 5 );
@@ -1030,7 +1012,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     sbSizer96 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Phase Corr") ), wxVERTICAL );
     
     cmbIQCORR_TXTSP = new NumericSlider( sbSizer96->GetStaticBox(), ID_IQCORR_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -2048, 2047, 0 );
-    cmbIQCORR_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    //cmbIQCORR_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     sbSizer96->Add( cmbIQCORR_TXTSP, 0, wxEXPAND, 5 );
     
@@ -1041,14 +1023,14 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT16 = new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("Alpha (Deg):"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT16->Wrap( -1 );
-    fgSizer130->Add( ID_STATICTEXT16, 1, flags, 5 );
+    fgSizer130->Add( ID_STATICTEXT16, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     txtPhaseAlpha = new wxStaticText( sbSizer96->GetStaticBox(), wxID_ANY, wxT("0"), wxDefaultPosition, wxDefaultSize, 0 );
     txtPhaseAlpha->Wrap( -1 );
-    fgSizer130->Add( txtPhaseAlpha, 1, flags, 5 );
+    fgSizer130->Add( txtPhaseAlpha, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     
-    sbSizer96->Add( fgSizer130, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizer96->Add( fgSizer130, 1, wxALIGN_LEFT|wxALIGN_TOP|wxALL, 5 );
     
     
     fgSizer219->Add( sbSizer96, 1, wxEXPAND, 5 );
@@ -1064,19 +1046,19 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT5 = new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("I:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT5->Wrap( -1 );
-    fgSizer131->Add( ID_STATICTEXT5, 0, 0, 0 );
+    fgSizer131->Add( ID_STATICTEXT5, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbGCORRI_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    //cmbGCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer131->Add( cmbGCORRI_TXTSP, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT4 = new wxStaticText( sbSizer97->GetStaticBox(), wxID_ANY, wxT("Q:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT4->Wrap( -1 );
-    fgSizer131->Add( ID_STATICTEXT4, 0, 0, 0 );
+    fgSizer131->Add( ID_STATICTEXT4, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbGCORRQ_TXTSP = new NumericSlider( sbSizer97->GetStaticBox(), ID_GCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 2047, 0 );
-    cmbGCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    //cmbGCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer131->Add( cmbGCORRQ_TXTSP, 0, wxEXPAND, 5 );
     
@@ -1084,10 +1066,10 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     ID_BUTTON10->SetDefault(); 
     ID_BUTTON10->Hide();
     
-    fgSizer131->Add( ID_BUTTON10, 1, wxALIGN_CENTER_HORIZONTAL|flags, 5 );
+    fgSizer131->Add( ID_BUTTON10, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
-    sbSizer97->Add( fgSizer131, 0, flags, 0 );
+    sbSizer97->Add( fgSizer131, 0, wxEXPAND|wxALL, 5 );
     
     
     fgSizer219->Add( sbSizer97, 1, wxEXPAND, 5 );
@@ -1103,24 +1085,24 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     ID_STATICTEXT8 = new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("I:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT8->Wrap( -1 );
-    fgSizer129->Add( ID_STATICTEXT8, 0, 0, 0 );
+    fgSizer129->Add( ID_STATICTEXT8, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbDCCORRI_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRI_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
-    cmbDCCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    //cmbDCCORRI_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer129->Add( cmbDCCORRI_TXTSP, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT9 = new wxStaticText( sbSizer95->GetStaticBox(), wxID_ANY, wxT("Q:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT9->Wrap( -1 );
-    fgSizer129->Add( ID_STATICTEXT9, 0, 0, 0 );
+    fgSizer129->Add( ID_STATICTEXT9, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbDCCORRQ_TXTSP = new NumericSlider( sbSizer95->GetStaticBox(), ID_DCCORRQ_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, -128, 127, 0 );
-    cmbDCCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
+    //cmbDCCORRQ_TXTSP->SetMinSize( wxSize( 48,-1 ) );
     
     fgSizer129->Add( cmbDCCORRQ_TXTSP, 0, wxEXPAND, 5 );
     
     
-    sbSizer95->Add( fgSizer129, 1, flags, 0 );
+    sbSizer95->Add( fgSizer129, 1, wxEXPAND|wxALL, 5 );
     
     
     fgSizer219->Add( sbSizer95, 1, wxEXPAND, 5 );
