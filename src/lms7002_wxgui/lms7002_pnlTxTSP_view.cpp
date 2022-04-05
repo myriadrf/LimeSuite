@@ -610,7 +610,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     btnUploadNCO = new wxButton( sbSizer106->GetStaticBox(), wxID_ANY, wxT("Upload NCO"), wxDefaultPosition, wxDefaultSize, 0 );
     btnUploadNCO->SetDefault(); 
-    fgSizer228->Add( btnUploadNCO, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer228->Add( btnUploadNCO, 1, wxEXPAND, 5 );
     
     wxString rgrMODE_TXChoices[] = { wxT("FCW"), wxT("PHO") };
     int rgrMODE_TXNChoices = sizeof( rgrMODE_TXChoices ) / sizeof( wxString );
@@ -618,7 +618,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     rgrMODE_TX->SetSelection( 0 );
     rgrMODE_TX->SetToolTip( wxT("Memory table mode") );
     
-    fgSizer228->Add( rgrMODE_TX, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer228->Add( rgrMODE_TX, 1, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer229;
     fgSizer229 = new wxFlexGridSizer( 0, 2, 5, 5 );
@@ -660,7 +660,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer153->Add( cmbDTHBIT_TX, 1, wxEXPAND, 5 );
     
     
-    fgSizer228->Add( fgSizer153, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer228->Add( fgSizer153, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer105;
     sbSizer105 = new wxStaticBoxSizer( new wxStaticBox( sbSizer106->GetStaticBox(), wxID_ANY, wxT("TSG") ), wxVERTICAL );
@@ -669,7 +669,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     chkTSGSWAPIQ_TXTSP->SetValue(true); 
     chkTSGSWAPIQ_TXTSP->SetToolTip( wxT("Swap signals at test signal generator's output") );
     
-    sbSizer105->Add( chkTSGSWAPIQ_TXTSP, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizer105->Add( chkTSGSWAPIQ_TXTSP, 0, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     wxFlexGridSizer* fgSizer148;
     fgSizer148 = new wxFlexGridSizer( 0, 2, 5, 5 );
@@ -708,7 +708,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     fgSizer148->Add( rgrTSGFC_TXTSP, 1, wxEXPAND, 5 );
     
-    sbSizer105->Add( fgSizer148, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizer105->Add( fgSizer148, 0, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     
     fgSizer228->Add( sbSizer105, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
