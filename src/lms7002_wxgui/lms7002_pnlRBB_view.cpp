@@ -17,49 +17,41 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     fgSizer52->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     wxStaticBoxSizer* sbSizerPowerDowns;
-    sbSizerPowerDowns = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Power down controls") ), wxHORIZONTAL );
-    
-    wxFlexGridSizer* fgSizer55;
-    fgSizer55 = new wxFlexGridSizer( 0, 1, 0, 0 );
-    fgSizer55->SetFlexibleDirection( wxBOTH );
-    fgSizer55->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    sbSizerPowerDowns = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Power down controls") ), wxVERTICAL );
 
     chkPD_LPFH_RBB = new wxCheckBox( sbSizerPowerDowns->GetStaticBox(), ID_PD_LPFH_RBB, wxT("LPFH block"));
     chkPD_LPFH_RBB->SetToolTip( wxT("Power down of the LPFH block") );
     
-    fgSizer55->Add( chkPD_LPFH_RBB, 0, flags, 0 );
+    sbSizerPowerDowns->Add( chkPD_LPFH_RBB, 0, flags, 0 );
     
     chkPD_LPFL_RBB = new wxCheckBox( sbSizerPowerDowns->GetStaticBox(), ID_PD_LPFL_RBB, wxT("LPFL block"));
     chkPD_LPFL_RBB->SetToolTip( wxT("Power down of the LPFL block") );
     
-    fgSizer55->Add( chkPD_LPFL_RBB, 0, flags, 0 );
+    sbSizerPowerDowns->Add( chkPD_LPFL_RBB, 0, flags, 0 );
     
     chkPD_PGA_RBB = new wxCheckBox( sbSizerPowerDowns->GetStaticBox(), ID_PD_PGA_RBB, wxT("PGA block"));
     chkPD_PGA_RBB->SetToolTip( wxT("Power down of the PGA block") );
     
-    fgSizer55->Add( chkPD_PGA_RBB, 0, flags, 0 );
+    sbSizerPowerDowns->Add( chkPD_PGA_RBB, 0, flags, 0 );
     
     chkEN_G_RBB = new wxCheckBox( sbSizerPowerDowns->GetStaticBox(), ID_EN_G_RBB, wxT("Enable RBB module"));
     chkEN_G_RBB->SetToolTip( wxT("Enable control for all the RBB_1 power downs") );
     
-    fgSizer55->Add( chkEN_G_RBB, 0, flags, 0 );
+    sbSizerPowerDowns->Add( chkEN_G_RBB, 0, flags, 0 );
     
     wxStaticBoxSizer* sbSizer35;
-    sbSizer35 = new wxStaticBoxSizer( new wxStaticBox( sbSizerPowerDowns->GetStaticBox(), wxID_ANY, wxT("Direct control") ), wxHORIZONTAL );
+    sbSizer35 = new wxStaticBoxSizer( new wxStaticBox( sbSizerPowerDowns->GetStaticBox(), wxID_ANY, wxT("Direct control") ), wxVERTICAL );
     
     chkEN_DIR_RBB = new wxCheckBox( sbSizer35->GetStaticBox(), ID_EN_DIR_RBB, wxT("Direct control of PDs and ENs"));
     chkEN_DIR_RBB->SetToolTip( wxT("Enables direct control of PDs and ENs for RBB module") );
     
-    sbSizer35->Add( chkEN_DIR_RBB, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizer35->Add( chkEN_DIR_RBB, 0, wxALIGN_LEFT, 5 );
     
     
-    fgSizer55->Add( sbSizer35, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizerPowerDowns->Add( sbSizer35, 0, wxALL|wxALIGN_LEFT, 5 );
     
     
-    sbSizerPowerDowns->Add( fgSizer55, 0, flags, 0 );
-    
-    
-    fgSizer52->Add( sbSizerPowerDowns, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer52->Add( sbSizerPowerDowns, 0, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer259;
     fgSizer259 = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -84,7 +76,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbBBLoopback->SetSelection( 0 );
     cmbBBLoopback->SetToolTip( wxT("This is the loopback enable signal that is enabled when high band LPFH_RBB or low band LPFL_RBB  is selected for the loopback path. \n0x0115 [15] EN_LB_LPFH_RBB\n0x0115 [14] EN_LB_LPFL_RBB") );
     
-    fgSizer53->Add( cmbBBLoopback, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer53->Add( cmbBBLoopback, 1, wxEXPAND, 5 );
     
     ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("PGA input connected to"));
     ID_STATICTEXT1->Wrap( -1 );
@@ -93,7 +85,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbINPUT_CTL_PGA_RBB = new wxComboBox( this, ID_INPUT_CTL_PGA_RBB, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
     cmbINPUT_CTL_PGA_RBB->SetToolTip( wxT("There are a total of four different differential inputs to the PGA. Only one of them is active at a time") );
     
-    fgSizer53->Add( cmbINPUT_CTL_PGA_RBB, 0, flags, 0 );
+    fgSizer53->Add( cmbINPUT_CTL_PGA_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT2 = new wxStaticText( this, wxID_ANY, wxT("PGA gain"));
     ID_STATICTEXT2->Wrap( -1 );
@@ -102,7 +94,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbG_PGA_RBB = new wxComboBox( this, ID_G_PGA_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbG_PGA_RBB->SetToolTip( wxT("This is the gain of the PGA") );
     
-    fgSizer53->Add( cmbG_PGA_RBB, 0, flags, 0 );
+    fgSizer53->Add( cmbG_PGA_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT3 = new wxStaticText( this, wxID_ANY, wxT("PGA Feedback capacitor"));
     ID_STATICTEXT3->Wrap( -1 );
@@ -112,7 +104,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     fgSizer53->Add( cmbC_CTL_PGA_RBB, 0, wxEXPAND, 5 );
     
     
-    fgSizer259->Add( fgSizer53, 0, flags, 0 );
+    fgSizer259->Add( fgSizer53, 0, wxEXPAND, 0 );
     
     wxString rgrOSW_PGA_RBBChoices[] = { wxT("ADC"), wxT("Output pads") };
     int rgrOSW_PGA_RBBNChoices = sizeof( rgrOSW_PGA_RBBChoices ) / sizeof( wxString );
@@ -120,7 +112,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     rgrOSW_PGA_RBB->SetSelection( 1 );
     rgrOSW_PGA_RBB->SetToolTip( wxT("There are two instances of the PGA circuit in the design. The output of the RBB_LPF blocks are connected the input of these PGA blocks (common). The output of one of them is connected to two pads pgaoutn and pgaoutp and the output of the other PGA is connected directly to the ADC input") );
     
-    fgSizer259->Add( rgrOSW_PGA_RBB, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer259->Add( rgrOSW_PGA_RBB, 0, wxALIGN_LEFT|wxALIGN_TOP, 0 );
     
     
     fgSizer52->Add( fgSizer259, 1, wxEXPAND, 5 );
@@ -140,14 +132,14 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbR_CTL_LPF_RBB = new wxComboBox( sbSizerRCtimeConstants->GetStaticBox(), ID_R_CTL_LPF_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbR_CTL_LPF_RBB->SetToolTip( wxT("Controls the absolute value of the resistance of the RC time constant of the RBB_LPF blocks (both Low and High)") );
     
-    fgSizer54->Add( cmbR_CTL_LPF_RBB, 0, flags, 0 );
+    fgSizer54->Add( cmbR_CTL_LPF_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT5 = new wxStaticText( sbSizerRCtimeConstants->GetStaticBox(), wxID_ANY, wxT("LPFH capacitance value"));
     ID_STATICTEXT5->Wrap( -1 );
     fgSizer54->Add( ID_STATICTEXT5, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbC_CTL_LPFH_RBB = new NumericSlider( sbSizerRCtimeConstants->GetStaticBox(), ID_C_CTL_LPFH_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbC_CTL_LPFH_RBB->SetMinSize( wxSize( 100,-1 ) );
+    //cmbC_CTL_LPFH_RBB->SetMinSize( wxSize( 100,-1 ) );
     
     fgSizer54->Add( cmbC_CTL_LPFH_RBB, 0, wxEXPAND, 5 );
     
@@ -212,7 +204,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbRCC_CTL_LPFH_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_RCC_CTL_LPFH_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbRCC_CTL_LPFH_RBB->SetToolTip( wxT("Controls the stability passive compensation of the LPFH_RBB operational amplifier") );
     
-    fgSizer56->Add( cmbRCC_CTL_LPFH_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbRCC_CTL_LPFH_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT8 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("LPFL stability passive compensation"));
     ID_STATICTEXT8->Wrap( -1 );
@@ -221,7 +213,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbRCC_CTL_LPFL_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_RCC_CTL_LPFL_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbRCC_CTL_LPFL_RBB->SetToolTip( wxT("Controls the stability passive compensation of the LPFL_RBB operational amplifier") );
     
-    fgSizer56->Add( cmbRCC_CTL_LPFL_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbRCC_CTL_LPFL_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT9 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("Input stage reference bias current (RBB_LPF)"));
     ID_STATICTEXT9->Wrap( -1 );
@@ -230,7 +222,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPF_IN_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_ICT_LPF_IN_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPF_IN_RBB->SetToolTip( wxT("Controls the reference bias current of the input stage of the operational amplifier used in RBB_LPF blocks (Low or High). ") );
     
-    fgSizer56->Add( cmbICT_LPF_IN_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbICT_LPF_IN_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT10 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("Output stage reference bias current (RBB_LPF)"));
     ID_STATICTEXT10->Wrap( -1 );
@@ -239,7 +231,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPF_OUT_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_ICT_LPF_OUT_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPF_OUT_RBB->SetToolTip( wxT("The reference bias current of the output stage of the operational amplifier used in RBB_LPF blocks (low or High)") );
     
-    fgSizer56->Add( cmbICT_LPF_OUT_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbICT_LPF_OUT_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT11 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("Output stage reference bias current (PGA)"));
     ID_STATICTEXT11->Wrap( -1 );
@@ -248,7 +240,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_PGA_OUT_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_ICT_PGA_OUT_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_PGA_OUT_RBB->SetToolTip( wxT("Controls the output stage reference bias current of the operational amplifier used in the PGA circuit") );
     
-    fgSizer56->Add( cmbICT_PGA_OUT_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbICT_PGA_OUT_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT12 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("Input stage reference bias current (PGA)"));
     ID_STATICTEXT12->Wrap( -1 );
@@ -257,7 +249,7 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_PGA_IN_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_ICT_PGA_IN_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_PGA_IN_RBB->SetToolTip( wxT("Controls the input stage reference bias current of the operational amplifier used in the PGA circuit") );
     
-    fgSizer56->Add( cmbICT_PGA_IN_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbICT_PGA_IN_RBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT13 = new wxStaticText( sbSizerOpAmp->GetStaticBox(), wxID_ANY, wxT("PGA stability passive compensation"));
     ID_STATICTEXT13->Wrap( -1 );
@@ -266,13 +258,13 @@ lms7002_pnlRBB_view::lms7002_pnlRBB_view( wxWindow* parent, wxWindowID id, const
     cmbRCC_CTL_PGA_RBB = new wxComboBox( sbSizerOpAmp->GetStaticBox(), ID_RCC_CTL_PGA_RBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbRCC_CTL_PGA_RBB->SetToolTip( wxT("Controls the stability passive compensation of the PGA_RBB operational amplifier") );
     
-    fgSizer56->Add( cmbRCC_CTL_PGA_RBB, 0, flags, 0 );
+    fgSizer56->Add( cmbRCC_CTL_PGA_RBB, 0, wxEXPAND, 0 );
     
     
-    sbSizerOpAmp->Add( fgSizer56, 0, flags, 0 );
+    sbSizerOpAmp->Add( fgSizer56, 0, wxEXPAND, 0 );
     
     
-    fgSizer52->Add( sbSizerOpAmp, 0, flags, 0 );
+    fgSizer52->Add( sbSizerOpAmp, 0, wxEXPAND, 0 );
     
     
     this->SetSizer( fgSizer52 );
