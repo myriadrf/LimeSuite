@@ -124,10 +124,10 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer107->Add( chkMCLK2_PE, 0, flags, 0 );
     
     
-    sbSizerEngagePullUp->Add( fgSizer107, 0, flags, 0 );
+    sbSizerEngagePullUp->Add( fgSizer107, 0, wxEXPAND, 0 );
     
     
-    fgSizer195->Add( sbSizerEngagePullUp, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer195->Add( sbSizerEngagePullUp, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizerResetSignals;
     sbSizerResetSignals = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL1, wxID_ANY, wxT("Reset signals") ), wxVERTICAL );
@@ -224,7 +224,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     sbSizerResetSignals->Add( fgSizer196, 1, wxEXPAND, 5 );
     
     
-    fgSizer195->Add( sbSizerResetSignals, 0, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer195->Add( sbSizerResetSignals, 0, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizerPowerControls;
     sbSizerPowerControls = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL1, wxID_ANY, wxT("Power Control") ), wxHORIZONTAL );
@@ -255,10 +255,10 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer113->Add( chkTXEN_B, 0, flags, 0 );
     
     
-    sbSizerPowerControls->Add( fgSizer113, 0, flags, 0 );
+    sbSizerPowerControls->Add( fgSizer113, 0, wxEXPAND, 0 );
     
     
-    fgSizer195->Add( sbSizerPowerControls, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer195->Add( sbSizerPowerControls, 1, wxEXPAND, 5 );
     
     chkMIMO_SISO = new wxCheckBox( ID_PANEL1, ID_MIMO_SISO, wxT("Disable MIMO channel B"), wxDefaultPosition, wxDefaultSize, 0 );
     chkMIMO_SISO->SetValue(true); 
@@ -297,7 +297,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_FIDM1->SetSelection( 0 );
     rgrLML_FIDM1->SetToolTip( wxT("Frame start ID selection for Port 1 when LML_MODE1 = 0") );
     
-    fgSizer108->Add( rgrLML_FIDM1, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_FIDM1, 0, wxEXPAND, 0 );
     
     wxString rgrLML_FIDM2Choices[] = { wxT("0"), wxT("1") };
     int rgrLML_FIDM2NChoices = sizeof( rgrLML_FIDM2Choices ) / sizeof( wxString );
@@ -305,7 +305,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_FIDM2->SetSelection( 1 );
     rgrLML_FIDM2->SetToolTip( wxT("Frame start ID selection for Port 2 when LML_MODE2 = 0") );
     
-    fgSizer108->Add( rgrLML_FIDM2, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_FIDM2, 0, wxEXPAND, 0 );
     
     wxString rgrLML_MODE1Choices[] = { wxT("TRXIQ"), wxT("JESD207") };
     int rgrLML_MODE1NChoices = sizeof( rgrLML_MODE1Choices ) / sizeof( wxString );
@@ -313,7 +313,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_MODE1->SetSelection( 0 );
     rgrLML_MODE1->SetToolTip( wxT("Mode of LimeLight Port 1") );
     
-    fgSizer108->Add( rgrLML_MODE1, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_MODE1, 0, wxEXPAND, 0 );
     
     wxString rgrLML_MODE2Choices[] = { wxT("TRXIQ"), wxT("JESD207") };
     int rgrLML_MODE2NChoices = sizeof( rgrLML_MODE2Choices ) / sizeof( wxString );
@@ -321,7 +321,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_MODE2->SetSelection( 0 );
     rgrLML_MODE2->SetToolTip( wxT("Mode of LimeLight Port 2") );
     
-    fgSizer108->Add( rgrLML_MODE2, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_MODE2, 0, wxEXPAND, 0 );
     
     wxString rgrLML_TXNRXIQ1Choices[] = { wxT("RXIQ"), wxT("TXIQ") };
     int rgrLML_TXNRXIQ1NChoices = sizeof( rgrLML_TXNRXIQ1Choices ) / sizeof( wxString );
@@ -329,7 +329,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_TXNRXIQ1->SetSelection( 0 );
     rgrLML_TXNRXIQ1->SetToolTip( wxT("TXIQ/RXIQ mode selection for Port 1 when LML_MODE1 = 0") );
     
-    fgSizer108->Add( rgrLML_TXNRXIQ1, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_TXNRXIQ1, 0, wxEXPAND, 0 );
     
     wxString rgrLML_TXNRXIQ2Choices[] = { wxT("RXIQ"), wxT("TXIQ") };
     int rgrLML_TXNRXIQ2NChoices = sizeof( rgrLML_TXNRXIQ2Choices ) / sizeof( wxString );
@@ -337,30 +337,30 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrLML_TXNRXIQ2->SetSelection( 0 );
     rgrLML_TXNRXIQ2->SetToolTip( wxT("TXIQ/RXIQ mode selection for Port 2 when LML_MODE2 = 0") );
     
-    fgSizer108->Add( rgrLML_TXNRXIQ2, 0, wxALIGN_LEFT, 0 );
+    fgSizer108->Add( rgrLML_TXNRXIQ2, 0, wxEXPAND, 0 );
     
     chkLML1_TRXIQPULSE = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML1 TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
     chkLML1_TRXIQPULSE->SetToolTip( wxT("Power control for Tx MIMO channel B") );
     
-    fgSizer108->Add( chkLML1_TRXIQPULSE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
+    fgSizer108->Add( chkLML1_TRXIQPULSE, 0, wxALIGN_LEFT, 0 );
     
     chkLML2_TRXIQPULSE = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML2 TRXIQPULSE mode"), wxDefaultPosition, wxDefaultSize, 0 );
     chkLML2_TRXIQPULSE->SetToolTip( wxT("Power control for Tx MIMO channel B") );
     
-    fgSizer108->Add( chkLML2_TRXIQPULSE, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
+    fgSizer108->Add( chkLML2_TRXIQPULSE, 0, wxALIGN_LEFT, 0 );
     
     chkLML1_SISODDR = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML1 SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
     chkLML1_SISODDR->SetToolTip( wxT("Power control for Tx MIMO channel B") );
     
-    fgSizer108->Add( chkLML1_SISODDR, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
+    fgSizer108->Add( chkLML1_SISODDR, 0, wxALIGN_LEFT, 0 );
     
     chkLML2_SISODDR = new wxCheckBox( sbSizerLimeLightModes->GetStaticBox(), ID_TXEN_B, wxT("LML2 SISODDR mode"), wxDefaultPosition, wxDefaultSize, 0 );
     chkLML2_SISODDR->SetToolTip( wxT("Power control for Tx MIMO channel B") );
     
-    fgSizer108->Add( chkLML2_SISODDR, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
+    fgSizer108->Add( chkLML2_SISODDR, 0, wxALIGN_LEFT, 0 );
     
     
-    sbSizerLimeLightModes->Add( fgSizer108, 0, wxALIGN_LEFT, 0 );
+    sbSizerLimeLightModes->Add( fgSizer108, 0, wxEXPAND|wxALL, 5);
     
     
     fgSizer199->Add( sbSizerLimeLightModes, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -369,7 +369,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     sbSizerDriverStrength = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL1, wxID_ANY, wxT("Driver strength") ), wxHORIZONTAL );
     
     wxFlexGridSizer* fgSizer111;
-    fgSizer111 = new wxFlexGridSizer( 0, 5, 0, 0 );
+    fgSizer111 = new wxFlexGridSizer(0, 5, 5, 5);
     fgSizer111->SetFlexibleDirection( wxBOTH );
     fgSizer111->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
@@ -379,7 +379,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrSDA_DS->SetSelection( 0 );
     rgrSDA_DS->SetToolTip( wxT("Driver strength of SDA pad") );
     
-    fgSizer111->Add( rgrSDA_DS, 0, flags, 0 );
+    fgSizer111->Add( rgrSDA_DS, 0, wxEXPAND, 0 );
     
     wxString rgrSCL_DSChoices[] = { wxT("4 mA"), wxT("8 mA") };
     int rgrSCL_DSNChoices = sizeof( rgrSCL_DSChoices ) / sizeof( wxString );
@@ -387,7 +387,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrSCL_DS->SetSelection( 0 );
     rgrSCL_DS->SetToolTip( wxT("Driver strength of SCL pad") );
     
-    fgSizer111->Add( rgrSCL_DS, 0, flags, 0 );
+    fgSizer111->Add( rgrSCL_DS, 0, wxEXPAND, 0 );
     
     wxString rgrSDIO_DSChoices[] = { wxT("4 mA"), wxT("8 mA") };
     int rgrSDIO_DSNChoices = sizeof( rgrSDIO_DSChoices ) / sizeof( wxString );
@@ -395,7 +395,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrSDIO_DS->SetSelection( 0 );
     rgrSDIO_DS->SetToolTip( wxT("Driver strength of SDIO pad") );
     
-    fgSizer111->Add( rgrSDIO_DS, 0, flags, 0 );
+    fgSizer111->Add( rgrSDIO_DS, 0, wxEXPAND, 0 );
     
     wxString rgrDIQ2_DSChoices[] = { wxT("4 mA"), wxT("8 mA") };
     int rgrDIQ2_DSNChoices = sizeof( rgrDIQ2_DSChoices ) / sizeof( wxString );
@@ -403,7 +403,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrDIQ2_DS->SetSelection( 0 );
     rgrDIQ2_DS->SetToolTip( wxT("Driver strength of DIQ2 pad") );
     
-    fgSizer111->Add( rgrDIQ2_DS, 0, flags, 0 );
+    fgSizer111->Add( rgrDIQ2_DS, 0, wxEXPAND, 0 );
     
     wxString rgrDIQ1_DSChoices[] = { wxT("4 mA"), wxT("8 mA") };
     int rgrDIQ1_DSNChoices = sizeof( rgrDIQ1_DSChoices ) / sizeof( wxString );
@@ -411,13 +411,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrDIQ1_DS->SetSelection( 0 );
     rgrDIQ1_DS->SetToolTip( wxT("Pull up control of MCLK2 pad") );
     
-    fgSizer111->Add( rgrDIQ1_DS, 0, flags, 0 );
+    fgSizer111->Add( rgrDIQ1_DS, 0, wxEXPAND, 0 );
     
     
-    sbSizerDriverStrength->Add( fgSizer111, 0, flags, 0 );
+    sbSizerDriverStrength->Add( fgSizer111, 0, wxEXPAND|wxALL, 5 );
     
     
-    fgSizer199->Add( sbSizerDriverStrength, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer199->Add( sbSizerDriverStrength, 1, wxEXPAND, 5 );
     
     
     fgMainSizer->Add( fgSizer199, 1, wxEXPAND, 5 );
@@ -451,7 +451,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     rgrSPIMODE->SetSelection( 0 );
     rgrSPIMODE->SetToolTip( wxT("SPI communication mode") );
     
-    fgSizer202->Add( rgrSPIMODE, 0, wxALL|wxALIGN_LEFT|wxALIGN_TOP, 0 );
+    fgSizer202->Add( rgrSPIMODE, 0, wxEXPAND, 0 );
     
     
     fgSizer222->Add( fgSizer202, 1, wxEXPAND, 5 );
@@ -531,7 +531,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     ID_STATICTEXT1->Wrap( -1 );
     fgSizer118->Add( ID_STATICTEXT1, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML1_S3S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S3S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML1_S3S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S3S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML1_S3S->Append( wxT("AI") );
     cmbLML1_S3S->Append( wxT("AQ") );
     cmbLML1_S3S->Append( wxT("BI") );
@@ -539,13 +539,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_S3S->SetSelection( 0 );
     cmbLML1_S3S->SetToolTip( wxT("Sample source in position 3, when Port 1 is TX") );
     
-    fgSizer118->Add( cmbLML1_S3S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer118->Add( cmbLML1_S3S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT2 = new wxStaticText( sbSizer87->GetStaticBox(), wxID_ANY, wxT("Position 2"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT2->Wrap( -1 );
     fgSizer118->Add( ID_STATICTEXT2, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML1_S2S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S2S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML1_S2S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S2S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML1_S2S->Append( wxT("AI") );
     cmbLML1_S2S->Append( wxT("AQ") );
     cmbLML1_S2S->Append( wxT("BI") );
@@ -553,13 +553,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_S2S->SetSelection( 0 );
     cmbLML1_S2S->SetToolTip( wxT("Sample source in position 2, when Port 1 is TX") );
     
-    fgSizer118->Add( cmbLML1_S2S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer118->Add( cmbLML1_S2S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT3 = new wxStaticText( sbSizer87->GetStaticBox(), wxID_ANY, wxT("Position 1"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT3->Wrap( -1 );
     fgSizer118->Add( ID_STATICTEXT3, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML1_S1S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S1S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML1_S1S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S1S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML1_S1S->Append( wxT("AI") );
     cmbLML1_S1S->Append( wxT("AQ") );
     cmbLML1_S1S->Append( wxT("BI") );
@@ -567,13 +567,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_S1S->SetSelection( 0 );
     cmbLML1_S1S->SetToolTip( wxT("Sample source in position 1, when Port 1 is TX") );
     
-    fgSizer118->Add( cmbLML1_S1S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer118->Add( cmbLML1_S1S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT4 = new wxStaticText( sbSizer87->GetStaticBox(), wxID_ANY, wxT("Position 0"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT4->Wrap( -1 );
     fgSizer118->Add( ID_STATICTEXT4, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML1_S0S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S0S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML1_S0S = new wxComboBox( sbSizer87->GetStaticBox(), ID_LML1_S0S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML1_S0S->Append( wxT("AI") );
     cmbLML1_S0S->Append( wxT("AQ") );
     cmbLML1_S0S->Append( wxT("BI") );
@@ -581,13 +581,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_S0S->SetSelection( 0 );
     cmbLML1_S0S->SetToolTip( wxT("Sample source in position 0, when Port 1 is TX") );
     
-    fgSizer118->Add( cmbLML1_S0S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer118->Add( cmbLML1_S0S, 0, wxEXPAND, 0 );
     
     
-    sbSizer87->Add( fgSizer118, 0, flags, 0 );
+    sbSizer87->Add( fgSizer118, 0, wxEXPAND, 0 );
     
     
-    sbSizerSampleSource->Add( sbSizer87, 0, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizerSampleSource->Add( sbSizer87, 0, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer89;
     sbSizer89 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSampleSource->GetStaticBox(), wxID_ANY, wxT("When Port 2 is RF2BB") ), wxVERTICAL );
@@ -602,7 +602,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     ID_STATICTEXT9->Wrap( -1 );
     fgSizer120->Add( ID_STATICTEXT9, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML2_S3S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S3S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML2_S3S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S3S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML2_S3S->Append( wxT("AI") );
     cmbLML2_S3S->Append( wxT("AQ") );
     cmbLML2_S3S->Append( wxT("BI") );
@@ -610,13 +610,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_S3S->SetSelection( 0 );
     cmbLML2_S3S->SetToolTip( wxT("Sample source in position 3, when Port 2 is TX") );
     
-    fgSizer120->Add( cmbLML2_S3S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer120->Add( cmbLML2_S3S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT10 = new wxStaticText( sbSizer89->GetStaticBox(), wxID_ANY, wxT("Position 2"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT10->Wrap( -1 );
     fgSizer120->Add( ID_STATICTEXT10, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML2_S2S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S2S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML2_S2S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S2S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML2_S2S->Append( wxT("AI") );
     cmbLML2_S2S->Append( wxT("AQ") );
     cmbLML2_S2S->Append( wxT("BI") );
@@ -624,13 +624,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_S2S->SetSelection( 0 );
     cmbLML2_S2S->SetToolTip( wxT("Sample source in position 2, when Port 2 is TX") );
     
-    fgSizer120->Add( cmbLML2_S2S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer120->Add( cmbLML2_S2S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT11 = new wxStaticText( sbSizer89->GetStaticBox(), wxID_ANY, wxT("Position 1"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT11->Wrap( -1 );
     fgSizer120->Add( ID_STATICTEXT11, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML2_S1S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S1S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML2_S1S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S1S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML2_S1S->Append( wxT("AI") );
     cmbLML2_S1S->Append( wxT("AQ") );
     cmbLML2_S1S->Append( wxT("BI") );
@@ -638,13 +638,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_S1S->SetSelection( 0 );
     cmbLML2_S1S->SetToolTip( wxT("Sample source in position 1, when Port 2 is TX") );
     
-    fgSizer120->Add( cmbLML2_S1S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer120->Add( cmbLML2_S1S, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT12 = new wxStaticText( sbSizer89->GetStaticBox(), wxID_ANY, wxT("Position 0"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT12->Wrap( -1 );
     fgSizer120->Add( ID_STATICTEXT12, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML2_S0S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S0S, wxEmptyString, wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, 0 );
+    cmbLML2_S0S = new wxComboBox( sbSizer89->GetStaticBox(), ID_LML2_S0S, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML2_S0S->Append( wxT("AI") );
     cmbLML2_S0S->Append( wxT("AQ") );
     cmbLML2_S0S->Append( wxT("BI") );
@@ -652,13 +652,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_S0S->SetSelection( 0 );
     cmbLML2_S0S->SetToolTip( wxT("Sample source in position 0, when Port 2 is TX") );
     
-    fgSizer120->Add( cmbLML2_S0S, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer120->Add( cmbLML2_S0S, 0, wxEXPAND, 0 );
     
     
-    sbSizer89->Add( fgSizer120, 0, flags, 0 );
+    sbSizer89->Add( fgSizer120, 0, wxEXPAND, 0 );
     
     
-    sbSizerSampleSource->Add( sbSizer89, 0, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizerSampleSource->Add( sbSizer89, 0, wxEXPAND, 5 );
     
     
     fgSizer117->Add( sbSizerSampleSource, 1, wxEXPAND, 5 );
@@ -678,14 +678,14 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     ID_STATICTEXT5->Wrap( -1 );
     fgSizer119->Add( ID_STATICTEXT5, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML1_BQP = new wxComboBox( sbSizer88->GetStaticBox(), ID_LML1_BQP, wxEmptyString, wxDefaultPosition, wxSize( 100,-1 ), 0, NULL, 0 );
+    cmbLML1_BQP = new wxComboBox( sbSizer88->GetStaticBox(), ID_LML1_BQP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML1_BQP->Append( wxT("position 0") );
     cmbLML1_BQP->Append( wxT("position 1") );
     cmbLML1_BQP->Append( wxT("position 2") );
     cmbLML1_BQP->Append( wxT("position 3") );
     cmbLML1_BQP->SetToolTip( wxT("BQ sample position in frame, when Port 1 is RX") );
     
-    fgSizer119->Add( cmbLML1_BQP, 0, flags, 0 );
+    fgSizer119->Add( cmbLML1_BQP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT6 = new wxStaticText( sbSizer88->GetStaticBox(), wxID_ANY, wxT("BI sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT6->Wrap( -1 );
@@ -698,7 +698,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_BIP->Append( wxT("position 3") );
     cmbLML1_BIP->SetToolTip( wxT("BI sample position in frame, when Port 1 is RX") );
     
-    fgSizer119->Add( cmbLML1_BIP, 0, flags, 0 );
+    fgSizer119->Add( cmbLML1_BIP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT7 = new wxStaticText( sbSizer88->GetStaticBox(), wxID_ANY, wxT("AQ sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT7->Wrap( -1 );
@@ -711,7 +711,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_AQP->Append( wxT("position 3") );
     cmbLML1_AQP->SetToolTip( wxT("AQ sample position in frame, when Port 1 is RX") );
     
-    fgSizer119->Add( cmbLML1_AQP, 0, flags, 0 );
+    fgSizer119->Add( cmbLML1_AQP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT8 = new wxStaticText( sbSizer88->GetStaticBox(), wxID_ANY, wxT("AI sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT8->Wrap( -1 );
@@ -724,13 +724,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML1_AIP->Append( wxT("position 3") );
     cmbLML1_AIP->SetToolTip( wxT("AI sample position in frame, when Port 1 is RX") );
     
-    fgSizer119->Add( cmbLML1_AIP, 0, flags, 0 );
+    fgSizer119->Add( cmbLML1_AIP, 0, wxEXPAND, 0 );
     
     
-    sbSizer88->Add( fgSizer119, 0, flags, 0 );
+    sbSizer88->Add( fgSizer119, 0, wxEXPAND, 0 );
     
     
-    sbSizerSamplePositions->Add( sbSizer88, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizerSamplePositions->Add( sbSizer88, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer90;
     sbSizer90 = new wxStaticBoxSizer( new wxStaticBox( sbSizerSamplePositions->GetStaticBox(), wxID_ANY, wxT("When Port 2 is BB2RF") ), wxVERTICAL );
@@ -744,14 +744,14 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     ID_STATICTEXT13->Wrap( -1 );
     fgSizer121->Add( ID_STATICTEXT13, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbLML2_BQP = new wxComboBox( sbSizer90->GetStaticBox(), ID_LML2_BQP, wxEmptyString, wxDefaultPosition, wxSize( 100,-1 ), 0, NULL, 0 );
+    cmbLML2_BQP = new wxComboBox( sbSizer90->GetStaticBox(), ID_LML2_BQP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbLML2_BQP->Append( wxT("position 0") );
     cmbLML2_BQP->Append( wxT("position 1") );
     cmbLML2_BQP->Append( wxT("position 2") );
     cmbLML2_BQP->Append( wxT("position 3") );
     cmbLML2_BQP->SetToolTip( wxT("BQ sample position in frame, when Port 2 is RX") );
     
-    fgSizer121->Add( cmbLML2_BQP, 0, flags, 0 );
+    fgSizer121->Add( cmbLML2_BQP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT14 = new wxStaticText( sbSizer90->GetStaticBox(), wxID_ANY, wxT("BI sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT14->Wrap( -1 );
@@ -764,7 +764,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_BIP->Append( wxT("position 3") );
     cmbLML2_BIP->SetToolTip( wxT("BI sample position in frame, when Port 2is RX") );
     
-    fgSizer121->Add( cmbLML2_BIP, 0, flags, 0 );
+    fgSizer121->Add( cmbLML2_BIP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT15 = new wxStaticText( sbSizer90->GetStaticBox(), wxID_ANY, wxT("AQ sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT15->Wrap( -1 );
@@ -777,7 +777,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_AQP->Append( wxT("position 3") );
     cmbLML2_AQP->SetToolTip( wxT("AQ sample position in frame, when Port 2 is RX") );
     
-    fgSizer121->Add( cmbLML2_AQP, 0, flags, 0 );
+    fgSizer121->Add( cmbLML2_AQP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT16 = new wxStaticText( sbSizer90->GetStaticBox(), wxID_ANY, wxT("AI sample position"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT16->Wrap( -1 );
@@ -790,13 +790,13 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbLML2_AIP->Append( wxT("position 3") );
     cmbLML2_AIP->SetToolTip( wxT("AI sample position in frame, when Port 2 is RX") );
     
-    fgSizer121->Add( cmbLML2_AIP, 0, flags, 0 );
+    fgSizer121->Add( cmbLML2_AIP, 0, wxEXPAND, 0 );
     
     
-    sbSizer90->Add( fgSizer121, 0, flags, 0 );
+    sbSizer90->Add( fgSizer121, 0, wxEXPAND, 0 );
     
     
-    sbSizerSamplePositions->Add( sbSizer90, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    sbSizerSamplePositions->Add( sbSizer90, 1, wxEXPAND, 5 );
     
     
     fgSizer117->Add( sbSizerSamplePositions, 1, wxEXPAND, 5 );
@@ -822,7 +822,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbTXRDCLK_MUX->Append( wxT("TxTSPCLK") );
     cmbTXRDCLK_MUX->SetToolTip( wxT("TX FIFO read clock selection") );
     
-    fgSizer122->Add( cmbTXRDCLK_MUX, 0, flags, 0 );
+    fgSizer122->Add( cmbTXRDCLK_MUX, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT26 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("Tx FIFO write clock source"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT26->Wrap( -1 );
@@ -834,7 +834,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbTXWRCLK_MUX->Append( wxT("RxTSPCLK") );
     cmbTXWRCLK_MUX->SetToolTip( wxT("TX FIFO write clock selection") );
     
-    fgSizer122->Add( cmbTXWRCLK_MUX, 0, flags, 0 );
+    fgSizer122->Add( cmbTXWRCLK_MUX, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT27 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("Rx FIFO read clock source"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT27->Wrap( -1 );
@@ -847,7 +847,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbRXRDCLK_MUX->Append( wxT("FCLK2") );
     cmbRXRDCLK_MUX->SetToolTip( wxT("RX FIFO read clock selection") );
     
-    fgSizer122->Add( cmbRXRDCLK_MUX, 0, flags, 0 );
+    fgSizer122->Add( cmbRXRDCLK_MUX, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT28 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("Rx FIFO write clock source"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT28->Wrap( -1 );
@@ -859,7 +859,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbRXWRCLK_MUX->Append( wxT("RxTSPCLK") );
     cmbRXWRCLK_MUX->SetToolTip( wxT("RX FIFO write clock selection") );
     
-    fgSizer122->Add( cmbRXWRCLK_MUX, 0, flags, 0 );
+    fgSizer122->Add( cmbRXWRCLK_MUX, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT29 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK2 clock source"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT29->Wrap( -1 );
@@ -872,7 +872,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbMCLK2SRC->Append( wxT("RxTSPCLKA") );
     cmbMCLK2SRC->SetToolTip( wxT("MCLK2 clock source") );
     
-    fgSizer122->Add( cmbMCLK2SRC, 0, flags, 0 );
+    fgSizer122->Add( cmbMCLK2SRC, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT30 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK1 clock source"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT30->Wrap( -1 );
@@ -885,12 +885,12 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbMCLK1SRC->Append( wxT("RxTSPCLKA") );
     cmbMCLK1SRC->SetToolTip( wxT("MCLK1 clock source") );
     
-    fgSizer122->Add( cmbMCLK1SRC, 0, flags, 0 );
+    fgSizer122->Add( cmbMCLK1SRC, 0, wxEXPAND, 0 );
     
     chkTXDIVEN = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_TXDIVEN, wxT("Enable Tx clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
     chkTXDIVEN->SetToolTip( wxT("TX clock divider enable") );
     
-    fgSizer122->Add( chkTXDIVEN, 0, flags, 0 );
+    fgSizer122->Add( chkTXDIVEN, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbTXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_TXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
     fgSizer122->Add( cmbTXTSPCLKA_DIV, 0, wxEXPAND, 5 );
@@ -898,7 +898,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     chkRXDIVEN = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_RXDIVEN, wxT("Enable Rx clock divider"), wxDefaultPosition, wxDefaultSize, 0 );
     chkRXDIVEN->SetToolTip( wxT("RX clock divider enable") );
     
-    fgSizer122->Add( chkRXDIVEN, 0, flags, 0 );
+    fgSizer122->Add( chkRXDIVEN, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbRXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_RXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
     fgSizer122->Add( cmbRXTSPCLKA_DIV, 0, wxEXPAND, 5 );
@@ -946,7 +946,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer122->Add( chkMCLK2_INV, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT, 0 );
     
     
-    sbSizerClockControls->Add( fgSizer122, 0, flags, 0 );
+    sbSizerClockControls->Add( fgSizer122, 0, wxEXPAND, 0 );
     
     wxFlexGridSizer* fgSizer251;
     fgSizer251 = new wxFlexGridSizer( 0, 4, 0, 5 );
@@ -1006,7 +1006,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer251->Add( cmbMCLK2_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
     
     
-    sbSizerClockControls->Add( fgSizer251, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
+    sbSizerClockControls->Add( fgSizer251, 1, wxEXPAND, 0 );
     
     
     fgSizer224->Add( sbSizerClockControls, 1, wxALIGN_LEFT|wxALIGN_TOP, 0 );
@@ -1035,42 +1035,42 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer125->Add( ID_STATICTEXT17, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML1_TX_PST = new wxSpinCtrl( sbSizerClockCyclesToWaitLML1->GetStaticBox(), ID_LML1_TX_PST, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML1_TX_PST->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML1_TX_PST->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer125->Add( cmbLML1_TX_PST, 0, 0, 5 );
+    fgSizer125->Add( cmbLML1_TX_PST, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT18 = new wxStaticText( sbSizerClockCyclesToWaitLML1->GetStaticBox(), wxID_ANY, wxT("Data drive start"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT18->Wrap( -1 );
     fgSizer125->Add( ID_STATICTEXT18, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML1_TX_PRE = new wxSpinCtrl( sbSizerClockCyclesToWaitLML1->GetStaticBox(), ID_LML1_TX_PRE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML1_TX_PRE->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML1_TX_PRE->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer125->Add( cmbLML1_TX_PRE, 0, 0, 5 );
+    fgSizer125->Add( cmbLML1_TX_PRE, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT19 = new wxStaticText( sbSizerClockCyclesToWaitLML1->GetStaticBox(), wxID_ANY, wxT("Data capture stop"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT19->Wrap( -1 );
     fgSizer125->Add( ID_STATICTEXT19, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML1_RX_PST = new wxSpinCtrl( sbSizerClockCyclesToWaitLML1->GetStaticBox(), ID_LML1_RX_PST, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML1_RX_PST->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML1_RX_PST->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer125->Add( cmbLML1_RX_PST, 0, 0, 5 );
+    fgSizer125->Add( cmbLML1_RX_PST, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT20 = new wxStaticText( sbSizerClockCyclesToWaitLML1->GetStaticBox(), wxID_ANY, wxT("Data capture start"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT20->Wrap( -1 );
     fgSizer125->Add( ID_STATICTEXT20, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML1_RX_PRE = new wxSpinCtrl( sbSizerClockCyclesToWaitLML1->GetStaticBox(), ID_LML1_RX_PRE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML1_RX_PRE->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML1_RX_PRE->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer125->Add( cmbLML1_RX_PRE, 0, 0, 5 );
-    
-    
-    sbSizerClockCyclesToWaitLML1->Add( fgSizer125, 1, flags, 0 );
+    fgSizer125->Add( cmbLML1_RX_PRE, 0, wxEXPAND, 5 );
     
     
-    fgSizer124->Add( sbSizerClockCyclesToWaitLML1, 1, wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizerClockCyclesToWaitLML1->Add( fgSizer125, 1, wxEXPAND, 0 );
+    
+    
+    fgSizer124->Add( sbSizerClockCyclesToWaitLML1, 1, wxALIGN_TOP, 5 );
     
     wxStaticBoxSizer* sbSizerClockCyclesToWaitLML2;
     sbSizerClockCyclesToWaitLML2 = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL2, wxID_ANY, wxT("LML2 Clock cycles to wait before") ), wxHORIZONTAL );
@@ -1089,39 +1089,39 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer126->Add( ID_STATICTEXT21, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML2_TX_PST = new wxSpinCtrl( sbSizerClockCyclesToWaitLML2->GetStaticBox(), ID_LML2_TX_PST, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML2_TX_PST->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML2_TX_PST->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer126->Add( cmbLML2_TX_PST, 0, 0, 5 );
+    fgSizer126->Add( cmbLML2_TX_PST, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT22 = new wxStaticText( sbSizerClockCyclesToWaitLML2->GetStaticBox(), wxID_ANY, wxT("Data drive start"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT22->Wrap( -1 );
     fgSizer126->Add( ID_STATICTEXT22, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML2_TX_PRE = new wxSpinCtrl( sbSizerClockCyclesToWaitLML2->GetStaticBox(), ID_LML2_TX_PRE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML2_TX_PRE->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML2_TX_PRE->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer126->Add( cmbLML2_TX_PRE, 0, 0, 5 );
+    fgSizer126->Add( cmbLML2_TX_PRE, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT23 = new wxStaticText( sbSizerClockCyclesToWaitLML2->GetStaticBox(), wxID_ANY, wxT("Data capture stop"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT23->Wrap( -1 );
     fgSizer126->Add( ID_STATICTEXT23, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML2_RX_PST = new wxSpinCtrl( sbSizerClockCyclesToWaitLML2->GetStaticBox(), ID_LML2_RX_PST, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML2_RX_PST->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML2_RX_PST->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer126->Add( cmbLML2_RX_PST, 0, 0, 5 );
+    fgSizer126->Add( cmbLML2_RX_PST, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT24 = new wxStaticText( sbSizerClockCyclesToWaitLML2->GetStaticBox(), wxID_ANY, wxT("Data capture start"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT24->Wrap( -1 );
     fgSizer126->Add( ID_STATICTEXT24, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbLML2_RX_PRE = new wxSpinCtrl( sbSizerClockCyclesToWaitLML2->GetStaticBox(), ID_LML2_RX_PRE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbLML2_RX_PRE->SetMinSize( wxSize( 48,-1 ) );
+    //cmbLML2_RX_PRE->SetMinSize( wxSize( 48,-1 ) );
     
-    fgSizer126->Add( cmbLML2_RX_PRE, 0, 0, 5 );
+    fgSizer126->Add( cmbLML2_RX_PRE, 0, wxEXPAND, 5 );
     
     
-    sbSizerClockCyclesToWaitLML2->Add( fgSizer126, 0, flags, 0 );
+    sbSizerClockCyclesToWaitLML2->Add( fgSizer126, 0, wxEXPAND, 0 );
     
     
     fgSizer124->Add( sbSizerClockCyclesToWaitLML2, 1, wxEXPAND, 5 );
@@ -1205,7 +1205,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     fgSizer123->Add( rgrENABLEDIR2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
     
     
-    sbSizerDirectionControls->Add( fgSizer123, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizerDirectionControls->Add( fgSizer123, 1, wxEXPAND, 5 );
     
     
     fgSizer115->Add( sbSizerDirectionControls, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
