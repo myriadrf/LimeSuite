@@ -62,10 +62,10 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     fgSizer59->Add( sbSizer39, 1, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
     
     
-    sbSizerPowerDowns->Add( fgSizer59, 0, flags, 0 );
+    sbSizerPowerDowns->Add( fgSizer59, 0, wxEXPAND, 0 );
     
     
-    fgSizer57->Add( sbSizerPowerDowns, 0, flags, 0 );
+    fgSizer57->Add( sbSizerPowerDowns, 0, wxEXPAND, 0 );
     
     wxFlexGridSizer* fgSizer214;
     fgSizer214 = new wxFlexGridSizer( 0, 1, 5, 5 );
@@ -102,7 +102,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbLOOPB_TBB = new wxComboBox( this, ID_LOOPB_TBB, wxEmptyString, wxDefaultPosition, wxSize( 197,-1 ), 0, NULL, 0 ); 
     cmbLOOPB_TBB->SetToolTip( wxT("This controls which signal is connected to the loopback output pins. Note: when both the lowpass ladder and real pole are powered down, the output of the active highband biquad is routed to the loopb output") );
     
-    fgSizer58->Add( cmbLOOPB_TBB, 0, flags, 0 );
+    fgSizer58->Add( cmbLOOPB_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT5 = new wxStaticText( this, wxID_ANY, wxT("Enable Tx IQ analog input"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT5->Wrap( -1 );
@@ -111,10 +111,10 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbTSTIN_TBB = new wxComboBox( this, ID_TSTIN_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbTSTIN_TBB->SetToolTip( wxT("This control selects where the input test signal (vinp/n_aux_bbq/i) is routed to as well as disabling the route.") );
     
-    fgSizer58->Add( cmbTSTIN_TBB, 0, flags, 0 );
+    fgSizer58->Add( cmbTSTIN_TBB, 0, wxEXPAND, 0 );
     
     
-    fgSizer214->Add( fgSizer58, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer214->Add( fgSizer58, 0, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer192;
     fgSizer192 = new wxFlexGridSizer( 0, 2, 0, 5 );
@@ -180,7 +180,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPFS5_F_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPFS5_F_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPFS5_F_TBB->SetToolTip( wxT("This controls the operational amplifier's output stage bias current of the low band real pole filter of the transmitter's baseband") );
     
-    fgSizer60->Add( cmbICT_LPFS5_F_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPFS5_F_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT7 = new wxStaticText( sbSizerOpamp->GetStaticBox(), wxID_ANY, wxT("Input stage bias current of low band real pole filter"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT7->Wrap( -14 );
@@ -189,7 +189,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPFS5_PT_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPFS5_PT_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPFS5_PT_TBB->SetToolTip( wxT("This controls the operational amplifier's input stage bias current of the low band real pole filter of the transmitter's baseband") );
     
-    fgSizer60->Add( cmbICT_LPFS5_PT_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPFS5_PT_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT8 = new wxStaticText( sbSizerOpamp->GetStaticBox(), wxID_ANY, wxT("Input stage bias reference current of high band low pass filter"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT8->Wrap( -1 );
@@ -198,7 +198,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPF_H_PT_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPF_H_PT_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPF_H_PT_TBB->SetToolTip( wxT("This controls the operational amplifiers input stage bias reference current of the high band low pass filter of the transmitter's baseband ") );
     
-    fgSizer60->Add( cmbICT_LPF_H_PT_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPF_H_PT_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT9 = new wxStaticText( sbSizerOpamp->GetStaticBox(), wxID_ANY, wxT("Output stage bias reference current of high band low pass filter"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT9->Wrap( -1 );
@@ -207,7 +207,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPFH_F_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPFH_F_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPFH_F_TBB->SetToolTip( wxT("controls the operational amplifiers output stage bias reference current of the high band low pass filter of the transmitter's baseband (LPFH_TBB)") );
     
-    fgSizer60->Add( cmbICT_LPFH_F_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPFH_F_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT10 = new wxStaticText( sbSizerOpamp->GetStaticBox(), wxID_ANY, wxT("Output stage bias reference of low band ladder filter"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT10->Wrap( -1 );
@@ -216,7 +216,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPFLAD_F_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPFLAD_F_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPFLAD_F_TBB->SetToolTip( wxT("This controls the operational amplfiers' output stages bias referene current of the low band ladder filter of the transmisster's baseband") );
     
-    fgSizer60->Add( cmbICT_LPFLAD_F_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPFLAD_F_TBB, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT11 = new wxStaticText( sbSizerOpamp->GetStaticBox(), wxID_ANY, wxT("Input stage bias reference of low band ladder filter"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT11->Wrap( -1 );
@@ -225,13 +225,13 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     cmbICT_LPFLAD_PT_TBB = new wxComboBox( sbSizerOpamp->GetStaticBox(), ID_ICT_LPFLAD_PT_TBB, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbICT_LPFLAD_PT_TBB->SetToolTip( wxT("This controls the operational amplifers' input stages bias reference current of the low band ladder filter of the transmitter's baseband") );
     
-    fgSizer60->Add( cmbICT_LPFLAD_PT_TBB, 0, flags, 0 );
+    fgSizer60->Add( cmbICT_LPFLAD_PT_TBB, 0, wxEXPAND, 0 );
     
     
-    sbSizerOpamp->Add( fgSizer60, 0, flags, 0 );
+    sbSizerOpamp->Add( fgSizer60, 0, wxEXPAND, 0 );
     
     
-    fgSizer57->Add( sbSizerOpamp, 0, flags, 0 );
+    fgSizer57->Add( sbSizerOpamp, 0, wxEXPAND, 0 );
     
     wxStaticBoxSizer* sbSizerResistorBanks;
     sbSizerResistorBanks = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("TxLPF resistor banks") ), wxVERTICAL );
@@ -271,7 +271,7 @@ lms7002_pnlTBB_view::lms7002_pnlTBB_view( wxWindow* parent, wxWindowID id, const
     fgSizer61->Add( cmbCCAL_LPFLAD_TBB, 0, wxEXPAND, 5 );
     
     
-    sbSizerResistorBanks->Add( fgSizer61, 0, flags, 0 );
+    sbSizerResistorBanks->Add( fgSizer61, 0, wxEXPAND, 0 );
     
     
     fgSizer57->Add( sbSizerResistorBanks, 0, flags, 0 );
