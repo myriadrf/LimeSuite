@@ -124,17 +124,17 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbLDP = new wxComboBox(this, ID_COMBOBOX1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX1"));
     cmbLDP->SetSelection(cmbLDP->Append(_("Three Cycles")));
     cmbLDP->Append(_("Five Cycles"));
-    FlexGridSizer5->Add(cmbLDP, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer5->Add(cmbLDP, 1, wxEXPAND, 5);
     cmbABW = new wxComboBox(this, ID_COMBOBOX2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX2"));
     cmbABW->SetSelection(cmbABW->Append(_("2.9ns")));
     cmbABW->Append(_("6.0ns"));
     cmbABW->Append(_("2.9ns"));
-    FlexGridSizer5->Add(cmbABW, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer5->Add(cmbABW, 1, wxEXPAND, 5);
     spinRCnt = new wxSpinCtrl(this, ID_SPINCTRL1, _T("125"), wxDefaultPosition, wxDefaultSize, 0, 0, 16383, 125, _T("ID_SPINCTRL1"));
     spinRCnt->SetValue(_T("125"));
-    FlexGridSizer5->Add(spinRCnt, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    StaticBoxSizer2->Add(FlexGridSizer5, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer4->Add(StaticBoxSizer2, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer5->Add(spinRCnt, 1, wxEXPAND, 5);
+    StaticBoxSizer2->Add(FlexGridSizer5, 1, wxEXPAND, 5);
+    FlexGridSizer4->Add(StaticBoxSizer2, 1, wxEXPAND, 5);
     StaticBoxSizer4 = new wxStaticBoxSizer(wxHORIZONTAL, this, _("N Counter Latch"));
     FlexGridSizer6 = new wxFlexGridSizer(2, 2, 0, 5);
     FlexGridSizer6->AddGrowableCol(0);
@@ -146,12 +146,12 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbCPG = new wxComboBox(this, ID_COMBOBOX3, wxEmptyString, wxDefaultPosition, wxSize(65, -1), 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX3"));
     cmbCPG->SetSelection(cmbCPG->Append(_("0")));
     cmbCPG->Append(_("1"));
-    FlexGridSizer6->Add(cmbCPG, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    spinNCnt = new wxSpinCtrl(this, ID_SPINCTRL2, _T("384"), wxDefaultPosition, wxSize(70, -1), 0, 0, 8191, 384, _T("ID_SPINCTRL2"));
+    FlexGridSizer6->Add(cmbCPG, 1, wxEXPAND, 5);
+    spinNCnt = new wxSpinCtrl(this, ID_SPINCTRL2, _T("384"), wxDefaultPosition, wxDefaultSize, 0, 0, 8191, 384, _T("ID_SPINCTRL2"));
     spinNCnt->SetValue(_T("384"));
-    FlexGridSizer6->Add(spinNCnt, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    StaticBoxSizer4->Add(FlexGridSizer6, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer4->Add(StaticBoxSizer4, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer6->Add(spinNCnt, 1, wxEXPAND, 5);
+    StaticBoxSizer4->Add(FlexGridSizer6, 1, wxEXPAND, 5);
+    FlexGridSizer4->Add(StaticBoxSizer4, 1, wxEXPAND, 5);
     FlexGridSizer3->Add(FlexGridSizer4, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Function Latch"));
     FlexGridSizer7 = new wxFlexGridSizer(0, 3, 0, 5);
@@ -169,7 +169,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbCS1_f->Append(_("5"));
     cmbCS1_f->Append(_("6"));
     cmbCS1_f->SetSelection(cmbCS1_f->Append(_("7")));
-    FlexGridSizer8->Add(cmbCS1_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer8->Add(cmbCS1_f, 1, wxEXPAND, 5);
     cmbTC_f = new wxComboBox(this, ID_COMBOBOX5, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX5"));
     cmbTC_f->SetSelection(cmbTC_f->Append(_("3")));
     cmbTC_f->Append(_("7"));
@@ -187,7 +187,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbTC_f->Append(_("55"));
     cmbTC_f->Append(_("59"));
     cmbTC_f->Append(_("63"));
-    FlexGridSizer8->Add(cmbTC_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer8->Add(cmbTC_f, 1, wxEXPAND , 5);
     StaticText8 = new wxStaticText(this, ID_STATICTEXT8, _("Current Setting 2:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT8"));
     FlexGridSizer8->Add(StaticText8, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     StaticText9 = new wxStaticText(this, ID_STATICTEXT9, _("Fastlock:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT9"));
@@ -201,13 +201,13 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbCS2_f->Append(_("5"));
     cmbCS2_f->Append(_("6"));
     cmbCS2_f->SetSelection(cmbCS2_f->Append(_("7")));
-    FlexGridSizer8->Add(cmbCS2_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer8->Add(cmbCS2_f, 1, wxEXPAND , 5);
     cmbFL_f = new wxComboBox(this, ID_COMBOBOX7, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX7"));
     cmbFL_f->SetSelection(cmbFL_f->Append(_("Disabled")));
     cmbFL_f->Append(_("Mode 1"));
     cmbFL_f->Append(_("Mode 2"));
-    FlexGridSizer8->Add(cmbFL_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer7->Add(FlexGridSizer8, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer8->Add(cmbFL_f, 1, wxEXPAND, 5);
+    FlexGridSizer7->Add(FlexGridSizer8, 1, wxEXPAND, 5);
     FlexGridSizer9 = new wxFlexGridSizer(3, 1, 0, 0);
     StaticText10 = new wxStaticText(this, ID_STATICTEXT10, _("Muxout Control"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT10"));
     FlexGridSizer9->Add(StaticText10, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
@@ -220,7 +220,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbMOC_f->Append(_("N-Chan OD Lock Detect"));
     cmbMOC_f->Append(_("Serial Data Output"));
     cmbMOC_f->Append(_("DGND"));
-    FlexGridSizer9->Add(cmbMOC_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(cmbMOC_f, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_1[2] =
     {
         _("Negative"),
@@ -228,7 +228,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPDP_f = new wxRadioBox(this, ID_RADIOBOX1, _("PD Polarity"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_1, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX1"));
     rgrPDP_f->SetSelection(1);
-    FlexGridSizer9->Add(rgrPDP_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(rgrPDP_f, 1, wxEXPAND, 5);
     FlexGridSizer7->Add(FlexGridSizer9, 1, wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
     FlexGridSizer10 = new wxFlexGridSizer(2, 2, 0, 5);
     wxString __wxRadioBoxChoices_2[2] =
@@ -238,7 +238,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPD1_f = new wxRadioBox(this, ID_RADIOBOX2, _("PD1"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_2, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX2"));
     rgrPD1_f->SetSelection(0);
-    FlexGridSizer10->Add(rgrPD1_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer10->Add(rgrPD1_f, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_3[2] =
     {
         _("Normal"),
@@ -246,7 +246,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrCR_f = new wxRadioBox(this, ID_RADIOBOX3, _("Counter Reset"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_3, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX3"));
     rgrCR_f->SetSelection(0);
-    FlexGridSizer10->Add(rgrCR_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer10->Add(rgrCR_f, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_4[2] =
     {
         _("0"),
@@ -254,7 +254,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPD2_f = new wxRadioBox(this, ID_RADIOBOX4, _("PD2"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_4, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX4"));
     rgrPD2_f->SetSelection(0);
-    FlexGridSizer10->Add(rgrPD2_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer10->Add(rgrPD2_f, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_5[2] =
     {
         _("Normal"),
@@ -262,9 +262,9 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrCPS_f = new wxRadioBox(this, ID_RADIOBOX5, _("CP State"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_5, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX5"));
     rgrCPS_f->SetSelection(0);
-    FlexGridSizer10->Add(rgrCPS_f, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer10->Add(rgrCPS_f, 1, wxEXPAND, 5);
     FlexGridSizer7->Add(FlexGridSizer10, 1, wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
-    StaticBoxSizer3->Add(FlexGridSizer7, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    StaticBoxSizer3->Add(FlexGridSizer7, 1, wxEXPAND, 5);
     FlexGridSizer3->Add(StaticBoxSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     StaticBoxSizer5 = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Initialization Latch"));
     FlexGridSizer13 = new wxFlexGridSizer(0, 3, 0, 5);
@@ -282,7 +282,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbCS1_i->Append(_("5"));
     cmbCS1_i->Append(_("6"));
     cmbCS1_i->SetSelection(cmbCS1_i->Append(_("7")));
-    FlexGridSizer14->Add(cmbCS1_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer14->Add(cmbCS1_i, 1, wxEXPAND, 5);
     cmbTC_i = new wxComboBox(this, ID_COMBOBOX10, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX10"));
     cmbTC_i->SetSelection(cmbTC_i->Append(_("3")));
     cmbTC_i->Append(_("7"));
@@ -300,7 +300,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbTC_i->Append(_("55"));
     cmbTC_i->Append(_("59"));
     cmbTC_i->Append(_("63"));
-    FlexGridSizer14->Add(cmbTC_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer14->Add(cmbTC_i, 1, wxEXPAND, 5);
     StaticText17 = new wxStaticText(this, ID_STATICTEXT19, _("Current Setting 2:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT19"));
     FlexGridSizer14->Add(StaticText17, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     StaticText18 = new wxStaticText(this, ID_STATICTEXT20, _("Fastlock:"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT20"));
@@ -314,13 +314,13 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbCS2_i->Append(_("5"));
     cmbCS2_i->Append(_("6"));
     cmbCS2_i->SetSelection(cmbCS2_i->Append(_("7")));
-    FlexGridSizer14->Add(cmbCS2_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer14->Add(cmbCS2_i, 1, wxEXPAND, 5);
     cmbFL_i = new wxComboBox(this, ID_COMBOBOX12, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_COMBOBOX12"));
     cmbFL_i->SetSelection(cmbFL_i->Append(_("Disabled")));
     cmbFL_i->Append(_("Mode 1"));
     cmbFL_i->Append(_("Mode 2"));
-    FlexGridSizer14->Add(cmbFL_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer13->Add(FlexGridSizer14, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer14->Add(cmbFL_i, 1, wxEXPAND, 5);
+    FlexGridSizer13->Add(FlexGridSizer14, 1, wxEXPAND, 5);
     FlexGridSizer15 = new wxFlexGridSizer(3, 1, 0, 0);
     StaticText19 = new wxStaticText(this, ID_STATICTEXT21, _("Muxout Control"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT21"));
     FlexGridSizer15->Add(StaticText19, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
@@ -333,7 +333,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     cmbMOC_i->Append(_("N-Chan OD Lock Detect"));
     cmbMOC_i->Append(_("Serial Data Output"));
     cmbMOC_i->Append(_("DGND"));
-    FlexGridSizer15->Add(cmbMOC_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer15->Add(cmbMOC_i, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_6[2] =
     {
         _("Negative"),
@@ -341,7 +341,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPDP_i = new wxRadioBox(this, ID_RADIOBOX6, _("PD Polarity"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_6, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX6"));
     rgrPDP_i->SetSelection(1);
-    FlexGridSizer15->Add(rgrPDP_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer15->Add(rgrPDP_i, 1, wxEXPAND, 5);
     FlexGridSizer13->Add(FlexGridSizer15, 1, wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
     FlexGridSizer16 = new wxFlexGridSizer(2, 2, 0, 5);
     wxString __wxRadioBoxChoices_7[2] =
@@ -351,7 +351,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPD1_i = new wxRadioBox(this, ID_RADIOBOX7, _("PD1"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_7, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX7"));
     rgrPD1_i->SetSelection(0);
-    FlexGridSizer16->Add(rgrPD1_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer16->Add(rgrPD1_i, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_8[2] =
     {
         _("Normal"),
@@ -359,7 +359,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrCR_i = new wxRadioBox(this, ID_RADIOBOX8, _("Counter Reset"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_8, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX8"));
     rgrCR_i->SetSelection(0);
-    FlexGridSizer16->Add(rgrCR_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer16->Add(rgrCR_i, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_9[2] =
     {
         _("0"),
@@ -367,7 +367,7 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrPD2_i = new wxRadioBox(this, ID_RADIOBOX9, _("PD2"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_9, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX9"));
     rgrPD2_i->SetSelection(0);
-    FlexGridSizer16->Add(rgrPD2_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer16->Add(rgrPD2_i, 1, wxEXPAND, 5);
     wxString __wxRadioBoxChoices_10[2] =
     {
         _("Normal"),
@@ -375,10 +375,10 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     };
     rgrCPS_i = new wxRadioBox(this, ID_RADIOBOX10, _("CP State"), wxDefaultPosition, wxDefaultSize, 2, __wxRadioBoxChoices_10, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX10"));
     rgrCPS_i->SetSelection(0);
-    FlexGridSizer16->Add(rgrCPS_i, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer16->Add(rgrCPS_i, 1, wxEXPAND, 5);
     FlexGridSizer13->Add(FlexGridSizer16, 1, wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
-    StaticBoxSizer5->Add(FlexGridSizer13, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer3->Add(StaticBoxSizer5, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    StaticBoxSizer5->Add(FlexGridSizer13, 1, wxEXPAND, 5);
+    FlexGridSizer3->Add(StaticBoxSizer5, 1, wxEXPAND, 5);
     StaticBoxSizer1->Add(FlexGridSizer3, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer1->Add(StaticBoxSizer1, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
     FlexGridSizer2 = new wxFlexGridSizer(0, 3, 0, 0);
@@ -401,12 +401,12 @@ ADF4002_wxgui::ADF4002_wxgui(wxWindow* parent,wxWindowID id, const wxString &tit
     FlexGridSizer11->Add(StaticText15, 1, wxTOP | wxBOTTOM | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 5);
     lblFcomp = new wxStaticText(this, ID_STATICTEXT16, _("Fcomp"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT16"));
     FlexGridSizer11->Add(lblFcomp, 1, wxTOP | wxBOTTOM | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer12->Add(FlexGridSizer11, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer12->Add(FlexGridSizer11, 1, wxEXPAND, 5);
     btnCalcSend = new wxButton(this, ID_BUTTON1, _("Calculate R, N && Upload"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
-    FlexGridSizer12->Add(btnCalcSend, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer12->Add(btnCalcSend, 1, wxEXPAND, 5);
     btnUpload = new wxButton(this, ID_BUTTON2, _("Upload"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
-    FlexGridSizer12->Add(btnUpload, 1, wxTOP | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    StaticBoxSizer6->Add(FlexGridSizer12, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer12->Add(btnUpload, 1, wxTOP | wxEXPAND, 5);
+    StaticBoxSizer6->Add(FlexGridSizer12, 1, wxEXPAND, 5);
     FlexGridSizer2->Add(StaticBoxSizer6, 1, wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
     FlexGridSizer1->Add(FlexGridSizer2, 1, wxLEFT | wxEXPAND | wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL, 5);
     SetSizer(FlexGridSizer1);
