@@ -91,25 +91,25 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     FlexGridSizer3 = new wxFlexGridSizer(0, 3, 0, 0);
     StaticBoxSizer1 = new wxStaticBoxSizer(wxVERTICAL, this, _("Si5351C"));
     btnLoadFile = new wxButton(this, ID_BUTTON2, _("Upload register map from file"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON2"));
-    StaticBoxSizer1->Add(btnLoadFile, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    StaticBoxSizer1->Add(btnLoadFile, 1, wxEXPAND, 5);
     btnResetToDefaults = new wxButton(this, ID_BUTTON4, _("Reset register map to default"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON4"));
-    StaticBoxSizer1->Add(btnResetToDefaults, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    StaticBoxSizer1->Add(btnResetToDefaults, 1, wxEXPAND, 5);
     FlexGridSizer3->Add(StaticBoxSizer1, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer2 = new wxFlexGridSizer(0, 2, 5, 5);
     StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("CLKIN Frequency (MHz)"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
     FlexGridSizer2->Add(StaticText1, 1, wxTOP | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtCLKIN_MHz = new wxTextCtrl(this, ID_TEXTCTRL1, _("30.72"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
-    FlexGridSizer2->Add(txtCLKIN_MHz, 1, wxTOP | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer2->Add(txtCLKIN_MHz, 1, wxTOP | wxEXPAND, 5);
 
     const wxString clksrcChoices[] = { _("XTAL"), _("CLKIN") };
     rgrClkSrc = new wxRadioBox(this, wxNewId(), _("PLL src"), wxDefaultPosition, wxDefaultSize, 2, clksrcChoices, 2, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX1"));
-    FlexGridSizer2->Add(rgrClkSrc, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 0);
+    FlexGridSizer2->Add(rgrClkSrc, 1, wxALL | wxEXPAND, 0);
 
     const wxString xtalfreqChoices[] = { _("25 MHz"), _("27 MHz") };
     rgrXTALfreq = new wxRadioBox(this, wxNewId(), _("XTAL freq"), wxDefaultPosition, wxDefaultSize, 2, xtalfreqChoices, 2, wxRA_SPECIFY_COLS, wxDefaultValidator, _T("ID_RADIOBOX1"));
-    FlexGridSizer2->Add(rgrXTALfreq, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 0);
+    FlexGridSizer2->Add(rgrXTALfreq, 1, wxALL | wxEXPAND, 0);
 
-    FlexGridSizer3->Add(FlexGridSizer2, 1, wxLEFT | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer3->Add(FlexGridSizer2, 1, wxLEFT | wxEXPAND, 5);
     FlexGridSizer6 = new wxFlexGridSizer(0, 1, 0, 0);
     lblStatus = new wxStaticText(this, ID_STATICTEXT14, _("SYS_INIT:\t\? \t SYS_INIT_STKY:\t\?\nLOL_B:\t\?  \tLOL_B_STKY:\t\?\nLOL_A:\t\?  \tLOL_A_STKY:\t\?\nLOS:\t\?  \tLOS_STKY:\t\?"), wxDefaultPosition, wxSize(282, 59), 0, _T("ID_STATICTEXT14"));
     FlexGridSizer6->Add(lblStatus, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -119,7 +119,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     btnClearStatus = new wxButton(this, ID_BUTTON5, _("Clear"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON5"));
     FlexGridSizer5->Add(btnClearStatus, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer6->Add(FlexGridSizer5, 1, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer3->Add(FlexGridSizer6, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer3->Add(FlexGridSizer6, 1, wxALL | wxEXPAND, 5);
     FlexGridSizer1->Add(FlexGridSizer3, 1, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer4 = new wxFlexGridSizer(0, 5, 0, 0);
     FlexGridSizer9 = new wxFlexGridSizer(0, 4, 0, 0);
@@ -137,7 +137,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK0->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK0, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK0 = new wxTextCtrl(this, ID_TEXTCTRL2, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL2"));
-    FlexGridSizer9->Add(txtFreq_CLK0, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK0, 1, wxEXPAND, 5);
     chkInvert_CLK0 = new wxCheckBox(this, ID_CHECKBOX9, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX9"));
     chkInvert_CLK0->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK0, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -147,7 +147,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK1->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK1, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK1 = new wxTextCtrl(this, ID_TEXTCTRL3, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL3"));
-    FlexGridSizer9->Add(txtFreq_CLK1, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK1, 1, wxEXPAND, 5);
     chkInvert_CLK1 = new wxCheckBox(this, ID_CHECKBOX10, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX10"));
     chkInvert_CLK1->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK1, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -157,7 +157,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK2->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK2, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK2 = new wxTextCtrl(this, ID_TEXTCTRL4, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL4"));
-    FlexGridSizer9->Add(txtFreq_CLK2, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK2, 1, wxEXPAND, 5);
     chkInvert_CLK2 = new wxCheckBox(this, ID_CHECKBOX11, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX11"));
     chkInvert_CLK2->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK2, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -167,7 +167,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK3->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK3, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK3 = new wxTextCtrl(this, ID_TEXTCTRL5, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL5"));
-    FlexGridSizer9->Add(txtFreq_CLK3, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK3, 1, wxEXPAND, 5);
     chkInvert_CLK3 = new wxCheckBox(this, ID_CHECKBOX12, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX12"));
     chkInvert_CLK3->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK3, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -177,7 +177,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK4->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK4, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK4 = new wxTextCtrl(this, ID_TEXTCTRL6, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL6"));
-    FlexGridSizer9->Add(txtFreq_CLK4, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK4, 1, wxEXPAND, 5);
     chkInvert_CLK4 = new wxCheckBox(this, ID_CHECKBOX13, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX13"));
     chkInvert_CLK4->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK4, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -187,7 +187,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK5->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK5, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK5 = new wxTextCtrl(this, ID_TEXTCTRL7, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL7"));
-    FlexGridSizer9->Add(txtFreq_CLK5, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK5, 1, wxEXPAND, 5);
     chkInvert_CLK5 = new wxCheckBox(this, ID_CHECKBOX14, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX14"));
     chkInvert_CLK5->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK5, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -197,7 +197,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK6->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK6, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK6 = new wxTextCtrl(this, ID_TEXTCTRL8, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL8"));
-    FlexGridSizer9->Add(txtFreq_CLK6, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK6, 1, wxEXPAND, 5);
     chkInvert_CLK6 = new wxCheckBox(this, ID_CHECKBOX15, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX15"));
     chkInvert_CLK6->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK6, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
@@ -207,14 +207,14 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     chkEN_CLK7->SetValue(true);
     FlexGridSizer9->Add(chkEN_CLK7, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     txtFreq_CLK7 = new wxTextCtrl(this, ID_TEXTCTRL9, _("27.0"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_TEXTCTRL9"));
-    FlexGridSizer9->Add(txtFreq_CLK7, 1, wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer9->Add(txtFreq_CLK7, 1, wxEXPAND, 5);
     chkInvert_CLK7 = new wxCheckBox(this, ID_CHECKBOX16, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX16"));
     chkInvert_CLK7->SetValue(false);
     FlexGridSizer9->Add(chkInvert_CLK7, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     FlexGridSizer4->Add(FlexGridSizer9, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
     btnConfigure = new wxButton(this, ID_BUTTON3, _("Configure Clocks"), wxDefaultPosition, wxSize(113, 61), 0, wxDefaultValidator, _T("ID_BUTTON3"));
     FlexGridSizer4->Add(btnConfigure, 1, wxALL | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-    FlexGridSizer1->Add(FlexGridSizer4, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer1->Add(FlexGridSizer4, 1, wxALL | wxEXPAND, 5);
     SetSizer(FlexGridSizer1);
     FlexGridSizer1->Fit(this);
     FlexGridSizer1->SetSizeHints(this);
