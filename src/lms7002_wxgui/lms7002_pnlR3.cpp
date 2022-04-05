@@ -135,36 +135,36 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
         }
         {
             wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 2, 0, 5);
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("DC_RXCDIV")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("DC_RXCDIV")), 1, wxALIGN_CENTER_VERTICAL, 0);
             NumericSlider* ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_DC_RXCDIV;
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("DC_TXCDIV")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("DC_TXCDIV")), 1, wxALIGN_CENTER_VERTICAL, 0);
             ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_DC_TXCDIV;
 
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_RXB")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_RXB")), 1, wxALIGN_CENTER_VERTICAL, 0);
             ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_RXB;
 
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_RXA")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_RXA")), 1, wxALIGN_CENTER_VERTICAL, 0);
             ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_RXA;
 
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_TXB")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_TXB")), 1, wxALIGN_CENTER_VERTICAL, 0);
             ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_TXB;
 
-            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_TXA")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(dcCalibGroup->GetStaticBox(), wxID_ANY, _("HYSCMP_TXA")), 1, wxALIGN_CENTER_VERTICAL, 0);
             ctrl = new NumericSlider(dcCalibGroup->GetStaticBox(), wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
@@ -191,56 +191,56 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             sizer->Add(chkbox);
             wndId2Enum[chkbox] = LMS7_RSSI_RSSIMODE;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("DAC_CLKDIV")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("DAC_CLKDIV")), 1, wxALIGN_CENTER_VERTICAL, 0);
             NumericSlider* spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0);
             spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(spnCtrl);
             wndId2Enum[spnCtrl] = LMS7_DAC_CLKDIV;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("Reference bias current to test ADC")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("Reference bias current to test ADC")), 1, wxALIGN_CENTER_VERTICAL, 0);
             spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0);
             spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(spnCtrl);
             wndId2Enum[spnCtrl] = LMS7_RSSI_BIAS;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("HYSCMP")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("HYSCMP")), 1, wxALIGN_CENTER_VERTICAL, 0);
             spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
             spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(spnCtrl);
             wndId2Enum[spnCtrl] = LMS7_RSSI_HYSCMP;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("DAC_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("DAC_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0);
             spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(spnCtrl);
             wndId2Enum[spnCtrl] = LMS7_RSSI_DAC_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("PDET2_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("PDET2_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             pdet_vals[1] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(pdet_vals[1]);
             wndId2Enum[pdet_vals[1]] = LMS7_RSSI_PDET2_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("PDET1_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("PDET1_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             pdet_vals[0] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(pdet_vals[0]);
             wndId2Enum[pdet_vals[0]] = LMS7_RSSI_PDET1_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI2_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI2_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             rssi_vals[1] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[1]);
             wndId2Enum[rssi_vals[1]] = LMS7_RSSI_RSSI2_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI1_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSSI1_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             rssi_vals[0] = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(rssi_vals[0]);
             wndId2Enum[rssi_vals[0]] = LMS7_RSSI_RSSI1_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("TREF_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("TREF_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             tref_val = new wxStaticText(panel, wxID_ANY, _("????"));
             sizer->Add(tref_val);
             wndId2Enum[tref_val] = LMS7_RSSI_TREF_VAL;
 
-            sizer->Add(new wxStaticText(panel, wxID_ANY, _("TVPTAT_VAL")), 1, wxEXPAND, 0);
+            sizer->Add(new wxStaticText(panel, wxID_ANY, _("TVPTAT_VAL")), 1, wxALIGN_CENTER_VERTICAL, 0);
             tvptat_val = new wxStaticText(panel, wxID_ANY, _("????"));
             wndId2Enum[tvptat_val] = LMS7_RSSI_TVPTAT_VAL;
             sizer->Add(tvptat_val);
@@ -270,7 +270,7 @@ LMS7_INTADC_CMPCFG_PDET1};
                 wndId2Enum[rssiCMPCFG[i]] = params[i];
                 rssiCMPCFG[i]->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
                 rssiCMPSTATUS[i] = new wxStaticText(panel, wxNewId(), _("?"));
-                sizerCMP->Add(rssiCMPSTATUS[i]);
+                sizerCMP->Add(rssiCMPSTATUS[i], 0, wxALIGN_CENTER_VERTICAL, 0);
                 wndId2Enum[rssiCMPSTATUS[i]] = paramStatus[i];
             }
             sizerCMP->Add(new wxFlexGridSizer(0, 0, 0, 0));
@@ -295,21 +295,21 @@ LMS7_INTADC_CMPCFG_PDET1};
         wndId2Enum[chkbox] = LMS7_RSSIDC_PD;
         chkRSSI_PD = chkbox;
 
-        sizer->Add(new wxStaticText(panel, wxID_ANY, _("HYSCMP")), 1, wxEXPAND, 0);
+        sizer->Add(new wxStaticText(panel, wxID_ANY, _("HYSCMP")), 1, wxALIGN_CENTER_VERTICAL, 0);
         NumericSlider* spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
         cmbRSSIDC_HYSCMP = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
         sizer->Add(spnCtrl);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_HYSCMP;
 
-        sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO2")), 1, wxEXPAND, 0);
+        sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO2")), 1, wxALIGN_CENTER_VERTICAL, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
         spinDCO2 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
         sizer->Add(spnCtrl);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_DCO2;
 
-        sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO1")), 1, wxEXPAND, 0);
+        sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO1")), 1, wxALIGN_CENTER_VERTICAL, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
         spinDCO1 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
@@ -334,16 +334,16 @@ LMS7_INTADC_CMPCFG_PDET1};
             rselArray.push_back(wxString::Format("%.1f mV", value_mV));
             value_mV -= 10;
         }
-        sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSEL:")), 1, wxEXPAND, 0);
+        sizer->Add(new wxStaticText(panel, wxID_ANY, _("RSEL:")), 1, wxALIGN_CENTER_VERTICAL, 0);
         cmbRSEL = new wxComboBox(panel, wxID_ANY);
         cmbRSEL->Append(rselArray);
         cmbRSEL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
         sizer->Add(cmbRSEL);
         wndId2Enum[cmbRSEL] = LMS7_RSSIDC_RSEL;
 
-        sizer->Add(new wxStaticText(panel, wxID_ANY, _("CMPSTATUS")), 1, wxEXPAND, 0);
+        sizer->Add(new wxStaticText(panel, wxID_ANY, _("CMPSTATUS")), 1, wxALIGN_CENTER_VERTICAL, 0);
         rssidc_cmpstatus = new wxStaticText(panel, wxID_ANY, _("?"));
-        sizer->Add(rssidc_cmpstatus);
+        sizer->Add(rssidc_cmpstatus, 0, wxALIGN_CENTER_VERTICAL, 0);
 
         wxButton* calibrateAnalogRSSIDC = new wxButton(panel, wxNewId(), _("Calibrate Analog RSSI"));
         calibrateAnalogRSSIDC->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnCalibrateAnalogRSSI), NULL, this);

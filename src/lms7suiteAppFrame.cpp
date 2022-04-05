@@ -125,7 +125,7 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     SetSize(x+8,y1+y2+8);
     m_scrolledWindow1->SetMinSize(wxSize(wxDefaultCoord,160));
     m_scrolledWindow1->SetMaxSize(wxSize(wxDefaultCoord,y1));
-    SetMinSize(wxSize(640,320));
+    //SetMinSize(wxSize(640,320));
     obj_ptr = this;
     wxCommandEvent event;
     OnControlBoardConnect(event);

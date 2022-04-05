@@ -282,7 +282,7 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     txtFrequency = new wxTextCtrl( sbSizer70->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0 );
     fgSizer89->Add( txtFrequency, 1, wxEXPAND, 5 );
     
-    cmbCLKH_OV_CLKL_CGEN = new wxComboBox( sbSizer70->GetStaticBox(), ID_CLKH_OV_CLKL_CGEN, wxEmptyString, wxDefaultPosition, wxSize( 48,-1 ), 0, NULL, 0 ); 
+    cmbCLKH_OV_CLKL_CGEN = new wxComboBox( sbSizer70->GetStaticBox(), ID_CLKH_OV_CLKL_CGEN, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbCLKH_OV_CLKL_CGEN->SetToolTip( wxT("FCLKL here is ADC clock. FCLKH is the clock to the DAC and if no division is added to the ADC as well") );
     
     fgSizer89->Add( cmbCLKH_OV_CLKL_CGEN, 1, wxEXPAND, 5 );
@@ -302,10 +302,9 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     ID_STATICTEXT101->Wrap( -1 );
     bSizer11->Add( ID_STATICTEXT101, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     
-    rxPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 360, 120 );
+    rxPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 360, 120 );
     rxPhase->Enable( false );
     rxPhase->SetToolTip( wxT("LML interface phase offset for Rx") );
-    rxPhase->SetMinSize( wxSize( 56,-1 ) );
     
     bSizer11->Add( rxPhase, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     
@@ -313,10 +312,9 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     ID_STATICTEXT102->Wrap( -1 );
     bSizer11->Add( ID_STATICTEXT102, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     
-    txPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), wxSP_ARROW_KEYS, 0, 360, 120 );
+    txPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 360, 120 );
     txPhase->Enable( false );
     txPhase->SetToolTip( wxT("LML interface phase offset for Tx") );
-    txPhase->SetMinSize( wxSize( 56,-1 ) );
     
     bSizer11->Add( txPhase, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     

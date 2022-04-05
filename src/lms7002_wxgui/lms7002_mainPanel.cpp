@@ -90,10 +90,10 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     fgSizer249->Add( chkEnableMIMO, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     
-    fgSizer248->Add( fgSizer249, 0, 0, 5 );
+    fgSizer248->Add( fgSizer249, 0, wxEXPAND, 5 );
     
     
-    fgSizer300->Add( fgSizer248, 0, 0, 5 );
+    fgSizer300->Add( fgSizer248, 0, wxEXPAND, 5 );
     
     btnDownloadAll = new wxButton( this, ID_BTN_CHIP_TO_GUI, wxT("Chip-->GUI"), wxDefaultPosition, wxDefaultSize, 0 );
     fgSizer300->Add( btnDownloadAll, 0, 0, 5 );
@@ -120,15 +120,15 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     
     txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
     txtTemperature->Wrap( -1 );
-    fgSizer299->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
+    fgSizer299->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer299->Add( btnReadTemperature, 0, 0, 5 );
+    fgSizer299->Add( btnReadTemperature, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     
-    fgSizer298->Add( fgSizer299, 1, wxALIGN_LEFT|wxALIGN_TOP|wxBOTTOM, 10 );
+    fgSizer298->Add( fgSizer299, 0, wxALIGN_LEFT|wxALIGN_TOP|wxBOTTOM, 10 );
     
-    tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxSize( -1,-1 ), 0 );
+    tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
     mTabCalibrations = new lms7002_pnlCalibrations_view( tabsNotebook, ID_TAB_CALIBRATIONS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     tabsNotebook->AddPage( mTabCalibrations, wxT("Calibrations"), true );
     mTabRFE = new lms7002_pnlRFE_view( tabsNotebook, ID_TAB_RFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -166,12 +166,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     mTabTrxGain = new lms7002_pnlGains_view( tabsNotebook, ID_TAB_GAINS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     tabsNotebook->AddPage( mTabTrxGain, wxT("TRX Gain"), false );
     
-    fgSizer298->Add( tabsNotebook, 1, wxEXPAND, 5 );
-    
-    
-    this->SetSizer( fgSizer298 );
-    this->Layout();
-    fgSizer298->Fit( this );
+    fgSizer298->Add( tabsNotebook, 0, 0, 5 );
     
     // Connect Events
     ID_BUTTON2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnOpenProject ), NULL, this );
@@ -192,6 +187,9 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
 
     mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
     tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
+
+    this->SetSizer( fgSizer298 );
+    this->Layout();
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
