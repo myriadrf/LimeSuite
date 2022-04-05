@@ -85,16 +85,16 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     chkEN_DIR_SXRSXT = new wxCheckBox( sbSizer74->GetStaticBox(), ID_EN_DIR_SXRSXT, wxT("Direct control of PDs and ENs"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_DIR_SXRSXT->SetToolTip( wxT("Enables direct control of PDs and ENs for SXR/SXT module") );
     
-    sbSizer74->Add( chkEN_DIR_SXRSXT, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizer74->Add( chkEN_DIR_SXRSXT, 1, wxALIGN_LEFT, 5 );
     
     
-    fgSizer95->Add( sbSizer74, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer95->Add( sbSizer74, 1, wxALIGN_LEFT|wxALIGN_TOP|wxALL, 5 );
     
     
     sbSizerPowerDowns->Add( fgSizer95, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 0 );
     
     
-    fgSizer93->Add( sbSizerPowerDowns, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer93->Add( sbSizerPowerDowns, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer77;
     sbSizer77 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("SXT/SXR controls") ), wxVERTICAL );
@@ -185,7 +185,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     fgSizer203->Add( ID_STATICTEXT7, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbTST_SX = new wxComboBox( this, ID_TST_SX, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
-    fgSizer203->Add( cmbTST_SX, 0, flags, 0 );
+    fgSizer203->Add( cmbTST_SX, 0, wxEXPAND, 0 );
     
     
     fgSizer103->Add( fgSizer203, 0, wxEXPAND, 5 );
@@ -212,27 +212,27 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     fgDivisionRatio->Add( ID_STATICTEXT4, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     ctrPW_DIV2_LOCH = new wxSpinCtrl( sbSizerDivisionRatio->GetStaticBox(), ID_PW_DIV2_LOCH, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 1 );
-    ctrPW_DIV2_LOCH->SetMinSize( wxSize( 48,-1 ) );
+    //ctrPW_DIV2_LOCH->SetMinSize( wxSize( 48,-1 ) );
     
-    fgDivisionRatio->Add( ctrPW_DIV2_LOCH, 0, 0, 5 );
+    fgDivisionRatio->Add( ctrPW_DIV2_LOCH, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT5 = new wxStaticText( sbSizerDivisionRatio->GetStaticBox(), wxID_ANY, wxT("Trim duty cycle of DIV4 LOCH"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT5->Wrap( -1 );
     fgDivisionRatio->Add( ID_STATICTEXT5, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     ctrPW_DIV4_LOCH = new wxSpinCtrl( sbSizerDivisionRatio->GetStaticBox(), ID_PW_DIV4_LOCH, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 2 );
-    ctrPW_DIV4_LOCH->SetMinSize( wxSize( 48,-1 ) );
+    //ctrPW_DIV4_LOCH->SetMinSize( wxSize( 48,-1 ) );
     
-    fgDivisionRatio->Add( ctrPW_DIV4_LOCH, 0, 0, 5 );
+    fgDivisionRatio->Add( ctrPW_DIV4_LOCH, 0, wxEXPAND, 5 );
     
     ID_STATICTEXT6 = new wxStaticText( sbSizerDivisionRatio->GetStaticBox(), wxID_ANY, wxT("LOCH_DIV division ratio"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT6->Wrap( -1 );
     fgDivisionRatio->Add( ID_STATICTEXT6, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     ctrDIV_LOCH = new wxSpinCtrl( sbSizerDivisionRatio->GetStaticBox(), ID_DIV_LOCH, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 2 );
-    ctrDIV_LOCH->SetMinSize( wxSize( 48,-1 ) );
+    //ctrDIV_LOCH->SetMinSize( wxSize( 48,-1 ) );
     
-    fgDivisionRatio->Add( ctrDIV_LOCH, 0, 0, 5 );
+    fgDivisionRatio->Add( ctrDIV_LOCH, 0, wxEXPAND, 5 );
     
     
     sbSizerDivisionRatio->Add( fgDivisionRatio, 1, wxALL|wxEXPAND|wxALIGN_LEFT, 0 );
@@ -255,7 +255,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbCP2_PLL = new wxComboBox( sbSizer78->GetStaticBox(), ID_CP2_PLL, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbCP2_PLL->SetToolTip( wxT("Controls the value of CP2 (cap from CP output to GND) in the PLL filter") );
     
-    fgSizer102->Add( cmbCP2_PLL, 0, flags, 0 );
+    fgSizer102->Add( cmbCP2_PLL, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT19 = new wxStaticText( sbSizer78->GetStaticBox(), wxID_ANY, wxT("CP3"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT19->Wrap( -1 );
@@ -264,7 +264,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbCP3_PLL = new wxComboBox( sbSizer78->GetStaticBox(), ID_CP3_PLL, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbCP3_PLL->SetToolTip( wxT("Controls the value of CP3 (cap from VCO Vtune input to GND) in the PLL filter") );
     
-    fgSizer102->Add( cmbCP3_PLL, 0, flags, 0 );
+    fgSizer102->Add( cmbCP3_PLL, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT20 = new wxStaticText( sbSizer78->GetStaticBox(), wxID_ANY, wxT("CZ"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT20->Wrap( -1 );
@@ -273,13 +273,13 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbCZ = new wxComboBox( sbSizer78->GetStaticBox(), ID_CZ, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbCZ->SetToolTip( wxT("Controls the value of CZ (Zero capacitor) in the PLL filter") );
     
-    fgSizer102->Add( cmbCZ, 0, flags, 0 );
+    fgSizer102->Add( cmbCZ, 0, wxEXPAND, 0 );
     
     
     sbSizer78->Add( fgSizer102, 1, wxEXPAND, 5 );
     
     
-    fgSizer198->Add( sbSizer78, 1, wxLEFT|wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer198->Add( sbSizer78, 1, wxEXPAND, 5 );
     
     wxString rgrSEL_VCOChoices[] = { wxT("VCOL"), wxT("VCOM"), wxT("VCOH") };
     int rgrSEL_VCONChoices = sizeof( rgrSEL_VCOChoices ) / sizeof( wxString );
@@ -287,32 +287,24 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     rgrSEL_VCO->SetSelection( 0 );
     rgrSEL_VCO->SetToolTip( wxT("Selects the active VCO. It is set by SX_SWC_calibration") );
     
-    fgSizer198->Add( rgrSEL_VCO, 0, flags, 0 );
+    fgSizer198->Add( rgrSEL_VCO, 0, wxEXPAND, 0 );
     
     wxStaticBoxSizer* sbSizer79;
     sbSizer79 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Frequency, MHz") ), wxVERTICAL );
     
     txtFrequency = new wxTextCtrl( sbSizer79->GetStaticBox(), wxID_ANY, wxT("2140"), wxDefaultPosition, wxDefaultSize, 0 );
-    #ifdef __WXGTK__
-    if ( !txtFrequency->HasFlag( wxTE_MULTILINE ) )
-    {
-    txtFrequency->SetMaxLength( 10 );
-    }
-    #else
-    txtFrequency->SetMaxLength( 10 );
-    #endif
-    sbSizer79->Add( txtFrequency, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizer79->Add( txtFrequency, 0, wxEXPAND, 5 );
     
     btnCalculate = new wxButton( sbSizer79->GetStaticBox(), wxID_ANY, wxT("Calculate"), wxDefaultPosition, wxDefaultSize, 0 );
-    sbSizer79->Add( btnCalculate, 0, flags, 5 );
+    sbSizer79->Add( btnCalculate, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     btnTune = new wxButton( sbSizer79->GetStaticBox(), wxID_ANY, wxT("Tune"), wxDefaultPosition, wxDefaultSize, 0 );
-    sbSizer79->Add( btnTune, 0, flags, 5 );
+    sbSizer79->Add( btnTune, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     ID_BUTTON5 = new wxButton( sbSizer79->GetStaticBox(), wxID_ANY, wxT("Coarse Tune"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_BUTTON5->Hide();
     
-    sbSizer79->Add( ID_BUTTON5, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizer79->Add( ID_BUTTON5, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
     fgSizer198->Add( sbSizer79, 0, wxEXPAND, 5 );
@@ -327,26 +319,18 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     
     m_staticText359 = new wxStaticText( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxT("RF Bandwidth (MHz):"), wxDefaultPosition, wxDefaultSize, 0 );
     m_staticText359->Wrap( -1 );
-    RefClkSpurSizer->Add( m_staticText359, 0, 0, 5 );
+    RefClkSpurSizer->Add( m_staticText359, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     txtRefSpurBW = new wxTextCtrl( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    #ifdef __WXGTK__
-    if ( !txtRefSpurBW->HasFlag( wxTE_MULTILINE ) )
-    {
-    txtRefSpurBW->SetMaxLength( 10 );
-    }
-    #else
-    txtRefSpurBW->SetMaxLength( 10 );
-    #endif
     txtRefSpurBW->Enable( false );
     
-    RefClkSpurSizer->Add( txtRefSpurBW, 0, 0, 5 );
+    RefClkSpurSizer->Add( txtRefSpurBW, 0, wxEXPAND|wxALL, 5 );
     
     
     pnlRefClkSpur->SetSizer( RefClkSpurSizer );
     pnlRefClkSpur->Layout();
     RefClkSpurSizer->Fit( pnlRefClkSpur );
-    fgSizer198->Add( pnlRefClkSpur, 1, wxEXPAND | wxALL, 5 );
+    fgSizer198->Add( pnlRefClkSpur, 1, wxEXPAND, 5 );
     
     
     fgSizer103->Add( fgSizer198, 1, wxEXPAND, 5 );
@@ -418,7 +402,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     fgSizer104->Add( lblRefClk_MHz, 1, wxALIGN_CENTER_VERTICAL, 5 );
     
     
-    sbSizer80->Add( fgSizer104, 0, wxEXPAND, 5 );
+    sbSizer80->Add( fgSizer104, 0, wxEXPAND|wxALL, 5 );
     
     
     fgSizer194->Add( sbSizer80, 0, wxLEFT|wxEXPAND, 5 );
@@ -452,10 +436,10 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     sbSizer76->Add( fgSizer97, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
     btnUpdateValues = new wxButton( sbSizer76->GetStaticBox(), wxID_ANY, wxT("Read"), wxDefaultPosition, wxDefaultSize, 0 );
-    sbSizer76->Add( btnUpdateValues, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    sbSizer76->Add( btnUpdateValues, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
     
     
-    fgSizer194->Add( sbSizer76, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer194->Add( sbSizer76, 1, wxEXPAND, 5 );
     
     
     sbSizerFrequencyControls->Add( fgSizer194, 0, wxEXPAND, 5 );
@@ -488,16 +472,9 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     fgSizer196->SetFlexibleDirection( wxBOTH );
     fgSizer196->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    wxFlexGridSizer* fgSizer96;
-    fgSizer96 = new wxFlexGridSizer( 0, 1, 0, 0 );
-    fgSizer96->SetFlexibleDirection( wxBOTH );
-    fgSizer96->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
     btnShowVCOparams = new wxButton( sbSizerFrequencyControls->GetStaticBox(), ID_BTN_SHOW_VCO, wxT("VCO params"), wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer96->Add( btnShowVCOparams, 1, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
-    
-    fgSizer196->Add( fgSizer96, 0, flags, 0 );
+    fgSizer196->Add( btnShowVCOparams, 0, wxALL|wxALIGN_CENTER_VERTICAL, 0 );
     
     wxFlexGridSizer* fgSizer98;
     fgSizer98 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -511,7 +488,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbVDIV_VCO = new wxComboBox( sbSizerFrequencyControls->GetStaticBox(), ID_VDIV_VCO, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbVDIV_VCO->SetToolTip( wxT("Controls VCO LDO output voltage") );
     
-    fgSizer98->Add( cmbVDIV_VCO, 0, flags, 0 );
+    fgSizer98->Add( cmbVDIV_VCO, 0, wxALIGN_CENTER_VERTICAL, 0 );
     
     
     fgSizer196->Add( fgSizer98, 1, wxALL|wxALIGN_LEFT|wxALIGN_TOP, 5 );
@@ -535,7 +512,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbIPULSE_CP = new wxComboBox( this, ID_IPULSE_CP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbIPULSE_CP->SetToolTip( wxT("Scales the pulse current of the charge pump") );
     
-    fgSizer193->Add( cmbIPULSE_CP, 0, flags, 0 );
+    fgSizer193->Add( cmbIPULSE_CP, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT8 = new wxStaticText( this, wxID_ANY, wxT("Feedback divider for SDM"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT8->Wrap( -1 );
@@ -544,7 +521,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbSEL_SDMCLK = new wxComboBox( this, ID_SEL_SDMCLK, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbSEL_SDMCLK->SetToolTip( wxT("Selects between the feedback divider output and Fref for SDM") );
     
-    fgSizer193->Add( cmbSEL_SDMCLK, 0, flags, 0 );
+    fgSizer193->Add( cmbSEL_SDMCLK, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT11 = new wxStaticText( this, wxID_ANY, wxT("Reference voltage"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT11->Wrap( -1 );
@@ -553,7 +530,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbRSEL_LDO_VCO = new wxComboBox( this, ID_RSEL_LDO_VCO, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbRSEL_LDO_VCO->SetToolTip( wxT("Set the reference voltage that supplies bias voltage of switch-cap array and varactor") );
     
-    fgSizer193->Add( cmbRSEL_LDO_VCO, 0, flags, 0 );
+    fgSizer193->Add( cmbRSEL_LDO_VCO, 0, wxEXPAND, 0 );
     
     ID_STATICTEXT12 = new wxStaticText( this, wxID_ANY, wxT("Scales offset of charge pump"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT12->Wrap( -1 );
@@ -562,10 +539,10 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbIOFFSET_CP = new wxComboBox( this, ID_IOFFSET_CP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbIOFFSET_CP->SetToolTip( wxT("Scales the offset current of the charge pump, 0-->63. This current is used in Fran-N mode to create an offset in the CP response and avoid the non-linear section") );
     
-    fgSizer193->Add( cmbIOFFSET_CP, 0, flags, 0 );
+    fgSizer193->Add( cmbIOFFSET_CP, 0, wxEXPAND, 0 );
     
     
-    fgSizer103->Add( fgSizer193, 0, 0, 0 );
+    fgSizer103->Add( fgSizer193, 0, wxEXPAND, 0 );
     
     sizerR3 = new wxFlexGridSizer( 0, 2, 0, 0 );
     sizerR3->SetFlexibleDirection( wxBOTH );
@@ -625,7 +602,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbRSEL_LDO_VCO->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlSX_view::ParameterChangeHandler ), NULL, this );
     cmbIOFFSET_CP->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_pnlSX_view::ParameterChangeHandler ), NULL, this );
     
-    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("PLL LPF zero resistor:")), 1, wxEXPAND, 0);
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("PLL LPF zero resistor:")), 1, wxALIGN_CENTER_VERTICAL, 0);
     cmbRZ_CTRL = new wxComboBox(this, wxID_ANY);
     cmbRZ_CTRL->Append(_("Rzero = 20 kOhm"));
     cmbRZ_CTRL->Append(_("Rzero = 8 kOhm"));
@@ -633,14 +610,14 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbRZ_CTRL->Append(_("LPF resistors are in bypass mode (<100 Ohm)"));
     cmbRZ_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
     wndId2Enum[cmbRZ_CTRL] = LMS7_RZ_CTRL;
-    sizerR3->Add(cmbRZ_CTRL);
+    sizerR3->Add(cmbRZ_CTRL, 0, wxEXPAND, 0);
 
-    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxEXPAND, 0);
+    sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxALIGN_CENTER_VERTICAL, 0);
     cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.18V"));
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.1V"));
     cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
-    sizerR3->Add(cmbCMPLO_CTRL, 0, 0, 5);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, wxEXPAND, 5);
     wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_SX;
 
     //ids for updating from chip
