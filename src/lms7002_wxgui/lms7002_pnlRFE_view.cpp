@@ -38,8 +38,8 @@ wxComboBox* lms7002_pnlRFE_view::NewComboBox(wxWindow *parent, const LMS7Paramet
 
 void SizerAddTextAndControl(wxSizer* sizer, const wxString& text, wxWindow* ctrl)
 {
-    sizer->Add( new wxStaticText( ctrl->GetParent(), wxID_ANY, text), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-    sizer->Add( ctrl, 0, wxEXPAND, 0 );
+    sizer->Add( new wxStaticText( ctrl->GetParent(), wxID_ANY, text), 0, wxLEFT|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    sizer->Add( ctrl, 0, wxEXPAND|wxLEFT, 5 );
 }
 
 lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -205,7 +205,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     cmbCCOMP_TIA_RFE = NewComboBox( sbSizerCapacitorControls->GetStaticBox(), LMS7param(CCOMP_TIA_RFE)); 
     cmbCCOMP_TIA_RFE->SetToolTip( wxT("Compensation capacitor for TIA") );
     
-    fgSizer49->Add( cmbCCOMP_TIA_RFE, 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    fgSizer49->Add( cmbCCOMP_TIA_RFE, 1, wxEXPAND, 0 );
     
     fgSizer49->Add( new wxStaticText( sbSizerCapacitorControls->GetStaticBox(), wxID_ANY, wxT("Feedback TIA")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
@@ -284,15 +284,15 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     fgSizer51->SetFlexibleDirection( wxBOTH );
     fgSizer51->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("I channel:")), 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("I channel:")), 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_I_RFE = NewComboBox( sbSizerTrimDuty->GetStaticBox(), LMS7param(CDC_I_RFE));
-    fgSizer51->Add( cmbCDC_I_RFE, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( cmbCDC_I_RFE, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
-    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("Q channel:")), 1, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("Q channel:")), 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_Q_RFE = NewComboBox( sbSizerTrimDuty->GetStaticBox(), LMS7param(CDC_Q_RFE)); 
-    fgSizer51->Add( cmbCDC_Q_RFE, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( cmbCDC_Q_RFE, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
     
     
     sbSizerTrimDuty->Add( fgSizer51, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );
