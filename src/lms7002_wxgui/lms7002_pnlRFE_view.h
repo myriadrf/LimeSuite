@@ -16,6 +16,7 @@ public:
 protected:
 	wxCheckBox* NewCheckBox(wxWindow *parent, const LMS7Parameter &param, const wxString &label, const wxString &tooltip, const wxPoint &pos, const wxSize &size);
 	wxComboBox* NewComboBox(wxWindow *parent, const LMS7Parameter &param, const wxString &tooltip, const wxPoint &pos, const wxSize &size);
+    NumericSlider* NewNumericSlider(wxWindow* parent, const LMS7Parameter &param, const wxString &value, const wxPoint &pos, const wxSize &size, long style, int min, int max, int initial, const wxString &name);
     void ParameterChangeHandler( wxCommandEvent& event );
     void SpinParameterChangeHandler(wxSpinEvent& event);
 

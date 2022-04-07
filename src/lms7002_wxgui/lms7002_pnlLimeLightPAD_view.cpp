@@ -363,7 +363,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     sbSizerLimeLightModes->Add( fgSizer108, 0, wxEXPAND|wxALL, 5);
     
     
-    fgSizer199->Add( sbSizerLimeLightModes, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+    fgSizer199->Add( sbSizerLimeLightModes, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizerDriverStrength;
     sbSizerDriverStrength = new wxStaticBoxSizer( new wxStaticBox( ID_PANEL1, wxID_ANY, wxT("Driver strength") ), wxHORIZONTAL );
@@ -903,28 +903,6 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbRXTSPCLKA_DIV = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_RXTSPCLKA_DIV, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
     fgSizer122->Add( cmbRXTSPCLKA_DIV, 0, wxEXPAND, 5 );
     
-    ID_STATICTEXT37 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK1DLY"), wxDefaultPosition, wxDefaultSize, 0 );
-    ID_STATICTEXT37->Wrap( -1 );
-    ID_STATICTEXT37->Hide();
-    
-    fgSizer122->Add( ID_STATICTEXT37, 1, wxALIGN_LEFT|wxALIGN_BOTTOM, 5 );
-    
-    cmbMCLK1DLY = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_MCLK1DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbMCLK1DLY->Hide();
-    
-    fgSizer122->Add( cmbMCLK1DLY, 0, wxEXPAND, 5 );
-    
-    ID_STATICTEXT39 = new wxStaticText( sbSizerClockControls->GetStaticBox(), wxID_ANY, wxT("MCLK2DLY"), wxDefaultPosition, wxDefaultSize, 0 );
-    ID_STATICTEXT39->Wrap( -1 );
-    ID_STATICTEXT39->Hide();
-    
-    fgSizer122->Add( ID_STATICTEXT39, 1, wxALIGN_LEFT|wxALIGN_BOTTOM, 5 );
-    
-    cmbMCLK2DLY = new wxSpinCtrl( sbSizerClockControls->GetStaticBox(), ID_MCLK2DLY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255, 0 );
-    cmbMCLK2DLY->Hide();
-    
-    fgSizer122->Add( cmbMCLK2DLY, 0, wxEXPAND, 5 );
-    
     chkFCLK1_INV = new wxCheckBox( sbSizerClockControls->GetStaticBox(), ID_FCLK1_INV, wxT("FCLK1 invert"), wxDefaultPosition, wxDefaultSize, 0 );
     chkFCLK1_INV->SetToolTip( wxT("FCLK1 clock inversion") );
     
@@ -962,7 +940,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbFCLK1_DLY->Append( wxT("1x delay") );
     cmbFCLK1_DLY->Append( wxT("2x delay") );
     cmbFCLK1_DLY->Append( wxT("3x delay") );
-    cmbFCLK1_DLY->SetToolTip( wxT("MCLK1 clock source") );
+    cmbFCLK1_DLY->SetToolTip( wxT("FCLK1 clock source") );
     
     fgSizer251->Add( cmbFCLK1_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
     
@@ -975,7 +953,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbFCLK2_DLY->Append( wxT("1x delay") );
     cmbFCLK2_DLY->Append( wxT("2x delay") );
     cmbFCLK2_DLY->Append( wxT("3x delay") );
-    cmbFCLK2_DLY->SetToolTip( wxT("MCLK1 clock source") );
+    cmbFCLK2_DLY->SetToolTip( wxT("FCLK2 clock source") );
     
     fgSizer251->Add( cmbFCLK2_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
     
@@ -1001,7 +979,7 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbMCLK2_DLY->Append( wxT("1x delay") );
     cmbMCLK2_DLY->Append( wxT("2x delay") );
     cmbMCLK2_DLY->Append( wxT("3x delay") );
-    cmbMCLK2_DLY->SetToolTip( wxT("MCLK1 clock source") );
+    cmbMCLK2_DLY->SetToolTip( wxT("MCLK2 clock source") );
     
     fgSizer251->Add( cmbMCLK2_DLY, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 0 );
     
@@ -1303,8 +1281,6 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     cmbTXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
     chkRXDIVEN->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
     cmbRXTSPCLKA_DIV->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-    cmbMCLK1DLY->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
-    cmbMCLK2DLY->Connect( wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
     chkFCLK1_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
     chkFCLK2_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
     chkMCLK1_INV->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_pnlLimeLightPAD_view::ParameterChangeHandler ), NULL, this );
@@ -1415,8 +1391,6 @@ lms7002_pnlLimeLightPAD_view::lms7002_pnlLimeLightPAD_view( wxWindow* parent, wx
     wndId2Enum[rgrLML_FIDM2] = LMS7param(LML2_FIDM);
     wndId2Enum[chkFCLK1_INV] = LMS7param(FCLK1_INV);
     wndId2Enum[chkFCLK2_INV] = LMS7param(FCLK2_INV);
-    wndId2Enum[cmbMCLK1DLY] = LMS7param(MCLK1DLY);
-    wndId2Enum[cmbMCLK2DLY] = LMS7param(MCLK2DLY);
     wndId2Enum[rgrDIQDIRCTR2] = LMS7param(DIQDIRCTR2);
     wndId2Enum[rgrDIQDIR2] = LMS7param(DIQDIR2);
     wndId2Enum[rgrDIQDIRCTR1] = LMS7param(DIQDIRCTR1);

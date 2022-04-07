@@ -143,7 +143,7 @@ lms7002_pnlGains_view::lms7002_pnlGains_view( wxWindow* parent, wxWindowID id, c
     fgSizer256->Add( m_staticText360, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
     
     txtCrestFactor = new wxTextCtrl( sbSizer135->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer256->Add( txtCrestFactor, 0, wxALL, 5 );
+    fgSizer256->Add( txtCrestFactor, 0, wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     
     sbSizer135->Add( fgSizer256, 1, wxEXPAND, 5 );

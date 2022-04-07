@@ -68,7 +68,7 @@ lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent, wxWindowID id, con
     
     ID_STATICTEXT2 = new wxStaticText( this, wxID_ANY, wxT("RP_CALIB_BIAS"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT2->Wrap( -1 );
-    fgSizer67->Add( ID_STATICTEXT2, 1, wxTOP|wxBOTTOM|wxRIGHT|wxALIGN_LEFT|wxALIGN_BOTTOM, 5 );
+    fgSizer67->Add( ID_STATICTEXT2, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbRP_CALIB_BIAS = new wxComboBox( this, ID_RP_CALIB_BIAS, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbRP_CALIB_BIAS->SetToolTip( wxT("Calibration code for rppolywo. This code is set by the calibration algorithm: BIAS_RPPOLY_calibration") );

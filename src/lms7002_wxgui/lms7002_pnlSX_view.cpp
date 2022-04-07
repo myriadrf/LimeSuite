@@ -22,7 +22,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer92;
-    fgSizer92 = new wxFlexGridSizer( 0, 2, 5, 5 );
+    fgSizer92 = new wxFlexGridSizer( 0, 3, 5, 5 );
     fgSizer92->SetFlexibleDirection( wxBOTH );
     fgSizer92->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
@@ -185,7 +185,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     fgSizer203->Add( ID_STATICTEXT7, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
     cmbTST_SX = new wxComboBox( this, ID_TST_SX, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 ); 
-    fgSizer203->Add( cmbTST_SX, 0, wxEXPAND, 0 );
+    fgSizer203->Add( cmbTST_SX, 0, 0, 0 );
     
     
     fgSizer103->Add( fgSizer203, 0, wxEXPAND, 5 );
@@ -312,7 +312,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     pnlRefClkSpur = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     pnlRefClkSpur->Hide();
     
-    RefClkSpurSizer = new wxStaticBoxSizer( new wxStaticBox( pnlRefClkSpur, wxID_ANY, wxT("Receiver Ref Clk    \nSpur Cancelation") ), wxVERTICAL );
+    RefClkSpurSizer = new wxStaticBoxSizer( new wxStaticBox( pnlRefClkSpur, wxID_ANY, wxT("Receiver Ref Clk \nSpur Cancelation") ), wxVERTICAL );
     
     chkEnableRefSpurCancelation = new wxCheckBox( RefClkSpurSizer->GetStaticBox(), wxID_ANY, wxT("Enable"), wxDefaultPosition, wxDefaultSize, 0 );
     RefClkSpurSizer->Add( chkEnableRefSpurCancelation, 0, 0, 5 );
@@ -330,7 +330,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     pnlRefClkSpur->SetSizer( RefClkSpurSizer );
     pnlRefClkSpur->Layout();
     RefClkSpurSizer->Fit( pnlRefClkSpur );
-    fgSizer198->Add( pnlRefClkSpur, 1, wxEXPAND, 5 );
+
     
     
     fgSizer103->Add( fgSizer198, 1, wxEXPAND, 5 );
@@ -348,7 +348,7 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     sbSizer80 = new wxStaticBoxSizer( new wxStaticBox( sbSizerFrequencyControls->GetStaticBox(), wxID_ANY, wxT("Calculated Values for Fractional Mode") ), wxVERTICAL );
     
     wxFlexGridSizer* fgSizer104;
-    fgSizer104 = new wxFlexGridSizer( 0, 4, 5, 10 );
+    fgSizer104 = new wxFlexGridSizer( 0, 4, 5, 5 );
     fgSizer104->AddGrowableCol( 1 );
     fgSizer104->AddGrowableCol( 3 );
     fgSizer104->SetFlexibleDirection( wxBOTH );
@@ -553,6 +553,8 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     
     
     fgSizer92->Add( fgSizer103, 1, wxALIGN_LEFT|wxALIGN_TOP, 5 );
+
+    fgSizer92->Add( pnlRefClkSpur, 1, 0, 5 );
     
     
     this->SetSizer( fgSizer92 );
@@ -610,14 +612,14 @@ lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const w
     cmbRZ_CTRL->Append(_("LPF resistors are in bypass mode (<100 Ohm)"));
     cmbRZ_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
     wndId2Enum[cmbRZ_CTRL] = LMS7_RZ_CTRL;
-    sizerR3->Add(cmbRZ_CTRL, 0, wxEXPAND, 0);
+    sizerR3->Add(cmbRZ_CTRL, 0, wxLEFT|wxEXPAND, 5);
 
     sizerR3->Add(new wxStaticText(this, wxID_ANY, _("CMPLO_CTRL:")), 1, wxALIGN_CENTER_VERTICAL, 0);
     cmbCMPLO_CTRL = new wxComboBox(this, wxID_ANY);
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.18V"));
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.1V"));
     cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlSX_view::ParameterChangeHandler), NULL, this);
-    sizerR3->Add(cmbCMPLO_CTRL, 0, wxEXPAND, 5);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, wxLEFT|wxEXPAND, 5);
     wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_SX;
 
     //ids for updating from chip

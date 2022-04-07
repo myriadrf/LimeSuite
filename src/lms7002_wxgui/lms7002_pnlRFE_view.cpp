@@ -36,10 +36,29 @@ wxComboBox* lms7002_pnlRFE_view::NewComboBox(wxWindow *parent, const LMS7Paramet
     return item;
 }
 
+NumericSlider* lms7002_pnlRFE_view::NewNumericSlider(wxWindow* parent,
+        const LMS7Parameter &param,
+        const wxString &tooltip=wxEmptyString,
+        const wxPoint &pos = wxDefaultPosition,
+        const wxSize &size = wxDefaultSize,
+        long style = wxSP_ARROW_KEYS,
+        int min = 0,
+        int max = 100,
+        int initial = 0,
+        const wxString &name = "numericSlider"
+        )
+{
+    int id = wxNewId();
+    NumericSlider* item = new NumericSlider(parent, id, wxEmptyString, pos, size, style, min, max, initial);
+    wndId2Enum[item] = param;
+    item->SetToolTip(tooltip);
+    item->Bind( wxEVT_COMMAND_SPINCTRL_UPDATED, &lms7002_pnlRFE_view::ParameterChangeHandler, this);
+    return item;
+}
 void SizerAddTextAndControl(wxSizer* sizer, const wxString& text, wxWindow* ctrl)
 {
-    sizer->Add( new wxStaticText( ctrl->GetParent(), wxID_ANY, text), 0, wxLEFT|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
-    sizer->Add( ctrl, 0, wxEXPAND|wxLEFT, 5 );
+    sizer->Add( new wxStaticText( ctrl->GetParent(), wxID_ANY, text), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    sizer->Add( ctrl, 0, wxEXPAND, 5 );
 }
 
 lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
@@ -165,10 +184,10 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     fgSizer45->SetFlexibleDirection( wxBOTH );
     fgSizer45->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    cmbDCOFFI_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFI_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
+    cmbDCOFFI_RFE = NewNumericSlider( sbSizerDC->GetStaticBox(), LMS7param(DCOFFI_RFE), wxT("Controls DC offset at the output of the TIA by injecting current to the input of the TIA (I side)"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
     SizerAddTextAndControl(fgSizer45, wxT("Offset I"), cmbDCOFFI_RFE);
     
-    cmbDCOFFQ_RFE = new NumericSlider( sbSizerDC->GetStaticBox(), ID_DCOFFQ_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
+    cmbDCOFFQ_RFE = NewNumericSlider( sbSizerDC->GetStaticBox(), LMS7param(DCOFFQ_RFE), wxT("Controls DC offset at the output of the TIA by injecting current to the input of the TIA (Q side)"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, -63, 63, 0 );
     SizerAddTextAndControl(fgSizer45, wxT("Offset Q"), cmbDCOFFQ_RFE);
     
     cmbICT_LODC_RFE = NewComboBox( sbSizerDC->GetStaticBox(), LMS7param(ICT_LODC_RFE)); 
@@ -178,7 +197,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     fgSizer45->Add( 0, 0, 1, wxEXPAND, 5 );
     wxCheckBox* chkEN_DCOFF_RXFE_RFE = new wxCheckBox( sbSizerDC->GetStaticBox(), ID_EN_DCOFF_RXFE_RFE, wxT("Enable DC offset"), wxDefaultPosition, wxDefaultSize, 0 );
     chkEN_DCOFF_RXFE_RFE->SetToolTip( wxT("Enables the DCOFFSET block for the RXFE") );
-    fgSizer45->Add( chkEN_DCOFF_RXFE_RFE, 0, wxALL|wxEXPAND, 0 );
+    fgSizer45->Add( chkEN_DCOFF_RXFE_RFE, 0, wxEXPAND|wxLEFT, 5 );
     
     
     sbSizerDC->Add( fgSizer45, 0, wxALL|wxEXPAND, 0 );
@@ -209,7 +228,7 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     
     fgSizer49->Add( new wxStaticText( sbSizerCapacitorControls->GetStaticBox(), wxID_ANY, wxT("Feedback TIA")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
     
-    cmbCFB_TIA_RFE = new NumericSlider( sbSizerCapacitorControls->GetStaticBox(), ID_CFB_TIA_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 4095, 0 );
+    cmbCFB_TIA_RFE = NewNumericSlider( sbSizerCapacitorControls->GetStaticBox(), LMS7param(CFB_TIA_RFE), wxT("Feedback capacitor for TIA. Controls the 3dB BW of the TIA. Should be set with calibration through digital baseband."), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 4095, 0 );
     fgSizer49->Add( cmbCFB_TIA_RFE, 1, wxEXPAND, 5 );
     
     
@@ -226,20 +245,14 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     fgSizer50->AddGrowableCol( 0 );
     fgSizer50->SetFlexibleDirection( wxBOTH );
     fgSizer50->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-    
-    fgSizer50->Add( new wxStaticText( sbSizerGainControls->GetStaticBox(), wxID_ANY, wxT("LNA")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-    
+
     cmbG_LNA_RFE = NewComboBox( sbSizerGainControls->GetStaticBox(), LMS7param(G_LNA_RFE)); 
     cmbG_LNA_RFE->SetToolTip( wxT("Controls the gain of the LNA") );
-    
-    fgSizer50->Add( cmbG_LNA_RFE, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-    
-    fgSizer50->Add( new wxStaticText( sbSizerGainControls->GetStaticBox(), wxID_ANY, wxT("Loopback")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
-    
+    SizerAddTextAndControl(fgSizer50, wxT("LNA"), cmbG_LNA_RFE);
+
     cmbG_RXLOOPB_RFE = NewComboBox( sbSizerGainControls->GetStaticBox(), LMS7param(G_RXLOOPB_RFE)); 
     cmbG_RXLOOPB_RFE->SetToolTip( wxT("Controls RXFE loopback gain") );
-    
-    fgSizer50->Add( cmbG_RXLOOPB_RFE, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 0 );
+    SizerAddTextAndControl(fgSizer50, wxT("Loopback"), cmbG_RXLOOPB_RFE);
     
     cmbG_TIA_RFE = NewComboBox( sbSizerGainControls->GetStaticBox(), LMS7param(G_TIA_RFE)); 
     cmbG_TIA_RFE->SetToolTip( wxT("Controls the Gain of the TIA") );
@@ -263,10 +276,10 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     cmbICT_LOOPB_RFE->SetToolTip( wxT("Controls the reference current of the RXFE loopback amplifier") );
     SizerAddTextAndControl(fgSizer46, wxT("Loopback amplifier"), cmbICT_LOOPB_RFE);
     
-    cmbICT_TIAMAIN_RFE = new NumericSlider( sbSizerRefCurrent->GetStaticBox(), ID_ICT_TIAMAIN_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
+    cmbICT_TIAMAIN_RFE = NewNumericSlider( sbSizerRefCurrent->GetStaticBox(), LMS7param(ICT_TIAMAIN_RFE), wxT("Controls the reference current of the RXFE TIA first stage"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
     SizerAddTextAndControl(fgSizer46, wxT("TIA 1st stage"), cmbICT_TIAMAIN_RFE);
 
-    cmbICT_TIAOUT_RFE = new NumericSlider( sbSizerRefCurrent->GetStaticBox(), ID_ICT_TIAOUT_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
+    cmbICT_TIAOUT_RFE = NewNumericSlider( sbSizerRefCurrent->GetStaticBox(), LMS7param(ICT_TIAOUT_RFE), wxT("Controls the reference current of the RXFE TIA first stage"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 31, 0 );
     SizerAddTextAndControl(fgSizer46, wxT("TIA 2nd stage"), cmbICT_TIAOUT_RFE);
     
     sbSizerRefCurrent->Add( fgSizer46, 0, wxEXPAND, 0 );
@@ -284,15 +297,15 @@ lms7002_pnlRFE_view::lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id, const 
     fgSizer51->SetFlexibleDirection( wxBOTH );
     fgSizer51->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
-    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("I channel:")), 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("I channel:")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_I_RFE = NewComboBox( sbSizerTrimDuty->GetStaticBox(), LMS7param(CDC_I_RFE));
-    fgSizer51->Add( cmbCDC_I_RFE, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( cmbCDC_I_RFE, 0, wxEXPAND, 5 );
     
-    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("Q channel:")), 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( new wxStaticText( sbSizerTrimDuty->GetStaticBox(), wxID_ANY, wxT("Q channel:")), 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5 );
     
     cmbCDC_Q_RFE = NewComboBox( sbSizerTrimDuty->GetStaticBox(), LMS7param(CDC_Q_RFE)); 
-    fgSizer51->Add( cmbCDC_Q_RFE, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+    fgSizer51->Add( cmbCDC_Q_RFE, 0, wxEXPAND, 5 );
     
     
     sbSizerTrimDuty->Add( fgSizer51, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5 );

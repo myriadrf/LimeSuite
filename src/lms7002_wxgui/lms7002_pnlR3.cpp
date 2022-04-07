@@ -131,7 +131,7 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             wxButton* btnUpdateCMP = new wxButton(panel, wxNewId(), _("Read"));
             btnUpdateCMP->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadDCCMP), NULL, this);
             sizer->Add(btnUpdateCMP);
-            dcCalibGroup->Add(sizer, 0, 0, 5);
+            dcCalibGroup->Add(sizer, 0, wxLEFT, 5);
         }
         {
             wxFlexGridSizer* sizer = new wxFlexGridSizer(0, 2, 0, 5);
@@ -169,7 +169,7 @@ lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wx
             ctrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
             sizer->Add(ctrl, 1, wxEXPAND, 5);
             wndId2Enum[ctrl] = LMS7_HYSCMP_TXA;
-            dcCalibGroup->Add(sizer, 0, wxLEFT, 5);
+            dcCalibGroup->Add(sizer, 0, wxLEFT|wxEXPAND, 5);
         }
         mainSizer->Add(dcCalibGroup, 1, wxEXPAND, 5);
     }
@@ -277,7 +277,7 @@ LMS7_INTADC_CMPCFG_PDET1};
             wxButton* btnUpdateRSSICMP = new wxButton(panel, wxNewId(), _("Read"));
             btnUpdateRSSICMP->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(lms7002_pnlR3_view::OnReadRSSICMP), NULL, this);
             sizerCMP->Add(btnUpdateRSSICMP);
-            RSSIPDETGroup->Add(sizerCMP);
+            RSSIPDETGroup->Add(sizerCMP, 0, wxLEFT, 5);
 
             rowGroup->Add(RSSIPDETGroup);
         }
@@ -299,21 +299,21 @@ LMS7_INTADC_CMPCFG_PDET1};
         NumericSlider* spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 7, 0);
         cmbRSSIDC_HYSCMP = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandler), NULL, this);
-        sizer->Add(spnCtrl);
+        sizer->Add(spnCtrl, 0, wxEXPAND, 0);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_HYSCMP;
 
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO2")), 1, wxALIGN_CENTER_VERTICAL, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
         spinDCO2 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
-        sizer->Add(spnCtrl);
+        sizer->Add(spnCtrl, 0, wxEXPAND, 0);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_DCO2;
 
         sizer->Add(new wxStaticText(panel, wxID_ANY, _("DCO1")), 1, wxALIGN_CENTER_VERTICAL, 0);
         spnCtrl = new NumericSlider(panel, wxNewId(), wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 127, 0);
         spinDCO1 = spnCtrl;
         spnCtrl->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxCommandEventHandler(lms7002_pnlR3_view::ParameterChangeHandlerCMPRead), NULL, this);
-        sizer->Add(spnCtrl);
+        sizer->Add(spnCtrl, 0, wxEXPAND, 0);
         wndId2Enum[spnCtrl] = LMS7_RSSIDC_DCO1;
 
         wxArrayString rselArray;

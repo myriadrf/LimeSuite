@@ -124,7 +124,7 @@ lms7002_pnlTRF_view::lms7002_pnlTRF_view( wxWindow* parent, wxWindowID id, const
     fgSizer37->Add( cmbICT_MAIN_TXPAD_TRF, 0, wxEXPAND, 0 );
     
     
-    sbSizerBiasCurrent->Add( fgSizer37, 0, flags, 0 );
+    sbSizerBiasCurrent->Add( fgSizer37, 0, wxEXPAND, 0 );
     
     
     fgSizer35->Add( sbSizerBiasCurrent, 0, wxEXPAND, 5 );

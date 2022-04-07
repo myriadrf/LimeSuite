@@ -234,9 +234,7 @@ protected:
 		wxCheckBox* chkRXDIVEN;
 		wxSpinCtrl* cmbRXTSPCLKA_DIV;
 		wxStaticText* ID_STATICTEXT37;
-		wxSpinCtrl* cmbMCLK1DLY;
 		wxStaticText* ID_STATICTEXT39;
-		wxSpinCtrl* cmbMCLK2DLY;
 		wxCheckBox* chkFCLK1_INV;
 		wxCheckBox* chkFCLK2_INV;
 		wxCheckBox* chkMCLK1_INV;

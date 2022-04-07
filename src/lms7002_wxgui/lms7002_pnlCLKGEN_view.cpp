@@ -300,29 +300,29 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     
     ID_STATICTEXT101 = new wxStaticText( sbSizer70->GetStaticBox(), wxID_ANY, wxT("Rx phase"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT101->Wrap( -1 );
-    bSizer11->Add( ID_STATICTEXT101, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    bSizer11->Add( ID_STATICTEXT101, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     rxPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 360, 120 );
     rxPhase->Enable( false );
     rxPhase->SetToolTip( wxT("LML interface phase offset for Rx") );
     
-    bSizer11->Add( rxPhase, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    bSizer11->Add( rxPhase, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     ID_STATICTEXT102 = new wxStaticText( sbSizer70->GetStaticBox(), wxID_ANY, wxT("Tx phase"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT102->Wrap( -1 );
-    bSizer11->Add( ID_STATICTEXT102, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    bSizer11->Add( ID_STATICTEXT102, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     txPhase = new wxSpinCtrl( sbSizer70->GetStaticBox(), ID_GFIR1_N_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 360, 120 );
     txPhase->Enable( false );
     txPhase->SetToolTip( wxT("LML interface phase offset for Tx") );
     
-    bSizer11->Add( txPhase, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    bSizer11->Add( txPhase, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     chkAutoPhase = new wxCheckBox( sbSizer70->GetStaticBox(), ID_AUTO_PHASE, wxT("Auto phase"), wxDefaultPosition, wxDefaultSize, 0 );
     chkAutoPhase->SetValue(true); 
     chkAutoPhase->SetToolTip( wxT("Configure FPGA PLL phase for LML interface automatically") );
     
-    bSizer11->Add( chkAutoPhase, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    bSizer11->Add( chkAutoPhase, 0, wxALIGN_CENTER_VERTICAL, 5 );
     
     
     sbSizer70->Add( bSizer11, 1, wxEXPAND, 5 );
@@ -610,7 +610,7 @@ lms7002_pnlCLKGEN_view::lms7002_pnlCLKGEN_view( wxWindow* parent, wxWindowID id,
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.18V"));
     cmbCMPLO_CTRL->Append(_("Low threshold is set to 0.1V"));
     cmbCMPLO_CTRL->Connect(wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler(lms7002_pnlCLKGEN_view::ParameterChangeHandler), NULL, this);
-    sizerR3->Add(cmbCMPLO_CTRL, 0, wxALIGN_CENTER_VERTICAL, 5);
+    sizerR3->Add(cmbCMPLO_CTRL, 0, wxLEFT|wxALIGN_CENTER_VERTICAL, 5);
     wndId2Enum[cmbCMPLO_CTRL] = LMS7_CMPLO_CTRL_CGEN;
 
     wndId2Enum[cmbCLKH_OV_CLKL_CGEN] = LMS7param(CLKH_OV_CLKL_CGEN);

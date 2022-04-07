@@ -173,8 +173,9 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     tableTitleCol2->Wrap( -1 );
     fgSizer221->Add( tableTitleCol2, 1, wxLEFT|wxALIGN_RIGHT, 5 );
     
+    int NCOlineflags = wxALIGN_CENTER_VERTICAL;
     rgrSEL0 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer221->Add( rgrSEL0, 0, flags, 5 );
+    fgSizer221->Add( rgrSEL0, 0, NCOlineflags, 5);
     
     txtFCWPHO0 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -189,7 +190,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO0 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.00000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO0->Wrap( -1 );
-    fgSizer221->Add( txtAnglePHO0, 0, wxALL, 5 );
+    fgSizer221->Add( txtAnglePHO0, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer221, 1, wxEXPAND, 5 );
@@ -200,7 +201,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2211->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL01 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2211->Add( rgrSEL01, 0, flags, 5 );
+    fgSizer2211->Add( rgrSEL01, 0, NCOlineflags, 5);
     
     txtFCWPHO01 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -215,7 +216,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO01 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO01->Wrap( -1 );
-    fgSizer2211->Add( txtAnglePHO01, 0, wxALL, 5 );
+    fgSizer2211->Add( txtAnglePHO01, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2211, 1, wxEXPAND, 5 );
@@ -226,7 +227,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2212->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL02 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2212->Add( rgrSEL02, 0, flags, 5 );
+    fgSizer2212->Add( rgrSEL02, 0, NCOlineflags, 5);
     
     txtFCWPHO02 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -241,7 +242,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO02 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO02->Wrap( -1 );
-    fgSizer2212->Add( txtAnglePHO02, 0, wxALL, 5 );
+    fgSizer2212->Add( txtAnglePHO02, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2212, 1, wxEXPAND, 5 );
@@ -252,7 +253,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2213->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL03 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2213->Add( rgrSEL03, 0, flags, 5 );
+    fgSizer2213->Add( rgrSEL03, 0, NCOlineflags, 5);
     
     txtFCWPHO03 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -267,7 +268,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO03 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO03->Wrap( -1 );
-    fgSizer2213->Add( txtAnglePHO03, 0, wxALL, 5 );
+    fgSizer2213->Add( txtAnglePHO03, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2213, 1, wxEXPAND, 5 );
@@ -278,7 +279,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2214->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL04 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2214->Add( rgrSEL04, 0, flags, 5 );
+    fgSizer2214->Add( rgrSEL04, 0, NCOlineflags, 5);
     
     txtFCWPHO04 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -293,7 +294,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO04 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO04->Wrap( -1 );
-    fgSizer2214->Add( txtAnglePHO04, 0, wxALL, 5 );
+    fgSizer2214->Add( txtAnglePHO04, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2214, 1, wxEXPAND, 5 );
@@ -304,7 +305,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2215->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL05 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2215->Add( rgrSEL05, 0, flags, 5 );
+    fgSizer2215->Add( rgrSEL05, 0, NCOlineflags, 5);
     
     txtFCWPHO05 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -319,7 +320,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO05 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO05->Wrap( -1 );
-    fgSizer2215->Add( txtAnglePHO05, 0, wxALL, 5 );
+    fgSizer2215->Add( txtAnglePHO05, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2215, 1, wxEXPAND, 5 );
@@ -330,7 +331,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2216->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL06 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2216->Add( rgrSEL06, 0, flags, 5 );
+    fgSizer2216->Add( rgrSEL06, 0, NCOlineflags, 5);
     
     txtFCWPHO06 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -345,7 +346,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO06 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO06->Wrap( -1 );
-    fgSizer2216->Add( txtAnglePHO06, 0, wxALL, 5 );
+    fgSizer2216->Add( txtAnglePHO06, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2216, 1, wxEXPAND, 5 );
@@ -356,7 +357,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2217->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL07 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2217->Add( rgrSEL07, 0, flags, 5 );
+    fgSizer2217->Add( rgrSEL07, 0, NCOlineflags, 5);
     
     txtFCWPHO07 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -371,18 +372,18 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO07 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO07->Wrap( -1 );
-    fgSizer2217->Add( txtAnglePHO07, 0, wxALL, 5 );
+    fgSizer2217->Add( txtAnglePHO07, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2217, 1, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer2218;
-    fgSizer2218 = new wxFlexGridSizer( 0, 4, 0, 0 );
+    fgSizer2218 = new wxFlexGridSizer( 0, 4, 0, 5 );
     fgSizer2218->SetFlexibleDirection( wxBOTH );
     fgSizer2218->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL08 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2218->Add( rgrSEL08, 0, flags, 5 );
+    fgSizer2218->Add( rgrSEL08, 0, NCOlineflags, 5);
     
     txtFCWPHO08 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -397,7 +398,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO08 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO08->Wrap( -1 );
-    fgSizer2218->Add( txtAnglePHO08, 0, wxALL, 5 );
+    fgSizer2218->Add( txtAnglePHO08, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2218, 1, wxEXPAND, 5 );
@@ -408,7 +409,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer2219->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL09 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer2219->Add( rgrSEL09, 0, flags, 5 );
+    fgSizer2219->Add( rgrSEL09, 0, NCOlineflags, 5);
     
     txtFCWPHO09 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -423,7 +424,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO09 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO09->Wrap( -1 );
-    fgSizer2219->Add( txtAnglePHO09, 0, wxALL, 5 );
+    fgSizer2219->Add( txtAnglePHO09, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer2219, 1, wxEXPAND, 5 );
@@ -434,7 +435,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22110->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL10 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22110->Add( rgrSEL10, 0, flags, 5 );
+    fgSizer22110->Add( rgrSEL10, 0, NCOlineflags, 5);
     
     txtFCWPHO10 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -449,7 +450,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO10 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO10->Wrap( -1 );
-    fgSizer22110->Add( txtAnglePHO10, 0, wxALL, 5 );
+    fgSizer22110->Add( txtAnglePHO10, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22110, 1, wxEXPAND, 5 );
@@ -460,7 +461,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22111->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL11 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22111->Add( rgrSEL11, 0, flags, 5 );
+    fgSizer22111->Add( rgrSEL11, 0, NCOlineflags, 5);
     
     txtFCWPHO11 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -475,7 +476,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO11 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO11->Wrap( -1 );
-    fgSizer22111->Add( txtAnglePHO11, 0, wxALL, 5 );
+    fgSizer22111->Add( txtAnglePHO11, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22111, 1, wxEXPAND, 5 );
@@ -486,7 +487,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22112->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL12 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22112->Add( rgrSEL12, 0, flags, 5 );
+    fgSizer22112->Add( rgrSEL12, 0, NCOlineflags, 5);
     
     txtFCWPHO12 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -501,7 +502,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO12 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO12->Wrap( -1 );
-    fgSizer22112->Add( txtAnglePHO12, 0, wxALL, 5 );
+    fgSizer22112->Add( txtAnglePHO12, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22112, 1, wxEXPAND, 5 );
@@ -512,7 +513,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22113->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL13 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22113->Add( rgrSEL13, 0, flags, 5 );
+    fgSizer22113->Add( rgrSEL13, 0, NCOlineflags, 5);
     
     txtFCWPHO13 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -527,7 +528,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO13 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO13->Wrap( -1 );
-    fgSizer22113->Add( txtAnglePHO13, 0, wxALL, 5 );
+    fgSizer22113->Add( txtAnglePHO13, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22113, 1, wxEXPAND, 5 );
@@ -538,7 +539,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22114->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL14 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22114->Add( rgrSEL14, 0, flags, 5 );
+    fgSizer22114->Add( rgrSEL14, 0, NCOlineflags, 5);
     
     txtFCWPHO14 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -553,7 +554,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO14 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO14->Wrap( -1 );
-    fgSizer22114->Add( txtAnglePHO14, 0, wxALL, 5 );
+    fgSizer22114->Add( txtAnglePHO14, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22114, 1, wxEXPAND, 5 );
@@ -564,7 +565,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer22115->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
     rgrSEL15 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer22115->Add( rgrSEL15, 0, flags, 5 );
+    fgSizer22115->Add( rgrSEL15, 0, NCOlineflags, 5);
     
     txtFCWPHO15 = new wxTextCtrl( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     #ifdef __WXGTK__
@@ -579,7 +580,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     
     txtAnglePHO15 = new wxStaticText( sbSizer106->GetStaticBox(), wxID_ANY, wxT("0.0000"), wxDefaultPosition, wxDefaultSize, 0 );
     txtAnglePHO15->Wrap( -1 );
-    fgSizer22115->Add( txtAnglePHO15, 0, wxALL, 5 );
+    fgSizer22115->Add( txtAnglePHO15, 0, NCOlineflags, 5);
     
     
     sizerNCOgrid->Add( fgSizer22115, 1, wxEXPAND, 5 );
