@@ -122,7 +122,8 @@ LMS7SuiteAppFrame::LMS7SuiteAppFrame( wxWindow* parent ) :
     int x,y1,y2;
     m_scrolledWindow1->GetVirtualSize(&x,&y1);
     mMiniLog->GetSize(nullptr,&y2);
-    SetSize(x+8,y1+y2+8);
+    //Increase size so the scrollbars would not appear
+    SetSize(x*1.05,(y1+y2)*1.05);
     m_scrolledWindow1->SetMinSize(wxSize(wxDefaultCoord,160));
     m_scrolledWindow1->SetMaxSize(wxSize(wxDefaultCoord,y1));
     //SetMinSize(wxSize(640,320));
