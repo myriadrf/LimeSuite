@@ -81,7 +81,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	#else
 	txtNyquistFreqMHz->SetMaxLength( 8 );
 	#endif
-	txtNyquistFreqMHz->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer11->Add( txtNyquistFreqMHz, 0, wxEXPAND, 5 );
 	
@@ -90,7 +89,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	fgSizer11->Add( m_staticText7, 0, wxALIGN_CENTER_VERTICAL, 5 );
 	
 	spinFFTsize = new wxSpinCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 64, 65536, 16384 );
-	spinFFTsize->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer11->Add( spinFFTsize, 0, wxEXPAND, 5 );
 	
@@ -252,7 +250,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	spinAvgCount = new wxSpinCtrl( sbSizer3->GetStaticBox(), wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 512, 1 );
 	spinAvgCount->SetToolTip( wxT("Number of FFTs to average") );
-	spinAvgCount->SetMinSize( wxSize( 64,-1 ) );
 	
 	fgSizer101->Add( spinAvgCount, 0, 0, 5 );
 	
@@ -415,7 +412,6 @@ frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title
 	
 	this->SetSizer( fgSizer7 );
 	this->Layout();
-	fgSizer7->Fit( this );
 	
 	this->Centre( wxBOTH );
 	

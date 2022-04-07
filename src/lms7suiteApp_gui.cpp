@@ -106,7 +106,7 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	bSizer6 = new wxBoxSizer( wxVERTICAL );
 	
-	m_scrolledWindow1 = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxSize( 1180,665 ), wxHSCROLL|wxVSCROLL );
+	m_scrolledWindow1 = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
 	m_scrolledWindow1->SetScrollRate( 5, 5 );
 	contentSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
 	contentSizer->AddGrowableCol( 0 );
@@ -115,12 +115,12 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	contentSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	mContent = new lms7002_mainPanel( m_scrolledWindow1, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	contentSizer->Add( mContent, 1, wxEXPAND, 5 );
+	contentSizer->Add( mContent, 0, wxEXPAND, 5 );
 	
 	
 	m_scrolledWindow1->SetSizer( contentSizer );
 	m_scrolledWindow1->Layout();
-	bSizer6->Add( m_scrolledWindow1, 4, wxALIGN_BOTTOM|wxBOTTOM|wxEXPAND, 5 );
+	bSizer6->Add( m_scrolledWindow1, 4, wxEXPAND, 5 );
 	
 	
 	fgSizer8->Add( bSizer6, 1, wxEXPAND, 5 );
@@ -128,7 +128,6 @@ AppFrame_view::AppFrame_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	this->SetSizer( fgSizer8 );
 	this->Layout();
-	fgSizer8->Fit( this );
 	
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( AppFrame_view::OnClose ) );
@@ -196,7 +195,7 @@ dlgAbout_view::dlgAbout_view( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	ID_STATICTEXT1 = new wxStaticText( this, wxID_ANY, wxT("LMS7002 Software "), wxDefaultPosition, wxDefaultSize, 0 );
 	ID_STATICTEXT1->Wrap( -1 );
-	ID_STATICTEXT1->SetFont( wxFont( 18, 70, 90, 90, false, wxEmptyString ) );
+	ID_STATICTEXT1->SetFont( ID_STATICTEXT1->GetFont().Scale(2) );
 	
 	fgSizer4->Add( ID_STATICTEXT1, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
 	

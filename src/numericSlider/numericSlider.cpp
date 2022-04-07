@@ -32,12 +32,11 @@ NumericSlider::NumericSlider(
     wxFlexGridSizer* mainSizer;
     mainSizer = new wxFlexGridSizer(0, 2, 0, 0);
     mainSizer->AddGrowableCol(0);
-    mainSizer->AddGrowableRow(0);
-    mainSizer->SetFlexibleDirection(wxBOTH);
+    mainSizer->SetFlexibleDirection(wxHORIZONTAL);
 
     mScroll = new wxScrollBar(this, wxNewId(), wxDefaultPosition, wxDefaultSize, wxSB_HORIZONTAL);
     mScroll->SetMinSize(wxSize(128, -1));
-    mainSizer->Add(mScroll, 0, wxEXPAND | wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 0);
+    mainSizer->Add(mScroll, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 0);
     int sliderStep = (max - min) / 20;
     if (sliderStep == 0)
         sliderStep = 1;
@@ -45,8 +44,8 @@ NumericSlider::NumericSlider(
     mScroll->Connect(wxEVT_SCROLL_CHANGED, wxScrollEventHandler(NumericSlider::OnScrollChange), NULL, this);
 
     mSpinner = new wxSpinCtrl(this, wxNewId(), wxEmptyString, wxDefaultPosition, wxSize(-1, -1), wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER, min, max, initial);
-    mSpinner->SetMinSize(wxSize(112, -1));
-    mainSizer->Add(mSpinner, 0, wxEXPAND |wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL, 0);
+    //mSpinner->SetMinSize(wxSize(112, -1));
+    mainSizer->Add(mSpinner, 0, wxALIGN_CENTER_VERTICAL, 0);
     mSpinner->Connect(wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(NumericSlider::OnSpinnerChange), NULL, this);
     mSpinner->Connect(wxEVT_TEXT_ENTER, wxSpinEventHandler(NumericSlider::OnSpinnerChangeEnter), NULL, this);
 

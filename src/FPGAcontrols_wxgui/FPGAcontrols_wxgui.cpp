@@ -66,10 +66,10 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     cmbDevice->Append(_T("LMS2"));
     cmbDevice->Append(_T("ADC/DAC"));
     cmbDevice->SetSelection(0);
-    FlexGridSizer1->Add(cmbDevice, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    FlexGridSizer1->Add(cmbDevice, 1, wxEXPAND, 5);
     mode = new wxChoice(this, wxNewId(), wxDefaultPosition, wxDefaultSize, 0, 0, 0, wxDefaultValidator, _T("ID_CHOICE"));
 
-    FlexGridSizer1->Add(mode, 1, wxEXPAND | wxALIGN_LEFT | wxALIGN_TOP, 5);
+    FlexGridSizer1->Add(mode, 1, wxEXPAND, 5);
 
     StaticBoxSizer3 = new wxStaticBoxSizer(wxHORIZONTAL, this, _T("WFM loader"));
     FlexGridSizer6 = new wxFlexGridSizer(0, 1, 5, 0);
@@ -88,10 +88,10 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     btnOpenWFM->SetToolTip("The file should contain interleaved 16bit I + 16bit Q sample values (IQIQIQ....)");
     FlexGridSizer8->Add(btnOpenWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     txtFilename = new wxStaticText(this, ID_STATICTEXT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_START, _T("ID_STATICTEXT2"));
-    FlexGridSizer8->Add(txtFilename, 1, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+    FlexGridSizer8->Add(txtFilename, 1, wxALL|wxEXPAND, 5);
     chkMIMO = new wxCheckBox(this, wxNewId(), _("MIMO"));
     FlexGridSizer8->Add(chkMIMO, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_TOP, 5);
-    FlexGridSizer6->Add(FlexGridSizer8, 1, wxEXPAND|wxALIGN_LEFT|wxALIGN_TOP, 5);
+    FlexGridSizer6->Add(FlexGridSizer8, 1, wxEXPAND, 5);
 
     FlexGridSizer2 = new wxFlexGridSizer(0, 3, 0, 5);
     btnPlayWFM = new wxButton(this, ID_BUTTON3, _T("Play >"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON3"));
@@ -100,7 +100,7 @@ FPGAcontrols_wxgui::FPGAcontrols_wxgui(wxWindow* parent,wxWindowID id,const wxSt
     FlexGridSizer2->Add(btnStopWFM, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     FlexGridSizer6->Add(FlexGridSizer2, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
     StaticBoxSizer3->Add(FlexGridSizer6, 1, wxALIGN_LEFT|wxALIGN_TOP, 5);
-    FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL | wxLEFT, 5);
+    FlexGridSizer1->Add(StaticBoxSizer3, 1, wxEXPAND | wxLEFT, 5);
 
     statusText = new wxStaticText(this, ID_STATICTEXT5, _T(""), wxDefaultPosition, wxSize(-1,-1), 0, _T("ID_STATICTEXT5"));
     FlexGridSizer1->Add(statusText, 1, wxLEFT|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);

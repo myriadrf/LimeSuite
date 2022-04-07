@@ -31,17 +31,165 @@ using namespace lime;
 
 lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
     :
-    mainPanel(parent, id, pos, size, style), lmsControl(nullptr)
+    wxPanel(parent, id, pos, size, style), lmsControl(nullptr)
 {
+    wxFlexGridSizer* fgSizer298;
+    fgSizer298 = new wxFlexGridSizer( 3, 1, 0, 0 );
+    fgSizer298->AddGrowableCol( 0 );
+    fgSizer298->AddGrowableRow( 1 );
+    fgSizer298->SetFlexibleDirection( wxBOTH );
+    fgSizer298->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    wxFlexGridSizer* fgSizer299;
+    fgSizer299 = new wxFlexGridSizer( 0, 7, 0, 0 );
+    fgSizer299->AddGrowableCol( 3 );
+    fgSizer299->SetFlexibleDirection( wxBOTH );
+    fgSizer299->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    ID_BUTTON2 = new wxButton( this, wxID_ANY, wxT("Open"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+    ID_BUTTON2->SetDefault(); 
+    fgSizer299->Add( ID_BUTTON2, 1, 0, 5 );
+    
+    ID_BUTTON3 = new wxButton( this, wxID_ANY, wxT("Save"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+    ID_BUTTON3->SetDefault(); 
+    fgSizer299->Add( ID_BUTTON3, 1, 0, 5 );
+    
+    wxFlexGridSizer* fgSizer300;
+    fgSizer300 = new wxFlexGridSizer( 0, 5, 0, 0 );
+    fgSizer300->AddGrowableRow( 0 );
+    fgSizer300->SetFlexibleDirection( wxBOTH );
+    fgSizer300->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    wxFlexGridSizer* fgSizer248;
+    fgSizer248 = new wxFlexGridSizer( 0, 1, 0, 0 );
+    fgSizer248->SetFlexibleDirection( wxBOTH );
+    fgSizer248->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    wxFlexGridSizer* fgSizer249;
+    fgSizer249 = new wxFlexGridSizer( 0, 4, 0, 0 );
+    fgSizer249->SetFlexibleDirection( wxHORIZONTAL );
+    fgSizer249->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    cmbLmsDevice = new wxComboBox( this, ID_G_LNA_RFE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+    cmbLmsDevice->Append( wxT("LMS 1") );
+    cmbLmsDevice->Append( wxT("LMS 2") );
+    cmbLmsDevice->SetSelection( 0 );
+    cmbLmsDevice->SetToolTip( wxT("Controls the gain of the LNA") );
+    
+    fgSizer249->Add( cmbLmsDevice, 0, wxALL, 0 );
+    
+    rbChannelA = new wxRadioButton( this, ID_BTN_CH_A, wxT("A CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer249->Add( rbChannelA, 0, wxALIGN_CENTER_VERTICAL, 5 );
+    
+    rbChannelB = new wxRadioButton( this, ID_BTN_CH_B, wxT("B CHANNEL"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer249->Add( rbChannelB, 0, wxALIGN_CENTER_VERTICAL, 5 );
+    
+    chkEnableMIMO = new wxCheckBox( this, wxID_ANY, wxT("Enable MIMO"), wxDefaultPosition, wxDefaultSize, 0 );
+    chkEnableMIMO->SetToolTip( wxT("Enables required registers for MIMO mode") );
+    
+    fgSizer249->Add( chkEnableMIMO, 0, wxALIGN_CENTER_VERTICAL, 5 );
+    
+    
+    fgSizer248->Add( fgSizer249, 0, wxEXPAND, 5 );
+    
+    
+    fgSizer300->Add( fgSizer248, 0, wxEXPAND, 5 );
+    
+    btnDownloadAll = new wxButton( this, ID_BTN_CHIP_TO_GUI, wxT("Chip-->GUI"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer300->Add( btnDownloadAll, 0, 0, 5 );
+    
+    btnUploadAll = new wxButton( this, wxID_ANY, wxT("GUI-->Chip"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer300->Add( btnUploadAll, 0, 0, 5 );
+    
+    btnResetChip = new wxButton( this, ID_BTN_RESET_CHIP, wxT("Reset"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer300->Add( btnResetChip, 0, 0, 5 );
+    
+    btnLoadDefault = new wxButton( this, ID_BTN_RESET_CHIP, wxT("Default"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer300->Add( btnLoadDefault, 0, 0, 5 );
+    
+    wxFlexGridSizer* fgSizer247;
+    fgSizer247 = new wxFlexGridSizer( 0, 2, 0, 0 );
+    fgSizer247->SetFlexibleDirection( wxBOTH );
+    fgSizer247->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    
+    
+    fgSizer300->Add( fgSizer247, 1, wxEXPAND, 5 );
+    
+    
+    fgSizer299->Add( fgSizer300, 1, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT, 10 );
+    
+    txtTemperature = new wxStaticText( this, wxID_ANY, wxT("Temperature: ?????"), wxDefaultPosition, wxDefaultSize, 0 );
+    txtTemperature->Wrap( -1 );
+    fgSizer299->Add( txtTemperature, 0, wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    
+    btnReadTemperature = new wxButton( this, wxID_ANY, wxT("Read Temp"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer299->Add( btnReadTemperature, 0, wxALIGN_CENTER_VERTICAL, 5 );
+    
+    
+    fgSizer298->Add( fgSizer299, 0, wxALIGN_LEFT|wxALIGN_TOP|wxBOTTOM, 10 );
+    
+    tabsNotebook = new wxNotebook( this, ID_TABS_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
+    mTabCalibrations = new lms7002_pnlCalibrations_view( tabsNotebook, ID_TAB_CALIBRATIONS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabCalibrations, wxT("Calibrations"), true );
+    mTabRFE = new lms7002_pnlRFE_view( tabsNotebook, ID_TAB_RFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabRFE, wxT("RFE"), false );
+    mTabRBB = new lms7002_pnlRBB_view( tabsNotebook, ID_TAB_RBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabRBB, wxT("RBB"), false );
+    mTabTRF = new lms7002_pnlTRF_view( tabsNotebook, ID_TAB_TRF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabTRF, wxT("TRF"), false );
+    mTabTBB = new lms7002_pnlTBB_view( tabsNotebook, ID_TAB_TBB, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabTBB, wxT("TBB"), false );
+    mTabAFE = new lms7002_pnlAFE_view( tabsNotebook, ID_TAB_AFE, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabAFE, wxT("AFE"), false );
+    mTabBIAS = new lms7002_pnlBIAS_view( tabsNotebook, ID_TAB_BIAS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabBIAS, wxT("BIAS"), false );
+    mTabLDO = new lms7002_pnlLDO_view( tabsNotebook, ID_TAB_LDO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabLDO, wxT("LDO"), false );
+    mTabXBUF = new lms7002_pnlXBUF_view( tabsNotebook, ID_TAB_XBUF, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabXBUF, wxT("XBUF"), false );
+    mTabCGEN = new lms7002_pnlCLKGEN_view( tabsNotebook, ID_TAB_CGEN, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabCGEN, wxT("CLKGEN"), false );
+    mTabSXR = new lms7002_pnlSX_view( tabsNotebook, ID_TAB_SXR, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabSXR, wxT("SXR"), false );
+    mTabSXT = new lms7002_pnlSX_view( tabsNotebook, ID_TAB_SXT, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabSXT, wxT("SXT"), false );
+    mTabLimeLight = new lms7002_pnlLimeLightPAD_view( tabsNotebook, ID_TAB_LIMELIGHT, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabLimeLight, wxT("LimeLight && PAD"), false );
+    mTabTxTSP = new lms7002_pnlTxTSP_view( tabsNotebook, ID_TAB_TXTSP, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabTxTSP, wxT("TxTSP"), false );
+    mTabRxTSP = new lms7002_pnlRxTSP_view( tabsNotebook, ID_TAB_RXTSP, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabRxTSP, wxT("RxTSP"), false );
+    mTabCDS = new lms7002_pnlCDS_view( tabsNotebook, ID_TAB_CDS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabCDS, wxT("CDS"), false );
+    mTabBIST = new lms7002_pnlBIST_view( tabsNotebook, ID_TAB_BIST, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabBIST, wxT("BIST"), false );
+    mTabTrxGain = new lms7002_pnlGains_view( tabsNotebook, ID_TAB_GAINS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    tabsNotebook->AddPage( mTabTrxGain, wxT("TRX Gain"), false );
+    
+    
+    
+    // Connect Events
+    ID_BUTTON2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnOpenProject ), NULL, this );
+    ID_BUTTON3->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnSaveProject ), NULL, this );
+    cmbLmsDevice->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnLmsDeviceSelect ), NULL, this );
+    rbChannelA->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnSwitchToChannelA ), NULL, this );
+    rbChannelB->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( lms7002_mainPanel::OnSwitchToChannelB ), NULL, this );
+    chkEnableMIMO->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnEnableMIMOchecked ), NULL, this );
+    btnDownloadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnDownloadAll ), NULL, this );
+    btnUploadAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnUploadAll ), NULL, this );
+    btnResetChip->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnResetChip ), NULL, this );
+    btnLoadDefault->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnLoadDefault ), NULL, this );
+    btnReadTemperature->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( lms7002_mainPanel::OnReadTemperature ), NULL, this );
+    tabsNotebook->Connect( wxEVT_COMMAND_NOTEBOOK_PAGE_CHANGED, wxNotebookEventHandler( lms7002_mainPanel::Onnotebook_modulesPageChanged ), NULL, this );
+
     mTabMCU = new lms7002_pnlMCU_BD_view(tabsNotebook);
     tabsNotebook->AddPage(mTabMCU, _("MCU"));
 
     mTabR3 = new lms7002_pnlR3_view(tabsNotebook, wxNewId());
     tabsNotebook->AddPage(mTabR3, _("R3 Controls"));
-}
-
-lms7002_mainPanel::~lms7002_mainPanel()
-{
+    fgSizer298->Add( tabsNotebook, 0, wxEXPAND, 5 );
+    this->SetSizer( fgSizer298 );
+    this->Layout();
 }
 
 void lms7002_mainPanel::UpdateVisiblePanel()
@@ -132,7 +280,7 @@ void lms7002_mainPanel::UpdateVisiblePanel()
         mTabR3->UpdateGUI();
     t2 = wxGetUTCTimeMillis();
 #ifndef NDEBUG
-    cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
+    //cout << "Visible GUI update time: " << (t2 - t1).ToString() << endl;
 #endif
 }
 
