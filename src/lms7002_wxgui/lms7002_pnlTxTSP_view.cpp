@@ -173,7 +173,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     tableTitleCol2->Wrap( -1 );
     fgSizer221->Add( tableTitleCol2, 1, wxLEFT|wxALIGN_RIGHT, 5 );
     
-    int NCOlineflags = wxALIGN_CENTER_VERTICAL;
+    int NCOlineflags = wxLEFT|wxALIGN_CENTER_VERTICAL;
     rgrSEL0 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     fgSizer221->Add( rgrSEL0, 0, NCOlineflags, 5);
     
@@ -378,7 +378,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     sizerNCOgrid->Add( fgSizer2217, 1, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer2218;
-    fgSizer2218 = new wxFlexGridSizer( 0, 4, 0, 5 );
+    fgSizer2218 = new wxFlexGridSizer( 0, 4, 0, 0 );
     fgSizer2218->SetFlexibleDirection( wxBOTH );
     fgSizer2218->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
@@ -804,7 +804,7 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer133->Add( cmbCMIX_GAIN_TXTSP, 1, wxEXPAND|wxLEFT, 5 );
     
     
-    fgSizer132->Add( fgSizer133, 1, wxEXPAND, 5 );
+    fgSizer132->Add( fgSizer133, 1, wxALL|wxEXPAND, 5 );
     
     
     sbSizer98->Add( fgSizer132, 1, wxEXPAND, 5 );
@@ -813,18 +813,18 @@ lms7002_pnlTxTSP_view::lms7002_pnlTxTSP_view( wxWindow* parent, wxWindowID id, c
     fgSizer220->Add( sbSizer98, 1, wxEXPAND, 5 );
     
     wxStaticBoxSizer* sbSizer99;
-    sbSizer99 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Interpolation") ), wxVERTICAL );
+    sbSizer99 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Interpolation") ), wxHORIZONTAL );
     
     ID_STATICTEXT7 = new wxStaticText( sbSizer99->GetStaticBox(), wxID_ANY, wxT("HBI ratio:"), wxDefaultPosition, wxDefaultSize, 0 );
     ID_STATICTEXT7->Wrap( -1 );
     sbSizer99->Add( ID_STATICTEXT7, 0, wxALL, 5 );
     
-    cmbHBI_OVR_TXTSP = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBI_OVR_TXTSP, wxEmptyString, wxDefaultPosition, wxSize( 64,-1 ), 0, NULL, 0 ); 
+    cmbHBI_OVR_TXTSP = new wxComboBox( sbSizer99->GetStaticBox(), ID_HBI_OVR_TXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
     cmbHBI_OVR_TXTSP->SetToolTip( wxT("HBI interpolation ratio") );
     
-    sbSizer99->Add( cmbHBI_OVR_TXTSP, 0, wxEXPAND, 0 );
+    sbSizer99->Add( cmbHBI_OVR_TXTSP, 0, wxLEFT|wxEXPAND, 5 );
     
-    fgSizer220->Add( sbSizer99, 1, wxEXPAND, 5 );
+    fgSizer220->Add( sbSizer99, 1, 0, 5 );
     
     
     fgSizer218->Add( fgSizer220, 1, wxEXPAND, 5 );

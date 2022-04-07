@@ -233,7 +233,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     sizerNCOgrid->Add( fgSizer225, 1, wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer221;
-    fgSizer221 = new wxFlexGridSizer( 0, 3, 0, 5 );
+    fgSizer221 = new wxFlexGridSizer( 0, 3, 0, 0 );
     fgSizer221->SetFlexibleDirection( wxBOTH );
     fgSizer221->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
     
@@ -248,7 +248,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     tableTitleCol2->Wrap( -1 );
     fgSizer221->Add( tableTitleCol2, 1, wxLEFT|wxALIGN_RIGHT, 5 );
     
-    const int NCOlineflags = wxALIGN_CENTER_VERTICAL;
+    const int NCOlineflags = wxLEFT|wxALIGN_CENTER_VERTICAL;
     rgrSEL0 = new wxRadioButton( sbSizer106->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     fgSizer221->Add( rgrSEL0, 0, NCOlineflags, 5);
 
@@ -864,7 +864,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     cmbCMIX_SC_RXTSP = new wxComboBox( sbSizer98->GetStaticBox(), ID_CMIX_SC_RXTSP, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
     cmbCMIX_SC_RXTSP->Append( wxT("Upconvert") );
     cmbCMIX_SC_RXTSP->Append( wxT("Downconvert") );
-    fgSizer132->Add( cmbCMIX_SC_RXTSP, 1, wxEXPAND, 5 );
+    fgSizer132->Add( cmbCMIX_SC_RXTSP, 1, wxALL|wxEXPAND, 5 );
     
     wxFlexGridSizer* fgSizer133;
     fgSizer133 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -887,7 +887,7 @@ lms7002_pnlRxTSP_view::lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id, co
     fgSizer133->Add( cmbCMIX_GAIN_RXTSP, 1, wxLEFT|wxEXPAND, 5 );
     
     
-    fgSizer132->Add( fgSizer133, 1, wxEXPAND, 5 );
+    fgSizer132->Add( fgSizer133, 1, wxALL|wxEXPAND, 5 );
     
     
     sbSizer98->Add( fgSizer132, 1, wxEXPAND, 5 );
