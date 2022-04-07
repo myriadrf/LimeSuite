@@ -204,11 +204,25 @@ API_EXPORT int CALL_CONV LMS_VCTCXOWrite(lms_device_t * device, uint16_t val)
     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
     if (port) //can use LMS64C protocol to write eeprom value
     {
-        unsigned char packet[64] = {0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3};//packet: eeprom write 2 btes, addr 16
-        packet[32] = val&0xFF;              //values start at offset=32
-        packet[33] = val>>8;
-        if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-            return -1;
+        lime::DeviceInfo dinfo = port->GetDeviceInfo();
+        if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
+        {
+            unsigned char packet[64] = { 0x8C, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1 };//packet: Flash write 2 btes, addr 16
+            packet[32] = val & 0xFF;              //values start at offset=32
+            packet[33] = val >> 8;
+
+            if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+                return -1;
+        }
+        else
+        {
+            unsigned char packet[64] = { 0x8C, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3 };//packet: eeprom write 2 btes, addr 16
+            packet[32] = val & 0xFF;              //values start at offset=32
+            packet[33] = val >> 8;
+
+            if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+                return -1;
+        }
     }
     return LMS_SUCCESS;
 }
@@ -221,10 +235,21 @@ API_EXPORT int CALL_CONV LMS_VCTCXORead(lms_device_t * device, uint16_t *val)
     auto port = dynamic_cast<lime::LMS64CProtocol*>(conn);
     if (port) //can use LMS64C protocol to read eeprom value
     {
-        unsigned char packet[64] = {0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3}; //packet: eeprom read 2 bytes, addr 16
-        if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
-            return -1;
-        *val = packet[32] | (packet[33]<<8); //values start at offset=32
+        lime::DeviceInfo dinfo = port->GetDeviceInfo();
+        if (dinfo.deviceName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)) //LimeSDR-Mini v2.x
+        {
+            unsigned char packet[64] = { 0x8D, 0, 56, 0, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 2, 0, 0xFF, 0, 0, 0, 1 }; //packet: eeprom read 2 bytes, addr 16
+            if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+                return -1;
+            *val = packet[32] | (packet[33] << 8); //values start at offset=32
+        }
+        else
+        {
+            unsigned char packet[64] = { 0x8D, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 16, 0, 3 }; //packet: eeprom read 2 bytes, addr 16
+            if (port->Write(packet, 64) != 64 || port->Read(packet, 64, 2000) != 64 || packet[1] != 1)
+                return -1;
+            *val = packet[32] | (packet[33] << 8); //values start at offset=32
+        }
     }
     else //fall back to reading runtime value
     {
