@@ -152,6 +152,7 @@ lms7002_mainPanel::lms7002_mainPanel(wxWindow* parent, wxWindowID id, const wxPo
     mTabSXR = new lms7002_pnlSX_view( tabsNotebook, ID_TAB_SXR, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     tabsNotebook->AddPage( mTabSXR, wxT("SXR"), false );
     mTabSXT = new lms7002_pnlSX_view( tabsNotebook, ID_TAB_SXT, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    mTabSXT->mIsSXT = true;
     tabsNotebook->AddPage( mTabSXT, wxT("SXT"), false );
     mTabLimeLight = new lms7002_pnlLimeLightPAD_view( tabsNotebook, ID_TAB_LIMELIGHT, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     tabsNotebook->AddPage( mTabLimeLight, wxT("LimeLight && PAD"), false );

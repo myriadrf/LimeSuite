@@ -17,8 +17,30 @@ using namespace lime;
 
 static bool showRefClkSpurCancelation = true;
 
+// changes active registers channel value, and on destruction restores the original
+class ControlChannelOverride
+{
+public:
+    ControlChannelOverride(lms_device_t* lmsControl, const uint16_t newMAC) : lmsControl(lmsControl), newMAC(newMAC)
+    {
+        assert(lmsControl != nullptr);
+        LMS_ReadParam(lmsControl, LMS7param(MAC), &mMACbackup);
+        if(mMACbackup != newMAC)
+            LMS_WriteParam(lmsControl, LMS7param(MAC), newMAC);
+    }
+    ~ControlChannelOverride()
+    {
+        if(mMACbackup != newMAC)
+            LMS_WriteParam(lmsControl, LMS7param(MAC), mMACbackup);
+    }
+protected:
+    lms_device_t* lmsControl;
+    uint16_t newMAC;
+    uint16_t mMACbackup;
+};
+
 lms7002_pnlSX_view::lms7002_pnlSX_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
-    : wxPanel(parent, id, pos, size, style), lmsControl(nullptr)
+    : wxPanel(parent, id, pos, size, style), mIsSXT(false), lmsControl(nullptr)
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer92;
@@ -1023,6 +1045,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
         std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
         return;
     }
+    ControlChannelOverride macBackup(lmsControl, mIsSXT ? 2 : 1);
     LMS_WriteParam(lmsControl,parameter,event.GetInt());
 
     if(event.GetEventObject() == ctrCSW_VCO) //for convenience refresh comparator values
@@ -1034,6 +1057,7 @@ void lms7002_pnlSX_view::ParameterChangeHandler(wxCommandEvent& event)
 
 void lms7002_pnlSX_view::OnbtnReadComparators(wxCommandEvent& event)
 {
+    ControlChannelOverride macBackup(lmsControl, mIsSXT ? 2 : 1);
     assert(lmsControl != nullptr);
     uint16_t value;
     LMS_ReadParam(lmsControl,LMS7param(VCO_CMPHO),&value);
@@ -1058,9 +1082,7 @@ void lms7002_pnlSX_view::OnbtnChangeRefClkClick( wxCommandEvent& event )
     wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter reference clock, MHz"), _("Reference clock"));
     double refClkMHz;
     dlg->SetTextValidator(wxFILTER_NUMERIC);
-    uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    const auto isTx = (ch == 2)? true : false;
+    const bool isTx = mIsSXT;
     double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     dlg->SetValue(wxString::Format(_("%f"), freq/1e6));
@@ -1085,9 +1107,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
     assert(lmsControl != nullptr);
     double freqMHz;
     txtFrequency->GetValue().ToDouble(&freqMHz);
-    uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    const auto isTx = (ch == 2)? true : false;
+    const bool isTx = mIsSXT;
     double RefClkMHz;
     lblRefClk_MHz->GetLabel().ToDouble(&RefClkMHz);
     LMS_SetClockFreq(lmsControl,LMS_CLOCK_REF,RefClkMHz * 1e6);
@@ -1109,7 +1129,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
         evt.SetEventType(LOG_MESSAGE);
         evt.SetInt(lime::LOG_LEVEL_INFO);
         wxString msg;
-        if (ch == 1)
+        if (!isTx)
             msg = _("SXR");
         else
             msg = _("SXT");
@@ -1123,9 +1143,7 @@ void lms7002_pnlSX_view::OnbtnCalculateClick( wxCommandEvent& event )
 void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 {
     assert(lmsControl != nullptr);
-    uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    int status = LMS_SetClockFreq(lmsControl,ch == 2 ? LMS_CLOCK_SXT : LMS_CLOCK_SXR,-1); //Tune
+    int status = LMS_SetClockFreq(lmsControl, mIsSXT ? LMS_CLOCK_SXT : LMS_CLOCK_SXR, -1); //Tune
     if (status != 0)
         wxMessageBox(wxString::Format(_("SX VCO Tune Failed")));
     UpdateGUI();
@@ -1134,11 +1152,9 @@ void lms7002_pnlSX_view::OnbtnTuneClick( wxCommandEvent& event )
 void lms7002_pnlSX_view::UpdateGUI()
 {
     assert(lmsControl != nullptr);
-
+    ControlChannelOverride macBackup(lmsControl, mIsSXT ? 2 : 1);
     LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-    uint16_t ch;
-    LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
-    const auto isTx = (ch == 2)? true : false;
+    const bool isTx = mIsSXT;
     double freq;
     LMS_GetClockFreq(lmsControl,LMS_CLOCK_REF,&freq);
     lblRefClk_MHz->SetLabel(wxString::Format(_("%.3f"), freq / 1e6));
@@ -1170,6 +1186,7 @@ void lms7002_pnlSX_view::UpdateGUI()
     lblFRAC_SDM->SetLabel(wxString::Format("%i", fracValue));
 
     //check if B channel is enabled
+    uint16_t ch = 0;
     LMS_ReadParam(lmsControl,LMS7param(MAC),&ch);
     if (ch >= 2)
     {
@@ -1180,7 +1197,7 @@ void lms7002_pnlSX_view::UpdateGUI()
             return;
         }
     }
-    if(ch == 1)
+    if(!mIsSXT)
         chkPD_LOCH_T2RBUF->Hide();
     else
         chkPD_LOCH_T2RBUF->Show();
