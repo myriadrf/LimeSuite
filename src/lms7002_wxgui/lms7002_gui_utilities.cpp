@@ -124,6 +124,7 @@ int LMS7002_WXGUI::value2index(int value, const indexValueMap &pairs)
 */
 void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wndId2param, bool replace)
 {
+#if wxUSE_TOOLTIPS
     wxString sttip = _("");
     std::map<wxWindow*, LMS7Parameter>::const_iterator iter;
     for (iter = wndId2param.begin(); iter != wndId2param.end(); ++iter)
@@ -151,4 +152,5 @@ void LMS7002_WXGUI::UpdateTooltips(const std::map<wxWindow*, LMS7Parameter> &wnd
         else
             iter->first->SetToolTip(sttip + wxString::From8BitData(iter->second.name));
     }
+#endif
 }

@@ -51,7 +51,7 @@ void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
             dlg->SetTextValidator(wxFILTER_NUMERIC);
             dlg->SetValue("127.0.0.1");
             if (dlg->ShowModal() == wxID_OK)
-                list[selection].addr = dlg->GetValue();
+                list[selection].addr = dlg->GetValue().mb_str() ;
             delete dlg;
         }
 

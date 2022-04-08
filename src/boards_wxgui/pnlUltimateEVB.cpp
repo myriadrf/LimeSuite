@@ -168,7 +168,7 @@ void pnlUltimateEVB::OnSave(wxCommandEvent &event)
     wxFileDialog dlg(this, _("Save samples file"), "", "", "CSV (*.csv)|*.csv", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_CANCEL)
         return;
-    std::string captureFilename = std::string(dlg.GetPath());
+    std::string captureFilename = std::string(dlg.GetPath().mb_str());
     std::ofstream ofile(captureFilename);
 
     if (ofile)
@@ -177,25 +177,25 @@ void pnlUltimateEVB::OnSave(wxCommandEvent &event)
         ofile << "Name;Voltage;;Current;;Power;;" << std::endl;
         for (size_t i = 0; i < vltgParams.size(); ++i)
         {
-            std::string str = std::string(vltgParams[i].value->GetLabel());
+            std::string str = std::string(vltgParams[i].value->GetLabel().mb_str());
             str.replace(str.find(' '), 1, 1, ';');
             ofile << vltgParams[i].name << ";" << str << ";" << std::endl;
         }
         for (size_t i = 0; i < pwrParams.size(); ++i)
         {
             ofile << pwrParams[i].name << ";";
-            std::string str = std::string(pwrParams[i++].value->GetLabel());
+            std::string str = std::string(pwrParams[i++].value->GetLabel().mb_str());
             str.replace(str.find(' '), 1, 1, ';');
             ofile << str << ";";
-            str = pwrParams[i++].value->GetLabel();
+            str = pwrParams[i++].value->GetLabel().mb_str();
             str.replace(str.find(' '), 1, 1, ';');
             ofile << str << ";";
-            str = pwrParams[i].value->GetLabel();
+            str = pwrParams[i].value->GetLabel().mb_str();
             str.replace(str.find(' '), 1, 1, ';');
             ofile << str << ";" << std::endl;
         }
         {
-            std::string str = std::string(totalPwr->GetLabel());
+            std::string str = std::string(totalPwr->GetLabel().mb_str());
             str.replace(str.find(' '), 1, 1, ';');
             ofile << "Total LMS power;;;;;" << str << ";" << std::endl;
         }
