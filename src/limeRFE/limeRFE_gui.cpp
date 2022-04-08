@@ -237,7 +237,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	int cTypeRXNChoices = sizeof( cTypeRXChoices ) / sizeof( wxString );
 	cTypeRX = new wxChoice( sbSizer9->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), cTypeRXNChoices, cTypeRXChoices, 0 );
 	cTypeRX->SetSelection( 0 );
-	fgSizer26->Add( cTypeRX, 1, wxALIGN_CENTER|wxALIGN_LEFT|wxALL|wxEXPAND|wxFIXED_MINSIZE, 5 );
+	fgSizer26->Add( cTypeRX, 1, wxALL|wxEXPAND, 5 );
 
 	wxString cChannelRXChoices[] = { wxT("1 - 1000 MHz") };
 	int cChannelRXNChoices = sizeof( cChannelRXChoices ) / sizeof( wxString );
@@ -315,7 +315,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	int cTypeTXNChoices = sizeof( cTypeTXChoices ) / sizeof( wxString );
 	cTypeTX = new wxChoice( sbSizer91->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), cTypeTXNChoices, cTypeTXChoices, 0 );
 	cTypeTX->SetSelection( 0 );
-	fgSizer261->Add( cTypeTX, 0, wxALIGN_CENTER|wxALL|wxEXPAND, 5 );
+	fgSizer261->Add( cTypeTX, 0, wxALL|wxEXPAND, 5 );
 
 	wxString cChannelTXChoices[] = { wxT("1 - 1000 MHz") };
 	int cChannelTXNChoices = sizeof( cChannelTXChoices ) / sizeof( wxString );
@@ -333,7 +333,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	int cPortTXNChoices = sizeof( cPortTXChoices ) / sizeof( wxString );
 	cPortTX = new wxChoice( sbSizer91->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), cPortTXNChoices, cPortTXChoices, 0 );
 	cPortTX->SetSelection( 0 );
-	fgSizer261->Add( cPortTX, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
+	fgSizer261->Add( cPortTX, 0, wxALL|wxEXPAND, 5 );
 
 
 	sbSizer91->Add( fgSizer261, 1, wxEXPAND, 5 );
@@ -359,7 +359,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	cbEnableSWR = new wxCheckBox( sbSizer12->GetStaticBox(), wxID_ANY, wxT("Enable SWR"), wxDefaultPosition, wxDefaultSize, 0 );
 	cbEnableSWR->SetMinSize( wxSize( 140,-1 ) );
 
-	bSizer221->Add( cbEnableSWR, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bSizer221->Add( cbEnableSWR, 0, wxALL, 5 );
 
 
 	fgSizer22->Add( bSizer221, 1, wxEXPAND, 5 );
@@ -445,7 +445,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	fgSizer291->Add( tbtnTX, 0, wxALL, 5 );
 
 
-	fgSizer2621->Add( fgSizer291, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	fgSizer2621->Add( fgSizer291, 1, wxEXPAND, 5 );
 
 
 	fgSizer2621->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -462,7 +462,7 @@ limeRFE_view::limeRFE_view( wxWindow* parent, wxWindowID id, const wxString& tit
 	btnConfigure = new wxButton( pnlConfiguration, wxID_ANY, wxT("Configure"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	btnConfigure->SetMinSize( wxSize( -1,50 ) );
 
-	fgSizer12->Add( btnConfigure, 0, wxALIGN_CENTER|wxALL|wxEXPAND, 2 );
+	fgSizer12->Add( btnConfigure, 0, wxALL|wxEXPAND, 2 );
 
 	pnlTXRXMode = new wxPanel( pnlConfiguration, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxStaticBoxSizer* sbsMode;
