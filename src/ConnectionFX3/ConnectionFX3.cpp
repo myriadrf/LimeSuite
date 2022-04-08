@@ -52,6 +52,7 @@ const std::set<uint8_t> ConnectionFX3::commandsToBulkCtrlHw2 =
 /**	@brief Initializes port type and object necessary to communicate to usb device.
 */
 ConnectionFX3::ConnectionFX3(void *arg, const std::string &vidpid, const std::string &serial, const unsigned index)
+    : contexts(nullptr), contextsToSend(nullptr)
 {
     bulkCtrlAvailable = false;
     bulkCtrlInProgress = false;
@@ -123,6 +124,7 @@ ConnectionFX3::~ConnectionFX3()
 */
 int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, const unsigned index)
 {
+    Close();
     bulkCtrlAvailable = false;
 #ifndef __unix__
     if(index > USBDevicePrimary->DeviceCount())
@@ -265,6 +267,8 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
     libusb_free_config_descriptor(descriptor);
 #endif
     isConnected = true;
+    contexts = new USBTransferContext[USB_MAX_CONTEXTS];
+    contextsToSend = new USBTransferContext[USB_MAX_CONTEXTS];
     if(bulkCtrlAvailable)
     {
         LMS64CProtocol::GenericPacket ctrPkt;
@@ -279,6 +283,32 @@ int ConnectionFX3::Open(const std::string &vidpid, const std::string &serial, co
 */
 void ConnectionFX3::Close()
 {
+#ifdef __unix__
+    const libusb_version* ver = libusb_get_version();
+    // Fix #358 libusb crash when freeing transfers(never used ones) without valid device handle. Bug in libusb 1.0.25 https://github.com/libusb/libusb/issues/1059
+    const bool isBuggy_libusb_free_transfer = ver->major==1 && ver->minor==0 && ver->micro == 25;
+    if(isBuggy_libusb_free_transfer)
+    {
+        if(contexts)
+            for(int i=0; i<USB_MAX_CONTEXTS; ++i)
+                contexts[i].transfer->dev_handle = dev_handle;
+        if(contextsToSend)
+            for(int i=0; i<USB_MAX_CONTEXTS; ++i)
+                contextsToSend[i].transfer->dev_handle = dev_handle;
+    }
+#endif
+
+    if(contexts)
+    {
+        delete[] contexts;
+        contexts = nullptr;
+    }
+    if(contextsToSend)
+    {
+        delete[] contextsToSend;
+        contextsToSend = nullptr;
+    }
+
     #ifndef __unix__
     USBDevicePrimary->Close();
     for (int i = 0; i < MAX_EP_CNT; i++)

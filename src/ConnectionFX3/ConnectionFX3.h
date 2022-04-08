@@ -119,8 +119,8 @@ protected:
     
     static const int USB_MAX_CONTEXTS = 16; //maximum number of contexts for asynchronous transfers
     
-    USBTransferContext contexts[USB_MAX_CONTEXTS];
-    USBTransferContext contextsToSend[USB_MAX_CONTEXTS];
+    USBTransferContext* contexts;
+    USBTransferContext* contextsToSend;
 
     bool isConnected;
 
