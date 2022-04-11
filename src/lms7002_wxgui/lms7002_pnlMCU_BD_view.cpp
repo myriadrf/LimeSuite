@@ -562,6 +562,7 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
     int  address = 0;
     int  value = 0;
     int i = 0;
+    int scanStatus = 0;
     //int temp;
     wxFileDialog dlg(this, _("Open txt file"), _("txt"), _("*.txt"), _("TXT Files (*.txt)|*.txt|TXT Files (*.txt)|*.txt |All Files (*.*)|*.*||"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dlg.ShowModal() == wxID_CANCEL)
@@ -591,18 +592,18 @@ void lms7002_pnlMCU_BD_view::OnbtnLoadTestFileClick( wxCommandEvent& event )
         }
 
         m_iTestResultFileLine = 0;
-        fscanf(inFile, "%d", &test_code);
+        scanStatus = fscanf(inFile, "%d", &test_code);
         while (!feof(inFile))
         {
             //fscanf(inFile, "%d %d %d", &test_code, &address, &value);
-            fscanf(inFile, "%d ", &address);
-            fscanf(inFile, "%d\n", &value);
+            scanStatus = fscanf(inFile, "%d ", &address);
+            scanStatus = fscanf(inFile, "%d\n", &value);
             TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
             TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
             TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
 
             m_iTestResultFileLine++;
-            fscanf(inFile, "%d", &test_code);
+            scanStatus = fscanf(inFile, "%d", &test_code);
         }
     }
     fclose(inFile);
@@ -856,6 +857,7 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
     wxString m_sTxtFileName = _("lms7suite_mcu/TestResults.txt");
     lblTestResultsFile->SetLabel("Test results file: " + m_sTxtFileName);
 
+    int scanStatus = 0;
     FILE * inFile = NULL;
     inFile = fopen(m_sTxtFileName.mb_str(), "r");
 
@@ -873,17 +875,17 @@ void lms7002_pnlMCU_BD_view::OnbtnRunTestClick( wxCommandEvent& event )
         int  test_code = 0;
         int  address = 0;
         int  value = 0;
-        fscanf(inFile, "%d", &test_code);
+        scanStatus = fscanf(inFile, "%d", &test_code);
         while (!feof(inFile))
         {
-            fscanf(inFile, "%d ", &address);
-            fscanf(inFile, "%d\n", &value);
+            scanStatus = fscanf(inFile, "%d ", &address);
+            scanStatus = fscanf(inFile, "%d\n", &value);
             TestResultArray_code[m_iTestResultFileLine] = (unsigned char)(test_code);
             TestResultArray_address[m_iTestResultFileLine] = (unsigned char)(address);
             TestResultArray_value[m_iTestResultFileLine] = (unsigned char)(value);
 
             m_iTestResultFileLine++;
-            fscanf(inFile, "%d", &test_code);
+            scanStatus = fscanf(inFile, "%d", &test_code);
         }
     }
     else
