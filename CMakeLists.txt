@@ -167,9 +167,10 @@ if (MSVC)
     elseif(${ENABLE_SIMD_FLAGS} MATCHES "AVX")
         add_definitions(/arch:AVX)
         message(STATUS "Enabling AVX instructions")
-    elseif(${ENABLE_SIMD_FLAGS} MATCHES "SSE2")
-        add_definitions(/arch:SSE2)
-        message(STATUS "Enabling SSE2 instructions")
+    # MSVC default mode already uses SSE2
+    # elseif(${ENABLE_SIMD_FLAGS} MATCHES "SSE2")
+    #     add_definitions(/arch:SSE2)
+    #     message(STATUS "Enabling SSE2 instructions")
     endif()
 endif(MSVC)
 
