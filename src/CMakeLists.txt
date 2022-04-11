@@ -297,14 +297,6 @@ install(
 )
 endif (ENABLE_HEADERS AND ENABLE_LIBRARY)
 
-########################################################################
-# boardEmulator -- creates serial port and imitates board communications
-########################################################################
-if(UNIX)
-    add_executable(boardEmulator boardEmulator.cpp)
-    target_link_libraries(boardEmulator LimeSuite)
-endif()
-
 #########################################################################
 # utilities
 #########################################################################
