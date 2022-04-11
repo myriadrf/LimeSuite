@@ -21,7 +21,7 @@
 #include <wx/splash.h>
 #include <wx/icon.h>
 #include <iostream>
-#ifndef NDEBUG
+#if !defined(NDEBUG) & defined(__unix__)
 IMPLEMENT_APP_CONSOLE(lms7suiteApp)
 #else
 IMPLEMENT_APP(lms7suiteApp)
