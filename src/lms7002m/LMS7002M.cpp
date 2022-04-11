@@ -1277,7 +1277,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         lsb = LMS7param(CSW_VCO).lsb;
         msb = LMS7param(CSW_VCO).msb;
         addrCMP = LMS7param(VCO_CMPHO).address;
-        lime::debug("ICT_VCO: %d", Get_SPI_Reg_bits(LMS7param(ICT_VCO)));
+        lime::debug("TuneVCO(%s) ICT_VCO: %d", moduleName, Get_SPI_Reg_bits(LMS7param(ICT_VCO)));
     }
     else //set addresses to CGEN module
     {
@@ -1286,7 +1286,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         lsb = LMS7param(CSW_VCO_CGEN).lsb;
         msb = LMS7param(CSW_VCO_CGEN).msb;
         addrCMP = LMS7param(VCO_CMPHO_CGEN).address;
-        lime::debug("ICT_VCO_CGEN: %d", Get_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN)));
+        lime::debug("TuneVCO(%s) ICT_VCO_CGEN: %d", moduleName, Get_SPI_Reg_bits(LMS7param(ICT_VCO_CGEN)));
     }
     // Initialization activate VCO and comparator
     if(int status = Modify_SPI_Reg_bits (addrVCOpd, 2, 1, 0) != 0)
@@ -1302,7 +1302,7 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         if(cmphl == 3) //VCO too high
         {
             this->SetActiveChannel(ch); //restore previously used channel
-            lime::debug("TuneVCO(%s) - VCO too high", moduleName);
+            lime::debug("TuneVCO(%s) - attempted VCO too high", moduleName);
             return -1;
         }
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , 255);
@@ -1311,17 +1311,22 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
         if(cmphl == 0) //VCO too low
         {
             this->SetActiveChannel(ch); //restore previously used channel
-            lime::debug("TuneVCO(%s) - VCO too low", moduleName);
+            lime::debug("TuneVCO(%s) - attempted VCO too low", moduleName);
             return -1;
         }
     }
 
     //search intervals [0-127][128-255]
     for(int t=0; t<2; ++t)
-        {
-        cswSearch[t].low = 128*(t+1);
-        cswSearch[t].high = 128*t; //search interval lowest value
+    {
+        bool hadLock = false;
+        // initialize search range with invalid values
+        cswSearch[t].low = 128*(t+1); // set low to highest possible value
+        cswSearch[t].high = 128*t; // set high to lowest possible value
+        lime::debug("TuneVCO(%s) - searching interval [%i:%i]", moduleName, cswSearch[t].high, cswSearch[t].low);
         Modify_SPI_Reg_bits (addrCSW_VCO , msb, lsb , cswSearch[t].high);
+        //binary search for and high value, and on the way store approximate low value
+        lime::debug("binary search:");
         for(int i=6; i>=0; --i)
         {
             cswSearch[t].high |= 1 << i; //CSW_VCO<i>=1
@@ -1332,28 +1337,35 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
             if(cmphl & 0x01) // reduce CSW
                 cswSearch[t].high &= ~(1 << i); //CSW_VCO<i>=0
             if(cmphl == 2 && cswSearch[t].high < cswSearch[t].low)
+            {
                 cswSearch[t].low = cswSearch[t].high;
+                hadLock = true;
+            }
         }
+        //linear search to make sure there are no gaps, and move away from edge case
+        lime::debug("adjust with linear search:");
         while(cswSearch[t].low <= cswSearch[t].high && cswSearch[t].low > t*128)
         {
             --cswSearch[t].low;
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswSearch[t].low);
             this_thread::sleep_for(settlingTime);
-            if(Get_SPI_Reg_bits(addrCMP, 13, 12, true) != 2)
+            const uint8_t tempCMPvalue = Get_SPI_Reg_bits(addrCMP, 13, 12, true);
+            lime::debug ("csw=%d\tcmphl=%d", cswSearch[t].low, (int16_t)tempCMPvalue);
+            if(tempCMPvalue != 2)
             {
                 ++cswSearch[t].low;
-            break;
+                break;
+            }
         }
-    }
-        if(cmphl == 2)
-    {
-            lime::debug("CSW: lowest=%d, highest=%d, selected=%d",
+        if(hadLock)
+        {
+            lime::debug("CSW: lowest=%d, highest=%d, will use=%d",
                         cswSearch[t].low,
                         cswSearch[t].high,
                         cswSearch[t].low+(cswSearch[t].high-cswSearch[t].low)/2);
         }
         else
-            lime::debug("Failed to lock");
+            lime::debug("CSW interval failed to lock");
     }
 
     //check if the intervals are joined
@@ -1362,33 +1374,46 @@ int LMS7002M::TuneVCO(VCO_Module module) // 0-cgen, 1-SXR, 2-SXT
     {
         cswHigh = cswSearch[1].high;
         cswLow = cswSearch[0].low;
+        lime::debug("CSW is locking in one continous range: low=%d, high=%d", cswLow, cswHigh);
     }
     //compare which interval is wider
-        else
+    else
     {
         uint8_t intervalIndex = (cswSearch[1].high-cswSearch[1].low > cswSearch[0].high-cswSearch[0].low);
         cswHigh = cswSearch[intervalIndex].high;
         cswLow = cswSearch[intervalIndex].low;
+        lime::debug("choosing wider CSW locking range: low=%d, high=%d", cswLow, cswHigh);
     }
 
+    uint8_t finalCSW = 0;
     if(cswHigh-cswLow == 1)
     {
+        lime::debug("TuneVCO(%s) - narrow locking values range detected [%i:%i]. VCO lock status might change with temperature.", moduleName, cswLow, cswHigh);
         //check which of two values really locks
+        finalCSW = cswLow;
         Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow);
         this_thread::sleep_for(settlingTime);
         cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
         if(cmphl != 2)
+        {
+            finalCSW = cswHigh;
             Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswHigh);
+        }
     }
     else
-        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, cswLow+(cswHigh-cswLow)/2);
+    {
+        finalCSW = cswLow+(cswHigh-cswLow)/2;
+        Modify_SPI_Reg_bits(addrCSW_VCO, msb, lsb, finalCSW);
+    }
     this_thread::sleep_for(settlingTime);
     cmphl = (uint8_t)Get_SPI_Reg_bits(addrCMP, 13, 12, true);
-    lime::debug("cmphl=%d",(uint16_t)cmphl);
     this->SetActiveChannel(ch); //restore previously used channel
     if(cmphl == 2)
+    {
+        lime::debug("TuneVCO(%s) - confirmed lock with final csw=%i, cmphl=%i", moduleName, finalCSW, cmphl);
         return 0;
-    lime::debug("TuneVCO(%s) - failed to lock (cmphl!=2)", moduleName);
+    }
+    lime::debug("TuneVCO(%s) - failed lock with final csw=%i, cmphl=%i", moduleName, finalCSW, cmphl);
     return -1;
 }
 
@@ -1509,7 +1534,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
         }
     }
     if (canDeliverFrequency == false)
-        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - required VCO frequency is out of range [%g-%g] MHz",
+        return ReportError(ERANGE, "SetFrequencySX%s(%g MHz) - required VCO frequencies are out of range [%g-%g] MHz",
                             tx?"T":"R", freq_Hz / 1e6,
                             gVCO_frequency_table[0][0]/1e6,
                             gVCO_frequency_table[2][sxVCO_N - 1]/1e6);
@@ -1527,12 +1552,13 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     Modify_SPI_Reg_bits(LMS7param(DIV_LOCH), div_loch); //DIV_LOCH
     Modify_SPI_Reg_bits(LMS7param(EN_DIV2_DIVPROG), (VCOfreq > m_dThrF)); //EN_DIV2_DIVPROG
 
-    lime::debug("INT %d, FRAC %d, DIV_LOCH %d, EN_DIV2_DIVPROG %d",
+    lime::debug("SetFrequencySX%s, INT %d, FRAC %d, DIV_LOCH %d, EN_DIV2_DIVPROG %d",
+                tx ? "T" : "R",
                 integerPart,
                 fractionalPart,
                 (int16_t)div_loch,
                 (VCOfreq > m_dThrF));
-    lime::debug("VCO %.2f MHz, RefClk %.2f MHz", VCOfreq/1e6, refClk_Hz/1e6);
+    lime::debug("Expected VCO %.2f MHz, RefClk %.2f MHz", VCOfreq/1e6, refClk_Hz/1e6);
 
     if (output)
     {
@@ -1577,6 +1603,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     {
         for (sel_vco = 0; sel_vco < 3; ++sel_vco)
         {
+            lime::debug("Tuning %s :", vcoNames[sel_vco]);
             Modify_SPI_Reg_bits(LMS7param(SEL_VCO), sel_vco);
             int status = TuneVCO(tx ? VCO_SXT : VCO_SXR);
             if(status == 0)
@@ -1584,7 +1611,10 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
                 tuneScore[sel_vco] = -128 + Get_SPI_Reg_bits(LMS7param(CSW_VCO), true);
                 canDeliverFrequency = true;
             }
-            lime::debug("%s : csw=%d %s", vcoNames[sel_vco], tuneScore[sel_vco]+128, (status == 0 ? "tune ok" : "tune fail"));
+            if(status == 0)
+                lime::debug("%s : csw=%d %s", vcoNames[sel_vco], tuneScore[sel_vco]+128, (status == 0 ? "tune ok" : "tune fail"));
+            else
+                lime::debug("%s : failed to lock", vcoNames[sel_vco]);
         }
         if (canDeliverFrequency)  //tune OK
             break;
@@ -1610,7 +1640,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
             sel_vco = 2;
     }
     csw_value = tuneScore[sel_vco] + 128;
-    lime::debug("Selected: %s", vcoNames[sel_vco]);
+    lime::debug("Selected: %s, CSW_VCO: %i", vcoNames[sel_vco], csw_value);
 
 
     if (output)
