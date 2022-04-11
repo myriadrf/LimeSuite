@@ -185,7 +185,9 @@ int lime::downloadImageResource(const std::string &name)
         #else
         const std::string mkdirCmd("md.exe \""+destDir+"\"");
         #endif
-        std::system(mkdirCmd.c_str());
+        int result = std::system(mkdirCmd.c_str());
+        if (result != 0)
+            return lime::ReportError(result, "Failed to create directory: %s", destDir.c_str());
     }
 
     //check for write access
