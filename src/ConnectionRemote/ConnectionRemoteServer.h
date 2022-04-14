@@ -7,7 +7,7 @@
 namespace lime
 {
 
-class ConnectionRemoteServer
+class LIME_API ConnectionRemoteServer
 {
 public:
 	ConnectionRemoteServer();
