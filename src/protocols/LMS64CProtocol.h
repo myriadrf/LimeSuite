@@ -54,6 +54,7 @@ public:
         USB_PORT = 1,
         SPI_PORT = 2,
         PCIE_PORT = 3,
+        NETWORK_PORT = 4,
         //insert new types here
         CONNECTION_TYPES_COUNT //used only for memory allocation
     };
@@ -154,15 +155,12 @@ public:
     int ProgramMCU(const uint8_t *buffer, const size_t length, const MCU_PROG_MODE mode, ProgrammingCallback callback) override;
     int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
     int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
-protected:
-#ifdef REMOTE_CONTROL
-    void InitRemote();
-    void CloseRemote();
-    void ProcessConnections();
-    bool remoteOpen;
-    int socketFd;
-    std::thread remoteThread;
-#endif
+
+    enum SPI_Index
+    {
+        LMS7002M_SPI_INDEX = 0x10,
+        ADF4002_SPI_INDEX = 0x30
+    };
 private:
     int WriteSi5351I2C(const std::string &data);
     int ReadSi5351I2C(const size_t numBytes, std::string &data);

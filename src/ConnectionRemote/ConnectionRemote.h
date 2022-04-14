@@ -7,46 +7,74 @@
 #pragma once
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
-#include <LMS64CProtocol.h>
 #include <vector>
 #include <string>
+#include <mutex>
 #include "IConnection.h"
+#include "LMS64CCommands.h"
 
 namespace lime{
 
-class ConnectionRemote : public LMS64CProtocol
+class ConnectionRemote : public IConnection
 {
 public:
-    struct Packet
+    ConnectionRemote(const char *ipString, uint16_t port);
+    ~ConnectionRemote(void);
+    virtual bool IsOpen(void) override;
+
+    virtual DeviceInfo GetDeviceInfo(void);
+
+    virtual int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
+
+    virtual int WriteLMS7002MSPI(const uint32_t *writeData, size_t size,unsigned periphID = 0) override;
+    virtual int ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, size_t size, unsigned periphID = 0) override;
+
+    virtual int WriteRegisters(const uint32_t *addrs, const uint32_t *data, const size_t size) override;
+    virtual int ReadRegisters(const uint32_t *addrs, uint32_t *data, const size_t size) override;
+
+    virtual int WriteI2C(const int addr, const std::string &data) override;
+    virtual int ReadI2C(const int addr, const size_t numBytes, std::string &data) override;
+    virtual int DeviceReset(int ind=0) override;
+    //virtual int ProgramWrite(const char *buffer, const size_t length, const int programmingMode, const int index, ProgrammingCallback callback = 0) override;
+    
+    virtual int GPIOWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIORead(uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirWrite(const uint8_t *buffer, const size_t bufLength) override;
+    virtual int GPIODirRead(uint8_t *buffer, const size_t bufLength) override;
+
+    // Network commands don't have to match LMS64C commands, just using them for convenience
+    enum NetworkCommand
     {
-        uint8_t cmd;
-        uint8_t data[64];
+        NETWORK_GET_INFO = 0,
+        NETWORK_RESET_DEVICE = CMD_LMS7002_RST,
+        NETWORK_I2C_WR = CMD_SI5351_WR,
+        NETWORK_I2C_RD = CMD_SI5351_RD,
+        NETWORK_LMS7002_WR = CMD_LMS7002_WR,
+        NETWORK_LMS7002_RD = CMD_LMS7002_RD,
+        NETWORK_BRDSPI_WR = CMD_BRDSPI_WR,
+        NETWORK_BRDSPI_RD = CMD_BRDSPI_RD
     };
 
-    ConnectionRemote(const char *comName);
-    ~ConnectionRemote(void);
-    int TransferPacket(GenericPacket &pkt) override;
-    bool IsOpen(void);
-    eConnectionType GetType(void) {return CONNECTION_UNDEFINED;};
-    //int TransactSPI(const int addr, const uint32_t *writeData, uint32_t *readData, const size_t size) override;
+    struct CtrlPacketHeader
+    {
+        uint8_t cmd;
+        uint8_t status;
+        uint8_t periphID;
+        uint16_t payloadLen;
+    };
 
 protected:
-    int socketFd;
+    int Write(const unsigned char *data, int len, int timeout_ms);
+    int Read(unsigned char *response, int len, int timeout_ms);
+
+    uint16_t m_TargetPort;
+    int m_ControlSocketFd;
     int Connect(const char* ip, uint16_t port);
-
-    //! virtual write function to be implemented by the base class
-    int Write(const unsigned char *buffer, int length, int timeout_ms = 100) override;
-
-    //! virtual read function to be implemented by the base class
-    int Read(unsigned char *buffer, int length, int timeout_ms = 100) override;
-
-    int GetBuffersCount() const override;
-    int CheckStreamSize(int size) const override;
 private:
     int Open();
     void Close(void);
     std::mutex mTransferLock;
-    std::string remoteIP;
+    std::string targetIP;
 };
 
 class ConnectionRemoteEntry : public ConnectionRegistryEntry

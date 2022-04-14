@@ -161,7 +161,7 @@ include(ConnectionSPI/CMakeLists.txt)
 
 ## Remote connection is not safe or efficient, it should not be in releases (github #263)
 ## it's only for debugging purposes when USB device cannot be used by multiple applications simultaneously.
-#include(ConnectionRemote/CMakeLists.txt)
+include(ConnectionRemote/CMakeLists.txt)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRegistry/BuiltinConnections.in.cpp

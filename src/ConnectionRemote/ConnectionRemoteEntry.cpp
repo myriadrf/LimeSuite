@@ -1,9 +1,3 @@
-/**
-    @file ConnectionRemote.cpp
-    @author Lime Microsystems
-    @brief Implementation of EVB7 connection of serial COM port.
-*/
-
 #include "ConnectionRemote.h"
 #include <fstream>
 #include <iostream>
@@ -11,11 +5,10 @@
 using namespace std;
 using namespace lime;
 
-
 //! make a static-initialized entry in the registry
 void __loadConnectionRemoteEntry(void) //TODO fixme replace with LoadLibrary/dlopen
 {
-    static ConnectionRemoteEntry EVB7COMEntry;
+    static ConnectionRemoteEntry RemoteLinkEntry;
 }
 
 ConnectionRemoteEntry::ConnectionRemoteEntry(void):
@@ -39,5 +32,6 @@ std::vector<ConnectionHandle> ConnectionRemoteEntry::enumerate(const ConnectionH
 
 IConnection *ConnectionRemoteEntry::make(const ConnectionHandle &handle)
 {
-    return new ConnectionRemote(handle.addr.c_str());
+    // TODO parse port number
+    return new ConnectionRemote(handle.addr.c_str(), 5000);
 }

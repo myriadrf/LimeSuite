@@ -1,5 +1,5 @@
 ########################################################################
-## Support for EVB7 over COM serial connection
+## Support for sending instructions to device over network
 ########################################################################
 
 set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRemote)
@@ -7,7 +7,7 @@ set(THIS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionRemote)
 set(CONNECTION_REMOTE_SOURCES
     ${THIS_SOURCE_DIR}/ConnectionRemoteEntry.cpp
     ${THIS_SOURCE_DIR}/ConnectionRemote.cpp
-    ${THIS_SOURCE_DIR}/LMS64CProtocol_remote.cpp
+    ${THIS_SOURCE_DIR}/ConnectionRemoteServer.cpp
 )
 
 ########################################################################
@@ -31,3 +31,7 @@ target_sources(LimeSuite PRIVATE ${CONNECTION_REMOTE_SOURCES})
 if(WIN32)
 target_link_libraries(LimeSuite Ws2_32.lib)
 endif()
+
+add_executable(ServerDaemon ${THIS_SOURCE_DIR}/ServerDaemon.cpp)
+target_link_libraries(ServerDaemon LimeSuite)
+set_target_properties(ServerDaemon PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
