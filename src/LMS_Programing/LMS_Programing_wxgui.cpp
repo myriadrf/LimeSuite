@@ -107,6 +107,8 @@ void LMS_Programing_wxgui::OnbtnOpenClick(wxCommandEvent& event)
             else
                 wildcards = "img(*.img)|*.img|All files(*.*)|*.*";
         }
+        else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2)))
+            wildcards = "bit(*.bit)|*.bit|All files(*.*)|*.*";
         else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI)))
             wildcards = "rpd(*.rpd)|*.rpd|All files(*.*)|*.*";
         else if (strstr(info->deviceName, lime::GetDeviceName(lime::LMS_DEV_LIMESDR_QPCIE)))

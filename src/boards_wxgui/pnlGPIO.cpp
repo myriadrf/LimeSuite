@@ -32,6 +32,8 @@ void pnlGPIO::Initialize(lms_device_t* pControl)
                 gpioCnt = 16;
             else if (string(info->deviceName) == string(GetDeviceName(LMS_DEV_LIMESDRMINI)))
                 gpioCnt = 10;
+            else if (string(info->deviceName) == string(GetDeviceName(LMS_DEV_LIMESDRMINI_V2)))
+                gpioCnt = 10;
         }
     }
 
