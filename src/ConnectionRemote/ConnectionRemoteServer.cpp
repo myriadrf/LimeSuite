@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #else
+#include <winsock2.h>
 #include <windows.h>
 #endif
 #include <fcntl.h>
@@ -157,12 +158,12 @@ void ConnectionRemoteServer::ProcessConnections()
         {
             int r = 0;
             // read header
-            int brecv = recv(clientFd, pktBuffer, headerSize, MSG_WAITALL);
+            int brecv = recv(clientFd, (char *)pktBuffer, headerSize, MSG_WAITALL);
             int msgSize = header->payloadLen;
             printf("recv header: %i, payloadLen: %i\n", brecv, msgSize);
             while(r < msgSize)
             {
-                brecv = recv(clientFd, pktBuffer+headerSize+r, msgSize-r, MSG_WAITALL);
+                brecv = recv(clientFd, (char *)pktBuffer+headerSize+r, msgSize-r, MSG_WAITALL);
                 printf("Recv: %i\n", brecv);
                 r += brecv;
                 if(brecv == 0)
@@ -299,7 +300,7 @@ void ConnectionRemoteServer::ProcessConnections()
             printf("Sending response:\n");
             while(bsent < headerSize+header->payloadLen)
             {
-                int r = send(clientFd, pktBuffer+bsent, headerSize+header->payloadLen-bsent, 0);
+                int r = send(clientFd, (char *)pktBuffer+bsent, headerSize+header->payloadLen-bsent, 0);
                 if(r < 0)
                 {
                     lime::log(LOG_LEVEL_ERROR, "RemoteControl send with error: %d\n", r);

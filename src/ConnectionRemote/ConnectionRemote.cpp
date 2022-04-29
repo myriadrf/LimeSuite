@@ -29,7 +29,7 @@
     #include <arpa/inet.h>
     #include <fcntl.h>
 #else
-    #include <Winsock.h>
+    #include <Winsock2.h>
 #endif // LINUX
 
 #if defined(__FreeBSD__)
