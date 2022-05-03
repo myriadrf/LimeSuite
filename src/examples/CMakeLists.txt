@@ -34,6 +34,14 @@ add_executable(basicTX basicTX.cpp)
 set_target_properties(basicTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(basicTX LimeSuite)
 
+add_executable(testTX testTX.cpp)
+set_target_properties(testTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(testTX LimeSuite)
+
+add_executable(testRX testRX.cpp)
+set_target_properties(testRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(testRX LimeSuite)
+
 if(ENABLE_LIMERFE)
     add_executable(limeRFE_USB_example limeRFE_USB_example.cpp)
     set_target_properties(limeRFE_USB_example PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
