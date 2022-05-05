@@ -87,7 +87,6 @@ int LMS7_LimeSDR_mini::Init()
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     lms->SPI_write(0x0123, 0x000F);  //SXT
-    //lms->SPI_write(0x0120, 0xE6C0);  //SXT
     lms->SPI_write(0x0120, 0x80C0);  //SXT
     lms->SPI_write(0x011C, 0x8941);  //SXT
     lms->EnableChannel(false, false);
