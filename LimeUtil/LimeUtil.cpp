@@ -43,8 +43,8 @@ static int printHelp(void)
     std::cout << "    --help \t\t\t\t Print this help message" << std::endl;
     std::cout << "    --info \t\t\t\t Print module information" << std::endl;
     std::cout << "    --find[=\"module=foo,serial=bar\"] \t Discover available devices" << std::endl;
-    std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
-    std::cout << "    --force \t\t\t\t Force operation" << std::endl;
+    std::cout << "    --force \t\t\t\t Force operation" << std::endl;    std::cout << "    --make[=\"module=foo,serial=bar\"] \t Create a device instance" << std::endl;
+
     std::cout << std::endl;
     std::cout << "  Advanced options:" << std::endl;
     std::cout << "    --args[=\"module=foo,serial=bar\"] \t Arguments for the options below" << std::endl;

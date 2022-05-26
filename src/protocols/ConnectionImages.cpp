@@ -44,7 +44,7 @@ static const ConnectionImageEntry &lookupImageEntry(const LMS64CProtocol::LMSinf
         ConnectionImageEntry({LMS_DEV_STREAM,  3, 8, "STREAM-USB_HW_1.1_r8.0.img",  1, 2,  "STREAM-USB_HW_1.3_r1.2.rbf"}),
         ConnectionImageEntry({LMS_DEV_LIMENET_MICRO, 3, 0, nullptr,  1, 3,  "LimeNET-Micro_lms7_trx_HW_2.1_r1.3.rpd"}),
         ConnectionImageEntry({LMS_DEV_LIMESDRMINI,  0, 0, nullptr,  1, 30,  "LimeSDR-Mini_HW_1.2_r1.30.rpd"}),
-        ConnectionImageEntry({LMS_DEV_LIMESDRMINI_V2,  0, 0, nullptr,  1, 30,  "LimeSDR-Mini_HW_2.0_r1.30.bit"}),
+        ConnectionImageEntry({LMS_DEV_LIMESDRMINI_V2,  0, 0, nullptr,  2, 2,  "LimeSDR-Mini_HW_2.0_r2.2.bit"}),
     };
 
     for(const auto &iter : imageEntries)
