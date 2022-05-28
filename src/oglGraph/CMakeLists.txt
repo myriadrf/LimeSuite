@@ -34,7 +34,7 @@ target_include_directories(oglGraph PUBLIC
 if (APPLE)
 	set(GL_LIBS "-framework OpenGL" "-framework GLUT")
 elseif (UNIX)
-	set(GL_LIBS ${OPENGL_LIBRARIES})
+	set(GL_LIBS GL ${OPENGL_LIBRARIES})
 endif()
 
 if(UNIX)
