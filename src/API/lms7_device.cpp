@@ -25,6 +25,11 @@
 #include "device_constants.h"
 #include "LMSBoards.h"
 
+#ifdef REMOTE_CONTROL
+    #include "../ConnectionRemote/ConnectionRemoteServer.h"
+    static lime::ConnectionRemoteServer hostServer;
+#endif
+
 namespace lime
 {
 
@@ -52,6 +57,10 @@ LMS7_Device* LMS7_Device::CreateDevice(const lime::ConnectionHandle& handle, LMS
         lime::ReportError(EBUSY, "Failed to open. Device is busy.");
         return nullptr;
     }
+#ifdef REMOTE_CONTROL
+    hostServer.SetDevice(conn);
+#endif
+
     auto info = conn->GetDeviceInfo();
     if (info.deviceName ==  lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
         device = new LMS7_LimeSDR_mini(conn,obj);
