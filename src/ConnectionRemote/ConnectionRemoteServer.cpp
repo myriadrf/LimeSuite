@@ -22,7 +22,7 @@
 #include "ConnectionRemote.h"
 #include "ConnectionRegistry.h"
 
-#include "ConnectionRemoteServer.h"
+#include "ConnectionRemote/ConnectionRemoteServer.h"
 
 namespace lime
 {
@@ -31,6 +31,7 @@ ConnectionRemoteServer::ConnectionRemoteServer() :
     device(nullptr), m_Active(false)
 {
     socketFd = -1;
+    Start(5000);
 }
 
 void ConnectionRemoteServer::SetDevice(IConnection* dev)
@@ -67,7 +68,7 @@ int ConnectionRemoteServer::Start(uint16_t listenPort)
         return -2;
     }
 #ifdef __unix__
-    //fcntl(socketFd, F_SETFL, O_NONBLOCK);
+    fcntl(socketFd, F_SETFL, O_NONBLOCK);
 #else
     u_long NonBlock = 1;
     ioctlsocket(socketFd, FIONBIO, &NonBlock);
@@ -108,8 +109,10 @@ ConnectionRemoteServer::~ConnectionRemoteServer()
 void ConnectionRemoteServer::Shutdown()
 {
     m_Active = false;
+    printf("ConnectionRemoteServer shutting down...\n");
     if(remoteThread.joinable())
         remoteThread.join();
+    printf("ConnectionRemoteServer stopped\n");
 
     if(socketFd > 0)
     {
@@ -146,12 +149,15 @@ void ConnectionRemoteServer::ProcessConnections()
     {
         memset(&cli_addr, 0, sizeof(cli_addr));
         clientFd = accept(socketFd, (struct sockaddr*)&cli_addr, &clilen);
-        printf("ACCEPTED CONNECTION\n");
-
         if(clientFd == EAGAIN || clientFd == EWOULDBLOCK)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
+        }
         if(clientFd < 0)
             continue;
+
+        printf("ACCEPTED CONNECTION\n");
 
         bool connected = true;
         while(connected && m_Active)
@@ -164,7 +170,10 @@ void ConnectionRemoteServer::ProcessConnections()
             while(r < msgSize)
             {
                 brecv = recv(clientFd, (char *)pktBuffer+headerSize+r, msgSize-r, MSG_WAITALL);
-                printf("Recv: %i\n", brecv);
+                printf("Recv: %i", brecv);
+                for(int p=0; p<brecv; p++)
+                    printf(" 0x%02X", *(pktBuffer+headerSize+r+p));
+                printf("\n");
                 r += brecv;
                 if(brecv == 0)
                 {
@@ -181,10 +190,14 @@ void ConnectionRemoteServer::ProcessConnections()
                     break;
                 }
             }
-            
+
 
             if(not connected)
                 break;
+            if(device == nullptr)
+            {
+                printf("ConnectionRemoteServer: local LMS device connection not initialized\n");
+            }
             if(device != nullptr)
             {
                 uint32_t* src = reinterpret_cast<uint32_t*>(pktBuffer+headerSize);
@@ -308,6 +321,9 @@ void ConnectionRemoteServer::ProcessConnections()
                     break;
                 }
                 printf("Send: %i\n", r);
+                for(int p=0; p<r; p++)
+                    printf(" 0x%02X", *(pktBuffer+bsent+p));
+                printf("\n");
                 bsent += r;
             }
         }

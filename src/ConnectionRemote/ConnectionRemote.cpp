@@ -189,6 +189,7 @@ int ConnectionRemote::Write(const unsigned char *data, int len, int timeout_ms)
 int ConnectionRemote::Read(unsigned char *response, int len, int timeout_ms)
 {
     int bytesRead = 0;
+    auto t1 = std::chrono::high_resolution_clock::now();
     while(bytesRead < len)
     {
         int rdBytes = recv(m_ControlSocketFd, (char*)response+bytesRead, len-bytesRead, MSG_WAITALL);
@@ -199,6 +200,11 @@ int ConnectionRemote::Read(unsigned char *response, int len, int timeout_ms)
         }
         bytesRead += rdBytes;
         printf("Socket read %i/%i\n", bytesRead, len);
+        if(rdBytes == 0 && (t1 - std::chrono::high_resolution_clock::now()) > std::chrono::milliseconds(timeout_ms))
+        {
+            printf("Read timeout\n");
+            return bytesRead;
+        }
         std::this_thread::yield();
     }
     return bytesRead;

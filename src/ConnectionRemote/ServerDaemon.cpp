@@ -9,7 +9,6 @@ using namespace lime;
 int main(int argc, char** argv)
 {
 	ConnectionRemoteServer srv;
-	srv.Start(5000);
 
 	ConnectionHandle handle;
 
