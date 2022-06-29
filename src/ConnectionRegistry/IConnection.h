@@ -27,7 +27,9 @@ namespace lime{
  */
 struct LIME_API DeviceInfo
 {
-    DeviceInfo(void){};
+    DeviceInfo(void) : boardSerialNumber(0)
+    {
+    };
 
     //! The displayable name for the device
     std::string deviceName;

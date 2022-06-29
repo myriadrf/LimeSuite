@@ -6,8 +6,9 @@
 
 #include <VersionInfo.h>
 #include <SystemResources.h>
-#include <ConnectionRegistry.h>
-#include <IConnection.h>
+#include "DeviceRegistry.h"
+#include "SDRDevice.h"
+
 #include <iostream>
 #include <cstdlib>
 #include <ciso646>
@@ -98,7 +99,7 @@ static int printInfo(void)
     std::cout << std::endl;
 
     std::cout << "Supported connections:" << std::endl;
-    for (const auto &name : ConnectionRegistry::moduleNames()) std::cout << "   * " << name << std::endl;
+    for (const auto &name : DeviceRegistry::moduleNames()) std::cout << "   * " << name << std::endl;
     std::cout << std::endl;
     return EXIT_SUCCESS;
 }
@@ -110,9 +111,9 @@ static int findDevices(void)
 {
     std::string argStr;
     if (optarg != NULL) argStr = "none," + std::string(optarg);
-    ConnectionHandle hint(argStr);
+    DeviceHandle hint(argStr);
 
-    auto handles = ConnectionRegistry::findConnections(hint);
+    auto handles = DeviceRegistry::findDevices(hint);
     for (const auto &handle : handles)
     {
         std::cout << "  * [" << handle.serialize() << "]" << std::endl;
@@ -129,63 +130,59 @@ static int makeDevice(void)
 {
     std::string argStr = "none,";
     if (optarg != NULL) argStr += optarg;
-    ConnectionHandle handle(argStr);
+    DeviceHandle handle(argStr);
 
     std::cout << "Make device " << argStr.substr(5) << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handle);
-    if (conn == nullptr)
+    try
     {
-        std::cout << "No available device!" << std::endl;
-        return EXIT_FAILURE;
+        SDRDevice* lmsdev = DeviceRegistry::makeDevice(handle);
+        auto info = lmsdev->GetDeviceInfo();
+        std::cout << "  Device name: " << info.deviceName << std::endl;
+        std::cout << "  Expansion name: " << info.expansionName << std::endl;
+        std::cout << "  Firmware version: " << info.firmwareVersion << std::endl;
+        std::cout << "  Hardware version: " << info.hardwareVersion << std::endl;
+        std::cout << "  Protocol version: " << info.protocolVersion << std::endl;
+        std::cout << "  Gateware version: " << info.gatewareVersion << std::endl;
+        std::cout << "  Gateware revision: " << info.gatewareRevision << std::endl;
+        std::cout << "  Gateware target: " << info.gatewareTargetBoard << std::endl;
+        std::cout << "  Serial number: " << std::hex << "0x" << info.boardSerialNumber << std::dec << std::endl;
+
+        std::cout << "  Free connection... " << std::flush;
+        DeviceRegistry::freeDevice(lmsdev);
+        std::cout << "OK" << std::endl;
+        std::cout << std::endl;
     }
-    if (not conn->IsOpen())
+    catch (...)
     {
-        std::cout << "Connection not open!" << std::endl;
-        ConnectionRegistry::freeConnection(conn);
-        return EXIT_FAILURE;
+        //printf("Unable to make device connection: %s\n", e.what());
+        return -1;
     }
-
-    auto info = conn->GetDeviceInfo();
-    std::cout << "  Device name: " << info.deviceName << std::endl;
-    std::cout << "  Expansion name: " << info.expansionName << std::endl;
-    std::cout << "  Firmware version: " << info.firmwareVersion << std::endl;
-    std::cout << "  Hardware version: " << info.hardwareVersion << std::endl;
-    std::cout << "  Protocol version: " << info.protocolVersion << std::endl;
-    std::cout << "  Gateware version: " << info.gatewareVersion << std::endl;
-    std::cout << "  Gateware revision: " << info.gatewareRevision << std::endl;
-    std::cout << "  Gateware target: " << info.gatewareTargetBoard << std::endl;
-    std::cout << "  Serial number: " << std::hex << "0x" << info.boardSerialNumber << std::dec << std::endl;
-
-    std::cout << "  Free connection... " << std::flush;
-    ConnectionRegistry::freeConnection(conn);
-    std::cout << "OK" << std::endl;
-    std::cout << std::endl;
     return EXIT_SUCCESS;
 }
 
 /***********************************************************************
- * Enable external reference clock 
+ * Enable external reference clock
  **********************************************************************/
 #define ADF4002_SPI_INDEX 0x30
 #define PERIPH_INPUT_RD_0 0xc8
 static int enableExtRefClk(const std::string &argStr, const double fref, const double fvco)
-{
+{/*
     lime::ADF4002* m_pModule;
     m_pModule = new lime::ADF4002();
 
-    ConnectionHandle handle(argStr);
+    DeviceHandle handle(argStr);
 
     std::cout << "Enable external reference clock on device " << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handle);
-    if (conn == nullptr)
+    auto lmsdev = DeviceRegistry::makeDevice(handle);
+    if (lmsdev == nullptr)
     {
         std::cout << "No available device!" << std::endl;
         return EXIT_FAILURE;
     }
-    if (not conn->IsOpen())
+    if (not lmsdev->IsOpen())
     {
         std::cout << "Connection not open!" << std::endl;
-        ConnectionRegistry::freeConnection(conn);
+        DeviceRegistry::freeDevice(lmsdev);
         return EXIT_FAILURE;
     }
 
@@ -204,20 +201,20 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
 
     int status;
     // ADF4002 needs to be writen 4 values of 24 bits
-    status = conn->TransactSPI(ADF4002_SPI_INDEX, dataWr.data(), nullptr, 4);
+    status = lmsdev->SPI(ADF4002_SPI_INDEX, dataWr.data(), nullptr, 4);
     if (status != 0)
     {
         std::cout << "Transaction failed!" << std::endl;
-        ConnectionRegistry::freeConnection(conn);
+        DeviceRegistry::freeDevice(lmsdev);
         return EXIT_FAILURE;
     }
 
     uint16_t adfLocked = 0;
-    status = conn->ReadRegister(PERIPH_INPUT_RD_0, adfLocked); 
+    status = lmsdev->ReadRegister(PERIPH_INPUT_RD_0, adfLocked);
     if (status != 0)
     {
         std::cout << "ReadRegister failed!" << std::endl;
-        ConnectionRegistry::freeConnection(conn);
+        DeviceRegistry::freeDevice(lmsdev);
         return EXIT_FAILURE;
     }
     // Bit 2 is the lock state
@@ -225,10 +222,10 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
     std::cout << "  ADF4002 Lock State: " << adfLocked << std::endl;
 
     std::cout << "  Free connection... " << std::flush;
-    ConnectionRegistry::freeConnection(conn);
+    DeviceRegistry::freeDevice(lmsdev);
     std::cout << "OK" << std::endl;
     std::cout << std::endl;
-    return EXIT_SUCCESS;
+    return EXIT_SUCCESS;*/
 }
 
 /***********************************************************************
@@ -236,17 +233,18 @@ static int enableExtRefClk(const std::string &argStr, const double fref, const d
  **********************************************************************/
 static int FX3Reset()
 {
+    /*
     std::string argStr = "none,";
     if (optarg != NULL) argStr += optarg;
-    auto handles = ConnectionRegistry::findConnections(argStr);
+    auto handles = DeviceRegistry::findDevices(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
     std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handles[0]);
-    auto status = conn->ProgramWrite(nullptr, 0, 0, 1, nullptr);
+    auto lmsdev = DeviceRegistry::makeDevice(handles[0]);
+    auto status = lmsdev->ProgramWrite(nullptr, 0, 0, 1, nullptr);
 
     std::cout << std::endl;
     if(status == 0)
@@ -258,8 +256,9 @@ static int FX3Reset()
         std::cout << "FX3 reset failed!" << std::endl;
     }
 
-    ConnectionRegistry::freeConnection(conn);
+    DeviceRegistry::freeDevice(lmsdev);
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
+    */
 }
 
 /***********************************************************************
@@ -267,14 +266,15 @@ static int FX3Reset()
  **********************************************************************/
 static int programUpdate(const bool force, const std::string &argStr)
 {
-    auto handles = ConnectionRegistry::findConnections(argStr);
+    /*
+    auto handles = DeviceRegistry::findDevices(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
     std::cout << "Connected to [" << handles[0].ToString() << "]" << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handles[0]);
+    auto lmsdev = DeviceRegistry::makeDevice(handles[0]);
 
     auto progCallback = [](int bsent, int btotal, const char* progressMsg)
     {
@@ -283,7 +283,7 @@ static int programUpdate(const bool force, const std::string &argStr)
         return 0;
     };
 
-    auto status = conn->ProgramUpdate(true/*yes download*/, force, progCallback);
+    auto status = lmsdev->ProgramUpdate(true, force, progCallback);
 
     std::cout << std::endl;
     if(status == 0)
@@ -295,8 +295,9 @@ static int programUpdate(const bool force, const std::string &argStr)
         std::cout << "Programming update failed!" << std::endl;
     }
 
-    ConnectionRegistry::freeConnection(conn);
+    DeviceRegistry::freeDevice(lmsdev);
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
+    */
 }
 
 /***********************************************************************
@@ -305,6 +306,7 @@ static int programUpdate(const bool force, const std::string &argStr)
 static int programGateware(const std::string &argStr)
 {
     //load file
+    /*
     std::ifstream file;
     file.open(optarg, std::ios::in | std::ios::binary);
     if(not file.good())
@@ -320,7 +322,7 @@ static int programGateware(const std::string &argStr)
     std::vector<char> progData(fileSize, 0);
     file.read(progData.data(), fileSize);
 
-    auto handles = ConnectionRegistry::findConnections(argStr);
+    auto handles = DeviceRegistry::findDevices(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
@@ -342,6 +344,7 @@ static int programGateware(const std::string &argStr)
         std::cout << "Programming failed!" << std::endl;
     delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
+    */
 }
 
 /***********************************************************************
@@ -349,6 +352,7 @@ static int programGateware(const std::string &argStr)
  **********************************************************************/
 static int programFirmware(const std::string &argStr)
 {
+    /*
     //load file
     std::ifstream file;
     file.open(optarg, std::ios::in | std::ios::binary);
@@ -365,7 +369,7 @@ static int programFirmware(const std::string &argStr)
     std::vector<char> progData(fileSize, 0);
     file.read(progData.data(), fileSize);
 
-    auto handles = ConnectionRegistry::findConnections(argStr);
+    auto handles = DeviceRegistry::findDevices(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
@@ -387,6 +391,7 @@ static int programFirmware(const std::string &argStr)
         std::cout << "Programming failed!" << std::endl;
     delete device;
     return (status==0)?EXIT_SUCCESS:EXIT_FAILURE;
+    */
 }
 
 /***********************************************************************

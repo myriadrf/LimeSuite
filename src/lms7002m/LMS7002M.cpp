@@ -119,7 +119,8 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
 /** @brief Creates LMS7002M main control object.
 It requires IConnection to be set by SetConnection() to communicate with chip
 */
-LMS7002M::LMS7002M() :
+LMS7002M::LMS7002M(uint32_t slaveID) :
+    mSlaveID(slaveID),
     useCache(0),
     mRegistersMap(new LMS7002M_RegistersMap()),
     controlPort(nullptr),

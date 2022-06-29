@@ -37,6 +37,7 @@ DeviceInfo IConnection::GetDeviceInfo(void)
     //causes lms7_device::CreateDevice() to use LMS7_Generic
     info.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
     info.expansionName = GetExpansionBoardName(EXP_BOARD_UNKNOWN);
+    info.boardSerialNumber = 0;
     return info;
 }
 

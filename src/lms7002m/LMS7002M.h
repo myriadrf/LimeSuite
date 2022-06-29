@@ -71,7 +71,7 @@ public:
         bool success;
     };
 
-    LMS7002M();
+    LMS7002M(uint32_t slaveID);
 
     /*!
      * Set the connection for the LMS7002M driver.
@@ -430,6 +430,7 @@ public:
     void RestoreRegisterMap(LMS7002M_RegistersMap *backup);
 
 protected:
+    const uint32_t mSlaveID;
     bool mCalibrationByMCU;
     MCU_BD *mcuControl;
     bool useCache;

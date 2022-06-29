@@ -2,6 +2,10 @@
 ## public headers
 ########################################################################
 set(LIME_SUITE_PUBLIC_HEADERS
+    boards/DeviceExceptions.h
+    boards/DeviceRegistry.h
+    boards/DeviceHandle.h
+    boards/SDRDevice.h
     lime/LimeSuite.h
     VersionInfo.h
     Logger.h
@@ -44,6 +48,9 @@ endif()
 ## lime suite library
 ########################################################################
 set(LIME_SUITE_SOURCES
+    boards/DeviceRegistry.cpp
+    boards/DeviceHandle.cpp
+    boards/SDRDevice.cpp
     Logger.cpp
     ADF4002/ADF4002.cpp
     lms7002m_mcu/MCU_BD.cpp
@@ -82,6 +89,7 @@ set(LIME_SUITE_SOURCES
 
 set(LIME_SUITE_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}
+    boards
     API
     lime
     GFIR
@@ -152,12 +160,17 @@ endif()
 ########################################################################
 ## Supported connections
 ########################################################################
-include(ConnectionEVB7COM/CMakeLists.txt)
+include(comms/USB/CMakeLists.txt)
+
+
+#include(ConnectionEVB7COM/CMakeLists.txt)
 include(ConnectionFX3/CMakeLists.txt)
-include(ConnectionSTREAM_UNITE/CMakeLists.txt)
+#include(ConnectionSTREAM_UNITE/CMakeLists.txt)
 include(ConnectionFTDI/CMakeLists.txt)
 include(ConnectionXillybus/CMakeLists.txt)
 include(ConnectionSPI/CMakeLists.txt)
+
+include(boards/LimeSDR/CMakeLists.txt)
 
 ## Remote connection is not safe or efficient, it should not be in releases (github #263)
 ## it's only for debugging purposes when USB device cannot be used by multiple applications simultaneously.
