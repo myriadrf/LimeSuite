@@ -67,6 +67,8 @@ enum eCMD_LMS
     CMD_MYRIAD_RST = 0x80,
     CMD_MYRIAD_WR = 0x81,
     CMD_MYRIAD_RD = 0x82,
+    CMD_I2C_WR = 0x84,
+    CMD_I2C_RD = 0x85,
     CMD_MEMORY_WR = 0x8C,
     CMD_MEMORY_RD = 0x8D
 };

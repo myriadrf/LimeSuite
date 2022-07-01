@@ -21,6 +21,8 @@ public:
     virtual DeviceInfo GetDeviceInfo() override;
 
     virtual void SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, size_t count) override;
+    virtual int I2CWrite(int address, const uint8_t *data, size_t length) override;
+    virtual int I2CRead(int addr, uint8_t *dest, size_t length) override;
 
 protected:
     LMS7002M* mLMSChip;

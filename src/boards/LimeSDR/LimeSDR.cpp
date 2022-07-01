@@ -151,6 +151,7 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, siz
     LMS64CProtocol::LMS64CPacket pkt;
     for(int i=0; i<count; ++i)
     {
+        pkt.status = STATUS_UNDEFINED;
         pkt.blockCount = 1;
         pkt.periphID = chipSelect;
         if(MOSI[i] & (1<<31)) // SPI write bit
@@ -193,4 +194,58 @@ void LimeSDR::SPI(uint32_t chipSelect, const uint32_t *MOSI, uint32_t *MISO, siz
         else
             throw std::runtime_error("SPI failed");
     }
+}
+
+int LimeSDR::I2CWrite(int address, const uint8_t *data, size_t length)
+{
+    assert(comms);
+    LMS64CProtocol::LMS64CPacket pkt;
+    int remainingBytes = length;
+    const uint8_t* src = data;
+    while (remainingBytes > 0)
+    {
+        pkt.cmd = CMD_I2C_WR;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+        pkt.periphID = address;
+        memcpy(pkt.payload, src, pkt.blockCount);
+        src += pkt.blockCount;
+        remainingBytes -= pkt.blockCount;
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("I2C write failed");
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+
+        if (pkt.status != STATUS_COMPLETED_CMD)
+            throw std::runtime_error("I2C write failed");
+    }
+    return 0;
+}
+
+int LimeSDR::I2CRead(int address, uint8_t *data, size_t length)
+{
+    assert(comms);
+    LMS64CProtocol::LMS64CPacket pkt;
+    int remainingBytes = length;
+    uint8_t* dest = data;
+    while (remainingBytes > 0)
+    {
+        pkt.cmd = CMD_I2C_RD;
+        pkt.status = STATUS_UNDEFINED;
+        pkt.blockCount = remainingBytes > pkt.maxDataLength ? pkt.maxDataLength : remainingBytes;
+        pkt.periphID = address;
+
+        int sent = comms->BulkTransfer(ctrlBulkOutAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+        if (sent != sizeof(pkt))
+            throw std::runtime_error("I2C read failed");
+        int recv = comms->BulkTransfer(ctrlBulkInAddr, (uint8_t*)&pkt, sizeof(pkt), 100);
+
+        memcpy(dest, pkt.payload, pkt.blockCount);
+        dest += pkt.blockCount;
+        remainingBytes -= pkt.blockCount;
+
+        if (pkt.status != STATUS_COMPLETED_CMD)
+            throw std::runtime_error("I2C read failed");
+    }
+    return 0;
 }
