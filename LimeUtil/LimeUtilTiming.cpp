@@ -7,9 +7,11 @@
 #include <VersionInfo.h>
 #include <ConnectionRegistry.h>
 #include <IConnection.h>
+#include "DeviceRegistry.h"
 #include <LMS7002M.h>
 #include <iostream>
 #include <chrono>
+#include "SDRDevice.h"
 
 using namespace lime;
 
@@ -24,48 +26,61 @@ struct LMS7002M_quiet : LMS7002M
 
 int deviceTestTiming(const std::string &argStr)
 {
-    auto handles = ConnectionRegistry::findConnections(argStr);
+    auto handles = DeviceRegistry::findDevices(argStr);
     if(handles.size() == 0)
     {
         std::cout << "No devices found" << std::endl;
         return EXIT_FAILURE;
     }
     std::cout << "Connected to [" << handles[0].serialize() << "]" << std::endl;
-    auto conn = ConnectionRegistry::makeConnection(handles[0]);
-
-    std::cout << "Creating instance of LMS7002M:" << std::endl;
-    auto lms7 = new LMS7002M_quiet;
-    lms7->SetConnection(conn);
+    SDRDevice* dev = DeviceRegistry::makeDevice(handles[0]);
 
     std::cout << std::endl;
     std::cout << "Timing basic operations:" << std::endl;
 
     //time spi write access
+    try
     {
         const size_t numIters(1000);
         auto t0 = std::chrono::high_resolution_clock::now();
+        uint32_t mosi = 0x80000000;
+        uint32_t miso = 0x0000;
         for (size_t i = 0; i < numIters; i++)
-        {
-            lms7->SPI_write(0x0000, 0x0000);
-        }
+            dev->SPI(0, &mosi, &miso, 1);
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
         std::cout << "  >>> SPI write register:\t" << (secsPerOp/1e-6) << " us" << std::endl;
     }
+    catch (...)
+    {
+        printf("Exceptions doing SPI write\n");
+    }
 
     //time spi read access
+    try
     {
         const size_t numIters(1000);
         auto t0 = std::chrono::high_resolution_clock::now();
+        uint32_t mosi = 0x002F;
+        uint32_t miso = 0x0000;
         for (size_t i = 0; i < numIters; i++)
         {
-            lms7->SPI_read(0x0000, true);
+            dev->SPI(0, &mosi, &miso, 1);
+            if(miso != 0x3841)
+            {
+                printf("SPI Read bad, expected 0x3841, got: 0x%04X\n", miso);
+                break;
+            }
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
         std::cout << "  >>> SPI read register:\t" << (secsPerOp/1e-6) << " us" << std::endl;
     }
-
+    catch (...)
+    {
+        printf("Exceptions doing SPI read\n");
+    }
+/*
     //time NCO setting
     {
         const size_t numIters(1000);
@@ -185,10 +200,10 @@ int deviceTestTiming(const std::string &argStr)
         const auto secsPerOp = std::chrono::duration<double>(t1-t0).count()/numIters;
         std::cout << "  >>> RX corrections:\t\t" << (secsPerOp/1e-3) << " ms" << std::endl;
     }
-
+*/
     std::cout << std::endl;
     std::cout << "Done timing!" << std::endl;
-    delete lms7;
-    ConnectionRegistry::freeConnection(conn);
+
+    DeviceRegistry::freeDevice(dev);
     return EXIT_SUCCESS;
 }

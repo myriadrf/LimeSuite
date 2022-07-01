@@ -333,7 +333,7 @@ LMS64CProtocol::LMSinfo LMS64CProtocol::GetInfo()
 LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
 {
     FPGAinfo info;
-    info.boardID = 0;
+    info.boardID = LMS_DEV_UNKNOWN;
     info.gatewareVersion = 0;
     info.gatewareRevision = 0;
     GenericPacket pkt;
@@ -347,7 +347,7 @@ LMS64CProtocol::FPGAinfo LMS64CProtocol::GetFPGAInfo()
     int status = this->TransferPacket(pkt);
     if (status == 0 && pkt.inBuffer.size() >= sizeof(addrs)*2)
     {
-        info.boardID = (pkt.inBuffer[2] << 8) | pkt.inBuffer[3];
+        info.boardID = eLMS_DEV((pkt.inBuffer[2] << 8) | pkt.inBuffer[3]);
         info.gatewareVersion = (pkt.inBuffer[6] << 8) | pkt.inBuffer[7];
         info.gatewareRevision = (pkt.inBuffer[10] << 8) | pkt.inBuffer[11];
         info.hwVersion = pkt.inBuffer[15]&0x7F;

@@ -74,6 +74,23 @@ public:
         std::vector<unsigned char> inBuffer;
     };
 
+    struct LMS64CPacket
+    {
+        static const int pktLength = 64;
+        static const int maxDataLength = 56;
+        static const int headerSize = maxDataLength-pktLength;
+        LMS64CPacket() :cmd(0), status(STATUS_UNDEFINED), blockCount(0)
+        {
+             memset(reserved, 0, sizeof(reserved));
+        };
+        uint8_t cmd;
+        uint8_t status;
+        uint8_t blockCount;
+        uint8_t periphID;
+        uint8_t reserved[4];
+        uint8_t payload[maxDataLength];
+    };
+
     struct ProtocolLMS64C
     {
         static const int pktLength = 64;
@@ -101,11 +118,15 @@ public:
 
     struct LMSinfo
     {
+        LMSinfo()
+        {
+            memset(this, 0, sizeof(LMSinfo));
+        }
         eLMS_DEV device;
         eEXP_BOARD expansion;
-        int firmware;
-        int hardware;
-        int protocol;
+        uint8_t firmware;
+        uint8_t hardware;
+        uint8_t protocol;
         uint64_t boardSerialNumber;
     };
 
@@ -113,7 +134,11 @@ public:
 
     struct FPGAinfo
     {
-        int boardID;
+        FPGAinfo()
+        {
+            memset(this, 0, sizeof(FPGAinfo));
+        }
+        eLMS_DEV boardID;
         int gatewareVersion;
         int gatewareRevision;
         int hwVersion;
