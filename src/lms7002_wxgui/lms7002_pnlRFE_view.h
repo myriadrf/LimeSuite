@@ -1,27 +1,21 @@
 #ifndef lms7002_pnlRFE_view_h
 #define lms7002_pnlRFE_view_h
 
-#include "lms7002_wxgui.h"
-
-//// end generated include
 #include <map>
 #include "lime/LimeSuite.h"
+#include "ILMS7002MTab.h"
 
-class lms7002_pnlRFE_view : public wxPanel
+class lms7002_pnlRFE_view : public ILMS7002MTab
 {
 public:
     lms7002_pnlRFE_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device_t* pControl);
-    void UpdateGUI();
-protected:
-	wxCheckBox* NewCheckBox(wxWindow *parent, const LMS7Parameter &param, const wxString &label, const wxString &tooltip, const wxPoint &pos, const wxSize &size);
+    virtual void UpdateGUI() override;
+
+  protected:
+    wxCheckBox* NewCheckBox(wxWindow *parent, const LMS7Parameter &param, const wxString &label, const wxString &tooltip, const wxPoint &pos, const wxSize &size);
 	wxComboBox* NewComboBox(wxWindow *parent, const LMS7Parameter &param, const wxString &tooltip, const wxPoint &pos, const wxSize &size);
     NumericSlider* NewNumericSlider(wxWindow* parent, const LMS7Parameter &param, const wxString &value, const wxPoint &pos, const wxSize &size, long style, int min, int max, int initial, const wxString &name);
-    void ParameterChangeHandler( wxCommandEvent& event );
-    void SpinParameterChangeHandler(wxSpinEvent& event);
-
-    lms_device_t* lmsControl;
-    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
+    virtual void ParameterChangeHandler(wxCommandEvent &event) override;
 
     enum
         {

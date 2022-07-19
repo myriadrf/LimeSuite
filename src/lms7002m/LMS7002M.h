@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace lime{
-class IConnection;
+class IComms;
 class LMS7002M_RegistersMap;
 class MCU_BD;
 class BinSearchParam;
@@ -41,22 +41,36 @@ typedef double float_type;
 class LIME_API LMS7002M
 {
 public:
-    enum
-    {
-        Rx, Tx
-    };
+  static constexpr double CGEN_MAX_FREQ = 640e6;
+  enum
+  {
+      Rx,
+      Tx
+  };
 
-    struct CGEN_details
-    {
-        float_type frequency;
-        float_type frequencyVCO;
-        float_type referenceClock;
-        uint32_t INT;
-        uint32_t FRAC;
-        uint8_t div_outch_cgen;
-        uint16_t csw;
-        bool success;
-    };
+  enum class ClockID
+  {
+      CLK_REFERENCE = 0,
+      CLK_SXR = 1, ///RX LO clock
+      CLK_SXT = 2, ///TX LO clock
+      CLK_CGEN = 3,
+      ///RXTSP reference clock (read-only)
+      CLK_RXTSP = 4,
+      ///TXTSP reference clock (read-only)
+      CLK_TXTSP = 5
+  };
+
+  struct CGEN_details
+  {
+      float_type frequency;
+      float_type frequencyVCO;
+      float_type referenceClock;
+      uint32_t INT;
+      uint32_t FRAC;
+      uint8_t div_outch_cgen;
+      uint16_t csw;
+      bool success;
+  };
     struct SX_details
     {
         float_type frequency;
@@ -79,9 +93,9 @@ public:
      * \param devIndex which RFIC index (default 0 for most devices)
      * \param dataPort connection used to get samples data when calibrating with FFT
      */
-    void SetConnection(IConnection* port, const size_t devIndex = 0);
+    void SetConnection(IComms *port, const size_t devIndex = 0);
 
-    IConnection *GetConnection(void) const
+    IComms *GetConnection(void) const
     {
         return controlPort;
     }
@@ -125,9 +139,10 @@ public:
      * This powers on or off all of the respective hardware
      * for a given channel A or B: TSP, BB, and RF sections.
      * @param isTx true for the transmit size, false for receive
+     * @param channel true for the transmit size, false for receive
      * @param enable true to enable, false to disable
      */
-    int EnableChannel(const bool isTx, const bool enable);
+    int EnableChannel(const bool isTx, const uint8_t channel, const bool enable);
 
     ///@name Registers writing and reading
     int UploadAll();
@@ -397,6 +412,9 @@ public:
      */
     void GetIQBalance(const bool tx, float_type &phase, float_type &gainI, float_type &gainQ);
 
+    double GetClockFreq(ClockID clk_id, uint8_t channel);
+    void SetClockFreq(ClockID clk_id, double freq, uint8_t channel);
+
     ///enumeration to indicate module registers intervals
     enum MemorySection
     {
@@ -494,7 +512,7 @@ protected:
     void Log(LogType type, const char *format, va_list argList);
 
     ///port used for communicating with LMS7002M
-    IConnection* controlPort;
+    lime::IComms *controlPort;
     unsigned mdevIndex;
     size_t mSelfCalDepth;
     int opt_gain_tbb[2];

@@ -3,7 +3,7 @@
 #include <vector>
 #include "lms7suiteEvents.h"
 #include "ConnectionHandle.h"
-#include "lms7_device.h"
+#include "SDRDevice.h"
 #include <iso646.h> // alternative operators for visual c++: not, and, or...
 using namespace std;
 
@@ -40,28 +40,28 @@ void dlgConnectionSettings::GetDeviceList( wxInitDialogEvent& event )
 
 void dlgConnectionSettings::OnConnect( wxCommandEvent& event )
 {
-    auto list = lime::LMS7_Device::GetDeviceList();
+    lms_info_str_t list[32];
+    int devCount = LMS_GetDeviceList(list);
 
     const int selection = mListLMS7ports->GetSelection();
-    if(selection != wxNOT_FOUND && (size_t)selection < list.size())
-    {
-        if (list[selection].module == "Z_Remote")
-        {
-            wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter remote IP address"), _("Remote IP address"));
-            dlg->SetTextValidator(wxFILTER_NUMERIC);
-            dlg->SetValue("127.0.0.1");
-            if (dlg->ShowModal() == wxID_OK)
-                list[selection].addr = dlg->GetValue().mb_str() ;
-            delete dlg;
-        }
+    if (selection != wxNOT_FOUND && (size_t)selection < devCount) {
+        // if (list[selection].module == "Z_Remote")
+        // {
+        //     wxTextEntryDialog *dlg = new wxTextEntryDialog(this, _("Enter remote IP address"), _("Remote IP address"));
+        //     dlg->SetTextValidator(wxFILTER_NUMERIC);
+        //     dlg->SetValue("127.0.0.1");
+        //     if (dlg->ShowModal() == wxID_OK)
+        //         list[selection].addr = dlg->GetValue().mb_str() ;
+        //     delete dlg;
+        // }
 
-        auto dev = lime::LMS7_Device::CreateDevice(list[selection], (lime::LMS7_Device*)*lmsControl);
-        if (!dev)
-        {
+        lms_device_t *device = nullptr;
+        int status = LMS_Open(&device, list[selection], nullptr);
+        if (status != 0) {
             wxMessageBox(wxString(_("Failed to open device")));
             return;
         }
-        *lmsControl = dev;
+        *lmsControl = device;
         wxCommandEvent evt;
         evt.SetEventType(CONTROL_PORT_CONNECTED);
         if(GetParent())
@@ -79,7 +79,7 @@ void dlgConnectionSettings::OnCancel( wxCommandEvent& event )
 
 void dlgConnectionSettings::OnDisconnect( wxCommandEvent& event )
 {
-    *lmsControl = new lime::LMS7_Device((lime::LMS7_Device*)*lmsControl);
+    *lmsControl = nullptr;
     wxCommandEvent evt;
     evt.SetEventType(CONTROL_PORT_DISCONNECTED);
     if(GetParent())

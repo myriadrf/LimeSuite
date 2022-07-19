@@ -10,7 +10,6 @@
 //(*Headers(ADF4002_wxgui)
 #include <wx/frame.h>
 #include <wx/wx.h>
-#include "lime/LimeSuite.h"
 class wxSpinEvent;
 class wxTextCtrl;
 class wxComboBox;
@@ -24,7 +23,7 @@ class wxStaticBoxSizer;
 
 namespace lime{
 class ADF4002;
-
+class SDRDevice;
 }
 
 class ADF4002_wxgui: public wxFrame
@@ -32,7 +31,7 @@ class ADF4002_wxgui: public wxFrame
 public:
 
     ADF4002_wxgui(wxWindow* parent,wxWindowID id=wxID_ANY, const wxString &title=_(""), const wxPoint& pos=wxDefaultPosition,const wxSize& size=wxDefaultSize, int styles=wxDEFAULT_FRAME_STYLE, wxString idname="");
-    void Initialize(lms_device_t* pSerPort);
+    void Initialize(lime::SDRDevice *pSerPort);
     virtual ~ADF4002_wxgui();
 
     void SetGuiDefaults();
@@ -147,7 +146,7 @@ protected:
 
 private:
     lime::ADF4002* m_pModule;
-    lms_device_t* lmsControl;
+    lime::SDRDevice *lmsControl;
     //(*Handlers(ADF4002_wxgui)
     void OnbtnCalcSendClick(wxCommandEvent& event);
     void OnbtnUploadClick(wxCommandEvent& event);

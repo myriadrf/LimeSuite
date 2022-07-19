@@ -5,9 +5,9 @@
 
 #include <map>
 #include <vector>
-#include "lime/LimeSuite.h"
+#include "ILMS7002MTab.h"
 
-class lms7002_pnlRxTSP_view : public wxPanel
+class lms7002_pnlRXTSP_view : public ILMS7002MTab
 {
 protected:
     // Handlers for pnlRxTSP_view events.
@@ -24,15 +24,16 @@ protected:
     void OnbtnReadRSSI(wxCommandEvent& event);
     void OnbtnSetLPFClick( wxCommandEvent& event );
 public:
-    lms7002_pnlRxTSP_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device_t* pControl);
-    void UpdateGUI();
-    void UpdateNCOinputs();
+  lms7002_pnlRXTSP_view(wxWindow *parent, wxWindowID id = wxID_ANY,
+                        const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
+                        long style = wxTAB_TRAVERSAL);
+  virtual void Initialize(lime::SDRDevice *pControl) override;
+  virtual void UpdateGUI() override;
+  void UpdateNCOinputs();
+
 protected:
     void PHOinputChanged(wxCommandEvent& event);
     void txtFCWPHOmodeAdditional_OnMouseWheel(wxMouseEvent& event);
-    lms_device_t* lmsControl;
-    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
 
     std::vector<wxStaticText*> lblNCOangles;
     std::vector<wxRadioButton*> rgrNCOselections;

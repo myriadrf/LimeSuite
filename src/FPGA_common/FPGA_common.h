@@ -6,44 +6,44 @@
 
 #ifndef FPGA_COMMON_H
 #define FPGA_COMMON_H
-#include "IConnection.h"
 #include <stdint.h>
 #include "dataTypes.h"
-#include "Streamer.h"
 #include <map>
+#include "SDRDevice.h"
 
 namespace lime
 {
-     
-class LIME_API FPGA
+class IComms;
+
+class FPGA
 {
 public:
-    
-    FPGA();
-    virtual ~FPGA(){};
-    void SetConnection(IConnection* conn);
-    IConnection* GetConnection() const;
-    int StartStreaming();
-    int StopStreaming();
-    int ResetTimestamp();
-    virtual int UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex);
-    
-    struct FPGA_PLL_clock
-    {
-        FPGA_PLL_clock()
-        {
-           findPhase = false;
-           bypass = false;
-           phaseShift_deg = 0;
-           index = 0;
-        }
-        double outFrequency;
-        double phaseShift_deg;
-        uint8_t index;
-        bool bypass;
-        bool findPhase;
-        double rd_actualFrequency;
-    };
+  FPGA(uint32_t slaveID, uint32_t lmsSlaveId);
+  virtual ~FPGA(){};
+  void SetConnection(lime::IComms *conn);
+  lime::IComms *GetConnection() const;
+  int StartStreaming();
+  int StopStreaming();
+  int ResetTimestamp();
+  virtual int UploadWFM(const void *const *samples, uint8_t chCount, size_t sample_count,
+                        SDRDevice::StreamConfig::DataFormat format, int epIndex);
+
+  struct FPGA_PLL_clock
+  {
+      FPGA_PLL_clock()
+      {
+          findPhase = false;
+          bypass = false;
+          phaseShift_deg = 0;
+          index = 0;
+      }
+      double outFrequency;
+      double phaseShift_deg;
+      uint8_t index;
+      bool bypass;
+      bool findPhase;
+      double rd_actualFrequency;
+  };
 
     virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, double txPhase, double rxPhase, int ch = 0);
     virtual int SetInterfaceFreq(double f_Tx_Hz, double f_Rx_Hz, int ch = 0);
@@ -56,11 +56,17 @@ public:
     virtual int ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt);
     int WriteRegister(uint32_t addr, uint32_t val);
     int ReadRegister(uint32_t addr);
-protected:
+    int WriteLMS7002MSPI(const uint32_t *addr, uint32_t length);
+    int ReadLMS7002MSPI(const uint32_t *addr, uint32_t *values, uint32_t length);
+
+  protected:
     int SetPllFrequency(uint8_t pllIndex, double inputFreq, FPGA_PLL_clock* outputs, uint8_t clockCount);
     int SetDirectClocking(int clockIndex);
-    IConnection* connection;
-private:
+    lime::IComms *connection;
+    const uint32_t mSlaveId;
+    const uint32_t mLMSSlaveId;
+
+  private:
     virtual int ReadRawStreamData(char* buffer, unsigned length, int epIndex, int timeout_ms);
     int SetPllClock(int clockIndex, int nSteps, bool waitLock, uint16_t &reg23val);
     bool useCache;

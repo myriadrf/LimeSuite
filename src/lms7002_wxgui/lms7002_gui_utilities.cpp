@@ -15,11 +15,13 @@
 #include <wx/spinctrl.h>
 #include <wx/object.h>
 #include <wx/tooltip.h>
-#include <lms7_device.h>
+#include "SDRDevice.h"
 
 using namespace lime;
 
-void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl, const std::map<wxWindow*, LMS7Parameter> &wndId2param)
+void LMS7002_WXGUI::UpdateControlsByMap(wxPanel *panel, SDRDevice *lmsControl,
+                                        const std::map<wxWindow *, LMS7Parameter> &wndId2param,
+                                        const uint8_t channel)
 {
     if (panel == nullptr || lmsControl == nullptr)
         return;
@@ -43,8 +45,7 @@ void LMS7002_WXGUI::UpdateControlsByMap(wxPanel* panel, lms_device_t* lmsControl
             continue;
         wndClass = wnd->GetClassInfo();
 
-        LMS7_Device* lms = (LMS7_Device*)lmsControl;
-        value = lms->ReadParam(idParam.second, -1, true);
+        value = lmsControl->ReadParam(idParam.second, channel, true);
         //cast window to specific control, to set value, or set selection
         if (wndClass->IsKindOf(cmbInfo))
         {

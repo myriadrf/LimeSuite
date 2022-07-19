@@ -16,7 +16,6 @@
 
 using namespace lime;
 
-static libusb_device_handle* dev_handle; //a device handle
 static libusb_context* ctx; //a libusb session
 
 static LimeSDREntry limesdrSupport; // self register on initialization

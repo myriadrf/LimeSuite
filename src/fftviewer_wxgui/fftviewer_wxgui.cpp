@@ -11,7 +11,9 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-frFFTviewer::frFFTviewer( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+frFFTviewer::frFFTviewer(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
+                         const wxSize &size, long style)
+    : IModuleFrame(parent, id)
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 	this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );

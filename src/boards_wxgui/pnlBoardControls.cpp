@@ -8,20 +8,20 @@
 #include <wx/wx.h>
 #endif //WX_PRECOMP
 
-#include "pnlUltimateEVB.h"
+// #include "pnlUltimateEVB.h"
 #include "pnluLimeSDR.h"
-#include "pnlCoreSDR.h"
+// #include "pnlCoreSDR.h"
 #include "pnlLimeSDR.h"
 #include "pnlBuffers.h"
-#include "RFSpark_wxgui.h"
- #include "pnlQSpark.h"
-#include <IConnection.h>
+// #include "RFSpark_wxgui.h"
+// #include "pnlQSpark.h"
+
 #include <ADCUnits.h>
 #include <assert.h>
 #include <wx/spinctrl.h>
 #include <vector>
 #include "lms7suiteEvents.h"
-#include "pnlLimeNetMicro.h"
+// #include "pnlLimeNetMicro.h"
 
 using namespace std;
 using namespace lime;
@@ -293,7 +293,7 @@ void pnlBoardControls::OnWriteAll( wxCommandEvent& event )
     }
 }
 
-void pnlBoardControls::Initialize(lms_device_t* controlPort)
+void pnlBoardControls::Initialize(SDRDevice *controlPort)
 {
     lmsControl = controlPort;
     const lms_dev_info_t* info;
@@ -477,50 +477,50 @@ void pnlBoardControls::SetupControls(const std::string &boardID)
         additionalControls = pnl;
         sizerAdditionalControls->Add(additionalControls);
     }
-    else if(boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
-    {
-        pnlUltimateEVB* pnl = new pnlUltimateEVB(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if(boardID == GetDeviceName(LMS_DEV_RFSPARK)
-         || boardID == GetDeviceName(LMS_DEV_EVB7)
-         || boardID == GetDeviceName(LMS_DEV_EVB7V2))
-    {
-        pnlBuffers* pnl = new pnlBuffers(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if (boardID == GetDeviceName(LMS_DEV_RFESPARK))
-    {
-        RFSpark_wxgui* pnl = new RFSpark_wxgui(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
-    {
-        pnlQSpark* pnl = new pnlQSpark(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
-    {
-        pnlCoreSDR* pnl = new pnlCoreSDR(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
-    else if (boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
-    {
-        pnlLimeNetMicro* pnl = new pnlLimeNetMicro(this, wxNewId());
-        pnl->Initialize(lmsControl);
-        additionalControls = pnl;
-        sizerAdditionalControls->Add(additionalControls);
-    }
+    // else if(boardID == GetDeviceName(LMS_DEV_LMS7002M_ULTIMATE_EVB))
+    // {
+    //     pnlUltimateEVB* pnl = new pnlUltimateEVB(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if(boardID == GetDeviceName(LMS_DEV_RFSPARK)
+    //      || boardID == GetDeviceName(LMS_DEV_EVB7)
+    //      || boardID == GetDeviceName(LMS_DEV_EVB7V2))
+    // {
+    //     pnlBuffers* pnl = new pnlBuffers(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if (boardID == GetDeviceName(LMS_DEV_RFESPARK))
+    // {
+    //     RFSpark_wxgui* pnl = new RFSpark_wxgui(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_QPCIE))
+    // {
+    //     pnlQSpark* pnl = new pnlQSpark(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if (boardID == GetDeviceName(LMS_DEV_LIMESDR_CORE_SDR))
+    // {
+    //     pnlCoreSDR* pnl = new pnlCoreSDR(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
+    // else if (boardID == GetDeviceName(LMS_DEV_LIMENET_MICRO))
+    // {
+    //     pnlLimeNetMicro* pnl = new pnlLimeNetMicro(this, wxNewId());
+    //     pnl->Initialize(lmsControl);
+    //     additionalControls = pnl;
+    //     sizerAdditionalControls->Add(additionalControls);
+    // }
     Layout();
     Fit();
 }

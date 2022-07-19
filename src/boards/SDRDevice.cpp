@@ -13,9 +13,9 @@ SDRDevice::~SDRDevice()
 {
 }
 
-DeviceInfo SDRDevice::GetDeviceInfo(void)
+SDRDevice::DeviceInfo SDRDevice::GetDeviceInfo(void)
 {
-    DeviceInfo info;
+    SDRDevice::DeviceInfo info;
     //initialize to UNKNOWN board type
     //causes lms7_device::CreateDevice() to use LMS7_Generic
     info.deviceName = GetDeviceName(LMS_DEV_UNKNOWN);
@@ -71,4 +71,61 @@ void SDRDevice::SetDataLogCallback(std::function<void(bool, const unsigned char*
     throw(OperationNotSupported("SetDataLogCallback not implemented"));
 }
 
+int SDRDevice::ReadLMSReg(uint16_t address, int ind)
+{
+    uint32_t mosi = address;
+    uint32_t miso = 0;
+    const auto slaves = GetDescriptor().spiSlaveIds;
+    SPI(slaves.at("LMS7002M"), &mosi, &miso, 1);
+    return miso & 0xFFFF;
 }
+void SDRDevice::WriteLMSReg(uint16_t address, uint16_t val, int ind)
+{
+    const uint32_t mosi = ((address | 0x8000) << 16) | val;
+    const auto slaves = GetDescriptor().spiSlaveIds;
+    SPI(slaves.at("LMS7002M"), &mosi, nullptr, 1);
+}
+int SDRDevice::ReadFPGAReg(uint16_t address)
+{
+    uint32_t mosi = address;
+    uint32_t miso = 0;
+    const auto slaves = GetDescriptor().spiSlaveIds;
+    SPI(slaves.at("FPGA"), &mosi, &miso, 1);
+    return miso & 0xFFFF;
+}
+void SDRDevice::WriteFPGAReg(uint16_t address, uint16_t val)
+{
+    const uint32_t mosi = ((address | 0x8000) << 16) | val;
+    const auto slaves = GetDescriptor().spiSlaveIds;
+    SPI(slaves.at("FPGA"), &mosi, nullptr, 1);
+}
+
+void *SDRDevice::GetInternalChip(uint32_t index)
+{
+    throw std::logic_error("SDR device does not have internal chips");
+}
+
+int SDRDevice::StreamStart(const StreamConfig &config)
+{
+    throw(OperationNotSupported("StreamStart not implemented"));
+}
+
+void SDRDevice::StreamStop() {}
+
+int SDRDevice::StreamRx(uint8_t channel, void **samples, uint32_t count, StreamMeta *meta)
+{
+    throw(OperationNotSupported("StreamRx not implemented"));
+}
+
+int SDRDevice::StreamTx(uint8_t channel, const void **samples, uint32_t count,
+                        const StreamMeta *meta)
+{
+    throw(OperationNotSupported("StreamTx not implemented"));
+}
+
+void SDRDevice::StreamStatus(uint8_t channel, StreamStats &status)
+{
+    throw(OperationNotSupported("StreamStatus not implemented"));
+}
+
+} // namespace lime

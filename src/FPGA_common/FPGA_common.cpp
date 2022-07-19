@@ -1,5 +1,4 @@
 #include "FPGA_common.h"
-#include "IConnection.h"
 #include "LMS64CProtocol.h"
 #include <ciso646>
 #include <vector>
@@ -9,6 +8,8 @@
 #include <thread>
 #include "Logger.h"
 #include <algorithm>
+
+#include "IComms.h"
 using namespace std;
 
 namespace lime
@@ -31,7 +32,7 @@ const uint16_t PHCFG_MODE = 1 << 14;
 
 const uint16_t busyAddr = 0x0021;
 
-FPGA::FPGA()
+FPGA::FPGA(uint32_t slaveID, uint32_t lmsSlaveId) : mSlaveId(slaveID), mLMSSlaveId(lmsSlaveId)
 {
     useCache = false;
 }
@@ -56,17 +57,15 @@ int FPGA::ReadRegister(uint32_t addr)
 
 int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned cnt)
 {
+    std::vector<uint32_t> spiBuffer;
     if (useCache)
     {
-        const int readonly_regs[] = {
-            0x000, 0x001, 0x002, 0x003, 0x021, 0x022, 0x065, 0x067, 0x069, 0x06A,
-            0x06B, 0x06C, 0x06D, 0x06F, 0x070, 0x071, 0x072, 0x073, 0x074, 0x076,
-            0x077, 0x078, 0x07A, 0x07B, 0x07C, 0x0C2, 0x100, 0x101, 0x102, 0x103,
-            0x104, 0x105, 0x106, 0x107, 0x108, 0x109, 0x10A, 0x10B, 0x10C, 0x10D,
-            0x10E, 0x10F, 0x110, 0x111, 0x114};
+        static const int readonly_regs[] = {
+            0x000, 0x001, 0x002, 0x003, 0x021, 0x022, 0x065, 0x067, 0x069, 0x06A, 0x06B, 0x06C,
+            0x06D, 0x06F, 0x070, 0x071, 0x072, 0x073, 0x074, 0x076, 0x077, 0x078, 0x07A, 0x07B,
+            0x07C, 0x0C2, 0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x109,
+            0x10A, 0x10B, 0x10C, 0x10D, 0x10E, 0x10F, 0x110, 0x111, 0x114};
 
-        std::vector<uint32_t> reg_addr;
-        std::vector<uint32_t> reg_val;
         for (unsigned i = 0; i < cnt; i++)
         {
             auto endptr = readonly_regs + sizeof(readonly_regs)/sizeof(*readonly_regs);
@@ -76,27 +75,49 @@ int FPGA::WriteRegisters(const uint32_t *addrs, const uint32_t *data, unsigned c
             auto result = regsCache.find(addrs[i]);
             if (result != regsCache.end() && result->second == data[i])
                 continue;
-            reg_addr.push_back(addrs[i]);
-            reg_val.push_back(data[i]);
+            spiBuffer.push_back((1 << 31) | (addrs[i]) << 16 | data[i]);
             regsCache[addrs[i]] = data[i];
         }
-        if (reg_val.size())
-            return connection->WriteRegisters(reg_addr.data(), reg_val.data(), reg_val.size());
+        if (spiBuffer.size())
+            connection->SPI(mSlaveId, spiBuffer.data(), nullptr, spiBuffer.size());
         return 0;
     }
-    return connection->WriteRegisters(addrs, data, cnt);
+    for (unsigned i = 0; i < cnt; i++)
+        spiBuffer.push_back((1 << 31) | (addrs[i]) << 16 | data[i]);
+    if (spiBuffer.size())
+        connection->SPI(mSlaveId, spiBuffer.data(), nullptr, spiBuffer.size());
+    return 0;
+}
+
+int FPGA::WriteLMS7002MSPI(const uint32_t *data, uint32_t length)
+{
+#ifndef NDEBUG
+    for (int i = 0; i < length; ++i)
+        assert(data[i] & (1 << 31));
+#endif
+    connection->SPI(mLMSSlaveId, data, nullptr, length);
+    return 0;
+}
+
+int FPGA::ReadLMS7002MSPI(const uint32_t *writeData, uint32_t *readData, uint32_t length)
+{
+    std::vector<uint32_t> spiBuf(length);
+    for (int i = 0; i < length; ++i)
+        spiBuf[i] = writeData[i] >> 16;
+    connection->SPI(mLMSSlaveId, spiBuf.data(), readData, length);
+    return 0;
 }
 
 int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
 {
+    std::vector<uint32_t> spiBuffer;
     if (useCache)
     {
-        const int volatile_regs[] = {
-            0x021, 0x022, 0x060, 0x065, 0x067, 0x069, 0x06A, 0x06B, 0x06C, 0x06D,
-            0x06F, 0x070, 0x071, 0x072, 0x073, 0x074, 0x076, 0x077, 0x078, 0x07A,
-            0x07B, 0x07C, 0x0C2, 0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106,
-            0x107, 0x108, 0x109, 0x10A, 0x10B, 0x10C, 0x10D, 0x10E, 0x10F, 0x110,
-            0x111, 0x114};
+        static const int volatile_regs[] = {
+            0x021, 0x022, 0x060, 0x065, 0x067, 0x069, 0x06A, 0x06B, 0x06C, 0x06D, 0x06F,
+            0x070, 0x071, 0x072, 0x073, 0x074, 0x076, 0x077, 0x078, 0x07A, 0x07B, 0x07C,
+            0x0C2, 0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x109,
+            0x10A, 0x10B, 0x10C, 0x10D, 0x10E, 0x10F, 0x110, 0x111, 0x114};
 
         std::vector<uint32_t> reg_addr;
         for (unsigned i = 0; i < cnt; i++)
@@ -108,30 +129,34 @@ int FPGA::ReadRegisters(const uint32_t *addrs, uint32_t *data, unsigned cnt)
                 if (result != regsCache.end())
                     continue;
             }
-            reg_addr.push_back(addrs[i]);
+            spiBuffer.push_back(addrs[i]);
         }
 
-        if (reg_addr.size())
-        {
-            std::vector<uint32_t> reg_val(reg_addr.size());
-            if (connection->ReadRegisters(reg_addr.data(), reg_val.data(), reg_addr.size()) <0)
-                return -1;
-            for (unsigned i = 0; i < reg_addr.size(); i++)
-                regsCache[reg_addr[i]] = reg_val[i];
+        if (spiBuffer.size()) {
+            std::vector<uint32_t> reg_val(spiBuffer.size());
+            connection->SPI(mSlaveId, spiBuffer.data(), reg_val.data(), spiBuffer.size());
+            for (unsigned i = 0; i < spiBuffer.size(); i++)
+                regsCache[spiBuffer[i]] = reg_val[i];
         }
         for (unsigned i = 0; i < cnt; i++)
             data[i] = regsCache[addrs[i]];
         return 0;
     }
-    return connection->ReadRegisters(addrs, data, cnt);
+    for (unsigned i = 0; i < cnt; i++)
+        spiBuffer.push_back(addrs[i]);
+    std::vector<uint32_t> reg_val(spiBuffer.size());
+    connection->SPI(mSlaveId, spiBuffer.data(), reg_val.data(), spiBuffer.size());
+    for (unsigned i = 0; i < cnt; i++)
+        data[i] = reg_val[i] & 0xFFFF;
+    return 0;
 }
 
-void FPGA::SetConnection(IConnection* conn)
+void FPGA::SetConnection(IComms *conn)
 {
     connection = conn;
 }
 
-IConnection* FPGA::GetConnection() const
+IComms *FPGA::GetConnection() const
 {
     return connection;
 }
@@ -234,9 +259,10 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
     const auto timeout = chrono::seconds(3);
     if(not connection)
         return ReportError(ENODEV, "ConfigureFPGA_PLL: connection port is NULL");
-    if(not connection->IsOpen())
-        return ReportError(ENODEV, "ConfigureFPGA_PLL: configure FPGA PLL, device not connected");
-    eLMS_DEV boardType = connection->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
+    // TODO: if(not connection->IsOpen())
+    //     return ReportError(ENODEV, "ConfigureFPGA_PLL: configure FPGA PLL, device not connected");
+    // TODO: eLMS_DEV boardType = connection->GetDeviceInfo().deviceName == GetDeviceName(LMS_DEV_LIMESDR_QPCIE) ? LMS_DEV_LIMESDR_QPCIE : LMS_DEV_UNKNOWN;
+    eLMS_DEV boardType = LMS_DEV_UNKNOWN;
 
     if(pllIndex > 15)
         ReportError(ERANGE, "SetPllFrequency: PLL index(%i) out of range [0-15]", pllIndex);
@@ -437,7 +463,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
         else
         {
             const int nSteps = (360.0 / Fstep_deg)-0.5;
-            const auto timeout = chrono::seconds(3);
+            const auto timeout = chrono::seconds(1);
             t1 = chrono::high_resolution_clock::now();
             t2 = t1;
             addrs.clear(); values.clear();
@@ -466,7 +492,7 @@ int FPGA::SetPllFrequency(const uint8_t pllIndex, const double inputFreq, FPGA_P
                 done = statusReg & 0x4;
                 error = statusReg & 0x08;
                 t2 = chrono::high_resolution_clock::now();
-                std::this_thread::sleep_for(chrono::milliseconds(10));
+                std::this_thread::sleep_for(chrono::milliseconds(100));
             } while (!done && (t2 - t1) < timeout);
             if (!done && t2 - t1 > timeout)
                 lime::error("SetPllFrequency: timeout, busy bit is still 1");
@@ -485,8 +511,8 @@ int FPGA::SetDirectClocking(int clockIndex)
 {
     if(not connection)
         return ReportError(ENODEV, "SetDirectClocking: connection port is NULL");
-    if(not connection->IsOpen())
-        return ReportError(ENODEV, "SetDirectClocking: device not connected");
+    // TODO: if(not connection->IsOpen())
+    //     return ReportError(ENODEV, "SetDirectClocking: device not connected");
 
     uint16_t drct_clk_ctrl_0005 = ReadRegister(0x0005);
     vector<uint32_t> addres;
@@ -583,9 +609,10 @@ int FPGA::Samples2FPGAPacketPayload(const complex16_t* const* samples, int sampl
     return samplesCount*sizeof(complex16_t);
 }
 
-int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_count, StreamConfig::StreamDataFormat format, int epIndex)
+int FPGA::UploadWFM(const void *const *samples, uint8_t chCount, size_t sample_count,
+                    SDRDevice::StreamConfig::DataFormat format, int epIndex)
 {
-    bool comp = (epIndex==2 && format!=StreamConfig::FMT_INT12) ? false : true;
+    bool comp = (epIndex == 2 && format != SDRDevice::StreamConfig::FMT_INT12) ? false : true;
 
     const int samplesInPkt = comp ? samples12InPkt : samples16InPkt;
     WriteRegister(0xFFFF, 1 << epIndex);
@@ -606,8 +633,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
     for(unsigned i=0; i<chCount; ++i)
         samplesShort[i] = nullptr;
 
-    if (format == StreamConfig::FMT_INT16 && comp == true)
-    {
+    if (format == SDRDevice::StreamConfig::FMT_INT16 && comp == true) {
         for(unsigned i=0; i<chCount; ++i)
             samplesShort[i] = new lime::complex16_t[sample_count];
         for (int ch = 0; ch < chCount; ch++)
@@ -618,8 +644,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
             }
         src = samplesShort;
     }
-    else if(format == StreamConfig::FMT_FLOAT32)
-    {
+    else if (format == SDRDevice::StreamConfig::FMT_FLOAT32) {
         const float mult = comp ? 2047.0f : 32767.0f;
         for(unsigned i=0; i<chCount; ++i)
             samplesShort[i] = new lime::complex16_t[sample_count];
@@ -653,8 +678,8 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
         pkt.reserved[0] = 0x1 << 5; //WFM loading
 
         long bToSend = 16+payloadSize;
-        if (connection->SendData((const char*)&pkt,bToSend,epIndex,500)!=bToSend)
-            break;
+        // TODO: if (connection->SendData((const char*)&pkt,bToSend,epIndex,500)!=bToSend)
+        break;
         cnt -= samplesToSend;
     }
     delete[] batch;
@@ -665,7 +690,7 @@ int FPGA::UploadWFM(const void* const* samples, uint8_t chCount, size_t sample_c
 
     /*Give some time to load samples to FPGA*/
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    connection->AbortSending(epIndex);
+    // TODO: connection->AbortSending(epIndex);
     if(cnt == 0)
         return 0;
     else
@@ -683,8 +708,8 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, double txPhase, d
     const uint32_t addr = (0x02A<<16);
     uint32_t val;
     val = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(&val, 1, channel);
-    connection->ReadLMS7002MSPI(&addr, &val, 1, channel);
+    WriteLMS7002MSPI(&val, 1);
+    ReadLMS7002MSPI(&addr, &val, 1);
     bool bypassTx = (val&0xF0) == 0x00;
     bool bypassRx = (val&0x0F) == 0x0D;
 
@@ -756,33 +781,33 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
     dataRdB.clear();
     //backup registers
     dataWr[0] = (uint32_t(0x0020) << 16);
-    connection->ReadLMS7002MSPI(dataWr.data(), &reg20, 1, channel);
+    ReadLMS7002MSPI(dataWr.data(), &reg20, 1);
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
 
     for (int i = 0; i < bakRegCnt; ++i)
         dataWr[i] = (spiAddr[i] << 16);
-    connection->ReadLMS7002MSPI(dataWr.data(),dataRdA.data(), bakRegCnt, channel);
+    ReadLMS7002MSPI(dataWr.data(), dataRdA.data(), bakRegCnt);
 
     {
         const uint32_t addr = (0x02A<<16);
         uint32_t val;
-        connection->ReadLMS7002MSPI(&addr, &val, 1, channel);
+        ReadLMS7002MSPI(&addr, &val, 1);
         bypassTx = (val&0xF0) == 0x00;
         bypassRx = (val&0x0F) == 0x0D;
     }
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
 
     for (int i = 0; i < bakRegCnt; ++i)
         if (spiAddr[i] >= 0x100)
             dataRdB.push_back(spiAddr[i] << 16);
-    connection->ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size(), channel);
+    ReadLMS7002MSPI(dataRdB.data(), dataRdB.data(), dataRdB.size());
 
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFF; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
 
     {
         std::vector<uint32_t> spiData = { 0x0E9F, 0x0FFF, 0x5550, 0xE4E4, 0xE4E4, 0x0086, 0x8001,
@@ -792,7 +817,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
     bool phaseSearchSuccess = false;
@@ -833,7 +858,7 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
         const int setRegCnt = spiData.size();
         for (int i = 0; i < setRegCnt; ++i)
             dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | spiData[i]; //msbit 1=SPI write
-        connection->WriteLMS7002MSPI(dataWr.data(), setRegCnt, channel);
+        WriteLMS7002MSPI(dataWr.data(), setRegCnt);
     }
 
     phaseSearchSuccess = false;
@@ -865,12 +890,12 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
 
     //Restore registers
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFD; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
     for (int i = 0; i < bakRegCnt; ++i)
         dataWr[i] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdA[i]; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), bakRegCnt, channel);
+    WriteLMS7002MSPI(dataWr.data(), bakRegCnt);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | 0xFFFE; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
 
     int k = 0;
     for (int i = 0; i < bakRegCnt; ++i)
@@ -878,9 +903,9 @@ int FPGA::SetInterfaceFreq(double txRate_Hz, double rxRate_Hz, int channel)
             dataWr[k] = (1 << 31) | (uint32_t(spiAddr[i]) << 16) | dataRdB[k]; //msbit 1=SPI write
             k++;
         }
-    connection->WriteLMS7002MSPI(dataWr.data(), k, channel);
+    WriteLMS7002MSPI(dataWr.data(), k);
     dataWr[0] = (1 << 31) | (uint32_t(0x0020) << 16) | reg20; //msbit 1=SPI write
-    connection->WriteLMS7002MSPI(dataWr.data(), 1, channel);
+    WriteLMS7002MSPI(dataWr.data(), 1);
     WriteRegister(0x000A, 0);
 
     return status;
@@ -890,14 +915,14 @@ int FPGA::ReadRawStreamData(char* buffer, unsigned length, int epIndex, int time
 {
     WriteRegister(0xFFFF, 1 << epIndex);
     StopStreaming();
-    connection->ResetStreamBuffers();
+    // TODO: connection->ResetStreamBuffers();
     WriteRegister(0x0008, 0x0100 | 0x2);
     WriteRegister(0x0007, 1);
     StartStreaming();
-    int totalBytesReceived = connection->ReceiveData(buffer,length, epIndex, timeout_ms);
+    // TODO:    int totalBytesReceived = connection->ReceiveData(buffer,length, epIndex, timeout_ms);
     StopStreaming();
-    connection->AbortReading(epIndex);
-    return totalBytesReceived;
+    // TODO:    connection->AbortReading(epIndex);
+    return 0; //totalBytesReceived;
 }
 
 double FPGA::DetectRefClk(double fx3Clk)

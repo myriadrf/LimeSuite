@@ -19,6 +19,7 @@ int error()
 {
     if (device != NULL)
         LMS_Close(device);
+    printf("Error\n");
     exit(-1);
 }
 

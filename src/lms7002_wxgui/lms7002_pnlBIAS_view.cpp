@@ -1,11 +1,13 @@
 #include "lms7002_pnlBIAS_view.h"
 #include <map>
 #include "lms7002_gui_utilities.h"
-#include "lms7_device.h"
+#include "SDRDevice.h"
+#include "LMS7002M.h"
 using namespace lime;
 
-lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
-    : wxPanel(parent, id, pos, size, style), lmsControl(nullptr)
+lms7002_pnlBIAS_view::lms7002_pnlBIAS_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
+                                           const wxSize &size, long style)
+    : ILMS7002MTab(parent, id, pos, size, style)
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer65;
@@ -121,36 +123,9 @@ lms7002_pnlBIAS_view::lms7002_pnlBIAS_view( wxWindow* parent, wxWindowID id, con
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
 }
 
-void lms7002_pnlBIAS_view::Initialize(lms_device_t* pControl)
-{
-    lmsControl = pControl;
-    assert(lmsControl != nullptr);
-}
-
-void lms7002_pnlBIAS_view::ParameterChangeHandler(wxCommandEvent& event)
-{
-    assert(lmsControl != nullptr);
-    LMS7Parameter parameter;
-    try
-    {
-        parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
-    }
-    catch (std::exception & e)
-    {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
-        return;
-    }
-    LMS_WriteParam(lmsControl,parameter,event.GetInt());
-}
-
-void lms7002_pnlBIAS_view::UpdateGUI()
-{
-    LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
-}
-
 void lms7002_pnlBIAS_view::OnCalibrateRP_BIAS( wxCommandEvent& event )
 {
-    LMS7002M* lms = ((LMS7_Device*)lmsControl)->GetLMS();
+    LMS7002M *lms = static_cast<LMS7002M *>(lmsControl->GetInternalChip(mChannel / 2));
     lms->CalibrateRP_BIAS();
     UpdateGUI();
 }

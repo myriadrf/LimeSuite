@@ -5,19 +5,19 @@
 
 #include <map>
 #include <vector>
-#include "lime/LimeSuite.h"
+#include "ILMS7002MTab.h"
 
-class lms7002_pnlTxTSP_view : public wxPanel
+class lms7002_pnlTXTSP_view : public ILMS7002MTab
 {
 public:
-    lms7002_pnlTxTSP_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device_t* pControl);
-    void UpdateGUI();
-    void UpdateNCOinputs();
-protected:
-    lms_device_t* lmsControl;
-    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
+  lms7002_pnlTXTSP_view(wxWindow *parent, wxWindowID id = wxID_ANY,
+                        const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
+                        long style = wxTAB_TRAVERSAL);
+  virtual void Initialize(lime::SDRDevice *pControl) override;
+  virtual void UpdateGUI() override;
+  void UpdateNCOinputs();
 
+protected:
     std::vector<wxStaticText*> lblNCOangles;
     std::vector<wxRadioButton*> rgrNCOselections;
     std::vector<wxTextCtrl*> txtNCOinputs;

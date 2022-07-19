@@ -44,7 +44,8 @@ struct Si5351_PLL
     int CLK_SRC; //0-XTAL, 1-CLKIN
 };
 
-class IConnection;
+class SDRDevice;
+
 class LIME_API Si5351C
 {
 public:
@@ -75,8 +76,8 @@ public:
 
 	Si5351C();
 	~Si5351C();
-	void Initialize(IConnection *mng);
-	bool LoadRegValuesFromFile(std::string FName);
+    void Initialize(SDRDevice *mng);
+    bool LoadRegValuesFromFile(std::string FName);
 
     void SetPLL(unsigned char id, unsigned long CLKIN_Hz, int CLK_SRC);
     void SetClock(unsigned char id, unsigned long fOut_Hz, bool enabled = true, bool inverted = false);
@@ -87,7 +88,7 @@ public:
 
 private:
     void FindVCO(Si5351_Channel *clocks, Si5351_PLL *plls, const unsigned long Fmin, const unsigned long Fmax);
-    IConnection *device;
+    lime::SDRDevice *device;
     int addrSi5351;
 
     Si5351_PLL PLL[2];

@@ -176,57 +176,57 @@ void pnlAPI::OnRun( wxCommandEvent& event )
     if (obj == runButtons[btnInit])
     {
         LMS_Init(lmsControl);
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnEnCh])
     {
         LMS_EnableChannel(lmsControl, enChDir->GetSelection(), enChCh->GetSelection(), enChEn->GetSelection());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetdB])
     {
         LMS_SetGaindB(lmsControl, setdBDir->GetSelection(), setdBCh->GetSelection(), setdBGain->GetValue());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetTest])
     {
         LMS_SetTestSignal(lmsControl, setTestDir->GetSelection(), setTestCh->GetSelection(), lms_testsig_t(setTestSig->GetSelection()), setTestI->GetValue(), setTestQ->GetValue());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetFreq])
     {
         double freq = 0;
         setFreqFreq->GetValue().ToDouble(&freq);
         LMS_SetLOFrequency(lmsControl, setFreqDir->GetSelection(), setFreqCh->GetSelection(), freq*1e6);
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetRate])
     {
         double freq = 0;
         setRateRate->GetValue().ToDouble(&freq);
         LMS_SetSampleRate(lmsControl, freq*1e6, 32>>setRateOv->GetSelection());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetRateDir])
     {
         double freq = 0;
         setRateDirRate->GetValue().ToDouble(&freq);
         LMS_SetSampleRateDir(lmsControl, setRateDirDir->GetSelection(), freq*1e6, 32>>setRateDirOv->GetSelection());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetAnt])
     {
         double freq = 0;
         setRateRate->GetValue().ToDouble(&freq);
         LMS_SetAntenna(lmsControl, setAntDir->GetSelection(), setAntCh->GetSelection(), setAntAnt->GetSelection());
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnSetGain])
     {
         double gain = 0;
         setGainGain->GetValue().ToDouble(&gain);
         LMS_SetNormalizedGain(lmsControl, setGainDir->GetSelection(), setGainCh->GetSelection(), gain);
-        lmsAppFrame->UpdateVisiblePanel();
+        //lmsAppFrame->UpdateVisiblePanel();
     }
     else if (obj == runButtons[btnGetRate])
     {

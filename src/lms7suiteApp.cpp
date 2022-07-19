@@ -40,12 +40,12 @@ bool lms7suiteApp::OnInit()
         wxSIMPLE_BORDER | wxSTAY_ON_TOP);
     wxYield(); //linux needs this to load splash image
     LMS7SuiteAppFrame* frame = new LMS7SuiteAppFrame(0L);
+    frame->SetIcon(wxICON(LMS_ICO));
 #ifndef NDEBUG
     wxLongLong t1 = wxGetUTCTimeMillis();
     std::cout << "Create time " << (wxGetUTCTimeMillis() - t1).ToString() << " ms\n";
 #endif
     splash->Destroy();
-    frame->SetIcon(wxICON(LMS_ICO));
     frame->Show();
     return true;
 }

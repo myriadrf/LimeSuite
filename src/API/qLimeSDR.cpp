@@ -17,7 +17,7 @@ LMS7_qLimeSDR::LMS7_qLimeSDR(lime::IConnection* conn, LMS7_Device *obj) : LMS7_D
     rx_channels.resize(GetNumChannels());
 
     while (lms_list.size() < 2)
-        lms_list.push_back(new lime::LMS7002M());
+        lms_list.push_back(new lime::LMS7002M(0));
 
     fpga->SetConnection(conn);
     for (unsigned i = 0; i < 2; i++)

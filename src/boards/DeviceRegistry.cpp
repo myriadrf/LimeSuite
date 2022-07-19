@@ -10,7 +10,7 @@ using namespace lime;
 #if 0
     #define verbose_printf(...) printf(__VA_ARGS__)
 #else
-    #define verbose_printf
+#define verbose_printf(...)
 #endif
 
 static std::mutex gRegistryMutex;

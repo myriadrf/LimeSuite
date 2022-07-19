@@ -68,21 +68,22 @@ set(LIME_SUITE_SOURCES
     lms7002m/LMS7002M_gainCalibrations.cpp
     protocols/LMS64CProtocol.cpp
     protocols/Streamer.cpp
+    protocols/TRXLooper.cpp
     protocols/ConnectionImages.cpp
     Si5351C/Si5351C.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     API/lms7_api.cpp
-    API/lms7_device.cpp
-    API/LmsGeneric.cpp
-    API/qLimeSDR.cpp
-    API/LimeSDR_mini.cpp
-    API/LimeSDR.cpp
-    API/LimeNET_micro.cpp
-    API/LimeSDR_PCIE.cpp
-    API/LimeSDR_Core.cpp
+    # API/lms7_device.cpp
+    # API/LmsGeneric.cpp
+    # API/qLimeSDR.cpp
+    # API/LimeSDR_mini.cpp
+    # API/LimeSDR.cpp
+    # API/LimeNET_micro.cpp
+    # API/LimeSDR_PCIE.cpp
+    # API/LimeSDR_Core.cpp
     FPGA_common/FPGA_common.cpp
-    FPGA_common/FPGA_Mini.cpp
-    FPGA_common/FPGA_Q.cpp
+    # FPGA_common/FPGA_Mini.cpp
+    # FPGA_common/FPGA_Q.cpp
     windowFunction.cpp
     threadHelper/threadHelper.cpp
 )
@@ -199,6 +200,7 @@ message(STATUS "wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
 ## LimeSuite GUI app
 ########################################################################
 set(LMS7SUITE_GUI_SOURCES
+    GUI/ILMS7002MTab.cpp
     ADF4002/ADF4002_wxgui.cpp
     lms7002_wxgui/lms7002_pnlXBUF_view.cpp
     lms7002_wxgui/lms7002_pnlRFE_view.cpp
@@ -245,13 +247,13 @@ set(LMS7SUITE_GUI_SOURCES
     fftviewer_wxgui/fftviewer_wxgui.cpp
     fftviewer_wxgui/fftviewer_frFFTviewer.cpp
     lms7suiteEvents/lms7suiteEvents.cpp
-    boards_wxgui/pnlBoardControls.cpp
-    boards_wxgui/pnlQSpark.cpp
-    boards_wxgui/pnluLimeSDR.cpp
-    boards_wxgui/pnlUltimateEVB.cpp
-    boards_wxgui/pnlBuffers.cpp
-    boards_wxgui/pnlCoreSDR.cpp
-    boards_wxgui/pnlLimeNetMicro.cpp
+    # boards_wxgui/pnlBoardControls.cpp
+    # boards_wxgui/pnlQSpark.cpp
+    # boards_wxgui/pnluLimeSDR.cpp
+    # boards_wxgui/pnlUltimateEVB.cpp
+    # boards_wxgui/pnlBuffers.cpp
+    # boards_wxgui/pnlCoreSDR.cpp
+    # boards_wxgui/pnlLimeNetMicro.cpp
     ${PROJECT_SOURCE_DIR}/external/kissFFT/kiss_fft.c
     windowFunction.cpp
     boards_wxgui/pnlLimeSDR.cpp
@@ -274,6 +276,7 @@ if (ENABLE_GUI)
     include_directories(lms7suiteEvents)
     include_directories(boards_wxgui)
     include_directories(limeRFE)
+    include_directories(GUI)
 
     include(${wxWidgets_USE_FILE})
     add_subdirectory(oglGraph)

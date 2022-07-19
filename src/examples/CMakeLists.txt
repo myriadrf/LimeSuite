@@ -22,6 +22,10 @@ add_executable(singleRX singleRX.cpp)
 set_target_properties(singleRX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(singleRX LimeSuite)
 
+add_executable(singleRX_cpp singleRX_cpp.cpp)
+set_target_properties(singleRX_cpp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+target_link_libraries(singleRX_cpp LimeSuite)
+
 add_executable(dualRXTX dualRXTX.cpp)
 set_target_properties(dualRXTX PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_link_libraries(dualRXTX LimeSuite)

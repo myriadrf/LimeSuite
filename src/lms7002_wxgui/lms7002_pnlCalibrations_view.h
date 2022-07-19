@@ -1,30 +1,27 @@
 #ifndef __lms7002_pnlCalibrations_view__
 #define __lms7002_pnlCalibrations_view__
 
-#include "lms7002_wxgui.h"
-
 #include <map>
 #include "lime/LimeSuite.h"
 
-class lms7002_pnlCalibrations_view : public wxPanel
+#include "ILMS7002MTab.h"
+
+class lms7002_pnlCalibrations_view : public ILMS7002MTab
 {
 protected:
-	// Handlers for pnlCalibrations_view events.
-    void ParameterChangeHandler(wxCommandEvent& event);
-	void ParameterChangeHandler( wxSpinEvent& event );
-	void OnbtnCalibrateRx( wxCommandEvent& event );
-	void OnbtnCalibrateTx( wxCommandEvent& event );
-	void OnbtnCalibrateAll( wxCommandEvent& event );
-	void OnCalibrationMethodChange( wxCommandEvent& event );
+  virtual void ParameterChangeHandler(wxCommandEvent &event) override;
+  void ParameterChangeHandler(wxSpinEvent &event);
+  void OnbtnCalibrateRx(wxCommandEvent &event);
+  void OnbtnCalibrateTx(wxCommandEvent &event);
+  void OnbtnCalibrateAll(wxCommandEvent &event);
+  void OnCalibrationMethodChange(wxCommandEvent &event);
 
 public:
     lms7002_pnlCalibrations_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device_t* pControl);
-    void UpdateGUI();
-protected:
-    lms_device_t* lmsControl;
-    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
+    virtual void Initialize(lime::SDRDevice *pControl) override;
+    virtual void UpdateGUI() override;
 
+  protected:
     enum
 		{
 			ID_GCORRI_RXTSP = 2048,

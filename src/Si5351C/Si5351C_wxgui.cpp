@@ -6,7 +6,7 @@
 
 #include "Si5351C_wxgui.h"
 #include "Si5351C.h"
-#include "lms7_device.h"
+#include "SDRDevice.h"
 #include <LMSBoards.h>
 
 //(*InternalHeaders(Si5351C_wxgui)
@@ -226,7 +226,7 @@ Si5351C_wxgui::Si5351C_wxgui(wxWindow* parent, wxWindowID id, const wxString &ti
     Connect(ID_BUTTON3, wxEVT_COMMAND_BUTTON_CLICKED, (wxObjectEventFunction)&Si5351C_wxgui::OnbtnConfigureClockClick);
 }
 
-void Si5351C_wxgui::Initialize(lms_device_t* pModule)
+void Si5351C_wxgui::Initialize(SDRDevice *pModule)
 {
     lmsControl = pModule;
 }
@@ -246,7 +246,7 @@ void Si5351C_wxgui::OnbtnLoadFileClick(wxCommandEvent& event)
         return;
 
     lime::Si5351C obj;
-    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Initialize(lmsControl);
     obj.LoadRegValuesFromFile(std::string(openFileDialog.GetPath().ToStdString()));
     if (obj.UploadConfiguration()!=0)
         wxMessageBox(wxString::Format(_("Configuration failed"), _("Error")));
@@ -292,7 +292,7 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
     if (chkInvert_CLK7->GetValue()) freq[7] *= -1;
 
     lime::Si5351C obj;
-    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Initialize(lmsControl);
 
     obj.SetPLL(0,clkin,rgrClkSrc->GetSelection());
     obj.SetPLL(1,clkin,rgrClkSrc->GetSelection());
@@ -310,7 +310,7 @@ void Si5351C_wxgui::OnbtnConfigureClockClick(wxCommandEvent& event)
 void Si5351C_wxgui::OnbtnResetToDefaultsClick(wxCommandEvent& event)
 {
     lime::Si5351C obj;
-    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Initialize(lmsControl);
     obj.Reset();
     obj.UploadConfiguration();
 }
@@ -409,7 +409,7 @@ void Si5351C_wxgui::ClockEnable(unsigned int i, bool enabled)
 void Si5351C_wxgui::OnbtnReadStatusClick(wxCommandEvent& event)
 {
     lime::Si5351C obj;
-    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Initialize(lmsControl);
     lime::Si5351C::StatusBits stat = obj.GetStatusBits();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\
@@ -422,7 +422,7 @@ lblStatus->SetLabel(text);
 void Si5351C_wxgui::OnbtnClearStatusClick(wxCommandEvent& event)
 {
     lime::Si5351C obj;
-    obj.Initialize(((LMS7_Device*)lmsControl)->GetConnection());
+    obj.Initialize(lmsControl);
     obj.ClearStatus();
     wxString text = wxString::Format("\
 SYS_INIT:	%i 	 SYS_INIT_STKY:	%i\n\

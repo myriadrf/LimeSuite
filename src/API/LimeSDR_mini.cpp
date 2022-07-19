@@ -83,14 +83,14 @@ int LMS7_LimeSDR_mini::Init()
     if(lms->CalibrateTxGain(0,nullptr) != 0)
         return -1;
 
-    lms->EnableChannel(true, false);
+    lms->EnableChannel(true, 0, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 2);
     lms->SPI_write(0x0123, 0x000F);  //SXT
     lms->SPI_write(0x0120, 0x80C0);  //SXT
     lms->SPI_write(0x011C, 0x8941);  //SXT
-    lms->EnableChannel(false, false);
-    lms->EnableChannel(true, false);
+    lms->EnableChannel(false, 1, false);
+    lms->EnableChannel(true, 1, false);
 
     lms->Modify_SPI_Reg_bits(LMS7param(MAC), 1);
 

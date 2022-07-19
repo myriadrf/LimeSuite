@@ -11,9 +11,8 @@
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_STATUS_EVENT = wxNewId();
 const long lms7002_pnlMCU_BD_view::ID_PROGRAMING_FINISH_EVENT = wxNewId();
 
-lms7002_pnlMCU_BD_view::lms7002_pnlMCU_BD_view(wxWindow* parent)
-    :
-    wxPanel(parent), lmsControl(nullptr)
+lms7002_pnlMCU_BD_view::lms7002_pnlMCU_BD_view(wxWindow *parent, wxWindowID id)
+    : ILMS7002MTab(parent, id)
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer195;
@@ -1411,12 +1410,6 @@ void lms7002_pnlMCU_BD_view::OnRegWriteRead( wxCommandEvent& event )
         LMS_ReadLMSReg(lmsControl,addr, &retval); //REG read
         ReadResult->SetLabel(wxString::Format("Result is: 0x%02X", retval));
     }
-}
-
-void lms7002_pnlMCU_BD_view::Initialize(lms_device_t* pControl)
-{
-    lmsControl = pControl;
-    assert(lmsControl != nullptr);
 }
 
 lms7002_pnlMCU_BD_view* lms7002_pnlMCU_BD_view::obj_ptr=nullptr;

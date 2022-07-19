@@ -85,7 +85,7 @@ LMS7_Device::LMS7_Device(LMS7_Device *obj) : connection(nullptr), lms_chip_id(0)
     }
     else
     {
-        lms_list.push_back(new lime::LMS7002M());
+        lms_list.push_back(new lime::LMS7002M(0));
         tx_channels.resize(GetNumChannels());
         rx_channels.resize(GetNumChannels());
     }
@@ -1460,7 +1460,7 @@ int LMS7_Device::EnableChannel(bool dir_tx, unsigned chan, bool enabled)
 {
     lime::LMS7002M* lms = SelectChannel(chan);
 
-    lms->EnableChannel(dir_tx, enabled);
+    lms->EnableChannel(dir_tx, chan, enabled);
     if (!enabled)
     {
         if (dir_tx)

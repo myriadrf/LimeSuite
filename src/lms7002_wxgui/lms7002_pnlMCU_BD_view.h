@@ -5,35 +5,34 @@
 
 #include <wx/timer.h>
 #include <thread>
-#include "lime/LimeSuite.h"
+#include "ILMS7002MTab.h"
 
-class lms7002_pnlMCU_BD_view : public wxPanel
+class lms7002_pnlMCU_BD_view : public ILMS7002MTab
 {
-	protected:
-		// Handlers for pnlMCU_BD_view events.
-		void OnButton_LOADHexClick( wxCommandEvent& event );
-		void OnchkResetClick( wxCommandEvent& event );
-		void OnbtnStartProgrammingClick( wxCommandEvent& event );
-		void OnbtnLoadTestFileClick( wxCommandEvent& event );
-		void OnbtnRunTestClick( wxCommandEvent& event );
-		void OnDebugModeClick( wxCommandEvent& event );
-		void OnRunInstruction( wxCommandEvent& event );
-		void OnResetPCClick( wxCommandEvent& event );
-		void OnViewSFRsClick( wxCommandEvent& event );
-		void OnViewIRAMClick( wxCommandEvent& event );
-		void OnEraseIRAMClick( wxCommandEvent& event );
-		void OnSelDivSelect( wxCommandEvent& event );
-		void Onm_cCtrlBasebandSelect( wxCommandEvent& event );
-		void Onm_cCtrlMCU_BDSelect( wxCommandEvent& event );
-		void OnRegWriteRead( wxCommandEvent& event );
-        void OnbtnRunProductionTestClicked(wxCommandEvent& event);
-	public:
-		/** Constructor */
-		lms7002_pnlMCU_BD_view( wxWindow* parent );
-	//// end generated class members
-        ~lms7002_pnlMCU_BD_view();
-        void Initialize(lms_device_t *ptr);
-protected:
+  protected:
+    // Handlers for pnlMCU_BD_view events.
+    void OnButton_LOADHexClick(wxCommandEvent &event);
+    void OnchkResetClick(wxCommandEvent &event);
+    void OnbtnStartProgrammingClick(wxCommandEvent &event);
+    void OnbtnLoadTestFileClick(wxCommandEvent &event);
+    void OnbtnRunTestClick(wxCommandEvent &event);
+    void OnDebugModeClick(wxCommandEvent &event);
+    void OnRunInstruction(wxCommandEvent &event);
+    void OnResetPCClick(wxCommandEvent &event);
+    void OnViewSFRsClick(wxCommandEvent &event);
+    void OnViewIRAMClick(wxCommandEvent &event);
+    void OnEraseIRAMClick(wxCommandEvent &event);
+    void OnSelDivSelect(wxCommandEvent &event);
+    void Onm_cCtrlBasebandSelect(wxCommandEvent &event);
+    void Onm_cCtrlMCU_BDSelect(wxCommandEvent &event);
+    void OnRegWriteRead(wxCommandEvent &event);
+    void OnbtnRunProductionTestClicked(wxCommandEvent &event);
+
+  public:
+    lms7002_pnlMCU_BD_view(wxWindow *parent, wxWindowID id);
+    ~lms7002_pnlMCU_BD_view();
+
+  protected:
     static const size_t max_array_size = 16 * 1024;
     int GetProgramCode(const char* inFileName, bool bin);
     void RunTest_MCU(int m_iMode1, int m_iMode0, unsigned short test_code, int m_iDebug);
@@ -43,8 +42,8 @@ protected:
     int ResetPC_MCU();
     int Change_MCUFrequency(unsigned char data);
     int One_byte_command(unsigned short data1, unsigned char * rdata1);
-    int Three_byte_command(unsigned char data1,unsigned char data2,unsigned char data3,
-		unsigned char * rdata1,unsigned char * rdata2,unsigned char * rdata3);
+    int Three_byte_command(unsigned char data1, unsigned char data2, unsigned char data3,
+                           unsigned char *rdata1, unsigned char *rdata2, unsigned char *rdata3);
     static bool OnProgrammingCallback(int bsent, int btotal, const char* progressMsg);
     void OnProgramingStatusUpdate(wxCommandEvent& event);
     int WaitUntilWritten();
@@ -61,7 +60,6 @@ protected:
     bool mThreadWorking;
     std::thread mWorkerThread;
     wxTimer* progressPooler;
-    lms_device_t* lmsControl;
     int m_iTestNo;
     int m_iInstrNo;
     int m_iPCvalue;

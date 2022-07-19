@@ -4,8 +4,9 @@
 
 using namespace lime;
 
-lms7002_pnlXBUF_view::lms7002_pnlXBUF_view( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
-    : wxPanel(parent, id, pos, size, style), lmsControl(nullptr)
+lms7002_pnlXBUF_view::lms7002_pnlXBUF_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
+                                           const wxSize &size, long style)
+    : ILMS7002MTab(parent, id, pos, size, style)
 {
     const int flags = 0;
     wxFlexGridSizer* fgSizer76;
@@ -99,31 +100,4 @@ lms7002_pnlXBUF_view::lms7002_pnlXBUF_view( wxWindow* parent, wxWindowID id, con
     wndId2Enum[chkSLFB_XBUF_TX] = LMS7param(SLFB_XBUF_TX);
 
     LMS7002_WXGUI::UpdateTooltips(wndId2Enum, true);
-}
-
-void lms7002_pnlXBUF_view::Initialize(lms_device_t* pControl)
-{
-    lmsControl = pControl;
-    assert(lmsControl != nullptr);
-}
-
-void lms7002_pnlXBUF_view::ParameterChangeHandler(wxCommandEvent& event)
-{
-    assert(lmsControl != nullptr);
-    LMS7Parameter parameter;
-    try
-    {
-        parameter = wndId2Enum.at(reinterpret_cast<wxWindow*>(event.GetEventObject()));
-    }
-    catch (std::exception & e)
-    {
-        std::cout << "Control element(ID = " << event.GetId() << ") don't have assigned LMS parameter." << std::endl;
-        return;
-    }
-    LMS_WriteParam(lmsControl,parameter,event.GetInt());
-}
-
-void lms7002_pnlXBUF_view::UpdateGUI()
-{
-    LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
 }

@@ -21,42 +21,43 @@ static const bool verboseEnabled = false;
 using namespace std;
 using namespace lime;
 
-class BoardLoopbackStore
-{
-public:
-    BoardLoopbackStore(lime::IConnection* port) : port(port)
-    {
-        if(port && port->ReadRegister(LoopbackCtrAddr, mLoopbackState) != 0)
-            lime::ReportError(-1, "Failed to read Loopback controls");
-    }
-    ~BoardLoopbackStore()
-    {
-        if(port && port->WriteRegister(LoopbackCtrAddr, mLoopbackState) != 0)
-            lime::ReportError(-1, "Failed to restore Loopback controls");
-    }
-private:
-    lime::IConnection* port;
-    static const uint32_t LoopbackCtrAddr = 0x0017;
-    int mLoopbackState;
-};
+// class BoardLoopbackStore
+// {
+// public:
+//     BoardLoopbackStore(lime::IConnection* port) : port(port)
+//     {
+//         if(port && port->ReadRegister(LoopbackCtrAddr, mLoopbackState) != 0)
+//             lime::ReportError(-1, "Failed to read Loopback controls");
+//     }
+//     ~BoardLoopbackStore()
+//     {
+//         if(port && port->WriteRegister(LoopbackCtrAddr, mLoopbackState) != 0)
+//             lime::ReportError(-1, "Failed to restore Loopback controls");
+//     }
+// private:
+//     lime::IConnection* port;
+//     static const uint32_t LoopbackCtrAddr = 0x0017;
+//     int mLoopbackState;
+// };
 
 static uint8_t GetExtLoopPair(lime::LMS7002M &ctr, bool calibratingTx)
 {
     uint8_t loopPair = 0;
-    lime::IConnection* port = ctr.GetConnection();
-    if(!port)
-        return 0;
+    // TODO;
+    // lime::IConnection* port = ctr.GetConnection();
+    // if(!port)
+    //     return 0;
 
-    auto devName = port->GetDeviceInfo().deviceName;
-    uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
-    uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
+    // auto devName = port->GetDeviceInfo().deviceName;
+    // uint8_t activeLNA = ctr.Get_SPI_Reg_bits(LMS7_SEL_PATH_RFE);
+    // uint8_t activeBand = (ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND2_TRF) << 1 | ctr.Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF))-1;
 
-    if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
-        loopPair = 1 << 2 | 0x1; // band2 -> LNAH
-    else if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
-        loopPair = activeBand << 2 | activeLNA;
-    else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2))
-        loopPair = activeBand << 2 | activeLNA;
+    // if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDR))
+    //     loopPair = 1 << 2 | 0x1; // band2 -> LNAH
+    // else if(devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI))
+    //     loopPair = activeBand << 2 | activeLNA;
+    // else if (devName == lime::GetDeviceName(lime::LMS_DEV_LIMESDRMINI_V2))
+    //     loopPair = activeBand << 2 | activeLNA;
     return loopPair;
 }
 
@@ -210,7 +211,6 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
         return ReportError(EINVAL, "Tx Calibration: Incorrect channel selection MAC %i", ch);
 
     //caching variables
-    DeviceInfo info = controlPort->GetDeviceInfo();
     double txFreq = GetFrequencySX(LMS7002M::Tx);
     uint8_t channel = ch == 1 ? 0 : 1;
     int band = Get_SPI_Reg_bits(LMS7_SEL_BAND1_TRF) ? 0 : 1;
@@ -247,9 +247,10 @@ int LMS7002M::CalibrateTx(float_type bandwidth_Hz, bool useExtLoopback)
        //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
-            status = SetExtLoopback(controlPort, ch, true, true);
-            if(status != 0)
-                return ReportError(EINVAL, "Tx Calibration: Failed to enable external loopback");
+            // TODO:
+            // status = SetExtLoopback(controlPort, ch, true, true);
+            // if(status != 0)
+            //     return ReportError(EINVAL, "Tx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, true);
             mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }
@@ -305,7 +306,6 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
     auto beginTime = std::chrono::high_resolution_clock::now();
 #endif
 
-    DeviceInfo info = controlPort->GetDeviceInfo();
     int status;
     uint8_t ch = (uint8_t)Get_SPI_Reg_bits(LMS7_MAC);
     if(ch == 0 || ch == 3)
@@ -356,9 +356,10 @@ int LMS7002M::CalibrateRx(float_type bandwidth_Hz, bool useExtLoopback)
         //BoardLoopbackStore onBoardLoopbackRestoration(GetConnection());
         if(useExtLoopback)
         {
-            status = SetExtLoopback(controlPort, ch, true, false);
-            if(status != 0)
-                return ReportError(EINVAL, "Rx Calibration: Failed to enable external loopback");
+            // TODO:
+            // status = SetExtLoopback(controlPort, ch, true, false);
+            // if(status != 0)
+            //     return ReportError(EINVAL, "Rx Calibration: Failed to enable external loopback");
             uint8_t loopPair = GetExtLoopPair(*this, false);
             mcuControl->SetParameter(MCU_BD::MCU_EXT_LOOPBACK_PAIR, loopPair);
         }

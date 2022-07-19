@@ -1,25 +1,22 @@
 #ifndef __lms7002_pnlRBB_view__
 #define __lms7002_pnlRBB_view__
 
-#include "lms7002_wxgui.h"
 #include <map>
-#include "lime/LimeSuite.h"
+#include "ILMS7002MTab.h"
 
-class lms7002_pnlRBB_view : public wxPanel
+class lms7002_pnlRBB_view : public ILMS7002MTab
 {
     protected:
-        void ParameterChangeHandler( wxCommandEvent& event );
-        void ParameterChangeHandler(wxSpinEvent& event);
-        void OncmbBBLoopbackSelected( wxCommandEvent& event );        
-        void OnbtnTuneFilter(wxCommandEvent& event);
+      virtual void ParameterChangeHandler(wxCommandEvent &event) override;
+      void ParameterChangeHandler(wxSpinEvent &event);
+      void OncmbBBLoopbackSelected(wxCommandEvent &event);
+      void OnbtnTuneFilter(wxCommandEvent &event);
+
     public:
     lms7002_pnlRBB_view(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
-    void Initialize(lms_device_t* pControl);
-    void UpdateGUI();
-protected:
-    lms_device_t* lmsControl;
-    std::map<wxWindow*, LMS7Parameter> wndId2Enum;
+    virtual void UpdateGUI() override;
 
+  protected:
     enum
         {
             ID_PD_LPFH_RBB = 2048,

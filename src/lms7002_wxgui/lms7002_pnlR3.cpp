@@ -7,21 +7,15 @@
 #include <chrono>
 #include <thread>
 #include "mcu_programs.h"
-#include "lms7_device.h"
 #include "device_constants.h"
 
 #include <vector>
-
+using namespace lime;
 using namespace std;
 
-lms7002_pnlR3_view::lms7002_pnlR3_view( wxWindow* parent ) :
-    wxPanel( parent)
-{
-
-}
-
-lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) :
-    wxPanel( parent, id, pos, size, style )
+lms7002_pnlR3_view::lms7002_pnlR3_view(wxWindow *parent, wxWindowID id, const wxPoint &pos,
+                                       const wxSize &size, long style)
+    : ILMS7002MTab(parent, id, pos, size, style)
 {
     lmsControl = nullptr;
     wxFlexGridSizer* mainSizer;
@@ -365,19 +359,21 @@ lms7002_pnlR3_view::~lms7002_pnlR3_view()
 {
 }
 
-void lms7002_pnlR3_view::Initialize(lms_device_t* pControl)
+void lms7002_pnlR3_view::Initialize(SDRDevice *pControl)
 {
-    lmsControl = pControl;
-    uint16_t value;
-    if (LMS_ReadParam(lmsControl,LMS7param(MASK),&value)!=0  || value != 0)
-        value = 1;
+    ILMS7002MTab::Initialize(pControl);
+    if (pControl == nullptr)
+        return;
+    uint16_t value = ReadParam(LMS7param(MASK));
     this->Enable(value);
 }
 
 void lms7002_pnlR3_view::UpdateGUI()
 {
+    if (!lmsControl)
+        return;
     LMS_Synchronize(lmsControl, false);
-    LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum);
+    LMS7002_WXGUI::UpdateControlsByMap(this, lmsControl, wndId2Enum, mChannel);
 
     wxCommandEvent evt;
 
@@ -387,7 +383,7 @@ void lms7002_pnlR3_view::UpdateGUI()
         auto parameter = wndId2Enum[cmbDCControlsRx[i]];
         LMS_WriteLMSReg(lmsControl, parameter.address, 0);
         LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
-        LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsRx[i]], &value);
+        value = ReadParam(wndId2Enum[cmbDCControlsRx[i]]);
         LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
         int absval = (value & 0x3F);
         if(value&0x40)
@@ -400,7 +396,7 @@ void lms7002_pnlR3_view::UpdateGUI()
         auto parameter = wndId2Enum[cmbDCControlsTx[i]];
         LMS_WriteLMSReg(lmsControl, parameter.address, 0);
         LMS_WriteLMSReg(lmsControl, parameter.address, 0x4000);
-        LMS_ReadParam(lmsControl, wndId2Enum[cmbDCControlsTx[i]], &value);
+        value = ReadParam(wndId2Enum[cmbDCControlsTx[i]]);
         LMS_WriteLMSReg(lmsControl, parameter.address, value & ~0xC000);
         int absval = (value & 0x3FF);
         if(value&0x400)
@@ -431,6 +427,8 @@ void lms7002_pnlR3_view::MCU_RunProcedure(uint8_t id)
 
 uint8_t lms7002_pnlR3_view::MCU_WaitForStatus(uint16_t timeout_ms)
 {
+    if (!lmsControl)
+        return 0;
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
     uint16_t value = 0;
@@ -451,7 +449,8 @@ uint8_t lms7002_pnlR3_view::MCU_WaitForStatus(uint16_t timeout_ms)
 
 void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
 {
-    assert(lmsControl != nullptr);
+    if (!lmsControl)
+        return;
     LMS7Parameter parameter;
     try
     {
@@ -501,7 +500,7 @@ void lms7002_pnlR3_view::ParameterChangeHandler(wxCommandEvent& event)
         }
     }
     else
-        LMS_WriteParam(lmsControl,parameter,event.GetInt());
+        WriteParam(parameter, event.GetInt());
 }
 
 void lms7002_pnlR3_view::ParameterChangeHandler(wxSpinEvent& event)
@@ -530,6 +529,8 @@ void lms7002_pnlR3_view::OnReadDCCMP(wxCommandEvent& event)
 
 void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
 {
+    if (!lmsControl)
+        return;
     LMS7Parameter parameter;
     try
     {
@@ -558,6 +559,8 @@ void lms7002_pnlR3_view::OnWriteTxDC(wxCommandEvent& event)
 
 void lms7002_pnlR3_view::OnWriteRxDC(wxCommandEvent& event)
 {
+    if (!lmsControl)
+        return;
     LMS7Parameter parameter;
     try
     {
@@ -597,6 +600,8 @@ void lms7002_pnlR3_view::ParameterChangeHandlerCMPRead( wxCommandEvent& event )
 
 void lms7002_pnlR3_view::UpdateGUISlow()
 {
+    if (!lmsControl)
+        return;
     vector<uint16_t> addrs = {0x0640, 0x0641};
     vector<uint16_t> rez;
     for(auto i : addrs)
@@ -619,7 +624,7 @@ void lms7002_pnlR3_view::UpdateGUISlow()
 
 void lms7002_pnlR3_view::OnCalibrateAnalogRSSI( wxCommandEvent& event )
 {
-    lime::LMS7002M* lms = ((lime::LMS7_Device*)lmsControl)->GetLMS();
-    lms->CalibrateAnalogRSSI_DC_Offset();
+    // lime::LMS7002M* lms = ((lime::LMS7_Device*)lmsControl)->GetLMS();
+    // TODO: lms->CalibrateAnalogRSSI_DC_Offset();
     UpdateGUI();
 }

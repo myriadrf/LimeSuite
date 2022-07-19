@@ -23,6 +23,11 @@ set(CONNECTION_FX3_SOURCES
     ${THIS_SOURCE_DIR}/FX3.cpp
 )
 
+set(COMMS_USB_SOURCES
+    ${THIS_SOURCE_DIR}/TRXLooper_USB.cpp
+    ${CONNECTION_FX3_SOURCES}
+)
+
 set(CONNECTION_FX3_LIBRARIES
     ${USB_LIBRARIES}
 )
@@ -42,5 +47,5 @@ endif()
 ## Add to library
 ########################################################################
 target_include_directories(LimeSuite PUBLIC ${USB_INCLUDE_DIRS} ${THIS_SOURCE_DIR})
-target_sources(LimeSuite PRIVATE ${CONNECTION_FX3_SOURCES})
+target_sources(LimeSuite PRIVATE ${COMMS_USB_SOURCES})
 target_link_libraries(LimeSuite ${CONNECTION_FX3_LIBRARIES})

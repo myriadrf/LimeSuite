@@ -1,10 +1,17 @@
 #ifndef __pnlMiniLog__
 #define __pnlMiniLog__
 
-#include "utilities_gui.h"
 #include <deque>
 #include <utility> //pair
 #include "Logger.h"
+
+class wxChoice;
+class wxButton;
+class wxTextCtrl;
+class wxCheckBox;
+class wxTextAttr;
+
+#include "wx/panel.h"
 
 class pnlMiniLog : public wxPanel
 {
@@ -19,7 +26,6 @@ public:
     void OnLogDataClicked( wxCommandEvent& event );
     wxCheckBox* chkLogData;
 private:
-    wxTextAttr mDefaultStyle;
     std::deque<wxString> mAllMessages;
     std::deque<std::pair<lime::LogLevel, wxString>> mMessageList;
     int log_level;

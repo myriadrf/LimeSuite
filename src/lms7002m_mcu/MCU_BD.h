@@ -15,6 +15,7 @@ namespace lime{
 
 class LMS64CProtocol;
 class IConnection;
+class IComms;
 
 class MCU_BD
 {
@@ -82,13 +83,13 @@ class MCU_BD
         int ReadOneByte(unsigned char * data);
         int One_byte_command(unsigned short data1, unsigned char * rdata1);
         unsigned int formREG2command(int m_iExt5, int m_iExt4, int m_iExt3, int m_iExt2, int m_iMode1, int m_iMode0);
-        IConnection* m_serPort;
+        IComms *m_serPort;
         int m_bLoadedDebug;
         int m_bLoadedProd;
         int byte_array_size;
-        unsigned mChipID;
+        uint32_t mChipSelect;
 
-    public:
+      public:
         uint8_t ReadMCUProgramID();
         OperationStatus SetDebugMode(bool enabled, IConnection::MCU_PROG_MODE mode);
         OperationStatus readIRAM(const uint8_t *addr, uint8_t* values, const uint8_t count);
@@ -122,7 +123,7 @@ class MCU_BD
         void DebugModeExit_MCU(int m_iMode1, int m_iMode0);
         int ResetPC_MCU();
         int RunInstr_MCU(unsigned short * pPCVAL);
-        void Initialize(IConnection* pSerPort, unsigned chipID = 0, unsigned rom_size = 0);
+        void Initialize(IComms *pSerPort, unsigned chipID = 0, unsigned rom_size = 0);
         lime::IConnection::ProgrammingCallback callback;
 };
 }

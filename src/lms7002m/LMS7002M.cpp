@@ -11,7 +11,7 @@
 #include "LMS7002M.h"
 #include <stdio.h>
 #include <set>
-#include "IConnection.h"
+#include "IComms.h"
 #include "INI.h"
 #include <cmath>
 #include <iostream>
@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <chrono>
 #include <thread>
+#include <unordered_set>
 #include "Logger.h"
 #include "mcu_programs.h"
 
@@ -29,8 +30,6 @@
 
 using namespace std;
 using namespace lime;
-
-#include "MCU_BD.h"
 
 float_type LMS7002M::gVCO_frequency_table[3][2] = { { 3800e6, 5222e6 }, { 4961e6, 6754e6 }, {6306e6, 7714e6} };
 float_type LMS7002M::gCGEN_VCO_frequencies[2] = {1930e6, 2940e6};
@@ -96,7 +95,7 @@ void LMS7002M::Log(LogType type, const char *format, va_list argList)
 
 /** @brief Sets connection which is used for data communication with chip
 */
-void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
+void LMS7002M::SetConnection(IComms *port, const size_t devIndex)
 {
     controlPort = port;
     mdevIndex = devIndex;
@@ -104,14 +103,11 @@ void LMS7002M::SetConnection(IConnection* port, const size_t devIndex)
     if (controlPort != nullptr)
     {
         unsigned byte_array_size = 0;
-        if (controlPort->IsOpen())
-        {
-            unsigned chipRev = this->Get_SPI_Reg_bits(LMS7_MASK, true);
-            if (chipRev >= 1)
-                byte_array_size = 1024 * 16;
-            else
-                byte_array_size = 1024 * 8;
-        }
+        unsigned chipRev = this->Get_SPI_Reg_bits(LMS7_MASK, true);
+        if (chipRev >= 1)
+            byte_array_size = 1024 * 16;
+        else
+            byte_array_size = 1024 * 8;
         mcuControl->Initialize(port, mdevIndex, byte_array_size);
     }
 }
@@ -229,9 +225,10 @@ size_t LMS7002M::GetActiveChannelIndex(bool fromChip)
     }
 }
 
-int LMS7002M::EnableChannel(const bool isTx, const bool enable)
+int LMS7002M::EnableChannel(const bool isTx, const uint8_t channel, const bool enable)
 {
     Channel ch = this->GetActiveChannel();
+    this->SetActiveChannel(channel > 0 ? ChB : ChA);
 
     //--- LML ---
     if (ch == ChA)
@@ -370,10 +367,10 @@ int LMS7002M::EnableChannel(const bool isTx, const bool enable)
 int LMS7002M::ResetChip()
 {
     int status = 0;
-    if (controlPort)
-        status = controlPort->DeviceReset(mdevIndex);
-    else
-        lime::warning("No device connected");
+    //if (controlPort)
+    //status = controlPort->DeviceReset(mdevIndex);
+    //else
+    //lime::warning("No device connected");
     mRegistersMap->InitializeDefaultValues(LMS7parameterList);
     status |= Modify_SPI_Reg_bits(LMS7param(MIMO_SISO), 0); //enable B channel after reset
     return status;
@@ -385,7 +382,7 @@ int LMS7002M::SoftReset()
     auto reg_0x002E = this->SPI_read(0x002E, true);
     this->SPI_write(0x0020, 0x0);
     this->SPI_write(0x0020, reg_0x0020);
-    this->SPI_write(0x002E, reg_0x002E);//must write
+    this->SPI_write(0x002E, reg_0x002E); //must write, enables/disabled MIMO channel B
     return 0;
 }
 
@@ -1513,6 +1510,8 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
     static map<float_type, int8_t> tuning_cache_sel_vco;
     static map<float_type, int16_t> tuning_cache_csw_value;
 
+    assert(freq_Hz > 0);
+
     const char* vcoNames[] = {"VCOL", "VCOM", "VCOH"};
     const uint8_t sxVCO_N = 2; //number of entries in VCO frequencies
     const float_type m_dThrF = 5500e6; //threshold to enable additional divider
@@ -1541,6 +1540,7 @@ int LMS7002M::SetFrequencySX(bool tx, float_type freq_Hz, SX_details* output)
                             gVCO_frequency_table[2][sxVCO_N - 1]/1e6);
 
     const float_type refClk_Hz = GetReferenceClk_SX(tx);
+    assert(refClk_Hz > 0);
     integerPart = (uint16_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - 4);
     fractionalPart = (uint32_t)((VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))) - (uint32_t)(VCOfreq / (refClk_Hz * (1 + (VCOfreq > m_dThrF))))) * 1048576);
 
@@ -1912,8 +1912,7 @@ int LMS7002M::GetGFIRCoefficients(bool tx, uint8_t GFIR_index, int16_t *coef, ui
         addresses.push_back(startAddr + index + 24 * (index / 40));
     uint16_t spiData[120];
     memset(spiData, 0, 120 * sizeof(uint16_t));
-    if (controlPort && controlPort->IsOpen())
-    {
+    if (controlPort) {
         status = SPI_read_batch(&addresses[0], spiData, coefCount);
         for (index = 0; index < coefCount; ++index)
             coef[index] = spiData[index];
@@ -1962,21 +1961,22 @@ uint16_t LMS7002M::SPI_read(uint16_t address, bool fromChip, int *status)
 {
     fromChip |= !useCache;
     //registers containing read only registers, which values can change
-    const uint16_t readOnlyRegs[] = { 0, 1, 2, 3, 4, 5, 6, 0x002F, 0x008C, 0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F, 0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
-    for (unsigned i = 0; i < sizeof(readOnlyRegs) / sizeof(uint16_t); ++i)
-        if (address == readOnlyRegs[i])
-        {
-            fromChip = true;
-            break;
-        }
+    static const std::unordered_set<uint16_t> volatileRegs = {
+        0,      1,      2,      3,      4,      5,      6,      0x002F, 0x008C, 0x00A8,
+        0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x0123, 0x0209, 0x020A, 0x020B, 0x040E, 0x040F,
+        0x05C3, 0x05C4, 0x05C5, 0x05C6, 0x05C7, 0x05C8, 0x05C9, 0x05CA};
+    if (volatileRegs.find(address) != volatileRegs.end())
+        fromChip = true;
+
     if (!controlPort || fromChip == false)
     {
         if (status && !controlPort)
             *status = ReportError("chip not connected");
-        int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
-        int regNo = (mac == 2)? 1 : 0; //only when MAC is B -> use register space B
-        if (address < 0x0100) regNo = 0; //force A when below MAC mapped register space
-        return mRegistersMap->GetValue(regNo, address);
+        uint8_t mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
+        uint8_t channel = (mac == 2) ? 1 : 0; //only when MAC is B -> use register space B
+        if (address < 0x0100)
+            channel = 0; //force A when below MAC mapped register space
+        return mRegistersMap->GetValue(channel, address);
     }
     if(controlPort)
     {
@@ -2042,11 +2042,13 @@ int LMS7002M::SPI_write_batch(const uint16_t* spiAddr, const uint16_t* spiData, 
         return 0;
     if (!controlPort)
     {
-        if (useCache) return 0;
+        if (useCache)
+            return 0;
         lime::error("No device connected");
         return -1;
     }
-    return controlPort->WriteLMS7002MSPI(data.data(), data.size(), mdevIndex);
+    controlPort->SPI(mSlaveID, data.data(), nullptr, data.size());
+    return 0;
 }
 
 /** @brief Batches multiple register reads into least amount of transactions
@@ -2067,12 +2069,10 @@ int LMS7002M::SPI_read_batch(const uint16_t* spiAddr, uint16_t* spiData, uint16_
     std::vector<uint32_t> dataRd(cnt);
     for (size_t i = 0; i < cnt; ++i)
     {
-        dataWr[i] = (uint32_t(spiAddr[i]) << 16);
+        dataWr[i] = (uint32_t)(spiAddr[i]);
     }
 
-
-    int status = controlPort->ReadLMS7002MSPI(dataWr.data(), dataRd.data(), cnt,mdevIndex);
-    if (status != 0) return status;
+    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), cnt);
 
     int mac = mRegistersMap->GetValue(0, LMS7param(MAC).address) & 0x0003;
 
@@ -2303,10 +2303,9 @@ int LMS7002M::SetDefaults(MemorySection module)
 */
 bool LMS7002M::IsSynced()
 {
-    if (!controlPort || controlPort->IsOpen() == false)
+    if (!controlPort)
         return false;
     bool isSynced = true;
-    int status;
 
     Channel ch = this->GetActiveChannel();
 
@@ -2319,15 +2318,10 @@ bool LMS7002M::IsSynced()
     std::vector<uint32_t> dataRd(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    status = controlPort->ReadLMS7002MSPI(dataWr.data(),  dataRd.data(), dataWr.size(),mdevIndex);
+    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), dataWr.size());
 
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
-    if (status != 0)
-    {
-        isSynced = false;
-        goto isSyncedEnding;
-    }
 
     //check if local copy matches chip
     for (uint16_t i = 0; i < addrToRead.size(); ++i)
@@ -2358,14 +2352,9 @@ bool LMS7002M::IsSynced()
     dataRd.resize(addrToRead.size());
     for(size_t i = 0; i < addrToRead.size(); ++i)
         dataWr[i] = (uint32_t(addrToRead[i]) << 16);
-    status = controlPort->ReadLMS7002MSPI(dataWr.data(),  dataRd.data(), dataWr.size(),mdevIndex);
+    controlPort->SPI(mSlaveID, dataWr.data(), dataRd.data(), dataWr.size());
     for(size_t i=0; i<addrToRead.size(); ++i)
         dataReceived[i] = dataRd[i] & 0xFFFF;
-    if (status != 0)
-    {
-        isSynced = false;
-        goto isSyncedEnding;
-    }
     this->SetActiveChannel(ChB);
 
     //check if local copy matches chip
@@ -2842,4 +2831,48 @@ int LMS7002M::CalibrateAnalogRSSI_DC_Offset()
     lime::debug("Found %i", found);
     Modify_SPI_Reg_bits(LMS7_EN_INSHSW_W_RFE, 0);
     return 0;
+}
+
+double LMS7002M::GetClockFreq(ClockID clk_id, uint8_t channel)
+{
+    switch (clk_id) {
+    case ClockID::CLK_REFERENCE:
+        return GetReferenceClk_SX(lime::LMS7002M::Rx);
+    case ClockID::CLK_SXR:
+        return GetFrequencySX(false);
+    case ClockID::CLK_SXT:
+        return GetFrequencySX(true);
+    case ClockID::CLK_CGEN:
+        return GetFrequencyCGEN();
+    case ClockID::CLK_RXTSP:
+        return GetReferenceClk_TSP(false);
+    case ClockID::CLK_TXTSP:
+        return GetReferenceClk_TSP(true);
+    default:
+        lime::ReportError(EINVAL, "Invalid clock ID.");
+        return 0;
+    }
+}
+
+void LMS7002M::SetClockFreq(ClockID clk_id, double freq, uint8_t channel)
+{
+    switch (clk_id) {
+    case ClockID::CLK_REFERENCE:
+        // TODO: recalculate CGEN,SXR/T
+        break;
+    case ClockID::CLK_CGEN:
+        SetFrequencyCGEN(freq, true, nullptr);
+        break;
+    case ClockID::CLK_SXR:
+        SetFrequencySX(false, freq, nullptr);
+        break;
+    case ClockID::CLK_SXT:
+        SetFrequencySX(false, freq, nullptr);
+        break;
+    case ClockID::CLK_RXTSP:
+    case ClockID::CLK_TXTSP:
+        throw std::logic_error("RxTSP/TxTSP Clocks are read only");
+    default:
+        throw std::logic_error("LMS7002M::SetClockFreq Unknown clock id");
+    }
 }

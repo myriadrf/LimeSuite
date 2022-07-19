@@ -10,7 +10,6 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
-class lms7002_mainPanel;
 
 #include <wx/string.h>
 #include <wx/bitmap.h>
@@ -31,61 +30,6 @@ class lms7002_mainPanel;
 #include <wx/hyperlink.h>
 #include <wx/button.h>
 #include <wx/dialog.h>
-
-///////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class AppFrame_view
-///////////////////////////////////////////////////////////////////////////////
-class AppFrame_view : public wxFrame 
-{
-	private:
-	
-	protected:
-		enum
-		{
-			idMenuQuit = 1000,
-			ID_MENUITEM_LIMERFE,
-			idMenuAbout
-		};
-		
-		wxMenuBar* mbar;
-		wxMenu* fileMenu;
-		wxMenu* mnuOptions;
-		wxMenuItem* mnuCacheValues;
-		wxMenu* mnuModules;
-		wxMenu* helpMenu;
-		wxStatusBar* statusBar;
-		wxBoxSizer* bSizer6;
-		wxScrolledWindow* m_scrolledWindow1;
-		wxFlexGridSizer* contentSizer;
-		lms7002_mainPanel* mContent;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
-		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowConnectionSettings( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnChangeCacheSettings( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowFFTviewer( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowADF4002( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowSi5351C( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowPrograming( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowFPGAcontrols( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowDeviceInfo( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowAPICalls( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowSPI( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowBoardControls( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnShowLimeRFE( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		
-		AppFrame_view( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Lime Suite GUI"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
-		
-		~AppFrame_view();
-	
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class dlgAbout_view

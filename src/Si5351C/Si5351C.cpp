@@ -5,7 +5,6 @@
 */
 
 #include "Si5351C.h"
-#include "IConnection.h"
 #include "Logger.h"
 #include <math.h>
 #include <iomanip>
@@ -15,6 +14,7 @@
 #include <cstring>
 #include <cassert>
 #include <ciso646> // alternative operators for visual c++: not, and, or...
+#include "SDRDevice.h"
 
 using namespace std;
 using namespace lime;
@@ -296,10 +296,10 @@ Si5351C::~Si5351C()
 */
 Si5351C::Status Si5351C::UploadConfiguration()
 {
-    if (!device || device->IsOpen() == false)
+    if (!device)
         return FAILED;
 
-    std::string outBuffer;
+    std::vector<uint8_t> outBuffer;
     //Disable outputs
 	outBuffer.push_back(3);
     outBuffer.push_back(uint8_t(0xFF));
@@ -327,11 +327,14 @@ Si5351C::Status Si5351C::UploadConfiguration()
     outBuffer.push_back(3);
     outBuffer.push_back(m_newConfiguration[3]);
 
-    int status;
-    status = device->WriteI2C(addrSi5351, outBuffer);
-    if (status != 0)
+    try {
+        device->I2CWrite(addrSi5351, outBuffer.data(), outBuffer.size());
+        return SUCCESS;
+    }
+    catch (std::runtime_error &e) {
+        printf("Si5351C configuration failed %s\n", e.what());
         return FAILED;
-    return SUCCESS;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -339,11 +342,11 @@ Si5351C::Status Si5351C::UploadConfiguration()
     @brief Sets connection manager to use for data transferring Si5351C
     @param mng connection manager for data transferring
 */
-void Si5351C::Initialize(IConnection *mng)
+void Si5351C::Initialize(SDRDevice *mng)
 {
     device = mng;
-    if (device != nullptr and device->IsOpen())
-        addrSi5351 = 0x20;
+    if (device != nullptr)
+        addrSi5351 = 0x20; // TODO: get address from SDRDevice descriptor
 }
 
 /**
@@ -816,14 +819,17 @@ Si5351C::StatusBits Si5351C::GetStatusBits()
     StatusBits stat;
     if(!device)
         return stat;
-    std::string dataIo;
+    std::vector<uint8_t> dataIo;
     dataIo.push_back(0);
     dataIo.push_back(1);
 
-    int status;
-    status = device->ReadI2C(addrSi5351, 2, dataIo);
-    if (status != 0)
+    try {
+        device->I2CRead(addrSi5351, dataIo.data(), 2);
+    }
+    catch (std::runtime_error &e) {
         return stat;
+    }
+
     uint8_t reg0 = dataIo[0] & 0xFF;
     uint8_t reg1 = dataIo[1] & 0xFF;
     stat.sys_init = (reg0 >> 7);
@@ -842,13 +848,16 @@ Si5351C::Status Si5351C::ClearStatus()
     if(!device)
         return FAILED;
 
-    std::string dataWr;
+    std::vector<uint8_t> dataWr;
     dataWr.push_back(1);
     dataWr.push_back(0x1);
 
-    int status;
-    status = device->WriteI2C(addrSi5351, dataWr);
-    if (status != 0)
+    try {
+        device->I2CWrite(addrSi5351, dataWr.data(), dataWr.size());
+        return SUCCESS;
+    }
+    catch (std::runtime_error &e) {
+        printf("Si5351C configuration failed %s\n", e.what());
         return FAILED;
-    return SUCCESS;
+    }
 }

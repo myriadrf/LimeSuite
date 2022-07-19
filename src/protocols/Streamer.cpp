@@ -179,7 +179,7 @@ Streamer::Streamer(FPGA* f, LMS7002M* chip, int id) : mRxStreams(2, this), mTxSt
     lms = chip,
     fpga = f;
     chipId = id;
-    dataPort = f->GetConnection();
+    // TODO: dataPort = f->GetConnection();
     mTimestampOffset = 0;
     rxLastTimestamp.store(0, std::memory_order_relaxed);
     terminateRx.store(false, std::memory_order_relaxed);
